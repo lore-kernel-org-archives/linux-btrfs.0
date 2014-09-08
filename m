@@ -1,165 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([122.248.162.4]:35317 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754262AbaIHOP0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 10:15:26 -0400
+Received: from e28smtp08.in.ibm.com ([122.248.162.8]:44610 "EHLO
+	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754175AbaIHOPQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 10:15:16 -0400
 Received: from /spool/local
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 8 Sep 2014 19:45:24 +0530
-Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id A1C323940043
-	for <linux-btrfs@vger.kernel.org>; Mon,  8 Sep 2014 19:45:20 +0530 (IST)
+	Mon, 8 Sep 2014 19:45:14 +0530
+Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 756F7394004C
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Sep 2014 19:45:12 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s88EFjwX57802820
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:45 +0530
+	by d28relay02.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s88EFbkl59834602
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:37 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s88EFI0O023957
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:19 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s88EF7jb023159
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:10 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH V6 15/15] Btrfs: subpagesize-blocksize: Revert commit fc4adbff823f76577ece26dcb88bf6f8392dbd43.
-Date: Mon,  8 Sep 2014 19:44:26 +0530
-Message-Id: <1410185666-23308-16-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V6 11/15] Btrfs: subpagesize-blocksize: btrfs_page_mkwrite: Reserve space in sectorsized units.
+Date: Mon,  8 Sep 2014 19:44:22 +0530
+Message-Id: <1410185666-23308-12-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1410185666-23308-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1410185666-23308-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize, we have multiple blocks in a page. Checking for
-existence of a page in the page cache isn't a sufficient check, since we
-could be truncating a subset of the blocks mapped by the page.
+In subpagesize-blocksize scenario, if i_size occurs in a block which is not
+the last block in the page, then the space to be reserved should be calculated
+appropriately.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 --
- fs/btrfs/file.c        |  4 ++-
- fs/btrfs/inode.c       | 77 +++-----------------------------------------------
- 3 files changed, 7 insertions(+), 76 deletions(-)
+ fs/btrfs/inode.c | 33 ++++++++++++++++++++++-----------
+ 1 file changed, 22 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 43527fd..50497bf 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -278,6 +278,4 @@ static inline void btrfs_inode_resume_unlocked_dio(struct inode *inode)
- 		  &BTRFS_I(inode)->runtime_flags);
- }
- 
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
--
- #endif
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b1e0d27..3707515 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2314,7 +2314,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		if ((!ordered ||
- 		    (ordered->file_offset + ordered->len <= lockstart ||
- 		     ordered->file_offset > lockend)) &&
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
-+		     !test_range_bit(&BTRFS_I(inode)->io_tree, lockstart,
-+				     lockend, EXTENT_UPTODATE, 0,
-+				     cached_state)) {
- 			if (ordered)
- 				btrfs_put_ordered_extent(ordered);
- 			break;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d79a543..4dedab6 100644
+index 7ad7d0f..23ce9ff 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6832,76 +6832,6 @@ out:
+@@ -7812,26 +7812,23 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	loff_t size;
+ 	int ret;
+ 	int reserved = 0;
++	u64 delalloc_size;
+ 	u64 page_start;
+ 	u64 page_end;
+ 
+ 	sb_start_pagefault(inode->i_sb);
+-	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
+-	if (!ret) {
+-		ret = file_update_time(vma->vm_file);
+-		reserved = 1;
+-	}
++
++	ret = file_update_time(vma->vm_file);
+ 	if (ret) {
+ 		if (ret == -ENOMEM)
+ 			ret = VM_FAULT_OOM;
+ 		else /* -ENOSPC, -EIO, etc */
+ 			ret = VM_FAULT_SIGBUS;
+-		if (reserved)
+-			goto out;
+-		goto out_noreserve;
++		goto out;
+ 	}
+ 
+ 	ret = VM_FAULT_NOPAGE; /* make the VM retry the fault */
++
+ again:
+ 	lock_page(page);
+ 	size = i_size_read(inode);
+@@ -7862,6 +7859,19 @@ again:
+ 		goto again;
+ 	}
+ 
++	if (page->index == ((size - 1) >> PAGE_CACHE_SHIFT))
++		delalloc_size = round_up(size - page_start, root->sectorsize);
++	else
++		delalloc_size = PAGE_CACHE_SIZE;
++
++	ret = btrfs_delalloc_reserve_space(inode, delalloc_size);
++	if (ret) {
++		/* -ENOSPC */
++		ret = VM_FAULT_SIGBUS;
++		goto out_unlock;
++	}
++	reserved = 1;
++
+ 	/*
+ 	 * XXX - page_mkwrite gets called every time the page is dirtied, even
+ 	 * if it was already dirty, so for space accounting reasons we need to
+@@ -7874,7 +7884,8 @@ again:
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+-	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
++	ret = btrfs_set_extent_delalloc(inode, page_start,
++					page_start + delalloc_size - 1,
+ 					&cached_state);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, page_start, page_end,
+@@ -7913,8 +7924,8 @@ out_unlock:
+ 	}
+ 	unlock_page(page);
+ out:
+-	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
+-out_noreserve:
++	if (reserved)
++		btrfs_delalloc_release_space(inode, delalloc_size);
+ 	sb_end_pagefault(inode->i_sb);
  	return ret;
  }
- 
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
--{
--	struct radix_tree_root *root = &inode->i_mapping->page_tree;
--	int found = false;
--	void **pagep = NULL;
--	struct page *page = NULL;
--	int start_idx;
--	int end_idx;
--
--	start_idx = start >> PAGE_CACHE_SHIFT;
--
--	/*
--	 * end is the last byte in the last page.  end == start is legal
--	 */
--	end_idx = end >> PAGE_CACHE_SHIFT;
--
--	rcu_read_lock();
--
--	/* Most of the code in this while loop is lifted from
--	 * find_get_page.  It's been modified to begin searching from a
--	 * page and return just the first page found in that range.  If the
--	 * found idx is less than or equal to the end idx then we know that
--	 * a page exists.  If no pages are found or if those pages are
--	 * outside of the range then we're fine (yay!) */
--	while (page == NULL &&
--	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
--		page = radix_tree_deref_slot(pagep);
--		if (unlikely(!page))
--			break;
--
--		if (radix_tree_exception(page)) {
--			if (radix_tree_deref_retry(page)) {
--				page = NULL;
--				continue;
--			}
--			/*
--			 * Otherwise, shmem/tmpfs must be storing a swap entry
--			 * here as an exceptional entry: so return it without
--			 * attempting to raise page count.
--			 */
--			page = NULL;
--			break; /* TODO: Is this relevant for this use case? */
--		}
--
--		if (!page_cache_get_speculative(page)) {
--			page = NULL;
--			continue;
--		}
--
--		/*
--		 * Has the page moved?
--		 * This is part of the lockless pagecache protocol. See
--		 * include/linux/pagemap.h for details.
--		 */
--		if (unlikely(page != *pagep)) {
--			page_cache_release(page);
--			page = NULL;
--		}
--	}
--
--	if (page) {
--		if (page->index <= end_idx)
--			found = true;
--		page_cache_release(page);
--	}
--
--	rcu_read_unlock();
--	return found;
--}
--
- static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			      struct extent_state **cached_state, int writing)
- {
-@@ -6926,9 +6856,10 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 		 * invalidate needs to happen so that reads after a write do not
- 		 * get stale data.
- 		 */
--		if (!ordered &&
--		    (!writing ||
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)))
-+		if (!ordered && (!writing ||
-+		    !test_range_bit(&BTRFS_I(inode)->io_tree,
-+				    lockstart, lockend, EXTENT_UPTODATE, 0,
-+				    *cached_state)))
- 			break;
- 
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
 -- 
 1.8.3.1
 

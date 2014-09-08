@@ -1,56 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:26911 "EHLO
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:43814 "EHLO
 	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752823AbaIHJyg (ORCPT
+	by vger.kernel.org with ESMTP id S1753342AbaIHKBl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Sep 2014 05:54:36 -0400
-Date: Mon, 8 Sep 2014 19:54:21 +1000
+	Mon, 8 Sep 2014 06:01:41 -0400
+Date: Mon, 8 Sep 2014 20:01:27 +1000
 From: Dave Chinner <david@fromorbit.com>
 To: Eryu Guan <eguan@redhat.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/15 v2] xfstests: new btrfs stress test cases
-Message-ID: <20140908095421.GE30012@dastard>
+Subject: Re: [PATCH 01/15 v2] btrfs: new test to run btrfs balance and
+ subvolume test simultaneously
+Message-ID: <20140908100127.GF30012@dastard>
 References: <1409233676-22787-1-git-send-email-eguan@redhat.com>
+ <1409233676-22787-2-git-send-email-eguan@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1409233676-22787-1-git-send-email-eguan@redhat.com>
+In-Reply-To: <1409233676-22787-2-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 28, 2014 at 09:47:41PM +0800, Eryu Guan wrote:
-> This patchset add new stress test cases for btrfs by running two
-> different btrfs operations simultaneously under fsstress to ensure
-> btrfs doesn't hang or oops in such situations. btrfs scrub and
-> btrfs check will be run after each test.
+On Thu, Aug 28, 2014 at 09:47:42PM +0800, Eryu Guan wrote:
+> Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
+> with fsstress running in background.
 > 
-> The test matrix is the combination of 6 btrfs operations:
+> Signed-off-by: Eryu Guan <eguan@redhat.com>
+> ---
+>  common/rc           |  24 ++++++++++
+>  tests/btrfs/059     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/059.out |   2 +
+>  tests/btrfs/group   |   1 +
+>  4 files changed, 156 insertions(+)
+>  create mode 100755 tests/btrfs/059
+>  create mode 100644 tests/btrfs/059.out
 > 
-> 	balance
-> 	create/mount/umount/delete subvolume
-> 	replace device
-> 	scrub
-> 	defrag
-> 	remount with different compress algorithms
-> 	
-> Short descriptions:
-> 
-> 	059: balance-subvolume
-> 	060: balance-scrub
-> 	061: balance-defrag
-> 	062: balance-remount
-> 	063: balance-replace
-> 	064: subvolume-replace
-> 	065: subvolume-scrub
-> 	066: subvolume-defrag
-> 	067: subvolume-remount
-> 	068: replace-scrub
-> 	069: replace-defrag
-> 	070: replace-remount
-> 	071: scrub-defrag
-> 	072: scrub-remount
-> 	073: defrag-remount
+> diff --git a/common/rc b/common/rc
+> index 16da898..c1a7b9e 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -2375,6 +2375,30 @@ _get_free_inode()
+>  	echo $nr_inode
+>  }
+>  
+> +_btrfs_stress_balance()
+> +{
+> +	local btrfs_mnt=$1
+> +	while true; do
+> +		$BTRFS_UTIL_PROG balance start $btrfs_mnt
+> +	done
+> +}
+> +
+> +_btrfs_stress_subvolume()
+> +{
+> +	local btrfs_dev=$1
+> +	local btrfs_mnt=$2
+> +	local subvol_name=$3
+> +	local subvol_mnt=$4
+> +
+> +	mkdir -p $subvol_mnt
+> +	while true; do
+> +		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
+> +		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
+> +		$UMOUNT_PROG $subvol_mnt
+> +		$BTRFS_UTIL_PROG subvolume delete $btrfs_mnt/$subvol_name
+> +	done
+> +}
+> +
 
-Can I get some reviews for btrfs people for this series, please?
+I'm thinking that we need to start separating common/rc in
+filesystem specific include files. Not necessary for this series,
+but we really need to so using this file as a dumping ground for
+shared code rather than for init and config stuff.
+
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -fr $tmp.*
+> +}
+
+Really dangerous, that. if $tmp is empty, then that will remove
+everything under / (i.e. 'cd /; rm -rf .*'). You shouldn't be using
+subdirs under $tmp - if you need lots of temporary data for the
+test, it should be under $TESTDIR, not on the root filesystem.
+
+> +run_test()
+> +{
+> +	local mkfs_opts=$1
+> +	local subvol_mnt=$tmp.mnt
+
+IOWs, don't do this. Mount stuff under $TESTDIR/$seq.mnt. That's
+what the testdir is there for...
 
 Cheers,
 

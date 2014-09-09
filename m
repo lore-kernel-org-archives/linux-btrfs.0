@@ -1,96 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18703 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756486AbaIEIwn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Sep 2014 04:52:43 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s858qgFA007043
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Sep 2014 08:52:43 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s858qfv2017420
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Sep 2014 08:52:42 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s858qfTv024815
-	for <linux-btrfs@vger.kernel.org>; Fri, 5 Sep 2014 08:52:41 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: force overwrite should wipe stale SB
-Date: Fri,  5 Sep 2014 23:51:24 +0800
-Message-Id: <1409932284-30895-1-git-send-email-anand.jain@oracle.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48796 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754056AbaIICJN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 22:09:13 -0400
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D7E703EE0BB
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Sep 2014 11:09:11 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id A6B2FAC058D
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Sep 2014 11:09:10 +0900 (JST)
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 585BA1DB803A
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Sep 2014 11:09:10 +0900 (JST)
+Received: from G01JPEXCHYT18.g01.fujitsu.local (G01JPEXCHYT18.g01.fujitsu.local [10.128.194.57])
+	by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id A70146D64C0
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Sep 2014 11:09:08 +0900 (JST)
+Message-ID: <540E613C.5010401@jp.fujitsu.com>
+Date: Tue, 9 Sep 2014 11:09:00 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: doc: fix invalid reference to setattr(8)
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here is a test case which says it all..
+From: Naohiro Aota <naota@elisp.net>
 
-mkfs.xfs -f $DEV
-mkfs.btrfs -f $DEV
-mount $DEV $MNT
-mount: /dev/vdiskc: more filesystems detected. This should not happen,
-       use -t <type> to explicitly specify the filesystem type or
-       use wipefs(8) to clean up the device.
+man 8 btrfs-property refers to `setattr(8)` which does not actually exist.
+It should refer to `chattr (1)` instead.
 
-mount: you must specify the filesystem type
-
-with this patch btrfs_prepare_device() also wipes old FS if any,
-btrfs_prepare_device() is called after we have verified that
-user has provided -f option.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- utils.c |   31 +++++++++++++++++++++++++++++++
- 1 files changed, 31 insertions(+), 0 deletions(-)
+ Documentation/btrfs-property.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index 0064587..8b0c751 100644
---- a/utils.c
-+++ b/utils.c
-@@ -678,6 +678,35 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+static void wipe_existing_fs(int fd)
-+{
-+	blkid_probe     pr = NULL;
-+
-+	pr = blkid_new_probe();
-+	if (!pr)
-+		return;
-+
-+	if (blkid_probe_set_device(pr, fd, 0, 0))
-+		goto out;
-+
-+	blkid_probe_enable_superblocks(pr, 1);
-+	blkid_probe_set_superblocks_flags(pr,
-+				BLKID_SUBLKS_MAGIC |
-+				BLKID_SUBLKS_TYPE |
-+				BLKID_SUBLKS_USAGE |
-+				BLKID_SUBLKS_LABEL |
-+				BLKID_SUBLKS_UUID);
-+
-+	blkid_probe_enable_partitions(pr, 1);
-+
-+	while (blkid_do_probe(pr) == 0)
-+		blkid_do_wipe(pr, 0);
-+
-+	fsync(fd);
-+out:
-+	blkid_free_probe(pr);
-+}
-+
- int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 			   u64 max_block_count, int *mixed, int discard)
- {
-@@ -729,6 +758,8 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 		return 1;
- 	}
- 
-+	wipe_existing_fs(fd);
-+
- 	*block_count_ret = block_count;
- 	return 0;
- }
+diff --git a/Documentation/btrfs-property.txt b/Documentation/btrfs-property.txt
+index 6b23e2e..9ed568c 100644
+--- a/Documentation/btrfs-property.txt
++++ b/Documentation/btrfs-property.txt
+@@ -64,4 +64,4 @@ SEE ALSO
+ --------
+ `mkfs.btrfs`(8),
+ `lsattr`(1),
+-`setattr`(8)
++`chattr`(1)
 -- 
-1.7.1
+1.8.3.1
 

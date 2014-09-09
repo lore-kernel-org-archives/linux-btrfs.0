@@ -1,75 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rin.romanrm.net ([37.187.97.211]:52535 "EHLO rin.romanrm.net"
+Received: from plane.gmane.org ([80.91.229.3]:60562 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752679AbaIIWUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Sep 2014 18:20:38 -0400
-Date: Wed, 10 Sep 2014 04:11:25 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: Arnd Bergmann <arnd@arndb.de>, Clemens Eisserer <linuxhippy@gmail.com>,
-        linux-btrfs@vger.kernel.org
+	id S1752047AbaIIWXv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Sep 2014 18:23:51 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XRTpE-0007E2-At
+	for linux-btrfs@vger.kernel.org; Wed, 10 Sep 2014 00:23:48 +0200
+Received: from pd953e39c.dip0.t-ipconnect.de ([217.83.227.156])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Sep 2014 00:23:48 +0200
+Received: from holger.hoffstaette by pd953e39c.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Sep 2014 00:23:48 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
 Subject: Re: ENOSPC on mostly empty file system
-Message-ID: <20140910041125.3fb1ac80@natsu>
-In-Reply-To: <20140909215725.GE5783@carfax.org.uk>
-References: <3150960.nnNb4J6vhp@wuerfel>
-	<4255785.FLXNWijYCD@wuerfel>
+Date: Tue, 9 Sep 2014 22:23:33 +0000 (UTC)
+Message-ID: <pan.2014.09.09.22.23.33@googlemail.com>
+References: <3150960.nnNb4J6vhp@wuerfel> <4255785.FLXNWijYCD@wuerfel>
 	<CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
 	<10095560.XRujO0W0CE@wuerfel>
-	<20140909215725.GE5783@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/EdAdAtHjr=fd3MRGoCk_87e"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/EdAdAtHjr=fd3MRGoCk_87e
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, 09 Sep 2014 23:49:10 +0200, Arnd Bergmann wrote:
 
-On Tue, 9 Sep 2014 22:57:25 +0100
-Hugo Mills <hugo@carfax.org.uk> wrote:
+> Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
+>         Total devices 1 FS bytes used 8.79GB
+>         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
+                          ^^^^^^^^^^^^^^^^^^^^ *ding ding ding*
 
-> On Tue, Sep 09, 2014 at 11:49:10PM +0200, Arnd Bergmann wrote:
-> > Ok, now I'm in the bad state again (after running a 'make allmodconfig'
-> > kernel build:
-> >=20
-> > Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
-> >         Total devices 1 FS bytes used 8.79GB
-> >         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
->=20
->    All the space on the FS has been allocated to some purpose or other.
->=20
-> > Data: total=3D65.11GB, used=3D7.99GB
->=20
->    Here, you have 65 GiB allocated to data, but only 8 GiB of that
-> used. The FS won't automatically free up any of that (yet -- it's one
-> of the project ideas).
+The term "used" is confusing here and really should be called
+"allocated", since it's more than the number of actually used
+bytes. Note that df shows that you "have" ~66GB data and ~1GB
+metadata (giving approx. ~67GB), despite the fact that of those
+65GB data allocated only ~8GB are actually used.
 
-If you find yourself constantly running into this situation, rather than
-incorporating periodical btrfs 'balances' into your scripts, you could cons=
-ider
-going with the "mixed" allocation mode of the FS, using the -M option of mk=
-fs.
+However all these reserved data chunks are preventing the metadata
+space from expanding, which is pretty full:
+Metadata, DUP: total=1.00GB, used=799.54MB
 
-Seeing as this is not the largest-sized partition in the world in the first
-place, the mixed mode would allow for a more efficient and flexible space
-allocation on it; at the cost of some performance penalty (you could compare
-your compilation times, but I don't think it's too significant).
+Here "total" also should be "allocated/reserved" and is 1GB, but
+btrfs feels it's necessary to allocate a new metadata chunk
+(which would also increase "total") and fails.
 
---=20
-With respect,
-Roman
+Running balance with -dusage=x will garbage-collect the reserved but
+mostly-empty data chunks with "up to x" percent actual usage.
 
---Sig_/EdAdAtHjr=fd3MRGoCk_87e
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+-h
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlQPew0ACgkQTLKSvz+PZwg9OQCeP8GQRHUj7BxRHA5oY8J5d2yX
-iu0AnjpbkukAnR12ZM6gMU+Srr3+QRy4
-=DTKw
------END PGP SIGNATURE-----
-
---Sig_/EdAdAtHjr=fd3MRGoCk_87e--

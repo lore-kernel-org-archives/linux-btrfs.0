@@ -1,80 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.24]:56969 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752156AbaIIWMy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Sep 2014 18:12:54 -0400
-From: Arnd Bergmann <arnd@arndb.de>
+Received: from rin.romanrm.net ([37.187.97.211]:52535 "EHLO rin.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752679AbaIIWUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Sep 2014 18:20:38 -0400
+Date: Wed, 10 Sep 2014 04:11:25 +0600
+From: Roman Mamedov <rm@romanrm.net>
 To: Hugo Mills <hugo@carfax.org.uk>
-Cc: Clemens Eisserer <linuxhippy@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, Clemens Eisserer <linuxhippy@gmail.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC on mostly empty file system
-Date: Wed, 10 Sep 2014 00:12:36 +0200
-Message-ID: <5508424.WdIdzisQ7q@wuerfel>
+Message-ID: <20140910041125.3fb1ac80@natsu>
 In-Reply-To: <20140909215725.GE5783@carfax.org.uk>
-References: <3150960.nnNb4J6vhp@wuerfel> <10095560.XRujO0W0CE@wuerfel> <20140909215725.GE5783@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+References: <3150960.nnNb4J6vhp@wuerfel>
+	<4255785.FLXNWijYCD@wuerfel>
+	<CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
+	<10095560.XRujO0W0CE@wuerfel>
+	<20140909215725.GE5783@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/EdAdAtHjr=fd3MRGoCk_87e"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 09 September 2014 22:57:25 Hugo Mills wrote:
+--Sig_/EdAdAtHjr=fd3MRGoCk_87e
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, 9 Sep 2014 22:57:25 +0100
+Hugo Mills <hugo@carfax.org.uk> wrote:
+
 > On Tue, Sep 09, 2014 at 11:49:10PM +0200, Arnd Bergmann wrote:
 > > Ok, now I'm in the bad state again (after running a 'make allmodconfig'
 > > kernel build:
-> > 
+> >=20
 > > Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
 > >         Total devices 1 FS bytes used 8.79GB
 > >         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
-> 
+>=20
 >    All the space on the FS has been allocated to some purpose or other.
-> 
-> > Data: total=65.11GB, used=7.99GB
-> 
+>=20
+> > Data: total=3D65.11GB, used=3D7.99GB
+>=20
 >    Here, you have 65 GiB allocated to data, but only 8 GiB of that
 > used. The FS won't automatically free up any of that (yet -- it's one
 > of the project ideas).
 
-Ok, I see.
- 
->    So... you need to free up some data chunks. You can do this with:
-> 
-> # btrfs balance start -dusage=5 /mountpoint
-> 
->    Take a look at the output of btrfs fi df and btrfs fi show
-> afterwards, and see how much the Data allocation has reduced by, and
-> how much unallocated space you have left afterwards. You may want to
-> increase the number in the above balance command to some higher value,
-> to free up even more chunks (it limits the balance to chunks less than
-> n% full -- so the command above will only touch chunks with 5% actual
-> data or less). This is in the FAQ.
+If you find yourself constantly running into this situation, rather than
+incorporating periodical btrfs 'balances' into your scripts, you could cons=
+ider
+going with the "mixed" allocation mode of the FS, using the -M option of mk=
+fs.
 
-This is the output afterwards:
-$ time sudo btrfs fi balance start  -dusage=5 /git/
-Done, had to relocate 44 out of 70 chunks
+Seeing as this is not the largest-sized partition in the world in the first
+place, the mixed mode would allow for a more efficient and flexible space
+allocation on it; at the cost of some performance penalty (you could compare
+your compilation times, but I don't think it's too significant).
 
-real    0m22.026s
-user    0m0.014s
-sys     0m8.302s
+--=20
+With respect,
+Roman
 
-$ sudo btrfs fi show /dev/sdc6
-Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
-        Total devices 1 FS bytes used 8.79GB
-        devid    1 size 67.14GB used 23.14GB path /dev/sdc6
+--Sig_/EdAdAtHjr=fd3MRGoCk_87e
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-$ sudo btrfs fi df /git
-Data: total=21.01GB, used=7.99GB
-System, DUP: total=8.00MB, used=12.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.05GB, used=821.32MB
-Metadata: total=8.00MB, used=0.00
-: total=200.00MB, used=0.00
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-I'm pretty sure I read the FAQ one of the last times this happened,
-but I thought it would only apply to mostly full file systems.
-I can usually recover by moving all the data to tmpfs and doing
-a new mkfs before moving the data back, and that normally lasts
-for a few months before I run out of space again.
+iEYEARECAAYFAlQPew0ACgkQTLKSvz+PZwg9OQCeP8GQRHUj7BxRHA5oY8J5d2yX
+iu0AnjpbkukAnR12ZM6gMU+Srr3+QRy4
+=DTKw
+-----END PGP SIGNATURE-----
 
-I'll try to see how long it takes until the problem comes back
-now.
-
-	Arnd
+--Sig_/EdAdAtHjr=fd3MRGoCk_87e--

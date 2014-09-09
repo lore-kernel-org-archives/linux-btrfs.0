@@ -1,99 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36008 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751387AbaIIV53 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Sep 2014 17:57:29 -0400
-Date: Tue, 9 Sep 2014 22:57:25 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Arnd Bergmann <arnd@arndb.de>
+Received: from mout.kundenserver.de ([212.227.17.24]:56969 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752156AbaIIWMy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Sep 2014 18:12:54 -0400
+From: Arnd Bergmann <arnd@arndb.de>
+To: Hugo Mills <hugo@carfax.org.uk>
 Cc: Clemens Eisserer <linuxhippy@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC on mostly empty file system
-Message-ID: <20140909215725.GE5783@carfax.org.uk>
-References: <3150960.nnNb4J6vhp@wuerfel>
- <4255785.FLXNWijYCD@wuerfel>
- <CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
- <10095560.XRujO0W0CE@wuerfel>
+Date: Wed, 10 Sep 2014 00:12:36 +0200
+Message-ID: <5508424.WdIdzisQ7q@wuerfel>
+In-Reply-To: <20140909215725.GE5783@carfax.org.uk>
+References: <3150960.nnNb4J6vhp@wuerfel> <10095560.XRujO0W0CE@wuerfel> <20140909215725.GE5783@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="qGV0fN9tzfkG3CxV"
-In-Reply-To: <10095560.XRujO0W0CE@wuerfel>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---qGV0fN9tzfkG3CxV
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Sep 09, 2014 at 11:49:10PM +0200, Arnd Bergmann wrote:
-> Ok, now I'm in the bad state again (after running a 'make allmodconfig'
-> kernel build:
+On Tuesday 09 September 2014 22:57:25 Hugo Mills wrote:
+> On Tue, Sep 09, 2014 at 11:49:10PM +0200, Arnd Bergmann wrote:
+> > Ok, now I'm in the bad state again (after running a 'make allmodconfig'
+> > kernel build:
+> > 
+> > Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
+> >         Total devices 1 FS bytes used 8.79GB
+> >         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
 > 
-> Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
->         Total devices 1 FS bytes used 8.79GB
->         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
+>    All the space on the FS has been allocated to some purpose or other.
+> 
+> > Data: total=65.11GB, used=7.99GB
+> 
+>    Here, you have 65 GiB allocated to data, but only 8 GiB of that
+> used. The FS won't automatically free up any of that (yet -- it's one
+> of the project ideas).
 
-   All the space on the FS has been allocated to some purpose or other.
+Ok, I see.
+ 
+>    So... you need to free up some data chunks. You can do this with:
+> 
+> # btrfs balance start -dusage=5 /mountpoint
+> 
+>    Take a look at the output of btrfs fi df and btrfs fi show
+> afterwards, and see how much the Data allocation has reduced by, and
+> how much unallocated space you have left afterwards. You may want to
+> increase the number in the above balance command to some higher value,
+> to free up even more chunks (it limits the balance to chunks less than
+> n% full -- so the command above will only touch chunks with 5% actual
+> data or less). This is in the FAQ.
 
-> Data: total=65.11GB, used=7.99GB
+This is the output afterwards:
+$ time sudo btrfs fi balance start  -dusage=5 /git/
+Done, had to relocate 44 out of 70 chunks
 
-   Here, you have 65 GiB allocated to data, but only 8 GiB of that
-used. The FS won't automatically free up any of that (yet -- it's one
-of the project ideas).
+real    0m22.026s
+user    0m0.014s
+sys     0m8.302s
 
-> System, DUP: total=8.00MB, used=12.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=1.00GB, used=821.48MB
+$ sudo btrfs fi show /dev/sdc6
+Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
+        Total devices 1 FS bytes used 8.79GB
+        devid    1 size 67.14GB used 23.14GB path /dev/sdc6
 
-   Here, you're running close to full with metadata -- the FS needs
-some space to write new copies of metadata block in order to modify
-anything. It can't get enough space to do that, because there's
-nowhere for any more metadata allocation to come from (because it's
-all allocated --see my first comment).
+$ sudo btrfs fi df /git
+Data: total=21.01GB, used=7.99GB
+System, DUP: total=8.00MB, used=12.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=1.05GB, used=821.32MB
+Metadata: total=8.00MB, used=0.00
+: total=200.00MB, used=0.00
 
-   So... you need to free up some data chunks. You can do this with:
+I'm pretty sure I read the FAQ one of the last times this happened,
+but I thought it would only apply to mostly full file systems.
+I can usually recover by moving all the data to tmpfs and doing
+a new mkfs before moving the data back, and that normally lasts
+for a few months before I run out of space again.
 
-# btrfs balance start -dusage=5 /mountpoint
+I'll try to see how long it takes until the problem comes back
+now.
 
-   Take a look at the output of btrfs fi df and btrfs fi show
-afterwards, and see how much the Data allocation has reduced by, and
-how much unallocated space you have left afterwards. You may want to
-increase the number in the above balance command to some higher value,
-to free up even more chunks (it limits the balance to chunks less than
-n% full -- so the command above will only touch chunks with 5% actual
-data or less). This is in the FAQ.
-
-   Hugo.
-
-> Metadata: total=8.00MB, used=0.00
-> : total=200.00MB, used=0.00
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Comic Sans goes into a bar,  and the barman says, "We don't ---   
-                         serve your type here."                          
-
---qGV0fN9tzfkG3CxV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBVA93xFheFHXiqx3kAQKLsQ/9Fhv08og3sd4U8VjRpZKx/gAjnwtk5UBV
-wVCzRHp4BNc88l3X9QkyyjjFGm14d+uy1Uiq50QdXa2C2J/o5B8Vt9y0PNeFa48N
-CNHF9/Tar6tB1kFu8l5gs00/cN03OyOoHNMEFrTpWzc60+vi1Iwr0j+ZXmHWlrQE
-INWx1haT1FqWT+JCySapXUhtZNmKO+qrqBpJe/I4r7xLSEHvJMg6YRtSuKk85FxE
-6ZKRPdF35PS1Hd2G8tRBWkiZRiVCsFFCJ3xdoeci2dEOxmByVMJ5tWGhZQHI+CUl
-DWXblwSD27Q3u8ERSTFB62W8IfFp0OT7NubER0JE3xxAG+Yn+nJSYr0fa96eVvbk
-PPGki0ibrhl3QM/Nu8BE3NUONaZkVNnFYrLmSTzUtEv9cLX1iJfRFDPbPjaDZbBk
-4bNb60uQABQVWNMAS1TK4pS2G3M3tbf62hY1TVSfMs7Vdd33xDnTdxzPnrE+Hi19
-ychrAvp/cbFxbLSnIiNVJ40ZwebFWBT6z+M/BrhGbj3kYHdntsEy55ORGFWiWAyU
-YbyA+X9Cc57jqPkO/xwfjqVS8HcBwY3v3XWr97/xb/tuO35TrwilguSmmBjahVUp
-SBs+AcDrePD8l9+mHENleMUXZr+LRT6hsNayozw6hol3zjtHAR1TnwJvPN+GiLf2
-BatYuA0ODgg=
-=2HQI
------END PGP SIGNATURE-----
-
---qGV0fN9tzfkG3CxV--
+	Arnd

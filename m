@@ -1,158 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:38996 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754980AbaIHV0m (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 8 Sep 2014 17:26:42 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] xfstests: generic: add dir fsync test, motivated by a btrfs bug
-Date: Mon,  8 Sep 2014 23:26:17 +0100
-Message-Id: <1410215177-5444-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
-References: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
+Received: from mx1.redhat.com ([209.132.183.28]:4172 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756601AbaIILxf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Sep 2014 07:53:35 -0400
+Date: Tue, 9 Sep 2014 19:53:24 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: Dave Chinner <david@fromorbit.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/15 v2] btrfs: new test to run btrfs balance and
+ subvolume test simultaneously
+Message-ID: <20140909115324.GU2977@dhcp-13-216.nay.redhat.com>
+References: <1409233676-22787-1-git-send-email-eguan@redhat.com>
+ <1409233676-22787-2-git-send-email-eguan@redhat.com>
+ <20140908100127.GF30012@dastard>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140908100127.GF30012@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test is motivated by a bug found in btrfs when fsync'ing a
-directory. The issue was that if a directory entry is both found
-in the persisted metadata and in the fsync log, at log replay time
-the directory got set ith a wrong i_size. This was fixed in btrfs
-with the following linux kernel patch:
+On Mon, Sep 08, 2014 at 08:01:27PM +1000, Dave Chinner wrote:
+> On Thu, Aug 28, 2014 at 09:47:42PM +0800, Eryu Guan wrote:
+> > Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
+> > with fsstress running in background.
+> > 
+> > Signed-off-by: Eryu Guan <eguan@redhat.com>
+> > ---
+> >  common/rc           |  24 ++++++++++
+> >  tests/btrfs/059     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+> >  tests/btrfs/059.out |   2 +
+> >  tests/btrfs/group   |   1 +
+> >  4 files changed, 156 insertions(+)
+> >  create mode 100755 tests/btrfs/059
+> >  create mode 100644 tests/btrfs/059.out
+> > 
+> > diff --git a/common/rc b/common/rc
+> > index 16da898..c1a7b9e 100644
+> > --- a/common/rc
+> > +++ b/common/rc
+> > @@ -2375,6 +2375,30 @@ _get_free_inode()
+> >  	echo $nr_inode
+> >  }
+> >  
+> > +_btrfs_stress_balance()
+> > +{
+> > +	local btrfs_mnt=$1
+> > +	while true; do
+> > +		$BTRFS_UTIL_PROG balance start $btrfs_mnt
+> > +	done
+> > +}
+> > +
+> > +_btrfs_stress_subvolume()
+> > +{
+> > +	local btrfs_dev=$1
+> > +	local btrfs_mnt=$2
+> > +	local subvol_name=$3
+> > +	local subvol_mnt=$4
+> > +
+> > +	mkdir -p $subvol_mnt
+> > +	while true; do
+> > +		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
+> > +		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
+> > +		$UMOUNT_PROG $subvol_mnt
+> > +		$BTRFS_UTIL_PROG subvolume delete $btrfs_mnt/$subvol_name
+> > +	done
+> > +}
+> > +
+> 
+> I'm thinking that we need to start separating common/rc in
+> filesystem specific include files. Not necessary for this series,
+> but we really need to so using this file as a dumping ground for
+> shared code rather than for init and config stuff.
 
-     Btrfs: fix directory recovery from fsync log
+Agreed, maybe I can add one more patch as a last patch to sort out all
+btrfs shared code to common/btrfs
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+> 
+> > +echo "QA output created by $seq"
+> > +
+> > +here=`pwd`
+> > +tmp=/tmp/$$
+> > +status=1
+> > +trap "_cleanup; exit \$status" 0 1 2 3 15
+> > +
+> > +_cleanup()
+> > +{
+> > +	cd /
+> > +	rm -fr $tmp.*
+> > +}
+> 
+> Really dangerous, that. if $tmp is empty, then that will remove
+> everything under / (i.e. 'cd /; rm -rf .*'). You shouldn't be using
+> subdirs under $tmp - if you need lots of temporary data for the
+> test, it should be under $TESTDIR, not on the root filesystem.
 
-V2: Replaced direct use of "xfs_io" with "$XFS_IO_PROG".
+Makes much sense! Will change it.
 
- tests/generic/326     | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/326.out |  2 ++
- tests/generic/group   |  1 +
- 3 files changed, 98 insertions(+)
- create mode 100755 tests/generic/326
- create mode 100644 tests/generic/326.out
-
-diff --git a/tests/generic/326 b/tests/generic/326
-new file mode 100755
-index 0000000..886c856
---- /dev/null
-+++ b/tests/generic/326
-@@ -0,0 +1,95 @@
-+#! /bin/bash
-+# FS QA Test No. 326
-+#
-+# This test is motivated by a bug found in btrfs when fsync'ing a directory.
-+# The issue was that if a directory entry is both found in the persisted
-+# metadata and in the fsync log, at log replay time the directory got set
-+# with a wrong i_size. This was fixed in btrfs with the following linux
-+# kernel patch:
-+#
-+#     Btrfs: fix directory recovery from fsync log
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+}
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_supported_fs generic
-+_supported_os Linux
-+_need_to_be_root
-+_require_scratch
-+_require_dm_flakey
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+
-+_init_flakey
-+_mount_flakey
-+
-+touch $SCRATCH_MNT/foo
-+
-+# Invoke sync here because it's necessary to trigger the original bug in btrfs.
-+# The intention is that at log recovery time we have a dir entry for 'foo' both
-+# in the fs/subvol tree and in the log tree - this is necessary to trigger the
-+# bug on btrfs.
-+sync
-+
-+touch $SCRATCH_MNT/bar
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
-+_check_scratch_fs $FLAKEY_DEV
-+
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+_mount_flakey
-+
-+[ -f $SCRATCH_MNT/foo ] || echo "file foo is missing"
-+[ -f $SCRATCH_MNT/bar ] || echo "file bar is missing"
-+
-+_unmount_flakey
-+
-+# In the original btrfs bug, the filesystem consistency check failed here
-+# because the directory inode got set with a wrong i_size by the log replay
-+# at mount time (dentry 'foo' was accounted for twice).
-+_check_scratch_fs $FLAKEY_DEV
-+
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/generic/326.out b/tests/generic/326.out
-new file mode 100644
-index 0000000..4ac0db5
---- /dev/null
-+++ b/tests/generic/326.out
-@@ -0,0 +1,2 @@
-+QA output created by 326
-+Silence is golden
-diff --git a/tests/generic/group b/tests/generic/group
-index bdcfd9d..cc5fecc 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -145,3 +145,4 @@
- 323 auto aio stress
- 324 auto fsr quick
- 325 auto quick data log
-+326 auto quick metadata log
--- 
-1.9.1
-
+Thanks,
+Eryu
+> 
+> > +run_test()
+> > +{
+> > +	local mkfs_opts=$1
+> > +	local subvol_mnt=$tmp.mnt
+> 
+> IOWs, don't do this. Mount stuff under $TESTDIR/$seq.mnt. That's
+> what the testdir is there for...
+> 
+> Cheers,
+> 
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com

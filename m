@@ -1,119 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.130]:57841 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750910AbaIIVtP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Sep 2014 17:49:15 -0400
-From: Arnd Bergmann <arnd@arndb.de>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from frost.carfax.org.uk ([85.119.82.111]:36008 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751387AbaIIV53 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Sep 2014 17:57:29 -0400
+Date: Tue, 9 Sep 2014 22:57:25 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: Clemens Eisserer <linuxhippy@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC on mostly empty file system
-Date: Tue, 09 Sep 2014 23:49:10 +0200
-Message-ID: <10095560.XRujO0W0CE@wuerfel>
-In-Reply-To: <CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
-References: <3150960.nnNb4J6vhp@wuerfel> <4255785.FLXNWijYCD@wuerfel> <CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
+Message-ID: <20140909215725.GE5783@carfax.org.uk>
+References: <3150960.nnNb4J6vhp@wuerfel>
+ <4255785.FLXNWijYCD@wuerfel>
+ <CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
+ <10095560.XRujO0W0CE@wuerfel>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="qGV0fN9tzfkG3CxV"
+In-Reply-To: <10095560.XRujO0W0CE@wuerfel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 09 September 2014 21:49:12 Clemens Eisserer wrote:
-> Hi Arnd,
+
+--qGV0fN9tzfkG3CxV
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Tue, Sep 09, 2014 at 11:49:10PM +0200, Arnd Bergmann wrote:
+> Ok, now I'm in the bad state again (after running a 'make allmodconfig'
+> kernel build:
 > 
-> > Ok, one more data point:
-> 
-> Why don't you provide the data point you were specifically asked for,
-> "btrfs fi df" ;)
+> Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
+>         Total devices 1 FS bytes used 8.79GB
+>         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
 
-I've cleaned it up again already. At the moment, it's working fine,
-with this data:
+   All the space on the FS has been allocated to some purpose or other.
 
-Data: total=65.11GB, used=7.41GB
-System, DUP: total=8.00MB, used=12.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=799.54MB
-Metadata: total=8.00MB, used=0.00
-: total=184.00MB, used=0.00
+> Data: total=65.11GB, used=7.99GB
 
-I also realized that the file I uploaded was the uncompressed 800MB
-version, not the compressed 82MB file, which is now at
-https://drive.google.com/file/d/0B_XQwQ5KlfJAYzY5c1lJRFVQNEE/edit?usp=sharing
-Sorry about that.
+   Here, you have 65 GiB allocated to data, but only 8 GiB of that
+used. The FS won't automatically free up any of that (yet -- it's one
+of the project ideas).
 
-Ok, now I'm in the bad state again (after running a 'make allmodconfig'
-kernel build:
+> System, DUP: total=8.00MB, used=12.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=1.00GB, used=821.48MB
 
-Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
-        Total devices 1 FS bytes used 8.79GB
-        devid    1 size 67.14GB used 67.14GB path /dev/sdc6
+   Here, you're running close to full with metadata -- the FS needs
+some space to write new copies of metadata block in order to modify
+anything. It can't get enough space to do that, because there's
+nowhere for any more metadata allocation to come from (because it's
+all allocated --see my first comment).
 
-Data: total=65.11GB, used=7.99GB
-System, DUP: total=8.00MB, used=12.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=1.00GB, used=821.48MB
-Metadata: total=8.00MB, used=0.00
-: total=200.00MB, used=0.00
+   So... you need to free up some data chunks. You can do this with:
 
-Not much extra space used up. Also, a bit from my last shell session
-after getting into this state:
+# btrfs balance start -dusage=5 /mountpoint
 
-arnd@wuerfel:~/arm-soc$ make -skj40
-../arch/arm/mach-mmp/devices.c:81:21: warning: 'u2o_get' defined but not used [-Wunused-function]
- static unsigned int u2o_get(void __iomem *base, unsigned int offset)
-                     ^
-../arch/arm/mach-mmp/devices.c:86:13: warning: 'u2o_set' defined but not used [-Wunused-function]
- static void u2o_set(void __iomem *base, unsigned int offset,
-             ^
-../arch/arm/mach-mmp/devices.c:97:13: warning: 'u2o_clear' defined but not used [-Wunused-function]
- static void u2o_clear(void __iomem *base, unsigned int offset,
-             ^
-../arch/arm/mach-mmp/devices.c:108:13: warning: 'u2o_write' defined but not used [-Wunused-function]
- static void u2o_write(void __iomem *base, unsigned int offset,
-             ^
-mv: cannot move 'security/selinux/ss/.tmp_conditional.o' to 'security/selinux/ss/conditional.o': No space left on device
-make[4]: *** [security/selinux/ss/conditional.o] Error 1
-mv: cannot move 'kernel/power/.snapshot.o.tmp' to 'kernel/power/.snapshot.o.cmd': No space left on device
-make[4]: *** [kernel/power/snapshot.o] Error 1
-mv: cannot move 'drivers/ata/.pata_hpt366.o.tmp' to 'drivers/ata/.pata_hpt366.o.cmd': No space left on device
-make[4]: *** [drivers/ata/pata_hpt366.o] Error 1
-mv: cannot move 'kernel/irq/.proc.o.tmp' to 'kernel/irq/.proc.o.cmd': No space left on device
-make[4]: *** [kernel/irq/proc.o] Error 1
-...
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: writing to 'x': No space left on device
-416642+0 records in
-416641+0 records out
-213320192 bytes (213 MB) copied, 2.97814 s, 71.6 MB/s
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: opening 'x': No space left on device
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: opening 'x': No space left on device
-arnd@wuerfel:~/arm-soc$ rm x
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: writing to 'x': No space left on device
-366053+0 records in
-366052+0 records out
-187418624 bytes (187 MB) copied, 3.04426 s, 61.6 MB/s
-arnd@wuerfel:~/arm-soc$ rm x
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: writing to 'x': No space left on device
-363482+0 records in
-363481+0 records out
-186102272 bytes (186 MB) copied, 2.80644 s, 66.3 MB/s
-arnd@wuerfel:~/arm-soc$ rm x
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: writing to 'x': No space left on device
-366677+0 records in
-366676+0 records out
-187738112 bytes (188 MB) copied, 2.86939 s, 65.4 MB/s
-arnd@wuerfel:~/arm-soc$ sync
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: opening 'x': No space left on device
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: opening 'x': No space left on device
-arnd@wuerfel:~/arm-soc$ dd if=/dev/zero of=x
-dd: opening 'x': No space left on device
+   Take a look at the output of btrfs fi df and btrfs fi show
+afterwards, and see how much the Data allocation has reduced by, and
+how much unallocated space you have left afterwards. You may want to
+increase the number in the above balance command to some higher value,
+to free up even more chunks (it limits the balance to chunks less than
+n% full -- so the command above will only touch chunks with 5% actual
+data or less). This is in the FAQ.
 
-I believe that there were no other processes writing to this partition
-at the time.
+   Hugo.
 
-	Arnd
+> Metadata: total=8.00MB, used=0.00
+> : total=200.00MB, used=0.00
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Comic Sans goes into a bar,  and the barman says, "We don't ---   
+                         serve your type here."                          
+
+--qGV0fN9tzfkG3CxV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBVA93xFheFHXiqx3kAQKLsQ/9Fhv08og3sd4U8VjRpZKx/gAjnwtk5UBV
+wVCzRHp4BNc88l3X9QkyyjjFGm14d+uy1Uiq50QdXa2C2J/o5B8Vt9y0PNeFa48N
+CNHF9/Tar6tB1kFu8l5gs00/cN03OyOoHNMEFrTpWzc60+vi1Iwr0j+ZXmHWlrQE
+INWx1haT1FqWT+JCySapXUhtZNmKO+qrqBpJe/I4r7xLSEHvJMg6YRtSuKk85FxE
+6ZKRPdF35PS1Hd2G8tRBWkiZRiVCsFFCJ3xdoeci2dEOxmByVMJ5tWGhZQHI+CUl
+DWXblwSD27Q3u8ERSTFB62W8IfFp0OT7NubER0JE3xxAG+Yn+nJSYr0fa96eVvbk
+PPGki0ibrhl3QM/Nu8BE3NUONaZkVNnFYrLmSTzUtEv9cLX1iJfRFDPbPjaDZbBk
+4bNb60uQABQVWNMAS1TK4pS2G3M3tbf62hY1TVSfMs7Vdd33xDnTdxzPnrE+Hi19
+ychrAvp/cbFxbLSnIiNVJ40ZwebFWBT6z+M/BrhGbj3kYHdntsEy55ORGFWiWAyU
+YbyA+X9Cc57jqPkO/xwfjqVS8HcBwY3v3XWr97/xb/tuO35TrwilguSmmBjahVUp
+SBs+AcDrePD8l9+mHENleMUXZr+LRT6hsNayozw6hol3zjtHAR1TnwJvPN+GiLf2
+BatYuA0ODgg=
+=2HQI
+-----END PGP SIGNATURE-----
+
+--qGV0fN9tzfkG3CxV--

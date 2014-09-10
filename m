@@ -1,56 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60562 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752047AbaIIWXv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Sep 2014 18:23:51 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XRTpE-0007E2-At
-	for linux-btrfs@vger.kernel.org; Wed, 10 Sep 2014 00:23:48 +0200
-Received: from pd953e39c.dip0.t-ipconnect.de ([217.83.227.156])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Sep 2014 00:23:48 +0200
-Received: from holger.hoffstaette by pd953e39c.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Sep 2014 00:23:48 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: ENOSPC on mostly empty file system
-Date: Tue, 9 Sep 2014 22:23:33 +0000 (UTC)
-Message-ID: <pan.2014.09.09.22.23.33@googlemail.com>
-References: <3150960.nnNb4J6vhp@wuerfel> <4255785.FLXNWijYCD@wuerfel>
-	<CAFvQSYQX9e__9vUedcqN2onUA4v2yyt2wz7wGdzAkTHzLL+ggw@mail.gmail.com>
-	<10095560.XRujO0W0CE@wuerfel>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:17024 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751005AbaIJAmg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Sep 2014 20:42:36 -0400
+Message-ID: <540F9E77.3080701@fb.com>
+Date: Tue, 9 Sep 2014 20:42:31 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Morten Stevens <mstevens@fedoraproject.org>, <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs 3.16.2 system crash
+References: <CAKSJeFLRK5PaZMd=KkkLNe_G_h86CYYNTrKVyt5eWzdKU+NbAw@mail.gmail.com> <540E3858.8060904@fb.com>
+In-Reply-To: <540E3858.8060904@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 09 Sep 2014 23:49:10 +0200, Arnd Bergmann wrote:
 
-> Label: none  uuid: 1d88cccb-3d0e-42d9-8252-a226dc5c2e47
->         Total devices 1 FS bytes used 8.79GB
->         devid    1 size 67.14GB used 67.14GB path /dev/sdc6
-                          ^^^^^^^^^^^^^^^^^^^^ *ding ding ding*
 
-The term "used" is confusing here and really should be called
-"allocated", since it's more than the number of actually used
-bytes. Note that df shows that you "have" ~66GB data and ~1GB
-metadata (giving approx. ~67GB), despite the fact that of those
-65GB data allocated only ~8GB are actually used.
+On 09/08/2014 07:14 PM, Chris Mason wrote:
+> 
+> 
+> On 09/08/2014 06:51 PM, Morten Stevens wrote:
+>> Hi,
+>>
+>> After some testing with the latest stable 3.16.2 kernel on my Fedora
+>> 20 test-vm and a small filesystem
+>> test with btrfs causes the system to crash.
+>>
+>> Kernel: 3.16.2
+>> Mount options: rw,seclabel,relatime,compress=lzo,space_cache
+>>
+>> The test is really simple: only writing 16 GB files on the disk with dd
+>> # dd if=/dev/zero of=ddfile bs=8k count=2000000
+>>
+>> You need to run it multiple times, after some time the host gets into
+>> a non-responsive
+>> state.
+> 
+> Hi Morten,
+> 
+> I haven't seen that one, and I ran an overnight stress before sending
+> out the stable patches.   But, let me try here.
 
-However all these reserved data chunks are preventing the metadata
-space from expanding, which is pretty full:
-Metadata, DUP: total=1.00GB, used=799.54MB
+I ran the dd's overnight and some other tests without trouble.  But that
+doesn't mean its not a btrfs bug, I'll try again tonight.
 
-Here "total" also should be "allocated/reserved" and is 1GB, but
-btrfs feels it's necessary to allocate a new metadata chunk
-(which would also increase "total") and fails.
-
-Running balance with -dusage=x will garbage-collect the reserved but
-mostly-empty data chunks with "up to x" percent actual usage.
-
--h
+-chris
 

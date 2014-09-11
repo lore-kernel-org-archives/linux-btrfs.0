@@ -1,63 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33776 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751331AbaIKGzz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Sep 2014 02:55:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XRyIE-0006dx-0B
-	for linux-btrfs@vger.kernel.org; Thu, 11 Sep 2014 08:55:46 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 08:55:45 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 08:55:45 +0200
+Received: from outbound-queue-1.mail.thdo.gradwell.net ([212.11.70.34]:42281
+	"EHLO outbound-queue-1.mail.thdo.gradwell.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751737AbaIKJIw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Sep 2014 05:08:52 -0400
+Received: from outbound-edge-1.mail.thdo.gradwell.net (bonnie.gradwell.net [212.11.70.2])
+	by outbound-queue-1.mail.thdo.gradwell.net (Postfix) with ESMTP id 23E0D22635
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 10:08:50 +0100 (BST)
+Message-ID: <541166A1.8080704@barrowhillfarm.org.uk>
+Date: Thu, 11 Sep 2014 10:08:49 +0100
+From: Bob Williams <linux@barrowhillfarm.org.uk>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Is it necessary to balance a btrfs raid1 array?
-Date: Thu, 11 Sep 2014 06:55:18 +0000 (UTC)
-Message-ID: <pan$a192b$da065674$ab069abf$c7aef1f5@cox.net>
-References: <541043B8.7010601@barrowhillfarm.org.uk>
-	<54109BCD.5000106@inwind.it>
-	<20140910193212.GA2549@wheatley.student.rit.edu>
-	<5410D0A8.6040204@inwind.it>
-	<20140911012516.GA3367@wheatley.student.rit.edu>
-	<20140911035119.GA10787@hungrycats.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <541043B8.7010601@barrowhillfarm.org.uk> <20140911043007.GB10787@hungrycats.org>
+In-Reply-To: <20140911043007.GB10787@hungrycats.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo Blaxell posted on Wed, 10 Sep 2014 23:51:19 -0400 as excerpted:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> Spinning disks stop being able to position their heads properly around
-> -10C or so, a fact that will be familiar to anyone who's tried to use a
-> laptop outside in winter.
+On 11/09/14 05:30, Zygo Blaxell wrote:
+> On Wed, Sep 10, 2014 at 01:27:36PM +0100, Bob Williams wrote:
+>> I have two 2TB disks formatted as a btrfs raid1 array, mirroring
+>> both data and metadata. Last night I started
+>> 
+>> # btrfs filesystem balance <path>
+>> 
+[...]
+> 
+>> As a rough guide, how often should one perform
+>> 
+>> a) balance
+> 
+> I have a cron job that runs 'btrfs balance resume' or 'btrfs
+> balance start' (depending on whether a balance is already in
+> progress) nightly at 1AM.  Another cron job comes along at 6AM to
+> run 'btrfs balance pause' on my headless servers.  On my desktops
+> and laptops I have a daemon that detects keyboard/mouse input and
+> does 'btrfs balance pause' when some is detected (the balance
+> remains paused until the next day at 1AM, as it is really heavy and
+> takes a long time to come to a stop).
+> 
+[...]
 
-Depends on where that winter is.  Here in Phoenix, snow makes news (and 
-whatever you do, don't ask Phoenicians to drive in it, they're bad enough 
-in rain!) and with the exception of outlying areas, there's now seldom 
-even frost in the morning.  -10C or so?  YIKES!
+Many thanks to everyone who has contributed to this thread. I have
+learnt a lot, and now have weekly cronjobs to balance and scrub.
 
-So using a laptop outside in winter here isn't likely to trigger the 
-behavior in question.
+Bob
+- -- 
+Bob Williams
+System:  Linux 3.11.10-21-desktop
+Distro:  openSUSE 13.1 (x86_64) with KDE Development Platform: 4.14.0
+Uptime:  06:00am up 6 days 15:04, 4 users, load average: 0.02, 0.02, 0.05
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-OTOH, I've personally had the opposite issue, go away for some hours in 
-the summer with the computer left running, AC fails when it's already 45C 
-in the shade outside, come back to a house baking at 55-60C inside, a 
-computer still on but of course crashed, and head-crashed disk that 
-likely reached well over 70C...
-
-Still, once I shut down and cooled everything down, the system but for 
-the disk was fine, and the disk was fine too, outside the zones where the 
-heads happened to be at the time.  I had (unmounted at the time) backup 
-partitions on the same disk that I was able to boot and run from for 
-several months, until I was able to buy and install a replacement.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+iEYEARECAAYFAlQRZp4ACgkQ0Sr7eZJrmU7YcACgpMcD4w3J8IV8m4MpYSG8jl1/
+kLEAoITiw3EcpvnELw2KlRaa3GlYEWUV
+=ICmv
+-----END PGP SIGNATURE-----

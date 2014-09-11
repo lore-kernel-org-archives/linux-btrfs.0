@@ -1,95 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cust-198-154-114-217.corexchange.com ([198.154.114.217]:38741
-	"EHLO vkenny.zootboy.com" rhost-flags-OK-FAIL-OK-OK)
-	by vger.kernel.org with ESMTP id S1750753AbaIKEXV (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:36028 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752416AbaIKEaI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Sep 2014 00:23:21 -0400
-Date: Thu, 11 Sep 2014 00:23:18 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Goffredo Baroncelli <kreijack@inwind.it>, linux-btrfs@vger.kernel.org
+	Thu, 11 Sep 2014 00:30:08 -0400
+Date: Thu, 11 Sep 2014 00:30:07 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Bob Williams <linux@barrowhillfarm.org.uk>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Is it necessary to balance a btrfs raid1 array?
-Message-ID: <20140911042318.GB3367@wheatley.student.rit.edu>
+Message-ID: <20140911043007.GB10787@hungrycats.org>
 References: <541043B8.7010601@barrowhillfarm.org.uk>
- <54109BCD.5000106@inwind.it>
- <20140910193212.GA2549@wheatley.student.rit.edu>
- <5410D0A8.6040204@inwind.it>
- <20140911012516.GA3367@wheatley.student.rit.edu>
- <20140911035119.GA10787@hungrycats.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140911035119.GA10787@hungrycats.org>
+In-Reply-To: <541043B8.7010601@barrowhillfarm.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 10, 2014 at 11:51:19PM -0400, Zygo Blaxell wrote:
-> This is a complex topic. 
-
-I agree, and I make no claim to be an expert in any of this.
-
-> Some disks have bugs in their firmware, and some of those bugs make the
-> data sheets and most of this discussion entirely moot.  The firmware is
-> gonna do what the firmware's gonna do.
-
-Agreed. That's why I like that fact that btrfs provides another layer of
-error checking / correction.
-
-> It's a bad idea to try to rewrite a fading sector in some cases.
-> If the drive is located in a climate-controlled data center then it
-> should be OK; however, there are multiple causes of read failure and
-> some of them will also cause writes to damage adjacent data on the disk.
-> Spinning disks stop being able to position their heads properly around
-> -10C or so, a fact that will be familiar to anyone who's tried to use a
-> laptop outside in winter.  Maybe someone dropped the computer, and the
-> read errors are due to the heads vibrating with the shock--a read retry
-> a few milliseconds later would be OK, but a rewrite (without a delay,
-> so the heads are still vibrating from the shock) would just wipe out
-> some nearby data with no possibility of recovery.
-
-Of course, the drive can't always know what's going on outside. It just
-tries its best (we hope). 
-
-> Most of the reallocations I've observed in the field happen when a
-> sector is written, not read.
-
-Very true. I believe what happens is that a sector is marked for
-re-allocation when the read fails, and a write to that sector will
-trigger the actual reallocation. Hence the "pending reallocations" SMART
-attribute.
-
-> Most disks can search for defects on their own, but the host has to issue a
-> SMART command to initiate such a search.  They will also track defect
-> rates and log recent error details (with varying degrees of bugginess).
-
-And again, it's up to the questionable firmware's discretion as to how
-that search is done / how thorough it is. And it has to be triggered by
-the user / script. I don't consider that to really be "on its own," as
-btrfs scrub requires the same level of input/scripting.
-
-> smartmontools is your friend.  It's not a replacement for btrfs scrub, but
-> it collects occasionally useful complementary information about the
-> health of the drive.
-
-I can't find the link, but there was a study done that shows an
-alarmingly high percentage of disk failures showed no SMART errors
-before failing. 
-
-> There used to be a firmware feature for drives to test themselves
-> whenever they are spinning and idle for four continuous hours, but most
-> modern disks will power themselves down if they are idle for much less
-> time...and who has a disk that's idle for four hours at a time anyway?  ;)
-
-My backup destination is touched once a day. It averages about 20 hours
-a day idle. Though it probably doesn't need to be testing itself 80% of
-the time. That would be a mite excessive =P
-
-> > Scrub your disks, folks. A scrubbed disk is a happy disk.
+On Wed, Sep 10, 2014 at 01:27:36PM +0100, Bob Williams wrote:
+> I have two 2TB disks formatted as a btrfs raid1 array, mirroring both
+> data and metadata. Last night I started
 > 
-> Seconded.  Also remember that not all storage errors are due to disk
-> failure.  There's a lot of RAM, high-speed signalling, and wire between
-> the host CPU and a disk platter.  SMART self-tests won't detect failures
-> in those, but scrubs will.
+> # btrfs filesystem balance <path>
+> 
+> and it is still running 18 hours later. This suggests that most stuff
+> only gets written to one physical device, which in turn suggests that
+> there is a risk of lost data if one physical device fails. Or is there
+> something clever about btrfs raid that I've missed? I've used linux
+> software raid (mdraid) before, and it appeared to write to both
+> devices simultaneously.
+> 
+> Is it safe to interrupt [^Z] the btrfs balancing process?
 
-But we'll save the ECC RAM discussion for another day, perhaps.
+The ioctl isn't interruptible, so ^Z won't do much.  You'll need a
+separate window to run 'btrfs balance pause' or 'btrfs balance cancel'.
+It seems to wait until it's reached the end of a block group before it
+actually stops, so it may take a few minutes or a few hours depending
+on how much other load you have on the filesystem.
 
---Sean
+> As a rough guide, how often should one perform
+> 
+> a) balance
+
+I have a cron job that runs 'btrfs balance resume' or 'btrfs balance
+start' (depending on whether a balance is already in progress) nightly
+at 1AM.  Another cron job comes along at 6AM to run 'btrfs balance pause'
+on my headless servers.  On my desktops and laptops I have a daemon that
+detects keyboard/mouse input and does 'btrfs balance pause' when some
+is detected (the balance remains paused until the next day at 1AM,
+as it is really heavy and takes a long time to come to a stop).
+
+Using that schedule, a full balance can take weeks to run to completion on
+a busy server.  Enough progress is made each day to have some benefit.
+
+I keep my disks 90-99% full.  Free space fragmentation can be a huge
+performance problem, since it causes severe file fragmentation when
+large files are created or modified.  Balancing rearranges the allocated
+space so that there are big enough contiguous free spaces so that new
+data isn't scattered sparsely across the entire surface of the disk.
+
+> b) defragment
+
+I run this once daily on a continuously active 4GB PostgreSQL DB.
+I generally don't bother with defragment otherwise.
+
+I have millions of tiny files that are already unfragmented, and a few
+huge files that can't be defragmented without moving around hundreds
+of GB of data to make a free contiguous extent.  For me defragment is
+usually either pointless or too expensive to be worthwhile, with a
+few specific exceptions like highly active large database files.
+
+Defragmentation also does not seem to play well with snapshots and
+deduplication.
+
+> c) scrub
+
+Every 14 days.  The ZFS guideline is one scrub every 4 weeks for
+enterprise drives, and every week for consumer drives.  I split the
+difference.  scrub is relatively fast so it's not too painful to run
+it often.  On the opposite weeks I run SMART self-tests on the drives too.
+
+On desktops and laptops I have a daemon that listens for keyboard/mouse
+input and pause/resumes scrubs, so I don't have to wait around while
+scrub competes for my disk bandwidth.  The servers just get a little
+slower for a couple of hours a month.
+
+> on a btrfs raid setup?
+
+I use roughly the same policies on all my btrfs filesystems from SSDs
+and single spinning disks to six-disk RAID1 arrays.  I don't rebalance
+SD cards--they are too fragile for the write load, and chances are good
+that they'll wear out before balancing becomes necessary anyway.  On
+busy server machines I'll rearrange the balancing hours to avoid high
+load times.
+
+> Bob
+> - -- 
+> Bob Williams
+> System:  Linux 3.11.10-21-desktop
+> Distro:  openSUSE 13.1 (x86_64) with KDE Development Platform: 4.14.0
+> Uptime:  06:00am up 5 days 15:04, 4 users, load average: 1.94, 2.21, 2.36
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v2.0.22 (GNU/Linux)
+> 
+> iEYEARECAAYFAlQQQ6wACgkQ0Sr7eZJrmU5WlwCfd+OcuqFoz/vYSZEHg+5zNwlo
+> oTQAn2ZKhx4gCdQIy0gl9EBb8XXVJu1G
+> =2GSh
+> -----END PGP SIGNATURE-----
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,89 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44692 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753587AbaIKTX2 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 11 Sep 2014 15:23:28 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: set inode's logged_trans/last_log_commit after ranged fsync
-Date: Thu, 11 Sep 2014 21:22:14 +0100
-Message-Id: <1410466934-26566-1-git-send-email-fdmanana@suse.com>
+Received: from mail-ob0-f173.google.com ([209.85.214.173]:40661 "EHLO
+	mail-ob0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753597AbaIKVnw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Sep 2014 17:43:52 -0400
+Received: by mail-ob0-f173.google.com with SMTP id m8so685931obr.18
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 14:43:51 -0700 (PDT)
+Message-ID: <54121651.50004@converseincode.com>
+Date: Thu, 11 Sep 2014 16:38:25 -0500
+From: Behan Webster <behanw@converseincode.com>
+MIME-Version: 1.0
+To: Chris Mason <clm@fb.com>, jbacik@fb.com
+CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        =?UTF-8?B?Vmluw61jaXVzIFRpbnRp?= <viniciustinti@gmail.com>,
+        =?UTF-8?B?SmFuLVNpbW9uIE3DtmxsZXI=?= <dl9pf@gmx.de>,
+        Mark Charlebois <charlebm@gmail.com>
+Subject: Re: [PATCH v2] btrfs: LLVMLinux: Remove VLAIS
+References: <1409957901-28962-1-git-send-email-behanw@converseincode.com> <5411B304.4000203@fb.com>
+In-Reply-To: <5411B304.4000203@fb.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a ranged fsync finishes if there are still extent maps in the modified
-list, still set the inode's logged_trans and last_log_commit. This is important
-in case an inode is fsync'ed and unlinked in the same transaction, to ensure its
-inode ref gets deleted from the log and the respective dentries in its parent
-are deleted too from the log (if the parent directory was fsync'ed in the same
-transaction).
+On 09/11/14 09:34, Chris Mason wrote:
+>
+> On 09/05/2014 06:58 PM, behanw@converseincode.com wrote:
+>> From: Vinícius Tinti <viniciustinti@gmail.com>
+>>
+>> Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
+>> compliant equivalent. This is the original VLAIS struct.
+>>
+>> struct {
+>> 	struct shash_desc shash;
+>> 	char ctx[crypto_shash_descsize(tfm)];
+>> } desc;
+>>
+>> This patch instead allocates the appropriate amount of memory using an char
+>> array.
+>>
+>> The new code can be compiled with both gcc and clang.
+>>
+>> struct shash_desc contains a flexible array member member ctx declared with
+>> CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
+>> of the array declared after struct shash_desc with long long.
+>>
+>> No trailing padding is required because it is not a struct type that can
+>> be used in an array.
+>>
+>> The CRYPTO_MINALIGN_ATTR is required so that desc is aligned with long long
+>> as would be the case for a struct containing a member with
+>> CRYPTO_MINALIGN_ATTR.
+> We copied this from one of the other crypto api users, and I'm sure
+> cooking up all these patches was not a great way to your afternoon.
+>
+> But, can I talk you into making a helper macro of some kind for this and
+> putting it into the crypto api headers?  Honestly this setup seems
+> really error prone.
+You're not the only person to ask for this. I've got one already coded 
+up based on suggestions from tglx.
 
-Instead make btrfs_inode_in_log() return false if the list of modified extent
-maps isn't empty.
+I've regenerated all the patches. I will resubmit soon.
 
-This is an incremental on top of the v4 version of the patch:
+Will fix.
 
-    "Btrfs: fix fsync data loss after a ranged fsync"
+Behan
 
-which was added to its v5, but didn't make it on time.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/btrfs_inode.h | 13 +++++++++++--
- fs/btrfs/tree-log.c    | 14 ++------------
- 2 files changed, 13 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 74ff403..3511031 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -246,8 +246,17 @@ static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
- 	    BTRFS_I(inode)->last_sub_trans <=
- 	    BTRFS_I(inode)->last_log_commit &&
- 	    BTRFS_I(inode)->last_sub_trans <=
--	    BTRFS_I(inode)->root->last_log_commit)
--		return 1;
-+	    BTRFS_I(inode)->root->last_log_commit) {
-+		/*
-+		 * After a ranged fsync we might have left some extent maps
-+		 * (that fall outside the fsync's range). So return false
-+		 * here if the list isn't empty, to make sure btrfs_log_inode()
-+		 * will be called and process those extent maps.
-+		 */
-+		smp_mb();
-+		if (list_empty(&BTRFS_I(inode)->extent_tree.modified_extents))
-+			return 1;
-+	}
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 82db14f..d7c1459 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4090,18 +4090,8 @@ log_extents:
- 		}
- 	}
- 
--	write_lock(&em_tree->lock);
--	/*
--	 * If we're doing a ranged fsync and there are still modified extents
--	 * in the list, we must run on the next fsync call as it might cover
--	 * those extents (a full fsync or an fsync for other range).
--	 */
--	if (list_empty(&em_tree->modified_extents)) {
--		BTRFS_I(inode)->logged_trans = trans->transid;
--		BTRFS_I(inode)->last_log_commit =
--			BTRFS_I(inode)->last_sub_trans;
--	}
--	write_unlock(&em_tree->lock);
-+	BTRFS_I(inode)->logged_trans = trans->transid;
-+	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->last_sub_trans;
- out_unlock:
- 	if (unlikely(err))
- 		btrfs_put_logged_extents(&logged_list);
 -- 
-1.9.1
+Behan Webster
+behanw@converseincode.com
 

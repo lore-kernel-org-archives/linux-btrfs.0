@@ -1,46 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:50541 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751507AbaIKB3Q (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18336 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752420AbaIKCdQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Sep 2014 21:29:16 -0400
-Date: Wed, 10 Sep 2014 18:29:15 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Samer Al-Kiswany <samera@ece.ubc.ca>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: mkdir and fsync
-Message-ID: <20140911012915.GA17887@infradead.org>
-References: <BAY168-DS1747B8D83FA04E0D49D89AC1CF0@phx.gbl>
+	Wed, 10 Sep 2014 22:33:16 -0400
+Message-ID: <54110AEC.6040301@oracle.com>
+Date: Thu, 11 Sep 2014 10:37:32 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <BAY168-DS1747B8D83FA04E0D49D89AC1CF0@phx.gbl>
+To: Johannes Hirte <johannes.hirte@datenkhaos.de>, linux-btrfs@vger.kernel.org
+Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
+ breaks subvol mount
+References: <20140911002241.201bc6c2@datenkhaos.de>
+In-Reply-To: <20140911002241.201bc6c2@datenkhaos.de>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 10, 2014 at 01:55:35PM -0700, Samer Al-Kiswany wrote:
-> Btrfs seems to achieve around 100k fsycs/second, which makes me believe it
-> is not touching the disk during these fsyncs.
-> After looking at the code, it seems indeed that fsync adds the inode to the
-> current transaction but does not sync the transaction to disk.
-> 
-> Is this the intended behavior for metadata fsync or is this a bug?
-> Is this POSIX compliant?
 
-Posix is basically meaningless for fsync:
+Hi Johannes,
 
-    The fsync() function shall request that all data for the open file
-    descriptor named by fildes is to be transferred to the storage
-    device associated with the file described by fildes. The nature of
-    the transfer is implementation-defined. The fsync() function shall
-    not return until the system has completed that action or until an
-    error is detected.
+> I've two more systems with kernel version >3.17-rc3
+> running and no problem like this.
 
-    [SIO] [Option Start] If _POSIX_SYNCHRONIZED_IO is defined, the
-    fsync() function shall force all currently queued I/O operations
-    associated with the file indicated by file descriptor fildes to
-    the synchronized I/O completion state. All I/O operations shall
-    be completed as defined for synchronized I/O file integrity
-    completion. [Option End]
+  Does this 3.17-rc3 also has the same type of subvol config
+  and it mount operation/sequence as you mentioned ?
 
-but Linux semantics do expect a filesystem to write out all metadata for
-a directory file descriptor on a fsync.
+ > - one hdd with btrfs
+ > - default subvolume (rootfs) is different from subovlid=0
+ > - at boot, several subvols are mounted at /home/$DIR
+
+  I ran a few tests, on our mainline
+  ----
+  mount -o subvol=sv1 /dev/sdh1 /btrfs
+  mount /dev/sdh1 /btrfs
+   mount: /dev/sdh1 already mounted or /btrfs busy [*]
+  mount /dev/sdh1 /btrfs1
+  echo $?
+  0
+  -----
+
+  [*] hope this isn't the problem you are mentioning.
+
+Thanks, Anand

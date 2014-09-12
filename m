@@ -1,47 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f45.google.com ([209.85.220.45]:61681 "EHLO
-	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751122AbaIBMW5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 08:22:57 -0400
-Received: by mail-pa0-f45.google.com with SMTP id bj1so14506872pad.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 05:22:56 -0700 (PDT)
-Date: Tue, 2 Sep 2014 20:22:53 +0800
-From: Eryu Guan <guaneryu@gmail.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs-progs: canonicalize dm device name before
- update kernel
-Message-ID: <20140902122253.GD3013@dhcp-13-216.nay.redhat.com>
-References: <1408016420-29221-1-git-send-email-guaneryu@gmail.com>
- <1408016420-29221-2-git-send-email-guaneryu@gmail.com>
- <20140902113234.GE5888@twin.jikos.cz>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:33159 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750988AbaILF4O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Sep 2014 01:56:14 -0400
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 6A1953EE168
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Sep 2014 14:56:13 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 71881AC026F
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Sep 2014 14:56:12 +0900 (JST)
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id D69BA1DB803B
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Sep 2014 14:56:11 +0900 (JST)
+Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
+	by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id A92C769271C
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Sep 2014 14:56:10 +0900 (JST)
+Message-ID: <54128AF5.8080202@jp.fujitsu.com>
+Date: Fri, 12 Sep 2014 14:56:05 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140902113234.GE5888@twin.jikos.cz>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs-progs: deal with conflict options for btrfs
+ fi show
+References: <1410412751-9277-1-git-send-email-guihc.fnst@cn.fujitsu.com> <1410484541-16422-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1410484541-16422-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 02, 2014 at 01:32:34PM +0200, David Sterba wrote:
-> On Thu, Aug 14, 2014 at 07:40:20PM +0800, Eryu Guan wrote:
-> > [root@hp-dl388eg8-01 btrfs-progs]# btrfs fi show
-> > Label: none  uuid: 1aba7da5-ce2b-4af0-a716-db732abc60b2
-> >         Total devices 1 FS bytes used 384.00KiB
-> >         devid    1 size 15.00GiB used 2.04GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv1
-> > 
-> > Label: none  uuid: 26ff4f12-f6d9-4cbc-aae2-57febeefde37
-> >         Total devices 2 FS bytes used 112.00KiB
-> >         devid    1 size 15.00GiB used 2.03GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv2
-> >         devid    2 size 15.00GiB used 2.01GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv3
-> > 
-> > Btrfs v3.14.2
-> 
-> The commit b276e4bc50b6ca99056a45315ea859c68d58fc1b
-> "canonicalize pathnames for device commands" supposedly fixes the same
-> problem, added in 3.16. Can you please test that it works in your case
-> as well? Thanks.
+Hi Gui,
 
-Yes, confirmed v3.16 fixes the issue, the device name didn't change
-after btrfsck and btrfs device scan -d
+(2014/09/12 10:15), Gui Hecheng wrote:
+> For btrfs fi show, -d|--all-devices & -m|--mounted will
+> overwrite each other, so if specified both, let the user
+> know that he should not use them at the same time.
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+> changelog:
+> 	v1->v2: add option conflict descriptions to manpage and usage.
+> ---
+>   Documentation/btrfs-filesystem.txt |  9 ++++++---
+>   cmds-filesystem.c                  | 12 ++++++++++--
+>   2 files changed, 16 insertions(+), 5 deletions(-)
+> 
+> diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+> index c9c0b00..d3d2dcc 100644
+> --- a/Documentation/btrfs-filesystem.txt
+> +++ b/Documentation/btrfs-filesystem.txt
+> @@ -20,15 +20,18 @@ SUBCOMMAND
+>   *df* <path> [<path>...]::
+>   Show space usage information for a mount point.
+>   
+> -*show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
+> +*show* [-m|--mounted|-d|--all-devices|<path>|<uuid>|<device>|<label>]::
+
+This line seems to be too long. Please see also the
+following thread.
+
+https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36270.html
 
 Thanks,
-Eryu
+Satoru
+
+
+>   Show the btrfs filesystem with some additional info.
+>   +
+>   If no option nor <path>|<uuid>|<device>|<label> is passed, btrfs shows
+>   information of all the btrfs filesystem both mounted and unmounted.
+> -If '--mounted' is passed, it would probe btrfs kernel to list mounted btrfs
+> +If '-m|--mounted' is passed, it would probe btrfs kernel to list mounted btrfs
+>   filesystem(s);
+> -If '--all-devices' is passed, all the devices under /dev are scanned;
+> +If '-d|--all-devices' is passed, all the devices under /dev are scanned;
+>   otherwise the devices list is extracted from the /proc/partitions file.
+> +Don't combine -m|--mounted and -d|--all-devices, because these two options
+> +will overwrite each other, and only one scan way will be adopted,
+> +probe the kernel to scan or scan devices under /dev.
+>   
+>   *sync* <path>::
+>   Force a sync for the filesystem identified by <path>.
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 69c1ca5..51c4c55 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -495,6 +495,7 @@ static const char * const cmd_show_usage[] = {
+>   	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
+>   	"-m|--mounted       show only mounted btrfs",
+>   	"If no argument is given, structure of all present filesystems is shown.",
+> +	"Don't combine -d|--all-devices and -m|--mounted, refer to manpage for details.",
+>   	NULL
+>   };
+>   
+> @@ -526,16 +527,23 @@ static int cmd_show(int argc, char **argv)
+>   			break;
+>   		switch (c) {
+>   		case 'd':
+> -			where = BTRFS_SCAN_PROC;
+> +			where &= ~BTRFS_SCAN_LBLKID;
+> +			where |= BTRFS_SCAN_PROC;
+>   			break;
+>   		case 'm':
+> -			where = BTRFS_SCAN_MOUNTED;
+> +			where &= ~BTRFS_SCAN_LBLKID;
+> +			where |= BTRFS_SCAN_MOUNTED;
+>   			break;
+>   		default:
+>   			usage(cmd_show_usage);
+>   		}
+>   	}
+>   
+> +	if ((where & BTRFS_SCAN_PROC) && (where & BTRFS_SCAN_MOUNTED)) {
+> +		fprintf(stderr, "Don't use -d|--all-devices and -m|--mounted options at the same time.\n");
+> +		usage(cmd_show_usage);
+> +	}
+> +
+>   	if (check_argc_max(argc, optind + 1))
+>   		usage(cmd_show_usage);
+>   
+> 
+

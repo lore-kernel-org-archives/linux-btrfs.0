@@ -1,37 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60588 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751469AbaILG10 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Sep 2014 02:27:26 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:54694 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XSKKL-002jbn-HV
-	for linux-btrfs@vger.kernel.org; Fri, 12 Sep 2014 00:27:25 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: how long should "btrfs device delete missing ..."  take?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <1efa888d-1695-4ad0-8e04-f6b2fe87314e@email.android.com>
-Date: Fri, 12 Sep 2014 00:27:24 -0600
-Message-Id: <0AB58DC8-B433-4614-BE51-146D31DDB6D9@colorremedies.com>
-References: <84a98bc5f667c04ca74ff77b56f537d9@admin.virtall.com> <pan$2d5ba$86c3ebd8$b81abab$13e892ea@cox.net> <4A9B52AD-8104-4C31-9BA4-13D329D2F952@colorremedies.com> <pan$a2cc2$dc8ad02$d35780a0$4fefc791@cox.net> <6AE06E73-C89E-42F0-9A09-FA92C68DED69@colorremedies.com> <1efa888d-1695-4ad0-8e04-f6b2fe87314e@email.android.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from omarion.csy.ca ([63.141.233.98]:58788 "EHLO omarion.csy.ca"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750827AbaILJiG convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Sep 2014 05:38:06 -0400
+Received: from 127.0.0.1 (helo=authenticated.user-IP.removed)
+	by omarion.csy.ca with esmtpsa (TLS1.0:RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.84)
+	id 1XSMg0-0003pR-Kw
+	for linux-btrfs@vger.kernel.org; Fri, 12 Sep 2014 01:57:57 -0700
+From: <shane-kernel@csy.ca>
+To: <linux-btrfs@vger.kernel.org>
+Subject: RAID1 failure and recovery
+Date: Fri, 12 Sep 2014 01:57:37 -0700
+Message-ID: <000f01cfce67$9e9015f0$dbb041d0$@csy.ca>
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-On Sep 11, 2014, at 11:19 PM, Russell Coker <russell@coker.com.au> wrote:
+I am testing BTRFS in a simple RAID1 environment. Default mount options and data and metadata are mirrored between sda2 and sdb2. I have a few questions and a potential bug report. I don't normally have console access to the server so when the server boots with 1 of 2 disks, the mount will fail without -o degraded. Can I use -o degraded by default to force mounting with any number of disks? This is the default behaviour for linux-raid so I was rather surprised when the server didn't boot after a simulated disk failure.
 
-> It would be nice if a file system mounted ro counted as ro snapshots for btrfs send.
-> 
-> When a file system is so messed up it can't be mounted rw it should be regarded as ro for all operations.
+So I pulled sdb to simulate a disk failure. The kernel oops'd but did continue running. I then rebooted encountering the above mount problem. I re-inserted the disk and rebooted again and BTRFS mounted successfully. However, I am now getting warnings like:
+BTRFS: read error corrected: ino 1615 off 86016 (dev /dev/sda2 sector 4580382824)
+I take it there were writes to SDA and sdb is out of sync. Btrfs is correcting sdb as it goes but I won't have redundancy until sdb resyncs completely. Is there a way to tell btrfs that I just re-added a failed disk and to go through and resync the array as mdraid would do? I know I can do a btrfs fi resync manually but can that be automated if the array goes out of sync for whatever reason (power failure)...
 
-Yes it's come up before, and there's a question whether mount -o ro is reliably ro enough for this. Maybe a force option?
+Finally for those using this sort of setup in production, is running btrfs on top of mdraid the way to go at this point?
 
-But then another one is a recursive btrfs send to go along with the above. I might want them all, or I might want all of the ones in two particular subvolumes, etc. And even combine the recursive ro snapshot and recursive send as a btrfs rescue option that would work even if the volume is mounted read-only.
+Cheers,
+Shane
 
 
-Chris Murphy

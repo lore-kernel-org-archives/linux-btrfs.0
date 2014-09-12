@@ -1,71 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f173.google.com ([209.85.214.173]:40661 "EHLO
-	mail-ob0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753597AbaIKVnw (ORCPT
+Received: from mail-qg0-f49.google.com ([209.85.192.49]:54867 "EHLO
+	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751741AbaILBug (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Sep 2014 17:43:52 -0400
-Received: by mail-ob0-f173.google.com with SMTP id m8so685931obr.18
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 14:43:51 -0700 (PDT)
-Message-ID: <54121651.50004@converseincode.com>
-Date: Thu, 11 Sep 2014 16:38:25 -0500
-From: Behan Webster <behanw@converseincode.com>
+	Thu, 11 Sep 2014 21:50:36 -0400
+Received: by mail-qg0-f49.google.com with SMTP id j5so60206qga.36
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Sep 2014 18:50:36 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, jbacik@fb.com
-CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        =?UTF-8?B?Vmluw61jaXVzIFRpbnRp?= <viniciustinti@gmail.com>,
-        =?UTF-8?B?SmFuLVNpbW9uIE3DtmxsZXI=?= <dl9pf@gmx.de>,
-        Mark Charlebois <charlebm@gmail.com>
-Subject: Re: [PATCH v2] btrfs: LLVMLinux: Remove VLAIS
-References: <1409957901-28962-1-git-send-email-behanw@converseincode.com> <5411B304.4000203@fb.com>
-In-Reply-To: <5411B304.4000203@fb.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <5411AB68.7020506@fb.com>
+References: <1410254376-6357-1-git-send-email-rongqing.li@windriver.com>
+	<5411AB68.7020506@fb.com>
+Date: Fri, 12 Sep 2014 09:50:36 +0800
+Message-ID: <CAJFZqHzey9rNoX-EnNQ344_QNVwObdGKtX-GT61qwh3-8SeStA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix a overflowing boundary writing in csum_tree_block
+From: Li RongQing <roy.qing.li@gmail.com>
+To: Chris Mason <clm@fb.com>
+Cc: Rongqing Li <rongqing.li@windriver.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/11/14 09:34, Chris Mason wrote:
+Do you means we can handle it like below?  I think it is not better,
+if that, csum size can not the expand, and the code in csum_tree_block
+seems redundancy;
+
+If you do not want to truncate in first patch, I think we can try to avoid it
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 22a3676..baed6c0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -879,6 +879,7 @@ static struct dentry *btrfs_mount(struct
+file_system_type *fs_type, int flags,
+        u64 subvol_objectid = 0;
+        u64 subvol_rootid = 0;
+        int error = 0;
++       u16 csum_size;
+
+        if (!(flags & MS_RDONLY))
+                mode |= FMODE_WRITE;
+@@ -974,6 +975,13 @@ static struct dentry *btrfs_mount(struct
+file_system_type *fs_type, int flags,
+                return root;
+        }
+
++       csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
++       if (csum_size > 4) {
++               printk(KERN_ERR "btrfs: csume size is larger than 4\n");
++               deactivate_locked_super(s);
++               return -EINVAL;
++       }
++
+        return root;
+
+ error_close_devices:
+
+On Thu, Sep 11, 2014 at 10:02 PM, Chris Mason <clm@fb.com> wrote:
+> On 09/09/2014 05:19 AM, rongqing.li@windriver.com wrote:
+>> From: Li RongQing <roy.qing.li@gmail.com>
+>>
+>> It is impossible that csum_size is larger than sizeof(long), but the codes
+>> still add the handler for this condition, like allocate new memory, for
+>> extension. If it becomes true someday, copying csum_size size memory to local
+>> 32bit variable found and val will overflow these two variables.
+>>
+>> Fix it by returning the max 4 byte checksum.
 >
-> On 09/05/2014 06:58 PM, behanw@converseincode.com wrote:
->> From: Vinícius Tinti <viniciustinti@gmail.com>
->>
->> Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
->> compliant equivalent. This is the original VLAIS struct.
->>
->> struct {
->> 	struct shash_desc shash;
->> 	char ctx[crypto_shash_descsize(tfm)];
->> } desc;
->>
->> This patch instead allocates the appropriate amount of memory using an char
->> array.
->>
->> The new code can be compiled with both gcc and clang.
->>
->> struct shash_desc contains a flexible array member member ctx declared with
->> CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
->> of the array declared after struct shash_desc with long long.
->>
->> No trailing padding is required because it is not a struct type that can
->> be used in an array.
->>
->> The CRYPTO_MINALIGN_ATTR is required so that desc is aligned with long long
->> as would be the case for a struct containing a member with
->> CRYPTO_MINALIGN_ATTR.
-> We copied this from one of the other crypto api users, and I'm sure
-> cooking up all these patches was not a great way to your afternoon.
+> Thanks for the patch.  I'd rather not silently truncate the copy down
+> though.  How about a one time check at mount to make sure the value in
+> the super is reasonable?
 >
-> But, can I talk you into making a helper macro of some kind for this and
-> putting it into the crypto api headers?  Honestly this setup seems
-> really error prone.
-You're not the only person to ask for this. I've got one already coded 
-up based on suggestions from tglx.
-
-I've regenerated all the patches. I will resubmit soon.
-
-Will fix.
-
-Behan
-
--- 
-Behan Webster
-behanw@converseincode.com
-
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

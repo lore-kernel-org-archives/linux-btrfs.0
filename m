@@ -1,57 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bay004-omc1s15.hotmail.com ([65.54.190.26]:56226 "EHLO
-	BAY004-OMC1S15.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932135AbaIWPZX convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 11:25:23 -0400
-Message-ID: <BAY172-W27ADBD4895716F53DE18EDB0B00@phx.gbl>
-From: Kyle Gates <kylegates@hotmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: general thoughts and questions + general and RAID5/6 stability?
-Date: Tue, 23 Sep 2014 10:25:23 -0500
-In-Reply-To: <542187F3.7090603@gmail.com>
-References: <8D1A2626CC69D79-11FC-A2C3@webmail-va141.sysops.aol.com>
- <pan$5a87e$97e2e260$54942ad0$cefe56f1@cox.net> <54208BBC.1000700@xunil.at>
- <542162A8.2010700@gmail.com> <5421706F.6070301@xunil.at>
- <542177BF.2000808@gmail.com>
- <CAGwxe4i2gQXSPiBGXbUKWid3o1tmD_+YtbOj=GQ11vzGx8CuTw@mail.gmail.com>,<542187F3.7090603@gmail.com>
-Content-Type: text/plain; charset="iso-8859-1"
-MIME-Version: 1.0
+Received: from userp1040.oracle.com ([156.151.31.81]:39268 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751853AbaIMJLs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Sep 2014 05:11:48 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s8D9Bl3j032580
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:47 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s8D9Bk3O002928
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:47 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s8D9BjGn004721
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:46 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/5] btrfs-progs: scan /proc/partitions not all of /dev with "-d"
+Date: Sat, 13 Sep 2014 09:21:18 +0800
+Message-Id: <1410571282-3482-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Eric Sandeen <sandeen@redhat.com>
 
->> If it is unknown, which of these options have been used at btrfs
->> creation time - is it possible to check the state of these options
->> afterwards on a mounted or unmounted filesystem?
->>
-> I don't think there is a specific tool for doing this, but some of them
-> do show up in dmesg, for example skinny-metadata shows up as a mention
-> of the FS having skinny extents.
->
-Devs,
+We can scan for btrfs devices in a few ways.  By default
+libblkid is used for "device scan" and "filesystem show";
+with the -m option only mounted filesystems are scanned,
+and with -d we physically read every system device.
 
-It may be helpful to include the device in the kernel log for skinny extents.
-Currently it shows up like the following which is a little ambiguous:
+But there's no reason for the complexity of a descent through
+/dev; /proc/partitions has every device known to the kernel, so
+just use that when -d is specified.
 
-[    6.050134] BTRFS info (device sde3): disk space caching is enabled
-[    6.056606] BTRFS: has skinny extents
-<snipped>
-[    7.740986] BTRFS info (device sde3): enabling auto defrag
-[    7.747151] BTRFS info (device sde3): disk space caching is enabled
-<snipped>
-[    7.908906] BTRFS info (device sde2): enabling auto defrag
-[    7.915031] BTRFS info (device sde2): disk space caching is enabled
-[    8.071033] BTRFS info (device sde4): enabling auto defrag
-[    8.076715] BTRFS info (device sde4): disk space caching is enabled
-[    8.082187] BTRFS: has skinny extents
-[    8.513502] BTRFS info (device sde5): enabling auto defrag
-[    8.518887] BTRFS info (device sde5): disk space caching is enabled
-[    8.524064] BTRFS: has skinny extents
-[    9.634285] BTRFS info (device sdd6): enabling auto defrag
-[    9.639308] BTRFS info (device sdd6): disk space caching is enabled
-[    9.644338] BTRFS: has skinny extents
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-device.c     | 2 +-
+ cmds-filesystem.c | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Thanks,
-Kyle
- 		 	   		  
+diff --git a/cmds-device.c b/cmds-device.c
+index d7af090..ad0bd35 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -223,7 +223,7 @@ static int cmd_scan_dev(int argc, char **argv)
+ 			break;
+ 		switch (c) {
+ 		case 'd':
+-			where = BTRFS_SCAN_DEV;
++			where = BTRFS_SCAN_PROC;
+ 			all = 1;
+ 			break;
+ 		default:
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index d8b6938..818e05f 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -563,7 +563,7 @@ static int cmd_show(int argc, char **argv)
+ 			break;
+ 		switch (c) {
+ 		case 'd':
+-			where = BTRFS_SCAN_DEV;
++			where = BTRFS_SCAN_PROC;
+ 			break;
+ 		case 'm':
+ 			where = BTRFS_SCAN_MOUNTED;
+@@ -587,7 +587,7 @@ static int cmd_show(int argc, char **argv)
+ 		 * right away
+ 		 */
+ 		if (type == BTRFS_ARG_BLKDEV) {
+-			if (where == BTRFS_SCAN_DEV) {
++			if (where == BTRFS_SCAN_PROC) {
+ 				/* we need to do this because
+ 				 * legacy BTRFS_SCAN_DEV
+ 				 * provides /dev/dm-x paths
+@@ -618,7 +618,7 @@ static int cmd_show(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (where == BTRFS_SCAN_DEV)
++	if (where == BTRFS_SCAN_PROC)
+ 		goto devs_only;
+ 
+ 	/* show mounted btrfs */
+-- 
+2.0.0.153.g79dcccc
+

@@ -1,100 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49483 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751223AbaIREWW (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:39297 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751861AbaIMJLw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 00:22:22 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8I4MRtP012947
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 12:22:27 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs: Add btrfsck support for nocow compressed prealloc write.
-Date: Thu, 18 Sep 2014 12:22:18 +0800
-Message-ID: <1411014138-20124-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1411014138-20124-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1411014138-20124-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Sat, 13 Sep 2014 05:11:52 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s8D9BpJ7032619
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:52 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s8D9BoOD002432
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:50 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s8D9BnCH004812
+	for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 09:11:50 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 4/5] btrfs-progs: remove BTRFS_SCAN_PROC scan method
+Date: Sat, 13 Sep 2014 09:21:21 +0800
+Message-Id: <1410571282-3482-4-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1410571282-3482-1-git-send-email-anand.jain@oracle.com>
+References: <1410571282-3482-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add support for nocow compressed write into preallocated range.
+The libblkid scan method which was introduced later, will also
+scan devices under /proc/partitions. So we don't have to do
+the explicit scan of the same.
 
-The main change is the following:
-1) use disk_bytenr + data_offset to search csum
-2) use offset + num_bytes - data_offset to judge if this is a valid
-file extent.
-3) add file extent item size check,
-Since now regular file extent has 2 sizes(one with appended members
-and the old one),
+Remove the scan method BTRFS_SCAN_PROC.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-check.c | 19 ++++++++++++++++---
- ctree.h      |  1 -
- 2 files changed, 16 insertions(+), 4 deletions(-)
+ cmds-device.c     |  5 ++---
+ cmds-filesystem.c | 10 +++++-----
+ disk-io.c         |  2 +-
+ utils.c           |  5 +----
+ utils.h           |  5 ++---
+ 5 files changed, 11 insertions(+), 16 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 268e588..7a18ad4 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -1175,12 +1175,17 @@ static int process_file_extent(struct btrfs_root *root,
- 		num_bytes = (num_bytes + mask) & ~mask;
- 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
- 		   extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+		u32 item_size = btrfs_item_size_nr(eb, slot);
- 		num_bytes = btrfs_file_extent_num_bytes(eb, fi);
--		disk_bytenr = btrfs_file_extent_disk_bytenr(eb, fi);
-+		/* data_offset will fallback to 0 on normal extent */
-+		disk_bytenr = btrfs_file_extent_disk_bytenr(eb, fi) +
-+			      btrfs_ondemand_file_extent_data_offset(eb,
-+							slot, fi);
- 		extent_offset = btrfs_file_extent_offset(eb, fi);
- 		if (num_bytes == 0 || (num_bytes & mask))
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
--		if (num_bytes + extent_offset >
-+		if (num_bytes + extent_offset -
-+		    btrfs_ondemand_file_extent_data_offset(eb, slot, fi) >
- 		    btrfs_file_extent_ram_bytes(eb, fi))
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
- 		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
-@@ -1190,6 +1195,13 @@ static int process_file_extent(struct btrfs_root *root,
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
- 		if (disk_bytenr > 0)
- 			rec->found_size += num_bytes;
-+		if (item_size != BTRFS_FILE_EXTENT_SIZE_NORMAL &&
-+		    item_size != BTRFS_FILE_EXTENT_SIZE_MAX)
-+			rec->errors |= I_ERR_BAD_FILE_EXTENT;
-+		if (!btrfs_fs_incompat(root->fs_info,
-+				       BTRFS_FEATURE_INCOMPAT_COMPPREALLOC) &&
-+		    (item_size == BTRFS_FILE_EXTENT_SIZE_MAX))
-+			rec->errors |= I_ERR_BAD_FILE_EXTENT;
- 	} else {
- 		rec->errors |= I_ERR_BAD_FILE_EXTENT;
+diff --git a/cmds-device.c b/cmds-device.c
+index ad0bd35..86787a4 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -199,13 +199,13 @@ static int cmd_rm_dev(int argc, char **argv)
+ static const char * const cmd_scan_dev_usage[] = {
+ 	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
+ 	"Scan devices for a btrfs filesystem",
++	" -d|--all-devices (deprecated)",
+ 	NULL
+ };
+ 
+ static int cmd_scan_dev(int argc, char **argv)
+ {
+ 	int i, fd, e;
+-	int where = BTRFS_SCAN_LBLKID;
+ 	int devstart = 1;
+ 	int all = 0;
+ 	int ret = 0;
+@@ -223,7 +223,6 @@ static int cmd_scan_dev(int argc, char **argv)
+ 			break;
+ 		switch (c) {
+ 		case 'd':
+-			where = BTRFS_SCAN_PROC;
+ 			all = 1;
+ 			break;
+ 		default:
+@@ -236,7 +235,7 @@ static int cmd_scan_dev(int argc, char **argv)
+ 
+ 	if (all || argc == 1) {
+ 		printf("Scanning for Btrfs filesystems\n");
+-		ret = scan_for_btrfs(where, BTRFS_UPDATE_KERNEL);
++		ret = btrfs_scan_lblkid(BTRFS_UPDATE_KERNEL);
+ 		if (ret)
+ 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
+ 		goto out;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 818e05f..ebaccca 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -542,7 +542,7 @@ static int cmd_show(int argc, char **argv)
+ 	struct list_head *cur_uuid;
+ 	char *search = NULL;
+ 	int ret;
+-	int where = BTRFS_SCAN_LBLKID;
++	int where = -1; // default, search both kernel and udev
+ 	int type = 0;
+ 	char mp[BTRFS_PATH_NAME_MAX + 1];
+ 	char path[PATH_MAX];
+@@ -563,7 +563,7 @@ static int cmd_show(int argc, char **argv)
+ 			break;
+ 		switch (c) {
+ 		case 'd':
+-			where = BTRFS_SCAN_PROC;
++			where = BTRFS_SCAN_LBLKID;
+ 			break;
+ 		case 'm':
+ 			where = BTRFS_SCAN_MOUNTED;
+@@ -587,7 +587,7 @@ static int cmd_show(int argc, char **argv)
+ 		 * right away
+ 		 */
+ 		if (type == BTRFS_ARG_BLKDEV) {
+-			if (where == BTRFS_SCAN_PROC) {
++			if (where == BTRFS_SCAN_LBLKID) {
+ 				/* we need to do this because
+ 				 * legacy BTRFS_SCAN_DEV
+ 				 * provides /dev/dm-x paths
+@@ -618,7 +618,7 @@ static int cmd_show(int argc, char **argv)
+ 		}
  	}
-@@ -1198,7 +1210,8 @@ static int process_file_extent(struct btrfs_root *root,
- 	if (disk_bytenr > 0) {
- 		u64 found;
- 		if (btrfs_file_extent_compression(eb, fi))
--			num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
-+			num_bytes = btrfs_ondemand_file_extent_data_len(eb,
-+					slot, fi);
- 		else
- 			disk_bytenr += extent_offset;
  
-diff --git a/ctree.h b/ctree.h
-index ab87133..e11e4d8 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -834,7 +834,6 @@ struct __compprealloc_data {
- 	__le64 data_len;
+-	if (where == BTRFS_SCAN_PROC)
++	if (where == BTRFS_SCAN_LBLKID)
+ 		goto devs_only;
  
- } __attribute__ ((__packed__));
--
- #define BTRFS_FILE_EXTENT_SIZE_NORMAL (sizeof(struct btrfs_file_extent_item))
- #define BTRFS_FILE_EXTENT_SIZE_MAX (sizeof(struct btrfs_file_extent_item) + \
- 				    sizeof(struct __compprealloc_data))
+ 	/* show mounted btrfs */
+@@ -633,7 +633,7 @@ static int cmd_show(int argc, char **argv)
+ 		goto out;
+ 
+ devs_only:
+-	ret = scan_for_btrfs(where, !BTRFS_UPDATE_KERNEL);
++	ret = btrfs_scan_lblkid(!BTRFS_UPDATE_KERNEL);
+ 
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: %d while scanning\n", ret);
+diff --git a/disk-io.c b/disk-io.c
+index 2a1f6d4..bb011d0 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1007,7 +1007,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
+ 	}
+ 
+ 	if (total_devs != 1) {
+-		ret = scan_for_btrfs(BTRFS_SCAN_PROC, run_ioctl);
++		ret = btrfs_scan_lblkid(run_ioctl);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/utils.c b/utils.c
+index 901127f..7c1e48b 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1148,7 +1148,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 
+ 	/* scan other devices */
+ 	if (is_btrfs && total_devs > 1) {
+-		if ((ret = scan_for_btrfs(BTRFS_SCAN_PROC, !BTRFS_UPDATE_KERNEL)))
++		if ((ret = btrfs_scan_lblkid(!BTRFS_UPDATE_KERNEL)))
+ 			return ret;
+ 	}
+ 
+@@ -2133,9 +2133,6 @@ int scan_for_btrfs(int where, int update_kernel)
+ 	int ret = 0;
+ 
+ 	switch (where) {
+-	case BTRFS_SCAN_PROC:
+-		ret = btrfs_scan_block_devices(update_kernel);
+-		break;
+ 	case BTRFS_SCAN_LBLKID:
+ 		ret = btrfs_scan_lblkid(update_kernel);
+ 		break;
+diff --git a/utils.h b/utils.h
+index 52a9dfc..ea0d5d4 100644
+--- a/utils.h
++++ b/utils.h
+@@ -26,9 +26,8 @@
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+ #define BTRFS_MKFS_SMALL_VOLUME_SIZE (1024 * 1024 * 1024)
+ 
+-#define BTRFS_SCAN_PROC		(1ULL << 0)
+-#define BTRFS_SCAN_MOUNTED	(1ULL << 1)
+-#define BTRFS_SCAN_LBLKID	(1ULL << 2)
++#define BTRFS_SCAN_MOUNTED	(1ULL << 0)
++#define BTRFS_SCAN_LBLKID	(1ULL << 1)
+ 
+ #define BTRFS_UPDATE_KERNEL	1
+ 
 -- 
-2.1.0
+2.0.0.153.g79dcccc
 

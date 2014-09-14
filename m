@@ -1,128 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f173.google.com ([74.125.82.173]:41765 "EHLO
-	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752497AbaINLMY (ORCPT
+Received: from bay004-omc1s25.hotmail.com ([65.54.190.36]:53486 "EHLO
+	BAY004-OMC1S25.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752816AbaINVFb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Sep 2014 07:12:24 -0400
-Received: by mail-we0-f173.google.com with SMTP id u56so2721124wes.32
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Sep 2014 04:12:23 -0700 (PDT)
-Message-ID: <54157815.4060006@gmail.com>
-Date: Sun, 14 Sep 2014 13:12:21 +0200
-From: "xavier.gnata@gmail.com" <xavier.gnata@gmail.com>
+	Sun, 14 Sep 2014 17:05:31 -0400
+Message-ID: <BAY168-DS278FBACE27850B5FD3BDEEC1CB0@phx.gbl>
+From: Samer Al-Kiswany <samera@ece.ubc.ca>
+To: "'Chris Mason'" <clm@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <BAY168-DS1747B8D83FA04E0D49D89AC1CF0@phx.gbl> <5411A3AC.1050705@fb.com>
+In-Reply-To: <5411A3AC.1050705@fb.com>
+Subject: RE: mkdir and fsync
+Date: Sun, 14 Sep 2014 13:56:38 -0700
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>,
-        Johannes Hirte <johannes.hirte@datenkhaos.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
- breaks subvol mount
-References: <20140911002241.201bc6c2@datenkhaos.de> <54110AEC.6040301@oracle.com> <54135AE7.40400@gmail.com> <5413D7E5.6080905@oracle.com>
-In-Reply-To: <5413D7E5.6080905@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The way an encrypted home is mounted is based on links as described here:
-https://help.ubuntu.com/community/EncryptedPrivateDirectory
-It used to be ok before 3.17-rc3 and df -h shows:
-/dev/sda5             363G  128G  217G  38% /
-/home/gnata/.Private  363G  128G  217G  38% /home/gnata
+Thank you Chris,
 
-It is suppose to work with a kernel >3.17-rc3 when "home" btrfs is a 
-subvolume?
-Does it make sense to test "[PATCH] btrfs-progs: canonicalize pathnames 
-for device commands" or it is premature?
+We use kernel 3.2 in a virtual machine using VirtualBox. We will test it
+with the latest kernel version and let you know if we face the same issue.
 
-Xavier
->
-> Hi Xavier,
->
->  Thanks for the report.
->
->  I got this reproduced: its a very corner case, it depends on the
->  device path given in the subsequent subvol mounts, the fix appear
->  to be outside of this patch at this moment and I am digging to know
->  if we need to normalize the device path before using it in the btrfs
->  kernel, just like btrfs-progs did recently.
->
->
->  reproducer:
->  ls -l /root/dev/sde-link
->    /root/dev/sde-link -> /dev/sde
->
->  mount -o device=/root/dev/sde-link /dev/sdd /btrfs1
->  btrfs fi show
->  Label: none  uuid: 943bf422-998c-4640-9d7f-d49f17b782ce
->     Total devices 2 FS bytes used 272.00KiB
->     devid    1 size 1.52GiB used 339.50MiB path /dev/sdd
->     devid    2 size 1.52GiB used 319.50MiB path /root/dev/sde-link
->
->  mount -o subvol=sv1,device=/dev/sde /dev/sdd /btrfs <-shouldn't fail.
->   mount: /dev/sdd already mounted or /btrfs busy
->   mount: according to mtab, /dev/sdd is mounted on /btrfs1
->
->  mount -o device=/root/dev/sde-link /dev/sdd /btrfs
->   echo $?
->   0
->
->
-> Xavier, Johannes,
->
->     The quickest workaround for you will be to try to match
->  the device path as in the btrfs fi show -m </mnt> output to
->  your probably fstab/mnttab entry.
->
->
-> Anand
->
-> On 09/13/2014 04:43 AM, xavier.gnata@gmail.com wrote:
->> Hi,
->>
->> On standard ubuntu 14.04 a with an encrypted (cryptsetup) /home as brtfs
->> subvolume we have the following results:
->> 3.17-rc2 : Ok.
->> 3.17-rc3 and 3.17-rc4 :  /home fails to mount on boot. If one try mount
->> -a then the system tells that the partition is already mounted according
->> to matab.
->
->
->>
->> On a 3.17-rc4, btrfs fi sh returns nothing special:
->> "
->> Label: none  uuid: f4f554bb-57d9-4647-ab14-ea978c9e7e9f
->>          Total devices 1 FS bytes used 131.41GiB
->>          devid    1 size 173.31GiB used 134.03GiB path /dev/sda5
->>
->> Btrfs v3.12
->> "
->>
->> I'm not sure if it has something to do with cryptsetup...
->>
->>
->> Xavier
->>
->>> Hi Johannes,
->>>
->>>> I've two more systems with kernel version >3.17-rc3
->>>> running and no problem like this.
->>>
->>>  Does this 3.17-rc3 also has the same type of subvol config
->>>  and it mount operation/sequence as you mentioned ?
->>>
->>> > - one hdd with btrfs
->>> > - default subvolume (rootfs) is different from subovlid=0
->>> > - at boot, several subvols are mounted at /home/$DIR
->>>
->>>  I ran a few tests, on our mainline
->>>  ----
->>>  mount -o subvol=sv1 /dev/sdh1 /btrfs
->>>  mount /dev/sdh1 /btrfs
->>>   mount: /dev/sdh1 already mounted or /btrfs busy [*]
->>>  mount /dev/sdh1 /btrfs1
->>>  echo $?
->>>  0
->>>  -----
->>>
->>>  [*] hope this isn't the problem you are mentioning.
->>>
->>> Thanks, Anand
+Thank you
+-samer
+http://www.ece.ubc.ca/~samera/ 
+http://www.cs.wisc.edu/~samera/ 
+
+
+-----Original Message-----
+From: Chris Mason [mailto:clm@fb.com] 
+Sent: Thursday, September 11, 2014 6:29 AM
+To: Samer Al-Kiswany; linux-btrfs@vger.kernel.org
+Subject: Re: mkdir and fsync
+
+On 09/10/2014 04:55 PM, Samer Al-Kiswany wrote:
+> Hi,
+> 
+> Thank you for help.
+> 
+> I am seeing a strange behavior when fsync()ing a directory.
+> 
+> Here is what I do
+> 
+> for (i=0; i < 100,000, i++){
+> 	.
+>       mkdir(p/child_i)
+>       fsync(p)
+> }
+> 
+> Btrfs seems to achieve around 100k fsycs/second, which makes me 
+> believe it is not touching the disk during these fsyncs.
+> After looking at the code, it seems indeed that fsync adds the inode 
+> to the current transaction but does not sync the transaction to disk.
+> 
+> Is this the intended behavior for metadata fsync or is this a bug?
+> Is this POSIX compliant?
+
+Which kernel and hardware?  We had some dir fsync handling bugs in the past
+which may have been related.
+
+I just did a test here, and we're definitely doing the IO.  Christoph is
+right about the requirements for fsync being sloppy.  For btrfs, we do put
+directory changes into the log during an fsync, but we may end up logging
+only what you fsync.
+
+So this will get child_i:
+
+mkdir(p/child_i)
+fsync(p)
+
+This will not:
+
+mkdir(p/child_i)
+fsync(some_other_directory_that_isn't_p)
+
+(This is different from ext34)
+
+-chris
+
+
+
 

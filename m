@@ -1,500 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:59546 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752288AbaINEqv convert rfc822-to-8bit (ORCPT
+Received: from mail-we0-f173.google.com ([74.125.82.173]:41765 "EHLO
+	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752497AbaINLMY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Sep 2014 00:46:51 -0400
-Received: by mail-pa0-f44.google.com with SMTP id kx10so4245837pab.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Sep 2014 21:46:50 -0700 (PDT)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: [PATCH] Btrfs: remove empty block groups automatically
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <1410549510-22336-1-git-send-email-jbacik@fb.com>
-Date: Sun, 14 Sep 2014 12:46:39 +0800
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <F9E95213-710B-42A2-A904-3EE1CE95B72E@gmail.com>
-References: <1410549510-22336-1-git-send-email-jbacik@fb.com>
-To: Josef Bacik <jbacik@fb.com>
+	Sun, 14 Sep 2014 07:12:24 -0400
+Received: by mail-we0-f173.google.com with SMTP id u56so2721124wes.32
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Sep 2014 04:12:23 -0700 (PDT)
+Message-ID: <54157815.4060006@gmail.com>
+Date: Sun, 14 Sep 2014 13:12:21 +0200
+From: "xavier.gnata@gmail.com" <xavier.gnata@gmail.com>
+MIME-Version: 1.0
+To: Anand Jain <Anand.Jain@oracle.com>,
+        Johannes Hirte <johannes.hirte@datenkhaos.de>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
+ breaks subvol mount
+References: <20140911002241.201bc6c2@datenkhaos.de> <54110AEC.6040301@oracle.com> <54135AE7.40400@gmail.com> <5413D7E5.6080905@oracle.com>
+In-Reply-To: <5413D7E5.6080905@oracle.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+The way an encrypted home is mounted is based on links as described here:
+https://help.ubuntu.com/community/EncryptedPrivateDirectory
+It used to be ok before 3.17-rc3 and df -h shows:
+/dev/sda5             363G  128G  217G  38% /
+/home/gnata/.Private  363G  128G  217G  38% /home/gnata
 
-> One problem that has plagued us is that a user will use up all of his space with
-> data, remove a bunch of that data, and then try to create a bunch of small files
-> and run out of space.  This happens because all the chunks were allocated for
-> data since the metadata requirements were so low.  But now there's a bunch of
-> empty data block groups and not enough metadata space to do anything.  This
-> patch solves this problem by automatically deleting empty block groups.  If we
-> notice the used count go down to 0 when deleting or on mount notice that a block
-> group has a used count of 0 then we will queue it to be deleted.
-> 
-> When the cleaner thread runs we will double check to make sure the block group
-> is still empty and then we will delete it.  This patch has the side effect of no
-> longer having a bunch of BUG_ON()'s in the chunk delete code, which will be
-> helpful for both this and relocate.  Thanks,
+It is suppose to work with a kernel >3.17-rc3 when "home" btrfs is a 
+subvolume?
+Does it make sense to test "[PATCH] btrfs-progs: canonicalize pathnames 
+for device commands" or it is premature?
 
-I am wondering whether we could check if it a Mixed Mode, we don¡¯t need remove
-Mixed mode block groups automatically¡­
-
-
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
-> fs/btrfs/ctree.h                  |   8 ++-
-> fs/btrfs/disk-io.c                |   3 +
-> fs/btrfs/extent-tree.c            | 128 +++++++++++++++++++++++++++++++++++---
-> fs/btrfs/tests/free-space-tests.c |   2 +-
-> fs/btrfs/volumes.c                | 115 ++++++++++++++++++++++------------
-> fs/btrfs/volumes.h                |   2 +
-> 6 files changed, 209 insertions(+), 49 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 6db3d4b..d373c89 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1298,8 +1298,8 @@ struct btrfs_block_group_cache {
-> 	 */
-> 	struct list_head cluster_list;
-> 
-> -	/* For delayed block group creation */
-> -	struct list_head new_bg_list;
-> +	/* For delayed block group creation or deletion of empty block groups */
-> +	struct list_head bg_list;
-> };
-> 
-> /* delayed seq elem */
-> @@ -1716,6 +1716,9 @@ struct btrfs_fs_info {
-> 
-> 	/* Used to reclaim the metadata space in the background. */
-> 	struct work_struct async_reclaim_work;
-> +
-> +	spinlock_t unused_bgs_lock;
-> +	struct list_head unused_bgs;
-> };
-> 
-> struct btrfs_subvolume_writers {
-> @@ -3343,6 +3346,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
-> 			   u64 size);
-> int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
-> 			     struct btrfs_root *root, u64 group_start);
-> +void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
-> void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
-> 				       struct btrfs_root *root);
-> u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index a224fb9..3409734 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1764,6 +1764,7 @@ static int cleaner_kthread(void *arg)
-> 		}
-> 
-> 		btrfs_run_delayed_iputs(root);
-> +		btrfs_delete_unused_bgs(root->fs_info);
-> 		again = btrfs_clean_one_deleted_snapshot(root);
-> 		mutex_unlock(&root->fs_info->cleaner_mutex);
-> 
-> @@ -2224,6 +2225,7 @@ int open_ctree(struct super_block *sb,
-> 	spin_lock_init(&fs_info->super_lock);
-> 	spin_lock_init(&fs_info->qgroup_op_lock);
-> 	spin_lock_init(&fs_info->buffer_lock);
-> +	spin_lock_init(&fs_info->unused_bgs_lock);
-> 	rwlock_init(&fs_info->tree_mod_log_lock);
-> 	mutex_init(&fs_info->reloc_mutex);
-> 	mutex_init(&fs_info->delalloc_root_mutex);
-> @@ -2233,6 +2235,7 @@ int open_ctree(struct super_block *sb,
-> 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
-> 	INIT_LIST_HEAD(&fs_info->space_info);
-> 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
-> +	INIT_LIST_HEAD(&fs_info->unused_bgs);
-> 	btrfs_mapping_init(&fs_info->mapping_tree);
-> 	btrfs_init_block_rsv(&fs_info->global_block_rsv,
-> 			     BTRFS_BLOCK_RSV_GLOBAL);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index b30ddb4..c68cdb1 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5433,6 +5433,20 @@ static int update_block_group(struct btrfs_root *root,
-> 			spin_unlock(&cache->space_info->lock);
-> 		} else {
-> 			old_val -= num_bytes;
-> +
-> +			/*
-> +			 * No longer have used bytes in this block group, queue
-> +			 * it for deletion.
-> +			 */
-> +			if (old_val == 0) {
-> +				spin_lock(&info->unused_bgs_lock);
-> +				if (list_empty(&cache->bg_list)) {
-> +					btrfs_get_block_group(cache);
-> +					list_add_tail(&cache->bg_list,
-> +						      &info->unused_bgs);
-> +				}
-> +				spin_unlock(&info->unused_bgs_lock);
-> +			}
-> 			btrfs_set_block_group_used(&cache->item, old_val);
-> 			cache->pinned += num_bytes;
-> 			cache->space_info->bytes_pinned += num_bytes;
-> @@ -8989,7 +9003,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
-> 	init_rwsem(&cache->data_rwsem);
-> 	INIT_LIST_HEAD(&cache->list);
-> 	INIT_LIST_HEAD(&cache->cluster_list);
-> -	INIT_LIST_HEAD(&cache->new_bg_list);
-> +	INIT_LIST_HEAD(&cache->bg_list);
-> 	btrfs_init_free_space_ctl(cache);
-> 
-> 	return cache;
-> @@ -9130,8 +9144,18 @@ int btrfs_read_block_groups(struct btrfs_root *root)
-> 		__link_block_group(space_info, cache);
-> 
-> 		set_avail_alloc_bits(root->fs_info, cache->flags);
-> -		if (btrfs_chunk_readonly(root, cache->key.objectid))
-> +		if (btrfs_chunk_readonly(root, cache->key.objectid)) {
-> 			set_block_group_ro(cache, 1);
-> +		} else if (btrfs_block_group_used(&cache->item) == 0) {
-> +			spin_lock(&info->unused_bgs_lock);
-> +			/* Should always be true but just in case. */
-> +			if (list_empty(&cache->bg_list)) {
-> +				btrfs_get_block_group(cache);
-> +				list_add_tail(&cache->bg_list,
-> +					      &info->unused_bgs);
-> +			}
-> +			spin_unlock(&info->unused_bgs_lock);
-> +		}
-> 	}
-> 
-> 	list_for_each_entry_rcu(space_info, &root->fs_info->space_info, list) {
-> @@ -9172,10 +9196,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
-> 	struct btrfs_key key;
-> 	int ret = 0;
-> 
-> -	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs,
-> -				 new_bg_list) {
-> -		list_del_init(&block_group->new_bg_list);
-> -
-> +	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs, bg_list) {
-> +		list_del_init(&block_group->bg_list);
-> 		if (ret)
-> 			continue;
-> 
-> @@ -9261,7 +9283,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
-> 
-> 	__link_block_group(cache->space_info, cache);
-> 
-> -	list_add_tail(&cache->new_bg_list, &trans->new_bgs);
-> +	list_add_tail(&cache->bg_list, &trans->new_bgs);
-> 
-> 	set_avail_alloc_bits(extent_root->fs_info, type);
-> 
-> @@ -9430,6 +9452,98 @@ out:
-> 	return ret;
-> }
-> 
-> +/*
-> + * Process the unused_bgs list and remove any that don't have any allocated
-> + * space inside of them.
-> + */
-> +void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct btrfs_block_group_cache *block_group;
-> +	struct btrfs_space_info *space_info;
-> +	struct btrfs_root *root = fs_info->extent_root;
-> +	struct btrfs_trans_handle *trans;
-> +	int ret = 0;
-> +
-> +	spin_lock(&fs_info->unused_bgs_lock);
-> +	while (!list_empty(&fs_info->unused_bgs)) {
-> +		u64 start, end;
-> +
-> +		block_group = list_first_entry(&fs_info->unused_bgs,
-> +					       struct btrfs_block_group_cache,
-> +					       bg_list);
-> +		space_info = block_group->space_info;
-> +		list_del_init(&block_group->bg_list);
-> +		if (ret) {
-> +			btrfs_put_block_group(block_group);
-> +			continue;
-> +		}
-> +		spin_unlock(&fs_info->unused_bgs_lock);
-> +
-> +		/* Don't want to race with allocators so take the groups_sem */
-> +		down_write(&space_info->groups_sem);
-> +		spin_lock(&block_group->lock);
-> +		if (block_group->reserved ||
-> +		    btrfs_block_group_used(&block_group->item) ||
-> +		    block_group->ro) {
-> +			/*
-> +			 * We want to bail if we made new allocations or have
-> +			 * outstanding allocations in this block group.  We do
-> +			 * the ro check in case balance is currently acting on
-> +			 * this block group.
-> +			 */
-> +			spin_unlock(&block_group->lock);
-> +			up_write(&space_info->groups_sem);
-> +			goto next;
-> +		}
-> +		spin_unlock(&block_group->lock);
-> +
-> +		/* We don't want to force the issue, only flip if it's ok. */
-> +		ret = set_block_group_ro(block_group, 0);
-> +		up_write(&space_info->groups_sem);
-> +		if (ret < 0) {
-> +			ret = 0;
-> +			goto next;
-> +		}
-> +
-> +		/*
-> +		 * Want to do this before we do anything else so we can recover
-> +		 * properly if we fail to join the transaction.
-> +		 */
-> +		trans = btrfs_join_transaction(root);
-> +		if (IS_ERR(trans)) {
-> +			btrfs_set_block_group_rw(root, block_group);
-> +			ret = PTR_ERR(trans);
-> +			goto next;
-> +		}
-> +
-> +		/*
-> +		 * We could have pending pinned extents for this block group,
-> +		 * just delete them, we don't care about them anymore.
-> +		 */
-> +		start = block_group->key.objectid;
-> +		end = start + block_group->key.offset - 1;
-> +		clear_extent_bits(&fs_info->freed_extents[0], start, end,
-> +				  EXTENT_DIRTY, GFP_NOFS);
-> +		clear_extent_bits(&fs_info->freed_extents[1], start, end,
-> +				  EXTENT_DIRTY, GFP_NOFS);
-> +
-> +		/* Reset pinned so btrfs_put_block_group doesn't complain */
-> +		block_group->pinned = 0;
-> +
-> +		/*
-> +		 * Btrfs_remove_chunk will abort the transaction if things go
-> +		 * horribly wrong.
-> +		 */
-> +		ret = btrfs_remove_chunk(trans, root,
-> +					 block_group->key.objectid);
-> +		btrfs_end_transaction(trans, root);
-> +next:
-> +		btrfs_put_block_group(block_group);
-> +		spin_lock(&fs_info->unused_bgs_lock);
-> +	}
-> +	spin_unlock(&fs_info->unused_bgs_lock);
-> +}
-> +
-> int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
-> {
-> 	struct btrfs_space_info *space_info;
-> diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-> index d78ae10..2299bfd 100644
-> --- a/fs/btrfs/tests/free-space-tests.c
-> +++ b/fs/btrfs/tests/free-space-tests.c
-> @@ -45,7 +45,7 @@ static struct btrfs_block_group_cache *init_test_block_group(void)
-> 	spin_lock_init(&cache->lock);
-> 	INIT_LIST_HEAD(&cache->list);
-> 	INIT_LIST_HEAD(&cache->cluster_list);
-> -	INIT_LIST_HEAD(&cache->new_bg_list);
-> +	INIT_LIST_HEAD(&cache->bg_list);
-> 
-> 	btrfs_init_free_space_ctl(cache);
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 77d7fbc..e8fc390 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2568,58 +2568,49 @@ static int btrfs_del_sys_chunk(struct btrfs_root *root, u64 chunk_objectid, u64
-> 	return ret;
-> }
-> 
-> -static int btrfs_relocate_chunk(struct btrfs_root *root,
-> -			 u64 chunk_tree, u64 chunk_objectid,
-> -			 u64 chunk_offset)
-> +int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
-> +		       struct btrfs_root *root, u64 chunk_offset)
-> {
-> 	struct extent_map_tree *em_tree;
-> -	struct btrfs_root *extent_root;
-> -	struct btrfs_trans_handle *trans;
-> -	struct btrfs_device *device;
-> 	struct extent_map *em;
-> +	struct btrfs_root *extent_root = root->fs_info->extent_root;
-> 	struct map_lookup *map;
-> 	u64 dev_extent_len = 0;
-> -	int ret;
-> -	int i;
-> +	u64 chunk_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-> +	u64 chunk_tree = root->fs_info->chunk_root->objectid;
-> +	int i, ret = 0;
-> 
-> +	/* Just in case */
-> 	root = root->fs_info->chunk_root;
-> -	extent_root = root->fs_info->extent_root;
-> 	em_tree = &root->fs_info->mapping_tree.map_tree;
-> 
-> -	ret = btrfs_can_relocate(extent_root, chunk_offset);
-> -	if (ret)
-> -		return -ENOSPC;
-> -
-> -	/* step one, relocate all the extents inside this chunk */
-> -	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
-> -	if (ret)
-> -		return ret;
-> -
-> -	trans = btrfs_start_transaction(root, 0);
-> -	if (IS_ERR(trans)) {
-> -		ret = PTR_ERR(trans);
-> -		btrfs_std_error(root->fs_info, ret);
-> -		return ret;
-> -	}
-> -
-> -	/*
-> -	 * step two, delete the device extents and the
-> -	 * chunk tree entries
-> -	 */
-> 	read_lock(&em_tree->lock);
-> 	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
-> 	read_unlock(&em_tree->lock);
-> 
-> -	BUG_ON(!em || em->start > chunk_offset ||
-> -	       em->start + em->len < chunk_offset);
-> +	if (!em || em->start > chunk_offset ||
-> +	    em->start + em->len < chunk_offset) {
-> +		/*
-> +		 * This is a logic error, but we don't want to just rely on the
-> +		 * user having built with ASSERT enabled, so if ASSERT doens't
-> +		 * do anything we still error out.
-> +		 */
-> +		ASSERT(0);
-> +		if (em)
-> +			free_extent_map(em);
-> +		return -EINVAL;
-> +	}
-> 	map = (struct map_lookup *)em->bdev;
-> 
-> 	for (i = 0; i < map->num_stripes; i++) {
-> -		device = map->stripes[i].dev;
-> +		struct btrfs_device *device = map->stripes[i].dev;
-> 		ret = btrfs_free_dev_extent(trans, device,
-> 					    map->stripes[i].physical,
-> 					    &dev_extent_len);
-> -		BUG_ON(ret);
-> +		if (ret) {
-> +			btrfs_abort_transaction(trans, root, ret);
-> +			goto out;
-> +		}
-> 
-> 		if (device->bytes_used > 0) {
-> 			lock_chunks(root);
-> @@ -2634,23 +2625,34 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
-> 
-> 		if (map->stripes[i].dev) {
-> 			ret = btrfs_update_device(trans, map->stripes[i].dev);
-> -			BUG_ON(ret);
-> +			if (ret) {
-> +				btrfs_abort_transaction(trans, root, ret);
-> +				goto out;
-> +			}
-> 		}
-> 	}
-> 	ret = btrfs_free_chunk(trans, root, chunk_tree, chunk_objectid,
-> 			       chunk_offset);
-> -
-> -	BUG_ON(ret);
-> +	if (ret) {
-> +		btrfs_abort_transaction(trans, root, ret);
-> +		goto out;
-> +	}
-> 
-> 	trace_btrfs_chunk_free(root, map, chunk_offset, em->len);
-> 
-> 	if (map->type & BTRFS_BLOCK_GROUP_SYSTEM) {
-> 		ret = btrfs_del_sys_chunk(root, chunk_objectid, chunk_offset);
-> -		BUG_ON(ret);
-> +		if (ret) {
-> +			btrfs_abort_transaction(trans, root, ret);
-> +			goto out;
-> +		}
-> 	}
-> 
-> 	ret = btrfs_remove_block_group(trans, extent_root, chunk_offset);
-> -	BUG_ON(ret);
-> +	if (ret) {
-> +		btrfs_abort_transaction(trans, extent_root, ret);
-> +		goto out;
-> +	}
-> 
-> 	write_lock(&em_tree->lock);
-> 	remove_extent_mapping(em_tree, em);
-> @@ -2658,11 +2660,46 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
-> 
-> 	/* once for the tree */
-> 	free_extent_map(em);
-> +out:
-> 	/* once for us */
-> 	free_extent_map(em);
-> +	return ret;
-> +}
-> +
-> +static int btrfs_relocate_chunk(struct btrfs_root *root,
-> +			 u64 chunk_tree, u64 chunk_objectid,
-> +			 u64 chunk_offset)
-> +{
-> +	struct btrfs_root *extent_root;
-> +	struct btrfs_trans_handle *trans;
-> +	int ret;
-> +
-> +	root = root->fs_info->chunk_root;
-> +	extent_root = root->fs_info->extent_root;
-> +
-> +	ret = btrfs_can_relocate(extent_root, chunk_offset);
-> +	if (ret)
-> +		return -ENOSPC;
-> +
-> +	/* step one, relocate all the extents inside this chunk */
-> +	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
-> +	if (ret)
-> +		return ret;
-> 
-> +	trans = btrfs_start_transaction(root, 0);
-> +	if (IS_ERR(trans)) {
-> +		ret = PTR_ERR(trans);
-> +		btrfs_std_error(root->fs_info, ret);
-> +		return ret;
-> +	}
-> +
-> +	/*
-> +	 * step two, delete the device extents and the
-> +	 * chunk tree entries
-> +	 */
-> +	ret = btrfs_remove_chunk(trans, root, chunk_offset);
-> 	btrfs_end_transaction(trans, root);
-> -	return 0;
-> +	return ret;
-> }
-> 
-> static int btrfs_relocate_sys_chunks(struct btrfs_root *root)
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 2b37da3..f648d19 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -462,6 +462,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
-> int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
-> 				struct btrfs_root *extent_root,
-> 				u64 chunk_offset, u64 chunk_size);
-> +int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
-> +		       struct btrfs_root *root, u64 chunk_offset);
-> 
-> static inline int btrfs_dev_stats_dirty(struct btrfs_device *dev)
-> {
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-Best Regards,
-Wang Shilong
+Xavier
+>
+> Hi Xavier,
+>
+>  Thanks for the report.
+>
+>  I got this reproduced: its a very corner case, it depends on the
+>  device path given in the subsequent subvol mounts, the fix appear
+>  to be outside of this patch at this moment and I am digging to know
+>  if we need to normalize the device path before using it in the btrfs
+>  kernel, just like btrfs-progs did recently.
+>
+>
+>  reproducer:
+>  ls -l /root/dev/sde-link
+>    /root/dev/sde-link -> /dev/sde
+>
+>  mount -o device=/root/dev/sde-link /dev/sdd /btrfs1
+>  btrfs fi show
+>  Label: none  uuid: 943bf422-998c-4640-9d7f-d49f17b782ce
+>     Total devices 2 FS bytes used 272.00KiB
+>     devid    1 size 1.52GiB used 339.50MiB path /dev/sdd
+>     devid    2 size 1.52GiB used 319.50MiB path /root/dev/sde-link
+>
+>  mount -o subvol=sv1,device=/dev/sde /dev/sdd /btrfs <-shouldn't fail.
+>   mount: /dev/sdd already mounted or /btrfs busy
+>   mount: according to mtab, /dev/sdd is mounted on /btrfs1
+>
+>  mount -o device=/root/dev/sde-link /dev/sdd /btrfs
+>   echo $?
+>   0
+>
+>
+> Xavier, Johannes,
+>
+>     The quickest workaround for you will be to try to match
+>  the device path as in the btrfs fi show -m </mnt> output to
+>  your probably fstab/mnttab entry.
+>
+>
+> Anand
+>
+> On 09/13/2014 04:43 AM, xavier.gnata@gmail.com wrote:
+>> Hi,
+>>
+>> On standard ubuntu 14.04 a with an encrypted (cryptsetup) /home as brtfs
+>> subvolume we have the following results:
+>> 3.17-rc2 : Ok.
+>> 3.17-rc3 and 3.17-rc4 :  /home fails to mount on boot. If one try mount
+>> -a then the system tells that the partition is already mounted according
+>> to matab.
+>
+>
+>>
+>> On a 3.17-rc4, btrfs fi sh returns nothing special:
+>> "
+>> Label: none  uuid: f4f554bb-57d9-4647-ab14-ea978c9e7e9f
+>>          Total devices 1 FS bytes used 131.41GiB
+>>          devid    1 size 173.31GiB used 134.03GiB path /dev/sda5
+>>
+>> Btrfs v3.12
+>> "
+>>
+>> I'm not sure if it has something to do with cryptsetup...
+>>
+>>
+>> Xavier
+>>
+>>> Hi Johannes,
+>>>
+>>>> I've two more systems with kernel version >3.17-rc3
+>>>> running and no problem like this.
+>>>
+>>>  Does this 3.17-rc3 also has the same type of subvol config
+>>>  and it mount operation/sequence as you mentioned ?
+>>>
+>>> > - one hdd with btrfs
+>>> > - default subvolume (rootfs) is different from subovlid=0
+>>> > - at boot, several subvols are mounted at /home/$DIR
+>>>
+>>>  I ran a few tests, on our mainline
+>>>  ----
+>>>  mount -o subvol=sv1 /dev/sdh1 /btrfs
+>>>  mount /dev/sdh1 /btrfs
+>>>   mount: /dev/sdh1 already mounted or /btrfs busy [*]
+>>>  mount /dev/sdh1 /btrfs1
+>>>  echo $?
+>>>  0
+>>>  -----
+>>>
+>>>  [*] hope this isn't the problem you are mentioning.
+>>>
+>>> Thanks, Anand
 

@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:60774 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752844AbaIOHb0 (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:33110 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753227AbaIOHbX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 03:31:26 -0400
-Received: by mail-pd0-f169.google.com with SMTP id fp1so5624721pdb.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:25 -0700 (PDT)
+	Mon, 15 Sep 2014 03:31:23 -0400
+Received: by mail-pa0-f46.google.com with SMTP id kq14so5755670pab.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:22 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -19,73 +19,55 @@ Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
         neilb@suse.de, qat-linux@intel.com, serge@hallyn.com,
         thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
         torvalds@linux-foundation.org,
-        =?UTF-8?q?Vin=C3=ADcius=20Tinti?= <viniciustinti@gmail.com>,
         Behan Webster <behanw@converseincode.com>
-Subject: [PATCH v3 02/12] btrfs: LLVMLinux: Remove VLAIS
-Date: Mon, 15 Sep 2014 00:30:24 -0700
-Message-Id: <1410766234-1634-3-git-send-email-behanw@converseincode.com>
+Subject: [PATCH v3 01/12] crypto: LLVMLinux: Add macro to remove use of VLAIS in crypto code
+Date: Mon, 15 Sep 2014 00:30:23 -0700
+Message-Id: <1410766234-1634-2-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Vinícius Tinti <viniciustinti@gmail.com>
+From: Behan Webster <behanw@converseincode.com>
 
-Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
-compliant equivalent. This is the original VLAIS struct.
-
-struct {
-	struct shash_desc shash;
-	char ctx[crypto_shash_descsize(tfm)];
-} desc;
-
-This patch instead allocates the appropriate amount of memory using a
-char array using the SHASH_DESC_ON_STACK macro.
+Add a macro which replaces the use of a Variable Length Array In Struct (VLAIS)
+with a C99 compliant equivalent. This macro instead allocates the appropriate
+amount of memory using an char array.
 
 The new code can be compiled with both gcc and clang.
 
-Signed-off-by: Vinícius Tinti <viniciustinti@gmail.com>
-Reviewed-by: Jan-Simon Möller <dl9pf@gmx.de>
-Reviewed-by: Mark Charlebois <charlebm@gmail.com>
-Signed-off-by: Behan Webster <behanw@converseincode.com>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Herbert Xu <herbert@gondor.apana.org.au>
----
- fs/btrfs/hash.c | 16 +++++++---------
- 1 file changed, 7 insertions(+), 9 deletions(-)
+struct shash_desc contains a flexible array member member ctx declared with
+CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
+of the array declared after struct shash_desc with long long.
 
-diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
-index 85889aa..4bf4d3a 100644
---- a/fs/btrfs/hash.c
-+++ b/fs/btrfs/hash.c
-@@ -33,18 +33,16 @@ void btrfs_hash_exit(void)
+No trailing padding is required because it is not a struct type that can
+be used in an array.
+
+The CRYPTO_MINALIGN_ATTR is required so that desc is aligned with long long
+as would be the case for a struct containing a member with
+CRYPTO_MINALIGN_ATTR.
+
+Signed-off-by: Behan Webster <behanw@converseincode.com>
+---
+ include/crypto/hash.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/include/crypto/hash.h b/include/crypto/hash.h
+index a391955..541125b 100644
+--- a/include/crypto/hash.h
++++ b/include/crypto/hash.h
+@@ -58,6 +58,11 @@ struct shash_desc {
+ 	void *__ctx[] CRYPTO_MINALIGN_ATTR;
+ };
  
- u32 btrfs_crc32c(u32 crc, const void *address, unsigned int length)
- {
--	struct {
--		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(tfm)];
--	} desc;
-+	SHASH_DESC_ON_STACK(shash, tfm);
-+	u32 *ctx = (u32 *)shash_desc_ctx(shash);
- 	int err;
- 
--	desc.shash.tfm = tfm;
--	desc.shash.flags = 0;
--	*(u32 *)desc.ctx = crc;
-+	shash->tfm = tfm;
-+	shash->flags = 0;
-+	*ctx = crc;
- 
--	err = crypto_shash_update(&desc.shash, address, length);
-+	err = crypto_shash_update(shash, address, length);
- 	BUG_ON(err);
- 
--	return *(u32 *)desc.ctx;
-+	return *ctx;
- }
++#define SHASH_DESC_ON_STACK(shash, tfm)				  \
++	char __desc[sizeof(struct shash_desc) +                   \
++		crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR; \
++	struct shash_desc *shash = (struct shash_desc *)__desc
++
+ struct shash_alg {
+ 	int (*init)(struct shash_desc *desc);
+ 	int (*update)(struct shash_desc *desc, const u8 *data,
 -- 
 1.9.1
 

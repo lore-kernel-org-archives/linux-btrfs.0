@@ -1,43 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:49950 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751409AbaION5W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 09:57:22 -0400
-Message-ID: <5416F03D.4030209@fb.com>
-Date: Mon, 15 Sep 2014 09:57:17 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from datenkhaos.de ([81.89.99.198]:52435 "EHLO datenkhaos.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753046AbaIOROE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Sep 2014 13:14:04 -0400
+Date: Mon, 15 Sep 2014 19:13:58 +0200
+From: Johannes Hirte <johannes.hirte@datenkhaos.de>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
+ breaks subvol mount
+Message-ID: <20140915191358.373f7e3a@datenkhaos.de>
+In-Reply-To: <pan$654be$d6b1d475$33035c3b$be242b8b@cox.net>
+References: <20140911002241.201bc6c2@datenkhaos.de>
+	<54110AEC.6040301@oracle.com>
+	<54135AE7.40400@gmail.com>
+	<5413D7E5.6080905@oracle.com>
+	<20140913195525.333f93a4@datenkhaos.de>
+	<20140913232320.64fd189c@datenkhaos.de>
+	<pan$654be$d6b1d475$33035c3b$be242b8b@cox.net>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: remove empty block groups automatically
-References: <1410549510-22336-1-git-send-email-jbacik@fb.com> <F9E95213-710B-42A2-A904-3EE1CE95B72E@gmail.com>
-In-Reply-To: <F9E95213-710B-42A2-A904-3EE1CE95B72E@gmail.com>
-Content-Type: text/plain; charset="gbk"; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/14/2014 12:46 AM, Wang Shilong wrote:
-> Hi Josef,
->
->> One problem that has plagued us is that a user will use up all of his space with
->> data, remove a bunch of that data, and then try to create a bunch of small files
->> and run out of space.  This happens because all the chunks were allocated for
->> data since the metadata requirements were so low.  But now there's a bunch of
->> empty data block groups and not enough metadata space to do anything.  This
->> patch solves this problem by automatically deleting empty block groups.  If we
->> notice the used count go down to 0 when deleting or on mount notice that a block
->> group has a used count of 0 then we will queue it to be deleted.
->>
->> When the cleaner thread runs we will double check to make sure the block group
->> is still empty and then we will delete it.  This patch has the side effect of no
->> longer having a bunch of BUG_ON()'s in the chunk delete code, which will be
->> helpful for both this and relocate.  Thanks,
->
-> I am wondering whether we could check if it a Mixed Mode, we don¡¯t need remove
-> Mixed mode block groups automatically¡­
+On Sun, 14 Sep 2014 00:45:49 +0000 (UTC)
+Duncan <1i5t5.duncan@cox.net> wrote:
 
-Good point, I'll update the patch.  Thanks,
+> Johannes Hirte posted on Sat, 13 Sep 2014 23:23:20 +0200 as excerpted:
+> 
+> > On Sat, 13 Sep 2014 19:55:25 +0200 Johannes Hirte
+> > <johannes.hirte@datenkhaos.de> wrote:
+> > 
+> >> On Sat, 13 Sep 2014 13:36:37 +0800 Anand Jain
+> >> <Anand.Jain@oracle.com> wrote:
+> >> 
+> >>> The quickest workaround for you will be to try to match
+> >>> the device path as in the btrfs fi show -m </mnt> output to your
+> >>> probably fstab/mnttab entry.
+> >> 
+> >> Doesn't work here. I don't even get a path with the affected
+> >> kernels. I'll get:
+> >> 
+> >> Label: none  uuid: 02edbd6b-f044-4800-b21e-ca8982c2c2e5
+> >>         Total devices 1 FS bytes used 270.10GiB
+> >>         *** Some devices missing
+> >> 
+> >> Btrfs v3.16
+> >> 
+> >> with a working kernel:
+> >> 
+> >> Label: none  uuid: 02edbd6b-f044-4800-b21e-ca8982c2c2e5
+> >>         Total devices 1 FS bytes used 270.10GiB
+> >>         devid  1 size 293.89GiB used 289.06GiB path /dev/sda1
+> >> 
+> >> Btrfs v3.16
+> 
+> >> And now I was able to reproduce on a second machine. The main
+> >> difference between the affected and the unaffected systems is
+> >> initramfs. On the affected systems, I don't use one. On the working
+> >> systems, the rootfs is mounted via initramfs before. I'll test, if
+> >> an initramfs will solve the issue. Seems likely, cause if I put
+> >> the disk of an affected system into a working system and mount it
+> >> there, everything works.
+> > 
+> > Of course, with the initramfs it works.
+> 
+> I see a btrfs device scan in the initramfs script.  What happens if
+> you simply run btrfs device scan manually, before doing btrfs
+> filesystem show?
+> 
+> I'm guessing that'll fix it.
 
-Josef
+Not tested, but I doubt it will fix it. In this initramfs it is a
+leftover from a time, when the system was multi-device. On two other
+systems, initramfs works without the scan. Additionally I can put the
+affected HDD from the laptop and put it into/on another system, that is
+affected without initramfs. I can mount it there without any scan
+before. But I'm not 100% sure if udev takes responsibility for scanning
+here.
 
+regards,
+  Johannes

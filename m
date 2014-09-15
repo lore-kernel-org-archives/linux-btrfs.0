@@ -1,51 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f169.google.com ([209.85.216.169]:62415 "EHLO
-	mail-qc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752807AbaIOQgk (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18440 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753962AbaIOQnn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 12:36:40 -0400
-Received: by mail-qc0-f169.google.com with SMTP id r5so4451439qcx.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 09:36:34 -0700 (PDT)
-Received: from [192.168.11.50] ([98.113.246.12])
-        by mx.google.com with ESMTPSA id e4sm9838659qgf.32.2014.09.15.09.36.33
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 15 Sep 2014 09:36:33 -0700 (PDT)
-Message-ID: <5417158B.4010700@gmail.com>
-Date: Mon, 15 Sep 2014 12:36:27 -0400
-From: Elliot Wolk <elliot.wolk@gmail.com>
+	Mon, 15 Sep 2014 12:43:43 -0400
+Message-ID: <54171711.8010107@oracle.com>
+Date: Tue, 16 Sep 2014 00:42:57 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: restore breaks incremental backup
+To: Sam Thursfield <sam.thursfield@codethink.co.uk>,
+        linux-btrfs@vger.kernel.org
+CC: baserock-dev@baserock.org, johannes.hirte@datenkhaos.de,
+        xavier.gnata@gmail.com, 1i5t5.duncan@cox.net
+Subject: Re: Unable to mount multiple subvolumes of a single disk
+References: <5417022A.5000101@codethink.co.uk>
+In-Reply-To: <5417022A.5000101@codethink.co.uk>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-restoring from an incremental backup breaks the parent UUIDs, making it 
-impossible to continue doing incremental backup.
 
-1) assume you do incremental backup from "home" to "BACKUP":
-btrfs subvol snapshot -r /home /home/backup1
-btrfs send /home/backup1 | btrfs receive /BACKUP
-btrfs subvol snapshot -r /home /home/backup2
-btrfs send /home/backup2 -p /home/backup1 | btrfs receive /BACKUP
+  Logs from Sam, tells the problem clearly.  mount is using
+  /dev/sda, but mount error message and kernel is using /dev/vda.
+
+----------------------
+$ mount /dev/sda /home -t btrfs -o subvol=/state/home,defaults,rw,noatime
+mount: /dev/vda is already mounted or /home busy
+        /dev/vda is already mounted on /
+
+$ btrfs fi show
+Label: 'baserock'  uuid: 9a1b9724-d64c-4709-9ce0-b7ad98054385
+	Total devices 1 FS bytes used 1.45GB
+	devid    1 size 4.00GB used 2.06GB path /dev/vda
+----------------------
+
+  any idea what provided kernel the path /dev/vda ?
+  Do we still have /dev/vda at the time of above mount cmd. ?
+
+  Further if you use /dev/vda instead of /dev/sda for the mount,
+  it should work. Provided vda is still there.
+
+Thanks, Anand
 
 
-2) then you delete "home", mkfs.btrfs, and attempt to restore:
-btrfs send /BACKUP/backup2 | btrfs receive /home
-btrfs subvol snapshot /home /home/home-rw
-btrfs subvol snapshot -r /home/home-rw /home/home-rw/backup3
-btrfs send /home/home-rw/backup3 -p /home/backup2 | btrfs receive /BACKUP
-#send|receive fails with "parent not found"
-#the next step would be to set-default to home-rw, remount, and continue 
-inc backup as above
 
-receive fails with "parent not found", which makes sense since the 
-parent UUIDs are not the same, but is highly undesirable. i need to 
-delete my backup drive and reseed which is mucho scary. perhaps there is 
-some obvious way to do this that im missing?
 
-thanks, and sorry if this is too vague or is not actually a misfeature. 
-let me know if theres anything i can do to help. {please CC me for 
-replies, im not subscribed}
-
+On 15/09/2014 23:13, Sam Thursfield wrote:
+> Hi!
+>
+> I'm having an issue with the 3.17rc5 kernel which prevents having
+> multiple subvolumes of the same disk mounted.
+>
+> I'm not sure exactly the cause. I thought it might be because in my
+> system the root file system is itself a subvolume of the disk I'm trying
+> to mount. But if I create a second disk image with two subvolumes, the
+> same thing occurs -- I can only mount one of them at a time.
+>
+> I've attached the output of a few commands, please let me know if you
+> want more info (I'm not subscribed to the list, please keep me in To:).
+>
+> We've bisected and found that the exact commit that changed the
+> behaviour is this one:
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=b96de000bc8bc9688b3a2abea4332bd57648a49f
+>
+>
+> I'm afraid I'm not familiar with the Btrfs code base and so I don't
+> understand the exact meaning of the comments in that commit.
+>
+> Thanks
+> Sam
+>

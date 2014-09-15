@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:39047 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753373AbaIOHbi (ORCPT
+Received: from mail-pd0-f181.google.com ([209.85.192.181]:45856 "EHLO
+	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753374AbaIOHbf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 03:31:38 -0400
-Received: by mail-pa0-f50.google.com with SMTP id bj1so5772426pad.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:38 -0700 (PDT)
+	Mon, 15 Sep 2014 03:31:35 -0400
+Received: by mail-pd0-f181.google.com with SMTP id w10so5588163pde.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:35 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -20,9 +20,9 @@ Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
         thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
         torvalds@linux-foundation.org,
         Behan Webster <behanw@converseincode.com>
-Subject: [PATCH v3 06/12] crypto: LLVMLinux: Remove VLAIS from crypto/omap_sham.c
-Date: Mon, 15 Sep 2014 00:30:28 -0700
-Message-Id: <1410766234-1634-7-git-send-email-behanw@converseincode.com>
+Subject: [PATCH v3 05/12] crypto: LLVMLinux: Remove VLAIS from crypto/n2_core.c
+Date: Mon, 15 Sep 2014 00:30:27 -0700
+Message-Id: <1410766234-1634-6-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -42,61 +42,44 @@ Signed-off-by: Behan Webster <behanw@converseincode.com>
 Reviewed-by: Mark Charlebois <charlebm@gmail.com>
 Reviewed-by: Jan-Simon Möller <dl9pf@gmx.de>
 ---
- drivers/crypto/omap-sham.c | 28 +++++++++++-----------------
- 1 file changed, 11 insertions(+), 17 deletions(-)
+ drivers/crypto/n2_core.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/crypto/omap-sham.c b/drivers/crypto/omap-sham.c
-index 710d863..24ef489 100644
---- a/drivers/crypto/omap-sham.c
-+++ b/drivers/crypto/omap-sham.c
-@@ -949,17 +949,14 @@ static int omap_sham_finish_hmac(struct ahash_request *req)
- 	struct omap_sham_hmac_ctx *bctx = tctx->base;
- 	int bs = crypto_shash_blocksize(bctx->shash);
- 	int ds = crypto_shash_digestsize(bctx->shash);
+diff --git a/drivers/crypto/n2_core.c b/drivers/crypto/n2_core.c
+index 7263c10..f8e3207 100644
+--- a/drivers/crypto/n2_core.c
++++ b/drivers/crypto/n2_core.c
+@@ -445,10 +445,7 @@ static int n2_hmac_async_setkey(struct crypto_ahash *tfm, const u8 *key,
+ 	struct n2_hmac_ctx *ctx = crypto_ahash_ctx(tfm);
+ 	struct crypto_shash *child_shash = ctx->child_shash;
+ 	struct crypto_ahash *fallback_tfm;
 -	struct {
 -		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(bctx->shash)];
+-		char ctx[crypto_shash_descsize(child_shash)];
 -	} desc;
-+	SHASH_DESC_ON_STACK(shash, bctx->shash);
++	SHASH_DESC_ON_STACK(shash, child_shash);
+ 	int err, bs, ds;
  
--	desc.shash.tfm = bctx->shash;
--	desc.shash.flags = 0; /* not CRYPTO_TFM_REQ_MAY_SLEEP */
-+	shash->tfm = bctx->shash;
-+	shash->flags = 0; /* not CRYPTO_TFM_REQ_MAY_SLEEP */
+ 	fallback_tfm = ctx->base.fallback_tfm;
+@@ -456,15 +453,15 @@ static int n2_hmac_async_setkey(struct crypto_ahash *tfm, const u8 *key,
+ 	if (err)
+ 		return err;
  
--	return crypto_shash_init(&desc.shash) ?:
--	       crypto_shash_update(&desc.shash, bctx->opad, bs) ?:
--	       crypto_shash_finup(&desc.shash, req->result, ds, req->result);
-+	return crypto_shash_init(shash) ?:
-+	       crypto_shash_update(shash, bctx->opad, bs) ?:
-+	       crypto_shash_finup(shash, req->result, ds, req->result);
- }
+-	desc.shash.tfm = child_shash;
+-	desc.shash.flags = crypto_ahash_get_flags(tfm) &
++	shash->tfm = child_shash;
++	shash->flags = crypto_ahash_get_flags(tfm) &
+ 		CRYPTO_TFM_REQ_MAY_SLEEP;
  
- static int omap_sham_finish(struct ahash_request *req)
-@@ -1118,18 +1115,15 @@ static int omap_sham_update(struct ahash_request *req)
- 	return omap_sham_enqueue(req, OP_UPDATE);
- }
- 
--static int omap_sham_shash_digest(struct crypto_shash *shash, u32 flags,
-+static int omap_sham_shash_digest(struct crypto_shash *tfm, u32 flags,
- 				  const u8 *data, unsigned int len, u8 *out)
- {
--	struct {
--		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(shash)];
--	} desc;
-+	SHASH_DESC_ON_STACK(shash, tfm);
- 
--	desc.shash.tfm = shash;
--	desc.shash.flags = flags & CRYPTO_TFM_REQ_MAY_SLEEP;
-+	shash->tfm = tfm;
-+	shash->flags = flags & CRYPTO_TFM_REQ_MAY_SLEEP;
- 
--	return crypto_shash_digest(&desc.shash, data, len, out);
-+	return crypto_shash_digest(shash, data, len, out);
- }
- 
- static int omap_sham_final_shash(struct ahash_request *req)
+ 	bs = crypto_shash_blocksize(child_shash);
+ 	ds = crypto_shash_digestsize(child_shash);
+ 	BUG_ON(ds > N2_HASH_KEY_MAX);
+ 	if (keylen > bs) {
+-		err = crypto_shash_digest(&desc.shash, key, keylen,
++		err = crypto_shash_digest(shash, key, keylen,
+ 					  ctx->hash_key);
+ 		if (err)
+ 			return err;
 -- 
 1.9.1
 

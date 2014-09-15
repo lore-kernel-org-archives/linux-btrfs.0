@@ -1,56 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:47132 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753311AbaIOIhx (ORCPT
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:63497 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751561AbaIOOVr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 04:37:53 -0400
-Received: by mail-pa0-f53.google.com with SMTP id rd3so6008873pab.40
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 01:37:49 -0700 (PDT)
-Message-ID: <5416A558.3070109@converseincode.com>
-Date: Mon, 15 Sep 2014 01:37:44 -0700
-From: Behan Webster <behanw@converseincode.com>
+	Mon, 15 Sep 2014 10:21:47 -0400
 MIME-Version: 1.0
-To: =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirqus@gmail.com>,
-        device-mapper development <dm-devel@redhat.com>
-CC: agk@redhat.com, clm@fb.com, David Miller <davem@davemloft.net>,
-        fabf@skynet.be, Herbert Xu <herbert@gondor.apana.org.au>,
-        jbacik@fb.com, snitzer@redhat.com, tadeusz.struk@intel.com,
-        thomas.lendacky@amd.com, linux-ima-user@lists.sourceforge.net,
-        qat-linux@intel.com, d.kasatkin@samsung.com,
+In-Reply-To: <1410766234-1634-12-git-send-email-behanw@converseincode.com>
+References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
+	<1410766234-1634-12-git-send-email-behanw@converseincode.com>
+Date: Mon, 15 Sep 2014 07:21:46 -0700
+Message-ID: <CA+55aFx8FN2Rq+d3v9rsDbTyX3hwm6TvudvZrL5wgf7fX3aQjA@mail.gmail.com>
+Subject: Re: [PATCH v3 11/12] security, crypto: LLVMLinux: Remove VLAIS from ima_crypto.c
+From: Linus Torvalds <torvalds@linux-foundation.org>
+To: Behan Webster <behanw@converseincode.com>
+Cc: Alasdair G Kergon <agk@redhat.com>, Chris Mason <clm@fb.com>,
+        David Miller <davem@davemloft.net>,
+        "dm-devel@redhat.com" <dm-devel@redhat.com>,
+        Fabian Frederick <fabf@skynet.be>,
+        Herbert Xu <herbert@gondor.apana.org.au>, Josef Bacik <jbacik@fb.com>,
+        Mike Snitzer <snitzer@redhat.com>, tadeusz.struk@intel.com,
+        Andrew Morton <akpm@linux-foundation.org>,
         Bruce Allan <bruce.w.allan@intel.com>,
-        Linux Kernel <linux-kernel@vger.kernel.org>, john.griffin@intel.com,
-        linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
-        linux-crypto@vger.kernel.org, james.l.morris@oracle.com,
-        Linus Torvalds <torvalds@linux-foundation.org>,
+        Dmitry Kasatkin <d.kasatkin@samsung.com>,
+        James Morris <james.l.morris@oracle.com>, john.griffin@intel.com,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Crypto Mailing List <linux-crypto@vger.kernel.org>,
         linux-ima-devel@lists.sourceforge.net,
-        Andrew Morton <akpm@linux-foundation.org>, zohar@linux.vnet.ibm.com,
-        linux-btrfs@vger.kernel.org, "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: [dm-devel] [PATCH v3 01/12] crypto: LLVMLinux: Add macro to remove
- use of VLAIS in crypto code
-References: <1410766234-1634-1-git-send-email-behanw@converseincode.com> <1410766234-1634-2-git-send-email-behanw@converseincode.com> <CAHXqBFK=o2Q3CUPWaL_8TDBJbGjfEOx_HnQzooy33wuKWyu5Gw@mail.gmail.com>
-In-Reply-To: <CAHXqBFK=o2Q3CUPWaL_8TDBJbGjfEOx_HnQzooy33wuKWyu5Gw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        linux-ima-user@lists.sourceforge.net,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        "linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+        LSM List <linux-security-module@vger.kernel.org>,
+        Neil Brown <neilb@suse.de>, qat-linux@intel.com,
+        "Serge E. Hallyn" <serge@hallyn.com>, thomas.lendacky@amd.com,
+        Mimi Zohar <zohar@linux.vnet.ibm.com>,
+        Thomas Gleixner <tglx@linutronix.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/15/14 01:06, Michał Mirosław wrote:
-> 2014-09-15 9:30 GMT+02:00  <behanw@converseincode.com>:
-> [...]
->> +#define SHASH_DESC_ON_STACK(shash, tfm)                                  \
->> +       char __desc[sizeof(struct shash_desc) +                   \
->> +               crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR; \
->> +       struct shash_desc *shash = (struct shash_desc *)__desc
->> +
-> char shash##__desc[] or similar? Otherwise it won't work if you use
-> this macro twice in the same block.
+On Mon, Sep 15, 2014 at 12:30 AM,  <behanw@converseincode.com> wrote:
+> From: Behan Webster <behanw@converseincode.com>
 >
-> Best Regards,
-> Michał Mirosław
-Good thinking. Will fix.
+> Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
+> compliant equivalent. This patch allocates the appropriate amount of memory
+> using a char array using the SHASH_DESC_ON_STACK macro.
 
-Behan
+You only made the first case use SHASH_DESC_ON_STACK, the two other
+cases you left in the ugly format. Was that just an oversight, or was
+there some reason for it?
 
--- 
-Behan Webster
-behanw@converseincode.com
-
+             Linus

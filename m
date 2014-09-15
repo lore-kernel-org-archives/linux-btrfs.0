@@ -1,108 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44528 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753891AbaIORWM (ORCPT
+Received: from mail.mystoragebox.com ([173.234.39.99]:59911 "EHLO
+	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753190AbaIORhs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 13:22:12 -0400
-Message-ID: <54172018.1050300@oracle.com>
-Date: Tue, 16 Sep 2014 01:21:28 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 15 Sep 2014 13:37:48 -0400
+Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.80])
+	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.83)
+	(envelope-from <markm-lists@intellasoft.net>)
+	id 1XTaDi-0004eY-QO
+	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 13:37:46 -0400
+Message-ID: <541723EA.6010608@intellasoft.net>
+Date: Mon, 15 Sep 2014 13:37:46 -0400
+From: Mark Murawski <markm-lists@intellasoft.net>
 MIME-Version: 1.0
-To: Sam Thursfield <sam.thursfield@codethink.co.uk>
-CC: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        baserock-dev@baserock.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk>
-In-Reply-To: <54171E51.2020709@codethink.co.uk>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs balance enospc
+References: <541706ED.4010901@intellasoft.net> <20140915170722.GA9160@sune>
+In-Reply-To: <20140915170722.GA9160@sune>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs balance start -dusage=86 /
+Done, had to relocate 1 out of 13 chunks
 
-Hi Sam,
+cartman {~} root# btrfs fi df /
+Data, RAID1: total=7.03GiB, used=7.01GiB
+System, RAID1: total=32.00MiB, used=4.00KiB
+Metadata, RAID1: total=1.00GiB, used=438.88MiB
+unknown, single: total=148.00MiB, used=0.00
 
-  Thanks for verifying.
+What's this 'unknown' section? Maybe this is the problem?  How do I get 
+rid of it?
 
-On 16/09/2014 01:13, Sam Thursfield wrote:
-> Hi Anand
+I still get enospc after a balance with a filter, and then a regular 
+balance:
+
+cartman {~} root# btrfs balance start /
+ERROR: error during balancing '/' - No space left on device
+
+
+
+
+On 09/15/14 13:07, Leonidas Spyropoulos wrote:
+> On 15/09/14, Mark Murawski wrote:
+>> I should have plenty of space for this operation, but it fails....
+>>
+>> [...]
 >
-> On 15/09/14 17:09, Anand Jain wrote:
->>
->> Sam,
->>
->>   Thanks for reporting. Can you apply the following diff
->>   on top of 3.17rc5 and check if it helps.
+> This might be useful:
+> https://btrfs.wiki.kernel.org/index.php/Balance_Filters
 >
-> The patch fixes the issue, although it took a little tweaking to get it
-> to apply cleanly.
+> Regards,
+> Leonidas
 >
->> -------
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index e9676a4..1224b61 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -533,7 +533,7 @@ static noinline int device_list_add(const char *path,
->>                   * the btrfs dev scan cli, after FS has been mounted.
->>                   */
->>                  if (fs_devices->opened) {
->> -                       return -EBUSY;
->> +                       goto out;
->>                  } else {
->>                          /*
->>                           * That is if the FS is _not_ mounted and if you
->> @@ -566,6 +566,7 @@ static noinline int device_list_add(const char *path,
->>          if (!fs_devices->opened)
->>                  device->generation = found_transid;
->>
->> +out:
->>          *fs_devices_ret = fs_devices;
->>
->>          return ret;
->> -------
->>
->>
->>
->>
->> Anand
->>
->>
->>
->> On 15/09/2014 23:54, Chris Mason wrote:
->>> On 09/15/2014 11:13 AM, Sam Thursfield wro:
->>>> Hi!
->>>>
->>>> I'm having an issue with the 3.17rc5 kernel which prevents having
->>>> multiple subvolumes of the same disk mounted.
->>>>
->>>> I'm not sure exactly the cause. I thought it might be because in my
->>>> system the root file system is itself a subvolume of the disk I'm
->>>> trying
->>>> to mount. But if I create a second disk image with two subvolumes, the
->>>> same thing occurs -- I can only mount one of them at a time.
->>>>
->>>> I've attached the output of a few commands, please let me know if you
->>>> want more info (I'm not subscribed to the list, please keep me in To:).
->>>>
->>>> We've bisected and found that the exact commit that changed the
->>>> behaviour is this one:
->>>> https://urldefense.proofpoint.com/v1/url?u=https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id%3Db96de000bc8bc9688b3a2abea4332bd57648a49f&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=qVtp3yxxUd8uElAkp118K4Bd0oZfeUOC%2BKUy3e6rRlA%3D%0A&s=0d2623956de100adc1185d2b75e9114384572b88c0330e74924baa1a2bce8d02
->>>>
->>>>
->>>>
->>>>
->>>> I'm afraid I'm not familiar with the Btrfs code base and so I don't
->>>> understand the exact meaning of the comments in that commit.
->>>
->>> Anand Jain is working on this in a separate thread.  I'll make sure the
->>> fix goes into the next rc, thanks for all the time spent bisecting.
->>>
->>> -chris
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->
->
+

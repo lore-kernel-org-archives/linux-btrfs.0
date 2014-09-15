@@ -1,57 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:61814 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751146AbaIKPkC (ORCPT
+Received: from mail-pd0-f172.google.com ([209.85.192.172]:48254 "EHLO
+	mail-pd0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753373AbaIOHbc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Sep 2014 11:40:02 -0400
-Message-ID: <5411C24A.3090506@fb.com>
-Date: Thu, 11 Sep 2014 11:39:54 -0400
-From: Chris Mason <clm@fb.com>
+	Mon, 15 Sep 2014 03:31:32 -0400
+Received: by mail-pd0-f172.google.com with SMTP id v10so5728157pde.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:32 -0700 (PDT)
+From: behanw@converseincode.com
+To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
+        fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
+        snitzer@redhat.com, tadeusz.struk@intel.com
+Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
+        james.l.morris@oracle.com, john.griffin@intel.com,
+        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
+        linux-ima-devel@lists.sourceforge.net,
+        linux-ima-user@lists.sourceforge.net, linux-kernel@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
+        neilb@suse.de, qat-linux@intel.com, serge@hallyn.com,
+        thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
+        torvalds@linux-foundation.org,
+        Behan Webster <behanw@converseincode.com>
+Subject: [PATCH v3 04/12] crypto: LLVMLinux: Remove VLAIS from crypto/mv_cesa.c
+Date: Mon, 15 Sep 2014 00:30:26 -0700
+Message-Id: <1410766234-1634-5-git-send-email-behanw@converseincode.com>
+In-Reply-To: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
+References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 12/18] Btrfs: Fix misuse of chunk mutex
-References: <1409751347-5296-1-git-send-email-miaox@cn.fujitsu.com> <1409751347-5296-12-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1409751347-5296-12-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Behan Webster <behanw@converseincode.com>
 
+Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
+compliant equivalent. This patch allocates the appropriate amount of memory
+using a char array using the SHASH_DESC_ON_STACK macro.
 
-On 09/03/2014 09:35 AM, Miao Xie wrote:
-> There were several problems about chunk mutex usage:
-> - Lock chunk mutex when updating metadata. It would cause the nested
->   deadlock because updating metadata might need allocate new chunks
->   that need acquire chunk mutex. We remove chunk mutex at this case,
->   because b-tree lock and other lock mechanism can help us.
-> - ABBA deadlock occured between device_list_mutex and chunk_mutex.
->   When we update device status, we must acquire device_list_mutex at the
->   beginning, and then we might get chunk_mutex during the device status
->   update because we need allocate new chunks for metadata COW. But at
->   most place, we acquire chunk_mutex at first and then acquire device list
->   mutex. We need change the lock order.
-> - Some place we needn't acquire chunk_mutex. For example we needn't get
->   chunk_mutex when we free a empty seed fs_devices structure.
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 9f22398d..357f911 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> 
-> @@ -2619,10 +2615,23 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
->  	map = (struct map_lookup *)em->bdev;
->  
->  	for (i = 0; i < map->num_stripes; i++) {
-> -		ret = btrfs_free_dev_extent(trans, map->stripes[i].dev,
-> -					    map->stripes[i].physical);
-> +		device = map->stripes[i].dev;
-> +		ret = btrfs_free_dev_extent(trans, device,
-> +					    map->stripes[i].physical,
-> +					    &dev_extent_len);
->  		BUG_ON(ret);
+The new code can be compiled with both gcc and clang.
 
-gcc is worried that dev_extent_len may be used uninitialized here.  The
-BUG_ON makes it unlikely we'll notice dev_extent_len, but I set it to
-zero in my version here.
+Signed-off-by: Behan Webster <behanw@converseincode.com>
+Reviewed-by: Mark Charlebois <charlebm@gmail.com>
+Reviewed-by: Jan-Simon Möller <dl9pf@gmx.de>
+---
+ drivers/crypto/mv_cesa.c | 41 ++++++++++++++++++-----------------------
+ 1 file changed, 18 insertions(+), 23 deletions(-)
 
--chris
+diff --git a/drivers/crypto/mv_cesa.c b/drivers/crypto/mv_cesa.c
+index 29d0ee5..032c72c 100644
+--- a/drivers/crypto/mv_cesa.c
++++ b/drivers/crypto/mv_cesa.c
+@@ -402,26 +402,23 @@ static int mv_hash_final_fallback(struct ahash_request *req)
+ {
+ 	const struct mv_tfm_hash_ctx *tfm_ctx = crypto_tfm_ctx(req->base.tfm);
+ 	struct mv_req_hash_ctx *req_ctx = ahash_request_ctx(req);
+-	struct {
+-		struct shash_desc shash;
+-		char ctx[crypto_shash_descsize(tfm_ctx->fallback)];
+-	} desc;
++	SHASH_DESC_ON_STACK(shash, tfm_ctx->fallback);
+ 	int rc;
+ 
+-	desc.shash.tfm = tfm_ctx->fallback;
+-	desc.shash.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
++	shash->tfm = tfm_ctx->fallback;
++	shash->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
+ 	if (unlikely(req_ctx->first_hash)) {
+-		crypto_shash_init(&desc.shash);
+-		crypto_shash_update(&desc.shash, req_ctx->buffer,
++		crypto_shash_init(shash);
++		crypto_shash_update(shash, req_ctx->buffer,
+ 				    req_ctx->extra_bytes);
+ 	} else {
+ 		/* only SHA1 for now....
+ 		 */
+-		rc = mv_hash_import_sha1_ctx(req_ctx, &desc.shash);
++		rc = mv_hash_import_sha1_ctx(req_ctx, shash);
+ 		if (rc)
+ 			goto out;
+ 	}
+-	rc = crypto_shash_final(&desc.shash, req->result);
++	rc = crypto_shash_final(shash, req->result);
+ out:
+ 	return rc;
+ }
+@@ -794,23 +791,21 @@ static int mv_hash_setkey(struct crypto_ahash *tfm, const u8 * key,
+ 	ss = crypto_shash_statesize(ctx->base_hash);
+ 
+ 	{
+-		struct {
+-			struct shash_desc shash;
+-			char ctx[crypto_shash_descsize(ctx->base_hash)];
+-		} desc;
++		SHASH_DESC_ON_STACK(shash, ctx->base_hash);
++
+ 		unsigned int i;
+ 		char ipad[ss];
+ 		char opad[ss];
+ 
+-		desc.shash.tfm = ctx->base_hash;
+-		desc.shash.flags = crypto_shash_get_flags(ctx->base_hash) &
++		shash->tfm = ctx->base_hash;
++		shash->flags = crypto_shash_get_flags(ctx->base_hash) &
+ 		    CRYPTO_TFM_REQ_MAY_SLEEP;
+ 
+ 		if (keylen > bs) {
+ 			int err;
+ 
+ 			err =
+-			    crypto_shash_digest(&desc.shash, key, keylen, ipad);
++			    crypto_shash_digest(shash, key, keylen, ipad);
+ 			if (err)
+ 				return err;
+ 
+@@ -826,12 +821,12 @@ static int mv_hash_setkey(struct crypto_ahash *tfm, const u8 * key,
+ 			opad[i] ^= 0x5c;
+ 		}
+ 
+-		rc = crypto_shash_init(&desc.shash) ? :
+-		    crypto_shash_update(&desc.shash, ipad, bs) ? :
+-		    crypto_shash_export(&desc.shash, ipad) ? :
+-		    crypto_shash_init(&desc.shash) ? :
+-		    crypto_shash_update(&desc.shash, opad, bs) ? :
+-		    crypto_shash_export(&desc.shash, opad);
++		rc = crypto_shash_init(shash) ? :
++		    crypto_shash_update(shash, ipad, bs) ? :
++		    crypto_shash_export(shash, ipad) ? :
++		    crypto_shash_init(shash) ? :
++		    crypto_shash_update(shash, opad, bs) ? :
++		    crypto_shash_export(shash, opad);
+ 
+ 		if (rc == 0)
+ 			mv_hash_init_ivs(ctx, ipad, opad);
+-- 
+1.9.1
+

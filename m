@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:33725 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753415AbaIOHbr (ORCPT
+Received: from mail-pd0-f170.google.com ([209.85.192.170]:44142 "EHLO
+	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753501AbaIOHb7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 03:31:47 -0400
-Received: by mail-pd0-f173.google.com with SMTP id ft15so5704016pdb.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:47 -0700 (PDT)
+	Mon, 15 Sep 2014 03:31:59 -0400
+Received: by mail-pd0-f170.google.com with SMTP id fp1so5639543pdb.15
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:59 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -20,11 +20,10 @@ Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
         thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
         torvalds@linux-foundation.org,
         =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
-        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu,
-        gmazyland@gmail.com
-Subject: [PATCH v3 08/12] crypto, dm: LLVMLinux: Remove VLAIS usage from dm-crypt
-Date: Mon, 15 Sep 2014 00:30:30 -0700
-Message-Id: <1410766234-1634-9-git-send-email-behanw@converseincode.com>
+        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
+Subject: [PATCH v3 12/12] crypto: LLVMLinux: Remove VLAIS usage from crypto/testmgr.c
+Date: Mon, 15 Sep 2014 00:30:34 -0700
+Message-Id: <1410766234-1634-13-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -43,102 +42,37 @@ The new code can be compiled with both gcc and clang.
 Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
 Cc: pageexec@freemail.hu
-Cc: gmazyland@gmail.com
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Herbert Xu <herbert@gondor.apana.org.au>
 ---
- drivers/md/dm-crypt.c | 34 ++++++++++++++--------------------
- 1 file changed, 14 insertions(+), 20 deletions(-)
+ crypto/testmgr.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
-index cd15e08..fc93b93 100644
---- a/drivers/md/dm-crypt.c
-+++ b/drivers/md/dm-crypt.c
-@@ -526,29 +526,26 @@ static int crypt_iv_lmk_one(struct crypt_config *cc, u8 *iv,
- 			    u8 *data)
- {
- 	struct iv_lmk_private *lmk = &cc->iv_gen_private.lmk;
--	struct {
--		struct shash_desc desc;
--		char ctx[crypto_shash_descsize(lmk->hash_tfm)];
--	} sdesc;
-+	SHASH_DESC_ON_STACK(desc, lmk->hash_tfm);
- 	struct md5_state md5state;
- 	__le32 buf[4];
- 	int i, r;
- 
--	sdesc.desc.tfm = lmk->hash_tfm;
--	sdesc.desc.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
-+	desc->tfm = lmk->hash_tfm;
-+	desc->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
- 
--	r = crypto_shash_init(&sdesc.desc);
-+	r = crypto_shash_init(desc);
- 	if (r)
- 		return r;
- 
- 	if (lmk->seed) {
--		r = crypto_shash_update(&sdesc.desc, lmk->seed, LMK_SEED_SIZE);
-+		r = crypto_shash_update(desc, lmk->seed, LMK_SEED_SIZE);
- 		if (r)
- 			return r;
+diff --git a/crypto/testmgr.c b/crypto/testmgr.c
+index ac2b631..b959c0c 100644
+--- a/crypto/testmgr.c
++++ b/crypto/testmgr.c
+@@ -1714,16 +1714,14 @@ static int alg_test_crc32c(const struct alg_test_desc *desc,
  	}
  
- 	/* Sector is always 512B, block size 16, add data of blocks 1-31 */
--	r = crypto_shash_update(&sdesc.desc, data + 16, 16 * 31);
-+	r = crypto_shash_update(desc, data + 16, 16 * 31);
- 	if (r)
- 		return r;
+ 	do {
+-		struct {
+-			struct shash_desc shash;
+-			char ctx[crypto_shash_descsize(tfm)];
+-		} sdesc;
++		SHASH_DESC_ON_STACK(shash, tfm);
++		u32 *ctx = (u32 *)shash_desc_ctx(shash);
  
-@@ -557,12 +554,12 @@ static int crypt_iv_lmk_one(struct crypt_config *cc, u8 *iv,
- 	buf[1] = cpu_to_le32((((u64)dmreq->iv_sector >> 32) & 0x00FFFFFF) | 0x80000000);
- 	buf[2] = cpu_to_le32(4024);
- 	buf[3] = 0;
--	r = crypto_shash_update(&sdesc.desc, (u8 *)buf, sizeof(buf));
-+	r = crypto_shash_update(desc, (u8 *)buf, sizeof(buf));
- 	if (r)
- 		return r;
+-		sdesc.shash.tfm = tfm;
+-		sdesc.shash.flags = 0;
++		shash->tfm = tfm;
++		shash->flags = 0;
  
- 	/* No MD5 padding here */
--	r = crypto_shash_export(&sdesc.desc, &md5state);
-+	r = crypto_shash_export(desc, &md5state);
- 	if (r)
- 		return r;
- 
-@@ -679,10 +676,7 @@ static int crypt_iv_tcw_whitening(struct crypt_config *cc,
- 	struct iv_tcw_private *tcw = &cc->iv_gen_private.tcw;
- 	u64 sector = cpu_to_le64((u64)dmreq->iv_sector);
- 	u8 buf[TCW_WHITENING_SIZE];
--	struct {
--		struct shash_desc desc;
--		char ctx[crypto_shash_descsize(tcw->crc32_tfm)];
--	} sdesc;
-+	SHASH_DESC_ON_STACK(desc, tcw->crc32_tfm);
- 	int i, r;
- 
- 	/* xor whitening with sector number */
-@@ -691,16 +685,16 @@ static int crypt_iv_tcw_whitening(struct crypt_config *cc,
- 	crypto_xor(&buf[8], (u8 *)&sector, 8);
- 
- 	/* calculate crc32 for every 32bit part and xor it */
--	sdesc.desc.tfm = tcw->crc32_tfm;
--	sdesc.desc.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
-+	desc->tfm = tcw->crc32_tfm;
-+	desc->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
- 	for (i = 0; i < 4; i++) {
--		r = crypto_shash_init(&sdesc.desc);
-+		r = crypto_shash_init(desc);
- 		if (r)
- 			goto out;
--		r = crypto_shash_update(&sdesc.desc, &buf[i * 4], 4);
-+		r = crypto_shash_update(desc, &buf[i * 4], 4);
- 		if (r)
- 			goto out;
--		r = crypto_shash_final(&sdesc.desc, &buf[i * 4]);
-+		r = crypto_shash_final(desc, &buf[i * 4]);
- 		if (r)
- 			goto out;
- 	}
+-		*(u32 *)sdesc.ctx = le32_to_cpu(420553207);
+-		err = crypto_shash_final(&sdesc.shash, (u8 *)&val);
++		*ctx = le32_to_cpu(420553207);
++		err = crypto_shash_final(shash, (u8 *)&val);
+ 		if (err) {
+ 			printk(KERN_ERR "alg: crc32c: Operation failed for "
+ 			       "%s: %d\n", driver, err);
 -- 
 1.9.1
 

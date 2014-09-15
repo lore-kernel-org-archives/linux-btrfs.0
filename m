@@ -1,86 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.mystoragebox.com ([173.234.39.99]:48817 "EHLO
-	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753256AbaIOPeH (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46897 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752552AbaIOPzG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 11:34:07 -0400
-Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.9])
-	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.83)
-	(envelope-from <markm-lists@intellasoft.net>)
-	id 1XTYI2-0004ii-2m
-	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 11:34:06 -0400
-Message-ID: <541706ED.4010901@intellasoft.net>
-Date: Mon, 15 Sep 2014 11:34:05 -0400
-From: Mark Murawski <markm-lists@intellasoft.net>
+	Mon, 15 Sep 2014 11:55:06 -0400
+Message-ID: <54170BCA.7070900@fb.com>
+Date: Mon, 15 Sep 2014 11:54:50 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs balance enospc
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Sam Thursfield <sam.thursfield@codethink.co.uk>,
+        <linux-btrfs@vger.kernel.org>
+CC: <baserock-dev@baserock.org>
+Subject: Re: Unable to mount multiple subvolumes of a single disk
+References: <5417022A.5000101@codethink.co.uk>
+In-Reply-To: <5417022A.5000101@codethink.co.uk>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I should have plenty of space for this operation, but it fails....
+On 09/15/2014 11:13 AM, Sam Thursfield wrote:
+> Hi!
+> 
+> I'm having an issue with the 3.17rc5 kernel which prevents having
+> multiple subvolumes of the same disk mounted.
+> 
+> I'm not sure exactly the cause. I thought it might be because in my
+> system the root file system is itself a subvolume of the disk I'm trying
+> to mount. But if I create a second disk image with two subvolumes, the
+> same thing occurs -- I can only mount one of them at a time.
+> 
+> I've attached the output of a few commands, please let me know if you
+> want more info (I'm not subscribed to the list, please keep me in To:).
+> 
+> We've bisected and found that the exact commit that changed the
+> behaviour is this one:
+> https://urldefense.proofpoint.com/v1/url?u=https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id%3Db96de000bc8bc9688b3a2abea4332bd57648a49f&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=qVtp3yxxUd8uElAkp118K4Bd0oZfeUOC%2BKUy3e6rRlA%3D%0A&s=0d2623956de100adc1185d2b75e9114384572b88c0330e74924baa1a2bce8d02
+> 
+> 
+> I'm afraid I'm not familiar with the Btrfs code base and so I don't
+> understand the exact meaning of the comments in that commit.
 
-cartman {~} root# btrfs filesystem df /
-Data, RAID1: total=7.59GiB, used=7.00GiB
-System, RAID1: total=32.00MiB, used=4.00KiB
-Metadata, RAID1: total=1.00GiB, used=438.45MiB
-unknown, single: total=148.00MiB, used=0.00
+Anand Jain is working on this in a separate thread.  I'll make sure the
+fix goes into the next rc, thanks for all the time spent bisecting.
 
-Filesystem                                             Type   Size Used 
-Avail Use% Mounted on
-/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa btrfs   19G 15G  
-3.1G  84% /
-
-cartman {~} root# btrfs fi show
-Label: 'Root'  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
-        Total devices 2 FS bytes used 7.43GiB
-        devid    1 size 9.31GiB used 8.06GiB path 
-/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
-        devid    3 size 9.31GiB used 8.06GiB path /dev/sdd6
-
-Label: 'Storage'  uuid: 179749c1-1bfb-4f28-9c69-72126c96cdef
-        Total devices 8 FS bytes used 1.83TiB
-        devid    1 size 149.05GiB used 149.04GiB path /dev/sde
-        devid    2 size 149.05GiB used 149.05GiB path /dev/sdh
-        devid    3 size 465.76GiB used 465.76GiB path /dev/sdc
-        devid    4 size 465.76GiB used 461.70GiB path /dev/sdf
-        devid    5 size 465.76GiB used 461.00GiB path /dev/sda
-        devid    6 size 465.76GiB used 461.00GiB path /dev/sdb
-        devid    7 size 920.34GiB used 843.00GiB path /dev/sdg7
-        devid    9 size 1.81TiB used 755.00GiB path /dev/sdd7
-
-Btrfs v3.16
-cartman {~} root# btrfs balance start /
-ERROR: error during balancing '/' - No space left on device
-There may be more info in syslog - try dmesg | tail
-
-Sep 13 16:35:42 localhost kernel: BTRFS info (device sdg6): found 33544 
-extents
-Sep 13 16:35:51 localhost kernel: BTRFS info (device sdg6): found 33541 
-extents
-Sep 13 16:35:52 localhost kernel: BTRFS info (device sdg6): relocating 
-block group 80153214976 flags 18
-Sep 13 16:35:53 localhost kernel: BTRFS info (device sdg6): found 1 extents
-Sep 13 16:35:54 localhost kernel: BTRFS info (device sdg6): relocating 
-block group 79680700416 flags 17
-Sep 13 16:36:03 localhost kernel: BTRFS info (device sdg6): found 32545 
-extents
-Sep 13 16:36:09 localhost kernel: BTRFS info (device sdg6): found 32545 
-extents
-Sep 13 16:36:10 localhost kernel: BTRFS info (device sdg6): relocating 
-block group 79412264960 flags 20
-Sep 13 16:36:12 localhost kernel: BTRFS info (device sdg6): found 1114 
-extents
-Sep 13 16:36:13 localhost kernel: BTRFS info (device sdg6): relocating 
-block group 79143829504 flags 20
-Sep 13 16:36:37 localhost kernel: BTRFS info (device sdg6): found 59076 
-extents
-Sep 13 16:36:38 localhost kernel: BTRFS info (device sdg6): relocating 
-block group 78875394048 flags 20
-Sep 13 16:37:01 localhost kernel: BTRFS info (device sdg6): found 59268 
-extents
-Sep 13 16:37:02 localhost kernel: BTRFS info (device sdg6): 6 enospc 
-errors during balance
+-chris
 

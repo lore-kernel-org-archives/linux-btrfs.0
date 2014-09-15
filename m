@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f172.google.com ([209.85.192.172]:48254 "EHLO
-	mail-pd0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753373AbaIOHbc (ORCPT
+Received: from mail-pd0-f173.google.com ([209.85.192.173]:33725 "EHLO
+	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753415AbaIOHbr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 03:31:32 -0400
-Received: by mail-pd0-f172.google.com with SMTP id v10so5728157pde.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:32 -0700 (PDT)
+	Mon, 15 Sep 2014 03:31:47 -0400
+Received: by mail-pd0-f173.google.com with SMTP id ft15so5704016pdb.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 00:31:47 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -19,10 +19,12 @@ Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
         neilb@suse.de, qat-linux@intel.com, serge@hallyn.com,
         thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
         torvalds@linux-foundation.org,
-        Behan Webster <behanw@converseincode.com>
-Subject: [PATCH v3 04/12] crypto: LLVMLinux: Remove VLAIS from crypto/mv_cesa.c
-Date: Mon, 15 Sep 2014 00:30:26 -0700
-Message-Id: <1410766234-1634-5-git-send-email-behanw@converseincode.com>
+        =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
+        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu,
+        gmazyland@gmail.com
+Subject: [PATCH v3 08/12] crypto, dm: LLVMLinux: Remove VLAIS usage from dm-crypt
+Date: Mon, 15 Sep 2014 00:30:30 -0700
+Message-Id: <1410766234-1634-9-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -30,7 +32,7 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Behan Webster <behanw@converseincode.com>
+From: Jan-Simon Möller <dl9pf@gmx.de>
 
 Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
 compliant equivalent. This patch allocates the appropriate amount of memory
@@ -38,99 +40,105 @@ using a char array using the SHASH_DESC_ON_STACK macro.
 
 The new code can be compiled with both gcc and clang.
 
+Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
-Reviewed-by: Mark Charlebois <charlebm@gmail.com>
-Reviewed-by: Jan-Simon Möller <dl9pf@gmx.de>
+Cc: pageexec@freemail.hu
+Cc: gmazyland@gmail.com
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Herbert Xu <herbert@gondor.apana.org.au>
 ---
- drivers/crypto/mv_cesa.c | 41 ++++++++++++++++++-----------------------
- 1 file changed, 18 insertions(+), 23 deletions(-)
+ drivers/md/dm-crypt.c | 34 ++++++++++++++--------------------
+ 1 file changed, 14 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/crypto/mv_cesa.c b/drivers/crypto/mv_cesa.c
-index 29d0ee5..032c72c 100644
---- a/drivers/crypto/mv_cesa.c
-+++ b/drivers/crypto/mv_cesa.c
-@@ -402,26 +402,23 @@ static int mv_hash_final_fallback(struct ahash_request *req)
+diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
+index cd15e08..fc93b93 100644
+--- a/drivers/md/dm-crypt.c
++++ b/drivers/md/dm-crypt.c
+@@ -526,29 +526,26 @@ static int crypt_iv_lmk_one(struct crypt_config *cc, u8 *iv,
+ 			    u8 *data)
  {
- 	const struct mv_tfm_hash_ctx *tfm_ctx = crypto_tfm_ctx(req->base.tfm);
- 	struct mv_req_hash_ctx *req_ctx = ahash_request_ctx(req);
+ 	struct iv_lmk_private *lmk = &cc->iv_gen_private.lmk;
 -	struct {
--		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(tfm_ctx->fallback)];
--	} desc;
-+	SHASH_DESC_ON_STACK(shash, tfm_ctx->fallback);
- 	int rc;
+-		struct shash_desc desc;
+-		char ctx[crypto_shash_descsize(lmk->hash_tfm)];
+-	} sdesc;
++	SHASH_DESC_ON_STACK(desc, lmk->hash_tfm);
+ 	struct md5_state md5state;
+ 	__le32 buf[4];
+ 	int i, r;
  
--	desc.shash.tfm = tfm_ctx->fallback;
--	desc.shash.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
-+	shash->tfm = tfm_ctx->fallback;
-+	shash->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
- 	if (unlikely(req_ctx->first_hash)) {
--		crypto_shash_init(&desc.shash);
--		crypto_shash_update(&desc.shash, req_ctx->buffer,
-+		crypto_shash_init(shash);
-+		crypto_shash_update(shash, req_ctx->buffer,
- 				    req_ctx->extra_bytes);
- 	} else {
- 		/* only SHA1 for now....
- 		 */
--		rc = mv_hash_import_sha1_ctx(req_ctx, &desc.shash);
-+		rc = mv_hash_import_sha1_ctx(req_ctx, shash);
- 		if (rc)
+-	sdesc.desc.tfm = lmk->hash_tfm;
+-	sdesc.desc.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
++	desc->tfm = lmk->hash_tfm;
++	desc->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
+ 
+-	r = crypto_shash_init(&sdesc.desc);
++	r = crypto_shash_init(desc);
+ 	if (r)
+ 		return r;
+ 
+ 	if (lmk->seed) {
+-		r = crypto_shash_update(&sdesc.desc, lmk->seed, LMK_SEED_SIZE);
++		r = crypto_shash_update(desc, lmk->seed, LMK_SEED_SIZE);
+ 		if (r)
+ 			return r;
+ 	}
+ 
+ 	/* Sector is always 512B, block size 16, add data of blocks 1-31 */
+-	r = crypto_shash_update(&sdesc.desc, data + 16, 16 * 31);
++	r = crypto_shash_update(desc, data + 16, 16 * 31);
+ 	if (r)
+ 		return r;
+ 
+@@ -557,12 +554,12 @@ static int crypt_iv_lmk_one(struct crypt_config *cc, u8 *iv,
+ 	buf[1] = cpu_to_le32((((u64)dmreq->iv_sector >> 32) & 0x00FFFFFF) | 0x80000000);
+ 	buf[2] = cpu_to_le32(4024);
+ 	buf[3] = 0;
+-	r = crypto_shash_update(&sdesc.desc, (u8 *)buf, sizeof(buf));
++	r = crypto_shash_update(desc, (u8 *)buf, sizeof(buf));
+ 	if (r)
+ 		return r;
+ 
+ 	/* No MD5 padding here */
+-	r = crypto_shash_export(&sdesc.desc, &md5state);
++	r = crypto_shash_export(desc, &md5state);
+ 	if (r)
+ 		return r;
+ 
+@@ -679,10 +676,7 @@ static int crypt_iv_tcw_whitening(struct crypt_config *cc,
+ 	struct iv_tcw_private *tcw = &cc->iv_gen_private.tcw;
+ 	u64 sector = cpu_to_le64((u64)dmreq->iv_sector);
+ 	u8 buf[TCW_WHITENING_SIZE];
+-	struct {
+-		struct shash_desc desc;
+-		char ctx[crypto_shash_descsize(tcw->crc32_tfm)];
+-	} sdesc;
++	SHASH_DESC_ON_STACK(desc, tcw->crc32_tfm);
+ 	int i, r;
+ 
+ 	/* xor whitening with sector number */
+@@ -691,16 +685,16 @@ static int crypt_iv_tcw_whitening(struct crypt_config *cc,
+ 	crypto_xor(&buf[8], (u8 *)&sector, 8);
+ 
+ 	/* calculate crc32 for every 32bit part and xor it */
+-	sdesc.desc.tfm = tcw->crc32_tfm;
+-	sdesc.desc.flags = CRYPTO_TFM_REQ_MAY_SLEEP;
++	desc->tfm = tcw->crc32_tfm;
++	desc->flags = CRYPTO_TFM_REQ_MAY_SLEEP;
+ 	for (i = 0; i < 4; i++) {
+-		r = crypto_shash_init(&sdesc.desc);
++		r = crypto_shash_init(desc);
+ 		if (r)
+ 			goto out;
+-		r = crypto_shash_update(&sdesc.desc, &buf[i * 4], 4);
++		r = crypto_shash_update(desc, &buf[i * 4], 4);
+ 		if (r)
+ 			goto out;
+-		r = crypto_shash_final(&sdesc.desc, &buf[i * 4]);
++		r = crypto_shash_final(desc, &buf[i * 4]);
+ 		if (r)
  			goto out;
  	}
--	rc = crypto_shash_final(&desc.shash, req->result);
-+	rc = crypto_shash_final(shash, req->result);
- out:
- 	return rc;
- }
-@@ -794,23 +791,21 @@ static int mv_hash_setkey(struct crypto_ahash *tfm, const u8 * key,
- 	ss = crypto_shash_statesize(ctx->base_hash);
- 
- 	{
--		struct {
--			struct shash_desc shash;
--			char ctx[crypto_shash_descsize(ctx->base_hash)];
--		} desc;
-+		SHASH_DESC_ON_STACK(shash, ctx->base_hash);
-+
- 		unsigned int i;
- 		char ipad[ss];
- 		char opad[ss];
- 
--		desc.shash.tfm = ctx->base_hash;
--		desc.shash.flags = crypto_shash_get_flags(ctx->base_hash) &
-+		shash->tfm = ctx->base_hash;
-+		shash->flags = crypto_shash_get_flags(ctx->base_hash) &
- 		    CRYPTO_TFM_REQ_MAY_SLEEP;
- 
- 		if (keylen > bs) {
- 			int err;
- 
- 			err =
--			    crypto_shash_digest(&desc.shash, key, keylen, ipad);
-+			    crypto_shash_digest(shash, key, keylen, ipad);
- 			if (err)
- 				return err;
- 
-@@ -826,12 +821,12 @@ static int mv_hash_setkey(struct crypto_ahash *tfm, const u8 * key,
- 			opad[i] ^= 0x5c;
- 		}
- 
--		rc = crypto_shash_init(&desc.shash) ? :
--		    crypto_shash_update(&desc.shash, ipad, bs) ? :
--		    crypto_shash_export(&desc.shash, ipad) ? :
--		    crypto_shash_init(&desc.shash) ? :
--		    crypto_shash_update(&desc.shash, opad, bs) ? :
--		    crypto_shash_export(&desc.shash, opad);
-+		rc = crypto_shash_init(shash) ? :
-+		    crypto_shash_update(shash, ipad, bs) ? :
-+		    crypto_shash_export(shash, ipad) ? :
-+		    crypto_shash_init(shash) ? :
-+		    crypto_shash_update(shash, opad, bs) ? :
-+		    crypto_shash_export(shash, opad);
- 
- 		if (rc == 0)
- 			mv_hash_init_ivs(ctx, ipad, opad);
 -- 
 1.9.1
 

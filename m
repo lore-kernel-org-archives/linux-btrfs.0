@@ -1,79 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.mystoragebox.com ([173.234.39.99]:59530 "EHLO
-	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752379AbaIPCXw (ORCPT
+Received: from mail-ob0-f176.google.com ([209.85.214.176]:42674 "EHLO
+	mail-ob0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750938AbaIPEdL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 22:23:52 -0400
-Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.80])
-	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.83)
-	(envelope-from <markm-lists@intellasoft.net>)
-	id 1XTiQm-0001rG-SN
-	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 22:23:49 -0400
-Message-ID: <54179F33.2010600@intellasoft.net>
-Date: Mon, 15 Sep 2014 22:23:47 -0400
-From: Mark Murawski <markm-lists@intellasoft.net>
+	Tue, 16 Sep 2014 00:33:11 -0400
+Received: by mail-ob0-f176.google.com with SMTP id wo20so1223992obc.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 21:33:09 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs balance enospc
-References: <541706ED.4010901@intellasoft.net> <20140915170722.GA9160@sune>	<541723EA.6010608@intellasoft.net>	<657EBB8A-8957-4E07-829E-171A1FF702E8@colorremedies.com> <pan$21d6d$91a64041$49bf8e34$6b7c2e69@cox.net>
-In-Reply-To: <pan$21d6d$91a64041$49bf8e34$6b7c2e69@cox.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Date: Tue, 16 Sep 2014 12:33:09 +0800
+Message-ID: <CAMVG2svU-tbpgJ5MqjnS=XGBNZcwfPd0WGMkp1aN4W0M1ewm5A@mail.gmail.com>
+Subject: 3.14.18 btrfs_set_item_key_safe BUG
+From: Daniel J Blueman <daniel@quora.org>
+To: Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wish i could follow your procedure, but this wasn't an ext conversion.
+On 3.14.18 with a BTRFS partition mounted
+noatime,autodefrag,compress=lzo, I see the second assertion in
+btrfs_set_item_key_safe() trip:
 
-I made this with mkfs for btrfs with kernel circa 3.8ish
+void btrfs_set_item_key_safe(struct btrfs_root *root, struct btrfs_path *path,
+                             struct btrfs_key *new_key)
+{
+        struct btrfs_disk_key disk_key;
+        struct extent_buffer *eb;
+        int slot;
 
+        eb = path->nodes[0];
+        slot = path->slots[0];
+        if (slot > 0) {
+                btrfs_item_key(eb, &disk_key, slot - 1);
+                BUG_ON(comp_keys(&disk_key, new_key) >= 0);
+        }
+        if (slot < btrfs_header_nritems(eb) - 1) {
+                btrfs_item_key(eb, &disk_key, slot + 1);
+                BUG_ON(comp_keys(&disk_key, new_key) <= 0); <---
+        }
 
-On 09/15/14 20:08, Duncan wrote:
-> Chris Murphy posted on Mon, 15 Sep 2014 14:54:57 -0600 as excerpted:
->
->>> I still get enospc after a balance with a filter, and then a regular
->>> balance:
->>>
->>> cartman {~} root# btrfs balance start /
->>> ERROR: error during balancing '/' - No space left on device
->>
->> Maybe try mount option enospc_debug and retry, see if you get more
->> information in dmesg.
->>
->> I'm not sure if a balance in this case wants to create a new data and
->> metadata chunk (on each device), or if it can start without creating any
->> chunks. If it wants to create new chunks, it's 1GiB for data, and 256MiB
->> for metadata. That's 1.256GiB but you only have 1.25GiB unallocated on
->> each device: size 9.31GiB minus used 8.06GiB.
->
-> Another possibility that has hit a few people:
->
-> Did you (MM/OP not CM) convert that filesystem from ext* to btrfs?  If
-> so, read on.  If not, this doesn't apply so you may skip it.
->
-> Assuming such a conversion, did you delete the subvolume containing the
-> original ext* yet, or not?  If not, that may be the problem, because that
-> subvolume must be left intact in ordered to allow rollback to ext* if
-> desired.  If you know you won't be rolling back, delete the ext* reserved
-> subvolume as described on the wiki.
->
-> Meanwhile, after deleting that subvolume, be sure to complete the defrag
-> and balance as suggested on the wiki, because failing to do so can lead
-> to other problems later.  Basically, the biggest extent size supported by
-> btrfs is 1 GiB, the size of a btrfs data chunk, while ext* supports
-> larger (unlimited size?) extents.  Failing to complete the defrag in
-> particular as suggested can mean large files with extents > 1 GiB in
-> size, which gives btrfs balance indigestion since it expects to see only
-> 1 GiB or smaller extents.  Several folks who converted from ext3/4 have
-> reported failed balances due to these too large extents, and fixing the
-> problem later can require manually moving one-by-one all files large
-> enough to be candidates for the problem (thus files > 1 GiB) out of btrfs
-> and back in, thus resulting in properly chunk-split extents when the file
-> is moved back to btrfs.  Everyone who has reported this problem so far,
-> has also reported that the move out and back in process solved the
-> problem for them, but if there's lots of such files it can be a pain, and
-> doing the defrag on the formerly ext* files before starting to use the
-> now btrfs for other things, ESPECIALLY before trying to snapshot affected
-> subvolumes since that locks the problem in place until those snapshots
-> are deleted, is definitely preferred. =:^)
->
+Full backtrace:
 
+kernel BUG at /home/apw/COD/linux/fs/btrfs/ctree.c:3215!
+invalid opcode: 0000 [#1] SMP
+Modules linked in: nfsd nfs_acl auth_rpcgss nfs fscache lockd sunrpc
+bonding psmouse serio_raw joydev video mac_hid lpc_ich lp parport
+hid_generic usbhid hid bcache btrfs raid10 raid456 async_raid6_recov
+async_pq raid6_pq async_xor ahci xor async_memcpy libahci async_tx
+raid1 e1000e ptp pps_core raid0 multipath linear
+CPU: 0 PID: 6742 Comm: btrfs-endio-wri Not tainted
+3.14.18-031418-generic #201409060201
+Hardware name: Supermicro X9SCL/X9SCM/X9SCL/X9SCM, BIOS 2.0b 09/17/2012
+task: ffff880418609d70 ti: ffff880121e92000 task.ti: ffff880121e92000
+RIP: 0010:[<ffffffffa01693f1>] [<ffffffffa01693f1>]
+btrfs_set_item_key_safe+0x141/0x150 [btrfs]
+RSP: 0018:ffff880121e93b28 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000011 RCX: 000000003e600000
+RDX: 0000000000000000 RSI: ffff880121e93c67 RDI: ffff880121e93b07
+RBP: ffff880121e93b88 R08: 0000000000001000 R09: ffff880121e93b48
+R10: 0000000000000000 R11: 00000000ffffffff R12: ffff88009ce9bcc0
+R13: ffff880121e93c67 R14: ffff880121e93b47 R15: ffff8804145f7c60
+FS: 0000000000000000(0000) GS:ffff88042fc00000(0000) knlGS:0000000000000000
+CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff34a8d1890 CR3: 0000000001c0d000 CR4: 00000000001407f0
+Stack:
+ ffff880121e93b88 ffff880405ca0000 ffff8803140d1000 d900000000000000
+ 6c0000000000f6bf 000000003e600000 ffff880121e93b88 ffff8804145f7c60
+ ffff88009ce9bcc0 000000003e5e0000 0000000000000001 0000000000000c46
+Call Trace:
+ [<ffffffffa01a1868>] __btrfs_drop_extents+0x5a8/0xc80 [btrfs]
+ [<ffffffffa0165e00>] ? tree_mod_log_free_eb+0x240/0x260 [btrfs]
+ [<ffffffffa0191d6b>]
+insert_reserved_file_extent.constprop.60+0xab/0x310 [btrfs]
+ [<ffffffffa018ee10>] ? start_transaction.part.35+0x80/0x540 [btrfs]
+ [<ffffffffa0198565>] btrfs_finish_ordered_io+0x465/0x500 [btrfs]
+ [<ffffffffa0198615>] finish_ordered_fn+0x15/0x20 [btrfs]
+ [<ffffffffa01bd8f0>] worker_loop+0xa0/0x330 [btrfs]
+ [<ffffffffa01bd850>] ? check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+ [<ffffffff810930c9>] kthread+0xc9/0xe0
+ [<ffffffff81093000>] ? flush_kthread_worker+0xb0/0xb0
+ [<ffffffff81784abc>] ret_from_fork+0x7c/0xb0
+ [<ffffffff81093000>] ? flush_kthread_worker+0xb0/0xb0
+Code: 00 00 4c 89 f6 4c 89 e7 48 98 48 8d 04 80 48 8d 54 80 65 e8 b2
+6c 04 00 4c 89 ee 4c 89 f7 e8 d7 f4 ff ff 85 c0 0f 8f 5c ff ff ff <0f>
+0b 0f 0b 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 55
+
+After rebooting, btrfs check (btrfs-tools 3.14.1-1) shows:
+
+checking extents
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 5 inode 16170969 errors 80, file extent overlap
+root 5 inode 17592262 errors 100, file extent discount
+found 752124326140 bytes used err is 1
+total csum bytes: 2415994160
+total tree bytes: 18200276992
+total fs tree bytes: 14156120064
+total extent tree bytes: 1240526848
+btree space waste bytes: 2998597745
+file data blocks allocated: 2473980772352
+ referenced 2731118456832
+
+Is it better to not trust compression, autodefrag, or is this
+filesystem corruption from previous issues, so I should rebuild the
+FS?
+
+Thanks,
+  Daniel
+-- 
+Daniel J Blueman

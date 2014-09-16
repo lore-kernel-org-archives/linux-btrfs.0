@@ -1,81 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from datenkhaos.de ([81.89.99.198]:39129 "EHLO datenkhaos.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758183AbaIOWSH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 18:18:07 -0400
-Date: Tue, 16 Sep 2014 00:17:57 +0200
-From: Johannes Hirte <johannes.hirte@datenkhaos.de>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: "xavier.gnata@gmail.com" <xavier.gnata@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
- breaks subvol mount
-Message-ID: <20140916001757.62ea5219@datenkhaos.de>
-In-Reply-To: <54172465.80002@oracle.com>
-References: <20140911002241.201bc6c2@datenkhaos.de>
-	<54110AEC.6040301@oracle.com>
-	<54135AE7.40400@gmail.com>
-	<5413D7E5.6080905@oracle.com>
-	<20140913195525.333f93a4@datenkhaos.de>
-	<20140913232320.64fd189c@datenkhaos.de>
-	<5416DC7A.1070608@oracle.com>
-	<20140915191445.35ad18d2@datenkhaos.de>
-	<54172465.80002@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:18867 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752933AbaIPJtx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 05:49:53 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: =?UTF-8?q?Toralf=20F=C3=B6rster?= <toralf.foerster@gmx.de>
+Subject: [PATCH] Btrfs: fix up bounds checking in lseek
+Date: Tue, 16 Sep 2014 17:49:30 +0800
+Message-Id: <1410860970-5578-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 16 Sep 2014 01:39:49 +0800
-Anand Jain <Anand.Jain@oracle.com> wrote:
+An user reported this, it is because that lseek's SEEK_SET/SEEK_CUR/SEEK_END
+allow a negative value for @offset, but btrfs's SEEK_DATA/SEEK_HOLE don't
+prepare for that and convert the negative @offset into unsigned type,
+so we get (end < start) warning.
 
-> 
-> 
-> On 16/09/2014 01:14, Johannes Hirte wrote:
-> > On Mon, 15 Sep 2014 20:32:58 +0800
-> > Anand Jain <Anand.Jain@oracle.com> wrote:
-> >
-> >>
-> >>
-> >> Hi Johannes,
-> >>
-> >>    Can I have you this tested.. ? Thanks.
-> >>
-> >>
-> >> -------
-> >> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> >> index e9676a4..1224b61 100644
-> >> --- a/fs/btrfs/volumes.c
-> >> +++ b/fs/btrfs/volumes.c
-> >> @@ -533,7 +533,7 @@ static noinline int device_list_add(const char
-> >> *path,
-> >>                    * the btrfs dev scan cli, after FS has been
-> >> mounted. */
-> >>                   if (fs_devices->opened) {
-> >> -                       return -EBUSY;
-> >> +                       goto out;
-> >>                   } else {
-> >>                           /*
-> >>                            * That is if the FS is _not_ mounted
-> >> and if you @@ -566,6 +566,7 @@ static noinline int
-> >> device_list_add(const char *path, if (!fs_devices->opened)
-> >>                   device->generation = found_transid;
-> >>
-> >> +out:
-> >>           *fs_devices_ret = fs_devices;
-> >>
-> >>           return ret;
-> >> -------
-> >
-> > With this change, it works again without initramfs.
-> 
->   Thanks. I am bit confused, is there any configuration that is
->   still not working, even with the above changes.
-> 
-> Anand
+[ 1269.835374] ------------[ cut here ]------------
+[ 1269.836809] WARNING: CPU: 0 PID: 1241 at fs/btrfs/extent_io.c:430 insert_state+0x11d/0x140()
+[ 1269.838816] BTRFS: end < start 4094 18446744073709551615
+[ 1269.840334] CPU: 0 PID: 1241 Comm: a.out Tainted: G        W      3.16.0+ #306
+[ 1269.858229] Call Trace:
+[ 1269.858612]  [<ffffffff81801a69>] dump_stack+0x4e/0x68
+[ 1269.858952]  [<ffffffff8107894c>] warn_slowpath_common+0x8c/0xc0
+[ 1269.859416]  [<ffffffff81078a36>] warn_slowpath_fmt+0x46/0x50
+[ 1269.859929]  [<ffffffff813b0fbd>] insert_state+0x11d/0x140
+[ 1269.860409]  [<ffffffff813b1396>] __set_extent_bit+0x3b6/0x4e0
+[ 1269.860805]  [<ffffffff813b21c7>] lock_extent_bits+0x87/0x200
+[ 1269.861697]  [<ffffffff813a5b28>] btrfs_file_llseek+0x148/0x2a0
+[ 1269.862168]  [<ffffffff811f201e>] SyS_lseek+0xae/0xc0
+[ 1269.862620]  [<ffffffff8180b212>] system_call_fastpath+0x16/0x1b
+[ 1269.862970] ---[ end trace 4d33ea885832054b ]---
 
-At moment, I'm not aware of any. But I will test the remaining systems
-I have.
+This assumes that btrfs starts finding DATA/HOLE from the beginning of file
+if the assigned @offset is negative.
 
-regards,
-  Johannes
+Also we add alignment for lock_extent_bits 's range.
+
+Reported-by: Toralf Förster <toralf.foerster@gmx.de>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/file.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index ff1cc03..68dd92c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2621,23 +2621,28 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct extent_map *em = NULL;
+ 	struct extent_state *cached_state = NULL;
+-	u64 lockstart = *offset;
+-	u64 lockend = i_size_read(inode);
+-	u64 start = *offset;
+-	u64 len = i_size_read(inode);
++	u64 lockstart;
++	u64 lockend;
++	u64 start;
++	u64 len;
+ 	int ret = 0;
+ 
+-	lockend = max_t(u64, root->sectorsize, lockend);
++	if (inode->i_size == 0)
++		return -ENXIO;
++
++	/*
++	 * *offset can be negative, in this case we start finding DATA/HOLE from
++	 * the very start of the file.
++	 */
++	start = max_t(loff_t, 0, *offset);
++
++	lockstart = round_down(start, root->sectorsize);
++	lockend = round_up(i_size_read(inode), root->sectorsize);
+ 	if (lockend <= lockstart)
+ 		lockend = lockstart + root->sectorsize;
+-
+ 	lockend--;
+ 	len = lockend - lockstart + 1;
+ 
+-	len = max_t(u64, len, root->sectorsize);
+-	if (inode->i_size == 0)
+-		return -ENXIO;
+-
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
+ 			 &cached_state);
+ 
+-- 
+1.8.1.4
+

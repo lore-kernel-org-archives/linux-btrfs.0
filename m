@@ -1,81 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:44259 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754839AbaIPTg1 convert rfc822-to-8bit (ORCPT
+Received: from mail.mystoragebox.com ([173.234.39.99]:42954 "EHLO
+	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755305AbaIPTyn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 15:36:27 -0400
-Received: by mail-lb0-f177.google.com with SMTP id l4so472307lbv.22
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:36:25 -0700 (PDT)
+	Tue, 16 Sep 2014 15:54:43 -0400
+Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.80])
+	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.83)
+	(envelope-from <markm-lists@intellasoft.net>)
+	id 1XTypl-0002IF-RT
+	for linux-btrfs@vger.kernel.org; Tue, 16 Sep 2014 15:54:41 -0400
+Message-ID: <54189581.6050303@intellasoft.net>
+Date: Tue, 16 Sep 2014 15:54:41 -0400
+From: Mark Murawski <markm-lists@intellasoft.net>
 MIME-Version: 1.0
-In-Reply-To: <45CDD4CC-7486-4074-A8E1-4573C40F8462@colorremedies.com>
-References: <CAPDSe6sip7UR3kge=aNedn6T1xhQmcEQHFCSm=JGDEibtRkOLw@mail.gmail.com>
- <5F01E283-D95E-4F81-B358-6470ABD58C0D@colorremedies.com> <45CDD4CC-7486-4074-A8E1-4573C40F8462@colorremedies.com>
-From: Tony Murray <murraytony@gmail.com>
-Date: Tue, 16 Sep 2014 14:36:05 -0500
-Message-ID: <CAPDSe6s2_bk18wakrjUb5+z+2fmVu3jjFpPEE63dM_rmeMEOeA@mail.gmail.com>
-Subject: Re: unable to mount, tools segfault
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: btrfs balance enospc
+References: <54186A4B.60902@intellasoft.net> <54186A82.7070801@intellasoft.net> <5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com>
+In-Reply-To: <5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, that was really just a sample of output rather then a
-run-through of my steps.  Also, I captured an image of the partition
-so I could re-install my OS.
+The smart stats on the disk are fine.  The /dev/sdc messages are from me 
+playing around and pulling out the drive.   btrfs fi show, shows the 
+drive as missing, yet it's still trying to write to it.
 
-I did try btrfs-zero-log first, but not btrfs rescue super-recover (as
-I was afraid it might break my superblock).
+Basically my goal is to remove this drive and stick it in another box 
+and I can't get btrfs to move all the data off of it due to enospc.
 
-I will try the latest 3.17rc and btrfs-progs integration (one at a
-time) when I get a chance.
-
-# btrfs-zero-log btrfs.img
-Check tree block failed, want=688963584, have=0
-Check tree block failed, want=688963584, have=0
-Check tree block failedd, want=688963584, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
+I'm gonna try and move some data off and remove/balance again.
 
 
+On 09/16/14 13:26, Chris Murphy wrote:
+ > Better to use btrfs replace. But sequence wise you should do btrfs 
+device delete missing, which should then effectively do a balance to the 
+newly added device. So while the sequence isn't really correct, that's 
+probably not why you're getting this failure.
+ >
+ >
+ >
+ >>
+ >>
+ >> Sep 16 12:47:12 localhost kernel: BTRFS: bdev /dev/sdc6 errs: wr 2411,
+ >> rd 0, flush 38, corrupt 137167, gen 25
+ >
+ > Please post results of
+ > smartctl -x /dev/sdc
+ >
 
-#btrfs-debug-tree -R btrfs.img
-Check tree block failed, want=688963584, have=0
-Check tree block failed, want=688963584, have=0
-Check tree block failed, want=688963584, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
-Check tree block failed, want=686817280, have=0
-Check tree block failed, want=686817280, have=0
-Check tree block failed, want=686817280, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-Check tree block failed, want=687718400, have=0
-Check tree block failed, want=687718400, have=0
-Check tree block failed, want=687718400, have=0
-read block failed check_tree_block
-Couldn't setup log root tree
-unable to open btrfs.img
+ > I'd expect with Btrfs having problems writing to a device, that 
+there'd be libata messages related to this also. Do you have earlier 
+kernel messages indicating the drive or controller are reporting errors?
+ >
+ >
 
-On Mon, Sep 15, 2014 at 8:16 PM, Chris Murphy <lists@colorremedies.com> wrote:
->
-> On Sep 15, 2014, at 6:56 PM, Chris Murphy <lists@colorremedies.com> wrote:
->
->>
->> On Sep 15, 2014, at 3:41 PM, Tony Murray <murraytony@gmail.com> wrote:
->>>
->>> # btrfs restore -v -i /dev/sda7 /mnt/sdb1/
->>
->> Starting with umounted volume:
->>
->> btrfs check <dev>
->> btrfs-debug-tree -R <dev>
->
-> Oh nevermind I just saw that you did a btrfsck --repair, so you really kinda got the sequence wrong by doing that so soon and without list advice. I don't see whether you tried btrfs-zero-log first, or btrfs rescue super-recover, did you?
->
-> btrfs-debug-tree -R should show four backup slots, and it's possible to plug in the tree root block value into btrfs restore -t, and maybe extract some data. And then it gets more aggressive from there, by seeing if you get any different recovery results with kernel 3.17rc5; and then it's btrfs-progs integration branch territory to see if maybe btrfs-zero-log or btrfs check will do something differently.
->
->
-> Chris Murphy--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

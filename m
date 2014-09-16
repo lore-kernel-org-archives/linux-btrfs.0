@@ -1,57 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.mystoragebox.com ([173.234.39.99]:42954 "EHLO
-	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755305AbaIPTyn (ORCPT
+Received: from mx.bordeaux.inra.fr ([147.100.111.220]:58401 "EHLO
+	mail-1.bordeaux.inra.fr" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753316AbaIPULN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 15:54:43 -0400
-Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.80])
-	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.83)
-	(envelope-from <markm-lists@intellasoft.net>)
-	id 1XTypl-0002IF-RT
-	for linux-btrfs@vger.kernel.org; Tue, 16 Sep 2014 15:54:41 -0400
-Message-ID: <54189581.6050303@intellasoft.net>
-Date: Tue, 16 Sep 2014 15:54:41 -0400
-From: Mark Murawski <markm-lists@intellasoft.net>
+	Tue, 16 Sep 2014 16:11:13 -0400
+Received: from [192.168.0.10] (lns-bzn-50f-81-56-234-61.adsl.proxad.net [81.56.234.61])
+	(authenticated bits=0)
+	by mail-1.bordeaux.inra.fr (/8.14.4) with ESMTP id s8GKGnSe009082
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 22:16:50 +0200 (CEST)
+Message-ID: <5418995C.2000708@bordeaux.inra.fr>
+Date: Tue, 16 Sep 2014 22:11:08 +0200
+From: Tovo Rabemanantsoa <tovo.rabemanantsoa@bordeaux.inra.fr>
 MIME-Version: 1.0
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs balance enospc
-References: <54186A4B.60902@intellasoft.net> <54186A82.7070801@intellasoft.net> <5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com>
-In-Reply-To: <5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Problem with a filesystem
+References: <54185D48.5060701@bordeaux.inra.fr> <4F2E9AE1-4B33-42BB-8B75-C5A66118A7CB@colorremedies.com>
+In-Reply-To: <4F2E9AE1-4B33-42BB-8B75-C5A66118A7CB@colorremedies.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The smart stats on the disk are fine.  The /dev/sdc messages are from me 
-playing around and pulling out the drive.   btrfs fi show, shows the 
-drive as missing, yet it's still trying to write to it.
+On 09/16/2014 07:17 PM, Chris Murphy wrote:
+> 
+> Debian 7.5 is based on kernel 3.2 which is very old in Btrfs terms. What kernel version are you using, and version of btrfs-progs?
+> 
+> Chris Murphy
+You're right,
+In the beginning, I used the btrfs-progs provided by my debian (kernel
+3.2.0-4 and btrfs version 0.19) but later, I compiled and used the git
+one (3.16).
+More information, 'btrfs filesystem show' gives :
 
-Basically my goal is to remove this drive and stick it in another box 
-and I can't get btrfs to move all the data off of it due to enospc.
+Label: none  uuid: 9ddd403a-2863-4e71-b28d-d2931a133af3
+	Total devices 1 FS bytes used 18.67TiB
+	devid    1 size 25.34TiB used 22.47TiB path /dev/sda4
 
-I'm gonna try and move some data off and remove/balance again.
-
-
-On 09/16/14 13:26, Chris Murphy wrote:
- > Better to use btrfs replace. But sequence wise you should do btrfs 
-device delete missing, which should then effectively do a balance to the 
-newly added device. So while the sequence isn't really correct, that's 
-probably not why you're getting this failure.
- >
- >
- >
- >>
- >>
- >> Sep 16 12:47:12 localhost kernel: BTRFS: bdev /dev/sdc6 errs: wr 2411,
- >> rd 0, flush 38, corrupt 137167, gen 25
- >
- > Please post results of
- > smartctl -x /dev/sdc
- >
-
- > I'd expect with Btrfs having problems writing to a device, that 
-there'd be libata messages related to this also. Do you have earlier 
-kernel messages indicating the drive or controller are reporting errors?
- >
- >
+Btrfs v3.16
 

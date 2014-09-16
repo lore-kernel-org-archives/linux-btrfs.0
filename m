@@ -1,95 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32706 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752198AbaIPUcS (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:24480 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753944AbaIPV4A (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 16:32:18 -0400
-Received: from pps.filterd (m0004347 [127.0.0.1])
-	by m0004347.ppops.net (8.14.5/8.14.5) with SMTP id s8GKW8RY026582
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 13:32:18 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by m0004347.ppops.net with ESMTP id 1peevq9jma-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 13:32:18 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: try not to ENOSPC on log replay
-Date: Tue, 16 Sep 2014 16:32:15 -0400
-Message-ID: <1410899535-20363-1-git-send-email-jbacik@fb.com>
+	Tue, 16 Sep 2014 17:56:00 -0400
+Message-ID: <5418B1E7.2020902@oracle.com>
+Date: Wed, 17 Sep 2014 05:55:51 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Johannes Hirte <johannes.hirte@datenkhaos.de>
+CC: "xavier.gnata@gmail.com" <xavier.gnata@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: "Btrfs: device_list_add() should not update list when mounted"
+ breaks subvol mount
+References: <20140911002241.201bc6c2@datenkhaos.de>	<54110AEC.6040301@oracle.com>	<54135AE7.40400@gmail.com>	<5413D7E5.6080905@oracle.com>	<20140913195525.333f93a4@datenkhaos.de>	<20140913232320.64fd189c@datenkhaos.de>	<5416DC7A.1070608@oracle.com>	<20140915191445.35ad18d2@datenkhaos.de>	<54172465.80002@oracle.com> <20140916001757.62ea5219@datenkhaos.de>
+In-Reply-To: <20140916001757.62ea5219@datenkhaos.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing log replay we may have to update inodes, which traditionally goes
-through our delayed inode stuff.  This will try to move space over from the
-trans handle, but we don't reserve space in our trans handle on replay since we
-don't know how much we will need, so instead we try to flush.  But because we
-have a trans handle open we won't flush anything, so if we are out of reserve
-space we will simply return ENOSPC.  Since we know that if an operation made it
-into the log then we definitely had space before the box bought the farm then we
-don't need to worry about doing this space reservation.  Just set a flag saying
-we are doing log replay and update the tree directly and bypass the reservation
-code altogether.  This will keep us from ENOSP'ing during log replay.  Thanks,
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/inode.c       | 3 ++-
- fs/btrfs/transaction.c | 1 +
- fs/btrfs/transaction.h | 1 +
- fs/btrfs/tree-log.c    | 1 +
- 4 files changed, 5 insertions(+), 1 deletion(-)
+Johannes, Xavier,
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 28e693e..dfdc656 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3705,7 +3705,8 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 	 * without delay
- 	 */
- 	if (!btrfs_is_free_space_inode(inode)
--	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID) {
-+	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
-+	    && !trans->log_replay) {
- 		btrfs_update_root_times(trans, root);
- 
- 		ret = btrfs_delayed_update_inode(trans, root, inode);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 16d0c1b..1676c5d 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -486,6 +486,7 @@ again:
- 	h->allocating_chunk = false;
- 	h->reloc_reserved = false;
- 	h->sync = false;
-+	h->log_replay = false;
- 	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 	INIT_LIST_HEAD(&h->new_bgs);
- 
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 579be51..924cd1f 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -97,6 +97,7 @@ struct btrfs_trans_handle {
- 	bool allocating_chunk;
- 	bool reloc_reserved;
- 	bool sync;
-+	bool log_replay;
- 	unsigned int type;
- 	/*
- 	 * this root is only needed to validate that the root passed to
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index dce33b5..ba31dd9 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4353,6 +4353,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
- 		ret = PTR_ERR(trans);
- 		goto error;
- 	}
-+	trans->log_replay = true;
- 
- 	wc.trans = trans;
- 	wc.pin = 1;
--- 
-1.8.3.1
+  Can you pls send the output for ..
 
+    cat /etc/fstab  | egrep btrfs
+    cat /proc/self/mounts | egrep btrfs
+    mount | egrep btrfs
+
+Thanks, Anand
+
+
+On 16/09/2014 06:17, Johannes Hirte wrote:
+> On Tue, 16 Sep 2014 01:39:49 +0800
+> Anand Jain <Anand.Jain@oracle.com> wrote:
+>
+>>
+>>
+>> On 16/09/2014 01:14, Johannes Hirte wrote:
+>>> On Mon, 15 Sep 2014 20:32:58 +0800
+>>> Anand Jain <Anand.Jain@oracle.com> wrote:
+>>>
+>>>>
+>>>>
+>>>> Hi Johannes,
+>>>>
+>>>>     Can I have you this tested.. ? Thanks.
+>>>>
+>>>>
+>>>> -------
+>>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>>> index e9676a4..1224b61 100644
+>>>> --- a/fs/btrfs/volumes.c
+>>>> +++ b/fs/btrfs/volumes.c
+>>>> @@ -533,7 +533,7 @@ static noinline int device_list_add(const char
+>>>> *path,
+>>>>                     * the btrfs dev scan cli, after FS has been
+>>>> mounted. */
+>>>>                    if (fs_devices->opened) {
+>>>> -                       return -EBUSY;
+>>>> +                       goto out;
+>>>>                    } else {
+>>>>                            /*
+>>>>                             * That is if the FS is _not_ mounted
+>>>> and if you @@ -566,6 +566,7 @@ static noinline int
+>>>> device_list_add(const char *path, if (!fs_devices->opened)
+>>>>                    device->generation = found_transid;
+>>>>
+>>>> +out:
+>>>>            *fs_devices_ret = fs_devices;
+>>>>
+>>>>            return ret;
+>>>> -------
+>>>
+>>> With this change, it works again without initramfs.
+>>
+>>    Thanks. I am bit confused, is there any configuration that is
+>>    still not working, even with the above changes.
+>>
+>> Anand
+>
+> At moment, I'm not aware of any. But I will test the remaining systems
+> I have.
+>
+> regards,
+>    Johannes
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,43 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postler.lichtfels.com ([78.46.92.195]:54378 "EHLO
-	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753172AbaIPVOn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 17:14:43 -0400
-Message-ID: <5418A6B9.6090003@xunil.at>
-Date: Tue, 16 Sep 2014 23:08:09 +0200
-From: "Stefan G. Weichinger" <lists@xunil.at>
-Reply-To: lists@xunil.at
-MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com>
-In-Reply-To: <5417250B.9030105@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36386 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752095AbaIPVUQ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 17:20:16 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: unable to mount, tools segfault
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAPDSe6s2_bk18wakrjUb5+z+2fmVu3jjFpPEE63dM_rmeMEOeA@mail.gmail.com>
+Date: Tue, 16 Sep 2014 15:20:14 -0600
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <3D5AA11E-78E2-4C5E-A333-887AA32418E0@colorremedies.com>
+References: <CAPDSe6sip7UR3kge=aNedn6T1xhQmcEQHFCSm=JGDEibtRkOLw@mail.gmail.com> <5F01E283-D95E-4F81-B358-6470ABD58C0D@colorremedies.com> <45CDD4CC-7486-4074-A8E1-4573C40F8462@colorremedies.com> <CAPDSe6s2_bk18wakrjUb5+z+2fmVu3jjFpPEE63dM_rmeMEOeA@mail.gmail.com>
+To: Tony Murray <murraytony@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 15.09.2014 um 19:42 schrieb Anand Jain:
 
-> Sam,
+On Sep 16, 2014, at 1:36 PM, Tony Murray <murraytony@gmail.com> wrote:
+
+> Sorry, that was really just a sample of output rather then a
+> run-through of my steps.  Also, I captured an image of the partition
+> so I could re-install my OS.
 > 
->   In the above context, Can you pls share the btrfs fi show output ?
+> I did try btrfs-zero-log first, but not btrfs rescue super-recover (as
+> I was afraid it might break my superblock).
+
+You could still try:
+btrfs rescue super-recover -v <dev>
+It will show you whether they are good or bad and which is which. And if they're good it won't fix anything. If one is bad it'll first ask you if it's a Btrfs fs before it tries to fix it. You can answer n if you don't want to try fixing it. At least, I get a crash, but it does fix corrupt csum before that.
+
+It's also possible to use:
+btrfs-show-super -afF <dev>
+This will show all supers, even if any are bad, it won't fix anything. But it's going to spit out a lot more info.
+
+Then it's possible to try:
+btrfs check -s0 <dev>
+btrfs check -s1 <dev>
+to see if you get any different result; the first one will still be really bad because it's the same as default, but if the second one looks better then it might be that you either have a bad superblock, or a good one pointing to a bad root tree. In which case it may still be possible to fix.
 
 
-unsure if it helps:
 
-I applied the patch as well, running gentoo on latest git-sources here.
-
-My "btrfs fi show" misses my SSD now:
-
-# btrfs fi show
-Label: 'btrfs_evo'  uuid: ea95dbd1-ef4e-48a4-9732-54e6c80b31df
-	Total devices 1 FS bytes used 80.91GiB
-	*** Some devices missing
-
-.. although all the btrfs-subvols on /dev/sda2 are mounted correctly and
-everything works fine so far.
-
-Stefan
+Chris Murphy
 

@@ -1,48 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f52.google.com ([209.85.216.52]:58852 "EHLO
-	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755066AbaIPT5Q (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32706 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752198AbaIPUcS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 15:57:16 -0400
-Received: by mail-qa0-f52.google.com with SMTP id m5so483325qaj.25
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:57:15 -0700 (PDT)
+	Tue, 16 Sep 2014 16:32:18 -0400
+Received: from pps.filterd (m0004347 [127.0.0.1])
+	by m0004347.ppops.net (8.14.5/8.14.5) with SMTP id s8GKW8RY026582
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 13:32:18 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by m0004347.ppops.net with ESMTP id 1peevq9jma-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 13:32:18 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: try not to ENOSPC on log replay
+Date: Tue, 16 Sep 2014 16:32:15 -0400
+Message-ID: <1410899535-20363-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Date: Tue, 16 Sep 2014 15:57:15 -0400
-Message-ID: <CAGURhyPOQf2SjAemqe8TG6sv-G+VHg0si5CkMxL=yh52Na-3Rw@mail.gmail.com>
-Subject: Measuring overhead of reference counting in btrfs
-From: Chris Dragga <chrisdragga@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi-
+When doing log replay we may have to update inodes, which traditionally goes
+through our delayed inode stuff.  This will try to move space over from the
+trans handle, but we don't reserve space in our trans handle on replay since we
+don't know how much we will need, so instead we try to flush.  But because we
+have a trans handle open we won't flush anything, so if we are out of reserve
+space we will simply return ENOSPC.  Since we know that if an operation made it
+into the log then we definitely had space before the box bought the farm then we
+don't need to worry about doing this space reservation.  Just set a flag saying
+we are doing log replay and update the tree directly and bypass the reservation
+code altogether.  This will keep us from ENOSP'ing during log replay.  Thanks,
 
-I'm doing a project that involves, among other things, measuring the
-block write overhead that reference counting snapshots imposes in
-btrfs, and I wanted to run my methodology by the mailing list, to see
-if there were any holes in it.  I'm counting backrefs here as
-reference counts, since they're used for the same purpose.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/inode.c       | 3 ++-
+ fs/btrfs/transaction.c | 1 +
+ fs/btrfs/transaction.h | 1 +
+ fs/btrfs/tree-log.c    | 1 +
+ 4 files changed, 5 insertions(+), 1 deletion(-)
 
-Essentially, I'm using extent_buffers to track reference count I/O.
-In the functions __btrfs_inc_extent_ref and __btrfs_free_extent, I
-check whether the reference count was incremented above one or
-decremented to a minimum of one, respectively; if so, I mark the
-extent_buffer as having been used for reference counts.  Conversely,
-if the buffer was employed for allocation or deallocation, I mark
-that; to this end, I also mark the buffers used in
-alloc_reserved_tree_block.  I also mark extent_buffers written in
-write_one_cache_group, create_pending_block_groups, and
-btrfs_remove_block_group as having been accessed for block groups.
-Finally, in  write_one_eb, I count each extent_buffer that has only
-been marked for reference counting and use the total as an indicator
-of the overhead incurred.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 28e693e..dfdc656 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3705,7 +3705,8 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 	 * without delay
+ 	 */
+ 	if (!btrfs_is_free_space_inode(inode)
+-	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID) {
++	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
++	    && !trans->log_replay) {
+ 		btrfs_update_root_times(trans, root);
+ 
+ 		ret = btrfs_delayed_update_inode(trans, root, inode);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 16d0c1b..1676c5d 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -486,6 +486,7 @@ again:
+ 	h->allocating_chunk = false;
+ 	h->reloc_reserved = false;
+ 	h->sync = false;
++	h->log_replay = false;
+ 	INIT_LIST_HEAD(&h->qgroup_ref_list);
+ 	INIT_LIST_HEAD(&h->new_bgs);
+ 
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 579be51..924cd1f 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -97,6 +97,7 @@ struct btrfs_trans_handle {
+ 	bool allocating_chunk;
+ 	bool reloc_reserved;
+ 	bool sync;
++	bool log_replay;
+ 	unsigned int type;
+ 	/*
+ 	 * this root is only needed to validate that the root passed to
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index dce33b5..ba31dd9 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4353,6 +4353,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ 		ret = PTR_ERR(trans);
+ 		goto error;
+ 	}
++	trans->log_replay = true;
+ 
+ 	wc.trans = trans;
+ 	wc.pin = 1;
+-- 
+1.8.3.1
 
-Does this seem accurate?  Are there any points at which I might be
-missing I/O that goes to extent buffers that store reference counts?
-I'm deliberately ignoring side-effects of reference count
-modification, like B-Tree splitting, as that I/O isn't related to the
-algorithm and would be difficult to track in a verifiable fashion.
-
-Thanks,
-Chris Dragga

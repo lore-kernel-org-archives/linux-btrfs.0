@@ -1,43 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54845 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:43110 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754479AbaIPBRA convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 21:17:00 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49350 helo=[192.168.1.145])
+	by vger.kernel.org with ESMTP id S1753916AbaIPBTy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Sep 2014 21:19:54 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49357 helo=[192.168.1.145])
 	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
 	(Exim 4.82)
 	(envelope-from <lists@colorremedies.com>)
-	id 1XThO6-000lU9-UB
-	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 19:16:59 -0600
+	id 1XThQv-000n6y-CJ
+	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 19:19:53 -0600
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: unable to mount, tools segfault
+Subject: Re: btrfs balance enospc
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <5F01E283-D95E-4F81-B358-6470ABD58C0D@colorremedies.com>
-Date: Mon, 15 Sep 2014 19:16:57 -0600
-Message-Id: <45CDD4CC-7486-4074-A8E1-4573C40F8462@colorremedies.com>
-References: <CAPDSe6sip7UR3kge=aNedn6T1xhQmcEQHFCSm=JGDEibtRkOLw@mail.gmail.com> <5F01E283-D95E-4F81-B358-6470ABD58C0D@colorremedies.com>
+In-Reply-To: <pan$21d6d$91a64041$49bf8e34$6b7c2e69@cox.net>
+Date: Mon, 15 Sep 2014 19:19:52 -0600
+Message-Id: <21267DAB-22F6-458E-A0F7-7EAEE6471335@colorremedies.com>
+References: <541706ED.4010901@intellasoft.net> <20140915170722.GA9160@sune> <541723EA.6010608@intellasoft.net> <657EBB8A-8957-4E07-829E-171A1FF702E8@colorremedies.com> <pan$21d6d$91a64041$49bf8e34$6b7c2e69@cox.net>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Sep 15, 2014, at 6:56 PM, Chris Murphy <lists@colorremedies.com> wrote:
-
+On Sep 15, 2014, at 6:08 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 > 
-> On Sep 15, 2014, at 3:41 PM, Tony Murray <murraytony@gmail.com> wrote:
->> 
->> # btrfs restore -v -i /dev/sda7 /mnt/sdb1/
-> 
-> Starting with umounted volume:
-> 
-> btrfs check <dev>
-> btrfs-debug-tree -R <dev>
+> Assuming such a conversion, did you delete the subvolume containing the 
+> original ext* yet, or not?  If not, that may be the problem, because that 
+> subvolume must be left intact in ordered to allow rollback to ext* if 
+> desired.  If you know you won't be rolling back, delete the ext* reserved 
+> subvolume as described on the wiki.
 
-Oh nevermind I just saw that you did a btrfsck --repair, so you really kinda got the sequence wrong by doing that so soon and without list advice. I don't see whether you tried btrfs-zero-log first, or btrfs rescue super-recover, did you?
-
-btrfs-debug-tree -R should show four backup slots, and it's possible to plug in the tree root block value into btrfs restore -t, and maybe extract some data. And then it gets more aggressive from there, by seeing if you get any different recovery results with kernel 3.17rc5; and then it's btrfs-progs integration branch territory to see if maybe btrfs-zero-log or btrfs check will do something differently.
+Good catch, I always forget this.
 
 
 Chris Murphy
+

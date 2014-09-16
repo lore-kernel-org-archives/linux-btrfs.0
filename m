@@ -1,111 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f176.google.com ([209.85.214.176]:42674 "EHLO
-	mail-ob0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750938AbaIPEdL (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:39698 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751087AbaIPF14 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 00:33:11 -0400
-Received: by mail-ob0-f176.google.com with SMTP id wo20so1223992obc.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 21:33:09 -0700 (PDT)
+	Tue, 16 Sep 2014 01:27:56 -0400
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id E0D043EE0C1
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 14:27:54 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 1E2C2AC0165
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 14:27:54 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id C431E1DB8038
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 14:27:53 +0900 (JST)
+Message-ID: <5417CA4A.40807@jp.fujitsu.com>
+Date: Tue, 16 Sep 2014 14:27:38 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Date: Tue, 16 Sep 2014 12:33:09 +0800
-Message-ID: <CAMVG2svU-tbpgJ5MqjnS=XGBNZcwfPd0WGMkp1aN4W0M1ewm5A@mail.gmail.com>
-Subject: 3.14.18 btrfs_set_item_key_safe BUG
-From: Daniel J Blueman <daniel@quora.org>
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: <fdmanana@gmail.com>
+CC: Filipe Manana <fdmanana@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] Btrfs: add missing compression property remove in btrfs_ioctl_setflags
+References: <1410361824-12676-1-git-send-email-fdmanana@suse.com>	<5411280A.9010601@jp.fujitsu.com> <CAL3q7H41wCtJ08h=91+wqzXK+DyBRLhNQBK1PtR9882Ddb1EKQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H41wCtJ08h=91+wqzXK+DyBRLhNQBK1PtR9882Ddb1EKQ@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3.14.18 with a BTRFS partition mounted
-noatime,autodefrag,compress=lzo, I see the second assertion in
-btrfs_set_item_key_safe() trip:
+Hi Filipe,
 
-void btrfs_set_item_key_safe(struct btrfs_root *root, struct btrfs_path *path,
-                             struct btrfs_key *new_key)
+# I added Chris to the CC list since this topic is to discuss
+# whether the current behavior is correct or not.
+
+(2014/09/11 18:48), Filipe David Manana wrote:
+> On Thu, Sep 11, 2014 at 5:41 AM, Satoru Takeuchi
+> <takeuchi_satoru@jp.fujitsu.com> wrote:
+>> Hi Filipe,
+>>
+>> (2014/09/11 0:10), Filipe Manana wrote:
+>>> The behaviour of a 'chattr -c' consists of getting the current flags,
+>>> clearing the FS_COMPR_FL bit and then sending the result to the set
+>>> flags ioctl - this means the bit FS_NOCOMP_FL isn't set in the flags
+>>> passed to the ioctl. This results in the compression property not being
+>>> cleared from the inode - it was cleared only if the bit FS_NOCOMP_FL
+>>> was set in the received flags.
+>>>
+>>> Reproducer:
+>>>
+>>>       $ mkfs.btrfs -f /dev/sdd
+>>>       $ mount /dev/sdd /mnt && cd /mnt
+>>>       $ mkdir a
+>>>       $ chattr +c a
+>>>       $ touch a/file
+>>>       $ lsattr a/file
+>>>       --------c------- a/file
+>>>       $ chattr -c a
+>>>       $ touch a/file2
+>>>       $ lsattr a/file2
+>>>       --------c------- a/file2
+>>>       $ lsattr -d a
+>>>       ---------------- a
+>>>
+>>> Reported-by: Andreas Schneider <asn@cryptomilk.org>
+>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>>> ---
+>>>    fs/btrfs/ioctl.c | 3 +++
+>>>    1 file changed, 3 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>> index a010c44..8e6950c 100644
+>>> --- a/fs/btrfs/ioctl.c
+>>> +++ b/fs/btrfs/ioctl.c
+>>> @@ -333,6 +333,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>>>
+>>>        } else {
+>>>                ip->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
+>>> +             ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+>>
+>> IMHO, this patch is going on a wrong way since this patch
+>> changes the meaning of chattr. Here is the correct behavior.
+>>
+>> flag | BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS |
+>> =====+======================+========================+
+>> +c   |        set           |         unset          |
+>> -c   |       unset          |         unset          |
+>>
+>> However, by your change, chattr -c results in unset
+>> BTRFS_INODE_COMPRESS and *set* BTRFS_INODE_NOCOMPRESS.
+>
+> Right, for the reason mentioned below it's not a big deal, but
+> nevertheless better to not break the expectations and behaviour from
+> pre-properties era.
+>
+>> It's because btrfs_set_prop() will finally lead to
+>> prop_compression_apply() with setting its value to "".
+>> It's the behavior of calling ioctl() with FS_NOCOMP_FL.
+>>
+>> Please note that inode flag without both BTRFS_INODE_COMPRESS
+>> nor BTRFS_INODE_NOCOMPRESS has its own meaning: whether file
+>> is compress or not is decided by "compress" mount option.
+>
+> Right, which will set NOCOMPRESS if compression of the first write is
+> worthless (compressed size >= uncompressed size).
+> The fs has the right of setting NOCOMPRESS/FS_NOCOMP_FL if it wishes
+> to (due to lack of any specification that forbids it).
+
+Actually "mount -o compress-force" can forbid to set NOCOMPRESS.
+Please refer to the following code.
+
+linux/fs/btrfs/inode.c:
+=======
+...
+	/* flag the file so we don't compress in the future */
+	if (!btrfs_test_opt(root, FORCE_COMPRESS) &&
+		!(BTRFS_I(inode)->force_compress)) {
+		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+	}
+...
+=======
+
+>
+>>
+>> My suggestion is as follows and I'll write a patch based
+>> on it soon.
+>>
+>>   - Change the meaning of btrfs.compression == "" to mean
+>>     unset both BTRFS_INODE_COMPRESS and BTRFS_INODE_NOCOMPRESS,
+>>     for chattr -c.
+>
+> Do that and you're breaking existing semantics - existing apps or
+> users might already depend on the current semantics/apis (i.e. not a
+> good idea).
+
+Yes, my suggestion will break that behavior. However I consider the
+existing behavior is inconsistent and is a bug.
+
+In the current implementation, compression property == "" has
+the two different meanings: one is with BTRFS_INODE_NOCOMPRESS,
+and the other is without this flag.
+
+So, even if the two files a and b have the same compression
+property, "", and the same contents, one file seems to be
+compressed and the other is not. It's difficult to understand
+for users and also confuses them.
+
+Here is the real example. Let assume the following two cases.
+
+   a) A file created freshly (under a directory without both COMPRESS and
+      NOCOMPRESS flag.)
+
+   b) A exisiting file which is explicitly set "" to compression property.
+
+In addition, here is the command log (I attach the source of
+"getflags" program in this email.)
+
+=======
+$ rm -f a b; touch a b
+$ btrfs prop set b compression ""
+$ btrfs prop get a compression
+$ btrfs prop get b compression
+$ ./getflags a
+0x0
+$ ./getflags b
+0x400             # 0x400 (FS_NOCOMP_FL) corresponds to BTRFS_INODE_NOCOMPRESS
+=======
+
+So both those two files have their compression property == "",
+but have different NOCOMPRESS flag state leading to
+different behavior.
+
+case | BTRFS_INODE_NOCOMPRESS | behavior
+=====+========================+=========================
+    a | unset                  | might be compressed
+    b | set                    | never be compressed
+
+I consider that we should not expect users to remember
+whether their files are case a or b and should introduce
+another value for compress property anyway.
+
+getflags.c
+===================
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <linux/fs.h>
+
+int main(int argc, char const* argv[])
 {
-        struct btrfs_disk_key disk_key;
-        struct extent_buffer *eb;
-        int slot;
-
-        eb = path->nodes[0];
-        slot = path->slots[0];
-        if (slot > 0) {
-                btrfs_item_key(eb, &disk_key, slot - 1);
-                BUG_ON(comp_keys(&disk_key, new_key) >= 0);
-        }
-        if (slot < btrfs_header_nritems(eb) - 1) {
-                btrfs_item_key(eb, &disk_key, slot + 1);
-                BUG_ON(comp_keys(&disk_key, new_key) <= 0); <---
-        }
-
-Full backtrace:
-
-kernel BUG at /home/apw/COD/linux/fs/btrfs/ctree.c:3215!
-invalid opcode: 0000 [#1] SMP
-Modules linked in: nfsd nfs_acl auth_rpcgss nfs fscache lockd sunrpc
-bonding psmouse serio_raw joydev video mac_hid lpc_ich lp parport
-hid_generic usbhid hid bcache btrfs raid10 raid456 async_raid6_recov
-async_pq raid6_pq async_xor ahci xor async_memcpy libahci async_tx
-raid1 e1000e ptp pps_core raid0 multipath linear
-CPU: 0 PID: 6742 Comm: btrfs-endio-wri Not tainted
-3.14.18-031418-generic #201409060201
-Hardware name: Supermicro X9SCL/X9SCM/X9SCL/X9SCM, BIOS 2.0b 09/17/2012
-task: ffff880418609d70 ti: ffff880121e92000 task.ti: ffff880121e92000
-RIP: 0010:[<ffffffffa01693f1>] [<ffffffffa01693f1>]
-btrfs_set_item_key_safe+0x141/0x150 [btrfs]
-RSP: 0018:ffff880121e93b28 EFLAGS: 00010246
-RAX: 0000000000000000 RBX: 0000000000000011 RCX: 000000003e600000
-RDX: 0000000000000000 RSI: ffff880121e93c67 RDI: ffff880121e93b07
-RBP: ffff880121e93b88 R08: 0000000000001000 R09: ffff880121e93b48
-R10: 0000000000000000 R11: 00000000ffffffff R12: ffff88009ce9bcc0
-R13: ffff880121e93c67 R14: ffff880121e93b47 R15: ffff8804145f7c60
-FS: 0000000000000000(0000) GS:ffff88042fc00000(0000) knlGS:0000000000000000
-CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007ff34a8d1890 CR3: 0000000001c0d000 CR4: 00000000001407f0
-Stack:
- ffff880121e93b88 ffff880405ca0000 ffff8803140d1000 d900000000000000
- 6c0000000000f6bf 000000003e600000 ffff880121e93b88 ffff8804145f7c60
- ffff88009ce9bcc0 000000003e5e0000 0000000000000001 0000000000000c46
-Call Trace:
- [<ffffffffa01a1868>] __btrfs_drop_extents+0x5a8/0xc80 [btrfs]
- [<ffffffffa0165e00>] ? tree_mod_log_free_eb+0x240/0x260 [btrfs]
- [<ffffffffa0191d6b>]
-insert_reserved_file_extent.constprop.60+0xab/0x310 [btrfs]
- [<ffffffffa018ee10>] ? start_transaction.part.35+0x80/0x540 [btrfs]
- [<ffffffffa0198565>] btrfs_finish_ordered_io+0x465/0x500 [btrfs]
- [<ffffffffa0198615>] finish_ordered_fn+0x15/0x20 [btrfs]
- [<ffffffffa01bd8f0>] worker_loop+0xa0/0x330 [btrfs]
- [<ffffffffa01bd850>] ? check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
- [<ffffffff810930c9>] kthread+0xc9/0xe0
- [<ffffffff81093000>] ? flush_kthread_worker+0xb0/0xb0
- [<ffffffff81784abc>] ret_from_fork+0x7c/0xb0
- [<ffffffff81093000>] ? flush_kthread_worker+0xb0/0xb0
-Code: 00 00 4c 89 f6 4c 89 e7 48 98 48 8d 04 80 48 8d 54 80 65 e8 b2
-6c 04 00 4c 89 ee 4c 89 f7 e8 d7 f4 ff ff 85 c0 0f 8f 5c ff ff ff <0f>
-0b 0f 0b 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 55
-
-After rebooting, btrfs check (btrfs-tools 3.14.1-1) shows:
-
-checking extents
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-root 5 inode 16170969 errors 80, file extent overlap
-root 5 inode 17592262 errors 100, file extent discount
-found 752124326140 bytes used err is 1
-total csum bytes: 2415994160
-total tree bytes: 18200276992
-total fs tree bytes: 14156120064
-total extent tree bytes: 1240526848
-btree space waste bytes: 2998597745
-file data blocks allocated: 2473980772352
- referenced 2731118456832
-
-Is it better to not trust compression, autodefrag, or is this
-filesystem corruption from previous issues, so I should rebuild the
-FS?
+   const char *name = argv[1];
+   int fd = open(name, O_RDONLY);
+   long x;
+   ioctl(fd, FS_IOC_GETFLAGS, &x);
+   printf("0x%lx\n", x);
+   return 0;
+}
+===================
 
 Thanks,
-  Daniel
--- 
-Daniel J Blueman
+Satoru
+
+> However you can add a new value that implements those semantics.
+>
+>>   - Add new value of "btrfs.compression" property, for example
+>>     "no" or "off", to mean unset BTRFS_INODE_COMPRESS and set
+>>     BTRFS_INODE_NOCOMPRESS. It's for ioctl() with FS_NOCOMP_FL.
+>>   - Unify duplicated code of changing inode flags to props.c.
+>>
+>> Thanks,
+>> Satoru
+>>
+>>> +             if (ret && ret != -ENODATA)
+>>> +                     goto out_drop;
+>>>        }
+>>>
+>>>        trans = btrfs_start_transaction(root, 1);
+>>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+

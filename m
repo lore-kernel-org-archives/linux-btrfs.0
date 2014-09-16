@@ -1,53 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50881 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752825AbaIPKVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 06:21:19 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XTpsq-0005f9-OQ
-	for linux-btrfs@vger.kernel.org; Tue, 16 Sep 2014 12:21:16 +0200
-Received: from pd953ef73.dip0.t-ipconnect.de ([217.83.239.115])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:21:16 +0200
-Received: from holger.hoffstaette by pd953ef73.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:21:16 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: 3.14.18 btrfs_set_item_key_safe BUG
-Date: Tue, 16 Sep 2014 10:21:04 +0000 (UTC)
-Message-ID: <pan.2014.09.16.10.21.04@googlemail.com>
-References: <CAMVG2svU-tbpgJ5MqjnS=XGBNZcwfPd0WGMkp1aN4W0M1ewm5A@mail.gmail.com>
-	<pan.2014.09.16.07.38.22@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16510 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754117AbaIPNYE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 09:24:04 -0400
+Message-ID: <541839E5.5030006@fb.com>
+Date: Tue, 16 Sep 2014 09:23:49 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Anand Jain <Anand.Jain@oracle.com>,
+        Sam Thursfield <sam.thursfield@codethink.co.uk>
+CC: <linux-btrfs@vger.kernel.org>, <baserock-dev@baserock.org>
+Subject: Re: Unable to mount multiple subvolumes of a single disk
+References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com>
+In-Reply-To: <54170F35.4040103@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 16 Sep 2014 07:38:22 +0000, Holger Hoffstätte wrote:
 
-> On Tue, 16 Sep 2014 12:33:09 +0800, Daniel J Blueman wrote:
+
+On 09/15/2014 12:09 PM, Anand Jain wrote:
 > 
->> kernel BUG at /home/apw/COD/linux/fs/btrfs/ctree.c:3215!
+> Sam,
 > 
-> This matches exactly the description mentioned just recently:
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/38340
+>  Thanks for reporting. Can you apply the following diff
+>  on top of 3.17rc5 and check if it helps.
 > 
-> (not in that posting, but in the patch description).
+> -------
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e9676a4..1224b61 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -533,7 +533,7 @@ static noinline int device_list_add(const char *path,
+>                  * the btrfs dev scan cli, after FS has been mounted.
+>                  */
+>                 if (fs_devices->opened) {
+> -                       return -EBUSY;
+> +                       goto out;
+>                 } else {
+>                         /*
+>                          * That is if the FS is _not_ mounted and if you
+> @@ -566,6 +566,7 @@ static noinline int device_list_add(const char *path,
+>         if (!fs_devices->opened)
+>                 device->generation = found_transid;
 > 
-> You seem to be running a custom kernel, so try if that patch
-> helps. Also try nuking the free space cache when you have it
-> applied.
+> +out:
+>         *fs_devices_ret = fs_devices;
+> 
+>         return ret;
 
-In order to apply that patch you will first need:
+Anand, are you planning on sending a full patch out for this?  One concern 
+I have is that after the device_list_add call:
 
-"Btrfs: don't insert useless holes when punching beyond the inode's size"
-https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/fs/btrfs?h=for-linus&id=12870f1c9b2de7d475d22e73fd7db1b418599725
 
-With that it applies cleanly to 3.14.18/19.
+    if (!ret && fs_devices_ret)                                             
+            (*fs_devices_ret)->total_devices = total_devices;
 
--h
+We should only be doing this from the newest super, not blindly overwriting.
+But that's a merge window fix.  For now I just want to deal with the regression,
+and your patch above looks good.
 
+Thanks for jumping on this one.
+
+-chris

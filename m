@@ -1,49 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:59737 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753385AbaIPVfH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 17:35:07 -0400
-Message-ID: <5418AD03.4090301@redhat.com>
-Date: Tue, 16 Sep 2014 16:34:59 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:51512 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753021AbaIPVxn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 17:53:43 -0400
+Message-ID: <5418B15C.1070907@oracle.com>
+Date: Wed, 17 Sep 2014 05:53:32 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-CC: "dsterba@suse.cz Sterba" <dsterba@suse.cz>
-Subject: Re: [bug] btrfs check --subvol-extents segfault
-References: <BB091951-5382-4788-901D-20E96546548A@colorremedies.com>
-In-Reply-To: <BB091951-5382-4788-901D-20E96546548A@colorremedies.com>
-Content-Type: text/plain; charset=windows-1252
+To: lists@xunil.at
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Unable to mount multiple subvolumes of a single disk
+References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com> <5418A6B9.6090003@xunil.at>
+In-Reply-To: <5418A6B9.6090003@xunil.at>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/16/14 4:33 PM, Chris Murphy wrote:
-> https://bugzilla.redhat.com/show_bug.cgi?id=1142421
-> 
-> kernel-3.17.0-0.rc5.git0.1.fc22.x86_64
-> btrfs-progs-3.16-1.fc21.x86_64
-> 
-> Steps to Reproduce:
-> 1. mkfs.btrfs /dev/sdc
-> 2. btrfs check --subvol-extents /dev/sdc
-> 
-> Results:
-> Segmentation fault (core dumped)
-> 
-> [  632.749774] btrfs[692]: segfault at 0 ip 00007fc9963fdd77 sp 00007fff93450880 error 4 in libc-2.19.90.so[7fc9963c2000+1bd000]
-> 
-> Eric Sandeed writes in the bugzilla that this was broken by commit
-> d34cbe76c723a05a14bbcfdc46e8ede789c3f1f9 which drops the requirement
-> to specify a subvolid, but still does arg_strtou64(optarg) ->
-> arg_strtou64(NULL) so it crashes.
 
-Yeah, AFAICT (although it's not documented anywhere) the functionality is
-*supposed* to take a subvolid as an argument.
 
-The commit lets it pass w/ no args, but still does arg_strtou64(optarg) to get
-the subvolid, and boom.
+Stefan,
 
-I think the commit just needs to be reverted, and then manpages updated &
-testcases written...
+  Can you pls send me the output for
 
--Eric
+    cat /etc/fstab  | egrep btrfs
+    cat /proc/self/mounts | egrep btrfs
+    mount | egrep btrfs
+
+Thanks, Anand
+
+
+
+On 17/09/2014 05:08, Stefan G. Weichinger wrote:
+> Am 15.09.2014 um 19:42 schrieb Anand Jain:
+>
+>> Sam,
+>>
+>>    In the above context, Can you pls share the btrfs fi show output ?
+>
+>
+> unsure if it helps:
+>
+> I applied the patch as well, running gentoo on latest git-sources here.
+>
+> My "btrfs fi show" misses my SSD now:
+>
+> # btrfs fi show
+> Label: 'btrfs_evo'  uuid: ea95dbd1-ef4e-48a4-9732-54e6c80b31df
+> 	Total devices 1 FS bytes used 80.91GiB
+> 	*** Some devices missing
+>
+> .. although all the btrfs-subvols on /dev/sda2 are mounted correctly and
+> everything works fine so far.
+>
+> Stefan
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

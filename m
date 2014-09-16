@@ -1,95 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18867 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752933AbaIPJtx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 05:49:53 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: =?UTF-8?q?Toralf=20F=C3=B6rster?= <toralf.foerster@gmx.de>
-Subject: [PATCH] Btrfs: fix up bounds checking in lseek
-Date: Tue, 16 Sep 2014 17:49:30 +0800
-Message-Id: <1410860970-5578-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53200 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754323AbaIPSbQ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 14:31:16 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:52189 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XTxX1-002j1L-8Z
+	for linux-btrfs@vger.kernel.org; Tue, 16 Sep 2014 12:31:15 -0600
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: where to file bugs
+Message-Id: <0D592D5C-1005-4494-AC31-63C3236E2E32@colorremedies.com>
+Date: Tue, 16 Sep 2014 12:31:12 -0600
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An user reported this, it is because that lseek's SEEK_SET/SEEK_CUR/SEEK_END
-allow a negative value for @offset, but btrfs's SEEK_DATA/SEEK_HOLE don't
-prepare for that and convert the negative @offset into unsigned type,
-so we get (end < start) warning.
+http://marc.info/?l=linux-btrfs&m=136733749808576&w=2
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F
 
-[ 1269.835374] ------------[ cut here ]------------
-[ 1269.836809] WARNING: CPU: 0 PID: 1241 at fs/btrfs/extent_io.c:430 insert_state+0x11d/0x140()
-[ 1269.838816] BTRFS: end < start 4094 18446744073709551615
-[ 1269.840334] CPU: 0 PID: 1241 Comm: a.out Tainted: G        W      3.16.0+ #306
-[ 1269.858229] Call Trace:
-[ 1269.858612]  [<ffffffff81801a69>] dump_stack+0x4e/0x68
-[ 1269.858952]  [<ffffffff8107894c>] warn_slowpath_common+0x8c/0xc0
-[ 1269.859416]  [<ffffffff81078a36>] warn_slowpath_fmt+0x46/0x50
-[ 1269.859929]  [<ffffffff813b0fbd>] insert_state+0x11d/0x140
-[ 1269.860409]  [<ffffffff813b1396>] __set_extent_bit+0x3b6/0x4e0
-[ 1269.860805]  [<ffffffff813b21c7>] lock_extent_bits+0x87/0x200
-[ 1269.861697]  [<ffffffff813a5b28>] btrfs_file_llseek+0x148/0x2a0
-[ 1269.862168]  [<ffffffff811f201e>] SyS_lseek+0xae/0xc0
-[ 1269.862620]  [<ffffffff8180b212>] system_call_fastpath+0x16/0x1b
-[ 1269.862970] ---[ end trace 4d33ea885832054b ]---
 
-This assumes that btrfs starts finding DATA/HOLE from the beginning of file
-if the assigned @offset is negative.
+Should both kernel and btrfs-progs bugs be filed at bugzilla.kernel.org? And if not, where should btrfs-progs bugs be filed?
 
-Also we add alignment for lock_extent_bits 's range.
 
-Reported-by: Toralf Förster <toralf.foerster@gmx.de>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/file.c | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index ff1cc03..68dd92c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2621,23 +2621,28 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct extent_map *em = NULL;
- 	struct extent_state *cached_state = NULL;
--	u64 lockstart = *offset;
--	u64 lockend = i_size_read(inode);
--	u64 start = *offset;
--	u64 len = i_size_read(inode);
-+	u64 lockstart;
-+	u64 lockend;
-+	u64 start;
-+	u64 len;
- 	int ret = 0;
- 
--	lockend = max_t(u64, root->sectorsize, lockend);
-+	if (inode->i_size == 0)
-+		return -ENXIO;
-+
-+	/*
-+	 * *offset can be negative, in this case we start finding DATA/HOLE from
-+	 * the very start of the file.
-+	 */
-+	start = max_t(loff_t, 0, *offset);
-+
-+	lockstart = round_down(start, root->sectorsize);
-+	lockend = round_up(i_size_read(inode), root->sectorsize);
- 	if (lockend <= lockstart)
- 		lockend = lockstart + root->sectorsize;
--
- 	lockend--;
- 	len = lockend - lockstart + 1;
- 
--	len = max_t(u64, len, root->sectorsize);
--	if (inode->i_size == 0)
--		return -ENXIO;
--
- 	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
- 			 &cached_state);
- 
--- 
-1.8.1.4
-
+Chris Murphy

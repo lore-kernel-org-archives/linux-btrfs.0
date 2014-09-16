@@ -1,62 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51512 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753021AbaIPVxn (ORCPT
+Received: from mail-qc0-f180.google.com ([209.85.216.180]:63914 "EHLO
+	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752512AbaIPWdf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 17:53:43 -0400
-Message-ID: <5418B15C.1070907@oracle.com>
-Date: Wed, 17 Sep 2014 05:53:32 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Tue, 16 Sep 2014 18:33:35 -0400
+Received: by mail-qc0-f180.google.com with SMTP id m20so849998qcx.25
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 15:33:34 -0700 (PDT)
 MIME-Version: 1.0
-To: lists@xunil.at
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com> <5418A6B9.6090003@xunil.at>
-In-Reply-To: <5418A6B9.6090003@xunil.at>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Date: Tue, 16 Sep 2014 15:33:34 -0700
+Message-ID: <CA+4uBUYffJ6+6_LtxjL2mkcbeN_p9-HUYaWv+MAJgGFrVyiitA@mail.gmail.com>
+Subject: EEXIST on writev to ceph journal file on btrfs 3.17-rc4 (not
+ reproducible in 3.16)
+From: Samuel Just <sam.just@inktank.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Stefan,
-
-  Can you pls send me the output for
-
-    cat /etc/fstab  | egrep btrfs
-    cat /proc/self/mounts | egrep btrfs
-    mount | egrep btrfs
-
-Thanks, Anand
-
-
-
-On 17/09/2014 05:08, Stefan G. Weichinger wrote:
-> Am 15.09.2014 um 19:42 schrieb Anand Jain:
->
->> Sam,
->>
->>    In the above context, Can you pls share the btrfs fi show output ?
->
->
-> unsure if it helps:
->
-> I applied the patch as well, running gentoo on latest git-sources here.
->
-> My "btrfs fi show" misses my SSD now:
->
-> # btrfs fi show
-> Label: 'btrfs_evo'  uuid: ea95dbd1-ef4e-48a4-9732-54e6c80b31df
-> 	Total devices 1 FS bytes used 80.91GiB
-> 	*** Some devices missing
->
-> .. although all the btrfs-subvols on /dev/sda2 are mounted correctly and
-> everything works fine so far.
->
-> Stefan
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+The journal file is opened with O_DIRECT | O_DSYNC.  I can reproduce
+it somewhat readily with a ceph-osd process on some of our hardware.
+I'm trying to create a non-ceph reproducer, but I figured that this
+might be enough to go on in the mean time.  What additional
+information would be useful?
+-Sam

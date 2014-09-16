@@ -1,70 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ducie-dc1.codethink.co.uk ([185.25.241.215]:43321 "EHLO
-	ducie-dc1.codethink.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752772AbaIPHqS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 03:46:18 -0400
-Message-ID: <5417EAC2.80607@codethink.co.uk>
-Date: Tue, 16 Sep 2014 08:46:10 +0100
-From: Paul Sherwood <paul.sherwood@codethink.co.uk>
-MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>,
-        Sam Thursfield <sam.thursfield@codethink.co.uk>
-CC: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        baserock-dev@baserock.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com>
-In-Reply-To: <5417250B.9030105@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:50881 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752825AbaIPKVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Sep 2014 06:21:19 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XTpsq-0005f9-OQ
+	for linux-btrfs@vger.kernel.org; Tue, 16 Sep 2014 12:21:16 +0200
+Received: from pd953ef73.dip0.t-ipconnect.de ([217.83.239.115])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:21:16 +0200
+Received: from holger.hoffstaette by pd953ef73.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Sep 2014 12:21:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Re: 3.14.18 btrfs_set_item_key_safe BUG
+Date: Tue, 16 Sep 2014 10:21:04 +0000 (UTC)
+Message-ID: <pan.2014.09.16.10.21.04@googlemail.com>
+References: <CAMVG2svU-tbpgJ5MqjnS=XGBNZcwfPd0WGMkp1aN4W0M1ewm5A@mail.gmail.com>
+	<pan.2014.09.16.07.38.22@googlemail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand
-On 15/09/2014 18:42, Anand Jain wrote:
->>> The patch fixes the issue, although it took a little tweaking to get it
->>> to apply cleanly.
+On Tue, 16 Sep 2014 07:38:22 +0000, Holger Hoffstätte wrote:
 
-I'm working with Sam. This is what I applied, and it works:
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 340a92d..2c87b72 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -533,7 +533,7 @@ static noinline int device_list_add(const char *path,
-                 * the btrfs dev scan cli, after FS has been mounted.
-                 */
-                if (fs_devices->opened) {
--                       return -EBUSY;
-+                        goto out;
-                } else {
-                        /*
-                         * That is if the FS is _not_ mounted and if you
-@@ -570,6 +570,8 @@ static noinline int device_list_add(const char *path,
-                fs_devices->latest_devid = devid;
-                fs_devices->latest_trans = found_transid;
-        }
-+
-+out:
-        *fs_devices_ret = fs_devices;
-
-        return ret;
-
-> Sam,
+> On Tue, 16 Sep 2014 12:33:09 +0800, Daniel J Blueman wrote:
 > 
->   In the above context, Can you pls share the btrfs fi show output ?
+>> kernel BUG at /home/apw/COD/linux/fs/btrfs/ctree.c:3215!
+> 
+> This matches exactly the description mentioned just recently:
+> http://article.gmane.org/gmane.comp.file-systems.btrfs/38340
+> 
+> (not in that posting, but in the patch description).
+> 
+> You seem to be running a custom kernel, so try if that patch
+> helps. Also try nuking the free space cache when you have it
+> applied.
 
-btrfs fi show gives:
+In order to apply that patch you will first need:
 
-Label: 'src2'  uuid: c2fcd4f8-cc40-4fab-b13b-0d1268afb497
-	Total devices 1 FS bytes used 77.93GB
-	devid    1 size 100.00GB used 100.00GB path /dev/sdb
+"Btrfs: don't insert useless holes when punching beyond the inode's size"
+https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/fs/btrfs?h=for-linus&id=12870f1c9b2de7d475d22e73fd7db1b418599725
 
-Label: 'baserock'  uuid: 129aff8f-65d9-4a19-9e2e-c3826bf5087d
-	Total devices 1 FS bytes used 3.11GB
-	devid    1 size 4.00GB used 4.00GB path /dev/sda
+With that it applies cleanly to 3.14.18/19.
 
-Btrfs v0.20-rc1-334-g304f215
-
-br
-Paul
+-h
 

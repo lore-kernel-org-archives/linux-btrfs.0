@@ -1,57 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:65177 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751754AbaIPBqn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 21:46:43 -0400
-Message-ID: <1410831965.14842.4.camel@localhost.localdomain>
-Subject: Re: How to deal with "The chunks in memory can not match the
- metadata of the fs. Repair failed."?
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Karl-Philipp Richter <richter@richtercloud.de>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Tue, 16 Sep 2014 09:46:05 +0800
-In-Reply-To: <5416FECF.5030709@richtercloud.de>
-References: <5416FECF.5030709@richtercloud.de>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54711 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754065AbaIPCJA convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Sep 2014 22:09:00 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49541 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XTiCR-0016LI-TK
+	for linux-btrfs@vger.kernel.org; Mon, 15 Sep 2014 20:09:00 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: [bug] <subvol> doesn't belong to btrfs mount point
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1E99F2EE-0D94-4271-990F-3535BB005A0A@colorremedies.com>
+Date: Mon, 15 Sep 2014 20:08:58 -0600
+Message-Id: <D8984BA0-E220-4D74-AADC-5C488023EDA1@colorremedies.com>
+References: <1E99F2EE-0D94-4271-990F-3535BB005A0A@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-09-15 at 16:59 +0200, Karl-Philipp Richter wrote:
-> Hi together,
-> I'm currently encountering another issue with `btrfs rescue 
-> chunk-recover`. After some seconds of maximal I/O activity, the program 
-> is idle for some seconds and then prints
-> 
->      The chunks in memory can not match the metadata of the fs. Repair 
-> failed.
->      Fail to recover the chunk tree.
-> 
-> I don't find any mention of this output except in the source code (this 
-> is as well the only thing $SEARCH_ENGINE points me to). What is the 
-> recommended next step? It would be nice to see the situation (The chunks 
-> in memory can not match the metadata of the fs) or the output mentioned 
-> in `man btrfs rescue`.
-> 
-> Any help is appreciated.
-> 
-> -Kalle
 
-Hi Kalle,
-If you are encountering the above msg, it means the chunk tree has some
-inconsistent stuff with other trees like device tree & extent tree.
-You can specify the '-v' option for chunk-recover to see more details.
+On Sep 12, 2014, at 5:39 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
-And also, the btrfs check cmd may tell more about the story.
+> Summary: When a btrfs subvolume is mounted with -o subvol, and a nested ro subvol/snapshot is created, btrfs send returns with an error. If the top level (id 5) is mounted instead, the send command succeeds.
 
-Thanks,
-Gui
+I'm not able to reproduce this, so at the moment I'm going to say it's user error until I can.
 
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+Chris Murphy

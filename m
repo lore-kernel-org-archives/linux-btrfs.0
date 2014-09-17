@@ -1,179 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25372 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754077AbaIQDz1 (ORCPT
+Received: from mail.mystoragebox.com ([173.234.39.99]:40230 "EHLO
+	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750895AbaIQEWM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Sep 2014 23:55:27 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8H3tHrH016867
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 11:55:18 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map
-Date: Wed, 17 Sep 2014 11:53:35 +0800
-Message-ID: <1410926015-26820-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Wed, 17 Sep 2014 00:22:12 -0400
+Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.9])
+	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.83)
+	(envelope-from <markm-lists@intellasoft.net>)
+	id 1XU6kr-00066P-0F
+	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 00:22:09 -0400
+Message-ID: <54190C70.1030501@intellasoft.net>
+Date: Wed, 17 Sep 2014 00:22:08 -0400
+From: Mark Murawski <markm-lists@intellasoft.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs listing is wrong
+References: <5411B5A6.50103@intellasoft.net> <5413E3CB.4050800@oracle.com>
+In-Reply-To: <5413E3CB.4050800@oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following commit enhanced the merge_extent_mapping() to reduce
-fragment in extent map tree, but it can't handle case which existing
-lies before map_start:
-51f39 btrfs: Use right extent length when inserting overlap extent map.
+Root is mounted.   This is the same picture after several reboots.
 
-[BUG]
-When existing extent map's start is before map_start,
-the em->len will be minus, which will corrupt the extent map and fail to
-insert the new extent map.
-This will happen when someone get a large extent map, but when it is
-going to insert it into extent map tree, some one has already commit
-some write and split the huge extent into small parts.
 
-[REPRODUCER]
-It is very easy to tiger using filebench with randomrw personality.
-It is about 100% to reproduce when using 8G preallocated file in 60s
-randonrw test.
+I've actually did some switching things around, drive swaps and some 
+expansions but it's still oddly displayed.
 
-[FIX]
-This patch can now handle any existing extent position.
-Since it does not directly use existing->start, now it will find the
-previous and next extent around map_start.
-So the old existing->start < map_start bug will never happen again.
+Label: 'Root'  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
+         Total devices 2 FS bytes used 5.81GiB
+         devid    3 size 10.00GiB used 6.78GiB path /dev/sdd6
+         devid    4 size 10.00GiB used 6.78GiB path 
+/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
 
-[ENHANCE]
-This patch will insert the best fitted extent map into extent map tree,
-other than the oldest [map_start, map_start + sectorsize) or the
-relatively newer but not perfect [map_start, existing->start).
+cartman {~} root# ls -al 
+/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+lrwxrwxrwx 1 root root 10 Sep 16 16:05 
+/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa -> ../../sdd6
 
-The patch will first search existing extent that does not intersects with
-the desired map range [map_start, map_start + len).
-The existing extent will be either before or behind map_start, and based
-on the existing extent, we can find out the previous and next extent
-around map_start.
 
-So the best fitted extent would be [prev->end, next->start).
-For prev or next is not found, em->start would be prev->end and em->end
-wold be next->start.
+cartman {~} root# blkid  /dev/sdd6
+/dev/sdd6: LABEL="Root" UUID="d71404d4-468e-47d5-8f06-3b65fa7776aa" 
+UUID_SUB="4ab62e9d-e1dc-4cea-92da-b2640fa841d0" TYPE="btrfs"
 
-With this patch, the fragment in extent map tree should be reduced much
-more than the 51f39 commit and reduce an unneeded extent map tree search.
+cartman {~} root# blkid  /dev/sdi6
+/dev/sdi6: LABEL="Root" UUID="d71404d4-468e-47d5-8f06-3b65fa7776aa" 
+UUID_SUB="bf76e31c-a49c-4497-83fb-5cb6567b5ad3" TYPE="btrfs"
 
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 79 ++++++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 57 insertions(+), 22 deletions(-)
+(dev 4 is really /dev/sdi6)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 016c403..8039021 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6191,21 +6191,60 @@ out_fail_inode:
- 	goto out_fail;
- }
- 
-+/* Find next extent map of a given extent map, caller needs to ensure locks */
-+static struct extent_map *next_extent_map(struct extent_map *em)
-+{
-+	struct rb_node *next;
-+
-+	next = rb_next(&em->rb_node);
-+	if (!next)
-+		return NULL;
-+	return container_of(next, struct extent_map, rb_node);
-+}
-+
-+static struct extent_map *prev_extent_map(struct extent_map *em)
-+{
-+	struct rb_node *prev;
-+
-+	prev = rb_prev(&em->rb_node);
-+	if (!prev)
-+		return NULL;
-+	return container_of(prev, struct extent_map, rb_node);
-+}
-+
- /* helper for btfs_get_extent.  Given an existing extent in the tree,
-+ * the existing extent is the nearest extent to map_start,
-  * and an extent that you want to insert, deal with overlap and insert
-- * the new extent into the tree.
-+ * the best fitted new extent into the tree.
-  */
- static int merge_extent_mapping(struct extent_map_tree *em_tree,
- 				struct extent_map *existing,
- 				struct extent_map *em,
- 				u64 map_start)
- {
-+	struct extent_map *prev;
-+	struct extent_map *next;
-+	u64 start;
-+	u64 end;
- 	u64 start_diff;
- 
- 	BUG_ON(map_start < em->start || map_start >= extent_map_end(em));
--	start_diff = map_start - em->start;
--	em->start = map_start;
--	em->len = existing->start - em->start;
-+
-+	if (existing->start > map_start) {
-+		next = existing;
-+		prev = prev_extent_map(next);
-+	} else {
-+		prev = existing;
-+		next = next_extent_map(prev);
-+	}
-+
-+	start = prev ? extent_map_end(prev) : em->start;
-+	start = max_t(u64, start, em->start);
-+	end = next ? next->start : extent_map_end(em);
-+	end = min_t(u64, end, extent_map_end(em));
-+	start_diff = start - em->start;
-+	em->start = start;
-+	em->len = end - start;
- 	if (em->block_start < EXTENT_MAP_LAST_BYTE &&
- 	    !test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
- 		em->block_start += start_diff;
-@@ -6482,25 +6521,21 @@ insert:
- 
- 		ret = 0;
- 
--		existing = lookup_extent_mapping(em_tree, start, len);
--		if (existing && (existing->start > start ||
--		    existing->start + existing->len <= start)) {
-+		existing = search_extent_mapping(em_tree, start, len);
-+		/*
-+		 * existing will always be non-NULL, since there must be
-+		 * extent causing the -EEXIST.
-+		 */
-+		if (start >= extent_map_end(existing) ||
-+		    start + len <= existing->start) {
-+			/*
-+			 * The existing extent map is the one nearest to
-+			 * the [start, start + len) range which overlaps
-+			 */
-+			err = merge_extent_mapping(em_tree, existing,
-+						   em, start);
- 			free_extent_map(existing);
--			existing = NULL;
--		}
--		if (!existing) {
--			existing = lookup_extent_mapping(em_tree, em->start,
--							 em->len);
--			if (existing) {
--				err = merge_extent_mapping(em_tree, existing,
--							   em, start);
--				free_extent_map(existing);
--				if (err) {
--					free_extent_map(em);
--					em = NULL;
--				}
--			} else {
--				err = -EIO;
-+			if (err) {
- 				free_extent_map(em);
- 				em = NULL;
- 			}
--- 
-2.1.0
+This was originally a natively created btrfs via mkfs
+
+
+
+On 09/13/2014 02:27 AM, Anand Jain wrote:
+>
+>
+> Hi Mark,
+>
+>> Label: 'Root'  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
+>>          Total devices 2 FS bytes used 7.46GiB
+>>          devid    1 size 9.31GiB used 8.06GiB path /dev/sdh6
+>>          devid    3 size 9.31GiB used 8.06GiB path
+>> /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+>
+>  I hope this taken when Root is mounted, (just for confirmation),
+>  which means those are read from the btrfs kernel. Not by scanning
+>  the udev.
+>
+>> # ls -al /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+>> lrwxrwxrwx 1 root root 10 Sep 11 10:43
+>> /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa -> ../../sdh6
+>
+>
+>  when we read /dev/sdh6 it was devid 1.
+>  When we read /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa 
+> it was devid 3.
+>
+>  But udev also says
+>    /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+>  is nothing but a soft link to /dev/sdh6 !!
+>
+>  Very strange !  Can you run blkid and show its output ?
+>
+>  Also by any chance did we do a disk to disk copy ?
+>
+>> devid 3 should really  be showing /dev/sde6
+>
+>  A reboot or btrfs kernel module reload might update the stale
+>  and tell the facts.
+>
+>
+> Thanks, Anand
 

@@ -1,79 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40451 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751842AbaIQJnB (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:26821 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753617AbaIQKFR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 05:43:01 -0400
-Message-ID: <541958A2.1030204@oracle.com>
-Date: Wed, 17 Sep 2014 17:47:14 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 17 Sep 2014 06:05:17 -0400
+Message-ID: <54195C4F.8080108@cn.fujitsu.com>
+Date: Wed, 17 Sep 2014 18:02:55 +0800
+From: "gux.fnst" <gux.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: Sam Thursfield <sam.thursfield@codethink.co.uk>,
-        linux-btrfs@vger.kernel.org, baserock-dev@baserock.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <541839E5.5030006@fb.com>
-In-Reply-To: <541839E5.5030006@fb.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: add regression test for remount with thread_pool
+ resized
+References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+In-Reply-To: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="GB2312"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-Hi Chris,
+    Could anyone help to review this patch? Thanks!
 
+Regards,
+Xing Gu
 
->> -------
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index e9676a4..1224b61 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -533,7 +533,7 @@ static noinline int device_list_add(const char *path,
->>                   * the btrfs dev scan cli, after FS has been mounted.
->>                   */
->>                  if (fs_devices->opened) {
->> -                       return -EBUSY;
->> +                       goto out;
->>                  } else {
->>                          /*
->>                           * That is if the FS is _not_ mounted and if you
->> @@ -566,6 +566,7 @@ static noinline int device_list_add(const char *path,
->>          if (!fs_devices->opened)
->>                  device->generation = found_transid;
->>
->> +out:
->>          *fs_devices_ret = fs_devices;
->>
->>          return ret;
->
-> Anand, are you planning on sending a full patch out for this?  One concern
-> I have is that after the device_list_add call:
->
->
->      if (!ret && fs_devices_ret)
->              (*fs_devices_ret)->total_devices = total_devices;
->
-> We should only be doing this from the newest super, not blindly overwriting.
-> But that's a merge window fix.  For now I just want to deal with the regression,
-> and your patch above looks good.
->
-> Thanks for jumping on this one.
-
-
-  Sorry for the trouble.
-  yes, I will be sending a full patch. I am finding too difficult
-  to revive the function btrfs_scan_one_device() which is predominately
-  to handle device scan and list_update _before_ any mount. Further
-  to the concern which you mention above, there is Ioctl
-  BTRFS_IOC_DEV_READY also using this function, which absolutely should
-  not have any intention to update the device list, but it does ..
-  theoretically. And I note that this ioctl is used by systemd as well.
-  So the fix is getting a bit complicated. I am attempting.
-
-Thanks, Anand
-
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+On 05/30/2014 04:52 PM, Xing Gu wrote:
+> Regression test for resizing 'thread_pool' when remount the fs.
+> 
+> Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+> ---
+>   tests/btrfs/055     | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/055.out |  1 +
+>   tests/btrfs/group   |  1 +
+>   3 files changed, 57 insertions(+)
+>   create mode 100755 tests/btrfs/055
+>   create mode 100644 tests/btrfs/055.out
+> 
+> diff --git a/tests/btrfs/055 b/tests/btrfs/055
+> new file mode 100755
+> index 0000000..0a0dd34
+> --- /dev/null
+> +++ b/tests/btrfs/055
+> @@ -0,0 +1,55 @@
+> +#!/bin/bash
+> +# FS QA Test No. btrfs/055
+> +#
+> +# Regression test for resizing 'thread_pool' when remount the fs.
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +
+> +_cleanup()
+> +{
+> +    rm -f $tmp.*
+> +}
+> +
+> +trap "_cleanup ; exit \$status" 0 1 2 3 15
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +
+> +_scratch_mount "-o thread_pool=6"
+> +
+> +_scratch_mount "-o remount,thread_pool=10"
+> +
+> +status=0 ; exit
+> diff --git a/tests/btrfs/055.out b/tests/btrfs/055.out
+> new file mode 100644
+> index 0000000..2fdd8f4
+> --- /dev/null
+> +++ b/tests/btrfs/055.out
+> @@ -0,0 +1 @@
+> +QA output created by 055
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index b668485..2c10c5b 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -57,3 +57,4 @@
+>   052 auto quick
+>   053 auto quick
+>   054 auto quick
+> +055 auto quick
+> 

@@ -1,121 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42389 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750874AbaIQEmA (ORCPT
+Received: from mx.bordeaux.inra.fr ([147.100.111.220]:64182 "EHLO
+	mail-1.bordeaux.inra.fr" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754377AbaIQJGS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 00:42:00 -0400
-Message-ID: <54191108.1060703@oracle.com>
-Date: Wed, 17 Sep 2014 12:41:44 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 17 Sep 2014 05:06:18 -0400
+Received: from [147.100.98.136] ([147.100.98.136])
+	(authenticated bits=0)
+	by mail-1.bordeaux.inra.fr (/8.14.4) with ESMTP id s8H9BtwE008719
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 11:11:55 +0200 (CEST)
+Message-ID: <54194F07.2080203@bordeaux.inra.fr>
+Date: Wed, 17 Sep 2014 11:06:15 +0200
+From: Tovo Rabemanantsoa <tovo.rabemanantsoa@bordeaux.inra.fr>
 MIME-Version: 1.0
-To: lists@xunil.at
-CC: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com> <5418A6B9.6090003@xunil.at> <5418B15C.1070907@oracle.com>
-In-Reply-To: <5418B15C.1070907@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Problem with a filesystem
+References: <54185D48.5060701@bordeaux.inra.fr> <4F2E9AE1-4B33-42BB-8B75-C5A66118A7CB@colorremedies.com> <5418995C.2000708@bordeaux.inra.fr> <82857E4F-9FF6-4110-993F-35830A44BC04@colorremedies.com>
+In-Reply-To: <82857E4F-9FF6-4110-993F-35830A44BC04@colorremedies.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 09/16/2014 11:27 PM, Chris Murphy wrote:
+> 
+> Try to mount normally, then with -o recovery, then with -o ro,recovery. Include dmesg showing any messages that appear for these attempts.
+Thank you,
+Please find below the messages shown during a normal mount and a mount
+with -o ro,recovery.
+
+======== Normal Mount ========
+/var/log/messages
+Sep 17 11:00:24 sdeeph1 kernel: [85051.529541] device fsid
+9ddd403a-2863-4e71-b28d-d2931a133af3 devid 1 transid 255446 /dev/sda4
+Sep 17 11:00:24 sdeeph1 kernel: [85051.529917] btrfs: disk space caching
+is enabled
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286741] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286756] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286764] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286770] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286775] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:01:09 sdeeph1 kernel: [85096.408271] btrfs: open_ctree failed
+
+/var/log/syslog adds this line :
+Sep 17 11:01:09 sdeeph1 kernel: [85096.286782] Failed to read block
+groups: -5
 
 
-  Thanks Sam for the logs.
+======== mount -o ro,recovery ========
+/var/log/messages
+Sep 17 11:05:10 sdeeph1 kernel: [85337.307267] device fsid
+9ddd403a-2863-4e71-b28d-d2931a133af3 devid 1 transid 255446 /dev/sda4
+Sep 17 11:05:10 sdeeph1 kernel: [85337.307635] btrfs: enabling auto recovery
+Sep 17 11:05:10 sdeeph1 kernel: [85337.307639] btrfs: disk space caching
+is enabled
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548215] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548229] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548237] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548243] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548249] parent transid verify
+failed on 24562568384512 wanted 255444 found 255446
+Sep 17 11:05:55 sdeeph1 kernel: [85381.670344] btrfs: open_ctree failed
 
-  In your config  btrfs Kernel still knows the device as /dev/root.
-  not /dev/sda. looks like during boot up the device is /dev/root
-  and after boot up its /dev/sda. so is the problem all about. some
-  logs below to support that.
+/var/log/syslog adds this line :
+Sep 17 11:05:55 sdeeph1 kernel: [85381.548255] Failed to read block
+groups: -5
 
-  Unfortunately at my end I am not able to reproduce this on a virtual
-  box. I guess it would need a real bios. If you have any of that info
-  that will help.
-
-  when progs can't find the device in user space it would print missing.
-  That was introduced in patch 206efb60cbe3049e0d44c6da3c1909aeee18f813.
-
-  But the point to note is  - though the actual device is same, its path
-  during boot up and after boot up are different in some standalone
-  systems.
-
-  scsi inquiry serial number provides an unique device id. But in btrfs
-  we are depend on our SB. which can copied across devices. OR there
-  might some un-wiped stale SB on the device. We need some new mechanism
-  to handle this.
-
-
- From your system, /proc/self/mounts (the device path here
-comes from the btrfs kernel, )
-------
-/dev/root / btrfs ...
-::
-/dev/root /home btrfs rw,noatime,compress=lzo,ssd,space_cache 0 0
--------
-
-per mount cli
------
-/dev/sda2 on / type btrfs ...
-::
-/dev/sda2 on /home type btrfs ...
-------
-
-fstab
------
-UUID=..b31df	/	btrfs defaults,noatime,compress=lzo,subvolid=258
-::
-UUID=..b31df	/home	btrfs defaults,noatime,compress=lzo,subvolid=285
--------
-
-
-
-
-Anand
-
-
-On 17/09/2014 05:53, Anand Jain wrote:
->
->
-> Stefan,
->
->   Can you pls send me the output for
->
->     cat /etc/fstab  | egrep btrfs
->     cat /proc/self/mounts | egrep btrfs
->     mount | egrep btrfs
->
-> Thanks, Anand
->
->
->
-> On 17/09/2014 05:08, Stefan G. Weichinger wrote:
->> Am 15.09.2014 um 19:42 schrieb Anand Jain:
->>
->>> Sam,
->>>
->>>    In the above context, Can you pls share the btrfs fi show output ?
->>
->>
->> unsure if it helps:
->>
->> I applied the patch as well, running gentoo on latest git-sources here.
->>
->> My "btrfs fi show" misses my SSD now:
->>
->> # btrfs fi show
->> Label: 'btrfs_evo'  uuid: ea95dbd1-ef4e-48a4-9732-54e6c80b31df
->>     Total devices 1 FS bytes used 80.91GiB
->>     *** Some devices missing
->>
->> .. although all the btrfs-subvols on /dev/sda2 are mounted correctly and
->> everything works fine so far.
->>
->> Stefan
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

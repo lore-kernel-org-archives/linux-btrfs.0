@@ -1,35 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54685 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755982AbaIQRNX (ORCPT
+Received: from wbwburpvsmtpb.warnerbros.com ([168.161.192.151]:26490 "EHLO
+	wbwburpvsmtpb.warnerbros.com" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755391AbaIQRXH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 13:13:23 -0400
-Date: Wed, 17 Sep 2014 10:13:22 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Filipe David Borba Manana <fdmanana@suse.com>
-Subject: Re: NOCOW on VM images causes extreme btrfs slowdowns, memory leaks, and deadlocks
-Message-ID: <20140917171322.GB29967@merlins.org>
-References: <20140908015124.GA21441@merlins.org> <CAL3q7H70SGvWamdeuvF1id-pnP0o4PskgJMb7qE+CfGBB5vd1w@mail.gmail.com> <20140915001836.GU8530@merlins.org> <20140915175747.GZ8530@merlins.org> <20140916235742.GG8530@merlins.org> <20140917150002.GA12223@merlins.org>
+	Wed, 17 Sep 2014 13:23:07 -0400
+Message-ID: <5419C11D.1080803@gmail.com>
+Date: Wed, 17 Sep 2014 10:13:01 -0700
+From: Alan Hagge <nospam.ah@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140917150002.GA12223@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Can btrfs re-sync an out-of-sync RAID1 filesystem?
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 17, 2014 at 08:00:02AM -0700, Marc MERLIN wrote:
-> kernel: 3.16.2
+I know that sounds weird, but here's my scenario:
 
-Grumble, I messed up the subject line.
-I meant that COW on virtual disk images causes the problems described in the
-previous Email.
-Obviously I already know that COW on disk images wasn't ideal, but the
-effects in 3.16 are still fairly severe.
+- Create a RAID1 filesystem (both data and metadata) using 2 same-sized
+external USB drives
+- Copy data (backup of other filesystem) onto this new filesystem
+- Dismount the filesystem
+- Split up the drives (keep one at home, move one to offsite backup)
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+This way if I need to recover a file, I can mount the one drive I have
+with "-o ro,degraded" to recover data.  If there's a read error on the
+backup drive during the copy, I can go to the offsite location, bring
+back the 2nd drive and mount both and have RAID1 protection.
+
+BUT...if I accidentally (because I forgot to use "ro" when mounting) or
+purposely write data to the single drive in degraded mode,  is it
+possible to later mount both drives in RAID1 mode and "resync" them (as
+opposed to having to do a "replace" operation on the out-of-sync drive,
+which would force it to be completely rewritten)?  If so, how would
+btrfs know which drive is the "master" (ie. the updated one)?
+
+Or is it not possible to write to a btrfs volume mounted in "degraded" mode?

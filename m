@@ -1,97 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.mystoragebox.com ([173.234.39.99]:40230 "EHLO
-	mail.mystoragebox.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750895AbaIQEWM (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42389 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbaIQEmA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 00:22:12 -0400
-Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.9])
-	by mail.mystoragebox.com with esmtpsa (TLS1.0:ECDHE_RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.83)
-	(envelope-from <markm-lists@intellasoft.net>)
-	id 1XU6kr-00066P-0F
-	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 00:22:09 -0400
-Message-ID: <54190C70.1030501@intellasoft.net>
-Date: Wed, 17 Sep 2014 00:22:08 -0400
-From: Mark Murawski <markm-lists@intellasoft.net>
+	Wed, 17 Sep 2014 00:42:00 -0400
+Message-ID: <54191108.1060703@oracle.com>
+Date: Wed, 17 Sep 2014 12:41:44 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs listing is wrong
-References: <5411B5A6.50103@intellasoft.net> <5413E3CB.4050800@oracle.com>
-In-Reply-To: <5413E3CB.4050800@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: unlisted-recipients:; (no To-header on input)
+To: lists@xunil.at
+CC: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: Unable to mount multiple subvolumes of a single disk
+References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <54171E51.2020709@codethink.co.uk> <54172018.1050300@oracle.com> <5417250B.9030105@oracle.com> <5418A6B9.6090003@xunil.at> <5418B15C.1070907@oracle.com>
+In-Reply-To: <5418B15C.1070907@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Root is mounted.   This is the same picture after several reboots.
 
 
-I've actually did some switching things around, drive swaps and some 
-expansions but it's still oddly displayed.
+  Thanks Sam for the logs.
 
-Label: 'Root'  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
-         Total devices 2 FS bytes used 5.81GiB
-         devid    3 size 10.00GiB used 6.78GiB path /dev/sdd6
-         devid    4 size 10.00GiB used 6.78GiB path 
-/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+  In your config  btrfs Kernel still knows the device as /dev/root.
+  not /dev/sda. looks like during boot up the device is /dev/root
+  and after boot up its /dev/sda. so is the problem all about. some
+  logs below to support that.
 
-cartman {~} root# ls -al 
-/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
-lrwxrwxrwx 1 root root 10 Sep 16 16:05 
-/dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa -> ../../sdd6
+  Unfortunately at my end I am not able to reproduce this on a virtual
+  box. I guess it would need a real bios. If you have any of that info
+  that will help.
 
+  when progs can't find the device in user space it would print missing.
+  That was introduced in patch 206efb60cbe3049e0d44c6da3c1909aeee18f813.
 
-cartman {~} root# blkid  /dev/sdd6
-/dev/sdd6: LABEL="Root" UUID="d71404d4-468e-47d5-8f06-3b65fa7776aa" 
-UUID_SUB="4ab62e9d-e1dc-4cea-92da-b2640fa841d0" TYPE="btrfs"
+  But the point to note is  - though the actual device is same, its path
+  during boot up and after boot up are different in some standalone
+  systems.
 
-cartman {~} root# blkid  /dev/sdi6
-/dev/sdi6: LABEL="Root" UUID="d71404d4-468e-47d5-8f06-3b65fa7776aa" 
-UUID_SUB="bf76e31c-a49c-4497-83fb-5cb6567b5ad3" TYPE="btrfs"
-
-(dev 4 is really /dev/sdi6)
-
-This was originally a natively created btrfs via mkfs
+  scsi inquiry serial number provides an unique device id. But in btrfs
+  we are depend on our SB. which can copied across devices. OR there
+  might some un-wiped stale SB on the device. We need some new mechanism
+  to handle this.
 
 
+ From your system, /proc/self/mounts (the device path here
+comes from the btrfs kernel, )
+------
+/dev/root / btrfs ...
+::
+/dev/root /home btrfs rw,noatime,compress=lzo,ssd,space_cache 0 0
+-------
 
-On 09/13/2014 02:27 AM, Anand Jain wrote:
+per mount cli
+-----
+/dev/sda2 on / type btrfs ...
+::
+/dev/sda2 on /home type btrfs ...
+------
+
+fstab
+-----
+UUID=..b31df	/	btrfs defaults,noatime,compress=lzo,subvolid=258
+::
+UUID=..b31df	/home	btrfs defaults,noatime,compress=lzo,subvolid=285
+-------
+
+
+
+
+Anand
+
+
+On 17/09/2014 05:53, Anand Jain wrote:
 >
 >
-> Hi Mark,
+> Stefan,
 >
->> Label: 'Root'  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
->>          Total devices 2 FS bytes used 7.46GiB
->>          devid    1 size 9.31GiB used 8.06GiB path /dev/sdh6
->>          devid    3 size 9.31GiB used 8.06GiB path
->> /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
+>   Can you pls send me the output for
 >
->  I hope this taken when Root is mounted, (just for confirmation),
->  which means those are read from the btrfs kernel. Not by scanning
->  the udev.
->
->> # ls -al /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
->> lrwxrwxrwx 1 root root 10 Sep 11 10:43
->> /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa -> ../../sdh6
->
->
->  when we read /dev/sdh6 it was devid 1.
->  When we read /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa 
-> it was devid 3.
->
->  But udev also says
->    /dev/disk/by-uuid/d71404d4-468e-47d5-8f06-3b65fa7776aa
->  is nothing but a soft link to /dev/sdh6 !!
->
->  Very strange !  Can you run blkid and show its output ?
->
->  Also by any chance did we do a disk to disk copy ?
->
->> devid 3 should really  be showing /dev/sde6
->
->  A reboot or btrfs kernel module reload might update the stale
->  and tell the facts.
->
+>     cat /etc/fstab  | egrep btrfs
+>     cat /proc/self/mounts | egrep btrfs
+>     mount | egrep btrfs
 >
 > Thanks, Anand
-
+>
+>
+>
+> On 17/09/2014 05:08, Stefan G. Weichinger wrote:
+>> Am 15.09.2014 um 19:42 schrieb Anand Jain:
+>>
+>>> Sam,
+>>>
+>>>    In the above context, Can you pls share the btrfs fi show output ?
+>>
+>>
+>> unsure if it helps:
+>>
+>> I applied the patch as well, running gentoo on latest git-sources here.
+>>
+>> My "btrfs fi show" misses my SSD now:
+>>
+>> # btrfs fi show
+>> Label: 'btrfs_evo'  uuid: ea95dbd1-ef4e-48a4-9732-54e6c80b31df
+>>     Total devices 1 FS bytes used 80.91GiB
+>>     *** Some devices missing
+>>
+>> .. although all the btrfs-subvols on /dev/sda2 are mounted correctly and
+>> everything works fine so far.
+>>
+>> Stefan
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

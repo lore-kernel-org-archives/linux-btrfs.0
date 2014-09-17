@@ -1,71 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35950 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:42102 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756089AbaIQTtI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 15:49:08 -0400
+	id S1756295AbaIQUHz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Sep 2014 16:07:55 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XULDu-00069n-Q2
-	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 21:49:06 +0200
+	id 1XULW2-0004t6-UG
+	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 22:07:50 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 21:49:06 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 22:07:50 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 21:49:06 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 22:07:50 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Can btrfs re-sync an out-of-sync RAID1 filesystem?
-Date: Wed, 17 Sep 2014 19:48:54 +0000 (UTC)
-Message-ID: <pan$e6d2e$8bcdb8e4$ee7c1dd5$85ffb88a@cox.net>
-References: <5419C11D.1080803@gmail.com>
+Subject: Re: Problem with unmountable filesystem.
+Date: Wed, 17 Sep 2014 20:07:34 +0000 (UTC)
+Message-ID: <pan$7ad6e$263e56a5$f2bf0e6d$c264643b@cox.net>
+References: <54184BD2.7000300@gmail.com>
+	<2A2CB71A-7516-43CD-94E1-BCB2198F5FC4@colorremedies.com>
+	<54196F42.4030101@gmail.com>
+	<22B49628-3659-4D83-BE99-A173CAFF23F9@colorremedies.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alan Hagge posted on Wed, 17 Sep 2014 10:13:01 -0700 as excerpted:
+Chris Murphy posted on Wed, 17 Sep 2014 12:57:59 -0600 as excerpted:
 
-> I know that sounds weird, but here's my scenario:
-> 
-> - Create a RAID1 filesystem (both data and metadata) using 2 same-sized
-> external USB drives - Copy data (backup of other filesystem) onto this
-> new filesystem - Dismount the filesystem - Split up the drives (keep one
-> at home, move one to offsite backup)
-> 
-> This way if I need to recover a file, I can mount the one drive I have
-> with "-o ro,degraded" to recover data.  If there's a read error on the
-> backup drive during the copy, I can go to the offsite location, bring
-> back the 2nd drive and mount both and have RAID1 protection.
-> 
-> BUT...if I accidentally (because I forgot to use "ro" when mounting) or
-> purposely write data to the single drive in degraded mode,  is it
-> possible to later mount both drives in RAID1 mode and "resync" them (as
-> opposed to having to do a "replace" operation on the out-of-sync drive,
-> which would force it to be completely rewritten)?  If so, how would
-> btrfs know which drive is the "master" (ie. the updated one)?
-> 
-> Or is it not possible to write to a btrfs volume mounted in "degraded"
-> mode?
+> But I think you're onto something, that a good superblock can point to a
+> corrupt tree root, and then not have a straight forward way to mount the
+> good tree root. If I understand this correctly.
 
-In general this works.  However, as the thread linked in Piotr's reply 
-mentions, don't expect it to work for NOCOW files.  (But you have to make 
-files nocow, so if you haven't, that shouldn't be an issue.)
+This is what I ran into myself a couple months ago.
 
-Additionally, the "newest version" detection is based on file generation, 
-so you want to be SURE you don't separately mount first one device 
-writable and then the other, so they diverge not only from each other but 
-from the point of separation.  If you split them, make SURE only the one 
-is mounted writable, so it'll be very clear which one has the updated 
-content.  If you DO accidentally separately mount both of them writable, 
-I'd suggest using wipefs (or dd) to kill the btrfs magic on one of them 
-so there's no possibility of btrfs getting mixed up which is newer, and 
-then doing a btrfs replace to replace it with a new, current copy.
+I ended up doing a restore as the simplest recovery I could do, then 
+recreated the affected filesystems.  It happened on two  filesystems 
+(separate, I don't trust subvolumes precisely because it's the same 
+filesystem underneath and that's too many eggs in one basket for my 
+comfort), /var/log and /home.  I was able to restore nearly all of /home 
+(enough that I wasn't aware of anything missing except symlinks that 
+restore doesn't work with), but lost about half of /var/log, which I did 
+first and made a couple mistakes on that I didn't repeat on /home.
 
-Meanwhile, again as noted in the Piotr's linked thread, the detection and 
-update isn't automatic.  Once split with one mounted writable, when 
-rejoined you'll want to do a btrfs scrub to bring the other one current.
+I figured there was a way to fix the filesystems as they were, but these 
+threads about deliberately corrupting the first superblock in ordered to 
+use the others hadn't appeared yet, and between restore and backups I got 
+enough back not to be worried about the rest, so restore was "good 
+enough".
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,76 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tur.go2.pl ([193.17.41.50]:52928 "EHLO tur.go2.pl"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755786AbaIQS7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 14:59:50 -0400
-Received: from moh3-ve3.go2.pl (moh3-ve3.go2.pl [193.17.41.87])
-	by tur.go2.pl (Postfix) with ESMTP id E6CD219BCC1F
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 20:34:09 +0200 (CEST)
-Received: from moh3-ve3.go2.pl (unknown [10.0.0.158])
-	by moh3-ve3.go2.pl (Postfix) with ESMTP id 0F490B5A735
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 20:33:32 +0200 (CEST)
-Received: from unknown (unknown [10.0.0.142])
-	by moh3-ve3.go2.pl (Postfix) with SMTP
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 20:33:32 +0200 (CEST)
-Date: Wed, 17 Sep 2014 20:33:24 +0200
-From: Piotr Szymaniak <szarpaj@grubelek.pl>
-To: Alan Hagge <nospam.ah@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Can btrfs re-sync an out-of-sync RAID1 filesystem?
-Message-ID: <20140917183324.GK1945@wloczykij>
-References: <5419C11D.1080803@gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="tKy6e3LXpfmanBFM"
-In-Reply-To: <5419C11D.1080803@gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48448 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756162AbaIQTK3 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Sep 2014 15:10:29 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:56440 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XUKcW-003uXb-Ls
+	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 13:10:29 -0600
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs balance enospc
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <5419CA37.1070608@intellasoft.net>
+Date: Wed, 17 Sep 2014 13:10:30 -0600
+Message-Id: <4601FF0D-31C3-48EA-8BD8-D789086336F0@colorremedies.com>
+References: <54186A4B.60902@intellasoft.net> <54186A82.7070801@intellasoft.net>,<5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com> <BAY172-W49807D9D79231B7B004F04B0C90@phx.gbl> <5419CA37.1070608@intellasoft.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---tKy6e3LXpfmanBFM
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Sep 17, 2014, at 11:51 AM, Mark Murawski <markm-lists@intellasoft.net> wrote:
 
-On Wed, Sep 17, 2014 at 10:13:01AM -0700, Alan Hagge wrote:
-> I know that sounds weird, but here's my scenario:
+> > Does/should a balance imply removal of missing devices (as long as the minimum number of devices are still available)?
+> 
+> That's a really good question.  As a user I would expect it to balance over remaining devices assuming you still have a complete picture. Doing a device delete missing after a balance should be just some pool metadata updates at that point.
+> 
+> Anyway... I solved my problem by moving/deleting files to free up space to the point that balance no longer complained about enospc.
 
-There was similar thread [1] few days ago, you should take a look at it.
-
-[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg37144.html
+Another option in such a case is to add a new device. It can be small, even a 2GB loop device or USB stick would do it in a bind. Then delete the device when you're done.
 
 
-Piotr Szymaniak.
---=20
-I ten smr=C3=B3d. Diabli wiedz=C4=85, co tam gni=C5=82o, w tym mi=C4=99siwi=
-e, ale Redowi
-wyda=C5=82o si=C4=99, =C5=BCe sto tysi=C4=99cy rozbitych cuchn=C4=85cych ja=
-j wylanych na sto
-tysi=C4=99cy cuchn=C4=85cych rybich =C5=82b=C3=B3w i zdech=C5=82ych kot=C3=
-=B3w nie mo=C5=BCe =C5=9Bmierdzie=C4=87
-tak, jak =C5=9Bmierdzia=C5=82a ta ma=C5=BA.
- -- Arkadij i Borys Strugaccy, =E2=80=9EPiknik na skraju drogi=E2=80=9D
+Chris Murphy
 
---tKy6e3LXpfmanBFM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJUGdP0AAoJEEMpAov1cw9ldTcP/jCGHfC9wxybLoeMpm5adoqd
-cEt6sidIUU7+JJXgqSkaDlZBBCM5AEJqz1KGB0qH994Uiml9PlOvwVrU7K+V8aW4
-DnSEetZowPexUW7GEXIV05yyh+Cjy8da7PnqKmm33dumBbu1UXZbEsi/A1+b9/5S
-yh38EvUGezH7WEsvkUAVfu64X1aZ3WaHsKO8jMo7gOuckzIbIZi0WmRPzeEegAFe
-pJTYdm1ZgPIFG6C425GD1Vi/jIL6mRvkony3D7NJlFKx47IIUYcwbhKNiApheLt5
-/iW1P7SGp5r7rC/DHarBKeZDg/X04D3KiJJOQYe703iIkN7iBym1O1eXFRc20k+C
-eCMPkv3WxHxUbo8Cam/59GfFgevtpp2wat7xqPt2nwSUwH/XfsQlHfZlurA6dd6j
-fWTW29CkL/4qIne3vZmTZqtef+OW42jH1CuET7fvitXZZVpSgMSHNkAqsiflViAK
-nx5qZS8jqHk6ES8O4NsxO61NFzRDk9jtlaQcByx5Fgzl0URVEBXNWpEcoqgK98H/
-f10Zc95om+DWBUaxpLU2b0SMIu4sCt/PjW1d9nbqJLC9t47aU/3l0A5vIaVEemSI
-1cpb3cyKGiQ0YeGqTQjuxUALjnk5K4hABksG7ApWwaLcfxLjK6F0+kMlJW1JGIs5
-wgdCkEcA6Ngj1ZuXradu
-=ja9s
------END PGP SIGNATURE-----
-
---tKy6e3LXpfmanBFM--

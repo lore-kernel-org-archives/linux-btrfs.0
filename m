@@ -1,38 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48448 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756162AbaIQTK3 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 15:10:29 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:56440 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XUKcW-003uXb-Ls
-	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 13:10:29 -0600
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfs balance enospc
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <5419CA37.1070608@intellasoft.net>
-Date: Wed, 17 Sep 2014 13:10:30 -0600
-Message-Id: <4601FF0D-31C3-48EA-8BD8-D789086336F0@colorremedies.com>
-References: <54186A4B.60902@intellasoft.net> <54186A82.7070801@intellasoft.net>,<5760D61A-8550-4386-8125-0A29A81ADE3A@colorremedies.com> <BAY172-W49807D9D79231B7B004F04B0C90@phx.gbl> <5419CA37.1070608@intellasoft.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:35950 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756089AbaIQTtI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Sep 2014 15:49:08 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XULDu-00069n-Q2
+	for linux-btrfs@vger.kernel.org; Wed, 17 Sep 2014 21:49:06 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 21:49:06 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Sep 2014 21:49:06 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Can btrfs re-sync an out-of-sync RAID1 filesystem?
+Date: Wed, 17 Sep 2014 19:48:54 +0000 (UTC)
+Message-ID: <pan$e6d2e$8bcdb8e4$ee7c1dd5$85ffb88a@cox.net>
+References: <5419C11D.1080803@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Alan Hagge posted on Wed, 17 Sep 2014 10:13:01 -0700 as excerpted:
 
-On Sep 17, 2014, at 11:51 AM, Mark Murawski <markm-lists@intellasoft.net> wrote:
-
-> > Does/should a balance imply removal of missing devices (as long as the minimum number of devices are still available)?
+> I know that sounds weird, but here's my scenario:
 > 
-> That's a really good question.  As a user I would expect it to balance over remaining devices assuming you still have a complete picture. Doing a device delete missing after a balance should be just some pool metadata updates at that point.
+> - Create a RAID1 filesystem (both data and metadata) using 2 same-sized
+> external USB drives - Copy data (backup of other filesystem) onto this
+> new filesystem - Dismount the filesystem - Split up the drives (keep one
+> at home, move one to offsite backup)
 > 
-> Anyway... I solved my problem by moving/deleting files to free up space to the point that balance no longer complained about enospc.
+> This way if I need to recover a file, I can mount the one drive I have
+> with "-o ro,degraded" to recover data.  If there's a read error on the
+> backup drive during the copy, I can go to the offsite location, bring
+> back the 2nd drive and mount both and have RAID1 protection.
+> 
+> BUT...if I accidentally (because I forgot to use "ro" when mounting) or
+> purposely write data to the single drive in degraded mode,  is it
+> possible to later mount both drives in RAID1 mode and "resync" them (as
+> opposed to having to do a "replace" operation on the out-of-sync drive,
+> which would force it to be completely rewritten)?  If so, how would
+> btrfs know which drive is the "master" (ie. the updated one)?
+> 
+> Or is it not possible to write to a btrfs volume mounted in "degraded"
+> mode?
 
-Another option in such a case is to add a new device. It can be small, even a 2GB loop device or USB stick would do it in a bind. Then delete the device when you're done.
+In general this works.  However, as the thread linked in Piotr's reply 
+mentions, don't expect it to work for NOCOW files.  (But you have to make 
+files nocow, so if you haven't, that shouldn't be an issue.)
 
+Additionally, the "newest version" detection is based on file generation, 
+so you want to be SURE you don't separately mount first one device 
+writable and then the other, so they diverge not only from each other but 
+from the point of separation.  If you split them, make SURE only the one 
+is mounted writable, so it'll be very clear which one has the updated 
+content.  If you DO accidentally separately mount both of them writable, 
+I'd suggest using wipefs (or dd) to kill the btrfs magic on one of them 
+so there's no possibility of btrfs getting mixed up which is newer, and 
+then doing a btrfs replace to replace it with a new, current copy.
 
-Chris Murphy
+Meanwhile, again as noted in the Piotr's linked thread, the detection and 
+update isn't automatic.  Once split with one mounted writable, when 
+rejoined you'll want to do a btrfs scrub to bring the other one current.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

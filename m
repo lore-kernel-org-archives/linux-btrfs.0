@@ -1,61 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:51106 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753137AbaIOOZv (ORCPT
+Received: from helcar.apana.org.au ([209.40.204.226]:47529 "EHLO
+	helcar.apana.org.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754013AbaIQJWw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 10:25:51 -0400
-Received: by mail-pd0-f173.google.com with SMTP id ft15so6315712pdb.32
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Sep 2014 07:25:51 -0700 (PDT)
-Message-ID: <5416F6CC.3050203@converseincode.com>
-Date: Mon, 15 Sep 2014 07:25:16 -0700
-From: Behan Webster <behanw@converseincode.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>
-CC: Alasdair G Kergon <agk@redhat.com>, Chris Mason <clm@fb.com>,
-        David Miller <davem@davemloft.net>,
-        "dm-devel@redhat.com" <dm-devel@redhat.com>,
-        Fabian Frederick <fabf@skynet.be>,
-        Herbert Xu <herbert@gondor.apana.org.au>, Josef Bacik <jbacik@fb.com>,
-        Mike Snitzer <snitzer@redhat.com>, tadeusz.struk@intel.com,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Bruce Allan <bruce.w.allan@intel.com>,
-        Dmitry Kasatkin <d.kasatkin@samsung.com>,
-        James Morris <james.l.morris@oracle.com>, john.griffin@intel.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Crypto Mailing List <linux-crypto@vger.kernel.org>,
+	Wed, 17 Sep 2014 05:22:52 -0400
+Date: Wed, 17 Sep 2014 17:22:12 +0800
+From: Herbert Xu <herbert@gondor.apana.org.au>
+To: behanw@converseincode.com
+Cc: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
+        fabf@skynet.be, jbacik@fb.com, snitzer@redhat.com,
+        tadeusz.struk@intel.com, akpm@linux-foundation.org,
+        bruce.w.allan@intel.com, d.kasatkin@samsung.com,
+        james.l.morris@oracle.com, john.griffin@intel.com,
+        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
         linux-ima-devel@lists.sourceforge.net,
-        linux-ima-user@lists.sourceforge.net,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        "linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
-        LSM List <linux-security-module@vger.kernel.org>,
-        Neil Brown <neilb@suse.de>, qat-linux@intel.com,
-        "Serge E. Hallyn" <serge@hallyn.com>, thomas.lendacky@amd.com,
-        Mimi Zohar <zohar@linux.vnet.ibm.com>,
-        Thomas Gleixner <tglx@linutronix.de>
-Subject: Re: [PATCH v3 11/12] security, crypto: LLVMLinux: Remove VLAIS from
- ima_crypto.c
-References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>	<1410766234-1634-12-git-send-email-behanw@converseincode.com> <CA+55aFx8FN2Rq+d3v9rsDbTyX3hwm6TvudvZrL5wgf7fX3aQjA@mail.gmail.com>
-In-Reply-To: <CA+55aFx8FN2Rq+d3v9rsDbTyX3hwm6TvudvZrL5wgf7fX3aQjA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        linux-ima-user@lists.sourceforge.net, linux-kernel@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
+        neilb@suse.de, qat-linux@intel.com, serge@hallyn.com,
+        thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
+        torvalds@linux-foundation.org
+Subject: Re: [PATCH v3 01/12] crypto: LLVMLinux: Add macro to remove use of
+ VLAIS in crypto code
+Message-ID: <20140917092212.GA1213@gondor.apana.org.au>
+References: <1410766234-1634-1-git-send-email-behanw@converseincode.com>
+ <1410766234-1634-2-git-send-email-behanw@converseincode.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1410766234-1634-2-git-send-email-behanw@converseincode.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/15/14 07:21, Linus Torvalds wrote:
-> On Mon, Sep 15, 2014 at 12:30 AM,  <behanw@converseincode.com> wrote:
->> From: Behan Webster <behanw@converseincode.com>
->>
->> Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
->> compliant equivalent. This patch allocates the appropriate amount of memory
->> using a char array using the SHASH_DESC_ON_STACK macro.
-> You only made the first case use SHASH_DESC_ON_STACK, the two other
-> cases you left in the ugly format. Was that just an oversight, or was
-> there some reason for it?
->
-Oversight. Will Fix.
+On Mon, Sep 15, 2014 at 12:30:23AM -0700, behanw@converseincode.com wrote:
+> From: Behan Webster <behanw@converseincode.com>
+> 
+> Add a macro which replaces the use of a Variable Length Array In Struct (VLAIS)
+> with a C99 compliant equivalent. This macro instead allocates the appropriate
+> amount of memory using an char array.
+> 
+> The new code can be compiled with both gcc and clang.
+> 
+> struct shash_desc contains a flexible array member member ctx declared with
+> CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
+> of the array declared after struct shash_desc with long long.
+> 
+> No trailing padding is required because it is not a struct type that can
+> be used in an array.
+> 
+> The CRYPTO_MINALIGN_ATTR is required so that desc is aligned with long long
+> as would be the case for a struct containing a member with
+> CRYPTO_MINALIGN_ATTR.
+> 
+> Signed-off-by: Behan Webster <behanw@converseincode.com>
 
-Behan
+Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
 
+Thanks,
 -- 
-Behan Webster
-behanw@converseincode.com
-
+Email: Herbert Xu <herbert@gondor.apana.org.au>
+Home Page: http://gondor.apana.org.au/~herbert/
+PGP Key: http://gondor.apana.org.au/~herbert/pubkey.txt

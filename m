@@ -1,78 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39834 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59670 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753431AbaIRJYT (ORCPT
+	with ESMTP id S1755230AbaIRJcA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 05:24:19 -0400
-Message-ID: <1411032216.25255.13.camel@localhost.localdomain>
-Subject: Re: [PATCH] Btrfs-progs: super-recover: fix double free fs_devices
- memory
+	Thu, 18 Sep 2014 05:32:00 -0400
+Message-ID: <1411032679.25255.17.camel@localhost.localdomain>
+Subject: Re: [PATCH] btrfs-progs: fix page align issue for lzo compress
+ inrestore
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>, Eric Sandeen <sandeen@redhat.com>,
-        "Chris Murphy" <lists@colorremedies.com>
-Date: Thu, 18 Sep 2014 17:23:36 +0800
-In-Reply-To: <1411030872-2235-1-git-send-email-wangshilong1991@gmail.com>
-References: <5419BE1E.2020607@redhat.com>
-	 <1411030872-2235-1-git-send-email-wangshilong1991@gmail.com>
+To: Marc Dietrich <marvin24@gmx.de>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Thu, 18 Sep 2014 17:31:19 +0800
+In-Reply-To: <1416727.rLUkdMm4S0@fb07-iapwap2>
+References: <1411011283-22079-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <2555349.8u3kbZMf74@fb07-iapwap2>
+	 <1411031454.25255.11.camel@localhost.localdomain>
+	 <1416727.rLUkdMm4S0@fb07-iapwap2>
 Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-09-18 at 05:01 -0400, Wang Shilong wrote:
-> super-recover collects btrfs devices infomation using existed
-> functions scan_one_devices().
+On Thu, 2014-09-18 at 11:25 +0200, Marc Dietrich wrote:
+> Am Donnerstag, 18. September 2014, 17:10:54 schrieb Gui Hecheng:
+> > On Thu, 2014-09-18 at 10:25 +0200, Marc Dietrich wrote:
+> > > Hello Gui,
+> > > 
+> > > Am Donnerstag, 18. September 2014, 11:34:43 schrieb Gui Hecheng:
+> > > > When runing restore under lzo compression, "bad compress length"
+> > > > problems are encountered.
+> > > > It is because there is a page align problem with the @decompress_lzo,
+> > > > as follows:
+> > > > 		|------| |----|-| |------|...|------|
+> > > > 		  page         ^    page       page
+> > > > 			       |
+> > > > 			  3 bytes left
+> > > > 
+> > > > 	When lzo compress pages im RAM, lzo will ensure that
+> > > > 	the 4 bytes len will be in one page as a whole.
+> > > > 	There is a situation that 3 (or less) bytes are left
+> > > > 	at the end of a page, and then the 4 bytes len is
+> > > > 	stored at the start of the next page.
+> > > > 	But the @decompress_lzo doesn't goto the start of
+> > > > 	the next page and continue to read the next 4 bytes
+> > > > 	which is across two pages, so a random value is fetched
+> > > > 	as a "bad compress length".
+> > > > 
+> > > > So we just switch to the page-aligned start position to read
+> > > > the len of next piece of data when "bad compress length" is encounterd.
+> > > > If we still get bad compress length in this case, then there is a
+> > > > real "bad compress length", and we shall report error.
+> > > > 
+> > > > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> > > > ---
+> > > >  cmds-restore.c | 20 ++++++++++++++++++++
+> > > >  1 file changed, 20 insertions(+)
+> > > > 
+> > > > diff --git a/cmds-restore.c b/cmds-restore.c
+> > > > index 38a131e..8b230ab 100644
+> > > > --- a/cmds-restore.c
+> > > > +++ b/cmds-restore.c
+> > > > @@ -57,6 +57,9 @@ static int dry_run = 0;
+> > > >  
+> > > >  #define LZO_LEN 4
+> > > >  #define PAGE_CACHE_SIZE 4096
+> > > > +#define PAGE_CACHE_MASK (~(PAGE_CACHE_SIZE - 1))
+> > > > +#define PAGE_CACHE_ALIGN(addr) (((addr) + PAGE_CACHE_SIZE - 1)	\
+> > > > +							& PAGE_CACHE_MASK)
+> > > >  #define lzo1x_worst_compress(x) ((x) + ((x) / 16) + 64 + 3)
+> > > >  
+> > > >  static int decompress_zlib(char *inbuf, char *outbuf, u64 compress_len,
+> > > > @@ -101,6 +104,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+> > > >  	size_t out_len = 0;
+> > > >  	size_t tot_len;
+> > > >  	size_t tot_in;
+> > > > +	size_t tot_in_aligned;
+> > > > +	int aligned = 0;
+> > > >  	int ret;
+> > > >  
+> > > >  	ret = lzo_init();
+> > > > @@ -117,6 +122,20 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+> > > >  		in_len = read_compress_length(inbuf);
+> > > >  
+> > > >  		if ((tot_in + LZO_LEN + in_len) > tot_len) {
+> > > > +			/*
+> > > > +			 * The LZO_LEN bytes is guaranteed to be
+> > > > +			 * in one page as a whole, so if a page
+> > > > +			 * has fewer than LZO_LEN bytes left,
+> > > > +			 * the LZO_LEN bytes should be fetched
+> > > > +			 * at the start of the next page
+> > > > +			 */
+> > > > +			if (!aligned) {
+> > > > +				tot_in_aligned = PAGE_CACHE_ALIGN(tot_in);
+> > > > +				inbuf += (tot_in_aligned - tot_in);
+> > > > +				tot_in = tot_in_aligned;
+> > > > +				aligned = 1;
+> > > > +				continue;
+> > > > +			}
+> > > 
+> > > Small question, shouldn't the aligned check be moved out of the if block?
+> > > First, we could have a bad length caused by the alignment which could result
+> > > in a stream length less than tot_len.
+> > 
+> > Ah, you have reminded me of a missing case to be covered.
+> > 
+> > > Second, if we know that the length record never crosses a page, why not
+> > > always check for proper alignment. I think the overhead should be minimal.
+> > 
+> > I don't think alignment should be checked always, because in the
+> > "normal" case the lzo stuff is "compact":
+> > 	[len][----data----][len][----data----]...
+> > It is never aligned to anything and we never knows where next @len
+> > starts before we read the former one. The alignement-related issue is a
+> > rare case.
 > 
-> Problem is fs_devices is freed twice in close_ctree() and
-> free_recover_superblock() for super correction path.
-> 
-> Fix this problem by checking whether fs_devices memory
-> have been freed before we free it.
-> 
-> Cc: Eric Sandeen <sandeen@redhat.com>
-> Cc: Chris Murphy <lists@colorremedies.com>
-> Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
-> ---
->  super-recover.c | 13 +++----------
->  1 file changed, 3 insertions(+), 10 deletions(-)
-> 
-> diff --git a/super-recover.c b/super-recover.c
-> index 767de4b..419b86a 100644
-> --- a/super-recover.c
-> +++ b/super-recover.c
-> @@ -69,21 +69,11 @@ void init_recover_superblock(struct btrfs_recover_superblock *recover)
->  static
->  void free_recover_superblock(struct btrfs_recover_superblock *recover)
->  {
-> -	struct btrfs_device *device;
->  	struct super_block_record *record;
->  
->  	if (!recover->fs_devices)
->  		return;
->  
-> -	while (!list_empty(&recover->fs_devices->devices)) {
-> -		device = list_entry(recover->fs_devices->devices.next,
-> -				struct btrfs_device, dev_list);
-> -		list_del_init(&device->dev_list);
-> -		free(device->name);
-> -		free(device);
-> -	}
-> -	free(recover->fs_devices);
-> -
->  	while (!list_empty(&recover->good_supers)) {
->  		record = list_entry(recover->good_supers.next,
->  				struct super_block_record, list);
-> @@ -341,6 +331,9 @@ int btrfs_recover_superblocks(const char *dname,
->  no_recover:
->  	recover_err_str(ret);
->  	free_recover_superblock(&recover);
-> +	/* check if we have freed fs_deivces in close_ctree() */
-> +	if (!root)
-> +		btrfs_close_devices(recover.fs_devices);
->  	return ret;
->  }
->  
+> sorry, my wording was wrong. I mean always check for page crossing of the length
+> record and move forward if yes.
 
-nice catch! "+20, recorded". ^_^
+Ah, this time I see, that is a good idea. Thanks!
+
+-Gui
+
+> Marc
+> 
+
 

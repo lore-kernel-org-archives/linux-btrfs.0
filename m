@@ -1,55 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f182.google.com ([209.85.160.182]:37583 "EHLO
-	mail-yk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753076AbaIVI6f (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:27821 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1757263AbaIRDf2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 04:58:35 -0400
-Received: by mail-yk0-f182.google.com with SMTP id 20so1202235yks.27
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 01:58:34 -0700 (PDT)
+	Wed, 17 Sep 2014 23:35:28 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8I3ZXBc011054
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 11:35:33 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: fix page align issue for lzo compress in restore
+Date: Thu, 18 Sep 2014 11:34:43 +0800
+Message-ID: <1411011283-22079-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAKFHe2RwgjBDCEd6D4jva8QFou=gj8Pzd2auFUNyHFNephrYTw@mail.gmail.com>
-References: <1411261282-26831-1-git-send-email-xnox@debian.org>
-	<1411261282-26831-4-git-send-email-xnox@debian.org>
-	<CAKFHe2RwgjBDCEd6D4jva8QFou=gj8Pzd2auFUNyHFNephrYTw@mail.gmail.com>
-Date: Mon, 22 Sep 2014 09:58:34 +0100
-Message-ID: <CANBHLUghtYatMgdGHDunp4osE16Ve2urTcmK9u963scOgiFwHg@mail.gmail.com>
-Subject: Re: [PATCH 4/4] Default to acting like fsck.
-From: Dimitri John Ledkov <xnox@debian.org>
-To: Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21 September 2014 13:59, Tobias Geerinckx-Rice
-<tobias.geerinckx.rice@gmail.com> wrote:
-> On 21 September 2014 03:01, Dimitri John Ledkov <xnox@debian.org> wrote:
->>
->> Inspect arguments, if we are not called as btrfs, then assume we are
->> called to act like fsck.
-> [...]
->> -       if (!strcmp(bname, "btrfsck")) {
->> +       if (strcmp(bname, "btrfs") != 0) {
->
-> That's assuming a lot.
->
-> Silently (!) breaking people's btrfs-3.15_patched-DontRandomlyPanicV2
-> is a recipe for needless hair-pulling. Is there a reason for not using
-> something less like strstr(bname, "fsck") that I am missing?
->
+When runing restore under lzo compression, "bad compress length"
+problems are encountered.
+It is because there is a page align problem with the @decompress_lzo,
+as follows:
+		|------| |----|-| |------|...|------|
+		  page         ^    page       page
+			       |
+			  3 bytes left
 
-Quite. This is verbatim patch as I have currently applied in Debian
-packaging, and it was a fast fix to prevent breakage we had at one
-point.
+	When lzo compress pages im RAM, lzo will ensure that
+	the 4 bytes len will be in one page as a whole.
+	There is a situation that 3 (or less) bytes are left
+	at the end of a page, and then the 4 bytes len is
+	stored at the start of the next page.
+	But the @decompress_lzo doesn't goto the start of
+	the next page and continue to read the next 4 bytes
+	which is across two pages, so a random value is fetched
+	as a "bad compress length".
 
-Indeed using "strstr(bname, "fsck")" would be better and sufficient to
-resolve the problem we encountered (specifically fsck.btrfs -> btrfs
-not acting like btrfs). Also using strstr, would fix btrfsck.my-build
-to act like fsck tool.
+So we just switch to the page-aligned start position to read
+the len of next piece of data when "bad compress length" is encounterd.
+If we still get bad compress length in this case, then there is a
+real "bad compress length", and we shall report error.
 
-I'll update this one patch.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ cmds-restore.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 38a131e..8b230ab 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -57,6 +57,9 @@ static int dry_run = 0;
+ 
+ #define LZO_LEN 4
+ #define PAGE_CACHE_SIZE 4096
++#define PAGE_CACHE_MASK (~(PAGE_CACHE_SIZE - 1))
++#define PAGE_CACHE_ALIGN(addr) (((addr) + PAGE_CACHE_SIZE - 1)	\
++							& PAGE_CACHE_MASK)
+ #define lzo1x_worst_compress(x) ((x) + ((x) / 16) + 64 + 3)
+ 
+ static int decompress_zlib(char *inbuf, char *outbuf, u64 compress_len,
+@@ -101,6 +104,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+ 	size_t out_len = 0;
+ 	size_t tot_len;
+ 	size_t tot_in;
++	size_t tot_in_aligned;
++	int aligned = 0;
+ 	int ret;
+ 
+ 	ret = lzo_init();
+@@ -117,6 +122,20 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+ 		in_len = read_compress_length(inbuf);
+ 
+ 		if ((tot_in + LZO_LEN + in_len) > tot_len) {
++			/*
++			 * The LZO_LEN bytes is guaranteed to be
++			 * in one page as a whole, so if a page
++			 * has fewer than LZO_LEN bytes left,
++			 * the LZO_LEN bytes should be fetched
++			 * at the start of the next page
++			 */
++			if (!aligned) {
++				tot_in_aligned = PAGE_CACHE_ALIGN(tot_in);
++				inbuf += (tot_in_aligned - tot_in);
++				tot_in = tot_in_aligned;
++				aligned = 1;
++				continue;
++			}
+ 			fprintf(stderr, "bad compress length %lu\n",
+ 				(unsigned long)in_len);
+ 			return -1;
+@@ -137,6 +156,7 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+ 		outbuf += new_len;
+ 		inbuf += in_len;
+ 		tot_in += in_len;
++		aligned = 0;
+ 	}
+ 
+ 	*decompress_len = out_len;
 -- 
-Regards,
+1.8.1.4
 
-Dimitri.

@@ -1,407 +1,536 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f177.google.com ([74.125.82.177]:51076 "EHLO
-	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753877AbaIROGv (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:4112 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756415AbaIRPUH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 10:06:51 -0400
-Received: by mail-we0-f177.google.com with SMTP id u57so974121wes.36
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 07:06:49 -0700 (PDT)
+	Thu, 18 Sep 2014 11:20:07 -0400
+Received: from pps.filterd (m0004346 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8IF8mI0030297
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 08:20:06 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0a-00082601.pphosted.com with ESMTP id 1pfjn9hhu5-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 08:20:06 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: remove empty block groups automatically V3
+Date: Thu, 18 Sep 2014 11:20:02 -0400
+Message-ID: <1411053602-17881-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Date: Thu, 18 Sep 2014 16:06:49 +0200
-Message-ID: <CACe732sS7bTvVCQm3f2BQagsqad+RFwRXhhiaGh+f2tDPupuVA@mail.gmail.com>
-Subject: corruption with btrfs on nocow loop file
-From: Jan Killius <tmpnerd@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=f46d04430466e58a480503577e61
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---f46d04430466e58a480503577e61
-Content-Type: text/plain; charset=UTF-8
+One problem that has plagued us is that a user will use up all of his space with
+data, remove a bunch of that data, and then try to create a bunch of small files
+and run out of space.  This happens because all the chunks were allocated for
+data since the metadata requirements were so low.  But now there's a bunch of
+empty data block groups and not enough metadata space to do anything.  This
+patch solves this problem by automatically deleting empty block groups.  If we
+notice the used count go down to 0 when deleting or on mount notice that a block
+group has a used count of 0 then we will queue it to be deleted.
 
-Hello,
-I get corruption with btrfs in a loop device with linux-3.16.3
-(https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/
-for-linus applied).
-I never had a problem with this setup until 3.16.
+When the cleaner thread runs we will double check to make sure the block group
+is still empty and then we will delete it.  This patch has the side effect of no
+longer having a bunch of BUG_ON()'s in the chunk delete code, which will be
+helpful for both this and relocate.  Thanks,
 
-This happened just after unpacking a few thousand small files and
-reading them back with an IDE (phpstorm).
-The loop file is a 50GB nocow file with LUKS on it.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V2->V3: Fixed a problem where orphan replay would get angry because bg deletion
+would add more orphans.  Fixed it so we don't delete bg's until after we've done
+all the open_ctree work.
 
-mount options for the main btrfs filesystem:
-/dev/sda2 on / type btrfs
-(rw,noatime,compress-force=lzo,ssd,discard,noacl,space_cache)
-mount options for the loop device:
-/dev/mapper/myvolume on /mnt/volume type btrfs
-(rw,noatime,compress-force=lzo,ssd,noacl,space_cache)
+ fs/btrfs/ctree.h                  |   9 ++-
+ fs/btrfs/disk-io.c                |   6 ++
+ fs/btrfs/extent-tree.c            | 141 ++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tests/free-space-tests.c |   2 +-
+ fs/btrfs/volumes.c                | 115 ++++++++++++++++++++-----------
+ fs/btrfs/volumes.h                |   2 +
+ 6 files changed, 226 insertions(+), 49 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6db3d4b..d93d598 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1298,8 +1298,8 @@ struct btrfs_block_group_cache {
+ 	 */
+ 	struct list_head cluster_list;
+ 
+-	/* For delayed block group creation */
+-	struct list_head new_bg_list;
++	/* For delayed block group creation or deletion of empty block groups */
++	struct list_head bg_list;
+ };
+ 
+ /* delayed seq elem */
+@@ -1567,6 +1567,7 @@ struct btrfs_fs_info {
+ 	int do_barriers;
+ 	int closing;
+ 	int log_root_recovering;
++	int open;
+ 
+ 	u64 total_pinned;
+ 
+@@ -1716,6 +1717,9 @@ struct btrfs_fs_info {
+ 
+ 	/* Used to reclaim the metadata space in the background. */
+ 	struct work_struct async_reclaim_work;
++
++	spinlock_t unused_bgs_lock;
++	struct list_head unused_bgs;
+ };
+ 
+ struct btrfs_subvolume_writers {
+@@ -3343,6 +3347,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 			   u64 size);
+ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 group_start);
++void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
+ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 				       struct btrfs_root *root);
+ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a224fb9..38ee7f2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1764,6 +1764,7 @@ static int cleaner_kthread(void *arg)
+ 		}
+ 
+ 		btrfs_run_delayed_iputs(root);
++		btrfs_delete_unused_bgs(root->fs_info);
+ 		again = btrfs_clean_one_deleted_snapshot(root);
+ 		mutex_unlock(&root->fs_info->cleaner_mutex);
+ 
+@@ -2224,6 +2225,7 @@ int open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->super_lock);
+ 	spin_lock_init(&fs_info->qgroup_op_lock);
+ 	spin_lock_init(&fs_info->buffer_lock);
++	spin_lock_init(&fs_info->unused_bgs_lock);
+ 	rwlock_init(&fs_info->tree_mod_log_lock);
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+@@ -2233,6 +2235,7 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+ 	INIT_LIST_HEAD(&fs_info->space_info);
+ 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
++	INIT_LIST_HEAD(&fs_info->unused_bgs);
+ 	btrfs_mapping_init(&fs_info->mapping_tree);
+ 	btrfs_init_block_rsv(&fs_info->global_block_rsv,
+ 			     BTRFS_BLOCK_RSV_GLOBAL);
+@@ -2968,6 +2971,8 @@ retry_root_backup:
+ 		fs_info->update_uuid_tree_gen = 1;
+ 	}
+ 
++	fs_info->open = 1;
++
+ 	return 0;
+ 
+ fail_qgroup:
+@@ -3679,6 +3684,7 @@ void close_ctree(struct btrfs_root *root)
+ 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+ 	btrfs_stop_all_workers(fs_info);
+ 
++	fs_info->open = 0;
+ 	free_root_pointers(fs_info, 1);
+ 
+ 	iput(fs_info->btree_inode);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b30ddb4..28a27d5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5433,6 +5433,20 @@ static int update_block_group(struct btrfs_root *root,
+ 			spin_unlock(&cache->space_info->lock);
+ 		} else {
+ 			old_val -= num_bytes;
++
++			/*
++			 * No longer have used bytes in this block group, queue
++			 * it for deletion.
++			 */
++			if (old_val == 0) {
++				spin_lock(&info->unused_bgs_lock);
++				if (list_empty(&cache->bg_list)) {
++					btrfs_get_block_group(cache);
++					list_add_tail(&cache->bg_list,
++						      &info->unused_bgs);
++				}
++				spin_unlock(&info->unused_bgs_lock);
++			}
+ 			btrfs_set_block_group_used(&cache->item, old_val);
+ 			cache->pinned += num_bytes;
+ 			cache->space_info->bytes_pinned += num_bytes;
+@@ -8855,6 +8869,16 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 	}
+ 	up_write(&info->commit_root_sem);
+ 
++	spin_lock(&info->unused_bgs_lock);
++	while (!list_empty(&info->unused_bgs)) {
++		block_group = list_first_entry(&info->unused_bgs,
++					       struct btrfs_block_group_cache,
++					       bg_list);
++		list_del_init(&block_group->bg_list);
++		btrfs_put_block_group(block_group);
++	}
++	spin_unlock(&info->unused_bgs_lock);
++
+ 	spin_lock(&info->block_group_cache_lock);
+ 	while ((n = rb_last(&info->block_group_cache_tree)) != NULL) {
+ 		block_group = rb_entry(n, struct btrfs_block_group_cache,
+@@ -8989,7 +9013,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	init_rwsem(&cache->data_rwsem);
+ 	INIT_LIST_HEAD(&cache->list);
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+-	INIT_LIST_HEAD(&cache->new_bg_list);
++	INIT_LIST_HEAD(&cache->bg_list);
+ 	btrfs_init_free_space_ctl(cache);
+ 
+ 	return cache;
+@@ -9130,8 +9154,18 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		__link_block_group(space_info, cache);
+ 
+ 		set_avail_alloc_bits(root->fs_info, cache->flags);
+-		if (btrfs_chunk_readonly(root, cache->key.objectid))
++		if (btrfs_chunk_readonly(root, cache->key.objectid)) {
+ 			set_block_group_ro(cache, 1);
++		} else if (btrfs_block_group_used(&cache->item) == 0) {
++			spin_lock(&info->unused_bgs_lock);
++			/* Should always be true but just in case. */
++			if (list_empty(&cache->bg_list)) {
++				btrfs_get_block_group(cache);
++				list_add_tail(&cache->bg_list,
++					      &info->unused_bgs);
++			}
++			spin_unlock(&info->unused_bgs_lock);
++		}
+ 	}
+ 
+ 	list_for_each_entry_rcu(space_info, &root->fs_info->space_info, list) {
+@@ -9172,10 +9206,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	int ret = 0;
+ 
+-	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs,
+-				 new_bg_list) {
+-		list_del_init(&block_group->new_bg_list);
+-
++	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs, bg_list) {
++		list_del_init(&block_group->bg_list);
+ 		if (ret)
+ 			continue;
+ 
+@@ -9261,7 +9293,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	__link_block_group(cache->space_info, cache);
+ 
+-	list_add_tail(&cache->new_bg_list, &trans->new_bgs);
++	list_add_tail(&cache->bg_list, &trans->new_bgs);
+ 
+ 	set_avail_alloc_bits(extent_root->fs_info, type);
+ 
+@@ -9430,6 +9462,101 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Process the unused_bgs list and remove any that don't have any allocated
++ * space inside of them.
++ */
++void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_block_group_cache *block_group;
++	struct btrfs_space_info *space_info;
++	struct btrfs_root *root = fs_info->extent_root;
++	struct btrfs_trans_handle *trans;
++	int ret = 0;
++
++	if (!fs_info->open)
++		return;
++
++	spin_lock(&fs_info->unused_bgs_lock);
++	while (!list_empty(&fs_info->unused_bgs)) {
++		u64 start, end;
++
++		block_group = list_first_entry(&fs_info->unused_bgs,
++					       struct btrfs_block_group_cache,
++					       bg_list);
++		space_info = block_group->space_info;
++		list_del_init(&block_group->bg_list);
++		if (ret || btrfs_mixed_space_info(space_info)) {
++			btrfs_put_block_group(block_group);
++			continue;
++		}
++		spin_unlock(&fs_info->unused_bgs_lock);
++
++		/* Don't want to race with allocators so take the groups_sem */
++		down_write(&space_info->groups_sem);
++		spin_lock(&block_group->lock);
++		if (block_group->reserved ||
++		    btrfs_block_group_used(&block_group->item) ||
++		    block_group->ro) {
++			/*
++			 * We want to bail if we made new allocations or have
++			 * outstanding allocations in this block group.  We do
++			 * the ro check in case balance is currently acting on
++			 * this block group.
++			 */
++			spin_unlock(&block_group->lock);
++			up_write(&space_info->groups_sem);
++			goto next;
++		}
++		spin_unlock(&block_group->lock);
++
++		/* We don't want to force the issue, only flip if it's ok. */
++		ret = set_block_group_ro(block_group, 0);
++		up_write(&space_info->groups_sem);
++		if (ret < 0) {
++			ret = 0;
++			goto next;
++		}
++
++		/*
++		 * Want to do this before we do anything else so we can recover
++		 * properly if we fail to join the transaction.
++		 */
++		trans = btrfs_join_transaction(root);
++		if (IS_ERR(trans)) {
++			btrfs_set_block_group_rw(root, block_group);
++			ret = PTR_ERR(trans);
++			goto next;
++		}
++
++		/*
++		 * We could have pending pinned extents for this block group,
++		 * just delete them, we don't care about them anymore.
++		 */
++		start = block_group->key.objectid;
++		end = start + block_group->key.offset - 1;
++		clear_extent_bits(&fs_info->freed_extents[0], start, end,
++				  EXTENT_DIRTY, GFP_NOFS);
++		clear_extent_bits(&fs_info->freed_extents[1], start, end,
++				  EXTENT_DIRTY, GFP_NOFS);
++
++		/* Reset pinned so btrfs_put_block_group doesn't complain */
++		block_group->pinned = 0;
++
++		/*
++		 * Btrfs_remove_chunk will abort the transaction if things go
++		 * horribly wrong.
++		 */
++		ret = btrfs_remove_chunk(trans, root,
++					 block_group->key.objectid);
++		btrfs_end_transaction(trans, root);
++next:
++		btrfs_put_block_group(block_group);
++		spin_lock(&fs_info->unused_bgs_lock);
++	}
++	spin_unlock(&fs_info->unused_bgs_lock);
++}
++
+ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_space_info *space_info;
+diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
+index d78ae10..2299bfd 100644
+--- a/fs/btrfs/tests/free-space-tests.c
++++ b/fs/btrfs/tests/free-space-tests.c
+@@ -45,7 +45,7 @@ static struct btrfs_block_group_cache *init_test_block_group(void)
+ 	spin_lock_init(&cache->lock);
+ 	INIT_LIST_HEAD(&cache->list);
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+-	INIT_LIST_HEAD(&cache->new_bg_list);
++	INIT_LIST_HEAD(&cache->bg_list);
+ 
+ 	btrfs_init_free_space_ctl(cache);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 77d7fbc..e8fc390 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2568,58 +2568,49 @@ static int btrfs_del_sys_chunk(struct btrfs_root *root, u64 chunk_objectid, u64
+ 	return ret;
+ }
+ 
+-static int btrfs_relocate_chunk(struct btrfs_root *root,
+-			 u64 chunk_tree, u64 chunk_objectid,
+-			 u64 chunk_offset)
++int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
++		       struct btrfs_root *root, u64 chunk_offset)
+ {
+ 	struct extent_map_tree *em_tree;
+-	struct btrfs_root *extent_root;
+-	struct btrfs_trans_handle *trans;
+-	struct btrfs_device *device;
+ 	struct extent_map *em;
++	struct btrfs_root *extent_root = root->fs_info->extent_root;
+ 	struct map_lookup *map;
+ 	u64 dev_extent_len = 0;
+-	int ret;
+-	int i;
++	u64 chunk_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
++	u64 chunk_tree = root->fs_info->chunk_root->objectid;
++	int i, ret = 0;
+ 
++	/* Just in case */
+ 	root = root->fs_info->chunk_root;
+-	extent_root = root->fs_info->extent_root;
+ 	em_tree = &root->fs_info->mapping_tree.map_tree;
+ 
+-	ret = btrfs_can_relocate(extent_root, chunk_offset);
+-	if (ret)
+-		return -ENOSPC;
+-
+-	/* step one, relocate all the extents inside this chunk */
+-	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
+-	if (ret)
+-		return ret;
+-
+-	trans = btrfs_start_transaction(root, 0);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		btrfs_std_error(root->fs_info, ret);
+-		return ret;
+-	}
+-
+-	/*
+-	 * step two, delete the device extents and the
+-	 * chunk tree entries
+-	 */
+ 	read_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
+ 	read_unlock(&em_tree->lock);
+ 
+-	BUG_ON(!em || em->start > chunk_offset ||
+-	       em->start + em->len < chunk_offset);
++	if (!em || em->start > chunk_offset ||
++	    em->start + em->len < chunk_offset) {
++		/*
++		 * This is a logic error, but we don't want to just rely on the
++		 * user having built with ASSERT enabled, so if ASSERT doens't
++		 * do anything we still error out.
++		 */
++		ASSERT(0);
++		if (em)
++			free_extent_map(em);
++		return -EINVAL;
++	}
+ 	map = (struct map_lookup *)em->bdev;
+ 
+ 	for (i = 0; i < map->num_stripes; i++) {
+-		device = map->stripes[i].dev;
++		struct btrfs_device *device = map->stripes[i].dev;
+ 		ret = btrfs_free_dev_extent(trans, device,
+ 					    map->stripes[i].physical,
+ 					    &dev_extent_len);
+-		BUG_ON(ret);
++		if (ret) {
++			btrfs_abort_transaction(trans, root, ret);
++			goto out;
++		}
+ 
+ 		if (device->bytes_used > 0) {
+ 			lock_chunks(root);
+@@ -2634,23 +2625,34 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
+ 
+ 		if (map->stripes[i].dev) {
+ 			ret = btrfs_update_device(trans, map->stripes[i].dev);
+-			BUG_ON(ret);
++			if (ret) {
++				btrfs_abort_transaction(trans, root, ret);
++				goto out;
++			}
+ 		}
+ 	}
+ 	ret = btrfs_free_chunk(trans, root, chunk_tree, chunk_objectid,
+ 			       chunk_offset);
+-
+-	BUG_ON(ret);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto out;
++	}
+ 
+ 	trace_btrfs_chunk_free(root, map, chunk_offset, em->len);
+ 
+ 	if (map->type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		ret = btrfs_del_sys_chunk(root, chunk_objectid, chunk_offset);
+-		BUG_ON(ret);
++		if (ret) {
++			btrfs_abort_transaction(trans, root, ret);
++			goto out;
++		}
+ 	}
+ 
+ 	ret = btrfs_remove_block_group(trans, extent_root, chunk_offset);
+-	BUG_ON(ret);
++	if (ret) {
++		btrfs_abort_transaction(trans, extent_root, ret);
++		goto out;
++	}
+ 
+ 	write_lock(&em_tree->lock);
+ 	remove_extent_mapping(em_tree, em);
+@@ -2658,11 +2660,46 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
+ 
+ 	/* once for the tree */
+ 	free_extent_map(em);
++out:
+ 	/* once for us */
+ 	free_extent_map(em);
++	return ret;
++}
++
++static int btrfs_relocate_chunk(struct btrfs_root *root,
++			 u64 chunk_tree, u64 chunk_objectid,
++			 u64 chunk_offset)
++{
++	struct btrfs_root *extent_root;
++	struct btrfs_trans_handle *trans;
++	int ret;
++
++	root = root->fs_info->chunk_root;
++	extent_root = root->fs_info->extent_root;
++
++	ret = btrfs_can_relocate(extent_root, chunk_offset);
++	if (ret)
++		return -ENOSPC;
++
++	/* step one, relocate all the extents inside this chunk */
++	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
++	if (ret)
++		return ret;
+ 
++	trans = btrfs_start_transaction(root, 0);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		btrfs_std_error(root->fs_info, ret);
++		return ret;
++	}
++
++	/*
++	 * step two, delete the device extents and the
++	 * chunk tree entries
++	 */
++	ret = btrfs_remove_chunk(trans, root, chunk_offset);
+ 	btrfs_end_transaction(trans, root);
+-	return 0;
++	return ret;
+ }
+ 
+ static int btrfs_relocate_sys_chunks(struct btrfs_root *root)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 2b37da3..f648d19 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -462,6 +462,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *extent_root,
+ 				u64 chunk_offset, u64 chunk_size);
++int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
++		       struct btrfs_root *root, u64 chunk_offset);
+ 
+ static inline int btrfs_dev_stats_dirty(struct btrfs_device *dev)
+ {
+-- 
+1.8.3.1
 
-
-btrfsck:
-Checking filesystem on /dev/mapper/npoa
-UUID: 3a869f74-2a05-4ea2-9950-a6be5e4a9691
-checking extents
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-found 197030750 bytes used err is 0
-total csum bytes: 1245628
-total tree bytes: 133332992
-total fs tree bytes: 127696896
-total extent tree bytes: 3997696
-btree space waste bytes: 22086930
-file data blocks allocated: 1277382656
-referenced 2252468224
-Btrfs v0.20-rc1-592-ge11a9ae-dirty
-
-I also got a btrfs-image of the loop file system if needed.
-If more information's are needed to investigate the issue just ask.
-
-
-
-Kindly regards
-Jan Killius
-
---f46d04430466e58a480503577e61
-Content-Type: application/x-bzip2; name="dmesg.bz2"
-Content-Disposition: attachment; filename="dmesg.bz2"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_i08697aq0
-
-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
-EfeGzsAd+tKW4q/IIHxYH/4u5IpwoSETLS0k
---f46d04430466e58a480503577e61--

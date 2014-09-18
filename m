@@ -1,115 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:38773 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751149AbaIRH26 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 03:28:58 -0400
-Received: by mail-pa0-f53.google.com with SMTP id rd3so897837pab.40
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 00:28:57 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: "btrfs rescue super-recover" memory corruption
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <5419BE1E.2020607@redhat.com>
-Date: Thu, 18 Sep 2014 15:28:43 +0800
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>
-Message-Id: <CE0C467D-8BD9-4B3B-8FED-AD70F31DC743@gmail.com>
-References: <5419BE1E.2020607@redhat.com>
-To: Eric Sandeen <sandeen@redhat.com>
+Received: from mout.gmx.net ([212.227.15.15]:53826 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751817AbaIRI0E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Sep 2014 04:26:04 -0400
+From: Marc Dietrich <marvin24@gmx.de>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fix page align issue for lzo compress in restore
+Date: Thu, 18 Sep 2014 10:25:57 +0200
+Message-ID: <2555349.8u3kbZMf74@fb07-iapwap2>
+In-Reply-To: <1411011283-22079-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1411011283-22079-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart5308379.pxbHsjWnp5"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Eric,
 
-> This:
-> 
-> # truncate --size=8g
-> # dd if=/dev/zero of=file conv=notrunc  bs=4 seek=16384 count=1
-> # valgrind ./btrfs rescue super-recover file -v
-> 
-> yields:
-> 
-> ==4604== Memcheck, a memory error detector
-> ==4604== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
-> ==4604== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright info
-> ==4604== Command: ./btrfs rescue super-recover file -v
-> ==4604== 
-> All Devices:
-> 	Device: id = 1, name = file
-> 
-> Before Recovering:
-> 	[All good supers]:
-> 		device name = file
-> 		superblock bytenr = 67108864
-> 
-> 	[All bad supers]:
-> 		device name = file
-> 		superblock bytenr = 65536
-> 
-> 
-> Make sure this is a btrfs disk otherwise the tool will destroy other fs, Are you sure? [y/N]: y
-> Recovered bad superblocks successful
-> ==4604== Invalid read of size 8
-> ==4604==    at 0x426B55: btrfs_recover_superblocks (list.h:204)
-> ==4604==    by 0x421C79: cmd_super_recover (cmds-rescue.c:148)
-> ==4604==    by 0x40420A: handle_command_group (btrfs.c:145)
-> ==4604==    by 0x421B54: cmd_rescue (cmds-rescue.c:162)
-> ==4604==    by 0x404199: main (btrfs.c:247)
-> ==4604==  Address 0x4c250b0 is 48 bytes inside a block of size 96 free'd
-> ==4604==    at 0x4A063F0: free (vg_replace_malloc.c:446)
-> ==4604==    by 0x43C77E: btrfs_close_devices (volumes.c:196)
-> ==4604==    by 0x42F5D1: close_ctree (disk-io.c:1404)
-> ==4604==    by 0x426A85: btrfs_recover_superblocks (super-recover.c:340)
-> ==4604==    by 0x421C79: cmd_super_recover (cmds-rescue.c:148)
-> ==4604==    by 0x40420A: handle_command_group (btrfs.c:145)
-> ==4604==    by 0x421B54: cmd_rescue (cmds-rescue.c:162)
-> ==4604==    by 0x404199: main (btrfs.c:247)
-> ==4604== 
-> ==4604== Invalid free() / delete / delete[] / realloc()
-> ==4604==    at 0x4A063F0: free (vg_replace_malloc.c:446)
-> ==4604==    by 0x426B9E: btrfs_recover_superblocks (super-recover.c:85)
-> ==4604==    by 0x421C79: cmd_super_recover (cmds-rescue.c:148)
-> ==4604==    by 0x40420A: handle_command_group (btrfs.c:145)
-> ==4604==    by 0x421B54: cmd_rescue (cmds-rescue.c:162)
-> ==4604==    by 0x404199: main (btrfs.c:247)
-> ==4604==  Address 0x4c25080 is 0 bytes inside a block of size 96 free'd
-> ==4604==    at 0x4A063F0: free (vg_replace_malloc.c:446)
-> ==4604==    by 0x43C77E: btrfs_close_devices (volumes.c:196)
-> ==4604==    by 0x42F5D1: close_ctree (disk-io.c:1404)
-> ==4604==    by 0x426A85: btrfs_recover_superblocks (super-recover.c:340)
-> ==4604==    by 0x421C79: cmd_super_recover (cmds-rescue.c:148)
-> ==4604==    by 0x40420A: handle_command_group (btrfs.c:145)
-> ==4604==    by 0x421B54: cmd_rescue (cmds-rescue.c:162)
-> ==4604==    by 0x404199: main (btrfs.c:247)
-> ==4604== 
-> ==4604== 
-> ==4604== HEAP SUMMARY:
-> ==4604==     in use at exit: 0 bytes in 0 blocks
-> ==4604==   total heap usage: 72 allocs, 73 frees, 140,384 bytes allocated
-> ==4604== 
-> ==4604== All heap blocks were freed -- no leaks are possible
-> ==4604== 
-> ==4604== For counts of detected and suppressed errors, rerun with: -v
-> ==4604== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 6 from 6)
-> 
-> i.e. I think we are double freeing memory:
-> 
->        close_ctree(root); // <-- here
-> no_recover:
->        recover_err_str(ret);
->        free_recover_superblock(&recover); // <-- and here
-> 
-> I can't really work out what all this is all doing, but maybe the fix is obvious
-> to Wang Shilong (who wrote the original code)?
+--nextPart5308379.pxbHsjWnp5
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="ISO-8859-1"
 
-Though i no longer spend much time on btrfs, i will take a look at this. ^_^
+Hello Gui,
 
-Thanks Eric
+Am Donnerstag, 18. September 2014, 11:34:43 schrieb Gui Hecheng:
+> When runing restore under lzo compression, "bad compress length"
+> problems are encountered.
+> It is because there is a page align problem with the @decompress_lzo,
+> as follows:
+> 		|------| |----|-| |------|...|------|
+> 		  page         ^    page       page
+> 			       |
+> 			  3 bytes left
 > 
-> Thanks,
-> -Eric
+> 	When lzo compress pages im RAM, lzo will ensure that
+> 	the 4 bytes len will be in one page as a whole.
+> 	There is a situation that 3 (or less) bytes are left
+> 	at the end of a page, and then the 4 bytes len is
+> 	stored at the start of the next page.
+> 	But the @decompress_lzo doesn't goto the start of
+> 	the next page and continue to read the next 4 bytes
+> 	which is across two pages, so a random value is fetched
+> 	as a "bad compress length".
+> 
+> So we just switch to the page-aligned start position to read
+> the len of next piece of data when "bad compress length" is encounterd.
+> If we still get bad compress length in this case, then there is a
+> real "bad compress length", and we shall report error.
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  cmds-restore.c | 20 ++++++++++++++++++++
+>  1 file changed, 20 insertions(+)
+> 
+> diff --git a/cmds-restore.c b/cmds-restore.c
+> index 38a131e..8b230ab 100644
+> --- a/cmds-restore.c
+> +++ b/cmds-restore.c
+> @@ -57,6 +57,9 @@ static int dry_run = 0;
+>  
+>  #define LZO_LEN 4
+>  #define PAGE_CACHE_SIZE 4096
+> +#define PAGE_CACHE_MASK (~(PAGE_CACHE_SIZE - 1))
+> +#define PAGE_CACHE_ALIGN(addr) (((addr) + PAGE_CACHE_SIZE - 1)	\
+> +							& PAGE_CACHE_MASK)
+>  #define lzo1x_worst_compress(x) ((x) + ((x) / 16) + 64 + 3)
+>  
+>  static int decompress_zlib(char *inbuf, char *outbuf, u64 compress_len,
+> @@ -101,6 +104,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+>  	size_t out_len = 0;
+>  	size_t tot_len;
+>  	size_t tot_in;
+> +	size_t tot_in_aligned;
+> +	int aligned = 0;
+>  	int ret;
+>  
+>  	ret = lzo_init();
+> @@ -117,6 +122,20 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+>  		in_len = read_compress_length(inbuf);
+>  
+>  		if ((tot_in + LZO_LEN + in_len) > tot_len) {
+> +			/*
+> +			 * The LZO_LEN bytes is guaranteed to be
+> +			 * in one page as a whole, so if a page
+> +			 * has fewer than LZO_LEN bytes left,
+> +			 * the LZO_LEN bytes should be fetched
+> +			 * at the start of the next page
+> +			 */
+> +			if (!aligned) {
+> +				tot_in_aligned = PAGE_CACHE_ALIGN(tot_in);
+> +				inbuf += (tot_in_aligned - tot_in);
+> +				tot_in = tot_in_aligned;
+> +				aligned = 1;
+> +				continue;
+> +			}
 
-Best Regards,
-Wang Shilong
+Small question, shouldn't the aligned check be moved out of the if block?
+First, we could have a bad length caused by the alignment which could result
+in a stream length less than tot_len.
+Second, if we know that the length record never crosses a page, why not
+always check for proper alignment. I think the overhead should be minimal.
+
+Marc
+
+
+>  			fprintf(stderr, "bad compress length %lu\n",
+>  				(unsigned long)in_len);
+>  			return -1;
+> @@ -137,6 +156,7 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+>  		outbuf += new_len;
+>  		inbuf += in_len;
+>  		tot_in += in_len;
+> +		aligned = 0;
+>  	}
+>  
+>  	*decompress_len = out_len;
+> 
+
+--nextPart5308379.pxbHsjWnp5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQEcBAABAgAGBQJUGpcVAAoJEKyeR39HFBtoJzUH/2VOPmOAh8drll0Y6Pp8MelV
+tInMVhU5lL2SWAmfSwcng3u6Ydgc+Lf8j1UBQD4DNVpvT4Nv3/O5VB62Lz8Asnsr
+KkF5Vcu4/gj7YzoA0720/49kNmCc5m7yDBRgpoTiGwNC4w8ajGpkE0VdVeVUWVRR
+onO7SNgUj3b/6eJW5iqkLwnZIKi6yQjPJ4WwuXXZuS1dzXGmEE9n9Zj34zRDEO4d
+hku3CDOJlTOmBsKBRV2pQyklAXRWhwe1KMGsUuAnYTVXYRTfjNfpns/kfNzv9F6w
+IUjioGdQJe7Jp6yIRxvdAy0zKFEDZuKDZc3WNt0azKqKzsRPx1DFh+liOswSsZM=
+=zhKm
+-----END PGP SIGNATURE-----
+
+--nextPart5308379.pxbHsjWnp5--
 

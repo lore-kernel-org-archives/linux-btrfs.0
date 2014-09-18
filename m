@@ -1,70 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:51381 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751089AbaIRIQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 04:16:17 -0400
-From: Marc Dietrich <marvin24@gmx.de>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: Zooko Wilcox-OHearn <zooko@leastauthority.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: fs corruption report
-Date: Thu, 18 Sep 2014 10:16:09 +0200
-Message-ID: <5786662.mcQW9aUYte@fb07-iapwap2>
-In-Reply-To: <1411011561.22018.3.camel@localhost.localdomain>
-References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com> <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com> <1411011561.22018.3.camel@localhost.localdomain>
+Received: from aserp1040.oracle.com ([141.146.126.69]:46881 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754119AbaIRIUs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Sep 2014 04:20:48 -0400
+Date: Thu, 18 Sep 2014 16:20:24 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to insert
+ best fitted extent map
+Message-ID: <20140918082023.GC15092@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1410926015-26820-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20140918042113.GA15092@localhost.localdomain>
+ <541A6F6F.4010901@cn.fujitsu.com>
+ <20140918073307.GB15092@localhost.localdomain>
+ <541A90A2.5050407@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1462941.YWT6pRoA0m"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <541A90A2.5050407@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---nextPart1462941.YWT6pRoA0m
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="UTF-8"
-
-Am Donnerstag, 18. September 2014, 11:39:21 schrieb Gui Hecheng:
-> On Mon, 2014-09-01 at 15:25 +0000, Zooko Wilcox-OHearn wrote:
-> > I'm more than happy to try out patches and even focus my own brain on
-> > diagnosing it, if I can. I'm hoping to regain access to some of my
-> > files on my btrfs partition, and also I would enjoy helping get this
-> > improved. :-)
-> > 
-> > So if you want me to try an experiment, just email me. Unfortunately I
-> > can't just give you a copy of the partition, since it has confidential
-> > information on it.
-> > 
-> > Regards,
-> > 
-> > Zooko
+On Thu, Sep 18, 2014 at 03:58:26PM +0800, Qu Wenruo wrote:
 > 
-> Hi, Zooko, Marc,
-> I'm glad that I could send some feedbacks,
-> The following piece deals with the lzo decompress problem with restore
+[...]
+> >
+> >original:   (start >= existing->start && start < extent_map_end(existing))
+> >this patch: (start < extent_map_end(existing) && start + len > existing->start)
+> >
+> >(start + len > existing->start) doesn't equal to start >= existing->start,
+> >here is a case of (start+len > existing->start) but (start <= existing->start).
+> >
+> >        |--------| -->(existing)
+> >     |--------|    -->[start, start+len)
+> >
+> >And calling search_extent_mapping() doesn't make sure that
+> >(start >= existing->start) is true, either.
+> All right, that case is right and I'm wrong.
+> I'll change the if() to use start >= existing->start.
 > 
-> https://patchwork.kernel.org/patch/4928831/
+> BTW, Any other problem?
+
+Others look good.
+
+thanks,
+-liubo
+
 > 
-> Hope that it helps.
-
-Thanks for finding this issue, Gui! I just started a restore.
-
-Marc
-
---nextPart1462941.YWT6pRoA0m
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJUGpTJAAoJEKyeR39HFBtoT2IIAIRaFTKIe9VB5t0atlqDfuKp
-2yazRm4cAlrSNDRU3aYeOpUQoaCwMCiA3bDG2jFdE1fY6vWU08YRbUbVx+D/zRvf
-jDlA2jeNSUzKWd41i8hG7SGjifc89crRrwOzZaJFXG+zmCUq8AZP/t+GkXnQoEs3
-Wka+lSZNXJT5Tkq/7bi+Olqu2XzSv3md3EDdd6gWwW018tsL/xMg1weAPtM7tOy2
-z/qATooMlklYrpiaajmAGA2i4O23icmemmjqXb+M1xcPp7lNuvbnAEi0p2fr3EXB
-kSWxEBesnVT4R0uL8AXispaglFaLjCKX2SS4LAzqHo8tKElZpKa7yhkUo0xbWQQ=
-=FHuf
------END PGP SIGNATURE-----
-
---nextPart1462941.YWT6pRoA0m--
-
+> Thanks,
+> Qu
+> >
+> >>>And one of overlapping cases is (existing->start > start), ie. em->start > start, this is
+> >>>against our rule of btrfs_get_extent,
+> >>Nope again, this overlapping in fact is quite normal in multithread
+> >>random read/write.
+> >>The files's [0~16) is a preallocated one,
+> >>Thread A:
+> >>     write [4K, 8K) into the file, but not committed yet.
+> >>     extent map tree contains [0,16K) only
+> >>Thread B:
+> >>btrfs_get_extent()
+> >>     the map_start is 8K, len is 4K as an example
+> >>     grab a large em, take [0,16K), since [4K,8K) write is not committed.
+> >>     comes to insert: btrfs_release_path(path);
+> >>
+> >>Thread A:
+> >>     [4K, 8K) is not committed
+> >>     the extent map is now [0, 4K) [4K, 8K) [8K, 16K).
+> >>
+> >>Thread B:
+> >>     goes to insert: add_extent_mapping()
+> >>     the [0,16K) is overlapping, and the returned existing one is [8K, 16K).
+> >>     which contains the [map_start, map_start +  len).
+> >So this's an example of existing->start == start (both are 8K), not
+> >existing->start > start.
+> >
+> >See __extent_writepage_io(),
+> >
+> >{
+> >		...
+> >                 em = epd->get_extent(inode, page, pg_offset, cur,
+> >                                      end - cur + 1, 1);
+> >                 if (IS_ERR_OR_NULL(em)) {
+> >                         SetPageError(page);
+> >                         ret = PTR_ERR_OR_ZERO(em);
+> >                         break;
+> >                 }
+> >                 extent_offset = cur - em->start;
+> >		^^^^^^^^^^^^^^^^^^^^^^^^^^^ it needs to be (em->start <= cur)
+> >
+> >		...
+> >}
+> >
+> >thanks,
+> >-liubo
+> >
+> >>>struct extent_map *btrfs_get_extent(...)
+> >>>{
+> >>>	[...]
+> >>>	insert:
+> >>>		btrfs_release_path(path);
+> >>>		if (em->start > start || extent_map_end(em) <= start) {
+> >>>			btrfs_err(root->fs_info, "bad extent! em: [%llu %llu] passed
+> >>>	[%llu %llu]",
+> >>>				em->start, em->len, start, len);
+> >>>			err = -EIO;
+> >>>                 goto out;
+> >>>         }
+> >>>         [...]
+> >>>}
+> >>>
+> >>>thanks,
+> >>>-liubo
+> >>>
+> >>>>+			/*
+> >>>>+			 * The existing extent map is the one nearest to
+> >>>>+			 * the [start, start + len) range which overlaps
+> >>>>+			 */
+> >>>>+			err = merge_extent_mapping(em_tree, existing,
+> >>>>+						   em, start);
+> >>>>  			free_extent_map(existing);
+> >>>>-			existing = NULL;
+> >>>>-		}
+> >>>>-		if (!existing) {
+> >>>>-			existing = lookup_extent_mapping(em_tree, em->start,
+> >>>>-							 em->len);
+> >>>>-			if (existing) {
+> >>>>-				err = merge_extent_mapping(em_tree, existing,
+> >>>>-							   em, start);
+> >>>>-				free_extent_map(existing);
+> >>>>-				if (err) {
+> >>>>-					free_extent_map(em);
+> >>>>-					em = NULL;
+> >>>>-				}
+> >>>>-			} else {
+> >>>>-				err = -EIO;
+> >>>>+			if (err) {
+> >>>>  				free_extent_map(em);
+> >>>>  				em = NULL;
+> >>>>  			}
+> >>>>-- 
+> >>>>2.1.0
+> >>>>
+> >>>>--
+> >>>>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> >>>>the body of a message to majordomo@vger.kernel.org
+> >>>>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,150 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44414 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753918AbaIKJqZ (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 11 Sep 2014 05:46:25 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mx1.redhat.com ([209.132.183.28]:37204 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751279AbaIRFuR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Sep 2014 01:50:17 -0400
+From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] xfstests: btrfs: add test regarding clearing compression flag/property
-Date: Thu, 11 Sep 2014 11:45:34 +0100
-Message-Id: <1410432334-21796-1-git-send-email-fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
+Subject: [PATCH v3 00/15] xfstests: new btrfs stress test cases
+Date: Thu, 18 Sep 2014 13:49:24 +0800
+Message-Id: <1411019379-8104-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for btrfs where removing the flag FS_COMPR_FL
-(chattr -c) from an inode wouldn't clear its compression property.
-This was fixed in the following linux kernel patch:
+This patchset add new stress test cases for btrfs by running two
+different btrfs operations simultaneously under fsstress to ensure
+btrfs doesn't hang or oops in such situations. btrfs scrub and
+btrfs check will be run after each test.
 
-  Btrfs: add missing compression property remove in btrfs_ioctl_setflags
+The test matrix is the combination of 6 btrfs operations:
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/059     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/059.out | 11 +++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 97 insertions(+)
+	balance
+	create/mount/umount/delete subvolume
+	replace device
+	scrub
+	defrag
+	remount with different compress algorithms
+	
+Short descriptions:
+
+	059: balance-subvolume
+	060: balance-scrub
+	061: balance-defrag
+	062: balance-remount
+	063: balance-replace
+	064: subvolume-replace
+	065: subvolume-scrub
+	066: subvolume-defrag
+	067: subvolume-remount
+	068: replace-scrub
+	069: replace-defrag
+	070: replace-remount
+	071: scrub-defrag
+	072: scrub-remount
+	073: defrag-remount
+
+Some issues I've seen:
+
+1. subvolume cannot be mounted with selinux context, so you may see
+   such logs in dmesg
+
+   SELinux: mount invalid.  Same superblock, different security settings for (dev dm-8, type btrfs)
+
+   I've reported the bug to btrfs list, see
+   [BUG] cannot mount subvolume with selinux context
+   http://www.spinics.net/lists/linux-btrfs/msg36779.html
+
+2. btrfs replace operation always returns ENOENT if balance is running
+   So in 063.full you'll see
+
+   ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt/testarea/scratch": No such file or directory, no error
+
+   Not sure if it's btrfs bug, at least I think the error code is misleading
+
+3. replace operation hangs the kernel(3.16-rc4+ and 3.17-rc2+) with fsstress running
+   So case 064/068/069/070 will hang
+
+
+Changes since v2:
+- mount subvolume at $TEST_DIR/$seq.mnt not $tmp.mnt
+- don't rm -rf $tmp.* which is dangerous
+- remove unnecessary btrfs filesystem sync operation
+- update _scratch_pool_mkfs to deal with dup profile
+- add more comments for each stress operation
+- rename _btrfs_stress_remount to _btrfs_stress_remount_compress (hope it's better...)
+- add _btrfs_get_profile_configs to remove duplicated test case array in each case
+- use _require_scratch_nocheck and _check_scratch_fs after each loop
+
+Changes since v1:
+- put common operations in common/rc as functions and share them across these tests
+- append mkfs options to _scratch_mkfs and _scratch_pool_mkfs instead of updating $MKFS_OPTIONS
+- rebase on top of master and re-number starting from btrfs/059
+
+Thanks,
+Eryu Guan
+
+Eryu Guan (15):
+  btrfs: new test to run btrfs balance and subvolume test simultaneously
+  btrfs: new test to run btrfs balance and scrub simultaneously
+  btrfs: new test to run btrfs balance and defrag operations simultaneously
+  btrfs: new case to run btrfs balance and remount with different compress algorithms
+  btrfs: new case to run btrfs balance and device replace operations simultaneously
+  btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
+  btrfs: new case to run btrfs subvolume create/delete operations and scrub simultaneously
+  btrfs: new case to run btrfs subvolume create/delete and defrag operations simultaneously
+  btrfs: new case to run subvolume create/delete and remount with defferent compress algorithms
+  btrfs: new case to run device replace and scrub operations simultaneously
+  btrfs: new case to run device replace and defrag operations simultaneously
+  btrfs: new case to run device replace and remount with different compress algorithms simultaneously
+  btrfs: new case to run btrfs scrub and defrag operations simultaneously
+  btrfs: new case to run btrfs scrub and remount with different compress algorithms simultaneously
+  btrfs: new case to run defrag and remount with different compress algorithms simultaneously
+
+ common/rc           | 225 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ tests/btrfs/059     | 115 +++++++++++++++++++++++++++
+ tests/btrfs/059.out |   2 +
+ tests/btrfs/060     | 114 ++++++++++++++++++++++++++
+ tests/btrfs/060.out |   2 +
+ tests/btrfs/061     | 116 +++++++++++++++++++++++++++
+ tests/btrfs/061.out |   2 +
+ tests/btrfs/062     | 114 ++++++++++++++++++++++++++
+ tests/btrfs/062.out |   2 +
+ tests/btrfs/063     | 122 ++++++++++++++++++++++++++++
+ tests/btrfs/063.out |   2 +
+ tests/btrfs/064     | 123 ++++++++++++++++++++++++++++
+ tests/btrfs/064.out |   2 +
+ tests/btrfs/065     | 115 +++++++++++++++++++++++++++
+ tests/btrfs/065.out |   2 +
+ tests/btrfs/066     | 117 +++++++++++++++++++++++++++
+ tests/btrfs/066.out |   2 +
+ tests/btrfs/067     | 116 +++++++++++++++++++++++++++
+ tests/btrfs/067.out |   2 +
+ tests/btrfs/068     | 123 ++++++++++++++++++++++++++++
+ tests/btrfs/068.out |   2 +
+ tests/btrfs/069     | 125 +++++++++++++++++++++++++++++
+ tests/btrfs/069.out |   2 +
+ tests/btrfs/070     | 123 ++++++++++++++++++++++++++++
+ tests/btrfs/070.out |   2 +
+ tests/btrfs/071     | 116 +++++++++++++++++++++++++++
+ tests/btrfs/071.out |   2 +
+ tests/btrfs/072     | 114 ++++++++++++++++++++++++++
+ tests/btrfs/072.out |   2 +
+ tests/btrfs/073     | 116 +++++++++++++++++++++++++++
+ tests/btrfs/073.out |   2 +
+ tests/btrfs/group   |  15 ++++
+ 32 files changed, 2035 insertions(+), 4 deletions(-)
  create mode 100755 tests/btrfs/059
  create mode 100644 tests/btrfs/059.out
+ create mode 100755 tests/btrfs/060
+ create mode 100644 tests/btrfs/060.out
+ create mode 100755 tests/btrfs/061
+ create mode 100644 tests/btrfs/061.out
+ create mode 100755 tests/btrfs/062
+ create mode 100644 tests/btrfs/062.out
+ create mode 100755 tests/btrfs/063
+ create mode 100644 tests/btrfs/063.out
+ create mode 100755 tests/btrfs/064
+ create mode 100644 tests/btrfs/064.out
+ create mode 100755 tests/btrfs/065
+ create mode 100644 tests/btrfs/065.out
+ create mode 100755 tests/btrfs/066
+ create mode 100644 tests/btrfs/066.out
+ create mode 100755 tests/btrfs/067
+ create mode 100644 tests/btrfs/067.out
+ create mode 100755 tests/btrfs/068
+ create mode 100644 tests/btrfs/068.out
+ create mode 100755 tests/btrfs/069
+ create mode 100644 tests/btrfs/069.out
+ create mode 100755 tests/btrfs/070
+ create mode 100644 tests/btrfs/070.out
+ create mode 100755 tests/btrfs/071
+ create mode 100644 tests/btrfs/071.out
+ create mode 100755 tests/btrfs/072
+ create mode 100644 tests/btrfs/072.out
+ create mode 100755 tests/btrfs/073
+ create mode 100644 tests/btrfs/073.out
 
-diff --git a/tests/btrfs/059 b/tests/btrfs/059
-new file mode 100755
-index 0000000..3379ead
---- /dev/null
-+++ b/tests/btrfs/059
-@@ -0,0 +1,85 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/059
-+#
-+# Regression test for btrfs where removing the flag FS_COMPR_FL (chattr -c)
-+# from an inode wouldn't clear its compression property.
-+# This was fixed in the following linux kernel patch:
-+#
-+#     Btrfs: add missing compression property remove in btrfs_ioctl_setflags
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	rm -fr $tmp
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_test
-+_require_scratch
-+_require_btrfs "property"
-+_need_to_be_root
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir $SCRATCH_MNT/testdir
-+echo "Setting compression flag in the directory..."
-+chattr +c $SCRATCH_MNT/testdir
-+echo "Directory compression property value:"
-+$BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir compression
-+
-+touch $SCRATCH_MNT/testdir/file1
-+echo "file1 compression property value:"
-+$BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/file1 compression
-+
-+echo "Clearing compression flag from directory..."
-+chattr -c $SCRATCH_MNT/testdir
-+echo "Directory compression property value:"
-+$BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir compression
-+
-+touch $SCRATCH_MNT/testdir/file2
-+echo "file2 compression property value:"
-+$BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/file2 compression
-+
-+touch $SCRATCH_MNT/testdir/file1
-+echo "file1 compression property value:"
-+$BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/file1 compression
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/059.out b/tests/btrfs/059.out
-new file mode 100644
-index 0000000..9ec9a53
---- /dev/null
-+++ b/tests/btrfs/059.out
-@@ -0,0 +1,11 @@
-+QA output created by 059
-+Setting compression flag in the directory...
-+Directory compression property value:
-+compression=zlib
-+file1 compression property value:
-+compression=zlib
-+Clearing compression flag from directory...
-+Directory compression property value:
-+file2 compression property value:
-+file1 compression property value:
-+compression=zlib
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 3fa9778..68b5c79 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -61,3 +61,4 @@
- 056 auto quick
- 057 auto quick
- 058 auto quick
-+059 auto quick
 -- 
-1.9.1
+1.8.3.1
 

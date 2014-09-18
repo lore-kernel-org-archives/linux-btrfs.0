@@ -1,41 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:16934 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:23822 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932215AbaIRFux (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 01:50:53 -0400
+	id S932236AbaIRFu5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Sep 2014 01:50:57 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v3 10/15] btrfs: new case to run device replace and scrub operations simultaneously
-Date: Thu, 18 Sep 2014 13:49:34 +0800
-Message-Id: <1411019379-8104-11-git-send-email-eguan@redhat.com>
+Subject: [PATCH v3 11/15] btrfs: new case to run device replace and defrag operations simultaneously
+Date: Thu, 18 Sep 2014 13:49:35 +0800
+Message-Id: <1411019379-8104-12-git-send-email-eguan@redhat.com>
 In-Reply-To: <1411019379-8104-1-git-send-email-eguan@redhat.com>
 References: <1411019379-8104-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs replace operations and scrub simultaneously with fsstress
+Run btrfs replace operations and defrag simultaneously with fsstress
 running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/068     | 123 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/068.out |   2 +
+ tests/btrfs/069     | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/069.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 126 insertions(+)
- create mode 100755 tests/btrfs/068
- create mode 100644 tests/btrfs/068.out
+ 3 files changed, 128 insertions(+)
+ create mode 100755 tests/btrfs/069
+ create mode 100644 tests/btrfs/069.out
 
-diff --git a/tests/btrfs/068 b/tests/btrfs/068
+diff --git a/tests/btrfs/069 b/tests/btrfs/069
 new file mode 100755
-index 0000000..220e608
+index 0000000..882b34b
 --- /dev/null
-+++ b/tests/btrfs/068
-@@ -0,0 +1,123 @@
++++ b/tests/btrfs/069
+@@ -0,0 +1,125 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/068
++# FSQA Test No. btrfs/069
 +#
-+# Run btrfs replace operations and scrub simultaneously with fsstress
++# Run btrfs replace operations and defrag simultaneously with fsstress
 +# running in background.
 +#
 +#-----------------------------------------------------------------------
@@ -90,9 +90,10 @@ index 0000000..220e608
 +run_test()
 +{
 +	local mkfs_opts=$1
++	local with_compress=$2
 +	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
 +
-+	echo "Test $mkfs_opts" >>$seqres.full
++	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
 +
 +	# remove the last device from the SCRATCH_DEV_POOL list so
 +	# _scratch_pool_mkfs won't use all devices in pool
@@ -118,18 +119,18 @@ index 0000000..220e608
 +	replace_pid=$!
 +	echo "$replace_pid" >>$seqres.full
 +
-+	echo -n "Start scrub worker: " >>$seqres.full
-+	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
-+	scrub_pid=$!
-+	echo "$scrub_pid" >>$seqres.full
++	echo -n "Start defrag worker: " >>$seqres.full
++	_btrfs_stress_defrag $SCRATCH_MNT $with_compress >/dev/null 2>&1 &
++	defrag_pid=$!
++	echo "$defrag_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+	kill $replace_pid $scrub_pid
++	kill $replace_pid $defrag_pid
 +	wait
 +
-+	# wait for the scrub and replace operations to finish
-+	while ps aux | grep "scrub start" | grep -qv grep; do
++	# wait for the defrag and replace operations to finish
++	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
 +		sleep 1
 +	done
 +	while ps aux | grep "replace start" | grep -qv grep; do
@@ -150,28 +151,29 @@ index 0000000..220e608
 +
 +echo "Silence is golden"
 +for t in "${_btrfs_profile_configs[@]}"; do
-+	run_test "$t"
++	run_test "$t" nocompress
++	run_test "$t" compress
 +done
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/068.out b/tests/btrfs/068.out
+diff --git a/tests/btrfs/069.out b/tests/btrfs/069.out
 new file mode 100644
-index 0000000..d10c9bd
+index 0000000..532a929
 --- /dev/null
-+++ b/tests/btrfs/068.out
++++ b/tests/btrfs/069.out
 @@ -0,0 +1,2 @@
-+QA output created by 068
++QA output created by 069
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index d515ff5..1e83505 100644
+index 1e83505..53f5f4b 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -70,3 +70,4 @@
- 065 auto subvol scrub
+@@ -71,3 +71,4 @@
  066 auto subvol defrag compress
  067 auto subvol remount compress
-+068 auto replace scrub
+ 068 auto replace scrub
++069 auto replace defrag compress
 -- 
 1.8.3.1
 

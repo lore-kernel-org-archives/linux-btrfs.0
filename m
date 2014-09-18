@@ -1,151 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18067 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751316AbaIRIYu convert rfc822-to-8bit (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:44325 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751817AbaIRI0K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 04:24:50 -0400
-Message-ID: <541A96D0.5000903@cn.fujitsu.com>
-Date: Thu, 18 Sep 2014 16:24:48 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Thu, 18 Sep 2014 04:26:10 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 540423EE0BD
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 17:26:08 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 69ED2AC07B1
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 17:26:07 +0900 (JST)
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 19C501DB8032
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 17:26:07 +0900 (JST)
+Received: from g01jpexchyt37.g01.fujitsu.local (unknown [10.128.193.4])
+	by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id 1E35758431A
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 17:26:06 +0900 (JST)
+Message-ID: <541A9717.5000003@jp.fujitsu.com>
+Date: Thu, 18 Sep 2014 17:25:59 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to insert
- best fitted extent map
-References: <1410926015-26820-1-git-send-email-quwenruo@cn.fujitsu.com> <20140918042113.GA15092@localhost.localdomain> <541A6F6F.4010901@cn.fujitsu.com> <20140918073307.GB15092@localhost.localdomain> <541A90A2.5050407@cn.fujitsu.com> <20140918082023.GC15092@localhost.localdomain>
-In-Reply-To: <20140918082023.GC15092@localhost.localdomain>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/5] btrfs: nodatasum drop compress
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Naohiro Aota <naota@elisp.net>
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to 
-insert best fitted extent map
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年09月18日 16:20
-> On Thu, Sep 18, 2014 at 03:58:26PM +0800, Qu Wenruo wrote:
-> [...]
->>> original:   (start >= existing->start && start < extent_map_end(existing))
->>> this patch: (start < extent_map_end(existing) && start + len > existing->start)
->>>
->>> (start + len > existing->start) doesn't equal to start >= existing->start,
->>> here is a case of (start+len > existing->start) but (start <= existing->start).
->>>
->>>         |--------| -->(existing)
->>>      |--------|    -->[start, start+len)
->>>
->>> And calling search_extent_mapping() doesn't make sure that
->>> (start >= existing->start) is true, either.
->> All right, that case is right and I'm wrong.
->> I'll change the if() to use start >= existing->start.
->>
->> BTW, Any other problem?
-> Others look good.
->
-> thanks,
-> -liubo
-Would you mind me adding your reviewed-by?
+We can enable both compress option and nodatasum option at the same time
+with the following command.
 
-Thanks
-Qu
->> Thanks,
->> Qu
->>>>> And one of overlapping cases is (existing->start > start), ie. em->start > start, this is
->>>>> against our rule of btrfs_get_extent,
->>>> Nope again, this overlapping in fact is quite normal in multithread
->>>> random read/write.
->>>> The files's [0~16) is a preallocated one,
->>>> Thread A:
->>>>      write [4K, 8K) into the file, but not committed yet.
->>>>      extent map tree contains [0,16K) only
->>>> Thread B:
->>>> btrfs_get_extent()
->>>>      the map_start is 8K, len is 4K as an example
->>>>      grab a large em, take [0,16K), since [4K,8K) write is not committed.
->>>>      comes to insert: btrfs_release_path(path);
->>>>
->>>> Thread A:
->>>>      [4K, 8K) is not committed
->>>>      the extent map is now [0, 4K) [4K, 8K) [8K, 16K).
->>>>
->>>> Thread B:
->>>>      goes to insert: add_extent_mapping()
->>>>      the [0,16K) is overlapping, and the returned existing one is [8K, 16K).
->>>>      which contains the [map_start, map_start +  len).
->>> So this's an example of existing->start == start (both are 8K), not
->>> existing->start > start.
->>>
->>> See __extent_writepage_io(),
->>>
->>> {
->>> 		...
->>>                  em = epd->get_extent(inode, page, pg_offset, cur,
->>>                                       end - cur + 1, 1);
->>>                  if (IS_ERR_OR_NULL(em)) {
->>>                          SetPageError(page);
->>>                          ret = PTR_ERR_OR_ZERO(em);
->>>                          break;
->>>                  }
->>>                  extent_offset = cur - em->start;
->>> 		^^^^^^^^^^^^^^^^^^^^^^^^^^^ it needs to be (em->start <= cur)
->>>
->>> 		...
->>> }
->>>
->>> thanks,
->>> -liubo
->>>
->>>>> struct extent_map *btrfs_get_extent(...)
->>>>> {
->>>>> 	[...]
->>>>> 	insert:
->>>>> 		btrfs_release_path(path);
->>>>> 		if (em->start > start || extent_map_end(em) <= start) {
->>>>> 			btrfs_err(root->fs_info, "bad extent! em: [%llu %llu] passed
->>>>> 	[%llu %llu]",
->>>>> 				em->start, em->len, start, len);
->>>>> 			err = -EIO;
->>>>>                  goto out;
->>>>>          }
->>>>>          [...]
->>>>> }
->>>>>
->>>>> thanks,
->>>>> -liubo
->>>>>
->>>>>> +			/*
->>>>>> +			 * The existing extent map is the one nearest to
->>>>>> +			 * the [start, start + len) range which overlaps
->>>>>> +			 */
->>>>>> +			err = merge_extent_mapping(em_tree, existing,
->>>>>> +						   em, start);
->>>>>>   			free_extent_map(existing);
->>>>>> -			existing = NULL;
->>>>>> -		}
->>>>>> -		if (!existing) {
->>>>>> -			existing = lookup_extent_mapping(em_tree, em->start,
->>>>>> -							 em->len);
->>>>>> -			if (existing) {
->>>>>> -				err = merge_extent_mapping(em_tree, existing,
->>>>>> -							   em, start);
->>>>>> -				free_extent_map(existing);
->>>>>> -				if (err) {
->>>>>> -					free_extent_map(em);
->>>>>> -					em = NULL;
->>>>>> -				}
->>>>>> -			} else {
->>>>>> -				err = -EIO;
->>>>>> +			if (err) {
->>>>>>   				free_extent_map(em);
->>>>>>   				em = NULL;
->>>>>>   			}
->>>>>> -- 
->>>>>> 2.1.0
->>>>>>
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+===
+$ sudo mount -o remount,compress,nodatasum /
+$ mount | grep btrfs
+/dev/vda2 on / type btrfs (rw,relatime,seclabel,nodatasum,compress=zlib,space_cache)
+===
+
+This behavior collides with Documentation/filesystems/btrfs.txt:
+
+===
+...
+  If compression is enabled, nodatacow and nodatasum are disabled.
+...
+===
+
+This patch drops the compress flags upon nodatasum flag.
+
+Signed-off-by: Naohiro Aota <naota@elisp.net>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+ fs/btrfs/super.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c4124de..d1c5b6d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -440,8 +440,15 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			 */
+ 			break;
+ 		case Opt_nodatasum:
+-			btrfs_set_and_info(root, NODATASUM,
+-					   "setting nodatasum");
++			if (!btrfs_test_opt(root, NODATASUM)) {
++				if (btrfs_test_opt(root, COMPRESS))
++					btrfs_info(root->fs_info, "setting nodatasum, compression disabled");
++				else
++					btrfs_info(root->fs_info, "setting nodatasum");
++			}
++			btrfs_clear_opt(info->mount_opt, COMPRESS);
++			btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
++			btrfs_set_opt(info->mount_opt, NODATASUM);
+ 			break;
+ 		case Opt_datasum:
+ 			if (btrfs_test_opt(root, NODATASUM)) {
+-- 1.8.3.1 
 

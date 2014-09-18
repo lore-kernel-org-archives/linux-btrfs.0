@@ -1,58 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:8547 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932662AbaIRPar (ORCPT
+Received: from mail-ig0-f195.google.com ([209.85.213.195]:49870 "EHLO
+	mail-ig0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756139AbaIRUOH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 11:30:47 -0400
-Received: from pps.filterd (m0044012 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8IF6nfU015335
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 08:30:47 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1peexnne5b-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 08:30:47 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: try not to ENOSPC on log replay V2
-Date: Thu, 18 Sep 2014 11:30:44 -0400
-Message-ID: <1411054244-20638-1-git-send-email-jbacik@fb.com>
+	Thu, 18 Sep 2014 16:14:07 -0400
+Received: by mail-ig0-f195.google.com with SMTP id uq10so486676igb.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 13:14:06 -0700 (PDT)
+Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.232.64.167])
+        by mx.google.com with ESMTPSA id j2sm2991454igm.21.2014.09.18.13.14.05
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 18 Sep 2014 13:14:05 -0700 (PDT)
+Message-ID: <541B3D0C.4040004@gmail.com>
+Date: Thu, 18 Sep 2014 16:14:04 -0400
+From: nick <yocto6@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: XFS Tests for Btrfs
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing log replay we may have to update inodes, which traditionally goes
-through our delayed inode stuff.  This will try to move space over from the
-trans handle, but we don't reserve space in our trans handle on replay since we
-don't know how much we will need, so instead we try to flush.  But because we
-have a trans handle open we won't flush anything, so if we are out of reserve
-space we will simply return ENOSPC.  Since we know that if an operation made it
-into the log then we definitely had space before the box bought the farm then we
-don't need to worry about doing this space reservation.  Use the
-fs_info->log_root_recovering flag to skip the delayed inode stuff and update the
-item directly.  Thanks,
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
-V1->V2: Use fs_info->log_root_recovering instead of adding yet another flag.
-
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 28e693e..acecf86 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3705,7 +3705,8 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 	 * without delay
- 	 */
- 	if (!btrfs_is_free_space_inode(inode)
--	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID) {
-+	    && root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
-+	    && !root->fs_info->log_root_recovering) {
- 		btrfs_update_root_times(trans, root);
- 
- 		ret = btrfs_delayed_update_inode(trans, root, inode);
--- 
-1.8.3.1
-
+Hey Fellow Btrfs Developers,
+I am wondering how to run the xfs tests for btrfs as I tried to do it based on a link online
+written I believe a few years ago. If someone can help me get set up for testing the btrfs
+code using xfs tests that would be great. In addition afterwards I already build kernel 3.17
+r5 release candidate and would be glad to run any times you need run to test single drive
+config issues.
+Thanks Nick     

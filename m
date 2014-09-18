@@ -1,60 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f45.google.com ([209.85.216.45]:36764 "EHLO
-	mail-qa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932081AbaIRRTl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 13:19:41 -0400
-Received: by mail-qa0-f45.google.com with SMTP id s7so1445670qap.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 10:19:41 -0700 (PDT)
-Message-ID: <541B142B.80803@gmail.com>
-Date: Thu, 18 Sep 2014 13:19:39 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:34654 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1757359AbaIRVPk convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Sep 2014 17:15:40 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Problem with unmountable filesystem.
-References: <54184BD2.7000300@gmail.com>	<2A2CB71A-7516-43CD-94E1-BCB2198F5FC4@colorremedies.com>	<54196F42.4030101@gmail.com> <pan$529ae$2bc50fa8$5e7f68de$70f24efb@cox.net>
-In-Reply-To: <pan$529ae$2bc50fa8$5e7f68de$70f24efb@cox.net>
-Content-Type: text/plain; charset=utf-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <541B1263.3090804@gmail.com>
+Date: Thu, 18 Sep 2014 15:15:37 -0600
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <B391FCBE-479B-471A-A543-AAD7B44EF5BA@colorremedies.com>
+References: <54184BD2.7000300@gmail.com> <2A2CB71A-7516-43CD-94E1-BCB2198F5FC4@colorremedies.com> <54196F42.4030101@gmail.com> <22B49628-3659-4D83-BE99-A173CAFF23F9@colorremedies.com> <541B1263.3090804@gmail.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/17/2014 04:22 PM, Duncan wrote:
-> Austin S Hemmelgarn posted on Wed, 17 Sep 2014 07:23:46 -0400 as
-> excerpted:
+
+On Sep 18, 2014, at 11:12 AM, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+
+> On 09/17/2014 02:57 PM, Chris Murphy wrote:
+>> 
+>> On Sep 17, 2014, at 5:23 AM, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+>>> 
+>>> Thanks for all the help.
+>> 
+>> Well, it's not much help. It seems possible to "corrupt" a primary superblock that points to a corrupt tree root, and use btrfs rescure super-recover to replace it, and then mount should work. One thing I didn't try was corrupting the primary superblock and just mounting normally or with recovery, to see if it'll automatically ignore the primary superblock and use the backup.
+>> 
+>> But I think you're onto something, that a good superblock can point to a corrupt tree root, and then not have a straight forward way to mount the good tree root. If I understand this correctly.
+>> 
+> Corrupting the primary superblock did in fact work, and I decided to try
+> mounting immediately, which failed.
+
+I just tried corrupting primary superblock by overwriting the 4 bytes csum with zeros.
+Normal mount = fail
+[16576.124611] BTRFS: superblock checksum mismatch
+[16576.141673] BTRFS: open_ctree failed
+
+-o recovery = fail
+[16595.532801] BTRFS: superblock checksum mismatch
+[16595.547868] BTRFS: open_ctree failed
+
+btrfs check = reports no problems
+btrfs check --repair = reports no problems or fixes but does fix the problem
+
+[root@f21v ~]# btrfs check --repair /dev/sdb
+enabling repair mode
+Checking filesystem on /dev/sdb
+UUID: 9acf13de-5b98-4f28-9992-533e4a99d348
+checking extents
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 510612493 bytes used err is 0
+total csum bytes: 864464
+total tree bytes: 1576960
+total fs tree bytes: 389120
+total extent tree bytes: 163840
+btree space waste bytes: 196561
+file data blocks allocated: 885604352
+ referenced 895991808
+Btrfs v3.16
+
+
+>  I didn't try with -o recovery, but
+> I think that would probably fail as well.  Things worked perfectly
+> however after using btrfs rescue super-recover.  As far as avoiding
+> future problems, I think the best solution would be to have the mount
+> operation try the tree root pointed to by the backup superblock if the
+> one pointed to by the primary seems corrupted.
+
+Right. I'm not understanding how you determined a tree root is corrupt. The mount code clearly knows it can't mount a corrupt tree root, but it's neither fixing this corruption nor falling back to another superblock to see if it points to a good tree root. It's beyond my expertise what comes after detecting the problem, which the code already does. Should it fix the problem? And if not, or if it can't, should it automatically fallback to a different tree root specified by a backup superblock? And if so how far back in generation should it go before asking for user intervention? Because it's possible, on say very large file systems with ssd mount option, that there could be 3 or 4 superblocks with different tree roots pointed to with different generations. We probably don't want to always go back up to 1.5 or 2 minutes to a different tree, rather than try to fix it if possible.
+
+
+
 > 
->> I've also discovered, when trying to use btrfs restore to copy out the
->> data to a different system, that 3.14.1 restore apparently chokes on
->> filesystem that have lzo compression turned on.  It's reporting errors
->> trying to inflate compressed files, and I know for a fact that none of
->> those files were even open, let alone being written to, when the system
->> crashed.  I don't know if this is a known bug or even if it is still the
->> case with btrfs-progs 3.16, but I figured I'd comment about it because I
->> haven't seen anything about it anywhere.
-> 
-> FWIW that's a known and recently patched issue.  If you're still seeing 
-> issues with it with btrfs-progs 3.16, report it, but 3.14.1 almost 
-> certainly wouldn't have had the fix.  (This is one related patch turned 
-> up by a quick search; there may be others.)
-> 
-> * commit 93ebec96f2ae1d3276ebe89e2d6188f9b46692fb
-> | Author: Vincent Stehlé <vincent.stehle@laposte.net>
-> | Date:   Wed Jun 18 18:51:19 2014 +0200
-> |
-> |     btrfs-progs: restore: check lzo compress length
-> |
-> |     When things go wrong for lzo-compressed btrfs, feeding
-> |     lzo1x_decompress_safe() with corrupt data during restore
-> |     can lead to crashes. Reduce the risk by adding
-> |     a check on the input length.
-> |
-> |     Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
-> |     Signed-off-by: David Sterba <dsterba@suse.cz>
-> |
-> |  cmds-restore.c | 6 ++++++
-> |  1 file changed, 6 insertions(+)
-> 
-Yeah, 3.16 seems fine, I just hadn't updated my recovery environment
-yet.  Ironically, I did some performance testing afterwards, and
-realized that using any compression was actually slowing down my system
-(my disk appears to be faster than my RAM, which is really sad, even for
-a laptop).
+> Secondarily, this almost makes me want to set the ssd option on all
+> BTRFS filesystems, just to get the rotating superblock updates, because
+> if it weren't for that behavior, I probably wouldn't have been able to
+> recovery anything in this particular case.
+
+It's a catch 22 in that what if you get a torn write on a superblock update but it pointed to a good tree root? A mirrored superblock would allow this to be fixed pretty easily. But rotating ones means you have to go to an older tree root, unless you somehow fix up the bad superblock with the pointer to the newest good tree root - could be tedious.
+
+One day these multiple repair methods should merge, I'd think. There are a lot of different ways to fix a Btrfs right now.
+
+
+Chris Murphy
+

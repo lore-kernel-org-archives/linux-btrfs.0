@@ -1,46 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64832 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43107 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757177AbaIRDkB (ORCPT
+	with ESMTP id S1750705AbaIREBe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Sep 2014 23:40:01 -0400
-Message-ID: <1411011561.22018.3.camel@localhost.localdomain>
-Subject: Re: fs corruption report
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Zooko Wilcox-OHearn <zooko@leastauthority.com>
-CC: Marc Dietrich <marvin24@gmx.de>, <linux-btrfs@vger.kernel.org>
-Date: Thu, 18 Sep 2014 11:39:21 +0800
-In-Reply-To: <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com>
-References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com>
-	 <1409192882.1582.13.camel@localhost.localdomain>
-	 <1484373.Oezxgh4u8P@ax5200p> <5322846.kPR8ohTNYd@ax5200p>
-	 <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+	Thu, 18 Sep 2014 00:01:34 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8I41dE4012276
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 12:01:39 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs: Add more check before read_extent_buffer() to avoid read overflow.
+Date: Thu, 18 Sep 2014 12:01:31 +0800
+Message-ID: <1411012892-17481-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-09-01 at 15:25 +0000, Zooko Wilcox-OHearn wrote:
-> I'm more than happy to try out patches and even focus my own brain on
-> diagnosing it, if I can. I'm hoping to regain access to some of my
-> files on my btrfs partition, and also I would enjoy helping get this
-> improved. :-)
-> 
-> So if you want me to try an experiment, just email me. Unfortunately I
-> can't just give you a copy of the partition, since it has confidential
-> information on it.
-> 
-> Regards,
-> 
-> Zooko
+Before this patch, when replay_one_extent() find an existing file
+extent item, btrfs will call read_extent_buffer() to read out the file
+extent.
+However it lacks enough check, and may read out the inline file extent
+using the wrong size(currently it always uses
+sizeof(btrfs_file_extent_item))
 
-Hi, Zooko, Marc,
-I'm glad that I could send some feedbacks,
-The following piece deals with the lzo decompress problem with restore
+If a inline file extent's size is smaller than normal file extent
+size(53 bytes) and unfortunately the inline file extent lies at the end
+of a full leaf, WARN_ON in read_extent_buffer() will be triggered.
 
-https://patchwork.kernel.org/patch/4928831/
+This patch will check the file extent type before calling
+read_extent_buffer(), since the if the logged one and the existing one
+are all preallocated/regular file extent item, their size must be
+sizeof(struct btrfs_file_extent_item) and will avoid the read overflow.
 
-Hope that it helps.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/tree-log.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
--Gui
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7e0e6e3..1ea2b10 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -620,6 +620,8 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 		existing = btrfs_item_ptr(leaf, path->slots[0],
+ 					  struct btrfs_file_extent_item);
+ 
++		if (btrfs_file_extent_type(leaf, existing) != found_type)
++			goto no_compare;
+ 		read_extent_buffer(eb, &cmp1, (unsigned long)item,
+ 				   sizeof(cmp1));
+ 		read_extent_buffer(leaf, &cmp2, (unsigned long)existing,
+@@ -634,6 +636,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 			goto out;
+ 		}
+ 	}
++no_compare:
+ 	btrfs_release_path(path);
+ 
+ 	/* drop any overlapping extents */
+-- 
+2.1.0
 

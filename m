@@ -1,61 +1,231 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59739 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750914AbaIVJt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 05:49:58 -0400
-Date: Mon, 22 Sep 2014 11:49:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: device delete progress
-Message-ID: <20140922094955.GI9715@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201409211209.11875.russell@coker.com.au>
- <pan$1d8a8$448bb26c$d55fc521$929be7e0@cox.net>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:14334 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756553AbaISOkE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 10:40:04 -0400
+Received: from pps.filterd (m0004348 [127.0.0.1])
+	by m0004348.ppops.net (8.14.5/8.14.5) with SMTP id s8JEdow4012459
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 07:40:04 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by m0004348.ppops.net with ESMTP id 1pfmm6397h-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 07:40:04 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: cleanup error handling in build_backref_tree
+Date: Fri, 19 Sep 2014 10:40:00 -0400
+Message-ID: <1411137600-4374-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$1d8a8$448bb26c$d55fc521$929be7e0@cox.net>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 21, 2014 at 08:34:33AM +0000, Duncan wrote:
-> Russell Coker posted on Sun, 21 Sep 2014 12:09:11 +1000 as excerpted:
-> 
-> > We need to have a way to determine the progress of a device delete
-> > operation.
-> > Also for a balance of a RAID-1 that has more than 2 devices it would be
-> > good to know how much space is used on each device.
-> > 
-> > Could btrfs fi df be extended to show information separately for each
-> > device?
-> 
-> btrfs fi show should give you at least some minimal per-device stats, 
-> today.  Enough to at least have some idea of the progress of a balance 
-> when adding/removing devices.
+When balance panics it tends to panic in the
 
-Up to now this is the only way to see the progress.
+BUG_ON(!upper->checked);
 
-> Longer term, there has been discussion of extending/changing the fi df 
-> format and making it far more verbose, including the information found in 
-> btrfs fi show as well, and making everything potentially per-device.  I 
-> hadn't paid a whole lot of attention to the details, however.
-> 
-> Alternatively, leave df more or less as it is (perhaps extending it a bit 
-> but attempting not to kill existing scripts using it) and put the detail 
-> in a new btrfs filesystem usage.  This sounds rather more reasonable to 
-> me.
-> 
-> Either way the idea is to give people a single command that combines the 
-> current output of fi show and fi df, ideally displaying per-device and 
-> filesystem totals both, in enough verbosity to avoid the unintuitive and 
-> arcane btrfs specific knowledge required today to interpret it.
-> 
-> I had originally presumed that such a change would happen before the 
-> experimental labels came off, but it didn't.  I don't know the timetable 
-> for it now, or even if it's still planned, as IIRC the discussion died 
-> away back in the btrfs-progs 3.12 era and I expected to see it in 3.14 
-> and it wasn't there, so I don't know...
+test, because it means it couldn't build the backref tree properly.  This is
+annoying to users and frankly a recoverable error, nothing in this function is
+actually fatal since it is just an in-memory building of the backrefs for a
+given bytenr.  So go through and change all the BUG_ON()'s to ASSERT()'s, and
+fix the BUG_ON(!upper->checked) thing to just return an error.
 
-The upcomming 3.17 release should contain all the 'new df' patches that
-were unfortunatelly delayed. There are some minor issues to be fixed but
-I hope it'll be ready close to the kernel 3.17 release.
+This patch also fixes the error handling so it tears down the work we've done
+properly.  This code was horribly broken since we always just panic'ed instead
+of actually erroring out, so it needed to be completely re-worked.  With this
+patch my broken image no longer panics when I mount it.  Thanks,
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/relocation.c | 88 ++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 59 insertions(+), 29 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 2d221c4..19726af 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -736,7 +736,8 @@ again:
+ 		err = ret;
+ 		goto out;
+ 	}
+-	BUG_ON(!ret || !path1->slots[0]);
++	ASSERT(ret);
++	ASSERT(path1->slots[0]);
+ 
+ 	path1->slots[0]--;
+ 
+@@ -746,10 +747,10 @@ again:
+ 		 * the backref was added previously when processing
+ 		 * backref of type BTRFS_TREE_BLOCK_REF_KEY
+ 		 */
+-		BUG_ON(!list_is_singular(&cur->upper));
++		ASSERT(list_is_singular(&cur->upper));
+ 		edge = list_entry(cur->upper.next, struct backref_edge,
+ 				  list[LOWER]);
+-		BUG_ON(!list_empty(&edge->list[UPPER]));
++		ASSERT(list_empty(&edge->list[UPPER]));
+ 		exist = edge->node[UPPER];
+ 		/*
+ 		 * add the upper level block to pending list if we need
+@@ -831,7 +832,7 @@ again:
+ 					cur->cowonly = 1;
+ 			}
+ #else
+-		BUG_ON(key.type == BTRFS_EXTENT_REF_V0_KEY);
++		ASSERT(key.type != BTRFS_EXTENT_REF_V0_KEY);
+ 		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY) {
+ #endif
+ 			if (key.objectid == key.offset) {
+@@ -840,7 +841,7 @@ again:
+ 				 * backref of this type.
+ 				 */
+ 				root = find_reloc_root(rc, cur->bytenr);
+-				BUG_ON(!root);
++				ASSERT(root);
+ 				cur->root = root;
+ 				break;
+ 			}
+@@ -868,7 +869,7 @@ again:
+ 			} else {
+ 				upper = rb_entry(rb_node, struct backref_node,
+ 						 rb_node);
+-				BUG_ON(!upper->checked);
++				ASSERT(upper->checked);
+ 				INIT_LIST_HEAD(&edge->list[UPPER]);
+ 			}
+ 			list_add_tail(&edge->list[LOWER], &cur->upper);
+@@ -892,7 +893,7 @@ again:
+ 
+ 		if (btrfs_root_level(&root->root_item) == cur->level) {
+ 			/* tree root */
+-			BUG_ON(btrfs_root_bytenr(&root->root_item) !=
++			ASSERT(btrfs_root_bytenr(&root->root_item) ==
+ 			       cur->bytenr);
+ 			if (should_ignore_root(root))
+ 				list_add(&cur->list, &useless);
+@@ -927,7 +928,7 @@ again:
+ 		need_check = true;
+ 		for (; level < BTRFS_MAX_LEVEL; level++) {
+ 			if (!path2->nodes[level]) {
+-				BUG_ON(btrfs_root_bytenr(&root->root_item) !=
++				ASSERT(btrfs_root_bytenr(&root->root_item) ==
+ 				       lower->bytenr);
+ 				if (should_ignore_root(root))
+ 					list_add(&lower->list, &useless);
+@@ -982,7 +983,7 @@ again:
+ 			} else {
+ 				upper = rb_entry(rb_node, struct backref_node,
+ 						 rb_node);
+-				BUG_ON(!upper->checked);
++				ASSERT(upper->checked);
+ 				INIT_LIST_HEAD(&edge->list[UPPER]);
+ 				if (!upper->owner)
+ 					upper->owner = btrfs_header_owner(eb);
+@@ -1026,7 +1027,7 @@ next:
+ 	 * everything goes well, connect backref nodes and insert backref nodes
+ 	 * into the cache.
+ 	 */
+-	BUG_ON(!node->checked);
++	ASSERT(node->checked);
+ 	cowonly = node->cowonly;
+ 	if (!cowonly) {
+ 		rb_node = tree_insert(&cache->rb_root, node->bytenr,
+@@ -1062,8 +1063,21 @@ next:
+ 			continue;
+ 		}
+ 
+-		BUG_ON(!upper->checked);
+-		BUG_ON(cowonly != upper->cowonly);
++		if (!upper->checked) {
++			/*
++			 * Still want to blow up for developers since this is a
++			 * logic bug.
++			 */
++			ASSERT(0);
++			err = -EINVAL;
++			goto out;
++		}
++		if (cowonly != upper->cowonly) {
++			ASSERT(0);
++			err = -EINVAL;
++			goto out;
++		}
++
+ 		if (!cowonly) {
+ 			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
+ 					      &upper->rb_node);
+@@ -1086,7 +1100,7 @@ next:
+ 	while (!list_empty(&useless)) {
+ 		upper = list_entry(useless.next, struct backref_node, list);
+ 		list_del_init(&upper->list);
+-		BUG_ON(!list_empty(&upper->upper));
++		ASSERT(list_empty(&upper->upper));
+ 		if (upper == node)
+ 			node = NULL;
+ 		if (upper->lowest) {
+@@ -1119,29 +1133,45 @@ out:
+ 	if (err) {
+ 		while (!list_empty(&useless)) {
+ 			lower = list_entry(useless.next,
+-					   struct backref_node, upper);
+-			list_del_init(&lower->upper);
++					   struct backref_node, list);
++			list_del_init(&lower->list);
+ 		}
+-		upper = node;
+-		INIT_LIST_HEAD(&list);
+-		while (upper) {
+-			if (RB_EMPTY_NODE(&upper->rb_node)) {
+-				list_splice_tail(&upper->upper, &list);
+-				free_backref_node(cache, upper);
+-			}
+-
+-			if (list_empty(&list))
+-				break;
+-
+-			edge = list_entry(list.next, struct backref_edge,
+-					  list[LOWER]);
++		while (!list_empty(&list)) {
++			edge = list_first_entry(&list, struct backref_edge,
++						list[UPPER]);
++			list_del(&edge->list[UPPER]);
+ 			list_del(&edge->list[LOWER]);
++			lower = edge->node[LOWER];
+ 			upper = edge->node[UPPER];
+ 			free_backref_edge(cache, edge);
++
++			/*
++			 * Lower is no longer linked to any upper backref nodes
++			 * and isn't in the cache, we can free it ourselves.
++			 */
++			if (list_empty(&lower->upper) &&
++			    RB_EMPTY_NODE(&lower->rb_node))
++				list_add(&lower->list, &useless);
++
++			if (!RB_EMPTY_NODE(&upper->rb_node))
++				continue;
++
++			/* Add this guy's upper edges to the list to proces */
++			list_for_each_entry(edge, &upper->upper, list[LOWER])
++				list_add_tail(&edge->list[UPPER], &list);
++			if (list_empty(&upper->upper))
++				list_add(&upper->list, &useless);
++		}
++
++		while (!list_empty(&useless)) {
++			lower = list_entry(useless.next,
++					   struct backref_node, list);
++			list_del_init(&lower->list);
++			free_backref_node(cache, lower);
+ 		}
+ 		return ERR_PTR(err);
+ 	}
+-	BUG_ON(node && node->detached);
++	ASSERT(!node || !node->detached);
+ 	return node;
+ }
+ 
+-- 
+1.8.3.1
+

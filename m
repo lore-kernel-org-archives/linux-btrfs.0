@@ -1,117 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:59898 "EHLO
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:40966 "EHLO
 	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751498AbaISIqA (ORCPT
+	with ESMTP id S1754215AbaISJFV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 04:46:00 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 522F03EE0BB
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:45:59 +0900 (JST)
+	Fri, 19 Sep 2014 05:05:21 -0400
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 412AA3EE0C2
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 18:05:20 +0900 (JST)
 Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 69D86AC06F7
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:45:58 +0900 (JST)
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 4BD42AC0886
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 18:05:19 +0900 (JST)
 Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 135BE1DB8032
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:45:58 +0900 (JST)
-Message-ID: <541BED3D.5020803@jp.fujitsu.com>
-Date: Fri, 19 Sep 2014 17:45:49 +0900
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id C7CB01DB803B
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 18:05:18 +0900 (JST)
+Message-ID: <541BF1C4.1050000@jp.fujitsu.com>
+Date: Fri, 19 Sep 2014 18:05:08 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 CC: Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/4] btrfs: correct empty compression property behavior
+Subject: [PATCH 4/4] btrfs: Fix compression related ioctl to run atomic operations
+ in one transaction
+References: <541BED3D.5020803@jp.fujitsu.com> <541BEDF8.7010009@jp.fujitsu.com> <541BEEC1.9030606@jp.fujitsu.com>
+In-Reply-To: <541BEEC1.9030606@jp.fujitsu.com>
 Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Naohiro Aota <naota@elisp.net>
 
-In the current implementation, compression property == "" has
-the two different meanings: one is with BTRFS_INODE_NOCOMPRESS,
-and the other is without this flag.
+Fix the following two problems in compression related ioctl code.
 
-So, even if the two files a and b have the same compression
-property, "", and the same contents, one file seems to be
-compressed and the other is not. It's difficult to understand
-for users and also confuses them.
+  a) Updating compression flags and updating inode attribute
+     in two separated transaction. So, if something bad happens
+     after the former, and before the latter, file system
+     would become inconsistent state.
 
-Here is the real example. Let assume the following two cases.
+     This patch move them into one transaction.
 
-  a) A file created freshly (under a directory without both
-     COMPRESS and NOCOMPRESS flag.)
+  b) It updates compression flags here and calls btrfs_set_prop()
+     after that. However flags are also updated in this function.
 
-  b) A existing file which is explicitly set ""
-     to compression property.
-
-In addition, here is the command log (I attached the source of
-"getflags" program in this patch.)
-
-=======
-$ rm -f a b; touch a b
-$ btrfs prop set b compression ""
- # both a and b have the same compression property: ""
-$ btrfs prop get a compression
-$ btrfs prop get b compression
- # but ... let's take a look at inode flags
-$ ./getflags a
-0x0
-$ ./getflags b
-0x400             # 0x400 (FS_NOCOMP_FL) corresponds to BTRFS_INODE_NOCOMPRESS
-=======
-
-So both these two files have their compression property == "",
-but have different NOCOMPRESS flag state leading to different
-behavior.
-
-case | BTRFS_INODE_NOCOMPRESS | behavior
-=====+========================+=========================
-   a | unset                  | might be compressed
-   b | set                    | never be compressed
-
-I consider that we should not expect users to remember
-whether their files are case a or b and should introduce
-another value for compress property anyway.
-
-getflags.c:
-===================
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <linux/fs.h>
-
-int main(int argc, char const* argv[])
-{
-  const char *name = argv[1];
-  int fd = open(name, O_RDONLY);
-  long x;
-  ioctl(fd, FS_IOC_GETFLAGS, &x);
-  printf("0x%lx\n", x);
-  return 0;
-}
-===================
+     This patch removes the duplicated code for updating flags
+     from ioctl code and aggregates this work to __btrfs_set_prop()
+     at all. 
 
 Signed-off-by: Naohiro Aota <naota@elisp.net>
 Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- fs/btrfs/props.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c | 32 +++++++++++---------------------
+ 1 file changed, 11 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 129b1dd..bf005f4 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -393,8 +393,8 @@ static int prop_compression_apply(struct inode *inode,
- 	int type;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0ff2127..47ac6da 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -221,6 +221,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	u64 ip_oldflags;
+ 	unsigned int i_oldflags;
+ 	umode_t mode;
++	const char *comp;
  
- 	if (len == 0) {
--		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
--		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
-+		BTRFS_I(inode)->flags &=
-+			~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
- 		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
+ 	if (!inode_owner_or_capable(inode))
+ 		return -EPERM;
+@@ -310,40 +311,29 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	 * things smaller.
+ 	 */
+ 	if (flags & FS_NOCOMP_FL) {
+-		ip->flags &= ~BTRFS_INODE_COMPRESS;
+-		ip->flags |= BTRFS_INODE_NOCOMPRESS;
+-
+-		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+-		if (ret && ret != -ENODATA)
+-			goto out_drop;
++		comp = "off";
+ 	} else if (flags & FS_COMPR_FL) {
+-		const char *comp;
+-
+-		ip->flags |= BTRFS_INODE_COMPRESS;
+-		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
+-
+ 		if (root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 			comp = "lzo";
+ 		else
+ 			comp = "zlib";
+-		ret = btrfs_set_prop(inode, "btrfs.compression",
+-				     comp, strlen(comp), 0);
+-		if (ret)
+-			goto out_drop;
+-
+ 	} else {
+-		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+-		if (ret && ret != -ENODATA)
+-			goto out_drop;
+-		ip->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
++		comp = "";
+ 	}
  
- 		return 0;
+-	trans = btrfs_start_transaction(root, 1);
++	trans = btrfs_start_transaction(root, 2);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		goto out_drop;
+ 	}
+ 
++	ret = __btrfs_set_prop(trans, inode, "btrfs.compression", comp,
++			       strlen(comp), 0);
++	if (ret && ret != -ENODATA) {
++		btrfs_end_transaction(trans, root);
++		goto out_drop;
++	}
++
+ 	btrfs_update_iflags(inode);
+ 	inode_inc_iversion(inode);
+ 	inode->i_ctime = CURRENT_TIME;
 -- 1.8.3.1 
 

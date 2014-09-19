@@ -1,78 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:35640 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756584AbaISM6m (ORCPT
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:38073 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755848AbaISM7m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 08:58:42 -0400
-Received: by mail-ig0-f171.google.com with SMTP id hn15so945991igb.16
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 05:58:42 -0700 (PDT)
-Message-ID: <541C2873.3000904@gmail.com>
-Date: Fri, 19 Sep 2014 08:58:27 -0400
+	Fri, 19 Sep 2014 08:59:42 -0400
+Received: by mail-ig0-f182.google.com with SMTP id hn15so3298352igb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 05:59:41 -0700 (PDT)
+Message-ID: <541C28AF.2010607@gmail.com>
+Date: Fri, 19 Sep 2014 08:59:27 -0400
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>,
-        rob@robspanton.com
-CC: linux-btrfs@vger.kernel.org
+To: rob@robspanton.com, linux-btrfs@vger.kernel.org
 Subject: Re: Performance Issues
-References: <1411129114.1811.7.camel@zarniwoop.blob> <1779590.cL85uaaAL2@vajra>
-In-Reply-To: <1779590.cL85uaaAL2@vajra>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080705050402060808030705"
+References: <1411129114.1811.7.camel@zarniwoop.blob> <541C264E.106@gmail.com>
+In-Reply-To: <541C264E.106@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030402070005000106060403"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080705050402060808030705
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+--------------ms030402070005000106060403
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-09-19 08:25, Sw=E2mi Petaramesh wrote:
-> Le vendredi 19 septembre 2014, 13:18:34 Rob Spanton a =E9crit :
+On 2014-09-19 08:49, Austin S Hemmelgarn wrote:
+> On 2014-09-19 08:18, Rob Spanton wrote:
+>> Hi,
+>>
 >> I have a particularly uncomplicated setup (a desktop PC with a hard
->> disk) and I'm seeing particularly slow performance from btrfs.
+>> disk) and I'm seeing particularly slow performance from btrfs.  A `git=
+
+>> status` in the linux source tree takes about 46 seconds after dropping=
+
+>> caches, whereas on other machines using ext4 this takes about 13s.  My=
+
+>> mail client (evolution) also seems to perform particularly poorly on
+>> this setup, and my hunch is that it's spending a lot of time waiting o=
+n
+>> the filesystem.
+>>
+>> I've tried mounting with noatime, and this has had no effect.  Anyone
+>> got any ideas?
+>>
+>> Here are the things that the wiki page asked for [1]:
+>>
+>> uname -a:
+>>
+>>          Linux zarniwoop.blob 3.16.2-200.fc20.x86_64 #1 SMP Mon Sep 8
+>>          11:54:45 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+>>
+>> btrfs --version:
+>>
+>>          Btrfs v3.16
+>>
+>> btrfs fi show:
+>>
+>>          Label: 'fedora'  uuid: 717c0a1b-815c-4e6a-86c0-60b921e84d75
+>>              Total devices 1 FS bytes used 1.49TiB
+>>              devid    1 size 2.72TiB used 1.50TiB path /dev/sda4
+>>
+>>          Btrfs v3.16
+>>
+>> btrfs fi df /:
+>>
+>>          Data, single: total=3D1.48TiB, used=3D1.48TiB
+>>          System, DUP: total=3D32.00MiB, used=3D208.00KiB
+>>          Metadata, DUP: total=3D11.50GiB, used=3D10.43GiB
+>>          unknown, single: total=3D512.00MiB, used=3D0.00
+>>
+>> dmesg dump is attached.
+>>
+>> Please CC any responses to me, as I'm not subscribed to the list.
+>>
+>> Cheers,
+>>
+>> Rob
+>>
+>> [1] https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list
+>>
+>>
+> WRT the performance of Evolution, the issue is probably fragmentation o=
+f
+> the data files.  If you run the command:
+> # btrfs fi defrag -rv /home
+> you should see some improvement in evolution performance (until you get=
+
+> any new mail that is).  Evolution (like most graphical e-mail clients
+> these days) uses sqlite for data storage, and sqlite database files are=
+
+> one of the known pathological cases for COW filesystems in general; the=
+
+> solution is to mark the files as NOCOW (see the info about VM images in=
+
+> [1] and [2], the same suggestions apply to database files).
 >
-> Weeelll I have the same over-complicated kind of setup, and an Arch Lin=
-ux
-> BTRFS system which used to boot in some decent amout of time in the pas=
-t now
-> takes about 5 full minutes to just make it to the KDM login prompt, and=
+> As for git, I haven't seen any performance issues specific to BTRFS; ar=
+e
+> you using any compress=3D mount option? zlib based compression is known=
+ to
+> cause serious slowdowns.  I don't think that git uses any kind of
+> database for data storage.  Also, if the performance comparison is from=
 
-> another 5 minutes before KDE is fully started. Makes me think of the go=
-od ole'
-> times of Windows 95 OSR2 on a 486SX with a dying 1 GB Hard disk...
-Well, part of your problem might be KDE itself, it's extremely CPU=20
-intensive these days.  I'd suggest disabling the 'semantic desktop'=20
-stuff, because that tends to be the worst offender as far as soaking up=20
-system resources.  Also, if you recently switched to systemd, that may=20
-be causing some slowdown as well (journald's default settings are=20
-terrible for performance)
+> other systems, unless those systems have the EXACT same hardware
+> configuration, they aren't really a good comparison.  Unless the pc thi=
+s
+> is on is a relatively recent system (less than a year or two old), it
+> may just be hardware that is the performance bottleneck.
 >
-> Now, let me add that I had removed all snaphots, ran a full defrag, and=
- even
-> rebalanced the damn thing without any positive effect...
->
-> (And yes, my HD is physically in good shape, SMART feels fully happy, a=
-nd it's
-> less than 75% full...)
->
-> I've been using BTRFS for 2-3 years on a dozen of different systems, an=
-d if
-> something doesn't surprise me at all, it's =AB slow performance =BB, in=
-deed,
-> although I'm myself more accustomed to =AB incredibly fscking damn slow=
+Realized after I sent this that I forgot the links for [1] and [2]
 
-> performance =BB...
-It's kind of funny, but I haven't had any performance issues with BTRFS=20
-since about 3.10, even on the systems my employer is using Fedora 20 on, =
-
-and those use only a Core 2 Duo Processor, DDR2-800 RAM, and SATA2 hard=20
-drives.
-> HTH
->
+[1] https://btrfs.wiki.kernel.org/index.php/UseCases
+[2] https://btrfs.wiki.kernel.org/index.php/FAQ
 
 
-
---------------ms080705050402060808030705
+--------------ms030402070005000106060403
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -109,8 +151,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQwOTE5MTI1ODI3
-WjAjBgkqhkiG9w0BCQQxFgQU6PMKUH+L0aCEX5p/MrMIKFy8q3owbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQwOTE5MTI1OTI3
+WjAjBgkqhkiG9w0BCQQxFgQUBFvpt4fmmwAk6YDFTA75Qeb1TZ0wbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -118,10 +160,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEARcHhUesrcW64bJ6d8yu8J05vO4JE
-9ew38a6z/Qaw4qCx+evgfXskxMNKIpFHUISqeBsYEhX/71TwlA4WcDazCl54kIuyNF75/M+J
-Hyq+NZHAWEBcWmH+Yhakq/AfrZYcz7nMNoEiPLPKSb1rsj8VoodRSkQGLcWcjU3dfBH0CUcb
-HMAELg9MnFZtiA9PxjGyiXRCse9D5ja+FwE+p3gsSx/MIjIuEuaxTyNTe+fi+lht1KwtYmf2
-kSMSU2cKa10HMaEohxB8iQIBS1aqs+zfpRuw9ud8cixRwN4+fvtTIBQmH+FhfeFgnKKMibJc
-J9Vdxt3BCJuUBXtgnaLNubppfgAAAAAAAA==
---------------ms080705050402060808030705--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAwzwHghlgoyhtUvHdJEuysLLvOUCv
+pZ5ty7+QySHMF8zBBPiA7ClAw4bv6gSJ9NK8b/n2BBTNT49f9TQvkP8yY/laLlwBmWTa8fLD
+moSVfgn81Ec4Sbnnz5OFAiPimD6KVklfi8UdWh7C+jc5jIeO57lqgx0iE/4hs1reTJHp8F6l
+4iyuXC993GCZF6LLl3ffCRNAu2FDDETYkRcfc/SHbVgBvkDk9r7/G3o6OnBn2CFBbSeqinKg
+DbfveMlEKXapHGX/5DQGcTmHPdQ9RB+2WJ98BYWAbnguHWNIXLUQu45zCW52hyIFPvKLvYTc
+4ArUlslV9PNXhioRvI9DF5J4VgAAAAAAAA==
+--------------ms030402070005000106060403--

@@ -1,79 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40065 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1757775AbaISTpf (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11888 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932080AbaISTrY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 15:45:35 -0400
-Received: from pps.filterd (m0004003 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8JJhqF1032375
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 12:45:35 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1pgrw40ef0-7
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 12:45:35 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix build_backref_tree issue with multiple shared blocks
-Date: Fri, 19 Sep 2014 15:43:34 -0400
-Message-ID: <1411155814-9773-1-git-send-email-jbacik@fb.com>
+	Fri, 19 Sep 2014 15:47:24 -0400
+Message-ID: <541C8845.4080101@fb.com>
+Date: Fri, 19 Sep 2014 15:47:17 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs fixes
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc Merlin sent me a broken fs image months ago where it would blow up in the
-upper->checked BUG_ON() in build_backref_tree.  This is because we had a
-scenario like this
+Hi Linus,
 
-block a -- level 4 (not shared)
-   |
-block b -- level 3 (reloc block, shared)
-   |
-block c -- level 2 (not shared)
-   |
-block d -- level 1 (shared)
-   |
-block e -- level 0 (shared)
+We have two more fixes for pulling:
 
-We go to build a backref tree for block e, we notice block d is shared and add
-it to the list of blocks to lookup it's backrefs for.  Now when we loop around
-we will check edges for the block, so we will see we looked up block c last
-time.  So we lookup block d and then see that the block that points to it is
-block c and we can just skip that edge since we've already been up this path.
-The problem is because we clear need_check when we see block d (as it is shared)
-we never add block b as needing to be checked.  And because block c is in our
-path already we bail out before we walk up to block b and add it to the backref
-check list.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-To fix this we need to reset need_check if we trip over a block that doesn't
-need to be checked.  This will make sure that any subsequent blocks in the path
-as we're walking up afterwards are added to the list to be processed.  With this
-patch I can now mount Marc's fs image and it'll complete the balance without
-panicing.  Thanks,
+I've got a  revert to fix a regression with btrfs device registration,
+and Filipe has part two of his fsync fix from last week.
 
-Reported-by: Marc MERLIN <marc@merlins.org>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/relocation.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+Chris Mason (1) commits (+6/-7):
+    Revert "Btrfs: device_list_add() should not update list when mounted"
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 19726af..b55ea37 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -978,8 +978,11 @@ again:
- 					need_check = false;
- 					list_add_tail(&edge->list[UPPER],
- 						      &list);
--				} else
-+				} else {
-+					if (upper->checked)
-+						need_check = true;
- 					INIT_LIST_HEAD(&edge->list[UPPER]);
-+				}
- 			} else {
- 				upper = rb_entry(rb_node, struct backref_node,
- 						 rb_node);
--- 
-1.8.3.1
+Filipe Manana (1) commits (+13/-14):
+    Btrfs: set inode's logged_trans/last_log_commit after ranged fsync
 
+Total: (2) commits (+19/-21)
+
+ fs/btrfs/btrfs_inode.h | 13 +++++++++++--
+ fs/btrfs/tree-log.c    | 14 ++------------
+ fs/btrfs/volumes.c     | 13 ++++++-------
+ 3 files changed, 19 insertions(+), 21 deletions(-)

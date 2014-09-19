@@ -1,39 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11888 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932080AbaISTrY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 15:47:24 -0400
-Message-ID: <541C8845.4080101@fb.com>
-Date: Fri, 19 Sep 2014 15:47:17 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from plane.gmane.org ([80.91.229.3]:41452 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758048AbaISWAF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 18:00:05 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XV6Dk-0007bS-1b
+	for linux-btrfs@vger.kernel.org; Sat, 20 Sep 2014 00:00:04 +0200
+Received: from 75.50.101.32 ([75.50.101.32])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 00:00:04 +0200
+Received: from rohbeck by 75.50.101.32 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 00:00:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Ralf-Peter Rohbeck <rohbeck@yahoo.com>
+Subject: Re: Single disk parrallelization
+Date: Fri, 19 Sep 2014 14:29:56 -0700
+Message-ID: <lvi78k$haj$1@ger.gmane.org>
+References: <BLU406-EAS1974279D81BF03735D65B479AB40@phx.gbl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <BLU406-EAS1974279D81BF03735D65B479AB40@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On 09/19/2014 11:10 AM, Jeb Thomson wrote:
+> With the advanced features of btrfs, it would be an additional simple task to make different platters run in parallel.
+>
+> In this case, say a disk has three platters, and so three seek heads as well. If we can identify that much, and what offsets they are at, it then becomes a trivial matter to place the reads and writes to different platters at the same time.
+>
+> In affect, this means each platter should be operating as a single virtualized unit, instead of one single unit...
+>
+> Regards,
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+A disk drive has only one actuator that moves all heads in parallel. 
+Also disk drives are an array of logical blocks today; nobody uses 
+cylinder/head/sector addressing any more.
 
-We have two more fixes for pulling:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-
-I've got a  revert to fix a regression with btrfs device registration,
-and Filipe has part two of his fsync fix from last week.
-
-Chris Mason (1) commits (+6/-7):
-    Revert "Btrfs: device_list_add() should not update list when mounted"
-
-Filipe Manana (1) commits (+13/-14):
-    Btrfs: set inode's logged_trans/last_log_commit after ranged fsync
-
-Total: (2) commits (+19/-21)
-
- fs/btrfs/btrfs_inode.h | 13 +++++++++++--
- fs/btrfs/tree-log.c    | 14 ++------------
- fs/btrfs/volumes.c     | 13 ++++++-------
- 3 files changed, 19 insertions(+), 21 deletions(-)

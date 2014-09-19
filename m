@@ -1,30 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44331 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:46333 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755682AbaISNgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 09:36:38 -0400
+	id S1754085AbaISNw0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 09:52:26 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XUyKp-0006sT-Fv
-	for linux-btrfs@vger.kernel.org; Fri, 19 Sep 2014 15:34:51 +0200
+	id 1XUybY-0006Il-VB
+	for linux-btrfs@vger.kernel.org; Fri, 19 Sep 2014 15:52:08 +0200
 Received: from pd953ea7c.dip0.t-ipconnect.de ([217.83.234.124])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 15:34:51 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 15:52:08 +0200
 Received: from holger.hoffstaette by pd953ea7c.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 15:34:51 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 15:52:08 +0200
 To: linux-btrfs@vger.kernel.org
 From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>
 Subject: Re: Performance Issues
-Date: Fri, 19 Sep 2014 13:34:38 +0000 (UTC)
-Message-ID: <pan.2014.09.19.13.34.38@googlemail.com>
+Date: Fri, 19 Sep 2014 13:51:22 +0000 (UTC)
+Message-ID: <pan.2014.09.19.13.51.22@googlemail.com>
 References: <1411129114.1811.7.camel@zarniwoop.blob>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
 
 On Fri, 19 Sep 2014 13:18:34 +0100, Rob Spanton wrote:
 
@@ -32,6 +33,9 @@ On Fri, 19 Sep 2014 13:18:34 +0100, Rob Spanton wrote:
 > disk) and I'm seeing particularly slow performance from btrfs.  A `git
 > status` in the linux source tree takes about 46 seconds after dropping
 > caches, whereas on other machines using ext4 this takes about 13s.  My
+> mail client (evolution) also seems to perform particularly poorly on
+> this setup, and my hunch is that it's spending a lot of time waiting on
+> the filesystem.
 
 This is - unfortunately - a particular btrfs oddity/characteristic/flaw,
 whatever you want to call it. git relies a lot on fast stat() calls,

@@ -1,66 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7725 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751103AbaISChk convert rfc822-to-8bit (ORCPT
+Received: from mail-pd0-f174.google.com ([209.85.192.174]:40056 "EHLO
+	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750815AbaISJBp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 22:37:40 -0400
-Message-ID: <541B975C.6010406@cn.fujitsu.com>
-Date: Fri, 19 Sep 2014 10:39:24 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel integration branch updated
-References: <541AE9DF.9030401@fb.com> <541B8AAD.4080305@cn.fujitsu.com>
-In-Reply-To: <541B8AAD.4080305@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+	Fri, 19 Sep 2014 05:01:45 -0400
+Received: by mail-pd0-f174.google.com with SMTP id v10so3232866pde.33
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 02:01:44 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org,
+        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+        Lai Jiangshan <laijs@cn.fujitsu.com>, linux-kernel@vger.kernel.org
+Subject: [PATCH v2 0/2] Move BTRFS RCU string to common library
+Date: Fri, 19 Sep 2014 02:01:28 -0700
+Message-Id: <cover.1411116672.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris
+This patch series moves the generic RCU string library used internally by BTRFS
+to be accessible by anyone. It provides printk_in_rcu and
+printk_ratelimited_in_rcu to print these strings. In order to avoid a weird
+inconsistency between the two, the first patch fixes printk_ratelimited so it
+passes on the return value from printk.
 
-On Fri, 19 Sep 2014 09:45:17 +0800, Qu Wenruo wrote:
-> Hi Chris,
-> 
-> 
-> I'm sorry that the commit 'btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map'
-> has a V2 patch, so the one in tree is not up-to-data.
-> 
-> Although the v2 change is quite small and it's relevantly dependent, so it should not be a pain change.
+The second patch actually moves the RCU string library. Version 2 passes on the
+return values from printk{,_ratelimited} and fixes some style issues.
 
-I think it is better to merge it to v3.17 since it is a regression of v3.17 kernel
+Omar Sandoval (2):
+  Return a value from printk_ratelimited
+  Move BTRFS RCU string to common library
 
-Thanks
-Miao 
+ fs/btrfs/check-integrity.c |  6 +--
+ fs/btrfs/dev-replace.c     | 19 +++++-----
+ fs/btrfs/disk-io.c         |  6 +--
+ fs/btrfs/extent_io.c       |  4 +-
+ fs/btrfs/ioctl.c           |  4 +-
+ fs/btrfs/raid56.c          |  2 +-
+ fs/btrfs/rcu-string.h      | 56 ----------------------------
+ fs/btrfs/scrub.c           | 15 ++++----
+ fs/btrfs/super.c           |  2 +-
+ fs/btrfs/volumes.c         | 14 +++----
+ include/linux/printk.h     |  4 +-
+ include/linux/rcustring.h  | 91 ++++++++++++++++++++++++++++++++++++++++++++++
+ 12 files changed, 131 insertions(+), 92 deletions(-)
+ delete mode 100644 fs/btrfs/rcu-string.h
+ create mode 100644 include/linux/rcustring.h
 
-> Thanks,
-> Qu
-> 
-> -------- Original Message --------
-> Subject: kernel integration branch updated
-> From: Chris Mason <clm@fb.com>
-> To: linux-btrfs <linux-btrfs@vger.kernel.org>
-> Date: 2014年09月18日 22:19
->> Hi everyone,
->>
->> I've added a few more patches to the kernel integration branch, and
->> rebased onto rc5.  This should be my last rebase before sending into
->> linux-next, please take a look.
->>
->> It's still missing three patches from Josef, which we're updating.  I
->> can put more patches on top, but I'd prefer not to rebase again unless
->> some patches need removing.
->>
->> -chris
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+2.1.0
 

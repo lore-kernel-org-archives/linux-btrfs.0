@@ -1,77 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.225]:30315 "EHLO
-	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1757276AbaISRY3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 13:24:29 -0400
-Date: Fri, 19 Sep 2014 13:21:23 -0400
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org,
-        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        Lai Jiangshan <laijs@cn.fujitsu.com>, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 1/2] Return a value from printk_ratelimited
-Message-ID: <20140919132123.418b276f@gandalf.local.home>
-In-Reply-To: <3629aa32fd3e434e41e5e5f4a97ab50adb8edcdc.1411116672.git.osandov@osandov.com>
-References: <cover.1411116672.git.osandov@osandov.com>
-	<3629aa32fd3e434e41e5e5f4a97ab50adb8edcdc.1411116672.git.osandov@osandov.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from blu004-omc1s22.hotmail.com ([65.55.116.33]:50257 "EHLO
+	BLU004-OMC1S22.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756107AbaISSPW convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 14:15:22 -0400
+Message-ID: <BLU406-EAS1974279D81BF03735D65B479AB40@phx.gbl>
+Content-Type: text/plain; charset="us-ascii"
+Subject: Single disk parrallelization
+From: Jeb Thomson <jet00159@outlook.com>
+Date: Fri, 19 Sep 2014 13:10:10 -0500
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+MIME-Version: 1.0 (1.0)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 19 Sep 2014 02:01:29 -0700
-Omar Sandoval <osandov@osandov.com> wrote:
+With the advanced features of btrfs, it would be an additional simple task to make different platters run in parallel. 
 
-> printk returns an integer; there's no reason for printk_ratelimited to swallow
-> it.
-> 
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> ---
->  include/linux/printk.h | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/include/linux/printk.h b/include/linux/printk.h
-> index d78125f..67534bc 100644
-> --- a/include/linux/printk.h
-> +++ b/include/linux/printk.h
-> @@ -343,12 +343,14 @@ extern asmlinkage void dump_stack(void) __cold;
->  #ifdef CONFIG_PRINTK
->  #define printk_ratelimited(fmt, ...)					\
->  ({									\
-> +	int __ret = 0;							\
+In this case, say a disk has three platters, and so three seek heads as well. If we can identify that much, and what offsets they are at, it then becomes a trivial matter to place the reads and writes to different platters at the same time. 
 
-My only issues is with the "__ret" name.
+In affect, this means each platter should be operating as a single virtualized unit, instead of one single unit...
 
-It's not really unique enough. If something else uses __ret and does
-
-  printk_ratelimit("some fmt string %d\n", __ret);
-
-This will not print the right value.
-
-printk_ratelimit can be used almost anywhere thus using a really unique
-value may be worth while here.
-
-What about:
-
-  int ______r
-
-?
-
--- Steve
-
->  	static DEFINE_RATELIMIT_STATE(_rs,				\
->  				      DEFAULT_RATELIMIT_INTERVAL,	\
->  				      DEFAULT_RATELIMIT_BURST);		\
->  									\
->  	if (__ratelimit(&_rs))						\
-> -		printk(fmt, ##__VA_ARGS__);				\
-> +		__ret = printk(fmt, ##__VA_ARGS__);			\
-> +	__ret;								\
->  })
->  #else
->  #define printk_ratelimited(fmt, ...)					\
-
+Regards,

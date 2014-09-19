@@ -1,110 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f195.google.com ([209.85.223.195]:56384 "EHLO
-	mail-ie0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750855AbaISB43 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:7725 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751103AbaISChk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 21:56:29 -0400
-Received: by mail-ie0-f195.google.com with SMTP id y20so523734ier.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 18:56:28 -0700 (PDT)
-Message-ID: <541B8D49.4000805@gmail.com>
-Date: Thu, 18 Sep 2014 21:56:25 -0400
-From: nick <yocto6@gmail.com>
+	Thu, 18 Sep 2014 22:37:40 -0400
+Message-ID: <541B975C.6010406@cn.fujitsu.com>
+Date: Fri, 19 Sep 2014 10:39:24 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: XFS Tests for Btrfs
-References: <541B3D0C.4040004@gmail.com> <541B8215.9080301@cn.fujitsu.com> <541B8430.7040000@gmail.com> <541B8993.1000604@cn.fujitsu.com> <541B89E0.5010905@gmail.com> <541B8AFC.5040208@cn.fujitsu.com>
-In-Reply-To: <541B8AFC.5040208@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel integration branch updated
+References: <541AE9DF.9030401@fb.com> <541B8AAD.4080305@cn.fujitsu.com>
+In-Reply-To: <541B8AAD.4080305@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris
 
+On Fri, 19 Sep 2014 09:45:17 +0800, Qu Wenruo wrote:
+> Hi Chris,
+> 
+> 
+> I'm sorry that the commit 'btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map'
+> has a V2 patch, so the one in tree is not up-to-data.
+> 
+> Although the v2 change is quite small and it's relevantly dependent, so it should not be a pain change.
 
-On 14-09-18 09:46 PM, Qu Wenruo wrote:
-> 
-> -------- Original Message --------
-> Subject: Re: XFS Tests for Btrfs
-> From: nick <yocto6@gmail.com>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-> Date: 2014年09月19日 09:41
->>
->> On 14-09-18 09:40 PM, Qu Wenruo wrote:
->>> -------- Original Message --------
->>> Subject: Re: XFS Tests for Btrfs
->>> From: nick <yocto6@gmail.com>
->>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
->>> Date: 2014年09月19日 09:17
->>>> On 14-09-18 09:08 PM, Qu Wenruo wrote:
->>>>> Hi,
->>>>>
->>>>> Xfstests uses several environment variants to setup the test environment.
->>>>> You can set it manually using export, or write them into local.conf in xfstests directory.
->>>>>
->>>>> These environment variants are mandatory:
->>>>> TEST_DEV: device for normal tests, like all generic tests
->>>>> TEST_DIR: where TEST_DEV is mounted to.
->>>>>
->>>>> And somecommon optional environment variants:
->>>>> SCRATCH_DEV: scratch device for some tests, if you want to test btrfs' multi device related feature, you need
->>>>> to set SCRATCH_DEV_POOL.
->>>>> SCRATCH_DEV_POOL: a list for devices mainly for btrfs' muti-device related test.
->>>>> SCRATCH_MNT: where SCRATCH_DEV/SCRATCH_DEV_POOL is mounted to.
->>>>>
->>>>> SCRATCH_DEV_POOL should not contain the TEST_DEV.
->>>>>
->>>>> FSTYP: the filesystem type you want to test.
->>>>> MKFS_OPTIONS: the mkfs time options. Useful to test mkfs time feature like no-holes.
->>>>> MOUNT_OPTIONS: the mount time options. Useful to test feature like compress.
->>>>>
->>>>> So short guide on how to run xfstests:
->>>>> 1. download the xfstests source, better the git version
->>>>>
->>>>> 2. compile xfstests
->>>>> make will do everything for you, except you lacks some headers or dependency.
->>>>> When that happens, follow your distribution's method to install them.
->>>>>
->>>>> 3. setup the environment variants
->>>>> Manually or into the local.conf is both OK.
->>>>>
->>>>> 4. run tests
->>>>> You can run all tests by ./check -g auto, or multiple/single test using blob/testcase number like:
->>>>> # ./check generic/311
->>>>> # ./check btrfs/[0-9][0-9][0-9]
->>>>>
->>>>> Thanks
->>>>> Qu
->>>>>
->>>>> -------- Original Message --------
->>>>> Subject: XFS Tests for Btrfs
->>>>> From: nick <yocto6@gmail.com>
->>>>> To: <linux-btrfs@vger.kernel.org>
->>>>> Date: 2014年09月19日 04:14
->>>>>> Hey Fellow Btrfs Developers,
->>>>>> I am wondering how to run the xfs tests for btrfs as I tried to do it based on a link online
->>>>>> written I believe a few years ago. If someone can help me get set up for testing the btrfs
->>>>>> code using xfs tests that would be great. In addition afterwards I already build kernel 3.17
->>>>>> r5 release candidate and would be glad to run any times you need run to test single drive
->>>>>> config issues.
->>>>>> Thanks Nick
->>>>>> -- 
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>> The issue I was hitting was my TEST_DIR not being configured properly. I will list my variables below.
->>>> /dev/sdc1 was my TEST_DEV
->>>> /media/nick/x was my TEST_DIR
->>>> Nick
->>> Did you mkfs on TEST_DEV? Can TEST_DEV be mounted correctly?
->>>
->>> Thanks,
->>> Qu
->> I partitioned  it using gparted and I can mount it normally but not with xfstests.
->> Nick
-> Did you specify the FSTYP? and what's the error prompt and dmesg for the fail of mount?
-> 
+I think it is better to merge it to v3.17 since it is a regression of v3.17 kernel
+
+Thanks
+Miao 
+
 > Thanks,
 > Qu
-I also tried creating a directory in /media/nick and got this when it tried to mount,
-+$TEST_DEV is mounted but not on $TEST_DIR - aborting for all tests that were going to
-be run.
-Nick 
+> 
+> -------- Original Message --------
+> Subject: kernel integration branch updated
+> From: Chris Mason <clm@fb.com>
+> To: linux-btrfs <linux-btrfs@vger.kernel.org>
+> Date: 2014年09月18日 22:19
+>> Hi everyone,
+>>
+>> I've added a few more patches to the kernel integration branch, and
+>> rebased onto rc5.  This should be my last rebase before sending into
+>> linux-next, please take a look.
+>>
+>> It's still missing three patches from Josef, which we're updating.  I
+>> can put more patches on top, but I'd prefer not to rebase again unless
+>> some patches need removing.
+>>
+>> -chris
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

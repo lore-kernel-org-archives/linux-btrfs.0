@@ -1,64 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54496 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932078AbaISRp7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 13:45:59 -0400
-Message-ID: <541C6BD1.7080604@fb.com>
-Date: Fri, 19 Sep 2014 12:45:53 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: <rob@robspanton.com>, <linux-btrfs@vger.kernel.org>
+Received: from tetsuo.zabbo.net ([50.193.208.193]:51555 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932069AbaISRvG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 13:51:06 -0400
+Date: Fri, 19 Sep 2014 10:51:04 -0700
+From: Zach Brown <zab@zabbo.net>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Performance Issues
-References: <1411129114.1811.7.camel@zarniwoop.blob>	 <541C464F.3030600@fb.com> <1411145469.1601.2.camel@zarniwoop.blob>
-In-Reply-To: <1411145469.1601.2.camel@zarniwoop.blob>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Message-ID: <20140919175104.GA920@lenny.home.zabbo.net>
+References: <1411129114.1811.7.camel@zarniwoop.blob>
+ <pan.2014.09.19.13.51.22@googlemail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan.2014.09.19.13.51.22@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/19/2014 11:51 AM, Rob Spanton wrote:
-> Hi,
->
-> Thanks for the response everyone.
->
-> I wrote:
->> I have a particularly uncomplicated setup (a desktop PC with a hard
->> disk) and I'm seeing particularly slow performance from btrfs.  A `git
->> status` in the linux source tree takes about 46 seconds after dropping
->> caches, whereas on other machines using ext4 this takes about 13s.  My
->> mail client (evolution) also seems to perform particularly poorly on
->> this setup, and my hunch is that it's spending a lot of time waiting on
->> the filesystem.
->
-> The evolution problem has been improved: the sqlite db that it was using
-> had over 18000 fragments, so I got evolution to recreate that file with
-> nocow set.  It now takes "only" 30s to load my mail rather than 80s,
-> which is better...
->
-> On Fri, 2014-09-19 at 11:05 -0400, Josef Bacik wrote:
->> Weird, I get the exact opposite performance.  Anyway it's probably
->> because of your file layouts, try defragging your git dir and see if
->> that helps.  Thanks,
->
-> Defragging has improved matters a bit: it now takes 26s (was 46s) to run
-> git status.  Still not amazing, but at the moment I have no evidence to
-> suggest that it's not something to do with the machine's hardware.  If I
-> get time over the weekend I'll dig out an external hard disk and try a
-> couple of benchmarks with that.
->
-> For reference, these are the mount flags:
->          /dev/sda4 on / type btrfs (rw,noatime,space_cache)
->          /dev/sda4 on /home type btrfs (rw,noatime,space_cache)
->
+On Fri, Sep 19, 2014 at 01:51:22PM +0000, Holger Hoffstätte wrote:
+> 
+> On Fri, 19 Sep 2014 13:18:34 +0100, Rob Spanton wrote:
+> 
+> > I have a particularly uncomplicated setup (a desktop PC with a hard
+> > disk) and I'm seeing particularly slow performance from btrfs.  A `git
+> > status` in the linux source tree takes about 46 seconds after dropping
+> > caches, whereas on other machines using ext4 this takes about 13s.  My
+> > mail client (evolution) also seems to perform particularly poorly on
+> > this setup, and my hunch is that it's spending a lot of time waiting on
+> > the filesystem.
+> 
+> This is - unfortunately - a particular btrfs oddity/characteristic/flaw,
+> whatever you want to call it. git relies a lot on fast stat() calls,
+> and those seem to be particularly slow with btrfs esp. on rotational
+> media. I have the same problem with rsync on a freshly mounted volume;
+> it gets fast (quite so!) after the first run.
+> 
+> The simplest thing to fix this is a "du -s >/dev/null" to pre-cache all
+> file inodes.
+> 
+> I'd also love a technical explanation why this happens and how it could
+> be fixed. Maybe it's just a consequence of how the metadata tree(s)
+> are laid out on disk.
 
-You have an awful lot of metadata, do you have a lot of snapshots?  Also 
-I'd be interested in making sure most of this is just from shitty 
-metadata layout, could you make sure you have a recent version of 
-trace-cmd and then drop caches and do
+There's a lot of meat behind that "just a consequence" but, yes, that's
+the heart of it.  Different metadata designs result in different io
+patterns which single rotating drives are exquisitely sensitive to.
 
-trace-cmd record -e sched:sched_switch git status
+You can look for differences in io patterns with iostat, blktrace,
+iowatcher, etc.  They'll show differences in io sizes, concurrency,
+locality, and often differences in the amount of blocks of data read.
 
-and send me the trace.dat so I can see where all the time is spent?  Thanks,
+  http://masoncoding.com/iowatcher/
 
-Josef
+As for "fixing it", welllll, it's arguably working as intended.  If you
+turned btrfs from one cow tree into lots of journaled trees of trees
+then, well, we'd be left with an absurd reimplementation of ext*|xfs.
 
+- z

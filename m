@@ -1,30 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f195.google.com ([209.85.213.195]:49870 "EHLO
-	mail-ig0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756139AbaIRUOH (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:28491 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751212AbaISBIl convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 16:14:07 -0400
-Received: by mail-ig0-f195.google.com with SMTP id uq10so486676igb.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 13:14:06 -0700 (PDT)
-Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.232.64.167])
-        by mx.google.com with ESMTPSA id j2sm2991454igm.21.2014.09.18.13.14.05
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 18 Sep 2014 13:14:05 -0700 (PDT)
-Message-ID: <541B3D0C.4040004@gmail.com>
-Date: Thu, 18 Sep 2014 16:14:04 -0400
-From: nick <yocto6@gmail.com>
+	Thu, 18 Sep 2014 21:08:41 -0400
+Message-ID: <541B8215.9080301@cn.fujitsu.com>
+Date: Fri, 19 Sep 2014 09:08:37 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: XFS Tests for Btrfs
-Content-Type: text/plain; charset=utf-8
+To: nick <yocto6@gmail.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: XFS Tests for Btrfs
+References: <541B3D0C.4040004@gmail.com>
+In-Reply-To: <541B3D0C.4040004@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Fellow Btrfs Developers,
-I am wondering how to run the xfs tests for btrfs as I tried to do it based on a link online
-written I believe a few years ago. If someone can help me get set up for testing the btrfs
-code using xfs tests that would be great. In addition afterwards I already build kernel 3.17
-r5 release candidate and would be glad to run any times you need run to test single drive
-config issues.
-Thanks Nick     
+Hi,
+
+Xfstests uses several environment variants to setup the test environment.
+You can set it manually using export, or write them into local.conf in 
+xfstests directory.
+
+These environment variants are mandatory:
+TEST_DEV: device for normal tests, like all generic tests
+TEST_DIR: where TEST_DEV is mounted to.
+
+And somecommon optional environment variants:
+SCRATCH_DEV: scratch device for some tests, if you want to test btrfs' 
+multi device related feature, you need
+to set SCRATCH_DEV_POOL.
+SCRATCH_DEV_POOL: a list for devices mainly for btrfs' muti-device 
+related test.
+SCRATCH_MNT: where SCRATCH_DEV/SCRATCH_DEV_POOL is mounted to.
+
+SCRATCH_DEV_POOL should not contain the TEST_DEV.
+
+FSTYP: the filesystem type you want to test.
+MKFS_OPTIONS: the mkfs time options. Useful to test mkfs time feature 
+like no-holes.
+MOUNT_OPTIONS: the mount time options. Useful to test feature like compress.
+
+So short guide on how to run xfstests:
+1. download the xfstests source, better the git version
+
+2. compile xfstests
+make will do everything for you, except you lacks some headers or 
+dependency.
+When that happens, follow your distribution's method to install them.
+
+3. setup the environment variants
+Manually or into the local.conf is both OK.
+
+4. run tests
+You can run all tests by ./check -g auto, or multiple/single test using 
+blob/testcase number like:
+# ./check generic/311
+# ./check btrfs/[0-9][0-9][0-9]
+
+Thanks
+Qu
+
+-------- Original Message --------
+Subject: XFS Tests for Btrfs
+From: nick <yocto6@gmail.com>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2014年09月19日 04:14
+> Hey Fellow Btrfs Developers,
+> I am wondering how to run the xfs tests for btrfs as I tried to do it based on a link online
+> written I believe a few years ago. If someone can help me get set up for testing the btrfs
+> code using xfs tests that would be great. In addition afterwards I already build kernel 3.17
+> r5 release candidate and would be glad to run any times you need run to test single drive
+> config issues.
+> Thanks Nick
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

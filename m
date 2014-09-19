@@ -1,72 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:53341 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750815AbaISIw2 (ORCPT
+Received: from mx-out-1.rwth-aachen.de ([134.130.5.186]:30481 "EHLO
+	mx-out-1.rwth-aachen.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752688AbaISJII (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 04:52:28 -0400
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id DBA213EE0BB
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:52:26 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id EDC56AC0A33
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:52:25 +0900 (JST)
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 8FBA71DB8037
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 17:52:25 +0900 (JST)
-Message-ID: <541BEEC1.9030606@jp.fujitsu.com>
-Date: Fri, 19 Sep 2014 17:52:17 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Fri, 19 Sep 2014 05:08:08 -0400
+Message-ID: <541BF025.1030309@rwth-aachen.de>
+Date: Fri, 19 Sep 2014 10:58:13 +0200
+From: Jakob Breier <Jakob.Breier@rwth-aachen.de>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 3/4] btrfs: export __btrfs_set_prop
-References: <541BED3D.5020803@jp.fujitsu.com> <541BEDF8.7010009@jp.fujitsu.com>
-In-Reply-To: <541BEDF8.7010009@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: <linux-btrfs@vger.kernel.org>
+Subject: Help for creating a useful bugreport
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Naohiro Aota <naota@elisp.net>
+Hi,
 
-Export __btrfs_set_prop() to be able to call it
-with running transaction.
+my btrfs partition got corrupted. With some trouble I got most of the 
+valuable data out of it using `btrfs restore -i` (it crashed a few 
+times, but on the fourth or fifth run it reached the stuff I wanted to 
+recover). As far as I can tell, the file system broke during normal 
+operations without any hardware failures. Before I switch back to ext4, 
+I'd like to file a bug report so my troubles were not completely in 
+vain. Unfortunately I don't have much to work with. Can you help me with 
+extracting enough information to create a useful bugreport?
 
-Signed-off-by: Naohiro Aota <naota@elisp.net>
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
- fs/btrfs/props.c | 2 +-
- fs/btrfs/props.h | 6 ++++++
- 2 files changed, 7 insertions(+), 1 deletion(-)
+Regards,
+Jakob
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 38efbe1..6f56f5b 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -99,7 +99,7 @@ find_prop_handler(const char *name,
- 	return NULL;
- }
- 
--static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
-+int __btrfs_set_prop(struct btrfs_trans_handle *trans,
- 			    struct inode *inode,
- 			    const char *name,
- 			    const char *value,
-diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
-index 100f188..cff91e0 100644
---- a/fs/btrfs/props.h
-+++ b/fs/btrfs/props.h
-@@ -28,6 +28,12 @@ int btrfs_set_prop(struct inode *inode,
- 		   const char *value,
- 		   size_t value_len,
- 		   int flags);
-+int __btrfs_set_prop(struct btrfs_trans_handle *trans,
-+			    struct inode *inode,
-+			    const char *name,
-+			    const char *value,
-+			    size_t value_len,
-+			    int flags);
- 
- int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path);
- 
--- 1.8.3.1 
+$ cat /etc/fedora-release
+Fedora release 20 (Heisenbug)
 
+$ uname -a
+Linux localhost.localdomain 3.16.2-200.fc20.x86_64 #1 SMP Mon Sep 8 
+11:54:45 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+$ sudo btrfs fi show /dev/dm-1
+Label: 'EncJakobExtern'  uuid: 8ccbd085-564d-4022-bfc9-18fd429d0a8d
+         Total devices 1 FS bytes used 731.07GiB
+         devid    1 size 931.60GiB used 769.04GiB path 
+/dev/mapper/luks-a266c492-2360-404d-9ad7-00edc2f0c09d
+
+Btrfs v3.16
+
+$ sudo mount /dev/dm-1 /mnt/diverse/
+mount: wrong fs type, bad option, bad superblock on 
+/dev/mapper/luks-a266c492-2360-404d-9ad7-00edc2f0c09d,
+        missing codepage or helper program, or other error
+
+        In some cases useful info is found in syslog - try
+        dmesg | tail or so.
+
+$ sudo mount /dev/dm-1 /mnt/diverse/ -o recovery
+mount: wrong fs type, bad option, bad superblock on 
+/dev/mapper/luks-a266c492-2360-404d-9ad7-00edc2f0c09d,
+        missing codepage or helper program, or other error
+
+        In some cases useful info is found in syslog - try
+        dmesg | tail or so.
+
+
+*Syslog:*
+Sep 19 10:11:11 localhost.localdomain kernel: BTRFS: device label 
+EncJakobExtern devid 1 transid 4923 /dev/dm-1
+Sep 19 10:11:11 localhost.localdomain udisksd[1971]: Unlocked LUKS 
+device /dev/sdb1 as /dev/dm-1
+
+Sep 19 10:16:13 localhost.localdomain sudo[5080]: jakob : TTY=pts/6 ; 
+PWD=/home/jakob ; USER=root ; COMMAND=/bin/mount /dev/dm-1 /mnt/diverse/
+Sep 19 10:16:17 localhost.localdomain kernel: BTRFS info (device dm-1): 
+disk space caching is enabled
+Sep 19 10:16:18 localhost.localdomain kernel: parent transid verify 
+failed on 46678016 wanted 4923 found 3306
+Sep 19 10:16:18 localhost.localdomain kernel: parent transid verify 
+failed on 46678016 wanted 4923 found 3306
+Sep 19 10:16:18 localhost.localdomain kernel: BTRFS: Failed to read 
+block groups: -5
+Sep 19 10:16:18 localhost.localdomain kernel: BTRFS: open_ctree failed
+
+Sep 19 10:16:45 localhost.localdomain sudo[5456]: jakob : TTY=pts/6 ; 
+PWD=/home/jakob ; USER=root ; COMMAND=/bin/mount /dev/dm-1 /mnt/diverse/ 
+-o recovery
+Sep 19 10:16:45 localhost.localdomain kernel: BTRFS info (device dm-1): 
+enabling auto recovery
+Sep 19 10:16:45 localhost.localdomain kernel: BTRFS info (device dm-1): 
+disk space caching is enabled
+Sep 19 10:16:46 localhost.localdomain kernel: parent transid verify 
+failed on 46678016 wanted 4923 found 3306
+Sep 19 10:16:46 localhost.localdomain kernel: parent transid verify 
+failed on 46678016 wanted 4923 found 3306
+Sep 19 10:16:46 localhost.localdomain kernel: BTRFS: Failed to read 
+block groups: -5
+Sep 19 10:16:46 localhost.localdomain kernel: BTRFS: open_ctree failed
+
+
+*fstab entry with which it was usually mounted:*
+/dev/mapper/LuksOpenendEncJakobExtern /mnt/EncJakobExtern btrfs 
+compress=lzo,nofail 0 0

@@ -1,170 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:51634 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932288AbaIRFvR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Sep 2014 01:51:17 -0400
-From: Eryu Guan <eguan@redhat.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v3 15/15] btrfs: new case to run defrag and remount with different compress algorithms simultaneously
-Date: Thu, 18 Sep 2014 13:49:39 +0800
-Message-Id: <1411019379-8104-16-git-send-email-eguan@redhat.com>
-In-Reply-To: <1411019379-8104-1-git-send-email-eguan@redhat.com>
-References: <1411019379-8104-1-git-send-email-eguan@redhat.com>
+Received: from mail-pd0-f173.google.com ([209.85.192.173]:61930 "EHLO
+	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751008AbaISGhw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Sep 2014 02:37:52 -0400
+Received: by mail-pd0-f173.google.com with SMTP id ft15so2984304pdb.32
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Sep 2014 23:37:52 -0700 (PDT)
+Date: Fri, 19 Sep 2014 14:37:48 +0800
+From: Eryu Guan <guaneryu@gmail.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: xfs@oss.sgi.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] xfstests: remove check_scratch_fs in btrfs/012
+Message-ID: <20140919063748.GA13950@dhcp-13-216.nay.redhat.com>
+References: <1409714759-9805-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1409714759-9805-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs defrag operations and remount with different compress
-algorithms simultaneously with fsstress running in background.
+On Wed, Sep 03, 2014 at 11:25:59AM +0800, Liu Bo wrote:
+> From: Liu Bo <liub.liubo@gmail.com>
+> 
+> btrfs/012 is a case to verify btrfs-convert feature, it converts an ext4 to
+> btrfs firstly and do something, then rolls back to ext4.
+> 
+> So at last we have a ext4 on the scratch device, but setting _require_scratch
+> will force a btrfsck on a ext4 fs because $FSTYP here is btrfs, and it ends up
+> with a failure report of _check_btrfs_filesystem.
+> 
+> Now that we have deliberately check the final ext4 fs in btrfs/012, just do not
+> set _require_scratch in this case.
+> 
+> Signed-off-by: Liu Bo <liub.liubo@gmail.com>
+> ---
+>  tests/btrfs/012 | 1 -
+>  1 file changed, 1 deletion(-)
+> 
+> diff --git a/tests/btrfs/012 b/tests/btrfs/012
+> index f7e5da5..12f6462 100755
+> --- a/tests/btrfs/012
+> +++ b/tests/btrfs/012
+> @@ -52,7 +52,6 @@ _cleanup()
+>  # Modify as appropriate.
+>  _supported_fs btrfs
+>  _supported_os Linux
+> -_require_scratch
 
-Signed-off-by: Eryu Guan <eguan@redhat.com>
----
- tests/btrfs/073     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/073.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 119 insertions(+)
- create mode 100755 tests/btrfs/073
- create mode 100644 tests/btrfs/073.out
+The test still requires a scratch device, so we cannot simply remove
+this line. Now we can use _require_scratch_nocheck helper, and it
+works fine based on my test.
 
-diff --git a/tests/btrfs/073 b/tests/btrfs/073
-new file mode 100755
-index 0000000..38c8356
---- /dev/null
-+++ b/tests/btrfs/073
-@@ -0,0 +1,116 @@
-+#! /bin/bash
-+# FSQA Test No. btrfs/073
-+#
-+# Run btrfs defrag operations and remount with different compress algorithms
-+# simultaneously with fsstress running in background.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 Red Hat Inc. All rights reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+# we check scratch dev after each loop
-+_require_scratch_nocheck
-+_require_scratch_dev_pool 4
-+_btrfs_get_profile_configs
-+
-+rm -f $seqres.full
-+
-+run_test()
-+{
-+	local mkfs_opts=$1
-+	local with_compress=$2
-+
-+	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
-+
-+	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
-+	# make sure we created btrfs with desired options
-+	if [ $? -ne 0 ]; then
-+		echo "mkfs $mkfs_opts failed"
-+		return
-+	fi
-+	_scratch_mount >>$seqres.full 2>&1
-+
-+	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
-+	echo "Run fsstress $args" >>$seqres.full
-+	$FSSTRESS_PROG $args >/dev/null 2>&1 &
-+	fsstress_pid=$!
-+
-+	echo -n "Start defrag worker: " >>$seqres.full
-+	_btrfs_stress_defrag $SCRATCH_MNT $with_compress >/dev/null 2>&1 &
-+	defrag_pid=$!
-+	echo "$defrag_pid" >>$seqres.full
-+
-+	echo -n "Start remount worker: " >>$seqres.full
-+	_btrfs_stress_remount_compress $SCRATCH_MNT >/dev/null 2>&1 &
-+	remount_pid=$!
-+	echo "$remount_pid" >>$seqres.full
-+
-+	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
-+	wait $fsstress_pid
-+	kill $defrag_pid $remount_pid
-+	wait
-+	# wait for the defrag and remount operations to finish
-+	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
-+		sleep 1
-+	done
-+	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
-+		sleep 1
-+	done
-+
-+	echo "Scrub the filesystem" >>$seqres.full
-+	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
-+	if [ $? -ne 0 ]; then
-+		echo "Scrub find errors in \"$mkfs_opts\" test" | tee -a $seqres.full
-+	fi
-+
-+	_scratch_unmount
-+	# we called _require_scratch_nocheck instead of _require_scratch
-+	# do check after test for each profile config
-+	_check_scratch_fs
-+}
-+
-+echo "Silence is golden"
-+for t in "${_btrfs_profile_configs[@]}"; do
-+	run_test "$t" nocompress
-+	run_test "$t" compress
-+done
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/073.out b/tests/btrfs/073.out
-new file mode 100644
-index 0000000..d107704
---- /dev/null
-+++ b/tests/btrfs/073.out
-@@ -0,0 +1,2 @@
-+QA output created by 073
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e631d5b..2e3fb6a 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -75,3 +75,4 @@
- 070 auto replace remount compress
- 071 auto scrub defrag compress
- 072 auto scrub remount compress
-+073 auto defrag remount compress
--- 
-1.8.3.1
+Thanks,
+Eryu
 
+>  
+>  BTRFS_CONVERT_PROG="`set_prog_path btrfs-convert`"
+>  MKFS_EXT4_PROG="`set_prog_path mkfs.ext4`"
+> -- 
+> 1.8.1.4
+> 
+> _______________________________________________
+> xfs mailing list
+> xfs@oss.sgi.com
+> http://oss.sgi.com/mailman/listinfo/xfs

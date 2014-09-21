@@ -1,100 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51611 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751792AbaIUHek (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Sep 2014 03:34:40 -0400
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: deleting a dead device
-Date: Sun, 21 Sep 2014 17:34:36 +1000
-Cc: linux-btrfs@vger.kernel.org
-References: <201409211139.17295.russell@coker.com.au> <pan$e422f$7bb05c96$557446c8$a9f98e73@cox.net>
-In-Reply-To: <pan$e422f$7bb05c96$557446c8$a9f98e73@cox.net>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201409211734.36865.russell@coker.com.au>
+Received: from plane.gmane.org ([80.91.229.3]:41725 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751792AbaIUIes (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 21 Sep 2014 04:34:48 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XVcbW-0004q5-CP
+	for linux-btrfs@vger.kernel.org; Sun, 21 Sep 2014 10:34:46 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2014 10:34:46 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Sep 2014 10:34:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: device delete progress
+Date: Sun, 21 Sep 2014 08:34:33 +0000 (UTC)
+Message-ID: <pan$1d8a8$448bb26c$d55fc521$929be7e0@cox.net>
+References: <201409211209.11875.russell@coker.com.au>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 21 Sep 2014, Duncan <1i5t5.duncan@cox.net> wrote:
-> Russell Coker posted on Sun, 21 Sep 2014 11:39:17 +1000 as excerpted:
-> > On a system running the Debian 3.14.15-2 kernel I added a new drive to a
-> > RAID-1 array.  My aim was to add a device and remove one of the old
-> > devices.
+Russell Coker posted on Sun, 21 Sep 2014 12:09:11 +1000 as excerpted:
+
+> We need to have a way to determine the progress of a device delete
+> operation.
+> Also for a balance of a RAID-1 that has more than 2 devices it would be
+> good to know how much space is used on each device.
 > 
-> That's an old kernel and presumably an old btrfs-progs.  Quite a number
-> of device management fixes have gone in recently, and you'd likely not be
-> in quite that predicament were you running a current kernel (make sure
-> it's 3.16.2+ or 3.17-rc2+ to get the fix for the workqueues bug that
-> affected 3.15 and thru 3.16.1 and 3.17-rc1).
+> Could btrfs fi df be extended to show information separately for each
+> device?
 
-3.16.2 is in Debian, I'm in the process of upgrading to it.
+btrfs fi show should give you at least some minimal per-device stats, 
+today.  Enough to at least have some idea of the progress of a balance 
+when adding/removing devices.
 
-> And the recommended way to handle a device replace now would be btrfs
-> replace, doing the add and delete in a single (albeit possibly long) step
-> instead of separately.
+Longer term, there has been discussion of extending/changing the fi df 
+format and making it far more verbose, including the information found in 
+btrfs fi show as well, and making everything potentially per-device.  I 
+hadn't paid a whole lot of attention to the details, however.
 
-I'm changing from a 500G single filesystem to a 200G RAID-1 (there's only 150G 
-of data).  The change from 500G to 200G can't be done with a replace as a 
-replace requires an equal or greater size.
+Alternatively, leave df more or less as it is (perhaps extending it a bit 
+but attempting not to kill existing scripts using it) and put the detail 
+in a new btrfs filesystem usage.  This sounds rather more reasonable to 
+me.
 
-I did a 2 step process, add/delete to go to a 200G USB attached device for 
-half the array and then replace to go from 200G on USB to 200G internal.
+Either way the idea is to give people a single command that combines the 
+current output of fi show and fi df, ideally displaying per-device and 
+filesystem totals both, in enough verbosity to avoid the unintuitive and 
+arcane btrfs specific knowledge required today to interpret it.
 
-> > The drive is attached by USB so I turned off the USB device and then got
-> > the above result.  So it still seems impossible to remove the device
-> > even though it's physically not present.  I've connected a new USB disk
-> > which is now /dev/sdd, so it seems that BTRFS is keeping the name
-> > /dev/sdc locked.
-> > 
-> > Should there be a way to fix this without rebooting or anything?
-> 
-> Did you try btrfs device delete missing?  It's documented on the wiki but
-> apparently not yet on the manpage.
-
-I did that after rebooting.  It didn't occur to me to try a "missing" 
-operation when the drive really wasn't missing.
-
-> According to the wiki that deletes
-> the first device that was in the metadata but not found when booting, so
-> you may have to reboot to do it, but it should work.
-
-That would be a bug.  There's no reason a reboot should be required if we can 
-remove a drive and add a new one with the kernel recognising it.  Hot-swap 
-disks aren't any sort of new feature.
-
-> Tho with the recent
-> stale-devices fixes, were that a current kernel you may not actually have
-> to reboot to have delete missing work.  But you probably will on 3.14,
-> and of course to upgrade kernels you'd have to reboot anyway, so...
-
-Yes a reboot was needed anyway.  But I'd have liked to delay that.
-
-> > Also as an aside, while the stats about write errors are useful, in this
-> > case it would be really good if there was a count of successful writes,
-> > it would be useful to know if the successful write count was close to 0.
-> > 
-> >  My understanding of the BTRFS design is that there would be no
-> > 
-> > performance penalty for adding counts of the number of successful reads
-> > and writes to the superblock.  Could this be done?
-> 
-> Not necessarily for reads, consider the case when the filesystem is read-
-> only as my btrfs root filesystem is by default -- lots of reads but
-> likely no writes and no super-block updates for the entire uptime.  But I
-> believe you're correct for writes, since they'd ultimately update the
-> superblocks anyway.
-
-For the case of a read-only filesystem it's OK to skip read stats.  It would 
-also be a bad idea to update read stats without writing data.  But there's no 
-reason why read stats couldn't be accumulated in-memory and written out the 
-next time something was written to disk.  That would give a slight inaccuracy 
-in the case where there was a power failure after some period of reading 
-without writing, but that's an unusual corner case.
+I had originally presumed that such a change would happen before the 
+experimental labels came off, but it didn't.  I don't know the timetable 
+for it now, or even if it's still planned, as IIRC the discussion died 
+away back in the btrfs-progs 3.12 era and I expected to see it in 3.14 
+and it wasn't there, so I don't know...
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

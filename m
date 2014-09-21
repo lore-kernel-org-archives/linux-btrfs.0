@@ -1,223 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp09.au.ibm.com ([202.81.31.142]:39243 "EHLO
-	e23smtp09.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751785AbaIUS4M (ORCPT
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:47580 "EHLO
+	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751843AbaIUS4P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Sep 2014 14:56:12 -0400
+	Sun, 21 Sep 2014 14:56:15 -0400
 Received: from /spool/local
-	by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 22 Sep 2014 04:56:11 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 41AB22CE802D
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:56:08 +1000 (EST)
+	Mon, 22 Sep 2014 04:56:14 +1000
+Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 3BE74357804C
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:56:12 +1000 (EST)
 Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s8LIvkWG15990902
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:57:46 +1000
+	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s8LIvldK32964812
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:57:47 +1000
 Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
-	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s8LIu7sO017818
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:56:07 +1000
+	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s8LIuBU2017906
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 04:56:11 +1000
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH V7 13/16] Btrfs: subpagesize-blocksize: Deal with partial ordered extent allocations.
-Date: Mon, 22 Sep 2014 00:25:27 +0530
-Message-Id: <1411325730-21817-14-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V7 15/16] Btrfs: subpagesize-blocksize: Revert commit fc4adbff823f76577ece26dcb88bf6f8392dbd43.
+Date: Mon, 22 Sep 2014 00:25:29 +0530
+Message-Id: <1411325730-21817-16-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1411325730-21817-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1411325730-21817-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario, extent allocations for only some of the
-dirty blocks of a page can succeed, while allocation for rest of the blocks
-can fail. This patch allows I/O against such partially allocated ordered
-extents to be submitted.
+In subpagesize-blocksize, we have multiple blocks in a page. Checking for
+existence of a page in the page cache isn't a sufficient check, since we
+could be truncating a subset of the blocks mapped by the page.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c | 24 +++++++++++++-----------
- fs/btrfs/extent_io.h |  1 +
- fs/btrfs/inode.c     | 39 +++++++++++++++++++++++++--------------
- 3 files changed, 39 insertions(+), 25 deletions(-)
+ fs/btrfs/btrfs_inode.h |  2 --
+ fs/btrfs/file.c        |  4 ++-
+ fs/btrfs/inode.c       | 77 +++-----------------------------------------------
+ 3 files changed, 7 insertions(+), 76 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8ea21c1..ccd9e1c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1774,15 +1774,22 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 			if (page_ops & PAGE_SET_PRIVATE2)
- 				SetPagePrivate2(pages[i]);
- 
-+			if (page_ops & PAGE_SET_ERROR)
-+				SetPageError(pages[i]);
-+
- 			if (pages[i] == locked_page) {
- 				page_cache_release(pages[i]);
- 				continue;
- 			}
--			if (page_ops & PAGE_CLEAR_DIRTY)
-+
-+			if ((page_ops & PAGE_CLEAR_DIRTY)
-+				&& !PagePrivate2(pages[i]))
- 				clear_page_dirty_for_io(pages[i]);
--			if (page_ops & PAGE_SET_WRITEBACK)
-+			if ((page_ops & PAGE_SET_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				set_page_writeback(pages[i]);
--			if (page_ops & PAGE_END_WRITEBACK)
-+			if ((page_ops & PAGE_END_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				end_page_writeback(pages[i]);
- 			if (page_ops & PAGE_UNLOCK)
- 				unlock_page(pages[i]);
-@@ -2403,7 +2410,7 @@ int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 			uptodate = 0;
- 	}
- 
--	if (!uptodate) {
-+	if (!uptodate || PageError(page)) {
- 		ClearPageUptodate(page);
- 		SetPageError(page);
- 		ret = ret < 0 ? ret : -EIO;
-@@ -3123,7 +3130,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 					       nr_written);
- 		/* File system has been set read-only */
- 		if (ret) {
--			SetPageError(page);
- 			/* fill_delalloc should be return < 0 for error
- 			 * but just in case, we use > 0 here meaning the
- 			 * IO is started, so we don't want to return > 0
-@@ -3332,7 +3338,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	struct inode *inode = page->mapping->host;
- 	struct extent_page_data *epd = data;
- 	u64 start = page_offset(page);
--	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	int ret;
- 	int nr = 0;
- 	size_t pg_offset;
-@@ -3375,7 +3380,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
- 	if (ret == 1)
- 		goto done_unlocked;
--	if (ret)
-+	if (ret && !PagePrivate2(page))
- 		goto done;
- 
- 	ret = __extent_writepage_io(inode, page, wbc, epd,
-@@ -3389,10 +3394,7 @@ done:
- 		set_page_writeback(page);
- 		end_page_writeback(page);
- 	}
--	if (PageError(page)) {
--		ret = ret < 0 ? ret : -EIO;
--		end_extent_writepage(page, ret, start, page_end);
--	}
-+
- 	unlock_page(page);
- 	return ret;
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 840e9a0..04ffd5b 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -51,6 +51,7 @@
- #define PAGE_SET_WRITEBACK	(1 << 2)
- #define PAGE_END_WRITEBACK	(1 << 3)
- #define PAGE_SET_PRIVATE2	(1 << 4)
-+#define PAGE_SET_ERROR		(1 << 5)
- 
- /*
-  * page->private values.  Every page that is controlled by the extent
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 91c5580..4ed78dd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -880,6 +880,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	struct btrfs_key ins;
- 	struct extent_map *em;
- 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct btrfs_ordered_extent *ordered;
-+	unsigned long page_ops, extent_ops;
- 	int ret = 0;
- 
- 	if (btrfs_is_free_space_inode(inode)) {
-@@ -924,8 +926,6 @@ static noinline int cow_file_range(struct inode *inode,
- 	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
- 
- 	while (disk_num_bytes > 0) {
--		unsigned long op;
--
- 		cur_alloc_size = disk_num_bytes;
- 		ret = btrfs_reserve_extent(root, cur_alloc_size,
- 					   root->sectorsize, 0, alloc_hint,
-@@ -971,14 +971,14 @@ static noinline int cow_file_range(struct inode *inode,
- 		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
- 					       ram_size, cur_alloc_size, 0);
- 		if (ret)
--			goto out_reserve;
-+			goto out_remove_extent_map;
- 
- 		if (root->root_key.objectid ==
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 			ret = btrfs_reloc_clone_csums(inode, start,
- 						      cur_alloc_size);
- 			if (ret)
--				goto out_reserve;
-+				goto out_remove_ordered_extent;
- 		}
- 
- 		if (disk_num_bytes < cur_alloc_size)
-@@ -991,13 +991,12 @@ static noinline int cow_file_range(struct inode *inode,
- 		 * Do set the Private2 bit so we know this page was properly
- 		 * setup for writepage
- 		 */
--		op = unlock ? PAGE_UNLOCK : 0;
--		op |= PAGE_SET_PRIVATE2;
--
-+		page_ops = unlock ? PAGE_UNLOCK : 0;
-+		page_ops |= PAGE_SET_PRIVATE2;
-+		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
- 		extent_clear_unlock_delalloc(inode, start,
--					     start + ram_size - 1, locked_page,
--					     EXTENT_LOCKED | EXTENT_DELALLOC,
--					     op);
-+					start + ram_size - 1, locked_page,
-+					extent_ops, page_ops);
- 		disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
-@@ -1006,14 +1005,26 @@ static noinline int cow_file_range(struct inode *inode,
- out:
- 	return ret;
- 
-+out_remove_ordered_extent:
-+	ordered = btrfs_lookup_ordered_extent(inode, ins.objectid);
-+	BUG_ON(!ordered);
-+	btrfs_remove_ordered_extent(inode, ordered);
-+
-+out_remove_extent_map:
-+	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
-+
- out_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
-+
- out_unlock:
-+	page_ops = unlock ? PAGE_UNLOCK : 0;
-+	page_ops |= PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK
-+		| PAGE_SET_ERROR;
-+	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
-+		| EXTENT_DEFRAG;
-+
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
--				     EXTENT_DELALLOC | EXTENT_DEFRAG,
--				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				extent_ops, page_ops);
- 	goto out;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 43527fd..50497bf 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -278,6 +278,4 @@ static inline void btrfs_inode_resume_unlocked_dio(struct inode *inode)
+ 		  &BTRFS_I(inode)->runtime_flags);
  }
  
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
+-
+ #endif
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b1e0d27..3707515 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2314,7 +2314,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		if ((!ordered ||
+ 		    (ordered->file_offset + ordered->len <= lockstart ||
+ 		     ordered->file_offset > lockend)) &&
+-		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
++		     !test_range_bit(&BTRFS_I(inode)->io_tree, lockstart,
++				     lockend, EXTENT_UPTODATE, 0,
++				     cached_state)) {
+ 			if (ordered)
+ 				btrfs_put_ordered_extent(ordered);
+ 			break;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d79a543..4dedab6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6832,76 +6832,6 @@ out:
+ 	return ret;
+ }
+ 
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
+-{
+-	struct radix_tree_root *root = &inode->i_mapping->page_tree;
+-	int found = false;
+-	void **pagep = NULL;
+-	struct page *page = NULL;
+-	int start_idx;
+-	int end_idx;
+-
+-	start_idx = start >> PAGE_CACHE_SHIFT;
+-
+-	/*
+-	 * end is the last byte in the last page.  end == start is legal
+-	 */
+-	end_idx = end >> PAGE_CACHE_SHIFT;
+-
+-	rcu_read_lock();
+-
+-	/* Most of the code in this while loop is lifted from
+-	 * find_get_page.  It's been modified to begin searching from a
+-	 * page and return just the first page found in that range.  If the
+-	 * found idx is less than or equal to the end idx then we know that
+-	 * a page exists.  If no pages are found or if those pages are
+-	 * outside of the range then we're fine (yay!) */
+-	while (page == NULL &&
+-	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
+-		page = radix_tree_deref_slot(pagep);
+-		if (unlikely(!page))
+-			break;
+-
+-		if (radix_tree_exception(page)) {
+-			if (radix_tree_deref_retry(page)) {
+-				page = NULL;
+-				continue;
+-			}
+-			/*
+-			 * Otherwise, shmem/tmpfs must be storing a swap entry
+-			 * here as an exceptional entry: so return it without
+-			 * attempting to raise page count.
+-			 */
+-			page = NULL;
+-			break; /* TODO: Is this relevant for this use case? */
+-		}
+-
+-		if (!page_cache_get_speculative(page)) {
+-			page = NULL;
+-			continue;
+-		}
+-
+-		/*
+-		 * Has the page moved?
+-		 * This is part of the lockless pagecache protocol. See
+-		 * include/linux/pagemap.h for details.
+-		 */
+-		if (unlikely(page != *pagep)) {
+-			page_cache_release(page);
+-			page = NULL;
+-		}
+-	}
+-
+-	if (page) {
+-		if (page->index <= end_idx)
+-			found = true;
+-		page_cache_release(page);
+-	}
+-
+-	rcu_read_unlock();
+-	return found;
+-}
+-
+ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 			      struct extent_state **cached_state, int writing)
+ {
+@@ -6926,9 +6856,10 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 		 * invalidate needs to happen so that reads after a write do not
+ 		 * get stale data.
+ 		 */
+-		if (!ordered &&
+-		    (!writing ||
+-		     !btrfs_page_exists_in_range(inode, lockstart, lockend)))
++		if (!ordered && (!writing ||
++		    !test_range_bit(&BTRFS_I(inode)->io_tree,
++				    lockstart, lockend, EXTENT_UPTODATE, 0,
++				    *cached_state)))
+ 			break;
+ 
+ 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
 -- 
 2.1.0
 

@@ -1,207 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:36695 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750853AbaISHeJ (ORCPT
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:57862 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751446AbaIUCfe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 03:34:09 -0400
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 49FBA3EE0BD
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 16:34:07 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 794A8AC0A04
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 16:34:06 +0900 (JST)
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0E6A0E08002
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 16:34:06 +0900 (JST)
-Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
-	by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 9FE0F46E831
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 16:34:04 +0900 (JST)
-Message-ID: <541BDC66.4010506@jp.fujitsu.com>
-Date: Fri, 19 Sep 2014 16:33:58 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Sat, 20 Sep 2014 22:35:34 -0400
+Received: by mail-ie0-f176.google.com with SMTP id ar1so5681882iec.35
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 19:35:33 -0700 (PDT)
+Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.231.92.7])
+        by mx.google.com with ESMTPSA id e4sm5469702igl.18.2014.09.20.19.35.31
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 20 Sep 2014 19:35:32 -0700 (PDT)
+Message-ID: <541E3973.5080703@gmail.com>
+Date: Sat, 20 Sep 2014 22:35:31 -0400
+From: nick <yocto6@gmail.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: Fix and enhance merge_extent_mapping() to insert
- best fitted extent map
-References: <1411030542-15677-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1411030542-15677-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: linux-btrfs@vger.kernel.org
+Subject: Bug on Kernel Bugzilla I Found Today
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/09/18 17:55), Qu Wenruo wrote:
-> The following commit enhanced the merge_extent_mapping() to reduce
-> fragment in extent map tree, but it can't handle case which existing
-> lies before map_start:
-> 51f39 btrfs: Use right extent length when inserting overlap extent map.
-> 
-> [BUG]
-> When existing extent map's start is before map_start,
-> the em->len will be minus, which will corrupt the extent map and fail to
-> insert the new extent map.
-> This will happen when someone get a large extent map, but when it is
-> going to insert it into extent map tree, some one has already commit
-> some write and split the huge extent into small parts.
-> 
-> [REPRODUCER]
-> It is very easy to tiger using filebench with randomrw personality.
-> It is about 100% to reproduce when using 8G preallocated file in 60s
-> randonrw test.
-> 
-> [FIX]
-> This patch can now handle any existing extent position.
-> Since it does not directly use existing->start, now it will find the
-> previous and next extent around map_start.
-> So the old existing->start < map_start bug will never happen again.
-> 
-> [ENHANCE]
-> This patch will insert the best fitted extent map into extent map tree,
-> other than the oldest [map_start, map_start + sectorsize) or the
-> relatively newer but not perfect [map_start, existing->start).
-> 
-> The patch will first search existing extent that does not intersects with
-> the desired map range [map_start, map_start + len).
-> The existing extent will be either before or behind map_start, and based
-> on the existing extent, we can find out the previous and next extent
-> around map_start.
-> 
-> So the best fitted extent would be [prev->end, next->start).
-> For prev or next is not found, em->start would be prev->end and em->end
-> wold be next->start.
-> 
-> With this patch, the fragment in extent map tree should be reduced much
-> more than the 51f39 commit and reduce an unneeded extent map tree search.
-> 
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
-Sorry to late reply. I confirmed this problem happens without
-this patch and does not happen with this patch.
-
-Thanks,
-Satoru
-
-> ---
-> changelog:
-> v2:
->      Liu Bo points out that the if() use 'start + len <= existing->start'
->      is not equal to original if(), which may cause problem in no-holes
->      mode.
-> ---
->   fs/btrfs/inode.c | 79 ++++++++++++++++++++++++++++++++++++++++----------------
->   1 file changed, 57 insertions(+), 22 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 016c403..b3864b7 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6191,21 +6191,60 @@ out_fail_inode:
->   	goto out_fail;
->   }
->   
-> +/* Find next extent map of a given extent map, caller needs to ensure locks */
-> +static struct extent_map *next_extent_map(struct extent_map *em)
-> +{
-> +	struct rb_node *next;
-> +
-> +	next = rb_next(&em->rb_node);
-> +	if (!next)
-> +		return NULL;
-> +	return container_of(next, struct extent_map, rb_node);
-> +}
-> +
-> +static struct extent_map *prev_extent_map(struct extent_map *em)
-> +{
-> +	struct rb_node *prev;
-> +
-> +	prev = rb_prev(&em->rb_node);
-> +	if (!prev)
-> +		return NULL;
-> +	return container_of(prev, struct extent_map, rb_node);
-> +}
-> +
->   /* helper for btfs_get_extent.  Given an existing extent in the tree,
-> + * the existing extent is the nearest extent to map_start,
->    * and an extent that you want to insert, deal with overlap and insert
-> - * the new extent into the tree.
-> + * the best fitted new extent into the tree.
->    */
->   static int merge_extent_mapping(struct extent_map_tree *em_tree,
->   				struct extent_map *existing,
->   				struct extent_map *em,
->   				u64 map_start)
->   {
-> +	struct extent_map *prev;
-> +	struct extent_map *next;
-> +	u64 start;
-> +	u64 end;
->   	u64 start_diff;
->   
->   	BUG_ON(map_start < em->start || map_start >= extent_map_end(em));
-> -	start_diff = map_start - em->start;
-> -	em->start = map_start;
-> -	em->len = existing->start - em->start;
-> +
-> +	if (existing->start > map_start) {
-> +		next = existing;
-> +		prev = prev_extent_map(next);
-> +	} else {
-> +		prev = existing;
-> +		next = next_extent_map(prev);
-> +	}
-> +
-> +	start = prev ? extent_map_end(prev) : em->start;
-> +	start = max_t(u64, start, em->start);
-> +	end = next ? next->start : extent_map_end(em);
-> +	end = min_t(u64, end, extent_map_end(em));
-> +	start_diff = start - em->start;
-> +	em->start = start;
-> +	em->len = end - start;
->   	if (em->block_start < EXTENT_MAP_LAST_BYTE &&
->   	    !test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
->   		em->block_start += start_diff;
-> @@ -6482,25 +6521,21 @@ insert:
->   
->   		ret = 0;
->   
-> -		existing = lookup_extent_mapping(em_tree, start, len);
-> -		if (existing && (existing->start > start ||
-> -		    existing->start + existing->len <= start)) {
-> +		existing = search_extent_mapping(em_tree, start, len);
-> +		/*
-> +		 * existing will always be non-NULL, since there must be
-> +		 * extent causing the -EEXIST.
-> +		 */
-> +		if (start >= extent_map_end(existing) ||
-> +		    start < existing->start) {
-> +			/*
-> +			 * The existing extent map is the one nearest to
-> +			 * the [start, start + len) range which overlaps
-> +			 */
-> +			err = merge_extent_mapping(em_tree, existing,
-> +						   em, start);
->   			free_extent_map(existing);
-> -			existing = NULL;
-> -		}
-> -		if (!existing) {
-> -			existing = lookup_extent_mapping(em_tree, em->start,
-> -							 em->len);
-> -			if (existing) {
-> -				err = merge_extent_mapping(em_tree, existing,
-> -							   em, start);
-> -				free_extent_map(existing);
-> -				if (err) {
-> -					free_extent_map(em);
-> -					em = NULL;
-> -				}
-> -			} else {
-> -				err = -EIO;
-> +			if (err) {
->   				free_extent_map(em);
->   				em = NULL;
->   			}
-> 
-
+Greeting to the Btrfs Developers and Community,
+Today , I found a new bug on the kernel bugzilla related to btrfs and am wondering if this bug has been fixed yet.
+Further due to my limited knowledge of the  btrfs code base, I lack the knowledge to fix bugs like this yet.In addition, 
+due to this I will paste below this  message a link to the reported bug page on the kernel bugzilla . It would be very 
+helpful for mycontinued  learning about the btrfs file system  if someone can CC me into the patches and/or discussion of 
+this  bug in order to help me learn more about btrfs  and bugs related to btrfs, this  would be greatly appreciated and extremely
+helpful for my learning. Hopefully eventually I can help fix bugs like this too and aid eventually in future btrfs development.
+Cheers and Thanks for the Help with Xfs Tests,
+Nick  
+Link to the Bug:
+https://bugzilla.kernel.org/show_bug.cgi?id=84631

@@ -1,66 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moh2-ve2.go2.pl ([193.17.41.200]:54825 "EHLO moh2-ve2.go2.pl"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757886AbaITUUX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Sep 2014 16:20:23 -0400
-Received: from moh2-ve2.go2.pl (unknown [10.0.0.200])
-	by moh2-ve2.go2.pl (Postfix) with ESMTP id A539ACB000A
-	for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 22:20:19 +0200 (CEST)
-Received: from unknown (unknown [10.0.0.42])
-	by moh2-ve2.go2.pl (Postfix) with SMTP
-	for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 22:20:18 +0200 (CEST)
-Date: Sat, 20 Sep 2014 22:20:03 +0200
-From: Piotr Szymaniak <szarpaj@grubelek.pl>
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:34459 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751021AbaIUEma (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 21 Sep 2014 00:42:30 -0400
+Received: by mail-pa0-f48.google.com with SMTP id ey11so2824344pad.35
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 21:42:29 -0700 (PDT)
+From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Using two mirrored drives separately
-Message-ID: <20140920202003.GU1945@wloczykij>
-References: <CAOwCge2f+s0BdUXYnMuX_iyXLcsq-FtftqT-yf1GSvyhhT9kdg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="WOTjKnJ88wpJKlWH"
-In-Reply-To: <CAOwCge2f+s0BdUXYnMuX_iyXLcsq-FtftqT-yf1GSvyhhT9kdg@mail.gmail.com>
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH] btrfs: fix ABBA deadlock in btrfs_dev_replace_finishing()
+Date: Sun, 21 Sep 2014 12:41:49 +0800
+Message-Id: <1411274509-10230-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_map_bio() first calls btrfs_bio_counter_inc_blocked() which checks
+fs state and increase bio_counter, then calls __btrfs_map_block() which
+will take the dev_replace lock.
 
---WOTjKnJ88wpJKlWH
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+On the other hand, btrfs_dev_replace_finishing() takes dev_replace lock
+first then set fs state to BTRFS_FS_STATE_DEV_REPLACING and waits for
+bio_counter to be zero.
 
-On Sat, Sep 20, 2014 at 07:11:52PM +0300, Leonid Bloch wrote:
-> I am wondering: if I set up btrfs on two identical drives, with data
-> and metadata mirroring, will it be possible to use these drives
-> separately later on? Will just one of these drives work as a regular
-> btrfs-formatted single drive if connected to a different machine?
+The deadlock can be reproduced easily by running replace and fsstress at
+the same time, e.g.
 
-If by this you mean btrfs raid1, then yes, they will work this way. Just
-both of them will have "missing" device and, afaik, wont mount without
--o degraded. But then you can rebalance to notraid1 or add another disk
-and replace missing devices on new machines.
+mkfs -t btrfs -f /dev/sdb1 /dev/sdb2
+mount /dev/sdb1 /mnt/btrfs
+fsstress -d /mnt/btrfs -n 100 -p 2 -l 0 & # fsstress from ltp supports -l option
+i=0
+while btrfs replace start -Bf /dev/sdb2 /dev/sdb3 /mnt/btrfs && \
+      btrfs replace start -Bf /dev/sdb3 /dev/sdb2 /mnt/btrfs; do
+	echo "=== loop $i ==="
+	let i=$i+1
+done
 
+This was introduced by
 
-Piotr Szymaniak.
+c404e0d Btrfs: fix use-after-free in the finishing procedure of the device replace
 
---WOTjKnJ88wpJKlWH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+---
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Tested by the reproducer and xfstests, no new failure found.
 
-iQIcBAEBCAAGBQJUHeFzAAoJEEMpAov1cw9ldfEP/jDxwztMuOd8c6WjN1JqP35c
-3eQVPf5VIXXDrRLkKkdcS46n+EsL03/2oa+oCzeZBXb0Kmc6pldxcZwj3cuDYwor
-Ie+UNu/aeHHjIw9K9elyDLsZJQMoJ7fvqfjVFrk3nd2C3PJuLdvjOIEZd9i/OIdA
-uCY/Q48Kc++Wc1otcdWRfE4ovqOQIwXCaF/oYx0PX44jRhjPdP+8Hp8hmTN44KNj
-sVnN/S+EQlNoPPG3uzbwOF368PV9I+6vqslT3eDPYkdHdI7OygyKi9I1sElzxyiA
-wKBZxXG4uqRFAHCQaqeqdDZtLUfdkWw1LTnjEaF2FFlHSwmKLt3374iGWzkoYc+D
-gx47dFqEsK2hR8ILbNQDFUZ2aLMAzPxoHQfa/mPViYi6eoIC24XYrZohtDFfX+PZ
-hcHlWLeKpVcdIwGwrnML+Z3qlsQPZsLMUhzb0mJ1FwyNfP80xWVGv5hti2NseMNc
-8XGz2nU5A+j3mC750X2V1HHkCYSJg+SyioQtBh7HSRbWVGv8Kdhme7RJspWt5l9W
-l4ggXRlCYY/3utspYCNsh2WPXTkU0brnb4X+4DacbOL29K9A0JNePlHrnM01uJK/
-cz1vaET3PClesSu9NQGY8syTTecdCZN9kHZkQ69fypFzNd/Glk9HFZB6bgUX+uz3
-pqJnvJiF0ZSl4KSMf3Io
-=sVMQ
------END PGP SIGNATURE-----
+But I found kmem_cache leak if I remove btrfs module after my new test case[1],
+which does fsstress & replace & subvolume create/mount/umount/delete at the same
+time.
 
---WOTjKnJ88wpJKlWH--
+BUG btrfs_extent_state (Tainted: G    B         ): Objects remaining in btrfs_extent_state on kmem_cache_close()
+......
+kmem_cache_destroy btrfs_extent_state: Slab cache still has objects
+CPU: 3 PID: 9503 Comm: modprobe Tainted: G    B          3.17.0-rc5+ #12
+Hardware name: Hewlett-Packard ProLiant DL388eGen8, BIOS P73 06/01/2012
+ 0000000000000000 000000008dd09c52 ffff880411c37eb0 ffffffff81642f7a
+ ffff8800b9a19300 ffff880411c37ed0 ffffffff8118ce89 0000000000000000
+ ffffffffa05dcd20 ffff880411c37ee0 ffffffffa056a80f ffff880411c37ef0
+Call Trace:
+ [<ffffffff81642f7a>] dump_stack+0x45/0x56
+ [<ffffffff8118ce89>] kmem_cache_destroy+0xf9/0x100
+ [<ffffffffa056a80f>] extent_io_exit+0x1f/0x50 [btrfs]
+ [<ffffffffa05c3ae3>] exit_btrfs_fs+0x2c/0x549 [btrfs]
+ [<ffffffff810efda2>] SyS_delete_module+0x162/0x200
+ [<ffffffff81013bb7>] ? do_notify_resume+0x97/0xb0
+ [<ffffffff8164af69>] system_call_fastpath+0x16/0x1b
+
+The test would hang before the fix. I'm not sure if it's related to the fix
+(seems not), please help review.
+
+Thanks,
+Eryu Guan
+
+[1] http://www.spinics.net/lists/linux-btrfs/msg37625.html
+
+ fs/btrfs/dev-replace.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index eea26e1..5dfd292 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -510,6 +510,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	/* keep away write_all_supers() during the finishing procedure */
+ 	mutex_lock(&root->fs_info->chunk_mutex);
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
++	btrfs_rm_dev_replace_blocked(fs_info);
+ 	btrfs_dev_replace_lock(dev_replace);
+ 	dev_replace->replace_state =
+ 		scrub_ret ? BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED
+@@ -567,12 +568,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	btrfs_kobj_rm_device(fs_info, src_device);
+ 	btrfs_kobj_add_device(fs_info, tgt_device);
+ 
+-	btrfs_rm_dev_replace_blocked(fs_info);
+-
+ 	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
+ 
+-	btrfs_rm_dev_replace_unblocked(fs_info);
+-
+ 	/*
+ 	 * this is again a consistent state where no dev_replace procedure
+ 	 * is running, the target device is part of the filesystem, the
+@@ -581,6 +578,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	 * belong to this filesystem.
+ 	 */
+ 	btrfs_dev_replace_unlock(dev_replace);
++	btrfs_rm_dev_replace_unblocked(fs_info);
+ 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 	mutex_unlock(&root->fs_info->chunk_mutex);
+ 
+-- 
+1.8.3.1
+

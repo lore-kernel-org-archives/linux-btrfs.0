@@ -1,45 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postler.lichtfels.com ([78.46.92.195]:39423 "EHLO
-	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753799AbaIVME2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 08:04:28 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by postler.lichtfels.com (Postfix) with ESMTP id 56BB7123DE
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 14:04:27 +0200 (CEST)
-Received: from postler.lichtfels.com ([127.0.0.1])
- by localhost (postler.lichtfels.com [127.0.0.1]) (amavisd-maia, port 10024)
- with LMTP id 30725-05 for <linux-btrfs@vger.kernel.org>;
- Mon, 22 Sep 2014 14:04:25 +0200 (CEST)
-Received: from hiro.oops.intern (mail.oops.co.at [213.129.238.225])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by postler.lichtfels.com (Postfix) with ESMTPSA id 8C16E123C9
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 14:04:25 +0200 (CEST)
-Message-ID: <54201048.9080508@xunil.at>
-Date: Mon, 22 Sep 2014 14:04:24 +0200
-From: "Stefan G. Weichinger" <lists@xunil.at>
-Reply-To: lists@xunil.at
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:33351 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753486AbaIVMiN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Sep 2014 08:38:13 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XW2se-0001pb-55
+	for linux-btrfs@vger.kernel.org; Mon, 22 Sep 2014 14:38:12 +0200
+Received: from pd953eb94.dip0.t-ipconnect.de ([217.83.235.148])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 14:38:12 +0200
+Received: from holger.hoffstaette by pd953eb94.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 14:38:12 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Unable to mount multiple subvolumes of a single disk
-References: <5417022A.5000101@codethink.co.uk> <54170BCA.7070900@fb.com> <54170F35.4040103@oracle.com> <541839E5.5030006@fb.com> <541958A2.1030204@oracle.com> <54198AD5.1080606@fb.com>
-In-Reply-To: <54198AD5.1080606@fb.com>
-Content-Type: text/plain; charset=utf-8
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Re: Performance Issues
+Date: Mon, 22 Sep 2014 12:37:59 +0000 (UTC)
+Message-ID: <pan.2014.09.22.12.37.58@googlemail.com>
+References: <1411129114.1811.7.camel@zarniwoop.blob>
+	<pan.2014.09.19.13.34.38@googlemail.com>
+	<20140922115903.GJ9715@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 17.09.2014 um 15:21 schrieb Chris Mason:
+On Mon, 22 Sep 2014 13:59:03 +0200, David Sterba wrote:
 
-> No problem, the original patch looked right to me too.  We're getting
-> closer to rc6, I think at this point I'll revert the original patch
-> until the next merge window.  Then we can step back and nail down
-> exactly what is going on.
+> On Fri, Sep 19, 2014 at 01:34:38PM +0000, Holger Hoffstätte wrote:
+>> 
+>> I'd also love a technical explanation why this happens and how it could
+>> be fixed. Maybe it's just a consequence of how the metadata tree(s)
+>> are laid out on disk.
+> 
+> The stat() call is the most severe slowdown factor in combination with
+> fragmentation and random order of the inodes that are being stat()ed.
+> 
+> A 'ls -f' (that does not stat) goes only through the DIR_INDEX_KEY items
+> in the b-tree that are usually packed together and reading is sequential
+> and fast.
+> 
+> A 'ls' that calls stat() in turn will have to seek for the INODE_ITEM
+> item that can be far from all the currently read metadata blocks.
 
-running git-sources 3.17-rc6 now and didn't need to apply the patch.
-So you fixed it already?
+Thanks Dave - that confirms everything I (unscientifically ;) observed so
+far, since I also tried to use "find" to warm up (in the hope it would
+cache the relevant metadata blocks), but running with strace showed that
+it does - of course! - not call stat on each inode, and just quickly reads
+the directory entry list (via getdents()).
 
-"btrfs fi show" also displays devices correctly again.
+This meant that even after a full "find" a subsequent "du" would still be
+slow(er). Both the cold "find" and a cold "du" also *sound* noticeably
+different, in terms of disk head scratching; find is significantly less
+seeky.
 
-Thanks, Stefan
+Interesting that you also mention the readahead. I've run the "du" warmup
+under Brendan Gregg's iosnoop and it shows that most stat()-heavy I/O is
+done in 16k blocks, while ext4 only seems to use 4k.
+
+Time to look at the trees in detail.. :)
+
+-h
 

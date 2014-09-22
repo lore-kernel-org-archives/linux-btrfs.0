@@ -1,44 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3747 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753905AbaIVP1o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 11:27:44 -0400
-Message-ID: <54203FE9.9040708@fb.com>
-Date: Mon, 22 Sep 2014 11:27:37 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs-progs release 3.16.1
-References: <20140922152421.GR9715@suse.cz>
-In-Reply-To: <20140922152421.GR9715@suse.cz>
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from victor.provo.novell.com ([137.65.250.26]:56698 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751070AbaIVPmE (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 22 Sep 2014 11:42:04 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/2] Btrfs: add missing end_page_writeback on submit_extent_page failure
+Date: Mon, 22 Sep 2014 17:41:04 +0100
+Message-Id: <1411404065-767-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/22/2014 11:24 AM, David Sterba wrote:
-> Hi,
-> 
-> this is is a minor release collecting a few bugfixes and enhancements.
-> User visible changes:
-> 
-> * the 'uknown' blockgroup in 'fi df' is properly named 'GlobalReserve'
-> * -R option for listing received UUID
-> 
-> Other updates:
-> 
-> * library version defines
-> * static build is fixed
-> * build without documentation is possible
-> 
-> The kernel.org btrfs-progs git repository is at
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/kdave/btrfs-progs.git
-> 
-> and eventually synced to Chris' git tree.
-> 
+If submit_extent_page() fails in write_one_eb(), we end up with the current
+page not marked dirty anymore, unlocked and marked for writeback. But we never
+end up calling end_page_writeback() against the page, which will make calls to
+filemap_fdatawait_range (e.g. at transaction commit time) hang forever waiting
+for the writeback bit to be cleared from the page.
 
-Thanks Dave!  I've sync'd the v3.16.1 git commits over to my tree.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent_io.c | 1 +
+ 1 file changed, 1 insertion(+)
 
--chris
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 3af4966..91f866c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3668,6 +3668,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 		if (ret) {
+ 			set_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
+ 			SetPageError(p);
++			end_page_writeback(p);
+ 			if (atomic_sub_and_test(num_pages - i, &eb->io_pages))
+ 				end_extent_buffer_writeback(eb);
+ 			ret = -EIO;
+-- 
+1.9.1
 

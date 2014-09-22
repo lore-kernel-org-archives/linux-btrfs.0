@@ -1,39 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35654 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751636AbaIUR4d convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Sep 2014 13:56:33 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:52222 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XVlNA-001bsN-HM
-	for linux-btrfs@vger.kernel.org; Sun, 21 Sep 2014 11:56:32 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Help for creating a useful bugreport
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <541EAF19.2060905@rwth-aachen.de>
-Date: Sun, 21 Sep 2014 11:56:31 -0600
-Message-Id: <5E85126D-27D1-4778-BB1D-E217C32F2AB1@colorremedies.com>
-References: <541BF025.1030309@rwth-aachen.de> <541EAF19.2060905@rwth-aachen.de>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mout.gmx.net ([212.227.15.18]:63370 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750894AbaIVITT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Sep 2014 04:19:19 -0400
+From: Marc Dietrich <marvin24@gmx.de>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Cc: Zooko Wilcox-OHearn <zooko@leastauthority.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: fs corruption report
+Date: Mon, 22 Sep 2014 10:19:14 +0200
+Message-ID: <14406058.nMoj3Kabx5@fb07-iapwap2>
+In-Reply-To: <1411090230.28980.6.camel@localhost.localdomain>
+References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com> <CAM_a8JzKth0_zG6cGoQeWHB3Dpro42wfEtS5QJXtFZT1xNoZYQ@mail.gmail.com> <1411090230.28980.6.camel@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2392394.REiNlrzhpx"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Sep 21, 2014, at 4:57 AM, Jakob Breier <Jakob.Breier@rwth-aachen.de> wrote:
+--nextPart2392394.REiNlrzhpx
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="UTF-8"
+
+Hi,
+
+Am Freitag, 19. September 2014, 09:30:30 schrieb Gui Hecheng:
+> On Thu, 2014-09-18 at 12:47 +0000, Zooko Wilcox-OHearn wrote:
+> > Thank you! I will try to restore using this patch.
+> > 
+> > What branch of what btrfs tools git repo should I apply the patch to?
+> > 
+> > Regards,
+> > 
+> > Zooko
 > 
-> I've tried opening a few files and they appear to be fine. I'll take a more thorough look later.
+> At least I think the following repo/v3.17.x branch has all
+> restore-related patches included.
+> 
+> git://github.com/kdave/btrfs-progs.git
+> 
+> This is a mirror of the latest devel repo that I am on.
 
-I'm not sure what to expect with --init-extent-tree after the fact. It might have holes in it (?) seeing as I'm not sure how we get something whole from something that had holes in it, that otherwise couldn't be fixed any other way. So I'd take it with a grain of salt unless someone else says it should be fine.
+restore of my corrupted partition finished. No "bad compress" nor valgrind
+errors anymore. I'll close the bug.
 
-I'm vaguely remembering something about --init-extent-tree discussed in archives, but can't find it, about maybe it should come with a more dire warning, and that the user would probably want to create a new filesystem after retrieving their data from a fixed file system. I know --init-csum-tree removes all csums, so everything produces checksum errors.
+Many thanks!
 
-You might want to check for hardware related sources for this corruption though. I don't recall if there was any kind of crash that instigated all of this? Do a 'smartctl -t long' test and also a badblocks -swv (destructive write/read with progress) and see if this turns up any problems with device. Check dmesg after badblocks to see if there are any drive or controller related messages, esp link resets or read or write errors. Last it might be worth a memtest86+ overnight or even better over a weekend.
+Marc
 
-Something caused this corruption, even on crashes I've not had much worse than orphans needing to be cleaned up on the next boot.
+--nextPart2392394.REiNlrzhpx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-Chris Murphy
+iQEcBAABAgAGBQJUH9uDAAoJEKyeR39HFBtoIfMH/RBDknaj4JpHv5wQmcIEAvF0
+/hNYMPXlG2W6gId0JwYIoZhorofBV35QpaLddEqRij2NWXYgTnn7iXYqqKoDHukJ
+fwgAoz1zZUMOXJn7TMs1JFGYn+EfwJY7FtIUMOfHcxnSBWqzxFvWGVYLoxJEMudV
+YxZxTZT4HFWyamWEifNZddo1CTbi8WkFnaxkCHt29fJ+SlwkEeoECm2lrjIH0FA3
+ui5EqeJO8ZrC6rWAAejoFuagIM58WXmEmVYitVq2y+yxiwjCqepBC89UimvaAidV
+NW8Oh/VcVeOsMjZ+SdATxI+1dadyrpKNiM/cobafd9z2tKKMdH4Q46fFOIxpCcQ=
+=WdE3
+-----END PGP SIGNATURE-----
+
+--nextPart2392394.REiNlrzhpx--
+

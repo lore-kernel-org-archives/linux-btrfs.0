@@ -1,231 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:14334 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756553AbaISOkE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Sep 2014 10:40:04 -0400
-Received: from pps.filterd (m0004348 [127.0.0.1])
-	by m0004348.ppops.net (8.14.5/8.14.5) with SMTP id s8JEdow4012459
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 07:40:04 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by m0004348.ppops.net with ESMTP id 1pfmm6397h-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Sep 2014 07:40:04 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: cleanup error handling in build_backref_tree
-Date: Fri, 19 Sep 2014 10:40:00 -0400
-Message-ID: <1411137600-4374-1-git-send-email-jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34200 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751070AbaIVL7F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Sep 2014 07:59:05 -0400
+Date: Mon, 22 Sep 2014 13:59:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Performance Issues
+Message-ID: <20140922115903.GJ9715@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1411129114.1811.7.camel@zarniwoop.blob>
+ <pan.2014.09.19.13.34.38@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan.2014.09.19.13.34.38@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When balance panics it tends to panic in the
+On Fri, Sep 19, 2014 at 01:34:38PM +0000, Holger Hoffstätte wrote:
+> On Fri, 19 Sep 2014 13:18:34 +0100, Rob Spanton wrote:
+> 
+> > I have a particularly uncomplicated setup (a desktop PC with a hard
+> > disk) and I'm seeing particularly slow performance from btrfs.  A `git
+> > status` in the linux source tree takes about 46 seconds after dropping
+> > caches, whereas on other machines using ext4 this takes about 13s.  My
+> 
+> This is - unfortunately - a particular btrfs oddity/characteristic/flaw,
+> whatever you want to call it. git relies a lot on fast stat() calls,
+> and those seem to be particularly slow with btrfs esp. on rotational
+> media. I have the same problem with rsync on a freshly mounted volume;
+> it gets fast (quite so!) after the first run.
+> 
+> The simplest thing to fix this is a "du -s >/dev/null" to pre-cache all
+> file inodes.
+> 
+> I'd also love a technical explanation why this happens and how it could
+> be fixed. Maybe it's just a consequence of how the metadata tree(s)
+> are laid out on disk.
 
-BUG_ON(!upper->checked);
+The stat() call is the most severe slowdown factor in combination with
+fragmentation and random order of the inodes that are being stat()ed.
 
-test, because it means it couldn't build the backref tree properly.  This is
-annoying to users and frankly a recoverable error, nothing in this function is
-actually fatal since it is just an in-memory building of the backrefs for a
-given bytenr.  So go through and change all the BUG_ON()'s to ASSERT()'s, and
-fix the BUG_ON(!upper->checked) thing to just return an error.
+A 'ls -f' (that does not stat) goes only through the DIR_INDEX_KEY items
+in the b-tree that are usually packed together and reading is sequential
+and fast.
 
-This patch also fixes the error handling so it tears down the work we've done
-properly.  This code was horribly broken since we always just panic'ed instead
-of actually erroring out, so it needed to be completely re-worked.  With this
-patch my broken image no longer panics when I mount it.  Thanks,
+A 'ls' that calls stat() in turn will have to seek for the INODE_ITEM
+item that can be far from all the currently read metadata blocks.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/relocation.c | 88 ++++++++++++++++++++++++++++++++++-----------------
- 1 file changed, 59 insertions(+), 29 deletions(-)
+What could help here is a directory readahead, pre-read the inode items
+during the readdir() call. I tried this with current readahead (some
+timeago) code but this didn't lead to improvement. The reason is that
+the readahead has low priority and is not able to cache the metadata
+blocks in time.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2d221c4..19726af 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -736,7 +736,8 @@ again:
- 		err = ret;
- 		goto out;
- 	}
--	BUG_ON(!ret || !path1->slots[0]);
-+	ASSERT(ret);
-+	ASSERT(path1->slots[0]);
- 
- 	path1->slots[0]--;
- 
-@@ -746,10 +747,10 @@ again:
- 		 * the backref was added previously when processing
- 		 * backref of type BTRFS_TREE_BLOCK_REF_KEY
- 		 */
--		BUG_ON(!list_is_singular(&cur->upper));
-+		ASSERT(list_is_singular(&cur->upper));
- 		edge = list_entry(cur->upper.next, struct backref_edge,
- 				  list[LOWER]);
--		BUG_ON(!list_empty(&edge->list[UPPER]));
-+		ASSERT(list_empty(&edge->list[UPPER]));
- 		exist = edge->node[UPPER];
- 		/*
- 		 * add the upper level block to pending list if we need
-@@ -831,7 +832,7 @@ again:
- 					cur->cowonly = 1;
- 			}
- #else
--		BUG_ON(key.type == BTRFS_EXTENT_REF_V0_KEY);
-+		ASSERT(key.type != BTRFS_EXTENT_REF_V0_KEY);
- 		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY) {
- #endif
- 			if (key.objectid == key.offset) {
-@@ -840,7 +841,7 @@ again:
- 				 * backref of this type.
- 				 */
- 				root = find_reloc_root(rc, cur->bytenr);
--				BUG_ON(!root);
-+				ASSERT(root);
- 				cur->root = root;
- 				break;
- 			}
-@@ -868,7 +869,7 @@ again:
- 			} else {
- 				upper = rb_entry(rb_node, struct backref_node,
- 						 rb_node);
--				BUG_ON(!upper->checked);
-+				ASSERT(upper->checked);
- 				INIT_LIST_HEAD(&edge->list[UPPER]);
- 			}
- 			list_add_tail(&edge->list[LOWER], &cur->upper);
-@@ -892,7 +893,7 @@ again:
- 
- 		if (btrfs_root_level(&root->root_item) == cur->level) {
- 			/* tree root */
--			BUG_ON(btrfs_root_bytenr(&root->root_item) !=
-+			ASSERT(btrfs_root_bytenr(&root->root_item) ==
- 			       cur->bytenr);
- 			if (should_ignore_root(root))
- 				list_add(&cur->list, &useless);
-@@ -927,7 +928,7 @@ again:
- 		need_check = true;
- 		for (; level < BTRFS_MAX_LEVEL; level++) {
- 			if (!path2->nodes[level]) {
--				BUG_ON(btrfs_root_bytenr(&root->root_item) !=
-+				ASSERT(btrfs_root_bytenr(&root->root_item) ==
- 				       lower->bytenr);
- 				if (should_ignore_root(root))
- 					list_add(&lower->list, &useless);
-@@ -982,7 +983,7 @@ again:
- 			} else {
- 				upper = rb_entry(rb_node, struct backref_node,
- 						 rb_node);
--				BUG_ON(!upper->checked);
-+				ASSERT(upper->checked);
- 				INIT_LIST_HEAD(&edge->list[UPPER]);
- 				if (!upper->owner)
- 					upper->owner = btrfs_header_owner(eb);
-@@ -1026,7 +1027,7 @@ next:
- 	 * everything goes well, connect backref nodes and insert backref nodes
- 	 * into the cache.
- 	 */
--	BUG_ON(!node->checked);
-+	ASSERT(node->checked);
- 	cowonly = node->cowonly;
- 	if (!cowonly) {
- 		rb_node = tree_insert(&cache->rb_root, node->bytenr,
-@@ -1062,8 +1063,21 @@ next:
- 			continue;
- 		}
- 
--		BUG_ON(!upper->checked);
--		BUG_ON(cowonly != upper->cowonly);
-+		if (!upper->checked) {
-+			/*
-+			 * Still want to blow up for developers since this is a
-+			 * logic bug.
-+			 */
-+			ASSERT(0);
-+			err = -EINVAL;
-+			goto out;
-+		}
-+		if (cowonly != upper->cowonly) {
-+			ASSERT(0);
-+			err = -EINVAL;
-+			goto out;
-+		}
-+
- 		if (!cowonly) {
- 			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
- 					      &upper->rb_node);
-@@ -1086,7 +1100,7 @@ next:
- 	while (!list_empty(&useless)) {
- 		upper = list_entry(useless.next, struct backref_node, list);
- 		list_del_init(&upper->list);
--		BUG_ON(!list_empty(&upper->upper));
-+		ASSERT(list_empty(&upper->upper));
- 		if (upper == node)
- 			node = NULL;
- 		if (upper->lowest) {
-@@ -1119,29 +1133,45 @@ out:
- 	if (err) {
- 		while (!list_empty(&useless)) {
- 			lower = list_entry(useless.next,
--					   struct backref_node, upper);
--			list_del_init(&lower->upper);
-+					   struct backref_node, list);
-+			list_del_init(&lower->list);
- 		}
--		upper = node;
--		INIT_LIST_HEAD(&list);
--		while (upper) {
--			if (RB_EMPTY_NODE(&upper->rb_node)) {
--				list_splice_tail(&upper->upper, &list);
--				free_backref_node(cache, upper);
--			}
--
--			if (list_empty(&list))
--				break;
--
--			edge = list_entry(list.next, struct backref_edge,
--					  list[LOWER]);
-+		while (!list_empty(&list)) {
-+			edge = list_first_entry(&list, struct backref_edge,
-+						list[UPPER]);
-+			list_del(&edge->list[UPPER]);
- 			list_del(&edge->list[LOWER]);
-+			lower = edge->node[LOWER];
- 			upper = edge->node[UPPER];
- 			free_backref_edge(cache, edge);
-+
-+			/*
-+			 * Lower is no longer linked to any upper backref nodes
-+			 * and isn't in the cache, we can free it ourselves.
-+			 */
-+			if (list_empty(&lower->upper) &&
-+			    RB_EMPTY_NODE(&lower->rb_node))
-+				list_add(&lower->list, &useless);
-+
-+			if (!RB_EMPTY_NODE(&upper->rb_node))
-+				continue;
-+
-+			/* Add this guy's upper edges to the list to proces */
-+			list_for_each_entry(edge, &upper->upper, list[LOWER])
-+				list_add_tail(&edge->list[UPPER], &list);
-+			if (list_empty(&upper->upper))
-+				list_add(&upper->list, &useless);
-+		}
-+
-+		while (!list_empty(&useless)) {
-+			lower = list_entry(useless.next,
-+					   struct backref_node, list);
-+			list_del_init(&lower->list);
-+			free_backref_node(cache, lower);
- 		}
- 		return ERR_PTR(err);
- 	}
--	BUG_ON(node && node->detached);
-+	ASSERT(!node || !node->detached);
- 	return node;
- }
- 
--- 
-1.8.3.1
+So the fix or rather workaround is to implement high priority readahead
+and trigger it for all DIR_INDEX keys that get returned by readdir().
+This will hurt the 'ls -f' usecase.
 
+In your example, 'du -s' acts as the readahead step.

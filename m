@@ -1,48 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33986 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750914AbaIVTXf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 15:23:35 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XW9Cw-0002xW-9o
-	for linux-btrfs@vger.kernel.org; Mon, 22 Sep 2014 21:23:34 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 21:23:34 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 21:23:34 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: device delete progress
-Date: Mon, 22 Sep 2014 19:23:22 +0000 (UTC)
-Message-ID: <pan$56df9$9e600d00$eb4260de$59059f98@cox.net>
-References: <201409211209.11875.russell@coker.com.au>
-	<pan$1d8a8$448bb26c$d55fc521$929be7e0@cox.net>
-	<20140922094955.GI9715@twin.jikos.cz>
-	<pan$c3643$3e5c01cf$cc7cb117$c2a00b4b@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-am1on0139.outbound.protection.outlook.com ([157.56.112.139]:57210
+	"EHLO emea01-am1-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1753128AbaIVUSP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Sep 2014 16:18:15 -0400
+From: Jaap Pieroen <jaap.pieroen@cns.nl>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Corrupted metadata. 'btrfs check' fails repair due to an assertion
+ failure: '!(root->ref_cows && trans->transid != root->last_trans)'
+Date: Mon, 22 Sep 2014 19:43:06 +0000
+Message-ID: <713DF78A-267D-4430-A6B2-61AB743B0014@cns.nl>
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Mon, 22 Sep 2014 16:29:26 +0000 as excerpted:
+Also filed on bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=85011
 
-> David Sterba posted on Mon, 22 Sep 2014 11:49:55 +0200 as excerpted:
-> 
->> The upcomming 3.17 release should contain all the 'new df' patches that
->> were unfortunatelly delayed. There are some minor issues to be fixed
->> but I hope it'll be ready close to the kernel 3.17 release.
-> 
-> Will that fix my "unknown" chunk profiles too?
+My log files are spammed with these messages until the drive is full:
+Sep 22 21:27:38 nasbak kernel: [ 1911.486180] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.487179] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.488334] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.489497] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.490512] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.491551] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
+Sep 22 21:27:38 nasbak kernel: [ 1911.492557] BTRFS critical (device sdg): corrupt leaf, bad key order: block=13415158087680,root=1, slot=7
 
-Never mind.  I see that in the 3.16.1 announcement, which I imagine I'll 
-get next update.
+Memory cards have been tested for 72hours with no problems to be found. Visiting the IRC channel learned me that I have corrupted meta data, which should be fixed by 'btrfs check'. Unfortunately 'btrfs check' stops due to an assertion failure:
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+# btrfs check --repair /dev/sdh
+enabling repair mode
+Checking filesystem on /dev/sdh
+UUID: 20ccaf09-54ea-486e-9495-9dc91b933e9c
+checking extents
+bad key ordering 7 8
+btrfs: ctree.c:267: __btrfs_cow_block: Assertion '!(root->ref_cows && trans->transid != root->last_trans)' failed.
 
+I'm also unable to provide an image due to another assertion failure:
+
+# btrfs-image -c9 -t4 /dev/sdh btrfs-image
+btrfs-image: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
+
+I'm using the latest tools and latest stable kernel:
+
+# uname -a
+Linux computername 3.16.2-031602-generic #201409052035 SMP Sat Sep 6 00:36:44 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+# btrfs --version
+Btrfs v3.16
+
+Other relevant information:
+
+# cat /etc/fstab
+UUID=f6162bfd-f793-4541-828c-be31550e0271 /               ext4    discard,noatime,errors=remount-ro 0       1
+UUID=20ccaf09-54ea-486e-9495-9dc91b933e9c /home           btrfs   defaults,subvol=home                                       0       0
+# sudo mount /home/
+# dmesg
+[  414.659393] BTRFS info (device sdh): disk space caching is enabled
+[  700.423512] init: smbd main process (1006) killed by TERM signal
+[  738.454018] BTRFS info (device sdh): disk space caching is enabled
+[  739.318381] BTRFS: bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
+[  739.318389] BTRFS: bdev /dev/sdd errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
+[  739.318393] BTRFS: bdev /dev/sdb errs: wr 0, rd 0, flush 0, corrupt 16, gen 0
+[  739.318397] BTRFS: bdev /dev/sda errs: wr 0, rd 0, flush 0, corrupt 24, gen 0
+# btrfs fi show
+Label: 'btrfs_storage_2'  uuid: 20ccaf09-54ea-486e-9495-9dc91b933e9c
+	Total devices 6 FS bytes used 5.08TiB
+	devid    1 size 2.73TiB used 2.73TiB path /dev/sdb
+	devid    2 size 2.73TiB used 2.73TiB path /dev/sda
+	devid    3 size 1.82TiB used 1.82TiB path /dev/sdd
+	devid    4 size 1.82TiB used 1.82TiB path /dev/sde
+	devid    6 size 2.73TiB used 2.73TiB path /dev/sdg
+	devid    7 size 2.73TiB used 2.73TiB path /dev/sdh
+# btrfs fi df /home
+Data, RAID10: total=7.27TiB, used=5.07TiB
+System, RAID10: total=64.00MiB, used=1.14MiB
+Metadata, RAID10: total=8.12GiB, used=6.90GiB
+unknown, single: total=512.00MiB, used=0.00
+
+Attached you'll find the output of the command: '# btrfs-debug-tree -b 13415158087680 /dev/sdh'
+
+I'm now locked into a situation where my filesystem is buggy(locking up), slow and logfiles are continuously filled. There is no way out because btrfs doesn't allow me to delete the files in the affected block or fix the metadata corruption. I'd very much appreciate a patch for btrfs check, or perhaps a workaround which allows me to get rid of the block. I'm very willing to help debug the issue further.
+
+Thanks for your time.

@@ -1,54 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36230 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:61573 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753558AbaIVNNK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 09:13:10 -0400
-Date: Mon, 22 Sep 2014 15:13:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Dimitri John Ledkov <xnox@debian.org>
-Cc: Tobias Geerinckx-Rice <tobias.geerinckx.rice@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] Default to acting like fsck.
-Message-ID: <20140922131308.GN9715@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1411261282-26831-1-git-send-email-xnox@debian.org>
- <1411261282-26831-4-git-send-email-xnox@debian.org>
- <CAKFHe2RwgjBDCEd6D4jva8QFou=gj8Pzd2auFUNyHFNephrYTw@mail.gmail.com>
- <CANBHLUghtYatMgdGHDunp4osE16Ve2urTcmK9u963scOgiFwHg@mail.gmail.com>
+	id S1751130AbaIVUjk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Sep 2014 16:39:40 -0400
+Message-ID: <54208907.1030001@redhat.com>
+Date: Mon, 22 Sep 2014 15:39:35 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANBHLUghtYatMgdGHDunp4osE16Ve2urTcmK9u963scOgiFwHg@mail.gmail.com>
+To: Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
+CC: Chris Murphy <lists@colorremedies.com>
+Subject: Re: [PATCH] Btrfs-progs: super-recover: fix double free fs_devices
+ memory
+References: <5419BE1E.2020607@redhat.com> <1411030872-2235-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1411030872-2235-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 22, 2014 at 09:58:34AM +0100, Dimitri John Ledkov wrote:
-> On 21 September 2014 13:59, Tobias Geerinckx-Rice
-> <tobias.geerinckx.rice@gmail.com> wrote:
-> > On 21 September 2014 03:01, Dimitri John Ledkov <xnox@debian.org> wrote:
-> >>
-> >> Inspect arguments, if we are not called as btrfs, then assume we are
-> >> called to act like fsck.
-> > [...]
-> >> -       if (!strcmp(bname, "btrfsck")) {
-> >> +       if (strcmp(bname, "btrfs") != 0) {
-> >
-> > That's assuming a lot.
-> >
-> > Silently (!) breaking people's btrfs-3.15_patched-DontRandomlyPanicV2
-> > is a recipe for needless hair-pulling. Is there a reason for not using
-> > something less like strstr(bname, "fsck") that I am missing?
-> >
+On 9/18/14 4:01 AM, Wang Shilong wrote:
+> super-recover collects btrfs devices infomation using existed
+> functions scan_one_devices().
 > 
-> Quite. This is verbatim patch as I have currently applied in Debian
-> packaging, and it was a fast fix to prevent breakage we had at one
-> point.
+> Problem is fs_devices is freed twice in close_ctree() and
+> free_recover_superblock() for super correction path.
 > 
-> Indeed using "strstr(bname, "fsck")" would be better and sufficient to
-> resolve the problem we encountered (specifically fsck.btrfs -> btrfs
-> not acting like btrfs). Also using strstr, would fix btrfsck.my-build
-> to act like fsck tool.
+> Fix this problem by checking whether fs_devices memory
+> have been freed before we free it.
+> 
+> Cc: Eric Sandeen <sandeen@redhat.com>
+> Cc: Chris Murphy <lists@colorremedies.com>
+> Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
 
-The intention was to provide backward compatibility shortcut for
-'btrfsck' -> 'btrfs check' and nothing else. The referenced bug is again
-for 0.19 but there's an upstream-shipped stub fsck.btrfs (since 3.14)
-that should avoid any packaging tricks.
+That does seem to fix the testcase.  Thanks!
+
+Acked-by: Eric Sandeen <sandeen@redhat.com>
+
+> ---
+>  super-recover.c | 13 +++----------
+>  1 file changed, 3 insertions(+), 10 deletions(-)
+> 
+> diff --git a/super-recover.c b/super-recover.c
+> index 767de4b..419b86a 100644
+> --- a/super-recover.c
+> +++ b/super-recover.c
+> @@ -69,21 +69,11 @@ void init_recover_superblock(struct btrfs_recover_superblock *recover)
+>  static
+>  void free_recover_superblock(struct btrfs_recover_superblock *recover)
+>  {
+> -	struct btrfs_device *device;
+>  	struct super_block_record *record;
+>  
+>  	if (!recover->fs_devices)
+>  		return;
+>  
+> -	while (!list_empty(&recover->fs_devices->devices)) {
+> -		device = list_entry(recover->fs_devices->devices.next,
+> -				struct btrfs_device, dev_list);
+> -		list_del_init(&device->dev_list);
+> -		free(device->name);
+> -		free(device);
+> -	}
+> -	free(recover->fs_devices);
+> -
+>  	while (!list_empty(&recover->good_supers)) {
+>  		record = list_entry(recover->good_supers.next,
+>  				struct super_block_record, list);
+> @@ -341,6 +331,9 @@ int btrfs_recover_superblocks(const char *dname,
+>  no_recover:
+>  	recover_err_str(ret);
+>  	free_recover_superblock(&recover);
+> +	/* check if we have freed fs_deivces in close_ctree() */
+> +	if (!root)
+> +		btrfs_close_devices(recover.fs_devices);
+>  	return ret;
+>  }
+>  
+> 
+

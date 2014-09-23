@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:53497 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753771AbaIWEnK (ORCPT
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:46169 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753540AbaIWEmx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 00:43:10 -0400
-Received: by mail-pd0-f178.google.com with SMTP id ft15so5717251pdb.37
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 21:43:09 -0700 (PDT)
+	Tue, 23 Sep 2014 00:42:53 -0400
+Received: by mail-pa0-f41.google.com with SMTP id ey11so6546435pad.28
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Sep 2014 21:42:52 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -20,10 +20,10 @@ Cc: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
         thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com,
         torvalds@linux-foundation.org,
         =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
-        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
-Subject: [PATCH v4 09/12] crypto: LLVMLinux: Remove VLAIS usage from crypto/hmac.c
-Date: Mon, 22 Sep 2014 21:42:14 -0700
-Message-Id: <1411447337-22362-10-git-send-email-behanw@converseincode.com>
+        Behan Webster <behanw@converseincode.com>
+Subject: [PATCH v4 03/12] crypto: LLVMLinux: Remove VLAIS from crypto/ccp/ccp-crypto-sha.c
+Date: Mon, 22 Sep 2014 21:42:08 -0700
+Message-Id: <1411447337-22362-4-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1411447337-22362-1-git-send-email-behanw@converseincode.com>
 References: <1411447337-22362-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -43,60 +43,43 @@ Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
 Reviewed-by: Mark Charlebois <charlebm@gmail.com>
 Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
-Cc: pageexec@freemail.hu
 ---
- crypto/hmac.c | 25 +++++++++++--------------
- 1 file changed, 11 insertions(+), 14 deletions(-)
+ drivers/crypto/ccp/ccp-crypto-sha.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/crypto/hmac.c b/crypto/hmac.c
-index 8d9544c..e392219 100644
---- a/crypto/hmac.c
-+++ b/crypto/hmac.c
-@@ -52,20 +52,17 @@ static int hmac_setkey(struct crypto_shash *parent,
- 	struct hmac_ctx *ctx = align_ptr(opad + ss,
- 					 crypto_tfm_ctx_alignment());
- 	struct crypto_shash *hash = ctx->hash;
+diff --git a/drivers/crypto/ccp/ccp-crypto-sha.c b/drivers/crypto/ccp/ccp-crypto-sha.c
+index 873f234..9653157 100644
+--- a/drivers/crypto/ccp/ccp-crypto-sha.c
++++ b/drivers/crypto/ccp/ccp-crypto-sha.c
+@@ -198,10 +198,9 @@ static int ccp_sha_setkey(struct crypto_ahash *tfm, const u8 *key,
+ {
+ 	struct ccp_ctx *ctx = crypto_tfm_ctx(crypto_ahash_tfm(tfm));
+ 	struct crypto_shash *shash = ctx->u.sha.hmac_tfm;
 -	struct {
--		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(hash)];
+-		struct shash_desc sdesc;
+-		char ctx[crypto_shash_descsize(shash)];
 -	} desc;
-+	SHASH_DESC_ON_STACK(shash, hash);
- 	unsigned int i;
++
++	SHASH_DESC_ON_STACK(sdesc, shash);
++
+ 	unsigned int block_size = crypto_shash_blocksize(shash);
+ 	unsigned int digest_size = crypto_shash_digestsize(shash);
+ 	int i, ret;
+@@ -216,11 +215,11 @@ static int ccp_sha_setkey(struct crypto_ahash *tfm, const u8 *key,
  
--	desc.shash.tfm = hash;
--	desc.shash.flags = crypto_shash_get_flags(parent) &
--			    CRYPTO_TFM_REQ_MAY_SLEEP;
-+	shash->tfm = hash;
-+	shash->flags = crypto_shash_get_flags(parent)
-+		& CRYPTO_TFM_REQ_MAY_SLEEP;
+ 	if (key_len > block_size) {
+ 		/* Must hash the input key */
+-		desc.sdesc.tfm = shash;
+-		desc.sdesc.flags = crypto_ahash_get_flags(tfm) &
++		sdesc->tfm = shash;
++		sdesc->flags = crypto_ahash_get_flags(tfm) &
+ 			CRYPTO_TFM_REQ_MAY_SLEEP;
  
- 	if (keylen > bs) {
- 		int err;
- 
--		err = crypto_shash_digest(&desc.shash, inkey, keylen, ipad);
-+		err = crypto_shash_digest(shash, inkey, keylen, ipad);
- 		if (err)
- 			return err;
- 
-@@ -81,12 +78,12 @@ static int hmac_setkey(struct crypto_shash *parent,
- 		opad[i] ^= 0x5c;
- 	}
- 
--	return crypto_shash_init(&desc.shash) ?:
--	       crypto_shash_update(&desc.shash, ipad, bs) ?:
--	       crypto_shash_export(&desc.shash, ipad) ?:
--	       crypto_shash_init(&desc.shash) ?:
--	       crypto_shash_update(&desc.shash, opad, bs) ?:
--	       crypto_shash_export(&desc.shash, opad);
-+	return crypto_shash_init(shash) ?:
-+	       crypto_shash_update(shash, ipad, bs) ?:
-+	       crypto_shash_export(shash, ipad) ?:
-+	       crypto_shash_init(shash) ?:
-+	       crypto_shash_update(shash, opad, bs) ?:
-+	       crypto_shash_export(shash, opad);
- }
- 
- static int hmac_export(struct shash_desc *pdesc, void *out)
+-		ret = crypto_shash_digest(&desc.sdesc, key, key_len,
++		ret = crypto_shash_digest(sdesc, key, key_len,
+ 					  ctx->u.sha.key);
+ 		if (ret) {
+ 			crypto_ahash_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
 -- 
 1.9.1
 

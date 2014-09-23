@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58622 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49847 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753982AbaIWC0y (ORCPT
+	with ESMTP id S1753090AbaIWIfn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Sep 2014 22:26:54 -0400
+	Tue, 23 Sep 2014 04:35:43 -0400
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 Subject: [PATCH v4] btrfs-progs: fix page align issue for lzo compress in restore
-Date: Tue, 23 Sep 2014 10:25:56 +0800
-Message-ID: <1411439156-9972-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Date: Tue, 23 Sep 2014 16:34:54 +0800
+Message-ID: <1411461294-24093-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 In-Reply-To: <20140922134115.GP9715@twin.jikos.cz>
 References: <20140922134115.GP9715@twin.jikos.cz>
 MIME-Version: 1.0
@@ -47,13 +47,13 @@ Reviewed-by: Marc Dietrich <marvin24@gmx.de>
 changelog
 	v1->v2: adopt alignment check method suggested by Marc
 	v2->v3: make code more readable
-	v3->v4: keep type safety
+	v3->v4: keep type safety & reformat comments
 ---
- cmds-restore.c | 29 +++++++++++++++++++++++++++--
- 1 file changed, 27 insertions(+), 2 deletions(-)
+ cmds-restore.c | 27 +++++++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
 
 diff --git a/cmds-restore.c b/cmds-restore.c
-index 38a131e..fa5d5d1 100644
+index e09acc4..1fe2df0 100644
 --- a/cmds-restore.c
 +++ b/cmds-restore.c
 @@ -56,7 +56,10 @@ static int get_xattrs = 0;
@@ -68,7 +68,7 @@ index 38a131e..fa5d5d1 100644
  #define lzo1x_worst_compress(x) ((x) + ((x) / 16) + 64 + 3)
  
  static int decompress_zlib(char *inbuf, char *outbuf, u64 compress_len,
-@@ -93,6 +96,28 @@ static inline size_t read_compress_length(unsigned char *buf)
+@@ -93,6 +96,26 @@ static inline size_t read_compress_length(unsigned char *buf)
  	return le32_to_cpu(dlen);
  }
  
@@ -84,11 +84,9 @@ index 38a131e..fa5d5d1 100644
 +		return;
 +
 +	/*
-+	 * The LZO_LEN bytes is guaranteed to be
-+	 * in one page as a whole, so if a page
-+	 * has fewer than LZO_LEN bytes left,
-+	 * the LZO_LEN bytes should be fetched
-+	 * at the start of the next page
++	 * The LZO_LEN bytes is guaranteed to be in one page as a whole,
++	 * so if a page has fewer than LZO_LEN bytes left, the LZO_LEN bytes
++	 * should be fetched at the start of the next page
 +	 */
 +	*in_len += bytes_left;
 +	*tot_in = tot_in_aligned;
@@ -97,7 +95,7 @@ index 38a131e..fa5d5d1 100644
  static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
  			  u64 *decompress_len)
  {
-@@ -135,8 +160,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+@@ -135,8 +158,8 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
  		}
  		out_len += new_len;
  		outbuf += new_len;

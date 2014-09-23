@@ -1,34 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f176.google.com ([209.85.223.176]:57862 "EHLO
-	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751446AbaIUCfe (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:31185 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751485AbaIWOWq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Sep 2014 22:35:34 -0400
-Received: by mail-ie0-f176.google.com with SMTP id ar1so5681882iec.35
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 19:35:33 -0700 (PDT)
-Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.231.92.7])
-        by mx.google.com with ESMTPSA id e4sm5469702igl.18.2014.09.20.19.35.31
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 20 Sep 2014 19:35:32 -0700 (PDT)
-Message-ID: <541E3973.5080703@gmail.com>
-Date: Sat, 20 Sep 2014 22:35:31 -0400
-From: nick <yocto6@gmail.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Bug on Kernel Bugzilla I Found Today
-Content-Type: text/plain; charset=utf-8
+	Tue, 23 Sep 2014 10:22:46 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s8NEMjU7012997
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 14:22:46 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s8NEMibi001460
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 14:22:44 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s8NEMhC0004573
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 14:22:43 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix crash of btrfs_release_extent_buffer_page
+Date: Tue, 23 Sep 2014 22:22:33 +0800
+Message-Id: <1411482153-14416-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greeting to the Btrfs Developers and Community,
-Today , I found a new bug on the kernel bugzilla related to btrfs and am wondering if this bug has been fixed yet.
-Further due to my limited knowledge of the  btrfs code base, I lack the knowledge to fix bugs like this yet.In addition, 
-due to this I will paste below this  message a link to the reported bug page on the kernel bugzilla . It would be very 
-helpful for mycontinued  learning about the btrfs file system  if someone can CC me into the patches and/or discussion of 
-this  bug in order to help me learn more about btrfs  and bugs related to btrfs, this  would be greatly appreciated and extremely
-helpful for my learning. Hopefully eventually I can help fix bugs like this too and aid eventually in future btrfs development.
-Cheers and Thanks for the Help with Xfs Tests,
-Nick  
-Link to the Bug:
-https://bugzilla.kernel.org/show_bug.cgi?id=84631
+This is actually inspired by Filipe's patch.  When write_one_eb() fails on
+submit_extent_page(), it'll give up writing this eb and mark it with
+EXTENT_BUFFER_IOERR.  So if it's not the last page that encounter the failure,
+there are some left pages which remain DIRTY, and if a later COW on this eb
+happens, ie. eb is COWed and freed, it'd run into BUG_ON in
+btrfs_release_extent_buffer_page() for the DIRTY page, ie. BUG_ON(PageDirty(page));
+
+This adds the missing clear_page_dirty_for_io() for the rest pages of eb.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index af0359d..e68a1d9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3597,6 +3597,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 	if (unlikely(ret)) {
+ 		for (; i < num_pages; i++) {
+ 			struct page *p = extent_buffer_page(eb, i);
++			clear_page_dirty_for_io(p);
+ 			unlock_page(p);
+ 		}
+ 	}
+-- 
+1.8.1.4
+

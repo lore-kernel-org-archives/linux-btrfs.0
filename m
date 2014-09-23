@@ -1,57 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.galliera.it ([62.101.86.54]:44594 "EHLO smtp.galliera.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755133AbaIWMUF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 08:20:05 -0400
-Received: from galliera.it (simoman.ceed [10.0.6.66])
-	by smtp.galliera.it (Postfix) with ESMTP id 223A230F19CC
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 14:10:59 +0200 (CEST)
-Date: Tue, 23 Sep 2014 14:06:41 +0200
-From: Simone Ferretti <simone@galliera.it>
-To: Majordomo@vger.kernel.org
-Subject: mount problem
-Message-ID: <20140923120641.GA27624@galliera.it>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:49554 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755286AbaIWMuE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Sep 2014 08:50:04 -0400
+Message-ID: <54216C70.6030206@fb.com>
+Date: Tue, 23 Sep 2014 08:49:52 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+CC: <guaneryu@gmail.com>, Eric Sandeen <sandeen@redhat.com>
+Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally
+ to avoid losing security label.
+References: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On 09/23/2014 01:40 AM, Qu Wenruo wrote:
+> [BUG]
+> Originally when mount btrfs with "-o subvol=" mount option, btrfs will
+> lose all security lable.
+> And if the btrfs fs is mounted somewhere else, due to the lost of
+> security lable, SELinux will refuse to mount since the same super block
+> is being mounted using different security lable.
+> 
+> [REPRODUCER]
+> With SELinux enabled:
+>  #mkfs -t btrfs /dev/sda5
+>  #mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
+>  #btrfs subvolume create /mnt/btrfs/subvol
+>  #mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5
+>   /mnt/test
+> 
+> kernel message:
+> SELinux: mount invalid.  Same superblock, different security settings
+> for (dev sda5, type btrfs)
+> 
+> [REASON]
+> This happens because btrfs will call vfs_kern_mount() and then
+> mount_subtree() to handle subvolume name lookup.
+> First mount will cut off all the security lables and when it comes to
+> the second vfs_kern_mount(), it has no security label now.
+> 
+> [FIX]
+> This patch will makes btrfs behavior much more like nfs,
+> which has the type flag FS_BINARY_MOUNTDATA,
+> making btrfs handles the security label internally.
+> So security label will be set in the real mount time and won't lose
+> label when use with "subvol=" mount option.
 
-we're testing BTRFS on our Debian server.  After a lot of operations
-simulating a RAID1 failure, every time I mount my BTRFS RAID1 volume
-the kernel logs these messages:
+Thanks for working on this.  Eric Sandeen (cc'd) was trying out
+something similar recently, so I want to make sure this doesn't conflict
+with his ideas.
 
-[73894.436173] BTRFS: bdev /dev/etherd/e30.20 errs: wr 33036, rd 0, flush 0, corrupt 2806, gen 0
-[73894.436181] BTRFS: bdev /dev/etherd/e60.28 errs: wr 244165, rd 0, flush 0, corrupt 1, gen 4
-
-Everything seems to work nice but I'm courious to know what these
-messages mean (in particular what do "gen" and "corrupt" mean?).
-
-# uname -a
-Linux dub 3.16-2-amd64 #1 SMP Debian 3.16.3-2 (2014-09-20) x86_64 GNU/Linux
-
-# btrfs --version
-Btrfs v3.16
-
-# btrfs fi show
-Label: 'btrfs_multiappliance'  uuid: 3452ffdd-c09b-43dd-9adb-cffde8518a72
-        Total devices 2 FS bytes used 20.03GiB
-        devid    1 size 1.82TiB used 24.03GiB path /dev/etherd/e30.20
-        devid    2 size 3.64TiB used 24.03GiB path /dev/etherd/e60.28
-
-# btrfs fi df /media/multiapp
-Data, RAID1: total=22.00GiB, used=20.01GiB
-System, RAID1: total=32.00MiB, used=16.00KiB
-Metadata, RAID1: total=2.00GiB, used=21.23MiB
-unknown, single: total=16.00MiB, used=0.00
-
-# dmesg
-[82932.655078] BTRFS info (device etherd/e30.20): disk space caching is enabled
-[82932.678380] BTRFS: bdev /dev/etherd/e30.20 errs: wr 33036, rd 0, flush 0, corrupt 2806, gen 0
-[82932.678388] BTRFS: bdev /dev/etherd/e60.28 errs: wr 244165, rd 0, flush 0, corrupt 1, gen 4
-
-
--- 
-Thanks in advance,
-Simone Ferretti
+-chris

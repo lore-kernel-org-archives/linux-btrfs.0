@@ -1,254 +1,276 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60871 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751713AbaIWFkM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 01:40:12 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <guaneryu@gmail.com>
-Subject: [PATCH] btrfs: Make btrfs handle security mount options internally to avoid losing security label.
-Date: Tue, 23 Sep 2014 13:40:08 +0800
-Message-ID: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-am1on0135.outbound.protection.outlook.com ([157.56.112.135]:15680
+	"EHLO emea01-am1-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1753080AbaIWICC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Sep 2014 04:02:02 -0400
+From: Jaap Pieroen <jaap.pieroen@cns.nl>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Corrupted metadata. 'btrfs check' fails repair due to an
+ assertion failure: '!(root->ref_cows && trans->transid != root->last_trans)'
+Date: Tue, 23 Sep 2014 07:59:56 +0000
+Message-ID: <814ec3af3b9247db9f21cbcb4e4f7a91@AM3PR06MB563.eurprd06.prod.outlook.com>
+References: <713DF78A-267D-4430-A6B2-61AB743B0014@cns.nl>
+In-Reply-To: <713DF78A-267D-4430-A6B2-61AB743B0014@cns.nl>
+Content-Type: multipart/mixed;
+	boundary="_002_814ec3af3b9247db9f21cbcb4e4f7a91AM3PR06MB563eurprd06pro_"
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-Originally when mount btrfs with "-o subvol=" mount option, btrfs will
-lose all security lable.
-And if the btrfs fs is mounted somewhere else, due to the lost of
-security lable, SELinux will refuse to mount since the same super block
-is being mounted using different security lable.
+--_002_814ec3af3b9247db9f21cbcb4e4f7a91AM3PR06MB563eurprd06pro_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-[REPRODUCER]
-With SELinux enabled:
- #mkfs -t btrfs /dev/sda5
- #mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
- #btrfs subvolume create /mnt/btrfs/subvol
- #mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5
-  /mnt/test
+I forgot the attachment. Here it is.
 
-kernel message:
-SELinux: mount invalid.  Same superblock, different security settings
-for (dev sda5, type btrfs)
+--_002_814ec3af3b9247db9f21cbcb4e4f7a91AM3PR06MB563eurprd06pro_
+Content-Type: text/plain; name="btrfs-debug-tree.txt"
+Content-Description: btrfs-debug-tree.txt
+Content-Disposition: attachment; filename="btrfs-debug-tree.txt"; size=13653;
+	creation-date="Tue, 23 Sep 2014 07:57:15 GMT";
+	modification-date="Tue, 23 Sep 2014 07:57:28 GMT"
+Content-Transfer-Encoding: base64
 
-[REASON]
-This happens because btrfs will call vfs_kern_mount() and then
-mount_subtree() to handle subvolume name lookup.
-First mount will cut off all the security lables and when it comes to
-the second vfs_kern_mount(), it has no security label now.
+IyBidHJmcy1kZWJ1Zy10cmVlIC1iIDEzNDE1MTU4MDg3NjgwIC9kZXYvc2RoCmxlYWYgMTM0MTUx
+NTgwODc2ODAgaXRlbXMgOTAgZnJlZSBzcGFjZSA4NTc3IGdlbmVyYXRpb24gMTQwMDY1IG93bmVy
+IDUwMDcKZnMgdXVpZCAyMGNjYWYwOS01NGVhLTQ4NmUtOTQ5NS05ZGM5MWI5MzNlOWMKY2h1bmsg
+dXVpZCBmNWEwZGVhMS1iMjUwLTRlYTQtYmY3Zi01MGQzMDQwMWE3MDgKCWl0ZW0gMCBrZXkgKDc1
+MTYgRElSX0lOREVYIDEwMikgaXRlbW9mZiAxNjIzMiBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtl
+eSAoNzYxNyBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5h
+bWU6IFA0MDgyMjkwLmRuZ19vcmlnaW5hbAoJaXRlbSAxIGtleSAoNzUxNiBESVJfSU5ERVggMTAz
+KSBpdGVtb2ZmIDE2MTkwIGl0ZW1zaXplIDQyCgkJbG9jYXRpb24ga2V5ICg3NjE4IElOT0RFX0lU
+RU0gMCkgdHlwZSBGSUxFCgkJbmFtZWxlbiAxMiBkYXRhbGVuIDAgbmFtZTogUDQwODIyOTMuZG5n
+CglpdGVtIDIga2V5ICg3NTE2IERJUl9JTkRFWCAxMDQpIGl0ZW1vZmYgMTYxMzkgaXRlbXNpemUg
+NTEKCQlsb2NhdGlvbiBrZXkgKDc2MTkgSU5PREVfSVRFTSAwKSB0eXBlIEZJTEUKCQluYW1lbGVu
+IDIxIGRhdGFsZW4gMCBuYW1lOiBQNDA4MjI5My5kbmdfb3JpZ2luYWwKCWl0ZW0gMyBrZXkgKDc1
+MTYgRElSX0lOREVYIDEwNSkgaXRlbW9mZiAxNjA5NyBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtl
+eSAoNzYyMCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5h
+bWU6IFA0MDgyMjk1LmRuZwoJaXRlbSA0IGtleSAoNzUxNiBESVJfSU5ERVggMTA2KSBpdGVtb2Zm
+IDE2MDQ2IGl0ZW1zaXplIDUxCgkJbG9jYXRpb24ga2V5ICg3NjIxIElOT0RFX0lURU0gMCkgdHlw
+ZSBGSUxFCgkJbmFtZWxlbiAyMSBkYXRhbGVuIDAgbmFtZTogUDQwODIyOTUuZG5nX29yaWdpbmFs
+CglpdGVtIDUga2V5ICg3NTE2IERJUl9JTkRFWCAxMDcpIGl0ZW1vZmYgMTYwMDQgaXRlbXNpemUg
+NDIKCQlsb2NhdGlvbiBrZXkgKDc2MjIgSU5PREVfSVRFTSAwKSB0eXBlIEZJTEUKCQluYW1lbGVu
+IDEyIGRhdGFsZW4gMCBuYW1lOiBQNDA4MjI5OS5kbmcKCWl0ZW0gNiBrZXkgKDc1MTYgRElSX0lO
+REVYIDEwOCkgaXRlbW9mZiAxNTk1MyBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYyMyBJ
+Tk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgy
+Mjk5LmRuZ19vcmlnaW5hbAoJaXRlbSA3IGtleSAoNzUxNiBESVJfSU5ERVggNTM2ODcxMDIxKSBp
+dGVtb2ZmIDE1OTExIGl0ZW1zaXplIDQyCgkJbG9jYXRpb24ga2V5ICg3NjI0IElOT0RFX0lURU0g
+MCkgdHlwZSBGSUxFCgkJbmFtZWxlbiAxMiBkYXRhbGVuIDAgbmFtZTogUDQwODIzMjEuZG5nCglp
+dGVtIDgga2V5ICg3NTE2IERJUl9JTkRFWCAxMTApIGl0ZW1vZmYgMTU4NjAgaXRlbXNpemUgNTEK
+CQlsb2NhdGlvbiBrZXkgKDc2MjUgSU5PREVfSVRFTSAwKSB0eXBlIEZJTEUKCQluYW1lbGVuIDIx
+IGRhdGFsZW4gMCBuYW1lOiBQNDA4MjMyMS5kbmdfb3JpZ2luYWwKCWl0ZW0gOSBrZXkgKDc1MTYg
+RElSX0lOREVYIDExMSkgaXRlbW9mZiAxNTgxOCBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAo
+NzYyNiBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6
+IFA0MDgyMzI4LmRuZwoJaXRlbSAxMCBrZXkgKDc1MTYgRElSX0lOREVYIDExMikgaXRlbW9mZiAx
+NTc2NyBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYyNyBJTk9ERV9JVEVNIDApIHR5cGUg
+RklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzI4LmRuZ19vcmlnaW5hbAoJ
+aXRlbSAxMSBrZXkgKDc1MTYgRElSX0lOREVYIDExMykgaXRlbW9mZiAxNTcyNSBpdGVtc2l6ZSA0
+MgoJCWxvY2F0aW9uIGtleSAoNzYyOCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4g
+MTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzQ5LmRuZwoJaXRlbSAxMiBrZXkgKDc1MTYgRElSX0lO
+REVYIDExNCkgaXRlbW9mZiAxNTY3NCBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYyOSBJ
+Tk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgy
+MzQ5LmRuZ19vcmlnaW5hbAoJaXRlbSAxMyBrZXkgKDc1MTYgRElSX0lOREVYIDExNSkgaXRlbW9m
+ZiAxNTYzMiBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzYzMCBJTk9ERV9JVEVNIDApIHR5
+cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzUwLmRuZwoJaXRlbSAx
+NCBrZXkgKDc1MTYgRElSX0lOREVYIDExNikgaXRlbW9mZiAxNTU4MSBpdGVtc2l6ZSA1MQoJCWxv
+Y2F0aW9uIGtleSAoNzYzMSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0
+YWxlbiAwIG5hbWU6IFA0MDgyMzUwLmRuZ19vcmlnaW5hbAoJaXRlbSAxNSBrZXkgKDc1MTYgRElS
+X0lOREVYIDExNykgaXRlbW9mZiAxNTUzOSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzYz
+MiBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0
+MDgyMzUxLmRuZwoJaXRlbSAxNiBrZXkgKDc1MTYgRElSX0lOREVYIDExOCkgaXRlbW9mZiAxNTQ4
+OCBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYzMyBJTk9ERV9JVEVNIDApIHR5cGUgRklM
+RQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzUxLmRuZ19vcmlnaW5hbAoJaXRl
+bSAxNyBrZXkgKDc1MTYgRElSX0lOREVYIDExOSkgaXRlbW9mZiAxNTQ0NiBpdGVtc2l6ZSA0MgoJ
+CWxvY2F0aW9uIGtleSAoNzYzNCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIg
+ZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzU2LmRuZwoJaXRlbSAxOCBrZXkgKDc1MTYgRElSX0lOREVY
+IDEyMCkgaXRlbW9mZiAxNTM5NSBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYzNSBJTk9E
+RV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzU2
+LmRuZ19vcmlnaW5hbAoJaXRlbSAxOSBrZXkgKDc1MTYgRElSX0lOREVYIDEyMSkgaXRlbW9mZiAx
+NTM1MyBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzYzNiBJTk9ERV9JVEVNIDApIHR5cGUg
+RklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzU3LmRuZwoJaXRlbSAyMCBr
+ZXkgKDc1MTYgRElSX0lOREVYIDEyMikgaXRlbW9mZiAxNTMwMiBpdGVtc2l6ZSA1MQoJCWxvY2F0
+aW9uIGtleSAoNzYzNyBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxl
+biAwIG5hbWU6IFA0MDgyMzU3LmRuZ19vcmlnaW5hbAoJaXRlbSAyMSBrZXkgKDc1MTYgRElSX0lO
+REVYIDEyMykgaXRlbW9mZiAxNTI2MCBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzYzOCBJ
+Tk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgy
+MzU4LmRuZwoJaXRlbSAyMiBrZXkgKDc1MTYgRElSX0lOREVYIDEyNCkgaXRlbW9mZiAxNTIwOSBp
+dGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzYzOSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJ
+CW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzU4LmRuZ19vcmlnaW5hbAoJaXRlbSAy
+MyBrZXkgKDc1MTYgRElSX0lOREVYIDEyNSkgaXRlbW9mZiAxNTE2NyBpdGVtc2l6ZSA0MgoJCWxv
+Y2F0aW9uIGtleSAoNzY0MCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0
+YWxlbiAwIG5hbWU6IFA0MDgyMzU5LmRuZwoJaXRlbSAyNCBrZXkgKDc1MTYgRElSX0lOREVYIDEy
+NikgaXRlbW9mZiAxNTExNiBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY0MSBJTk9ERV9J
+VEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzU5LmRu
+Z19vcmlnaW5hbAoJaXRlbSAyNSBrZXkgKDc1MTYgRElSX0lOREVYIDEyNykgaXRlbW9mZiAxNTA3
+NCBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY0MiBJTk9ERV9JVEVNIDApIHR5cGUgRklM
+RQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzYwLmRuZwoJaXRlbSAyNiBrZXkg
+KDc1MTYgRElSX0lOREVYIDEyOCkgaXRlbW9mZiAxNTAyMyBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9u
+IGtleSAoNzY0MyBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAw
+IG5hbWU6IFA0MDgyMzYwLmRuZ19vcmlnaW5hbAoJaXRlbSAyNyBrZXkgKDc1MTYgRElSX0lOREVY
+IDEyOSkgaXRlbW9mZiAxNDk4MSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY0NCBJTk9E
+RV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzYx
+LmRuZwoJaXRlbSAyOCBrZXkgKDc1MTYgRElSX0lOREVYIDEzMCkgaXRlbW9mZiAxNDkzMCBpdGVt
+c2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY0NSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5h
+bWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzYxLmRuZ19vcmlnaW5hbAoJaXRlbSAyOSBr
+ZXkgKDc1MTYgRElSX0lOREVYIDEzMSkgaXRlbW9mZiAxNDg4OCBpdGVtc2l6ZSA0MgoJCWxvY2F0
+aW9uIGtleSAoNzY0NiBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxl
+biAwIG5hbWU6IFA0MDgyMzYyLmRuZwoJaXRlbSAzMCBrZXkgKDc1MTYgRElSX0lOREVYIDEzMikg
+aXRlbW9mZiAxNDgzNyBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY0NyBJTk9ERV9JVEVN
+IDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzYyLmRuZ19v
+cmlnaW5hbAoJaXRlbSAzMSBrZXkgKDc1MTYgRElSX0lOREVYIDEzMykgaXRlbW9mZiAxNDc5NSBp
+dGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY0OCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJ
+CW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzYzLmRuZwoJaXRlbSAzMiBrZXkgKDc1
+MTYgRElSX0lOREVYIDEzNCkgaXRlbW9mZiAxNDc0NCBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtl
+eSAoNzY0OSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5h
+bWU6IFA0MDgyMzYzLmRuZ19vcmlnaW5hbAoJaXRlbSAzMyBrZXkgKDc1MTYgRElSX0lOREVYIDEz
+NSkgaXRlbW9mZiAxNDcwMiBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY1MCBJTk9ERV9J
+VEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzY0LmRu
+ZwoJaXRlbSAzNCBrZXkgKDc1MTYgRElSX0lOREVYIDEzNikgaXRlbW9mZiAxNDY1MSBpdGVtc2l6
+ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY1MSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVs
+ZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzY0LmRuZ19vcmlnaW5hbAoJaXRlbSAzNSBrZXkg
+KDc1MTYgRElSX0lOREVYIDEzNykgaXRlbW9mZiAxNDYwOSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9u
+IGtleSAoNzY1MiBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAw
+IG5hbWU6IFA0MDgyMzY1LmRuZwoJaXRlbSAzNiBrZXkgKDc1MTYgRElSX0lOREVYIDEzOCkgaXRl
+bW9mZiAxNDU1OCBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY1MyBJTk9ERV9JVEVNIDAp
+IHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzY1LmRuZ19vcmln
+aW5hbAoJaXRlbSAzNyBrZXkgKDc1MTYgRElSX0lOREVYIDEzOSkgaXRlbW9mZiAxNDUxNiBpdGVt
+c2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY1NCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5h
+bWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzY4LmRuZwoJaXRlbSAzOCBrZXkgKDc1MTYg
+RElSX0lOREVYIDE0MCkgaXRlbW9mZiAxNDQ2NSBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAo
+NzY1NSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6
+IFA0MDgyMzY4LmRuZ19vcmlnaW5hbAoJaXRlbSAzOSBrZXkgKDc1MTYgRElSX0lOREVYIDE0MSkg
+aXRlbW9mZiAxNDQyMyBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY1NiBJTk9ERV9JVEVN
+IDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzgwLmRuZwoJ
+aXRlbSA0MCBrZXkgKDc1MTYgRElSX0lOREVYIDE0MikgaXRlbW9mZiAxNDM3MiBpdGVtc2l6ZSA1
+MQoJCWxvY2F0aW9uIGtleSAoNzY1NyBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4g
+MjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzgwLmRuZ19vcmlnaW5hbAoJaXRlbSA0MSBrZXkgKDc1
+MTYgRElSX0lOREVYIDE0MykgaXRlbW9mZiAxNDMzMCBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtl
+eSAoNzY1OCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5h
+bWU6IFA0MDgyMzg4LmRuZwoJaXRlbSA0MiBrZXkgKDc1MTYgRElSX0lOREVYIDE0NCkgaXRlbW9m
+ZiAxNDI3OSBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY1OSBJTk9ERV9JVEVNIDApIHR5
+cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzg4LmRuZ19vcmlnaW5h
+bAoJaXRlbSA0MyBrZXkgKDc1MTYgRElSX0lOREVYIDE0NSkgaXRlbW9mZiAxNDIzNyBpdGVtc2l6
+ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY2MCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVs
+ZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzkxLmRuZwoJaXRlbSA0NCBrZXkgKDc1MTYgRElS
+X0lOREVYIDE0NikgaXRlbW9mZiAxNDE4NiBpdGVtc2l6ZSA1MQoJCWxvY2F0aW9uIGtleSAoNzY2
+MSBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEgZGF0YWxlbiAwIG5hbWU6IFA0
+MDgyMzkxLmRuZ19vcmlnaW5hbAoJaXRlbSA0NSBrZXkgKDc1MTYgRElSX0lOREVYIDE0NykgaXRl
+bW9mZiAxNDE0NCBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY2MiBJTk9ERV9JVEVNIDAp
+IHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzkyLmRuZwoJaXRl
+bSA0NiBrZXkgKDc1MTYgRElSX0lOREVYIDE0OCkgaXRlbW9mZiAxNDA5MyBpdGVtc2l6ZSA1MQoJ
+CWxvY2F0aW9uIGtleSAoNzY2MyBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMjEg
+ZGF0YWxlbiAwIG5hbWU6IFA0MDgyMzkyLmRuZ19vcmlnaW5hbAoJaXRlbSA0NyBrZXkgKDc1MTYg
+RElSX0lOREVYIDE0OSkgaXRlbW9mZiAxNDA1MSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAo
+NzY2NCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6
+IFA0MDgyNDA2LmRuZwoJaXRlbSA0OCBrZXkgKDc1MTYgRElSX0lOREVYIDE1MCkgaXRlbW9mZiAx
+NDAwOSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY2NSBJTk9ERV9JVEVNIDApIHR5cGUg
+RklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyNDA4LmRuZwoJaXRlbSA0OSBr
+ZXkgKDc1MTYgRElSX0lOREVYIDE1MSkgaXRlbW9mZiAxMzk2NyBpdGVtc2l6ZSA0MgoJCWxvY2F0
+aW9uIGtleSAoNzY2NiBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxl
+biAwIG5hbWU6IFA0MDgyNDE1LmRuZwoJaXRlbSA1MCBrZXkgKDc1MTYgRElSX0lOREVYIDE1Mikg
+aXRlbW9mZiAxMzkyNSBpdGVtc2l6ZSA0MgoJCWxvY2F0aW9uIGtleSAoNzY2NyBJTk9ERV9JVEVN
+IDApIHR5cGUgRklMRQoJCW5hbWVsZW4gMTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyNDE3LmRuZwoJ
+aXRlbSA1MSBrZXkgKDc1MTYgRElSX0lOREVYIDE1MykgaXRlbW9mZiAxMzg4MyBpdGVtc2l6ZSA0
+MgoJCWxvY2F0aW9uIGtleSAoNzY2OCBJTk9ERV9JVEVNIDApIHR5cGUgRklMRQoJCW5hbWVsZW4g
+MTIgZGF0YWxlbiAwIG5hbWU6IFA0MDgyNDIwLmRuZwoJaXRlbSA1MiBrZXkgKDc1MTcgSU5PREVf
+SVRFTSAwKSBpdGVtb2ZmIDEzNzIzIGl0ZW1zaXplIDE2MAoJCWlub2RlIGdlbmVyYXRpb24gNDk4
+NyB0cmFuc2lkIDE0MDA2NSBzaXplIDEyMjY2NjA0IGJsb2NrIGdyb3VwIDAgbW9kZSAxMDA2NjYg
+bGlua3MgMQoJaXRlbSA1MyBrZXkgKDc1MTcgSU5PREVfUkVGIDc1MTYpIGl0ZW1vZmYgMTM3MDEg
+aXRlbXNpemUgMjIKCQlpbm9kZSByZWYgaW5kZXggMiBuYW1lbGVuIDEyIG5hbWU6IFA0MDgxOTY0
+LmRuZwoJaXRlbSA1NCBrZXkgKDc1MTcgRVhURU5UX0RBVEEgMCkgaXRlbW9mZiAxMzY0OCBpdGVt
+c2l6ZSA1MwoJCWV4dGVudCBkYXRhIGRpc2sgYnl0ZSA1NDkyMzkyMTA4MDMyIG5yIDEyMjY3NTIw
+CgkJZXh0ZW50IGRhdGEgb2Zmc2V0IDAgbnIgMTIyNjc1MjAgcmFtIDEyMjY3NTIwCgkJZXh0ZW50
+IGNvbXByZXNzaW9uIDAKCWl0ZW0gNTUga2V5ICg3NTE4IElOT0RFX0lURU0gMCkgaXRlbW9mZiAx
+MzQ4OCBpdGVtc2l6ZSAxNjAKCQlpbm9kZSBnZW5lcmF0aW9uIDQ5ODcgdHJhbnNpZCAxNDAwNjUg
+c2l6ZSAxMjI2MDIxMCBibG9jayBncm91cCAwIG1vZGUgMTAwNjY2IGxpbmtzIDEKCWl0ZW0gNTYg
+a2V5ICg3NTE4IElOT0RFX1JFRiA3NTE2KSBpdGVtb2ZmIDEzNDU3IGl0ZW1zaXplIDMxCgkJaW5v
+ZGUgcmVmIGluZGV4IDMgbmFtZWxlbiAyMSBuYW1lOiBQNDA4MTk2NC5kbmdfb3JpZ2luYWwKCWl0
+ZW0gNTcga2V5ICg3NTE4IEVYVEVOVF9EQVRBIDApIGl0ZW1vZmYgMTM0MDQgaXRlbXNpemUgNTMK
+CQlleHRlbnQgZGF0YSBkaXNrIGJ5dGUgNTQ5MjQwNDM3NTU1MiBuciAxMjI2MzQyNAoJCWV4dGVu
+dCBkYXRhIG9mZnNldCAwIG5yIDEyMjYzNDI0IHJhbSAxMjI2MzQyNAoJCWV4dGVudCBjb21wcmVz
+c2lvbiAwCglpdGVtIDU4IGtleSAoNzUxOSBJTk9ERV9JVEVNIDApIGl0ZW1vZmYgMTMyNDQgaXRl
+bXNpemUgMTYwCgkJaW5vZGUgZ2VuZXJhdGlvbiA0OTg3IHRyYW5zaWQgMTQwMDY1IHNpemUgMTIy
+NzgyNzggYmxvY2sgZ3JvdXAgMCBtb2RlIDEwMDY2NiBsaW5rcyAxCglpdGVtIDU5IGtleSAoNzUx
+OSBJTk9ERV9SRUYgNzUxNikgaXRlbW9mZiAxMzIyMiBpdGVtc2l6ZSAyMgoJCWlub2RlIHJlZiBp
+bmRleCA0IG5hbWVsZW4gMTIgbmFtZTogUDQwODE5NjcuZG5nCglpdGVtIDYwIGtleSAoNzUxOSBF
+WFRFTlRfREFUQSAwKSBpdGVtb2ZmIDEzMTY5IGl0ZW1zaXplIDUzCgkJZXh0ZW50IGRhdGEgZGlz
+ayBieXRlIDU0OTA2OTYxNzE1MjAgbnIgMTIyNzk4MDgKCQlleHRlbnQgZGF0YSBvZmZzZXQgMCBu
+ciAxMjI3OTgwOCByYW0gMTIyNzk4MDgKCQlleHRlbnQgY29tcHJlc3Npb24gMAoJaXRlbSA2MSBr
+ZXkgKDc1MjAgSU5PREVfSVRFTSAwKSBpdGVtb2ZmIDEzMDA5IGl0ZW1zaXplIDE2MAoJCWlub2Rl
+IGdlbmVyYXRpb24gNDk4NyB0cmFuc2lkIDE0MDA2NSBzaXplIDEyMjc3MTI0IGJsb2NrIGdyb3Vw
+IDAgbW9kZSAxMDA2NjYgbGlua3MgMQoJaXRlbSA2MiBrZXkgKDc1MjAgSU5PREVfUkVGIDc1MTYp
+IGl0ZW1vZmYgMTI5NzggaXRlbXNpemUgMzEKCQlpbm9kZSByZWYgaW5kZXggNSBuYW1lbGVuIDIx
+IG5hbWU6IFA0MDgxOTY3LmRuZ19vcmlnaW5hbAoJaXRlbSA2MyBrZXkgKDc1MjAgRVhURU5UX0RB
+VEEgMCkgaXRlbW9mZiAxMjkyNSBpdGVtc2l6ZSA1MwoJCWV4dGVudCBkYXRhIGRpc2sgYnl0ZSA1
+NDkwNzA4NDUxMzI4IG5yIDEyMjc5ODA4CgkJZXh0ZW50IGRhdGEgb2Zmc2V0IDAgbnIgMTIyNzk4
+MDggcmFtIDEyMjc5ODA4CgkJZXh0ZW50IGNvbXByZXNzaW9uIDAKCWl0ZW0gNjQga2V5ICg3NTIx
+IElOT0RFX0lURU0gMCkgaXRlbW9mZiAxMjc2NSBpdGVtc2l6ZSAxNjAKCQlpbm9kZSBnZW5lcmF0
+aW9uIDQ5ODcgdHJhbnNpZCAxNDAwNjUgc2l6ZSAxMjY4Njk4OCBibG9jayBncm91cCAwIG1vZGUg
+MTAwNjY2IGxpbmtzIDEKCWl0ZW0gNjUga2V5ICg3NTIxIElOT0RFX1JFRiA3NTE2KSBpdGVtb2Zm
+IDEyNzQzIGl0ZW1zaXplIDIyCgkJaW5vZGUgcmVmIGluZGV4IDYgbmFtZWxlbiAxMiBuYW1lOiBQ
+NDA4MTk3Mi5kbmcKCWl0ZW0gNjYga2V5ICg3NTIxIEVYVEVOVF9EQVRBIDApIGl0ZW1vZmYgMTI2
+OTAgaXRlbXNpemUgNTMKCQlleHRlbnQgZGF0YSBkaXNrIGJ5dGUgNTQ5MDcyMDczMTEzNiBuciAx
+MjY4OTQwOAoJCWV4dGVudCBkYXRhIG9mZnNldCAwIG5yIDEyNjg5NDA4IHJhbSAxMjY4OTQwOAoJ
+CWV4dGVudCBjb21wcmVzc2lvbiAwCglpdGVtIDY3IGtleSAoNzUyMiBJTk9ERV9JVEVNIDApIGl0
+ZW1vZmYgMTI1MzAgaXRlbXNpemUgMTYwCgkJaW5vZGUgZ2VuZXJhdGlvbiA0OTg3IHRyYW5zaWQg
+MTQwMDY1IHNpemUgMTI2ODA1NzggYmxvY2sgZ3JvdXAgMCBtb2RlIDEwMDY2NiBsaW5rcyAxCglp
+dGVtIDY4IGtleSAoNzUyMiBJTk9ERV9SRUYgNzUxNikgaXRlbW9mZiAxMjQ5OSBpdGVtc2l6ZSAz
+MQoJCWlub2RlIHJlZiBpbmRleCA3IG5hbWVsZW4gMjEgbmFtZTogUDQwODE5NzIuZG5nX29yaWdp
+bmFsCglpdGVtIDY5IGtleSAoNzUyMiBFWFRFTlRfREFUQSAwKSBpdGVtb2ZmIDEyNDQ2IGl0ZW1z
+aXplIDUzCgkJZXh0ZW50IGRhdGEgZGlzayBieXRlIDU0OTEyNDMwNDA3NjggbnIgMTI2ODEyMTYK
+CQlleHRlbnQgZGF0YSBvZmZzZXQgMCBuciAxMjY4MTIxNiByYW0gMTI2ODEyMTYKCQlleHRlbnQg
+Y29tcHJlc3Npb24gMAoJaXRlbSA3MCBrZXkgKDc1MjMgSU5PREVfSVRFTSAwKSBpdGVtb2ZmIDEy
+Mjg2IGl0ZW1zaXplIDE2MAoJCWlub2RlIGdlbmVyYXRpb24gNDk4NyB0cmFuc2lkIDE0MDA2NSBz
+aXplIDEyODI1NjcwIGJsb2NrIGdyb3VwIDAgbW9kZSAxMDA2NjYgbGlua3MgMQoJaXRlbSA3MSBr
+ZXkgKDc1MjMgSU5PREVfUkVGIDc1MTYpIGl0ZW1vZmYgMTIyNjQgaXRlbXNpemUgMjIKCQlpbm9k
+ZSByZWYgaW5kZXggOCBuYW1lbGVuIDEyIG5hbWU6IFA0MDgxOTc1LmRuZwoJaXRlbSA3MiBrZXkg
+KDc1MjMgRVhURU5UX0RBVEEgMCkgaXRlbW9mZiAxMjIxMSBpdGVtc2l6ZSA1MwoJCWV4dGVudCBk
+YXRhIGRpc2sgYnl0ZSA1NDkxMjU1NzIxOTg0IG5yIDEyODI4NjcyCgkJZXh0ZW50IGRhdGEgb2Zm
+c2V0IDAgbnIgMTI4Mjg2NzIgcmFtIDEyODI4NjcyCgkJZXh0ZW50IGNvbXByZXNzaW9uIDAKCWl0
+ZW0gNzMga2V5ICg3NTI0IElOT0RFX0lURU0gMCkgaXRlbW9mZiAxMjA1MSBpdGVtc2l6ZSAxNjAK
+CQlpbm9kZSBnZW5lcmF0aW9uIDQ5ODcgdHJhbnNpZCAxNDAwNjUgc2l6ZSAxMjgyNDUxNiBibG9j
+ayBncm91cCAwIG1vZGUgMTAwNjY2IGxpbmtzIDEKCWl0ZW0gNzQga2V5ICg3NTI0IElOT0RFX1JF
+RiA3NTE2KSBpdGVtb2ZmIDEyMDIwIGl0ZW1zaXplIDMxCgkJaW5vZGUgcmVmIGluZGV4IDkgbmFt
+ZWxlbiAyMSBuYW1lOiBQNDA4MTk3NS5kbmdfb3JpZ2luYWwKCWl0ZW0gNzUga2V5ICg3NTI0IEVY
+VEVOVF9EQVRBIDApIGl0ZW1vZmYgMTE5NjcgaXRlbXNpemUgNTMKCQlleHRlbnQgZGF0YSBkaXNr
+IGJ5dGUgNTQ5MTI2ODU1MDY1NiBuciAxMjgyNDU3NgoJCWV4dGVudCBkYXRhIG9mZnNldCAwIG5y
+IDEyODI0NTc2IHJhbSAxMjgyNDU3NgoJCWV4dGVudCBjb21wcmVzc2lvbiAwCglpdGVtIDc2IGtl
+eSAoNzUyNSBJTk9ERV9JVEVNIDApIGl0ZW1vZmYgMTE4MDcgaXRlbXNpemUgMTYwCgkJaW5vZGUg
+Z2VuZXJhdGlvbiA0OTg3IHRyYW5zaWQgMTQwMDY1IHNpemUgMTMwOTc0MjYgYmxvY2sgZ3JvdXAg
+MCBtb2RlIDEwMDY2NiBsaW5rcyAxCglpdGVtIDc3IGtleSAoNzUyNSBJTk9ERV9SRUYgNzUxNikg
+aXRlbW9mZiAxMTc4NSBpdGVtc2l6ZSAyMgoJCWlub2RlIHJlZiBpbmRleCAxMCBuYW1lbGVuIDEy
+IG5hbWU6IFA0MDgxOTk4LmRuZwoJaXRlbSA3OCBrZXkgKDc1MjUgRVhURU5UX0RBVEEgMCkgaXRl
+bW9mZiAxMTczMiBpdGVtc2l6ZSA1MwoJCWV4dGVudCBkYXRhIGRpc2sgYnl0ZSA1NDkxMjgxMzc1
+MjMyIG5yIDEzMDk5MDA4CgkJZXh0ZW50IGRhdGEgb2Zmc2V0IDAgbnIgMTMwOTkwMDggcmFtIDEz
+MDk5MDA4CgkJZXh0ZW50IGNvbXByZXNzaW9uIDAKCWl0ZW0gNzkga2V5ICg3NTI2IElOT0RFX0lU
+RU0gMCkgaXRlbW9mZiAxMTU3MiBpdGVtc2l6ZSAxNjAKCQlpbm9kZSBnZW5lcmF0aW9uIDQ5ODcg
+dHJhbnNpZCAxNDAwNjUgc2l6ZSAxMzA5NjQ2NCBibG9jayBncm91cCAwIG1vZGUgMTAwNjY2IGxp
+bmtzIDEKCWl0ZW0gODAga2V5ICg3NTI2IElOT0RFX1JFRiA3NTE2KSBpdGVtb2ZmIDExNTQxIGl0
+ZW1zaXplIDMxCgkJaW5vZGUgcmVmIGluZGV4IDExIG5hbWVsZW4gMjEgbmFtZTogUDQwODE5OTgu
+ZG5nX29yaWdpbmFsCglpdGVtIDgxIGtleSAoNzUyNiBFWFRFTlRfREFUQSAwKSBpdGVtb2ZmIDEx
+NDg4IGl0ZW1zaXplIDUzCgkJZXh0ZW50IGRhdGEgZGlzayBieXRlIDU0OTEyOTQ0NzQyNDAgbnIg
+MTMwOTkwMDgKCQlleHRlbnQgZGF0YSBvZmZzZXQgMCBuciAxMzA5OTAwOCByYW0gMTMwOTkwMDgK
+CQlleHRlbnQgY29tcHJlc3Npb24gMAoJaXRlbSA4MiBrZXkgKDc1MjcgSU5PREVfSVRFTSAwKSBp
+dGVtb2ZmIDExMzI4IGl0ZW1zaXplIDE2MAoJCWlub2RlIGdlbmVyYXRpb24gNDk4NyB0cmFuc2lk
+IDE0MDA2NSBzaXplIDEzMjcxODI4IGJsb2NrIGdyb3VwIDAgbW9kZSAxMDA2NjYgbGlua3MgMQoJ
+aXRlbSA4MyBrZXkgKDc1MjcgSU5PREVfUkVGIDc1MTYpIGl0ZW1vZmYgMTEzMDYgaXRlbXNpemUg
+MjIKCQlpbm9kZSByZWYgaW5kZXggMTIgbmFtZWxlbiAxMiBuYW1lOiBQNDA4MTk5OS5kbmcKCWl0
+ZW0gODQga2V5ICg3NTI3IEVYVEVOVF9EQVRBIDApIGl0ZW1vZmYgMTEyNTMgaXRlbXNpemUgNTMK
+CQlleHRlbnQgZGF0YSBkaXNrIGJ5dGUgNTQ4OTQyMTI0NjQ2NCBuciAxMzI3NTEzNgoJCWV4dGVu
+dCBkYXRhIG9mZnNldCAwIG5yIDEzMjc1MTM2IHJhbSAxMzI3NTEzNgoJCWV4dGVudCBjb21wcmVz
+c2lvbiAwCglpdGVtIDg1IGtleSAoNzUyOCBJTk9ERV9JVEVNIDApIGl0ZW1vZmYgMTEwOTMgaXRl
+bXNpemUgMTYwCgkJaW5vZGUgZ2VuZXJhdGlvbiA0OTg3IHRyYW5zaWQgMTQwMDY1IHNpemUgMTMy
+NzA4NjYgYmxvY2sgZ3JvdXAgMCBtb2RlIDEwMDY2NiBsaW5rcyAxCglpdGVtIDg2IGtleSAoNzUy
+OCBJTk9ERV9SRUYgNzUxNikgaXRlbW9mZiAxMTA2MiBpdGVtc2l6ZSAzMQoJCWlub2RlIHJlZiBp
+bmRleCAxMyBuYW1lbGVuIDIxIG5hbWU6IFA0MDgxOTk5LmRuZ19vcmlnaW5hbAoJaXRlbSA4NyBr
+ZXkgKDc1MjggRVhURU5UX0RBVEEgMCkgaXRlbW9mZiAxMTAwOSBpdGVtc2l6ZSA1MwoJCWV4dGVu
+dCBkYXRhIGRpc2sgYnl0ZSA1NDg5NDM0NTIxNjAwIG5yIDEzMjcxMDQwCgkJZXh0ZW50IGRhdGEg
+b2Zmc2V0IDAgbnIgMTMyNzEwNDAgcmFtIDEzMjcxMDQwCgkJZXh0ZW50IGNvbXByZXNzaW9uIDAK
+CWl0ZW0gODgga2V5ICg3NTI5IElOT0RFX0lURU0gMCkgaXRlbW9mZiAxMDg0OSBpdGVtc2l6ZSAx
+NjAKCQlpbm9kZSBnZW5lcmF0aW9uIDQ5ODcgdHJhbnNpZCAxNDAwNjUgc2l6ZSAxMzYxNTQyOCBi
+bG9jayBncm91cCAwIG1vZGUgMTAwNjY2IGxpbmtzIDEKCWl0ZW0gODkga2V5ICg3NTI5IElOT0RF
+X1JFRiA3NTE2KSBpdGVtb2ZmIDEwODI3IGl0ZW1zaXplIDIyCgkJaW5vZGUgcmVmIGluZGV4IDE0
+IG5hbWVsZW4gMTIgbmFtZTogUDQwODIwMDAuZG5n
 
-[FIX]
-This patch will makes btrfs behavior much more like nfs,
-which has the type flag FS_BINARY_MOUNTDATA,
-making btrfs handles the security label internally.
-So security label will be set in the real mount time and won't lose
-label when use with "subvol=" mount option.
-
-Reported-by: Eryu Guan <guaneryu@gmail.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h |  5 +++
- fs/btrfs/super.c | 97 +++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 97 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8e29b61..c82dd6d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -34,6 +34,7 @@
- #include <linux/pagemap.h>
- #include <linux/btrfs.h>
- #include <linux/workqueue.h>
-+#include <linux/security.h>
- #include "extent_io.h"
- #include "extent_map.h"
- #include "async-thread.h"
-@@ -1723,6 +1724,9 @@ struct btrfs_fs_info {
- 
- 	/* Used to reclaim the metadata space in the background. */
- 	struct work_struct async_reclaim_work;
-+
-+	/* For btrfs to record security options */
-+	struct security_mnt_opts security_opts;
- };
- 
- struct btrfs_subvolume_writers {
-@@ -3604,6 +3608,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info->uuid_root);
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
-+	security_free_mnt_opts(&fs_info->security_opts);
- 	kfree(fs_info);
- }
- 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c4124de..1eb7858 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1215,6 +1215,54 @@ static struct dentry *mount_subvol(const char *subvol_name, int flags,
- 	return root;
- }
- 
-+static int parse_security_options(char *orig_opts,
-+				  struct security_mnt_opts *sec_opts)
-+{
-+	char *secdata = NULL;
-+	int ret = 0;
-+
-+	secdata = alloc_secdata();
-+	if (!secdata)
-+		return -ENOMEM;
-+	ret = security_sb_copy_data(orig_opts, secdata);
-+	if (ret) {
-+		free_secdata(secdata);
-+		return ret;
-+	}
-+	ret = security_sb_parse_opts_str(secdata, sec_opts);
-+	free_secdata(secdata);
-+	return ret;
-+}
-+
-+static int setup_security_options(struct btrfs_fs_info *fs_info,
-+				  struct super_block *sb,
-+				  struct security_mnt_opts *sec_opts)
-+{
-+	int ret = 0;
-+
-+	/*
-+	 * Call security_sb_set_mnt_opts() to check whether new sec_opts
-+	 * is valid.
-+	 */
-+	ret = security_sb_set_mnt_opts(sb, sec_opts, 0, NULL);
-+	if (ret)
-+		return ret;
-+
-+	if (!fs_info->security_opts.num_mnt_opts) {
-+		/* first time security setup, copy sec_opts to fs_info */
-+		memcpy(&fs_info->security_opts, sec_opts, sizeof(*sec_opts));
-+	} else {
-+		/*
-+		 * Since SELinux(the only one supports security_mnt_opts) does
-+		 * NOT support changing context during remount/mount same sb,
-+		 * This must be the same or part of the same security options,
-+		 * just free it.
-+		 */
-+		security_free_mnt_opts(sec_opts);
-+	}
-+	return ret;
-+}
-+
- /*
-  * Find a superblock for the given device / mount point.
-  *
-@@ -1229,6 +1277,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	struct dentry *root;
- 	struct btrfs_fs_devices *fs_devices = NULL;
- 	struct btrfs_fs_info *fs_info = NULL;
-+	struct security_mnt_opts new_sec_opts;
- 	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
-@@ -1251,9 +1300,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 		return root;
- 	}
- 
-+	security_init_mnt_opts(&new_sec_opts);
-+	if (data) {
-+		error = parse_security_options(data, &new_sec_opts);
-+		if (error)
-+			return ERR_PTR(error);
-+	}
-+
- 	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
- 	if (error)
--		return ERR_PTR(error);
-+		goto error_sec_opts;
- 
- 	/*
- 	 * Setup a dummy root and fs_info for test/set super.  This is because
-@@ -1262,13 +1318,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	 * then open_ctree will properly initialize everything later.
- 	 */
- 	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
--	if (!fs_info)
--		return ERR_PTR(-ENOMEM);
-+	if (!fs_info) {
-+		error = -ENOMEM;
-+		goto error_sec_opts;
-+	}
- 
- 	fs_info->fs_devices = fs_devices;
- 
- 	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
- 	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
-+	security_init_mnt_opts(&fs_info->security_opts);
- 	if (!fs_info->super_copy || !fs_info->super_for_commit) {
- 		error = -ENOMEM;
- 		goto error_fs_info;
-@@ -1306,8 +1365,19 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	}
- 
- 	root = !error ? get_default_root(s, subvol_objectid) : ERR_PTR(error);
--	if (IS_ERR(root))
-+	if (IS_ERR(root)) {
-+		deactivate_locked_super(s);
-+		error = PTR_ERR(root);
-+		goto error_sec_opts;
-+	}
-+
-+	fs_info = btrfs_sb(s);
-+	error = setup_security_options(fs_info, s, &new_sec_opts);
-+	if (error) {
-+		dput(root);
- 		deactivate_locked_super(s);
-+		goto error_sec_opts;
-+	}
- 
- 	return root;
- 
-@@ -1315,6 +1385,8 @@ error_close_devices:
- 	btrfs_close_devices(fs_devices);
- error_fs_info:
- 	free_fs_info(fs_info);
-+error_sec_opts:
-+	security_free_mnt_opts(&new_sec_opts);
- 	return ERR_PTR(error);
- }
- 
-@@ -1396,6 +1468,21 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 	sync_filesystem(sb);
- 	btrfs_remount_prepare(fs_info);
- 
-+	if (data) {
-+		struct security_mnt_opts new_sec_opts;
-+
-+		security_init_mnt_opts(&new_sec_opts);
-+		ret = parse_security_options(data, &new_sec_opts);
-+		if (ret)
-+			goto restore;
-+		ret = setup_security_options(fs_info, sb,
-+					     &new_sec_opts);
-+		if (ret) {
-+			security_free_mnt_opts(&new_sec_opts);
-+			goto restore;
-+		}
-+	}
-+
- 	ret = btrfs_parse_options(root, data);
- 	if (ret) {
- 		ret = -EINVAL;
-@@ -1769,7 +1856,7 @@ static struct file_system_type btrfs_fs_type = {
- 	.name		= "btrfs",
- 	.mount		= btrfs_mount,
- 	.kill_sb	= btrfs_kill_super,
--	.fs_flags	= FS_REQUIRES_DEV,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA,
- };
- MODULE_ALIAS_FS("btrfs");
- 
--- 
-2.1.0
-
+--_002_814ec3af3b9247db9f21cbcb4e4f7a91AM3PR06MB563eurprd06pro_--

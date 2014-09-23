@@ -1,48 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11283 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750939AbaI3U4J (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 16:56:09 -0400
-Received: from pps.filterd (m0004003 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8UKrlxd005862
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 13:56:08 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1pr10cru5j-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 13:56:08 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: check all slots in leaves
-Date: Tue, 30 Sep 2014 16:56:05 -0400
-Message-ID: <1412110565-7889-1-git-send-email-jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:41971 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755502AbaIWPyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Sep 2014 11:54:22 -0400
+Date: Tue, 23 Sep 2014 17:54:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Alexandre Oliva <oliva@gnu.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: fixes for btrfs check --repair
+Message-ID: <20140923155420.GW9715@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <ora96m3r2v.fsf@free.home>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <ora96m3r2v.fsf@free.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's an off by one error in btrfs_check_leaf, we should be going to nritems -
-1, not nritems - 2, we were missing problems with items in the very last slot.
-Thanks,
+Hi,
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- ctree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Sat, Aug 30, 2014 at 01:00:40PM -0300, Alexandre Oliva wrote:
+> Here are the patches.
 
-diff --git a/ctree.c b/ctree.c
-index 9e5b30f..c085941 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -494,7 +494,7 @@ btrfs_check_leaf(struct btrfs_root *root, struct btrfs_disk_key *parent_key,
- 		       (unsigned long long)btrfs_header_bytenr(buf));
- 		goto fail;
- 	}
--	for (i = 0; nritems > 1 && i < nritems - 2; i++) {
-+	for (i = 0; nritems > 1 && i < nritems - 1; i++) {
- 		btrfs_item_key(buf, &key, i);
- 		btrfs_item_key_to_cpu(buf, &cpukey, i + 1);
- 		if (btrfs_comp_keys(&key, &cpukey) >= 0) {
--- 
-1.8.3.1
-
+thanks, I've put them into the queue (branch with other fsck fixes).

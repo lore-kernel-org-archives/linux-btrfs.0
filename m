@@ -1,58 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:49554 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755286AbaIWMuE (ORCPT
+Received: from mail-we0-f181.google.com ([74.125.82.181]:33147 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755742AbaIWM6J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 08:50:04 -0400
-Message-ID: <54216C70.6030206@fb.com>
-Date: Tue, 23 Sep 2014 08:49:52 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 23 Sep 2014 08:58:09 -0400
+Received: by mail-we0-f181.google.com with SMTP id w61so2693523wes.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 05:58:08 -0700 (PDT)
+Received: from ubuntu.localnet (91-113-120-128.adsl.highway.telekom.at. [91.113.120.128])
+        by mx.google.com with ESMTPSA id pm2sm2208283wic.13.2014.09.23.05.58.07
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 23 Sep 2014 05:58:07 -0700 (PDT)
+From: GEO <1g2e3o4@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfs send does not work from readonly device
+Date: Tue, 23 Sep 2014 14:58:06 +0200
+Message-ID: <16424080.RP99VxSJe8@ubuntu>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-CC: <guaneryu@gmail.com>, Eric Sandeen <sandeen@redhat.com>
-Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally
- to avoid losing security label.
-References: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/23/2014 01:40 AM, Qu Wenruo wrote:
-> [BUG]
-> Originally when mount btrfs with "-o subvol=" mount option, btrfs will
-> lose all security lable.
-> And if the btrfs fs is mounted somewhere else, due to the lost of
-> security lable, SELinux will refuse to mount since the same super block
-> is being mounted using different security lable.
-> 
-> [REPRODUCER]
-> With SELinux enabled:
->  #mkfs -t btrfs /dev/sda5
->  #mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
->  #btrfs subvolume create /mnt/btrfs/subvol
->  #mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5
->   /mnt/test
-> 
-> kernel message:
-> SELinux: mount invalid.  Same superblock, different security settings
-> for (dev sda5, type btrfs)
-> 
-> [REASON]
-> This happens because btrfs will call vfs_kern_mount() and then
-> mount_subtree() to handle subvolume name lookup.
-> First mount will cut off all the security lables and when it comes to
-> the second vfs_kern_mount(), it has no security label now.
-> 
-> [FIX]
-> This patch will makes btrfs behavior much more like nfs,
-> which has the type flag FS_BINARY_MOUNTDATA,
-> making btrfs handles the security label internally.
-> So security label will be set in the real mount time and won't lose
-> label when use with "subvol=" mount option.
+Let's say we have a snapshot called "snapshot" on our device "/dev/sdb".
+Now we boot a qemu machine and attatch the disk read only (since we do not
+want to put our data at risk in the vm, and read only should be enough to
+get our snapshot data).
 
-Thanks for working on this.  Eric Sandeen (cc'd) was trying out
-something similar recently, so I want to make sure this doesn't conflict
-with his ideas.
+I used
 
--chris
+qemu-system-x86_64 -drive -file=/dev/sdb,if=scsi,readonly -hda
+<path_to_guest_operating_system>
+
+When we are in the qemu instance (suppose our device  /dev/sdb is mounted
+on /mnt/import), we want to import our data now using btrfs send/receive:
+
+btrfs send /mnt/import/snapshot | btrfs receive  /
+
+we get the following problems in syslog due to the fact that our device is
+read only:
+
+delayed_refs has NO entry
+BTRFS warning (device sdb): btrfs_update_root:151: Aborting unsused
+transaction(No space left)
+BTRFS warning (device sdb): Skipping commit of aborted transaction.
+BTRFS warning (device sdb): cleanup_transaction:1547: Aborting unused
+transaction (No space left)
+
+Apart from the snapshot folder being created in / nothing happens, the
+process simply hangs forever, with no actual data getting imported.
+
+Is that supposed to be that way? Why is readonly not enough to import data
+using btrfs send?

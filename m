@@ -1,114 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:63413 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751307AbaIWMIN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 08:08:13 -0400
-Received: by mail-ig0-f182.google.com with SMTP id hn15so4409599igb.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 05:08:12 -0700 (PDT)
-Message-ID: <542162A8.2010700@gmail.com>
-Date: Tue, 23 Sep 2014 08:08:08 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from smtp.galliera.it ([62.101.86.54]:44594 "EHLO smtp.galliera.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755133AbaIWMUF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Sep 2014 08:20:05 -0400
+Received: from galliera.it (simoman.ceed [10.0.6.66])
+	by smtp.galliera.it (Postfix) with ESMTP id 223A230F19CC
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 14:10:59 +0200 (CEST)
+Date: Tue, 23 Sep 2014 14:06:41 +0200
+From: Simone Ferretti <simone@galliera.it>
+To: Majordomo@vger.kernel.org
+Subject: mount problem
+Message-ID: <20140923120641.GA27624@galliera.it>
 MIME-Version: 1.0
-To: lists@xunil.at, linux-btrfs@vger.kernel.org
-Subject: Re: general thoughts and questions + general and RAID5/6 stability?
-References: <8D1A2626CC69D79-11FC-A2C3@webmail-va141.sysops.aol.com> <pan$5a87e$97e2e260$54942ad0$cefe56f1@cox.net> <54208BBC.1000700@xunil.at>
-In-Reply-To: <54208BBC.1000700@xunil.at>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms040607060701060105020805"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hi all,
 
---------------ms040607060701060105020805
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+we're testing BTRFS on our Debian server.  After a lot of operations
+simulating a RAID1 failure, every time I mount my BTRFS RAID1 volume
+the kernel logs these messages:
 
-On 2014-09-22 16:51, Stefan G. Weichinger wrote:
-> Am 20.09.2014 um 11:32 schrieb Duncan:
->
->> What I do as part of my regular backup regime, is every few kernel cyc=
-les
->> I wipe the (first level) backup and do a fresh mkfs.btrfs, activating =
-new
->> optional features as I believe appropriate.  Then I boot to the new
->> backup and run a bit to test it, then wipe the normal working copy and=
- do
->> a fresh mkfs.btrfs on it, again with the new optional features enabled=
+[73894.436173] BTRFS: bdev /dev/etherd/e30.20 errs: wr 33036, rd 0, flush 0, corrupt 2806, gen 0
+[73894.436181] BTRFS: bdev /dev/etherd/e60.28 errs: wr 244165, rd 0, flush 0, corrupt 1, gen 4
 
->> that I want.
->
-> Is re-creating btrfs-filesystems *recommended* in any way?
->
-> Does that actually make a difference in the fs-structure?
->
-I would recommend it, there are some newer features that you can only=20
-set at mkfs time.  Quite often, when a new feature is implemented, it is =
+Everything seems to work nice but I'm courious to know what these
+messages mean (in particular what do "gen" and "corrupt" mean?).
 
-some time before things are such that it can be enabled online, and even =
+# uname -a
+Linux dub 3.16-2-amd64 #1 SMP Debian 3.16.3-2 (2014-09-20) x86_64 GNU/Linux
 
-then that doesn't convert anything until it is rewritten.
-> So far I assumed it was enough to keep the kernel up2date, use current
-> (stable) btrfs-progs and run some scrub every week or so (not to mentio=
-n
-> backups .. if it ain't backed up, it was/isn't important).
->
-> Stefan
->
->
+# btrfs --version
+Btrfs v3.16
+
+# btrfs fi show
+Label: 'btrfs_multiappliance'  uuid: 3452ffdd-c09b-43dd-9adb-cffde8518a72
+        Total devices 2 FS bytes used 20.03GiB
+        devid    1 size 1.82TiB used 24.03GiB path /dev/etherd/e30.20
+        devid    2 size 3.64TiB used 24.03GiB path /dev/etherd/e60.28
+
+# btrfs fi df /media/multiapp
+Data, RAID1: total=22.00GiB, used=20.01GiB
+System, RAID1: total=32.00MiB, used=16.00KiB
+Metadata, RAID1: total=2.00GiB, used=21.23MiB
+unknown, single: total=16.00MiB, used=0.00
+
+# dmesg
+[82932.655078] BTRFS info (device etherd/e30.20): disk space caching is enabled
+[82932.678380] BTRFS: bdev /dev/etherd/e30.20 errs: wr 33036, rd 0, flush 0, corrupt 2806, gen 0
+[82932.678388] BTRFS: bdev /dev/etherd/e60.28 errs: wr 244165, rd 0, flush 0, corrupt 1, gen 4
 
 
-
---------------ms040607060701060105020805
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQwOTIzMTIwODA4
-WjAjBgkqhkiG9w0BCQQxFgQUwGy2vONajWKBdbRHpcHPM4GYy5EwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAh2xuquFLCpHVcw7+swSLIc6S34l9
-83wTacbib043R8gSZ7oBe4q1jh8Nor73ui+vsfDyxwe5UyRVQnjdqNf5SLsarCvFIAA+2IWm
-kGHkPP+tuARVSgO75RWRSbfGN3W/F9lG6cFgeV/CMDeaTk1OOhWLVwGNmY2lj9G/4uSWW655
-gHbxPa2BWyoQutqMMZc9GViJ8+c7NmfiRps5WJeC44S+/T5N7WRQJBXnDeEO32oX8yTLXoCh
-xpakolDVoP64WZO6Ewv/lQ9xNo7MHgR1j+lSNa8USND0V31PVHfjxssCnscy5yMLrfLcSJtH
-wfhwT8LGvI4zlOZDLHkBrHVJDwAAAAAAAA==
---------------ms040607060701060105020805--
+-- 
+Thanks in advance,
+Simone Ferretti

@@ -1,71 +1,357 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49334 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754436AbaICIm2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Sep 2014 04:42:28 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XP68v-0003Ht-Gf
-	for linux-btrfs@vger.kernel.org; Wed, 03 Sep 2014 10:42:17 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Sep 2014 10:42:17 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Sep 2014 10:42:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs-progs-3.16: fs metadata is both single and dup?
-Date: Wed, 3 Sep 2014 08:41:58 +0000 (UTC)
-Message-ID: <pan$e1912$7304dafe$ca27510c$e0fa8da1@cox.net>
-References: <pan.2014.09.02.12.05.33@googlemail.com>
-	<20140902121349.GF18897@carfax.org.uk>
-	<pan$5f385$eac97af1$e9cf0e10$15446dc8@cox.net>
-	<20140903073305.GH18897@carfax.org.uk>
-Mime-Version: 1.0
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:61662 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753708AbaIWQtF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Sep 2014 12:49:05 -0400
+Received: by mail-ie0-f176.google.com with SMTP id ar1so9917358iec.35
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 09:49:04 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <5421A23B.3000401@fb.com>
+References: <5421A23B.3000401@fb.com>
+Date: Tue, 23 Sep 2014 10:49:04 -0600
+Message-ID: <CAE5mzvhytUWtzwbrWAHjvqYOzR2THGnTNiC6aK1mB7nRCbt53w@mail.gmail.com>
+Subject: Re: [PATCH RFC] btrfs-progs: Add simple python front end to the
+ search ioctl
+From: cwillu <cwillu@cwillu.com>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Wed, 03 Sep 2014 08:33:05 +0100 as excerpted:
+On Tue, Sep 23, 2014 at 10:39 AM, Chris Mason <clm@fb.com> wrote:
+>
+> This is a starting point for a debugfs style python interface using
+> the search ioctl.  For now it can only do one thing, which is to
+> print out all the extents in a file and calculate the compression ratio.
+>
+> Over time it will grow more features, especially for the kinds of things
+> we might run btrfs-debug-tree to find out.  Expect the usage and output
+> to change dramatically over time (don't hard code to it).
+>
+> Signed-off-by: Chris Mason <clm@fb.com>
+> ---
+>  btrfs-debugfs | 296 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 296 insertions(+)
+>  create mode 100755 btrfs-debugfs
+>
+> diff --git a/btrfs-debugfs b/btrfs-debugfs
+> new file mode 100755
+> index 0000000..cf1d285
+> --- /dev/null
+> +++ b/btrfs-debugfs
+> @@ -0,0 +1,296 @@
+> +#!/usr/bin/env python2
+> +#
+> +# Simple python program to print out all the extents of a single file
+> +# LGPLv2 license
+> +# Copyright Facebook 2014
+> +
+> +import sys,os,struct,fcntl,ctypes,stat
+> +
+> +# helpers for max ints
+> +maxu64 = (1L << 64) - 1
+> +maxu32 = (1L << 32) - 1
+> +
+> +# the inode (like form stat)
+> +BTRFS_INODE_ITEM_KEY = 1
+> +# backref to the directory
+> +BTRFS_INODE_REF_KEY = 12
+> +# backref to the directory v2
+> +BTRFS_INODE_EXTREF_KEY = 13
+> +# xattr items
+> +BTRFS_XATTR_ITEM_KEY = 24
+> +# orphans for list files
+> +BTRFS_ORPHAN_ITEM_KEY = 48
+> +# treelog items for dirs
+> +BTRFS_DIR_LOG_ITEM_KEY = 60
+> +BTRFS_DIR_LOG_INDEX_KEY = 72
+> +# dir items and dir indexes both hold filenames
+> +BTRFS_DIR_ITEM_KEY = 84
+> +BTRFS_DIR_INDEX_KEY = 96
+> +# these are the file extent pointers
+> +BTRFS_EXTENT_DATA_KEY = 108
+> +# csums
+> +BTRFS_EXTENT_CSUM_KEY = 128
+> +# root item for subvols and snapshots
+> +BTRFS_ROOT_ITEM_KEY = 132
+> +# root item backrefs
+> +BTRFS_ROOT_BACKREF_KEY = 144
+> +BTRFS_ROOT_REF_KEY = 156
+> +# each allocated extent has an extent item
+> +BTRFS_EXTENT_ITEM_KEY = 168
+> +# optimized extents for metadata only
+> +BTRFS_METADATA_ITEM_KEY = 169
+> +# backrefs for extents
+> +BTRFS_TREE_BLOCK_REF_KEY = 176
+> +BTRFS_EXTENT_DATA_REF_KEY = 178
+> +BTRFS_EXTENT_REF_V0_KEY = 180
+> +BTRFS_SHARED_BLOCK_REF_KEY = 182
+> +BTRFS_SHARED_DATA_REF_KEY = 184
+> +# one of these for each block group
+> +BTRFS_BLOCK_GROUP_ITEM_KEY = 192
+> +# dev extents records which part of each device is allocated
+> +BTRFS_DEV_EXTENT_KEY = 204
+> +# dev items describe devs
+> +BTRFS_DEV_ITEM_KEY = 216
+> +# one for each chunk
+> +BTRFS_CHUNK_ITEM_KEY = 228
+> +# qgroup info
+> +BTRFS_QGROUP_STATUS_KEY = 240
+> +BTRFS_QGROUP_INFO_KEY = 242
+> +BTRFS_QGROUP_LIMIT_KEY = 244
+> +BTRFS_QGROUP_RELATION_KEY = 246
+> +# records balance progress
+> +BTRFS_BALANCE_ITEM_KEY = 248
+> +# stats on device errors
+> +BTRFS_DEV_STATS_KEY = 249
+> +BTRFS_DEV_REPLACE_KEY = 250
+> +BTRFS_STRING_ITEM_KEY = 253
+> +
+> +# in the kernel sources, this is flattened
+> +# btrfs_ioctl_search_args_v2.  It includes both the btrfs_ioctl_search_key
+> +# and the buffer.  We're using a 64K buffer size.
+> +#
+> +args_buffer_size = 65536
+> +class btrfs_ioctl_search_args(ctypes.Structure):
 
-> On Wed, Sep 03, 2014 at 04:53:39AM +0000, Duncan wrote:
->> Hugo Mills posted on Tue, 02 Sep 2014 13:13:49 +0100 as excerpted:
->> 
->> 
->> [A] btrfs fi df on a new filesystem always seems to have those extra
->> unused single profile lines.
->> 
->> I got so the first thing I'd do on first mount was a balance -- before
->> there was anything actually on the filesystem so it was real fast -- to
->> get rid of those null entries.
-> 
->    Interesting. Last time I tried that (balance without any contents),
-> the balance removed *all* the chunks, and then the FS forgot about what
-> configuration it should have and reverted to RAID-1/single. I usually
-> recommend writing at least one 4k+ file to the FS first, if it's
-> bothering someone so much that they can't let it go.
+Put comments like these in triple-quoted strings just inside the class
+or function you're defining; this makes them accessible using the
+standard help() system:
 
-Interesting indeed.  From memory, even before I've put anything on the 
-filesystem it always seems to have a bit of the first chunk of both data 
-and metadata used -- not much but enough that it's obvious in the df 
-which mode chunks are the null-chunks, and apparently obvious to the 
-balance as well, as it has always left me with at least a first chunk of 
-each.
+class foo(bar):
+    """
+In the kernel sources, this is
 
-I wonder what the difference might be.  Perhaps it's just the versions of 
-kernel and/or userspace I've happened to do all my mkfs.btrfs with?  Or 
-maybe it's one of the features (like thin-metadata or noholes) I enable 
-by default, or the fact that I use labels for partition ID and tracking, 
-so I always fill that in.  Whatever it is, it seems to put a bit of 
-something in the filesystem, possibly at first mount, so the actually 
-used chunks, one each of data and metadata, aren't entirely empty.
+> +    _pack_ = 1
+> +    _fields_ = [ ("tree_id", ctypes.c_ulonglong),
+> +                 ("min_objectid", ctypes.c_ulonglong),
+> +                 ("max_objectid", ctypes.c_ulonglong),
+> +                 ("min_offset", ctypes.c_ulonglong),
+> +                 ("max_offset", ctypes.c_ulonglong),
+> +                 ("min_transid", ctypes.c_ulonglong),
+> +                 ("max_transid", ctypes.c_ulonglong),
+> +                 ("min_type", ctypes.c_uint),
+> +                 ("max_type", ctypes.c_uint),
+> +                 ("nr_items", ctypes.c_uint),
+> +                 ("unused", ctypes.c_uint),
+> +                 ("unused1", ctypes.c_ulonglong),
+> +                 ("unused2", ctypes.c_ulonglong),
+> +                 ("unused3", ctypes.c_ulonglong),
+> +                 ("unused4", ctypes.c_ulonglong),
+> +                 ("buf_size", ctypes.c_ulonglong),
+> +                 ("buf", ctypes.c_ubyte * args_buffer_size),
+> +               ]
+> +
+> +# the search ioctl resturns one header for each item
 
-Or maybe I'm remembering wrong and I've just been lucky. <shrug>
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> +class btrfs_ioctl_search_header(ctypes.Structure):
+> +    _pack_ = 1
+> +    _fields_ = [ ("transid", ctypes.c_ulonglong),
+> +                 ("objectid", ctypes.c_ulonglong),
+> +                 ("offset", ctypes.c_ulonglong),
+> +                 ("type", ctypes.c_uint),
+> +                 ("len", ctypes.c_uint),
+> +               ]
+> +
+> +# the type field in btrfs_file_extent_item
+> +BTRFS_FILE_EXTENT_INLINE = 0
+> +BTRFS_FILE_EXTENT_REG = 1
+> +BTRFS_FILE_EXTENT_PREALLOC = 2
+> +
+> +class btrfs_file_extent_item(ctypes.LittleEndianStructure):
+> +    _pack_ = 1
+> +    _fields_ = [ ("generation", ctypes.c_ulonglong),
+> +                 ("ram_bytes", ctypes.c_ulonglong),
+> +                 ("compression", ctypes.c_ubyte),
+> +                 ("encryption", ctypes.c_ubyte),
+> +                 ("other_encoding", ctypes.c_ubyte * 2),
+> +                 ("type", ctypes.c_ubyte),
+> +                 ("disk_bytenr", ctypes.c_ulonglong),
+> +                 ("disk_num_bytes", ctypes.c_ulonglong),
+> +                 ("offset", ctypes.c_ulonglong),
+> +                 ("num_bytes", ctypes.c_ulonglong),
+> +               ]
+> +
+> +class btrfs_ioctl_search():
+> +    def __init__(self):
+> +        self.args = btrfs_ioctl_search_args()
+> +        self.args.tree_id = 0
+> +        self.args.min_objectid = 0
+> +        self.args.max_objectid = maxu64
+> +        self.args.min_offset = 0
+> +        self.args.max_offset = maxu64
+> +        self.args.min_transid = 0
+> +        self.args.max_transid = maxu64
+> +        self.args.min_type = 0
+> +        self.args.max_type = maxu32
+> +        self.args.nr_items = 0
+> +        self.args.buf_size = args_buffer_size
+> +
+> +        # magic encoded for x86_64 this is the v2 search ioctl
+> +        self.ioctl_num = 3228603409L
+> +
+> +    # the results of the search get stored into args.buf
+> +    def search(self, fd, nritems=65536):
+> +        self.args.nr_items = nritems
+> +        fcntl.ioctl(fd, self.ioctl_num, self.args, 1)
+> +
+> +# this moves the search key forward by one.  If the end result is
+> +# still a valid search key (all mins less than all maxes), we return
+> +# True.  Otherwise False
+> +#
+> +def advance_search(search):
+> +    if search.args.min_offset < maxu64:
+> +        search.args.min_offset += 1
+> +    elif search.args.min_type < 255:
+> +        search.args.min_type += 1
+> +    elif search.args.min_objectid < maxu64:
+> +        search.args.min_objectid += 1
+> +    else:
+> +        return False
+> +
+> +    if search.args.min_offset > search.args.max_offset:
+> +        return False
+> +    if search.args.min_type > search.args.max_type:
+> +        return False
+> +    if search.args.min_objectid > search.args.max_objectid:
+> +        return False
+> +
+> +    return True
+> +
+> +# given one search_header and one file_item, print the details.  This
+> +# also tosses the [disk_bytenr,disk_num_bytes] into extent_hash to record
+> +# which extents were used by this file
+> +#
+> +def print_one_extent(header, fi, extent_hash):
+> +    # we're ignoring inline items for now
+> +    if fi.type == BTRFS_FILE_EXTENT_INLINE:
+> +        # header.len is the length of the item returned.  We subtract
+> +        # the part of the file item header that is actually used (21 bytes)
+> +        # and we get the length of the inlined data.
+> +        # this may or may not be compressed
+> +        inline_len = header.len - 21
+> +        if fi.compression:
+> +            ram_bytes = fi.ram_bytes
+> +        else:
+> +            ram_bytes = inline_len
+> +        print "(%Lu %Lu): ram %Lu disk 0 disk_size %Lu -- inline" % \
+> +               (header.objectid, header.offset, ram_bytes, inline_len)
+> +        extent_hash[-1] = inline_len
+> +        return
+> +
+> +    if fi.disk_bytenr == 0:
+> +        tag = " -- hole"
+> +    else:
+> +        tag = ""
+> +    print "(%Lu %Lu): ram %Lu disk %Lu disk_size %Lu%s" % (header.objectid,
+> +           header.offset, fi.num_bytes, fi.disk_bytenr, fi.disk_num_bytes, tag)
+> +
+> +    if fi.disk_bytenr:
+> +        extent_hash[fi.disk_bytenr] = fi.disk_num_bytes
+> +
+> +# open 'filename' and run the search ioctl against it, printing all the extents
+> +# we find
+> +def print_file_extents(filename):
+> +    extent_hash = {}
+> +
+> +    s = btrfs_ioctl_search()
+> +    s.args.min_type = BTRFS_EXTENT_DATA_KEY
+> +    s.args.max_type = BTRFS_EXTENT_DATA_KEY
+> +
+> +    try:
+> +        fd = os.open(filename, os.O_RDONLY)
+> +        st = os.fstat(fd)
+> +    except Exception, e:
+> +        sys.stderr.write("Failed to open %s (%s)\n" % (filename, e))
+> +        return -1
+> +
+> +    if not stat.S_ISREG(st.st_mode):
+> +        sys.stderr.write("%s not a regular file\n" % filename)
+> +        return 0
+> +
+> +    s.args.min_objectid = st.st_ino
+> +    s.args.max_objectid = st.st_ino
+> +
+> +    size = st.st_size
+> +
+> +    while True:
+> +        try:
+> +            s.search(fd)
+> +        except Exception, e:
+> +            sys.stderr.write("Search ioctl failed for %s (%s)\n" % (filename, e))
+> +            return -1
+> +
+> +        if s.args.nr_items == 0:
+> +            break
+> +
+> +        # p is the results buffer from the kernel
+> +        p = ctypes.addressof(s.args.buf)
+> +        header = btrfs_ioctl_search_header()
+> +        header_size = ctypes.sizeof(header)
+> +        h = ctypes.addressof(header)
+> +        p_left = args_buffer_size
+> +
+> +        for x in xrange(0, s.args.nr_items):
+> +            # for each item, copy the header from the buffer into
+> +            # our header struct.
+> +            ctypes.memmove(h, p, header_size)
+> +            p += header_size
+> +            p_left -= header_size
+> +
+> +            # this would be a kernel bug it shouldn't be sending malformed
+> +            # items
+> +            if p_left <= 0:
+> +                break
+> +
+> +            if header.type == BTRFS_EXTENT_DATA_KEY:
+> +                fi = btrfs_file_extent_item()
+> +
+> +                # this would also be a kernel bug
+> +                if p_left < ctypes.sizeof(fi):
+> +                    break
+> +
+> +                # Copy the file item out of the results buffer
+> +                ctypes.memmove(ctypes.addressof(fi), p, ctypes.sizeof(fi))
+> +                print_one_extent(header, fi, extent_hash)
+> +
+> +            p += header.len
+> +            p_left -= header.len
+> +            if p_left <= 0:
+> +                break
+> +
+> +            s.args.min_offset = header.offset
+> +
+> +        if not advance_search(s):
+> +            break
+> +
+> +    total_on_disk = 0
+> +    total_extents = 0
+> +    for x in extent_hash.itervalues():
+> +        total_on_disk += x
+> +        total_extents += 1
+> +
+> +    # don't divide by zero
+> +    if total_on_disk == 0:
+> +        total_on_disk = 1
+> +
+> +    print "file: %s extents %Lu disk size %Lu logical size %Lu ratio %.2f" % \
+> +          (filename, total_extents, total_on_disk, st.st_size,
+> +          float(st.st_size) / float(total_on_disk))
+> +    return 0
+> +
+> +if len(sys.argv) == 1:
+> +    sys.stderr.write("Usage: btrfs-debug filename ...\n")
+> +    sys.exit(1)
+> +
+> +for f in sys.argv[1:]:
+> +    print_file_extents(f)
+> --
+> 1.8.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,29 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:41534 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752738AbaIXCBf (ORCPT
+Received: from mailrelay005.isp.belgacom.be ([195.238.6.171]:28543 "EHLO
+	mailrelay005.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751134AbaIXSXO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 22:01:35 -0400
-Received: by mail-ig0-f180.google.com with SMTP id a13so5712885igq.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Sep 2014 19:01:34 -0700 (PDT)
-Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.231.92.7])
-        by mx.google.com with ESMTPSA id j4sm3153180igx.20.2014.09.23.19.01.33
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 23 Sep 2014 19:01:34 -0700 (PDT)
-Message-ID: <542225FC.8030101@gmail.com>
-Date: Tue, 23 Sep 2014 22:01:32 -0400
-From: nick <yocto6@gmail.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Help Me Learn Btrfs Code Base
-Content-Type: text/plain; charset=utf-8
+	Wed, 24 Sep 2014 14:23:14 -0400
+From: Fabian Frederick <fabf@skynet.be>
+To: linux-kernel@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        Fabian Frederick <fabf@skynet.be>
+Subject: [PATCH 1/1 linux-next] Btrfs: fix compilation errors under DEBUG
+Date: Wed, 24 Sep 2014 20:23:05 +0200
+Message-Id: <1411582985-17734-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Guys,
-I am wondering if anybody here would like to mentor me in the btrfs code base in if they have
-any free time. I am not asking for much just someone to answer my questions and help me learn
-the code base well enough to help out.
-Thanks for Any Help,
-Nick
+bi_sector and bi_size moved to bi_iter since commit 4f024f3797c4
+("block: Abstract out bvec iterator")
+
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5b5a5c4..d47289c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5708,8 +5708,8 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 		name = rcu_dereference(dev->name);
+ 		pr_debug("btrfs_map_bio: rw %d, sector=%llu, dev=%lu "
+ 			 "(%s id %llu), size=%u\n", rw,
+-			 (u64)bio->bi_sector, (u_long)dev->bdev->bd_dev,
+-			 name->str, dev->devid, bio->bi_size);
++			 (u64)bio->bi_iter.bi_sector, (u_long)dev->bdev->bd_dev,
++			 name->str, dev->devid, bio->bi_iter.bi_size);
+ 		rcu_read_unlock();
+ 	}
+ #endif
+-- 
+1.9.3
+

@@ -1,58 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.galliera.it ([62.101.86.54]:32947 "EHLO smtp.galliera.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750940AbaIXO2i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Sep 2014 10:28:38 -0400
-Received: from galliera.it (simoman.ceed [10.0.6.66])
-	by smtp.galliera.it (Postfix) with ESMTP id ED93330F755A
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Sep 2014 16:28:35 +0200 (CEST)
-Date: Wed, 24 Sep 2014 16:28:35 +0200
-From: Simone Ferretti <simone@galliera.it>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: mount problem
-Message-ID: <20140924142835.GA18272@galliera.it>
-References: <20140923120641.GA27624@galliera.it>
- <pan$b29db$c1fc8f39$f1e6e06c$d6b3042c@cox.net>
+Received: from mail1.bemta8.messagelabs.com ([216.82.243.203]:35663 "EHLO
+	mail1.bemta8.messagelabs.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751271AbaIXOlG convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Sep 2014 10:41:06 -0400
+From: Robb Walker <rwalker@DRWHoldings.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: lvm thin provisioning snapshots and btrfs
+Date: Wed, 24 Sep 2014 14:34:45 +0000
+Message-ID: <1411569217555.64572@DRWHoldings.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$b29db$c1fc8f39$f1e6e06c$d6b3042c@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wed, Sep 24, 2014 at 01:23:32PM +0000, Duncan wrote:
-> Simone Ferretti posted on Tue, 23 Sep 2014 14:06:41 +0200 as excerpted:
-> 
-> > we're testing BTRFS on our Debian server.  After a lot of operations
-> > simulating a RAID1 failure, every time I mount my BTRFS RAID1 volume the
-> > kernel logs these messages:
-> > 
-> > [73894.436173] BTRFS: bdev /dev/etherd/e30.20 errs:
-> > wr 33036, rd 0, flush 0, corrupt 2806, gen 0
-> > [73894.436181] BTRFS: bdev /dev/etherd/e60.28 errs:
-> > wr 244165, rd 0, flush 0, corrupt 1, gen 4
-> > 
-> > Everything seems to work nice but I'm courious to know what these
-> > messages mean (in particular what do "gen" and "corrupt" mean?).
-> 
-> Gen=generation.  The generation or transaction-ID (different names for 
-> the exact same thing) is a monotonically increasing integer that gets 
-> updated every time a tree update reaches all the way to the superblock.  
-> In the error context, it means the superblock had one generation number 
-> but N other blocks had a different (presumably older) generation number.
-> 
-> Corrupt is simply the number of blocks where the calculated checksum 
-> didn't match the recorded checksum, thus indicating an error.
->
-> See btrfs device stats -z to reset the numbers to zero (after printing 
-> them one last time).
 
 
-Thank you much for your quick and illuminating answer.
+Hello all seeing something odd with btrfs and lvm thin-provisioning snapshots. Sent my finding to the lvm list and thought I might post here after some feedback which I have included. Apologies in advance if this is bad form. Please let me know. Hopefully the trail below is not too confusing.
 
-I'm wondering if you (or anyone else of course) know if there is btrfs
-documentation/papers/anything (besides wiki I did not find anything),
-in which it's possible to learn this kind of informations?
 
--- 
-Bye,
-Simone
+Regards and TIA
+
+
+----original post -- and note I see this on centos 6u5 outlined below and ubuntu 14.04.1
+
+
+ With  lvm thin prov + ext4 I get expected results. When I take a snapshot. I see the snapshot is the state of the lvm volume at the point of time of snapshot creation.
+
+
+For  btrfs, I am using a root subvolume mounted as @foo_root with a thinly provisioned lvm underneath. Same setup just using btrfs.
+
+I take a thin snapshot
+lvcreate -n lv_root_thin -s vg_thin/lv_root
+snapshot is created
+activate with lvchange -Kay  /dev/vg_thin/lv_root_thin
+
+
+I then mount the snap with mount -odefaults,subvol=@foo_root /dev/vg_thin/lv_root_thin /snaps
+The contents match the origin  lvm. Both  lvms, origin and snap stay in sync with whatever changes I make.
+At one point I thought that maybe it was snapping at the subv level so I decided a snapshot of the root vol. However the deletion also appeared in the thin snapshot
+
+
+Also couple notes:
+I never see in lvs that the thin snapshot goes -o- online as I do in ext4
+chdir into the /snaps and running df -h . shows that I'm in the snapshot
+chdir into /snaps/\@foo_root and running df -h . shows I'm in the origin vol. <this is where I thought it might be snapping at the "raw" brtfs subvolume level
+
+
+
+Hopefully this is somewhat clear
+
+
+
+Regards and TIA
+---Lvm list feedback ---
+
+It's likely  btrfs problem that it is not reporting duplicity problem?
+
+In  lvm2 we try to detect duplicate PVs and report problem and pick one to use.
+
+Btrfs needs to do the same - I'd expect some kernel messages about these kind
+of problems?
+
+Snapshot activation is skipped here for a reason.
+
+It's upto user/admin to avoid system confusion.
+
+So my best advice is - to ensure you do not have active origin & snapshot at
+the same time - especially when manipulating with  btrfs - since it most likely
+ignore device UUID generated by  lvm (and that should be unique)
+
+You will need to check disk  btrfs identifiers if you need to have active these
+volumes at the same time.
+
+----------
+I actually see the same thing with regular snapshots as well
+
+
+
+dmesg shows
+ 153.594444] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-1
+[  153.598598] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-2
+[  153.602398] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-1
+[  153.605490] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-1
+[  153.608078] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-2
+[  153.611517] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/dm-2
+[  195.495648] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/mapper/vg00_th-lv_root_140924
+[ 1171.952393] btrfs: device fsid 44c76cc5-5d03-4f02-af5f-2028e61e09fa devid 1 transid 38 /dev/mapper/vg00_th-lv_root_140924
+
+
+
+
+
+
+
+
+
+
+
+
+
+This e-mail and any attachments may contain information that is confidential and proprietary and otherwise protected from disclosure. If you are not the intended recipient of this e-mail, do not read, duplicate or redistribute it by any means. Please immediately delete it and any attachments and notify the sender that you have received it in error. Unintended recipients are prohibited from taking action on the basis of information in this e-mail or any attachments. The DRW Companies make no representations that this e-mail or any attachments are free of computer viruses or other defects.

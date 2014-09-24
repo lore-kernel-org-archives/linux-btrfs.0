@@ -1,110 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55744 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751568AbaIXDoB convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Sep 2014 23:44:01 -0400
-Message-ID: <54223DFD.4000709@cn.fujitsu.com>
-Date: Wed, 24 Sep 2014 11:43:57 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>, Chris Mason <clm@fb.com>,
-        <linux-btrfs@vger.kernel.org>
-CC: <guaneryu@gmail.com>
-Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally
- to avoid losing security label.
-References: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com> <54216C70.6030206@fb.com> <5421C11D.2040201@redhat.com> <542210E5.7060509@cn.fujitsu.com> <54223B76.1040908@redhat.com>
-In-Reply-To: <54223B76.1040908@redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37248 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751012AbaIXNXt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Sep 2014 09:23:49 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XWmXp-0001af-2e
+	for linux-btrfs@vger.kernel.org; Wed, 24 Sep 2014 15:23:45 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Sep 2014 15:23:45 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Sep 2014 15:23:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: mount problem
+Date: Wed, 24 Sep 2014 13:23:32 +0000 (UTC)
+Message-ID: <pan$b29db$c1fc8f39$f1e6e06c$d6b3042c@cox.net>
+References: <20140923120641.GA27624@galliera.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Simone Ferretti posted on Tue, 23 Sep 2014 14:06:41 +0200 as excerpted:
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options 
-internally to avoid losing security label.
-From: Eric Sandeen <sandeen@redhat.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>, 
-<linux-btrfs@vger.kernel.org>
-Date: 2014年09月24日 11:33
-> On 9/23/14 7:31 PM, Qu Wenruo wrote:
->> -------- Original Message --------
->> Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally to avoid losing security label.
->> From: Eric Sandeen <sandeen@redhat.com>
->> To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
->> Date: 2014年09月24日 02:51
->>> On 9/23/14 7:49 AM, Chris Mason wrote:
->>>> On 09/23/2014 01:40 AM, Qu Wenruo wrote:
->>>>> [BUG]
->>>>> Originally when mount btrfs with "-o subvol=" mount option, btrfs will
->>>>> lose all security lable.
->>>>> And if the btrfs fs is mounted somewhere else, due to the lost of
->>>>> security lable, SELinux will refuse to mount since the same super block
->>>>> is being mounted using different security lable.
->>>>>
->>>>> [REPRODUCER]
->>>>> With SELinux enabled:
->>>>>    #mkfs -t btrfs /dev/sda5
->>>>>    #mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
->>>>>    #btrfs subvolume create /mnt/btrfs/subvol
->>>>>    #mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5
->>>>>     /mnt/test
->>>>>
->>>>> kernel message:
->>>>> SELinux: mount invalid.  Same superblock, different security settings
->>>>> for (dev sda5, type btrfs)
->>>>>
->>>>> [REASON]
->>>>> This happens because btrfs will call vfs_kern_mount() and then
->>>>> mount_subtree() to handle subvolume name lookup.
->>>>> First mount will cut off all the security lables and when it comes to
->>>>> the second vfs_kern_mount(), it has no security label now.
->>>>>
->>>>> [FIX]
->>>>> This patch will makes btrfs behavior much more like nfs,
->>>>> which has the type flag FS_BINARY_MOUNTDATA,
->>>>> making btrfs handles the security label internally.
->>>>> So security label will be set in the real mount time and won't lose
->>>>> label when use with "subvol=" mount option.
->>>> Thanks for working on this.  Eric Sandeen (cc'd) was trying out
->>>> something similar recently, so I want to make sure this doesn't conflict
->>>> with his ideas.
->>> My ideas didn't get very far.  ;)
->>>
->>> What I was after was a way for multiple subvolumes to have unique contexts.
->>> It looks like this might do the trick, as long as they are mounted on a unique
->>> mount point.
->>>
->>> Would this allow "subvolume create" to take a context, so that everything
->>> under /mnt/btrfs/subvol/ has a unique subvol-wide context?
->>>
->>> thanks,
->>> -Eric
->> Did you mean the following situation?
->> /dev/sdb default subvol(FS_TREE) mounted on /mnt/default with context A
->> /dev/sdb subvol=subvol mounted on /mnt/subvol with context B
->>
->> If that's your goal, I am afraid that my patch can't achieve it and even worse, will even forbid it. :(
->>
->> SELinux doesn't allow same superblock mounted with different context, and the patch follows it.
->> If SELinux is modified to allow same superblock different context, then my patch also needs to be modified.
-> oh, ok, I see.
->
-> I don't think that my "wish" should disallow your patch.
->
-> For the problem I was looking at, I think the only way forward would require
-> some significant selinux modification, and treating a subvol root essentially
-> like a superblock.
->
-> So ... don't let me slow you down, at least for now.  ;)
->
-> -Eric
->
-BTW, since with the patch btrfs can in fact don't call 
-security_sb_set_mnt_opts() if btrfs wants,
-what about set context to the dentry or something like that, but not set 
-to superblock?
-I may be wrong, since I am still not famaliar with security parts...
+> we're testing BTRFS on our Debian server.  After a lot of operations
+> simulating a RAID1 failure, every time I mount my BTRFS RAID1 volume the
+> kernel logs these messages:
+> 
+> [73894.436173] BTRFS: bdev /dev/etherd/e30.20 errs:
+> wr 33036, rd 0, flush 0, corrupt 2806, gen 0
+> [73894.436181] BTRFS: bdev /dev/etherd/e60.28 errs:
+> wr 244165, rd 0, flush 0, corrupt 1, gen 4
+> 
+> Everything seems to work nice but I'm courious to know what these
+> messages mean (in particular what do "gen" and "corrupt" mean?).
 
-Thanks,
-Qu
+Gen=generation.  The generation or transaction-ID (different names for 
+the exact same thing) is a monotonically increasing integer that gets 
+updated every time a tree update reaches all the way to the superblock.  
+In the error context, it means the superblock had one generation number 
+but N other blocks had a different (presumably older) generation number.
+
+Corrupt is simply the number of blocks where the calculated checksum 
+didn't match the recorded checksum, thus indicating an error.
+
+Of course rd=read, wr=write...
+
+In raid1 mode scrub can typically find and fix many of these errors.  My 
+brtfs are mostly raid1 mode, and when I crash and reboot, scrub nearly 
+always finds and fixes errors on the two btrfs (independent btrfs full-
+filesystems, not subvolumes, /var/log and /home) I normally have mounted 
+rw.
+
+But do note that this is the HISTORIC count, counting all errors since 
+the counts were reset.  Thus, they'll still be reported after scrub or 
+whatever has fixed them.  As long as the numbers don't increase, you're 
+good.  Any increase indicates additional problems.
+
+See btrfs device stats -z to reset the numbers to zero (after printing 
+them one last time).
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

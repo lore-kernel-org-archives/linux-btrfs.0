@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47599 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:49549 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752732AbaIWXUo (ORCPT
+	with ESMTP id S1752732AbaIWXnr (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 23 Sep 2014 19:20:44 -0400
+	Tue, 23 Sep 2014 19:43:47 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v2] Btrfs: be aware of btree inode write errors to avoid fs corruption
-Date: Wed, 24 Sep 2014 01:20:22 +0100
-Message-Id: <1411518022-13592-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2 v3] Btrfs: be aware of btree inode write errors to avoid fs corruption
+Date: Wed, 24 Sep 2014 01:43:06 +0100
+Message-Id: <1411519386-19340-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1411404065-767-2-git-send-email-fdmanana@suse.com>
 References: <1411404065-767-2-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -64,6 +64,8 @@ V2: If an extent buffer's write failed but it's also deleted from the tree
     since the unwritten node/leaf it represents can't be pointed to by any
     other node in a tree.
 
+V3: Correct V2, missed unstaged changes.
+
  fs/btrfs/disk-io.c     |  4 +--
  fs/btrfs/extent-tree.c |  8 ++++++
  fs/btrfs/extent_io.c   | 76 +++++++++++++++++++++++++++++++++++++++++++++-----
@@ -115,7 +117,7 @@ index ef0845d..608814b 100644
  }
  
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 91f866c..e21f200 100644
+index 91f866c..da1706f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
 @@ -20,6 +20,7 @@
@@ -189,7 +191,7 @@ index 91f866c..e21f200 100644
 +	if (ret)
 +		atomic_inc(&cur_trans->eb_write_errors);
 +	else
-+		atomic_add_unless(&cur_trans->log_eb_write_errors, 1, 1);
++		atomic_inc(&cur_trans->log_eb_write_errors);
 +}
 +
  static void end_bio_extent_buffer_writepage(struct bio *bio, int err)
@@ -254,7 +256,7 @@ index 5e91fb9..6456179 100644
  /* these are flags for extent_clear_unlock_delalloc */
  #define PAGE_UNLOCK		(1 << 0)
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1e272c0..c488bf9 100644
+index 1e272c0..0b325d0 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
 @@ -193,6 +193,8 @@ loop:
@@ -290,8 +292,8 @@ index 1e272c0..c488bf9 100644
 +	if (dirty_pages == &trans->transaction->dirty_pages)
 +		errors = atomic_xchg(&trans->transaction->eb_write_errors, 0);
 +	else
-+		errors = !!atomic_add_unless(
-+		    &trans->transaction->log_eb_write_errors, -1, 0);
++		errors = atomic_xchg(
++		    &trans->transaction->log_eb_write_errors, 0);
 +
 +	ASSERT(errors >= 0);
 +	if (errors > 0 && !werr)

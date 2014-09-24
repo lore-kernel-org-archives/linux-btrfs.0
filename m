@@ -1,45 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f180.google.com ([74.125.82.180]:63881 "EHLO
-	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751418AbaIUBBa (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:27675 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750783AbaIXFbn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Sep 2014 21:01:30 -0400
-Received: by mail-we0-f180.google.com with SMTP id u56so1300860wes.39
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Sep 2014 18:01:28 -0700 (PDT)
-From: Dimitri John Ledkov <xnox@debian.org>
-To: linux-btrfs@vger.kernel.org
-Cc: Dimitri John Ledkov <xnox@debian.org>
-Subject: [PATCH 1/4] Properly cast to avoid compiler warnings, fixes FTBFS on alpha and ia64.
-Date: Sun, 21 Sep 2014 02:01:19 +0100
-Message-Id: <1411261282-26831-1-git-send-email-xnox@debian.org>
+	Wed, 24 Sep 2014 01:31:43 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8O5VkZK003128
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Sep 2014 13:31:46 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2] btrfs-progs: Add human readable incompat flags output for btrfs-show-super
+Date: Wed, 24 Sep 2014 13:31:39 +0800
+Message-ID: <1411536699-32520-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bug-Debian: http://bugs.debian.org/539433
-Bug-Debian: http://bugs.debian.org/583768
-Authors:
- Luca Bruno <lucab@debian.org>
- Alexander Kurtz <kurtz.alex@googlemail.com>
- Daniel Baumann <daniel.baumann@progress-technologies.net>
+Add human readable incompat flags output for btrfs-show-super,
+now no longer needs to calculate the hex flags by hand.
 
-Signed-off-by: Dimitri John Ledkov <xnox@debian.org>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+changelog:
+v2: Add the mising "0x" before hex unknown incompat flags
+---
+ btrfs-show-super.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 71b7bd6..3673050 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2441,7 +2441,7 @@ static int do_rollback(const char *devname)
- 	ext2_root = btrfs_read_fs_root(root->fs_info, &key);
- 	if (!ext2_root || IS_ERR(ext2_root)) {
- 		fprintf(stderr, "unable to open subvol %llu\n",
--			key.objectid);
-+			(unsigned long long) key.objectid);
- 		goto fail;
+diff --git a/btrfs-show-super.c b/btrfs-show-super.c
+index 38c5d26..456dbd8 100644
+--- a/btrfs-show-super.c
++++ b/btrfs-show-super.c
+@@ -285,6 +285,58 @@ static void print_backup_roots(struct btrfs_super_block *sb)
  	}
+ }
  
++struct readable_flag_entry {
++	u64 bit;
++	char *output;
++};
++
++#define DEF_INCOMPAT_FLAG_ENTRY(bit_name)		\
++	{BTRFS_FEATURE_INCOMPAT_##bit_name, #bit_name}
++
++struct readable_flag_entry incompat_flags_array[] = {
++	DEF_INCOMPAT_FLAG_ENTRY(MIXED_BACKREF),
++	DEF_INCOMPAT_FLAG_ENTRY(DEFAULT_SUBVOL),
++	DEF_INCOMPAT_FLAG_ENTRY(MIXED_GROUPS),
++	DEF_INCOMPAT_FLAG_ENTRY(COMPRESS_LZO),
++	DEF_INCOMPAT_FLAG_ENTRY(COMPRESS_LZOv2),
++	DEF_INCOMPAT_FLAG_ENTRY(BIG_METADATA),
++	DEF_INCOMPAT_FLAG_ENTRY(EXTENDED_IREF),
++	DEF_INCOMPAT_FLAG_ENTRY(RAID56),
++	DEF_INCOMPAT_FLAG_ENTRY(SKINNY_METADATA),
++	DEF_INCOMPAT_FLAG_ENTRY(NO_HOLES)
++};
++static const int incompat_flags_num = sizeof(incompat_flags_array) /
++				      sizeof(struct readable_flag_entry);
++
++static void print_readable_incompat_flag(u64 flag)
++{
++	int i;
++	int first = 1;
++	struct readable_flag_entry *entry;
++
++	if (!flag)
++		return;
++	printf("\t\t\t( ");
++	for (i = 0; i < incompat_flags_num; i++) {
++		entry = incompat_flags_array + i;
++		if (flag & entry->bit) {
++			if (first)
++				printf("%s ", entry->output);
++			else
++				printf("|\n\t\t\t  %s ", entry->output);
++		}
++		first = 0;
++	}
++	flag &= ~BTRFS_FEATURE_INCOMPAT_SUPP;
++	if (flag) {
++		if (first)
++			printf("unknown flag: 0x%llx ", flag);
++		else
++			printf("|\n\t\t\t  unknown flag: 0x%llx ", flag);
++	}
++	printf(")\n");
++}
++
+ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ {
+ 	int i;
+@@ -364,6 +416,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
+ 	printf("incompat_flags\t\t0x%llx\n",
+ 	       (unsigned long long)btrfs_super_incompat_flags(sb));
++	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
+ 	printf("csum_type\t\t%llu\n",
+ 	       (unsigned long long)btrfs_super_csum_type(sb));
+ 	printf("csum_size\t\t%llu\n",
 -- 
-2.1.0.rc1
+2.1.0
 

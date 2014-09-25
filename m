@@ -1,123 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:58562 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750755AbaIYF6E (ORCPT
+Received: from postler.lichtfels.com ([78.46.92.195]:53685 "EHLO
+	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750877AbaIYHPT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 01:58:04 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 5AAB93EE0B6
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:58:02 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 66AB3AC0411
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:58:01 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 1234E1DB8038
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:58:01 +0900 (JST)
-Message-ID: <5423AEDD.2090004@jp.fujitsu.com>
-Date: Thu, 25 Sep 2014 14:57:49 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Thu, 25 Sep 2014 03:15:19 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by postler.lichtfels.com (Postfix) with ESMTP id 1596B123C9
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 09:15:17 +0200 (CEST)
+Received: from postler.lichtfels.com ([127.0.0.1])
+ by localhost (postler.lichtfels.com [127.0.0.1]) (amavisd-maia, port 10024)
+ with LMTP id 07103-03 for <linux-btrfs@vger.kernel.org>;
+ Thu, 25 Sep 2014 09:15:14 +0200 (CEST)
+Received: from goto.oops.intern (unknown [IPv6:2001:15c0:65ff:8742:39e4:6d8d:b8e0:3beb])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by postler.lichtfels.com (Postfix) with ESMTPSA id 9BC6A123CE
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 09:15:14 +0200 (CEST)
+Message-ID: <5423C101.8000201@xunil.at>
+Date: Thu, 25 Sep 2014 09:15:13 +0200
+From: "Stefan G. Weichinger" <lists@xunil.at>
+Reply-To: lists@xunil.at
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2 4/4] btrfs: Fix compression related ioctl to run atomic
- operations in one transaction
-References: <541BED3D.5020803@jp.fujitsu.com> <541BEDF8.7010009@jp.fujitsu.com> <541BEEC1.9030606@jp.fujitsu.com> <541BF1C4.1050000@jp.fujitsu.com>
-In-Reply-To: <541BF1C4.1050000@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: linux-btrfs@vger.kernel.org
+Subject: Re: general thoughts and questions + general and RAID5/6 stability?
+References: <8D1A2626CC69D79-11FC-A2C3@webmail-va141.sysops.aol.com> <pan$5a87e$97e2e260$54942ad0$cefe56f1@cox.net> <54208BBC.1000700@xunil.at> <542162A8.2010700@gmail.com> <5421706F.6070301@xunil.at> <542177BF.2000808@gmail.com>
+In-Reply-To: <542177BF.2000808@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Naohiro Aota <naota@elisp.net>
+Am 23.09.2014 um 15:38 schrieb Austin S Hemmelgarn:
 
-Fix the following two problems in compression related ioctl() code.
+>> What features for example?
+> Well, running 'mkfs.btrfs -O list-all' with 3.16 btrfs-progs gives the
+> following list of features:
+> mixed-bg        - mixed data and metadata block groups
+> extref            - increased hard-link limit per file to 65536
+> raid56            - raid56 extended format
+> skinny-metadata        - reduced size metadata extent refs
+> no-holes        - no explicit hole extents for files
+> 
+> mixed-bg is something that you generally wouldn't want to change after
+> mkfs.
+> extref can be enabled online, and the filesystem metadata gets updated
+> as-needed, and dosen't provide any real performance improvement (but is
+> needed for some mail servers that have HUGE mail-queues)
+> I don't know anything about the raid56 option, but there isn't any way
+> to change it after mkfs.
+> skinyy-metadata can be changed online, and the format gets updated on
+> rewrite of each metadata block.  This one does provide a performance
+> improvement (stat() in particular runs noticeably faster).  You should
+> probably enable this if it isn't already enabled, even if you don't
+> recreate your filesystem.
+> no-holes cannot currently be changed online, and is a very recent
+> addition (post v3.14 btrfs-progs I believe) that provides improved
+> performance for sparse files (which is particularly useful if you are
+> doing things with fixed size virtual machine disk images).
 
-  a) Updating compression flags and updating inode attribute
-     in two separated transaction. So, if something bad happens
-     after the former, and before the latter, file system
-     would become inconsistent state.
+Recreating or at least "btrfstune -rx" for my rootfs would mean that I
+have to boot from a live medium bringing recent btrfs-progs, right?
 
-     This patch move them into one transaction.
+sysresccd brings btrfs-progs-3.14.2 ... that should be enough, ok?
 
-  b) It updates compression flags here and calls btrfs_set_prop()
-     after that. However flags are also updated in this function.
+aside from that, the rootfs on my thinkpad shows these features:
 
-     This patch removes the duplicated code for updating flags
-     from ioctl code and aggregates this work to
-     btrfs_set_prop_trans() at all. 
+# ls /sys/fs/btrfs/bec7dff9-8749-4db4-9a1b-fa844cfcc36a/features/
+big_metadata  compress_lzo  extended_iref  mixed_backref
 
-Signed-off-by: Naohiro Aota <naota@elisp.net>
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
-changelog
-	v1->v2: Reflect the following comment from David
-        https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg37513.html
----
- fs/btrfs/ioctl.c | 32 +++++++++++---------------------
- 1 file changed, 11 insertions(+), 21 deletions(-)
+So I only miss the skinny extents ... and "no-holes".
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0ff2127..40a0fdd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -221,6 +221,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	u64 ip_oldflags;
- 	unsigned int i_oldflags;
- 	umode_t mode;
-+	const char *comp;
- 
- 	if (!inode_owner_or_capable(inode))
- 		return -EPERM;
-@@ -310,40 +311,29 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	 * things smaller.
- 	 */
- 	if (flags & FS_NOCOMP_FL) {
--		ip->flags &= ~BTRFS_INODE_COMPRESS;
--		ip->flags |= BTRFS_INODE_NOCOMPRESS;
--
--		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
--		if (ret && ret != -ENODATA)
--			goto out_drop;
-+		comp = "off";
- 	} else if (flags & FS_COMPR_FL) {
--		const char *comp;
--
--		ip->flags |= BTRFS_INODE_COMPRESS;
--		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
--
- 		if (root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
- 			comp = "lzo";
- 		else
- 			comp = "zlib";
--		ret = btrfs_set_prop(inode, "btrfs.compression",
--				     comp, strlen(comp), 0);
--		if (ret)
--			goto out_drop;
--
- 	} else {
--		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
--		if (ret && ret != -ENODATA)
--			goto out_drop;
--		ip->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
-+		comp = "";
- 	}
- 
--	trans = btrfs_start_transaction(root, 1);
-+	trans = btrfs_start_transaction(root, 2);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		goto out_drop;
- 	}
- 
-+	ret = btrfs_set_prop_trans(trans, inode, "btrfs.compression", comp,
-+			       strlen(comp), 0);
-+	if (ret && ret != -ENODATA) {
-+		btrfs_end_transaction(trans, root);
-+		goto out_drop;
-+	}
-+
- 	btrfs_update_iflags(inode);
- 	inode_inc_iversion(inode);
- 	inode->i_ctime = CURRENT_TIME;
--- 1.8.3.1 
-
+Stefan

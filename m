@@ -1,109 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45014 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751343AbaIYFeT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 01:34:19 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XX1h3-0005HU-W5
-	for linux-btrfs@vger.kernel.org; Thu, 25 Sep 2014 07:34:17 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 07:34:17 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 07:34:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mount problem
-Date: Thu, 25 Sep 2014 05:34:05 +0000 (UTC)
-Message-ID: <pan$c2f73$56f01bfe$eb054a09$f8f997c9@cox.net>
-References: <20140923120641.GA27624@galliera.it>
-	<pan$b29db$c1fc8f39$f1e6e06c$d6b3042c@cox.net>
-	<20140924142835.GA18272@galliera.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:34703 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751160AbaIYFzs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Sep 2014 01:55:48 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id DB54A3EE113
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:55:46 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id E5720AC0546
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:55:45 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 620101DB8038
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 14:55:45 +0900 (JST)
+Message-ID: <5423AE51.8060701@jp.fujitsu.com>
+Date: Thu, 25 Sep 2014 14:55:29 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2 3/4] btrfs: Rename and export __btrfs_set_prop to be called
+ from running transaction
+References: <541BED3D.5020803@jp.fujitsu.com> <541BEDF8.7010009@jp.fujitsu.com> <541BEEC1.9030606@jp.fujitsu.com> <20140922120119.GK9715@twin.jikos.cz>
+In-Reply-To: <20140922120119.GK9715@twin.jikos.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Simone Ferretti posted on Wed, 24 Sep 2014 16:28:35 +0200 as excerpted:
+Hi David,
 
-> Wed, Sep 24, 2014 at 01:23:32PM +0000, Duncan wrote:
->> Simone Ferretti posted on Tue, 23 Sep 2014 14:06:41 +0200 as excerpted:
->> 
->>> we're testing BTRFS on our Debian server.  After a lot of operations
->>> simulating a RAID1 failure, every time I mount my BTRFS RAID1 volume
->>> the kernel logs these messages:
->>> 
->>> [73894.436173] BTRFS: bdev /dev/etherd/e30.20 errs:
->>> wr 33036, rd 0, flush 0, corrupt 2806, gen 0
->>> [73894.436181] BTRFS: bdev /dev/etherd/e60.28 errs:
->>> wr 244165, rd 0, flush 0, corrupt 1, gen 4
->>> 
->>> Everything seems to work nice but I'm courious to know what these
->>> messages mean (in particular what do "gen" and "corrupt" mean?).
->> 
->> Gen=generation.  The generation or transaction-ID (different names for
->> the exact same thing) is a monotonically increasing integer that gets
->> updated every time a tree update reaches all the way to the superblock.
->> In the error context, it means the superblock had one generation number
->> but N other blocks had a different (presumably older) generation
->> number.
->> 
->> Corrupt is simply the number of blocks where the calculated checksum
->> didn't match the recorded checksum, thus indicating an error.
+(2014/09/22 21:01), David Sterba wrote:
+> On Fri, Sep 19, 2014 at 05:52:17PM +0900, Satoru Takeuchi wrote:
+>> @@ -99,7 +99,7 @@ find_prop_handler(const char *name,
+>>   	return NULL;
+>>   }
 >>
->> See btrfs device stats -z to reset the numbers to zero (after printing
->> them one last time).
-> 
-> 
-> Thank you much for your quick and illuminating answer.
-> 
-> I'm wondering if you (or anyone else of course) know if there is btrfs
-> documentation/papers/anything (besides wiki I did not find anything), in
-> which it's possible to learn this kind of informations?
+>> -static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
+>> +int __btrfs_set_prop(struct btrfs_trans_handle *trans,
+>
+> It's common for static helpers to use the __ prefix, but please drop it
+> for an exported function(s).
 
-I've learned it from the list and wiki, and from general background 
-experience and by reading between the lines at times.
+Sorry for the late reply. Here is the v2 patch.
+Please take alook at it.
 
-For the monotonically increasing counts and a zero-out option case, the 
-manpage and help information for btrfs device stats -z, that indicates -z 
-resets counts to zero, implies that they continue to count up otherwise.  
-At one point I think a dev did confirm that on-list, but it's easy enough 
-to read the implication without such confirmation, particularly when it 
-matches observed behavior, as it does.
+---
+From: Naohiro Aota <naota@elisp.net>
 
+Since "__" prefix means static helper, rename __btrfs_set_prop() to
+btrfs_set_prop_trans.
 
-The gen/trans-id thing is in fact covered in the wiki, but at least on 
-the user-wiki side, I believe only in passing as it is mentioned on the 
-btrfs restore page, here:
+Signed-off-by: Naohiro Aota <naota@elisp.net>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+changelog
+	v1->v2: Reflect the following comment from David.
+         https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg37513.html
+---
+  fs/btrfs/props.c | 6 +++---
+  fs/btrfs/props.h | 7 +++++++
+  2 files changed, 10 insertions(+), 3 deletions(-)
 
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-(That is in turn linked from the problem-faq, filesystem won't mount and 
-none of the above helped, is there any hope, entry, as well as from the 
-built-in-tools section of the main page.)
-
-Of course people only searching for specific things instead of doing 
-general research before diving head-first into a new filesystem, thus 
-reading most of at least the user section of the wiki, as I did, might 
-miss it.
-
-But while it's there, it took an actual problem and trying to actually 
-use restore on my own system before the equivalence of trans-id and 
-generation actually sunk in.
-
-The corrupt thing probably came from my previous experience, working with 
-mdraid and its scrub, and with ECC RAM and the related BIOS scrub 
-features.  In general, any admin who has worked with (and understood) any 
-sort of checksumming and error detection and correction should have a 
-general idea what's going on there, at least after reading the
-btrfs-scrub manpage and running it to correct errors a few times, thus 
-seeing how its output matches that of the corresponding stats.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 38efbe1..bba081a 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -99,7 +99,7 @@ find_prop_handler(const char *name,
+  	return NULL;
+  }
+  
+-static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
++int btrfs_set_prop_trans(struct btrfs_trans_handle *trans,
+  			    struct inode *inode,
+  			    const char *name,
+  			    const char *value,
+@@ -153,7 +153,7 @@ int btrfs_set_prop(struct inode *inode,
+  		   size_t value_len,
+  		   int flags)
+  {
+-	return __btrfs_set_prop(NULL, inode, name, value, value_len, flags);
++	return btrfs_set_prop_trans(NULL, inode, name, value, value_len, flags);
+  }
+  
+  static int iterate_object_props(struct btrfs_root *root,
+@@ -325,7 +325,7 @@ static int inherit_props(struct btrfs_trans_handle *trans,
+  					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
+  		if (ret)
+  			goto out;
+-		ret = __btrfs_set_prop(trans, inode, h->xattr_name,
++		ret = btrfs_set_prop_trans(trans, inode, h->xattr_name,
+  				       value, strlen(value), 0);
+  		btrfs_block_rsv_release(root, trans->block_rsv, num_bytes);
+  		if (ret)
+diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
+index 100f188..dcbccf9 100644
+--- a/fs/btrfs/props.h
++++ b/fs/btrfs/props.h
+@@ -29,6 +29,13 @@ int btrfs_set_prop(struct inode *inode,
+  		   size_t value_len,
+  		   int flags);
+  
++int btrfs_set_prop_trans(struct btrfs_trans_handle *trans,
++			    struct inode *inode,
++			    const char *name,
++			    const char *value,
++			    size_t value_len,
++			    int flags);
++
+  int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path);
+  
+  int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+-- 1.8.3.1
 

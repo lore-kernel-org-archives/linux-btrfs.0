@@ -1,42 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay005.isp.belgacom.be ([195.238.6.171]:28543 "EHLO
-	mailrelay005.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751134AbaIXSXO (ORCPT
+Received: from mail-ie0-f169.google.com ([209.85.223.169]:65305 "EHLO
+	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753737AbaIYPub (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Sep 2014 14:23:14 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        Fabian Frederick <fabf@skynet.be>
-Subject: [PATCH 1/1 linux-next] Btrfs: fix compilation errors under DEBUG
-Date: Wed, 24 Sep 2014 20:23:05 +0200
-Message-Id: <1411582985-17734-1-git-send-email-fabf@skynet.be>
+	Thu, 25 Sep 2014 11:50:31 -0400
+Received: by mail-ie0-f169.google.com with SMTP id rp18so11928499iec.14
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 08:50:31 -0700 (PDT)
+Received: from [192.168.0.50] (CPE0026f3330aca-CM0026f3330ac6.cpe.net.cable.rogers.com. [99.231.92.7])
+        by mx.google.com with ESMTPSA id au4sm7247868igc.3.2014.09.25.08.50.29
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 25 Sep 2014 08:50:30 -0700 (PDT)
+Message-ID: <542439C4.2020900@gmail.com>
+Date: Thu, 25 Sep 2014 11:50:28 -0400
+From: nick <yocto6@gmail.com>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: XFS Tests
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-bi_sector and bi_size moved to bi_iter since commit 4f024f3797c4
-("block: Abstract out bvec iterator")
-
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
- fs/btrfs/volumes.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5b5a5c4..d47289c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5708,8 +5708,8 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
- 		name = rcu_dereference(dev->name);
- 		pr_debug("btrfs_map_bio: rw %d, sector=%llu, dev=%lu "
- 			 "(%s id %llu), size=%u\n", rw,
--			 (u64)bio->bi_sector, (u_long)dev->bdev->bd_dev,
--			 name->str, dev->devid, bio->bi_size);
-+			 (u64)bio->bi_iter.bi_sector, (u_long)dev->bdev->bd_dev,
-+			 name->str, dev->devid, bio->bi_iter.bi_size);
- 		rcu_read_unlock();
- 	}
- #endif
--- 
-1.9.3
-
+Hello Fellow Developers,
+Today I ran the Xfs test suite on a test drive I have. Further moreI get a few failing tests and will post the results of my run ofxfstests with ./check below. If someone would like my local.conf for debugging purposes please let me known.
+Nick
+Ran: btrfs/001 btrfs/002 btrfs/004 btrfs/005 btrfs/006 btrfs/008 btrfs/009 btrfs/010 btrfs/011 btrfs/012
+Not run: btrfs/003 btrfs/007
+Failures: btrfs/006 btrfs/010 btrfs/011
+Failed 3 of 10 tests

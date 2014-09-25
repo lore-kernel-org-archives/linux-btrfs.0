@@ -1,56 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay004.isp.belgacom.be ([195.238.6.170]:55362 "EHLO
-	mailrelay004.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751937AbaIYRfP (ORCPT
+Received: from mailrelay001.isp.belgacom.be ([195.238.6.51]:61141 "EHLO
+	mailrelay001.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751307AbaIYVdg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 13:35:15 -0400
+	Thu, 25 Sep 2014 17:33:36 -0400
 From: Fabian Frederick <fabf@skynet.be>
 To: linux-kernel@vger.kernel.org
 Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
         Fabian Frederick <fabf@skynet.be>
-Subject: [PATCH 1/1 linux-next] btrfs: fix shadow warning on cmp
-Date: Thu, 25 Sep 2014 19:35:02 +0200
-Message-Id: <1411666502-14395-1-git-send-email-fabf@skynet.be>
+Subject: [PATCH 1/1 linux-next] Btrfs: remove redundant btrfs_verify_qgroup_counts  declaration.
+Date: Thu, 25 Sep 2014 23:33:06 +0200
+Message-Id: <1411680786-24886-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cmp was declared twice in btrfs_compare_trees resulting in a shadow
-warning. This patch renames second internal variable.
+Do like disk-io function declared under CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+and keep prototype in qgroup.h only
 
 Signed-off-by: Fabian Frederick <fabf@skynet.be>
 ---
-Compiled but untested.
+ fs/btrfs/ctree.h | 2 --
+ 1 file changed, 2 deletions(-)
 
- fs/btrfs/ctree.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 39021bf..8d0703c 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5522,18 +5522,18 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 					goto out;
- 				advance_right = ADVANCE;
- 			} else {
--				enum btrfs_compare_tree_result cmp;
-+				enum btrfs_compare_tree_result result;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 089f6da..67ef9d1 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4126,8 +4126,6 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
+ /* Sanity test specific functions */
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ void btrfs_test_destroy_inode(struct inode *inode);
+-int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+-			       u64 rfer, u64 excl);
+ #endif
  
- 				WARN_ON(!extent_buffer_uptodate(left_path->nodes[0]));
- 				ret = tree_compare_item(left_root, left_path,
- 						right_path, tmp_buf);
- 				if (ret)
--					cmp = BTRFS_COMPARE_TREE_CHANGED;
-+					result = BTRFS_COMPARE_TREE_CHANGED;
- 				else
--					cmp = BTRFS_COMPARE_TREE_SAME;
-+					result = BTRFS_COMPARE_TREE_SAME;
- 				ret = changed_cb(left_root, right_root,
- 						 left_path, right_path,
--						 &left_key, cmp, ctx);
-+						 &left_key, result, ctx);
- 				if (ret < 0)
- 					goto out;
- 				advance_left = ADVANCE;
+ #endif
 -- 
 1.9.3
 

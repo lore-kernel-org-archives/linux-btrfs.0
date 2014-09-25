@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:34042 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:56738 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751937AbaIYPd0 (ORCPT
+	with ESMTP id S1752600AbaIYPwN (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 25 Sep 2014 11:33:26 -0400
+	Thu, 25 Sep 2014 11:52:13 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v9] Btrfs: be aware of btree inode write errors to avoid fs corruption
-Date: Thu, 25 Sep 2014 17:33:11 +0100
-Message-Id: <1411662791-7389-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2 v10] Btrfs: be aware of btree inode write errors to avoid fs corruption
+Date: Thu, 25 Sep 2014 17:51:45 +0100
+Message-Id: <1411663905-25543-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1411404065-767-2-git-send-email-fdmanana@suse.com>
 References: <1411404065-767-2-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -98,14 +98,16 @@ V9: Don't decrement the error counters if the eb is deleted or re-written.
     field eb->log_index to know wether it's a log btree eb (and which sub-
     -transaction) or a non-log btree eb.
 
+V10: Clear the log eb write error flags in a more logical place (transaction
+     commit function).
+
  fs/btrfs/btrfs_inode.h | 11 ++++++++
  fs/btrfs/disk-io.c     |  4 +--
  fs/btrfs/extent-tree.c |  4 ++-
  fs/btrfs/extent_io.c   | 76 +++++++++++++++++++++++++++++++++++++++++++++-----
  fs/btrfs/extent_io.h   |  8 ++++--
- fs/btrfs/transaction.c | 22 +++++++++++++++
- fs/btrfs/tree-log.c    |  6 ++++
- 7 files changed, 119 insertions(+), 12 deletions(-)
+ fs/btrfs/transaction.c | 26 +++++++++++++++++
+ 6 files changed, 117 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
 index 3511031..aee4050 100644
@@ -335,7 +337,7 @@ index 5e91fb9..fd51d7e 100644
  int set_extent_buffer_dirty(struct extent_buffer *eb);
  int set_extent_buffer_uptodate(struct extent_buffer *eb);
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1e272c0..c404e79 100644
+index 1e272c0..51cb84f 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
 @@ -852,6 +852,8 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
@@ -374,25 +376,24 @@ index 1e272c0..c404e79 100644
  	return werr;
  }
  
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 2d0fa43..80f9b4c 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2748,8 +2748,14 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- int btrfs_free_log(struct btrfs_trans_handle *trans, struct btrfs_root *root)
+@@ -1651,6 +1673,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
  {
- 	if (root->log_root) {
-+		struct inode *btree_inode = root->fs_info->btree_inode;
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct btrfs_transaction *prev_trans = NULL;
++	struct btrfs_inode *btree_ino = BTRFS_I(root->fs_info->btree_inode);
+ 	int ret;
+ 
+ 	ret = btrfs_run_ordered_operations(trans, root, 0);
+@@ -1897,6 +1920,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	memcpy(root->fs_info->super_for_commit, root->fs_info->super_copy,
+ 	       sizeof(*root->fs_info->super_copy));
+ 
++	clear_bit(BTRFS_INODE_BTREE_LOG1_ERR, &btree_ino->runtime_flags);
++	clear_bit(BTRFS_INODE_BTREE_LOG2_ERR, &btree_ino->runtime_flags);
 +
- 		free_log_tree(trans, root->log_root);
- 		root->log_root = NULL;
-+		clear_bit(BTRFS_INODE_BTREE_LOG1_ERR,
-+			  &BTRFS_I(btree_inode)->runtime_flags);
-+		clear_bit(BTRFS_INODE_BTREE_LOG2_ERR,
-+			  &BTRFS_I(btree_inode)->runtime_flags);
- 	}
- 	return 0;
- }
+ 	spin_lock(&root->fs_info->trans_lock);
+ 	cur_trans->state = TRANS_STATE_UNBLOCKED;
+ 	root->fs_info->running_transaction = NULL;
 -- 
 1.9.1
 

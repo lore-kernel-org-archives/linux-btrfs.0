@@ -1,40 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay001.isp.belgacom.be ([195.238.6.51]:61141 "EHLO
-	mailrelay001.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751307AbaIYVdg (ORCPT
+Received: from cobra.newdream.net ([66.33.216.30]:48827 "EHLO
+	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753171AbaIZPaM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 17:33:36 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        Fabian Frederick <fabf@skynet.be>
-Subject: [PATCH 1/1 linux-next] Btrfs: remove redundant btrfs_verify_qgroup_counts  declaration.
-Date: Thu, 25 Sep 2014 23:33:06 +0200
-Message-Id: <1411680786-24886-1-git-send-email-fabf@skynet.be>
+	Fri, 26 Sep 2014 11:30:12 -0400
+From: Sage Weil <sage@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Cc: zyan@redhat.com, Sage Weil <sage@redhat.com>
+Subject: [PATCH] Btrfs: fix race in WAIT_SYNC ioctl
+Date: Fri, 26 Sep 2014 08:30:06 -0700
+Message-Id: <1411745406-19036-1-git-send-email-sage@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Do like disk-io function declared under CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-and keep prototype in qgroup.h only
+We check whether transid is already committed via last_trans_committed and
+then search through trans_list for pending transactions.  If
+last_trans_committed is updated by btrfs_commit_transaction after we check
+it (there is no locking), we will fail to find the committed transaction
+and return EINVAL to the caller.  This has been observed occasionally by
+ceph-osd (which uses this ioctl heavily).
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
+Fix by rechecking whether the provided transid <= last_trans_committed
+after the search fails, and if so return 0.
+
+Signed-off-by: Sage Weil <sage@redhat.com>
 ---
- fs/btrfs/ctree.h | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/transaction.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 089f6da..67ef9d1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4126,8 +4126,6 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
- /* Sanity test specific functions */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- void btrfs_test_destroy_inode(struct inode *inode);
--int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
--			       u64 rfer, u64 excl);
- #endif
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index d89c6d3..98a25df 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -609,7 +609,6 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
+ 		if (transid <= root->fs_info->last_trans_committed)
+ 			goto out;
  
- #endif
+-		ret = -EINVAL;
+ 		/* find specified transaction */
+ 		spin_lock(&root->fs_info->trans_lock);
+ 		list_for_each_entry(t, &root->fs_info->trans_list, list) {
+@@ -625,9 +624,16 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
+ 			}
+ 		}
+ 		spin_unlock(&root->fs_info->trans_lock);
+-		/* The specified transaction doesn't exist */
+-		if (!cur_trans)
++
++		/*
++		 * The specified transaction doesn't exist, or we
++		 * raced with btrfs_commit_transaction
++		 */
++		if (!cur_trans) {
++			if (transid > root->fs_info->last_trans_committed)
++				ret = -EINVAL;
+ 			goto out;
++		}
+ 	} else {
+ 		/* find newest transaction that is committing | committed */
+ 		spin_lock(&root->fs_info->trans_lock);
 -- 
-1.9.3
+1.9.1
 

@@ -1,176 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:54623 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751702AbaIYLaB (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 25 Sep 2014 07:30:01 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mx1.redhat.com ([209.132.183.28]:12900 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753357AbaIZDzc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Sep 2014 23:55:32 -0400
+Date: Fri, 26 Sep 2014 11:55:30 +0800
+From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] xfstests: generic: add dir fsync test, motivated by a btrfs bug
-Date: Thu, 25 Sep 2014 13:29:39 +0100
-Message-Id: <1411648179-7853-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
-References: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 00/15] xfstests: new btrfs stress test cases
+Message-ID: <20140926035529.GF13912@dhcp-13-216.nay.redhat.com>
+References: <1411019379-8104-1-git-send-email-eguan@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1411019379-8104-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test is motivated by a bug found in btrfs when replaying a
-directory from the fsync log. The issue was that if a directory
-entry is both found in the persisted metadata and in the fsync
-log, at log replay time the directory got set with a wrong i_size.
-This had the consequence of not being able to rmdir empty
-directories (failed with errno ENOTEMPTY).
-This was fixed in btrfs with the following linux kernel patch:
+On Thu, Sep 18, 2014 at 01:49:24PM +0800, Eryu Guan wrote:
+> This patchset add new stress test cases for btrfs by running two
+> different btrfs operations simultaneously under fsstress to ensure
+> btrfs doesn't hang or oops in such situations. btrfs scrub and
+> btrfs check will be run after each test.
+> 
+> The test matrix is the combination of 6 btrfs operations:
+> 
+> 	balance
+> 	create/mount/umount/delete subvolume
+> 	replace device
+> 	scrub
+> 	defrag
+> 	remount with different compress algorithms
+> 	
+> Short descriptions:
+> 
+> 	059: balance-subvolume
+> 	060: balance-scrub
+> 	061: balance-defrag
+> 	062: balance-remount
+> 	063: balance-replace
+> 	064: subvolume-replace
+> 	065: subvolume-scrub
+> 	066: subvolume-defrag
+> 	067: subvolume-remount
+> 	068: replace-scrub
+> 	069: replace-defrag
+> 	070: replace-remount
+> 	071: scrub-defrag
+> 	072: scrub-remount
+> 	073: defrag-remount
+> 
+> Some issues I've seen:
+> 
+> 1. subvolume cannot be mounted with selinux context, so you may see
+>    such logs in dmesg
+> 
+>    SELinux: mount invalid.  Same superblock, different security settings for (dev dm-8, type btrfs)
+> 
+>    I've reported the bug to btrfs list, see
+>    [BUG] cannot mount subvolume with selinux context
+>    http://www.spinics.net/lists/linux-btrfs/msg36779.html
+> 
+> 2. btrfs replace operation always returns ENOENT if balance is running
+>    So in 063.full you'll see
+> 
+>    ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt/testarea/scratch": No such file or directory, no error
+> 
+>    Not sure if it's btrfs bug, at least I think the error code is misleading
+> 
+> 3. replace operation hangs the kernel(3.16-rc4+ and 3.17-rc2+) with fsstress running
+>    So case 064/068/069/070 will hang
 
-     Btrfs: fix directory recovery from fsync log
+I found some bugs in 070 after applying the patch manually which fixes
+the hang. And 070 exposes one more bug (scrub finds correctable and
+uncorrectable errors), will state this issue in v4.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+Also did minor update in the _btrfs_stress_replace() function. Will
+send v4 out soon.
 
-V2: Replaced direct use of "xfs_io" with "$XFS_IO_PROG".
-
-V3: Made the explanations more clear and mention what's the consequence
-    of getting a directory's inode with an incorrect i_size on btrfs.
-    Changed the test to not call the filesystem check (since it's already
-    done by the test framework) and verify that an rmdir against an empty
-    directory succeeds.
-
- tests/generic/326     | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/326.out |   2 +
- tests/generic/group   |   1 +
- 3 files changed, 108 insertions(+)
- create mode 100755 tests/generic/326
- create mode 100644 tests/generic/326.out
-
-diff --git a/tests/generic/326 b/tests/generic/326
-new file mode 100755
-index 0000000..e59c560
---- /dev/null
-+++ b/tests/generic/326
-@@ -0,0 +1,105 @@
-+#! /bin/bash
-+# FS QA Test No. 326
-+#
-+# This test is motivated by a bug found in btrfs when replaying a directory
-+# from the fsync log. The issue was that if a directory entry is both found
-+# in the persisted metadata and in the fsync log, at log replay time the
-+# directory got set with a wrong i_size. This had the consequence of not being
-+# able to rmdir empty directories (failed with errno ENOTEMPTY).
-+# This was fixed in btrfs with the following linux kernel patch:
-+#
-+#     Btrfs: fix directory recovery from fsync log
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+}
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_supported_fs generic
-+_supported_os Linux
-+_need_to_be_root
-+_require_scratch
-+_require_dm_flakey
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+
-+_init_flakey
-+_mount_flakey
-+
-+mkdir $SCRATCH_MNT/test_dir
-+touch $SCRATCH_MNT/test_dir/foo
-+
-+# Invoke sync here because it's necessary to trigger the original bug in btrfs.
-+# The intention is that at log recovery time we have a dir entry for 'foo' both
-+# in the fs/subvol tree and in the log tree - this is necessary to trigger the
-+# bug on btrfs.
-+sync
-+
-+touch $SCRATCH_MNT/test_dir/bar
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/test_dir
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/test_dir/bar
-+
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
-+
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+# In the original btrfs bug, log replay would update the directory's inode
-+# i_size incorrectly - it would sum again the size of dentry 'foo' (3) to
-+# the inode's i_size, which is incorrect because the dentry was already
-+# persisted before (in the fs/subvol tree).
-+_mount_flakey
-+
-+[ -f $SCRATCH_MNT/test_dir/foo ] || echo "file foo is missing"
-+[ -f $SCRATCH_MNT/test_dir/bar ] || echo "file bar is missing"
-+
-+rm -f $SCRATCH_MNT/test_dir/foo
-+rm -f $SCRATCH_MNT/test_dir/bar
-+
-+# In btrfs removing all entries from a directory should set the directory's
-+# inode i_size to 0, but with this bug that didn't happen and this made
-+# an rmdir fail with errno ENOTEMPTY (even though the directory had no more
-+# entries in it).
-+rmdir $SCRATCH_MNT/test_dir
-+[ -d $SCRATCH_MNT/test_dir ] && echo "rmdir didn't succeed"
-+
-+_unmount_flakey
-+
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/generic/326.out b/tests/generic/326.out
-new file mode 100644
-index 0000000..4ac0db5
---- /dev/null
-+++ b/tests/generic/326.out
-@@ -0,0 +1,2 @@
-+QA output created by 326
-+Silence is golden
-diff --git a/tests/generic/group b/tests/generic/group
-index bdcfd9d..cc5fecc 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -145,3 +145,4 @@
- 323 auto aio stress
- 324 auto fsr quick
- 325 auto quick data log
-+326 auto quick metadata log
--- 
-1.9.1
-
+Thanks,
+Eryu
+> 
+> 
+> Changes since v2:
+> - mount subvolume at $TEST_DIR/$seq.mnt not $tmp.mnt
+> - don't rm -rf $tmp.* which is dangerous
+> - remove unnecessary btrfs filesystem sync operation
+> - update _scratch_pool_mkfs to deal with dup profile
+> - add more comments for each stress operation
+> - rename _btrfs_stress_remount to _btrfs_stress_remount_compress (hope it's better...)
+> - add _btrfs_get_profile_configs to remove duplicated test case array in each case
+> - use _require_scratch_nocheck and _check_scratch_fs after each loop
+> 
+> Changes since v1:
+> - put common operations in common/rc as functions and share them across these tests
+> - append mkfs options to _scratch_mkfs and _scratch_pool_mkfs instead of updating $MKFS_OPTIONS
+> - rebase on top of master and re-number starting from btrfs/059
+> 
+> Thanks,
+> Eryu Guan
+> 
+> Eryu Guan (15):
+>   btrfs: new test to run btrfs balance and subvolume test simultaneously
+>   btrfs: new test to run btrfs balance and scrub simultaneously
+>   btrfs: new test to run btrfs balance and defrag operations simultaneously
+>   btrfs: new case to run btrfs balance and remount with different compress algorithms
+>   btrfs: new case to run btrfs balance and device replace operations simultaneously
+>   btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
+>   btrfs: new case to run btrfs subvolume create/delete operations and scrub simultaneously
+>   btrfs: new case to run btrfs subvolume create/delete and defrag operations simultaneously
+>   btrfs: new case to run subvolume create/delete and remount with defferent compress algorithms
+>   btrfs: new case to run device replace and scrub operations simultaneously
+>   btrfs: new case to run device replace and defrag operations simultaneously
+>   btrfs: new case to run device replace and remount with different compress algorithms simultaneously
+>   btrfs: new case to run btrfs scrub and defrag operations simultaneously
+>   btrfs: new case to run btrfs scrub and remount with different compress algorithms simultaneously
+>   btrfs: new case to run defrag and remount with different compress algorithms simultaneously
+> 
+>  common/rc           | 225 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  tests/btrfs/059     | 115 +++++++++++++++++++++++++++
+>  tests/btrfs/059.out |   2 +
+>  tests/btrfs/060     | 114 ++++++++++++++++++++++++++
+>  tests/btrfs/060.out |   2 +
+>  tests/btrfs/061     | 116 +++++++++++++++++++++++++++
+>  tests/btrfs/061.out |   2 +
+>  tests/btrfs/062     | 114 ++++++++++++++++++++++++++
+>  tests/btrfs/062.out |   2 +
+>  tests/btrfs/063     | 122 ++++++++++++++++++++++++++++
+>  tests/btrfs/063.out |   2 +
+>  tests/btrfs/064     | 123 ++++++++++++++++++++++++++++
+>  tests/btrfs/064.out |   2 +
+>  tests/btrfs/065     | 115 +++++++++++++++++++++++++++
+>  tests/btrfs/065.out |   2 +
+>  tests/btrfs/066     | 117 +++++++++++++++++++++++++++
+>  tests/btrfs/066.out |   2 +
+>  tests/btrfs/067     | 116 +++++++++++++++++++++++++++
+>  tests/btrfs/067.out |   2 +
+>  tests/btrfs/068     | 123 ++++++++++++++++++++++++++++
+>  tests/btrfs/068.out |   2 +
+>  tests/btrfs/069     | 125 +++++++++++++++++++++++++++++
+>  tests/btrfs/069.out |   2 +
+>  tests/btrfs/070     | 123 ++++++++++++++++++++++++++++
+>  tests/btrfs/070.out |   2 +
+>  tests/btrfs/071     | 116 +++++++++++++++++++++++++++
+>  tests/btrfs/071.out |   2 +
+>  tests/btrfs/072     | 114 ++++++++++++++++++++++++++
+>  tests/btrfs/072.out |   2 +
+>  tests/btrfs/073     | 116 +++++++++++++++++++++++++++
+>  tests/btrfs/073.out |   2 +
+>  tests/btrfs/group   |  15 ++++
+>  32 files changed, 2035 insertions(+), 4 deletions(-)
+>  create mode 100755 tests/btrfs/059
+>  create mode 100644 tests/btrfs/059.out
+>  create mode 100755 tests/btrfs/060
+>  create mode 100644 tests/btrfs/060.out
+>  create mode 100755 tests/btrfs/061
+>  create mode 100644 tests/btrfs/061.out
+>  create mode 100755 tests/btrfs/062
+>  create mode 100644 tests/btrfs/062.out
+>  create mode 100755 tests/btrfs/063
+>  create mode 100644 tests/btrfs/063.out
+>  create mode 100755 tests/btrfs/064
+>  create mode 100644 tests/btrfs/064.out
+>  create mode 100755 tests/btrfs/065
+>  create mode 100644 tests/btrfs/065.out
+>  create mode 100755 tests/btrfs/066
+>  create mode 100644 tests/btrfs/066.out
+>  create mode 100755 tests/btrfs/067
+>  create mode 100644 tests/btrfs/067.out
+>  create mode 100755 tests/btrfs/068
+>  create mode 100644 tests/btrfs/068.out
+>  create mode 100755 tests/btrfs/069
+>  create mode 100644 tests/btrfs/069.out
+>  create mode 100755 tests/btrfs/070
+>  create mode 100644 tests/btrfs/070.out
+>  create mode 100755 tests/btrfs/071
+>  create mode 100644 tests/btrfs/071.out
+>  create mode 100755 tests/btrfs/072
+>  create mode 100644 tests/btrfs/072.out
+>  create mode 100755 tests/btrfs/073
+>  create mode 100644 tests/btrfs/073.out
+> 
+> -- 
+> 1.8.3.1
+> 

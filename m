@@ -1,77 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:14131 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751474AbaIYUq6 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:45424 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753048AbaIZHgh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 16:46:58 -0400
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8PKjPcp032124
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 13:46:57 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1pkytgtpc6-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 13:46:57 -0700
-From: Josef Bacik <jbacik@fb.com>
+	Fri, 26 Sep 2014 03:36:37 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8Q7adnA024215
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Sep 2014 15:36:40 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: let btrfs-image actually work on a balanced fs
-Date: Thu, 25 Sep 2014 16:46:55 -0400
-Message-ID: <1411678015-5928-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH] btrfs-progs: Check the consistence between the parent node and child node/leaf.
+Date: Fri, 26 Sep 2014 15:36:35 +0800
+Message-ID: <1411716995-22537-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use the read extent buffer infrastructure to read the super block when we are
-creating a btrfs-image.  This works out fine most of the time except when the fs
-has been balanced, then it fails to map the super block.  So we could fix
-btrfs-image to read in the super in a special way, but thats more code.  So
-instead just check in the eb reading code if we are reading the super and then
-don't bother mapping the block, just read the actual offset.  This fixed some
-poor guy who was trying to btrfs-image his fs that had been balanced.  Thanks,
+When btrfs-progs walk down the tree, it does not check whether the child
+node/leaf is valid.
+In fact, there is some corrupted image whose csum is all valid but
+parent node points to a invalid leaf.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+In my case, the parent node in fs tree point to a invalid leaf(gen 11),
+whose generation(15) and first key(EXTENT_TREE ROOT_ITEM 0) is
+completely invalid, and will cause BUG_ON in process_inode_item().
+
+Unfortunately, we are unable to fix when it happens.
+So we can only output meaningful error message and avoid the insane
+node/leaf, which is still much better than the original BUG_ON().
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-image.c | 5 ++++-
- disk-io.c     | 3 ++-
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ cmds-check.c | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index cb17f16..6643ad1 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -1020,6 +1020,9 @@ static int copy_tree_blocks(struct btrfs_root *root, struct extent_buffer *eb,
- 	int i = 0;
- 	int ret;
- 
-+	if (btrfs_header_bytenr(eb) == 65536)
-+		printf("We have bytenr 65536, belongs to %llu, level %d\n",
-+		       btrfs_header_owner(eb), btrfs_header_level(eb));
- 	ret = add_extent(btrfs_header_bytenr(eb), root->leafsize, metadump, 0);
- 	if (ret) {
- 		fprintf(stderr, "Error adding metadata block\n");
-@@ -1279,7 +1282,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
+diff --git a/cmds-check.c b/cmds-check.c
+index d479361..9471709 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1302,6 +1302,52 @@ static void reada_walk_down(struct btrfs_root *root,
  	}
+ }
  
- 	ret = add_extent(BTRFS_SUPER_INFO_OFFSET, BTRFS_SUPER_INFO_SIZE,
--			&metadump, 0);
-+			&metadump, 1);
- 	if (ret) {
- 		fprintf(stderr, "Error adding metadata %d\n", ret);
- 		err = ret;
-diff --git a/disk-io.c b/disk-io.c
-index 26a532e..34c0a97 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -201,7 +201,8 @@ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirr
- 		read_len = bytes_left;
- 		device = NULL;
++/*
++ * Check the child node/leaf by the following condition:
++ * 1. the first item key of the node/leaf should be the same with the one
++ *    in parent.
++ * 2. block in parent node should match the child node/leaf.
++ * 3. generation of parent node and child's header should be consistent.
++ *
++ * Or the child node/leaf pointed by the key in parent is not valid.
++ *
++ * We hope to check leaf owner too, but since subvol may share leaves,
++ * which makes leaf owner check not so strong, key check should be
++ * sufficient enough for that case.
++ */
++static int check_child_node(struct btrfs_root *root,
++			    struct extent_buffer *parent, int slot,
++			    struct extent_buffer *child)
++{
++	struct btrfs_key parent_key;
++	struct btrfs_key child_key;
++	int ret = 0;
++
++	btrfs_item_key_to_cpu(parent, &parent_key, slot);
++	btrfs_item_key_to_cpu(child, &child_key, 0);
++	if (memcmp(&parent_key, &child_key, sizeof(parent_key))) {
++		ret = -EINVAL;
++		fprintf(stderr,
++			"Wrong key of child node/leaf, wanted: (%llu, %u, %llu), have: (%llu, %u, %llu)\n",
++			parent_key.objectid, parent_key.type, parent_key.offset,
++			child_key.objectid, child_key.type, child_key.offset);
++	}
++	if (btrfs_header_bytenr(child) != btrfs_node_blockptr(parent, slot)) {
++		ret = -EINVAL;
++		fprintf(stderr, "Wrong block of child node/leaf, wanted: %llu, have: %llu\n",
++			btrfs_node_blockptr(parent, slot),
++			btrfs_header_bytenr(child));
++	}
++	if (btrfs_node_ptr_generation(parent, slot) !=
++	    btrfs_header_generation(child)) {
++		ret = -EINVAL;
++		fprintf(stderr, "Wrong generation of child node/leaf, wanted: %llu, have: %llu\n",
++			btrfs_header_generation(child),
++			btrfs_node_ptr_generation(parent, slot));
++	}
++	return ret;
++}
++
+ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			  struct walk_control *wc, int *level)
+ {
+@@ -1375,6 +1421,11 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			}
+ 		}
  
--		if (!info->on_restoring) {
-+		if (!info->on_restoring &&
-+		    eb->start != BTRFS_SUPER_INFO_OFFSET) {
- 			ret = btrfs_map_block(&info->mapping_tree, READ,
- 					      eb->start + offset, &read_len, &multi,
- 					      mirror, NULL);
++		ret = check_child_node(root, cur, path->slots[*level], next);
++		if (ret) {
++			err = ret;
++			goto out;
++		}
+ 		*level = *level - 1;
+ 		free_extent_buffer(path->nodes[*level]);
+ 		path->nodes[*level] = next;
 -- 
-1.9.3
+2.1.1
 

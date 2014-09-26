@@ -1,60 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57599 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751753AbaIYVWF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 17:22:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XXGUB-0000qx-6C
-	for linux-btrfs@vger.kernel.org; Thu, 25 Sep 2014 23:21:59 +0200
-Received: from pd953e787.dip0.t-ipconnect.de ([217.83.231.135])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 23:21:59 +0200
-Received: from holger.hoffstaette by pd953e787.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Sep 2014 23:21:59 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: 3.16 Managed to ENOSPC with <80% used
-Date: Thu, 25 Sep 2014 21:21:47 +0000 (UTC)
-Message-ID: <pan.2014.09.25.21.21.47@googlemail.com>
-References: <CAPL5yKfTfzkqBT9dQBpJAjuBtq2-=QqdCn_Pzfnnd1URKA_q4A@mail.gmail.com>
-	<pan.2014.09.24.22.23.33@googlemail.com>
-	<CAPL5yKdt7eTk-+0NP2Y9Aa8zNQqJpujTm31z_ee04OS3DocMXg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from eastrmfepi107.cox.net ([68.230.241.203]:47072 "EHLO
+	eastrmfepi107.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752966AbaIZCPT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Sep 2014 22:15:19 -0400
+Received: from eastrmimpo109 ([68.230.241.222]) by eastrmfepo103.cox.net
+          (InterMail vM.8.01.05.15 201-2260-151-145-20131218) with ESMTP
+          id <20140926014722.ZOJH31158.eastrmfepo103.cox.net@eastrmimpo109>
+          for <linux-btrfs@vger.kernel.org>;
+          Thu, 25 Sep 2014 21:47:22 -0400
+Date: Thu, 25 Sep 2014 18:47:20 -0700
+From: Duncan <1i5t5.duncan@cox.net>
+To: G EO <1g2e3o4@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs send does not work from readonly device
+Message-ID: <20140925184720.000978db@ws>
+In-Reply-To: <vXff1o01A11vvw101XfhvK>
+References: <16424080.RP99VxSJe8@ubuntu>
+	<pan$afb89$92478dcc$d289358e$905b34a@cox.net>
+	<CAOsFrTcVrWjSks0K-NzokHinBZVRxGGwmRzG_tdzxaU7AAC=xQ@mail.gmail.com>
+	<vXff1o01A11vvw101XfhvK>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 25 Sep 2014 17:05:11 -0400, Dan Merillat wrote:
+On Thu, 25 Sep 2014 21:39:41 +0200
+G EO <1g2e3o4@gmail.com> wrote:
 
-> Deleting files or dropping snapshots is difficult when it's wedged as
-> well, a lot of disk activity (journal thrash?) and no persistent
-> progress - a reboot brigs the deleted files back.  I eventually
-> managed to empty a single data chunk and after that it was a trivial
-> recovery.
+> The snapshots underneath are set read only anyway in my case, since
+> the they landed there by btrfs receive or I am thinking wrong here?
+> Duncan, do you remember the bug number?
 
-That's why I mentioned adding a second device - that will immediately
-allow cleanup with headroom. An additional 8GB tmpfs volume can works
-wonders.
+I don't.  I remember seeing the discussion on the list.  Without
+googling my local list archive it seems to me it might have been in one
+of Marc Merlin's threads.
 
->> That particular workload seems to cause the block allocator to go
->> on a spending spree; you're not the first to see this.
-> 
-> I could see normal-user usage patterns getting ignored, but this is
-> the patterns of the people working on BTRFS.   Maybe they need to
-> remove their balance cronjobs for a while. :)
-
-Well..some remedy is coming:
-https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/fs/btrfs?h=integration&id=47ab2a6c689913db23ccae38349714edf8365e0a
-
-Not sure how many preliminaries that patch needs, but if you are
-comfortable with patching/building your kernel you could give that
-a try. I'm sure Josef would love some feedback.
-
-Glad you're back on track. :)
-
-Holger
-
+-- 
+Duncan - No HTML messages please, as they are filtered as spam.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

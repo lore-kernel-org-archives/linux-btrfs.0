@@ -1,390 +1,594 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:48573 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755303AbaIZK1H (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 26 Sep 2014 06:27:07 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v12] Btrfs: be aware of btree inode write errors to avoid fs corruption
-Date: Fri, 26 Sep 2014 12:25:56 +0100
-Message-Id: <1411730756-7213-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1411404065-767-2-git-send-email-fdmanana@suse.com>
-References: <1411404065-767-2-git-send-email-fdmanana@suse.com>
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:59258 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753370AbaIZXZN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Sep 2014 19:25:13 -0400
+Date: Fri, 26 Sep 2014 16:25:07 -0700
+From: josh@joshtriplett.org
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org,
+        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+        Lai Jiangshan <laijs@cn.fujitsu.com>, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] Move BTRFS RCU string to common library
+Message-ID: <20140926232507.GE20917@cloud>
+References: <cover.1411116672.git.osandov@osandov.com>
+ <541e463ecea7c2aa0e4aaaa907ed444f3fa0f3f2.1411116672.git.osandov@osandov.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <541e463ecea7c2aa0e4aaaa907ed444f3fa0f3f2.1411116672.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While we have a transaction ongoing, the VM might decide at any time
-to call btree_inode->i_mapping->a_ops->writepages(), which will start
-writeback of dirty pages belonging to btree nodes/leafs. This call
-might return an error or the writeback might finish with an error
-before we attempt to commit the running transaction. If this happens,
-we might have no way of knowing that such error happened when we are
-committing the transaction - because the pages might no longer be
-marked dirty nor tagged for writeback (if a subsequent modification
-to the extent buffer didn't happen before the transaction commit) which
-makes filemap_fdata[write|wait]_range unable to find such pages (even
-if they're marked with SetPageError).
-So if this happens we must abort the transaction, otherwise we commit
-a super block with btree roots that point to btree nodes/leafs whose
-content on disk is invalid - either garbage or the content of some
-node/leaf from a past generation that got cowed or deleted and is no
-longer valid (for this later case we end up getting error messages like
-"parent transid verify failed on 10826481664 wanted 25748 found 29562"
-when reading btree nodes/leafs from disk).
+On Fri, Sep 19, 2014 at 02:01:30AM -0700, Omar Sandoval wrote:
+> The RCU-friendy string API used internally by BTRFS is generic enough for
+> common use. This doesn't add any new functionality, but instead just moves the
+> code and documents the existing API.
+> 
+> Signed-off-by: Omar Sandoval <osandov@osandov.com>
 
-Note that setting and checking AS_EIO/AS_ENOSPC in the btree inode's
-i_mapping would not be enough because we need to distinguish between
-log tree extents (not fatal) vs non-log tree extents (fatal) and
-because the next call to filemap_fdatawait_range() will catch and clear
-such errors in the mapping - and that call might be from a log sync and
-not from a transaction commit, which means we would not know about the
-error at transaction commit time. Also, checking for the eb flag
-EXTENT_BUFFER_IOERR at transaction commit time isn't done and would
-not be completely reliable, as the eb might be removed from memory and
-read back when trying to get it, which clears that flag right before
-reading the eb's pages from disk, making us not know about the previous
-write error.
+One nit: shouldn't the returned rcu_string pointer have an __rcu
+address space annotation?
 
-Using the new 3 flags for the btree inode also makes us achieve the
-goal of AS_EIO/AS_ENOSPC when writepages() returns success, started
-writeback for all dirty pages and before filemap_fdatawait_range() is
-called, the writeback for all dirty pages had already finished with
-errors - because we were not using AS_EIO/AS_ENOSPC,
-filemap_fdatawait_range() would return success, as it could not know
-that writeback errors happened (the pages were no longer tagged for
-writeback).
+With that fixed:
+Reviewed-by: Josh Triplett <josh@joshtriplett.org>
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: If an extent buffer's write failed but it's also deleted from the tree
-    before the transaction commits, don't abort the transaction with -EIO,
-    since the unwritten node/leaf it represents can't be pointed to by any
-    other node in a tree.
-
-V3: Correct V2, missed unstaged changes.
-
-V4: Use root's key to figure out which counter to update.
-
-V5: Decrement the error counters too when an eb is made dirty again (the
-    next write attempt might succeed).
-
-V6: Moved counters from transaction struct to fs_info struct, because there's
-    a (short) time window where fs_info->running_transaction is NULL.
-    There's now 2 counters for log extent buffers too, each one representing
-    a different log transaction.
-
-V7: Track the eb's log index in the eb itself, otherwise it wasn't possible
-    to find it when writeback triggered from a transaction commit.
-
-V8: Track the log eb write errors per root instead, and reset them on a
-    transaction commit.
-
-V9: Don't decrement the error counters if the eb is deleted or re-written.
-    It is not safe because there's a time window when committing a transaction,
-    between setting fs_info->current_transaction to NULL and checking the
-    error counters in btrfs_write_and_wait_transaction(), where a new transaction
-    can start and delete or re-write an eb that has the write error flag set.
-    If this happens it means the previous transaction can write a superblock
-    that refers to trees that point to unwritten nodes.
-    Replaced the counters with simple flags in the btree inode's runtime
-    flags - essentially back to V1 but accounting for the 2 different log
-    sub-transactions.
-    Removed access to an eb's parent root through
-    BTRFS_I(eb->pages[0]->mapping->host)->root since it was not correct, as this
-    always gives us the btree inode's root (objectid 1ULL). Instead use the
-    field eb->log_index to know wether it's a log btree eb (and which sub-
-    -transaction) or a non-log btree eb.
-
-V10: Clear the log eb write error flags in a more logical place (transaction
-     commit function).
-
-V11: Updated commit message and a comment, replaced an ASSERT() with a BUG()
-     and changed eb->lock_nested to a short to keep the structure size.
-
-V12: Removed leftovers from previous versions (no longer necessary #include and
-     prototype in extent_io.h of no longer existing function) and updated parts
-     from a comment that apply only to some past versions.
-     Rebased against latest integration branch (didn't apply cleanly) and re-tested.
-
- fs/btrfs/btrfs_inode.h | 11 ++++++++
- fs/btrfs/disk-io.c     |  4 +--
- fs/btrfs/extent-tree.c |  4 ++-
- fs/btrfs/extent_io.c   | 74 +++++++++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/extent_io.h   |  7 +++--
- fs/btrfs/transaction.c | 26 ++++++++++++++++++
- 6 files changed, 114 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 7a7521c..8a42adb 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -44,6 +44,17 @@
- #define BTRFS_INODE_IN_DELALLOC_LIST		9
- #define BTRFS_INODE_READDIO_NEED_LOCK		10
- #define BTRFS_INODE_HAS_PROPS		        11
-+/*
-+ * The following 3 bits are meant only for the btree inode.
-+ * When any of them is set, it means an error happened while writing an
-+ * extent buffer belonging to:
-+ * 1) a non-log btree
-+ * 2) a log btree and first log sub-transaction
-+ * 3) a log btree and second log sub-transaction
-+ */
-+#define BTRFS_INODE_BTREE_ERR		        12
-+#define BTRFS_INODE_BTREE_LOG1_ERR		13
-+#define BTRFS_INODE_BTREE_LOG2_ERR		14
- 
- /* in memory btrfs inode */
- struct btrfs_inode {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4780e66..09b3c8a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -607,7 +607,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 		goto err;
- 
- 	eb->read_mirror = mirror;
--	if (test_bit(EXTENT_BUFFER_IOERR, &eb->bflags)) {
-+	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
- 		ret = -EIO;
- 		goto err;
- 	}
-@@ -680,7 +680,7 @@ static int btree_io_failed_hook(struct page *page, int failed_mirror)
- 	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
- 
- 	eb = (struct extent_buffer *)page->private;
--	set_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
-+	set_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
- 	eb->read_mirror = failed_mirror;
- 	atomic_dec(&eb->io_pages);
- 	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 44d0497..8ebe6bf 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7235,17 +7235,19 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	btrfs_set_buffer_uptodate(buf);
- 
- 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
-+		buf->log_index = root->log_transid % 2;
- 		/*
- 		 * we allow two log transactions at a time, use different
- 		 * EXENT bit to differentiate dirty pages.
- 		 */
--		if (root->log_transid % 2 == 0)
-+		if (buf->log_index == 0)
- 			set_extent_dirty(&root->dirty_log_pages, buf->start,
- 					buf->start + buf->len - 1, GFP_NOFS);
- 		else
- 			set_extent_new(&root->dirty_log_pages, buf->start,
- 					buf->start + buf->len - 1, GFP_NOFS);
- 	} else {
-+		buf->log_index = -1;
- 		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
- 			 buf->start + buf->len - 1, GFP_NOFS);
- 	}
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 828aded..9cc757f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3601,6 +3601,68 @@ static void end_extent_buffer_writeback(struct extent_buffer *eb)
- 	wake_up_bit(&eb->bflags, EXTENT_BUFFER_WRITEBACK);
- }
- 
-+static void set_btree_ioerr(struct page *page)
-+{
-+	struct extent_buffer *eb = (struct extent_buffer *)page->private;
-+	struct btrfs_inode *btree_ino = BTRFS_I(eb->fs_info->btree_inode);
-+
-+	SetPageError(page);
-+	if (test_and_set_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags))
-+		return;
-+
-+	/*
-+	 * If writeback for a btree extent that doesn't belong to a log tree
-+	 * failed, increment the counter transaction->eb_write_errors.
-+	 * We do this because while the transaction is running and before it's
-+	 * committing (when we call filemap_fdata[write|wait]_range against
-+	 * the btree inode), we might have
-+	 * btree_inode->i_mapping->a_ops->writepages() called by the VM - if it
-+	 * returns an error or an error happens during writeback, when we're
-+	 * committing the transaction we wouldn't know about it, since the pages
-+	 * can be no longer dirty nor marked anymore for writeback (if a
-+	 * subsequent modification to the extent buffer didn't happen before the
-+	 * transaction commit), which makes filemap_fdata[write|wait]_range not
-+	 * able to find the pages tagged with SetPageError at transaction
-+	 * commit time. So if this happens we must abort the transaction,
-+	 * otherwise we commit a super block with btree roots that point to
-+	 * btree nodes/leafs whose content on disk is invalid - either garbage
-+	 * or the content of some node/leaf from a past generation that got
-+	 * cowed or deleted and is no longer valid.
-+	 *
-+	 * Note: setting AS_EIO/AS_ENOSPC in the btree inode's i_mapping would
-+	 * not be enough - we need to distinguish between log tree extents vs
-+	 * non-log tree extents, and the next filemap_fdatawait_range() call
-+	 * will catch and clear such errors in the mapping - and that call might
-+	 * be from a log sync and not from a transaction commit. Also, checking
-+	 * for the eb flag EXTENT_BUFFER_WRITE_ERR at transaction commit time is
-+	 * not done and would not be reliable - the eb might have been released
-+	 * from memory and reading it back again means that flag would not be
-+	 * set (since it's a runtime flag, not persisted on disk).
-+	 *
-+	 * Using the flags below in the btree inode also makes us achieve the
-+	 * goal of AS_EIO/AS_ENOSPC when writepages() returns success, started
-+	 * writeback for all dirty pages and before filemap_fdatawait_range()
-+	 * is called, the writeback for all dirty pages had already finished
-+	 * with errors - because we were not using AS_EIO/AS_ENOSPC,
-+	 * filemap_fdatawait_range() would return success, as it could not know
-+	 * that writeback errors happened (the pages were no longer tagged for
-+	 * writeback).
-+	 */
-+	switch (eb->log_index) {
-+	case -1:
-+		set_bit(BTRFS_INODE_BTREE_ERR, &btree_ino->runtime_flags);
-+		break;
-+	case 0:
-+		set_bit(BTRFS_INODE_BTREE_LOG1_ERR, &btree_ino->runtime_flags);
-+		break;
-+	case 1:
-+		set_bit(BTRFS_INODE_BTREE_LOG2_ERR, &btree_ino->runtime_flags);
-+		break;
-+	default:
-+		BUG(); /* unexpected, logic error */
-+	}
-+}
-+
- static void end_bio_extent_buffer_writepage(struct bio *bio, int err)
- {
- 	struct bio_vec *bvec;
-@@ -3614,10 +3676,9 @@ static void end_bio_extent_buffer_writepage(struct bio *bio, int err)
- 		BUG_ON(!eb);
- 		done = atomic_dec_and_test(&eb->io_pages);
- 
--		if (err || test_bit(EXTENT_BUFFER_IOERR, &eb->bflags)) {
--			set_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
-+		if (err || test_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags)) {
- 			ClearPageUptodate(page);
--			SetPageError(page);
-+			set_btree_ioerr(page);
- 		}
- 
- 		end_page_writeback(page);
-@@ -3644,7 +3705,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	int rw = (epd->sync_io ? WRITE_SYNC : WRITE) | REQ_META;
- 	int ret = 0;
- 
--	clear_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
-+	clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags);
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	atomic_set(&eb->io_pages, num_pages);
- 	if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
-@@ -3661,8 +3722,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 					 0, epd->bio_flags, bio_flags);
- 		epd->bio_flags = bio_flags;
- 		if (ret) {
--			set_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
--			SetPageError(p);
-+			set_btree_ioerr(p);
- 			end_page_writeback(p);
- 			if (atomic_sub_and_test(num_pages - i, &eb->io_pages))
- 				end_extent_buffer_writeback(eb);
-@@ -5054,7 +5114,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 		goto unlock_exit;
- 	}
- 
--	clear_bit(EXTENT_BUFFER_IOERR, &eb->bflags);
-+	clear_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
- 	eb->read_mirror = 0;
- 	atomic_set(&eb->io_pages, num_reads);
- 	for (i = start_i; i < num_pages; i++) {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 5e91fb9..06f030c 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -41,9 +41,10 @@
- #define EXTENT_BUFFER_TREE_REF 5
- #define EXTENT_BUFFER_STALE 6
- #define EXTENT_BUFFER_WRITEBACK 7
--#define EXTENT_BUFFER_IOERR 8
-+#define EXTENT_BUFFER_READ_ERR 8        /* read IO error */
- #define EXTENT_BUFFER_DUMMY 9
- #define EXTENT_BUFFER_IN_TREE 10
-+#define EXTENT_BUFFER_WRITE_ERR 11    /* write IO error */
- 
- /* these are flags for extent_clear_unlock_delalloc */
- #define PAGE_UNLOCK		(1 << 0)
-@@ -141,7 +142,9 @@ struct extent_buffer {
- 	atomic_t blocking_readers;
- 	atomic_t spinning_readers;
- 	atomic_t spinning_writers;
--	int lock_nested;
-+	short lock_nested;
-+	/* >= 0 if eb belongs to a log tree, -1 otherwise */
-+	short log_index;
- 
- 	/* protects write locks */
- 	rwlock_t lock;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 16d0c1b..a47b100 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -851,6 +851,8 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
- 	struct extent_state *cached_state = NULL;
- 	u64 start = 0;
- 	u64 end;
-+	struct btrfs_inode *btree_ino = BTRFS_I(root->fs_info->btree_inode);
-+	bool errors = false;
- 
- 	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
- 				      EXTENT_NEED_WAIT, &cached_state)) {
-@@ -864,6 +866,26 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
- 	}
- 	if (err)
- 		werr = err;
-+
-+	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
-+		if ((mark & EXTENT_DIRTY) &&
-+		    test_and_clear_bit(BTRFS_INODE_BTREE_LOG1_ERR,
-+				       &btree_ino->runtime_flags))
-+			errors = true;
-+
-+		if ((mark & EXTENT_NEW) &&
-+		    test_and_clear_bit(BTRFS_INODE_BTREE_LOG2_ERR,
-+				       &btree_ino->runtime_flags))
-+			errors = true;
-+	} else {
-+		if (test_and_clear_bit(BTRFS_INODE_BTREE_ERR,
-+				       &btree_ino->runtime_flags))
-+			errors = true;
-+	}
-+
-+	if (errors && !werr)
-+		werr = -EIO;
-+
- 	return werr;
- }
- 
-@@ -1629,6 +1651,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
- 	struct btrfs_transaction *prev_trans = NULL;
-+	struct btrfs_inode *btree_ino = BTRFS_I(root->fs_info->btree_inode);
- 	int ret;
- 
- 	/* Stop the commit early if ->aborted is set */
-@@ -1871,6 +1894,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	btrfs_update_commit_device_size(root->fs_info);
- 	btrfs_update_commit_device_bytes_used(root, cur_trans);
- 
-+	clear_bit(BTRFS_INODE_BTREE_LOG1_ERR, &btree_ino->runtime_flags);
-+	clear_bit(BTRFS_INODE_BTREE_LOG2_ERR, &btree_ino->runtime_flags);
-+
- 	spin_lock(&root->fs_info->trans_lock);
- 	cur_trans->state = TRANS_STATE_UNBLOCKED;
- 	root->fs_info->running_transaction = NULL;
--- 
-1.9.1
-
+>  fs/btrfs/check-integrity.c |  6 +--
+>  fs/btrfs/dev-replace.c     | 19 +++++-----
+>  fs/btrfs/disk-io.c         |  6 +--
+>  fs/btrfs/extent_io.c       |  4 +-
+>  fs/btrfs/ioctl.c           |  4 +-
+>  fs/btrfs/raid56.c          |  2 +-
+>  fs/btrfs/rcu-string.h      | 56 ----------------------------
+>  fs/btrfs/scrub.c           | 15 ++++----
+>  fs/btrfs/super.c           |  2 +-
+>  fs/btrfs/volumes.c         | 14 +++----
+>  include/linux/rcustring.h  | 91 ++++++++++++++++++++++++++++++++++++++++++++++
+>  11 files changed, 128 insertions(+), 91 deletions(-)
+>  delete mode 100644 fs/btrfs/rcu-string.h
+>  create mode 100644 include/linux/rcustring.h
+> 
+> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+> index ce92ae3..4ccd7da 100644
+> --- a/fs/btrfs/check-integrity.c
+> +++ b/fs/btrfs/check-integrity.c
+> @@ -94,6 +94,7 @@
+>  #include <linux/mutex.h>
+>  #include <linux/genhd.h>
+>  #include <linux/blkdev.h>
+> +#include <linux/rcustring.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "hash.h"
+> @@ -103,7 +104,6 @@
+>  #include "print-tree.h"
+>  #include "locking.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  
+>  #define BTRFSIC_BLOCK_HASHTABLE_SIZE 0x10000
+>  #define BTRFSIC_BLOCK_LINK_HASHTABLE_SIZE 0x10000
+> @@ -851,8 +851,8 @@ static int btrfsic_process_superblock_dev_mirror(
+>  			printk_in_rcu(KERN_INFO "New initial S-block (bdev %p, %s)"
+>  				     " @%llu (%s/%llu/%d)\n",
+>  				     superblock_bdev,
+> -				     rcu_str_deref(device->name), dev_bytenr,
+> -				     dev_state->name, dev_bytenr,
+> +				     rcu_string_dereference(device->name),
+> +				     dev_bytenr, dev_state->name, dev_bytenr,
+>  				     superblock_mirror_num);
+>  		list_add(&superblock_tmp->all_blocks_node,
+>  			 &state->all_blocks_list);
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index eea26e1..87d10cc 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -25,6 +25,7 @@
+>  #include <linux/capability.h>
+>  #include <linux/kthread.h>
+>  #include <linux/math64.h>
+> +#include <linux/rcustring.h>
+>  #include <asm/div64.h>
+>  #include "ctree.h"
+>  #include "extent_map.h"
+> @@ -34,7 +35,6 @@
+>  #include "volumes.h"
+>  #include "async-thread.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  #include "dev-replace.h"
+>  #include "sysfs.h"
+>  
+> @@ -376,9 +376,9 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+>  	printk_in_rcu(KERN_INFO
+>  		      "BTRFS: dev_replace from %s (devid %llu) to %s started\n",
+>  		      src_device->missing ? "<missing disk>" :
+> -		        rcu_str_deref(src_device->name),
+> +		      rcu_string_dereference(src_device->name),
+>  		      src_device->devid,
+> -		      rcu_str_deref(tgt_device->name));
+> +		      rcu_string_dereference(tgt_device->name));
+>  
+>  	tgt_device->total_bytes = src_device->total_bytes;
+>  	tgt_device->disk_total_bytes = src_device->disk_total_bytes;
+> @@ -528,9 +528,10 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  		printk_in_rcu(KERN_ERR
+>  			      "BTRFS: btrfs_scrub_dev(%s, %llu, %s) failed %d\n",
+>  			      src_device->missing ? "<missing disk>" :
+> -			        rcu_str_deref(src_device->name),
+> +			      rcu_string_dereference(src_device->name),
+>  			      src_device->devid,
+> -			      rcu_str_deref(tgt_device->name), scrub_ret);
+> +			      rcu_string_dereference(tgt_device->name),
+> +			      scrub_ret);
+>  		btrfs_dev_replace_unlock(dev_replace);
+>  		mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+>  		mutex_unlock(&root->fs_info->chunk_mutex);
+> @@ -544,9 +545,9 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  	printk_in_rcu(KERN_INFO
+>  		      "BTRFS: dev_replace from %s (devid %llu) to %s) finished\n",
+>  		      src_device->missing ? "<missing disk>" :
+> -		        rcu_str_deref(src_device->name),
+> +		      rcu_string_dereference(src_device->name),
+>  		      src_device->devid,
+> -		      rcu_str_deref(tgt_device->name));
+> +		      rcu_string_dereference(tgt_device->name));
+>  	tgt_device->is_tgtdev_for_dev_replace = 0;
+>  	tgt_device->devid = src_device->devid;
+>  	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
+> @@ -805,10 +806,10 @@ static int btrfs_dev_replace_kthread(void *data)
+>  		printk_in_rcu(KERN_INFO
+>  			"BTRFS: continuing dev_replace from %s (devid %llu) to %s @%u%%\n",
+>  			dev_replace->srcdev->missing ? "<missing disk>" :
+> -			rcu_str_deref(dev_replace->srcdev->name),
+> +			rcu_string_dereference(dev_replace->srcdev->name),
+>  			dev_replace->srcdev->devid,
+>  			dev_replace->tgtdev ?
+> -			rcu_str_deref(dev_replace->tgtdev->name) :
+> +			rcu_string_dereference(dev_replace->tgtdev->name) :
+>  			"<missing target disk>",
+>  			(unsigned int)progress);
+>  	}
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index a1d36e6..00f7441 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -31,6 +31,7 @@
+>  #include <linux/ratelimit.h>
+>  #include <linux/uuid.h>
+>  #include <linux/semaphore.h>
+> +#include <linux/rcustring.h>
+>  #include <asm/unaligned.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -44,7 +45,6 @@
+>  #include "free-space-cache.h"
+>  #include "inode-map.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  #include "dev-replace.h"
+>  #include "raid56.h"
+>  #include "sysfs.h"
+> @@ -3059,7 +3059,7 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+>  
+>  		printk_ratelimited_in_rcu(KERN_WARNING "BTRFS: lost page write due to "
+>  					  "I/O error on %s\n",
+> -					  rcu_str_deref(device->name));
+> +					  rcu_string_dereference(device->name));
+>  		/* note, we dont' set_buffer_write_io_error because we have
+>  		 * our own ways of dealing with the IO errors
+>  		 */
+> @@ -3247,7 +3247,7 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+>  
+>  		if (bio_flagged(bio, BIO_EOPNOTSUPP)) {
+>  			printk_in_rcu("BTRFS: disabling barriers on dev %s\n",
+> -				      rcu_str_deref(device->name));
+> +				      rcu_string_dereference(device->name));
+>  			device->nobarriers = 1;
+>  		} else if (!bio_flagged(bio, BIO_UPTODATE)) {
+>  			ret = -EIO;
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index af0359d..441dccd 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -11,6 +11,7 @@
+>  #include <linux/pagevec.h>
+>  #include <linux/prefetch.h>
+>  #include <linux/cleancache.h>
+> +#include <linux/rcustring.h>
+>  #include "extent_io.h"
+>  #include "extent_map.h"
+>  #include "ctree.h"
+> @@ -18,7 +19,6 @@
+>  #include "volumes.h"
+>  #include "check-integrity.h"
+>  #include "locking.h"
+> -#include "rcu-string.h"
+>  #include "backref.h"
+>  
+>  static struct kmem_cache *extent_state_cache;
+> @@ -2065,7 +2065,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
+>  	printk_ratelimited_in_rcu(KERN_INFO
+>  			"BTRFS: read error corrected: ino %lu off %llu "
+>  		    "(dev %s sector %llu)\n", page->mapping->host->i_ino,
+> -		    start, rcu_str_deref(dev->name), sector);
+> +		    start, rcu_string_dereference(dev->name), sector);
+>  
+>  	bio_put(bio);
+>  	return 0;
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 8a8e298..9d4cd72 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -44,6 +44,7 @@
+>  #include <linux/uuid.h>
+>  #include <linux/btrfs.h>
+>  #include <linux/uaccess.h>
+> +#include <linux/rcustring.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "transaction.h"
+> @@ -53,7 +54,6 @@
+>  #include "locking.h"
+>  #include "inode-map.h"
+>  #include "backref.h"
+> -#include "rcu-string.h"
+>  #include "send.h"
+>  #include "dev-replace.h"
+>  #include "props.h"
+> @@ -1583,7 +1583,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+>  	new_size *= root->sectorsize;
+>  
+>  	printk_in_rcu(KERN_INFO "BTRFS: new size for %s is %llu\n",
+> -		      rcu_str_deref(device->name), new_size);
+> +		      rcu_string_dereference(device->name), new_size);
+>  
+>  	if (new_size > old_size) {
+>  		trans = btrfs_start_transaction(root, 0);
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 0a6b6e4..eecf738 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -32,6 +32,7 @@
+>  #include <linux/list_sort.h>
+>  #include <linux/raid/xor.h>
+>  #include <linux/vmalloc.h>
+> +#include <linux/rcustring.h>
+>  #include <asm/div64.h>
+>  #include "ctree.h"
+>  #include "extent_map.h"
+> @@ -42,7 +43,6 @@
+>  #include "raid56.h"
+>  #include "async-thread.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  
+>  /* set when additional merges to this rbio are not allowed */
+>  #define RBIO_RMW_LOCKED_BIT	1
+> diff --git a/fs/btrfs/rcu-string.h b/fs/btrfs/rcu-string.h
+> deleted file mode 100644
+> index 9e111e4..0000000
+> --- a/fs/btrfs/rcu-string.h
+> +++ /dev/null
+> @@ -1,56 +0,0 @@
+> -/*
+> - * Copyright (C) 2012 Red Hat.  All rights reserved.
+> - *
+> - * This program is free software; you can redistribute it and/or
+> - * modify it under the terms of the GNU General Public
+> - * License v2 as published by the Free Software Foundation.
+> - *
+> - * This program is distributed in the hope that it will be useful,
+> - * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> - * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+> - * General Public License for more details.
+> - *
+> - * You should have received a copy of the GNU General Public
+> - * License along with this program; if not, write to the
+> - * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+> - * Boston, MA 021110-1307, USA.
+> - */
+> -
+> -struct rcu_string {
+> -	struct rcu_head rcu;
+> -	char str[0];
+> -};
+> -
+> -static inline struct rcu_string *rcu_string_strdup(const char *src, gfp_t mask)
+> -{
+> -	size_t len = strlen(src) + 1;
+> -	struct rcu_string *ret = kzalloc(sizeof(struct rcu_string) +
+> -					 (len * sizeof(char)), mask);
+> -	if (!ret)
+> -		return ret;
+> -	strncpy(ret->str, src, len);
+> -	return ret;
+> -}
+> -
+> -static inline void rcu_string_free(struct rcu_string *str)
+> -{
+> -	if (str)
+> -		kfree_rcu(str, rcu);
+> -}
+> -
+> -#define printk_in_rcu(fmt, ...) do {	\
+> -	rcu_read_lock();		\
+> -	printk(fmt, __VA_ARGS__);	\
+> -	rcu_read_unlock();		\
+> -} while (0)
+> -
+> -#define printk_ratelimited_in_rcu(fmt, ...) do {	\
+> -	rcu_read_lock();				\
+> -	printk_ratelimited(fmt, __VA_ARGS__);		\
+> -	rcu_read_unlock();				\
+> -} while (0)
+> -
+> -#define rcu_str_deref(rcu_str) ({				\
+> -	struct rcu_string *__str = rcu_dereference(rcu_str);	\
+> -	__str->str;						\
+> -})
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index f4a41f3..62e335f 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -18,6 +18,7 @@
+>  
+>  #include <linux/blkdev.h>
+>  #include <linux/ratelimit.h>
+> +#include <linux/rcustring.h>
+>  #include "ctree.h"
+>  #include "volumes.h"
+>  #include "disk-io.h"
+> @@ -27,7 +28,6 @@
+>  #include "extent_io.h"
+>  #include "dev-replace.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  #include "raid56.h"
+>  
+>  /*
+> @@ -519,7 +519,8 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
+>  		printk_in_rcu(KERN_WARNING "BTRFS: %s at logical %llu on dev "
+>  			"%s, sector %llu, root %llu, inode %llu, offset %llu, "
+>  			"length %llu, links %u (path: %s)\n", swarn->errstr,
+> -			swarn->logical, rcu_str_deref(swarn->dev->name),
+> +			swarn->logical,
+> +			rcu_string_dereference(swarn->dev->name),
+>  			(unsigned long long)swarn->sector, root, inum, offset,
+>  			min(isize - offset, (u64)PAGE_SIZE), nlink,
+>  			(char *)(unsigned long)ipath->fspath->val[i]);
+> @@ -531,7 +532,7 @@ err:
+>  	printk_in_rcu(KERN_WARNING "BTRFS: %s at logical %llu on dev "
+>  		"%s, sector %llu, root %llu, inode %llu, offset %llu: path "
+>  		"resolving failed with ret=%d\n", swarn->errstr,
+> -		swarn->logical, rcu_str_deref(swarn->dev->name),
+> +		swarn->logical, rcu_string_dereference(swarn->dev->name),
+>  		(unsigned long long)swarn->sector, root, inum, offset, ret);
+>  
+>  	free_ipath(ipath);
+> @@ -595,7 +596,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+>  				"BTRFS: %s at logical %llu on dev %s, "
+>  				"sector %llu: metadata %s (level %d) in tree "
+>  				"%llu\n", errstr, swarn.logical,
+> -				rcu_str_deref(dev->name),
+> +				rcu_string_dereference(dev->name),
+>  				(unsigned long long)swarn.sector,
+>  				ref_level ? "node" : "leaf",
+>  				ret < 0 ? -1 : ref_level,
+> @@ -796,7 +797,7 @@ out:
+>  			num_uncorrectable_read_errors);
+>  		printk_ratelimited_in_rcu(KERN_ERR "BTRFS: "
+>  		    "unable to fixup (nodatasum) error at logical %llu on dev %s\n",
+> -			fixup->logical, rcu_str_deref(fixup->dev->name));
+> +		    fixup->logical, rcu_string_dereference(fixup->dev->name));
+>  	}
+>  
+>  	btrfs_free_path(path);
+> @@ -1198,7 +1199,7 @@ corrected_error:
+>  			spin_unlock(&sctx->stat_lock);
+>  			printk_ratelimited_in_rcu(KERN_ERR
+>  				"BTRFS: fixed up error at logical %llu on dev %s\n",
+> -				logical, rcu_str_deref(dev->name));
+> +				logical, rcu_string_dereference(dev->name));
+>  		}
+>  	} else {
+>  did_not_correct_error:
+> @@ -1207,7 +1208,7 @@ did_not_correct_error:
+>  		spin_unlock(&sctx->stat_lock);
+>  		printk_ratelimited_in_rcu(KERN_ERR
+>  			"BTRFS: unable to fixup (regular) error at logical %llu on dev %s\n",
+> -			logical, rcu_str_deref(dev->name));
+> +			logical, rcu_string_dereference(dev->name));
+>  	}
+>  
+>  out:
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index c4124de..cf4db62 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -42,6 +42,7 @@
+>  #include <linux/cleancache.h>
+>  #include <linux/ratelimit.h>
+>  #include <linux/btrfs.h>
+> +#include <linux/rcustring.h>
+>  #include "delayed-inode.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -54,7 +55,6 @@
+>  #include "volumes.h"
+>  #include "export.h"
+>  #include "compression.h"
+> -#include "rcu-string.h"
+>  #include "dev-replace.h"
+>  #include "free-space-cache.h"
+>  #include "backref.h"
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 340a92d..8b1e5e8 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -27,6 +27,7 @@
+>  #include <linux/kthread.h>
+>  #include <linux/raid/pq.h>
+>  #include <linux/semaphore.h>
+> +#include <linux/rcustring.h>
+>  #include <asm/div64.h>
+>  #include "ctree.h"
+>  #include "extent_map.h"
+> @@ -37,7 +38,6 @@
+>  #include "raid56.h"
+>  #include "async-thread.h"
+>  #include "check-integrity.h"
+> -#include "rcu-string.h"
+>  #include "math.h"
+>  #include "dev-replace.h"
+>  #include "sysfs.h"
+> @@ -6323,7 +6323,7 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+>  	if (ret < 0) {
+>  		printk_in_rcu(KERN_WARNING "BTRFS: "
+>  			"error %d while searching for dev_stats item for device %s!\n",
+> -			      ret, rcu_str_deref(device->name));
+> +			      ret, rcu_string_dereference(device->name));
+>  		goto out;
+>  	}
+>  
+> @@ -6334,7 +6334,7 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+>  		if (ret != 0) {
+>  			printk_in_rcu(KERN_WARNING "BTRFS: "
+>  				"delete too small dev_stats item for device %s failed %d!\n",
+> -				      rcu_str_deref(device->name), ret);
+> +				rcu_string_dereference(device->name), ret);
+>  			goto out;
+>  		}
+>  		ret = 1;
+> @@ -6347,8 +6347,8 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
+>  					      &key, sizeof(*ptr));
+>  		if (ret < 0) {
+>  			printk_in_rcu(KERN_WARNING "BTRFS: "
+> -					  "insert dev_stats item for device %s failed %d!\n",
+> -				      rcu_str_deref(device->name), ret);
+> +				      "insert dev_stats item for device %s failed %d!\n",
+> +				      rcu_string_dereference(device->name), ret);
+>  			goto out;
+>  		}
+>  	}
+> @@ -6402,7 +6402,7 @@ static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev)
+>  		return;
+>  	printk_ratelimited_in_rcu(KERN_ERR "BTRFS: "
+>  			   "bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
+> -			   rcu_str_deref(dev->name),
+> +			   rcu_string_dereference(dev->name),
+>  			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
+>  			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
+>  			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_FLUSH_ERRS),
+> @@ -6422,7 +6422,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *dev)
+>  
+>  	printk_in_rcu(KERN_INFO "BTRFS: "
+>  		   "bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
+> -	       rcu_str_deref(dev->name),
+> +	       rcu_string_dereference(dev->name),
+>  	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
+>  	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
+>  	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_FLUSH_ERRS),
+> diff --git a/include/linux/rcustring.h b/include/linux/rcustring.h
+> new file mode 100644
+> index 0000000..18980e9
+> --- /dev/null
+> +++ b/include/linux/rcustring.h
+> @@ -0,0 +1,91 @@
+> +/*
+> + * RCU-friendly strings
+> + *
+> + * Copyright (C) 2012 Red Hat.  All rights reserved.
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License, or
+> + * (at your option) any later version.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> + * GNU General Public License for more details.
+> + *
+> + * You should have received a copy of the GNU General Public License
+> + * along with this program; if not, you can access it online at
+> + * http://www.gnu.org/licenses/gpl-2.0.html.
+> + */
+> +
+> +#ifndef _LINUX_RCUSTRING_H
+> +#define _LINUX_RCUSTRING_H
+> +
+> +struct rcu_string {
+> +	struct rcu_head rcu;
+> +	char str[0];
+> +};
+> +
+> +/**
+> + * rcu_string_strdup() - create an RCU string from a string
+> + * @src: The string to copy
+> + * @flags: Flags for kmalloc
+> + */
+> +static inline struct rcu_string *rcu_string_strdup(const char *src, gfp_t flags)
+> +{
+> +	struct rcu_string *ret;
+> +	size_t len = strlen(src) + 1;
+> +
+> +	ret = kmalloc(sizeof(struct rcu_string) + (len * sizeof(char)), flags);
+> +	if (!ret)
+> +		return ret;
+> +	memcpy(ret->str, src, len);
+> +	return ret;
+> +}
+> +
+> +/**
+> + * rcu_string_free() - free an RCU string
+> + * @str: The string
+> + */
+> +static inline void rcu_string_free(struct rcu_string *str)
+> +{
+> +	if (str)
+> +		kfree_rcu(str, rcu);
+> +}
+> +
+> +/*
+> + * rcu_string_dereference() - dereference an RCU string
+> + * @str: The string
+> + *
+> + * Like rcu_dereference, this must be done in an RCU critical section.
+> + */
+> +static inline char *rcu_string_dereference(struct rcu_string *rcu_str)
+> +{
+> +	return rcu_dereference(rcu_str)->str;
+> +}
+> +
+> +/**
+> + * printk_in_rcu() - printk in an RCU read-side critical section
+> + */
+> +#define printk_in_rcu(fmt, ...)			\
+> +({						\
+> +	int __ret;				\
+> +	rcu_read_lock();			\
+> +	__ret = printk(fmt, __VA_ARGS__);	\
+> +	rcu_read_unlock();			\
+> +	__ret;					\
+> +})
+> +
+> +/**
+> + * printk_ratelimited_in_rcu() - printk in an RCU read-side critical section
+> + */
+> +#define printk_ratelimited_in_rcu(fmt, ...)		\
+> +({							\
+> +	int __ret;					\
+> +	rcu_read_lock();				\
+> +	__ret = printk_ratelimited(fmt, __VA_ARGS__);	\
+> +	rcu_read_unlock();				\
+> +	__ret;						\
+> +})
+> +
+> +#endif
+> -- 
+> 2.1.0
+> 

@@ -1,42 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepi107.cox.net ([68.230.241.203]:47072 "EHLO
-	eastrmfepi107.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752966AbaIZCPT (ORCPT
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:60742 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751753AbaIZOSi convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Sep 2014 22:15:19 -0400
-Received: from eastrmimpo109 ([68.230.241.222]) by eastrmfepo103.cox.net
-          (InterMail vM.8.01.05.15 201-2260-151-145-20131218) with ESMTP
-          id <20140926014722.ZOJH31158.eastrmfepo103.cox.net@eastrmimpo109>
-          for <linux-btrfs@vger.kernel.org>;
-          Thu, 25 Sep 2014 21:47:22 -0400
-Date: Thu, 25 Sep 2014 18:47:20 -0700
-From: Duncan <1i5t5.duncan@cox.net>
-To: G EO <1g2e3o4@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send does not work from readonly device
-Message-ID: <20140925184720.000978db@ws>
-In-Reply-To: <vXff1o01A11vvw101XfhvK>
-References: <16424080.RP99VxSJe8@ubuntu>
-	<pan$afb89$92478dcc$d289358e$905b34a@cox.net>
-	<CAOsFrTcVrWjSks0K-NzokHinBZVRxGGwmRzG_tdzxaU7AAC=xQ@mail.gmail.com>
-	<vXff1o01A11vvw101XfhvK>
+	Fri, 26 Sep 2014 10:18:38 -0400
+Received: by mail-vc0-f175.google.com with SMTP id hy4so1956811vcb.34
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Sep 2014 07:18:37 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <pan.2014.09.25.21.21.47@googlemail.com>
+References: <CAPL5yKfTfzkqBT9dQBpJAjuBtq2-=QqdCn_Pzfnnd1URKA_q4A@mail.gmail.com>
+	<pan.2014.09.24.22.23.33@googlemail.com>
+	<CAPL5yKdt7eTk-+0NP2Y9Aa8zNQqJpujTm31z_ee04OS3DocMXg@mail.gmail.com>
+	<pan.2014.09.25.21.21.47@googlemail.com>
+Date: Fri, 26 Sep 2014 10:18:37 -0400
+Message-ID: <CAGfcS_koxt3d4kBv1o+5FnpDj-6+WA6tsPbPkBdehNnWcYnaKA@mail.gmail.com>
+Subject: Re: 3.16 Managed to ENOSPC with <80% used
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 25 Sep 2014 21:39:41 +0200
-G EO <1g2e3o4@gmail.com> wrote:
+On Thu, Sep 25, 2014 at 5:21 PM, Holger Hoffstätte
+<holger.hoffstaette@googlemail.com> wrote:
+> That's why I mentioned adding a second device - that will immediately
+> allow cleanup with headroom. An additional 8GB tmpfs volume can works
+> wonders.
+>
 
-> The snapshots underneath are set read only anyway in my case, since
-> the they landed there by btrfs receive or I am thinking wrong here?
-> Duncan, do you remember the bug number?
+If you add a single 8GB tmpfs to a RAID1 btrfs array, is it safe to
+assume that you'll still always have a redundant copy of everything on
+a disk somewhere during the recovery?  Would only a single tmpfs
+volume actually help in this case?  I get a bit nervous about doing a
+cleanup that involves moving metadata to tmpfs of all places, since
+some kind of deadlock/etc could result in unrecoverable data loss.
 
-I don't.  I remember seeing the discussion on the list.  Without
-googling my local list archive it seems to me it might have been in one
-of Marc Merlin's threads.
+Doing the same thing with an actual hard drive would concern me less.
 
--- 
-Duncan - No HTML messages please, as they are filtered as spam.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--
+Rich

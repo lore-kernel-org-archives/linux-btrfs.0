@@ -1,63 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50024 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:55920 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752847AbaIZEVU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Sep 2014 00:21:20 -0400
+	id S1752542AbaIZEne (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Sep 2014 00:43:34 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v4 02/15] btrfs: new test to run btrfs balance and scrub simultaneously
-Date: Fri, 26 Sep 2014 12:14:48 +0800
-Message-Id: <1411704901-12723-3-git-send-email-eguan@redhat.com>
+Subject: [PATCH v4 14/15] btrfs: new case to run btrfs scrub and remount with different compress algorithms simultaneously
+Date: Fri, 26 Sep 2014 12:15:00 +0800
+Message-Id: <1411704901-12723-15-git-send-email-eguan@redhat.com>
 In-Reply-To: <1411704901-12723-1-git-send-email-eguan@redhat.com>
 References: <1411704901-12723-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs balance and scrub operations simultaneously with fsstress
-running in background.
+Run btrfs scrub and remount with different compress algorithms
+simultaneously with fsstress running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- common/rc           |   9 +++++
- tests/btrfs/060     | 114 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/060.out |   2 +
+ tests/btrfs/072     | 114 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/072.out |   2 +
  tests/btrfs/group   |   1 +
- 4 files changed, 126 insertions(+)
- create mode 100755 tests/btrfs/060
- create mode 100644 tests/btrfs/060.out
+ 3 files changed, 117 insertions(+)
+ create mode 100755 tests/btrfs/072
+ create mode 100644 tests/btrfs/072.out
 
-diff --git a/common/rc b/common/rc
-index 2393c4b..d1dec8a 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2591,6 +2591,15 @@ _btrfs_stress_subvolume()
- 	done
- }
- 
-+# stress btrfs by running scrub in a loop
-+_btrfs_stress_scrub()
-+{
-+	local btrfs_mnt=$1
-+	while true; do
-+		$BTRFS_UTIL_PROG scrub start -B $btrfs_mnt
-+	done
-+}
-+
- init_rc()
- {
- 	if [ "$iam" == new ]
-diff --git a/tests/btrfs/060 b/tests/btrfs/060
+diff --git a/tests/btrfs/072 b/tests/btrfs/072
 new file mode 100755
-index 0000000..b270c7b
+index 0000000..b185f85
 --- /dev/null
-+++ b/tests/btrfs/060
++++ b/tests/btrfs/072
 @@ -0,0 +1,114 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/060
++# FSQA Test No. btrfs/072
 +#
-+# Run btrfs balance and scrub operations simultaneously with fsstress
-+# running in background.
++# Run btrfs scrub and remount with different compress algorithms
++# simultaneously with fsstress running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -126,25 +105,25 @@ index 0000000..b270c7b
 +	$FSSTRESS_PROG $args >/dev/null 2>&1 &
 +	fsstress_pid=$!
 +
-+	echo -n "Start balance worker: " >>$seqres.full
-+	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
-+	balance_pid=$!
-+	echo "$balance_pid" >>$seqres.full
-+
 +	echo -n "Start scrub worker: " >>$seqres.full
 +	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
 +	scrub_pid=$!
 +	echo "$scrub_pid" >>$seqres.full
 +
++	echo -n "Start remount worker: " >>$seqres.full
++	_btrfs_stress_remount_compress $SCRATCH_MNT >/dev/null 2>&1 &
++	remount_pid=$!
++	echo "$remount_pid" >>$seqres.full
++
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+	kill $balance_pid $scrub_pid
++	kill $scrub_pid $remount_pid
 +	wait
-+	# wait for the balance and scrub operations to finish
-+	while ps aux | grep "balance start" | grep -qv grep; do
++	# wait for the scrub and remount operations to finish
++	while ps aux | grep "scrub start" | grep -qv grep; do
 +		sleep 1
 +	done
-+	while ps aux | grep "scrub start" | grep -qv grep; do
++	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -167,23 +146,23 @@ index 0000000..b270c7b
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/060.out b/tests/btrfs/060.out
+diff --git a/tests/btrfs/072.out b/tests/btrfs/072.out
 new file mode 100644
-index 0000000..8ffce4d
+index 0000000..590bbc6
 --- /dev/null
-+++ b/tests/btrfs/060.out
++++ b/tests/btrfs/072.out
 @@ -0,0 +1,2 @@
-+QA output created by 060
++QA output created by 072
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index c66c42c..1c60c8f 100644
+index 5377acf..e631d5b 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -62,3 +62,4 @@
- 057 auto quick
- 058 auto quick
- 059 auto balance subvol
-+060 auto balance scrub
+@@ -74,3 +74,4 @@
+ 069 auto replace defrag compress
+ 070 auto replace remount compress
+ 071 auto scrub defrag compress
++072 auto scrub remount compress
 -- 
 1.8.3.1
 

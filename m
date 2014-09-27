@@ -1,64 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:48827 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753171AbaIZPaM (ORCPT
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:45963 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751083AbaI0Ff5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Sep 2014 11:30:12 -0400
-From: Sage Weil <sage@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Cc: zyan@redhat.com, Sage Weil <sage@redhat.com>
-Subject: [PATCH] Btrfs: fix race in WAIT_SYNC ioctl
-Date: Fri, 26 Sep 2014 08:30:06 -0700
-Message-Id: <1411745406-19036-1-git-send-email-sage@redhat.com>
+	Sat, 27 Sep 2014 01:35:57 -0400
+Received: by mail-pd0-f178.google.com with SMTP id ft15so14061658pdb.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Sep 2014 22:35:56 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org,
+        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+        Lai Jiangshan <laijs@cn.fujitsu.com>, linux-kernel@vger.kernel.org
+Subject: [PATCH v3 0/2] Move BTRFS RCU string to common library
+Date: Fri, 26 Sep 2014 22:36:47 -0700
+Message-Id: <cover.1411796033.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We check whether transid is already committed via last_trans_committed and
-then search through trans_list for pending transactions.  If
-last_trans_committed is updated by btrfs_commit_transaction after we check
-it (there is no locking), we will fail to find the committed transaction
-and return EINVAL to the caller.  This has been observed occasionally by
-ceph-osd (which uses this ioctl heavily).
+This patch series makes the generic RCU string library used internally by BTRFS
+accessible by anyone.
 
-Fix by rechecking whether the provided transid <= last_trans_committed
-after the search fails, and if so return 0.
+The first patch makes printk_ratelimited pass on the return value from printk.
+Version 3 gives the temporary return variable a unique name to avoid name
+clashes.
 
-Signed-off-by: Sage Weil <sage@redhat.com>
----
- fs/btrfs/transaction.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+The second patch moves the RCU string header and updates the BTRFS code that
+depends on it. Version 3 adds the __rcu annotation to the relevant functions.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d89c6d3..98a25df 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -609,7 +609,6 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
- 		if (transid <= root->fs_info->last_trans_committed)
- 			goto out;
- 
--		ret = -EINVAL;
- 		/* find specified transaction */
- 		spin_lock(&root->fs_info->trans_lock);
- 		list_for_each_entry(t, &root->fs_info->trans_list, list) {
-@@ -625,9 +624,16 @@ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid)
- 			}
- 		}
- 		spin_unlock(&root->fs_info->trans_lock);
--		/* The specified transaction doesn't exist */
--		if (!cur_trans)
-+
-+		/*
-+		 * The specified transaction doesn't exist, or we
-+		 * raced with btrfs_commit_transaction
-+		 */
-+		if (!cur_trans) {
-+			if (transid > root->fs_info->last_trans_committed)
-+				ret = -EINVAL;
- 			goto out;
-+		}
- 	} else {
- 		/* find newest transaction that is committing | committed */
- 		spin_lock(&root->fs_info->trans_lock);
+Version 3 also adds Paul's ack and Josh's review.
+
+Omar Sandoval (2):
+  Return a value from printk_ratelimited
+  Move BTRFS RCU string to common library
+
+ fs/btrfs/check-integrity.c |  6 +--
+ fs/btrfs/dev-replace.c     | 19 +++++-----
+ fs/btrfs/disk-io.c         |  6 +--
+ fs/btrfs/extent_io.c       |  4 +-
+ fs/btrfs/ioctl.c           |  4 +-
+ fs/btrfs/raid56.c          |  2 +-
+ fs/btrfs/rcu-string.h      | 56 ----------------------------
+ fs/btrfs/scrub.c           | 15 ++++----
+ fs/btrfs/super.c           |  2 +-
+ fs/btrfs/volumes.c         | 14 +++----
+ include/linux/printk.h     |  4 +-
+ include/linux/rcustring.h  | 92 ++++++++++++++++++++++++++++++++++++++++++++++
+ 12 files changed, 132 insertions(+), 92 deletions(-)
+ delete mode 100644 fs/btrfs/rcu-string.h
+ create mode 100644 include/linux/rcustring.h
+
 -- 
-1.9.1
+2.1.1
 

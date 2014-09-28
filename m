@@ -1,96 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:50845 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753559AbaI1IrT (ORCPT
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:44232 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753611AbaI1IrU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Sep 2014 04:47:19 -0400
-Received: by mail-pd0-f181.google.com with SMTP id z10so1496442pdj.26
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Sep 2014 01:47:19 -0700 (PDT)
+	Sun, 28 Sep 2014 04:47:20 -0400
+Received: by mail-pa0-f45.google.com with SMTP id rd3so6161279pab.32
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Sep 2014 01:47:20 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix sparse address space warnings
-Date: Sun, 28 Sep 2014 01:48:11 -0700
-Message-Id: <1411894092-28784-2-git-send-email-osandov@osandov.com>
+Subject: [PATCH 2/2] btrfs: fix sparse lock context warnings
+Date: Sun, 28 Sep 2014 01:48:12 -0700
+Message-Id: <1411894092-28784-3-git-send-email-osandov@osandov.com>
 In-Reply-To: <1411894092-28784-1-git-send-email-osandov@osandov.com>
 References: <1411894092-28784-1-git-send-email-osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The buffer passed to vfs_write in send and several casts of ioctl fields are
-missing the __user annotation. Also fixes a couple of related trivial style
-issues.
+Fix several sparse warnings that can easily be addressed with context
+annotations. These annotations also provide some sort of documentation for the
+internal helper functions.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/ioctl.c | 6 +++---
- fs/btrfs/send.c  | 8 ++++----
- 2 files changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/ctree.c            | 3 ++-
+ fs/btrfs/extent-tree.c      | 1 +
+ fs/btrfs/extent_io.c        | 2 +-
+ fs/btrfs/free-space-cache.c | 1 +
+ fs/btrfs/locking.c          | 1 +
+ 5 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8a8e298..0f9a5a1 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2176,7 +2176,7 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
- 
- 	inode = file_inode(file);
- 	ret = search_ioctl(inode, &args.key, &buf_size,
--			   (char *)(&uarg->buf[0]));
-+			   (char __user *)(&uarg->buf[0]));
- 	if (ret == 0 && copy_to_user(&uarg->key, &args.key, sizeof(args.key)))
- 		ret = -EFAULT;
- 	else if (ret == -EOVERFLOW &&
-@@ -4247,7 +4247,7 @@ static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
- 		ipath->fspath->val[i] = rel_ptr;
- 	}
- 
--	ret = copy_to_user((void *)(unsigned long)ipa->fspath,
-+	ret = copy_to_user((void __user *)(unsigned long)ipa->fspath,
- 			   (void *)(unsigned long)ipath->fspath, size);
- 	if (ret) {
- 		ret = -EFAULT;
-@@ -4322,7 +4322,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
- 	if (ret < 0)
- 		goto out;
- 
--	ret = copy_to_user((void *)(unsigned long)loi->inodes,
-+	ret = copy_to_user((void __user *)(unsigned long)loi->inodes,
- 			   (void *)(unsigned long)inodes, size);
- 	if (ret)
- 		ret = -EFAULT;
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6528aa6..e0be577 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -515,7 +515,8 @@ static int write_buf(struct file *filp, const void *buf, u32 len, loff_t *off)
- 	set_fs(KERNEL_DS);
- 
- 	while (pos < len) {
--		ret = vfs_write(filp, (char *)buf + pos, len - pos, off);
-+		ret = vfs_write(filp, (__force const char __user *)buf + pos,
-+				len - pos, off);
- 		/* TODO handle that correctly */
- 		/*if (ret == -ERESTARTSYS) {
- 			continue;
-@@ -639,8 +640,7 @@ static int send_header(struct send_ctx *sctx)
- 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
- 	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
- 
--	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
--					&sctx->send_off);
-+	return write_buf(sctx->send_filp, &hdr, sizeof(hdr), &sctx->send_off);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 44ee5d2..c1bbc88 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -487,7 +487,8 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct tree_mod_elem *tm)
+  * call tree_mod_log_write_unlock() to release.
+  */
+ static inline int tree_mod_dont_log(struct btrfs_fs_info *fs_info,
+-				    struct extent_buffer *eb) {
++				    struct extent_buffer *eb)
++{
+ 	smp_mb();
+ 	if (list_empty(&(fs_info)->tree_mod_seq_list))
+ 		return 1;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3efe1c3..281f30f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6387,6 +6387,7 @@ static struct btrfs_block_group_cache *
+ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
+ 		   struct btrfs_free_cluster *cluster,
+ 		   int delalloc)
++__acquires(&cluster->refill_lock)
+ {
+ 	struct btrfs_block_group_cache *used_bg;
+ 	bool locked = false;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index af0359d..cc6b1fc 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4775,8 +4775,8 @@ static inline void btrfs_release_extent_buffer_rcu(struct rcu_head *head)
+ 	__free_extent_buffer(eb);
  }
  
- /*
-@@ -676,7 +676,7 @@ static int send_cmd(struct send_ctx *sctx)
- 	hdr->crc = cpu_to_le32(crc);
+-/* Expects to have eb->eb_lock already held */
+ static int release_extent_buffer(struct extent_buffer *eb)
++__releases(&eb->refs_lock)
+ {
+ 	WARN_ON(atomic_read(&eb->refs) == 0);
+ 	if (atomic_dec_and_test(&eb->refs)) {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 2b0a627..41c6cd5 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1838,6 +1838,7 @@ static struct btrfs_free_space_op free_space_op = {
  
- 	ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
--					&sctx->send_off);
-+			&sctx->send_off);
- 
- 	sctx->total_send_size += sctx->send_size;
- 	sctx->cmd_send_size[le16_to_cpu(hdr->cmd)] += sctx->send_size;
+ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
+ 			      struct btrfs_free_space *info)
++__must_hold(&ctl->tree_lock)
+ {
+ 	struct btrfs_free_space *bitmap_info;
+ 	struct btrfs_block_group_cache *block_group = NULL;
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 5665d21..47bdc2c 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -222,6 +222,7 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
+  * blocking readers or writers
+  */
+ void btrfs_tree_lock(struct extent_buffer *eb)
++__acquires(&eb->lock)
+ {
+ again:
+ 	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
 -- 
 2.1.1
 

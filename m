@@ -1,82 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:51236 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751985AbaI1WZB (ORCPT
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:40456 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751396AbaI2Jev (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Sep 2014 18:25:01 -0400
-Received: by mail-pa0-f47.google.com with SMTP id rd3so5841661pab.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Sep 2014 15:25:00 -0700 (PDT)
-Date: Sun, 28 Sep 2014 15:26:04 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: orenl@cellrox.com
-Subject: Re: [PATCH 1/2] btrfs: fix sparse address space warnings
-Message-ID: <20140928222604.GA6328@molino.home.network>
-References: <1411894092-28784-1-git-send-email-osandov@osandov.com>
- <1411894092-28784-2-git-send-email-osandov@osandov.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1411894092-28784-2-git-send-email-osandov@osandov.com>
+	Mon, 29 Sep 2014 05:34:51 -0400
+Received: by mail-pa0-f51.google.com with SMTP id lj1so2424504pab.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Sep 2014 02:34:51 -0700 (PDT)
+Received: from localhost ([106.120.101.38])
+        by mx.google.com with ESMTPSA id fn2sm11340746pdb.75.2014.09.29.02.34.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
+        Mon, 29 Sep 2014 02:34:50 -0700 (PDT)
+From: roy.qing.li@gmail.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH][v2] btrfs: fix a overflowing boundary writing in csum_tree_block
+Date: Mon, 29 Sep 2014 17:34:49 +0800
+Message-Id: <1411983289-26522-1-git-send-email-roy.qing.li@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 28, 2014 at 01:48:11AM -0700, Omar Sandoval wrote:
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 6528aa6..e0be577 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -515,7 +515,8 @@ static int write_buf(struct file *filp, const void *buf, u32 len, loff_t *off)
->  	set_fs(KERNEL_DS);
->  
->  	while (pos < len) {
-> -		ret = vfs_write(filp, (char *)buf + pos, len - pos, off);
-> +		ret = vfs_write(filp, (__force const char __user *)buf + pos,
-> +				len - pos, off);
->  		/* TODO handle that correctly */
->  		/*if (ret == -ERESTARTSYS) {
->  			continue;
+From: Li RongQing <roy.qing.li@gmail.com>
 
-Actually, looking at this now, it looks like this is just an open-coded
-kernel_write. I think this could be made a bit cleaner by using that instead;
-the tradeoff is that each call to kernel_write will do the address space
-flip-flop, so if the write gets split up into many calls, there'd be some
-slight overhead. That's probably a microoptimization, but I think it's worth
-looking into making kernel_read and kernel_write handle the retry logic.
+It is impossible that csum_size is larger than sizeof(long), but the codes
+still add the handler for this condition, like allocate new memory, for
+extension. If it becomes true someday, copying csum_size size memory to local
+32bit variable found and val will overflow these two variables.
 
-It looks like Oren Laadan submitted a patch doing exactly that as part of the
-checkpoint/restart patch series: https://lkml.org/lkml/2010/5/6/142. I've added
-an email address that I found for him.
+Fix it by returning the max 4 byte checksum, and print the csum_size
 
->From Josef's response way back in 2010:
-> > +static ssize_t _kernel_write(struct file *file, loff_t offset,
-> > +			     const char __user *ubuf, size_t count)
-> > +{
-> > +	ssize_t nwrite;
-> > +	size_t nleft;
-> > +	loff_t pos = offset;
-> > +
-> > +	for (nleft = count; nleft; nleft -= nwrite) {
-> > +		nwrite = vfs_write(file, ubuf, nleft, &pos);
-> > +		if (nwrite < 0) {
-> > +			if (nwrite == -EAGAIN) {
-> > +				nwrite = 0;
-> > +				continue;
-> > +			} else
-> > +				return nwrite;
-> > +		}
-> > +		ubuf += nwrite;
-> > +	}
-> > +	return count - nleft;
-> > +}
-> 
-> I'm not entirely sure if this can happen, but if vfs_write doesn't write
-> anything, but doesn't have an error, we could end up in an infinite loop.  Like
-> I said I'm not sure if thats even possible, but its definitely one of those
-> things that if it is possible some random security guy is going to figure out
-> how to exploit it at some point down the line.
+Signed-off-by: Li RongQing <roy.qing.li@gmail.com>
+---
+ fs/btrfs/disk-io.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-Did anyone ever come up with a good answer for this?
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a1d36e6..d9b52ac 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -295,14 +295,17 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+ 			u32 val;
+ 			u32 found = 0;
++
++			csum_size = min_t(u16, csum_size, sizeof(u32));
+ 			memcpy(&found, result, csum_size);
+ 
+ 			read_extent_buffer(buf, &val, 0, csum_size);
+ 			printk_ratelimited(KERN_INFO
+ 				"BTRFS: %s checksum verify failed on %llu wanted %X found %X "
+-				"level %d\n",
++				"level %d checksum size %d\n",
+ 				root->fs_info->sb->s_id, buf->start,
+-				val, found, btrfs_header_level(buf));
++				val, found, btrfs_header_level(buf), csum_size);
++
+ 			if (result != (char *)&inline_result)
+ 				kfree(result);
+ 			return 1;
 -- 
-Omar
+1.7.10.4
+

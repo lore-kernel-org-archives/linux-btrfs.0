@@ -1,82 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36119 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752483AbaI2ON4 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:32885 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753536AbaI2PnO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Sep 2014 10:13:56 -0400
-Date: Mon, 29 Sep 2014 22:13:43 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Olivier Bonvalet <ob@daevel.fr>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/relocation.c:1065 in 3.14.16 to 3.17-rc3
-Message-ID: <20140929141342.GB31870@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1409745869.21602.21.camel@localhost>
+	Mon, 29 Sep 2014 11:43:14 -0400
+Date: Mon, 29 Sep 2014 08:43:01 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe David Borba Manana <fdmanana@suse.com>
+Message-ID: <20140929154301.GP26729@merlins.org>
+References: <20140927201941.GL26729@merlins.org>
+ <CAL3q7H7iBBQPnN6dXsXi62TT2qV-Z8JnW3YFAjiPZ6BdZMOt3w@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1409745869.21602.21.camel@localhost>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAL3q7H7iBBQPnN6dXsXi62TT2qV-Z8JnW3YFAjiPZ6BdZMOt3w@mail.gmail.com>
+Subject: Re: 3.16.3 btrfs receive dies with rename o4736059-335172-0 ->
+ merlin/RC/OSD failed. Directory not empty machine
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 03, 2014 at 02:04:29PM +0200, Olivier Bonvalet wrote:
-> Hi,
+On Mon, Sep 29, 2014 at 01:10:37PM +0100, Filipe David Manana wrote:
+> > Is there a patch you'd like me to try, or should I just work around the
+> > problem by deleting all these directories and recreating in 2 steps to
+> > get around the bug?
 > 
-> I have a btrfs partition which throw kernel BUG, even with linux
-> 3.17-rc3 (I tried 3.14.16, 3.16.1 and 3.17-rc3 kernels) :
+> For the moment you'll have to use the workaround.
 > 
-> [   45.058466] ------------[ cut here ]------------
-> [   45.058539] kernel BUG at fs/btrfs/relocation.c:1065!
-> [   45.058578] invalid opcode: 0000 [#1] SMP 
-> [   45.058655] Modules linked in: nf_conntrack iTCO_wdt iTCO_vendor_support i2c_i801 lpc_ich ehci_pci i2ccore ehci_hcd mfd_core evdev battery ie31200_edac edac_core video button btrfs xor raid6_pq dm_mod raid1 md_mod sg sd_mod crc_t10dif crct10dif_common thermal ahci libahci libata scsi_mod xhci_hcd e1000e fan ptp pps_core
-> [   45.059500] CPU: 2 PID: 1740 Comm: btrfs-balance Not tainted 3.17-rc3-dae-intel #1
-> [   45.059550] Hardware name: Digicube sas DediCube/DQ77MK, BIOS MKQ7710H.86A.0058.2013.0226.1541 02/26/2013
-> [   45.059602] task: ffff8802151c17e0 ti: ffff8802105ec000 task.ti: ffff8802105ec000
-> [   45.059652] RIP: 0010:[<ffffffffa019fcf8>]  [<ffffffffa019fcf8>] build_backref_tree+0xa3d/0xcf6 [btrfs]
-> [   45.059739] RSP: 0018:ffff8802105efaf0  EFLAGS: 00010246
-> [   45.059776] RAX: ffff8802105efb00 RBX: ffff880213b83800 RCX: ffff880210565d10
-> [   45.059816] RDX: ffff8802105efb68 RSI: ffff8802105efb68 RDI: ffff880210565d10
-> [   45.059857] RBP: ffff880210565d10 R08: ffff88021313fc40 R09: 0000000000001000
-> [   45.059896] R10: 0000160000000000 R11: 6db6db6db6db6db7 R12: ffff8800d114d310
-> [   45.059937] R13: ffff8802105efb78 R14: ffff8800d114d2c0 R15: ffff88021313fc40
-> [   45.059977] FS:  0000000000000000(0000) GS:ffff88021e280000(0000) knlGS:0000000000000000
-> [   45.060028] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [   45.060066] CR2: 00007f2fc9c649b8 CR3: 0000000001611000 CR4: 00000000001407e0
-> [   45.060105] Stack:
-> [   45.060138]  ffff88021d5fc890 ffff88021417d890 0000000000000000 ffff8802105efb68
-> [   45.060264]  0000000100000005 ffff880213b83920 ffff8802105efb78 00ffffffa015ecd1
-> [   45.060392]  ffff8800d114d400 ffff8800d114d240 ffff880210464220 ffff880210565d40
-> [   45.060516] Call Trace:
-> [   45.060556]  [<ffffffffa01a11ff>] ? relocate_tree_blocks+0x15f/0x430 [btrfs]
-> [   45.060607]  [<ffffffffa019cd78>] ? tree_insert+0x44/0x47 [btrfs]
-> [   45.060656]  [<ffffffffa019e2ba>] ? add_tree_block+0x112/0x13c [btrfs]
-> [   45.060702]  [<ffffffffa01a1ff7>] ? relocate_block_group+0x26d/0x4a6 [btrfs]
-> [   45.060753]  [<ffffffffa0179014>] ? btrfs_wait_ordered_roots+0x18f/0x1ab [btrfs]
-> [   45.060812]  [<ffffffffa01a2384>] ? btrfs_relocate_block_group+0x154/0x265 [btrfs]
-> [   45.060872]  [<ffffffffa0181d01>] ? btrfs_relocate_chunk.isra.29+0x52/0x55d [btrfs]
-> [   45.060932]  [<ffffffffa018fdc8>] ? btrfs_set_lock_blocking_rw+0xa8/0xaa [btrfs]
-> [   45.060988]  [<ffffffffa0145680>] ? btrfs_item_key_to_cpu+0x12/0x30 [btrfs]
-> [   45.061039]  [<ffffffffa017767f>] ? btrfs_get_token_64+0x75/0xcf [btrfs]
-> [   45.061088]  [<ffffffffa017e201>] ? release_extent_buffer+0x26/0x96 [btrfs]
-> [   45.061170]  [<ffffffffa0184965>] ? btrfs_balance+0x9e3/0xb78 [btrfs]
-> [   45.061263]  [<ffffffffa0184afa>] ? btrfs_balance+0xb78/0xb78 [btrfs]
-> [   45.061314]  [<ffffffffa0184b49>] ? balance_kthread+0x4f/0x6d [btrfs]
-> [   45.061360]  [<ffffffff8104704b>] ? kthread+0xa7/0xaf
-> [   45.061420]  [<ffffffff81040000>] ? SyS_old_getrlimit+0x21/0xcb
-> [   45.061460]  [<ffffffff81046fa4>] ? __kthread_parkme+0x5b/0x5b
-> [   45.061501]  [<ffffffff813834ec>] ? ret_from_fork+0x7c/0xb0
-> [   45.061541]  [<ffffffff81046fa4>] ? __kthread_parkme+0x5b/0x5b
-> [   45.061579] Code: 26 a8 02 74 0d 4c 89 e7 e8 3c e1 ff ff 41 80 66 71 fd 49 8b 46 58 49 89 6e 58 4c 89 65 00 48 89 45 08 48 89 28 eb c0 a8 10 75 02 <0f> 0b 83 e0 01 39 44 24 10 0f 84 20 ff ff ff 0f 0b 49 8b 46 58 
-> [   45.063148] RIP  [<ffffffffa019fcf8>] build_backref_tree+0xa3d/0xcf6 [btrfs]
-> [   45.063219]  RSP <ffff8802105efaf0>
-> [   45.063260] ---[ end trace c396e96e4d1a5697 ]---
+> I have a hunch about what it might be, but to confirm it (or help if
+> it's wrong/incomplete) please send me the full output of the following
+> commands:
 > 
-> I have dump the FS with btrfs-image, but don't know where to push that.
-> So you can download it at : https://daevel.fr/img/btrfs-image.out
-> (near 6GB, md5sum ee5559ab31368aba60c259ce3b5b9504)
+> - tree -d --inodes, at the root of the parent snapshot
+> - tree -d --inodes, at the root of the second snapshot
+> - btrfs receive -vv --max-errors=0 .... (needs btrfs-progs 3.16.x I believe)
+> 
+> And I'll try to figure it out sometime this week.
 
-Would you please try this patch?
+Thanks.
 
-https://patchwork.kernel.org/patch/4939761/
+Here's the relevant stripped output:
+Before:
+└── [    257]  merlin
+    ├── [1294378]  RC
+    │   ├── [3490376]  Docs
+    │   ├── [1651282]  notes -> /home/merlin/public_html/notes/rc
+    │   ├── [2682102]  OSD
+    │   │   ├── [3964804]  old
+    │   │   └── [3964832]  Source
+    │   │       ├── [3964833]  Copter
+    │   │       └── [3964835]  Plane
 
-thanks,
--liubo
+After:
+└── [    257]  merlin
+    ├── [1294378]  RC
+    │   ├── [3490376]  Docs
+    │   ├── [1651282]  notes -> /home/merlin/public_html/notes/rc
+    │   ├── [4736059]  OSD
+    │   │   ├── [3964804]  OSD-2.0
+    │   │   ├── [4736027]  OSD-Copter 789
+    │   │   └── [2682102]  OSD-Plane 788
+    │   │       └── [3964832]  Source
+    │   │           ├── [3964833]  Copter
+    │   │           └── [3964835]  Plane
+
+Log (stripped):
+Create a readonly snapshot of 'home' in './home_ro.20140929_08:19:16'
+At subvol home_ro.20140929_08:19:16
+At snapshot home_ro.20140929_08:19:16
+receiving snapshot home_ro.20140929_08:19:16 uuid=807e5a76-8a80-9c44-9864-426dc8283523, ctransid=343443 parent_uuid=4c7431e0-106f-d243-b317-078e393e091c, parent_ctransid=335144
+truncate merlin/RC/OSD/old/config.xml size=109
+utimes merlin/RC/OSD/old/config.xml
+unlink merlin/downloads/CT Tool for MinimOSD Extra 2.3.2.0 Pre Release r727.zip
+utimes merlin/RC/OSD
+truncate merlin/RC/OSD/config.xml size=274
+utimes merlin/RC/OSD/config.xml
+link o4736027-335149-0/octocopter1.osd -> merlin/RC/OSD/octocopter1.osd
+unlink merlin/RC/OSD/octocopter1.osd
+utimes merlin/RC/OSD
+unlink merlin/downloads/MinimOSDExtra_Copter_Prerelease_2.4_r794.hex
+unlink merlin/downloads/MinimOSDExtra_Copter_Prerelease_2.4_r789.zip
+rename o4736027-335149-0 -> o4736059-335172-0/OSD-Copter 789
+chown o4736059-335172-0/OSD-Copter 789 - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789 - mode=0755
+utimes o4736059-335172-0/OSD-Copter 789
+rename o4736031-335150-0 -> o4736059-335172-0/OSD-Copter 789/ArduCam_logo.jpg
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/ArduCam_logo.jpg size=18721
+chown o4736059-335172-0/OSD-Copter 789/ArduCam_logo.jpg - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/ArduCam_logo.jpg - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/ArduCam_logo.jpg
+rename o4736032-335150-0 -> o4736059-335172-0/OSD-Copter 789/config.xml
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/config.xml size=274
+chown o4736059-335172-0/OSD-Copter 789/config.xml - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/config.xml - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/config.xml
+rename o4736033-335150-0 -> o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.0.mcm
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.0.mcm size=163847
+chown o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.0.mcm - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.0.mcm - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.0.mcm
+rename o4736034-335150-0 -> o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.1.mcm
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.1.mcm size=163847
+chown o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.1.mcm - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.1.mcm - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/MinimOSD_2.4.0.1.mcm
+rename o4736035-335150-0 -> o4736059-335172-0/OSD-Copter 789/MinimOSD-Extra_Copter_Pre-release_2.4_r789.hex
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/MinimOSD-Extra_Copter_Pre-release_2.4_r789.hex size=82216
+chown o4736059-335172-0/OSD-Copter 789/MinimOSD-Extra_Copter_Pre-release_2.4_r789.hex - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/MinimOSD-Extra_Copter_Pre-release_2.4_r789.hex - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/MinimOSD-Extra_Copter_Pre-release_2.4_r789.hex
+rename o4736036-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Config.application
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Config.application size=1631
+chown o4736059-335172-0/OSD-Copter 789/OSD_Config.application - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Config.application - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Config.application
+rename o4736037-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Config.exe
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Config.exe size=215040
+chown o4736059-335172-0/OSD-Copter 789/OSD_Config.exe - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Config.exe - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Config.exe
+rename o4736038-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.config
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.config size=117
+chown o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.config - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.config - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.config
+rename o4736039-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.manifest
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.manifest size=6218
+chown o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.manifest - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.manifest - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Config.exe.manifest
+rename o4736040-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Config.pdb
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Config.pdb size=196096
+chown o4736059-335172-0/OSD-Copter 789/OSD_Config.pdb - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Config.pdb - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Config.pdb
+rename o4736041-335150-0 -> o4736059-335172-0/OSD-Copter 789/OSD_Panels.ino
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/OSD_Panels.ino size=44250
+chown o4736059-335172-0/OSD-Copter 789/OSD_Panels.ino - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/OSD_Panels.ino - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/OSD_Panels.ino
+rename o4736042-335150-0 -> o4736059-335172-0/OSD-Copter 789/vlcsnap-2012-01-28-07h46m04s95.png
+utimes o4736059-335172-0/OSD-Copter 789
+truncate o4736059-335172-0/OSD-Copter 789/vlcsnap-2012-01-28-07h46m04s95.png size=281948
+chown o4736059-335172-0/OSD-Copter 789/vlcsnap-2012-01-28-07h46m04s95.png - uid=500, gid=500
+chmod o4736059-335172-0/OSD-Copter 789/vlcsnap-2012-01-28-07h46m04s95.png - mode=0644
+utimes o4736059-335172-0/OSD-Copter 789/vlcsnap-2012-01-28-07h46m04s95.png
+rename o4736059-335172-0 -> merlin/RC/OSD
+ERROR: rename o4736059-335172-0 -> merlin/RC/OSD failed. Directory not empty
+chown merlin/RC/OSD - uid=500, gid=500
+chmod merlin/RC/OSD - mode=0755
+rename merlin/RC/OSD -> merlin/RC/OSD/OSD-Plane 788
+ERROR: rename merlin/RC/OSD -> merlin/RC/OSD/OSD-Plane 788 failed. Invalid argument
+utimes merlin/RC/OSD/OSD-Plane 788
+ERROR: utimes merlin/RC/OSD/OSD-Plane 788 failed. No such file or directory
+utimes merlin/RC/OSD
+rename merlin/RC/OSD/OSD-Plane 788/old -> merlin/RC/OSD/OSD-2.0
+ERROR: rename merlin/RC/OSD/OSD-Plane 788/old -> merlin/RC/OSD/OSD-2.0 failed. No such file or directory
+utimes merlin/RC/OSD/OSD-2.0
+ERROR: utimes merlin/RC/OSD/OSD-2.0 failed. No such file or directory
+utimes merlin/RC/OSD/OSD-Plane 788
+ERROR: utimes merlin/RC/OSD/OSD-Plane 788 failed. No such file or directory
+utimes merlin/RC/OSD
+utimes merlin/RC/OSD
+rename o4736194-335193-0 -> merlin/RC/OSD/OSD-Copter 789/octocopter2.osd
+ERROR: rename o4736194-335193-0 -> merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+utimes merlin/RC/OSD/OSD-Copter 789
+ERROR: utimes merlin/RC/OSD/OSD-Copter 789 failed. No such file or directory
+ERROR: open /mnt/btrfs_pool2//home_ro.20140929_08:19:16/merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+truncate merlin/RC/OSD/OSD-Copter 789/octocopter2.osd size=1713
+ERROR: truncate merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+chown merlin/RC/OSD/OSD-Copter 789/octocopter2.osd - uid=500, gid=500
+ERROR: chown merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+chmod merlin/RC/OSD/OSD-Copter 789/octocopter2.osd - mode=0644
+ERROR: chmod merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+utimes merlin/RC/OSD/OSD-Copter 789/octocopter2.osd
+ERROR: utimes merlin/RC/OSD/OSD-Copter 789/octocopter2.osd failed. No such file or directory
+
+ABORT: btrfs send -p /mnt/btrfs_pool1/home_ro.20140927_09:00:00 home_ro.20140929_08:19:16 |  btrfs receive /mnt/btrfs_pool2// failed
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,49 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:60920 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751330AbaI3Ojh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 10:39:37 -0400
-Received: by mail-pa0-f48.google.com with SMTP id eu11so1923066pac.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 07:39:37 -0700 (PDT)
-From: naota@elisp.net
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs: initial reference count of extent buffer is correct?
-References: <87y4ud2l7q.fsf@elisp.net>
-	<20140825061604.GE22848@localhost.localdomain>
-Date: Tue, 30 Sep 2014 23:39:31 +0900
-In-Reply-To: <20140825061604.GE22848@localhost.localdomain> (Liu Bo's message
-	of "Mon, 25 Aug 2014 14:16:05 +0800")
-Message-ID: <878ul15g0s.fsf@elisp.net>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:39677 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751872AbaI3RQw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Sep 2014 13:16:52 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: quwenruo@cn.fujitsu.com, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: add more superblock checks
+Date: Tue, 30 Sep 2014 19:16:47 +0200
+Message-Id: <1412097407-29093-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Liu
+Populate btrfs_check_super_valid() with checks that try to verify
+consistency of superblock by additional conditions that may arise from
+corrupted devices or bitflips. Some of tests are only hints and issue
+warnings instead of failing the mount, basically when the checks are
+derived from the data found in the superblock.
 
-Thank you for your explanation, and I'm sorry for this long silence.
+Tested on a broken image provided by Qu.
 
-Liu Bo <bo.li.liu@oracle.com> writes:
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/disk-io.c | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 65 insertions(+), 2 deletions(-)
 
-> You may think of it twice, commit 53ee1bccf99cd5b474fe1aa857b7dd176e3a1407 
-> is to fix a bug of assigning a free block to two different extent buffers, ie.
-> two different extent buffers' share the same eb->start, so it's not just bumping
-> a reference cnt.
->
-> Right now we want to be consistent with the kernel side, decreasing eb->refs=0
-> means it'd be freed, so droping free_some_buffer() can be a good choice.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a1d36e62179c..bfb00cb1c84c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3814,10 +3814,73 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
+ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 			      int read_only)
+ {
++	struct btrfs_super_block *sb = fs_info->super_copy;
++	int ret = 0;
++
++	if (sb->root_level > BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: tree_root level too big: %d > %d\n",
++				sb->root_level, BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++	if (sb->chunk_root_level > BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: chunk_root level too big: %d > %d\n",
++				sb->chunk_root_level, BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++	if (sb->log_root_level > BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: log_root level too big: %d > %d\n",
++				sb->log_root_level, BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++
+ 	/*
+-	 * Placeholder for checks
++	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
++	 * items yet, they'll be verified later. Issue just a warning.
+ 	 */
+-	return 0;
++	if (!IS_ALIGNED(sb->root, 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				sb->root);
++	if (!IS_ALIGNED(sb->chunk_root, 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				sb->chunk_root);
++	if (!IS_ALIGNED(sb->log_root, 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				sb->log_root);
++
++	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
++		printk(KERN_ERR "BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
++				fs_info->fsid, sb->dev_item.fsid);
++		ret = -EINVAL;
++	}
++
++	/*
++	 * Hint to catch really bogus numbers, bitflips or so, more exact checks are
++	 * done later
++	 */
++	if (sb->num_devices > (1UL << 31))
++		printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
++				sb->num_devices);
++
++	if (sb->bytenr != BTRFS_SUPER_INFO_OFFSET) {
++		printk(KERN_ERR "BTRFS: super offset mismatch %llu != %u\n",
++				sb->bytenr, BTRFS_SUPER_INFO_OFFSET);
++		ret = -EINVAL;
++	}
++
++	/*
++	 * The generation is a global counter, we'll trust it more than the others
++	 * but it's still possible that it's the one that's wrong.
++	 */
++	if (sb->generation < sb->chunk_root_generation)
++		printk(KERN_WARNING
++			"BTRFS: suspicious: generation < chunk_root_generation: %llu < %llu\n",
++			sb->generation, sb->chunk_root_generation);
++	if (sb->generation < sb->cache_generation && sb->cache_generation != (u64)-1)
++		printk(KERN_WARNING
++			"BTRFS: suspicious: generation < cache_generation: %llu < %llu\n",
++			sb->generation, sb->cache_generation);
++
++	return ret;
+ }
+ 
+ static void btrfs_error_commit_super(struct btrfs_root *root)
+-- 
+1.8.4.5
 
-Now I understand the reason why @refs = 1 initially.
-
-I'll post a patch to drop free_some_buffer() after this.
-
-> And for caching extent buffer, we've increased eb->refs by 1 to keep it in the
-> cache rbtree.
->
-> thanks,
-> -liubo
-
-Regards,
-Naohiro

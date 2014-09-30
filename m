@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:36524 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755260AbaI3WAu (ORCPT
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:54728 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754856AbaI3WAt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 18:00:50 -0400
-Received: by mail-pa0-f43.google.com with SMTP id hz1so7122639pad.16
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 15:00:49 -0700 (PDT)
+	Tue, 30 Sep 2014 18:00:49 -0400
+Received: by mail-pd0-f178.google.com with SMTP id y10so5383591pdj.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 15:00:48 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>, Zach Brown <zab@zabbo.net>
-Subject: [PATCH v2 3/3] btrfs: fix sparse lock context warnings
-Date: Tue, 30 Sep 2014 15:01:42 -0700
-Message-Id: <0f2aec95ffee1c6b7b7b65366d4aba98c4df1d09.1412114127.git.osandov@osandov.com>
+Subject: [PATCH v2 2/3] btrfs: fix sparse address space warnings
+Date: Tue, 30 Sep 2014 15:01:41 -0700
+Message-Id: <49ca3ccf1c2fd2091c6fbec1d14e393b95b0fff8.1412114127.git.osandov@osandov.com>
 In-Reply-To: <cover.1412114127.git.osandov@osandov.com>
 References: <cover.1412114127.git.osandov@osandov.com>
 In-Reply-To: <cover.1412114127.git.osandov@osandov.com>
@@ -20,69 +20,45 @@ References: <cover.1412114127.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix several sparse warnings that can easily be addressed with context
-annotations. These annotations also provide some sort of documentation for the
-internal helper functions.
+Several casts of ioctl fields from userspace are missing the __user annotation.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/extent-tree.c      | 1 +
- fs/btrfs/extent_io.c        | 2 +-
- fs/btrfs/free-space-cache.c | 1 +
- fs/btrfs/locking.c          | 1 +
- 4 files changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3efe1c3..281f30f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6387,6 +6387,7 @@ static struct btrfs_block_group_cache *
- btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
- 		   struct btrfs_free_cluster *cluster,
- 		   int delalloc)
-+__acquires(&cluster->refill_lock)
- {
- 	struct btrfs_block_group_cache *used_bg;
- 	bool locked = false;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index af0359d..cc6b1fc 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4775,8 +4775,8 @@ static inline void btrfs_release_extent_buffer_rcu(struct rcu_head *head)
- 	__free_extent_buffer(eb);
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8a8e298..0f9a5a1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2176,7 +2176,7 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
  
--/* Expects to have eb->eb_lock already held */
- static int release_extent_buffer(struct extent_buffer *eb)
-+__releases(&eb->refs_lock)
- {
- 	WARN_ON(atomic_read(&eb->refs) == 0);
- 	if (atomic_dec_and_test(&eb->refs)) {
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 2b0a627..41c6cd5 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1838,6 +1838,7 @@ static struct btrfs_free_space_op free_space_op = {
+ 	inode = file_inode(file);
+ 	ret = search_ioctl(inode, &args.key, &buf_size,
+-			   (char *)(&uarg->buf[0]));
++			   (char __user *)(&uarg->buf[0]));
+ 	if (ret == 0 && copy_to_user(&uarg->key, &args.key, sizeof(args.key)))
+ 		ret = -EFAULT;
+ 	else if (ret == -EOVERFLOW &&
+@@ -4247,7 +4247,7 @@ static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
+ 		ipath->fspath->val[i] = rel_ptr;
+ 	}
  
- static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
- 			      struct btrfs_free_space *info)
-+__must_hold(&ctl->tree_lock)
- {
- 	struct btrfs_free_space *bitmap_info;
- 	struct btrfs_block_group_cache *block_group = NULL;
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 5665d21..47bdc2c 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -222,6 +222,7 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
-  * blocking readers or writers
-  */
- void btrfs_tree_lock(struct extent_buffer *eb)
-+__acquires(&eb->lock)
- {
- again:
- 	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
+-	ret = copy_to_user((void *)(unsigned long)ipa->fspath,
++	ret = copy_to_user((void __user *)(unsigned long)ipa->fspath,
+ 			   (void *)(unsigned long)ipath->fspath, size);
+ 	if (ret) {
+ 		ret = -EFAULT;
+@@ -4322,7 +4322,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	ret = copy_to_user((void *)(unsigned long)loi->inodes,
++	ret = copy_to_user((void __user *)(unsigned long)loi->inodes,
+ 			   (void *)(unsigned long)inodes, size);
+ 	if (ret)
+ 		ret = -EFAULT;
 -- 
 2.1.1
 

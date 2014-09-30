@@ -1,57 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44393 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751709AbaI2Vt5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Sep 2014 17:49:57 -0400
-Date: Mon, 29 Sep 2014 23:49:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: fix sparse address space warnings
-Message-ID: <20140929214954.GG11436@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1411894092-28784-1-git-send-email-osandov@osandov.com>
- <1411894092-28784-2-git-send-email-osandov@osandov.com>
- <20140929160738.GC11436@twin.jikos.cz>
- <20140929194512.GA7038@mew.dhcp4.washington.edu>
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:60920 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751330AbaI3Ojh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Sep 2014 10:39:37 -0400
+Received: by mail-pa0-f48.google.com with SMTP id eu11so1923066pac.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 07:39:37 -0700 (PDT)
+From: naota@elisp.net
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-progs: initial reference count of extent buffer is correct?
+References: <87y4ud2l7q.fsf@elisp.net>
+	<20140825061604.GE22848@localhost.localdomain>
+Date: Tue, 30 Sep 2014 23:39:31 +0900
+In-Reply-To: <20140825061604.GE22848@localhost.localdomain> (Liu Bo's message
+	of "Mon, 25 Aug 2014 14:16:05 +0800")
+Message-ID: <878ul15g0s.fsf@elisp.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140929194512.GA7038@mew.dhcp4.washington.edu>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 29, 2014 at 12:45:12PM -0700, Omar Sandoval wrote:
-> > > @@ -639,8 +640,7 @@ static int send_header(struct send_ctx *sctx)
-> > > -	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
-> > > -					&sctx->send_off);
-> > > +	return write_buf(sctx->send_filp, &hdr, sizeof(hdr), &sctx->send_off);
-> > 
-> > >  	ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
-> > > -					&sctx->send_off);
-> > > +			&sctx->send_off);
-> > 
-> > Please do not fold unrelated changes.
-> 
-> My metric for "related" here was that these were call sites of a function I
-> directly modified.
+Hi, Liu
 
-The changes are only in the whitespace, that's not necessary. It's
-usually ok to fix style issues in the code you modify directly.
+Thank you for your explanation, and I'm sorry for this long silence.
 
-> Is the preferred form to just split style fixes that we encounter into
-> a separate patch in the series?
+Liu Bo <bo.li.liu@oracle.com> writes:
 
-Well, I may only express my point of view. Yes, split the style-only
-changes into another patch and don't send it :)
+> You may think of it twice, commit 53ee1bccf99cd5b474fe1aa857b7dd176e3a1407 
+> is to fix a bug of assigning a free block to two different extent buffers, ie.
+> two different extent buffers' share the same eb->start, so it's not just bumping
+> a reference cnt.
+>
+> Right now we want to be consistent with the kernel side, decreasing eb->refs=0
+> means it'd be freed, so droping free_some_buffer() can be a good choice.
 
-The problem with patches that do not effectively change anything is that
-they pollute git history and just add extra step when one has to look
-for a patch that broke something, or eg. change context of following
-patches and make backporting a bit more tedious. Code cleanups are fine,
-but there's usually a point of making the code more readable, compact,
-etc.
+Now I understand the reason why @refs = 1 initially.
 
-The coding style should be perfect from the beginning. Nobody will
-probably point out minor style violations during review, because it just
-pointless for a patch that fixes a real bug.
+I'll post a patch to drop free_some_buffer() after this.
+
+> And for caching extent buffer, we've increased eb->refs by 1 to keep it in the
+> cache rbtree.
+>
+> thanks,
+> -liubo
+
+Regards,
+Naohiro

@@ -1,63 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2660 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754755AbaI3Cj0 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55551 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750846AbaI3VEb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Sep 2014 22:39:26 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8U2dQhs011252
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 10:39:26 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Tue, 30 Sep 2014 17:04:31 -0400
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s8UL4RY0020091
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 14:04:30 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1pqrywjg51-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Sep 2014 14:04:29 -0700
+From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Don't return any fs_info that contain NULL tree_root or fs_root.
-Date: Tue, 30 Sep 2014 10:39:22 +0800
-Message-ID: <1412044762-2480-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: add shift_items to btrfs-corrupt-block
+Date: Tue, 30 Sep 2014 17:02:26 -0400
+Message-ID: <1412110946-8598-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-btrfsck will segfault if it fails to open the fs tree or tree root.
+A user had a corrupted fs where his items where shifted oddly.  This adds the
+functionality I needed to btrfs-corrupt-block in order to reproduce this
+corruption in order to make fsck fix this sort of problem.  Thanks,
 
-[REPRODUCER]
-Execute btrfsck on a highly damaged btrfs image.
-fsfuzz can be used to make a junk btrfs image.
-
-[REASON]
-Current open_ctree() in btrfs-progs support OPEN_CTREE_PARTIAL flag to
-allow return fs_info even some of the trees is missing.
-
-However it is too loose and even allows fs_info containing no tree to be
-returned.
-
-And when it happens, fs_info->fs_root is NULL,
-close_ctree(fs_info->fs_root) will cause the access to NULL pointer and
-segfault.
-
-[FIX]
-This patch will add checks for fs_info->tree_root and fs_info->fs_root
-before return fs_info.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ btrfs-corrupt-block.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-diff --git a/disk-io.c b/disk-io.c
-index 26a532e..21a3083 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1134,7 +1134,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	return fs_info;
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 474d48f..22390b5 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -303,6 +303,7 @@ enum btrfs_file_extent_field {
  
- out_failed:
--	if (flags & OPEN_CTREE_PARTIAL)
-+	if (flags & OPEN_CTREE_PARTIAL &&
-+	    fs_info->tree_root && fs_info->fs_root)
- 		return fs_info;
- out_chunk:
- 	btrfs_release_all_roots(fs_info);
+ enum btrfs_metadata_block_field {
+ 	BTRFS_METADATA_BLOCK_GENERATION,
++	BTRFS_METADATA_BLOCK_SHIFT_ITEMS,
+ 	BTRFS_METADATA_BLOCK_BAD,
+ };
+ 
+@@ -332,6 +333,8 @@ convert_metadata_block_field(char *field)
+ {
+ 	if (!strncmp(field, "generation", FIELD_BUF_LEN))
+ 		return BTRFS_METADATA_BLOCK_GENERATION;
++	if (!strncmp(field, "shift_items", FIELD_BUF_LEN))
++		return BTRFS_METADATA_BLOCK_SHIFT_ITEMS;
+ 	return BTRFS_METADATA_BLOCK_BAD;
+ }
+ 
+@@ -538,6 +541,26 @@ out:
+ 	return ret;
+ }
+ 
++static void shift_items(struct btrfs_root *root, struct extent_buffer *eb)
++{
++	int nritems = btrfs_header_nritems(eb);
++	int shift_space = btrfs_leaf_free_space(root, eb) / 2;
++	int slot = nritems / 2;
++	int i = 0;
++	unsigned int data_end = btrfs_item_offset_nr(eb, nritems - 1);
++
++	/* Shift the item data up to and including slot back by shift space */
++	memmove_extent_buffer(eb, data_end - shift_space, data_end,
++			      btrfs_item_offset_nr(eb, slot - 1) - data_end);
++
++	/* Now update the item pointers. */
++	for (i = nritems - 1; i >= slot; i--) {
++		u32 offset = btrfs_item_offset_nr(eb, i);
++		offset -= shift_space;
++		btrfs_set_item_offset(eb, btrfs_item_nr(i), offset);
++	}
++}
++
+ static int corrupt_metadata_block(struct btrfs_root *root, u64 block,
+ 				  char *field)
+ {
+@@ -608,6 +631,9 @@ static int corrupt_metadata_block(struct btrfs_root *root, u64 block,
+ 		bogus = generate_u64(orig);
+ 		btrfs_set_header_generation(eb, bogus);
+ 		break;
++	case BTRFS_METADATA_BLOCK_SHIFT_ITEMS:
++		shift_items(root, path->nodes[level]);
++		break;
+ 	default:
+ 		ret = -EINVAL;
+ 		break;
 -- 
-2.1.1
+1.8.3.1
 

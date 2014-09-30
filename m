@@ -1,109 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45424 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753048AbaIZHgh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Sep 2014 03:36:37 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s8Q7adnA024215
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Sep 2014 15:36:40 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Check the consistence between the parent node and child node/leaf.
-Date: Fri, 26 Sep 2014 15:36:35 +0800
-Message-ID: <1411716995-22537-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56907 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751172AbaI3Lf7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Sep 2014 07:35:59 -0400
+Date: Tue, 30 Sep 2014 13:35:57 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Don't return any fs_info that contain NULL
+ tree_root or fs_root.
+Message-ID: <20140930113556.GI11436@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1412044762-2480-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1412044762-2480-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btrfs-progs walk down the tree, it does not check whether the child
-node/leaf is valid.
-In fact, there is some corrupted image whose csum is all valid but
-parent node points to a invalid leaf.
+On Tue, Sep 30, 2014 at 10:39:22AM +0800, Qu Wenruo wrote:
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1134,7 +1134,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+>  	return fs_info;
+>  
+>  out_failed:
+> -	if (flags & OPEN_CTREE_PARTIAL)
+> +	if (flags & OPEN_CTREE_PARTIAL &&
+> +	    fs_info->tree_root && fs_info->fs_root)
+>  		return fs_info;
 
-In my case, the parent node in fs tree point to a invalid leaf(gen 11),
-whose generation(15) and first key(EXTENT_TREE ROOT_ITEM 0) is
-completely invalid, and will cause BUG_ON in process_inode_item().
+I see a conflict with a pending patch
+https://patchwork.kernel.org/patch/4254631/
 
-Unfortunately, we are unable to fix when it happens.
-So we can only output meaningful error message and avoid the insane
-node/leaf, which is still much better than the original BUG_ON().
+that removes the check completely but fixes the crash in another way. I
+like Wang's patch because it keeps the logic about partial open inside
+btrfs_setup_all_roots(). Please test if it fixes the crash with the
+corrupted image you have. Thanks.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- cmds-check.c | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index d479361..9471709 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -1302,6 +1302,52 @@ static void reada_walk_down(struct btrfs_root *root,
- 	}
- }
- 
-+/*
-+ * Check the child node/leaf by the following condition:
-+ * 1. the first item key of the node/leaf should be the same with the one
-+ *    in parent.
-+ * 2. block in parent node should match the child node/leaf.
-+ * 3. generation of parent node and child's header should be consistent.
-+ *
-+ * Or the child node/leaf pointed by the key in parent is not valid.
-+ *
-+ * We hope to check leaf owner too, but since subvol may share leaves,
-+ * which makes leaf owner check not so strong, key check should be
-+ * sufficient enough for that case.
-+ */
-+static int check_child_node(struct btrfs_root *root,
-+			    struct extent_buffer *parent, int slot,
-+			    struct extent_buffer *child)
-+{
-+	struct btrfs_key parent_key;
-+	struct btrfs_key child_key;
-+	int ret = 0;
-+
-+	btrfs_item_key_to_cpu(parent, &parent_key, slot);
-+	btrfs_item_key_to_cpu(child, &child_key, 0);
-+	if (memcmp(&parent_key, &child_key, sizeof(parent_key))) {
-+		ret = -EINVAL;
-+		fprintf(stderr,
-+			"Wrong key of child node/leaf, wanted: (%llu, %u, %llu), have: (%llu, %u, %llu)\n",
-+			parent_key.objectid, parent_key.type, parent_key.offset,
-+			child_key.objectid, child_key.type, child_key.offset);
-+	}
-+	if (btrfs_header_bytenr(child) != btrfs_node_blockptr(parent, slot)) {
-+		ret = -EINVAL;
-+		fprintf(stderr, "Wrong block of child node/leaf, wanted: %llu, have: %llu\n",
-+			btrfs_node_blockptr(parent, slot),
-+			btrfs_header_bytenr(child));
-+	}
-+	if (btrfs_node_ptr_generation(parent, slot) !=
-+	    btrfs_header_generation(child)) {
-+		ret = -EINVAL;
-+		fprintf(stderr, "Wrong generation of child node/leaf, wanted: %llu, have: %llu\n",
-+			btrfs_header_generation(child),
-+			btrfs_node_ptr_generation(parent, slot));
-+	}
-+	return ret;
-+}
-+
- static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 			  struct walk_control *wc, int *level)
- {
-@@ -1375,6 +1421,11 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 			}
- 		}
- 
-+		ret = check_child_node(root, cur, path->slots[*level], next);
-+		if (ret) {
-+			err = ret;
-+			goto out;
-+		}
- 		*level = *level - 1;
- 		free_extent_buffer(path->nodes[*level]);
- 		path->nodes[*level] = next;
--- 
-2.1.1
-
+>  out_chunk:
+>  	btrfs_release_all_roots(fs_info);

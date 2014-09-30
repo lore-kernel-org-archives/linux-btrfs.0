@@ -1,111 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39677 "EHLO mx2.suse.de"
+Received: from tetsuo.zabbo.net ([50.193.208.193]:49576 "EHLO tetsuo.zabbo.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751872AbaI3RQw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 13:16:52 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: add more superblock checks
-Date: Tue, 30 Sep 2014 19:16:47 +0200
-Message-Id: <1412097407-29093-1-git-send-email-dsterba@suse.cz>
+	id S1751042AbaI3T1o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Sep 2014 15:27:44 -0400
+Date: Tue, 30 Sep 2014 12:27:43 -0700
+From: Zach Brown <zab@zabbo.net>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        orenl@cellrox.com
+Subject: Re: [PATCH 1/2] btrfs: fix sparse address space warnings
+Message-ID: <20140930192743.GE12900@lenny.home.zabbo.net>
+References: <1411894092-28784-1-git-send-email-osandov@osandov.com>
+ <1411894092-28784-2-git-send-email-osandov@osandov.com>
+ <20140928222604.GA6328@molino.home.network>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140928222604.GA6328@molino.home.network>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Populate btrfs_check_super_valid() with checks that try to verify
-consistency of superblock by additional conditions that may arise from
-corrupted devices or bitflips. Some of tests are only hints and issue
-warnings instead of failing the mount, basically when the checks are
-derived from the data found in the superblock.
+On Sun, Sep 28, 2014 at 03:26:04PM -0700, Omar Sandoval wrote:
+> On Sun, Sep 28, 2014 at 01:48:11AM -0700, Omar Sandoval wrote:
+> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> > index 6528aa6..e0be577 100644
+> > --- a/fs/btrfs/send.c
+> > +++ b/fs/btrfs/send.c
+> > @@ -515,7 +515,8 @@ static int write_buf(struct file *filp, const void *buf, u32 len, loff_t *off)
+> >  	set_fs(KERNEL_DS);
+> >  
+> >  	while (pos < len) {
+> > -		ret = vfs_write(filp, (char *)buf + pos, len - pos, off);
+> > +		ret = vfs_write(filp, (__force const char __user *)buf + pos,
+> > +				len - pos, off);
+> >  		/* TODO handle that correctly */
+> >  		/*if (ret == -ERESTARTSYS) {
+> >  			continue;
+> 
+> Actually, looking at this now, it looks like this is just an open-coded
+> kernel_write. I think this could be made a bit cleaner by using that instead;
 
-Tested on a broken image provided by Qu.
+Agreed, but notice that you'll want to be careful to update
+write_buf()'s *off because passing a dereferenced copy to kernel_write()
+will lose the pos update that vfs_write() is currently taking care of.
 
-Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/disk-io.c | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 65 insertions(+), 2 deletions(-)
+A carefully placed "*off += ret" in write_buf() will be fine.  (As fine
+as having a magical private file position in the send context ever was.)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a1d36e62179c..bfb00cb1c84c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3814,10 +3814,73 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
- static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 			      int read_only)
- {
-+	struct btrfs_super_block *sb = fs_info->super_copy;
-+	int ret = 0;
-+
-+	if (sb->root_level > BTRFS_MAX_LEVEL) {
-+		printk(KERN_ERR "BTRFS: tree_root level too big: %d > %d\n",
-+				sb->root_level, BTRFS_MAX_LEVEL);
-+		ret = -EINVAL;
-+	}
-+	if (sb->chunk_root_level > BTRFS_MAX_LEVEL) {
-+		printk(KERN_ERR "BTRFS: chunk_root level too big: %d > %d\n",
-+				sb->chunk_root_level, BTRFS_MAX_LEVEL);
-+		ret = -EINVAL;
-+	}
-+	if (sb->log_root_level > BTRFS_MAX_LEVEL) {
-+		printk(KERN_ERR "BTRFS: log_root level too big: %d > %d\n",
-+				sb->log_root_level, BTRFS_MAX_LEVEL);
-+		ret = -EINVAL;
-+	}
-+
- 	/*
--	 * Placeholder for checks
-+	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
-+	 * items yet, they'll be verified later. Issue just a warning.
- 	 */
--	return 0;
-+	if (!IS_ALIGNED(sb->root, 4096))
-+		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
-+				sb->root);
-+	if (!IS_ALIGNED(sb->chunk_root, 4096))
-+		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
-+				sb->chunk_root);
-+	if (!IS_ALIGNED(sb->log_root, 4096))
-+		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
-+				sb->log_root);
-+
-+	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
-+		printk(KERN_ERR "BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
-+				fs_info->fsid, sb->dev_item.fsid);
-+		ret = -EINVAL;
-+	}
-+
-+	/*
-+	 * Hint to catch really bogus numbers, bitflips or so, more exact checks are
-+	 * done later
-+	 */
-+	if (sb->num_devices > (1UL << 31))
-+		printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
-+				sb->num_devices);
-+
-+	if (sb->bytenr != BTRFS_SUPER_INFO_OFFSET) {
-+		printk(KERN_ERR "BTRFS: super offset mismatch %llu != %u\n",
-+				sb->bytenr, BTRFS_SUPER_INFO_OFFSET);
-+		ret = -EINVAL;
-+	}
-+
-+	/*
-+	 * The generation is a global counter, we'll trust it more than the others
-+	 * but it's still possible that it's the one that's wrong.
-+	 */
-+	if (sb->generation < sb->chunk_root_generation)
-+		printk(KERN_WARNING
-+			"BTRFS: suspicious: generation < chunk_root_generation: %llu < %llu\n",
-+			sb->generation, sb->chunk_root_generation);
-+	if (sb->generation < sb->cache_generation && sb->cache_generation != (u64)-1)
-+		printk(KERN_WARNING
-+			"BTRFS: suspicious: generation < cache_generation: %llu < %llu\n",
-+			sb->generation, sb->cache_generation);
-+
-+	return ret;
- }
- 
- static void btrfs_error_commit_super(struct btrfs_root *root)
--- 
-1.8.4.5
+> the tradeoff is that each call to kernel_write will do the address
+> space flip-flop, so if the write gets split up into many calls,
+> there'd be some slight overhead.  That's probably a microoptimization,
+> but 
 
+Yeah, I don't think that overhead is going to be significant given all
+of the work that's going on.
+
+> I think it's worth looking
+> into making kernel_read and kernel_write handle the retry logic.
+
+I disagree.  I wouldn't broaden the scope to add retrying on behalf of
+all kernel_write() callers and write methods (it's exported to modules,
+too).  I'd leave the looping in btrfs and just call kernel_write() to
+get rid of the segment juggling.
+
+- z

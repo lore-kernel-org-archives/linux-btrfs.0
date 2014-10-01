@@ -1,50 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41579 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:59685 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752862AbaJAQtN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Oct 2014 12:49:13 -0400
-Date: Wed, 1 Oct 2014 18:49:10 +0200
-From: David Sterba <dsterba@suse.cz>
+	id S1751759AbaJAXPm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Oct 2014 19:15:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XZT7R-0005PW-H2
+	for linux-btrfs@vger.kernel.org; Thu, 02 Oct 2014 01:15:37 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Oct 2014 01:15:37 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Oct 2014 01:15:37 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs 3.16.2
-Message-ID: <20141001164910.GT11436@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs progs 3.16.2
+Date: Wed, 1 Oct 2014 23:15:25 +0000 (UTC)
+Message-ID: <pan$906da$6c7d5d3c$d3bdad8a$75c98e31@cox.net>
+References: <20141001164910.GT11436@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+David Sterba posted on Wed, 01 Oct 2014 18:49:10 +0200 as excerpted:
 
-several important fixes appeared recently and the 3.17 branch is not
-finalized so I'm doing another minor release, including nonintrusive
-patches and documentation updates.
+> several important fixes appeared recently and the 3.17 branch is not
+> finalized so I'm doing another minor release, including nonintrusive
+> patches and documentation updates.
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: https://git.kernel.org/cgit/linux/kernel/git/kdave/btrfs-progs.git/
+In 3.16.1 I looked in vain for documentation for the new balance filter I 
+saw in the changelog (for 3.16 or 3.16.1 IDR which, and I'd have to 
+lookup the name of the filter...).  I don't see it listed here either.
 
----
+If it's not in 3.16.2, could the btrfs-balance manpage be updated to 
+include it for 3.17?
 
-David Disseldorp (1):
-      btrfs-progs: fix typo in subvol list usage
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Dimitri John Ledkov (1):
-      btrfs-progs: Properly cast to avoid compiler warnings, fixes FTBFS on alpha and ia64
-
-Gui Hecheng (1):
-      btrfs-progs: update manpage with new option -f for btrfstune
-
-Josef Bacik (5):
-      Btrfs-progs: make BUG*() be more verbose
-      Btrfs-progs: don't assert when we have an invalid mapping
-      Btrfs-progs: let btrfs-image actually work on a balanced fs
-      btrfs-progs: add root to dirty list when fixing bad keys
-      Btrfs-progs: check all slots in leaves
-
-Naohiro Aota (1):
-      btrfs-progs: fix many typos in documents
-
-Qu Wenruo (2):
-      btrfs-progs: Add human readable incompat flags output for btrfs-show-super
-      btrfs-progs: Check the csum tree node before go through the csum tree

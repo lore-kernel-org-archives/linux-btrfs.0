@@ -1,161 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40187 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40190 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752263AbaJBQuQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:50:16 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 9D5F6AAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:15 +0000 (UTC)
+	id S1752263AbaJBQuU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:50:20 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 9ADE1AB1D
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:19 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 07/14] btrfs: use slab for end_io_wq structures
-Date: Thu,  2 Oct 2014 18:50:15 +0200
-Message-Id: <97eb6b69d1e856cb5e1cf2c3d94afab643e93128.1412264873.git.dsterba@suse.cz>
+Subject: [PATCH 08/14] btrfs: remove unused members from struct scrub_warning
+Date: Thu,  2 Oct 2014 18:50:19 +0200
+Message-Id: <8b9456da037ab53428d6347fa2fa088933da1424.1412264873.git.dsterba@suse.cz>
 In-Reply-To: <cover.1412264871.git.dsterba@suse.cz>
 References: <cover.1412264871.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The structure is frequently reused.  Rename it according to the slab
-name.
-
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c | 38 +++++++++++++++++++++++++++++---------
- fs/btrfs/disk-io.h |  2 ++
- fs/btrfs/super.c   |  8 +++++++-
- 3 files changed, 38 insertions(+), 10 deletions(-)
+ fs/btrfs/scrub.c | 17 ++---------------
+ 1 file changed, 2 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d7cb58ed2946..2f075ef20050 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -72,11 +72,11 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root);
- static void btrfs_error_commit_super(struct btrfs_root *root);
- 
- /*
-- * end_io_wq structs are used to do processing in task context when an IO is
-- * complete.  This is used during reads to verify checksums, and it is used
-+ * btrfs_end_io_wq structs are used to do processing in task context when an IO
-+ * is complete.  This is used during reads to verify checksums, and it is used
-  * by writes to insert metadata for new file extents after IO is complete.
-  */
--struct end_io_wq {
-+struct btrfs_end_io_wq {
- 	struct bio *bio;
- 	bio_end_io_t *end_io;
- 	void *private;
-@@ -87,6 +87,26 @@ struct end_io_wq {
- 	struct btrfs_work work;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b9c37ac9ed1b..efa083113827 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -177,17 +177,12 @@ struct scrub_copy_nocow_ctx {
+ struct scrub_warning {
+ 	struct btrfs_path	*path;
+ 	u64			extent_item_size;
+-	char			*scratch_buf;
+-	char			*msg_buf;
+ 	const char		*errstr;
+ 	sector_t		sector;
+ 	u64			logical;
+ 	struct btrfs_device	*dev;
+-	int			msg_bufsize;
+-	int			scratch_bufsize;
  };
  
-+static struct kmem_cache *btrfs_end_io_wq_cache;
-+
-+int __init btrfs_end_io_wq_init(void)
-+{
-+	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
-+					sizeof(struct btrfs_end_io_wq),
-+					0,
-+					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					NULL);
-+	if (!btrfs_end_io_wq_cache)
-+		return -ENOMEM;
-+	return 0;
-+}
-+
-+void btrfs_end_io_wq_exit(void)
-+{
-+	if (btrfs_end_io_wq_cache)
-+		kmem_cache_destroy(btrfs_end_io_wq_cache);
-+}
-+
- /*
-  * async submit bios are used to offload expensive checksumming
-  * onto the worker threads.  They checksum file and metadata bios
-@@ -690,7 +710,7 @@ static int btree_io_failed_hook(struct page *page, int failed_mirror)
+-
+ static void scrub_pending_bio_inc(struct scrub_ctx *sctx);
+ static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
+ static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
+@@ -551,7 +546,6 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	u64 ref_root;
+ 	u32 item_size;
+ 	u8 ref_level;
+-	const int bufsize = 4096;
+ 	int ret;
  
- static void end_workqueue_bio(struct bio *bio, int err)
- {
--	struct end_io_wq *end_io_wq = bio->bi_private;
-+	struct btrfs_end_io_wq *end_io_wq = bio->bi_private;
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_workqueue *wq;
- 	btrfs_work_func_t func;
-@@ -736,9 +756,9 @@ static void end_workqueue_bio(struct bio *bio, int err)
- int btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
- 			enum btrfs_wq_endio_type metadata)
- {
--	struct end_io_wq *end_io_wq;
-+	struct btrfs_end_io_wq *end_io_wq;
+ 	WARN_ON(sblock->page_count < 1);
+@@ -559,18 +553,13 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	fs_info = sblock->sctx->dev_root->fs_info;
  
--	end_io_wq = kmalloc(sizeof(*end_io_wq), GFP_NOFS);
-+	end_io_wq = kmem_cache_alloc(btrfs_end_io_wq_cache, GFP_NOFS);
- 	if (!end_io_wq)
- 		return -ENOMEM;
+ 	path = btrfs_alloc_path();
++	if (!path)
++		return;
  
-@@ -1723,16 +1743,16 @@ static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
- static void end_workqueue_fn(struct btrfs_work *work)
- {
- 	struct bio *bio;
--	struct end_io_wq *end_io_wq;
-+	struct btrfs_end_io_wq *end_io_wq;
- 	int error;
+-	swarn.scratch_buf = kmalloc(bufsize, GFP_NOFS);
+-	swarn.msg_buf = kmalloc(bufsize, GFP_NOFS);
+ 	swarn.sector = (sblock->pagev[0]->physical) >> 9;
+ 	swarn.logical = sblock->pagev[0]->logical;
+ 	swarn.errstr = errstr;
+ 	swarn.dev = NULL;
+-	swarn.msg_bufsize = bufsize;
+-	swarn.scratch_bufsize = bufsize;
+-
+-	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
+-		goto out;
  
--	end_io_wq = container_of(work, struct end_io_wq, work);
-+	end_io_wq = container_of(work, struct btrfs_end_io_wq, work);
- 	bio = end_io_wq->bio;
+ 	ret = extent_from_logical(fs_info, swarn.logical, path, &found_key,
+ 				  &flags);
+@@ -611,8 +600,6 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
  
- 	error = end_io_wq->error;
- 	bio->bi_private = end_io_wq->private;
- 	bio->bi_end_io = end_io_wq->end_io;
--	kfree(end_io_wq);
-+	kmem_cache_free(btrfs_end_io_wq_cache, end_io_wq);
- 	bio_endio_nodec(bio, error);
+ out:
+ 	btrfs_free_path(path);
+-	kfree(swarn.scratch_buf);
+-	kfree(swarn.msg_buf);
  }
  
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 84da438fd9a3..9ac233923ca3 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -142,6 +142,8 @@ int btree_lock_page_hook(struct page *page, void *data,
- 				void (*flush_fn)(void *));
- int btrfs_calc_num_tolerated_disk_barrier_failures(
- 	struct btrfs_fs_info *fs_info);
-+int __init btrfs_end_io_wq_init(void);
-+void btrfs_end_io_wq_exit(void);
- 
- #ifdef CONFIG_DEBUG_LOCK_ALLOC
- void btrfs_init_lockdep(void);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b915d7704f19..4685b9704f15 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2001,10 +2001,14 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		goto free_delayed_ref;
- 
--	err = btrfs_interface_init();
-+	err = btrfs_end_io_wq_init();
- 	if (err)
- 		goto free_prelim_ref;
- 
-+	err = btrfs_interface_init();
-+	if (err)
-+		goto free_end_io_wq;
-+
- 	btrfs_init_lockdep();
- 
- 	btrfs_print_info();
-@@ -2021,6 +2025,8 @@ static int __init init_btrfs_fs(void)
- 
- unregister_ioctl:
- 	btrfs_interface_exit();
-+free_end_io_wq:
-+	btrfs_end_io_wq_exit();
- free_prelim_ref:
- 	btrfs_prelim_ref_exit();
- free_delayed_ref:
+ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
 -- 
 1.8.4.5
 

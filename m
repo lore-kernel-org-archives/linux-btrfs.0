@@ -1,133 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40356 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40721 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751550AbaJBQx5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:53:57 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 37273AB1D
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:53:56 +0000 (UTC)
+	id S1752986AbaJBRZv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 13:25:51 -0400
+Date: Thu, 2 Oct 2014 19:25:49 +0200
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/2] btrfs: remove unlikely from data-dependent branches and slow paths
-Date: Thu,  2 Oct 2014 18:53:55 +0200
-Message-Id: <ee39b432b4ac083acdafd7b4f156283722e3bf14.1412265734.git.dsterba@suse.cz>
-In-Reply-To: <cover.1412265734.git.dsterba@suse.cz>
-References: <cover.1412265734.git.dsterba@suse.cz>
+To: Marc Dietrich <marvin24@gmx.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: FIBMAP unsupported
+Message-ID: <20141002172549.GV11436@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <6602102.lhBckFYBLs@fb07-iapwap2>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <6602102.lhBckFYBLs@fb07-iapwap2>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are the branch hints that obviously depend on the data being
-processed, the CPU predictor will do better job according to the actual
-load. It also does not make sense to use the hints in slow paths that do
-a lot of other operations like locking, waiting or IO.
+On Thu, Oct 02, 2014 at 05:13:22PM +0200, Marc Dietrich wrote:
+> I have a large (25G) virtual disk on a btrfs fs. Yes, I know this is not 
+> optimial. So I try to defrag it from time to time. However, using "btrfs fi 
+> defrag -c vm.vdi" results in even more fragments than before (reported by 
+> filefrag). So I wrote my own pseudo defragger,
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/extent-tree.c | 4 ++--
- fs/btrfs/file.c        | 4 ++--
- fs/btrfs/inode.c       | 8 ++++----
- fs/btrfs/ioctl.c       | 2 +-
- fs/btrfs/transaction.c | 2 +-
- 5 files changed, 10 insertions(+), 10 deletions(-)
+Unfortunatelly the default target fragment size is 256k. Try
+'btrfs filesystem defrag -t 32m ...' or higher numbers and see if it
+helps.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 44d04979f071..ede740bfaac0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9694,7 +9694,7 @@ void btrfs_end_nocow_write(struct btrfs_root *root)
- 
- int btrfs_start_nocow_write(struct btrfs_root *root)
- {
--	if (unlikely(atomic_read(&root->will_be_snapshoted)))
-+	if (atomic_read(&root->will_be_snapshoted))
- 		return 0;
- 
- 	percpu_counter_inc(&root->subv_writers->counter);
-@@ -9702,7 +9702,7 @@ int btrfs_start_nocow_write(struct btrfs_root *root)
- 	 * Make sure counter is updated before we check for snapshot creation.
- 	 */
- 	smp_mb();
--	if (unlikely(atomic_read(&root->will_be_snapshoted))) {
-+	if (atomic_read(&root->will_be_snapshoted)) {
- 		btrfs_end_nocow_write(root);
- 		return 0;
- 	}
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 29b147d46b0a..a18ceabd99a8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -452,7 +452,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
- 		if (unlikely(copied == 0))
- 			break;
- 
--		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
-+		if (copied < PAGE_CACHE_SIZE - offset) {
- 			offset += copied;
- 		} else {
- 			pg++;
-@@ -1792,7 +1792,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	if (sync)
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
--	if (unlikely(file->f_flags & O_DIRECT)) {
-+	if (file->f_flags & O_DIRECT) {
- 		num_written = __btrfs_direct_write(iocb, from, pos);
- 	} else {
- 		num_written = __btrfs_buffered_write(file, from, pos);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 998e67fdf2f6..47d214560831 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7802,9 +7802,9 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 	atomic_inc(&dip->pending_bios);
- 
- 	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
--		if (unlikely(map_length < submit_len + bvec->bv_len ||
-+		if (map_length < submit_len + bvec->bv_len ||
- 		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
--				 bvec->bv_offset) < bvec->bv_len)) {
-+				 bvec->bv_offset) < bvec->bv_len) {
- 			/*
- 			 * inc the count before we submit the bio so
- 			 * we know the end IO handler won't happen before
-@@ -8017,8 +8017,8 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
- 		ret = btrfs_delalloc_reserve_space(inode, count);
- 		if (ret)
- 			goto out;
--	} else if (unlikely(test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
--				     &BTRFS_I(inode)->runtime_flags))) {
-+	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
-+				     &BTRFS_I(inode)->runtime_flags)) {
- 		inode_dio_done(inode);
- 		flags = DIO_LOCKING | DIO_SKIP_HOLES;
- 		wakeup = false;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0ff212757b95..f2c60cd70e63 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3167,7 +3167,7 @@ static void clone_update_extent_map(struct inode *inode,
- 					em->start + em->len - 1, 0);
- 	}
- 
--	if (unlikely(ret))
-+	if (ret)
- 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 			&BTRFS_I(inode)->runtime_flags);
- }
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 16d0c1b62b3e..8eded14e8c5c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -418,7 +418,7 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
- 		/*
- 		 * Do the reservation for the relocation root creation
- 		 */
--		if (unlikely(need_reserve_reloc_root(root))) {
-+		if (need_reserve_reloc_root(root)) {
- 			num_bytes += root->nodesize;
- 			reloc_reserved = true;
- 		}
--- 
-1.8.4.5
+> which produces much better results (ok, the file must not be in use). 
+> Somewhere in the 3.17 cycle the resulting image got corrupted using the script 
+> above. 
+> 
+> Running filefrag on it returns "FIBMAP unsupported".
 
+This message doe not mean it is a corruption, but filefrag tries to use
+the FIBMAP ioctl that is not implemented on btrfs, instead FIEMAP is
+used.
+
+filefrag on a nocow file works for me here (3.16.x kernel), I can see
+that filefrag on a directory prints the FIBMAP message.
+
+> Virtualbox returns  "AHCI#0P0: Read at offset 606236672 (49152 bytes left) 
+> returned rc=VERR_DEV_IO_ERROR". No errors in the kernel log.
+> 
+> Trying "cp vm.vdi /dev/null" returns: cp: Error reading „vm.vdi“: IO-Error
+
+This could be caused by the virtualization layer. Try to run scrub and
+fsck in the non-destru^Wchecking mode if it finds problems.
+
+As you're using compression and autodefrag, a quick skim of the 3.17
+patches points to e9512d72e8e61c750c90efacd720abe3c4569822 "fix
+autodefrag with compression", but that's just "keyword" match.
+
+There's another report about nocow corruption and VirtualBox in a 3.16 +
+for-linus version (which is almost 3.17-rc)
+http://article.gmane.org/gmane.comp.file-systems.btrfs/38701/
+
+But according to the attached messages, the underlying device is
+unreliable and logs a lot of IO errors.
+
+For now it looks like VirutalBox is not writing the data or there is a
+bug introduced post 3.16 killing nocow files.

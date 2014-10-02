@@ -1,72 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw10a-chadwick.wadns.net ([41.185.62.109]:19438 "EHLO
-	fw10a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751074AbaJBGFY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Oct 2014 02:05:24 -0400
-Message-ID: <542CE7CC.4020904@swiftspirit.co.za>
-Date: Thu, 02 Oct 2014 07:51:08 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+Received: from frost.carfax.org.uk ([85.119.82.111]:40724 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751074AbaJBGxG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Oct 2014 02:53:06 -0400
+Date: Thu, 2 Oct 2014 07:53:02 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Justin Brown <justin.brown@fandingo.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: Deleting a Subvol from a Cancelled Btrfs-Send
+Message-ID: <20141002065302.GF11747@carfax.org.uk>
+References: <CAKZK7uzNJWSQAmaem4eZj-dcSJOvmT=-Mn53rjCbb=fNY9zEhw@mail.gmail.com>
+ <CAKZK7uwWDQa_7LThjW_58+DpNQogkepuwvPhg-9bzsgyQjn14Q@mail.gmail.com>
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check segfaults after flipping 2 Bytes
-References: <542C6443.1010809@niklasfi.de> <pan$36400$3ee14aa9$ee1e5a94$415ce7b2@cox.net>
-In-Reply-To: <pan$36400$3ee14aa9$ee1e5a94$415ce7b2@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="yZnyZsPjQYjG7xG7"
+In-Reply-To: <CAKZK7uwWDQa_7LThjW_58+DpNQogkepuwvPhg-9bzsgyQjn14Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/10/02 01:31, Duncan wrote:
-> Niklas Fischer posted on Wed, 01 Oct 2014 22:29:55 +0200 as excerpted:
->
->> I was trying to determine how btrfs reacts to disk errors, when I
->> discovered, that flipping two Bytes, supposedly inside of a file can
->> render the filesystem unusable. Here is what I did:
->>
->> 1. dd if=/dev/zero of=/dev/sdg2 bs=1M
->> 2. mkfs.btrfs /dev/sdg2
->> 3. mount /dev/sdg2 /tmp/btrfs
->> 4. echo "hello world this is some text" > /tmp/btrfs/hello
->> 5. umount /dev/sdg2
-> Keep in mind that on btrfs, small enough files will not be written to
-> file extents but instead will be written directly into the metadata.
->
-> That's a small enough file I guess that's what you were seeing, which
-> would explain the two instances of the string, since on a single device
-> btrfs, metadata is dup mode by default.
->
-> That metadata block would then fail checksum, and an attempt would be
-> made to use the second copy, which of course would fail it the same way.
-At least a very unlikely scenario in production.
-> And that being the only file in the filesystem, I'd /guess/ (not being a
-> developer myself, just a btrfs testing admin and list regular) that
-> metadata block is still the original one, which very likely contains
-> critical filesystem information as well, thus explaining the mount
-> failure when the block failed checksum verify.
-This is a possible use-case for an equivalent to ZFS's ditto blocks. An 
-alternative strategy would be to purposefully "sparsify" early metadata 
-blocks (this is thinking out loud - whether or not that is a viable or 
-easy strategy is debatable).
-> In theory at least, with a less synthetic test case there'd be enough
-> more metadata on the filesystem that the affected metadata block would be
-> further down the chain, and corrupting it wouldn't corrupt critical
-> filesystem information as it wouldn't be in the same block.
->
-> That might explain the problem, but I don't know enough about btrfs to
-> know how reasonable a solution would be.
-> [snip]
-A reasonable workaround to get the filesystem back into a usable or 
-recoverable state might be to mount read-only and ignore checksums. That 
-would keep the filesystem intact, though the system has no way to know 
-whether or not the folder structures are also corrupt.
 
-I'm not sure if there is a mount option for this use case however. The 
-option descriptions for "nodatasum" and "nodatacow" imply that *new* 
-checksums are not generated. In this case the checksums already exist.
+--yZnyZsPjQYjG7xG7
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+On Thu, Oct 02, 2014 at 12:05:39AM -0500, Justin Brown wrote:
+> I'm experimenting with btrfs-send. Previously (2014-09-26), I did my
+> first btrfs-send on a subvol, and that worked fine. Today, I tried to
+> send a new snapshot. Unfortunately, I realized part way through that I
+> forgot to specify the parent to only send a delta, and killed the send
+> with ^C.
+>=20
+> On the destination, I'm left with:
+>=20
+> ~$ sudo btrfs subvol list /var/media/backups/venus/home/
+> ID 2820 gen 57717 top level 5 path media
+> ID 2821 gen 57402 top level 5 path ovirt
+> ID 4169 gen 57703 top level 2820 path media/backups/venus/home
+> ID 4170 gen 57575 top level 4169 path home-2014-09-26
+> ID 4243 gen 57707 top level 4169 path home-2014-10-01
+>=20
+> Home-2014-10-01 was the partial send that was cancelled. I figured
+> that I could delete this partial subvol and try again.
+>=20
+> ~$ sudo btrfs subvol del home-2014-10-01
+> Transaction commit: none (default)
+> ERROR: error accessing 'home-2014-10-01'
 
+   If you're not doing this from /var/media/backups/venus/home/ it
+won't succeed. You need to specify (either via a relative path or an
+absolute one) where the subvol is, not just what its name is.
+
+   (Consider what happens if you have two filesystems, each with a
+home-2014-09-26 subvol.)
+
+   Hugo.
+
+> Obviously, trying to delete the subvol directory fails too:
+>=20
+> ~$ sudo rm -rf /var/media/backups/venus/home/home-2014-10-01/
+> rm: cannot remove =E2=80=98/var/media/backups/venus/home/home-2014-10-01/=
+=E2=80=99:
+> Operation not permitted
+>=20
+> Is there anyway to delete this partial subvol?
+>=20
+> Thanks,
+> Justin
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+           --- All hope abandon,  Ye who press Enter here. ---          =20
+
+--yZnyZsPjQYjG7xG7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBVCz2TVheFHXiqx3kAQIJLQ//XGMmUjj3z8fupyU36nBn6Hl3mycxfNt8
+IAGS70nGtoA692J8LqQXhoBgbbSoEznLxZUpzCGB0ydP7fhZ42MoNNE3JkvFb/n1
+7ZwQJfbxyZhAECuDBymwRXyqz6U7TndEDiM/9KNqVuMpNhv2ZCsUsLFMW0tpiJqt
+qgcdj++BXMr9Ln987iybTylWVw7zN+PkEFOfEaKAi6nmzsgZQy8DnSPPCeJRjvRp
+h2jLfza4FyjvgIHnc7/tKFgizt/9BJli81AB2pD/2OuEwQ3paJjwmgDiAyvJ+mCe
+V4KTbeW3HqxO1Wbz2s5VodVGG012kKcLztSJamQ9hbxc2vCgwnXiZZfMi6kUyrrr
+bWPPJhGGykM9n0JRHAMK4JTRChCe7T16C2Hmwclq4tQ6bagJYIDJGClZ5jwR6mhL
+zcSQul0XqKT7kqe8r5Kzu7Kj6sdIYV0dFrx8J6R8Na55ng4Qw5nCpNGeRCbCrE2r
+yOwohB5G4crv/nuuSByv3rvQHOMkYoh1fxrQqEJLto7GKxOTT27BpuC2gTQwtUWN
+rWwHxslYPhpJx6qLkgXY2qeZIBlpqDk5seLmr2GLDthMOrawtP5I5cw8eOFoZ2sj
+I2OS65SiZWsjr5p7idlScshEfChm3Lll3qxOnAgpCrdI7dGMIVpXbTKujnm6Klv3
+yQ08Y+c2b6w=
+=EfoG
+-----END PGP SIGNATURE-----
+
+--yZnyZsPjQYjG7xG7--

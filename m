@@ -1,48 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40192 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40285 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753106AbaJBQuZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:50:25 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 17E6AAAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:24 +0000 (UTC)
+	id S1751661AbaJBQw2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:52:28 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 85C91AAF3
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:52:27 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 09/14] btrfs: let merge_reloc_roots return void
-Date: Thu,  2 Oct 2014 18:50:23 +0200
-Message-Id: <94404e82e5f5452a13ef580b6d3df1483671dff9.1412264873.git.dsterba@suse.cz>
-In-Reply-To: <cover.1412264871.git.dsterba@suse.cz>
-References: <cover.1412264871.git.dsterba@suse.cz>
+Subject: [PATCH 0/6] Cleanup, remove superfluous blocksize parameter
+Date: Thu,  2 Oct 2014 18:52:27 +0200
+Message-Id: <cover.1412265712.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/relocation.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+First portion of cleanups that remove a parameter that's being passed to a lot
+of functions, although the value does not change during the filesystem
+lifetime.  This part contains the obvious and safe changes, but there are more
+pending that start to touch functionality and haven't not passed xfstests
+without warnings.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2d221c46180c..f39abe690bb2 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2316,7 +2316,7 @@ void free_reloc_roots(struct list_head *list)
- }
- 
- static noinline_for_stack
--int merge_reloc_roots(struct reloc_control *rc)
-+void merge_reloc_roots(struct reloc_control *rc)
- {
- 	struct btrfs_root *root;
- 	struct btrfs_root *reloc_root;
-@@ -2397,7 +2397,6 @@ out:
- 	}
- 
- 	BUG_ON(!RB_EMPTY_ROOT(&rc->reloc_root_tree.rb_root));
--	return ret;
- }
- 
- static void free_block_list(struct rb_root *blocks)
+You can pull from
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanup/blocksize-diet-part1
+
+David Sterba (6):
+  btrfs: remove unused parameter from readahead_tree_block
+  btrfs: return void from readahead_tree_block
+  btrfs: inline code of reada_tree_block and remove it
+  btrfs: remove parameter blocksize from read_tree_block
+  btrfs: remove unused parameter blocksize from btrfs_find_tree_block
+  btrfs: remove blocksize from btrfs_alloc_free_block and rename
+
+ fs/btrfs/backref.c     |  6 ++----
+ fs/btrfs/ctree.c       | 54 ++++++++++++++++++++------------------------------
+ fs/btrfs/ctree.h       |  6 +++---
+ fs/btrfs/disk-io.c     | 37 +++++++++++-----------------------
+ fs/btrfs/disk-io.h     |  7 +++----
+ fs/btrfs/extent-tree.c | 20 ++++++++-----------
+ fs/btrfs/ioctl.c       |  3 +--
+ fs/btrfs/print-tree.c  |  1 -
+ fs/btrfs/relocation.c  | 28 ++++++--------------------
+ 9 files changed, 57 insertions(+), 105 deletions(-)
+
 -- 
 1.8.4.5
 

@@ -1,56 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40174 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40176 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751811AbaJBQtz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:49:55 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id ED23DAAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:49:53 +0000 (UTC)
+	id S1751811AbaJBQt7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:49:59 -0400
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 02/14] btrfs: remove unused variable from btrfs_parse_options
-Date: Thu,  2 Oct 2014 18:49:53 +0200
-Message-Id: <143f363618558478fd7b5156c343d21e74194987.1412264872.git.dsterba@suse.cz>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH 03/14] Btrfs: set default max_inline to 8KiB instead of 8MiB
+Date: Thu,  2 Oct 2014 18:49:57 +0200
+Message-Id: <95ac567af212db3293af3897ccb521efdf1dd7ff.1412264872.git.dsterba@suse.cz>
 In-Reply-To: <cover.1412264871.git.dsterba@suse.cz>
 References: <cover.1412264871.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+
+8MiB is way too large and likely set by mistake. This is not
+a significant issue as in practice the max amount of data
+added to an inline extent is also limited by the page cache
+and btree leaf sizes.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/super.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/ctree.h   | 1 +
+ fs/btrfs/disk-io.c | 2 +-
+ fs/btrfs/super.c   | 2 +-
+ 3 files changed, 3 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 089f6da09411..dd79ba7ee3ea 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2089,6 +2089,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define	BTRFS_MOUNT_CHANGE_INODE_CACHE	(1 << 24)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
++#define BTRFS_DEFAULT_MAX_INLINE	(8192)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4780e6623c7b..9b2a741370b7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2260,7 +2260,7 @@ int open_ctree(struct super_block *sb,
+ 	atomic_set(&fs_info->qgroup_op_seq, 0);
+ 	atomic64_set(&fs_info->tree_mod_seq, 0);
+ 	fs_info->sb = sb;
+-	fs_info->max_inline = 8192 * 1024;
++	fs_info->max_inline = BTRFS_DEFAULT_MAX_INLINE;
+ 	fs_info->metadata_ratio = 0;
+ 	fs_info->defrag_inodes = RB_ROOT;
+ 	fs_info->free_chunk_space = 0;
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 2375f94fb780..1c6da8e00c1b 100644
+index 1c6da8e00c1b..b1d2a42f379d 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -395,7 +395,6 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	int ret = 0;
- 	char *compress_type;
- 	bool compress_force = false;
--	bool compress = false;
- 
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
- 	if (cache_gen)
-@@ -473,7 +472,6 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			/* Fallthrough */
- 		case Opt_compress:
- 		case Opt_compress_type:
--			compress = true;
- 			if (token == Opt_compress ||
- 			    token == Opt_compress_force ||
- 			    strcmp(args[0].from, "zlib") == 0) {
-@@ -503,7 +501,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				btrfs_set_and_info(root, FORCE_COMPRESS,
- 						   "force %s compression",
- 						   compress_type);
--			} else if (compress) {
-+			} else {
- 				if (!btrfs_test_opt(root, COMPRESS))
- 					btrfs_info(root->fs_info,
- 						   "btrfs: use %s compression",
+@@ -1014,7 +1014,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",nodatacow");
+ 	if (btrfs_test_opt(root, NOBARRIER))
+ 		seq_puts(seq, ",nobarrier");
+-	if (info->max_inline != 8192 * 1024)
++	if (info->max_inline != BTRFS_DEFAULT_MAX_INLINE)
+ 		seq_printf(seq, ",max_inline=%llu", info->max_inline);
+ 	if (info->alloc_start != 0)
+ 		seq_printf(seq, ",alloc_start=%llu", info->alloc_start);
 -- 
 1.8.4.5
 

@@ -1,274 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40199 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40202 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753629AbaJBQui (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:50:38 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E8825AAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:36 +0000 (UTC)
+	id S1753585AbaJBQuq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:50:46 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 798B7AAF3
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:45 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 12/14] btrfs: kill extent_buffer_page helper
-Date: Thu,  2 Oct 2014 18:50:36 +0200
-Message-Id: <fb85fc9a675738ee2746b51c3aedde944b18ca02.1412264873.git.dsterba@suse.cz>
+Subject: [PATCH 14/14] btrfs: move checks for DUMMY_ROOT into a helper
+Date: Thu,  2 Oct 2014 18:50:45 +0200
+Message-Id: <fccb84c94a9755f48668e43d0a44d6ecc750900f.1412264873.git.dsterba@suse.cz>
 In-Reply-To: <cover.1412264871.git.dsterba@suse.cz>
 References: <cover.1412264871.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It used to be more complex but now it's just a simple array access.
-
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/extent_io.c | 55 +++++++++++++++++++++++++---------------------------
- fs/btrfs/extent_io.h |  6 ------
- 2 files changed, 26 insertions(+), 35 deletions(-)
+ fs/btrfs/ctree.c       |  5 ++---
+ fs/btrfs/ctree.h       |  9 +++++++++
+ fs/btrfs/disk-io.c     |  4 +---
+ fs/btrfs/extent-tree.c | 16 +++++++---------
+ fs/btrfs/qgroup.c      | 10 ++++------
+ 5 files changed, 23 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 638e1a5b00e2..3359969b1a36 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2064,7 +2064,7 @@ int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
- 		return -EROFS;
- 
- 	for (i = 0; i < num_pages; i++) {
--		struct page *p = extent_buffer_page(eb, i);
-+		struct page *p = eb->pages[i];
- 
- 		ret = repair_io_failure(root->fs_info->btree_inode, start,
- 					PAGE_CACHE_SIZE, start, p,
-@@ -3580,7 +3580,7 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
- 
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = 0; i < num_pages; i++) {
--		struct page *p = extent_buffer_page(eb, i);
-+		struct page *p = eb->pages[i];
- 
- 		if (!trylock_page(p)) {
- 			if (!flush) {
-@@ -3651,7 +3651,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 		bio_flags = EXTENT_BIO_TREE_LOG;
- 
- 	for (i = 0; i < num_pages; i++) {
--		struct page *p = extent_buffer_page(eb, i);
-+		struct page *p = eb->pages[i];
- 
- 		clear_page_dirty_for_io(p);
- 		set_page_writeback(p);
-@@ -3674,10 +3674,8 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	}
- 
- 	if (unlikely(ret)) {
--		for (; i < num_pages; i++) {
--			struct page *p = extent_buffer_page(eb, i);
--			unlock_page(p);
--		}
-+		for (; i < num_pages; i++)
-+			unlock_page(eb->pages[i]);
- 	}
- 
- 	return ret;
-@@ -4464,7 +4462,7 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
- 
- 	do {
- 		index--;
--		page = extent_buffer_page(eb, index);
-+		page = eb->pages[index];
- 		if (page && mapped) {
- 			spin_lock(&page->mapping->private_lock);
- 			/*
-@@ -4646,7 +4644,8 @@ static void mark_extent_buffer_accessed(struct extent_buffer *eb,
- 
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = 0; i < num_pages; i++) {
--		struct page *p = extent_buffer_page(eb, i);
-+		struct page *p = eb->pages[i];
-+
- 		if (p != accessed)
- 			mark_page_accessed(p);
- 	}
-@@ -4815,7 +4814,7 @@ again:
- 	 */
- 	SetPageChecked(eb->pages[0]);
- 	for (i = 1; i < num_pages; i++) {
--		p = extent_buffer_page(eb, i);
-+		p = eb->pages[i];
- 		ClearPageChecked(p);
- 		unlock_page(p);
- 	}
-@@ -4926,7 +4925,7 @@ void clear_extent_buffer_dirty(struct extent_buffer *eb)
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 
- 	for (i = 0; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		if (!PageDirty(page))
- 			continue;
- 
-@@ -4962,7 +4961,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
- 	WARN_ON(!test_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags));
- 
- 	for (i = 0; i < num_pages; i++)
--		set_page_dirty(extent_buffer_page(eb, i));
-+		set_page_dirty(eb->pages[i]);
- 	return was_dirty;
- }
- 
-@@ -4975,7 +4974,7 @@ int clear_extent_buffer_uptodate(struct extent_buffer *eb)
- 	clear_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = 0; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		if (page)
- 			ClearPageUptodate(page);
- 	}
-@@ -4991,7 +4990,7 @@ int set_extent_buffer_uptodate(struct extent_buffer *eb)
- 	set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = 0; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		SetPageUptodate(page);
- 	}
- 	return 0;
-@@ -5031,7 +5030,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = start_i; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		if (wait == WAIT_NONE) {
- 			if (!trylock_page(page))
- 				goto unlock_exit;
-@@ -5054,7 +5053,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	eb->read_mirror = 0;
- 	atomic_set(&eb->io_pages, num_reads);
- 	for (i = start_i; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		if (!PageUptodate(page)) {
- 			ClearPageError(page);
- 			err = __extent_read_full_page(tree, page,
-@@ -5079,7 +5078,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 		return ret;
- 
- 	for (i = start_i; i < num_pages; i++) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		wait_on_page_locked(page);
- 		if (!PageUptodate(page))
- 			ret = -EIO;
-@@ -5090,7 +5089,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- unlock_exit:
- 	i = start_i;
- 	while (locked_pages > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		i++;
- 		unlock_page(page);
- 		locked_pages--;
-@@ -5116,7 +5115,7 @@ void read_extent_buffer(struct extent_buffer *eb, void *dstv,
- 	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 
- 		cur = min(len, (PAGE_CACHE_SIZE - offset));
- 		kaddr = page_address(page);
-@@ -5148,7 +5147,7 @@ int read_extent_buffer_to_user(struct extent_buffer *eb, void __user *dstv,
- 	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 
- 		cur = min(len, (PAGE_CACHE_SIZE - offset));
- 		kaddr = page_address(page);
-@@ -5197,7 +5196,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 		return -EINVAL;
- 	}
- 
--	p = extent_buffer_page(eb, i);
-+	p = eb->pages[i];
- 	kaddr = page_address(p);
- 	*map = kaddr + offset;
- 	*map_len = PAGE_CACHE_SIZE - offset;
-@@ -5223,7 +5222,7 @@ int memcmp_extent_buffer(struct extent_buffer *eb, const void *ptrv,
- 	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 
- 		cur = min(len, (PAGE_CACHE_SIZE - offset));
- 
-@@ -5257,7 +5256,7 @@ void write_extent_buffer(struct extent_buffer *eb, const void *srcv,
- 	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		WARN_ON(!PageUptodate(page));
- 
- 		cur = min(len, PAGE_CACHE_SIZE - offset);
-@@ -5287,7 +5286,7 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
- 	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(eb, i);
-+		page = eb->pages[i];
- 		WARN_ON(!PageUptodate(page));
- 
- 		cur = min(len, PAGE_CACHE_SIZE - offset);
-@@ -5318,7 +5317,7 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 		(PAGE_CACHE_SIZE - 1);
- 
- 	while (len > 0) {
--		page = extent_buffer_page(dst, i);
-+		page = dst->pages[i];
- 		WARN_ON(!PageUptodate(page));
- 
- 		cur = min(len, (unsigned long)(PAGE_CACHE_SIZE - offset));
-@@ -5396,8 +5395,7 @@ void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 		cur = min_t(unsigned long, cur,
- 			(unsigned long)(PAGE_CACHE_SIZE - dst_off_in_page));
- 
--		copy_pages(extent_buffer_page(dst, dst_i),
--			   extent_buffer_page(dst, src_i),
-+		copy_pages(dst->pages[dst_i], dst->pages[src_i],
- 			   dst_off_in_page, src_off_in_page, cur);
- 
- 		src_offset += cur;
-@@ -5443,8 +5441,7 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 
- 		cur = min_t(unsigned long, len, src_off_in_page + 1);
- 		cur = min(cur, dst_off_in_page + 1);
--		copy_pages(extent_buffer_page(dst, dst_i),
--			   extent_buffer_page(dst, src_i),
-+		copy_pages(dst->pages[dst_i], dst->pages[src_i],
- 			   dst_off_in_page - cur + 1,
- 			   src_off_in_page - cur + 1, cur);
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 1e06f0e4a185..63f2b10ee763 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -279,12 +279,6 @@ static inline unsigned long num_extent_pages(u64 start, u64 len)
- 		(start >> PAGE_CACHE_SHIFT);
- }
- 
--static inline struct page *extent_buffer_page(struct extent_buffer *eb,
--					      unsigned long i)
--{
--	return eb->pages[i];
--}
--
- static inline void extent_buffer_get(struct extent_buffer *eb)
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 533657c508e2..ce1d71d171bb 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1506,10 +1506,9 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   struct extent_buffer *buf)
  {
- 	atomic_inc(&eb->refs);
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++	if (btrfs_test_is_dummy_root(root))
+ 		return 0;
+-#endif
++
+ 	/* ensure we can see the force_cow */
+ 	smp_rmb();
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bae025a20e63..557fd9520607 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4131,4 +4131,13 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+ 			       u64 rfer, u64 excl);
+ #endif
+ 
++static inline int btrfs_test_is_dummy_root(struct btrfs_root *root)
++{
++#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
++	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++		return 1;
++#endif
++	return 0;
++}
++
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0abf4b0a9010..14117f85b545 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1130,11 +1130,9 @@ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 						 u64 bytenr, u32 blocksize)
+ {
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++	if (btrfs_test_is_dummy_root(root))
+ 		return alloc_test_extent_buffer(root->fs_info, bytenr,
+ 						blocksize);
+-#endif
+ 	return alloc_extent_buffer(root->fs_info, bytenr, blocksize);
+ }
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 44d04979f071..7895db9c6bdc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3073,10 +3073,10 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 	int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
+ 			    u64, u64, u64, u64, u64, u64, int);
+ 
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++
++	if (btrfs_test_is_dummy_root(root))
+ 		return 0;
+-#endif
++
+ 	ref_root = btrfs_header_owner(buf);
+ 	nritems = btrfs_header_nritems(buf);
+ 	level = btrfs_header_level(buf);
+@@ -6264,10 +6264,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	int ret;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++	if (btrfs_test_is_dummy_root(root))
+ 		return 0;
+-#endif
++
+ 	add_pinned_bytes(root->fs_info, num_bytes, owner, root_objectid);
+ 
+ 	/*
+@@ -7336,15 +7335,14 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 	bool skinny_metadata = btrfs_fs_incompat(root->fs_info,
+ 						 SKINNY_METADATA);
+ 
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state))) {
++	if (btrfs_test_is_dummy_root(root)) {
+ 		buf = btrfs_init_new_buffer(trans, root, root->alloc_bytenr,
+ 					    blocksize, level);
+ 		if (!IS_ERR(buf))
+ 			root->alloc_bytenr += blocksize;
+ 		return buf;
+ 	}
+-#endif
++
+ 	block_rsv = use_block_rsv(trans, root, blocksize);
+ 	if (IS_ERR(block_rsv))
+ 		return ERR_CAST(block_rsv);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index cd9717ea8c9d..48b60dbf807f 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -539,10 +539,9 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+ 
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &quota_root->state)))
++	if (btrfs_test_is_dummy_root(quota_root))
+ 		return 0;
+-#endif
++
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -698,10 +697,9 @@ static int update_qgroup_info_item(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	int slot;
+ 
+-#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+-	if (unlikely(test_bit(BTRFS_ROOT_DUMMY_ROOT, &root->state)))
++	if (btrfs_test_is_dummy_root(root))
+ 		return 0;
+-#endif
++
+ 	key.objectid = 0;
+ 	key.type = BTRFS_QGROUP_INFO_KEY;
+ 	key.offset = qgroup->qgroupid;
 -- 
 1.8.4.5
 

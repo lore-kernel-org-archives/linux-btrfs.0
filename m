@@ -1,47 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40185 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40187 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752263AbaJBQuM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:50:12 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 4EF46AAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:11 +0000 (UTC)
+	id S1752263AbaJBQuQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:50:16 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 9D5F6AAF3
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:50:15 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 06/14] btrfs: fix error labels in init_btrfs_fs
-Date: Thu,  2 Oct 2014 18:50:10 +0200
-Message-Id: <af13b4922b057b4ebc7e2315a6f666ecb65890e4.1412264873.git.dsterba@suse.cz>
+Subject: [PATCH 07/14] btrfs: use slab for end_io_wq structures
+Date: Thu,  2 Oct 2014 18:50:15 +0200
+Message-Id: <97eb6b69d1e856cb5e1cf2c3d94afab643e93128.1412264873.git.dsterba@suse.cz>
 In-Reply-To: <cover.1412264871.git.dsterba@suse.cz>
 References: <cover.1412264871.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_interface_init rarely fails but we could leak the prelim_ref slab.
+The structure is frequently reused.  Rename it according to the slab
+name.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/super.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 38 +++++++++++++++++++++++++++++---------
+ fs/btrfs/disk-io.h |  2 ++
+ fs/btrfs/super.c   |  8 +++++++-
+ 3 files changed, 38 insertions(+), 10 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d7cb58ed2946..2f075ef20050 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -72,11 +72,11 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root);
+ static void btrfs_error_commit_super(struct btrfs_root *root);
+ 
+ /*
+- * end_io_wq structs are used to do processing in task context when an IO is
+- * complete.  This is used during reads to verify checksums, and it is used
++ * btrfs_end_io_wq structs are used to do processing in task context when an IO
++ * is complete.  This is used during reads to verify checksums, and it is used
+  * by writes to insert metadata for new file extents after IO is complete.
+  */
+-struct end_io_wq {
++struct btrfs_end_io_wq {
+ 	struct bio *bio;
+ 	bio_end_io_t *end_io;
+ 	void *private;
+@@ -87,6 +87,26 @@ struct end_io_wq {
+ 	struct btrfs_work work;
+ };
+ 
++static struct kmem_cache *btrfs_end_io_wq_cache;
++
++int __init btrfs_end_io_wq_init(void)
++{
++	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
++					sizeof(struct btrfs_end_io_wq),
++					0,
++					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++					NULL);
++	if (!btrfs_end_io_wq_cache)
++		return -ENOMEM;
++	return 0;
++}
++
++void btrfs_end_io_wq_exit(void)
++{
++	if (btrfs_end_io_wq_cache)
++		kmem_cache_destroy(btrfs_end_io_wq_cache);
++}
++
+ /*
+  * async submit bios are used to offload expensive checksumming
+  * onto the worker threads.  They checksum file and metadata bios
+@@ -690,7 +710,7 @@ static int btree_io_failed_hook(struct page *page, int failed_mirror)
+ 
+ static void end_workqueue_bio(struct bio *bio, int err)
+ {
+-	struct end_io_wq *end_io_wq = bio->bi_private;
++	struct btrfs_end_io_wq *end_io_wq = bio->bi_private;
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_workqueue *wq;
+ 	btrfs_work_func_t func;
+@@ -736,9 +756,9 @@ static void end_workqueue_bio(struct bio *bio, int err)
+ int btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
+ 			enum btrfs_wq_endio_type metadata)
+ {
+-	struct end_io_wq *end_io_wq;
++	struct btrfs_end_io_wq *end_io_wq;
+ 
+-	end_io_wq = kmalloc(sizeof(*end_io_wq), GFP_NOFS);
++	end_io_wq = kmem_cache_alloc(btrfs_end_io_wq_cache, GFP_NOFS);
+ 	if (!end_io_wq)
+ 		return -ENOMEM;
+ 
+@@ -1723,16 +1743,16 @@ static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
+ static void end_workqueue_fn(struct btrfs_work *work)
+ {
+ 	struct bio *bio;
+-	struct end_io_wq *end_io_wq;
++	struct btrfs_end_io_wq *end_io_wq;
+ 	int error;
+ 
+-	end_io_wq = container_of(work, struct end_io_wq, work);
++	end_io_wq = container_of(work, struct btrfs_end_io_wq, work);
+ 	bio = end_io_wq->bio;
+ 
+ 	error = end_io_wq->error;
+ 	bio->bi_private = end_io_wq->private;
+ 	bio->bi_end_io = end_io_wq->end_io;
+-	kfree(end_io_wq);
++	kmem_cache_free(btrfs_end_io_wq_cache, end_io_wq);
+ 	bio_endio_nodec(bio, error);
+ }
+ 
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 84da438fd9a3..9ac233923ca3 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -142,6 +142,8 @@ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+ int btrfs_calc_num_tolerated_disk_barrier_failures(
+ 	struct btrfs_fs_info *fs_info);
++int __init btrfs_end_io_wq_init(void);
++void btrfs_end_io_wq_exit(void);
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+ void btrfs_init_lockdep(void);
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b1d2a42f379d..b915d7704f19 100644
+index b915d7704f19..4685b9704f15 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1999,11 +1999,11 @@ static int __init init_btrfs_fs(void)
- 
- 	err = btrfs_prelim_ref_init();
+@@ -2001,10 +2001,14 @@ static int __init init_btrfs_fs(void)
  	if (err)
--		goto free_prelim_ref;
-+		goto free_delayed_ref;
+ 		goto free_delayed_ref;
  
- 	err = btrfs_interface_init();
+-	err = btrfs_interface_init();
++	err = btrfs_end_io_wq_init();
  	if (err)
--		goto free_delayed_ref;
-+		goto free_prelim_ref;
+ 		goto free_prelim_ref;
  
++	err = btrfs_interface_init();
++	if (err)
++		goto free_end_io_wq;
++
  	btrfs_init_lockdep();
  
+ 	btrfs_print_info();
+@@ -2021,6 +2025,8 @@ static int __init init_btrfs_fs(void)
+ 
+ unregister_ioctl:
+ 	btrfs_interface_exit();
++free_end_io_wq:
++	btrfs_end_io_wq_exit();
+ free_prelim_ref:
+ 	btrfs_prelim_ref_exit();
+ free_delayed_ref:
 -- 
 1.8.4.5
 

@@ -1,89 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40355 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40356 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751550AbaJBQxy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 12:53:54 -0400
+	id S1751550AbaJBQx5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 12:53:57 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id ED862AB1D
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:53:52 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 37273AB1D
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 16:53:56 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/2] btrfs: remove unlikely from NULL checks
-Date: Thu,  2 Oct 2014 18:53:52 +0200
-Message-Id: <5d99a998f375b7bff7ddff0162a6eed4d4ca1318.1412265734.git.dsterba@suse.cz>
+Subject: [PATCH 2/2] btrfs: remove unlikely from data-dependent branches and slow paths
+Date: Thu,  2 Oct 2014 18:53:55 +0200
+Message-Id: <ee39b432b4ac083acdafd7b4f156283722e3bf14.1412265734.git.dsterba@suse.cz>
 In-Reply-To: <cover.1412265734.git.dsterba@suse.cz>
 References: <cover.1412265734.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unlikely is implicit for NULL checks of pointers.
+There are the branch hints that obviously depend on the data being
+processed, the CPU predictor will do better job according to the actual
+load. It also does not make sense to use the hints in slow paths that do
+a lot of other operations like locking, waiting or IO.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/async-thread.c | 10 +++++-----
- fs/btrfs/inode.c        |  2 +-
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/extent-tree.c | 4 ++--
+ fs/btrfs/file.c        | 4 ++--
+ fs/btrfs/inode.c       | 8 ++++----
+ fs/btrfs/ioctl.c       | 2 +-
+ fs/btrfs/transaction.c | 2 +-
+ 5 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 2da0a66790ba..4dabeb893b7c 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -92,7 +92,7 @@ __btrfs_alloc_workqueue(const char *name, int flags, int max_active,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 44d04979f071..ede740bfaac0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9694,7 +9694,7 @@ void btrfs_end_nocow_write(struct btrfs_root *root)
+ 
+ int btrfs_start_nocow_write(struct btrfs_root *root)
  {
- 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+-	if (unlikely(atomic_read(&root->will_be_snapshoted)))
++	if (atomic_read(&root->will_be_snapshoted))
+ 		return 0;
  
--	if (unlikely(!ret))
-+	if (!ret)
- 		return NULL;
- 
- 	ret->max_active = max_active;
-@@ -116,7 +116,7 @@ __btrfs_alloc_workqueue(const char *name, int flags, int max_active,
- 		ret->normal_wq = alloc_workqueue("%s-%s", flags,
- 						 ret->max_active, "btrfs",
- 						 name);
--	if (unlikely(!ret->normal_wq)) {
-+	if (!ret->normal_wq) {
- 		kfree(ret);
- 		return NULL;
+ 	percpu_counter_inc(&root->subv_writers->counter);
+@@ -9702,7 +9702,7 @@ int btrfs_start_nocow_write(struct btrfs_root *root)
+ 	 * Make sure counter is updated before we check for snapshot creation.
+ 	 */
+ 	smp_mb();
+-	if (unlikely(atomic_read(&root->will_be_snapshoted))) {
++	if (atomic_read(&root->will_be_snapshoted)) {
+ 		btrfs_end_nocow_write(root);
+ 		return 0;
  	}
-@@ -138,12 +138,12 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- {
- 	struct btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 29b147d46b0a..a18ceabd99a8 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -452,7 +452,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
+ 		if (unlikely(copied == 0))
+ 			break;
  
--	if (unlikely(!ret))
-+	if (!ret)
- 		return NULL;
+-		if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
++		if (copied < PAGE_CACHE_SIZE - offset) {
+ 			offset += copied;
+ 		} else {
+ 			pg++;
+@@ -1792,7 +1792,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	if (sync)
+ 		atomic_inc(&BTRFS_I(inode)->sync_writers);
  
- 	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
- 					      max_active, thresh);
--	if (unlikely(!ret->normal)) {
-+	if (!ret->normal) {
- 		kfree(ret);
- 		return NULL;
- 	}
-@@ -151,7 +151,7 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 	if (flags & WQ_HIGHPRI) {
- 		ret->high = __btrfs_alloc_workqueue(name, flags, max_active,
- 						    thresh);
--		if (unlikely(!ret->high)) {
-+		if (!ret->high) {
- 			__btrfs_destroy_workqueue(ret->normal);
- 			kfree(ret);
- 			return NULL;
+-	if (unlikely(file->f_flags & O_DIRECT)) {
++	if (file->f_flags & O_DIRECT) {
+ 		num_written = __btrfs_direct_write(iocb, from, pos);
+ 	} else {
+ 		num_written = __btrfs_buffered_write(file, from, pos);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 344a322eb386..998e67fdf2f6 100644
+index 998e67fdf2f6..47d214560831 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -9013,7 +9013,7 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
- 		spin_unlock(&root->delalloc_lock);
+@@ -7802,9 +7802,9 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	atomic_inc(&dip->pending_bios);
  
- 		work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
--		if (unlikely(!work)) {
-+		if (!work) {
- 			if (delay_iput)
- 				btrfs_add_delayed_iput(inode);
- 			else
+ 	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
+-		if (unlikely(map_length < submit_len + bvec->bv_len ||
++		if (map_length < submit_len + bvec->bv_len ||
+ 		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len)) {
++				 bvec->bv_offset) < bvec->bv_len) {
+ 			/*
+ 			 * inc the count before we submit the bio so
+ 			 * we know the end IO handler won't happen before
+@@ -8017,8 +8017,8 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 		ret = btrfs_delalloc_reserve_space(inode, count);
+ 		if (ret)
+ 			goto out;
+-	} else if (unlikely(test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+-				     &BTRFS_I(inode)->runtime_flags))) {
++	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
++				     &BTRFS_I(inode)->runtime_flags)) {
+ 		inode_dio_done(inode);
+ 		flags = DIO_LOCKING | DIO_SKIP_HOLES;
+ 		wakeup = false;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0ff212757b95..f2c60cd70e63 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3167,7 +3167,7 @@ static void clone_update_extent_map(struct inode *inode,
+ 					em->start + em->len - 1, 0);
+ 	}
+ 
+-	if (unlikely(ret))
++	if (ret)
+ 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			&BTRFS_I(inode)->runtime_flags);
+ }
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 16d0c1b62b3e..8eded14e8c5c 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -418,7 +418,7 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
+ 		/*
+ 		 * Do the reservation for the relocation root creation
+ 		 */
+-		if (unlikely(need_reserve_reloc_root(root))) {
++		if (need_reserve_reloc_root(root)) {
+ 			num_bytes += root->nodesize;
+ 			reloc_reserved = true;
+ 		}
 -- 
 1.8.4.5
 

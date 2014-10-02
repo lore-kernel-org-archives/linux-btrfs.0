@@ -1,134 +1,197 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40592 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751906AbaJBRPl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Oct 2014 13:15:41 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E4F61AAF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Oct 2014 17:15:39 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: scrub, detect stale information in the status file
-Date: Thu,  2 Oct 2014 19:15:38 +0200
-Message-Id: <1412270138-24112-1-git-send-email-dsterba@suse.cz>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28131 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751357AbaJBTM2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Oct 2014 15:12:28 -0400
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s92J7awt020021
+	for <linux-btrfs@vger.kernel.org>; Thu, 2 Oct 2014 12:12:27 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1pscd2822v-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 02 Oct 2014 12:12:24 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: corrupt btrfs items in btrfs-corrup-block
+Date: Thu, 2 Oct 2014 15:12:20 -0400
+Message-ID: <1412277140-9753-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If scrub is not cancelled nor finished, the recorded status will prevent
-scrub to start again though it's not running. There's a force option to
-run it anyway, but this is just a bandaid and the true status of scrub
-should be detected automatically. The force option should not be
-necessary anymore.
+For testing fsck against completely broken btrfs_items.
 
-The test introduced in 9681f82853360aac1ff2 checks only the status file,
-not kernel status of scrub.
-
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- cmds-scrub.c | 40 +++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 39 insertions(+), 1 deletion(-)
+ btrfs-corrupt-block.c | 90 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 88 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 731c5c94e6cc..eb50d8a65708 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -59,6 +59,7 @@ struct scrub_stats {
- 	u64 duration;
- 	u64 finished;
- 	u64 canceled;
-+	int in_progress;
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 278a56f..c58f01a 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -109,6 +109,8 @@ static void print_usage(void)
+ 		"<num>,<num>,<num> (must also specify -f for the field)\n");
+ 	fprintf(stderr, "\t-f The field in the item to corrupt\n");
+ 	fprintf(stderr, "\t-d Delete this item (must specify -K)\n");
++	fprintf(stderr, "\t-I An item to corrupt (must also specify the field "
++		"to corrupt and a root+key for the item)\n");
+ 	exit(1);
+ }
+ 
+@@ -308,6 +310,11 @@ enum btrfs_metadata_block_field {
+ 	BTRFS_METADATA_BLOCK_BAD,
  };
  
- /* TBD: replace with #include "linux/ioprio.h" in some years */
-@@ -251,7 +252,11 @@ static void _print_scrub_ss(struct scrub_stats *ss)
- 		printf(" and was aborted after %llu seconds\n",
- 		       ss->duration);
- 	} else {
--		printf(", running for %llu seconds\n", ss->duration);
-+		if (ss->in_progress)
-+			printf(", running for %llu seconds\n", ss->duration);
-+		else
-+			printf(", interrupted after %llu seconds, not running\n",
-+					ss->duration);
- 	}
++enum btrfs_item_field {
++	BTRFS_ITEM_OFFSET,
++	BTRFS_ITEM_BAD,
++};
++
+ enum btrfs_key_field {
+ 	BTRFS_KEY_OBJECTID,
+ 	BTRFS_KEY_TYPE,
+@@ -350,6 +357,13 @@ static enum btrfs_key_field convert_key_field(char *field)
+ 	return BTRFS_KEY_BAD;
  }
  
-@@ -1057,6 +1062,28 @@ static int is_scrub_running_on_fs(struct btrfs_ioctl_fs_info_args *fi_args,
- 	return 0;
- }
- 
-+static int is_scrub_running_in_kernel(int fd,
-+		struct btrfs_ioctl_dev_info_args *di_args, u64 max_devices)
++static enum btrfs_item_field convert_item_field(char *field)
 +{
-+	struct scrub_progress sp;
-+	int i;
-+	int ret;
-+
-+	for (i = 0; i < max_devices; i++) {
-+		memset(&sp, 0, sizeof(sp));
-+		sp.scrub_args.devid = di_args[i].devid;
-+		ret = ioctl(fd, BTRFS_IOC_SCRUB_PROGRESS, &sp.scrub_args);
-+		if (ret < 0 && errno == ENODEV)
-+			continue;
-+		if (ret < 0 && errno == ENOTCONN)
-+			return 0;
-+		if (!ret)
-+			return 1;
-+	}
-+
-+	return 1;
++	if (!strncmp(field, "offset", FIELD_BUF_LEN))
++		return BTRFS_ITEM_OFFSET;
++	return BTRFS_ITEM_BAD;
 +}
 +
- static const char * const cmd_scrub_start_usage[];
- static const char * const cmd_scrub_resume_usage[];
+ static u64 generate_u64(u64 orig)
+ {
+ 	u64 ret;
+@@ -359,6 +373,15 @@ static u64 generate_u64(u64 orig)
+ 	return ret;
+ }
  
-@@ -1206,6 +1233,13 @@ static int scrub_start(int argc, char **argv, int resume)
- 	}
- 
- 	/*
-+	 * Check for stale information in the status file, ie. if it's
-+	 * canceled=0, finished=0 but no scrub is running.
-+	 */
-+	if (!is_scrub_running_in_kernel(fdmnt, di_args, fi_args.num_devices))
-+		force = 1;
++static u32 generate_u32(u32 orig)
++{
++	u32 ret;
++	do {
++		ret = rand();
++	} while (ret == orig);
++	return ret;
++}
 +
-+	/*
- 	 * check whether any involved device is already busy running a
- 	 * scrub. This would cause damaged status messages and the state
- 	 * "aborted" without the explanation that a scrub was already
-@@ -1636,6 +1670,7 @@ static int cmd_scrub_status(int argc, char **argv)
- 	struct sockaddr_un addr = {
- 		.sun_family = AF_UNIX,
- 	};
-+	int in_progress;
- 	int ret;
- 	int i;
- 	int fdmnt;
-@@ -1725,6 +1760,7 @@ static int cmd_scrub_status(int argc, char **argv)
- 			fprintf(stderr, "WARNING: failed to read status: %s\n",
- 				strerror(-PTR_ERR(past_scrubs)));
- 	}
-+	in_progress = is_scrub_running_in_kernel(fdmnt, di_args, fi_args.num_devices);
+ static u8 generate_u8(u8 orig)
+ {
+ 	u8 ret;
+@@ -679,6 +702,58 @@ out:
+ 	return ret;
+ }
  
- 	printf("scrub status for %s\n", fsid);
++static int corrupt_btrfs_item(struct btrfs_root *root, struct btrfs_key *key,
++			      char *field)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_path *path;
++	enum btrfs_item_field corrupt_field;
++	u32 orig, bogus;
++	int ret;
++
++	corrupt_field = convert_item_field(field);
++	if (corrupt_field == BTRFS_ITEM_BAD) {
++		fprintf(stderr, "Invalid field %s\n", field);
++		return -EINVAL;
++	}
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
++		fprintf(stderr, "Couldn't start transaction %ld\n",
++			PTR_ERR(trans));
++		return PTR_ERR(trans);
++	}
++
++	ret = btrfs_search_slot(trans, root, key, path, 0, 1);
++	if (ret != 0) {
++		fprintf(stderr, "Error searching to node %d\n", ret);
++		goto out;
++	}
++
++	ret = 0;
++	switch (corrupt_field) {
++	case BTRFS_ITEM_OFFSET:
++		orig = btrfs_item_offset_nr(path->nodes[0], path->slots[0]);
++		bogus = generate_u32(orig);
++		btrfs_set_item_offset(path->nodes[0],
++				      btrfs_item_nr(path->slots[0]), bogus);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++out:
++	btrfs_commit_transaction(trans, root);
++	btrfs_free_path(path);
++	return ret;
++}
++
+ static struct option long_options[] = {
+ 	/* { "byte-count", 1, NULL, 'b' }, */
+ 	{ "logical", 1, NULL, 'l' },
+@@ -695,6 +770,7 @@ static struct option long_options[] = {
+ 	{ "field", 1, NULL, 'f'},
+ 	{ "key", 1, NULL, 'K'},
+ 	{ "delete", 0, NULL, 'd'},
++	{ "item", 0, NULL, 'I'},
+ 	{ 0, 0, 0, 0}
+ };
  
-@@ -1737,6 +1773,7 @@ static int cmd_scrub_status(int argc, char **argv)
- 						NULL, NULL);
- 				continue;
- 			}
-+			last_scrub->stats.in_progress = in_progress;
- 			print_scrub_dev(&di_args[i], &last_scrub->p, print_raw,
- 					last_scrub->stats.finished ?
- 							"history" : "status",
-@@ -1744,6 +1781,7 @@ static int cmd_scrub_status(int argc, char **argv)
+@@ -859,6 +935,7 @@ int main(int ac, char **av)
+ 	int chunk_rec = 0;
+ 	int chunk_tree = 0;
+ 	int delete = 0;
++	int corrupt_item = 0;
+ 	u64 metadata_block = 0;
+ 	u64 inode = 0;
+ 	u64 file_extent = (u64)-1;
+@@ -870,8 +947,8 @@ int main(int ac, char **av)
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(ac, av, "l:c:b:eEkuUi:f:x:m:K:d", long_options,
+-				&option_index);
++		c = getopt_long(ac, av, "l:c:b:eEkuUi:f:x:m:K:dI",
++				long_options, &option_index);
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -924,6 +1001,9 @@ int main(int ac, char **av)
+ 			case 'd':
+ 				delete = 1;
+ 				break;
++			case 'I':
++				corrupt_item = 1;
++				break;
+ 			default:
+ 				print_usage();
  		}
- 	} else {
- 		init_fs_stat(&fs_stat);
-+		fs_stat.s.in_progress = in_progress;
- 		for (i = 0; i < fi_args.num_devices; ++i) {
- 			last_scrub = last_dev_scrub(past_scrubs,
- 							di_args[i].devid);
+@@ -1026,6 +1106,12 @@ int main(int ac, char **av)
+ 		ret = delete_item(root, &key);
+ 		goto out_close;
+ 	}
++	if (corrupt_item) {
++		if (!key.objectid)
++			print_usage();
++		ret = corrupt_btrfs_item(root, &key, field);
++		goto out_close;
++	}
+ 	if (key.objectid || key.offset || key.type) {
+ 		if (!strlen(field))
+ 			print_usage();
 -- 
-2.1.1
+1.8.3.1
 

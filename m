@@ -1,30 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:49911 "EHLO tetsuo.zabbo.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750717AbaI3WTl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 18:19:41 -0400
-Date: Tue, 30 Sep 2014 15:19:40 -0700
-From: Zach Brown <zab@zabbo.net>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2 1/3] btrfs: replace open-coded kernel_write
-Message-ID: <20140930221940.GG12900@lenny.home.zabbo.net>
-References: <cover.1412114127.git.osandov@osandov.com>
- <a6e4b5480b7e16bfcac28156381ba33fc8662570.1412114127.git.osandov@osandov.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a6e4b5480b7e16bfcac28156381ba33fc8662570.1412114127.git.osandov@osandov.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:40032 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751906AbaJBRRo (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 2 Oct 2014 13:17:44 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: marc@merlins.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: send, don't delay dir move if there's a new parent inode
+Date: Thu,  2 Oct 2014 19:17:32 +0100
+Message-Id: <1412273852-20727-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 30, 2014 at 03:01:40PM -0700, Omar Sandoval wrote:
-> write_buf used by btrfs send has what is more or less a reimplementation of
-> kernel_write. This also gets rid of a sparse address space warning.
+If between two snapshots we rename an existing directory named X to Y and
+make it a child (direct or not) of a new inode named X, we were delaying
+the move/rename of the former directory unnecessarily, which would result
+in attempting to rename the new directory from its orphan name to name X
+prematurely.
 
-Seems reasonable to me:
+Minimal reproducer:
 
-Reviewed-by: Zach Brown <zab@zabbo.net>
+    $ mkfs.btrfs -f /dev/vdd
+    $ mount /dev/vdd /mnt
+    $ mkdir -p /mnt/merlin/RC/OSD/Source
 
-- z
+    $ btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+
+    $ mkdir /mnt/OSD
+    $ mv /mnt/merlin/RC/OSD /mnt/OSD/OSD-Plane_788
+    $ mv /mnt/OSD /mnt/merlin/RC
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/mysnap2
+
+    $ btrfs send /mnt/mysnap1 -f /tmp/1.snap
+    $ btrfs send -p /mnt/mysnap1 /mnt/mysnap2 -f /tmp/2.snap
+
+    $ mkfs.btrfs -f /dev/vdc
+    $ mount /dev/vdc /mnt2
+
+    $ btrfs receive /mnt2 -f /tmp/1.snap
+    $ btrfs receive /mnt2 -f /tmp/2.snap
+
+The second receive (from an incremental send) failed with the following
+error message: "rename o261-7-0 -> merlin/RC/OSD failed".
+This is a regression introduced in the 3.16 kernel.
+
+A test case for xfstests follows.
+
+Reported-by: Marc Merlin <marc@merlins.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 7edfc7c..b9c27aa 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3327,7 +3327,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
+ 		if (ret < 0 && ret != -ENOENT) {
+ 			goto out;
+ 		} else if (ret == -ENOENT) {
+-			ret = 1;
++			ret = 0;
+ 			break;
+ 		}
+ 
+-- 
+1.9.1
+

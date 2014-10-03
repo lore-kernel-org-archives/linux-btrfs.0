@@ -1,63 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:42376 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753828AbaJCQxe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Oct 2014 12:53:34 -0400
-Received: by mail-pd0-f178.google.com with SMTP id y10so2733353pdj.23
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Oct 2014 09:53:34 -0700 (PDT)
-Date: Fri, 3 Oct 2014 09:53:32 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Jogi =?iso-8859-1?Q?Hofm=FCller?= <jogi@mur.at>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs 3.16.2 does not recognize subvolumes correctly
-Message-ID: <20141003165332.GA24593@mew.dhcp4.washington.edu>
-References: <542D100F.9050502@mur.at>
- <542E7D21.2030905@mur.at>
+Received: from efeu.mur.at ([89.106.208.66]:40029 "EHLO efeu.mur.at"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753293AbaJCSKJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Oct 2014 14:10:09 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by efeu.mur.at (Postfix) with ESMTP id 9AD0E2232F
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Oct 2014 20:10:07 +0200 (CEST)
+Received: from efeu.mur.at ([127.0.0.1])
+	by localhost (efeu.mur.at [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id J5lF9PLf79oe for <linux-btrfs@vger.kernel.org>;
+	Fri,  3 Oct 2014 20:10:07 +0200 (CEST)
+Received: from [192.168.2.2] (85-126-169-193.work.xdsl-line.inode.at [85.126.169.193])
+	by efeu.mur.at (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Oct 2014 20:10:07 +0200 (CEST)
+Message-ID: <542EE67E.2010202@mur.at>
+Date: Fri, 03 Oct 2014 20:10:06 +0200
+From: =?UTF-8?B?Sm9naSBIb2Ztw7xsbGVy?= <jogi@mur.at>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <542E7D21.2030905@mur.at>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs 3.16.2 does not recognize subvolumes correctly
+References: <542D100F.9050502@mur.at> <542E7D21.2030905@mur.at> <20141003165332.GA24593@mew.dhcp4.washington.edu>
+In-Reply-To: <20141003165332.GA24593@mew.dhcp4.washington.edu>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="shDQgugdag536dOQo3FQ3WMmVAWARceNU"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 03, 2014 at 12:40:33PM +0200, Jogi Hofmüller wrote:
-> Hi all,
-> 
-> First of all, I am talking about btrfs-progs 3.16.2 if there was any doubt.
-> 
-> I did some more checking and found the following disturbing results.
-> 
-> I can still create snapshots of subvolumes and the default subvolume (/)
-> without problems.  But sending the snapshot fails with the error:
-> 
-> ERROR: /.SNAPSHOT doesn't belong to btrfs mount point
-> 
-> btrfs subvolume list -a /
-> 
-> ID 259 gen 21444 top level 5 path home
-> ID 260 gen 21443 top level 5 path var
-> ID 742 gen 18830 top level 5 path .SNAPSHOT
-> ID 743 gen 18832 top level 259 path home/.SNAPSHOT
-> 
-> But then again e.g.
-> 
-> btrfs subvolume show /home
-> ERROR: /home doesn't belong to btrfs mount point
-> 
-> All this is happening on my laptop running kernel 3.16.3. (Debian).
-> 
-> Interestingly enough I have another machine where only the default
-> subvolume makes problems but another subvolume can be snapshotted and
-> the snapshot send.  This machine uses kernel 3.14.15.
-> 
-> Please let me know what I can do to fix this.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--shDQgugdag536dOQo3FQ3WMmVAWARceNU
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-There was a similar issue in btrfs-progs 3.16 that was fixed in 3.16.1 by this
-commit:
-https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/commit/?id=6a47725a6fb8a463dd60611800222c7297195588
+Hi Omar,
 
-I'd do a quick `btrfs --version` just to make sure you're running the version
-you think you are. Otherwise, the output of `mount` might shed some light on why
-you're getting this.
+Am 2014-10-03 um 18:53 schrieb Omar Sandoval:
 
--- 
-Omar
+> There was a similar issue in btrfs-progs 3.16 that was fixed in 3.16.1 =
+by this
+> commit:
+> https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/comm=
+it/?id=3D6a47725a6fb8a463dd60611800222c7297195588
+>=20
+> I'd do a quick `btrfs --version` just to make sure you're running the v=
+ersion
+> you think you are. Otherwise, the output of `mount` might shed some lig=
+ht on why
+> you're getting this.
+
+Turns out I am still using btrfs-progs 3.16 :(  Don't know where I came
+across the version 3.16.2 that I put in the subject.  Gee, embarrassing.
+ Sorry for the noise.  Hope 3.16.1 will be available in Debian testing so=
+on.
+
+Regards,
+--=20
+j.hofm=C3=BCller
+
+Ger=C3=BCchtegenerator		               http://plagi.at/geruecht
+
+
+--shDQgugdag536dOQo3FQ3WMmVAWARceNU
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iF4EAREIAAYFAlQu5n4ACgkQkaXhaapqItmslwEA7ndpBf+5pEihRfTbsqBD5Rz9
+TfZnjvirHp444tIjS+oA/2KELsTnhRAafdb61cypJ/EF3JGV2qJ0u53AuDJ8kPLi
+=IlPM
+-----END PGP SIGNATURE-----
+
+--shDQgugdag536dOQo3FQ3WMmVAWARceNU--

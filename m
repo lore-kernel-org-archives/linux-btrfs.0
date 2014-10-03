@@ -1,89 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from efeu.mur.at ([89.106.208.66]:48112 "EHLO efeu.mur.at"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751170AbaJCKkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 Oct 2014 06:40:41 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by efeu.mur.at (Postfix) with ESMTP id 4BFB422387
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Oct 2014 12:40:34 +0200 (CEST)
-Received: from efeu.mur.at ([127.0.0.1])
-	by localhost (efeu.mur.at [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id cRu3SZebcrvB for <linux-btrfs@vger.kernel.org>;
-	Fri,  3 Oct 2014 12:40:34 +0200 (CEST)
-Received: from [IPv6:2a02:3e0:1:0:6a68:68ff:fe00:79be] (unknown [IPv6:2a02:3e0:1:0:6a68:68ff:fe00:79be])
-	by efeu.mur.at (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Oct 2014 12:40:34 +0200 (CEST)
-Message-ID: <542E7D21.2030905@mur.at>
-Date: Fri, 03 Oct 2014 12:40:33 +0200
-From: =?UTF-8?B?Sm9naSBIb2Ztw7xsbGVy?= <jogi@mur.at>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:42376 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753828AbaJCQxe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Oct 2014 12:53:34 -0400
+Received: by mail-pd0-f178.google.com with SMTP id y10so2733353pdj.23
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Oct 2014 09:53:34 -0700 (PDT)
+Date: Fri, 3 Oct 2014 09:53:32 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Jogi =?iso-8859-1?Q?Hofm=FCller?= <jogi@mur.at>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs 3.16.2 does not recognize subvolumes correctly
+Message-ID: <20141003165332.GA24593@mew.dhcp4.washington.edu>
 References: <542D100F.9050502@mur.at>
-In-Reply-To: <542D100F.9050502@mur.at>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="DGnvjr0awg4BG3HHro0X32WqoNjnhu9G9"
+ <542E7D21.2030905@mur.at>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <542E7D21.2030905@mur.at>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DGnvjr0awg4BG3HHro0X32WqoNjnhu9G9
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+On Fri, Oct 03, 2014 at 12:40:33PM +0200, Jogi Hofmüller wrote:
+> Hi all,
+> 
+> First of all, I am talking about btrfs-progs 3.16.2 if there was any doubt.
+> 
+> I did some more checking and found the following disturbing results.
+> 
+> I can still create snapshots of subvolumes and the default subvolume (/)
+> without problems.  But sending the snapshot fails with the error:
+> 
+> ERROR: /.SNAPSHOT doesn't belong to btrfs mount point
+> 
+> btrfs subvolume list -a /
+> 
+> ID 259 gen 21444 top level 5 path home
+> ID 260 gen 21443 top level 5 path var
+> ID 742 gen 18830 top level 5 path .SNAPSHOT
+> ID 743 gen 18832 top level 259 path home/.SNAPSHOT
+> 
+> But then again e.g.
+> 
+> btrfs subvolume show /home
+> ERROR: /home doesn't belong to btrfs mount point
+> 
+> All this is happening on my laptop running kernel 3.16.3. (Debian).
+> 
+> Interestingly enough I have another machine where only the default
+> subvolume makes problems but another subvolume can be snapshotted and
+> the snapshot send.  This machine uses kernel 3.14.15.
+> 
+> Please let me know what I can do to fix this.
 
-Hi all,
+There was a similar issue in btrfs-progs 3.16 that was fixed in 3.16.1 by this
+commit:
+https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/commit/?id=6a47725a6fb8a463dd60611800222c7297195588
 
-First of all, I am talking about btrfs-progs 3.16.2 if there was any doub=
-t.
+I'd do a quick `btrfs --version` just to make sure you're running the version
+you think you are. Otherwise, the output of `mount` might shed some light on why
+you're getting this.
 
-I did some more checking and found the following disturbing results.
-
-I can still create snapshots of subvolumes and the default subvolume (/)
-without problems.  But sending the snapshot fails with the error:
-
-ERROR: /.SNAPSHOT doesn't belong to btrfs mount point
-
-btrfs subvolume list -a /
-
-ID 259 gen 21444 top level 5 path home
-ID 260 gen 21443 top level 5 path var
-ID 742 gen 18830 top level 5 path .SNAPSHOT
-ID 743 gen 18832 top level 259 path home/.SNAPSHOT
-
-But then again e.g.
-
-btrfs subvolume show /home
-ERROR: /home doesn't belong to btrfs mount point
-
-All this is happening on my laptop running kernel 3.16.3. (Debian).
-
-Interestingly enough I have another machine where only the default
-subvolume makes problems but another subvolume can be snapshotted and
-the snapshot send.  This machine uses kernel 3.14.15.
-
-Please let me know what I can do to fix this.
-
-Regards,
---=20
-J.Hofm=C3=BCller
-
-ich zitiere wie Espenlaub.
-
-https://twitter.com/TheGurkenkaiser/status/463444397678690304
-
-
---DGnvjr0awg4BG3HHro0X32WqoNjnhu9G9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iF4EAREIAAYFAlQufSEACgkQkaXhaapqItlsXQD/eHQi5zXilufLRZEo0J4DDYU9
-CBxM2wnKMlFjGMDBg8UA/iNEAdo+c6YOv42Z7HBqS4zlKIe4kQ5gIdOY7i8IIdg9
-=BFER
------END PGP SIGNATURE-----
-
---DGnvjr0awg4BG3HHro0X32WqoNjnhu9G9--
+-- 
+Omar

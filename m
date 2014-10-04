@@ -1,23 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:39628 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751473AbaJDVrW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 Oct 2014 17:47:22 -0400
-To: Josef Bacik <jbacik@fb.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:5998 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750967AbaJDWH2 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 4 Oct 2014 18:07:28 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Tomasz Chmielewski <tch@virtall.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: 3.17.0-rc7: kernel BUG at fs/btrfs/relocation.c:931!
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Sat, 04 Oct 2014 23:47:19 +0200
-From: Tomasz Chmielewski <tch@virtall.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-In-Reply-To: <igsuij8fl8nu41ovutsy9bir.1412374179559@email.android.com>
+Date: Sat, 4 Oct 2014 22:07:23 +0000
+Message-ID: <0ub0ret2rxnknn8gxpp2cfrk.1412460441603@email.android.com>
 References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
  <542EE83D.8050701@fb.com>,<999a300ed462a1e1388aee4d6f03a30e@admin.virtall.com>
- <igsuij8fl8nu41ovutsy9bir.1412374179559@email.android.com>
-Message-ID: <2792a6f8e04dcedbc41f5d20a78fa247@admin.virtall.com>
+ <igsuij8fl8nu41ovutsy9bir.1412374179559@email.android.com>,<2792a6f8e04dcedbc41f5d20a78fa247@admin.virtall.com>
+In-Reply-To: <2792a6f8e04dcedbc41f5d20a78fa247@admin.virtall.com>
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Yup I don't need filenames for a balance.  Thanks,
+
+Josef
+
+Tomasz Chmielewski <tch@virtall.com> wrote:
+
 
 Hi,
 
@@ -32,25 +39,25 @@ Tomasz Chmielewski
 
 On 2014-10-04 00:09 (Sat), Josef Bacik wrote:
 > Can you make a btrfs-image of this fs and send it to me?  Thanks,
-> 
+>
 > Josef
-> 
+>
 > Tomasz Chmielewski <tch@virtall.com> wrote:
-> 
-> 
+>
+>
 > On 2014-10-03 20:17 (Fri), Josef Bacik wrote:
 >> On 10/02/2014 03:27 AM, Tomasz Chmielewski wrote:
 >>> Got this when running balance with 3.17.0-rc7:
->>> 
->> 
+>>>
+>>
 >> Give these two patches a try
->> 
+>>
 >> https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/patch/4938281/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=zoOEeHoPSaWycUnRMebS4NI5cEnXmHt7kS4QG2us9Mk%3D%0A&s=dc71db2c3614702306e4085366f39b206c2b93859afded8030aea69d56f570f7
 >> https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/patch/4939761/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=zoOEeHoPSaWycUnRMebS4NI5cEnXmHt7kS4QG2us9Mk%3D%0A&s=d9f61fcd6ba68d21f5180b30ffafed66471754728c5e46f70a2010c13ca48726
-> 
+>
 > With these two patches applied on top of 3.13-rc7, it BUGs somewhere
 > else now:
-> 
+>
 > [ 2030.858792] BTRFS info (device sdd1): relocating block group
 > 6469424513024 flags 17
 > [ 2039.674077] BTRFS info (device sdd1): found 20937 extents
@@ -72,7 +79,7 @@ On 2014-10-04 00:09 (Sat), Josef Bacik wrote:
 > ip_tables x_tables cpufreq_ondemand cpufreq_conservative
 > cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor raid6_pq
 > zlib_deflate coretemp hwmon loop i2c_i801 parport_pc pcspkr i2c_core
-> parport video battery tpm_infineon tpm_tis tpm lpc_ich mfd_core 
+> parport video battery tpm_infineon tpm_tis tpm lpc_ich mfd_core
 > ehci_pci
 > ehci_hcd acpi_cpufreq button ext4 crc16 jbd2 mbcache raid1 sg sd_mod
 > ahci libahci libata scsi_mod r8169 mii
@@ -113,7 +120,7 @@ On 2014-10-04 00:09 (Sat), Josef Bacik wrote:
 > btrfs_relocate_chunk.isra.62+0x58/0x5f7 [btrfs]
 > [ 2092.729512]  [<ffffffffa030e99f>] ?
 > btrfs_set_lock_blocking_rw+0x68/0x95 [btrfs]
-> [ 2092.729632]  [<ffffffffa02bfb04>] ? 
+> [ 2092.729632]  [<ffffffffa02bfb04>] ?
 > btrfs_set_path_blocking+0x23/0x54
 > [btrfs]
 > [ 2092.729704]  [<ffffffffa02c4517>] ? btrfs_search_slot+0x7bc/0x816
@@ -140,5 +147,5 @@ On 2014-10-04 00:09 (Sat), Josef Bacik wrote:
 > [ 2092.731233] ---[ end trace 16c7709ebf2c379c ]---
 
 Tomasz Chmielewski
-http://www.sslrack.com
+https://urldefense.proofpoint.com/v1/url?u=http://www.sslrack.com/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=04DsKhXKpV2nuINvUCrCo%2Bzmyr%2BwKVOYV3yrYCEqs3o%3D%0A&s=1a938ddfc074ee6f147c1ef13dd02a6a981fbe7d086926dab65e71cfc0fdbe83
 

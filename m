@@ -1,73 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserverfr1.prnet.org ([188.165.43.41]:44737 "EHLO
-	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750780AbaJFTsg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Oct 2014 15:48:36 -0400
-Message-ID: <5432F205.8010002@prnet.org>
-Date: Mon, 06 Oct 2014 21:48:21 +0200
-From: David Arendt <admin@prnet.org>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send and kernel 3.17
-References: <5432E466.9070604@prnet.org> <1412622378.31886.3@mail.thefacebook.com>
-In-Reply-To: <1412622378.31886.3@mail.thefacebook.com>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:51376 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751290AbaJFUOw (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 6 Oct 2014 16:14:52 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 3/5] Btrfs: don't leak pages and memory on compressed write error
+Date: Mon,  6 Oct 2014 22:14:24 +0100
+Message-Id: <1412630066-21746-4-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
+References: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have upgraded from kernel 3.16.3.
+In inode.c:submit_compressed_extents(), if we fail before calling
+btrfs_submit_compressed_write(), or when that function fails, we
+were freeing the async_extent structure without releasing its pages
+and freeing the pages array.
 
-emerge-fetch.log is a simple append-only log file. Other files having
-the problems after deleting them one by one have been emerge.log,
-mysql.log, freshclam.log and main.cvd from clamav. At this one, I
-stopped deleting.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 28 +++++++++++++++++++---------
+ 1 file changed, 19 insertions(+), 9 deletions(-)
 
-On 10/06/2014 09:06 PM, Chris Mason wrote:
-> On Mon, Oct 6, 2014 at 2:50 PM, David Arendt <admin@prnet.org> wrote:
->> Hi,
->>
->> After upgrading to kernel 3.17 btrfs send has stopped working.
->>
->> ERROR: send ioctl failed with -5: Input/output error
->>
->> The following message is printed by kernel:
->>
->> [75322.782197] BTRFS error (device sda2): did not find backref in
->> send_root. inode=461, offset=0, disk_byte=1094713344 found
->> extent=1094713344
->>
->> btrfs inspect-internal inode-resolve -v 461 /u00/root.snapshot returns:
->>
->> /var/log/emerge-fetch.log
->>
->> After removing this file, the error moves on to another file.
->>
->> btrfs scrub output:
->>
->> scrub status for bc31b068-2c36-4ff2-ac5c-7ce55af5371d
->>     scrub started at Mon Oct  6 19:49:25 2014 and finished after 1748
->> seconds
->>     total bytes scrubbed: 94.21GiB with 0 errors
->>
->> Other then the btrfs send problem, the filesystem works normally.
->>
->> Is this a bug in btrfs-send or is my filesystem corrupted and should be
->> restored from backup ?
->>
->> Please tell me if I can do anything else to help debugging this issue.
->
-> Which kernel did you upgrade from?  I don't think we have changes in
-> 3.17 that should impact this.
->
-> Is merge-fetch.log just a simple append-only log file?
->
-> -chris
->
->
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e2c4650..a3e2330 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -633,6 +633,22 @@ free_pages_out:
+ 	goto out;
+ }
+ 
++static void free_async_extent_pages(struct async_extent *async_extent)
++{
++	int i;
++
++	if (!async_extent->pages)
++		return;
++
++	for (i = 0; i < async_extent->nr_pages; i++) {
++		WARN_ON(async_extent->pages[i]->mapping);
++		page_cache_release(async_extent->pages[i]);
++	}
++	kfree(async_extent->pages);
++	async_extent->nr_pages = 0;
++	async_extent->pages = NULL;
++}
++
+ /*
+  * phase two of compressed writeback.  This is the ordered portion
+  * of the code, which only gets called in the order the work was
+@@ -709,15 +725,7 @@ retry:
+ 					   async_extent->compressed_size,
+ 					   0, alloc_hint, &ins, 1, 1);
+ 		if (ret) {
+-			int i;
+-
+-			for (i = 0; i < async_extent->nr_pages; i++) {
+-				WARN_ON(async_extent->pages[i]->mapping);
+-				page_cache_release(async_extent->pages[i]);
+-			}
+-			kfree(async_extent->pages);
+-			async_extent->nr_pages = 0;
+-			async_extent->pages = NULL;
++			free_async_extent_pages(async_extent);
+ 
+ 			if (ret == -ENOSPC) {
+ 				unlock_extent(io_tree, async_extent->start,
+@@ -827,6 +835,7 @@ retry:
+ 			extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
+ 						     PAGE_END_WRITEBACK |
+ 						     PAGE_SET_ERROR);
++			free_async_extent_pages(async_extent);
+ 		}
+ 		alloc_hint = ins.objectid + ins.offset;
+ 		kfree(async_extent);
+@@ -848,6 +857,7 @@ out_free:
+ 				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+ 				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
+ 				     PAGE_SET_ERROR);
++	free_async_extent_pages(async_extent);
+ 	kfree(async_extent);
+ 	goto again;
+ }
+-- 
+1.9.1
 

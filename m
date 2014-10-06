@@ -1,45 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46353 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:10419 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752089AbaJFKFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Oct 2014 06:05:35 -0400
+	id S1751520AbaJFKF3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Oct 2014 06:05:29 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v5 09/15] btrfs: new case to run subvolume create/delete and remount with defferent compress algorithms
-Date: Mon,  6 Oct 2014 18:04:48 +0800
-Message-Id: <1412589894-10675-10-git-send-email-eguan@redhat.com>
+Subject: [PATCH v5 07/15] btrfs: new case to run btrfs subvolume create/delete operations and scrub simultaneously
+Date: Mon,  6 Oct 2014 18:04:46 +0800
+Message-Id: <1412589894-10675-8-git-send-email-eguan@redhat.com>
 In-Reply-To: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 References: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs subvolume create/mount/umount/delete and remount with
-different compress algorithms simultaneously, with fsstress running in
-background.
+Run btrfs subvolume create/mount/umount/delete and btrfs scrub
+operation simultaneously, with fsstress running in background.
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/068     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/068.out |   2 +
+ tests/btrfs/066     | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/066.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 119 insertions(+)
- create mode 100755 tests/btrfs/068
- create mode 100644 tests/btrfs/068.out
+ 3 files changed, 118 insertions(+)
+ create mode 100755 tests/btrfs/066
+ create mode 100644 tests/btrfs/066.out
 
-diff --git a/tests/btrfs/068 b/tests/btrfs/068
+diff --git a/tests/btrfs/066 b/tests/btrfs/066
 new file mode 100755
-index 0000000..3126ec2
+index 0000000..2d9a1d2
 --- /dev/null
-+++ b/tests/btrfs/068
-@@ -0,0 +1,116 @@
++++ b/tests/btrfs/066
+@@ -0,0 +1,115 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/068
++# FSQA Test No. btrfs/066
 +#
-+# Run btrfs subvolume create/mount/umount/delete and remount with
-+# different compress algorithms simultaneously, with fsstress running
-+# in background.
++# Run btrfs subvolume create/mount/umount/delete and btrfs scrub
++# operation simultaneously, with fsstress running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -94,7 +92,7 @@ index 0000000..3126ec2
 +	local mkfs_opts=$1
 +	local subvol_mnt=$TEST_DIR/$seq.mnt
 +
-+	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
++	echo "Test $mkfs_opts" >>$seqres.full
 +
 +	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
 +	# make sure we created btrfs with desired options
@@ -114,18 +112,18 @@ index 0000000..3126ec2
 +	subvol_pid=$!
 +	echo "$subvol_pid" >>$seqres.full
 +
-+	echo -n "Start remount worker: " >>$seqres.full
-+	_btrfs_stress_remount_compress $SCRATCH_MNT >/dev/null 2>&1 &
-+	remount_pid=$!
-+	echo "$remount_pid" >>$seqres.full
++	echo -n "Start scrub worker: " >>$seqres.full
++	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
++	scrub_pid=$!
++	echo "$scrub_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
 +
-+	kill $subvol_pid $remount_pid
++	kill $subvol_pid $scrub_pid
 +	wait
-+	# wait for the remount loop process to finish
-+	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
++	# wait for the scrub operation to finish
++	while ps aux | grep "scrub start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -150,23 +148,23 @@ index 0000000..3126ec2
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/068.out b/tests/btrfs/068.out
+diff --git a/tests/btrfs/066.out b/tests/btrfs/066.out
 new file mode 100644
-index 0000000..d10c9bd
+index 0000000..b60cc24
 --- /dev/null
-+++ b/tests/btrfs/068.out
++++ b/tests/btrfs/066.out
 @@ -0,0 +1,2 @@
-+QA output created by 068
++QA output created by 066
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 2420042..4999ca7 100644
+index 697a913..0770882 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -70,3 +70,4 @@
+@@ -68,3 +68,4 @@
+ 063 auto balance remount compress
+ 064 auto balance replace
  065 auto subvol replace
- 066 auto subvol scrub
- 067 auto subvol defrag compress
-+068 auto subvol remount compress
++066 auto subvol scrub
 -- 
 1.8.3.1
 

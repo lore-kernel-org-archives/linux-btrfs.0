@@ -1,62 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13088 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752541AbaJCO7k (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 Oct 2014 10:59:40 -0400
-Received: from pps.filterd (m0004003 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s93ExBCq010429
-	for <linux-btrfs@vger.kernel.org>; Fri, 3 Oct 2014 07:59:39 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1psverg8wt-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 03 Oct 2014 07:59:39 -0700
-From: Josef Bacik <jbacik@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:61699 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750888AbaJFGbU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Oct 2014 02:31:20 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s966VIIO023342
+	for <linux-btrfs@vger.kernel.org>; Mon, 6 Oct 2014 14:31:18 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: skip extent rebuild test if no testdev
-Date: Fri, 3 Oct 2014 10:59:36 -0400
-Message-ID: <1412348376-6771-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH v2] btrfs-progs: Check the consistence between the parent node and child node/leaf.
+Date: Mon, 6 Oct 2014 14:31:21 +0800
+Message-ID: <1412577081-18177-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is highly obnoxious to have to go put in a testdev when all you really want
-is to run the quick image tests.  Make this part optional so if we don't have a
-testdev specified we just don't run that particular test.  Thanks,
+When btrfs-progs walk down the tree, it does not check whether the child
+node/leaf is valid.
+In fact, there is some corrupted image whose csum is all valid but
+parent node points to a invalid leaf.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+In my case, the parent node in fs tree point to a invalid leaf(gen 11),
+whose generation(15) and first key(EXTENT_TREE ROOT_ITEM 0) is
+completely invalid, and will cause BUG_ON in process_inode_item().
+
+Unfortunately, we are unable to fix when it happens.
+So we can only output meaningful error message and avoid the insane
+node/leaf, which is still much better than the original BUG_ON().
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/fsck-tests.sh | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+changelog:
+v2: always call btrfs_node_item_key_to_cpu() on parent and call
+    btrfs_node/item_key_to_cpu() according to the child level.
+---
+ cmds-check.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
 
-diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
-index b783b78..867366b 100644
---- a/tests/fsck-tests.sh
-+++ b/tests/fsck-tests.sh
-@@ -24,10 +24,6 @@ run_check()
+diff --git a/cmds-check.c b/cmds-check.c
+index d479361..085b654 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1302,6 +1302,56 @@ static void reada_walk_down(struct btrfs_root *root,
+ 	}
+ }
  
- rm -f $RESULT
- 
--if [ -z $TEST_DEV ] || [ -z $TEST_MNT ];then
--	_fail "please set TEST_DEV and TEST_MNT"
--fi
--
- # test rely on corrupting blocks tool
- run_check make btrfs-corrupt-block
- 
-@@ -45,6 +41,11 @@ do
- 	run_check $here/btrfsck test.img
- done
- 
-+if [ -z $TEST_DEV ] || [ -z $TEST_MNT ];then
-+	echo "     [NOTRUN] extent tree rebuild"
-+	exit 0
-+fi
++/*
++ * Check the child node/leaf by the following condition:
++ * 1. the first item key of the node/leaf should be the same with the one
++ *    in parent.
++ * 2. block in parent node should match the child node/leaf.
++ * 3. generation of parent node and child's header should be consistent.
++ *
++ * Or the child node/leaf pointed by the key in parent is not valid.
++ *
++ * We hope to check leaf owner too, but since subvol may share leaves,
++ * which makes leaf owner check not so strong, key check should be
++ * sufficient enough for that case.
++ */
++static int check_child_node(struct btrfs_root *root,
++			    struct extent_buffer *parent, int slot,
++			    struct extent_buffer *child)
++{
++	struct btrfs_key parent_key;
++	struct btrfs_key child_key;
++	int ret = 0;
 +
- # test whether fsck can rebuild a corrupted extent tree
- test_extent_tree_rebuild()
++	btrfs_node_key_to_cpu(parent, &parent_key, slot);
++	if (btrfs_header_level(child) == 0)
++		btrfs_item_key_to_cpu(child, &child_key, 0);
++	else
++		btrfs_node_key_to_cpu(child, &child_key, 0);
++
++	if (memcmp(&parent_key, &child_key, sizeof(parent_key))) {
++		ret = -EINVAL;
++		fprintf(stderr,
++			"Wrong key of child node/leaf, wanted: (%llu, %u, %llu), have: (%llu, %u, %llu)\n",
++			parent_key.objectid, parent_key.type, parent_key.offset,
++			child_key.objectid, child_key.type, child_key.offset);
++	}
++	if (btrfs_header_bytenr(child) != btrfs_node_blockptr(parent, slot)) {
++		ret = -EINVAL;
++		fprintf(stderr, "Wrong block of child node/leaf, wanted: %llu, have: %llu\n",
++			btrfs_node_blockptr(parent, slot),
++			btrfs_header_bytenr(child));
++	}
++	if (btrfs_node_ptr_generation(parent, slot) !=
++	    btrfs_header_generation(child)) {
++		ret = -EINVAL;
++		fprintf(stderr, "Wrong generation of child node/leaf, wanted: %llu, have: %llu\n",
++			btrfs_header_generation(child),
++			btrfs_node_ptr_generation(parent, slot));
++	}
++	return ret;
++}
++
+ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			  struct walk_control *wc, int *level)
  {
+@@ -1375,6 +1425,11 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			}
+ 		}
+ 
++		ret = check_child_node(root, cur, path->slots[*level], next);
++		if (ret) {
++			err = ret;
++			goto out;
++		}
+ 		*level = *level - 1;
+ 		free_extent_buffer(path->nodes[*level]);
+ 		path->nodes[*level] = next;
 -- 
-1.8.3.1
+2.1.2
 

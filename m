@@ -1,173 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50372 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:1147 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751961AbaJFKFQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Oct 2014 06:05:16 -0400
+	id S1751705AbaJFKFS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Oct 2014 06:05:18 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v5 01/15] btrfs: new test to run btrfs balance and subvolume test simultaneously
-Date: Mon,  6 Oct 2014 18:04:40 +0800
-Message-Id: <1412589894-10675-2-git-send-email-eguan@redhat.com>
+Subject: [PATCH v5 02/15] btrfs: new test to run btrfs balance and scrub simultaneously
+Date: Mon,  6 Oct 2014 18:04:41 +0800
+Message-Id: <1412589894-10675-3-git-send-email-eguan@redhat.com>
 In-Reply-To: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 References: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-with fsstress running in background.
+Run btrfs balance and scrub operations simultaneously with fsstress
+running in background.
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- common/rc           | 110 +++++++++++++++++++++++++++++++++++++++++++++++--
- tests/btrfs/060     | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/060.out |   2 +
+ common/rc           |   9 +++++
+ tests/btrfs/061     | 114 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/061.out |   2 +
  tests/btrfs/group   |   1 +
- 4 files changed, 224 insertions(+), 4 deletions(-)
- create mode 100755 tests/btrfs/060
- create mode 100644 tests/btrfs/060.out
+ 4 files changed, 126 insertions(+)
+ create mode 100755 tests/btrfs/061
+ create mode 100644 tests/btrfs/061.out
 
 diff --git a/common/rc b/common/rc
-index 34d7c19..fb7892b 100644
+index fb7892b..fac1fad 100644
 --- a/common/rc
 +++ b/common/rc
-@@ -585,11 +585,17 @@ _scratch_pool_mkfs()
- {
-     case $FSTYP in
-     btrfs)
--	$MKFS_BTRFS_PROG $MKFS_OPTIONS $* $SCRATCH_DEV_POOL > /dev/null
--	;;
-+        # if dup profile is in mkfs options call _scratch_mkfs instead
-+        # because dup profile only works with single device
-+        if [[ "$*" =~ dup ]]; then
-+            _scratch_mkfs $*
-+        else
-+            $MKFS_BTRFS_PROG $MKFS_OPTIONS $* $SCRATCH_DEV_POOL > /dev/null
-+        fi
-+        ;;
-     *)
--	echo "_scratch_pool_mkfs is not implemented for $FSTYP" 1>&2
--	;;
-+        echo "_scratch_pool_mkfs is not implemented for $FSTYP" 1>&2
-+        ;;
-     esac
+@@ -2588,6 +2588,15 @@ _btrfs_stress_subvolume()
+ 	done
  }
  
-@@ -2486,6 +2492,102 @@ _get_free_inode()
- 	echo $nr_inode
- }
- 
-+# get btrfs profile configs being tested
-+#
-+# A set of pre-set profile configs are exported via _btrfs_profile_configs
-+# array. Default configs can be overridden by setting BTRFS_PROFILE_CONFIGS
-+# var in the format "metadata_profile:data_profile", multiple configs can be
-+# seperated by space, e.g.
-+# export BTRFS_PROFILE_CONFIGS="raid0:raid0 raid1:raid1 dup:single"
-+_btrfs_get_profile_configs()
-+{
-+	if [ "$FSTYP" != "btrfs" ]; then
-+		return
-+	fi
-+
-+	# no user specified btrfs profile configs, export the default configs
-+	if [ -z "$BTRFS_PROFILE_CONFIGS" ]; then
-+		# default configs
-+		_btrfs_profile_configs=(
-+			"-m single -d single"
-+			"-m dup -d single"
-+			"-m raid0 -d raid0"
-+			"-m raid1 -d raid0"
-+			"-m raid1 -d raid1"
-+			"-m raid10 -d raid10"
-+			"-m raid5 -d raid5"
-+			"-m raid6 -d raid6"
-+		)
-+
-+		# remove dup/raid5/raid6 profiles if we're doing device replace
-+		# dup profile indicates only one device being used (SCRATCH_DEV),
-+		# but we don't want to replace SCRATCH_DEV, which will be used in
-+		# _scratch_mount/_check_scratch_fs etc.
-+		# and raid5/raid6 doesn't support replace yet
-+		if [ "$1" == "replace" ]; then
-+			_btrfs_profile_configs=(
-+				"-m single -d single"
-+				"-m raid0 -d raid0"
-+				"-m raid1 -d raid0"
-+				"-m raid1 -d raid1"
-+				"-m raid10 -d raid10"
-+				# add these back when raid5/6 is working with replace
-+				#"-m raid5 -d raid5"
-+				#"-m raid6 -d raid6"
-+			)
-+		fi
-+		export _btrfs_profile_configs
-+		return
-+	fi
-+
-+	# parse user specified btrfs profile configs
-+	local i=0
-+	local cfg=""
-+	for cfg in $BTRFS_PROFILE_CONFIGS; do
-+		# turn "metadata:data" format to "-m metadata -d data"
-+		# and assign it to _btrfs_profile_configs array
-+		cfg=`echo "$cfg" | sed -e 's/^/-m /' -e 's/:/ -d /'`
-+		_btrfs_profile_configs[$i]="$cfg"
-+		let i=i+1
-+	done
-+
-+	if [ "$1" == "replace" ]; then
-+		if echo ${_btrfs_profile_configs[*]} | grep -q raid[56]; then
-+			_notrun "RAID5/6 doesn't support btrfs device replace yet"
-+		fi
-+		if echo ${_btrfs_profile_configs[*]} | grep -q dup; then
-+			_notrun "Do not set dup profile in btrfs device replace test"
-+		fi
-+	fi
-+	export _btrfs_profile_configs
-+}
-+
-+# stress btrfs by running balance operation in a loop
-+_btrfs_stress_balance()
++# stress btrfs by running scrub in a loop
++_btrfs_stress_scrub()
 +{
 +	local btrfs_mnt=$1
 +	while true; do
-+		$BTRFS_UTIL_PROG balance start $btrfs_mnt
-+	done
-+}
-+
-+# stress btrfs by creating/mounting/umounting/deleting subvolume in a loop
-+_btrfs_stress_subvolume()
-+{
-+	local btrfs_dev=$1
-+	local btrfs_mnt=$2
-+	local subvol_name=$3
-+	local subvol_mnt=$4
-+
-+	mkdir -p $subvol_mnt
-+	while true; do
-+		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
-+		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
-+		$UMOUNT_PROG $subvol_mnt
-+		$BTRFS_UTIL_PROG subvolume delete $btrfs_mnt/$subvol_name
++		$BTRFS_UTIL_PROG scrub start -B $btrfs_mnt
 +	done
 +}
 +
  init_rc()
  {
  	if [ "$iam" == new ]
-diff --git a/tests/btrfs/060 b/tests/btrfs/060
+diff --git a/tests/btrfs/061 b/tests/btrfs/061
 new file mode 100755
-index 0000000..8ef0e7f
+index 0000000..e0e03d7
 --- /dev/null
-+++ b/tests/btrfs/060
-@@ -0,0 +1,115 @@
++++ b/tests/btrfs/061
+@@ -0,0 +1,114 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/060
++# FSQA Test No. btrfs/061
 +#
-+# Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-+# with fsstress running in background.
++# Run btrfs balance and scrub operations simultaneously with fsstress
++# running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -220,14 +111,13 @@ index 0000000..8ef0e7f
 +run_test()
 +{
 +	local mkfs_opts=$1
-+	local subvol_mnt=$TEST_DIR/$seq.mnt
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
 +	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
 +	# make sure we created btrfs with desired options
 +	if [ $? -ne 0 ]; then
-+		echo "mkfs $mkfs_opts failed" | tee -a $seqres.full
++		echo "mkfs $mkfs_opts failed"
 +		return
 +	fi
 +	_scratch_mount >>$seqres.full 2>&1
@@ -242,18 +132,20 @@ index 0000000..8ef0e7f
 +	balance_pid=$!
 +	echo "$balance_pid" >>$seqres.full
 +
-+	echo -n "Start subvolume worker: " >>$seqres.full
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	subvol_pid=$!
-+	echo "$subvol_pid" >>$seqres.full
++	echo -n "Start scrub worker: " >>$seqres.full
++	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
++	scrub_pid=$!
++	echo "$scrub_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+
-+	kill $balance_pid $subvol_pid
++	kill $balance_pid $scrub_pid
 +	wait
-+	# wait for the balance operation to finish
++	# wait for the balance and scrub operations to finish
 +	while ps aux | grep "balance start" | grep -qv grep; do
++		sleep 1
++	done
++	while ps aux | grep "scrub start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -263,8 +155,6 @@ index 0000000..8ef0e7f
 +		echo "Scrub find errors in \"$mkfs_opts\" test" | tee -a $seqres.full
 +	fi
 +
-+	# in case the subvolume is still mounted
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
 +	_scratch_unmount
 +	# we called _require_scratch_nocheck instead of _require_scratch
 +	# do check after test for each profile config
@@ -278,23 +168,23 @@ index 0000000..8ef0e7f
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/060.out b/tests/btrfs/060.out
+diff --git a/tests/btrfs/061.out b/tests/btrfs/061.out
 new file mode 100644
-index 0000000..8ffce4d
+index 0000000..273be9e
 --- /dev/null
-+++ b/tests/btrfs/060.out
++++ b/tests/btrfs/061.out
 @@ -0,0 +1,2 @@
-+QA output created by 060
++QA output created by 061
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 68b5c79..bcc4d46 100644
+index bcc4d46..5064ef3 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -62,3 +62,4 @@
- 057 auto quick
+@@ -63,3 +63,4 @@
  058 auto quick
  059 auto quick
-+060 auto balance subvol
+ 060 auto balance subvol
++061 auto balance scrub
 -- 
 1.8.3.1
 

@@ -1,65 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:38487 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:46596 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751344AbaJFUOw (ORCPT
+	with ESMTP id S1751289AbaJFUOw (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
 	Mon, 6 Oct 2014 16:14:52 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 5/5] Btrfs: make inode.c:submit_compressed_extents() return void
-Date: Mon,  6 Oct 2014 22:14:26 +0100
-Message-Id: <1412630066-21746-6-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/5] Btrfs: fix hang on compressed write error
+Date: Mon,  6 Oct 2014 22:14:23 +0100
+Message-Id: <1412630066-21746-3-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
 References: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Its return value is completely ignored by its single caller and it's
-useless anyway, since errors are indicated through SetPageError and
-the bit AS_EIO set in the flags of the inode's mapping. The caller
-can't do anything with the value, as it's invoked from a workqueue
-task and not by the task calling filemap_fdatawrite_range (which calls
-the writepages address space callback, which in turn calls the inode's
-fill_delalloc callback).
+In inode.c:submit_compressed_extents(), before calling btrfs_submit_compressed_write()
+we start writeback for all pages, clear their dirty flag, unlock them, etc, but if
+btrfs_submit_compressed_write() fails (at the moment it can only fail with -ENOMEM),
+we never end the writeback on the pages, so any filemap_fdatawait_range() call will
+hang forever. We were also not calling the writepage end io hook, which means the
+corresponding ordered extent will never complete and all its waiters will block
+forever, such as a full fsync (via btrfs_wait_ordered_range()).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8636499..7635b1d 100644
+index cefa618..e2c4650 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -655,7 +655,7 @@ static void free_async_extent_pages(struct async_extent *async_extent)
-  * queued.  We walk all the async extents created by compress_file_range
-  * and send them down to the disk.
-  */
--static noinline int submit_compressed_extents(struct inode *inode,
-+static noinline void submit_compressed_extents(struct inode *inode,
- 					      struct async_cow *async_cow)
- {
- 	struct async_extent *async_extent;
-@@ -667,9 +667,6 @@ static noinline int submit_compressed_extents(struct inode *inode,
- 	struct extent_io_tree *io_tree;
- 	int ret = 0;
- 
--	if (list_empty(&async_cow->extents))
--		return 0;
--
- again:
- 	while (!list_empty(&async_cow->extents)) {
- 		async_extent = list_entry(async_cow->extents.next,
-@@ -841,7 +838,7 @@ retry:
+@@ -814,6 +814,20 @@ retry:
+ 				    ins.objectid,
+ 				    ins.offset, async_extent->pages,
+ 				    async_extent->nr_pages);
++		if (ret) {
++			struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
++			struct page *p = async_extent->pages[0];
++			const u64 start = async_extent->start;
++			const u64 end = start + async_extent->ram_size - 1;
++
++			p->mapping = inode->i_mapping;
++			tree->ops->writepage_end_io_hook(p, start, end,
++							 NULL, 0);
++			p->mapping = NULL;
++			extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
++						     PAGE_END_WRITEBACK |
++						     PAGE_SET_ERROR);
++		}
+ 		alloc_hint = ins.objectid + ins.offset;
  		kfree(async_extent);
- 		cond_resched();
- 	}
--	return 0;
-+	return;
- out_free_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
- out_free:
+ 		if (ret)
 -- 
 1.9.1
 

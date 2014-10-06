@@ -1,108 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33523 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56140 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751509AbaJFC3O convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Oct 2014 22:29:14 -0400
-Message-ID: <5431FEA1.20803@cn.fujitsu.com>
-Date: Mon, 6 Oct 2014 10:29:53 +0800
+	with ESMTP id S1752027AbaJFDBh convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Oct 2014 23:01:37 -0400
+Message-ID: <54320637.4030506@cn.fujitsu.com>
+Date: Mon, 6 Oct 2014 11:02:15 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Niklas Fischer <niklas@niklasfi.de>, <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs check segfaults after flipping 2 Bytes
-References: <542C6443.1010809@niklasfi.de>
-In-Reply-To: <542C6443.1010809@niklasfi.de>
+To: Eric Sandeen <sandeen@redhat.com>, Chris Mason <clm@fb.com>,
+        <linux-btrfs@vger.kernel.org>
+CC: <guaneryu@gmail.com>
+Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally
+ to avoid losing security label.
+References: <1411450808-14988-1-git-send-email-quwenruo@cn.fujitsu.com> <54216C70.6030206@fb.com> <5421C11D.2040201@redhat.com> <542210E5.7060509@cn.fujitsu.com> <54223B76.1040908@redhat.com>
+In-Reply-To: <54223B76.1040908@redhat.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 -------- Original Message --------
-Subject: btrfs check segfaults after flipping 2 Bytes
-From: Niklas Fischer <niklas@niklasfi.de>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年10月02日 04:29
-> Hello,
+Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options 
+internally to avoid losing security label.
+From: Eric Sandeen <sandeen@redhat.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>, 
+<linux-btrfs@vger.kernel.org>
+Date: 2014年09月24日 11:33
+> On 9/23/14 7:31 PM, Qu Wenruo wrote:
+>> -------- Original Message --------
+>> Subject: Re: [PATCH] btrfs: Make btrfs handle security mount options internally to avoid losing security label.
+>> From: Eric Sandeen <sandeen@redhat.com>
+>> To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+>> Date: 2014年09月24日 02:51
+>>> On 9/23/14 7:49 AM, Chris Mason wrote:
+>>>> On 09/23/2014 01:40 AM, Qu Wenruo wrote:
+>>>>> [BUG]
+>>>>> Originally when mount btrfs with "-o subvol=" mount option, btrfs will
+>>>>> lose all security lable.
+>>>>> And if the btrfs fs is mounted somewhere else, due to the lost of
+>>>>> security lable, SELinux will refuse to mount since the same super block
+>>>>> is being mounted using different security lable.
+>>>>>
+>>>>> [REPRODUCER]
+>>>>> With SELinux enabled:
+>>>>>    #mkfs -t btrfs /dev/sda5
+>>>>>    #mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
+>>>>>    #btrfs subvolume create /mnt/btrfs/subvol
+>>>>>    #mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5
+>>>>>     /mnt/test
+>>>>>
+>>>>> kernel message:
+>>>>> SELinux: mount invalid.  Same superblock, different security settings
+>>>>> for (dev sda5, type btrfs)
+>>>>>
+>>>>> [REASON]
+>>>>> This happens because btrfs will call vfs_kern_mount() and then
+>>>>> mount_subtree() to handle subvolume name lookup.
+>>>>> First mount will cut off all the security lables and when it comes to
+>>>>> the second vfs_kern_mount(), it has no security label now.
+>>>>>
+>>>>> [FIX]
+>>>>> This patch will makes btrfs behavior much more like nfs,
+>>>>> which has the type flag FS_BINARY_MOUNTDATA,
+>>>>> making btrfs handles the security label internally.
+>>>>> So security label will be set in the real mount time and won't lose
+>>>>> label when use with "subvol=" mount option.
+>>>> Thanks for working on this.  Eric Sandeen (cc'd) was trying out
+>>>> something similar recently, so I want to make sure this doesn't conflict
+>>>> with his ideas.
+>>> My ideas didn't get very far.  ;)
+>>>
+>>> What I was after was a way for multiple subvolumes to have unique contexts.
+>>> It looks like this might do the trick, as long as they are mounted on a unique
+>>> mount point.
+>>>
+>>> Would this allow "subvolume create" to take a context, so that everything
+>>> under /mnt/btrfs/subvol/ has a unique subvol-wide context?
+>>>
+>>> thanks,
+>>> -Eric
+>> Did you mean the following situation?
+>> /dev/sdb default subvol(FS_TREE) mounted on /mnt/default with context A
+>> /dev/sdb subvol=subvol mounted on /mnt/subvol with context B
+>>
+>> If that's your goal, I am afraid that my patch can't achieve it and even worse, will even forbid it. :(
+>>
+>> SELinux doesn't allow same superblock mounted with different context, and the patch follows it.
+>> If SELinux is modified to allow same superblock different context, then my patch also needs to be modified.
+> oh, ok, I see.
 >
-> I was trying to determine how btrfs reacts to disk errors, when I
-> discovered, that flipping two Bytes, supposedly inside of a file can
-> render the filesystem unusable. Here is what I did:
+> I don't think that my "wish" should disallow your patch.
 >
-> 1. dd if=/dev/zero of=/dev/sdg2 bs=1M
-> 2. mkfs.btrfs /dev/sdg2
-> 3. mount /dev/sdg2 /tmp/btrfs
-> 4. echo "hello world this is some text" > /tmp/btrfs/hello
-> 5. umount /dev/sdg2
+> For the problem I was looking at, I think the only way forward would require
+> some significant selinux modification, and treating a subvol root essentially
+> like a superblock.
 >
-> this should result in this image [1]
+> So ... don't let me slow you down, at least for now.  ;)
 >
-> in the following steps /dev/sdg2 is altered. Basically, we want to apply
-> s/world/wirld/g
+> -Eric
 >
-> 6. dd if=/dev/sdg2 of=/tmp/sdg2 bs=1M
-> 7. edit /tmp/sdg2 in ghex, find & replace all occurences of "world" with
-> "wirld" (two occurences found), save as /tmp/sdg2_new
-2 problems here.
-
-[1] csum mismatch
-As already mentioned by Ducan and Brendan, the csum does not match.
-
-What makes thing much worse, since small file's extent is inlined, the 
-data is stored in metadata tree blocks,
-and the file system is almost empty so the inline extent lies in the 
-*root* leaf of fs_tree.
-These two unfortunate facts makes the whole fs_tree corrupted(only one 
-leaf, and its cusm dismatch),
-which cause btrfs-progs segfault.
-
-The good news is that, the bug in btrfs-progs is already fixed by Wang's 
-patch:
-https://patchwork.kernel.org/patch/4254631/
-So at least, btrfs-progs will not segfault anymore.
-
-[2] two occurences?
-So you definitely changed something you should not touch... maybe 
-another tree root?
-
-Anyway, almost everything in btrfs is csums, so any manual modification 
-may cause problem.
-
-> 8. dd if=/tmp/sdg2_new of=/dev/sdg2 bs=1M
->
-> /dev/sdg2 now looks like this [2]
->
-> now, when I try mounting /dev/sdg2:
->
-> """22:21 root@localhost ~#
-> LANG=EN mount /dev/sdg2 /tmp/btrfs/
-> mount: mount /dev/sdg2 on /tmp/btrfs failed: Cannot allocate memory"""
->
-> ok, so let us try btrfs check
->
-> """22:21 root@localhost ~#
-> LANG=EN btrfs check /dev/sdg2
-> checksum verify failed on 4222976 found F22E71BD wanted CE334502
-> checksum verify failed on 4222976 found F22E71BD wanted CE334502
-> Csum didn't match
-> Checking filesystem on /dev/sdg2
-> UUID: ea2843f1-e8aa-420f-acf8-6ef13f6c6753
-> checking extents
-> Speicherzugriffsfehler (Speicherabzug geschrieben)"""
->
-> that last line reads "Segfault, memory dumped". Is this behaviour expected?
->
-> Kind regards,
-> Niklas
->
-> [1] tgz: https://gigamove.rz.rwth-aachen.de/d/id/R5CKikxbYTBdqs
->      raw: https://gigamove.rz.rwth-aachen.de/d/id/VgMXAicS7CGEjt
-> [2] tgz: https://gigamove.rz.rwth-aachen.de/d/id/cEebNYne9ppFy4
->      raw: https://gigamove.rz.rwth-aachen.de/d/id/ATJa7wpfEWdfL2
-BTW, [2]'s tgz is in fact raw, and raw is tgz....
+To Chris, any other comment?
 
 Thanks,
 Qu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-

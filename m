@@ -1,69 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33359 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:62276 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751961AbaJFKFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Oct 2014 06:05:23 -0400
+	id S1751660AbaJFKFZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Oct 2014 06:05:25 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v5 04/15] btrfs: new case to run btrfs balance and remount with different compress algorithms
-Date: Mon,  6 Oct 2014 18:04:43 +0800
-Message-Id: <1412589894-10675-5-git-send-email-eguan@redhat.com>
+Subject: [PATCH v5 05/15] btrfs: new case to run btrfs balance and device replace operations simultaneously
+Date: Mon,  6 Oct 2014 18:04:44 +0800
+Message-Id: <1412589894-10675-6-git-send-email-eguan@redhat.com>
 In-Reply-To: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 References: <1412589894-10675-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs balance and remount with different compress algorithms
-simultaneously, with fsstress running in background.
+Run btrfs balance and replace operations simultaneously with fsstress
+running in background.
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- common/rc           |  14 +++++++
- tests/btrfs/063     | 114 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/063.out |   2 +
+ common/rc           |  73 +++++++++++++++++++++++++++++++
+ tests/btrfs/064     | 122 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/064.out |   2 +
  tests/btrfs/group   |   1 +
- 4 files changed, 131 insertions(+)
- create mode 100755 tests/btrfs/063
- create mode 100644 tests/btrfs/063.out
+ 4 files changed, 198 insertions(+)
+ create mode 100755 tests/btrfs/064
+ create mode 100644 tests/btrfs/064.out
 
 diff --git a/common/rc b/common/rc
-index 9c2aa8e..a158ea3 100644
+index a158ea3..531eb1e 100644
 --- a/common/rc
 +++ b/common/rc
-@@ -2617,6 +2617,20 @@ _btrfs_stress_defrag()
+@@ -2160,6 +2160,24 @@ _require_scratch_dev_pool()
  	done
  }
  
-+# stress btrfs by remounting it with different compression algorithms in a loop
-+# run this with fsstress running at background could exercise the compression
-+# code path and ensure no race when switching compression algorithm with constant
-+# I/O activity.
-+_btrfs_stress_remount_compress()
++# ensure devices in SCRATCH_DEV_POOL are of the same size
++# must be called after _require_scratch_dev_pool
++_require_scratch_dev_pool_equal_size()
++{
++	local _size
++	local _newsize
++	local _dev
++
++	# SCRATCH_DEV has been set to the first device in SCRATCH_DEV_POOL
++	_size=`_get_device_size $SCRATCH_DEV`
++	for _dev in $SCRATCH_DEV_POOL; do
++		_newsize=`_get_device_size $_dev`
++		if [ $_size -ne $_newsize ]; then
++			_notrun "This test requires devices in SCRATCH_DEV_POOL have the same size"
++		fi
++	done
++}
++
+ # We will check if the device is deletable
+ _require_deletable_scratch_dev_pool()
+ {
+@@ -2631,6 +2649,61 @@ _btrfs_stress_remount_compress()
+ 	done
+ }
+ 
++# stress btrfs by replacing devices in a loop
++# Note that at least 3 devices are needed in SCRATCH_DEV_POOL and the last
++# device should be free(not used by btrfs)
++_btrfs_stress_replace()
 +{
 +	local btrfs_mnt=$1
++
++	# The device number in SCRATCH_DEV_POOL should be at least 3,
++	# one is SCRATCH_DEV, one is to be replaced, one is free device
++	# we won't replace SCRATCH_DEV, see below for reason
++	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt 3 ]; then
++		echo "_btrfs_stress_replace requires at least 3 devices in SCRATCH_DEV_POOL"
++		return
++	fi
++
++	# take the last device as the first free_dev
++	local free_dev="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $NF}'`"
++
++	# free_dev should be really free
++	if $BTRFS_UTIL_PROG filesystem show $btrfs_mnt | grep -q "$free_dev"; then
++		echo "_btrfs_stress_replace: $free_dev is used by btrfs"
++		return
++	fi
++
++	# dev_pool is device list being currently used by btrfs (excluding SCRATCH_DEV)
++	# and can be replaced. We don't replace SCRATCH_DEV because it will be used in
++	# _scratch_mount and _check_scratch_fs etc.
++	local dev_pool=`echo $SCRATCH_DEV_POOL | sed -e "s# *$SCRATCH_DEV *##" \
++			-e "s# *$free_dev *##"`
++
++	# set the first device in dev_pool as the first src_dev to be replaced
++	local src_dev=`echo $dev_pool | $AWK_PROG '{print $1}'`
++
++	echo "dev_pool=$dev_pool"
++	echo "free_dev=$free_dev, src_dev=$src_dev"
 +	while true; do
-+		for algo in no zlib lzo; do
-+			$MOUNT_PROG -o remount,compress=$algo $btrfs_mnt
-+		done
++		echo "Replacing $src_dev with $free_dev"
++		$BTRFS_UTIL_PROG replace start -fB $src_dev $free_dev $btrfs_mnt
++		if [ $? -ne 0 ]; then
++			# don't update src_dev and free_dev if replace failed
++			continue
++		fi
++		dev_pool="$dev_pool $free_dev"
++		dev_pool=`echo $dev_pool | sed -e "s# *$src_dev *##"`
++		free_dev=$src_dev
++		src_dev=`echo $dev_pool | $AWK_PROG '{print $1}'`
 +	done
++}
++
++# return device size in kb
++_get_device_size()
++{
++	grep `_short_dev $1` /proc/partitions | awk '{print $3}'
 +}
 +
  init_rc()
  {
  	if [ "$iam" == new ]
-diff --git a/tests/btrfs/063 b/tests/btrfs/063
+diff --git a/tests/btrfs/064 b/tests/btrfs/064
 new file mode 100755
-index 0000000..854c941
+index 0000000..d4b1353
 --- /dev/null
-+++ b/tests/btrfs/063
-@@ -0,0 +1,114 @@
++++ b/tests/btrfs/064
+@@ -0,0 +1,122 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/063
++# FSQA Test No. btrfs/064
 +#
-+# Run btrfs balance and remount with different compress algorithms
-+# simultaneously, with fsstress running in background.
++# Run btrfs balance and replace operations simultaneously with fsstress
++# running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -108,24 +174,32 @@ index 0000000..854c941
 +_supported_os Linux
 +# we check scratch dev after each loop
 +_require_scratch_nocheck
-+_require_scratch_dev_pool 4
-+_btrfs_get_profile_configs
++_require_scratch_dev_pool 5
++_require_scratch_dev_pool_equal_size
++_btrfs_get_profile_configs replace
 +
 +rm -f $seqres.full
 +
 +run_test()
 +{
 +	local mkfs_opts=$1
++	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
++	# remove the last device from the SCRATCH_DEV_POOL list so
++	# _scratch_pool_mkfs won't use all devices in pool
++	local last_dev="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $NF}'`"
++	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | sed -e "s# *$last_dev *##"`
 +	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
 +	# make sure we created btrfs with desired options
 +	if [ $? -ne 0 ]; then
 +		echo "mkfs $mkfs_opts failed"
++		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +		return
 +	fi
 +	_scratch_mount >>$seqres.full 2>&1
++	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +
 +	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
 +	echo "Run fsstress $args" >>$seqres.full
@@ -137,20 +211,20 @@ index 0000000..854c941
 +	balance_pid=$!
 +	echo "$balance_pid" >>$seqres.full
 +
-+	echo -n "Start remount worker: " >>$seqres.full
-+	_btrfs_stress_remount_compress $SCRATCH_MNT >/dev/null 2>&1 &
-+	remount_pid=$!
-+	echo "$remount_pid" >>$seqres.full
++	echo -n "Start replace worker: " >>$seqres.full
++	_btrfs_stress_replace $SCRATCH_MNT >>$seqres.full 2>&1 &
++	replace_pid=$!
++	echo "$replace_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+	kill $balance_pid $remount_pid
++	kill $balance_pid $replace_pid
 +	wait
-+	# wait for the balance and remount loop to finish
++	# wait for the balance and replace operations to finish
 +	while ps aux | grep "balance start" | grep -qv grep; do
 +		sleep 1
 +	done
-+	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
++	while ps aux | grep "replace start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -173,23 +247,23 @@ index 0000000..854c941
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/063.out b/tests/btrfs/063.out
+diff --git a/tests/btrfs/064.out b/tests/btrfs/064.out
 new file mode 100644
-index 0000000..de35fc5
+index 0000000..d907654
 --- /dev/null
-+++ b/tests/btrfs/063.out
++++ b/tests/btrfs/064.out
 @@ -0,0 +1,2 @@
-+QA output created by 063
++QA output created by 064
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a6c39f7..b7025f6 100644
+index b7025f6..9455b4d 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -65,3 +65,4 @@
- 060 auto balance subvol
+@@ -66,3 +66,4 @@
  061 auto balance scrub
  062 auto balance defrag compress
-+063 auto balance remount compress
+ 063 auto balance remount compress
++064 auto balance replace
 -- 
 1.8.3.1
 

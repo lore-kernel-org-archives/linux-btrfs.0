@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39157 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751223AbaJGGL4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 02:11:56 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:23636 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751277AbaJGGPV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 02:15:21 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs-progs: fix uninitialized warining in btrfs_calc_stripe_index
-Date: Tue,  7 Oct 2014 06:17:02 +0800
-Message-Id: <1412633822-15952-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v3] btrfs-progs: fix uninitialized warning in btrfs_calc_stripe_index
+Date: Tue,  7 Oct 2014 06:20:29 +0800
+Message-Id: <1412634029-15992-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <20141006171931.GD11436@twin.jikos.cz>
 References: <20141006171931.GD11436@twin.jikos.cz>
 MIME-Version: 1.0
@@ -23,6 +23,7 @@ chunk-recover.c:1481: warning: ‘index’ may be used uninitialized in this fun
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+v3: fix typo in commit
 v2: Accept David review comment
  chunk-recover.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)

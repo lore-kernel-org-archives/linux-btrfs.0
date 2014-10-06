@@ -1,154 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:16098 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751662AbaJAOey (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Oct 2014 10:34:54 -0400
-Received: from pps.filterd (m0044008 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s91EQ6eW023957
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Oct 2014 07:34:54 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1pqwxb2s2f-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 01 Oct 2014 07:34:54 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: rebuild the crc tree with --init-csum-tree
-Date: Wed, 1 Oct 2014 10:34:51 -0400
-Message-ID: <1412174091-5409-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from aserp1040.oracle.com ([141.146.126.69]:42279 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750713AbaJGGWL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 02:22:11 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v4] btrfs-progs: fix uninitialized warning in btrfs_calc_stripe_index
+Date: Tue,  7 Oct 2014 06:27:16 +0800
+Message-Id: <1412634436-16698-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <20141006171931.GD11436@twin.jikos.cz>
+References: <20141006171931.GD11436@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have --init-csum-tree, which just empties the csum tree.  I'm not sure why we
-would ever need this, but we definitely need to be able to rebuild the csum tree
-in some cases.  This patch adds the ability to completely rebuild the crc tree
-by reading all of the data and adding csum entries for them.  This patch doesn't
-pay attention to NODATASUM inodes, it'll happily add csums for everything.
-Thanks,
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+chunk-recover.c: In function btrfs_calc_stripe_index
+chunk-recover.c:1481: warning: index may be used uninitialized in this function
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-check.c | 98 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 98 insertions(+)
+v4: remove some unintended char in commit, sorry
+v3: fix typo in commit
+v2: Accept David review comment
+ chunk-recover.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 03b0fbd..3141aa4 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6625,6 +6625,98 @@ out:
- 	return ret;
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 14c25a7..058a652 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -1491,7 +1491,7 @@ static int btrfs_calc_stripe_index(struct chunk_record *chunk, u64 logical)
+ 		stripe_nr /= nr_data_stripes;
+ 		index = (index + stripe_nr) % chunk->num_stripes;
+ 	} else {
+-		BUG_ON(1);
++		return -1;
+ 	}
+ 	return index;
  }
- 
-+static int populate_csum(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *csum_root, char *buf, u64 start,
-+			 u64 len)
-+{
-+	u64 offset = 0;
-+	u64 sectorsize;
-+	int ret = 0;
-+
-+	while (offset < len) {
-+		sectorsize = csum_root->sectorsize;
-+		ret = read_extent_data(csum_root, buf, start + offset,
-+				       &sectorsize, 0);
-+		if (ret)
-+			break;
-+		ret = btrfs_csum_file_block(trans, csum_root, start + len,
-+					    start + offset, buf, sectorsize);
-+		if (ret)
-+			break;
-+		offset += sectorsize;
-+	}
-+	return ret;
-+}
-+
-+static int fill_csum_tree(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *csum_root)
-+{
-+	struct btrfs_root *extent_root = csum_root->fs_info->extent_root;
-+	struct btrfs_path *path;
-+	struct btrfs_extent_item *ei;
-+	struct extent_buffer *leaf;
-+	char *buf;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_EXTENT_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-+	if (ret < 0) {
-+		btrfs_free_path(path);
-+		return ret;
-+	}
-+
-+	buf = malloc(csum_root->sectorsize);
-+	if (!buf) {
-+		btrfs_free_path(path);
-+		return -ENOMEM;
-+	}
-+
-+	while (1) {
-+		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+			ret = btrfs_next_leaf(extent_root, path);
-+			if (ret < 0)
-+				break;
-+			if (ret) {
-+				ret = 0;
-+				break;
-+			}
-+		}
-+		leaf = path->nodes[0];
-+
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.type != BTRFS_EXTENT_ITEM_KEY) {
-+			path->slots[0]++;
-+			continue;
-+		}
-+
-+		ei = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_extent_item);
-+		if (!(btrfs_extent_flags(leaf, ei) &
-+		      BTRFS_EXTENT_FLAG_DATA)) {
-+			path->slots[0]++;
-+			continue;
-+		}
-+
-+		ret = populate_csum(trans, csum_root, buf, key.objectid,
-+				    key.offset);
-+		if (ret)
-+			break;
-+		path->slots[0]++;
-+	}
-+
-+	btrfs_free_path(path);
-+	free(buf);
-+	return ret;
-+}
-+
- static struct option long_options[] = {
- 	{ "super", 1, NULL, 's' },
- 	{ "repair", 0, NULL, 0 },
-@@ -6794,6 +6886,12 @@ int cmd_check(int argc, char **argv)
- 				ret = -EIO;
- 				goto close_out;
- 			}
-+
-+			ret = fill_csum_tree(trans, info->csum_root);
-+			if (ret) {
-+				fprintf(stderr, "crc refilling failed\n");
-+				return -EIO;
-+			}
- 		}
- 		/*
- 		 * Ok now we commit and run the normal fsck, which will add
+@@ -1554,6 +1554,7 @@ btrfs_rebuild_ordered_meta_chunk_stripes(struct recover_control *rc,
+ again:
+ 	er = container_of(cache, struct extent_record, cache);
+ 	index = btrfs_calc_stripe_index(chunk, er->cache.start);
++	BUG_ON(index == -1);
+ 	if (chunk->stripes[index].devid)
+ 		goto next;
+ 	list_for_each_entry_safe(devext, next, &devexts, chunk_list) {
+@@ -1944,6 +1945,7 @@ next_csum:
+ 	if (list_is_last(candidates.next, &candidates)) {
+ 		index = btrfs_calc_stripe_index(chunk,
+ 			key.offset + csum_offset * blocksize);
++		BUG_ON(index == -1);
+ 		if (chunk->stripes[index].devid)
+ 			goto next_stripe;
+ 		ret = insert_stripe(&candidates, rc, chunk, index);
 -- 
-1.8.3.1
+2.0.0.153.g79dcccc
 

@@ -1,54 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:61642 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751827AbaJFRGx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Oct 2014 13:06:53 -0400
-Received: by mail-wi0-f173.google.com with SMTP id fb4so5309144wid.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Oct 2014 10:06:52 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 6 Oct 2014 10:06:52 -0700
-Message-ID: <CAG+QAKVPcJPVL-mRsnG0m1NQCRrwaUbYDqKXBCjOnH_5A0ifHg@mail.gmail.com>
-Subject: Two uncorrectable errors across RAID1 at same logical block?
-From: Rich Rauenzahn <rrauenza@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56515 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751289AbaJFQtG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Oct 2014 12:49:06 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 6CDAAAD55
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Oct 2014 16:49:05 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: check, add verbosity level option
+Date: Mon,  6 Oct 2014 18:48:58 +0200
+Message-Id: <1412614138-32008-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1412172669-1975-1-git-send-email-jbacik@fb.com>
+References: <1412172669-1975-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fs is across two ssd drives.  Am I interpreting this right that the
-same logical block is corrupt on both drives?  That seems odd.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ Documentation/btrfs-check.txt | 2 ++
+ cmds-check.c                  | 7 ++++++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
 
-How do I map it to a filename?
+diff --git a/Documentation/btrfs-check.txt b/Documentation/btrfs-check.txt
+index 8a8073f52fad..589466e0a3f3 100644
+--- a/Documentation/btrfs-check.txt
++++ b/Documentation/btrfs-check.txt
+@@ -32,6 +32,8 @@ create a new CRC tree.
+ create a new extent tree.
+ --check-data-csum::
+ verify checkums of data blocks.
++--verbose::
++increase verbosity level.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-check.c b/cmds-check.c
+index af1940a3fe38..6f3dc77171c4 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -55,6 +55,7 @@ static int repair = 0;
+ static int no_holes = 0;
+ static int init_extent_tree = 0;
+ static int check_data_csum = 0;
++static int verbose = 0;
+ 
+ struct extent_backref {
+ 	struct list_head list;
+@@ -6801,6 +6802,7 @@ const char * const cmd_check_usage[] = {
+ 	"--check-data-csum           verify checkums of data blocks",
+ 	"--qgroup-report             print a report on qgroup consistency",
+ 	"--subvol-extents            print subvolume extents and sharing state",
++	"--verbose                   increase verbosity level",
+ 	NULL
+ };
+ 
+@@ -6822,7 +6824,7 @@ int cmd_check(int argc, char **argv)
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(argc, argv, "as:b", long_options,
++		c = getopt_long(argc, argv, "as:bv", long_options,
+ 				&option_index);
+ 		if (c < 0)
+ 			break;
+@@ -6849,6 +6851,9 @@ int cmd_check(int argc, char **argv)
+ 			case 'E':
+ 				subvolid = arg_strtou64(optarg);
+ 				break;
++			case 'v':
++				verbose++;
++				break;
+ 			case '?':
+ 			case 'h':
+ 				usage(cmd_check_usage);
+-- 
+2.1.1
 
-$ sudo dmesg --clear
-
-$ dmesg
-
-$ sudo btrfs scrub start -B /
-scrub done for
-35f0ce3f-0902-47a3-8ad8-86179d1f3e3a
-        scrub started at Mon Oct  6 09:51:01 2014 and finished after 325 seconds
-        total bytes scrubbed: 114.89GiB with 2 errors
-        error details: csum=2
-        corrected errors: 0, uncorrectable errors: 2, unverified errors: 0
-
-$ dmesg
- btrfs: bdev /dev/sdg3 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
- btrfs: unable to fixup (regular) error at logical 58464632832 on dev /dev/sdg3
- btrfs: bdev /dev/sdf3 errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
- btrfs: unable to fixup (regular) error at logical 58464632832 on dev /dev/sdf3
-
-$ uname -a
-Linux hostname 3.10.0-123.8.1.el7.x86_64 #1 SMP Mon Sep 22 19:06:58
-UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-
-$ btrfs --version
-Btrfs v3.12
-
-$ btrfs fi show
-Btrfs v3.12
-
-$ btrfs fi df /
-Data, RAID1: total=107.07GiB, used=55.47GiB
-System, RAID1: total=32.00MiB, used=16.00KiB
-Metadata, RAID1: total=4.00GiB, used=2.04GiB

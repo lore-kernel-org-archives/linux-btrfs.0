@@ -1,87 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:55975 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751264AbaJFUOw (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 6 Oct 2014 16:14:52 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/5] Btrfs: set page and mapping error on compressed write failure
-Date: Mon,  6 Oct 2014 22:14:22 +0100
-Message-Id: <1412630066-21746-2-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
-References: <1412630066-21746-1-git-send-email-fdmanana@suse.com>
+Received: from extserverfr1.prnet.org ([188.165.43.41]:44739 "EHLO
+	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750720AbaJFVBM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Oct 2014 17:01:12 -0400
+Message-ID: <543300EF.2070308@prnet.org>
+Date: Mon, 06 Oct 2014 22:51:59 +0200
+From: David Arendt <admin@prnet.org>
+MIME-Version: 1.0
+To: Chris Mason <clm@fb.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send and kernel 3.17
+References: <5432E466.9070604@prnet.org> <1412622378.31886.3@mail.thefacebook.com>
+In-Reply-To: <1412622378.31886.3@mail.thefacebook.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we fail in submit_compressed_extents() before calling btrfs_submit_compressed_write(),
-we start and end the writeback for the pages (clear their dirty flag, unlock them, etc)
-but we don't tag the pages, nor the inode's mapping, with an error. This makes it
-impossible for a caller of filemap_fdatawait_range() (fsync, or transaction commit
-for e.g.) know that there was an error.
+I just tried downgrading to 3.16.3 again. In 3.16.3 btrfs send is
+working without any problem. Afterwards I upgraded again to 3.17 and the
+problem reappeared. So the problem seems to be kernel version related.
 
-Note that the return value of submit_compressed_extents() is useless, as that function
-is executed by a workqueue task and not directly by the fill_delalloc callback. This
-means the writepage/s callbacks of the inode's address space operations don't get that
-return value.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent_io.c | 5 +++++
- fs/btrfs/extent_io.h | 1 +
- fs/btrfs/inode.c     | 3 ++-
- 3 files changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9cc757f..865594c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1746,6 +1746,9 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 	if (page_ops == 0)
- 		return 0;
- 
-+	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
-+		mapping_set_error(inode->i_mapping, -EIO);
-+
- 	while (nr_pages > 0) {
- 		ret = find_get_pages_contig(inode->i_mapping, index,
- 				     min_t(unsigned long,
-@@ -1763,6 +1766,8 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 				clear_page_dirty_for_io(pages[i]);
- 			if (page_ops & PAGE_SET_WRITEBACK)
- 				set_page_writeback(pages[i]);
-+			if (page_ops & PAGE_SET_ERROR)
-+				SetPageError(pages[i]);
- 			if (page_ops & PAGE_END_WRITEBACK)
- 				end_page_writeback(pages[i]);
- 			if (page_ops & PAGE_UNLOCK)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 06f030c..5654e14 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -52,6 +52,7 @@
- #define PAGE_SET_WRITEBACK	(1 << 2)
- #define PAGE_END_WRITEBACK	(1 << 3)
- #define PAGE_SET_PRIVATE2	(1 << 4)
-+#define PAGE_SET_ERROR		(1 << 5)
- 
- /*
-  * page->private values.  Every page that is controlled by the extent
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 344a322..cefa618 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -832,7 +832,8 @@ out_free:
- 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
- 				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
- 				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
-+				     PAGE_SET_ERROR);
- 	kfree(async_extent);
- 	goto again;
- }
--- 
-1.9.1
+On 10/06/2014 09:06 PM, Chris Mason wrote:
+> On Mon, Oct 6, 2014 at 2:50 PM, David Arendt <admin@prnet.org> wrote:
+>> Hi,
+>>
+>> After upgrading to kernel 3.17 btrfs send has stopped working.
+>>
+>> ERROR: send ioctl failed with -5: Input/output error
+>>
+>> The following message is printed by kernel:
+>>
+>> [75322.782197] BTRFS error (device sda2): did not find backref in
+>> send_root. inode=461, offset=0, disk_byte=1094713344 found
+>> extent=1094713344
+>>
+>> btrfs inspect-internal inode-resolve -v 461 /u00/root.snapshot returns:
+>>
+>> /var/log/emerge-fetch.log
+>>
+>> After removing this file, the error moves on to another file.
+>>
+>> btrfs scrub output:
+>>
+>> scrub status for bc31b068-2c36-4ff2-ac5c-7ce55af5371d
+>>     scrub started at Mon Oct  6 19:49:25 2014 and finished after 1748
+>> seconds
+>>     total bytes scrubbed: 94.21GiB with 0 errors
+>>
+>> Other then the btrfs send problem, the filesystem works normally.
+>>
+>> Is this a bug in btrfs-send or is my filesystem corrupted and should be
+>> restored from backup ?
+>>
+>> Please tell me if I can do anything else to help debugging this issue.
+>
+> Which kernel did you upgrade from?  I don't think we have changes in
+> 3.17 that should impact this.
+>
+> Is merge-fetch.log just a simple append-only log file?
+>
+> -chris
+>
+>
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

@@ -1,81 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33871 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752692AbaJGONC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Oct 2014 10:13:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XbVVd-0005Ir-IF
-	for linux-btrfs@vger.kernel.org; Tue, 07 Oct 2014 16:13:01 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Oct 2014 16:13:01 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Oct 2014 16:13:01 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [Bug] 3.17.0 mixed-bg enospc but both btrfs fi show and btrfs
- fi df say there's plenty
-Date: Tue, 7 Oct 2014 14:12:49 +0000 (UTC)
-Message-ID: <pan$6ceba$5e2fc992$69bbe110$430a3e20@cox.net>
-References: <pan$40d93$809c9f3a$611f994e$934f6422@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:12773 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751125AbaJGVXG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Oct 2014 17:23:06 -0400
+Date: Tue, 7 Oct 2014 17:22:52 -0400
+From: Chris Mason <clm@fb.com>
+Subject: Re: 3.16.2 btrfs deadlock
+To: Marc MERLIN <marc@merlins.org>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1412716972.2374.1@mail.thefacebook.com>
+In-Reply-To: <20141005202937.GK10696@merlins.org>
+References: <20141005202937.GK10696@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Tue, 07 Oct 2014 13:41:49 +0000 as excerpted:
-
-> FWIW, if I try to cp it instead of using mc, 14208 KiB copies before I
-> get the enospc.
-
-Interesting workaround I just found:
-
-1) cp the file and let the cp abort.
-2) delete the partial copy
-3) mc-copy the file.
-4) watch the full 14905 KiB file mc-copy over just fine.
-
-But:
-
-5) delete the full copy
-6) try mc-copying the thing again
-7) same issue as before
-
-And:
-
-8) try using cp for the partial copy again
-9) delete the partial copy
-10) cp the file again
-11) still a partial copy, but 14464 KiB instead of 14208 KiB copied
-
-Further:
-
-12) delete that (14464 KiB) partial copy
-13) cp the file yet again
-14) full file copies over (diff-identical)
 
 
-With the full file copied over now, btrfs filesystem show gives the same 
-results, but the btrfs filesystem df data+metadata line looks like this:
+On Sun, Oct 5, 2014 at 4:29 PM, Marc MERLIN <marc@merlins.org> wrote:
+> Deadlocks have been less frequent (good), but here is one.
+> 
+> An rsync from 5 days ago got stuck on btrfs it seems, and things just
+> started piling up on top until the system deadlocked
+> 
+> I see btrfs-transaction saying wait on page, but if it's RAM, I had
+> plenty left:
+>              total       used       free     shared    buffers     
+> cached
+> Mem:       7894580    6950108     944472          0         40    
+> 4816148
+> -/+ buffers/cache:    2133920    5760660
+> Swap:     15616764     767004   14849760
+> 
+> 
+> Here's the trace:
+> SysRq : Show Blocked State
+>   task                        PC stack   pid father
+> md8_raid5       D ffff88017028cb80     0   675      2 0x00000000
+>  ffff88020fd67aa8 0000000000000046 ffffffff812f1799 ffff88020fd67fd8
+>  ffff880037228410 00000000000140c0 ffff88021e3940c0 ffff880037228410
+>  ffff8801f5579bf0 0000000000000004 ffff880211ad07c8 ffff88020fd67ab8
+> Call Trace:
+>  [<ffffffff812f1799>] ? blk_flush_plug_list+0x1bc/0x1cb
+>  [<ffffffff8163a889>] schedule+0x6e/0x70
+>  [<ffffffff8163aa2b>] io_schedule+0x60/0x7a
+>  [<ffffffff812ef8f6>] get_request+0x4b8/0x56a
+>  [<ffffffff8130ba01>] ? cfq_merge+0x49/0x9e
+>  [<ffffffff81087b70>] ? finish_wait+0x65/0x65
+>  [<ffffffff812f1921>] blk_queue_bio+0x179/0x262
+>  [<ffffffff812eec2c>] generic_make_request+0x9c/0xdb
+>  [<ffffffffc042b31d>] handle_stripe+0x1e41/0x2166 [raid456]
+>  [<ffffffff81017316>] ? ___preempt_schedule+0x56/0xa8
+>  [<ffffffff8163d0d9>] ? _raw_spin_unlock_irqrestore+0x1f/0x32
+>  [<ffffffffc042b925>] handle_active_stripes.isra.22+0x2e3/0x359 
+> [raid456]
+>  [<ffffffff8151d35e>] ? md_wakeup_thread+0x55/0x58
+>  [<ffffffffc042bdd6>] raid5d+0x330/0x428 [raid456]
+>  [<ffffffff810795b1>] ? get_parent_ip+0xd/0x3c
+>  [<ffffffff815202f9>] md_thread+0x11c/0x13a
+>  [<ffffffff81087b70>] ? finish_wait+0x65/0x65
+>  [<ffffffff815201dd>] ? bb_store+0x55/0x55
+>  [<ffffffff8106e3a9>] kthread+0xae/0xb6
+>  [<ffffffff8106e2fb>] ? __kthread_parkme+0x61/0x61
+>  [<ffffffff8163d8fc>] ret_from_fork+0x7c/0xb0
+>  [<ffffffff8106e2fb>] ? __kthread_parkme+0x61/0x61
 
-Data+Metadata, DUP: total=50.00MiB, used=43.94MiB
+This trace shows we're stuck somewhere different from the 3.15 stalls.  
+md is waiting for a request, and unfortunately those are outside of 
+btrfs completely.  It's likely that if you had let it sit, the box 
+would have eventually dig its way out.
 
-Given that without the file it was used=30.59 MiB, the space used by the 
-14.56 MiB file is 13.35 MiB, presumably due to lzo-compression.
+-chris
 
-But why is it working under some conditions and failing with enospc under 
-others?
-
-Is this something those compression-related patches I've see floating 
-around should fix?  I guess not all of them made it into 3.17 if so.  
-Hopefully 3.18.  Or is this a different bug without a patch floating 
-around yet?
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

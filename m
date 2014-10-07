@@ -1,46 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58451 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752045AbaJFKF2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Oct 2014 06:05:28 -0400
-From: Eryu Guan <eguan@redhat.com>
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:47547 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754108AbaJGPVg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 11:21:36 -0400
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v5 06/15] btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
-Date: Mon,  6 Oct 2014 18:04:45 +0800
-Message-Id: <1412589894-10675-7-git-send-email-eguan@redhat.com>
-In-Reply-To: <1412589894-10675-1-git-send-email-eguan@redhat.com>
-References: <1412589894-10675-1-git-send-email-eguan@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] xfstests: add regression for inode bad compression ratio detection
+Date: Tue,  7 Oct 2014 19:20:49 -0400
+Message-Id: <1412724049-50613-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs subvolume create/mount/umount/delete and device replace
-operation simultaneously, with fsstress running in background.
+This test add a regression test to make sure btrfs dosen't set
+inode NOCOMPRESS flag when a small write(<=blocksize) happens.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Eryu Guan <eguan@redhat.com>
+Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
 ---
- tests/btrfs/065     | 123 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/065.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 126 insertions(+)
- create mode 100755 tests/btrfs/065
- create mode 100644 tests/btrfs/065.out
+Test is a little relying on btrfs now have a max 128k limit write, not sure
+whether it is good since it is possible we may change it in the future, let me
+know if you have better idea ^_^.
+---
+ tests/btrfs/060     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/060.out |  3 +++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 76 insertions(+)
+ create mode 100644 tests/btrfs/060
+ create mode 100644 tests/btrfs/060.out
 
-diff --git a/tests/btrfs/065 b/tests/btrfs/065
-new file mode 100755
-index 0000000..7d8249b
+diff --git a/tests/btrfs/060 b/tests/btrfs/060
+new file mode 100644
+index 0000000..6ef2e0f
 --- /dev/null
-+++ b/tests/btrfs/065
-@@ -0,0 +1,123 @@
++++ b/tests/btrfs/060
+@@ -0,0 +1,72 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/065
++# FS QA Test No. btrfs/060
 +#
-+# Run btrfs subvolume create/mount/umount/delete and device replace
-+# operation simultaneously, with fsstress running in background.
++# Regression test for btrfs incorrection inode ratio detection.
++# This was fixed in the following linux kernel patch:
++#
++#     Btrfs: fix incorrect compression ratio detection
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (C) 2014 Red Hat Inc. All rights reserved.
++# Copyright (c) 2014 Wang Shilong.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -54,7 +57,6 @@ index 0000000..7d8249b
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
 +#-----------------------------------------------------------------------
 +#
 +
@@ -64,13 +66,14 @@ index 0000000..7d8249b
 +
 +here=`pwd`
 +tmp=/tmp/$$
-+status=1
++
++status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
 +	cd /
-+	rm -f $tmp.*
++	rm -fr $tmp
 +}
 +
 +# get standard environment, filters and checks
@@ -80,99 +83,47 @@ index 0000000..7d8249b
 +# real QA test starts here
 +_supported_fs btrfs
 +_supported_os Linux
-+# we check scratch dev after each loop
-+_require_scratch_nocheck
-+_require_scratch_dev_pool 5
-+_require_scratch_dev_pool_equal_size
-+_btrfs_get_profile_configs replace
++_require_test
++_require_scratch
++_need_to_be_root
 +
 +rm -f $seqres.full
 +
-+run_test()
-+{
-+	local mkfs_opts=$1
-+	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
-+	local subvol_mnt=$TEST_DIR/$seq.mnt
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount "-o compress=lzo"
 +
-+	echo "Test $mkfs_opts" >>$seqres.full
++$XFS_IO_PROG -f -c "pwrite 0 10M" -c "fsync" \
++	$SCRATCH_MNT/data >> $seqres.full 2>&1
 +
-+	# remove the last device from the SCRATCH_DEV_POOL list so
-+	# _scratch_pool_mkfs won't use all devices in pool
-+	local last_dev="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $NF}'`"
-+	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | sed -e "s# *$last_dev *##"`
-+	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
-+	# make sure we created btrfs with desired options
-+	if [ $? -ne 0 ]; then
-+		echo "mkfs $mkfs_opts failed"
-+		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-+		return
-+	fi
-+	_scratch_mount >>$seqres.full 2>&1
-+	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
++filefrag $SCRATCH_MNT/data | $AWK_PROG '{print $2}'
 +
-+	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
-+	echo "Run fsstress $args" >>$seqres.full
-+	$FSSTRESS_PROG $args >/dev/null 2>&1 &
-+	fsstress_pid=$!
++$XFS_IO_PROG -f -c "pwrite 0 $((4096*33))" -c "fsync" \
++	$SCRATCH_MNT/data >> $seqres.full 2>&1
 +
-+	echo -n "Start subvolume worker: " >>$seqres.full
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	subvol_pid=$!
-+	echo "$subvol_pid" >>$seqres.full
-+
-+	echo -n "Start replace worker: " >>$seqres.full
-+	_btrfs_stress_replace $SCRATCH_MNT >>$seqres.full 2>&1 &
-+	replace_pid=$!
-+	echo "$replace_pid" >>$seqres.full
-+
-+	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
-+	wait $fsstress_pid
-+
-+	kill $subvol_pid $replace_pid
-+	wait
-+	# wait for the replace operation to finish
-+	while ps aux | grep "replace start" | grep -qv grep; do
-+		sleep 1
-+	done
-+
-+	echo "Scrub the filesystem" >>$seqres.full
-+	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
-+	if [ $? -ne 0 ]; then
-+		echo "Scrub find errors in \"$mkfs_opts\" test" | tee -a $seqres.full
-+	fi
-+
-+	# in case the subvolume is still mounted
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
-+	_scratch_unmount
-+	# we called _require_scratch_nocheck instead of _require_scratch
-+	# do check after test for each profile config
-+	_check_scratch_fs
-+}
-+
-+echo "Silence is golden"
-+for t in "${_btrfs_profile_configs[@]}"; do
-+	run_test "$t"
-+done
++$XFS_IO_PROG -f -c "pwrite 0 10M" -c "fsync" \
++	$SCRATCH_MNT/data >> $seqres.full 2>&1
++filefrag $SCRATCH_MNT/data | $AWK_PROG '{print $2}'
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/065.out b/tests/btrfs/065.out
+diff --git a/tests/btrfs/060.out b/tests/btrfs/060.out
 new file mode 100644
-index 0000000..94476cd
+index 0000000..1c306d2
 --- /dev/null
-+++ b/tests/btrfs/065.out
-@@ -0,0 +1,2 @@
-+QA output created by 065
-+Silence is golden
++++ b/tests/btrfs/060.out
+@@ -0,0 +1,3 @@
++QA output created by 060
++80
++80
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 9455b4d..697a913 100644
+index 68b5c79..d06c163 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -67,3 +67,4 @@
- 062 auto balance defrag compress
- 063 auto balance remount compress
- 064 auto balance replace
-+065 auto subvol replace
+@@ -62,3 +62,4 @@
+ 057 auto quick
+ 058 auto quick
+ 059 auto quick
++060 auto quick
 -- 
 1.8.3.1
 

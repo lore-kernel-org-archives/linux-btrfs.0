@@ -1,85 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43559 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751397AbaJFKSu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Oct 2014 06:18:50 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s96AInuc030935
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Oct 2014 18:18:49 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: fix BUG_ON when all devices under seed fs are missing
-Date: Mon, 6 Oct 2014 18:17:49 +0800
-Message-ID: <1412590669-5887-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from www.zacarias.com.ar ([62.210.192.172]:42427 "EHLO
+	www.zacarias.com.ar" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752462AbaJGOSt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 10:18:49 -0400
+From: Gustavo Zacarias <gustavo@zacarias.com.ar>
+To: linux-btrfs@vger.kernel.org
+Cc: Gustavo Zacarias <gustavo@zacarias.com.ar>
+Subject: [PATCH] btrfs-progs: add option to disable backtrace usage
+Date: Tue,  7 Oct 2014 11:09:04 -0300
+Message-Id: <1412690944-5513-1-git-send-email-gustavo@zacarias.com.ar>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
-	# mkfs.btrfs -f /dev/sda[1-2]
-	# btrfstune -S 1 /dev/sda1
-	# mount /dev/sda /mnt
-	# btrfs dev add /dev/sda3 /mnt
-	# umount /mnt
-	# mkfs.ext4 /dev/sda1		// kill seed dev
-	# mkfs.ext4 /dev/sda2		// kill seed dev
-	# btrfs-debug-tree /dev/sda3	<== BUG_ON
-Output msg:
-	volumes.c:1824: btrfs_read_chunk_tree: Assertion `ret` failed.
-	btrfs-debug-tree[0x41cb36]
-	btrfs-debug-tree(btrfs_read_chunk_tree+0x3ca)
-	btrfs-debug-tree(btrfs_setup_chunk_tree_and_device_map
-	btrfs-debug-tree[0x40f695]
-	btrfs-debug-tree(open_ctree_fs_info+0x86)
-	btrfs-debug-tree(main+0x12d)
-	/lib64/libc.so.6(__libc_start_main+0xf5)
-	btrfs-debug-tree[0x4062e9]
+This commit adds the support for a make variable named
+"DISABLE_BACKTRACE" which allows to disable the support for backtrace()
+usage on ASSERT(), BUG() and BUG_ON() calls.
+This is useful because some alternative C libraries like uClibc have
+optional support for backtrace() which is rarely built when debugging
+isn't taking place.
 
-This BUG_ON complains about a failed @read_one_dev() call when
-@open_seed_devices() failed to find the seed @fs_devices object
-for a dev_item in chunk tree.
-In this case, just insert a "shadow" @fs_devices with the fsid in
-dev_item shall make no harm since no other tools will try to
-make use of the stuff that the "shadow" @fs_devices possesses
-after its creation.
-
-After apply this commit, btrfs-debug-tree will report unable
-to open the device.
-
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Gustavo Zacarias <gustavo@zacarias.com.ar>
 ---
-*Note*
-This should be after patch:
-	Btrfs-progs: fsck: disallow partial opening if critical \
-						roots corrupted
----
- volumes.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ Makefile     |  4 ++++
+ kerncompat.h | 15 +++++++++++++++
+ 2 files changed, 19 insertions(+)
 
-diff --git a/volumes.c b/volumes.c
-index eaf3f9f..a9c7662 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1671,8 +1671,15 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
+diff --git a/Makefile b/Makefile
+index 7cc7783..342545c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -63,6 +63,10 @@ BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
+ INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
+ CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
  
- 	fs_devices = find_fsid(fsid);
- 	if (!fs_devices) {
--		ret = -ENOENT;
--		goto out;
-+		/* missing all seed devices */
-+		fs_devices = kzalloc(sizeof(*fs_devices), GFP_NOFS);
-+		if (!fs_devices) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		INIT_LIST_HEAD(&fs_devices->devices);
-+		list_add(&fs_devices->list, &fs_uuids);
-+		memcpy(fs_devices->fsid, fsid, BTRFS_FSID_SIZE);
- 	}
++ifeq ($(DISABLE_BACKTRACE),1)
++AM_CFLAGS += -DBTRFS_DISABLE_BACKTRACE
++endif
++
+ ifneq ($(DISABLE_DOCUMENTATION),1)
+ BUILDDIRS += build-Documentation
+ INSTALLDIRS += install-Documentation
+diff --git a/kerncompat.h b/kerncompat.h
+index 19c7fa5..889d94c 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -29,7 +29,9 @@
+ #include <stddef.h>
+ #include <linux/types.h>
+ #include <stdint.h>
++#ifndef BTRFS_DISABLE_BACKTRACE
+ #include <execinfo.h>
++#endif
  
- 	ret = btrfs_open_devices(fs_devices, O_RDONLY);
+ #define ptr_to_u64(x)	((u64)(uintptr_t)x)
+ #define u64_to_ptr(x)	((void *)(uintptr_t)x)
+@@ -55,6 +57,7 @@
+ #define ULONG_MAX       (~0UL)
+ #endif
+ 
++#ifndef BTRFS_DISABLE_BACKTRACE
+ #define MAX_BACKTRACE	16
+ static inline void print_trace(void)
+ {
+@@ -81,6 +84,9 @@ static inline void assert_trace(const char *assertion, const char *filename,
+ }
+ 
+ #define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
++#else
++#define BUG() assert(0)
++#endif
+ 
+ #ifdef __CHECKER__
+ #define __force    __attribute__((force))
+@@ -264,10 +270,19 @@ static inline long IS_ERR(const void *ptr)
+ #define kstrdup(x, y) strdup(x)
+ #define kfree(x) free(x)
+ 
++#ifndef BTRFS_DISABLE_BACKTRACE
+ #define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, !(c))
++#else
++#define BUG_ON(c) assert(!(c))
++#endif
+ 
+ #define WARN_ON(c) BUG_ON(c)
++
++#ifndef BTRFS_DISABLE_BACKTRACE
+ #define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (c))
++#else
++#define ASSERT(c) assert(c)
++#endif
+ 
+ #define container_of(ptr, type, member) ({                      \
+         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 -- 
-1.8.1.4
+2.0.4
 

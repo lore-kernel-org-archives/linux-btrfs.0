@@ -1,173 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47767 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750905AbaJJHoJ (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 10 Oct 2014 03:44:09 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v2] Btrfs: add helper btrfs_fdatawrite_range
-Date: Fri, 10 Oct 2014 09:43:11 +0100
-Message-Id: <1412930591-14856-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1412885936-16256-2-git-send-email-fdmanana@suse.com>
-References: <1412885936-16256-2-git-send-email-fdmanana@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:22977 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752548AbaJGG5V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 02:57:21 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s976vJ1R001043
+	for <linux-btrfs@vger.kernel.org>; Tue, 7 Oct 2014 14:57:19 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Always return positive value to avoid meaningless return value
+Date: Tue, 7 Oct 2014 14:57:18 +0800
+Message-ID: <1412665038-3405-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To avoid duplicating this double filemap_fdatawrite_range() call for
-inodes with async extents (compressed writes) so often.
+btrfs command may return minus value, however most shell only supports
+return value in range [0,255], so minus return value will overflow,
+which is quite confusing for end user.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+This patch will do the minus check return value check before return it
+to shell for all the btrfs-progs commands.
+
+Also fix several easy-to-find errno leak and insane manual return value.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ btrfs-calc-size.c     | 2 ++
+ btrfs-corrupt-block.c | 4 ++++
+ btrfs-crc.c           | 7 +++----
+ btrfs-debug-tree.c    | 5 ++++-
+ btrfs-find-root.c     | 2 ++
+ btrfs-map-logical.c   | 6 +++++-
+ btrfs-select-super.c  | 6 ++++--
+ btrfs.c               | 6 +++++-
+ 8 files changed, 29 insertions(+), 9 deletions(-)
 
-V2: Pass right arguments to the new helper. Missed unstaged changes.
-
- fs/btrfs/ctree.h        |  1 +
- fs/btrfs/file.c         | 39 ++++++++++++++++++++++++++++++---------
- fs/btrfs/inode.c        |  9 +--------
- fs/btrfs/ordered-data.c | 24 ++----------------------
- 4 files changed, 34 insertions(+), 39 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 089f6da..4e0ad8c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3896,6 +3896,7 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 		      struct page **pages, size_t num_pages,
- 		      loff_t pos, size_t write_bytes,
- 		      struct extent_state **cached);
-+int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
- 
- /* tree-defrag.c */
- int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 82c7229..bbd474b 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1676,6 +1676,7 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
- 				    loff_t pos)
- {
- 	struct file *file = iocb->ki_filp;
-+	struct inode *inode = file_inode(file);
- 	ssize_t written;
- 	ssize_t written_buffered;
- 	loff_t endbyte;
-@@ -1697,13 +1698,10 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
- 	 * able to read what was just written.
- 	 */
- 	endbyte = pos + written_buffered - 1;
--	err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
--	if (!err && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			     &BTRFS_I(file_inode(file))->runtime_flags))
--		err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
-+	err = btrfs_fdatawrite_range(inode, pos, endbyte);
- 	if (err)
- 		goto out;
--	err = filemap_fdatawait_range(file->f_mapping, pos, endbyte);
-+	err = filemap_fdatawait_range(inode->i_mapping, pos, endbyte);
- 	if (err)
- 		goto out;
- 	written += written_buffered;
-@@ -1864,10 +1862,7 @@ static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
- 	int ret;
- 
- 	atomic_inc(&BTRFS_I(inode)->sync_writers);
--	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
--	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			     &BTRFS_I(inode)->runtime_flags))
--		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	ret = btrfs_fdatawrite_range(inode, start, end);
- 	atomic_dec(&BTRFS_I(inode)->sync_writers);
- 
+diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+index 501111c..221dc1f 100644
+--- a/btrfs-calc-size.c
++++ b/btrfs-calc-size.c
+@@ -511,5 +511,7 @@ int main(int argc, char **argv)
+ out:
+ 	close_ctree(root);
+ 	free(roots);
++	if (ret < 0)
++		ret = -ret;
  	return ret;
-@@ -2820,3 +2815,29 @@ int btrfs_auto_defrag_init(void)
- 
- 	return 0;
  }
-+
-+int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end)
-+{
-+	int ret;
-+
-+	/*
-+	 * So with compression we will find and lock a dirty page and clear the
-+	 * first one as dirty, setup an async extent, and immediately return
-+	 * with the entire range locked but with nobody actually marked with
-+	 * writeback.  So we can't just filemap_write_and_wait_range() and
-+	 * expect it to work since it will just kick off a thread to do the
-+	 * actual work.  So we need to call filemap_fdatawrite_range _again_
-+	 * since it will wait on the page lock, which won't be unlocked until
-+	 * after the pages have been marked as writeback and so we're good to go
-+	 * from there.  We have to do this otherwise we'll miss the ordered
-+	 * extents and that results in badness.  Please Josef, do not think you
-+	 * know better and pull this out at some point in the future, it is
-+	 * right and you are wrong.
-+	 */
-+	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
-+			     &BTRFS_I(inode)->runtime_flags))
-+		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 474d48f..e543adc 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -988,8 +988,12 @@ int main(int ac, char **av)
+ 		logical += root->sectorsize;
+ 		bytes -= root->sectorsize;
+ 	}
++	if (ret < 0)
++		ret = -ret;
+ 	return ret;
+ out_close:
+ 	close_ctree(root);
++	if (ret < 0)
++		ret = -ret;
+ 	return ret;
+ }
+diff --git a/btrfs-crc.c b/btrfs-crc.c
+index 723e0b7..9fcc8f3 100644
+--- a/btrfs-crc.c
++++ b/btrfs-crc.c
+@@ -57,9 +57,8 @@ int main(int argc, char **argv)
+ 			seed = atol(optarg);
+ 			break;
+ 		case 'h':
++		default:
+ 			usage();
+-		case '?':
+-			return 255;
+ 		}
+ 	}
+ 
+@@ -68,7 +67,7 @@ int main(int argc, char **argv)
+ 
+ 	if (!loop) {
+ 		if (check_argc_min(argc - optind, 1))
+-			return 255;
++			return EINVAL;
+ 
+ 		printf("%12u - %s\n", crc32c(~1, str, strlen(str)), str);
+ 		return 0;
+@@ -76,7 +75,7 @@ int main(int argc, char **argv)
+ 
+ 	buf = malloc(length);
+ 	if (!buf)
+-		return -ENOMEM;
++		return ENOMEM;
+ 	srand(seed);
+ 
+ 	while (1) {
+diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
+index e46500d..6fd6858 100644
+--- a/btrfs-debug-tree.c
++++ b/btrfs-debug-tree.c
+@@ -408,5 +408,8 @@ no_node:
+ 	printf("uuid %s\n", uuidbuf);
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ close_root:
+-	return close_ctree(root);
++	ret = close_ctree(root);
++	if (ret < 0)
++		ret = -ret;
 +	return ret;
-+}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 752ff18..be955481 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7052,14 +7052,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			btrfs_put_ordered_extent(ordered);
+ }
+diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+index 408d471..b23ada8 100644
+--- a/btrfs-find-root.c
++++ b/btrfs-find-root.c
+@@ -329,5 +329,7 @@ int main(int argc, char **argv)
+ 	csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+ 	ret = find_root(root);
+ 	close_ctree(root);
++	if (ret < 0)
++		ret = -ret;
+ 	return ret;
+ }
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index 6b475fc..2be39cc 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -173,8 +173,10 @@ int main(int ac, char **av)
+ 			info_file = stderr;
  		} else {
- 			/* Screw you mmap */
--			ret = filemap_fdatawrite_range(inode->i_mapping,
--						       lockstart,
--						       lockend);
--			if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--					     &BTRFS_I(inode)->runtime_flags))
--				ret = filemap_fdatawrite_range(inode->i_mapping,
--							       lockstart,
--							       lockend);
-+			ret = btrfs_fdatawrite_range(inode, lockstart, lockend);
- 			if (ret)
- 				break;
- 			ret = filemap_fdatawait_range(inode->i_mapping,
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index ac734ec..1401b1a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -725,30 +725,10 @@ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
- 	/* start IO across the range first to instantiate any delalloc
- 	 * extents
+ 			out_fd = open(output_file, O_RDWR | O_CREAT, 0600);
+-			if (out_fd < 0)
++			if (out_fd < 0) {
++				ret = errno;
+ 				goto close;
++			}
+ 			ret = ftruncate(out_fd, 0);
+ 			if (ret) {
+ 				ret = 1;
+@@ -211,5 +213,7 @@ out_close_fd:
+ 		close(out_fd);
+ close:
+ 	close_ctree(root);
++	if (ret < 0)
++		ret = -ret;
+ 	return ret;
+ }
+diff --git a/btrfs-select-super.c b/btrfs-select-super.c
+index 6231d42..d6aa25a 100644
+--- a/btrfs-select-super.c
++++ b/btrfs-select-super.c
+@@ -81,10 +81,10 @@ int main(int ac, char **av)
+ 
+ 	if((ret = check_mounted(av[optind])) < 0) {
+ 		fprintf(stderr, "Could not check mount status: %s\n", strerror(-ret));
+-		return ret;
++		return -ret;
+ 	} else if(ret) {
+ 		fprintf(stderr, "%s is currently mounted. Aborting.\n", av[optind]);
+-		return -EBUSY;
++		return EBUSY;
+ 	}
+ 
+ 	root = open_ctree(av[optind], bytenr, 1);
+@@ -104,5 +104,7 @@ int main(int ac, char **av)
  	 */
--	ret = filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
-+	ret = btrfs_fdatawrite_range(inode, start, orig_end);
- 	if (ret)
- 		return ret;
--	/*
--	 * So with compression we will find and lock a dirty page and clear the
--	 * first one as dirty, setup an async extent, and immediately return
--	 * with the entire range locked but with nobody actually marked with
--	 * writeback.  So we can't just filemap_write_and_wait_range() and
--	 * expect it to work since it will just kick off a thread to do the
--	 * actual work.  So we need to call filemap_fdatawrite_range _again_
--	 * since it will wait on the page lock, which won't be unlocked until
--	 * after the pages have been marked as writeback and so we're good to go
--	 * from there.  We have to do this otherwise we'll miss the ordered
--	 * extents and that results in badness.  Please Josef, do not think you
--	 * know better and pull this out at some point in the future, it is
--	 * right and you are wrong.
--	 */
--	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--		     &BTRFS_I(inode)->runtime_flags)) {
--		ret = filemap_fdatawrite_range(inode->i_mapping, start,
--					       orig_end);
--		if (ret)
--			return ret;
--	}
-+
- 	ret = filemap_fdatawait_range(inode->i_mapping, start, orig_end);
- 	if (ret)
- 		return ret;
+ 	printf("using SB copy %llu, bytenr %llu\n", (unsigned long long)num,
+ 	       (unsigned long long)bytenr);
++	if (ret < 0)
++		ret = -ret;
+ 	return ret;
+ }
+diff --git a/btrfs.c b/btrfs.c
+index e83349c..4d09464 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -216,6 +216,7 @@ int main(int argc, char **argv)
+ {
+ 	const struct cmd_struct *cmd;
+ 	const char *bname;
++	int ret;
+ 
+ 	if ((bname = strrchr(argv[0], '/')) != NULL)
+ 		bname++;
+@@ -244,5 +245,8 @@ int main(int argc, char **argv)
+ 	crc32c_optimization_init();
+ 
+ 	fixup_argv0(argv, cmd->token);
+-	exit(cmd->fn(argc, argv));
++	ret = cmd->fn(argc, argv);
++	if (ret < 0)
++		ret = -ret;
++	exit(ret);
+ }
 -- 
-1.9.1
+2.1.2
 

@@ -1,100 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34077 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753382AbaJGJ0R (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 05:26:17 -0400
-Date: Tue, 7 Oct 2014 10:26:12 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Juan Orti Alcaine <juan.orti@miceliux.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Identify mounted subvolume
-Message-ID: <20141007092611.GF11870@carfax.org.uk>
-References: <c7a9551462105e36f8ac5f874d19e9c2@miceliux.com>
- <20141007090608.GE11870@carfax.org.uk>
- <5433AFFB.20101@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="K/NRh952CO+2tg14"
-In-Reply-To: <5433AFFB.20101@cn.fujitsu.com>
+Received: from plane.gmane.org ([80.91.229.3]:56964 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752028AbaJGNmD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Oct 2014 09:42:03 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XbV1c-0004E1-Su
+	for linux-btrfs@vger.kernel.org; Tue, 07 Oct 2014 15:42:00 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Oct 2014 15:42:00 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Oct 2014 15:42:00 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: [Bug] 3.17.0 mixed-bg enospc but both btrfs fi show and btrfs fi df
+ say there's plenty
+Date: Tue, 7 Oct 2014 13:41:49 +0000 (UTC)
+Message-ID: <pan$40d93$809c9f3a$611f994e$934f6422@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is with my small 256 MiB btrfs mixed-bg dup-mode /boot, or actually, 
+with its backup (same size partition, different device).  Kernel 3.17.0, 
+btrfs-progs 3.16.1 (both actually from git), gentoo.
 
---K/NRh952CO+2tg14
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+It was time to renew my backups so I did a mkfs.btrfs on the backup to 
+start fresh:
 
-On Tue, Oct 07, 2014 at 05:18:51PM +0800, Qu Wenruo wrote:
->=20
-> -------- Original Message --------
-> Subject: Re: Identify mounted subvolume
-> From: Hugo Mills <hugo@carfax.org.uk>
-> To: Juan Orti Alcaine <juan.orti@miceliux.com>
-> Date: 2014=E5=B9=B410=E6=9C=8807=E6=97=A5 17:06
-> >On Tue, Oct 07, 2014 at 10:47:56AM +0200, Juan Orti Alcaine wrote:
-> >>I cannot find the answer to this one. How can I determine which subvolu=
-me I
-> >>have mounted in a certain path? I'm looking through /sys but no clue.
-> >    Rumour has it that /proc/self/mountinfo is meant to have the
-> >information, but I've just checked, and it doesn't seem to have the
-> >subvol in it on my server (3.16.2).
-> >
-> >    Hugo.
-> >
-> This accepted patch will make /proc/self/mountinfo to have all the info.
-> https://patchwork.kernel.org/patch/4593831/
->=20
-> But I didn't see it in 3.17 kernel or integration branch, maybe next merge
-> window?
->=20
-> Even without the patch, when mounting using '-o subvol=3D' mount option w=
-ill
-> also fill the /proc/self/mountinfo,
-> using 3.16.4.
-> ---
-> 149 19 0:39 / /mnt/btrfs rw,relatime shared:101 - btrfs /dev/sda6
-> rw,space_cache
-> 153 19 0:39 */subvol1* /mnt/other rw,relatime shared:104 - btrfs /dev/sda6
-> rw,space_cache
-> ---
+mkfs.btrfs -d dup -m dup -L bt0238gcn0+35l0 -O extref,skinny-metadata,no-
+holes -f /dev/sdb3
 
-   Aaaah, I see. I was just misinterpreting the information.
+Of course with the 256 MiB size, mkfs.btrfs naturally added mixed-bg to 
+the features as well.
 
-> On the other hand, without the patch and you mount with '-o subvolid=3D',=
- then
-> mountinfo will not help.
+I then did a balance to remove the single-mode mkfs-time artifacts.
 
-   Got it. Thanks for clearing up my lack of understanding.
+Mount-options on both the working and backup filesystems are identical:
 
-   Hugo.
+nodev,nosuid,noauto,compress=lzo,autodefrag
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Unix:  For controlling fungal diseases in crops ---        =20
+Mounting both filesystems, I then tried to use mc to copy everything from 
+the working filesystem to the mkfs-fresh backup.  That failed with 
+enospc.  However, in the past, repeated copy attempts, using "if size 
+differs" when mc pops up the duplicate filename warnings, have eventually 
+copied everything over just fine.
 
---K/NRh952CO+2tg14
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+This time, while repeated copy attempts did result in most files copying, 
+the (dracut generated) cpio archive that gets appended to my kernels as 
+the initramfs failed to copy over.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+However, the source filesystem is an identically sized btrfs with the 
+same mount options (and I think the same features enabled, tho I'm not 
+sure), and the files fit there with "plenty" (for the fs size) of room to 
+spare!
 
-iQIVAwUBVDOxs1heFHXiqx3kAQI3sA//SbfALP/mv1MPOShsed5D2w4EnJUD5Xhr
-bVEbSJPdUt9xzcm9OfPw/hhDGm5T+ZawKDeF1j6NGHO1ZZnB+9Mr92FcA1IblRua
-RA/S54MnnJM9LyfspBvnMQZ3t0eSY1zeLiHERMBfVS5+wYbdIK6SD8WNZO/A9Nwk
-h9QuaA/N/6IMFpgOG66/vgl2DAa5pqNIXMctG9+4JzMznz/HAql9LIx8awD1tQZN
-mTIEJUcQ6bFkzZzG1Z6vaoXhraK8bO/pC2oVq+R7rgtswE+CZTxyhlPPjUEarFwx
-i3Her2M/W5i+6vtx2iydMwdYo3jjGv9PwjeP6tzaWSq7nDWUYpbvEGfSs/ISspD6
-yq76PdjLTcyotwMpoWucYOoFqyXlmz9poXj68vObNprNDFw8CzwB+N3PYR5hawOT
-7qiuF3EKdFYlNR61f/7SXl1X4WTUsNhWRzqMA+dVd2DaKoGlN9CZW6kiL/UJ/kgV
-gzfOgVZpwkBnWiHo6JHs1aZvstP0C36bjo768UaR3Sinpes+xudoGB3eeAIROYwq
-CgWvhnoHyUn44CfNespS1sB7oUjO/qodbqpEozs9Fzfsrn5711HgUpDC2x0fuHiA
-f1FUulJZp4UTjyU3KEkKSNW2NB71pGgkrxkrqJ+SgG2PFhVNiYBISsH/yr8V/XcD
-QhKHTFAkghU=
-=I3Pq
------END PGP SIGNATURE-----
+And both btrfs filesystem show and btrfs filesystem df say there's lots 
+of room left.
 
---K/NRh952CO+2tg14--
+Destination filesystem (without the 14905 KiB cpio file, #>> indicates 
+the prompt):
+
+#>>btrfs filesystem show /bk/bt
+Label: 'bt0238gcn0+35l0'  uuid: 4d310294-c899-4dcc-be81-580d477060e9
+        Total devices 1 FS bytes used 30.59MiB
+        devid    1 size 256.00MiB used 132.00MiB path /dev/sdb3
+
+Btrfs v3.16.1
+
+#>>btrfs filesystem df /bk/bt
+System, DUP: total=16.00MiB, used=4.00KiB
+Data+Metadata, DUP: total=50.00MiB, used=30.59MiB
+GlobalReserve, single: total=4.00MiB, used=0.00
+
+
+Source filesystem (including the 14905 KiB cpio file):
+
+c#>>btrfs filesystem show /bt
+Label: 'bt0238gcn1+35l0'  uuid: d6539322-0834-4eeb-928d-a13eb32dcbb2
+        Total devices 1 FS bytes used 44.48MiB
+        devid    1 size 256.00MiB used 159.00MiB path /dev/sda3
+
+Btrfs v3.16.1
+
+#>>btrfs filesystem df /bt
+System, DUP: total=15.50MiB, used=4.00KiB
+Data+Metadata, DUP: total=64.00MiB, used=44.48MiB
+GlobalReserve, single: total=4.00MiB, used=0.00
+
+
+On the destination, 50 MiB data+metadata allocated - 30.59 MiB used = 
+19.41 MiB free in the chunk(s).  So an approximately 14.6 MiB file 
+shouldn't even require additional chunk allocation.  But as can be seen 
+from the show output, even if it did, there's plenty of unallocated space 
+left to allocate new chunks if need be.
+
+So why am I getting enospc?
+
+
+FWIW, if I try to cp it instead of using mc, 14208 KiB copies before I 
+get the enospc.
+
+At that point, with the partially copied (14208/14905 KiB) file, this is 
+what I get:
+
+#>>btrfs filesystem show /bk/bt
+Label: 'bt0238gcn0+35l0'  uuid: 4d310294-c899-4dcc-be81-580d477060e9
+        Total devices 1 FS bytes used 43.59MiB
+        devid    1 size 256.00MiB used 132.00MiB path /dev/sdb3
+
+Btrfs v3.16.1
+
+#>>btrfs filesystem df /bk/bt
+System, DUP: total=16.00MiB, used=4.00KiB
+Data+Metadata, DUP: total=50.00MiB, used=43.58MiB
+GlobalReserve, single: total=4.00MiB, used=0.00
+
+
+So no further chunk allocation, data+metadata usage increased from 30.59 
+MiB to 43.58 MiB, almost exactly 13 MiB.  The file is 14905 MiB and 14208 
+copied but it couldn't handle that last ~700 KiB, even tho data+metadata 
+still shows nearly 6.5 MiB still unused in the existing chunk and there's 
+still 124 MiB unallocated, nearly half the 256 MiB filesystem size!  That 
+can be halved due to dup-mode for ~62 MiB of usable space, barring bugs 
+like this one.
+
+And it all fits on the basically identical source btrfs, with 97 MiB 
+still unallocated to chunks and 19+ MiB free in the data+metadata 
+chunks.  So why is the new filesystem prematurely enospcing me?
+
+I can btrfs image the filesystems if necessary, and/or even dd-image them 
+and send the whole thing, tho it /does/ have kernel config and system-
+maps, etc as well as my grub2 config, so while it's not too private it's 
+probably not something I want on a public list.  Tho I'd guess it to be a 
+reasonably generic issue to duplicate, given the information above.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,135 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45240 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752784AbaJGID0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Oct 2014 04:03:26 -0400
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.miceliux.com ([81.4.104.92]:37414 "EHLO mx2.miceliux.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753075AbaJGI4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Oct 2014 04:56:03 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx2.miceliux.com (Postfix) with ESMTP id AB111186336
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Oct 2014 10:47:57 +0200 (CEST)
+Received: from mx2.miceliux.com ([127.0.0.1])
+	by localhost (mx2.miceliux.com [127.0.0.1]) (amavisd-new, port 10028)
+	with ESMTP id nbP1wJCy7KsD for <linux-btrfs@vger.kernel.org>;
+	Tue,  7 Oct 2014 10:47:57 +0200 (CEST)
+Received: from miceliux.com (unknown [IPv6:2a00:dcc0:dead:a8bb::1])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: juan.orti@miceliux.com)
+	by mx2.miceliux.com (Postfix) with ESMTPSA id 03092186333
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Oct 2014 10:47:56 +0200 (CEST)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Tue, 07 Oct 2014 10:47:56 +0200
+From: Juan Orti Alcaine <juan.orti@miceliux.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: btrfs_scan_block_devices is unused function delete it
-Date: Tue,  7 Oct 2014 08:08:31 +0800
-Message-Id: <1412640511-21840-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1410571282-3482-4-git-send-email-anand.jain@oracle.com>
-References: <1410571282-3482-4-git-send-email-anand.jain@oracle.com>
+Subject: Identify mounted subvolume
+Message-ID: <c7a9551462105e36f8ac5f874d19e9c2@miceliux.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After Patch:
- remove BTRFS_SCAN_PROC scan method
-There isn't any consumer for btrfs_scan_block_devices() so delete it.
+I cannot find the answer to this one. How can I determine which 
+subvolume I have mounted in a certain path? I'm looking through /sys but 
+no clue.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- utils.c | 83 -----------------------------------------------------------------
- utils.h |  1 -
- 2 files changed, 84 deletions(-)
+Thank you.
 
-diff --git a/utils.c b/utils.c
-index 48d2d9a..b23f332 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1542,89 +1542,6 @@ int set_label(const char *btrfs_dev, const char *label)
- 	return ret;
- }
- 
--int btrfs_scan_block_devices(int run_ioctl)
--{
--
--	struct stat st;
--	int ret;
--	int fd;
--	struct btrfs_fs_devices *tmp_devices;
--	u64 num_devices;
--	FILE *proc_partitions;
--	int i;
--	char buf[1024];
--	char fullpath[110];
--	int scans = 0;
--	int special;
--
--scan_again:
--	proc_partitions = fopen("/proc/partitions","r");
--	if (!proc_partitions) {
--		fprintf(stderr, "Unable to open '/proc/partitions' for scanning\n");
--		return -ENOENT;
--	}
--	/* skip the header */
--	for (i = 0; i < 2; i++)
--		if (!fgets(buf, 1023, proc_partitions)) {
--			fprintf(stderr,
--				"Unable to read '/proc/partitions' for scanning\n");
--			fclose(proc_partitions);
--			return -ENOENT;
--		}
--
--	strcpy(fullpath,"/dev/");
--	while(fgets(buf, 1023, proc_partitions)) {
--		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
--
--		/*
--		 * multipath and MD devices may register as a btrfs filesystem
--		 * both through the original block device and through
--		 * the special (/dev/mapper or /dev/mdX) entry.
--		 * This scans the special entries last
--		 */
--		special = strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")) == 0;
--		if (!special)
--			special = strncmp(fullpath, "/dev/md", strlen("/dev/md")) == 0;
--
--		if (scans == 0 && special)
--			continue;
--		if (scans > 0 && !special)
--			continue;
--
--		ret = lstat(fullpath, &st);
--		if (ret < 0) {
--			fprintf(stderr, "failed to stat %s\n", fullpath);
--			continue;
--		}
--		if (!S_ISBLK(st.st_mode)) {
--			continue;
--		}
--
--		fd = open(fullpath, O_RDONLY);
--		if (fd < 0) {
--			if (errno != ENOMEDIUM)
--				fprintf(stderr, "failed to open %s: %s\n",
--					fullpath, strerror(errno));
--			continue;
--		}
--		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
--					    &num_devices,
--					    BTRFS_SUPER_INFO_OFFSET, 0);
--		if (ret == 0 && run_ioctl > 0) {
--			btrfs_register_one_device(fullpath);
--		}
--		close(fd);
--	}
--
--	fclose(proc_partitions);
--
--	if (scans == 0) {
--		scans++;
--		goto scan_again;
--	}
--	return 0;
--}
--
- /*
-  * A not-so-good version fls64. No fascinating optimization since
-  * no one except parse_size use it
-diff --git a/utils.h b/utils.h
-index 1536469..e332fd1 100644
---- a/utils.h
-+++ b/utils.h
-@@ -100,7 +100,6 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, unsigned unit_mo
- 	})
- 
- int get_mountpt(char *dev, char *mntpt, size_t size);
--int btrfs_scan_block_devices(int run_ioctl);
- u64 parse_size(char *s);
- u64 arg_strtou64(const char *str);
- int open_file_or_dir(const char *fname, DIR **dirstream);
 -- 
-2.0.0.153.g79dcccc
+Juan Orti
+https://miceliux.com
 

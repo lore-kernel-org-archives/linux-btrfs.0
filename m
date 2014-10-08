@@ -1,45 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-04v.sys.comcast.net ([96.114.154.163]:48263 "EHLO
-	resqmta-po-04v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754532AbaJHQWM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Oct 2014 12:22:12 -0400
-Message-ID: <543562C6.3030604@shroop.net>
-Date: Wed, 08 Oct 2014 09:13:58 -0700
-From: Rich Rauenzahn <rich@shroop.net>
+Received: from mx1.redhat.com ([209.132.183.28]:40303 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751555AbaJHTLv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Oct 2014 15:11:51 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s98JBoRu028053
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 8 Oct 2014 15:11:51 -0400
+Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id s98JBnhU025694
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 8 Oct 2014 15:11:50 -0400
+Message-ID: <54358C77.2070808@redhat.com>
+Date: Wed, 08 Oct 2014 14:11:51 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: Rich Rauenzahn <rrauenza@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Two uncorrectable errors across RAID1 at same logical block?
-References: <CAG+QAKVPcJPVL-mRsnG0m1NQCRrwaUbYDqKXBCjOnH_5A0ifHg@mail.gmail.com> <20141007020538.GA3187@localhost.localdomain> <54334D5E.9000300@shroop.net> <20141008142030.GA13823@localhost.localdomain>
-In-Reply-To: <20141008142030.GA13823@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: What is the vision for btrfs fs repair?
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/8/2014 7:20 AM, Liu Bo wrote:
-> On Mon, Oct 06, 2014 at 07:18:06PM -0700, Rich Rauenzahn wrote:
->> On 10/6/2014 7:05 PM, Liu Bo wrote:
->>> btrfs inspect-internal logical-resolve 58464632832
->> $  sudo btrfs inspect-internal logical-resolve 58464632832  /
->>
->> ...no output?
->>
->>
-> Hmm...have you tried the latest btrfs-progs?
->
-> You can pull it or get a tar ball from
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->
-> thanks,
-> -liubo
->
+I was looking at Marc's post:
 
-Still no output:
+http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
 
-   $ sudo ./btrfs inspect-internal logical-resolve 58464632832  /
+and it feels like there isn't exactly a cohesive, overarching vision for
+repair of a corrupted btrfs filesystem.
 
-Could it be a deleted file?
+In other words - I'm an admin cruising along, when the kernel throws some
+fs corruption error, or for whatever reason btrfs fails to mount.
+What should I do?
+
+Marc lays out several steps, but to me this highlights that there seem to
+be a lot of disjoint mechanisms out there to deal with these problems;
+mostly from Marc's blog, with some bits of my own:
+
+* btrfs scrub
+	"Errors are corrected along if possible" (what *is* possible?)
+* mount -o recovery
+	"Enable autorecovery attempts if a bad tree root is found at mount time."
+* mount -o degraded
+	"Allow mounts to continue with missing devices."
+	(This isn't really a way to recover from corruption, right?)
+* btrfs-zero-log
+	"remove the log tree if log tree is corrupt"
+* btrfs rescue
+	"Recover a damaged btrfs filesystem"
+	chunk-recover
+	super-recover
+	How does this relate to btrfs check?
+* btrfs check
+	"repair a btrfs filesystem"
+	--repair
+	--init-csum-tree
+	--init-extent-tree
+	How does this relate to btrfs rescue?
+* btrfs restore
+	"try to salvage files from a damaged filesystem"
+	(not really repair, it's disk-scraping)
 
 
+What's the vision for, say, scrub vs. check vs. rescue?  Should they repair the
+same errors, only online vs. offline?  If not, what class of errors does one fix vs.
+the other?  How would an admin know?  Can btrfs check recover a bad tree root
+in the same way that mount -o recovery does?  How would I know if I should use
+--init-*-tree, or chunk-recover, and what are the ramifications of using
+these options?
+
+It feels like recovery tools have been badly splintered, and if there's an
+overarching design or vision for btrfs fs repair, I can't tell what it is.
+Can anyone help me?
+
+Thanks,
+-Eric

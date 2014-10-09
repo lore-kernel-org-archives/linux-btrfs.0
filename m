@@ -1,52 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36871 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:42847 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751207AbaJITQY (ORCPT
+	with ESMTP id S1751065AbaJITTy (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 9 Oct 2014 15:16:24 -0400
+	Thu, 9 Oct 2014 15:19:54 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2] Btrfs: report error after failure inlining extent in compressed write path
-Date: Thu,  9 Oct 2014 21:15:43 +0100
-Message-Id: <1412885744-16180-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 1/2] Btrfs: correctly flush compressed data before/after direct IO
+Date: Thu,  9 Oct 2014 21:18:55 +0100
+Message-Id: <1412885936-16256-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If cow_file_range_inline() failed, when called from compress_file_range(),
-we were tagging the locked page for writeback, end its writeback and unlock it,
-but not marking it with an error nor setting AS_EIO in inode's mapping flags.
-
-This made it impossible for a caller of filemap_fdatawrite_range (writepages)
-or filemap_fdatawait_range() to know that an error happened. And the return
-value of compress_file_range() is useless because it's returned to a workqueue
-task and not to the task calling filemap_fdatawrite_range (writepages).
-
-This change applies on top of the previous patchset starting at the patch
-titled:
-
-    "[1/5] Btrfs: set page and mapping error on compressed write failure"
-
-Which changed extent_clear_unlock_delalloc() to use SetPageError and
-mapping_set_error().
+For compressed writes, after doing the first filemap_fdatawrite_range() we
+don't get the pages tagged for writeback immediately. Instead we create
+a workqueue task, which is run by other kthread, and keep the pages locked.
+That other kthread compresses data, creates the respective ordered extent/s,
+tags the pages for writeback and unlocks them. Therefore we need a second
+call to filemap_fdatawrite_range() if we have compressed writes, as this
+second call will wait for the pages to become unlocked, then see they became
+tagged for writeback and finally wait for the writeback to finish.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/file.c  | 12 +++++++++++-
+ fs/btrfs/inode.c | 16 +++++++++++++---
+ 2 files changed, 24 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 29b147d..82c7229 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1692,8 +1692,18 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+ 		err = written_buffered;
+ 		goto out;
+ 	}
++	/*
++	 * Ensure all data is persisted. We want the next direct IO read to be
++	 * able to read what was just written.
++	 */
+ 	endbyte = pos + written_buffered - 1;
+-	err = filemap_write_and_wait_range(file->f_mapping, pos, endbyte);
++	err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
++	if (!err && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++			     &BTRFS_I(file_inode(file))->runtime_flags))
++		err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
++	if (err)
++		goto out;
++	err = filemap_fdatawait_range(file->f_mapping, pos, endbyte);
+ 	if (err)
+ 		goto out;
+ 	written += written_buffered;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7635b1d..b91a171 100644
+index aef0fa3..752ff18 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -538,6 +538,7 @@ cont:
- 						     clear_flags, PAGE_UNLOCK |
- 						     PAGE_CLEAR_DIRTY |
- 						     PAGE_SET_WRITEBACK |
-+						     PAGE_SET_ERROR |
- 						     PAGE_END_WRITEBACK);
- 			goto free_pages_out;
- 		}
+@@ -7052,9 +7052,19 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 			btrfs_put_ordered_extent(ordered);
+ 		} else {
+ 			/* Screw you mmap */
+-			ret = filemap_write_and_wait_range(inode->i_mapping,
+-							   lockstart,
+-							   lockend);
++			ret = filemap_fdatawrite_range(inode->i_mapping,
++						       lockstart,
++						       lockend);
++			if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++					     &BTRFS_I(inode)->runtime_flags))
++				ret = filemap_fdatawrite_range(inode->i_mapping,
++							       lockstart,
++							       lockend);
++			if (ret)
++				break;
++			ret = filemap_fdatawait_range(inode->i_mapping,
++						      lockstart,
++						      lockend);
+ 			if (ret)
+ 				break;
+ 
 -- 
 1.9.1
 

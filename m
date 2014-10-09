@@ -1,131 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:63441 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:44566 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750958AbaJIKUp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Oct 2014 06:20:45 -0400
-From: Eryu Guan <eguan@redhat.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: test mount btrfs subvolume with selinux context
-Date: Thu,  9 Oct 2014 18:19:28 +0800
-Message-Id: <1412849968-13760-1-git-send-email-eguan@redhat.com>
-In-Reply-To: <1412668149-16890-1-git-send-email-eguan@redhat.com>
-References: <1412668149-16890-1-git-send-email-eguan@redhat.com>
+	id S1751372AbaJIPnV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Oct 2014 11:43:21 -0400
+Date: Thu, 9 Oct 2014 17:43:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: Re: [PATCH] btrfs: add more superblock checks
+Message-ID: <20141009154319.GB22943@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <5433A7D7.4080401@cn.fujitsu.com>
+ <5433A97F.8050509@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5433A97F.8050509@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If one subvolume was mounted with selinux context, other subvolumes
-should be able to be mounted with the same selinux context too.
+On Tue, Oct 07, 2014 at 04:51:11PM +0800, Qu Wenruo wrote:
+> > +	struct btrfs_super_block *sb = fs_info->super_copy;
+> > +	int ret = 0;
+> > +
+> > +	if (sb->root_level > BTRFS_MAX_LEVEL) {
+> > +		printk(KERN_ERR "BTRFS: tree_root level too big: %d > %d\n",
+> > +				sb->root_level, BTRFS_MAX_LEVEL);
+> > +		ret = -EINVAL;
+> > +	}
+> > +	if (sb->chunk_root_level > BTRFS_MAX_LEVEL) {
+> > +		printk(KERN_ERR "BTRFS: chunk_root level too big: %d > %d\n",
+> > +				sb->chunk_root_level, BTRFS_MAX_LEVEL);
+> > +		ret = -EINVAL;
+> > +	}
+> > +	if (sb->log_root_level > BTRFS_MAX_LEVEL) {
+> > +		printk(KERN_ERR "BTRFS: log_root level too big: %d > %d\n",
+> > +				sb->log_root_level, BTRFS_MAX_LEVEL);
+> > +		ret = -EINVAL;
+> > +	}
+> > +
+> >   	/*
+> > -	 * Placeholder for checks
+> > +	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
+> > +	 * items yet, they'll be verified later. Issue just a warning.
+> >   	 */
+> > -	return 0;
+> > +	if (!IS_ALIGNED(sb->root, 4096))
+> > +		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
+> > +				sb->root);
+> > +	if (!IS_ALIGNED(sb->chunk_root, 4096))
+> > +		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
+> > +				sb->chunk_root);
+> > +	if (!IS_ALIGNED(sb->log_root, 4096))
+> > +		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
+> > +				sb->log_root);
+> 1) it is better not to call IS_ALIGNED to immediate value//.
+> Although current btrfs implement ensures that all sectorsize is larger 
+> equal than page_size,
+> but Chandan Rajendra is trying to support subpage-sized blocksize,
+> which may cause false alert later.
 
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Eryu Guan <eguan@redhat.com>
----
+The patch reflects current state, so when the subpage blocksize patches
+are merged, this will have to be changed accordingly.
 
-v2:
-- redirect _scratch_mkfs output to $seqres.full to avoid trim disk message
-  if the disk supports trim
+> It would be much better using btrfs_super_sectorsize() instead to 
+> improve extendability.
 
- tests/btrfs/075     | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/075.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 73 insertions(+)
- create mode 100755 tests/btrfs/075
- create mode 100644 tests/btrfs/075.out
+See the comment above, we don't trust the superblock yet and cannot use
+the sectorsize reliably.
 
-diff --git a/tests/btrfs/075 b/tests/btrfs/075
-new file mode 100755
-index 0000000..16ed854
---- /dev/null
-+++ b/tests/btrfs/075
-@@ -0,0 +1,70 @@
-+#! /bin/bash
-+# FSQA Test No. btrfs/075
-+#
-+# If one subvolume was mounted with selinux context, other subvolumes
-+# should be able to be mounted with the same selinux context too.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 Red Hat Inc. All rights reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+# SELINUX_MOUNT_OPTIONS will be set in common/config if selinux is enabled
-+if [ "$SELINUX_MOUNT_OPTIONS" == "" ]; then
-+	_notrun "Require selinux to be enabled"
-+fi
-+
-+rm -f $seqres.full
-+echo "Silence is golden"
-+
-+# first mount default subvolume with selinux context set
-+_scratch_mkfs >$seqres.full 2>&1
-+_scratch_mount
-+
-+# create a new subvolume and mount it with the same selinux context
-+subvol_mnt=$TEST_DIR/$seq.mnt
-+mkdir -p $subvol_mnt
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol >>$seqres.full 2>&1
-+$MOUNT_PROG -o subvol=subvol $SELINUX_MOUNT_OPTIONS $SCRATCH_DEV $subvol_mnt
-+status=$?
-+
-+exit
-diff --git a/tests/btrfs/075.out b/tests/btrfs/075.out
-new file mode 100644
-index 0000000..ded801b
---- /dev/null
-+++ b/tests/btrfs/075.out
-@@ -0,0 +1,2 @@
-+QA output created by 075
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index c8ac72c..00ae8ce 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -77,3 +77,4 @@
- 072 auto scrub defrag compress
- 073 auto scrub remount compress
- 074 auto defrag remount compress
-+075 auto quick subvol
--- 
-1.8.3.1
+> 2) missing endian convert.
+> On big endian system it would be a disaster....
+> btrfs_super_* marco should be used.
 
+Thanks, will fix it.
+
+> > +	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
+> > +		printk(KERN_ERR "BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
+> > +				fs_info->fsid, sb->dev_item.fsid);
+> > +		ret = -EINVAL;
+> > +	}
+> > +
+> > +	/*
+> > +	 * Hint to catch really bogus numbers, bitflips or so, more exact checks are
+> > +	 * done later
+> > +	 */
+> > +	if (sb->num_devices > (1UL << 31))
+> > +		printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
+> > +				sb->num_devices);
+
+> What about also check the devid with sb->num_devices too?
+> Every valid devid should be less equal than sb->num_devices if I am right.
+> Although iterate dev_item here may be overkilled...
+
+This could be done of course, I've tried to keep the checks very small
+and using only directly accessible information. More is possible of
+course.
+
+> > +
+> > +	if (sb->bytenr != BTRFS_SUPER_INFO_OFFSET) {
+> > +		printk(KERN_ERR "BTRFS: super offset mismatch %llu != %u\n",
+> > +				sb->bytenr, BTRFS_SUPER_INFO_OFFSET);
+> > +		ret = -EINVAL;
+> > +	}
+> > +
+> > +	/*
+> > +	 * The generation is a global counter, we'll trust it more than the others
+> > +	 * but it's still possible that it's the one that's wrong.
+> > +	 */
+> > +	if (sb->generation < sb->chunk_root_generation)
+> > +		printk(KERN_WARNING
+> > +			"BTRFS: suspicious: generation < chunk_root_generation: %llu < %llu\n",
+> > +			sb->generation, sb->chunk_root_generation);
+> > +	if (sb->generation < sb->cache_generation && sb->cache_generation != (u64)-1)
+> > +		printk(KERN_WARNING
+> > +			"BTRFS: suspicious: generation < cache_generation: %llu < %llu\n",
+> > +			sb->generation, sb->cache_generation);
+> > +
+> > +	return ret;
+> >   }
+> >   
+> Still the endian problem.
+
+Will fix, thanks.

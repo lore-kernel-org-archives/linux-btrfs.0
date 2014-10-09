@@ -1,77 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40209 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752327AbaJINtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Oct 2014 09:49:40 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XcE67-0002Lx-5J
-	for linux-btrfs@vger.kernel.org; Thu, 09 Oct 2014 15:49:39 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Oct 2014 15:49:39 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Oct 2014 15:49:39 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: What is the vision for btrfs fs repair?
-Date: Thu, 9 Oct 2014 13:49:27 +0000 (UTC)
-Message-ID: <pan$be94c$47b1139c$477c562b$8f545371@cox.net>
-References: <54358C77.2070808@redhat.com> <54367193.6000202@gmail.com>
-	<pan$3113d$a3bae425$2c8363e3$ea9c68d9@cox.net>
-	<20141009053402.7dc286f0@ws> <54368B1E.4040901@gmail.com>
-Mime-Version: 1.0
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:55009 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755094AbaJIN6E (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Oct 2014 09:58:04 -0400
+Received: by mail-ig0-f176.google.com with SMTP id hn15so12793185igb.15
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Oct 2014 06:58:04 -0700 (PDT)
+MIME-Version: 1.0
+Date: Thu, 9 Oct 2014 09:58:04 -0400
+Message-ID: <CAJtFHUStCfWvk9QqjYbYrHzZm44RfAScdf-neKD7S_T0SdY9hQ@mail.gmail.com>
+Subject: deadlock with 3.16.3
+From: E V <eliventer@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn posted on Thu, 09 Oct 2014 09:18:22 -0400 as
-excerpted:
+running wheezy Debian 3.16.3-2~bpo70+1 system has locked up 2 nights
+in a row running rsync copying from remote to a ~100TB btrfs. Only job
+running on the server, no interactive users or anything. soft locks
+showed up in kern.log across many CPUs shortly before system became
+non-responsive. First lines of the call traces via: grep '8 17:12'
+/var/log/kern.log | cut -d" " --complement -f 1,2,3,4,5,6 | grep -A1
+'Call Trace:' | egrep -v '\-\-|Call Trace:'
 
-> On 2014-10-09 08:34, Duncan wrote:
+I've gone back to 3.14, which I've never had issues with. sar report
+from 5 minutes prior looked pretty normal, no swap depletion. Let me
+know if you want more info
 
->> The only way a read-only
->> mount should be writable is if it's mounted (bind-mounted or
->> btrfs-subvolume-mounted) read-write elsewhere, and the write occurs to
->> that mount, not the read-only mounted location.
-
-> In theory yes, but there are caveats to this, namely:
-> * atime updates still happen unless you have mounted the fs with noatime
-
-I've been mounting noatime for well over a decade now, exactly due to 
-such problems.  But I believe at least /some/ filesystems are truly read-
-only when they're mounted as such, and atime updates don't happen on them.
-
-These days I actually apply a patch that changes the default relatime to 
-noatime, so I don't even have to have it in my mount-options. =:^)
-
-> * The superblock gets updated if there are 'any' writes
-
-Yeah.  At least in theory, there shouldn't be, however.  As I said, in 
-theory, even journal replay and orphan delete shouldn't hit media, altho 
-handling it in memory and dirtying the cache, so if the filesystem is 
-ever remounted read-write they get written, is reasonable.
-
-> * The free space cache 'might' be updated if there are any writes
-
-Makes sense.  But of course that's what I'm arguing, there shouldn't /be/ 
-any writes.  Read-only should mean exactly that, don't touch media, 
-period.
-
-I remember at one point activating an mdraid1 degraded, read-only, just a 
-single device of the 4-way raid1 I was running at the time, to recover 
-data from it after the system it was running in died.  The idea was don't 
-write to the device at all, because I was still testing the new system, 
-and in case I decided to try to reassemble the raid at some point.  Read-
-only really NEEDS to be read-only, under such conditions.
-
-Similarly for forensic examination, of course.  If there's a write, any 
-write, it's evidence tampering.  Read-only needs to MEAN read-only!
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+[30328.735511]  [<ffffffffa0227df8>] ?
+btrfs_lookup_file_extent+0x38/0x40 [btrfs]
+[30328.747283]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.759289]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.775303]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.787311]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.799324]  [<ffffffffa026cfaf>] ? btrfs_tree_read_lock+0x3f/0x110 [btrfs]
+[30328.839351]  [<ffffffffa026cfaf>] ? btrfs_tree_read_lock+0x3f/0x110 [btrfs]
+[30328.855363]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.867373]  [<ffffffffa026cecc>] ?
+btrfs_clear_lock_blocking_rw+0x4c/0xf0 [btrfs]
+[30328.879384]  [<ffffffffa026cfaf>] ? btrfs_tree_read_lock+0x3f/0x110 [btrfs]
+[30328.891394]  [<ffffffffa026cecc>] ?
+btrfs_clear_lock_blocking_rw+0x4c/0xf0 [btrfs]
+[30328.907407]  [<ffffffffa026d353>] ? btrfs_tree_lock+0xd3/0x1e0 [btrfs]
+[30328.919396]  [<ffffffffa026cfaf>] ? btrfs_tree_read_lock+0x3f/0x110 [btrfs]

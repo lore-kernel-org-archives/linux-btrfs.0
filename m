@@ -1,41 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:4978 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752189AbaJIPsP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Oct 2014 11:48:15 -0400
-Message-ID: <5436AD4C.8060204@redhat.com>
-Date: Thu, 09 Oct 2014 10:44:12 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:33612 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757265AbaJIQl3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Oct 2014 12:41:29 -0400
+Received: by mail-wi0-f172.google.com with SMTP id n3so13727474wiv.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Oct 2014 09:41:28 -0700 (PDT)
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com> <54367193.6000202@gmail.com>	<pan$3113d$a3bae425$2c8363e3$ea9c68d9@cox.net>	<20141009053402.7dc286f0@ws> <54368B1E.4040901@gmail.com> <pan$be94c$47b1139c$477c562b$8f545371@cox.net>
-In-Reply-To: <pan$be94c$47b1139c$477c562b$8f545371@cox.net>
-Content-Type: text/plain; charset=utf-8
+Date: Thu, 9 Oct 2014 11:41:28 -0500
+Message-ID: <CAAKzf7nLzh1ck7YK8z_E3fx1hK5zWLbKRh1NiG5oVpxuaGtO7Q@mail.gmail.com>
+Subject: Confusion with newly converted filesystem
+From: Tim Cuthbertson <ratcheer@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/9/14 8:49 AM, Duncan wrote:
-> Austin S Hemmelgarn posted on Thu, 09 Oct 2014 09:18:22 -0400 as
-> excerpted:
-> 
->> On 2014-10-09 08:34, Duncan wrote:
-> 
->>> The only way a read-only
->>> mount should be writable is if it's mounted (bind-mounted or
->>> btrfs-subvolume-mounted) read-write elsewhere, and the write occurs to
->>> that mount, not the read-only mounted location.
-> 
->> In theory yes, but there are caveats to this, namely:
->> * atime updates still happen unless you have mounted the fs with noatime
+I will try to explain what I have done, but also try to keep it fairly
+short. I installed a Linux distro that does not support installing to
+btrfs to an ext4. I ran dist-upgrade to ensure that I have the latest
+btrfs-tools. I upgraded the Debian kernel from 3.13 to 3.16.3. When
+all this was completed, there was something like 900 MB used on a 40
+GB partition.
 
-Getting off the topic a bit, but that really shouldn't happen:
+Next, I booted to another distro (Arch Linux) which also has the
+latest kernel and btrfs-progs. I ran "btrfs-convert /dev/sda6". When I
+rebooted to the new Debian system, the btrfs was mounted read-only.
+"btrfs fi show /" showed all 40 GB as used. I did some internet
+research, then I remounted the filesystem as rw and added another 40
+GB partition on a separate disk drive. Then I ran "btrfs balance start
+-dusage=30". This seemed to stabilize the filesystem to the point that
+it is usable.
 
-#define IS_NOATIME(inode)       __IS_FLG(inode, MS_RDONLY|MS_NOATIME)
+I proceeded with my original plan, which was to make it a two-drive
+RAID filesystem, using "-dconvert =raid0 -mconvert=raid1". This
+succeeded, but the data and metadata usage stats still look all out of
+whack. After several rebalance attempts, my usage stats look like the
+following:
 
-and in touch_atime():
+"btrfs fi show /" shows a total usage of 1.76 GB, with 40 GB allocated
+and 14.03 GB used on each device. "btrfs fi df /" shows total data of
+2 GB allocated with 1.69 GB used and metadata of 13 GB total with
+72.41 MB used.
 
-        if (IS_NOATIME(inode))
-                return;
+Why is 13 GB needed for 72 MB of metadata? Is there any understandable
+way to fix this? I am not a newbie, but am by no means an expert with
+btrfs
 
--Eric
+Thank you,
+Tim

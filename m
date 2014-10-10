@@ -1,67 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f172.google.com ([209.85.192.172]:37579 "EHLO
-	mail-pd0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751920AbaJJNfJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 09:35:09 -0400
-Received: by mail-pd0-f172.google.com with SMTP id ft15so1683379pdb.31
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 06:35:09 -0700 (PDT)
-From: Wang Shilong <wangshilong1991@gmail.com>
-Content-Type: text/plain; charset=GB2312
-Subject: Problems running Balance and checking integrity concurrently.
-Date: Fri, 10 Oct 2014 21:35:02 +0800
-Message-Id: <5BE1151D-599F-4FD4-BD6B-AC707C72CEC4@gmail.com>
-Cc: Josef Bacik <jbacik@fb.com>, clm@fb.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-To: sbehrens@giantdisaster.de
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39843 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751950AbaJJOhq convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Oct 2014 10:37:46 -0400
+Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:64041 helo=[192.168.2.7])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XcbKD-000ZPi-Rf
+	for linux-btrfs@vger.kernel.org; Fri, 10 Oct 2014 08:37:45 -0600
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: What is the vision for btrfs fs repair?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <5437BAB2.1040605@shiftmail.org>
+Date: Fri, 10 Oct 2014 10:37:44 -0400
+Message-Id: <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
+References: <54358C77.2070808@redhat.com> <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com> <5437BAB2.1040605@shiftmail.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello£¬
 
-I have reproduced a problem with Btrfs integrity and balance using latest
-btrfs kernel,it is very easy to reproduce:
+On Oct 10, 2014, at 6:53 AM, Bob Marley <bobmarley@shiftmail.org> wrote:
 
-With mount option ¡°check_int¡±, and run xfstests/btrfs/ tests, below test could definitely
-reproduce problem:
+> On 10/10/2014 03:58, Chris Murphy wrote:
+>> 
+>>> * mount -o recovery
+>>> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
+>> I'm confused why it's not the default yet. Maybe it's continuing to evolve at a pace that suggests something could sneak in that makes things worse? It is almost an oxymoron in that I'm manually enabling an autorecovery
+>> 
+>> If true, maybe the closest indication we'd get of btrfs stablity is the default enabling of autorecovery.
+> 
+> No way!
+> I wouldn't want a default like that.
+> 
+> If you think at distributed transactions: suppose a sync was issued on both sides of a distributed transaction, then power was lost on one side, than btrfs had corruption. When I remount it, definitely the worst thing that can happen is that it auto-rolls-back to a previous known-good state.
 
-./check tests/btrfs/014
+For a general purpose file system, losing 30 seconds (or less) of questionably committed data, likely corrupt, is a file system that won't mount without user intervention, which requires a secret decoder ring to get it to mount at all. And may require the use of specialized tools to retrieve that data in any case.
 
-5.122248] Written block @25800343552 (sdc/1210187776/0) found in hash table, M, bytenr mismatch (!= stored 20968505344).
-[  455.122283] Written block @25800359936 (sdc/1210204160/1) found in hash table, M, bytenr mismatch (!= stored 20968521728).
-[  455.122301] Written block @25800376320 (sdc/1210220544/1) found in hash table, M, bytenr mismatch (!= stored 20968538112).
-[  455.122347] Referenced block @25800343552 (sdc/1344405504/2) found in hash table, M, bytenr mismatch (!= stored 20968505344).
-[  455.122427] Referenced block @25800359936 (sdc/1344421888/2) found in hash table, M, bytenr mismatch (!= stored 20968521728).
-[  455.122853] Written block @25800376320 (sdc/1344438272/0) found in hash table, M, bytenr mismatch (!= stored 20968538112).
-[  455.126275] BTRFS critical (device sdc): unable to find logical 3452043264 len 4096
-[  455.126491] btrfsic: btrfsic_map_block(root @3452043264) failed!
-[  455.126496] BTRFS critical (device sdc): unable to find logical 3452059648 len 4096
-[  455.126769] btrfsic: btrfsic_map_block(root @3452059648) failed!
-[  455.126773] BTRFS critical (device sdc): unable to find logical 3452076032 len 4096
-[  455.127007] btrfsic: btrfsic_map_block(root @3452076032) failed!
-[  455.127011] BTRFS critical (device sdc): unable to find logical 3452092416 len 4096
-<snip>
-[  455.129864] btrfsic: btrfsic_map_block(root @3452272640) failed!
-[  455.129869] BTRFS critical (device sdc): unable to find logical 3452289024 len 4096
-[  455.130113] btrfsic: btrfsic_map_block(root @3452289024) failed!
-[  455.130756] BTRFS critical (device sdc): unable to find logical 3451994112 len 4096
-[  455.130984] btrfsic: btrfsic_map_block(root @3451994112) failed!
-[  455.130988] BTRFS critical (device sdc): unable to find logical 3452010496 len 4096
-[  455.131192] btrfsic: btrfsic_map_block(root @3452010496) failed!
-[  455.131195] BTRFS critical (device sdc): unable to find logical 3452026880 len 4096
-[  455.131401] btrfsic: btrfsic_map_block(root @3452026880) failed!
-[  455.131914] Written block @25800392704 (sdc/1210236928/0) found in hash table, M, bytenr mismatch (!= stored 20968554496).
-[  455.131938] Referenced block @25800409088 (sdc/1210253312/1) found in hash table, M, bytenr mismatch (!= stored 20968570880).
-[  455.131971] Referenced block @25800409088 (sdc/1344471040/2) found in hash table, M, bytenr mismatch (!= stored 20968570880).
-[  455.132017] Referenced block @25800425472 (sdc/1210269696/1) found in hash table, M, bytenr mismatch (!= stored 20968587264).
-[  455.132030] Referenced block @25800425472 (sdc/1344487424/2) found in hash table, M, bytenr mismatch (!= stored 20968587264).
-[  455.132344] Written block @25800392704 (sdc/1344454656/0) found in hash table, M, bytenr mismatch (!= stored 20968554496
+The fail safe behavior is to treat the known good tree root as the default tree root, and bypass the bad tree root if it cannot be repaired, so that the volume can be mounted with default mount options (i.e. the ones in fstab). Otherwise it's a filesystem that isn't well suited for general purpose use as rootfs let alone for boot.
 
-I supposed there are some race problems between integrity check and
-Btrfs balance, could you guys please take a look at this issue!
-
-
-Best Regards,
-Wang Shilong
+Chris Murphy
 

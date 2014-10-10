@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44080 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751081AbaJJDUP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Oct 2014 23:20:15 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XcQkY-0003Ok-56
-	for linux-btrfs@vger.kernel.org; Fri, 10 Oct 2014 05:20:14 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 05:20:14 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 05:20:14 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: What is the vision for btrfs fs repair?
-Date: Fri, 10 Oct 2014 03:20:00 +0000 (UTC)
-Message-ID: <pan$ecd19$37cfe586$a16f45b8$3f43b02@cox.net>
-References: <54358C77.2070808@redhat.com>
-	<9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42193 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750786AbaJJElo convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Oct 2014 00:41:44 -0400
+Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:61840 helo=[192.168.2.7])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XcS1Q-001XYi-1G
+	for linux-btrfs@vger.kernel.org; Thu, 09 Oct 2014 22:41:44 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Confusion with newly converted filesystem
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
+Date: Fri, 10 Oct 2014 00:41:41 -0400
+Message-Id: <4AC5138B-075A-45C9-BEEE-94A38CE8FE3C@colorremedies.com>
+References: <CAAKzf7nLzh1ck7YK8z_E3fx1hK5zWLbKRh1NiG5oVpxuaGtO7Q@mail.gmail.com> <CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Thu, 09 Oct 2014 21:58:53 -0400 as excerpted:
 
-> I suspect it's unintended splintering, and is an artifact that will go
-> away. I'd rather the convoluted, fractured nature of repair go away
-> before the scary experimental warnings do.
 
-Heh, agreed with everything[1], but too late for this, the experimental 
-warnings are peeled off, the experimental or at least horribly immature
-/behavior/ remains. =:^(
+On Oct 9, 2014, at 2:58 PM, Tim Cuthbertson <ratcheer@gmail.com> wrote:
 
----
-[1] ... and a much more logically cohesive and well structured reply than 
-I could have managed as my own thoughts simply weren't that well 
-organized.
+> Never mind. I have stumbled my way into a solution.
+> 
+> I ran "btrfs subv delete /ext2_saved". Then I ran "btrfs balance start
+> /". That relocated 15 of 15 chunks. Now fi show shows 2.03 GB used on
+> each device and fi df shows 1 GB of metadata total.
+> 
+> Apparently, that saved ext4 subvolume was a real mess.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+Not a mess, it's just a side effect of the conversion while it's still reversible. It's kinda both ext3/4 and Btrfs at the same time after conversion. You can even still mount the snapshot as ext3/4. Once you're ready to commit to Btrfs and not use the ext rollback snapshot, deleting it and balancing completes the conversion. It's more of a metadata duplication via in-line migration.
+
+Chris Murphy

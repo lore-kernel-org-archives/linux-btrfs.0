@@ -1,137 +1,281 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36300 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751015AbaJJCEo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Oct 2014 22:04:44 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XcPZS-0004no-6r
-	for linux-btrfs@vger.kernel.org; Fri, 10 Oct 2014 04:04:42 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 04:04:42 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 04:04:42 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Fwd: Confusion with newly converted filesystem
-Date: Fri, 10 Oct 2014 02:04:24 +0000 (UTC)
-Message-ID: <pan$b0425$ee6a20ac$73d43927$36624189@cox.net>
-References: <CAAKzf7nLzh1ck7YK8z_E3fx1hK5zWLbKRh1NiG5oVpxuaGtO7Q@mail.gmail.com>
-	<CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:6169 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751064AbaJJCiN convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Oct 2014 22:38:13 -0400
+Message-ID: <543746C8.9070601@cn.fujitsu.com>
+Date: Fri, 10 Oct 2014 10:39:04 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: <fdmanana@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to insert
+ best fitted extent map
+References: <1410926015-26820-1-git-send-email-quwenruo@cn.fujitsu.com>	<CAL3q7H4Nqof4dhZCxDsOPyB116RGtSgLCUuDoxahEOsFHzo9UQ@mail.gmail.com>	<541B7967.4050907@cn.fujitsu.com>	<CAL3q7H64P6O1P8vGf2ry8mRJst=E1xxeMmHL0+BB63RYnjGrrg@mail.gmail.com>	<5435D695.40803@cn.fujitsu.com> <CAL3q7H54BTVtBO8Pa1DXuC+Pk7xmndc-nCGSz2tTsQE+YGBJNA@mail.gmail.com>
+In-Reply-To: <CAL3q7H54BTVtBO8Pa1DXuC+Pk7xmndc-nCGSz2tTsQE+YGBJNA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tim Cuthbertson posted on Thu, 09 Oct 2014 13:58:58 -0500 as excerpted:
 
-> I ran "btrfs subv delete /ext2_saved". Then I ran "btrfs balance start
-> /".
-> That relocated 15 of 15 chunks. Now fi show shows 2.03 GB used on each
-> device and fi df shows 1 GB of metadata total.
-> 
-> Apparently, that saved ext4 subvolume was a real mess.
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to 
+insert best fitted extent map
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年10月09日 18:27
+> On Thu, Oct 9, 2014 at 1:28 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> -------- Original Message --------
+>> Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to insert
+>> best fitted extent map
+>> From: Filipe David Manana <fdmanana@gmail.com>
+>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date: 2014年10月08日 20:08
+>>> On Fri, Sep 19, 2014 at 1:31 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> wrote:
+>>>> -------- Original Message --------
+>>>> Subject: Re: [PATCH] btrfs: Fix and enhance merge_extent_mapping() to
+>>>> insert
+>>>> best fitted extent map
+>>>> From: Filipe David Manana <fdmanana@gmail.com>
+>>>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> Date: 2014年09月18日 21:16
+>>>>> On Wed, Sep 17, 2014 at 4:53 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>> wrote:
+>>>>>> The following commit enhanced the merge_extent_mapping() to reduce
+>>>>>> fragment in extent map tree, but it can't handle case which existing
+>>>>>> lies before map_start:
+>>>>>> 51f39 btrfs: Use right extent length when inserting overlap extent map.
+>>>>>>
+>>>>>> [BUG]
+>>>>>> When existing extent map's start is before map_start,
+>>>>>> the em->len will be minus, which will corrupt the extent map and fail
+>>>>>> to
+>>>>>> insert the new extent map.
+>>>>>> This will happen when someone get a large extent map, but when it is
+>>>>>> going to insert it into extent map tree, some one has already commit
+>>>>>> some write and split the huge extent into small parts.
+>>>>> This sounds like very deterministic to me.
+>>>>> Any reason to not add tests to the sanity tests that exercise
+>>>>> this/these case/cases?
+>>>> Yes, thanks for the informing.
+>>>> Will add the test case for it soon.
+>>> Hi Qu,
+>>>
+>>> Any progress on the test?
+>>>
+>>> This is a very important one IMHO, not only because of the bad
+>>> consequences of the bug (extent map corruption, leading to all sorts
+>>> of chaos), but also because this problem was not found by the full
+>>> xfstests suite on several developer machines.
+>>>
+>>> thanks
+>> Still trying to reproduce it under xfstest framework.
+> That's the problem, wasn't apparently reproducible (or detectable at
+> least) by anyone with xfstests.
+I'll try to build a C program to behave the same of filebench and to see 
+if it works.
+At least with filebench, it can be triggered in 60s with 100% 
+possibility to reproduce.
+>
+>> But even followiiing the FileBench randomrw behavior(1 thread random read 1
+>> thread random write on preallocated space),
+>> I still failed to reproduce it.
+>>
+>> Still investigating how to reproduce it.
+>> Worst case may be add a new C program into src of xfstests?
+> How about the sanity tests (fs/btrfs/tests/*.c)? Create an empty map
+> tree, add some extent maps, then try to merge some new extent maps
+> that used to fail before this fix. Seems simple, no?
+>
+> thanks Qu
+It needs concurrency read and write(commit) to trigger it, I am not sure 
+it can be reproduced in sanity tests
+since it seems not commit things and lacks multithread facility.
 
-Yes and no.
+I'll give it a try on the filebench-behavior C program first, and then 
+sanity tests if former doesn't work at all
 
-The problem is that ext4 and btrfs work rather differently from each 
-other, and btrfs can't manage the saved ext4 subvolume as it would normal 
-btrfs subvolumes because doing so would break the ext4 side, killing the 
-ability to roll-back to ext4 that's the whole point of keeping that 
-dedicated subvolume.
-
-So once you are sure you aren't going to roll-back, deleting the ext4 
-saved subvolume, thus allowing btrfs to manage the entire filesystem 
-without the previously ext4 stuff getting in the way, is high priority.
-
-IOW the conversion, like many conversions, is a compromise.  It serves a 
-certain purpose, but until the legacy stuff is gone, the new stuff is 
-hobbled and can't be used to full effect.
-
-So yes, any btrfs converted from ext4 is going to be a real mess, in 
-btrfs terms, until that ext4 saved subvolume is deleted, because it 
-simply can't manage it like it can native btrfs since doing so would 
-break the ability to roll back to the ext4.  But it's an expected mess, 
-and it's only a mess because the native formats differ.  The ext4 image 
-can be just fine in ext4, and when it is removed, btrfs is normally just 
-fine as well.  It's just the btrfs with the ext4 image still there that's 
-a problem, and that only because the ext4 image isn't really playing by 
-btrfs native rules, so btrfs can't properly manage it.
-
-
-BTW, if it was letting you balance without an error than you probably 
-didn't run into this particular problem that often happens with ext* 
-conversions, likely because the filesystem was new and basically all 
-relatively small (under 1 GiB) distro files, but it's worth knowing about 
-and doing the one additional step, just to be sure, plus for possible 
-future conversions.
-
-With ext4, extent size is effectively unlimited.  A full 4.7 GiB DVD ISO 
-image file, for instance, properly defragged, can appear as a single 4.7 
-GiB extent.  No problem on ext4 and in fact that'd be the ideal.
-
-On btrfs, by contrast, data chunk size, and thus largest possible extent 
-size, is 1 GiB.  That 4.7 GiB DVD ISO image would have to be broken up 
-into at least five extents, four of a full GiB each plus the sub-GiB 
-remainder of the file.  In practice it'd likely be six extents, the 
-beginning of the file using what was left of the current data chunk, four 
-complete 1 GiB data chunks, and whatever was left beginning a sixth data 
-chunk, that would eventually be filled with other file data as well.
-
-Of course the same thing applies to other large files, whatever their 
-content and size.  Big VM images are one example, big database files 
-another, big multi-gig archive files yet another, big non-ISO media files 
-again another.
-
-As a result, people with these sorts of large files on their originating 
-ext4 filesystem tend to run into problems with btrfs balance, etc, after 
-the conversion, because btrfs balance expects to see extents no larger 
-than the btrfs-native 1 GiB data chunk, and doesn't know what to do with 
-these > 1 GiB "super-extents".
-
-On converted btrfs with this sort of file, balance will simply error out 
-while the ext4 saved subvolume remains, and normally even after it is 
-gone, until a btrfs filesystem defrag is run on the former ext4 content 
-to break up these super-extents into 1 GiB maximum native btrfs data 
-chunks that btrfs in general and btrfs balance in particular can actually 
-handle.
-
-Since you didn't run into this problem, you evidently either didn't have 
-any of these > 1 GiB files, not surprising on a fresh install, or if you 
-did, they were already fragmented enough for btrfs balance to handle.
-
-However, I'd still recommend doing a proper btrfs filesystem defrag and 
-then another balance, the combination of which should ensure that every 
-last bit of what remains of the ext4 formatting is properly converted to 
-btrfs native.  Given that you already completed a balance the defrag and 
-rebalance may not matter, but better to do it unnecessarily now and be 
-sure, than to run into problems and /wish/ you had done so later.
-
-Additionally, doing it now, before you add too many additional files to 
-the filesystem, will be easier and take less time than doing it later.
-
-
-One more tip while we're talking about defrag:  If you don't have any big 
-(> half a GiB) files to deal with, or if you do but they're all 
-essentially static files (like already written media files that aren't 
-going to be edited in-place), I'd strongly recommend using btrfs' 
-autodefrag mount option, which I use on all my btrfs here.
-
-OTOH, for large "internal rewrite pattern" files such as active VM image 
-files, big database files, even big torrented files until they're fully 
-downloaded and not being rewritten any longer, the autodefrag mount 
-option doesn't scale so well.  Very briefly, consider using the nocow 
-file attribute on these types of files.  But there's more to it than that 
-especially if you're planning on making regular use of btrfs 
-snapshotting, so this is primarily intended as a pointer for where to 
-start your own research on the subject, and perhaps a new thread if you 
-have further questions after that.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thanks,
+Qu
+>
+>
+>> Thanks,
+>> Qu
+>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>> Thanks
+>>>>>
+>>>>>> [REPRODUCER]
+>>>>>> It is very easy to tiger using filebench with randomrw personality.
+>>>>>> It is about 100% to reproduce when using 8G preallocated file in 60s
+>>>>>> randonrw test.
+>>>>>>
+>>>>>> [FIX]
+>>>>>> This patch can now handle any existing extent position.
+>>>>>> Since it does not directly use existing->start, now it will find the
+>>>>>> previous and next extent around map_start.
+>>>>>> So the old existing->start < map_start bug will never happen again.
+>>>>>>
+>>>>>> [ENHANCE]
+>>>>>> This patch will insert the best fitted extent map into extent map tree,
+>>>>>> other than the oldest [map_start, map_start + sectorsize) or the
+>>>>>> relatively newer but not perfect [map_start, existing->start).
+>>>>>>
+>>>>>> The patch will first search existing extent that does not intersects
+>>>>>> with
+>>>>>> the desired map range [map_start, map_start + len).
+>>>>>> The existing extent will be either before or behind map_start, and
+>>>>>> based
+>>>>>> on the existing extent, we can find out the previous and next extent
+>>>>>> around map_start.
+>>>>>>
+>>>>>> So the best fitted extent would be [prev->end, next->start).
+>>>>>> For prev or next is not found, em->start would be prev->end and em->end
+>>>>>> wold be next->start.
+>>>>>>
+>>>>>> With this patch, the fragment in extent map tree should be reduced much
+>>>>>> more than the 51f39 commit and reduce an unneeded extent map tree
+>>>>>> search.
+>>>>>>
+>>>>>> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+>>>>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>>> ---
+>>>>>>     fs/btrfs/inode.c | 79
+>>>>>> ++++++++++++++++++++++++++++++++++++++++----------------
+>>>>>>     1 file changed, 57 insertions(+), 22 deletions(-)
+>>>>>>
+>>>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>>>>>> index 016c403..8039021 100644
+>>>>>> --- a/fs/btrfs/inode.c
+>>>>>> +++ b/fs/btrfs/inode.c
+>>>>>> @@ -6191,21 +6191,60 @@ out_fail_inode:
+>>>>>>            goto out_fail;
+>>>>>>     }
+>>>>>>
+>>>>>> +/* Find next extent map of a given extent map, caller needs to ensure
+>>>>>> locks */
+>>>>>> +static struct extent_map *next_extent_map(struct extent_map *em)
+>>>>>> +{
+>>>>>> +       struct rb_node *next;
+>>>>>> +
+>>>>>> +       next = rb_next(&em->rb_node);
+>>>>>> +       if (!next)
+>>>>>> +               return NULL;
+>>>>>> +       return container_of(next, struct extent_map, rb_node);
+>>>>>> +}
+>>>>>> +
+>>>>>> +static struct extent_map *prev_extent_map(struct extent_map *em)
+>>>>>> +{
+>>>>>> +       struct rb_node *prev;
+>>>>>> +
+>>>>>> +       prev = rb_prev(&em->rb_node);
+>>>>>> +       if (!prev)
+>>>>>> +               return NULL;
+>>>>>> +       return container_of(prev, struct extent_map, rb_node);
+>>>>>> +}
+>>>>>> +
+>>>>>>     /* helper for btfs_get_extent.  Given an existing extent in the
+>>>>>> tree,
+>>>>>> + * the existing extent is the nearest extent to map_start,
+>>>>>>      * and an extent that you want to insert, deal with overlap and
+>>>>>> insert
+>>>>>> - * the new extent into the tree.
+>>>>>> + * the best fitted new extent into the tree.
+>>>>>>      */
+>>>>>>     static int merge_extent_mapping(struct extent_map_tree *em_tree,
+>>>>>>                                    struct extent_map *existing,
+>>>>>>                                    struct extent_map *em,
+>>>>>>                                    u64 map_start)
+>>>>>>     {
+>>>>>> +       struct extent_map *prev;
+>>>>>> +       struct extent_map *next;
+>>>>>> +       u64 start;
+>>>>>> +       u64 end;
+>>>>>>            u64 start_diff;
+>>>>>>
+>>>>>>            BUG_ON(map_start < em->start || map_start >=
+>>>>>> extent_map_end(em));
+>>>>>> -       start_diff = map_start - em->start;
+>>>>>> -       em->start = map_start;
+>>>>>> -       em->len = existing->start - em->start;
+>>>>>> +
+>>>>>> +       if (existing->start > map_start) {
+>>>>>> +               next = existing;
+>>>>>> +               prev = prev_extent_map(next);
+>>>>>> +       } else {
+>>>>>> +               prev = existing;
+>>>>>> +               next = next_extent_map(prev);
+>>>>>> +       }
+>>>>>> +
+>>>>>> +       start = prev ? extent_map_end(prev) : em->start;
+>>>>>> +       start = max_t(u64, start, em->start);
+>>>>>> +       end = next ? next->start : extent_map_end(em);
+>>>>>> +       end = min_t(u64, end, extent_map_end(em));
+>>>>>> +       start_diff = start - em->start;
+>>>>>> +       em->start = start;
+>>>>>> +       em->len = end - start;
+>>>>>>            if (em->block_start < EXTENT_MAP_LAST_BYTE &&
+>>>>>>                !test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
+>>>>>>                    em->block_start += start_diff;
+>>>>>> @@ -6482,25 +6521,21 @@ insert:
+>>>>>>
+>>>>>>                    ret = 0;
+>>>>>>
+>>>>>> -               existing = lookup_extent_mapping(em_tree, start, len);
+>>>>>> -               if (existing && (existing->start > start ||
+>>>>>> -                   existing->start + existing->len <= start)) {
+>>>>>> +               existing = search_extent_mapping(em_tree, start, len);
+>>>>>> +               /*
+>>>>>> +                * existing will always be non-NULL, since there must
+>>>>>> be
+>>>>>> +                * extent causing the -EEXIST.
+>>>>>> +                */
+>>>>>> +               if (start >= extent_map_end(existing) ||
+>>>>>> +                   start + len <= existing->start) {
+>>>>>> +                       /*
+>>>>>> +                        * The existing extent map is the one nearest
+>>>>>> to
+>>>>>> +                        * the [start, start + len) range which
+>>>>>> overlaps
+>>>>>> +                        */
+>>>>>> +                       err = merge_extent_mapping(em_tree, existing,
+>>>>>> +                                                  em, start);
+>>>>>>                            free_extent_map(existing);
+>>>>>> -                       existing = NULL;
+>>>>>> -               }
+>>>>>> -               if (!existing) {
+>>>>>> -                       existing = lookup_extent_mapping(em_tree,
+>>>>>> em->start,
+>>>>>> -                                                        em->len);
+>>>>>> -                       if (existing) {
+>>>>>> -                               err = merge_extent_mapping(em_tree,
+>>>>>> existing,
+>>>>>> -                                                          em, start);
+>>>>>> -                               free_extent_map(existing);
+>>>>>> -                               if (err) {
+>>>>>> -                                       free_extent_map(em);
+>>>>>> -                                       em = NULL;
+>>>>>> -                               }
+>>>>>> -                       } else {
+>>>>>> -                               err = -EIO;
+>>>>>> +                       if (err) {
+>>>>>>                                    free_extent_map(em);
+>>>>>>                                    em = NULL;
+>>>>>>                            }
+>>>>>> --
+>>>>>> 2.1.0
+>>>>>>
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>> in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>>
+>>>
+>
+>
 

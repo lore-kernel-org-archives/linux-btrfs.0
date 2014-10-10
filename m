@@ -1,56 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from srv2.trombetti.net ([65.254.53.252]:3885 "EHLO
-	srv2.trombetti.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751995AbaJJLMi (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:53631 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751043AbaJJNEc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 07:12:38 -0400
-Received: from localhost (localhost [127.0.0.1])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: SASL)
-	by srv2.trombetti.net (Postfix) with ESMTPSA id 9615F313AB
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 07:25:25 -0400 (EDT)
-Message-ID: <5437BF23.6030000@shiftmail.org>
-Date: Fri, 10 Oct 2014 13:12:35 +0200
-From: Bob Marley <bobmarley@shiftmail.org>
+	Fri, 10 Oct 2014 09:04:32 -0400
+Received: by mail-wg0-f48.google.com with SMTP id k14so3791618wgh.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 06:04:29 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com>	<9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>	<5437BAB2.1040605@shiftmail.org> <20141010165902.36262e8e@natsu>
-In-Reply-To: <20141010165902.36262e8e@natsu>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <4AC5138B-075A-45C9-BEEE-94A38CE8FE3C@colorremedies.com>
+References: <CAAKzf7nLzh1ck7YK8z_E3fx1hK5zWLbKRh1NiG5oVpxuaGtO7Q@mail.gmail.com>
+	<CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
+	<4AC5138B-075A-45C9-BEEE-94A38CE8FE3C@colorremedies.com>
+Date: Fri, 10 Oct 2014 08:04:29 -0500
+Message-ID: <CAAKzf7kvmhavPqPQoXAtkxBtEDN=LBzOKnfB3p14agAGF3snaQ@mail.gmail.com>
+Subject: Re: Confusion with newly converted filesystem
+From: Tim Cuthbertson <ratcheer@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/10/2014 12:59, Roman Mamedov wrote:
-> On Fri, 10 Oct 2014 12:53:38 +0200
-> Bob Marley <bobmarley@shiftmail.org> wrote:
->
->> On 10/10/2014 03:58, Chris Murphy wrote:
->>>> * mount -o recovery
->>>> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
->>> I'm confused why it's not the default yet. Maybe it's continuing to evolve at a pace that suggests something could sneak in that makes things worse? It is almost an oxymoron in that I'm manually enabling an autorecovery
->>>
->>> If true, maybe the closest indication we'd get of btrfs stablity is the default enabling of autorecovery.
->> No way!
->> I wouldn't want a default like that.
->>
->> If you think at distributed transactions: suppose a sync was issued on
->> both sides of a distributed transaction, then power was lost on one
->> side
-> What distributed transactions? Btrfs is not a clustered filesystem[1], it does
-> not support and likely will never support being mounted from multiple hosts at
-> the same time.
->
-> [1]http://en.wikipedia.org/wiki/Clustered_file_system
->
+Thank you very much, Duncan and Chris. Especially to Duncan, for his
+detailed reply and further suggestions. I will try to follow your
+advice as best I can. I am old, but I'm still learning!
 
-This is not the only way to do a distributed transaction.
-Databases can be hosted on the filesystem, and those can do distributed 
-transations.
-Think of two bank accounts, one on btrfs fs1 here, and another bank 
-account on database on a whatever filesystem in another country. You 
-want to debit one account and credit the other one: the filesystems at 
-the two sides *must not rollback their state* !! (especially not 
-transparently without human intervention)
-
+Tim

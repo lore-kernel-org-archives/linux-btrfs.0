@@ -1,40 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42193 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750786AbaJJElo convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 00:41:44 -0400
-Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:61840 helo=[192.168.2.7])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XcS1Q-001XYi-1G
-	for linux-btrfs@vger.kernel.org; Thu, 09 Oct 2014 22:41:44 -0600
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:33838 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751732AbaJJHNg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Oct 2014 03:13:36 -0400
+Received: by mail-pa0-f48.google.com with SMTP id eu11so1203975pac.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 00:13:36 -0700 (PDT)
+Received: from localhost ([203.114.244.88])
+        by mx.google.com with ESMTPSA id ip3sm2451978pbc.58.2014.10.10.00.13.34
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 10 Oct 2014 00:13:35 -0700 (PDT)
+Date: Fri, 10 Oct 2014 15:13:31 +0800
+From: Eryu Guan <guaneryu@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: return failure if btrfs_dev_replace_finishing()
+ failed
+Message-ID: <20141010071331.GG13950@dhcp-13-216.nay.redhat.com>
+References: <1411640894-5160-1-git-send-email-guaneryu@gmail.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Confusion with newly converted filesystem
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
-Date: Fri, 10 Oct 2014 00:41:41 -0400
-Message-Id: <4AC5138B-075A-45C9-BEEE-94A38CE8FE3C@colorremedies.com>
-References: <CAAKzf7nLzh1ck7YK8z_E3fx1hK5zWLbKRh1NiG5oVpxuaGtO7Q@mail.gmail.com> <CAAKzf7=XxK0FXtSrMtFou-gZ9DDYJtuHFy4R5cdjQFjBm0urvg@mail.gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <1411640894-5160-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Oct 9, 2014, at 2:58 PM, Tim Cuthbertson <ratcheer@gmail.com> wrote:
-
-> Never mind. I have stumbled my way into a solution.
+On Thu, Sep 25, 2014 at 06:28:14PM +0800, Eryu Guan wrote:
+> device replace could fail due to another running scrub process, but this
+> failure doesn't get returned to userspace.
 > 
-> I ran "btrfs subv delete /ext2_saved". Then I ran "btrfs balance start
-> /". That relocated 15 of 15 chunks. Now fi show shows 2.03 GB used on
-> each device and fi df shows 1 GB of metadata total.
+> The following steps could reproduce this issue
 > 
-> Apparently, that saved ext4 subvolume was a real mess.
+> 	mkfs -t btrfs -f /dev/sdb1 /dev/sdb2
+> 	mount /dev/sdb1 /mnt/btrfs
+> 	while true; do
+> 		btrfs scrub start -B /mnt/btrfs >/dev/null 2>&1
+> 	done &
+> 	btrfs replace start -Bf /dev/sdb2 /dev/sdb3 /mnt/btrfs
+> 	# if this replace succeeded, do the following and repeat until
+> 	# you see this log in dmesg
+> 	# BTRFS: btrfs_scrub_dev(/dev/sdb2, 2, /dev/sdb3) failed -115
+> 	#btrfs replace start -Bf /dev/sdb3 /dev/sdb2 /mnt/btrfs
+> 
+> 	# once you see the error log in dmesg, check return value of
+> 	# replace
+> 	echo $?
+> 
+> Also only WARN_ON if the return code is not -EINPROGRESS.
+> 
+> Signed-off-by: Eryu Guan <guaneryu@gmail.com>
 
+Ping, any comments on this patch?
 
-Not a mess, it's just a side effect of the conversion while it's still reversible. It's kinda both ext3/4 and Btrfs at the same time after conversion. You can even still mount the snapshot as ext3/4. Once you're ready to commit to Btrfs and not use the ext rollback snapshot, deleting it and balancing completes the conversion. It's more of a metadata duplication via in-line migration.
-
-Chris Murphy
+Thanks,
+Eryu
+> ---
+>  fs/btrfs/dev-replace.c | 8 +++++---
+>  1 file changed, 5 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index eea26e1..44d32ab 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -418,9 +418,11 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+>  			      &dev_replace->scrub_progress, 0, 1);
+>  
+>  	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
+> -	WARN_ON(ret);
+> +	/* don't warn if EINPROGRESS, someone else might be running scrub */
+> +	if (ret != -EINPROGRESS)
+> +		WARN_ON(ret);
+>  
+> -	return 0;
+> +	return ret;
+>  
+>  leave:
+>  	dev_replace->srcdev = NULL;
+> @@ -538,7 +540,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  			btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
+>  		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+>  
+> -		return 0;
+> +		return scrub_ret;
+>  	}
+>  
+>  	printk_in_rcu(KERN_INFO
+> -- 
+> 1.8.3.1
+> 

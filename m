@@ -1,57 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from srv2.trombetti.net ([65.254.53.252]:1084 "EHLO
-	srv2.trombetti.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751395AbaJJKxl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 06:53:41 -0400
-Received: from localhost (localhost [127.0.0.1])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: SASL)
-	by srv2.trombetti.net (Postfix) with ESMTPSA id BF684313AB
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 07:06:28 -0400 (EDT)
-Message-ID: <5437BAB2.1040605@shiftmail.org>
-Date: Fri, 10 Oct 2014 12:53:38 +0200
-From: Bob Marley <bobmarley@shiftmail.org>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from rin.romanrm.net ([37.187.97.211]:56915 "EHLO rin.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754411AbaJJK7F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Oct 2014 06:59:05 -0400
+Date: Fri, 10 Oct 2014 16:59:02 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Bob Marley <bobmarley@shiftmail.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com> <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
-In-Reply-To: <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Message-ID: <20141010165902.36262e8e@natsu>
+In-Reply-To: <5437BAB2.1040605@shiftmail.org>
+References: <54358C77.2070808@redhat.com>
+	<9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
+	<5437BAB2.1040605@shiftmail.org>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/9waolaq=/LNtBVkM7o3m3ZU"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/10/2014 03:58, Chris Murphy wrote:
->
->> * mount -o recovery
->> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
-> I'm confused why it's not the default yet. Maybe it's continuing to evolve at a pace that suggests something could sneak in that makes things worse? It is almost an oxymoron in that I'm manually enabling an autorecovery
->
-> If true, maybe the closest indication we'd get of btrfs stablity is the default enabling of autorecovery.
+--Sig_/9waolaq=/LNtBVkM7o3m3ZU
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-No way!
-I wouldn't want a default like that.
+On Fri, 10 Oct 2014 12:53:38 +0200
+Bob Marley <bobmarley@shiftmail.org> wrote:
 
-If you think at distributed transactions: suppose a sync was issued on 
-both sides of a distributed transaction, then power was lost on one 
-side, than btrfs had corruption. When I remount it, definitely the worst 
-thing that can happen is that it auto-rolls-back to a previous 
-known-good state.
+> On 10/10/2014 03:58, Chris Murphy wrote:
+> >
+> >> * mount -o recovery
+> >> 	"Enable autorecovery attempts if a bad tree root is found at mount ti=
+me."
+> > I'm confused why it's not the default yet. Maybe it's continuing to evo=
+lve at a pace that suggests something could sneak in that makes things wors=
+e? It is almost an oxymoron in that I'm manually enabling an autorecovery
+> >
+> > If true, maybe the closest indication we'd get of btrfs stablity is the=
+ default enabling of autorecovery.
+>=20
+> No way!
+> I wouldn't want a default like that.
+>=20
+> If you think at distributed transactions: suppose a sync was issued on=20
+> both sides of a distributed transaction, then power was lost on one=20
+> side
 
-Now if I can express wishes:
+What distributed transactions? Btrfs is not a clustered filesystem[1], it d=
+oes
+not support and likely will never support being mounted from multiple hosts=
+ at
+the same time.
 
-I would like an option that spits out all the usable tree roots (or 
-what's the name, superblocks?) and not just the newest one which is 
-corrupt. And then another option that lets me mount *readonly* starting 
-from the tree root I specify. So I can check how much of the data is 
-still there. After I decide that such tree root is good, I need another 
-option that lets me mount with such tree root in readwrite mode, and 
-obviously eliminating all tree roots newer than that.
-Some time ago I read that mounting the filesystem with an earlier tree 
-root was possible, but only by manually erasing the disk regions in 
-which the newer superblocks are. This is crazy, it's too risky on too 
-many levels, and also as I wrote I want to check what data is available 
-on a certain tree root before mounting readwrite from that one.
+[1]http://en.wikipedia.org/wiki/Clustered_file_system
 
+--=20
+With respect,
+Roman
 
+--Sig_/9waolaq=/LNtBVkM7o3m3ZU
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlQ3u/YACgkQTLKSvz+PZwhqkgCdHfQscp1PsP9mZF3tUbQmIPXl
+olIAniRflu/nhNsaDp6hK5zzQRQcDGkI
+=yxbq
+-----END PGP SIGNATURE-----
+
+--Sig_/9waolaq=/LNtBVkM7o3m3ZU--

@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34723 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755112AbaJJU5n (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57173 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754888AbaJJU5o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 16:57:43 -0400
-Received: from pps.filterd (m0004003 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9AKsFoM012653
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 13:57:42 -0700
+	Fri, 10 Oct 2014 16:57:44 -0400
+Received: from pps.filterd (m0044008 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9AKuGjv009731
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 13:57:44 -0700
 Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1pxmbv8mwc-2
+	by mx0a-00082601.pphosted.com with ESMTP id 1pxnkg85gx-1
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 13:57:42 -0700
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 13:57:43 -0700
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 09/12] Btrfs-progs: add a dummy backref if our location is wrong
-Date: Fri, 10 Oct 2014 16:57:14 -0400
-Message-ID: <1412974637-31334-10-git-send-email-jbacik@fb.com>
+Subject: [PATCH 10/12] Btrfs-progs: deal with mismatch index between dir index and inode ref
+Date: Fri, 10 Oct 2014 16:57:15 -0400
+Message-ID: <1412974637-31334-11-git-send-email-jbacik@fb.com>
 In-Reply-To: <1412974637-31334-1-git-send-email-jbacik@fb.com>
 References: <1412974637-31334-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -23,42 +23,45 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If our location is bogus in our dir item we were just skipping the thing.
-However in this case we want to just delete the dir index, so create a dummy
-inode rec using BTRFS_MULTIPLE_OBJECTIDS and just add every backref we find to
-the list so we know to straight up delete all of these items.  Thanks,
+Sometimes we have a dir index and an inode ref that don't agree on the index.
+In this case just assume that the inode ref is the ultimate authority on the
+subject and delete the dir index.  This means we have to not reset index if we
+find a mismatched inode ref to make sure we delete the right dir index.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- cmds-check.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ cmds-check.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 8fdc542..ca890cc 100644
+index ca890cc..80fa244 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -551,6 +551,8 @@ static struct inode_backref *get_inode_backref(struct inode_record *rec,
- 	struct inode_backref *backref;
+@@ -608,9 +608,10 @@ static int add_inode_backref(struct cache_tree *inode_cache,
+ 			backref->errors |= REF_ERR_DUP_INODE_REF;
+ 		if (backref->found_dir_index && backref->index != index)
+ 			backref->errors |= REF_ERR_INDEX_UNMATCH;
++		else
++			backref->index = index;
  
- 	list_for_each_entry(backref, &rec->backrefs, list) {
-+		if (rec->ino == BTRFS_MULTIPLE_OBJECTIDS)
-+			break;
- 		if (backref->dir != dir || backref->namelen != namelen)
+ 		backref->ref_type = itemtype;
+-		backref->index = index;
+ 		backref->found_inode_ref = 1;
+ 	} else {
+ 		BUG_ON(1);
+@@ -1654,8 +1655,10 @@ static int repair_inode_backrefs(struct btrfs_root *root,
+ 		if (rec->ino == root_dirid && backref->index == 0)
  			continue;
- 		if (memcmp(name, backref->name, namelen))
-@@ -990,7 +992,11 @@ static int process_dir_item(struct btrfs_root *root,
- 					  namebuf, len, filetype,
- 					  key->type, error);
- 		} else {
--			fprintf(stderr, "warning line %d\n", __LINE__);
-+			fprintf(stderr, "invalid location in dir item %u\n",
-+				location.type);
-+			add_inode_backref(inode_cache, BTRFS_MULTIPLE_OBJECTIDS,
-+					  key->objectid, key->offset, namebuf,
-+					  len, filetype, key->type, error);
- 		}
  
- 		len = sizeof(*di) + name_len + data_len;
+-		if (delete && backref->found_dir_index &&
+-		    !backref->found_inode_ref) {
++		if (delete &&
++		    ((backref->found_dir_index && !backref->found_inode_ref) ||
++		     (backref->found_dir_index && backref->found_inode_ref &&
++		      backref->errors & REF_ERR_INDEX_UNMATCH))) {
+ 			ret = delete_dir_index(root, inode_cache, rec, backref);
+ 			if (ret)
+ 				break;
 -- 
 1.8.3.1
 

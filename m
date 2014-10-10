@@ -1,53 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26771 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751174AbaJJHmg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 03:42:36 -0400
-Message-ID: <54378F28.5090300@oracle.com>
-Date: Fri, 10 Oct 2014 15:47:52 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56961 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751324AbaJJIUY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Oct 2014 04:20:24 -0400
+Date: Fri, 10 Oct 2014 10:20:23 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eryu Guan <guaneryu@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: don't report internal dev replace
+ result if ioctl failed
+Message-ID: <20141010082023.GF22943@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1412761349-32721-1-git-send-email-guaneryu@gmail.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: force overwrite should wipe stale SB
-References: <20141001112606.GO11436@twin.jikos.cz> <1412205729-20938-1-git-send-email-anand.jain@oracle.com> <20141010073949.GE22943@twin.jikos.cz>
-In-Reply-To: <20141010073949.GE22943@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1412761349-32721-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Oct 08, 2014 at 05:42:28PM +0800, Eryu Guan wrote:
+> If BTRFS_IOC_DEV_REPLACE ioctl failed, there's no result returned to
+> fill args.result, it doesn't make sense to report this internal result
+> to user.
+> 
+> And the arg has been initialized with 0, the result is always 0, which
+> is BTRFS_IOCTL_DEV_REPLACE_REPLACE_NO_ERROR, and the resulting error
+> message looks confusing too:
+> 
+> ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt/btrfs": No such file or directory, no error
+> 
+> So just skip the internal dev replace result if the whole ioctl failed.
 
-
-  Thanks.
-Anand
-
-On 10/10/2014 03:39 PM, David Sterba wrote:
-> On Thu, Oct 02, 2014 at 07:22:09AM +0800, Anand Jain wrote:
->> (I am unable to reproduce the issue, tried to go back with progs versions
->> but still the same. So as of now this code remains untested, suggest to
->> wait till we have a reproducible test case).
->>
->> Here is a test case which says it all..
->>
->> mkfs.xfs -f $DEV
->> mkfs.btrfs -f $DEV
->> mount $DEV $MNT
->> mount: /dev/vdiskc: more filesystems detected. This should not happen,
->>         use -t <type> to explicitly specify the filesystem type or
->>         use wipefs(8) to clean up the device.
->>
->> mount: you must specify the filesystem type
->>
->> with this patch btrfs_prepare_device() also wipes old FS if any,
->> btrfs_prepare_device() is called after we have verified that
->> user has provided -f option.
->>
->> v2: to satisfy the backward compatibility issue, replace
->> blkid_do_wipe() with local wipe function.
->
-> Thank you, works for me, added to 3.17 queue.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+The 'no error' is confusing there, but I'm afraid we're losing some
+information if the secondary result is completely dropped. How about
+intializing the replace result with, eg., -1 and then print an empty
+string from replace_dev_result2string instead?

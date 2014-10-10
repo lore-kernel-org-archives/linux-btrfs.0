@@ -1,87 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:51018 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752115AbaJJPTA (ORCPT
+Received: from srv2.trombetti.net ([65.254.53.252]:1757 "EHLO
+	srv2.trombetti.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751594AbaJJRoG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 11:19:00 -0400
-Received: by mail-ig0-f174.google.com with SMTP id a13so3134475igq.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 08:18:59 -0700 (PDT)
+	Fri, 10 Oct 2014 13:44:06 -0400
+Received: from localhost (localhost [127.0.0.1])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: SASL)
+	by srv2.trombetti.net (Postfix) with ESMTPSA id CDA9B313AB
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 13:56:52 -0400 (EDT)
+Message-ID: <54381ADB.2030002@shiftmail.org>
+Date: Fri, 10 Oct 2014 19:43:55 +0200
+From: Bob Marley <bobmarley@shiftmail.org>
 MIME-Version: 1.0
-In-Reply-To: <5437BF23.6030000@shiftmail.org>
-References: <54358C77.2070808@redhat.com>
-	<9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
-	<5437BAB2.1040605@shiftmail.org>
-	<20141010165902.36262e8e@natsu>
-	<5437BF23.6030000@shiftmail.org>
-Date: Fri, 10 Oct 2014 09:18:58 -0600
-Message-ID: <CAE5mzvgGjM_LUS7GBk2Y6JAo2ci5vF3jiSsmNowObMPZBqykGQ@mail.gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: What is the vision for btrfs fs repair?
-From: cwillu <cwillu@cwillu.com>
-To: Bob Marley <bobmarley@shiftmail.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+References: <54358C77.2070808@redhat.com> <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com> <5437BAB2.1040605@shiftmail.org> <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
+In-Reply-To: <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If -o recovery is necessary, then you're either running into a btrfs
-bug, or your hardware is lying about when it has actually written
-things to disk.
-
-The first case isn't unheard of, although far less common than it used
-to be, and it should continue to improve with time.
-
-In the second case, you're potentially screwed regardless of the
-filesystem, without doing hacks like "wait a good long time before
-returning from fsync in the hopes that the disk might actually have
-gotten around to performing the write it said had already finished."
-
-On Fri, Oct 10, 2014 at 5:12 AM, Bob Marley <bobmarley@shiftmail.org> wrote:
-> On 10/10/2014 12:59, Roman Mamedov wrote:
->>
->> On Fri, 10 Oct 2014 12:53:38 +0200
->> Bob Marley <bobmarley@shiftmail.org> wrote:
->>
->>> On 10/10/2014 03:58, Chris Murphy wrote:
->>>>>
->>>>> * mount -o recovery
->>>>>         "Enable autorecovery attempts if a bad tree root is found at
->>>>> mount time."
->>>>
->>>> I'm confused why it's not the default yet. Maybe it's continuing to
->>>> evolve at a pace that suggests something could sneak in that makes things
->>>> worse? It is almost an oxymoron in that I'm manually enabling an
->>>> autorecovery
->>>>
->>>> If true, maybe the closest indication we'd get of btrfs stablity is the
->>>> default enabling of autorecovery.
->>>
->>> No way!
->>> I wouldn't want a default like that.
->>>
->>> If you think at distributed transactions: suppose a sync was issued on
->>> both sides of a distributed transaction, then power was lost on one
->>> side
->>
->> What distributed transactions? Btrfs is not a clustered filesystem[1], it
->> does
->> not support and likely will never support being mounted from multiple
->> hosts at
->> the same time.
->>
->> [1]http://en.wikipedia.org/wiki/Clustered_file_system
->>
+On 10/10/2014 16:37, Chris Murphy wrote:
+> The fail safe behavior is to treat the known good tree root as the default tree root, and bypass the bad tree root if it cannot be repaired, so that the volume can be mounted with default mount options (i.e. the ones in fstab). Otherwise it's a filesystem that isn't well suited for general purpose use as rootfs let alone for boot.
 >
-> This is not the only way to do a distributed transaction.
-> Databases can be hosted on the filesystem, and those can do distributed
-> transations.
-> Think of two bank accounts, one on btrfs fs1 here, and another bank account
-> on database on a whatever filesystem in another country. You want to debit
-> one account and credit the other one: the filesystems at the two sides *must
-> not rollback their state* !! (especially not transparently without human
-> intervention)
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+A filesystem which is suited for "general purpose" use is a filesystem 
+which honors fsync, and doesn't *ever* auto-roll-back without user 
+intervention.
+
+Anything different is not suited for database transactions at all. Any 
+paid service which has the users database on btrfs is going to be at 
+risk of losing payments, and probably without the company even knowing. 
+If btrfs goes this way I hope a big warning is written on the wiki and 
+on the manpages telling that this filesystem is totally unsuitable for 
+hosting databases performing transactions.
+
+At most I can suggest that a flag in the metadata be added to 
+allow/disallow auto-roll-back-on-error on such filesystem, so people can 
+decide the "tolerant" vs. "transaction-safe" mode at filesystem creation.
+

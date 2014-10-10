@@ -1,158 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:35792 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751264AbaJITTy (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 9 Oct 2014 15:19:54 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] Btrfs: add helper btrfs_fdatawrite_range
-Date: Thu,  9 Oct 2014 21:18:56 +0100
-Message-Id: <1412885936-16256-2-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1412885936-16256-1-git-send-email-fdmanana@suse.com>
-References: <1412885936-16256-1-git-send-email-fdmanana@suse.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57787 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751064AbaJJB65 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Oct 2014 21:58:57 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: What is the vision for btrfs fs repair?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <54358C77.2070808@redhat.com>
+Date: Thu, 9 Oct 2014 21:58:53 -0400
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com>
+References: <54358C77.2070808@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To avoid duplicating this double filemap_fdatawrite_range() call for
-inodes with async extents (compressed writes) so often.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h        |  1 +
- fs/btrfs/file.c         | 36 ++++++++++++++++++++++++++++--------
- fs/btrfs/inode.c        |  9 +--------
- fs/btrfs/ordered-data.c | 24 ++----------------------
- 4 files changed, 32 insertions(+), 38 deletions(-)
+On Oct 8, 2014, at 3:11 PM, Eric Sandeen <sandeen@redhat.com> wrote:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 089f6da..4e0ad8c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3896,6 +3896,7 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 		      struct page **pages, size_t num_pages,
- 		      loff_t pos, size_t write_bytes,
- 		      struct extent_state **cached);
-+int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
- 
- /* tree-defrag.c */
- int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 82c7229..2df1dce 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1697,10 +1697,7 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
- 	 * able to read what was just written.
- 	 */
- 	endbyte = pos + written_buffered - 1;
--	err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
--	if (!err && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			     &BTRFS_I(file_inode(file))->runtime_flags))
--		err = filemap_fdatawrite_range(file->f_mapping, pos, endbyte);
-+	err = btrfs_fdatawrite_range(file->f_mapping, pos, endbyte);
- 	if (err)
- 		goto out;
- 	err = filemap_fdatawait_range(file->f_mapping, pos, endbyte);
-@@ -1864,10 +1861,7 @@ static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
- 	int ret;
- 
- 	atomic_inc(&BTRFS_I(inode)->sync_writers);
--	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
--	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			     &BTRFS_I(inode)->runtime_flags))
--		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	ret = btrfs_fdatawrite_range(inode->i_mapping, start, end);
- 	atomic_dec(&BTRFS_I(inode)->sync_writers);
- 
- 	return ret;
-@@ -2820,3 +2814,29 @@ int btrfs_auto_defrag_init(void)
- 
- 	return 0;
- }
-+
-+int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end)
-+{
-+	int ret;
-+
-+	/*
-+	 * So with compression we will find and lock a dirty page and clear the
-+	 * first one as dirty, setup an async extent, and immediately return
-+	 * with the entire range locked but with nobody actually marked with
-+	 * writeback.  So we can't just filemap_write_and_wait_range() and
-+	 * expect it to work since it will just kick off a thread to do the
-+	 * actual work.  So we need to call filemap_fdatawrite_range _again_
-+	 * since it will wait on the page lock, which won't be unlocked until
-+	 * after the pages have been marked as writeback and so we're good to go
-+	 * from there.  We have to do this otherwise we'll miss the ordered
-+	 * extents and that results in badness.  Please Josef, do not think you
-+	 * know better and pull this out at some point in the future, it is
-+	 * right and you are wrong.
-+	 */
-+	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
-+			     &BTRFS_I(inode)->runtime_flags))
-+		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+
-+	return ret;
-+}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 752ff18..be955481 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7052,14 +7052,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			btrfs_put_ordered_extent(ordered);
- 		} else {
- 			/* Screw you mmap */
--			ret = filemap_fdatawrite_range(inode->i_mapping,
--						       lockstart,
--						       lockend);
--			if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--					     &BTRFS_I(inode)->runtime_flags))
--				ret = filemap_fdatawrite_range(inode->i_mapping,
--							       lockstart,
--							       lockend);
-+			ret = btrfs_fdatawrite_range(inode, lockstart, lockend);
- 			if (ret)
- 				break;
- 			ret = filemap_fdatawait_range(inode->i_mapping,
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index ac734ec..1401b1a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -725,30 +725,10 @@ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
- 	/* start IO across the range first to instantiate any delalloc
- 	 * extents
- 	 */
--	ret = filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
-+	ret = btrfs_fdatawrite_range(inode, start, orig_end);
- 	if (ret)
- 		return ret;
--	/*
--	 * So with compression we will find and lock a dirty page and clear the
--	 * first one as dirty, setup an async extent, and immediately return
--	 * with the entire range locked but with nobody actually marked with
--	 * writeback.  So we can't just filemap_write_and_wait_range() and
--	 * expect it to work since it will just kick off a thread to do the
--	 * actual work.  So we need to call filemap_fdatawrite_range _again_
--	 * since it will wait on the page lock, which won't be unlocked until
--	 * after the pages have been marked as writeback and so we're good to go
--	 * from there.  We have to do this otherwise we'll miss the ordered
--	 * extents and that results in badness.  Please Josef, do not think you
--	 * know better and pull this out at some point in the future, it is
--	 * right and you are wrong.
--	 */
--	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--		     &BTRFS_I(inode)->runtime_flags)) {
--		ret = filemap_fdatawrite_range(inode->i_mapping, start,
--					       orig_end);
--		if (ret)
--			return ret;
--	}
-+
- 	ret = filemap_fdatawait_range(inode->i_mapping, start, orig_end);
- 	if (ret)
- 		return ret;
--- 
-1.9.1
+> I was looking at Marc's post:
+> 
+> http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
+> 
+> and it feels like there isn't exactly a cohesive, overarching vision for
+> repair of a corrupted btrfs filesystem.
 
+It's definitely confusing compared to any other filesystem I've used on four different platforms. And that's when excluding scraping and the functions unique to any multiple device volume: scrubs, degraded mount.
+
+To be fair, mdadm doesn't even have a scrub command, it's done via 'echo check > /sys/block/mdX/md/sync_action'. And meanwhile LVM has pvck, vgck, and for scrubs it's lvchange --syncaction {check|repair}. These are also completely non-obvious.
+
+> * mount -o recovery
+> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
+
+I'm confused why it's not the default yet. Maybe it's continuing to evolve at a pace that suggests something could sneak in that makes things worse? It is almost an oxymoron in that I'm manually enabling an autorecovery
+
+ If true, maybe the closest indication we'd get of btrfs stablity is the default enabling of autorecovery.
+
+> * btrfs-zero-log
+> 	"remove the log tree if log tree is corrupt"
+> * btrfs rescue
+> 	"Recover a damaged btrfs filesystem"
+> 	chunk-recover
+> 	super-recover
+> 	How does this relate to btrfs check?
+> * btrfs check
+> 	"repair a btrfs filesystem"
+> 	--repair
+> 	--init-csum-tree
+> 	--init-extent-tree
+> 	How does this relate to btrfs rescue?
+
+These three translate into eight combinations of repairs, adding -o recovery there are 9 combinations. I think this is the main source of confusion, there are just too many options, but also it's completely non-obvious which one to use in which situation.
+
+My expectation is that eventually these get consolidated into just check and check --repair. As the repair code matures, it'd go into kernel autorecovery code. That's a guess on my part, but it's consistent with design goals.
+
+
+> It feels like recovery tools have been badly splintered, and if there's an
+> overarching design or vision for btrfs fs repair, I can't tell what it is.
+> Can anyone help me?
+
+I suspect it's unintended splintering, and is an artifact that will go away. I'd rather the convoluted, fractured nature of repair go away before the scary experimental warnings do.
+
+
+Chris Murphy

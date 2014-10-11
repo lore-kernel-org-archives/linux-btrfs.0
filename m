@@ -1,61 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49581 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751983AbaJKLe2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Oct 2014 07:34:28 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XcuwM-0008EH-3O
-	for linux-btrfs@vger.kernel.org; Sat, 11 Oct 2014 13:34:26 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Oct 2014 13:34:26 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Oct 2014 13:34:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS root filesystem and large discrepancy between du (73Gb
- used) and df (125 Gb used)?
-Date: Sat, 11 Oct 2014 11:34:14 +0000 (UTC)
-Message-ID: <pan$a0cab$22b4ec04$54b04b41$fb188d3c@cox.net>
-References: <CAMnnoUJawjQM48AiE_WhvJt9QMy=b+MacOJ4wUcrRvDmH3jOZA@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-lb0-f173.google.com ([209.85.217.173]:60078 "EHLO
+	mail-lb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752302AbaJKPLL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 Oct 2014 11:11:11 -0400
+Received: by mail-lb0-f173.google.com with SMTP id 10so4567549lbg.32
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Oct 2014 08:11:10 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20141011085216.GA29666@localhost.localdomain>
+References: <CAG+QAKVPcJPVL-mRsnG0m1NQCRrwaUbYDqKXBCjOnH_5A0ifHg@mail.gmail.com>
+	<20141007020538.GA3187@localhost.localdomain>
+	<54334D5E.9000300@shroop.net>
+	<20141008142030.GA13823@localhost.localdomain>
+	<543562C6.3030604@shroop.net>
+	<20141009071337.GA13470@localhost.localdomain>
+	<5436BE9B.90300@shroop.net>
+	<20141011085216.GA29666@localhost.localdomain>
+Date: Sat, 11 Oct 2014 08:11:10 -0700
+Message-ID: <CAG+QAKVJNojVW-tZ61_J9Gff9hK_xkVViX8dzp65waiovf_JRQ@mail.gmail.com>
+Subject: Re: Two uncorrectable errors across RAID1 at same logical block?
+From: Rich Rauenzahn <rrauenza@gmail.com>
+To: bo.li.liu@oracle.com
+Cc: Rich Rauenzahn <rich@shroop.net>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Victor Hooi posted on Sat, 11 Oct 2014 22:07:12 +1100 as excerpted:
+$ sudo ./btrfs-debug-tree  /dev/sdf3 | grep 58464632832
+                namelen 11 datalen 0 name: 58464632832
+                namelen 11 datalen 0 name: 58464632832
+                inode ref index 266598 namelen 11 name: 58464632832
 
-> I have a Ubuntu 14.04 Server host using BTRFS that seems to show large
-> discrepancies between the output of du (73 GB used) and df (125 GB
-> used).
+Is that a real inode number? I think it isn't ... Wait -- I think I'm
+picking a file in /tmp with that name, which is a block I dumped.
+Renamed it.
 
-A sampling from the FAQ:
+$ sudo ./btrfs-debug-tree  /dev/sdf3 | grep 58464632832
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
+Now it returns nothing...
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Aaargh.21_My_filesystem_is_full.2C_and_I.27ve_put_almost_nothing_into_it.21
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Why_is_free_space_so_complicated.3F
-
-https://btrfs.wiki.kernel.org/index.php/FAQ#Why_is_there_so_much_space_overhead.3F
-
-Basically, use btrfs filesystem show and btrfs filesystem df on btrfs.
-You may also wish to use the compress mount-option, and if you're
-using btrfs snapshotting, consider regularly thinning out the
-old snapshots.
-
-Additionally, be aware that snapshot-aware defrag is disabled
-ATM as it wasn't scaling well, so if you're
-using snapshots, anything you defrag will take up more room
-as only the snapshot you point defrag at is defragged, while
-the other snapshots are still pointing to the old version and
-won't free that space until the snapshots are removed.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Sat, Oct 11, 2014 at 1:52 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Thu, Oct 09, 2014 at 09:58:03AM -0700, Rich Rauenzahn wrote:
+>> On 10/9/2014 12:13 AM, Liu Bo wrote:
+>> >sudo ./btrfs inspect-internal logical-resolve -v 58464632832  /
+>>
+>> $ sudo ./btrfs inspect-internal logical-resolve -v 58464632832  /
+>> ioctl ret=0, total_size=4096, bytes_left=4080, bytes_missing=0,
+>> cnt=0, missed=0
+>
+> Hi Rich,
+>
+> So cnt=0 is the reason that we got nothing output, however,
+> to be honest, I don't know exactly why 'cnt' is 0, perhaps it's due to an old
+> version btrfs, as the 'btrfs inspect-internal' command depends on ioctl which
+> may have bugs in old btrfs.
+>
+>>
+>> I also tried -P and -s 100000000 ....
+>>
+>> Also did this:
+>>
+>> $ sudo ./btrfs-map-logical  -l 58464632832   -o /tmp/58464632832 /dev/sdf3
+>> mirror 1 logical 58464632832 physical 1536393216 device /dev/sdg3
+>> mirror 2 logical 58464632832 physical 58464632832 device /dev/sdf3
+>>
+>> And looked at the 4k block.  strings doesn't show anything useful: +V0T"
+>> File doesn't recognize it as anything particular.
+>>
+>> Weird.
+>
+> One ultimate solution is to use 'btrfs-debug-tree' to dump the human readable
+> metadata information and grep for 58464632832 to read inode info. ,
+> but this may cost time depending on the size of your patition.
+>
+> thanks,
+> -liubo
+>
+>>
+>> I have one other clue which I think is irrelevant.  I had another
+>> error on a different drive/different fs and it turned out to be the
+>> vmem file for a virtual machine under vmware workstation.  I deleted
+>> the file since it was just the memory image and the error went away.
+>> It was easy to map the bad block to the file from dmesg and the
+>> inode.   I may have also created a vm at some point on this drive
+>> we're looking at now and then moved it.  So I think that information
+>> is not relevant... but maybe you've seen this before.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

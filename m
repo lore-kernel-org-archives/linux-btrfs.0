@@ -1,59 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:24133 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751672AbaJJWFY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 18:05:24 -0400
-Message-ID: <5438581D.5060102@redhat.com>
-Date: Fri, 10 Oct 2014 17:05:17 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-pd0-f174.google.com ([209.85.192.174]:45521 "EHLO
+	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751171AbaJKGpg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 Oct 2014 02:45:36 -0400
+Received: by mail-pd0-f174.google.com with SMTP id y13so2807129pdi.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Oct 2014 23:45:35 -0700 (PDT)
+Date: Sat, 11 Oct 2014 14:45:29 +0800
+From: Eryu Guan <guaneryu@gmail.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: return failure if btrfs_dev_replace_finishing()
+ failed
+Message-ID: <20141011064529.GI13950@dhcp-13-216.nay.redhat.com>
+References: <1411640894-5160-1-git-send-email-guaneryu@gmail.com>
+ <20141010071331.GG13950@dhcp-13-216.nay.redhat.com>
+ <543797BA.3090103@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Bob Marley <bobmarley@shiftmail.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com> <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com> <5437BAB2.1040605@shiftmail.org> <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com> <54381ADB.2030002@shiftmail.org> <543834FC.9050409@gmail.com>
-In-Reply-To: <543834FC.9050409@gmail.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <543797BA.3090103@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/10/14 2:35 PM, Austin S Hemmelgarn wrote:
-> On 2014-10-10 13:43, Bob Marley wrote:
->> On 10/10/2014 16:37, Chris Murphy wrote:
->>> The fail safe behavior is to treat the known good tree root as
->>> the default tree root, and bypass the bad tree root if it cannot
->>> be repaired, so that the volume can be mounted with default mount
->>> options (i.e. the ones in fstab). Otherwise it's a filesystem
->>> that isn't well suited for general purpose use as rootfs let
->>> alone for boot.
->>> 
->> 
->> A filesystem which is suited for "general purpose" use is a
->> filesystem which honors fsync, and doesn't *ever* auto-roll-back
->> without user intervention.
->> 
->> Anything different is not suited for database transactions at all.
->> Any paid service which has the users database on btrfs is going to
->> be at risk of losing payments, and probably without the company
->> even knowing. If btrfs goes this way I hope a big warning is
->> written on the wiki and on the manpages telling that this
->> filesystem is totally unsuitable for hosting databases performing
->> transactions.
-> If they need reliability, they should have some form of redundancy
-> in-place and/or run the database directly on the block device;
-> because even ext4, XFS, and pretty much every other filesystem can
-> lose data sometimes,
+On Fri, Oct 10, 2014 at 04:24:26PM +0800, Miao Xie wrote:
+> On Fri, 10 Oct 2014 15:13:31 +0800, Eryu Guan wrote:
+> > On Thu, Sep 25, 2014 at 06:28:14PM +0800, Eryu Guan wrote:
+> >> device replace could fail due to another running scrub process, but this
+> >> failure doesn't get returned to userspace.
+> >>
+> >> The following steps could reproduce this issue
+> >>
+> >> 	mkfs -t btrfs -f /dev/sdb1 /dev/sdb2
+> >> 	mount /dev/sdb1 /mnt/btrfs
+> >> 	while true; do
+> >> 		btrfs scrub start -B /mnt/btrfs >/dev/null 2>&1
+> >> 	done &
+> >> 	btrfs replace start -Bf /dev/sdb2 /dev/sdb3 /mnt/btrfs
+> >> 	# if this replace succeeded, do the following and repeat until
+> >> 	# you see this log in dmesg
+> >> 	# BTRFS: btrfs_scrub_dev(/dev/sdb2, 2, /dev/sdb3) failed -115
+> >> 	#btrfs replace start -Bf /dev/sdb3 /dev/sdb2 /mnt/btrfs
+> >>
+> >> 	# once you see the error log in dmesg, check return value of
+> >> 	# replace
+> >> 	echo $?
+> >>
+> >> Also only WARN_ON if the return code is not -EINPROGRESS.
+> >>
+> >> Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+> > 
+> > Ping, any comments on this patch?
+> > 
+> > Thanks,
+> > Eryu
+> >> ---
+> >>  fs/btrfs/dev-replace.c | 8 +++++---
+> >>  1 file changed, 5 insertions(+), 3 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> >> index eea26e1..44d32ab 100644
+> >> --- a/fs/btrfs/dev-replace.c
+> >> +++ b/fs/btrfs/dev-replace.c
+> >> @@ -418,9 +418,11 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+> >>  			      &dev_replace->scrub_progress, 0, 1);
+> >>  
+> >>  	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
+> >> -	WARN_ON(ret);
+> >> +	/* don't warn if EINPROGRESS, someone else might be running scrub */
+> >> +	if (ret != -EINPROGRESS)
+> >> +		WARN_ON(ret);
+> 
+> picky comment
+> 
+> I prefer WARN_ON(ret && ret != -EINPROGRESS).
 
-Not if i.e. fsync returns.  If the data is gone later, it's a hardware
-problem, or occasionally a bug - bugs that are usually found & fixed
-pretty quickly.
+Yes, this is simpler :)
+> 
+> >>  
+> >> -	return 0;
+> >> +	return ret;
+> 
+> here we will return -EINPROGRESS if scrub is running, I think it better that
+> we assign some special number to args->result, and then return 0, just like
+> the case the device replace is running.
 
-> the difference being that those tend to give
-> worse results when hardware is misbehaving than BTRFS does, because
-> BTRFS usually has a old copy of whatever data structure gets
-> corrupted to fall back on.
+Seems that requires a new result type, say,
 
-I'm curious, is that based on conjecture or real-world testing?
+#define BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS          3
 
--Eric
+and assign this result to args->result if btrfs_scrub_dev() returned -EINPROGRESS
 
+But I don't think returning 0 unconditionally is a good idea, since
+btrfs_dev_replace_finishing() could return other errors too, that way
+these errors will be lost, and userspace still won't catch the
+errors ($? is 0)
+
+What I'm thinking about is something like:
+
+	ret = btrfs_scrub_dev(...);
+	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
+	if (ret == -EINPROGRESS) {
+		args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
+		ret = 0;
+	} else {
+		WARN_ON(ret);
+	}
+
+	return ret;
+
+What do you think? If no objection I'll work on v2.
+
+Thanks for your review!
+
+Eryu
+> 
+> Thanks
+> Miao
+> 
+> >>  
+> >>  leave:
+> >>  	dev_replace->srcdev = NULL;
+> >> @@ -538,7 +540,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+> >>  			btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
+> >>  		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+> >>  
+> >> -		return 0;
+> >> +		return scrub_ret;
+> >>  	}
+> >>  
+> >>  	printk_in_rcu(KERN_INFO
+> >> -- 
+> >> 1.8.3.1
+> >>
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> 

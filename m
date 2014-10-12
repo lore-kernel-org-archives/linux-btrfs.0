@@ -1,266 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3684 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750810AbaJKAl7 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42000 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750998AbaJLKFW convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Oct 2014 20:41:59 -0400
-Message-ID: <54387CD0.7050103@fb.com>
-Date: Fri, 10 Oct 2014 20:41:52 -0400
-From: Chris Mason <clm@fb.com>
+	Sun, 12 Oct 2014 06:05:22 -0400
+Received: from merkaba.localnet (ppp-212-114-182-233.dynamic.mnet-online.de [212.114.182.233])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 905B911C
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 11:56:51 +0200 (CEST)
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Linux Btrfs Mailing List <linux-btrfs@vger.kernel.org>
+Subject: [REGRESSION?] Used+avail gives more than size of device
+Date: Sun, 12 Oct 2014 11:56:51 +0200
+Message-ID: <10721429.ggFParDapp@merkaba>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi!
 
-Hi Linus,
+On 3.17, i.e. since the size reporting changes, I get:
 
-Please pull my for-linus branch:
+merkaba:~> LANG=C df -hT -t btrfs
+Filesystem              Type   Size  Used Avail Use% Mounted on
+/dev/mapper/sata-debian btrfs   30G   19G   21G  48% /
+/dev/mapper/sata-debian btrfs   30G   19G   21G  48% /mnt/debian-zeit
+/dev/mapper/msata-daten btrfs  200G  185G   15G  93% /daten
+/dev/mapper/msata-home  btrfs  160G  135G   48G  75% /mnt/home-zeit
+/dev/mapper/msata-home  btrfs  160G  135G   48G  75% /home
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+I wonder about used and avail not adding up to total size of filesystem:
+19+21 = 40 GiB instead of 30 GiB for / and 135+48 = 183 GiB for /home.
+Only /daten seems to be correct.
 
-This is based on 3.17-rc5 because that's when I forked off for -next,
-but I've been testing it against linux-next or 3.17 for a while now.
+/ and /home are RAID 1 spanning two SSDs. /daten is single.
 
-The largest set of changes here come from Miao Xie.  He's cleaning up
-and improving read recovery/repair for raid, and has a number of related
-fixes.
+I wondered about compression taken into account? They use compress=lzo.
 
-I've merged another set of fsync fixes from Filipe, and he's also
-improved the way we handle metadata write errors to make sure we force
-the FS readonly if things go wrong.
+While /daten has also compress=lzo, it contains mostly incompressible data
+like jpeg images and mp3, ogg vorbis and probably some flac music files as
+well one or the other mp4 video file, compressed media data that is.
 
-Otherwise we have a collection of fixes and cleanups.  Dave Sterba gets
-a cookie for removing the most lines (thanks Dave).
+Any explaination for the discrepancy, can it just be due to the compression?
 
-Miao Xie (36) commits (+1193/-537):
-    Btrfs: cleanup similar code of the buffered data data check and dio read data check (+47/-55)
-    Btrfs: cleanup double assignment of device->bytes_used when device replace finishes (+0/-1)
-    Btrfs: cleanup the read failure record after write or when the inode is freeing (+41/-0)
-    Btrfs: stop mounting the fs if the non-ENOENT errors happen when opening seed fs (+1/-1)
-    Btrfs: update the comment of total_bytes and disk_total_bytes of btrfs_devie (+2/-2)
-    Btrfs: make the device lock and its protected data in the same cacheline (+12/-13)
-    Btrfs: fix unprotected device list access when getting the fs information (+7/-1)
-    Btrfs: fix use-after-free problem of the device during device replace (+8/-1)
-    Btrfs: Fix wrong free_chunk_space assignment during removing a device (+0/-5)
-    Btrfs: Cleanup unused variant and argument of IO failure handlers (+10/-16)
-    Btrfs: cleanup unused latest_devid and latest_trans in fs_devices (+11/-34)
-    Btrfs: Fix the problem that the dirty flag of dev stats is cleared (+20/-6)
-    Btrfs: load checksum data once when submitting a direct read io (+35/-34)
-    Btrfs: fix unprotected device list access when cloning fs devices (+3/-0)
-    Btrfs: fix wrong generation check of super block on a seed device (+5/-1)
-    Btrfs: fix missing error handler if submiting re-read bio fails (+5/-0)
-    Btrfs: Set real mirror number for read operation on RAID0/5/6 (+5/-0)
-    Btrfs: fix unprotected device's variants on 32bits machine (+124/-29)
-    Btrfs: modify clean_io_failure and make it suit direct io (+19/-21)
-    Btrfs: make the logic of source device removing more clear (+8/-14)
-    Btrfs: update free_chunk_space during allocting a new chunk (+5/-5)
-    Btrfs: implement repair function when direct read fails (+281/-29)
-    Btrfs: modify repair_io_failure and make it suit direct io (+7/-4)
-    Btrfs: modify rw_devices counter under chunk_mutex context (+2/-2)
-    Btrfs: move the missing device to its own fs device list (+52/-26)
-    Btrfs: split bio_readpage_error into several functions (+123/-64)
-    Btrfs: fix unprotected assignment of the target device (+28/-28)
-    Btrfs: fix wrong device bytes_used in the super block (+37/-1)
-    Btrfs: fix wrong disk size when writing super blocks (+83/-5)
-    Btrfs: cleanup unused num_can_discard in fs_devices (+2/-15)
-    Btrfs: fix unprotected system chunk array insertion (+6/-1)
-    Btrfs: fix writing data into the seed filesystem (+36/-16)
-    Btrfs: fix unprotected device->bytes_used update (+3/-1)
-    Btrfs: do file data check by sub-bio's self (+87/-29)
-    Btrfs: fix wrong fsid check of scrub (+13/-5)
-    Btrfs: Fix misuse of chunk mutex (+65/-72)
+/home has large maildir and lots of source files… which I expect to compress
+well. Also a debian installation may contain quite an amount of compressible
+data. But still… the ratio seems a bit off. As it means it would have been
+able to store 19 GiB of data within 9 GiB of actual disk space for / which
+would be a quite high compression ratio for LZO.
 
-David Sterba (32) commits (+507/-584):
-    btrfs: remove unused parameter blocksize from btrfs_find_tree_block (+9/-12)
-    btrfs: remove unlikely from data-dependent branches and slow paths (+10/-10)
-    btrfs: remove obsolete comment in btrfs_clean_one_deleted_snapshot (+1/-4)
-    btrfs: drop constant param from btrfs_release_extent_buffer_page (+6/-9)
-    btrfs: remove blocksize from btrfs_alloc_free_block and rename (+21/-27)
-    btrfs: clenaup: don't call btrfs_release_path before free_path (+0/-1)
-    btrfs: remove stale define after removing ordered operations (+0/-7)
-    btrfs: hide typecast to definition of BTRFS_SEND_TRANS_STUB (+4/-5)
-    btrfs: remove unused parameter from readahead_tree_block (+8/-16)
-    btrfs: remove parameter blocksize from read_tree_block (+18/-37)
-    btrfs: use DIV_ROUND_UP instead of open-coded variants (+22/-32)
-    btrfs: remove unused members from struct scrub_warning (+2/-15)
-    btrfs: remove unused variable from btrfs_parse_options (+1/-3)
-    btrfs: inline code of reada_tree_block and remove it (+2/-10)
-    btrfs: wake up transaction thread from SYNC_FS ioctl (+6/-0)
-    btrfs: new define for the inline extent data start (+9/-10)
-    btrfs: defrag, use unsigned type for extent thresh (+4/-4)
-    btrfs: move checks for DUMMY_ROOT into a helper (+23/-21)
-    btrfs: use nodesize everywhere, kill leafsize (+89/-141)
-    btrfs: cleanup ino cache members of btrfs_root (+52/-52)
-    btrfs: use enum for wq endio metadata type (+14/-18)
-    btrfs: return void from readahead_tree_block (+4/-8)
-    btrfs: kill the key type accessor helpers (+60/-60)
-    btrfs: use slab for end_io_wq structures (+38/-10)
-    btrfs: let merge_reloc_roots return void (+1/-2)
-    btrfs: fix error labels in init_btrfs_fs (+2/-2)
-    btrfs: kill extent_buffer_page helper (+26/-35)
-    btrfs: remove unlikely from NULL checks (+6/-6)
-    btrfs: remove unused extent state bits (+0/-4)
-    btrfs: clean away stripe_align helper (+1/-10)
-    btrfs: make close_ctree return void (+3/-11)
-    btrfs: add more superblock checks (+65/-2)
 
-Filipe Manana (15) commits (+1071/-183):
-    Btrfs: add missing compression property remove in btrfs_ioctl_setflags (+3/-0)
-    Btrfs: be aware of btree inode write errors to avoid fs corruption (+114/-12)
-    Btrfs: add missing end_page_writeback on submit_extent_page failure (+1/-0)
-    Btrfs: fix data corruption after fast fsync and writeback error (+166/-102)
-    Btrfs: improve free space cache management and space allocation (+653/-1)
-    Btrfs: fix fsync race leading to invalid data after log replay (+63/-15)
-    Btrfs: send, don't delay dir move if there's a new parent inode (+1/-1)
-    Btrfs: avoid unnecessary switch of path locks to blocking mode (+1/-2)
-    Btrfs: make btrfs_search_forward return with nodes unlocked (+7/-15)
-    Btrfs: unlock nodes earlier when inserting items in a btree (+6/-6)
-    Btrfs: send, lower mem requirements for processing xattrs (+32/-8)
-    Btrfs: set error return value in btrfs_get_blocks_direct (+3/-1)
-    Btrfs: shrink further sizeof(struct extent_buffer) (+0/-2)
-    Btrfs: fix directory recovery from fsync log (+1/-0)
-    Btrfs: reduce size of struct extent_state (+20/-18)
+merkaba:~> mount | grep btrfs
+/dev/mapper/sata-debian on / type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
+/dev/mapper/sata-debian on /mnt/debian-zeit type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
+/dev/mapper/msata-daten on /daten type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
+/dev/mapper/msata-home on /mnt/home-zeit type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
+/dev/mapper/msata-home on /home type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
 
-Anand Jain (14) commits (+80/-38):
-    btrfs: rw_devices shouldn't be incremented for seed fs in btrfs_rm_dev_replace_srcdev() (+2/-1)
-    btrfs: replace seed device followed by unmount causes kernel WARNING (+7/-1)
-    btrfs: preparatory to make btrfs_rm_dev_replace_srcdev() seed aware (+9/-5)
-    btrfs: update sprout seed pointer when seed fs is relinquished (+21/-0)
-    btrfs: sysfs label interface should check for read only FS (+3/-0)
-    btrfs: fix memory leak when there is no more seed device (+2/-0)
-    btrfs: code optimize: BTRFS_ATTR could handle the mode (+14/-11)
-    btrfs: code optimize: BTRFS_ATTR_RW could set the mode (+5/-4)
-    btrfs: fix rw_devices miss match after seed replace (+2/-0)
-    btrfs: use BTRFS_ATTR instead of btrfs_no_store() (+3/-10)
-    btrfs: rename total_bytes to avoid confusion (+5/-5)
-    btrfs: device delete must be sysloged (+3/-0)
-    btrfs: fix typo in the log message (+1/-1)
-    btrfs: device add must be sysloged (+3/-0)
 
-Liu Bo (8) commits (+48/-34):
-    Btrfs: show real function name in btrfs workqueue tracepoint (+1/-1)
-    Btrfs: add work_struct information for workqueue tracepoint (+6/-3)
-    Btrfs: cleanup the same name in end_bio_extent_readpage (+4/-4)
-    Btrfs: fix crash of btrfs_release_extent_buffer_page (+1/-0)
-    Btrfs: fix wrong parse of extent map's tracepoint (+7/-6)
-    Btrfs: cleanup for btrfs workqueue tracepoints (+0/-7)
-    Btrfs: fix loop writing of async reclaim (+14/-3)
-    Btrfs: fix up bounds checking in lseek (+15/-10)
 
-Wang Shilong (7) commits (+80/-22):
-    Btrfs: clear compress-force when remounting with compress option (+7/-0)
-    Btrfs: print btrfs specific info for some fatal error cases (+7/-7)
-    Btrfs: fall into nocompression codes quickly if possible (+1/-4)
-    Btrfs: fix wrong skipping compression for an inode (+20/-5)
-    Btrfs: make defragment work with nodatacow option (+42/-3)
-    Btrfs: fix off-by-one in cow_file_range_inline() (+2/-2)
-    Btrfs: fix wrong max inline data size limit (+1/-1)
 
-Josef Bacik (6) commits (+414/-117):
-    Btrfs: fix build_backref_tree issue with multiple shared blocks (+4/-1)
-    Btrfs: make fiemap not blow when you have lots of snapshots (+116/-36)
-    Btrfs: cleanup error handling in build_backref_tree (+59/-29)
-    Btrfs: remove empty block groups automatically (+226/-49)
-    Btrfs: don't do async reclaim during log replay (+7/-1)
-    Btrfs: try not to ENOSPC on log replay (+2/-1)
+merkaba:~> btrfs fi sh
+Label: 'debian'  uuid: […]
+        Total devices 2 FS bytes used 18.47GiB
+        devid    1 size 30.00GiB used 30.00GiB path /dev/mapper/sata-debian
+        devid    2 size 30.00GiB used 30.00GiB path /dev/mapper/msata-debian
 
-Fabian Frederick (5) commits (+9/-12):
-    Btrfs: remove redundant btrfs_verify_qgroup_counts declaration. (+0/-2)
-    Btrfs: fix compilation errors under DEBUG (+2/-2)
-    btrfs: fix shadow warning on cmp (+4/-4)
-    btrfs: use PTR_ERR_OR_ZERO (+1/-3)
-    Btrfs: fix sparse warning (+2/-1)
+Label: 'daten'  uuid: […]
+        Total devices 1 FS bytes used 184.82GiB
+        devid    1 size 200.00GiB used 188.02GiB path /dev/mapper/msata-daten
 
-Qu Wenruo (5) commits (+159/-29):
-    btrfs: Make btrfs handle security mount options internally to avoid losing security label. (+97/-5)
-    btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map (+57/-22)
-    btrfs: Fix the wrong condition judgment about subset extent map (+1/-1)
-    btrfs: Fix compile error when CONFIG_SECURITY is not set. (+2/-0)
-    btrfs: Fix a deadlock in btrfs_dev_replace_finishing() (+2/-1)
+Label: 'home'  uuid: […]
+        Total devices 2 FS bytes used 134.39GiB
+        devid    1 size 160.00GiB used 160.00GiB path /dev/mapper/msata-home
+        devid    2 size 160.00GiB used 160.00GiB path /dev/mapper/sata-home
 
-Mark Fasheh (2) commits (+69/-2):
-    btrfs: don't go readonly on existing qgroup items (+8/-2)
-    btrfs: add trace for qgroup accounting (+61/-0)
 
-Satoru Takeuchi (2) commits (+14/-5):
-    btrfs: use IS_ALIGNED() for assertion in btrfs_lookup_csums_range() for simplicity (+2/-2)
-    btrfs: label should not contain return char (+12/-3)
+merkaba:~> btrfs fi df / 
+Data, RAID1: total=27.99GiB, used=17.84GiB
+System, RAID1: total=8.00MiB, used=16.00KiB
+Metadata, RAID1: total=2.00GiB, used=645.88MiB
+unknown, single: total=224.00MiB, used=0.00
+merkaba:~> btrfs fi df /home
+Data, RAID1: total=154.97GiB, used=131.46GiB
+System, RAID1: total=32.00MiB, used=48.00KiB
+Metadata, RAID1: total=5.00GiB, used=2.93GiB
+unknown, single: total=512.00MiB, used=0.00
+merkaba:~> btrfs fi df /daten
+Data, single: total=187.01GiB, used=184.53GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=1.01GiB, used=292.31MiB
+unknown, single: total=112.00MiB, used=0.00
 
-HIMANGI SARAOGI (1) commits (+2/-2):
-    Btrfs: use BUG_ON
 
-Sage Weil (1) commits (+9/-3):
-    Btrfs: fix race in WAIT_SYNC ioctl
+merkaba:~> LANG=C strace df -hT -t btrfs
+execve("/bin/df", ["df", "-hT", "-t", "btrfs"], [/* 55 vars */]) = 0
+brk(0)                                  = 0x13c2000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e7de000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=250673, ...}) = 0
+mmap(NULL, 250673, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f795e7a0000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0P\34\2\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=1725888, ...}) = 0
+mmap(NULL, 3832352, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f795e218000
+mprotect(0x7f795e3b7000, 2093056, PROT_NONE) = 0
+mmap(0x7f795e5b6000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x19e000) = 0x7f795e5b6000
+mmap(0x7f795e5bc000, 14880, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f795e5bc000
+close(3)                                = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e79f000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e79e000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e79d000
+arch_prctl(ARCH_SET_FS, 0x7f795e79e700) = 0
+mprotect(0x7f795e5b6000, 16384, PROT_READ) = 0
+mprotect(0x616000, 4096, PROT_READ)     = 0
+mprotect(0x7f795e7e0000, 4096, PROT_READ) = 0
+munmap(0x7f795e7a0000, 250673)          = 0
+brk(0)                                  = 0x13c2000
+brk(0x13e3000)                          = 0x13e3000
+open("/etc/mtab", O_RDONLY|O_CLOEXEC)   = 3
+fstat(3, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e7dd000
+read(3, "rootfs / rootfs rw 0 0\nsysfs /sy"..., 1024) = 1024
+read(3, "0 0\ncgroup /sys/fs/cgroup/memory"..., 1024) = 1024
+read(3, "mapper/sata-debian /mnt/debian-z"..., 1024) = 496
+read(3, "", 1024)                       = 0
+close(3)                                = 0
+munmap(0x7f795e7dd000, 4096)            = 0
+stat("/", {st_mode=S_IFDIR|0755, st_size=306, ...}) = 0
+stat("/sys", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/proc", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/dev", {st_mode=S_IFDIR|0755, st_size=3820, ...}) = 0
+stat("/dev/pts", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/run", {st_mode=S_IFDIR|0755, st_size=1140, ...}) = 0
+stat("/", {st_mode=S_IFDIR|0755, st_size=306, ...}) = 0
+stat("/sys/kernel/security", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/dev/shm", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=40, ...}) = 0
+stat("/run/lock", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=120, ...}) = 0
+stat("/sys/fs/cgroup", {st_mode=S_IFDIR|0755, st_size=320, ...}) = 0
+stat("/sys/fs/cgroup/systemd", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/pstore", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/cpuset", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/cpu,cpuacct", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/memory", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/devices", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/freezer", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/net_cls,net_prio", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/blkio", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/perf_event", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/sys/fs/cgroup/hugetlb", {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+stat("/proc/sys/fs/binfmt_misc", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/dev/hugepages", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/dev/mqueue", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=40, ...}) = 0
+stat("/sys/kernel/debug", {st_mode=S_IFDIR|0700, st_size=0, ...}) = 0
+stat("/sys/fs/fuse/connections", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/tmp", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=760, ...}) = 0
+stat("/boot", {st_mode=S_IFDIR|0755, st_size=3072, ...}) = 0
+stat("/mnt/debian-zeit", {st_mode=S_IFDIR|0755, st_size=12, ...}) = 0
+stat("/daten", {st_mode=S_IFDIR|0755, st_size=30, ...}) = 0
+stat("/mnt/home-zeit", {st_mode=S_IFDIR|0755, st_size=8, ...}) = 0
+stat("/home", {st_mode=S_IFDIR|0755, st_size=124, ...}) = 0
+stat("/proc/sys/fs/binfmt_misc", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+stat("/run/user/1000", {st_mode=S_IFDIR|0700, st_size=120, ...}) = 0
+uname({sys="Linux", node="merkaba", ...}) = 0
+statfs("/", {f_type=0x9123683e, f_bsize=4096, f_blocks=7864320, f_bfree=2964122, f_bavail=5320460, f_files=0, f_ffree=0, f_fsid={1441862335, 1668422792}, f_namelen=255, f_frsize=4096}) = 0
+stat("/", {st_mode=S_IFDIR|0755, st_size=306, ...}) = 0
+statfs("/mnt/debian-zeit", {f_type=0x9123683e, f_bsize=4096, f_blocks=7864320, f_bfree=2964122, f_bavail=5320460, f_files=0, f_ffree=0, f_fsid={1441862335, 1668423053}, f_namelen=255, f_frsize=4096}) = 0
+stat("/mnt/debian-zeit", {st_mode=S_IFDIR|0755, st_size=12, ...}) = 0
+statfs("/daten", {f_type=0x9123683e, f_bsize=4096, f_blocks=52428800, f_bfree=3951188, f_bavail=3789488, f_files=0, f_ffree=0, f_fsid={-1029141028, 226079861}, f_namelen=255, f_frsize=4096}) = 0
+stat("/daten", {st_mode=S_IFDIR|0755, st_size=30, ...}) = 0
+statfs("/mnt/home-zeit", {f_type=0x9123683e, f_bsize=4096, f_blocks=41943040, f_bfree=6582413, f_bavail=12322874, f_files=0, f_ffree=0, f_fsid={493729996, 1996367843}, f_namelen=255, f_frsize=4096}) = 0
+stat("/mnt/home-zeit", {st_mode=S_IFDIR|0755, st_size=8, ...}) = 0
+statfs("/home", {f_type=0x9123683e, f_bsize=4096, f_blocks=41943040, f_bfree=6582413, f_bavail=12322874, f_files=0, f_ffree=0, f_fsid={493729996, 1996367590}, f_namelen=255, f_frsize=4096}) = 0
+stat("/home", {st_mode=S_IFDIR|0755, st_size=124, ...}) = 0
+fstat(1, {st_mode=S_IFCHR|0600, st_rdev=makedev(136, 0), ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f795e7dd000
+write(1, "Filesystem              Type   S"..., 64Filesystem              Type   Size  Used Avail Use% Mounted on
+) = 64
+write(1, "/dev/mapper/sata-debian btrfs   "..., 55/dev/mapper/sata-debian btrfs   30G   19G   21G  48% /
+) = 55
+write(1, "/dev/mapper/sata-debian btrfs   "..., 70/dev/mapper/sata-debian btrfs   30G   19G   21G  48% /mnt/debian-zeit
+) = 70
+write(1, "/dev/mapper/msata-daten btrfs  2"..., 60/dev/mapper/msata-daten btrfs  200G  185G   15G  93% /daten
+) = 60
+write(1, "/dev/mapper/msata-home  btrfs  1"..., 68/dev/mapper/msata-home  btrfs  160G  135G   48G  75% /mnt/home-zeit
+) = 68
+write(1, "/dev/mapper/msata-home  btrfs  1"..., 59/dev/mapper/msata-home  btrfs  160G  135G   48G  75% /home
+) = 59
+close(1)                                = 0
+munmap(0x7f795e7dd000, 4096)            = 0
+close(2)                                = 0
+exit_group(0)                           = ?
++++ exited with 0 +++
 
-Filipe David Borba Manana (1) commits (+3/-2):
-    Btrfs: set default max_inline to 8KiB instead of 8MiB
-
-Li RongQing (1) commits (+0/-4):
-    btrfs: remove the wrong comments
-
-Chris Mason (1) commits (+2/-3):
-    Btrfs: fix compiles when CONFIG_BTRFS_FS_RUN_SANITY_TESTS is off
-
-Sergey Senozhatsky (1) commits (+68/-70):
-    btrfs compression: merge inflate and deflate z_streams
-
-Andrey Utkin (1) commits (+1/-1):
-    btrfs: Drop stray check of fixup_workers creation
-
-Total: (139) commits
-
- fs/btrfs/async-thread.c           |  11 +-
- fs/btrfs/async-thread.h           |   1 +
- fs/btrfs/backref.c                | 123 +++++--
- fs/btrfs/backref.h                |   3 +
- fs/btrfs/btrfs_inode.h            |  27 +-
- fs/btrfs/check-integrity.c        |  18 +-
- fs/btrfs/compression.c            |  21 +-
- fs/btrfs/ctree.c                  | 106 +++---
- fs/btrfs/ctree.h                  |  93 +++---
- fs/btrfs/delayed-inode.c          |   8 +-
- fs/btrfs/dev-replace.c            |  82 +++--
- fs/btrfs/dir-item.c               |  12 +-
- fs/btrfs/disk-io.c                | 284 +++++++++-------
- fs/btrfs/disk-io.h                |  16 +-
- fs/btrfs/export.c                 |   4 +-
- fs/btrfs/extent-tree.c            | 265 +++++++++++----
- fs/btrfs/extent_io.c              | 483 +++++++++++++++++----------
- fs/btrfs/extent_io.h              |  60 ++--
- fs/btrfs/file-item.c              |  30 +-
- fs/btrfs/file.c                   | 151 ++++++---
- fs/btrfs/free-space-cache.c       | 157 ++++++++-
- fs/btrfs/hash.c                   |   4 +-
- fs/btrfs/inode-item.c             |  12 +-
- fs/btrfs/inode-map.c              |  68 ++--
- fs/btrfs/inode.c                  | 648 ++++++++++++++++++++++++++++--------
- fs/btrfs/ioctl.c                  |  60 ++--
- fs/btrfs/lzo.c                    |   3 +-
- fs/btrfs/orphan.c                 |   4 +-
- fs/btrfs/print-tree.c             |   3 +-
- fs/btrfs/qgroup.c                 |  30 +-
- fs/btrfs/raid56.c                 |   8 +-
- fs/btrfs/reada.c                  |   2 +-
- fs/btrfs/relocation.c             | 142 ++++----
- fs/btrfs/scrub.c                  |  67 ++--
- fs/btrfs/send.c                   |  47 ++-
- fs/btrfs/super.c                  | 137 +++++++-
- fs/btrfs/sysfs.c                  |  41 ++-
- fs/btrfs/sysfs.h                  |  16 +-
- fs/btrfs/tests/free-space-tests.c | 516 ++++++++++++++++++++++++++++-
- fs/btrfs/transaction.c            |  52 ++-
- fs/btrfs/transaction.h            |   2 +-
- fs/btrfs/tree-log.c               | 259 +++++++++------
- fs/btrfs/tree-log.h               |   2 +
- fs/btrfs/uuid-tree.c              |   1 -
- fs/btrfs/volumes.c                | 676 ++++++++++++++++++++++++--------------
- fs/btrfs/volumes.h                | 166 ++++++++--
- fs/btrfs/xattr.c                  |   4 +-
- fs/btrfs/zlib.c                   | 141 ++++----
- include/trace/events/btrfs.h      |  85 ++++-
- 49 files changed, 3617 insertions(+), 1534 deletions(-)
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

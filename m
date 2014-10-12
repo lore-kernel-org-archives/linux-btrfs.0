@@ -1,78 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:33003 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:38457 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750777AbaJLKOE (ORCPT
+	with ESMTP id S1750922AbaJLKRz convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Oct 2014 06:14:04 -0400
+	Sun, 12 Oct 2014 06:17:55 -0400
 From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Chris Murphy <lists@colorremedies.com>
+To: Eric Sandeen <sandeen@redhat.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: What is the vision for btrfs fs repair?
-Date: Sun, 12 Oct 2014 12:14:01 +0200
-Message-ID: <2313804.P0rE2GFdbV@merkaba>
-In-Reply-To: <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
-References: <54358C77.2070808@redhat.com> <5437BAB2.1040605@shiftmail.org> <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
+Date: Sun, 12 Oct 2014 12:17:53 +0200
+Message-ID: <2905860.B2VjmEPlfG@merkaba>
+In-Reply-To: <54358C77.2070808@redhat.com>
+References: <54358C77.2070808@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 10. Oktober 2014, 10:37:44 schrieb Chris Murphy:
-> On Oct 10, 2014, at 6:53 AM, Bob Marley <bobmarley@shiftmail.org> wrote:
-> > On 10/10/2014 03:58, Chris Murphy wrote:
-> >>> * mount -o recovery
-> >>> 
-> >>> 	"Enable autorecovery attempts if a bad tree root is found at mount
-> >>> 	time."
-> >> 
-> >> I'm confused why it's not the default yet. Maybe it's continuing to
-> >> evolve at a pace that suggests something could sneak in that makes
-> >> things worse? It is almost an oxymoron in that I'm manually enabling an
-> >> autorecovery
-> >> 
-> >> If true, maybe the closest indication we'd get of btrfs stablity is the
-> >> default enabling of autorecovery.> 
-> > No way!
-> > I wouldn't want a default like that.
-> > 
-> > If you think at distributed transactions: suppose a sync was issued on
-> > both sides of a distributed transaction, then power was lost on one side,
-> > than btrfs had corruption. When I remount it, definitely the worst thing
-> > that can happen is that it auto-rolls-back to a previous known-good
-> > state.
-> For a general purpose file system, losing 30 seconds (or less) of
-> questionably committed data, likely corrupt, is a file system that won't
-> mount without user intervention, which requires a secret decoder ring to
-> get it to mount at all. And may require the use of specialized tools to
-> retrieve that data in any case.
+Am Mittwoch, 8. Oktober 2014, 14:11:51 schrieb Eric Sandeen:
+> I was looking at Marc's post:
 > 
-> The fail safe behavior is to treat the known good tree root as the default
-> tree root, and bypass the bad tree root if it cannot be repaired, so that
-> the volume can be mounted with default mount options (i.e. the ones in
-> fstab). Otherwise it's a filesystem that isn't well suited for general
-> purpose use as rootfs let alone for boot.
+> http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-> and-Btrfs-Filesystem-Repair.html
+> 
+> and it feels like there isn't exactly a cohesive, overarching vision for
+> repair of a corrupted btrfs filesystem.
+> 
+> In other words - I'm an admin cruising along, when the kernel throws some
+> fs corruption error, or for whatever reason btrfs fails to mount.
+> What should I do?
+> 
+> Marc lays out several steps, but to me this highlights that there seem to
+> be a lot of disjoint mechanisms out there to deal with these problems;
+> mostly from Marc's blog, with some bits of my own:
+> 
+> * btrfs scrub
+> 	"Errors are corrected along if possible" (what *is* possible?)
+> * mount -o recovery
+> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
+> * mount -o degraded
+> 	"Allow mounts to continue with missing devices."
+> 	(This isn't really a way to recover from corruption, right?)
+> * btrfs-zero-log
+> 	"remove the log tree if log tree is corrupt"
+> * btrfs rescue
+> 	"Recover a damaged btrfs filesystem"
+> 	chunk-recover
+> 	super-recover
+> 	How does this relate to btrfs check?
+> * btrfs check
+> 	"repair a btrfs filesystem"
+> 	--repair
+> 	--init-csum-tree
+> 	--init-extent-tree
+> 	How does this relate to btrfs rescue?
+> * btrfs restore
+> 	"try to salvage files from a damaged filesystem"
+> 	(not really repair, it's disk-scraping)
+> 
+> 
+> What's the vision for, say, scrub vs. check vs. rescue?  Should they repair
+> the same errors, only online vs. offline?  If not, what class of errors
+> does one fix vs. the other?  How would an admin know?  Can btrfs check
+> recover a bad tree root in the same way that mount -o recovery does?  How
+> would I know if I should use --init-*-tree, or chunk-recover, and what are
+> the ramifications of using these options?
+> 
+> It feels like recovery tools have been badly splintered, and if there's an
+> overarching design or vision for btrfs fs repair, I can't tell what it is.
+> Can anyone help me?
 
-To understand this a bit better:
+How about taking one step back:
 
-What can be the reasons a recent tree gets corrupted?
+What are the possible corruption cases these tools are meant to address? 
+*Where* can BTRFS break and *why*?
 
-I always thought with a controller and device and driver combination that 
-honors fsync with BTRFS it would either be the new state of the last known 
-good state *anyway*. So where does the need to rollback arise from?
+What of it can be folded into one command? Where can BTRFS be improved to 
+either prevent a corruption from happening ot automatically correcting it? 
+What actions can be determined automatically by the repair tool? What needs to 
+be options for the user to choose from? And what guidance would the user need 
+to decide?
 
-That said all journalling filesystems have some sort of rollback as far as I 
-understand: If the last journal entry is incomplete they discard it on journal 
-replay. So even there you use the last seconds of write activity.
+I.e. really going to back what diagnosing and repair of BTRFS actually 
+includes and then well… go about a vision how this all can fit together as you 
+suggested.
 
-But in case fsync() returns the data needs to be safe on disk. I always 
-thought BTRFS honors this under *any* circumstance. If some proposed 
-autorollback breaks this guarentee, I think something is broke elsewhere.
-
-And fsync is an fsync is an fsync. Its semantics are clear as crystal. There 
-is nothing, absolutely nothing to discuss about it.
-
-An fsync completes if the device itself reported "Yeah, I have the data on 
-disk, all safe and cool to go". Anything else is a bug IMO.
+As a minimum I suggest to have all possible options as a main category in 
+btrfs command, no external commands whatsoever, so if btrfs-zero-log is still 
+needed, at it into btrfs command.
 
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de

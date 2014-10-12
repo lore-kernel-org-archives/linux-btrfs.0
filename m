@@ -1,81 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f178.google.com ([209.85.217.178]:50494 "EHLO
-	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751494AbaJLPYR (ORCPT
+Received: from mail-oi0-f45.google.com ([209.85.218.45]:60048 "EHLO
+	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752899AbaJLUHY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Oct 2014 11:24:17 -0400
-Received: by mail-lb0-f178.google.com with SMTP id w7so5282699lbi.23
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 08:24:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <543A61EE.7070200@prnet.org>
-References: <543450DC.90504@prnet.org>
-	<1412714780.2374.0@mail.thefacebook.com>
-	<543A61EE.7070200@prnet.org>
-Date: Sun, 12 Oct 2014 17:24:15 +0200
-Message-ID: <CANg_oxzGu3SB4Es5tdB4+zsYJ231eWo878XUVPFcoRFM5wNBzA@mail.gmail.com>
-Subject: Re: btrfs send and kernel 3.17
-From: john terragon <jterragon@gmail.com>
-To: David Arendt <admin@prnet.org>
-Cc: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Sun, 12 Oct 2014 16:07:24 -0400
+Received: by mail-oi0-f45.google.com with SMTP id i138so11402876oig.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 13:07:24 -0700 (PDT)
+Received: from target.stec-inc.ad (pat.hitachigst.com. [199.255.44.5])
+        by mx.google.com with ESMTPSA id e7sm8044225oen.17.2014.10.12.13.07.22
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sun, 12 Oct 2014 13:07:23 -0700 (PDT)
+From: neo <cknvme@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Test Commit
+Date: Sun, 12 Oct 2014 13:07:21 -0700
+Message-Id: <1413144441-6894-1-git-send-email-cknvme@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I just wanted to "confirm David's story" so to speak :)
+diff --git a/Makefile b/Makefile
+index 18eb944..7cc7783 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@ CC = gcc
+ LN = ln
+ AR = ar
+ AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fno-strict-aliasing -fPIC
+-CFLAGS = -g -O1 -fno-strict-aliasing
++CFLAGS = -g -O1 -fno-strict-aliasing -rdynamic
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+-- 
+1.9.1
 
--kernel 3.17-rc7 (didn't bother to compile 3.17 as there weren't any
-btrfs fixes, I think)
-
--btrfs-progs 3.16.2 (also compiled from source, so no
-distribution-specific patches)
-
--fresh fs
-
--I get the same two errors David got (first I got the I/O error one
-and then the memory allocation one)
-
--plus now when I ls -la the fs top volume this is what I get
-
-drwxrwsr-x 1 root staff  30 Sep 11 16:15 home
-d????????? ? ?    ?       ?            ? home-backup
-drwxr-xr-x 1 root root  250 Oct 10 15:37 root
-d????????? ? ?    ?       ?            ? root-backup
-drwxr-xr-x 1 root root   88 Sep 15 16:02 vms
-drwxr-xr-x 1 root root   88 Sep 15 16:02 vms-backup
-
-yes, the question marks on those two *-backup snapshots are really
-there. I can't access the snapshots, I can't delete them, I can't do
-anything with them.
-
--btrfs check segfaults
-
--the events that led to this situation are these:
- 1) btrfs su snap -r root root-backup
- 2) send |receive (the entire root-backup, not and incremental send)
-     immediate I/O error
- 3) move on to home: btrfs su snap -r home home-backup
- 4) send|receive (again not an incremental send)
-     everything goes well (!)
- 5) retry with root: btrfs su snap -r root root-backup
- 6) send|receive
-     and it goes seemingly well
- 7) apt-get dist-upgrade just to modify root and try an incremental send
- 8) reboot after the dist-upgrade
- 9) ls -la the fs top volume: first I get the memory allocation error
-and after that
-       any ls -la gives the output I pasted above. (notice that beside
-the ls -la, the
-       two snapshots were not touched in any way since the two send|receive)
-
-Few final notes. I haven't tried send/receive in a while (they were
-unreliable) so I can't tell which is the last version they worked for
-me (well, no version actually :) ).
-I've never had any problem with just snapshots. I make them regularly,
-I use them, I modify them and I've never had one problem (with 3.17
-too, it's just send/receive that murders them).
-
-Best regards
-
-John

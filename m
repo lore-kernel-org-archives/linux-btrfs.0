@@ -1,86 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserverfr1.prnet.org ([188.165.43.41]:44891 "EHLO
-	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752355AbaJLLLt (ORCPT
+Received: from mail-lb0-f178.google.com ([209.85.217.178]:50494 "EHLO
+	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751494AbaJLPYR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Oct 2014 07:11:49 -0400
-Message-ID: <543A61EE.7070200@prnet.org>
-Date: Sun, 12 Oct 2014 13:11:42 +0200
-From: David Arendt <admin@prnet.org>
+	Sun, 12 Oct 2014 11:24:17 -0400
+Received: by mail-lb0-f178.google.com with SMTP id w7so5282699lbi.23
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 08:24:15 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: linux-btrfs@vger.kernel.org
+In-Reply-To: <543A61EE.7070200@prnet.org>
+References: <543450DC.90504@prnet.org>
+	<1412714780.2374.0@mail.thefacebook.com>
+	<543A61EE.7070200@prnet.org>
+Date: Sun, 12 Oct 2014 17:24:15 +0200
+Message-ID: <CANg_oxzGu3SB4Es5tdB4+zsYJ231eWo878XUVPFcoRFM5wNBzA@mail.gmail.com>
 Subject: Re: btrfs send and kernel 3.17
-References: <543450DC.90504@prnet.org> <1412714780.2374.0@mail.thefacebook.com>
-In-Reply-To: <1412714780.2374.0@mail.thefacebook.com>
-Content-Type: text/plain; charset=utf-8
+From: john terragon <jterragon@gmail.com>
+To: David Arendt <admin@prnet.org>
+Cc: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This weekend I finally had time to try btrfs send again on the newly
-created fs. Now I am running into another problem:
+Hi.
 
-btrfs send returns: ERROR: send ioctl failed with -12: Cannot allocate
-memory
+I just wanted to "confirm David's story" so to speak :)
 
-In dmesg I see only the following output:
+-kernel 3.17-rc7 (didn't bother to compile 3.17 as there weren't any
+btrfs fixes, I think)
 
-parent transid verify failed on 21325004800 wanted 2620 found 8325
+-btrfs-progs 3.16.2 (also compiled from source, so no
+distribution-specific patches)
 
+-fresh fs
 
-On 10/07/2014 10:46 PM, Chris Mason wrote:
-> On Tue, Oct 7, 2014 at 4:45 PM, David Arendt <admin@prnet.org> wrote:
->> On 10/07/2014 03:19 PM, Chris Mason wrote:
->>>
->>>
->>>  On Tue, Oct 7, 2014 at 1:25 AM, David Arendt <admin@prnet.org> wrote:
->>>>  I did a revert of this commit. After creating a snapshot, the
->>>>  filesystem was no longer usable, even with kernel 3.16.3 (crashes 10
->>>>  seconds after mount without error message) . Maybe there was some
->>>>  previous damage that just appeared now. This evening, I will restore
->>>>  from backup and report back.
->>>>
->>>>  On October 7, 2014 12:22:11 AM CEST, Chris Mason <clm@fb.com> wrote:
->>>>>  On Mon, Oct 6, 2014 at 4:51 PM, David Arendt <admin@prnet.org>
->>>>> wrote:
->>>>>>   I just tried downgrading to 3.16.3 again. In 3.16.3 btrfs send is
->>>>>>   working without any problem. Afterwards I upgraded again to
->>>>>> 3.17 and
->>>>>>   the
->>>>>>   problem reappeared. So the problem seems to be kernel version
->>>>>>  related.
->>>>>
->>>>>  [ backref errors during btrfs-send ]
->>>>>
->>>>>  Ok then, our list of suspects is pretty short.  Can you easily build
->>>>>  test kernels?
->>>>>
->>>>>  I'd like to try reverting this commit:
->>>>>
->>>>>  51f395ad4058883e4273b02fdebe98072dbdc0d2
->>>
->>>  Oh no!  Reverting this definitely should not have caused corruptions,
->>>  so I think the problem was already there.  Do you still have the
->>>  filesystem image?
->>>
->>>  Please let us know if you're missing files off the backup, we'll help
->>>  pull them out.
->>>
->> Due to space constraints, it was not possible to take an image of the
->> corrupted filesystem. As I do backups daily, and the problems occurred 5
->> hours after backup, no file was lost. Thanks for offering your help. In
->> 4 days I will do some send tests on the newly created filesystem and
->> report back.
->
-> Ok, if you have the kernel messages from the panic, please send them
-> along.
->
-> -chris
->
->
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-I get the same two errors David got (first I got the I/O error one
+and then the memory allocation one)
 
+-plus now when I ls -la the fs top volume this is what I get
+
+drwxrwsr-x 1 root staff  30 Sep 11 16:15 home
+d????????? ? ?    ?       ?            ? home-backup
+drwxr-xr-x 1 root root  250 Oct 10 15:37 root
+d????????? ? ?    ?       ?            ? root-backup
+drwxr-xr-x 1 root root   88 Sep 15 16:02 vms
+drwxr-xr-x 1 root root   88 Sep 15 16:02 vms-backup
+
+yes, the question marks on those two *-backup snapshots are really
+there. I can't access the snapshots, I can't delete them, I can't do
+anything with them.
+
+-btrfs check segfaults
+
+-the events that led to this situation are these:
+ 1) btrfs su snap -r root root-backup
+ 2) send |receive (the entire root-backup, not and incremental send)
+     immediate I/O error
+ 3) move on to home: btrfs su snap -r home home-backup
+ 4) send|receive (again not an incremental send)
+     everything goes well (!)
+ 5) retry with root: btrfs su snap -r root root-backup
+ 6) send|receive
+     and it goes seemingly well
+ 7) apt-get dist-upgrade just to modify root and try an incremental send
+ 8) reboot after the dist-upgrade
+ 9) ls -la the fs top volume: first I get the memory allocation error
+and after that
+       any ls -la gives the output I pasted above. (notice that beside
+the ls -la, the
+       two snapshots were not touched in any way since the two send|receive)
+
+Few final notes. I haven't tried send/receive in a while (they were
+unreliable) so I can't tell which is the last version they worked for
+me (well, no version actually :) ).
+I've never had any problem with just snapshots. I make them regularly,
+I use them, I modify them and I've never had one problem (with 3.17
+too, it's just send/receive that murders them).
+
+Best regards
+
+John

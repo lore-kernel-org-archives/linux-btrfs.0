@@ -1,93 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:38457 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750922AbaJLKRz convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:54880 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751681AbaJLXu7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Oct 2014 06:17:55 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What is the vision for btrfs fs repair?
-Date: Sun, 12 Oct 2014 12:17:53 +0200
-Message-ID: <2905860.B2VjmEPlfG@merkaba>
-In-Reply-To: <54358C77.2070808@redhat.com>
-References: <54358C77.2070808@redhat.com>
+	Sun, 12 Oct 2014 19:50:59 -0400
+Received: by mail-wg0-f47.google.com with SMTP id x13so7425868wgg.18
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 16:50:58 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Date: Sun, 12 Oct 2014 16:50:58 -0700
+Message-ID: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com>
+Subject: what is the best way to monitor raid1 drive failures?
+From: Suman C <schakrava@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 8. Oktober 2014, 14:11:51 schrieb Eric Sandeen:
-> I was looking at Marc's post:
-> 
-> http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-> and-Btrfs-Filesystem-Repair.html
-> 
-> and it feels like there isn't exactly a cohesive, overarching vision for
-> repair of a corrupted btrfs filesystem.
-> 
-> In other words - I'm an admin cruising along, when the kernel throws some
-> fs corruption error, or for whatever reason btrfs fails to mount.
-> What should I do?
-> 
-> Marc lays out several steps, but to me this highlights that there seem to
-> be a lot of disjoint mechanisms out there to deal with these problems;
-> mostly from Marc's blog, with some bits of my own:
-> 
-> * btrfs scrub
-> 	"Errors are corrected along if possible" (what *is* possible?)
-> * mount -o recovery
-> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
-> * mount -o degraded
-> 	"Allow mounts to continue with missing devices."
-> 	(This isn't really a way to recover from corruption, right?)
-> * btrfs-zero-log
-> 	"remove the log tree if log tree is corrupt"
-> * btrfs rescue
-> 	"Recover a damaged btrfs filesystem"
-> 	chunk-recover
-> 	super-recover
-> 	How does this relate to btrfs check?
-> * btrfs check
-> 	"repair a btrfs filesystem"
-> 	--repair
-> 	--init-csum-tree
-> 	--init-extent-tree
-> 	How does this relate to btrfs rescue?
-> * btrfs restore
-> 	"try to salvage files from a damaged filesystem"
-> 	(not really repair, it's disk-scraping)
-> 
-> 
-> What's the vision for, say, scrub vs. check vs. rescue?  Should they repair
-> the same errors, only online vs. offline?  If not, what class of errors
-> does one fix vs. the other?  How would an admin know?  Can btrfs check
-> recover a bad tree root in the same way that mount -o recovery does?  How
-> would I know if I should use --init-*-tree, or chunk-recover, and what are
-> the ramifications of using these options?
-> 
-> It feels like recovery tools have been badly splintered, and if there's an
-> overarching design or vision for btrfs fs repair, I can't tell what it is.
-> Can anyone help me?
+Hi,
 
-How about taking one step back:
+I am testing some disk failure scenarios in a 2 drive raid1 mirror.
+They are 4GB each, virtual SATA drives inside virtualbox.
 
-What are the possible corruption cases these tools are meant to address? 
-*Where* can BTRFS break and *why*?
+To simulate the failure, I detached one of the drives from the system.
+After that, I see no sign of a problem except for these errors:
 
-What of it can be folded into one command? Where can BTRFS be improved to 
-either prevent a corruption from happening ot automatically correcting it? 
-What actions can be determined automatically by the repair tool? What needs to 
-be options for the user to choose from? And what guidance would the user need 
-to decide?
+Oct 12 15:37:14 rock-dev kernel: btrfs: bdev /dev/sdb errs: wr 0, rd
+0, flush 1, corrupt 0, gen 0
+Oct 12 15:37:14 rock-dev kernel: lost page write due to I/O error on /dev/sdb
 
-I.e. really going to back what diagnosing and repair of BTRFS actually 
-includes and then well… go about a vision how this all can fit together as you 
-suggested.
+/dev/sdb is gone from the system, but btrfs fi show still lists it.
 
-As a minimum I suggest to have all possible options as a main category in 
-btrfs command, no external commands whatsoever, so if btrfs-zero-log is still 
-needed, at it into btrfs command.
+Label: raid1pool  uuid: 4e5d8b43-1d34-4672-8057-99c51649b7c6
+    Total devices 2 FS bytes used 1.46GiB
+    devid    1 size 4.00GiB used 2.45GiB path /dev/sdb
+    devid    2 size 4.00GiB used 2.43GiB path /dev/sdc
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+I am able to read and write just fine, but do see the above errors in dmesg.
+
+What is the best way to find out that one of the drives has gone bad?
+
+Suman

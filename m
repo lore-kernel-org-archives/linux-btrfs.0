@@ -1,40 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f178.google.com ([209.85.220.178]:63977 "EHLO
-	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752656AbaJMPNA (ORCPT
+Received: from mail-vc0-f177.google.com ([209.85.220.177]:34579 "EHLO
+	mail-vc0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753920AbaJMPPl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 11:13:00 -0400
-Received: by mail-vc0-f178.google.com with SMTP id hq12so5925647vcb.37
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 08:12:59 -0700 (PDT)
+	Mon, 13 Oct 2014 11:15:41 -0400
+Received: by mail-vc0-f177.google.com with SMTP id hq11so5883651vcb.22
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 08:15:40 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20141009141944.GA11525@atrey.karlin.mff.cuni.cz>
-References: <20141009141944.GA11525@atrey.karlin.mff.cuni.cz>
-Date: Mon, 13 Oct 2014 11:12:59 -0400
-Message-ID: <CAGfcS_nR-MP8VLWanvvs9dMQBi02JoCCUTYd_JwA9tmtPRGmSg@mail.gmail.com>
-Subject: Re: btrfs balance segfault, kernel BUG at fs/btrfs/extent-tree.c:7727
+In-Reply-To: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
+References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
+Date: Mon, 13 Oct 2014 11:15:40 -0400
+Message-ID: <CAGfcS_m+kZXFr=_vHVdzamptjWZQoOr0Bp9vikqt9fEdpG3yXg@mail.gmail.com>
+Subject: Re: 3.17.0-rc7: kernel BUG at fs/btrfs/relocation.c:931!
 From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Petr Janecek <janecek@ucw.cz>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Tomasz Chmielewski <tch@virtall.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 9, 2014 at 10:19 AM, Petr Janecek <janecek@ucw.cz> wrote:
+On Thu, Oct 2, 2014 at 3:27 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
+> Got this when running balance with 3.17.0-rc7:
 >
->   I have trouble finishing btrfs balance on five disk raid10 fs.
-> I added a disk to 4x3TB raid10 fs and run "btrfs balance start
-> /mnt/b3", which segfaulted after few hours, probably because of the BUG
-> below. "btrfs check" does not find any errors, both before the balance
-> and after reboot (the fs becomes un-umountable).
->
-> [22744.238559] WARNING: CPU: 0 PID: 4211 at fs/btrfs/extent-tree.c:876 btrfs_lookup_extent_info+0x292/0x30a [btrfs]()
->
-> [22744.532378] kernel BUG at fs/btrfs/extent-tree.c:7727!
+> [173475.410717] kernel BUG at fs/btrfs/relocation.c:931!
 
-I am running into something similar. I just added a 3TB drive to my
-raid1 btrfs and started a balance.  The balance segfaulted, and I find
-this in dmesg:
-
+I just started a post on another thread with this exact same issue on
+3.17.0. I started a balance after adding a new drive.
 
 [453046.291762] BTRFS info (device sde2): relocating block group
 10367073779712 flags 17
@@ -121,8 +112,3 @@ f0 30
 build_backref_tree+0x1152/0x11b0 [btrfs]
 [453069.290591]  RSP <ffff88010cf97848>
 [453069.316194] ---[ end trace 5fdc0af4cc62bf41 ]---
-
-It looks like I can't cancel the balance, so I'll probably have to reboot.
-
---
-Rich

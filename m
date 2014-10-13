@@ -1,201 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36978 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:37912 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753365AbaJMLDQ (ORCPT
+	with ESMTP id S1753393AbaJMLDb (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 13 Oct 2014 07:03:16 -0400
+	Mon, 13 Oct 2014 07:03:31 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/3] Btrfs: deal with convert_extent_bit errors to avoid fs corruption
-Date: Mon, 13 Oct 2014 12:28:37 +0100
-Message-Id: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 3/3] Btrfs: avoid returning -ENOMEM in convert_extent_bit() too early
+Date: Mon, 13 Oct 2014 12:28:39 +0100
+Message-Id: <1413199719-25742-3-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
+References: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When committing a transaction or a log, we look for btree extents that
-need to be durably persisted by searching for ranges in a io tree that
-have some bits set (EXTENT_DIRTY or EXTENT_NEW). We then attempt to clear
-those bits and set the EXTENT_NEED_WAIT bit, with calls to the function
-convert_extent_bit, and then start writeback for the extents.
-
-That function however can return an error (at the moment only -ENOMEM
-is possible, specially when it does GFP_ATOMIC allocation requests
-through alloc_extent_state_atomic) - that means the ranges didn't got
-the EXTENT_NEED_WAIT bit set (or at least not for the whole range),
-which in turn means a call to btrfs_wait_marked_extents() won't find
-those ranges for which we started writeback, causing a transaction
-commit or a log commit to persist a new superblock without waiting
-for the writeback of extents in that range to finish first.
-
-Therefore if a crash happens after persisting the new superblock and
-before writeback finishes, we have a superblock pointing to roots that
-weren't fully persisted or roots that point to nodes or leafs that weren't
-fully persisted, causing all sorts of unexpected/bad behaviour as we endup
-reading garbage from disk or the content of some node/leaf from a past
-generation that got cowed or deleted and is no longer valid (for this later
-case we end up getting error messages like "parent transid verify failed on
-X wanted Y found Z" when reading btree nodes/leafs from disk).
+We try to allocate an extent state before acquiring the tree's spinlock
+just in case we end up needing to split an existing extent state into two.
+If that allocation failed, we would return -ENOMEM.
+However, our only single caller (transaction/log commit code), passes in
+an extent state that was cached from a call to find_first_extent_bit() and
+that has a very high chance to match exactly the input range (always true
+for a transaction commit and very often, but not always, true for a log
+commit) - in this case we end up not needing at all that initial extent
+state used for an eventual split. Therefore just don't return -ENOMEM if
+we can't allocate the temporary extent state, since we might not need it
+at all, and if we end up needing one, we'll do it later anyway.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/transaction.c | 92 +++++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/transaction.h |  2 --
- 2 files changed, 76 insertions(+), 18 deletions(-)
+ fs/btrfs/extent_io.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8f1a408..cb673d4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -76,6 +76,32 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 	}
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0d931b1..654ed3d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1066,13 +1066,21 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	int err = 0;
+ 	u64 last_start;
+ 	u64 last_end;
++	bool first_iteration = true;
  
-+static void clear_btree_io_tree(struct extent_io_tree *tree)
-+{
-+	spin_lock(&tree->lock);
-+	while (!RB_EMPTY_ROOT(&tree->state)) {
-+		struct rb_node *node;
-+		struct extent_state *state;
-+
-+		node = rb_first(&tree->state);
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		rb_erase(&state->rb_node, &tree->state);
-+		RB_CLEAR_NODE(&state->rb_node);
-+		/*
-+		 * btree io trees aren't supposed to have tasks waiting for
-+		 * changes in the flags of extent states ever.
-+		 */
-+		ASSERT(!waitqueue_active(&state->wq));
-+		free_extent_state(state);
-+		if (need_resched()) {
-+			spin_unlock(&tree->lock);
-+			cond_resched();
-+			spin_lock(&tree->lock);
-+		}
-+	}
-+	spin_unlock(&tree->lock);
-+}
-+
- static noinline void switch_commit_roots(struct btrfs_transaction *trans,
- 					 struct btrfs_fs_info *fs_info)
- {
-@@ -89,6 +115,7 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans,
- 		root->commit_root = btrfs_root_node(root);
- 		if (is_fstree(root->objectid))
- 			btrfs_unpin_free_ino(root);
-+		clear_btree_io_tree(&root->dirty_log_pages);
- 	}
- 	up_write(&fs_info->commit_root_sem);
- }
-@@ -827,17 +854,38 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
+ 	btrfs_debug_check_extent_io_range(tree, start, end);
  
- 	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
- 				      mark, &cached_state)) {
--		convert_extent_bit(dirty_pages, start, end, EXTENT_NEED_WAIT,
--				   mark, &cached_state, GFP_NOFS);
--		cached_state = NULL;
--		err = filemap_fdatawrite_range(mapping, start, end);
-+		bool wait_writeback = false;
-+
-+		err = convert_extent_bit(dirty_pages, start, end,
-+					 EXTENT_NEED_WAIT,
-+					 mark, &cached_state, GFP_NOFS);
+ again:
+ 	if (!prealloc && (mask & __GFP_WAIT)) {
 +		/*
-+		 * convert_extent_bit can return -ENOMEM, which is most of the
-+		 * time a temporary error. So when it happens, ignore the error
-+		 * and wait for writeback of this range to finish - because we
-+		 * failed to set the bit EXTENT_NEED_WAIT for the range, a call
-+		 * to btrfs_wait_marked_extents() would not know that writeback
-+		 * for this range started and therefore wouldn't wait for it to
-+		 * finish - we don't want to commit a superblock that points to
-+		 * btree nodes/leafs for which writeback hasn't finished yet
-+		 * (and without errors).
-+		 * We cleanup any entries left in the io tree when committing
-+		 * the transaction (through clear_btree_io_tree()).
++		 * Best effort, don't worry if extent state allocation fails
++		 * here for the first iteration. We might have a cached state
++		 * that matches exactly the target range, in which case no
++		 * extent state allocations are needed. We'll only know this
++		 * after locking the tree.
 +		 */
-+		if (err == -ENOMEM) {
-+			err = 0;
-+			wait_writeback = true;
-+		}
-+		if (!err)
-+			err = filemap_fdatawrite_range(mapping, start, end);
- 		if (err)
- 			werr = err;
-+		else if (wait_writeback)
-+			werr = filemap_fdatawait_range(mapping, start, end);
-+		cached_state = NULL;
+ 		prealloc = alloc_extent_state(mask);
+-		if (!prealloc)
++		if (!prealloc && !first_iteration)
+ 			return -ENOMEM;
+ 	}
+ 
+@@ -1242,6 +1250,7 @@ search_again:
+ 	spin_unlock(&tree->lock);
+ 	if (mask & __GFP_WAIT)
  		cond_resched();
- 		start = end + 1;
- 	}
--	if (err)
--		werr = err;
- 	return werr;
++	first_iteration = false;
+ 	goto again;
  }
  
-@@ -861,9 +909,21 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
- 
- 	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
- 				      EXTENT_NEED_WAIT, &cached_state)) {
--		clear_extent_bit(dirty_pages, start, end, EXTENT_NEED_WAIT,
--				 0, 0, &cached_state, GFP_NOFS);
--		err = filemap_fdatawait_range(mapping, start, end);
-+		/*
-+		 * Ignore -ENOMEM errors returned by clear_extent_bit().
-+		 * When committing the transaction, we'll remove any entries
-+		 * left in the io tree. For a log commit, we don't remove them
-+		 * after committing the log because the tree can be accessed
-+		 * concurrently - we do it only at transaction commit time when
-+		 * it's safe to do it (through clear_btree_io_tree()).
-+		 */
-+		err = clear_extent_bit(dirty_pages, start, end,
-+				       EXTENT_NEED_WAIT,
-+				       0, 0, &cached_state, GFP_NOFS);
-+		if (err == -ENOMEM)
-+			err = 0;
-+		if (!err)
-+			err = filemap_fdatawait_range(mapping, start, end);
- 		if (err)
- 			werr = err;
- 		cond_resched();
-@@ -918,17 +978,17 @@ static int btrfs_write_and_wait_marked_extents(struct btrfs_root *root,
- 	return 0;
- }
- 
--int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
-+static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root)
- {
--	if (!trans || !trans->transaction) {
--		struct inode *btree_inode;
--		btree_inode = root->fs_info->btree_inode;
--		return filemap_write_and_wait(btree_inode->i_mapping);
--	}
--	return btrfs_write_and_wait_marked_extents(root,
-+	int ret;
-+
-+	ret = btrfs_write_and_wait_marked_extents(root,
- 					   &trans->transaction->dirty_pages,
- 					   EXTENT_DIRTY);
-+	clear_btree_io_tree(&trans->transaction->dirty_pages);
-+
-+	return ret;
- }
- 
- /*
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 617eca4..66840ba 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -144,8 +144,6 @@ struct btrfs_trans_handle *btrfs_attach_transaction_barrier(
- 					struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root);
- int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid);
--int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
--				     struct btrfs_root *root);
- 
- void btrfs_add_dead_root(struct btrfs_root *root);
- int btrfs_defrag_root(struct btrfs_root *root);
 -- 
 1.9.1
 

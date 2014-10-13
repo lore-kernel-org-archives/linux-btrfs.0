@@ -1,127 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42121 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753399AbaJMWgd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 18:36:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XdoEB-0006kP-AD
-	for linux-btrfs@vger.kernel.org; Tue, 14 Oct 2014 00:36:31 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Oct 2014 00:36:31 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Oct 2014 00:36:31 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs random filesystem corruption in kernel 3.17
-Date: Mon, 13 Oct 2014 22:36:20 +0000 (UTC)
-Message-ID: <pan$e02d1$5d8cd0cc$87f3cfc$b14a0d51@cox.net>
+Received: from mail-vc0-f178.google.com ([209.85.220.178]:38917 "EHLO
+	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752944AbaJMXSJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Oct 2014 19:18:09 -0400
+Received: by mail-vc0-f178.google.com with SMTP id hq12so6761408vcb.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 16:18:08 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CANg_oxz7Kpp8ppTn0jg8aeHcrpoakO6mAcHkv9Nnn9ms4M-2rQ@mail.gmail.com>
 References: <543450DC.90504@prnet.org>
-	<1412714780.2374.0@mail.thefacebook.com> <543A61EE.7070200@prnet.org>
+	<1412714780.2374.0@mail.thefacebook.com>
+	<543A61EE.7070200@prnet.org>
 	<CAGfcS_k7Y2-j3moyFw3j0gzb6Xuj-AutfjvZzEnpMem-z0KPRA@mail.gmail.com>
 	<543C35C3.9070002@prnet.org>
-	<CAGfcS_n5+ToT6kM5+J9TLjdwpriC3uu7hg2HVZXTmTSo-URO9Q@mail.gmail.com>
-Mime-Version: 1.0
+	<CANg_oxytS04xrVLfWzgz7sJZBArJ-HM8nGADF+ujjRy8heYjqQ@mail.gmail.com>
+	<CAGfcS_mtYg6OSggo+t5ksxafOn0hxhtsO86k924RA55XqxzGQQ@mail.gmail.com>
+	<CANg_oxz7Kpp8ppTn0jg8aeHcrpoakO6mAcHkv9Nnn9ms4M-2rQ@mail.gmail.com>
+Date: Mon, 13 Oct 2014 19:18:08 -0400
+Message-ID: <CAGfcS_=QaPPNLYKePnhpaDuXqW3uqc4Y4nWjj5ca_ixCuU+uXA@mail.gmail.com>
+Subject: Re: btrfs random filesystem corruption in kernel 3.17
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: john terragon <jterragon@gmail.com>
+Cc: David Arendt <admin@prnet.org>, Chris Mason <clm@fb.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Freeman posted on Mon, 13 Oct 2014 16:42:14 -0400 as excerpted:
+On Mon, Oct 13, 2014 at 5:22 PM, john terragon <jterragon@gmail.com> wrote:
+> I'm using "compress=no" so compression doesn't seem to be related, at
+> least in my case. Just read-only snapshots on 3.17 (although I haven't
+> tried 3.16).
 
-> On Mon, Oct 13, 2014 at 4:27 PM, David Arendt <admin@prnet.org> wrote:
->> From my own experience and based on what other people are saying, I
->> think there is a random btrfs filesystem corruption problem in kernel
->> 3.17 at least related to snapshots, therefore I decided to post using
->> another subject to draw attention from people not concerned about btrfs
->> send to it. More information can be found in the brtfs send posts.
->>
->> Did the filesystem you tried to balance contain snapshots ? Read only
->> ones ?
-> 
-> The filesystem contains numerous subvolumes and snapshots, many of which
-> are read-only.  I'm managing many with snapper.
-> 
-> The similarity of the transid verify errors made me think this issue is
-> related, and the root cause may have nothing to do with btrfs send.
-> 
-> As far as I can tell these errors aren't having any affect on my data -
-> hopefully the system is catching the problems before there are actual
-> disk writes/etc.
+I was using lzo compression, and hence my comment about turning it off
+before going back to 3.16 (not realizing that 3.16 has subsequently
+been fixed).
 
-Summarizing what I've seen on the threads...
+Ironically enough I discovered this as I was about to migrate my ext4
+backup drive into my btrfs raid1.  Maybe I'll go ahead and wait on
+that and have an rsync backup of the filesystem handy (minus
+snapshots) just in case.  :)
 
-1) The bug seems to be read-only snapshot related.  The connection to 
-send is that send creates read-only snapshots, but people creating read-
-only snapshots for other purposes are now reporting the same problem, so 
-it's not send, it's the read-only snapshots.
+I'd switch to 3.16, but it sounds like there is no way to remove the
+snapshots at the moment, and I can live for a while without the
+ability to create new ones.
 
-2) Writable snapshots haven't been implicated yet, and the working set 
-from which the snapshots are taken doesn't seem to be affected, either.  
-So in that sense it's not affecting ordinary usage, only the read-only 
-snapshots themselves.
+interestingly enough it doesn't look like ALL snapshots are affected.
+I checked and some of the snapshots I made last weekend while doing
+system updates look accessible.  They are significantly smaller, and
+the subvolumes they were made from are also fairly new - though I have
+no idea if that is related.
 
-3) More problematic, however, is the fact that these apparently corrupted 
-read-only snapshots often are not listed properly and can't be deleted, 
-tho I'm not sure if that's /all/ the corrupted snapshots or only part of 
-them. So while it may not affect ordinary operation in the short term, 
-over time until there's a fix, people routinely doing read-only snapshots 
-are going to be getting more and more of these undeletable snapshots, and 
-depending on whether the eventual patch only prevents more or can 
-actually fix the bad ones (possibly via btrfs check or the like), 
-affected filesystems may ultimately have to be blown away and recreated 
-with a fresh mkfs, in ordered to kill the currently undeletable snapshots.
+The subvolumes do show up in btrfs su list.  They cannot be examined
+using btrfs su show.
 
-So the first thing to do would be to shut off whatever's making read-only 
-snapshots, so you don't make the problem worse while it's being 
-investigated.  For those who can do that without too big an interruption 
-to their normal routine (who don't depend on send/receive, for instance), 
-just keep it off for the time being.  For those who depend on read-only 
-snapshots (send-receive for backup and the data is too valuable to not do 
-the backups for a few days), consider switching back to 3.16-stable -- 
-from 3.16.3 at least, the patch for the compress bug is there, so that 
-shouldn't be a problem.
+It would be VERY nice to have a way of cleaning this up without
+blowing away the entire filesystem...
 
-And if you're affected, be aware that until we have a fix, we don't know 
-if it'll be possible to remove the affected and currently undeletable 
-snapshots.  If it's not, at some point you'll need to do a fresh 
-mkfs.btrfs, to get rid of the damage.  Since the bug doesn't appear to 
-affect writable snapshots or the "head" from which snapshots are made, 
-it's not urgent, and a full fix is likely to include a patch to detect 
-and fix the problem as well, but until we know what the problem is we 
-can't be sure of that, so be prepared to do that mkfs at some point, as 
-at this point it's possible that's the only way you'll be able to kill 
-the corrupted snapshots.
-
-4) Total speculation on my part, but given the wanted transid (aka 
-generation, in different contexts) is significantly lower than the found 
-transid, and the fact that the problem appears to be limited to
-/read-only/ snapshots, my first suspicion is that something's getting 
-updated that would normally apply to all snapshots, but the read-only 
-nature of the snapshots is preventing the full update there.  The transid 
-of the block is updated, but the snapshot being read-only is preventing 
-update of the pointer in that snapshot accordingly.
-
-What I do /not/ know is whether the bug is that something's getting 
-updated that should NOT be, and it's simply the read-only snapshots 
-letting us know about it since the writable snapshots are fully updated, 
-even if that breaks the snapshot (breaking writable snapshots in a 
-different and currently undetected way), or if instead, it's a legitimate 
-update, like a balance simply moving the snapshot around but not 
-affecting it otherwise, and the bug is that the read-only snapshots 
-aren't allowing the legitimate update.
-
-Either way, this more or less developed over the weekend, and it's Monday 
-now, so the devs should be on it.  If it's anything like the 3.15/3.16 
-compression bug, it'll take some time for them to properly trace it, and 
-then to figure out an appropriate fix, but they will.  Chances are we'll 
-have at least some decent progress on a trace by Friday, and maybe even a 
-good-to-go patch. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--
+Rich

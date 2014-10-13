@@ -1,131 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserverfr1.prnet.org ([188.165.43.41]:44900 "EHLO
-	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750708AbaJMELh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 00:11:37 -0400
-Message-ID: <543B50F2.2010405@prnet.org>
-Date: Mon, 13 Oct 2014 06:11:30 +0200
-From: David Arendt <admin@prnet.org>
-MIME-Version: 1.0
-To: john terragon <jterragon@gmail.com>
-CC: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send and kernel 3.17
-References: <543450DC.90504@prnet.org>	<1412714780.2374.0@mail.thefacebook.com>	<543A61EE.7070200@prnet.org> <CANg_oxzGu3SB4Es5tdB4+zsYJ231eWo878XUVPFcoRFM5wNBzA@mail.gmail.com> <543AF411.3090408@prnet.org>
-In-Reply-To: <543AF411.3090408@prnet.org>
-Content-Type: text/plain; charset=windows-1252
+Received: from victor.provo.novell.com ([137.65.250.26]:36579 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753367AbaJMLDQ (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 13 Oct 2014 07:03:16 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 2/3] Btrfs: make find_first_extent_bit be able to cache any state
+Date: Mon, 13 Oct 2014 12:28:38 +0100
+Message-Id: <1413199719-25742-2-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
+References: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some more info I thought off. For me, the corruption problem seems not
-to be send related but snapshot creation related. On machine 2 send was
-never used. However both filesystems are stored on SSDs (of different
-brand). Another filesystem stored on a normal HDD didn't experience the
-problem. Maybe this is pure coincidence and has nothing to do with the
-fact that it is on SSD or HDD. Another thing I noticed is that for me,
-the problem only seems to occur for root subvolumes with many small
-files. I have no root subvolumes on HDD so it might be not SSD related.
+Right now the only caller of find_first_extent_bit() that is interested
+in caching extent states (transaction or log commit), never gets an extent
+state cached. This is because find_first_extent_bit() only caches states
+that have at least one of the flags EXTENT_IOBITS or EXTENT_BOUNDARY, and
+the transaction/log commit caller always passes a tree that doesn't have
+ever extent states with any of those flags (they can only have one of the
+following flags: EXTENT_DIRTY, EXTENT_NEW or EXTENT_NEED_WAIT).
 
-On 10/12/2014 11:35 PM, David Arendt wrote:
-> Just to let you know, I just tried an ls -l on 2 machines running kernel
-> 3.17 and btrfs-progs 3.16.2.
->
-> Here is my ls -l output:
->
-> Machine 1:
-> ls: cannot access root.20141009.000503.backup: Cannot allocate memory
-> total 0
-> d????????? ? ?      ?         ?            ? root.20141009.000503.backup
-> drwxr-xr-x 1 root   root    182 Oct  7 20:35 root.20141012.095526.backup
-> drwxr-xr-x 1 root   root    182 Oct  7 20:35 root.20141012.000503.backup
-> drwxr-xr-x 1 root   root    182 Oct  7 20:35 root.20141011.000502.backup
-> drwxr-xr-x 1 root   root    182 Oct  7 20:35 root.20141010.000502.backup
->
-> root.20141009.000503.backup is not deletable.
->
-> Machine 2:
-> ls: cannot access root.20141006.003239.backup: Cannot allocate memory
-> ls: cannot access root.20141007.001616.backup: Cannot allocate memory
-> ls: cannot access root.20141008.000501.backup: Cannot allocate memory
-> ls: cannot access root.20141009.052436.backup: Cannot allocate memory
-> total 0
-> d????????? ? ?    ?      ?            ? root.20141009.052436.backup
-> d????????? ? ?    ?      ?            ? root.20141008.000501.backup
-> d????????? ? ?    ?      ?            ? root.20141007.001616.backup
-> d????????? ? ?    ?      ?            ? root.20141006.003239.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140925.001125.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140924.001017.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140923.001008.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140922.001836.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140921.001029.backup
-> drwxr-xr-x 1 root root 232 Aug  3 15:00 root.20140920.001020.backup
->
-> The ? ones are also not deletable.
->
-> Both machines are giving transid verify failed errors.
->
-> I verified my logfiles and this problem was never there using previous
-> kernel versions. On machine 1, it is also sure that it was not any
-> previous corruption as this filesystem has also been created with
-> btrfs-progs 3.16.2 using kernel 3.17.
->
-> On 10/12/2014 05:24 PM, john terragon wrote:
->> Hi.
->>
->> I just wanted to "confirm David's story" so to speak :)
->>
->> -kernel 3.17-rc7 (didn't bother to compile 3.17 as there weren't any
->> btrfs fixes, I think)
->>
->> -btrfs-progs 3.16.2 (also compiled from source, so no
->> distribution-specific patches)
->>
->> -fresh fs
->>
->> -I get the same two errors David got (first I got the I/O error one
->> and then the memory allocation one)
->>
->> -plus now when I ls -la the fs top volume this is what I get
->>
->> drwxrwsr-x 1 root staff  30 Sep 11 16:15 home
->> d????????? ? ?    ?       ?            ? home-backup
->> drwxr-xr-x 1 root root  250 Oct 10 15:37 root
->> d????????? ? ?    ?       ?            ? root-backup
->> drwxr-xr-x 1 root root   88 Sep 15 16:02 vms
->> drwxr-xr-x 1 root root   88 Sep 15 16:02 vms-backup
->>
->> yes, the question marks on those two *-backup snapshots are really
->> there. I can't access the snapshots, I can't delete them, I can't do
->> anything with them.
->>
->> -btrfs check segfaults
->>
->> -the events that led to this situation are these:
->>  1) btrfs su snap -r root root-backup
->>  2) send |receive (the entire root-backup, not and incremental send)
->>      immediate I/O error
->>  3) move on to home: btrfs su snap -r home home-backup
->>  4) send|receive (again not an incremental send)
->>      everything goes well (!)
->>  5) retry with root: btrfs su snap -r root root-backup
->>  6) send|receive
->>      and it goes seemingly well
->>  7) apt-get dist-upgrade just to modify root and try an incremental send
->>  8) reboot after the dist-upgrade
->>  9) ls -la the fs top volume: first I get the memory allocation error
->> and after that
->>        any ls -la gives the output I pasted above. (notice that beside
->> the ls -la, the
->>        two snapshots were not touched in any way since the two send|receive)
->>
->> Few final notes. I haven't tried send/receive in a while (they were
->> unreliable) so I can't tell which is the last version they worked for
->> me (well, no version actually :) ).
->> I've never had any problem with just snapshots. I make them regularly,
->> I use them, I modify them and I've never had one problem (with 3.17
->> too, it's just send/receive that murders them).
->>
->> Best regards
->>
->> John
+This change together with the following one in the patch series (titled
+"Btrfs: avoid returning -ENOMEM in convert_extent_bit() too early") will
+help reduce significantly the chances of calls to convert_extent_bit()
+fail with -ENOMEM when called from the transaction/log commit code.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent_io.c   | 16 ++++++++++++----
+ fs/btrfs/transaction.c |  3 +++
+ 2 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 420fe26..0d931b1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -796,17 +796,25 @@ static void set_state_bits(struct extent_io_tree *tree,
+ 	state->state |= bits_to_set;
+ }
+ 
+-static void cache_state(struct extent_state *state,
+-			struct extent_state **cached_ptr)
++static void cache_state_if_flags(struct extent_state *state,
++				 struct extent_state **cached_ptr,
++				 const u64 flags)
+ {
+ 	if (cached_ptr && !(*cached_ptr)) {
+-		if (state->state & (EXTENT_IOBITS | EXTENT_BOUNDARY)) {
++		if (!flags || (state->state & flags)) {
+ 			*cached_ptr = state;
+ 			atomic_inc(&state->refs);
+ 		}
+ 	}
+ }
+ 
++static void cache_state(struct extent_state *state,
++			struct extent_state **cached_ptr)
++{
++	return cache_state_if_flags(state, cached_ptr,
++				    EXTENT_IOBITS | EXTENT_BOUNDARY);
++}
++
+ /*
+  * set some bits on a range in the tree.  This may require allocations or
+  * sleeping, so the gfp mask is used to indicate what is allowed.
+@@ -1482,7 +1490,7 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+ 	state = find_first_extent_bit_state(tree, start, bits);
+ got_it:
+ 	if (state) {
+-		cache_state(state, cached_state);
++		cache_state_if_flags(state, cached_state, 0);
+ 		*start_ret = state->start;
+ 		*end_ret = state->end;
+ 		ret = 0;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index cb673d4..396ae8b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -882,6 +882,7 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
+ 			werr = err;
+ 		else if (wait_writeback)
+ 			werr = filemap_fdatawait_range(mapping, start, end);
++		free_extent_state(cached_state);
+ 		cached_state = NULL;
+ 		cond_resched();
+ 		start = end + 1;
+@@ -926,6 +927,8 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
+ 			err = filemap_fdatawait_range(mapping, start, end);
+ 		if (err)
+ 			werr = err;
++		free_extent_state(cached_state);
++		cached_state = NULL;
+ 		cond_resched();
+ 		start = end + 1;
+ 	}
+-- 
+1.9.1
 

@@ -1,72 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:37912 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753393AbaJMLDb (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 13 Oct 2014 07:03:31 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 3/3] Btrfs: avoid returning -ENOMEM in convert_extent_bit() too early
-Date: Mon, 13 Oct 2014 12:28:39 +0100
-Message-Id: <1413199719-25742-3-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
-References: <1413199719-25742-1-git-send-email-fdmanana@suse.com>
+Received: from mail-la0-f46.google.com ([209.85.215.46]:63352 "EHLO
+	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753406AbaJMMkD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Oct 2014 08:40:03 -0400
+Received: by mail-la0-f46.google.com with SMTP id gi9so6507045lab.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 05:40:01 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <543B50F2.2010405@prnet.org>
+References: <543450DC.90504@prnet.org>
+	<1412714780.2374.0@mail.thefacebook.com>
+	<543A61EE.7070200@prnet.org>
+	<CANg_oxzGu3SB4Es5tdB4+zsYJ231eWo878XUVPFcoRFM5wNBzA@mail.gmail.com>
+	<543AF411.3090408@prnet.org>
+	<543B50F2.2010405@prnet.org>
+Date: Mon, 13 Oct 2014 14:40:01 +0200
+Message-ID: <CANg_oxzzFT5A0Cmn0REAzB5Lm-Tjytp6gaFb5r=F5=zFY-t8Dg@mail.gmail.com>
+Subject: Re: btrfs send and kernel 3.17
+From: john terragon <jterragon@gmail.com>
+To: David Arendt <admin@prnet.org>
+Cc: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We try to allocate an extent state before acquiring the tree's spinlock
-just in case we end up needing to split an existing extent state into two.
-If that allocation failed, we would return -ENOMEM.
-However, our only single caller (transaction/log commit code), passes in
-an extent state that was cached from a call to find_first_extent_bit() and
-that has a very high chance to match exactly the input range (always true
-for a transaction commit and very often, but not always, true for a log
-commit) - in this case we end up not needing at all that initial extent
-state used for an eventual split. Therefore just don't return -ENOMEM if
-we can't allocate the temporary extent state, since we might not need it
-at all, and if we end up needing one, we'll do it later anyway.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent_io.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0d931b1..654ed3d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1066,13 +1066,21 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int err = 0;
- 	u64 last_start;
- 	u64 last_end;
-+	bool first_iteration = true;
- 
- 	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- again:
- 	if (!prealloc && (mask & __GFP_WAIT)) {
-+		/*
-+		 * Best effort, don't worry if extent state allocation fails
-+		 * here for the first iteration. We might have a cached state
-+		 * that matches exactly the target range, in which case no
-+		 * extent state allocations are needed. We'll only know this
-+		 * after locking the tree.
-+		 */
- 		prealloc = alloc_extent_state(mask);
--		if (!prealloc)
-+		if (!prealloc && !first_iteration)
- 			return -ENOMEM;
- 	}
- 
-@@ -1242,6 +1250,7 @@ search_again:
- 	spin_unlock(&tree->lock);
- 	if (mask & __GFP_WAIT)
- 		cond_resched();
-+	first_iteration = false;
- 	goto again;
- }
- 
--- 
-1.9.1
-
+Actually it seems strange that a send operation could corrupt the
+source subvolume or fs. Why would the send modify the source subvolume
+in any significant way? The only way I can find to reconcile your
+observations with mine is that maybe the snapshots get corrupted not
+by the send operation by itself but when they are generated with -r
+(readonly, as it is needed to send them). Are the corrupted snapshots
+you have in machine 2 (the one in which send was never used) readonly?

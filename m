@@ -1,186 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:48838 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753103AbaJMLiH (ORCPT
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:55392 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753301AbaJMLsc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 07:38:07 -0400
-Received: by mail-ig0-f179.google.com with SMTP id h18so10086003igc.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 04:38:06 -0700 (PDT)
-Message-ID: <543BB996.6040606@gmail.com>
-Date: Mon, 13 Oct 2014 07:37:58 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Mon, 13 Oct 2014 07:48:32 -0400
+Received: by mail-vc0-f174.google.com with SMTP id hq12so5686803vcb.33
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Oct 2014 04:48:31 -0700 (PDT)
 MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com> <5437BAB2.1040605@shiftmail.org> <93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com> <2313804.P0rE2GFdbV@merkaba>
 In-Reply-To: <2313804.P0rE2GFdbV@merkaba>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030206010000030101070000"
+References: <54358C77.2070808@redhat.com>
+	<5437BAB2.1040605@shiftmail.org>
+	<93B9D2BD-1F0F-4C94-899F-16A3A2A0D57E@colorremedies.com>
+	<2313804.P0rE2GFdbV@merkaba>
+Date: Mon, 13 Oct 2014 07:48:31 -0400
+Message-ID: <CAGfcS_=yjBR+j7AUCaMBCC4BmDTEX52wN-ZoB8vZ5j_jhB8ONg@mail.gmail.com>
+Subject: Re: What is the vision for btrfs fs repair?
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
-
---------------ms030206010000030101070000
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2014-10-12 06:14, Martin Steigerwald wrote:
+On Sun, Oct 12, 2014 at 6:14 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
 > Am Freitag, 10. Oktober 2014, 10:37:44 schrieb Chris Murphy:
->> On Oct 10, 2014, at 6:53 AM, Bob Marley <bobmarley@shiftmail.org> wrot=
-e:
->>> On 10/10/2014 03:58, Chris Murphy wrote:
->>>>> * mount -o recovery
->>>>>
->>>>> 	"Enable autorecovery attempts if a bad tree root is found at mount=
-
->>>>> 	time."
->>>>
->>>> I'm confused why it's not the default yet. Maybe it's continuing to
->>>> evolve at a pace that suggests something could sneak in that makes
->>>> things worse? It is almost an oxymoron in that I'm manually enabling=
- an
->>>> autorecovery
->>>>
->>>> If true, maybe the closest indication we'd get of btrfs stablity is =
-the
->>>> default enabling of autorecovery.>
->>> No way!
->>> I wouldn't want a default like that.
->>>
->>> If you think at distributed transactions: suppose a sync was issued o=
-n
->>> both sides of a distributed transaction, then power was lost on one s=
-ide,
->>> than btrfs had corruption. When I remount it, definitely the worst th=
-ing
->>> that can happen is that it auto-rolls-back to a previous known-good
->>> state.
+>> On Oct 10, 2014, at 6:53 AM, Bob Marley <bobmarley@shiftmail.org> wrote:
+>> > On 10/10/2014 03:58, Chris Murphy wrote:
+>> >>> * mount -o recovery
+>> >>>
+>> >>>   "Enable autorecovery attempts if a bad tree root is found at mount
+>> >>>   time."
+>> >>
+>> >> I'm confused why it's not the default yet. Maybe it's continuing to
+>> >> evolve at a pace that suggests something could sneak in that makes
+>> >> things worse? It is almost an oxymoron in that I'm manually enabling an
+>> >> autorecovery
+>> >>
+>> >> If true, maybe the closest indication we'd get of btrfs stablity is the
+>> >> default enabling of autorecovery.>
+>> > No way!
+>> > I wouldn't want a default like that.
+>> >
+>> > If you think at distributed transactions: suppose a sync was issued on
+>> > both sides of a distributed transaction, then power was lost on one side,
+>> > than btrfs had corruption. When I remount it, definitely the worst thing
+>> > that can happen is that it auto-rolls-back to a previous known-good
+>> > state.
 >> For a general purpose file system, losing 30 seconds (or less) of
->> questionably committed data, likely corrupt, is a file system that won=
-'t
->> mount without user intervention, which requires a secret decoder ring =
-to
->> get it to mount at all. And may require the use of specialized tools t=
-o
+>> questionably committed data, likely corrupt, is a file system that won't
+>> mount without user intervention, which requires a secret decoder ring to
+>> get it to mount at all. And may require the use of specialized tools to
 >> retrieve that data in any case.
 >>
->> The fail safe behavior is to treat the known good tree root as the def=
-ault
->> tree root, and bypass the bad tree root if it cannot be repaired, so t=
-hat
->> the volume can be mounted with default mount options (i.e. the ones in=
-
->> fstab). Otherwise it's a filesystem that isn't well suited for general=
-
+>> The fail safe behavior is to treat the known good tree root as the default
+>> tree root, and bypass the bad tree root if it cannot be repaired, so that
+>> the volume can be mounted with default mount options (i.e. the ones in
+>> fstab). Otherwise it's a filesystem that isn't well suited for general
 >> purpose use as rootfs let alone for boot.
 >
 > To understand this a bit better:
 >
 > What can be the reasons a recent tree gets corrupted?
 >
-Well, so far I have had the following cause corrupted trees:
-1. Kernel panic during resume from ACPI S1 (suspend to RAM), which just=20
-happened to be in the middle of a tree commit.
-2. Generic power loss during a tree commit.
-3. A device not properly honoring write-barriers (the operations=20
-immediately adjacent to the write barrier weren't being ordered=20
-correctly all the time).
-
-Based on what I know about BTRFS, the following could also cause problems=
-:
-1. A single-event-upset somewhere in the write path.
-2. The kernel issuing a write to the wrong device (I haven't had this=20
-happen to me, but know people who have).
-
-In general, any of these will cause problems for pretty much any=20
-filesystem, not just BTRFS.
-> I always thought with a controller and device and driver combination th=
-at
-> honors fsync with BTRFS it would either be the new state of the last kn=
-own
+> I always thought with a controller and device and driver combination that
+> honors fsync with BTRFS it would either be the new state of the last known
 > good state *anyway*. So where does the need to rollback arise from?
 >
-I think that in this case the term rollback is a bit ambiguous, here it=20
-means from the point of view of userspace, which sees the FS as having=20
-'rolled-back' from the most recent state to the last known good state.
-> That said all journalling filesystems have some sort of rollback as far=
- as I
-> understand: If the last journal entry is incomplete they discard it on =
-journal
-> replay. So even there you use the last seconds of write activity.
->
-> But in case fsync() returns the data needs to be safe on disk. I always=
 
-> thought BTRFS honors this under *any* circumstance. If some proposed
-> autorollback breaks this guarentee, I think something is broke elsewher=
-e.
->
-> And fsync is an fsync is an fsync. Its semantics are clear as crystal. =
-There
-> is nothing, absolutely nothing to discuss about it.
->
-> An fsync completes if the device itself reported "Yeah, I have the data=
- on
-> disk, all safe and cool to go". Anything else is a bug IMO.
->
-Or a hardware issue, most filesystems need disks to properly honor write =
+In theory the recover option should never be necessary.  Btrfs makes
+all the guarantees everybody wants it to - when the data is fsynced
+then it will never be lost.
 
-barriers to provide guaranteed semantics on an fsync, and many consumer=20
-disk drives still don't honor them consistently.
+The question is what should happen when a corrupted tree root, which
+should never happen, happens anyway.  The options are to refuse to
+mount the filesystem by default, or mount it by default discarding
+about 30-60s worth of writes.  And yes, when this situation happens
+(whether it mounts by default or not) btrfs has broken its promise of
+data being written after a successful fsync return.
 
+As has been pointed out, braindead drive firmware is the most likely
+cause of this sort of issue.  However, there are a number of other
+hardware and software errors that could cause it, including errors in
+linux outside of btrfs, and of course bugs in btrfs as well.
 
---------------ms030206010000030101070000
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+In an ideal world no filesystem would need any kind of recovery/repair
+tools.  They can often mean that the fsync promise was broken.  The
+real question is, once that has happened, how do you move on?
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDEzMTEzNzU4
-WjAjBgkqhkiG9w0BCQQxFgQU0dnaYZn5L+6Rc/B+YrklzVgopbswbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAo5vfw7W59YfhP0jqadakERw9Ihe7
-Fih97Dxxsp/r5o9FP+GcBVtKJenkHDgFs+dgscuhbMdyvgkh00wxEg5noPnPlQ72sjTwNB8W
-4zdDxUsvFryPQHUxyBihmSntPIYGfkoB1xKqei6Xh+nP/gtBRHVIX738dsUnInSauNHQKEoP
-KEo7CyWQKn2xEwqOaKpXEo0fE54ZwAGvOE3VTKxEXermswhf7s9wsYLKuE7+bFSuatl98+Wn
-pEGXY56choM2RHHGPhYMxN1h0GQBFotFmEuLA2eIdZmAf2sRZoxOrxPrc4y41SlZpke4O/LQ
-ZwBLKmXUKzkW6MpWQsVymf/MwgAAAAAAAA==
---------------ms030206010000030101070000--
+I think the best default is to auto-recover, but to have better
+facilities for reporting errors to the user.  Right now btrfs is very
+quiet about failures - maybe a cryptic message in dmesg, and nobody
+reads all of that unless they're looking for something.  If btrfs
+could report significant issues that might mitigate the impact of an
+auto-recovery.
+
+Also, another thing to consider during recovery is whether the damaged
+data could be optionally stored in a snapshot of some kind - maybe in
+the way that ext3/4 rollback data after conversion gets stored in a
+snapshot.  My knowledge of the underlying structures is weak, but I'd
+think that a corrupted tree root practically is a snapshot already,
+and turning it into one might even be easier than cleaning it up.  Of
+course, we would need to ensure the snapshot could be deleted without
+further error.  Doing anything with the snapshot might require special
+tools, but if people want to do disk scraping they could.
+
+--
+Rich

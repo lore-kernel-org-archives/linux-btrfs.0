@@ -1,82 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53080 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:32774 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753866AbaJNWAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 18:00:23 -0400
+	id S1751303AbaJNWfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Oct 2014 18:35:34 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XeA8j-0002Xw-QY
-	for linux-btrfs@vger.kernel.org; Wed, 15 Oct 2014 00:00:21 +0200
+	id 1XeAgj-0000Ua-V5
+	for linux-btrfs@vger.kernel.org; Wed, 15 Oct 2014 00:35:29 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:00:21 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:35:29 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:00:21 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:35:29 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: what is the best way to monitor raid1 drive failures?
-Date: Tue, 14 Oct 2014 22:00:09 +0000 (UTC)
-Message-ID: <pan$83686$251b2d40$6e8ece38$bc60b89e@cox.net>
-References: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com>
-	<543B372F.10509@oracle.com>
-	<CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com>
-	<543C86C3.7040804@oracle.com>
-	<CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
+Subject: Re: Random file system corruption in 3.17 (not BTRFS related...?)
+Date: Tue, 14 Oct 2014 22:35:14 +0000 (UTC)
+Message-ID: <pan$ce890$598bb3af$d0bcd705$e79f1b9b@cox.net>
+References: <543D555B.50708@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Suman C posted on Tue, 14 Oct 2014 07:48:01 -0700 as excerpted:
+Robert White posted on Tue, 14 Oct 2014 09:54:51 -0700 as excerpted:
 
-> Here's a simple raid1 recovery experiment that's not working as
-> expected.
-> 
-> kernel: 3.17, latest mainline progs: 3.16.1
-> 
-> I started with a simple raid1 mirror of 2 drives (sda and sdb). The
-> filesystem is functional, I created one subvol, put some data,
-> read/write tested etc..
-> 
-> yanked the sdb out. (this is physical/hardware). btrfs fi show prints
-> drive missing, as expected.
-> 
-> powered the machine down. removed the "bad"(yanked out sdb) drive and
-> replaced it with a new drive. Powered up the machine.
-> 
-> The new drive shows up as sdb. btrfs fi show still prints drive missing.
-> 
-> mounted the filesystem with ro,degraded
-> 
-> tried adding the "new" sdb drive which results in the following error.
-> (-f because the new drive has a fs from past)
-> 
-> # btrfs device add -f /dev/sdb /mnt2/raid1pool /dev/sdb is mounted
+> On the BTRFS system much of my browser settings for firefox were
+> trashed, particularly the cookies and saved conifigurations for add-ons
+> (like which sites had scripts enabled/disabled in no-script) etc.
 
-While I'm not sure it'll get you past the error, did you try...
+FWIW, this reply is more toward the firefox corruption than the
+why-particulars of the crash.
 
-# btrfs replace ...
+The prefs.js file in the profile dir holds addon settings and seems to be 
+particularly sensitive to corruption.  At least here, firefox has created 
+several backups, prefs-1.js thru prefs-7.js, I suppose at upgrade.  The 
+first time I lost settings I restored prefs-7.js (the newest/largest of 
+the backups) as prefs.js, and only lost a few settings that I had changed 
+since the last upgrade, which had changed the firefox interface so I had 
+to change my settings accordingly.  The time or two since then that I 
+hard-crashed and lost my addons, I was able to replace the prefs.js file 
+from a recent /home backup.
 
-That's the new way to /replace/ a missing device, adding a new one and 
-deleting the old one (which can be missing) at the same time.  See the 
-btrfs-replace manpage.
+Anyway, it's the prefs.js file that you want to restore.  Whether it's 
+from the last prefs-N.js backup that firefox did, or from your own 
+backup, prefs.js is it.
 
-While the btrfs-replace manpage says that you have to use the <devid> 
-format if the device is missing, it isn't particularly helpful in telling 
-what that format actually is.  Do a btrfs fi show and use the appropriate 
-devid /number/ from there. =:^)
-
-Please report back as I'm using btrfs raid1 as well, but my own tests are 
-rather stale by this point and I'd have to figure it out as I went.  So 
-I'm highly interested in your results. =:^)
-
-(FWIW, personally I'd have made that btrfs device replace, instead of 
-btrfs replace, to keep it grouped with the other device operations, but 
-whatever, it's its own top-level command, now.  Tho at least the
-btrfs-device manpage mentions btrfs replace and its manpage as well.  But 
-I still think having replace as its own top-level command is confusing.)
+As for cookies, history, etc.  I didn't notice them going corrupt.  I do 
+run raid1 btrfs and after a crash, do a scrub, which may recover some 
+files.  And I run tight enough security that most cookies are session-
+only (and no third-party), so that file won't be written to much, which 
+probably saves it.  I don't know about history.  Maybe it was corrupted 
+and I simply didn't notice it, as I don't use history that often.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

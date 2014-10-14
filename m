@@ -1,87 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f54.google.com ([209.85.215.54]:33408 "EHLO
-	mail-la0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753551AbaJNI7I (ORCPT
+Received: from extserverfr1.prnet.org ([188.165.43.41]:44933 "EHLO
+	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754846AbaJNLRu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 04:59:08 -0400
-Received: by mail-la0-f54.google.com with SMTP id gm9so7889224lab.41
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Oct 2014 01:59:06 -0700 (PDT)
-Message-ID: <543CE5D8.1050306@converseincode.com>
-Date: Tue, 14 Oct 2014 10:59:04 +0200
-From: Behan Webster <behanw@converseincode.com>
+	Tue, 14 Oct 2014 07:17:50 -0400
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>
-CC: akpm@linux-foundation.org, bruce.w.allan@intel.com, d.kasatkin@samsung.com,
-        james.l.morris@oracle.com, john.griffin@intel.com,
-        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
-        linux-ima-devel@lists.sourceforge.net,
-        linux-ima-user@lists.sourceforge.net, linux-kernel@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
-        neilb@suse.de, qat-linux@intel.com, serge@hallyn.com,
-        thomas.lendacky@amd.com, zohar@linux.vnet.ibm.com, agk@redhat.com,
-        clm@fb.com, davem@davemloft.net, dm-devel@redhat.com, fabf@skynet.be,
-        herbert@gondor.apana.org.au, jbacik@fb.com, snitzer@redhat.com,
-        tadeusz.struk@intel.com
-Subject: [GIT PULL] LLVMLinux patches for v3.18
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Tue, 14 Oct 2014 13:17:41 +0200
+From: admin@prnet.org
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs random filesystem corruption in kernel 3.17
+In-Reply-To: <pan$e02d1$5d8cd0cc$87f3cfc$b14a0d51@cox.net>
+References: <543450DC.90504@prnet.org>
+ <1412714780.2374.0@mail.thefacebook.com> <543A61EE.7070200@prnet.org>
+ <CAGfcS_k7Y2-j3moyFw3j0gzb6Xuj-AutfjvZzEnpMem-z0KPRA@mail.gmail.com>
+ <543C35C3.9070002@prnet.org>
+ <CAGfcS_n5+ToT6kM5+J9TLjdwpriC3uu7hg2HVZXTmTSo-URO9Q@mail.gmail.com>
+ <pan$e02d1$5d8cd0cc$87f3cfc$b14a0d51@cox.net>
+Message-ID: <c2103f1c229cdd887b8743d0946a8a8f@prnet.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-These patches remove the use of VLAIS using a new SHASH_DESC_ON_STACK macro.
-Some of the previously accepted VLAIS removal patches haven't used this
-macro. I will
-push new patches to consistently use this macro in all those older cases
-for 3.19
+> Summarizing what I've seen on the threads...
 
-The following changes since commit 2d65a9f48fcdf7866aab6457bc707ca233e0c791:
+First of all many thanks for summarizing the info.
 
-  Merge branch 'drm-next' of git://people.freedesktop.org/~airlied/linux
-(2014-10-14 09:39:08 +0200)
+> 1) The bug seems to be read-only snapshot related.  The connection to
+> send is that send creates read-only snapshots, but people creating 
+> read-
+> only snapshots for other purposes are now reporting the same problem, 
+> so
+> it's not send, it's the read-only snapshots.
 
-are available in the git repository at:
+In fact send does not create a read-only snapshot, snapshots are created 
+manually prior to calling send.
 
-  git://git.linuxfoundation.org/llvmlinux/kernel.git
-tags/llvmlinux-for-v3.18
+> 2) Writable snapshots haven't been implicated yet, and the working set
+> from which the snapshots are taken doesn't seem to be affected, either.
+> So in that sense it's not affecting ordinary usage, only the read-only
+> snapshots themselves.
+> 
+> 3) More problematic, however, is the fact that these apparently 
+> corrupted
+> read-only snapshots often are not listed properly and can't be deleted,
+> tho I'm not sure if that's /all/ the corrupted snapshots or only part 
+> of
+> them. So while it may not affect ordinary operation in the short term,
+> over time until there's a fix, people routinely doing read-only 
+> snapshots
+> are going to be getting more and more of these undeletable snapshots, 
+> and
+> depending on whether the eventual patch only prevents more or can
+> actually fix the bad ones (possibly via btrfs check or the like),
+> affected filesystems may ultimately have to be blown away and recreated
+> with a fresh mkfs, in ordered to kill the currently undeletable 
+> snapshots.
+> 
+> So the first thing to do would be to shut off whatever's making 
+> read-only
+> snapshots, so you don't make the problem worse while it's being
+> investigated.  For those who can do that without too big an 
+> interruption
+> to their normal routine (who don't depend on send/receive, for 
+> instance),
+> just keep it off for the time being.  For those who depend on read-only
+> snapshots (send-receive for backup and the data is too valuable to not 
+> do
+> the backups for a few days), consider switching back to 3.16-stable --
+> from 3.16.3 at least, the patch for the compress bug is there, so that
+> shouldn't be a problem.
+> 
+> And if you're affected, be aware that until we have a fix, we don't 
+> know
+> if it'll be possible to remove the affected and currently undeletable
+> snapshots.  If it's not, at some point you'll need to do a fresh
+> mkfs.btrfs, to get rid of the damage.  Since the bug doesn't appear to
+> affect writable snapshots or the "head" from which snapshots are made,
+> it's not urgent, and a full fix is likely to include a patch to detect
+> and fix the problem as well, but until we know what the problem is we
+> can't be sure of that, so be prepared to do that mkfs at some point, as
+> at this point it's possible that's the only way you'll be able to kill
+> the corrupted snapshots.
 
-for you to fetch changes up to 4c5c30249452aaebf258751ea4222eba3dd3da4c:
+I don't agree with you concerning the not urgent part. In my opinion, 
+any problem leading to filesystem or other data corruption should be 
+considered as urgent, at least as long as it isn't known what exactly is 
+affected and whether there is a simple way to salvage the corruption 
+without going the backup/restore route.
 
-  crypto: LLVMLinux: Remove VLAIS usage from crypto/testmgr.c
-(2014-10-14 10:51:24 +0200)
-
-----------------------------------------------------------------
-LLVMLinux patches for v3.18
-
-----------------------------------------------------------------
-Behan Webster (6):
-      crypto: LLVMLinux: Add macro to remove use of VLAIS in crypto code
-      crypto: LLVMLinux: Remove VLAIS from crypto/mv_cesa.c
-      crypto: LLVMLinux: Remove VLAIS from crypto/n2_core.c
-      crypto: LLVMLinux: Remove VLAIS from crypto/omap_sham.c
-      crypto: LLVMLinux: Remove VLAIS from crypto/.../qat_algs.c
-      security, crypto: LLVMLinux: Remove VLAIS from ima_crypto.c
-
-Jan-Simon Möller (5):
-      crypto: LLVMLinux: Remove VLAIS from crypto/ccp/ccp-crypto-sha.c
-      crypto, dm: LLVMLinux: Remove VLAIS usage from dm-crypt
-      crypto: LLVMLinux: Remove VLAIS usage from crypto/hmac.c
-      crypto: LLVMLinux: Remove VLAIS usage from libcrc32c.c
-      crypto: LLVMLinux: Remove VLAIS usage from crypto/testmgr.c
-
-Vinícius Tinti (1):
-      btrfs: LLVMLinux: Remove VLAIS
-
- crypto/hmac.c                            | 25 ++++++++---------
- crypto/testmgr.c                         | 14 ++++------
- drivers/crypto/ccp/ccp-crypto-sha.c      | 13 ++++-----
- drivers/crypto/mv_cesa.c                 | 41 ++++++++++++----------------
- drivers/crypto/n2_core.c                 | 11 +++-----
- drivers/crypto/omap-sham.c               | 28 ++++++++-----------
- drivers/crypto/qat/qat_common/qat_algs.c | 31 ++++++++++-----------
- drivers/md/dm-crypt.c                    | 34 ++++++++++-------------
- fs/btrfs/hash.c                          | 16 +++++------
- include/crypto/hash.h                    |  5 ++++
- lib/libcrc32c.c                          | 16 +++++------
- security/integrity/ima/ima_crypto.c      | 47
-+++++++++++++-------------------
- 12 files changed, 122 insertions(+), 159 deletions(-)
-
+> 4) Total speculation on my part, but given the wanted transid (aka
+> generation, in different contexts) is significantly lower than the 
+> found
+> transid, and the fact that the problem appears to be limited to
+> /read-only/ snapshots, my first suspicion is that something's getting
+> updated that would normally apply to all snapshots, but the read-only
+> nature of the snapshots is preventing the full update there.  The 
+> transid
+> of the block is updated, but the snapshot being read-only is preventing
+> update of the pointer in that snapshot accordingly.
+> 
+> What I do /not/ know is whether the bug is that something's getting
+> updated that should NOT be, and it's simply the read-only snapshots
+> letting us know about it since the writable snapshots are fully 
+> updated,
+> even if that breaks the snapshot (breaking writable snapshots in a
+> different and currently undetected way), or if instead, it's a 
+> legitimate
+> update, like a balance simply moving the snapshot around but not
+> affecting it otherwise, and the bug is that the read-only snapshots
+> aren't allowing the legitimate update.
+> 
+> Either way, this more or less developed over the weekend, and it's 
+> Monday
+> now, so the devs should be on it.  If it's anything like the 3.15/3.16
+> compression bug, it'll take some time for them to properly trace it, 
+> and
+> then to figure out an appropriate fix, but they will.  Chances are 
+> we'll
+> have at least some decent progress on a trace by Friday, and maybe even 
+> a
+> good-to-go patch. =:^)

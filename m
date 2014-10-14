@@ -1,30 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47291 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754304AbaJNJcg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 05:32:36 -0400
-Date: Tue, 14 Oct 2014 11:32:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Marc Dietrich <marvin24@gmx.de>
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH v4] btrfs-progs: fix page align issue for lzo compress in
- restore
-Message-ID: <20141014093234.GP22943@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20140922134115.GP9715@twin.jikos.cz>
- <1411461294-24093-1-git-send-email-guihc.fnst@cn.fujitsu.com>
- <1929724.Hf7kupaGA7@fb07-iapwap2>
+Received: from resqmta-po-05v.sys.comcast.net ([96.114.154.164]:42637 "EHLO
+	resqmta-po-05v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751303AbaJNWZl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Oct 2014 18:25:41 -0400
+Message-ID: <543DA2E3.3070503@pobox.com>
+Date: Tue, 14 Oct 2014 15:25:39 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1929724.Hf7kupaGA7@fb07-iapwap2>
+To: linux-btrfs@vger.kernel.org
+Subject: Wishlist Item :: One Subvol in Multiple Places
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 14, 2014 at 10:06:16AM +0200, Marc Dietrich wrote:
-> This hasn't landed in an btrfs-progs branch I found. Any update?
+I've got no idea if this is possible given the current storage layout, 
+but it would be Really Nice™ if there were a way to have a single 
+subvolume exist in more than one place in hirearchy. I know this can be 
+faked via mount tricks (bind or use of subvol=), but having it be a real 
+thing would be preferable.
 
-I had it tagged for review and found something that needs fixing. The
-PAGE_CACHE_SIZE is hardcoded to 4k, this will break on filesystems with
-larger sectors (eg. the powerpc machines). I'll scheudule the patch post
-3.17, with a fix.
+For example, if I have two or more distributions on a computer or want 
+to switch between 32bit and 64bit environments frequently, but I want to 
+use the same /home (which is its own subvolume anyway) it would be nice 
+if the native layout could be permuted such that /__System_32/home and 
+/__System_64/home were the actual same subvolume.
+
+The mechanism, were it possible, would be something like "btrfs 
+subvolume link /existing/path /new/path" (or "bind" instead of "link")
+
+I've got no idea if the directory structure would allow for this, but if 
+it would it would simplify several things (for me anyway) if the file 
+system layout represented the runtime layout.

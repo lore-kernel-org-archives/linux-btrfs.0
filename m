@@ -1,58 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extserverfr1.prnet.org ([188.165.43.41]:44941 "EHLO
-	extserverfr1.prnet.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751076AbaJNRWO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 13:22:14 -0400
-Message-ID: <543D5BC3.9080008@prnet.org>
-Date: Tue, 14 Oct 2014 19:22:11 +0200
-From: David Arendt <admin@prnet.org>
-MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Random file system corruption in 3.17 (not BTRFS related...?)
-References: <543D555B.50708@pobox.com>
-In-Reply-To: <543D555B.50708@pobox.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:38172 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754241AbaJNTPd convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Oct 2014 15:15:33 -0400
+Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:59612 helo=[192.168.2.7])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Xe7ZE-003wAs-IF
+	for linux-btrfs@vger.kernel.org; Tue, 14 Oct 2014 13:15:32 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: what is the best way to monitor raid1 drive failures?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
+Date: Tue, 14 Oct 2014 15:15:28 -0400
+Message-Id: <3E469DA1-1744-4AFC-9C56-04AE2CB6BA4F@colorremedies.com>
+References: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com> <543B372F.10509@oracle.com> <CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com> <543C86C3.7040804@oracle.com> <CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I didn't notice a corruption on other filesystems with kernel 3.17.0. 
-Also I didn't experience any hangs except when trying to mount a 
-corrupted btrfs but this was causing a hang within less than 10 seconds. 
-It could be that your problem is unrelated and that the corruption you 
-are experiencing is due to an unrelated hang followed by a hard 
-powerdown. Have you been able to capture any btrfs related kernel panics ?
 
-On 10/14/14 6:54 PM, Robert White wrote:
-> Howdy,
->
-> So I run several gentoo systems and I upgraded two of them to kernel 
-> 3.17.0
->
-> One using BTRFS for root.
-> One using ext3 for root (via the ext4 driver)
->
-> _Both_ systems exhibited strange behavior (long pauses and then hangs 
-> requiring hard-power) within several hours. Both then had random 
-> filesystem damage.
->
-> On the BTRFS system much of my browser settings for firefox were 
-> trashed, particularly the cookies and saved conifigurations for 
-> add-ons (like which sites had scripts enabled/disabled in no-script) etc.
->
-> On the ext3/4 system there were several corruptions including a 
-> pipe/special file with a large non-zero size that required I do a 
-> "fsck -fyD /dev/sda3" to repair. (one comment from fsck was that the 
-> pipe/special file "looked like a directory" or some such)
->
-> So I can say that corruption is taking place, but I suspect it is 
-> _not_ happening in the BTRFS specific code.
->
-> (ASIDE: both systems are older amd64 using built-in radeon display 
-> hardware.)
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Oct 14, 2014, at 10:48 AM, Suman C <schakrava@gmail.com> wrote:
+> 
+> mounted the filesystem with ro,degraded
+> 
+> tried adding the "new" sdb drive which results in the following error.
+> (-f because the new drive has a fs from past)
+> 
+> # btrfs device add -f /dev/sdb /mnt2/raid1pool
+> /dev/sdb is mounted
+> 
+> Unless I am missing something, this looks like a bug.
+
+Strange message. I expect a device can't be added to a volume mounted ro. If the device add command works on a volume mounted rw, then the bug is the message '/dev/sdb is mounted' when adding device to ro mounted volume.
+
+
+Chris Murphy
 

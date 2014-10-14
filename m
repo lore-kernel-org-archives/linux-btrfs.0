@@ -1,57 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:58188 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754524AbaJNULF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 16:11:05 -0400
-Received: by mail-wi0-f176.google.com with SMTP id hi2so11182118wib.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Oct 2014 13:11:04 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <3E469DA1-1744-4AFC-9C56-04AE2CB6BA4F@colorremedies.com>
+Received: from plane.gmane.org ([80.91.229.3]:53080 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753866AbaJNWAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Oct 2014 18:00:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XeA8j-0002Xw-QY
+	for linux-btrfs@vger.kernel.org; Wed, 15 Oct 2014 00:00:21 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:00:21 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:00:21 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: what is the best way to monitor raid1 drive failures?
+Date: Tue, 14 Oct 2014 22:00:09 +0000 (UTC)
+Message-ID: <pan$83686$251b2d40$6e8ece38$bc60b89e@cox.net>
 References: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com>
 	<543B372F.10509@oracle.com>
 	<CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com>
 	<543C86C3.7040804@oracle.com>
 	<CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
-	<3E469DA1-1744-4AFC-9C56-04AE2CB6BA4F@colorremedies.com>
-Date: Tue, 14 Oct 2014 13:11:03 -0700
-Message-ID: <CAPF83msoJtpRRmMEeaLHQf=e6JyoTgR9TP3p_Q5XAZCLahh-yw@mail.gmail.com>
-Subject: Re: what is the best way to monitor raid1 drive failures?
-From: Suman C <schakrava@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After the reboot step, where I indicated that I mounted ro, I was
-unable to mount rw or rw,degraded. I get the "mount: wrong fs type,
-bad option, bad superblock...." error if I try to mount it rw.
+Suman C posted on Tue, 14 Oct 2014 07:48:01 -0700 as excerpted:
 
-What might be the reason for that?
+> Here's a simple raid1 recovery experiment that's not working as
+> expected.
+> 
+> kernel: 3.17, latest mainline progs: 3.16.1
+> 
+> I started with a simple raid1 mirror of 2 drives (sda and sdb). The
+> filesystem is functional, I created one subvol, put some data,
+> read/write tested etc..
+> 
+> yanked the sdb out. (this is physical/hardware). btrfs fi show prints
+> drive missing, as expected.
+> 
+> powered the machine down. removed the "bad"(yanked out sdb) drive and
+> replaced it with a new drive. Powered up the machine.
+> 
+> The new drive shows up as sdb. btrfs fi show still prints drive missing.
+> 
+> mounted the filesystem with ro,degraded
+> 
+> tried adding the "new" sdb drive which results in the following error.
+> (-f because the new drive has a fs from past)
+> 
+> # btrfs device add -f /dev/sdb /mnt2/raid1pool /dev/sdb is mounted
 
-Suman
+While I'm not sure it'll get you past the error, did you try...
 
-On Tue, Oct 14, 2014 at 12:15 PM, Chris Murphy <lists@colorremedies.com> wrote:
->
-> On Oct 14, 2014, at 10:48 AM, Suman C <schakrava@gmail.com> wrote:
->>
->> mounted the filesystem with ro,degraded
->>
->> tried adding the "new" sdb drive which results in the following error.
->> (-f because the new drive has a fs from past)
->>
->> # btrfs device add -f /dev/sdb /mnt2/raid1pool
->> /dev/sdb is mounted
->>
->> Unless I am missing something, this looks like a bug.
->
-> Strange message. I expect a device can't be added to a volume mounted ro. If the device add command works on a volume mounted rw, then the bug is the message '/dev/sdb is mounted' when adding device to ro mounted volume.
->
->
-> Chris Murphy
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+# btrfs replace ...
+
+That's the new way to /replace/ a missing device, adding a new one and 
+deleting the old one (which can be missing) at the same time.  See the 
+btrfs-replace manpage.
+
+While the btrfs-replace manpage says that you have to use the <devid> 
+format if the device is missing, it isn't particularly helpful in telling 
+what that format actually is.  Do a btrfs fi show and use the appropriate 
+devid /number/ from there. =:^)
+
+Please report back as I'm using btrfs raid1 as well, but my own tests are 
+rather stale by this point and I'd have to figure it out as I went.  So 
+I'm highly interested in your results. =:^)
+
+(FWIW, personally I'd have made that btrfs device replace, instead of 
+btrfs replace, to keep it grouped with the other device operations, but 
+whatever, it's its own top-level command, now.  Tho at least the
+btrfs-device manpage mentions btrfs replace and its manpage as well.  But 
+I still think having replace as its own top-level command is confusing.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,99 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:47937 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750891AbaJPHB7 (ORCPT
+Received: from resqmta-po-07v.sys.comcast.net ([96.114.154.166]:49277 "EHLO
+	resqmta-po-07v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752936AbaJNXC4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Oct 2014 03:01:59 -0400
-Received: by mail-la0-f44.google.com with SMTP id hs14so2354832lab.17
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Oct 2014 00:01:57 -0700 (PDT)
+	Tue, 14 Oct 2014 19:02:56 -0400
+Message-ID: <543DAB9F.3050403@pobox.com>
+Date: Tue, 14 Oct 2014 16:02:55 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <543F213F.5090308@jp.fujitsu.com>
-References: <541BED3D.5020803@jp.fujitsu.com>
-	<20140929163646.GF11436@twin.jikos.cz>
-	<543F213F.5090308@jp.fujitsu.com>
-Date: Thu, 16 Oct 2014 08:01:57 +0100
-Message-ID: <CAL3q7H4RGcyiejS9JsD7bvF1N4uGPerumEsezceW_HN__yY3Dg@mail.gmail.com>
-Subject: Re: [PATCH 1/4] btrfs: correct empty compression property behavior
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>,
-        naota <naota@elisp.net>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Wishlist Item :: re/setable "Snapshot" property
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 16, 2014 at 2:37 AM, Satoru Takeuchi
-<takeuchi_satoru@jp.fujitsu.com> wrote:
-> Hi David and Chris,
->
-> (2014/09/29 18:36), David Sterba wrote:
->>
->> On Fri, Sep 19, 2014 at 05:45:49PM +0900, Satoru Takeuchi wrote:
->>>
->>> In the current implementation, compression property == "" has
->>> the two different meanings: one is with BTRFS_INODE_NOCOMPRESS,
->>> and the other is without this flag.
->>>
->>> So, even if the two files a and b have the same compression
->>> property, "", and the same contents, one file seems to be
->>> compressed and the other is not. It's difficult to understand
->>> for users and also confuses them.
->>
->>
->> Fixing this inconsistency is good, let me think more about the
->> interface.
->
->
-> How about these patches? These patches seems not to be merged yet.
-> Especially patch 4/4 resolve the bug that atomic two operations
-> are separated to the different two transactions. I consider this
-> patch should be applied as soon as possible.
+ From what I can tell the status of a subvolume as a "snapshot" or not 
+is a persistent property that has exactly one effect... determining if 
+the subvolume is listed when using "-s" on btrfs subvol list. That is 
+the status as "snapshot" or not seems to be largely cosmetic.
 
-Why do you think the possibility of 2 transactions being used are such
-a terrible thing that needs immediate attention?
+It would be useful if that property could read and modified with the 
+property subcommand. In particular using "btrfs subvol list / -s" as to 
+track and roll backups is great... until you decide to use one of those 
+backups to replace a damaged or misused partition.
 
-If the first transaction ends up getting committed after calling
-btrfs_end_transaction(), and an error (or a crash/reboot) happens
-before the second transaction, userspace gets an error and gets to
-know the changes weren't fully applied (and the sensible action is to
-retry the ioctl later).
-The worst it can happen is leaving some compression xattr or flag on
-disk after the first transaction commit. But that doesn't prevent
-userspace from doing file/directory operations nor much less causes
-any data loss or corruption, nor does it cause any metadata
-inconsistency reported by btrfsck or scrub for e.g.. So leaving
-compression on/off is transparent thing that doesn't affect user
-operations.
+So lets say you have /home and you make /home_BACKUP_disambiguator_here 
+snapshots every day and you want to keep the two most recent monthly and 
+the five most recent daily. The most obvious solution is to get the 
+current status with the -s option to snapshot list.
 
-You can my Reviewed-by: Filipe Manana <fdmanana@suse.com> to the
-series if you want.
+Then someone totally trashes home and you want to do the following fast 
+recovery from snapshot:
 
-thanks
+btrfs subvol delete /home
+btrfs subvolume snapshot /home_BACKUP_relevant_tail /home
 
->
-> Thanks,
-> Satoru
->
->
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+__OR__
+
+btrfs subvol delete /home
+mv /home_BACKUP_relevant_date /home
+btrfs property set /home ro false
 
 
+At this point there is no way to remove /home from the listing produced 
+by "btrfs subvol list / -s". This basically breaks the most (only?) 
+obvious use for the -s filter anyway.
 
--- 
-Filipe David Manana,
+Being able to do a "btrfs property set /home snapshot false" would then 
+prevent complications in the system maintenance scripts.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+At present the only way get a "non-snapshot" subvolume back in place of 
+/home would be to create a new subvolume with "btrfs subvolume create 
+/home" and then copy the files out of the backup snapshot long-hand. /Blarg.
+
+The other major use would be copying a complete system using 
+send/receive and then promoting the received subvolumes out of snapshot 
+status for the exact same reason in terms of automated backups.
+
+There needs to be a way to manipulate this attribute.
+
+If this attribute has any other purpose, I can't figure out what it is.

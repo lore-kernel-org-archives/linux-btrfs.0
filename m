@@ -1,84 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3385 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750877AbaJMVJp (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:33884 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754171AbaJNCNa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 17:09:45 -0400
-Message-ID: <543C3F93.8080403@fb.com>
-Date: Mon, 13 Oct 2014 17:09:39 -0400
-From: Josef Bacik <jbacik@fb.com>
+	Mon, 13 Oct 2014 22:13:30 -0400
+Message-ID: <543C86C3.7040804@oracle.com>
+Date: Tue, 14 Oct 2014 10:13:23 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com>
-In-Reply-To: <54358C77.2070808@redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: Suman C <schakrava@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: what is the best way to monitor raid1 drive failures?
+References: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com> <543B372F.10509@oracle.com> <CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com>
+In-Reply-To: <CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/08/2014 03:11 PM, Eric Sandeen wrote:
-> I was looking at Marc's post:
->
-> https://urldefense.proofpoint.com/v1/url?u=http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=XJPoqgf9jjvuE1IqCerEXXuwF4w3hbDS3%2F63x5KI4R4%3D%0A&s=b1f817d758eacf914bd60f20ada715384e13c1f8e040100794b0cb21261ec884
->
-> and it feels like there isn't exactly a cohesive, overarching vision for
-> repair of a corrupted btrfs filesystem.
->
-> In other words - I'm an admin cruising along, when the kernel throws some
-> fs corruption error, or for whatever reason btrfs fails to mount.
-> What should I do?
->
-> Marc lays out several steps, but to me this highlights that there seem to
-> be a lot of disjoint mechanisms out there to deal with these problems;
-> mostly from Marc's blog, with some bits of my own:
->
-> * btrfs scrub
-> 	"Errors are corrected along if possible" (what *is* possible?)
-> * mount -o recovery
-> 	"Enable autorecovery attempts if a bad tree root is found at mount time."
-> * mount -o degraded
-> 	"Allow mounts to continue with missing devices."
-> 	(This isn't really a way to recover from corruption, right?)
-> * btrfs-zero-log
-> 	"remove the log tree if log tree is corrupt"
-> * btrfs rescue
-> 	"Recover a damaged btrfs filesystem"
-> 	chunk-recover
-> 	super-recover
-> 	How does this relate to btrfs check?
-> * btrfs check
-> 	"repair a btrfs filesystem"
-> 	--repair
-> 	--init-csum-tree
-> 	--init-extent-tree
-> 	How does this relate to btrfs rescue?
-> * btrfs restore
-> 	"try to salvage files from a damaged filesystem"
-> 	(not really repair, it's disk-scraping)
->
->
-> What's the vision for, say, scrub vs. check vs. rescue?  Should they repair the
-> same errors, only online vs. offline?  If not, what class of errors does one fix vs.
-> the other?  How would an admin know?  Can btrfs check recover a bad tree root
-> in the same way that mount -o recovery does?  How would I know if I should use
-> --init-*-tree, or chunk-recover, and what are the ramifications of using
-> these options?
->
-> It feels like recovery tools have been badly splintered, and if there's an
-> overarching design or vision for btrfs fs repair, I can't tell what it is.
-> Can anyone help me?
->
 
-We probably should just consolidate under 3 commands, one for online 
-checking, one for offline repair and one for pulling stuff off of the 
-disk when things go to hell.  A lot of these tools were born out of the 
-fact that we didn't have a fsck tool for a long time so there were these 
-stop gaps put into place, so now its time to go back and clean it up.
 
-I'll try and do this after I finish my cleanup/sync between kernel and 
-progs work and fill out the documentation a little better so its clear 
-when to use what.  Thanks,
 
-Josef
+On 10/14/14 03:50, Suman C wrote:
+> I had progs 3.12 and updated to the latest from git(3.16). With this
+> update, btrfs fi show reports there is a missing device immediately
+> after i pull it out. Thanks!
+>
+> I am using virtualbox to test this. So, I am detaching the drive like so:
+>
+> vboxmanage storageattach <vm> --storagectl <controller> --port <port>
+> --device <device> --medium none
+>
+> Next I am going to try and test a more realistic scenario where a
+> harddrive is not pulled out, but is damaged.
 
+
+> Can/does btrfs mark a filesystem(say, 2 drive raid1) degraded or
+> unhealthy automatically when one drive is damaged badly enough that it
+> cannot be written to or read from reliably?
+
+  There are some gaps as directly compared to an enterprise volume
+  manager, which is being fixed.  but pls do report what you find.
+
+Thanks, Anand
+
+
+> Suman
+>
+> On Sun, Oct 12, 2014 at 7:21 PM, Anand Jain <Anand.Jain@oracle.com> wrote:
+>>
+>> Suman,
+>>
+>>> To simulate the failure, I detached one of the drives from the system.
+>>> After that, I see no sign of a problem except for these errors:
+>>
+>>   Are you physically pulling out the device ? I wonder if lsblk or blkid
+>>   shows the error ? reporting device missing logic is in the progs (so
+>>   have that latest) and it works provided user script such as blkid/lsblk
+>>   also reports the problem. OR for soft-detach tests you could use
+>>   devmgt at http://github.com/anajain/devmgt
+>>
+>>   Also I am trying to get the device management framework for the btrfs
+>>   with a more better device management and reporting.
+>>
+>> Thanks,  Anand
+>>
+>>
+>>
+>> On 10/13/14 07:50, Suman C wrote:
+>>>
+>>> Hi,
+>>>
+>>> I am testing some disk failure scenarios in a 2 drive raid1 mirror.
+>>> They are 4GB each, virtual SATA drives inside virtualbox.
+>>>
+>>> To simulate the failure, I detached one of the drives from the system.
+>>> After that, I see no sign of a problem except for these errors:
+>>>
+>>> Oct 12 15:37:14 rock-dev kernel: btrfs: bdev /dev/sdb errs: wr 0, rd
+>>> 0, flush 1, corrupt 0, gen 0
+>>> Oct 12 15:37:14 rock-dev kernel: lost page write due to I/O error on
+>>> /dev/sdb
+>>>
+>>> /dev/sdb is gone from the system, but btrfs fi show still lists it.
+>>>
+>>> Label: raid1pool  uuid: 4e5d8b43-1d34-4672-8057-99c51649b7c6
+>>>       Total devices 2 FS bytes used 1.46GiB
+>>>       devid    1 size 4.00GiB used 2.45GiB path /dev/sdb
+>>>       devid    2 size 4.00GiB used 2.43GiB path /dev/sdc
+>>>
+>>> I am able to read and write just fine, but do see the above errors in
+>>> dmesg.
+>>>
+>>> What is the best way to find out that one of the drives has gone bad?
+>>>
+>>> Suman
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

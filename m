@@ -1,46 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:58861 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750887AbaJOXOr (ORCPT
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:53186 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750887AbaJOXOt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 19:14:47 -0400
-Received: by mail-wg0-f51.google.com with SMTP id b13so2439475wgh.34
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 16:14:46 -0700 (PDT)
+	Wed, 15 Oct 2014 19:14:49 -0400
+Received: by mail-wg0-f50.google.com with SMTP id a1so2446582wgh.33
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 16:14:48 -0700 (PDT)
 From: Zach Brown <zab@zabbo.net>
 To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/4] btrfs-progs: check sscanf return code
-Date: Wed, 15 Oct 2014 16:14:18 -0700
-Message-Id: <1413414861-28097-2-git-send-email-zab@zabbo.net>
+Subject: [PATCH 2/4] btrfs-progs: check read extent errors when mapping
+Date: Wed, 15 Oct 2014 16:14:19 -0700
+Message-Id: <1413414861-28097-3-git-send-email-zab@zabbo.net>
 In-Reply-To: <1413414861-28097-1-git-send-email-zab@zabbo.net>
 References: <1413414861-28097-1-git-send-email-zab@zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-coverity warned that the return code from sscanf() assigned to 'i'
-wasn't checked before being assigned again.  Check it.
+coverity barked out a warning that btrfs-map-logical was storing but
+ignoring errors from read_extent_from_disk().   So don't ignore 'em.  I
+made extent reading errors fatal to match the fatal errors from mapping
+mirrors above.
+
+And while we're at it have read_extent_from_disk() return -errno pread
+errors instead of -EIO or -1 (-EPERM).  The only other caller who tests
+errors clobbers them with -EIO.
 
 Signed-off-by: Zach Brown <zab@zabbo.net>
 ---
- utils.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ btrfs-map-logical.c | 12 +++++++++++-
+ extent_io.c         |  4 +++-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index c2f30d4..51e55be 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1574,7 +1574,11 @@ scan_again:
+diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
+index 6b475fc..47d1104 100644
+--- a/btrfs-map-logical.c
++++ b/btrfs-map-logical.c
+@@ -76,8 +76,18 @@ static struct extent_buffer * debug_read_block(struct btrfs_root *root,
+ 			(unsigned long long)eb->dev_bytenr, device->name);
+ 		kfree(multi);
  
- 	strcpy(fullpath,"/dev/");
- 	while(fgets(buf, 1023, proc_partitions)) {
--		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
-+		ret = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
-+		if (ret != 1) {
-+			fprintf(stderr, "failed to scan device name from /proc/partitions\n");
-+			break;
+-		if (!copy || mirror_num == copy)
++		if (!copy || mirror_num == copy) {
+ 			ret = read_extent_from_disk(eb, 0, eb->len);
++			if (ret) {
++				fprintf(info_file,
++					"Error: failed to read extent: mirror %d logical %llu: %s\n",
++					mirror_num, (unsigned long long)eb->start,
++					strerror(-ret));
++				free_extent_buffer(eb);
++				eb = NULL;
++				break;
++			}
 +		}
  
- 		/*
- 		 * multipath and MD devices may register as a btrfs filesystem
+ 		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+ 					      eb->start, eb->len);
+diff --git a/extent_io.c b/extent_io.c
+index 425af8a..5186e89 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -647,8 +647,10 @@ int read_extent_from_disk(struct extent_buffer *eb,
+ {
+ 	int ret;
+ 	ret = pread(eb->fd, eb->data + offset, len, eb->dev_bytenr);
+-	if (ret < 0)
++	if (ret < 0) {
++		ret = -errno;
+ 		goto out;
++	}
+ 	if (ret != len) {
+ 		ret = -EIO;
+ 		goto out;
 -- 
 1.9.3
 

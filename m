@@ -1,59 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:42893 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751160AbaJMEm4 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:23754 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751232AbaJOIik (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Oct 2014 00:42:56 -0400
-Received: by mail-pd0-f181.google.com with SMTP id z10so4860764pdj.26
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Oct 2014 21:42:55 -0700 (PDT)
-From: Eryu Guan <guaneryu@gmail.com>
+	Wed, 15 Oct 2014 04:38:40 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH] btrfs-progs: add new dev replace result
-Date: Mon, 13 Oct 2014 12:42:13 +0800
-Message-Id: <1413175333-26095-2-git-send-email-guaneryu@gmail.com>
-In-Reply-To: <1413175333-26095-1-git-send-email-guaneryu@gmail.com>
-References: <1413175333-26095-1-git-send-email-guaneryu@gmail.com>
+Cc: dsterba@suse.cz, clm@fb.com
+Subject: [PATCH 1/1] btrfs-progs: mkfs should be consistent in calling register device
+Date: Wed, 15 Oct 2014 08:45:11 +0800
+Message-Id: <1413333911-25542-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A new dev replace result was introduced by kernel commit
+When we have one device we don't call register device.
+(in fact not mandatory, but to make it consistent)
+And when we have more than one we call register device.
 
-Btrfs: return failure if btrfs_dev_replace_finishing() failed
+reproducer:
+Nothing in the kernel device list
+cat /proc/fs/btrfs/devlist | egrep fsid | wc -l
+0
 
-Make the userspace know about the new result too.
+mkfs.btrfs will automatically call register device when devices
+is more than 1.
 
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+mkfs.btrfs -f /dev/sdb /dev/sdc
+cat /proc/fs/btrfs/devlist | egrep fsid | wc -l
+1
+
+But it does not when there is only one device
+
+mkfs.btrfs -f /dev/sdb
+cat /proc/fs/btrfs/devlist | egrep fsid | wc -l
+0
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-replace.c | 2 ++
- ioctl.h        | 1 +
- 2 files changed, 3 insertions(+)
+ mkfs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 9fe7ad8..7a45cef 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -53,6 +53,8 @@ static const char *replace_dev_result2string(__u64 result)
- 		return "not started";
- 	case BTRFS_IOCTL_DEV_REPLACE_RESULT_ALREADY_STARTED:
- 		return "already started";
-+	case BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS:
-+		return "scrub is in progress";
- 	default:
- 		return "<illegal result value>";
- 	}
-diff --git a/ioctl.h b/ioctl.h
-index f0fc060..0e02fae 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -144,6 +144,7 @@ struct btrfs_ioctl_dev_replace_status_params {
- #define BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR			0
- #define BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED		1
- #define BTRFS_IOCTL_DEV_REPLACE_RESULT_ALREADY_STARTED		2
-+#define BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS		3
- struct btrfs_ioctl_dev_replace_args {
- 	__u64 cmd;	/* in */
- 	__u64 result;	/* out */
+diff --git a/mkfs.c b/mkfs.c
+index 9de61e1..e10e62d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1588,11 +1588,11 @@ int main(int ac, char **av)
+ 
+ 	trans = btrfs_start_transaction(root, 1);
+ 
++	btrfs_register_one_device(file);
++
+ 	if (dev_cnt == 0)
+ 		goto raid_groups;
+ 
+-	btrfs_register_one_device(file);
+-
+ 	while (dev_cnt-- > 0) {
+ 		int old_mixed = mixed;
+ 
 -- 
-1.8.3.1
+2.0.0.153.g79dcccc
 

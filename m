@@ -1,47 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21085 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751020AbaJOVUS (ORCPT
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:38460 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750966AbaJOWmt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 17:20:18 -0400
-Received: from pps.filterd (m0004003 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9FLJ0Js023466
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 14:20:18 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1q2070r3px-16
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 14:20:17 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: properly clean up btrfs_end_io_wq_cache
-Date: Wed, 15 Oct 2014 17:19:59 -0400
-Message-ID: <1413407999-1154-1-git-send-email-jbacik@fb.com>
+	Wed, 15 Oct 2014 18:42:49 -0400
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <1413407515.18175.0@mail.thefacebook.com>
+References: <1413398246-17324-1-git-send-email-fdmanana@suse.com>
+	<1413407515.18175.0@mail.thefacebook.com>
+Date: Thu, 16 Oct 2014 00:42:47 +0200
+Message-ID: <CANg_oxx6u3Bk5XHeTYxUHa3t9gnE4J_TWnPyzFCa0aaONxR-6g@mail.gmail.com>
+Subject: Re: [PATCH] Revert "Btrfs: race free update of commit root for ro snapshots"
+From: john terragon <jterragon@gmail.com>
+To: Chris Mason <clm@fb.com>
+Cc: Filipe Manana <fdmanana@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, stable@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In one of Dave's cleanup commits he forgot to call btrfs_end_io_wq_exit on
-unload, which makes us unable to unload and then re-load the btrfs module.  This
-fixes the problem.  Thanks,
+Hi.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/super.c | 1 +
- 1 file changed, 1 insertion(+)
+I applied the patch to 3.17.1 but although I haven't seen any
+corrupted ro snapshot yet it's still impossible to do btrfs send. As
+soon as I start btrfs send I still get
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b83ef15..c1d020f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2151,6 +2151,7 @@ static void __exit exit_btrfs_fs(void)
- 	extent_map_exit();
- 	extent_io_exit();
- 	btrfs_interface_exit();
-+	btrfs_end_io_wq_exit();
- 	unregister_filesystem(&btrfs_fs_type);
- 	btrfs_exit_sysfs();
- 	btrfs_cleanup_fs_uuids();
--- 
-1.8.3.1
+ERROR: send ioctl failed with -12: Cannot allocate memory
 
+even if I redirect btrfs send's output to a file (instead of involving
+btrfs receive)
+
+Maybe this time it's actually a btrfs-progs bug?
+
+Thanks
+John

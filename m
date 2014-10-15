@@ -1,68 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37418 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:39207 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751303AbaJNW4Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Oct 2014 18:56:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XeB0t-0005ve-A7
-	for linux-btrfs@vger.kernel.org; Wed, 15 Oct 2014 00:56:19 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:56:19 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:56:19 +0200
+	id S932269AbaJOArH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Oct 2014 20:47:07 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 21F89AB07
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 00:47:06 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs random filesystem corruption in kernel 3.17
-Date: Tue, 14 Oct 2014 22:55:53 +0000 (UTC)
-Message-ID: <pan$d4cea$708739e$61c372fa$5e22780a@cox.net>
-References: <543450DC.90504@prnet.org>
-	<1412714780.2374.0@mail.thefacebook.com> <543A61EE.7070200@prnet.org>
-	<CAGfcS_k7Y2-j3moyFw3j0gzb6Xuj-AutfjvZzEnpMem-z0KPRA@mail.gmail.com>
-	<543C35C3.9070002@prnet.org>
-	<CAGfcS_n5+ToT6kM5+J9TLjdwpriC3uu7hg2HVZXTmTSo-URO9Q@mail.gmail.com>
-	<pan$e02d1$5d8cd0cc$87f3cfc$b14a0d51@cox.net>
-	<c2103f1c229cdd887b8743d0946a8a8f@prnet.org>
-	<pan$67a58$c42f6156$af002a14$c1094f5a@cox.net> <543D9DA9.50702@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] btrfs: add more superblock checks
+Date: Wed, 15 Oct 2014 02:47:04 +0200
+Message-Id: <1413334024-8536-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Tue, 14 Oct 2014 15:03:21 -0700 as excerpted:
+Populate btrfs_check_super_valid() with checks that try to verify
+consistency of superblock by additional conditions that may arise from
+corrupted devices or bitflips. Some of tests are only hints and issue
+warnings instead of failing the mount, basically when the checks are
+derived from the data found in the superblock.
 
-> What happens if "btrfs property set" is used to (attempt to) promote the
-> snapshot from read-only to read-write? Can the damaged snapshot then be
-> subjected to scrub of btrfsck?
-> 
-> e.g.
-> 
-> btrfs property set /path/to/snapshot ro false (maintenance here)
+Tested on a broken image provided by Qu.
 
-Very good question not yet answered. =:^)
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+V2: use the accessor macros, use >= for the tree level checks
 
-But it's one I can't answer as my use-case doesn't call for such 
-snapshots in the first place and I don't have any to be personally 
-affected by this bug, so my interest is academic.
+ fs/btrfs/disk-io.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 66 insertions(+), 2 deletions(-)
 
-I simply saw the big hairy thread and tried to summarize what I could get 
-out of it to that point, with a bit of my own speculation as to what the 
-"reversed" transid complaints meant.
-
-(Since transids are normally sequential, in most corruption cases, the 
-filesystem has moved on and has a higher transid that's "wanted", but can 
-only find an older/lower transid for something or other.  Or at least 
-that's what I've seen here and what seems common in the other reports 
-I've seen posted.  This bug reverses that, with an older/lower "wanted" 
-transid, but finding a newer/higher one.  That's the strange point that 
-leapt out to me and I'd guess it's a strong hint at the problem, thus my 
-definitely admin-not-coder speculation on that point.)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a1d36e62179c..7da15d6f9a1d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3814,10 +3814,74 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
+ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 			      int read_only)
+ {
++	struct btrfs_super_block *sb = fs_info->super_copy;
++	int ret = 0;
++
++	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: tree_root level too big: %d >= %d\n",
++				btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++	if (btrfs_super_chunk_root_level(sb) >= BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: chunk_root level too big: %d >= %d\n",
++				btrfs_super_chunk_root_level(sb), BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++	if (btrfs_super_log_root_level(sb) >= BTRFS_MAX_LEVEL) {
++		printk(KERN_ERR "BTRFS: log_root level too big: %d >= %d\n",
++				btrfs_super_log_root_level(sb), BTRFS_MAX_LEVEL);
++		ret = -EINVAL;
++	}
++
+ 	/*
+-	 * Placeholder for checks
++	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
++	 * items yet, they'll be verified later. Issue just a warning.
+ 	 */
+-	return 0;
++	if (!IS_ALIGNED(btrfs_super_root(sb), 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				btrfs_super_root(sb));
++	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				btrfs_super_chunk_root(sb));
++	if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096))
++		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
++				btrfs_super_log_root(sb));
++
++	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
++		printk(KERN_ERR "BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
++				fs_info->fsid, sb->dev_item.fsid);
++		ret = -EINVAL;
++	}
++
++	/*
++	 * Hint to catch really bogus numbers, bitflips or so, more exact checks are
++	 * done later
++	 */
++	if (btrfs_super_num_devices(sb) > (1UL << 31))
++		printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
++				btrfs_super_num_devices(sb));
++
++	if (btrfs_super_bytenr(sb) != BTRFS_SUPER_INFO_OFFSET) {
++		printk(KERN_ERR "BTRFS: super offset mismatch %llu != %u\n",
++				btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
++		ret = -EINVAL;
++	}
++
++	/*
++	 * The generation is a global counter, we'll trust it more than the others
++	 * but it's still possible that it's the one that's wrong.
++	 */
++	if (btrfs_super_generation(sb) < btrfs_super_chunk_root_generation(sb))
++		printk(KERN_WARNING
++			"BTRFS: suspicious: generation < chunk_root_generation: %llu < %llu\n",
++			btrfs_super_generation(sb), btrfs_super_chunk_root_generation(sb));
++	if (btrfs_super_generation(sb) < btrfs_super_cache_generation(sb)
++	    && btrfs_super_cache_generation(sb) != (u64)-1)
++		printk(KERN_WARNING
++			"BTRFS: suspicious: generation < cache_generation: %llu < %llu\n",
++			btrfs_super_generation(sb), btrfs_super_cache_generation(sb));
++
++	return ret;
+ }
+ 
+ static void btrfs_error_commit_super(struct btrfs_root *root)
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.8.4.5
 

@@ -1,186 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19784 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750721AbaJOELX (ORCPT
+Received: from mx2.miceliux.com ([81.4.104.92]:32785 "EHLO mx2.miceliux.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751130AbaJOHI0 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 00:11:23 -0400
-Message-ID: <543DF3E3.4000505@oracle.com>
-Date: Wed, 15 Oct 2014 12:11:15 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 15 Oct 2014 03:08:26 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx2.miceliux.com (Postfix) with ESMTP id 3686F19773B
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 09:08:16 +0200 (CEST)
+Received: from mx2.miceliux.com ([127.0.0.1])
+	by localhost (mx2.miceliux.com [127.0.0.1]) (amavisd-new, port 10028)
+	with ESMTP id js7pus9-YG5B for <linux-btrfs@vger.kernel.org>;
+	Wed, 15 Oct 2014 09:08:15 +0200 (CEST)
+Received: from miceliux.com (unknown [IPv6:2a00:dcc0:dead:a8bb::1])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: juan.orti@miceliux.com)
+	by mx2.miceliux.com (Postfix) with ESMTPSA id 5776B197738
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 09:08:15 +0200 (CEST)
 MIME-Version: 1.0
-To: Suman C <schakrava@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: what is the best way to monitor raid1 drive failures?
-References: <CAPF83msBVh_EqHAFxzmicnQjZKe7k4ioNEd8q3vwTxLNDx5prA@mail.gmail.com> <543B372F.10509@oracle.com> <CAPF83mufgJvTKscpAS_SwFdSrA+1dK3T89A2UiuSHArr5wDn8A@mail.gmail.com> <543C86C3.7040804@oracle.com> <CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
-In-Reply-To: <CAPF83mtWrTRyfT34nNm7yjLDq+6uRegNJStkDK6+n_7fpmRTDQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Wed, 15 Oct 2014 09:08:14 +0200
+From: Juan Orti Alcaine <juan.orti@miceliux.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Random file system corruption in 3.17 (not BTRFS
+ =?UTF-8?Q?related=2E=2E=2E=3F=29?=
+In-Reply-To: <543D555B.50708@pobox.com>
+References: <543D555B.50708@pobox.com>
+Message-ID: <eff13bd09ee6883785a4be3ab005886b@miceliux.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+El 2014-10-14 18:54, Robert White escribió:
+> Howdy,
+> 
+> So I run several gentoo systems and I upgraded two of them to kernel 
+> 3.17.0
+> 
+> One using BTRFS for root.
+> One using ext3 for root (via the ext4 driver)
+> 
+> _Both_ systems exhibited strange behavior (long pauses and then hangs
+> requiring hard-power) within several hours. Both then had random
+> filesystem damage.
+> 
+> On the BTRFS system much of my browser settings for firefox were
+> trashed, particularly the cookies and saved conifigurations for
+> add-ons (like which sites had scripts enabled/disabled in no-script)
+> etc.
+> 
+> On the ext3/4 system there were several corruptions including a
+> pipe/special file with a large non-zero size that required I do a
+> "fsck -fyD /dev/sda3" to repair. (one comment from fsck was that the
+> pipe/special file "looked like a directory" or some such)
+> 
+> So I can say that corruption is taking place, but I suspect it is
+> _not_ happening in the BTRFS specific code.
+> 
+> (ASIDE: both systems are older amd64 using built-in radeon display 
+> hardware.)
+> 
 
+I've also experienced Btrfs corruptions with 3.17.0 (Fedora 21 alpha). 
+It has happened two times, each one after a clean reinstall and a wipe 
+of the old fs. In less than a day, both installations got corrupted and 
+the filesystems went readonly. When listing the contents, I saw many 
+directories with question marks.
 
-On 10/14/14 22:48, Suman C wrote:
-> Hi,
->
-> Here's a simple raid1 recovery experiment that's not working as expected.
->
-> kernel: 3.17, latest mainline
-> progs: 3.16.1
->
-> I started with a simple raid1 mirror of 2 drives (sda and sdb). The
-> filesystem is functional, I created one subvol, put some data,
-> read/write tested etc..
->
-> yanked the sdb out. (this is physical/hardware). btrfs fi show prints
-> drive missing, as expected.
+My system has 4 drives and 2 fs:
+- 1 SSD in single
+- 3 HDD in RAID1
 
+I do readonly snapshots every hour of all the subvolumes, so I have 
+hundreds of snapshots.
 
-> powered the machine down. removed the "bad"(yanked out sdb) drive and
-> replaced it with a new drive. Powered up the machine.
+Now I'm back in 3.16.4 without any problems. I'm trying to reproduce my 
+setup in a virtual machine. If the corruption happens again, I'll send 
+you more data on this problem.
 
-  Does new drive at sdb contain some stale btrfs SB ? and was that
-  FS mounted during boot ?
+-- 
+Juan Orti
+https://miceliux.com
 
-  Or simply unmount; wipefs -a /dev/sdb; reboot. That will help to
-  achieve your test case.
-
-> The new drive shows up as sdb. btrfs fi show still prints drive missing.
-
-  good in fact.
-
-> mounted the filesystem with ro,degraded
-
-  ro wasn't required. And now you should be able to replace using
-  devid/missing string.
-
-> tried adding the "new" sdb drive which results in the following error.
-> (-f because the new drive has a fs from past)
->
-> # btrfs device add -f /dev/sdb /mnt2/raid1pool
-> /dev/sdb is mounted
->
-> Unless I am missing something, this looks like a bug.
-
-  Our progs check_mounted() is not too strong, there might be bug.
-  But as of now some info as above is missing.
-
-
-  If you could have experimental patch:
-     [PATCH RFC] btrfs: introduce procfs interface for the device list
-
-  And read /proc/fs/btrfs/devlist
-    That will tell you the "real" status of devices inside the kernel.
-    progs tries to act intelligent at times not required.
-
-
-Anand
-
-
-> Let me know, I can retest.
->
-> Thanks
-> Suman
->
-> On Mon, Oct 13, 2014 at 7:13 PM, Anand Jain <Anand.Jain@oracle.com> wrote:
->>
->>
->>
->> On 10/14/14 03:50, Suman C wrote:
->>>
->>> I had progs 3.12 and updated to the latest from git(3.16). With this
->>> update, btrfs fi show reports there is a missing device immediately
->>> after i pull it out. Thanks!
->>>
->>> I am using virtualbox to test this. So, I am detaching the drive like so:
->>>
->>> vboxmanage storageattach <vm> --storagectl <controller> --port <port>
->>> --device <device> --medium none
->>>
->>> Next I am going to try and test a more realistic scenario where a
->>> harddrive is not pulled out, but is damaged.
->>
->>
->>
->>> Can/does btrfs mark a filesystem(say, 2 drive raid1) degraded or
->>> unhealthy automatically when one drive is damaged badly enough that it
->>> cannot be written to or read from reliably?
->>
->>
->>   There are some gaps as directly compared to an enterprise volume
->>   manager, which is being fixed.  but pls do report what you find.
->>
->> Thanks, Anand
->>
->>
->>
->>> Suman
->>>
->>> On Sun, Oct 12, 2014 at 7:21 PM, Anand Jain <Anand.Jain@oracle.com> wrote:
->>>>
->>>>
->>>> Suman,
->>>>
->>>>> To simulate the failure, I detached one of the drives from the system.
->>>>> After that, I see no sign of a problem except for these errors:
->>>>
->>>>
->>>>    Are you physically pulling out the device ? I wonder if lsblk or blkid
->>>>    shows the error ? reporting device missing logic is in the progs (so
->>>>    have that latest) and it works provided user script such as blkid/lsblk
->>>>    also reports the problem. OR for soft-detach tests you could use
->>>>    devmgt at http://github.com/anajain/devmgt
->>>>
->>>>    Also I am trying to get the device management framework for the btrfs
->>>>    with a more better device management and reporting.
->>>>
->>>> Thanks,  Anand
->>>>
->>>>
->>>>
->>>> On 10/13/14 07:50, Suman C wrote:
->>>>>
->>>>>
->>>>> Hi,
->>>>>
->>>>> I am testing some disk failure scenarios in a 2 drive raid1 mirror.
->>>>> They are 4GB each, virtual SATA drives inside virtualbox.
->>>>>
->>>>> To simulate the failure, I detached one of the drives from the system.
->>>>> After that, I see no sign of a problem except for these errors:
->>>>>
->>>>> Oct 12 15:37:14 rock-dev kernel: btrfs: bdev /dev/sdb errs: wr 0, rd
->>>>> 0, flush 1, corrupt 0, gen 0
->>>>> Oct 12 15:37:14 rock-dev kernel: lost page write due to I/O error on
->>>>> /dev/sdb
->>>>>
->>>>> /dev/sdb is gone from the system, but btrfs fi show still lists it.
->>>>>
->>>>> Label: raid1pool  uuid: 4e5d8b43-1d34-4672-8057-99c51649b7c6
->>>>>        Total devices 2 FS bytes used 1.46GiB
->>>>>        devid    1 size 4.00GiB used 2.45GiB path /dev/sdb
->>>>>        devid    2 size 4.00GiB used 2.43GiB path /dev/sdc
->>>>>
->>>>> I am able to read and write just fine, but do see the above errors in
->>>>> dmesg.
->>>>>
->>>>> What is the best way to find out that one of the drives has gone bad?
->>>>>
->>>>> Suman
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>> in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

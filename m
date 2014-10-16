@@ -1,148 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27135 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751232AbaJOIoG (ORCPT
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:38702 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751241AbaJOXdf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 04:44:06 -0400
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 15 Oct 2014 19:33:35 -0400
+Received: by mail-wg0-f45.google.com with SMTP id m15so2448724wgh.28
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 16:33:34 -0700 (PDT)
+From: Filipe Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use btrfs_register_one_device()
-Date: Wed, 15 Oct 2014 08:50:38 +0800
-Message-Id: <1413334238-25729-1-git-send-email-anand.jain@oracle.com>
+Cc: dsterba@suse.cz, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs-progs: check, fix return value check of is_child_root()
+Date: Thu, 16 Oct 2014 01:33:23 +0100
+Message-Id: <1413419603-19146-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1413410320-22954-1-git-send-email-fdmanana@suse.com>
+References: <1413410320-22954-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cmd_scan_dev() has it own code to register device (calling ioctl BTRFS_IOC_SCAN_DEV),
-apparently it could use btrfs_register_one_device().
+The following commit:
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+    "btrfs-progs: fsck: remove unfriendly BUG_ON() for searching tree failure"
+    f495a2ac66116f0a1b15e73380c8cbca6e0a4ca0
+
+introduced a regression, detected through xfstests/btrfs/054, where
+previously a negative return value (-1) was used to mean a particular
+root didn't had any parent root, and now, after that change, a negative
+value is also used to mean that an error happened. That change also made
+the only caller of is_child_root() interpret any negative return value
+as an error and therefore incorrectly made the caller leave with an
+error, instead of continuing.
+
+This affects only the 3.17 release candidates (3.16 and older releases
+don't have this issue).
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- cmds-device.c | 33 ++++++---------------------------
- utils.c       |  8 +++++---
- utils.h       |  2 +-
- 3 files changed, 12 insertions(+), 31 deletions(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index a728f21..57ad0b2 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -206,7 +206,7 @@ static const char * const cmd_scan_dev_usage[] = {
- 
- static int cmd_scan_dev(int argc, char **argv)
- {
--	int i, fd, e;
-+	int i;
- 	int devstart = 1;
- 	int all = 0;
- 	int ret = 0;
-@@ -242,22 +242,14 @@ static int cmd_scan_dev(int argc, char **argv)
- 		goto out;
- 	}
- 
--	fd = open("/dev/btrfs-control", O_RDWR);
--	if (fd < 0) {
--		perror("failed to open /dev/btrfs-control");
--		ret = 1;
--		goto out;
--	}
--
- 	for( i = devstart ; i < argc ; i++ ){
--		struct btrfs_ioctl_vol_args args;
- 		char *path;
- 
- 		if (!is_block_device(argv[i])) {
- 			fprintf(stderr,
- 				"ERROR: %s is not a block device\n", argv[i]);
- 			ret = 1;
--			goto close_out;
-+			goto out;
- 		}
- 		path = canonicalize_path(argv[i]);
- 		if (!path) {
-@@ -265,30 +257,17 @@ static int cmd_scan_dev(int argc, char **argv)
- 				"ERROR: Could not canonicalize path '%s': %s\n",
- 				argv[i], strerror(errno));
- 			ret = 1;
--			goto close_out;
-+			goto out;
- 		}
- 		printf("Scanning for Btrfs filesystems in '%s'\n", path);
--
--		strncpy_null(args.name, path);
--		/*
--		 * FIXME: which are the error code returned by this ioctl ?
--		 * it seems that is impossible to understand if there no is
--		 * a btrfs filesystem from an I/O error !!!
--		 */
--		ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
--		e = errno;
--
--		if( ret < 0 ){
--			fprintf(stderr, "ERROR: unable to scan the device '%s' - %s\n",
--				path, strerror(e));
-+		if (btrfs_register_one_device(path) != 0) {
-+			ret = 1;
- 			free(path);
--			goto close_out;
-+			goto out;
- 		}
- 		free(path);
- 	}
- 
--close_out:
--	close(fd);
- out:
- 	return !!ret;
- }
-diff --git a/utils.c b/utils.c
-index 78cb93f..017c513 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1236,7 +1236,7 @@ struct pending_dir {
- 	char name[PATH_MAX];
- };
- 
--void btrfs_register_one_device(char *fname)
-+int btrfs_register_one_device(char *fname)
- {
- 	struct btrfs_ioctl_vol_args args;
- 	int fd;
-@@ -1248,17 +1248,19 @@ void btrfs_register_one_device(char *fname)
- 		fprintf(stderr, "failed to open /dev/btrfs-control "
- 			"skipping device registration: %s\n",
- 			strerror(errno));
--		return;
-+		return -errno;
- 	}
- 	strncpy(args.name, fname, BTRFS_PATH_NAME_MAX);
- 	args.name[BTRFS_PATH_NAME_MAX-1] = 0;
- 	ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
- 	e = errno;
--	if(ret<0){
-+	if (ret < 0) {
- 		fprintf(stderr, "ERROR: device scan failed '%s' - %s\n",
- 			fname, strerror(e));
-+		ret = -e;
- 	}
- 	close(fd);
-+	return ret;
+V2: Made it return 2 (instead of -1) when the root child_root_id doesn't
+    have any parent roots, in order to behave exactly like the code
+    pre-commit f495a2ac66116f0a1b15e73380c8cbca6e0a4ca0.
+
+ cmds-check.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 99d1a94..310eb2a 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -895,6 +895,14 @@ static int leave_shared_node(struct btrfs_root *root,
+ 	return 0;
  }
  
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
-diff --git a/utils.h b/utils.h
-index 1e13b9d..3f7b388 100644
---- a/utils.h
-+++ b/utils.h
-@@ -81,7 +81,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 		      u64 block_count, u32 io_width, u32 io_align,
- 		      u32 sectorsize);
- int btrfs_scan_for_fsid(int run_ioctls);
--void btrfs_register_one_device(char *fname);
-+int btrfs_register_one_device(char *fname);
- char *canonicalize_dm_name(const char *ptname);
- char *canonicalize_path(const char *path);
- int check_mounted(const char *devicename);
++/*
++ * Returns:
++ * < 0 - on error
++ * 1   - if the root with id child_root_id is a child of root parent_root_id
++ * 0   - if the root child_root_id isn't a child of the root parent_root_id but
++ *       has other root(s) as parent(s)
++ * 2   - if the root child_root_id doesn't have any parent roots
++ */
+ static int is_child_root(struct btrfs_root *root, u64 parent_root_id,
+ 			 u64 child_root_id)
+ {
+@@ -952,7 +960,7 @@ out:
+ 	btrfs_release_path(&path);
+ 	if (ret < 0)
+ 		return ret;
+-	return has_parent? 0 : -1;
++	return has_parent ? 0 : 2;
+ }
+ 
+ static int process_dir_item(struct btrfs_root *root,
 -- 
-2.0.0.153.g79dcccc
+1.9.1
 

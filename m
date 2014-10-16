@@ -1,217 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f169.google.com ([209.85.217.169]:49986 "EHLO
-	mail-lb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751293AbaJPHoP (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:65264 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750765AbaJPHvU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Oct 2014 03:44:15 -0400
+	Thu, 16 Oct 2014 03:51:20 -0400
+Message-ID: <543F78F1.6040203@fb.com>
+Date: Thu, 16 Oct 2014 03:51:13 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1413423740-7022-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1413423740-7022-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Thu, 16 Oct 2014 08:44:13 +0100
-Message-ID: <CAL3q7H7bHOOdhw2eCnPmyBgwnu6k4uJDfrz9-qHy-0mDxyrbrA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: regression test for btrfs extent merge
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs corruption fix
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 16, 2014 at 2:42 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> The following kernel commit introduced the bug:
-> 51f395ad btrfs: Use right extent length when inserting overlap extent map.
->
-> When btrfs commit race with btrfs_get_extent(), merge_extent_mapping()
-> may build up a new extent which length overflows and cause extent map
-> insert fail, causing the caller get a -EEXIST error.
->
-> This regression is fixed by the following patches:
-> btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map
-> btrfs: Fix the wrong condition judgment about subset extent map
->
-> Cc: Filipe Manana <fdmanana@suse.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Hi Linus,
 
-Tested-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+I'm testing a pull with more fixes, but wanted to get this one out so
+Greg can pick it up.  The corruption isn't easy to hit, you have to do a
+readonly snapshot and have orphans in the snapshot.  But my review and
+testing missed the bug.  Filipe has added a better xfstest to cover it.
 
-Thanks very much for this Qu.
+Please pull:
 
-> ---
->  tests/btrfs/078     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/078.out |   2 +
->  tests/btrfs/group   |   1 +
->  3 files changed, 131 insertions(+)
->  create mode 100755 tests/btrfs/078
->  create mode 100644 tests/btrfs/078.out
->
-> diff --git a/tests/btrfs/078 b/tests/btrfs/078
-> new file mode 100755
-> index 0000000..bdc20af
-> --- /dev/null
-> +++ b/tests/btrfs/078
-> @@ -0,0 +1,128 @@
-> +#! /bin/bash
-> +# FS QA Test No. btrfs/078
-> +#
-> +# Do write along with fiemap ioctl.
-> +# Regression test for the kernel comit:
-> +# 51f395ad btrfs: Use right extent length when inserting overlap extent map.
-> +#
-> +# When calling fiemap(without SYNC flag) and btrfs fs is commiting,
-> +# it will cause race condition and cause btrfs to generate a wrong extent
-> +# whose len is overflow and fail to insert into the extent map tree,
-> +# returning -EEXIST.
-> +#
-> +# Fixed by the following patches (not merged in mainline yet):
-> +# btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map
-> +# btrfs: Fix the wrong condition judgment about subset extent map
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (C) 2014 Fujitsu All Rights Reserved.
-> +# Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +tmp=`mktemp -d`
-> +status=1       # failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +       kill $dd_pid &> /dev/null
-> +       kill $fiemap_pid &> /dev/null
-> +       wait
-> +       rm -fr $test_file
-> +       rm -fr $tmp
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +_need_to_be_root
-> +# Since xfs_io's fiemap always use SYNC flag and can't be unset,
-> +# we must use filefrag to call fiemap without SYNC flag.
-> +_require_command "/usr/sbin/filefrag"
-> +_require_xfs_io_command "falloc"
-> +
-> +test_file=$SCRATCH_MNT/testfile
-> +filesize=$((10 * 1024 * 1024 * 1024)) #10G size
-> +buffersize=$((1024 * 1024)) # 1M bs for dd
-> +count=$(($filesize / $buffersize))
-> +testfile=$SCRATCH_MNT/testfile
-> +
-> +rm -f $seqres.full
-> +rm -f $test_file
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1
-> +_scratch_mount
-> +$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile || \
-> +       _fail 'need device larger than 10G'
-> +
-> +dd_work() {
-> +       out=$1
-> +       dd if=/dev/zero of=$out bs=$buffersize count=$count \
-> +          conv=notrunc &> /dev/null
-> +}
-> +
-> +# There is a bug for e2fsprogs, at least in version 1.42.9, filefrag will
-> +# leak the return value, so we can't judge return value only,
-> +# but also to filter the output
-> +_filter_error() {
-> +       # when filefrag fails FIEMAP ioctl, it will fall back to FIBMAP,
-> +       # which is not supported by btrfs and will report "FIBMAP: strerr()"
-> +       # However due to other btrfs commits, kernel will return -ENOTTY
-> +       # or -EINVAL, so only grep for "FIBMAP" for max compatibility.
-> +       grep "FIBMAP"
-> +}
-> +
-> +fiemap_work() {
-> +       filename=$1
-> +       while true; do
-> +               filefrag $filename 2> $tmp/output 1> /dev/null
-> +               ret=$?
-> +               err=`cat $tmp/output | _filter_error`
-> +               if [ $ret -ne 0 -o -n "$err" ]; then
-> +                       kill $dd_pid
-> +                       return 1
-> +               fi
-> +       done
-> +}
-> +
-> +dd_work $testfile &
-> +dd_pid=$!
-> +fiemap_work $testfile &
-> +fiemap_pid=$!
-> +wait $dd_pid
-> +ddret=$?
-> +kill $fiemap_pid &> /dev/null
-> +wait $fiemap_pid
-> +
-> +if [ $ddret -ne 0 ]; then
-> +       echo "Extent merge bug detected"
-> +       status=1
-> +       exit
-> +else
-> +       echo "Silence is golden"
-> +       status=0
-> +       exit
-> +fi
-> diff --git a/tests/btrfs/078.out b/tests/btrfs/078.out
-> new file mode 100644
-> index 0000000..b8acea8
-> --- /dev/null
-> +++ b/tests/btrfs/078.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 078
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 9adf862..40e7430 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -80,3 +80,4 @@
->  075 auto quick subvol
->  076 auto quick
->  077 auto quick
-> +078 auto
-> --
-> 2.1.2
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+Chris Mason (1) commits (+33/-36):
+    Revert "Btrfs: race free update of commit root for ro snapshots"
 
+Total: (1) commits (+33/-36)
 
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+ fs/btrfs/inode.c | 36 ------------------------------------
+ fs/btrfs/ioctl.c | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 36 deletions(-)

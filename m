@@ -1,51 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:56471 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750956AbaJDVdo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 Oct 2014 17:33:44 -0400
-Date: Sat, 4 Oct 2014 23:33:33 +0200
-From: Marc Dietrich <marvin24@gmx.de>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: FIBMAP unsupported
-Message-Id: <20141004233333.a31053a21e4f5c446e4eebac@gmx.de>
-In-Reply-To: <542EA15F.9080703@suse.com>
-References: <6602102.lhBckFYBLs@fb07-iapwap2>
-	<20141002172549.GV11436@twin.jikos.cz>
-	<2356843.HqzAreCEMf@ax5200p>
-	<6603452.o3OqIjYaDr@ax5200p>
-	<542EA15F.9080703@suse.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from 185-6-29-55-rev.logitus.pl ([185.6.29.55]:41607 "EHLO
+	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750816AbaJPJXZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Oct 2014 05:23:25 -0400
+Date: Thu, 16 Oct 2014 11:17:26 +0200
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: unexplainable corruptions 3.17.0
+Message-ID: <20141016091726.GA582640@mother.pipebreaker.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 03 Oct 2014 14:15:11 +0100
-Filipe Manana <fdmanana@suse.com> wrote:
-> Just tried it and I confirm filefrag's call to ioctl FS_IOC_FIEMAP fails
-> with -EEXIST.
-> 
-> It's actually a known issue affecting any of the 3.17 RCs (except RC1).
-> The extent map manipulation/merging is broken for some cases. Try with
-> this 2 patches on top of 3.17-rcX:
-> 
-> https://patchwork.kernel.org/patch/4929981/
-> https://patchwork.kernel.org/patch/4945191/
+Hi,
 
-ok, 2nd patch did not apply cleanly, so I just replaced the < with <=.
+  Recently I've observed some corruptions to systemd's journal
+files which are somewhat puzzling. This is especially worrying
+as this is btrfs raid1 setup and I expected auto-healing.
 
-Otherwise, I can confirm the patches are fixing the issue here.
+  System details: 3.17.0-301.fc21.x86_64
+btrfs: raid1 over 2x dm-crypted 6TB HDDs.
+mount opts: rw,relatime,seclabel,compress=lzo,space_cache
 
-> Or, alternatively, reverting this patch:
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=51f395ad4058883e4273b02fdebe98072dbdc0d2
-> 
-> Someone else reported on this list a write/pwrite/writev failure with
-> errno EEXIST too (and apparently caused by the same reason).
-> 
-> This broken extent map handling is serious IMHO, it can make fsync log
-> bogus extent items for example, amongst other possible bad and weird things.
+  Broken files are in /var/log/journal directory. This directory
+is set NOCOW with chattr, all the files within too.
 
-Yes, it clearly corrupted by files in a strange way. Please try to get
-it into final, or at least -stable if too late.
+Example of broken file:
+system@0005057fe87730cf-6d3d85ed59bd70ae.journal~
 
-Marc
+When read with dd_rescue, there are many I/O errors
+reported, the summary looks like that (x = error):
+>-..-..xxxxxxxxx---x.-..-..-...-..-..-...-< 100%
+
+  Reads with cat, hexdump fails with:
+read(4, 0x1001000, 65536)               = -1 EIO (Input/output error)
+
+  But btrfs dev stat reports no errors!
+$ btrfs dev stat .
+[/dev/dm-0].write_io_errs   0
+[/dev/dm-0].read_io_errs    0
+[/dev/dm-0].flush_io_errs   0
+[/dev/dm-0].corruption_errs 0
+[/dev/dm-0].generation_errs 0
+[/dev/dm-1].write_io_errs   0
+[/dev/dm-1].read_io_errs    0
+[/dev/dm-1].flush_io_errs   0
+[/dev/dm-1].corruption_errs 0
+[/dev/dm-1].generation_errs 0
+
+  There are no hardware errors in dmesg.
+
+  This is perplexing.  How to find out what is causing the
+brokeness and howto avoid it in the future?
+
+-- 
+Tomasz   .. oo o.   oo o. .o   .o o. o. oo o.   ..
+Torcz    .. .o .o   .o .o oo   oo .o .. .. oo   oo
+o.o.o.   .o .. o.   o. o. o.   o. o. oo .. ..   o.
+

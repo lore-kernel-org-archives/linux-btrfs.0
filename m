@@ -1,215 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:42628 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751001AbaJOVJ4 (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:35288 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751238AbaJPBh4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 17:09:56 -0400
-Received: by mail-ig0-f169.google.com with SMTP id uq10so164498igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 14:09:56 -0700 (PDT)
+	Wed, 15 Oct 2014 21:37:56 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id C33453EE1C1
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Oct 2014 10:37:54 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id D0C38AC06E4
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Oct 2014 10:37:53 +0900 (JST)
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 527011DB803F
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Oct 2014 10:37:53 +0900 (JST)
+Message-ID: <543F213F.5090308@jp.fujitsu.com>
+Date: Thu, 16 Oct 2014 03:37:03 +0200
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Date: Wed, 15 Oct 2014 17:09:55 -0400
-Message-ID: <CAA8KC9Lt0CBhL1FqYPw_W57ohv9Cd8M038ubKKeYZT95iu1YFQ@mail.gmail.com>
-Subject: RAID1 fails to recover chunk tree
-From: Zack Coffey <clickwir@gmail.com>
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>
+CC: naota <naota@elisp.net>
+Subject: Re: [PATCH 1/4] btrfs: correct empty compression property behavior
+References: <541BED3D.5020803@jp.fujitsu.com> <20140929163646.GF11436@twin.jikos.cz>
+In-Reply-To: <20140929163646.GF11436@twin.jikos.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Revisit of a previous issue. Summary, single drive btrfs has lots of
-data. Made a RAID1 with another drive of just the metadata. Was in
-that state for less than 12 hours-ish, removed the second drive and
-now cannot get to any data on the original drive.
+Hi David and Chris,
 
-Single drive btrfs was made on Ubuntu with kernel 3.13.0 and tools
-3.12. Was running fine as a single drive for a while, I added another
-drive to the system and wanted to see what RAID1 for metadata would
-look like. Turned it on, was doing fine. Forgot I had done that,
-shutdown the PC and removed the extra drive. Now nothing I've tried
-can access the original single drive.
+(2014/09/29 18:36), David Sterba wrote:
+> On Fri, Sep 19, 2014 at 05:45:49PM +0900, Satoru Takeuchi wrote:
+>> In the current implementation, compression property == "" has
+>> the two different meanings: one is with BTRFS_INODE_NOCOMPRESS,
+>> and the other is without this flag.
+>>
+>> So, even if the two files a and b have the same compression
+>> property, "", and the same contents, one file seems to be
+>> compressed and the other is not. It's difficult to understand
+>> for users and also confuses them.
+>
+> Fixing this inconsistency is good, let me think more about the
+> interface.
 
-$ sudo mount -o degraded /dev/sdc1 /media/Data/
-mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+How about these patches? These patches seems not to be merged yet.
+Especially patch 4/4 resolve the bug that atomic two operations
+are separated to the different two transactions. I consider this
+patch should be applied as soon as possible.
 
-$ dmesg | tail
-[45353.869448] KBD BUG in
-../../../../../../../../
-drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45353.901511] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45353.901666] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45354.148488] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45354.148573] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[46241.155350] btrfs: device fsid bd78815a-802b-43e2-8387-fc6ab4237d67
-devid 1 transid 60944 /dev/sdc1
-[46241.155923] btrfs: allowing degraded mounts
-[46241.155927] btrfs: disk space caching is enabled
-[46241.159436] btrfs: failed to read chunk root on sdc1
-[46241.177815] btrfs: open_ctree failed
+Thanks,
+Satoru
 
-$ btrfs-show-super /dev/sdc1
-superblock: bytenr=65536, device=/dev/sdc1
-------------------------------
----------------------------
-csum                    0x93bcb1b5 [match]
-bytenr                  65536
-flags                   0x1
-magic                   _BHRfS_M [match]
-fsid                    bd78815a-802b-43e2-8387-fc6ab4237d67
-label
-generation              60944
-root                    909586694144
-sys_array_size          97
-chunk_root_generation   60938
-root_level              1
-chunk_root              911673917440
-chunk_root_level        1
-log_root                0
-log_root_transid        0
-log_root_level          0
-total_bytes             1115871535104
-bytes_used              321833435136
-sectorsize              4096
-nodesize                4096
-leafsize                4096
-stripesize              4096
-root_dir                6
-num_devices             2
-compat_flags            0x0
-compat_ro_flags         0x0
-incompat_flags          0x9
-csum_type               0
-csum_size               4
-cache_generation        60944
-uuid_tree_generation    60944
-dev_item.uuid           d82b2027-17b6-4513-a86d-9227a42d7ed1
-dev_item.fsid           bd78815a-802b-43e2-8387-fc6ab4237d67 [match]
-dev_item.type           0
-dev_item.total_bytes    615763673088
-dev_item.bytes_used     324270030848
-dev_item.io_align       4096
-dev_item.io_width       4096
-dev_item.sector_size    4096
-dev_item.devid          1
-dev_item.dev_group      0
-dev_item.seek_speed     0
-dev_item.bandwidth      0
-dev_item.generation     0
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 
-
-$ sudo btrfs device add -f /dev/sdh1 /dev/sdc1
-ERROR: error adding the device '/dev/sdh1' - Inappropriate ioctl for device
-
-$ sudo btrfs device delete missing /dev/sdc1
-ERROR: error removing the device 'missing' - Inappropriate ioctl for device
-
-$ sudo mount -o degraded,defaults,compress=lzo /dev/sdc1 /media/Data/
-mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
-
-$ dmesg | tail
-[106991.655384] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[106991.665066] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107019.954397] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107019.962009] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107070.124927] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107070.126475] btrfs: allowing degraded mounts
-[107070.126479] btrfs: use lzo compression
-[107070.126480] btrfs: disk space caching is enabled
-[107070.127254] btrfs: failed to read chunk root on sdc1
-[107070.142983] btrfs: open_ctree failed
-
-$ sudo btrfs rescue super-recover -v /dev/sdc1
-All Devices:
-        Device: id = 1, name = /dev/sdc1
-
-Before Recovering:
-        [All good supers]:
-                device name = /dev/sdc1
-                superblock bytenr = 65536
-
-                device name = /dev/sdc1
-                superblock bytenr = 67108864
-
-                device name = /dev/sdc1
-                superblock bytenr = 274877906944
-
-        [All bad supers]:
-
-All supers are valid, no need to recover
-
-$ sudo btrfs check /dev/sdc1
-warning, device 2 is missing
-Check tree block failed, want=911673917440, have=0
-read block failed check_tree_block
-Couldn't read chunk root
-Couldn't open file system
-
-$ sudo btrfs check --repair /dev/sdc1
-enabling repair mode
-warning, device 2 is missing
-Check tree block failed, want=911673917440, have=0
-read block failed check_tree_block
-Couldn't read chunk root
-Couldn't open file system
-
-$ btrfs rescue chunk-recover -v /dev/sdc1
-<<snipped>>
-Chunk: start = 860100755456, len = 1073741824, type = 1, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 26877100032
-      No block group.
-      No device extent.
-  Chunk: start = 861174497280, len = 1073741824, type = 1, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 27950841856
-      No block group.
-      No device extent.
-
-Total Chunks:   333
-  Heathy:       305
-  Bad:  28
-
-Orphan Block Groups:
-  Block Group: start = 872985657344, len = 1073741824, flag = 4
-  Block Group: start = 911673917440, len = 33554432, flag = 2
-  Block Group: start = 911707471872, len = 1073741824, flag = 4
-
-Orphan Device Extents:
-  Device extent: devid = 2, start = 2182086656, len = 33554432, chunk
-offset = 911673917440
-  Device extent: devid = 2, start = 2215641088, len = 1073741824,
-chunk offset = 911707471872
-Fail to recover the chunk tree.
-<</snipped>>
-
-I can give the full copy of what was snipped if requested.
-
-Now I'm on openSUSE Tumbleweed (kernel 3.17). Still get the same
-result from 'chunk-recover'. There's 305 healthy chunks, is there
-anyway to recover that data and forget about the bad ones?
-
-A good portion of the data on that drive was backed up, but some
-wasn't. My fault, I've learned. Can I get anything back from that
-drive?
-
-Thanks
-Zack

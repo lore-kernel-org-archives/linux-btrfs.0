@@ -1,89 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f42.google.com ([209.85.215.42]:51789 "EHLO
-	mail-la0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751293AbaJOXtI (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:42234 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751001AbaJPBmY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 19:49:08 -0400
-Received: by mail-la0-f42.google.com with SMTP id gf13so2190986lab.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Oct 2014 16:49:06 -0700 (PDT)
+	Wed, 15 Oct 2014 21:42:24 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: regression test for btrfs extent merge
+Date: Thu, 16 Oct 2014 09:42:20 +0800
+Message-ID: <1413423740-7022-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H6bm96eNWtvWdBuc4QnS+6BdkHXZrbEmfm6n5Po1KH3fw@mail.gmail.com>
-References: <1413398246-17324-1-git-send-email-fdmanana@suse.com>
-	<1413407515.18175.0@mail.thefacebook.com>
-	<CANg_oxx6u3Bk5XHeTYxUHa3t9gnE4J_TWnPyzFCa0aaONxR-6g@mail.gmail.com>
-	<CAL3q7H6bm96eNWtvWdBuc4QnS+6BdkHXZrbEmfm6n5Po1KH3fw@mail.gmail.com>
-Date: Thu, 16 Oct 2014 01:49:06 +0200
-Message-ID: <CANg_oxxEUMh_V1DnpzSHCsZm_7O0OgBd2kA1ry9RTJMLLGkgXw@mail.gmail.com>
-Subject: Re: [PATCH] Revert "Btrfs: race free update of commit root for ro snapshots"
-From: john terragon <jterragon@gmail.com>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
--It's not a brand new fs. It has been created four or five days ago
-with btrfs-progs 3.16.2 (in fact it was created because of the dead
-unremovable ro snapshots in the previous fs)
+The following kernel commit introduced the bug:
+51f395ad btrfs: Use right extent length when inserting overlap extent map.
 
--the snapshot in question has been created after applying the patch
-(and it has not become corrupted so far)
+When btrfs commit race with btrfs_get_extent(), merge_extent_mapping()
+may build up a new extent which length overflows and cause extent map
+insert fail, causing the caller get a -EEXIST error.
 
--not an incremental send
+This regression is fixed by the following patches:
+btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map
+btrfs: Fix the wrong condition judgment about subset extent map
 
--no warnings in dmesg
+Cc: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/078     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/078.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 131 insertions(+)
+ create mode 100755 tests/btrfs/078
+ create mode 100644 tests/btrfs/078.out
 
--btrfs check segfaults (as it did before the patch)
+diff --git a/tests/btrfs/078 b/tests/btrfs/078
+new file mode 100755
+index 0000000..bdc20af
+--- /dev/null
++++ b/tests/btrfs/078
+@@ -0,0 +1,128 @@
++#! /bin/bash
++# FS QA Test No. btrfs/078
++#
++# Do write along with fiemap ioctl.
++# Regression test for the kernel comit:
++# 51f395ad btrfs: Use right extent length when inserting overlap extent map.
++#
++# When calling fiemap(without SYNC flag) and btrfs fs is commiting,
++# it will cause race condition and cause btrfs to generate a wrong extent
++# whose len is overflow and fail to insert into the extent map tree,
++# returning -EEXIST.
++#
++# Fixed by the following patches (not merged in mainline yet):
++# btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map
++# btrfs: Fix the wrong condition judgment about subset extent map
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2014 Fujitsu All Rights Reserved.
++# Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=`mktemp -d`
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	kill $dd_pid &> /dev/null
++	kill $fiemap_pid &> /dev/null
++	wait
++	rm -fr $test_file
++	rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++# Since xfs_io's fiemap always use SYNC flag and can't be unset,
++# we must use filefrag to call fiemap without SYNC flag.
++_require_command "/usr/sbin/filefrag"
++_require_xfs_io_command "falloc"
++
++test_file=$SCRATCH_MNT/testfile
++filesize=$((10 * 1024 * 1024 * 1024)) #10G size
++buffersize=$((1024 * 1024)) # 1M bs for dd
++count=$(($filesize / $buffersize))
++testfile=$SCRATCH_MNT/testfile
++
++rm -f $seqres.full
++rm -f $test_file
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile || \
++	_fail 'need device larger than 10G'
++
++dd_work() {
++	out=$1
++	dd if=/dev/zero of=$out bs=$buffersize count=$count \
++	   conv=notrunc &> /dev/null
++}
++
++# There is a bug for e2fsprogs, at least in version 1.42.9, filefrag will
++# leak the return value, so we can't judge return value only,
++# but also to filter the output
++_filter_error() {
++	# when filefrag fails FIEMAP ioctl, it will fall back to FIBMAP,
++	# which is not supported by btrfs and will report "FIBMAP: strerr()"
++	# However due to other btrfs commits, kernel will return -ENOTTY
++	# or -EINVAL, so only grep for "FIBMAP" for max compatibility.
++	grep "FIBMAP"
++}
++
++fiemap_work() {
++	filename=$1
++	while true; do
++		filefrag $filename 2> $tmp/output 1> /dev/null
++		ret=$?
++		err=`cat $tmp/output | _filter_error`
++		if [ $ret -ne 0 -o -n "$err" ]; then
++			kill $dd_pid
++			return 1
++		fi
++	done
++}
++
++dd_work $testfile &
++dd_pid=$!
++fiemap_work $testfile &
++fiemap_pid=$!
++wait $dd_pid
++ddret=$?
++kill $fiemap_pid &> /dev/null
++wait $fiemap_pid
++
++if [ $ddret -ne 0 ]; then
++	echo "Extent merge bug detected"
++	status=1
++	exit
++else
++	echo "Silence is golden"
++	status=0
++	exit
++fi
+diff --git a/tests/btrfs/078.out b/tests/btrfs/078.out
+new file mode 100644
+index 0000000..b8acea8
+--- /dev/null
++++ b/tests/btrfs/078.out
+@@ -0,0 +1,2 @@
++QA output created by 078
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 9adf862..40e7430 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -80,3 +80,4 @@
+ 075 auto quick subvol
+ 076 auto quick
+ 077 auto quick
++078 auto
+-- 
+2.1.2
 
--there are in fact dead unremovable ro snapshots in the filesystem (it
-has been used before the patch). But the filesystem seems functional
-as long as the dead ro snapshots aren't touched. If one of them is
-accessed with ls -l  I get the usual "parent transid verify failed on
-X wanted Y found Z". But as I said no warnings of that kind (or any
-kind) appear in dmesg when I do the send on the freshly created ro
-snapshot.
-
-thanks
-john
-
-
-On Thu, Oct 16, 2014 at 1:05 AM, Filipe David Manana <fdmanana@gmail.com> wrote:
-> On Wed, Oct 15, 2014 at 11:42 PM, john terragon <jterragon@gmail.com> wrote:
->> Hi.
->>
->> I applied the patch to 3.17.1 but although I haven't seen any
->> corrupted ro snapshot yet it's still impossible to do btrfs send. As
->> soon as I start btrfs send I still get
->>
->> ERROR: send ioctl failed with -12: Cannot allocate memory
->>
->> even if I redirect btrfs send's output to a file (instead of involving
->> btrfs receive)
->>
->> Maybe this time it's actually a btrfs-progs bug?
->
-> Not enough information to tell.
->
-> Is it a brand new fs? If not, is it a snapshot created after applying
-> the patch or before? Does a btrfsck reports any issues with the fs?
-> Is it an incremental (using -p <parent_snapshot>) or a full send? Do
-> you see any warning (traces, errors) in syslog (dmesg)?
->
-> Either an issue in send or, if it's an fs created/used with unpatched
-> 3.17.0/1, it can be a side effect of the corruption.
->
-> thanks
->
->>
->> Thanks
->> John
->
->
->
-> --
-> Filipe David Manana,
->
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."

@@ -1,26 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44863 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:45955 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750789AbaJPLwj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Oct 2014 07:52:39 -0400
-Date: Thu, 16 Oct 2014 13:52:37 +0200
+	id S1751318AbaJPMhP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Oct 2014 08:37:15 -0400
+Date: Thu, 16 Oct 2014 14:37:13 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Calvin Walton <calvin.walton@kepstin.ca>
-Cc: Bob Williams <linux@barrowhillfarm.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: Scrub already running
-Message-ID: <20141016115237.GE22943@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Btrfs-progs pre-release 3.17, take 2
+Message-ID: <20141016123713.GF22943@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <543D3EAA.4000706@barrowhillfarm.org.uk>
- <1413303927.1289.6.camel@kepstin.ca>
+References: <20141014121717.GQ22943@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1413303927.1289.6.camel@kepstin.ca>
+In-Reply-To: <20141014121717.GQ22943@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 14, 2014 at 12:25:27PM -0400, Calvin Walton wrote:
-> I'm not sure if this has been improved in newer versions of the btrfs-
-> progs.
+Hi,
 
-Will be fixed in 3.17, patch
-https://patchwork.kernel.org/patch/5019841/
+this another rc, tagged as v3.17-rc5 (a197726ad770760), fixing a few problems.
+There's one known issue, xfstests/btrfs/006 prints an unexpected output (more
+at https://patchwork.kernel.org/patch/5084631/). ETA for release is tomorrow.
+
+Shortlog:
+
+Anand Jain (3):
+      btrfs-progs: mkfs should be consistent in calling register device
+      btrfs-progs: introduce a proper structure on which cli will call register-device ioctl
+      btrfs-progs: open RW to register device using btrfs-control
+
+Filipe Manana (1):
+      Btrfs-progs: check, fix return value check of is_child_root()
+
+Zach Brown (2):
+      btrfs-progs: check sscanf return code
+      btrfs-progs: fix show super unknown flag output

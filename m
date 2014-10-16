@@ -1,32 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44347 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750765AbaJPLdj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Oct 2014 07:33:39 -0400
-Date: Thu, 16 Oct 2014 13:33:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com
-Subject: Poll: time to switch skinny-metadata on by default?
-Message-ID: <20141016113337.GC22943@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.219]:41292 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751073AbaJPPsb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Oct 2014 11:48:31 -0400
+Message-ID: <543FE8D4.2040804@giantdisaster.de>
+Date: Thu, 16 Oct 2014 17:48:36 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Problems running Balance and checking integrity concurrently.
+References: <5BE1151D-599F-4FD4-BD6B-AC707C72CEC4@gmail.com>
+In-Reply-To: <5BE1151D-599F-4FD4-BD6B-AC707C72CEC4@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, 10 Oct 2014 21:35:02 +0800, Wang Shilong wrote:
+> Hello，
+> 
+> I have reproduced a problem with Btrfs integrity and balance using latest
+> btrfs kernel,it is very easy to reproduce:
+> 
+> With mount option “check_int”, and run xfstests/btrfs/ tests, below test could definitely
+> reproduce problem:
+> 
+> ./check tests/btrfs/014
 
-the core of skinny-metadata feature has been merged in 3.10 (Jun 2013)
-and has been reportedly used by many people. No major bugs were reported
-lately unless I missed them.
+The following two patches fix the issue.
 
-The obvious benefit is reduced metadata consumption at the cost of lost
-backward compatibility for pre-3.10 kernels. I believe this is
-acceptable to do the change now.
 
-The feature can be turned off at mkfs time by '-O ^skinny-metadata' if
-needed.
-
-I'd like to make it default with the 3.17 release of btrfs-progs.
-Please let me know if you have objections.

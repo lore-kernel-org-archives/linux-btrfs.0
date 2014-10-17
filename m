@@ -1,52 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17723 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750835AbaJQKJf (ORCPT
+Received: from xp4-p00-ob.smtp.rzone.de ([81.169.146.139]:38358 "EHLO
+	xp4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751791AbaJQMKN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 06:09:35 -0400
-Message-ID: <5440EAD8.4060801@fb.com>
-Date: Fri, 17 Oct 2014 06:09:28 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs corruption fix
-References: <543F78F1.6040203@fb.com>
-In-Reply-To: <543F78F1.6040203@fb.com>
-Content-Type: text/plain; charset="utf-8"
+	Fri, 17 Oct 2014 08:10:13 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jored.store (RZmta 35.10 OK)
+	with ESMTP id g028d7q9HCAA7aS
+	for <linux-btrfs@vger.kernel.org>;
+	Fri, 17 Oct 2014 14:10:10 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 2/2] Btrfs: check-int: don't complain about balanced blocks
+Date: Fri, 17 Oct 2014 14:10:10 +0200
+Message-Id: <1413547810-2353-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The xfstest btrfs/014 which tests the balance operation caused that the
+check_int module complained that known blocks changed their physical
+location. Since this is not an error in this case, only print such
+message if the verbose mode was enabled.
 
+Reported-by: Wang Shilong <wangshilong1991@gmail.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Tested-by: Wang Shilong <wangshilong1991@gmail.com>
+---
+v1 -> v2:
+Don't break user-visible strings.
 
-On 10/16/2014 03:51 AM, Chris Mason wrote:
-> Hi Linus,
-> 
-> I'm testing a pull with more fixes, but wanted to get this one out so
-> Greg can pick it up.  The corruption isn't easy to hit, you have to do a
-> readonly snapshot and have orphans in the snapshot.  But my review and
-> testing missed the bug.  Filipe has added a better xfstest to cover it.
-> 
-> Please pull:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+ fs/btrfs/check-integrity.c | 80 ++++++++++++++++++++++++----------------------
+ 1 file changed, 42 insertions(+), 38 deletions(-)
 
-Sorry Linus, I realized this morning I forgot my sob.  I've pushed out an
-updated commit to a new for-linus-update branch.  The code and diffstat are 
-exactly the same:
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 65fc2e0bbc4a..1dcf66ad5b51 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -1325,24 +1325,25 @@ static int btrfsic_create_link_to_next_block(
+ 		l = NULL;
+ 		next_block->generation = BTRFSIC_GENERATION_UNKNOWN;
+ 	} else {
+-		if (next_block->logical_bytenr != next_bytenr &&
+-		    !(!next_block->is_metadata &&
+-		      0 == next_block->logical_bytenr)) {
+-			printk(KERN_INFO
+-			       "Referenced block @%llu (%s/%llu/%d)"
+-			       " found in hash table, %c,"
+-			       " bytenr mismatch (!= stored %llu).\n",
+-			       next_bytenr, next_block_ctx->dev->name,
+-			       next_block_ctx->dev_bytenr, *mirror_nump,
+-			       btrfsic_get_block_type(state, next_block),
+-			       next_block->logical_bytenr);
+-		} else if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
+-			printk(KERN_INFO
+-			       "Referenced block @%llu (%s/%llu/%d)"
+-			       " found in hash table, %c.\n",
+-			       next_bytenr, next_block_ctx->dev->name,
+-			       next_block_ctx->dev_bytenr, *mirror_nump,
+-			       btrfsic_get_block_type(state, next_block));
++		if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE) {
++			if (next_block->logical_bytenr != next_bytenr &&
++			    !(!next_block->is_metadata &&
++			      0 == next_block->logical_bytenr))
++				printk(KERN_INFO
++				       "Referenced block @%llu (%s/%llu/%d) found in hash table, %c, bytenr mismatch (!= stored %llu).\n",
++				       next_bytenr, next_block_ctx->dev->name,
++				       next_block_ctx->dev_bytenr, *mirror_nump,
++				       btrfsic_get_block_type(state,
++							      next_block),
++				       next_block->logical_bytenr);
++			else
++				printk(KERN_INFO
++				       "Referenced block @%llu (%s/%llu/%d) found in hash table, %c.\n",
++				       next_bytenr, next_block_ctx->dev->name,
++				       next_block_ctx->dev_bytenr, *mirror_nump,
++				       btrfsic_get_block_type(state,
++							      next_block));
++		}
+ 		next_block->logical_bytenr = next_bytenr;
+ 
+ 		next_block->mirror_num = *mirror_nump;
+@@ -1528,7 +1529,9 @@ static int btrfsic_handle_extent_data(
+ 				return -1;
+ 			}
+ 			if (!block_was_created) {
+-				if (next_block->logical_bytenr != next_bytenr &&
++				if ((state->print_mask &
++				     BTRFSIC_PRINT_MASK_VERBOSE) &&
++				    next_block->logical_bytenr != next_bytenr &&
+ 				    !(!next_block->is_metadata &&
+ 				      0 == next_block->logical_bytenr)) {
+ 					printk(KERN_INFO
+@@ -1881,25 +1884,26 @@ again:
+ 							       dev_state,
+ 							       dev_bytenr);
+ 			}
+-			if (block->logical_bytenr != bytenr &&
+-			    !(!block->is_metadata &&
+-			      block->logical_bytenr == 0))
+-				printk(KERN_INFO
+-				       "Written block @%llu (%s/%llu/%d)"
+-				       " found in hash table, %c,"
+-				       " bytenr mismatch"
+-				       " (!= stored %llu).\n",
+-				       bytenr, dev_state->name, dev_bytenr,
+-				       block->mirror_num,
+-				       btrfsic_get_block_type(state, block),
+-				       block->logical_bytenr);
+-			else if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
+-				printk(KERN_INFO
+-				       "Written block @%llu (%s/%llu/%d)"
+-				       " found in hash table, %c.\n",
+-				       bytenr, dev_state->name, dev_bytenr,
+-				       block->mirror_num,
+-				       btrfsic_get_block_type(state, block));
++			if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE) {
++				if (block->logical_bytenr != bytenr &&
++				    !(!block->is_metadata &&
++				      block->logical_bytenr == 0))
++					printk(KERN_INFO
++					       "Written block @%llu (%s/%llu/%d) found in hash table, %c, bytenr mismatch (!= stored %llu).\n",
++					       bytenr, dev_state->name,
++					       dev_bytenr,
++					       block->mirror_num,
++					       btrfsic_get_block_type(state,
++								      block),
++					       block->logical_bytenr);
++				else
++					printk(KERN_INFO
++					       "Written block @%llu (%s/%llu/%d) found in hash table, %c.\n",
++					       bytenr, dev_state->name,
++					       dev_bytenr, block->mirror_num,
++					       btrfsic_get_block_type(state,
++								      block));
++			}
+ 			block->logical_bytenr = bytenr;
+ 		} else {
+ 			if (num_pages * PAGE_CACHE_SIZE <
+-- 
+2.1.1
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-update
-
-> 
-> Chris Mason (1) commits (+33/-36):
->     Revert "Btrfs: race free update of commit root for ro snapshots"
-> 
-> Total: (1) commits (+33/-36)
-> 
->  fs/btrfs/inode.c | 36 ------------------------------------
->  fs/btrfs/ioctl.c | 33 +++++++++++++++++++++++++++++++++
->  2 files changed, 33 insertions(+), 36 deletions(-)
-> 
-
--chris

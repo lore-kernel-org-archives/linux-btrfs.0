@@ -1,62 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47557 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751194AbaJQMxV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 08:53:21 -0400
-Date: Fri, 17 Oct 2014 08:53:06 -0400
-From: Chris Mason <clm@fb.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:58528 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752883AbaJQPBx convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Oct 2014 11:01:53 -0400
+Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:53713 helo=[192.168.2.7])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Xf92N-002l79-KW
+	for linux-btrfs@vger.kernel.org; Fri, 17 Oct 2014 09:01:52 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: unexplainable corruptions 3.17.0
-To: Tomasz Torcz <tomek@pipebreaker.pl>
-CC: <linux-btrfs@vger.kernel.org>
-Message-ID: <1413550386.755.1@mail.thefacebook.com>
-In-Reply-To: <20141017085448.GA1050018@mother.pipebreaker.pl>
-References: <20141017085448.GA1050018@mother.pipebreaker.pl>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20141016091726.GA582640@mother.pipebreaker.pl>
+Date: Fri, 17 Oct 2014 11:01:51 -0400
+Message-Id: <2103F075-0D7A-4BF7-AC3B-1A1C7A101E27@colorremedies.com>
+References: <20141016091726.GA582640@mother.pipebreaker.pl>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 17, 2014 at 4:54 AM, Tomasz Torcz <tomek@pipebreaker.pl> 
-wrote:
-> On Fri, Oct 17, 2014 at 04:29:36PM +0800, Liu Bo wrote:
->>  On Fri, Oct 17, 2014 at 10:10:09AM +0200, Tomasz Torcz wrote:
->>  > On Fri, Oct 17, 2014 at 04:02:03PM +0800, Liu Bo wrote:
->>  > > >   Recently I've observed some corruptions to systemd's journal
->>  > > > files which are somewhat puzzling. This is especially worrying
->>  > > > as this is btrfs raid1 setup and I expected auto-healing.
->>  > > > read(4, 0x1001000, 65536)               = -1 EIO 
->> (Input/output error)
->> 
->>  Well..I don't know exactly what's the cause, but as the file is 
->> NOCOW, it writes
->>  data in place, have you experienced a hard reboot or something 
->> recently?
+
+On Oct 16, 2014, at 5:17 AM, Tomasz Torcz <tomek@pipebreaker.pl> wrote:
 > 
->   Nothing like that.  Server is on an UPS, there were couple normal 
-> shutdowns
-> this year (few kernel upgrades).
+>  Broken files are in /var/log/journal directory. This directory
+> is set NOCOW with chattr, all the files within too.
 > 
->>  And any message in dmesg log while getting EIO by reading the file?
+> Example of broken file:
+> system@0005057fe87730cf-6d3d85ed59bd70ae.journal~
+
+What do you get for 'journalctl --verify' ? I'm curious if any journal files are considered corrupt by journalctl, and if there's parity between journalctl and dd_rescue when it comes to good/bad journals.
+
 > 
->   Nothing in dmesg, no btrfs messages, no SCSI/SATA errors, nothing. 
-> That's
-> why I find those corruptions mysterious.
->   Maybe there is some way to inspect internal btrfs state and find 
-> out what
-> causing the problems?  Or maybe this is related to patch mentioned in 
-> this thread?
+> When read with dd_rescue, there are many I/O errors
+> reported, the summary looks like that (x = error):
+>> -..-..xxxxxxxxx---x.-..-..-...-..-..-...-< 100%
+> 
+>  Reads with cat, hexdump fails with:
+> read(4, 0x1001000, 65536)               = -1 EIO (Input/output error)
 
-This sounds like the problem fixed with some patches to our extent 
-mapping code  that went in with the merge window.  I've cherry picked a 
-few for stable and I'm running them through tests now.  They are in my 
-stable-3.17 branch, and I'll send to Greg once Linus grabs the revert 
-for the last one.
+Yeah weird, I'd expect in any case that there'd be a kernel message, whether it's a Btrfs or hardware problem.
 
-But, if you want to try that branch out, it may fix this EIO.  
-Otherwise we'll start sending you debugging.
-
--chris
-
-
+Chris Murphy
 

@@ -1,41 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42284 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751289AbaJQPHn convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 11:07:43 -0400
-Received: from cablepool1-225.stoweaccess.com ([199.188.178.225]:53759 helo=[192.168.2.7])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1Xf982-002nqA-Kr
-	for linux-btrfs@vger.kernel.org; Fri, 17 Oct 2014 09:07:43 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from mail-vc0-f171.google.com ([209.85.220.171]:60529 "EHLO
+	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753325AbaJQSJb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Oct 2014 14:09:31 -0400
+Received: by mail-vc0-f171.google.com with SMTP id hy10so997531vcb.16
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Oct 2014 11:09:30 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1413550386.755.1@mail.thefacebook.com>
+References: <20141017085448.GA1050018@mother.pipebreaker.pl>
+	<1413550386.755.1@mail.thefacebook.com>
+Date: Fri, 17 Oct 2014 14:09:30 -0400
+Message-ID: <CAGfcS_muumP4VQTUkTTGqg=RpjWrU1A5cC+g4=dKMbdMoQvmXg@mail.gmail.com>
 Subject: Re: unexplainable corruptions 3.17.0
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$6eb1$c20caee6$477f612f$2b524b4d@cox.net>
-Date: Fri, 17 Oct 2014 11:07:42 -0400
-Message-Id: <DD5CB8A9-8243-4D55-90E3-0020933B3633@colorremedies.com>
-References: <20141016091726.GA582640@mother.pipebreaker.pl> <20141017080202.GA3604@localhost.localdomain> <pan$6eb1$c20caee6$477f612f$2b524b4d@cox.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Chris Mason <clm@fb.com>
+Cc: Tomasz Torcz <tomek@pipebreaker.pl>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Oct 17, 2014 at 8:53 AM, Chris Mason <clm@fb.com> wrote:
+> This sounds like the problem fixed with some patches to our extent mapping
+> code  that went in with the merge window.  I've cherry picked a few for
+> stable and I'm running them through tests now.  They are in my stable-3.17
+> branch, and I'll send to Greg once Linus grabs the revert for the last one.
 
-On Oct 17, 2014, at 7:38 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
-> When I switched to systemd here, I set it to volatile storage only, and 
-> kept syslog-ng setup for longer term storage.  I arranged things so 
-> journald's volatile logs had enough room to grow for a normal single 
-> session in the /run/log tmpfs.  That gives me the nice journald systemd 
-> integration, systemctl status reporting the last few log entries for a 
-> specific service, etc.
-> 
-> But everything still gets passed to syslog-ng 
-
-For the uninitiated: To do the above, delete /var/log/journal and install syslog daemon of choice (and is systemd-journald compatible of course). That's it. By deleting /var/log/journal, systemd-journald will write logs to /run/log/journal.
-
-
-Chris Murphy
-
+Just for clarity - when can we expect to see these in the kernel?  I
+wasn't sure which merge windows you're referring to.  I take it that
+3.17.1 is still unpatched (for this and the readonly snapshot issue -
+which requires reverting 9c3b306e1c9e6be4be09e99a8fe2227d1005effc).

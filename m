@@ -1,132 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64371 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751322AbaJQB7Y (ORCPT
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:46533 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750835AbaJQE0Z convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Oct 2014 21:59:24 -0400
-Message-ID: <1413511097.4054.8.camel@localhost.localdomain>
-Subject: Re: [PATCH v2] btrfs: ioctl BTRFS_IOC_FS_INFO and
- BTRFS_IOC_DEV_INFO miss-matched with slots
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        <lists@colorremedies.com>, <clm@fb.com>
-Date: Fri, 17 Oct 2014 09:58:17 +0800
-In-Reply-To: <540854CD.2080106@oracle.com>
-References: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>
-	 <1408351099-4721-1-git-send-email-anand.jain@oracle.com>
-	 <1408351099-4721-2-git-send-email-anand.jain@oracle.com>
-	 <20140904095812.GA5636@twin.jikos.cz> <540854CD.2080106@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+	Fri, 17 Oct 2014 00:26:25 -0400
+Received: by mail-pa0-f51.google.com with SMTP id lj1so61724pab.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Oct 2014 21:26:25 -0700 (PDT)
+Content-Type: text/plain; charset=GB2312
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Subject: Re: Problems running Balance and checking integrity concurrently.
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <543FE8D4.2040804@giantdisaster.de>
+Date: Fri, 17 Oct 2014 12:26:12 +0800
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <186E3C3A-40EC-462A-91AE-8586E7C2D137@gmail.com>
+References: <5BE1151D-599F-4FD4-BD6B-AC707C72CEC4@gmail.com> <543FE8D4.2040804@giantdisaster.de>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-09-04 at 20:02 +0800, Anand Jain wrote:
-> 
-> 
-> On 09/04/2014 05:58 PM, David Sterba wrote:
-> > On Mon, Aug 18, 2014 at 04:38:18PM +0800, Anand Jain wrote:
-> >> ioctl BTRFS_IOC_FS_INFO return num_devices which does _not_ include seed
-> >> device, But the following ioctl BTRFS_IOC_DEV_INFO counts and gets seed
-> >> disk when probed. So in the userland we hit a count-slot missmatch
-> >> bug..
-> >>              get_fs_info()
-> >>              ::
-> >>                      BUG_ON(ndevs >= fi_args->num_devices);
-> >> which hits this bug when we have mounted a seed device.
-> >>
-> >> So to fix this problem here in this patch ioctl BTRFS_IOC_FS_INFO
-> >> will provide total_devices instead of num_devices.
-> >
-> > The ioctl is very unclear what the 'num_device' actually means.
-> 
->   Right. Thats also true in kernel. very messy. very confusing.
->   tool btrfs-devlist would help understand whats going on.
-> 
-> ----
->   $ egrep num_device *.c | egrep "total_device"
-> ioctl.c:	fi_args->num_devices = fs_devices->total_devices;
-> super.c:		ret = !(fs_devices->num_devices == fs_devices->total_devices);
-> volumes.c:	total_devices = btrfs_super_num_devices(disk_super);
-> ----
-> 
->   By the way about BTRFS_IOC_DEVICES_READY ioctl above its long time
->   broken with seed/replace, just waiting to get these patches integrated
->   first so to fix it later.
-> 
-> 
-> >> This would fix the problem partly. Partly because ealier num_devices
-> >> included the replacing device but now total_device does not include
-> >> the replacing device. Getting a count which includes a transient device
-> >> is rather too in efficient/wrong indeed, because there can be a race
-> >> condition where in the time between ioctl BTRFS_IOC_FS_INFO to
-> >> BTRFS_IOC_DEV_INFO the replace device operation might have been
-> >> completed. So to fix this problem its better that user land btrfs-progs
-> >> probes replacing device (at devid 0) separately.
-> >>
-> >> v2:
-> >> Agree with Wang's comment. Its better to show seed disks under the
-> >> sprout fs, so that user can establish mapping of seed to sprout devices.
-> >>
-> >> So here I am making BTRFS_IOC_FS_INFO to return the total_devices
-> >> which would count the seed devices (but not the replacing device).
-> >
-> > This is even more confusing. I think we need to add another member to
-> > the ioctl struct to reflect the number of regular devices (num_devices)
-> > and the true total number of devices including seeding and replaced
-> > devices.
-> 
->   that will be a better way. thanks.
-> 
-> > The difference should be accompanied by a flag that would say
-> > if there's a seeding or replace in progress.
-> >
-> > There are some backward compatibility concerns. Setting num_devices to
-> > total_devices changes semantics of the ioctl, so I think it should stay
-> > as is for now,
-> 
->   As I have tested there is not backward compatibility issue.
->   But from semantics perspective .. agreed.
-> 
-> > but the BUG_ON can be removed and replaced by code that
-> > reallocates the buffer or allocates a few more items in advance.
-> 
->    We don't know how may seed devices are there for a sprout FS.
->    So thats not possible.
-> 
->   Will review  resubmit.
-> 
-> Thanks for commenting.
 
-Hi all,
+Hi Stefan Behrens,
 
-Firtly, thanks for the fix, Anand, how's the new version going?
+Thanks very much for your attention!
 
-I've been testing the btrfs fi show cmd these days and find that
-this patch has not been merged into linus's tree yet.
+More stress tests will be followed and will
+give you feedbacks when finished.
 
-Since the suggested way of adding member to the ioctl struct brings
-compatibility issues, it may need more discussion.
 
-But since this fix really incluence much to the user, I consider merging
-this version first to be a good idea.
-
-What do you think, Chris?
-
-Thanks,
-Gui
-
-> Anand
+> On Fri, 10 Oct 2014 21:35:02 +0800, Wang Shilong wrote:
+>> Hello£¬
+>> 
+>> I have reproduced a problem with Btrfs integrity and balance using latest
+>> btrfs kernel,it is very easy to reproduce:
+>> 
+>> With mount option ¡°check_int¡±, and run xfstests/btrfs/ tests, below test could definitely
+>> reproduce problem:
+>> 
+>> ./check tests/btrfs/014
 > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> The following two patches fix the issue.
+> 
+> 
 
+Best Regards,
+Wang Shilong
 

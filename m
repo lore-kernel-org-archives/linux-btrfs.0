@@ -1,142 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp4-p00-ob.smtp.rzone.de ([81.169.146.139]:38358 "EHLO
-	xp4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751791AbaJQMKN (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:54613 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752032AbaJQRI4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 08:10:13 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jored.store (RZmta 35.10 OK)
-	with ESMTP id g028d7q9HCAA7aS
-	for <linux-btrfs@vger.kernel.org>;
-	Fri, 17 Oct 2014 14:10:10 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] Btrfs: check-int: don't complain about balanced blocks
-Date: Fri, 17 Oct 2014 14:10:10 +0200
-Message-Id: <1413547810-2353-1-git-send-email-sbehrens@giantdisaster.de>
+	Fri, 17 Oct 2014 13:08:56 -0400
+Received: by mail-wi0-f176.google.com with SMTP id hi2so2609936wib.15
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Oct 2014 10:08:54 -0700 (PDT)
+Received: from [10.34.184.179] (188.29.164.88.threembb.co.uk. [188.29.164.88])
+        by mx.google.com with ESMTPSA id dw9sm168604wib.0.2014.10.17.10.08.52
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Fri, 17 Oct 2014 10:08:53 -0700 (PDT)
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Subject: Ccache on btrfs
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Date: Fri, 17 Oct 2014 18:11:02 +0100
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <2700CF0B-F340-44F7-A4D6-0C5FF05CCD81@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The xfstest btrfs/014 which tests the balance operation caused that the
-check_int module complained that known blocks changed their physical
-location. Since this is not an error in this case, only print such
-message if the verbose mode was enabled.
+Hi 
 
-Reported-by: Wang Shilong <wangshilong1991@gmail.com>
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
-Tested-by: Wang Shilong <wangshilong1991@gmail.com>
----
-v1 -> v2:
-Don't break user-visible strings.
+Is there an issue with btrfs ccache and multiple threads during compilation? I'm experiencing kernel panics while building Linux kernel on a btrfs system with -j8 and ccache enabled. Google suggest there was some issue on earlier kernels but my kernel is 3.16+
 
- fs/btrfs/check-integrity.c | 80 ++++++++++++++++++++++++----------------------
- 1 file changed, 42 insertions(+), 38 deletions(-)
+Anyone can confirm? 
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 65fc2e0bbc4a..1dcf66ad5b51 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -1325,24 +1325,25 @@ static int btrfsic_create_link_to_next_block(
- 		l = NULL;
- 		next_block->generation = BTRFSIC_GENERATION_UNKNOWN;
- 	} else {
--		if (next_block->logical_bytenr != next_bytenr &&
--		    !(!next_block->is_metadata &&
--		      0 == next_block->logical_bytenr)) {
--			printk(KERN_INFO
--			       "Referenced block @%llu (%s/%llu/%d)"
--			       " found in hash table, %c,"
--			       " bytenr mismatch (!= stored %llu).\n",
--			       next_bytenr, next_block_ctx->dev->name,
--			       next_block_ctx->dev_bytenr, *mirror_nump,
--			       btrfsic_get_block_type(state, next_block),
--			       next_block->logical_bytenr);
--		} else if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
--			printk(KERN_INFO
--			       "Referenced block @%llu (%s/%llu/%d)"
--			       " found in hash table, %c.\n",
--			       next_bytenr, next_block_ctx->dev->name,
--			       next_block_ctx->dev_bytenr, *mirror_nump,
--			       btrfsic_get_block_type(state, next_block));
-+		if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE) {
-+			if (next_block->logical_bytenr != next_bytenr &&
-+			    !(!next_block->is_metadata &&
-+			      0 == next_block->logical_bytenr))
-+				printk(KERN_INFO
-+				       "Referenced block @%llu (%s/%llu/%d) found in hash table, %c, bytenr mismatch (!= stored %llu).\n",
-+				       next_bytenr, next_block_ctx->dev->name,
-+				       next_block_ctx->dev_bytenr, *mirror_nump,
-+				       btrfsic_get_block_type(state,
-+							      next_block),
-+				       next_block->logical_bytenr);
-+			else
-+				printk(KERN_INFO
-+				       "Referenced block @%llu (%s/%llu/%d) found in hash table, %c.\n",
-+				       next_bytenr, next_block_ctx->dev->name,
-+				       next_block_ctx->dev_bytenr, *mirror_nump,
-+				       btrfsic_get_block_type(state,
-+							      next_block));
-+		}
- 		next_block->logical_bytenr = next_bytenr;
- 
- 		next_block->mirror_num = *mirror_nump;
-@@ -1528,7 +1529,9 @@ static int btrfsic_handle_extent_data(
- 				return -1;
- 			}
- 			if (!block_was_created) {
--				if (next_block->logical_bytenr != next_bytenr &&
-+				if ((state->print_mask &
-+				     BTRFSIC_PRINT_MASK_VERBOSE) &&
-+				    next_block->logical_bytenr != next_bytenr &&
- 				    !(!next_block->is_metadata &&
- 				      0 == next_block->logical_bytenr)) {
- 					printk(KERN_INFO
-@@ -1881,25 +1884,26 @@ again:
- 							       dev_state,
- 							       dev_bytenr);
- 			}
--			if (block->logical_bytenr != bytenr &&
--			    !(!block->is_metadata &&
--			      block->logical_bytenr == 0))
--				printk(KERN_INFO
--				       "Written block @%llu (%s/%llu/%d)"
--				       " found in hash table, %c,"
--				       " bytenr mismatch"
--				       " (!= stored %llu).\n",
--				       bytenr, dev_state->name, dev_bytenr,
--				       block->mirror_num,
--				       btrfsic_get_block_type(state, block),
--				       block->logical_bytenr);
--			else if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
--				printk(KERN_INFO
--				       "Written block @%llu (%s/%llu/%d)"
--				       " found in hash table, %c.\n",
--				       bytenr, dev_state->name, dev_bytenr,
--				       block->mirror_num,
--				       btrfsic_get_block_type(state, block));
-+			if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE) {
-+				if (block->logical_bytenr != bytenr &&
-+				    !(!block->is_metadata &&
-+				      block->logical_bytenr == 0))
-+					printk(KERN_INFO
-+					       "Written block @%llu (%s/%llu/%d) found in hash table, %c, bytenr mismatch (!= stored %llu).\n",
-+					       bytenr, dev_state->name,
-+					       dev_bytenr,
-+					       block->mirror_num,
-+					       btrfsic_get_block_type(state,
-+								      block),
-+					       block->logical_bytenr);
-+				else
-+					printk(KERN_INFO
-+					       "Written block @%llu (%s/%llu/%d) found in hash table, %c.\n",
-+					       bytenr, dev_state->name,
-+					       dev_bytenr, block->mirror_num,
-+					       btrfsic_get_block_type(state,
-+								      block));
-+			}
- 			block->logical_bytenr = bytenr;
- 		} else {
- 			if (num_pages * PAGE_CACHE_SIZE <
--- 
-2.1.1
-
+Thanks 
+Leonidas 

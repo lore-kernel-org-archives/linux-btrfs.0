@@ -1,53 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from homie.mail.dreamhost.com ([208.97.132.208]:36763 "EHLO
-	homiemail-a3.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753722AbaJQUIV (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:41130 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750729AbaJQUcs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 16:08:21 -0400
-Message-ID: <1413576485.22256.5.camel@linux-t7sj.site>
-Subject: Re: btrfs soft lockups: locks gone crazy
-From: Davidlohr Bueso <dave@stgolabs.net>
-To: Josef Bacik <jbacik@fb.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Date: Fri, 17 Oct 2014 13:08:05 -0700
-In-Reply-To: <54416EF6.1050403@fb.com>
-References: <1413271664.27233.13.camel@linux-t7sj.site>
-	 <54416EF6.1050403@fb.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Fri, 17 Oct 2014 16:32:48 -0400
+Message-ID: <54417CEB.9020003@fb.com>
+Date: Fri, 17 Oct 2014 16:32:43 -0400
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Leonidas Spyropoulos <artafinde@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Ccache on btrfs
+References: <2700CF0B-F340-44F7-A4D6-0C5FF05CCD81@gmail.com> <CAGqmi7751HOLJ5xU+NfoZSjTQhgYME-9b36hgJt0oG6w+Ft-CA@mail.gmail.com> <20141017192438.GA20983@sune>
+In-Reply-To: <20141017192438.GA20983@sune>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2014-10-17 at 15:33 -0400, Josef Bacik wrote:
-> On 10/14/2014 03:27 AM, Davidlohr Bueso wrote:
-> > Hello,
-> >
-> > I'm getting massive amounts of cpu soft lockups in Linus's tree for
-> > today. This occurs almost immediately and is very reproducible in aim7
-> > disk workloads using btrfs:
-> >
-> 
-> I'm trying to reproduce but it's not popping for me.  What is the setup 
-> of your fs?  mkfs options, mount options etc.  And how are you running 
-> aim7?  I'm using reaim with the default reaim.config and workfile,disk, 
-> is this what you are using?  If not please attach your config and 
-> workfile so I can be sure to be doing the same thing as you.  Thanks,
+On 10/17/2014 03:24 PM, Leonidas Spyropoulos wrote:
+> On 17/10/14, Timofey Titovets wrote:
+>> i use ccache and often compile linux from git,
+>> I don't catch any errors with it.
+>>
+> Interesting, I re-enabled ccache on an ext4 partition (HDD) and worked
+> fine. So I suspect it's something to do with btrfs and SSD. My mount
+> options are:
+> /dev/sda3 on /home type btrfs (rw,relatime,ssd,discard,nospace_cache)
+>
+> The problem is that I can't get hold of kernel panic since it's not in
+> the journal [1]. I don't know a way to get hold of the kernel panic log
+> to help anyway.
+>
+> What would it be useful to debug it?
 
-The steps I used are:
+Setup netconsole, you can set it to go to a different box and then on 
+that box run
 
-Download mmtests: https://github.com/gormanm/mmtests.git
+nc -lu -p 514 > out.txt
 
-cp configs/config-global-dhp__reaim-io config
+and then reproduce the panic.  If you are using fedora you can install 
+netconsole and edit /etc/sysconfig/netconsole and set SYSLOGADDR=<your 
+other boxes address>.  Thanks,
 
-edit the new config and just leave 'workfile.shared workfile.disk'
-workloads as the REAIM_WORKFILES parameter.
-
-./run-mmtests --no-monitor testname
-
-Just a few mins into the test you should start getting the lockups. fwiw
-I have not had the time to try other setups of reaim that are not
-bundled with mmtests.
-
-Thanks,
-Davidlohr
+Josef
 

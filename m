@@ -1,97 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24726 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750796AbaJREiO (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:37215 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750860AbaJRK3V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Oct 2014 00:38:14 -0400
-Message-ID: <5441EEA1.7080807@oracle.com>
-Date: Sat, 18 Oct 2014 12:37:53 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Sat, 18 Oct 2014 06:29:21 -0400
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: "Michael Johnson - MJ" <mj@revmj.com>
+Subject: Re: strange 3.16.3 problem
+Date: Sat, 18 Oct 2014 21:29:16 +1100
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <201410181454.19375.russell@coker.com.au> <CAHGunUkzXZ-ybUR_y3tHzGwtn_45gq8YQJyEqteBX3zqWzUakA@mail.gmail.com>
+In-Reply-To: <CAHGunUkzXZ-ybUR_y3tHzGwtn_45gq8YQJyEqteBX3zqWzUakA@mail.gmail.com>
 MIME-Version: 1.0
-To: "Vincent." <fensoft@gmail.com>
-CC: Suman Chakravartula <suman@rockstor.com>, linux-btrfs@vger.kernel.org,
-        linux-btrfs-owner@vger.kernel.org
-Subject: Re: raid10 drive replacement
-References: <CAMhgxDMxRNviq5iayuziqUiQXGzSP5cZV2qxnch-3wWLZvwNAA@mail.gmail.com> <daf1096c58d3dd54392809f7d3f89e4d@sonic.net>
-In-Reply-To: <daf1096c58d3dd54392809f7d3f89e4d@sonic.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Message-Id: <201410182129.16380.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, 18 Oct 2014, "Michael Johnson - MJ" <mj@revmj.com> wrote:
+> The NFS client is part of the kernel iirc, so it should be 64 bit.  This
+> would allow the creation of files larger than 4gb and create possible
+> issues with a 32 bit user space utility.
 
-somethings aren't matching well. the issue is..
-----
-[ 6219.703606] Btrfs: too many missing devices, writeable mount is not 
-allowed
-----
-But per Vincent only xvdc is missing in a raid10 (both data and metadata 
-are raid10 ?)
+A correctly written 32bit application will handle files >4G in size.
 
+While some applications may have problems, I'm fairly sure that ls will be ok.
 
-Anand
+# dd if=/dev/zero of=/tmp/test bs=1024k count=1 seek=5000
+1+0 records in
+1+0 records out
+1048576 bytes (1.0 MB) copied, 0.00383089 s, 274 MB/s
+# /bin/ls -lh /tmp/test
+-rw-r--r--. 1 root root 4.9G Oct 18 20:47 /tmp/test
+# file /bin/ls
+/bin/ls: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically 
+linked (uses shared libs), for GNU/Linux 2.6.26, 
+BuildID[sha1]=0xd3280633faaabf56a14a26693d2f810a32222e51, stripped
 
+A quick test shows that a 32bit ls can handle this.
 
-On 10/18/14 10:02, Suman Chakravartula wrote:
->
-> On 2014-10-17 18:47, Vincent. wrote:
->> Hi !
->>
->> I have a faulty drive in my raid10 and want it to be replaced.
->> Working drive are xvd[bef] and replacement drive is xvdc.
->>
-> This is something I ran into the other day. Key difference is that I was
-> running 3.17.1 kernel and 3.16 btrfs-progs
->
->> When I mount my drive in RW:
->> #mount -odegraded /dev/xvdb /tank
->> #dmesg -c
->> [ 6207.294513] btrfs: device fsid 728ef4d8-928c-435c-b707-f71c459e1520
->> devid 1 transid 551398 /dev/xvdb
->> [ 6207.327357] btrfs: allowing degraded mounts
->> [ 6207.477041] btrfs: bdev (null) errs: wr 15211054, rd 3038899, flush
->> 0, corrupt 0, gen 0
->> [ 6219.703606] Btrfs: too many missing devices, writeable mount is not
->> allowed
->> [ 6219.785929] btrfs: open_ctree failed
->>
->
-> In my case, I was able to rw mount. May be update btrfs-progs and retry?
->
->> When I mount my drive in RO:
->> #mount -odegraded,ro /dev/xvdb /tank
->> #btrfs filesystem show
->> Label: none  uuid: 728ef4d8-928c-435c-b707-f71c459e1520
->> Total devices 4 FS bytes used 4.70TiB
->> devid    1 size 2.73TiB used 2.73TiB path /dev/xvdb
->> devid    2 size 2.73TiB used 2.73TiB path
->> devid    3 size 2.73TiB used 2.73TiB path /dev/xvde
->> devid    4 size 2.73TiB used 2.73TiB path /dev/xvdf
->>
->> Btrfs v3.12
->>
->> Of course, because my mount is in RO, i can't add device and do a
->> balance:
->> #btrfs device add /dev/xvdc /tank
->> ERROR: error adding the device '/dev/xvdc' - Read-only file system
->>
->> Neither a "replace without disk":
->> #btrfs replace start -Br 2 /dev/xvdc /tank
->> ERROR: ioctl(DEV_REPLACE_START) failed on "/tank": Read-only file
->> system, no error
->>
-> Because my mount was rw, replace worked.
->
->> FYI I'm on ubuntu 14.04 with btrfs 3.12
->>
->> Any idea ?
->> Thanks !
->> --
->> fensoft
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I would mount from a client with 64 bit user space and see if the problem
+> occurs there.  If so, it is probably not a btrfs issue (if I am
+> understanding your environment correctly).
+
+I'll try that later.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

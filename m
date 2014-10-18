@@ -1,31 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:44028 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751215AbaJRPwf convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:46006 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751186AbaJRPx7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Oct 2014 11:52:35 -0400
-Received: by mail-pd0-f170.google.com with SMTP id p10so2432626pdj.15
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Oct 2014 08:52:35 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+	Sat, 18 Oct 2014 11:53:59 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: Petr Janecek <janecek@ucw.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.cz" <dsterba@suse.cz>
 Subject: Re: Poll: time to switch skinny-metadata on by default?
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <54427383.6050104@fb.com>
-Date: Sat, 18 Oct 2014 23:52:20 +0800
-Cc: Petr Janecek <janecek@ucw.cz>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Message-Id: <EB5E882A-A370-40CC-BECE-5451088980EC@gmail.com>
-References: <20141017123036.GA8052@atrey.karlin.mff.cuni.cz> <54415F1C.1060902@fb.com> <20141018112121.GB17403@atrey.karlin.mff.cuni.cz> <54427383.6050104@fb.com>
-To: Josef Bacik <jbacik@fb.com>
+Date: Sat, 18 Oct 2014 15:53:50 +0000
+Message-ID: <jlgvc1v688egconn3ah4w2yx.1413647627938@email.android.com>
+References: <20141017123036.GA8052@atrey.karlin.mff.cuni.cz>
+ <54415F1C.1060902@fb.com> <20141018112121.GB17403@atrey.karlin.mff.cuni.cz>
+ <54427383.6050104@fb.com>,<EB5E882A-A370-40CC-BECE-5451088980EC@gmail.com>
+In-Reply-To: <EB5E882A-A370-40CC-BECE-5451088980EC@gmail.com>
+Content-Type: text/plain; charset="big5"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Thanks I'll run this on Monday.
+
+Josef
+
+Wang Shilong <wangshilong1991@gmail.com> wrote:
+
 
 Hello Josef,
 
 With Skinny metadta and i running your btrfs-next repo for-suse branch
 (which has extent ref patch), i hit following problem:
 
-[  250.679705] BTRFS info (device sdb): relocating block group 35597058048 flags 36                                                                                                                        
+[  250.679705] BTRFS info (device sdb): relocating block group 35597058048 flags 36
 [  250.728815] BTRFS info (device sdb): relocating block group 35462840320 flags 36
 [  253.562133] Dropping a ref for a root that doesn't have a ref on the block
 [  253.562475] Dumping block entry [34793177088 8192], num_refs 3, metadata 0
@@ -97,51 +105,51 @@ SLEEP=3
 
 function run_snapshots()
 {
-	i=1
-	while [ 1 ]
-	do
-		btrfs sub snapshot $TEST_MNT $TEST_MNT/snap_$i
-		a=$(($i%10))
-		if [ $a -eq 0 ]; then
-			btrfs sub delete *
-		fi
-		((i++))
-		sleep $SLEEP
-	done
+        i=1
+        while [ 1 ]
+        do
+                btrfs sub snapshot $TEST_MNT $TEST_MNT/snap_$i
+                a=$(($i%10))
+                if [ $a -eq 0 ]; then
+                        btrfs sub delete *
+                fi
+                ((i++))
+                sleep $SLEEP
+        done
 }
 
 function run_compiling()
 {
-	while [ 1 ]
-	do
-		make -j4 -C $TEST_MNT/linux-btrfs
-		make -C $TEST_MNT/linux-btrfs clean
-	done
+        while [ 1 ]
+        do
+                make -j4 -C $TEST_MNT/linux-btrfs
+                make -C $TEST_MNT/linux-btrfs clean
+        done
 }
 
 function run_balance()
 {
-	while [ 1 ]
-	do
-		btrfs balance start $TEST_MNT
-		sleep $SLEEP
-	done
+        while [ 1 ]
+        do
+                btrfs balance start $TEST_MNT
+                sleep $SLEEP
+        done
 }
 
 run_snapshots &
 run_compiling &
 run_balance &
 
-â€”â€”cutâ€”
+¡X¡Xcut¡X
 
 Mount options:
 /dev/sdb /mnt btrfs rw,relatime,space_cache 0 0
 
-Here my /dev/sdb is 10G, and before comping kernel,run â€˜make allmodconfigâ€™
-Above tests maybe detect more problemï¼Œ after running a while, system seems
+Here my /dev/sdb is 10G, and before comping kernel,run ¡¥make allmodconfig¡¦
+Above tests maybe detect more problem¡A after running a while, system seems
 blocked, echo w > /proc/sysrq-trigger
 
-[ 1970.909512] SysRq : Show Blocked State                                                                                                                                                             
+[ 1970.909512] SysRq : Show Blocked State
    2 [ 1970.910490]   task                        PC stack   pid father
    3 [ 1970.910564] kworker/u128:9  D ffff880208a89a30     0  3514      2 0x00000080
    4 [ 1970.910587] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-1)
@@ -261,7 +269,7 @@ blocked, echo w > /proc/sysrq-trigger
  118 [ 1970.911212]  [<ffffffff81243ad1>] SyS_ioctl+0x81/0xa0
  119 [ 1970.911217]  [<ffffffff8114a49c>] ? __audit_syscall_entry+0x9c/0xf0
  120 [ 1970.911220]  [<ffffffff81795429>] system_call_fastpath+0x16/0x1b
-[ 1970.911217]  [<ffffffff8114a49c>] ? __audit_syscall_entry+0x9c/0xf0                                                                                                                                 
+[ 1970.911217]  [<ffffffff8114a49c>] ? __audit_syscall_entry+0x9c/0xf0
  120 [ 1970.911220]  [<ffffffff81795429>] system_call_fastpath+0x16/0x1b
  121 [ 1970.911228] as              D ffff880225e93460     0  6423   6421 0x00000080
  122 [ 1970.911231]  ffff880049657ad0 0000000000000046 ffff880049657fd8 00000000001d59c0
@@ -324,21 +332,21 @@ blocked, echo w > /proc/sysrq-trigger
  179 [ 1970.911544] Call Trace:
  180 [ 1970.911547]  [<ffffffff8178e209>] schedule+0x29/0x7
 
-It is easy to reproduce this problem using my scriptsâ€¦
+It is easy to reproduce this problem using my scripts¡K
 
 
 > On 10/18/2014 07:21 AM, Petr Janecek wrote:
 >> Hello,
->> 
+>>
 >>>>   so far I haven't succeeded running btrfs balance on a large
 >>>> skinny-metadata fs -- segfault, kernel bug, reproducible.  No such
 >>>> problems on ^skinny-metadata fs (same disks, same data).  Tried both
 >>>> several times on 3.17.  More info in comments 10,14 in
->>>> https://bugzilla.kernel.org/show_bug.cgi?id=64961
->>> 
+>>>> https://urldefense.proofpoint.com/v1/url?u=https://bugzilla.kernel.org/show_bug.cgi?id%3D64961&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=w2UsZEYXkYBIP7OADCD4aaaiMhrfPRT6P52q9vkc07k%3D%0A&s=e638e9ef49e562448ef1e564bcdc8ddc0ac2ef7e07a6e30c7405ec489ba4e672
+>>>
 >>> I can't reproduce this, how big is your home directory, and are you
 >>> still seeing corruptions after just rsyncing to a clean fs?  Thanks,
->> 
+>>
 >>   as I wrote in comment 10, it has improved since year ago when I
 >> reported it: I see no corruption at all, neither after rsync, nor after
 >> balance crash: btrfs check doesn't find anything wrong, files look ok.
@@ -346,27 +354,28 @@ It is easy to reproduce this problem using my scriptsâ€¦
 >> kernel bug and the fs gets stuck.  When I run balance again after
 >> reboot, it makes only a very small progress and crashes again the same
 >> way.
->> 
+>>
 >>   There are some 2.5TB of data in 7.5M files on that fs.  And couple
 >> dozen ro snapshots -- I'm testing 3.17 + revert of 9c3b306e1c9e right
 >> now, but it takes more than day to copy the data and recreate all the
 >> snapshots.  But a test with ^skinny-metadata showed no problems, so I
 >> don't thing I got bitten by that bug.
->> 
+>>
 >>   I have btrfs-image of one of previous runs after crashed balance.
 >> It's 15GB. I can place it somewhere with fast link, are you interested?
->> 
->> 
-> 
+>>
+>>
+>
 > Yup, send me the link and I'll pull it down.  Thanks,
-> 
+>
 > Josef
-> 
+>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  https://urldefense.proofpoint.com/v1/url?u=http://vger.kernel.org/majordomo-info.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=w2UsZEYXkYBIP7OADCD4aaaiMhrfPRT6P52q9vkc07k%3D%0A&s=5db2bf67575db1c2c60f26d25b0419e691e95fffaf526828334f7896ee687a2e
 
 Best Regards,
 Wang Shilong
 
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

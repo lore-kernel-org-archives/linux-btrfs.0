@@ -1,33 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f171.google.com ([209.85.220.171]:60529 "EHLO
-	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753325AbaJQSJb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Oct 2014 14:09:31 -0400
-Received: by mail-vc0-f171.google.com with SMTP id hy10so997531vcb.16
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Oct 2014 11:09:30 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1413550386.755.1@mail.thefacebook.com>
-References: <20141017085448.GA1050018@mother.pipebreaker.pl>
-	<1413550386.755.1@mail.thefacebook.com>
-Date: Fri, 17 Oct 2014 14:09:30 -0400
-Message-ID: <CAGfcS_muumP4VQTUkTTGqg=RpjWrU1A5cC+g4=dKMbdMoQvmXg@mail.gmail.com>
+Received: from csamuel.org ([74.50.50.137]:60966 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750860AbaJRHj2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 18 Oct 2014 03:39:28 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 4E9AF405B1
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Oct 2014 18:32:48 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 10771-03 for <linux-btrfs@vger.kernel.org>;
+ Sat, 18 Oct 2014 18:32:48 +1100 (EST)
+Received: from quad.localnet (2001-44b8-41dd-d500-7973-2f82-a172-c2bc.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:7973:2f82:a172:c2bc])
+	by csamuel.org (Postfix) with ESMTPSA id DF9EA40572
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Oct 2014 18:32:47 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: unexplainable corruptions 3.17.0
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Chris Mason <clm@fb.com>
-Cc: Tomasz Torcz <tomek@pipebreaker.pl>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Sat, 18 Oct 2014 18:32:49 +1100
+Message-ID: <1798492.UPHDTB8iYW@quad>
+In-Reply-To: <CAGfcS_muumP4VQTUkTTGqg=RpjWrU1A5cC+g4=dKMbdMoQvmXg@mail.gmail.com>
+References: <20141017085448.GA1050018@mother.pipebreaker.pl> <1413550386.755.1@mail.thefacebook.com> <CAGfcS_muumP4VQTUkTTGqg=RpjWrU1A5cC+g4=dKMbdMoQvmXg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 17, 2014 at 8:53 AM, Chris Mason <clm@fb.com> wrote:
-> This sounds like the problem fixed with some patches to our extent mapping
-> code  that went in with the merge window.  I've cherry picked a few for
-> stable and I'm running them through tests now.  They are in my stable-3.17
-> branch, and I'll send to Greg once Linus grabs the revert for the last one.
+On Fri, 17 Oct 2014 02:09:30 PM Rich Freeman wrote:
 
-Just for clarity - when can we expect to see these in the kernel?  I
-wasn't sure which merge windows you're referring to.  I take it that
-3.17.1 is still unpatched (for this and the readonly snapshot issue -
-which requires reverting 9c3b306e1c9e6be4be09e99a8fe2227d1005effc).
+> Just for clarity - when can we expect to see these in the kernel?
+
+The stable kernel rules say:
+
+https://www.kernel.org/doc/Documentation/stable_kernel_rules.txt
+
+#  - It or an equivalent fix must already exist in Linus' tree (upstream).
+
+So until Linus merges the revert into the mainline kernel it cannot go into a 
+stable release, and he's not merged it yet.
+
+cheers,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+

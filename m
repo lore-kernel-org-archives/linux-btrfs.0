@@ -1,70 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52637 "EHLO plane.gmane.org"
+Received: from csamuel.org ([74.50.50.137]:42869 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751399AbaJSKUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Oct 2014 06:20:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xfnai-0007ZZ-V9
-	for linux-btrfs@vger.kernel.org; Sun, 19 Oct 2014 12:20:00 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Oct 2014 12:20:00 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Oct 2014 12:20:00 +0200
+	id S1751295AbaJSKq5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 Oct 2014 06:46:57 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 0D71120C1B0
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Oct 2014 21:46:57 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 21244-02 for <linux-btrfs@vger.kernel.org>;
+ Sun, 19 Oct 2014 21:46:56 +1100 (EST)
+Received: from quad.localnet (2001-44b8-41dd-d500-f0b6-f2cf-b299-3076.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:f0b6:f2cf:b299:3076])
+	by csamuel.org (Postfix) with ESMTPSA id A2B8F20C1AC
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Oct 2014 21:46:56 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: strange 3.16.3 problem
-Date: Sun, 19 Oct 2014 10:19:50 +0000 (UTC)
-Message-ID: <pan$ae8b8$e1969f5d$427e912a$f8f0705f@cox.net>
+Date: Sun, 19 Oct 2014 21:46:59 +1100
+Message-ID: <6991158.lQd06JG7rD@quad>
+In-Reply-To: <201410181454.19375.russell@coker.com.au>
 References: <201410181454.19375.russell@coker.com.au>
-	<54426C16.5030206@pobox.com> <201410191041.42013.russell@coker.com.au>
-	<pan$9d78b$40e61441$d421f088$d69188b0@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Sun, 19 Oct 2014 05:37:36 +0000 as excerpted:
+Hiya Russell,
 
-> Russell Coker posted on Sun, 19 Oct 2014 10:41:41 +1100 as excerpted:
-> 
->> # find . -name "*546" -exec rm "{}" \;
->> rm: cannot remove `./1412233213.M638209P10546': No such file or
->> directory
-> 
-> Going with the non-printable-character theory, what happens if you
-> expand that *546 find one character at a time?  Does *0546 work? *10546?
-> etc.
-> 
-> When you find a boundary where it goes from working to not-working, what
-> happens if you stick a wildcard in that boundary?  Assuming *0546
-> doesn't work, for instance, thus creating a boundary between the 0 and
-> the 5, what about *0*546 or *0?546?
+On Sat, 18 Oct 2014 02:54:19 PM Russell Coker wrote:
 
-FWIW, I just had something similar happen here, except ls could see the 
-files and tell me what happened, tho for a moment I was wondering...  In 
-my case it was a couple symlinks, dead because the partition they pointed 
-into wasn't mounted.  But with this thread fresh in my mind, of course it 
-was the first thing to come to mind...
+> # find . -name "*546"
+> ./1412233213.M638209P10546
+> # ls -l ./1412233213.M638209P10546
+> ls: cannot access ./1412233213.M638209P10546: No such file or directory
 
+Does:
 
-Another idea for potentially figuring out what's going on...
+find . -name "*546" -ls
 
-If you have tab-completion active, what sort of auto-completes does it 
-offer with for instance ls 141<tab> ?  If necessary, again you can try 
-expanding one character at a time, except of course from the left here 
-instead of from the right as above.
-
-For things like colons, I know bash-completion here fills in \: in place 
-of simply colon.  I just tested what it'd do with a backspace char 
-embedded in a filename, and tab-completion substitutes ^H (while ls 
-substitutes ? ).
+work at all?
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
 

@@ -1,45 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28542 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751298AbaJOTFO (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:27963 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751869AbaJSMoM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Oct 2014 15:05:14 -0400
-Message-ID: <543EC561.8000200@fb.com>
-Date: Wed, 15 Oct 2014 15:05:05 -0400
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Filipe Manana <fdmanana@gmail.com>, <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] fstests: btrfs: regression test for ro snapshot creation
-References: <1413398276-17365-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1413398276-17365-1-git-send-email-fdmanana@suse.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+	Sun, 19 Oct 2014 08:44:12 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] fstests: fix memory corruption in aio-last-ref-held-by-io
+Date: Sun, 19 Oct 2014 20:43:54 +0800
+Message-Id: <1413722634-25514-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/15/2014 02:37 PM, Filipe Manana wrote:
-> Regression test for a btrfs issue where creation of readonly snapshots caused
-> the filesystem to get into an inconsistent state.
->
-> This regression was introduced in the 3.17 kernel and fixed by reverting the
-> following linux kernel commit:
->
->       Btrfs: race free update of commit root for ro snapshots
->       9c3b306e1c9e6be4be09e99a8fe2227d1005effc
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->   tests/btrfs/078     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->   tests/btrfs/078.out |  2 ++
->   tests/btrfs/group   |  1 +
->   3 files changed, 88 insertions(+)
->   create mode 100755 tests/btrfs/078
->   create mode 100644 tests/btrfs/078.out
->
+From: Liu Bo <liub.liubo@gmail.com>
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+This's been detected by testing generic/323 on btrfs, it keeps producing chaos
+of checksum errors.
 
-Thanks,
+It is because aio-last-ref-held-by-io uses a static buffer that is been used
+repeatedly for every io_submit() call, but we'll issue NUM_IOS(=16) io_sumbit()
+in a 'for' loop at a time, and when those data read by aio has not finish its
+endio(), its memory is likely to be used in the next io_submit, which ends up
+data corruption and numerous checksum errors.
 
-Josef
+This allocates memory for each io_submit() and generic/323 runs fine after this.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ src/aio-dio-regress/aio-last-ref-held-by-io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/aio-dio-regress/aio-last-ref-held-by-io.c b/src/aio-dio-regress/aio-last-ref-held-by-io.c
+index a73dc3b..7633831 100644
+--- a/src/aio-dio-regress/aio-last-ref-held-by-io.c
++++ b/src/aio-dio-regress/aio-last-ref-held-by-io.c
+@@ -109,7 +109,7 @@ aio_test_thread(void *data)
+ 	ioctx_initted = 0;
+ 	ios_submitted = 0;
+ 
+-	ret = posix_memalign((void **)&buffer, getpagesize(), IOSIZE);
++	ret = posix_memalign((void **)&buffer, getpagesize(), IOSIZE * NUM_IOS);
+ 	if (ret != 0) {
+ 		printf("%lu: Failed to allocate buffer for IO: %d\n",
+ 		       pthread_self(), ret);
+@@ -137,7 +137,7 @@ aio_test_thread(void *data)
+ 				struct iocb *iocb = &iocbs[i];
+ 
+ 				memset(iocb, 0, sizeof(*iocb));
+-				io_prep_pread(iocb, fd, buffer,
++				io_prep_pread(iocb, fd, (buffer + i * IOSIZE),
+ 					      IOSIZE, i * IOSIZE);
+ 				if (io_submit(ioctx, 1, &iocb) != 1) {
+ 					printf("%lu: failed to submit io #%d\n",
+-- 
+1.8.1.4
 

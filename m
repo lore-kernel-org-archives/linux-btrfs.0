@@ -1,39 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34480 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:35153 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750957AbaJTRIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Oct 2014 13:08:40 -0400
-Date: Mon, 20 Oct 2014 19:08:38 +0200
+	id S1751347AbaJTRuV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Oct 2014 13:50:21 -0400
+Date: Mon, 20 Oct 2014 19:50:19 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Suman Chakravartula <suman@rockstor.com>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Compressed size of a filesystem
-Message-ID: <20141020170838.GY22943@twin.jikos.cz>
+Subject: Re: [REGRESSION?] Used+avail gives more than size of device
+Message-ID: <20141020175019.GZ22943@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <911267269ecc4056ebe114fe78a52b0a@sonic.net>
+References: <10721429.ggFParDapp@merkaba>
+ <pan$10714$bcab7b52$f88ec3cf$1547168d@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <911267269ecc4056ebe114fe78a52b0a@sonic.net>
+In-Reply-To: <pan$10714$bcab7b52$f88ec3cf$1547168d@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 20, 2014 at 09:05:41AM -0700, Suman Chakravartula wrote:
-> I'd like to calculate the compressed size of a btrfs filesystem. I read 
-> the wiki and understand the backward compatibility issues mentioned. 
-> Also, the "df before and after" method doesn't work for me and I have no 
-> control over when end users are writing to the filesystem.
+On Sun, Oct 12, 2014 at 10:55:54PM +0000, Duncan wrote:
+[...]
+> It's the raid-factor.  =:^)
 > 
-> Wiki says there's a patch which is not merged. Is that refering to this 
-> discussion:
-> 
-> http://comments.gmane.org/gmane.comp.file-systems.btrfs/14942
+> Btrfs in the kernel is apparently accounting for raid-factor in used 
+> space in whatever function standard df is using, but not in available 
+> space, even where that available space is already chunk-allocated (btrfs 
+> fi show, individual devices, size vs. used, where "used" simply means 
+> chunk-allocated for show) and thus the raid-factor known.
 
-I'll update the link.
+Nice analysis. There must be a bug then. The raid factor is taken into account
+when calculating the usable space:
 
-> Why was the patch not merged?
+super.c:btrfs_statfs():
+1827         buf->f_bavail = total_free_data;
+1828         ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
+1829         if (ret) {
+1830                 mutex_unlock(&fs_info->chunk_mutex);
+1831                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+1832                 return ret;
+1833         }
+1834         buf->f_bavail += div_u64(total_free_data, factor);
 
-Because the approach was abandoned in favor of a more generic solution
-that reuses the existing interface (FIEMAP). The patchset implementing
-this is
-
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/37312
+but it looks like the free space is counted twice, lines 1827 and 1834. The
+function btrfs_calc_avail_data_space does the guesswork "how much space could
+be still allocated" in the logical units, basically simulating the allocator
+logic. I'll have a look as I've touched btrfs_statfs last.

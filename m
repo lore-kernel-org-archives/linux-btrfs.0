@@ -1,131 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46009 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751038AbaJTBd2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Oct 2014 21:33:28 -0400
-Message-ID: <54446653.3090403@oracle.com>
-Date: Mon, 20 Oct 2014 09:33:07 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: "Vincent." <fensoft@gmail.com>
-CC: Suman Chakravartula <suman@rockstor.com>, linux-btrfs@vger.kernel.org,
-        linux-btrfs-owner@vger.kernel.org
-Subject: Re: raid10 drive replacement
-References: <CAMhgxDMxRNviq5iayuziqUiQXGzSP5cZV2qxnch-3wWLZvwNAA@mail.gmail.com> <daf1096c58d3dd54392809f7d3f89e4d@sonic.net> <5441EEA1.7080807@oracle.com> <CAMhgxDO21Arh+4+uLBAhqSZ36q_4fkhHR=1vcx64jsXYNacBtA@mail.gmail.com>
-In-Reply-To: <CAMhgxDO21Arh+4+uLBAhqSZ36q_4fkhHR=1vcx64jsXYNacBtA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:58341 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750868AbaJTEWu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Oct 2014 00:22:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xg4Ua-0006Vw-6M
+	for linux-btrfs@vger.kernel.org; Mon, 20 Oct 2014 06:22:48 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Oct 2014 06:22:48 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Oct 2014 06:22:48 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 3.16.3..3.17.1 hang in renameat2()
+Date: Mon, 20 Oct 2014 04:22:34 +0000 (UTC)
+Message-ID: <pan$9faea$426c6538$a1667c8d$b8fd7fa4@cox.net>
+References: <20141019192525.GA29401@hungrycats.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Zygo Blaxell posted on Sun, 19 Oct 2014 15:25:26 -0400 as excerpted:
+
+> It is the rename (mv) that is getting stuck.  It seems to hold a lock
+> that prevents any process from later traversing d/e with find or ls, but
+> does not prevent a stat on the path 'd/e/f' (which reports that d/e/f is
+> now a hard link to a/b/c).
+
+Just a btrfs user and list regular here, but this bit sounds very much 
+like the symptoms from another current thread, except if a rename got 
+stuck, he apparently never noticed.
+
+Try looking up the "strange 3.16.3 problem" thread, OP Russell Coker, 
+Sat, 18 Oct 2014 14:54:19 +1100, Message-ID: 
+<201410181454.19375.russell@coker.com.au>
+
+Here's the gmane link to the first post; you can follow the link from 
+there to get the thread.
+
+<http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39515>
+
+Symptoms:
+
+# find . -name "*546"
+./1412233213.M638209P10546
+# ls -l ./1412233213.M638209P10546
+ls: cannot access ./1412233213.M638209P10546: No such file or directory
 
 
-  still somethings aren't matching, it could be that
-  underlying group profile might have changed without
-  your notice (yes in some circumstance it could).
-  can you show 'btrfs fi df <mnt>'
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Anand
-
-
-On 10/19/14 07:12, Vincent. wrote:
-> i've upgraded to kernel 3.17.0 to update btrfs.ko and it's still not
-> mountable in -odegraded (-odegraded,ro works) with this error:
-> [  361.828752] BTRFS info (device xvde): allowing degraded mounts
-> [  361.984823] BTRFS: bdev (null) errs: wr 15211054, rd 3038899, flush
-> 0, corrupt 0, gen 0
-> [  374.253555] BTRFS: too many missing devices, writeable mount is not allowed
-> [  374.332474] BTRFS: open_ctree failed
->
-> and, yes, data + metadata are raid10
-> --
-> Vincent
->
->
-> On Sat, Oct 18, 2014 at 6:37 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
->>
->> somethings aren't matching well. the issue is..
->> ----
->> [ 6219.703606] Btrfs: too many missing devices, writeable mount is not
->> allowed
->> ----
->> But per Vincent only xvdc is missing in a raid10 (both data and metadata are
->> raid10 ?)
->>
->>
->> Anand
->>
->>
->>
->> On 10/18/14 10:02, Suman Chakravartula wrote:
->>>
->>>
->>> On 2014-10-17 18:47, Vincent. wrote:
->>>>
->>>> Hi !
->>>>
->>>> I have a faulty drive in my raid10 and want it to be replaced.
->>>> Working drive are xvd[bef] and replacement drive is xvdc.
->>>>
->>> This is something I ran into the other day. Key difference is that I was
->>> running 3.17.1 kernel and 3.16 btrfs-progs
->>>
->>>> When I mount my drive in RW:
->>>> #mount -odegraded /dev/xvdb /tank
->>>> #dmesg -c
->>>> [ 6207.294513] btrfs: device fsid 728ef4d8-928c-435c-b707-f71c459e1520
->>>> devid 1 transid 551398 /dev/xvdb
->>>> [ 6207.327357] btrfs: allowing degraded mounts
->>>> [ 6207.477041] btrfs: bdev (null) errs: wr 15211054, rd 3038899, flush
->>>> 0, corrupt 0, gen 0
->>>> [ 6219.703606] Btrfs: too many missing devices, writeable mount is not
->>>> allowed
->>>> [ 6219.785929] btrfs: open_ctree failed
->>>>
->>>
->>> In my case, I was able to rw mount. May be update btrfs-progs and retry?
->>>
->>>> When I mount my drive in RO:
->>>> #mount -odegraded,ro /dev/xvdb /tank
->>>> #btrfs filesystem show
->>>> Label: none  uuid: 728ef4d8-928c-435c-b707-f71c459e1520
->>>> Total devices 4 FS bytes used 4.70TiB
->>>> devid    1 size 2.73TiB used 2.73TiB path /dev/xvdb
->>>> devid    2 size 2.73TiB used 2.73TiB path
->>>> devid    3 size 2.73TiB used 2.73TiB path /dev/xvde
->>>> devid    4 size 2.73TiB used 2.73TiB path /dev/xvdf
->>>>
->>>> Btrfs v3.12
->>>>
->>>> Of course, because my mount is in RO, i can't add device and do a
->>>> balance:
->>>> #btrfs device add /dev/xvdc /tank
->>>> ERROR: error adding the device '/dev/xvdc' - Read-only file system
->>>>
->>>> Neither a "replace without disk":
->>>> #btrfs replace start -Br 2 /dev/xvdc /tank
->>>> ERROR: ioctl(DEV_REPLACE_START) failed on "/tank": Read-only file
->>>> system, no error
->>>>
->>> Because my mount was rw, replace worked.
->>>
->>>> FYI I'm on ubuntu 14.04 with btrfs 3.12
->>>>
->>>> Any idea ?
->>>> Thanks !
->>>> --
->>>> fensoft
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

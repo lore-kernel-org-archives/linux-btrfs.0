@@ -1,150 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31737 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752606AbaJTISS (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48212 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751814AbaJTNJk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Oct 2014 04:18:18 -0400
-Message-ID: <5444C536.2070803@oracle.com>
-Date: Mon, 20 Oct 2014 16:17:58 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 20 Oct 2014 09:09:40 -0400
+Date: Mon, 20 Oct 2014 09:02:44 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: strange 3.16.3 problem
+Message-ID: <20141020130243.GB29401@hungrycats.org>
+References: <201410181454.19375.russell@coker.com.au>
+ <pan$9907e$9b197fe7$2a806862$700ddfa7@cox.net>
 MIME-Version: 1.0
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-CC: dsterba@suse.cz, linux-btrfs@vger.kernel.org, lists@colorremedies.com,
-        clm@fb.com
-Subject: Re: [PATCH v2] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO
- miss-matched with slots
-References: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>	 <1408351099-4721-1-git-send-email-anand.jain@oracle.com>	 <1408351099-4721-2-git-send-email-anand.jain@oracle.com>	 <20140904095812.GA5636@twin.jikos.cz> <540854CD.2080106@oracle.com> <1413511097.4054.8.camel@localhost.localdomain>
-In-Reply-To: <1413511097.4054.8.camel@localhost.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="SkvwRMAIpAhPCcCJ"
+In-Reply-To: <pan$9907e$9b197fe7$2a806862$700ddfa7@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-inline as below.
+--SkvwRMAIpAhPCcCJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Mon, Oct 20, 2014 at 04:38:28AM +0000, Duncan wrote:
+> Russell Coker posted on Sat, 18 Oct 2014 14:54:19 +1100 as excerpted:
+>=20
+> > # find . -name "*546"
+> > ./1412233213.M638209P10546 # ls -l ./1412233213.M638209P10546 ls: cannot
+> > access ./1412233213.M638209P10546: No such file or directory
+>=20
+> Does your mail server do a lot of renames?  Is one perhaps stuck?  If so,=
+=20
+> that sounds like the same thing "Zygo Blaxell" is reporting in the=20
+> "3.16.3..3.17.1 hang in renameat2()" thread, OP on Sun, 19 Oct 2014=20
+> 15:25:26 -400, Msg-ID: <20141019192525.GA29401@hungrycats.org>, as linked=
+=20
+> here:
+>=20
+> <http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39539>
+>=20
+> I pointed him at this thread too.  I hadn't seen you mention a hung=20
+> rename, but the other symptoms sound similar.
+
+Not really.  It looks like Russell having a NFS client-side problem,
+I'm having a server-side one (maybe).  Also, all Russell's system calls
+seem to be returning promptly, while some of mine are not.  Even if
+there were timeouts, an NFS server timeout gives a different error than
+'No such file or directory'.  Finally, the one and only thing I _can_
+do with my bug is 'ls' on the renamed files (for me, the find would get
+stuck before returning any output).
+
+For Russell's issue...most of the stuff I can think of has been
+tried already.  I didn't see if there was any attempt try to ls the
+file from the NFS server as well as the client side.  If ls is OK on
+the server but not the client, it's an NFS issue (possibly interacting
+with some btrfs-specific quirk); otherwise, it's likely a corrupted
+filesystem (mail servers seem to be unusually good at making these).
+
+Most of the I/O time on mail servers tends to land in the fsync() system
+call, and some nasty fsync() btrfs bugs were fixed in 3.17 (i.e. after
+3.16, and not in the 3.16.x stable update for x <=3D 5 (the last one
+I've checked)).  That said, I'm not familiar with how fsync() translates
+over NFS, so it might not be relevant after all.
+
+If the NFS server's view of the filesystem is OK, check the NFS protocol
+version from /proc/mounts on the client.  Sometimes NFS clients will
+get some transient network error during connection and fall back to some
+earlier (and potentially buggier) NFS version.  I've seen very different
+behavior in some important corner cases from v4 and v3 clients, for
+example, and if the client is falling all the way back to v2 the bugs
+and their workarounds start to get just plain _weird_ (e.g. filenames
+which produce specific values from some hash function or that contain
+specific character sequences are unusable).  v2 is so old it may even
+have issues with 64-bit inode numbers.
 
 
-On 10/17/2014 09:58 AM, Gui Hecheng wrote:
-> On Thu, 2014-09-04 at 20:02 +0800, Anand Jain wrote:
->>
->>
->> On 09/04/2014 05:58 PM, David Sterba wrote:
->>> On Mon, Aug 18, 2014 at 04:38:18PM +0800, Anand Jain wrote:
->>>> ioctl BTRFS_IOC_FS_INFO return num_devices which does _not_ include seed
->>>> device, But the following ioctl BTRFS_IOC_DEV_INFO counts and gets seed
->>>> disk when probed. So in the userland we hit a count-slot missmatch
->>>> bug..
->>>>               get_fs_info()
->>>>               ::
->>>>                       BUG_ON(ndevs >= fi_args->num_devices);
->>>> which hits this bug when we have mounted a seed device.
->>>>
->>>> So to fix this problem here in this patch ioctl BTRFS_IOC_FS_INFO
->>>> will provide total_devices instead of num_devices.
->>>
->>> The ioctl is very unclear what the 'num_device' actually means.
->>
->>    Right. Thats also true in kernel. very messy. very confusing.
->>    tool btrfs-devlist would help understand whats going on.
->>
->> ----
->>    $ egrep num_device *.c | egrep "total_device"
->> ioctl.c:	fi_args->num_devices = fs_devices->total_devices;
->> super.c:		ret = !(fs_devices->num_devices == fs_devices->total_devices);
->> volumes.c:	total_devices = btrfs_super_num_devices(disk_super);
->> ----
->>
->>    By the way about BTRFS_IOC_DEVICES_READY ioctl above its long time
->>    broken with seed/replace, just waiting to get these patches integrated
->>    first so to fix it later.
->>
->>
->>>> This would fix the problem partly. Partly because ealier num_devices
->>>> included the replacing device but now total_device does not include
->>>> the replacing device. Getting a count which includes a transient device
->>>> is rather too in efficient/wrong indeed, because there can be a race
->>>> condition where in the time between ioctl BTRFS_IOC_FS_INFO to
->>>> BTRFS_IOC_DEV_INFO the replace device operation might have been
->>>> completed. So to fix this problem its better that user land btrfs-progs
->>>> probes replacing device (at devid 0) separately.
->>>>
->>>> v2:
->>>> Agree with Wang's comment. Its better to show seed disks under the
->>>> sprout fs, so that user can establish mapping of seed to sprout devices.
->>>>
->>>> So here I am making BTRFS_IOC_FS_INFO to return the total_devices
->>>> which would count the seed devices (but not the replacing device).
->>>
->>> This is even more confusing. I think we need to add another member to
->>> the ioctl struct to reflect the number of regular devices (num_devices)
->>> and the true total number of devices including seeding and replaced
->>> devices.
->>
->>    that will be a better way. thanks.
->>
->>> The difference should be accompanied by a flag that would say
->>> if there's a seeding or replace in progress.
->>>
->>> There are some backward compatibility concerns. Setting num_devices to
->>> total_devices changes semantics of the ioctl, so I think it should stay
->>> as is for now,
->>
->>    As I have tested there is not backward compatibility issue.
->>    But from semantics perspective .. agreed.
->>
->>> but the BUG_ON can be removed and replaced by code that
->>> reallocates the buffer or allocates a few more items in advance.
->>
->>     We don't know how may seed devices are there for a sprout FS.
->>     So thats not possible.
->>
->>    Will review  resubmit.
->>
->> Thanks for commenting.
->
-> Hi all,
->
-> Firtly, thanks for the fix, Anand, how's the new version going?
+--SkvwRMAIpAhPCcCJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> I've been testing the btrfs fi show cmd these days and find that
-> this patch has not been merged into linus's tree yet.
->
-> Since the suggested way of adding member to the ioctl struct brings
-> compatibility issues, it may need more discussion.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-  Thanks Gui for commenting.
+iEYEARECAAYFAlRFB+sACgkQgfmLGlazG5yR/QCfUtw9oFkhlwALCnInLrsAOo80
+lCAAnRuwHsrDspvAZbQV5XG942uDO4ef
+=+Fjs
+-----END PGP SIGNATURE-----
 
-  Yes discussion is needed. Mainly on our long term plan for a better
-  btrfs kernel device and parameter read interface. which also means
-  current bugs can wait for this new interface instead of patching the
-  old structures and bring in a new compatibility mess.
-
-Thanks, Anand
-
-
-
-> But since this fix really incluence much to the user, I consider merging
-> this version first to be a good idea.
->
-> What do you think, Chris?
->
-> Thanks,
-> Gui
->
->> Anand
->>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+--SkvwRMAIpAhPCcCJ--

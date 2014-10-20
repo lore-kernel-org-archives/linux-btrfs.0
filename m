@@ -1,72 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f47.google.com ([209.85.215.47]:54645 "EHLO
-	mail-la0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751582AbaJSTet convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:46009 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751038AbaJTBd2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Oct 2014 15:34:49 -0400
+	Sun, 19 Oct 2014 21:33:28 -0400
+Message-ID: <54446653.3090403@oracle.com>
+Date: Mon, 20 Oct 2014 09:33:07 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Date: Sun, 19 Oct 2014 21:34:47 +0200
-Message-ID: <CAMuHMdUnEZ35U3Qby1OFuFYnAysf9JhHxbDxcUMiFuMefy9idQ@mail.gmail.com>
-Subject: btrfs extent_state.private compiler warning (Re: Btrfs: cleanup the
- read failure record after write or when the inode is freeing)
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-To: Miao Xie <miaox@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: "Vincent." <fensoft@gmail.com>
+CC: Suman Chakravartula <suman@rockstor.com>, linux-btrfs@vger.kernel.org,
+        linux-btrfs-owner@vger.kernel.org
+Subject: Re: raid10 drive replacement
+References: <CAMhgxDMxRNviq5iayuziqUiQXGzSP5cZV2qxnch-3wWLZvwNAA@mail.gmail.com> <daf1096c58d3dd54392809f7d3f89e4d@sonic.net> <5441EEA1.7080807@oracle.com> <CAMhgxDO21Arh+4+uLBAhqSZ36q_4fkhHR=1vcx64jsXYNacBtA@mail.gmail.com>
+In-Reply-To: <CAMhgxDO21Arh+4+uLBAhqSZ36q_4fkhHR=1vcx64jsXYNacBtA@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 11, 2014 at 2:08 PM, Linux Kernel Mailing List
-<linux-kernel@vger.kernel.org> wrote:
-> Gitweb:     http://git.kernel.org/linus/;a=commit;h=f612496bca664bff6a09a99a9a7506410b6e876e
-> Commit:     f612496bca664bff6a09a99a9a7506410b6e876e
 
->     Btrfs: cleanup the read failure record after write or when the inode is freeing
+
+  still somethings aren't matching, it could be that
+  underlying group profile might have changed without
+  your notice (yes in some circumstance it could).
+  can you show 'btrfs fi df <mnt>'
+
+Anand
+
+
+On 10/19/14 07:12, Vincent. wrote:
+> i've upgraded to kernel 3.17.0 to update btrfs.ko and it's still not
+> mountable in -odegraded (-odegraded,ro works) with this error:
+> [  361.828752] BTRFS info (device xvde): allowing degraded mounts
+> [  361.984823] BTRFS: bdev (null) errs: wr 15211054, rd 3038899, flush
+> 0, corrupt 0, gen 0
+> [  374.253555] BTRFS: too many missing devices, writeable mount is not allowed
+> [  374.332474] BTRFS: open_ctree failed
 >
->     After the data is written successfully, we should cleanup the read failure record
->     in that range because
->     - If we set data COW for the file, the range that the failure record pointed to is
->       mapped to a new place, so it is invalid.
->     - If we set no data COW for the file, and if there is no error during writting,
->       the corrupted data is corrected, so the failure record can be removed. And if
->       some errors happen on the mirrors, we also needn't worry about it because the
->       failure record will be recreated if we read the same place again.
+> and, yes, data + metadata are raid10
+> --
+> Vincent
 >
->     Sometimes, we may fail to correct the data, so the failure records will be left
->     in the tree, we need free them when we free the inode or the memory leak happens.
-
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-
-> +void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
-> +{
-> +       struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
-> +       struct io_failure_record *failrec;
-> +       struct extent_state *state, *next;
-
-> +               failrec = (struct io_failure_record *)state->private;
-
-On 32-bit:
-
-fs/btrfs/extent_io.c: In function ‘btrfs_free_io_failure_record’:
-fs/btrfs/extent_io.c:2166: warning: cast to pointer from integer of
-different size
-
-Is there any specific reason extend_state.private is "u64", and not
-"unsigned long", or better "void *", or even better
-"struct io_failure_record *"?
-
-That would get rid of the (double) cast tricks.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>
+> On Sat, Oct 18, 2014 at 6:37 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
+>>
+>> somethings aren't matching well. the issue is..
+>> ----
+>> [ 6219.703606] Btrfs: too many missing devices, writeable mount is not
+>> allowed
+>> ----
+>> But per Vincent only xvdc is missing in a raid10 (both data and metadata are
+>> raid10 ?)
+>>
+>>
+>> Anand
+>>
+>>
+>>
+>> On 10/18/14 10:02, Suman Chakravartula wrote:
+>>>
+>>>
+>>> On 2014-10-17 18:47, Vincent. wrote:
+>>>>
+>>>> Hi !
+>>>>
+>>>> I have a faulty drive in my raid10 and want it to be replaced.
+>>>> Working drive are xvd[bef] and replacement drive is xvdc.
+>>>>
+>>> This is something I ran into the other day. Key difference is that I was
+>>> running 3.17.1 kernel and 3.16 btrfs-progs
+>>>
+>>>> When I mount my drive in RW:
+>>>> #mount -odegraded /dev/xvdb /tank
+>>>> #dmesg -c
+>>>> [ 6207.294513] btrfs: device fsid 728ef4d8-928c-435c-b707-f71c459e1520
+>>>> devid 1 transid 551398 /dev/xvdb
+>>>> [ 6207.327357] btrfs: allowing degraded mounts
+>>>> [ 6207.477041] btrfs: bdev (null) errs: wr 15211054, rd 3038899, flush
+>>>> 0, corrupt 0, gen 0
+>>>> [ 6219.703606] Btrfs: too many missing devices, writeable mount is not
+>>>> allowed
+>>>> [ 6219.785929] btrfs: open_ctree failed
+>>>>
+>>>
+>>> In my case, I was able to rw mount. May be update btrfs-progs and retry?
+>>>
+>>>> When I mount my drive in RO:
+>>>> #mount -odegraded,ro /dev/xvdb /tank
+>>>> #btrfs filesystem show
+>>>> Label: none  uuid: 728ef4d8-928c-435c-b707-f71c459e1520
+>>>> Total devices 4 FS bytes used 4.70TiB
+>>>> devid    1 size 2.73TiB used 2.73TiB path /dev/xvdb
+>>>> devid    2 size 2.73TiB used 2.73TiB path
+>>>> devid    3 size 2.73TiB used 2.73TiB path /dev/xvde
+>>>> devid    4 size 2.73TiB used 2.73TiB path /dev/xvdf
+>>>>
+>>>> Btrfs v3.12
+>>>>
+>>>> Of course, because my mount is in RO, i can't add device and do a
+>>>> balance:
+>>>> #btrfs device add /dev/xvdc /tank
+>>>> ERROR: error adding the device '/dev/xvdc' - Read-only file system
+>>>>
+>>>> Neither a "replace without disk":
+>>>> #btrfs replace start -Br 2 /dev/xvdc /tank
+>>>> ERROR: ioctl(DEV_REPLACE_START) failed on "/tank": Read-only file
+>>>> system, no error
+>>>>
+>>> Because my mount was rw, replace worked.
+>>>
+>>>> FYI I'm on ubuntu 14.04 with btrfs 3.12
+>>>>
+>>>> Any idea ?
+>>>> Thanks !
+>>>> --
+>>>> fensoft
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,67 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:34014 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753175AbaJTJOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Oct 2014 05:14:10 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 646CB400B8
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Oct 2014 20:14:09 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 29929-10 for <linux-btrfs@vger.kernel.org>;
- Mon, 20 Oct 2014 20:14:09 +1100 (EST)
-Received: from quad.localnet (2001-44b8-41dd-d500-7c09-6e1b-3563-d195.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:7c09:6e1b:3563:d195])
-	by csamuel.org (Postfix) with ESMTPSA id F0CE440016
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Oct 2014 20:14:08 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs@vger.kernel.org
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41459 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752345AbaJTOEj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Oct 2014 10:04:39 -0400
+Date: Mon, 20 Oct 2014 10:04:37 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Hugo Mills <hugo@carfax.org.uk>, Tomasz Torcz <tomek@pipebreaker.pl>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: unexplainable corruptions 3.17.0
-Date: Mon, 20 Oct 2014 20:14:12 +1100
-Message-ID: <2588267.pfc4WIxGVz@quad>
-In-Reply-To: <12404322.5f6czpaAWj@fb07-iapwap2>
-References: <20141017085448.GA1050018@mother.pipebreaker.pl> <1798492.UPHDTB8iYW@quad> <12404322.5f6czpaAWj@fb07-iapwap2>
+Message-ID: <20141020140437.GC29401@hungrycats.org>
+References: <20141016091726.GA582640@mother.pipebreaker.pl>
+ <20141017080202.GA3604@localhost.localdomain>
+ <20141017081009.GC582640@mother.pipebreaker.pl>
+ <20141017081737.GC29594@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="KDt/GgjP6HVcx58l"
+In-Reply-To: <20141017081737.GC29594@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 20 Oct 2014 10:01:56 AM Marc Dietrich wrote:
 
-> so fixes would be tagged earlier this way and merged automaticly.
+--KDt/GgjP6HVcx58l
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I don't think there's a lot automatic about stable, Greg K-H merges patches
-into a git tree here:
+On Fri, Oct 17, 2014 at 08:17:37AM +0000, Hugo Mills wrote: > On Fri, Oct 1=
+7, 2014 at 10:10:09AM +0200, Tomasz Torcz wrote:
+> > On Fri, Oct 17, 2014 at 04:02:03PM +0800, Liu Bo wrote:
+> > > >   Recently I've observed some corruptions to systemd's journal
+> > > > files which are somewhat puzzling. This is especially worrying
+> > > > as this is btrfs raid1 setup and I expected auto-healing.
+> > > >=20
+> > > >   System details: 3.17.0-301.fc21.x86_64
+> > > > btrfs: raid1 over 2x dm-crypted 6TB HDDs.
+> > > > mount opts: rw,relatime,seclabel,compress=3Dlzo,space_cache
+> > > >   Reads with cat, hexdump fails with:
+> > > > read(4, 0x1001000, 65536)               =3D -1 EIO (Input/output er=
+ror)
+> > > >=20
+> > > Does scrub work for you?
+> >=20
+> >   As there seem to be no way to scrub individual files, I've started
+> > scrub of full volume.  It will take some hours to finish.
+> >=20
+> >   Meanwhile, could you satisfy my curiosity what would scrub do that
+> > wouldn't be done by just reading the whole file?
+>=20
+>    It checks both copies. Reading the file will only read one of the
+> copies of any given block (so if that's good and the other copy is
+> bad, it won't fix anything).
 
-http://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git
+Really?  One of my earliest btrfs tests was to run a loop of 'sha1sum
+-c' on a gigabyte or two of files in one window while I used dd to
+write random data in random locations directly to one of the filesystem
+mirror partitions in the other.  I did this test *specifically* to
+watch the automatic checksumming and self-healing features of btrfs
+in action.  A complete 'sha1sum' verification of the filesystem contents
+passed even though the kernel log was showing checksum errors scrolling
+by faster than I could read, which strongly implies that read() normally
+does check both mirrors before returning EIO.  This was on kernel version
+3.12.21 or so, so it should be working on 3.17 too.
 
-As you can see since last night he pulled in a bunch of btrfs fixes into that
-based upon what Chris Mason emailed out yesterday.
-
-
-commit 2792dbfd1e02a70a8eef7e0cc3f44cb77d6c100f
-Author: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date:   Mon Oct 20 07:08:43 2014 +0800
-
-    3.17-stable patches
-    
-    added patches:
-        btrfs-add-missing-compression-property-remove-in-btrfs_ioctl_setflags.patch
-        btrfs-cleanup-error-handling-in-build_backref_tree.patch
-        btrfs-don-t-do-async-reclaim-during-log-replay.patch
-        btrfs-don-t-go-readonly-on-existing-qgroup-items.patch
-        btrfs-fix-a-deadlock-in-btrfs_dev_replace_finishing.patch
-        btrfs-fix-and-enhance-merge_extent_mapping-to-insert-best-fitted-extent-map.patch
-        btrfs-fix-build_backref_tree-issue-with-multiple-shared-blocks.patch
-        btrfs-fix-race-in-wait_sync-ioctl.patch
-        btrfs-fix-the-wrong-condition-judgment-about-subset-extent-map.patch
-        btrfs-fix-up-bounds-checking-in-lseek.patch
-        btrfs-try-not-to-enospc-on-log-replay.patch
-        btrfs-wake-up-transaction-thread-from-sync_fs-ioctl.patch
-        revert-btrfs-race-free-update-of-commit-root-for-ro-snapshots.patch
-
-(there are also a bunch going in for 3.10, 3.14 and 3.16 too)
-
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Thomasz reports using 'nocow', which breaks the data integrity checks.
+I'd expect the read() to return success and provide garbage data, but the
+observed behavior is EIO instead.  The underlying device doesn't seem
+to be generating the I/O errors, so it's probably metadata corruption
+of some kind.  Are there btrfs kernel messages in dmesg?
 
 
+--KDt/GgjP6HVcx58l
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlRFFnUACgkQgfmLGlazG5zl5gCgpvf6KlZVtPb6WFnQ4vNlH8cq
+zcIAn0DdABtmz0zU+kEB9etLJiQQi2Oe
+=vvc8
+-----END PGP SIGNATURE-----
+
+--KDt/GgjP6HVcx58l--

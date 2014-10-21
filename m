@@ -1,90 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f45.google.com ([209.85.215.45]:57681 "EHLO
-	mail-la0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754662AbaJUIOL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 04:14:11 -0400
-Received: by mail-la0-f45.google.com with SMTP id q1so551097lam.32
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 01:14:08 -0700 (PDT)
-MIME-Version: 1.0
-From: Cristian Falcas <cristi.falcas@gmail.com>
-Date: Tue, 21 Oct 2014 11:13:48 +0300
-Message-ID: <CAMo7R_e9=wdGhEm9P+DZgXrKQ+qrKqdELzwwi-OMTCp6Mk8aTg@mail.gmail.com>
-Subject: downgrade from kernel 3.17 to 3.10
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from victor.provo.novell.com ([137.65.250.26]:49941 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751014AbaJUJMY (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 21 Oct 2014 05:12:24 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: ensure send always works on roots without orphans
+Date: Tue, 21 Oct 2014 11:11:41 +0100
+Message-Id: <1413886301-31495-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can I downgrade the kernel from 3.17.1 to latest 3.10 if I have a
-btrfs partition formatted and used on 3.17.1?
+Move the logic from the snapshot creation ioctl into send. This avoids
+doing the transaction commit if send isn't used, and ensures that if
+a crash/reboot happens after the transaction commit that created the
+snapshot and before the transaction commit that switched the commit
+root, send will not get a commit root that differs from the main root
+(that has orphan items).
 
-I mean, is there something that could go wrong with the fs if suddenly
-I use an older kernel?
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ioctl.c | 29 -----------------------------
+ fs/btrfs/send.c  | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 49 insertions(+), 29 deletions(-)
 
-I want to downgrade because last night we had some 1200 oops's in 1
-hour on the 3.17 kernel related to "CPU#n stuck" and what seems to be
-btrfs work:
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 33c80f5..994c573 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -717,35 +717,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (ret)
+ 		goto fail;
+ 
+-	/*
+-	 * If orphan cleanup did remove any orphans, it means the tree was
+-	 * modified and therefore the commit root is not the same as the
+-	 * current root anymore. This is a problem, because send uses the
+-	 * commit root and therefore can see inode items that don't exist
+-	 * in the current root anymore, and for example make calls to
+-	 * btrfs_iget, which will do tree lookups based on the current root
+-	 * and not on the commit root. Those lookups will fail, returning a
+-	 * -ESTALE error, and making send fail with that error. So make sure
+-	 * a send does not see any orphans we have just removed, and that it
+-	 * will see the same inodes regardless of whether a transaction
+-	 * commit happened before it started (meaning that the commit root
+-	 * will be the same as the current root) or not.
+-	 */
+-	if (readonly && pending_snapshot->snap->node !=
+-	    pending_snapshot->snap->commit_root) {
+-		trans = btrfs_join_transaction(pending_snapshot->snap);
+-		if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
+-			ret = PTR_ERR(trans);
+-			goto fail;
+-		}
+-		if (!IS_ERR(trans)) {
+-			ret = btrfs_commit_transaction(trans,
+-						       pending_snapshot->snap);
+-			if (ret)
+-				goto fail;
+-		}
+-	}
+-
+ 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+ 	if (IS_ERR(inode)) {
+ 		ret = PTR_ERR(inode);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 874828d..804432d 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5507,6 +5507,51 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * If orphan cleanup did remove any orphans from a root, it means the tree
++ * was modified and therefore the commit root is not the same as the current
++ * root anymore. This is a problem, because send uses the commit root and
++ * therefore can see inode items that don't exist in the current root anymore,
++ * and for example make calls to btrfs_iget, which will do tree lookups based
++ * on the current root and not on the commit root. Those lookups will fail,
++ * returning a -ESTALE error, and making send fail with that error. So make
++ * sure a send does not see any orphans we have just removed, and that it will
++ * see the same inodes regardless of whether a transaction commit happened
++ * before it started (meaning that the commit root will be the same as the
++ * current root) or not.
++ */
++static int ensure_commit_roots_uptodate(struct send_ctx *sctx)
++{
++	int i;
++	struct btrfs_trans_handle *trans = NULL;
++
++again:
++	if (sctx->parent_root &&
++	    sctx->parent_root->node != sctx->parent_root->commit_root)
++		goto commit_trans;
++
++	for (i = 0; i < sctx->clone_roots_cnt; i++)
++		if (sctx->clone_roots[i].root->node !=
++		    sctx->clone_roots[i].root->commit_root)
++			goto commit_trans;
++
++	if (trans)
++		return btrfs_end_transaction(trans, sctx->send_root);
++
++	return 0;
++
++commit_trans:
++	/* Use any root, all fs roots will get their commit roots updated. */
++	if (!trans) {
++		trans = btrfs_join_transaction(sctx->send_root);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++		goto again;
++	}
++
++	return btrfs_commit_transaction(trans, sctx->send_root);
++}
++
+ static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
+ {
+ 	spin_lock(&root->root_item_lock);
+@@ -5728,6 +5773,10 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			NULL);
+ 	sort_clone_roots = 1;
+ 
++	ret = ensure_commit_roots_uptodate(sctx);
++	if (ret)
++		goto out;
++
+ 	current->journal_info = BTRFS_SEND_TRANS_STUB;
+ 	ret = send_subvol(sctx);
+ 	current->journal_info = NULL;
+-- 
+1.9.1
 
-NMI watchdog: BUG: soft lockup - CPU#3 stuck for 22s! [ceph-osd:3542]
-Modules linked in: iptable_nat nf_nat_ipv4 nf_nat iptable_mangle
-nf_conntrack_ipv4 nf_defrag_ipv4 iptable_filter ip_tables
-nf_conntrack_ipv6 nf_defrag_ipv6 xt_mac xt_physdev veth
-ip6table_filter ip6_tables ebtable_nat ebtables ipt_REJECT xt_CHECKSUM
-autofs4 openvswitch vxlan udp_tunnel gre libcrc32c xt_state
-nf_conntrack xt_comment xt_multiport vfat fat bridge ipv6 stp llc
-vhost_net macvtap macvlan vhost tun kvm_intel kvm iTCO_wdt
-iTCO_vendor_support serio_raw rtc_efi pcspkr ipmi_si ipmi_msghandler
-i2c_i801 lpc_ich cdc_ether usbnet mii shpchp sg ses enclosure ioatdma
-dca i7core_edac edac_core bnx2 ext4 jbd2 mbcache btrfs raid6_pq xor
-sr_mod cdrom sd_mod crc_t10dif crct10dif_common pata_acpi ata_generic
-ata_piix megaraid_sas mgag200 ttm drm_kms_helper sysimgblt sysfillrect
-syscopyarea dm_mirror dm_region_hash dm_log dm_mod [last unloaded:
-nf_defrag_ipv4]
-CPU: 3 PID: 3542 Comm: ceph-osd Tainted: G             L
-3.17.1-1.el6.elrepo.x86_64 #1
-Hardware name: IBM System x3650 M3 -[7945AC1]-/69Y4438     , BIOS
--[D6E149AUS-1.09]- 09/21/2010
-task: ffff88121cc2b010 ti: ffff8810212a4000 task.ti: ffff8810212a4000
-RIP: 0010:[<ffffffff810b7c96>]  [<ffffffff810b7c96>]
-queue_read_lock_slowpath+0x76/
-0x90
-RSP: 0018:ffff8810212a7b58  EFLAGS: 00000206
-RAX: 0000000000000c11 RBX: ffff8810212a7ba8 RCX: ffff880773ee1aec
-RDX: 0000000000000c16 RSI: 000000000000000a RDI: ffff880773ee1ae8
-RBP: ffff8810212a7b58 R08: 000000000000000b R09: ffff880773ee1aac
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000065
-R13: 00000019518bb800 R14: ffff88034a151780 R15: ffff8810212a7bb4
-FS:  00007f36da014700(0000) GS:ffff88127f260000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 000000030b145010 CR3: 000000121e0e1000 CR4: 00000000000027e0
-Stack:
-ffff8810212a7b68 ffffffff8165e78d ffff8810212a7bf8 ffffffffa0174eca
-00000001012a7b98 ffff88121cc2b010 ffff8810212a7bb0 ffff88121cc2b010
-ffff8806b3b67ab8 ffff880b5005a4a0 ffff8810212a7bc8 ffffffffa0158ad1
-Call Trace:
-[<ffffffff8165e78d>] _raw_read_lock+0x1d/0x30
-[<ffffffffa0174eca>] btrfs_tree_read_lock+0x5a/0x130 [btrfs]
-[<ffffffffa0158ad1>] ? free_extent_buffer+0x61/0xc0 [btrfs]
-[<ffffffffa010e43b>] btrfs_read_lock_root_node+0x3b/0x50 [btrfs]
-[<ffffffffa01182da>] btrfs_search_forward+0x3a/0x340 [btrfs]
-[<ffffffffa017d215>] btrfs_log_inode+0x375/0x7b0 [btrfs]
-[<ffffffffa015e9d3>] ? extent_write_cache_pages.clone.6+0xf3/0x3f0 [btrfs]
-[<ffffffff810afb50>] ? bit_waitqueue+0xb0/0xb0
-[<ffffffff8165cb96>] ? mutex_lock+0x16/0x40
-[<ffffffffa0175cc1>] ? start_log_trans+0xe1/0x230 [btrfs]
-[<ffffffffa017d771>] btrfs_log_inode_parent+0x121/0x340 [btrfs]
-[<ffffffffa017da8c>] btrfs_log_dentry_safe+0x6c/0x90 [btrfs]
-[<ffffffffa014cfc1>] btrfs_sync_file+0x181/0x340 [btrfs]
-[<ffffffff81205861>] vfs_fsync_range+0x21/0x30
-[<ffffffff8120588c>] vfs_fsync+0x1c/0x20
-[<ffffffff81205a7d>] do_fsync+0x3d/0x70
-[<ffffffff81205ac3>] SyS_fdatasync+0x13/0x20
-[<ffffffff8165ede9>] system_call_fastpath+0x16/0x1b
-Code: 00 00 f0 0f c1 07 3c ff 75 0b 0f 1f 00 f3 90 8b 07 3c ff 74 f8
-66 83 47 04 01 c9 c3 f3 90 8b 07 3c ff 74 f8 c9 c3 f3 90 0f b7 01 <66>
-39 c2 75 f6 0f 1f 44 00 00 eb b5 90 90 90 90 90 90 90 90 90
-
-
-Thank you,
-Cristian Falcas

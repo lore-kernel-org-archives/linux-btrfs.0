@@ -1,138 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:49941 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:42318 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751014AbaJUJMY (ORCPT
+	by vger.kernel.org with ESMTP id S1751211AbaJUJNI (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 21 Oct 2014 05:12:24 -0400
+	Tue, 21 Oct 2014 05:13:08 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: ensure send always works on roots without orphans
-Date: Tue, 21 Oct 2014 11:11:41 +0100
-Message-Id: <1413886301-31495-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix snapshot inconsistency after a file write followed by truncate
+Date: Tue, 21 Oct 2014 11:12:43 +0100
+Message-Id: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move the logic from the snapshot creation ioctl into send. This avoids
-doing the transaction commit if send isn't used, and ensures that if
-a crash/reboot happens after the transaction commit that created the
-snapshot and before the transaction commit that switched the commit
-root, send will not get a commit root that differs from the main root
-(that has orphan items).
+If right after starting the snapshot creation ioctl we perform a write against a
+file followed by a truncate, with both operations increasing the file's size, we
+can get a snapshot tree that reflects a state of the source subvolume's tree where
+the file truncation happened but the write operation didn't. This leaves a gap
+between 2 file extent items of the inode, which makes btrfs' fsck complain about it.
+
+For example, if we perform the following file operations:
+
+    $ mkfs.btrfs -f /dev/vdd
+    $ mount /dev/vdd /mnt
+    $ xfs_io -f \
+          -c "pwrite -S 0xaa -b 32K 0 32K" \
+          -c "fsync" \
+          -c "pwrite -S 0xbb -b 32770 16K 32770" \
+          -c "truncate 90123" \
+          /mnt/foobar
+
+and the snapshot creation ioctl was just called before the second write, we often
+can get the following inode items in the snapshot's btree:
+
+        item 120 key (257 INODE_ITEM 0) itemoff 7987 itemsize 160
+                inode generation 146 transid 7 size 90123 block group 0 mode 100600 links 1 uid 0 gid 0 rdev 0 flags 0x0
+        item 121 key (257 INODE_REF 256) itemoff 7967 itemsize 20
+                inode ref index 282 namelen 10 name: foobar
+        item 122 key (257 EXTENT_DATA 0) itemoff 7914 itemsize 53
+                extent data disk byte 1104855040 nr 32768
+                extent data offset 0 nr 32768 ram 32768
+                extent compression 0
+        item 123 key (257 EXTENT_DATA 53248) itemoff 7861 itemsize 53
+                extent data disk byte 0 nr 0
+                extent data offset 0 nr 40960 ram 40960
+                extent compression 0
+
+There's a file range, corresponding to the interval [32K; ALIGN(16K + 32770, 4096)[
+for which there's no file extent item covering it. This is because the file write
+and file truncate operations happened both right after the snapshot creation ioctl
+called btrfs_start_delalloc_inodes(), which means we didn't start and wait for the
+ordered extent that matches the write and, in btrfs_setsize(), we were able to call
+btrfs_cont_expand() before being able to commit the current transaction in the
+snapshot creation ioctl. So this made it possibe to insert the hole file extent
+item in the source subvolume (which represents the region added by the truncate)
+right before the transaction commit from the snapshot creation ioctl.
+
+Btrfs' fsck tool complains about such cases with a message like the following:
+
+    "root 331 inode 257 errors 100, file extent discount"
+
+>From a user perspective, the expectation when a snapshot is created while those
+file operations are being performed is that the snapshot will have a file that
+either:
+
+1) is empty
+2) only the first write was captured
+3) only the 2 writes were captured
+4) both writes and the truncation were captured
+
+But never capture a state where only the first write and the truncation were
+captured (since the second write was performed before the truncation).
+
+A test case for xfstests follows.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 29 -----------------------------
- fs/btrfs/send.c  | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 49 insertions(+), 29 deletions(-)
+ fs/btrfs/inode.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 33c80f5..994c573 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -717,35 +717,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (ret)
- 		goto fail;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0d41741..c28b78f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4622,6 +4622,9 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 	}
  
--	/*
--	 * If orphan cleanup did remove any orphans, it means the tree was
--	 * modified and therefore the commit root is not the same as the
--	 * current root anymore. This is a problem, because send uses the
--	 * commit root and therefore can see inode items that don't exist
--	 * in the current root anymore, and for example make calls to
--	 * btrfs_iget, which will do tree lookups based on the current root
--	 * and not on the commit root. Those lookups will fail, returning a
--	 * -ESTALE error, and making send fail with that error. So make sure
--	 * a send does not see any orphans we have just removed, and that it
--	 * will see the same inodes regardless of whether a transaction
--	 * commit happened before it started (meaning that the commit root
--	 * will be the same as the current root) or not.
--	 */
--	if (readonly && pending_snapshot->snap->node !=
--	    pending_snapshot->snap->commit_root) {
--		trans = btrfs_join_transaction(pending_snapshot->snap);
--		if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
--			ret = PTR_ERR(trans);
--			goto fail;
--		}
--		if (!IS_ERR(trans)) {
--			ret = btrfs_commit_transaction(trans,
--						       pending_snapshot->snap);
--			if (ret)
--				goto fail;
--		}
--	}
--
- 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
- 	if (IS_ERR(inode)) {
- 		ret = PTR_ERR(inode);
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 874828d..804432d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5507,6 +5507,51 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * If orphan cleanup did remove any orphans from a root, it means the tree
-+ * was modified and therefore the commit root is not the same as the current
-+ * root anymore. This is a problem, because send uses the commit root and
-+ * therefore can see inode items that don't exist in the current root anymore,
-+ * and for example make calls to btrfs_iget, which will do tree lookups based
-+ * on the current root and not on the commit root. Those lookups will fail,
-+ * returning a -ESTALE error, and making send fail with that error. So make
-+ * sure a send does not see any orphans we have just removed, and that it will
-+ * see the same inodes regardless of whether a transaction commit happened
-+ * before it started (meaning that the commit root will be the same as the
-+ * current root) or not.
-+ */
-+static int ensure_commit_roots_uptodate(struct send_ctx *sctx)
-+{
-+	int i;
-+	struct btrfs_trans_handle *trans = NULL;
-+
-+again:
-+	if (sctx->parent_root &&
-+	    sctx->parent_root->node != sctx->parent_root->commit_root)
-+		goto commit_trans;
-+
-+	for (i = 0; i < sctx->clone_roots_cnt; i++)
-+		if (sctx->clone_roots[i].root->node !=
-+		    sctx->clone_roots[i].root->commit_root)
-+			goto commit_trans;
-+
-+	if (trans)
-+		return btrfs_end_transaction(trans, sctx->send_root);
-+
-+	return 0;
-+
-+commit_trans:
-+	/* Use any root, all fs roots will get their commit roots updated. */
-+	if (!trans) {
-+		trans = btrfs_join_transaction(sctx->send_root);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+		goto again;
-+	}
-+
-+	return btrfs_commit_transaction(trans, sctx->send_root);
-+}
-+
- static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
- {
- 	spin_lock(&root->root_item_lock);
-@@ -5728,6 +5773,10 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 			NULL);
- 	sort_clone_roots = 1;
- 
-+	ret = ensure_commit_roots_uptodate(sctx);
-+	if (ret)
-+		goto out;
-+
- 	current->journal_info = BTRFS_SEND_TRANS_STUB;
- 	ret = send_subvol(sctx);
- 	current->journal_info = NULL;
+ 	if (newsize > oldsize) {
++		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
++		if (ret)
++			return ret;
+ 		truncate_pagecache(inode, newsize);
+ 		ret = btrfs_cont_expand(inode, oldsize, newsize);
+ 		if (ret)
 -- 
 1.9.1
 

@@ -1,45 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:48985 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932390AbaJUQkD (ORCPT
+Received: from outrelay06.libero.it ([212.52.84.110]:33219 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933074AbaJUQkX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 12:40:03 -0400
-Received: by mail-vc0-f174.google.com with SMTP id hq12so755480vcb.33
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 09:40:01 -0700 (PDT)
+	Tue, 21 Oct 2014 12:40:23 -0400
+Message-ID: <54468C73.1070108@inwind.it>
+Date: Tue, 21 Oct 2014 18:40:19 +0200
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz>
-	<pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-Date: Tue, 21 Oct 2014 12:40:01 -0400
-Message-ID: <CAGfcS_nTbXQQTOC+QcBX8dbwk18Qbf-+JonQSw4WP6MOFg2z7A@mail.gmail.com>
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: strange 3.16.3 problem
+References: <201410181454.19375.russell@coker.com.au>	<54426C16.5030206@pobox.com> <201410191041.42013.russell@coker.com.au>	<54454858.8010802@pobox.com> <54456EB0.9020503@inwind.it> <pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
+In-Reply-To: <pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 21, 2014 at 5:29 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> David Sterba posted on Mon, 20 Oct 2014 18:34:03 +0200 as excerpted:
->
->> On Thu, Oct 16, 2014 at 01:33:37PM +0200, David Sterba wrote:
->>> I'd like to make it default with the 3.17 release of btrfs-progs.
->>> Please let me know if you have objections.
->>
->> For the record, 3.17 will not change the defaults. The timing of the
->> poll was very bad to get enough feedback before the release. Let's keep
->> it open for now.
->
-> FWIW my own results agree with yours, I've had no problem with skinny-
-> metadata here, and it has been my default now for a couple backup-and-new-
-> mkfs.btrfs generations, now.
->
+On 10/21/2014 11:50 AM, Duncan wrote:
+> Goffredo Baroncelli posted on Mon, 20 Oct 2014 22:21:04 +0200 as
+> excerpted:
+> 
+[...]
+>> > 
+>> > Could this be related to the inode overflow in 32 bit system (see
+>> > inode_cache options) ? If so running a 64bit "ls -i" should work....
+> Good point.  Russell might just owe you a beverage of choice.  =:^)
+> 
+> The inode_cache mount option isn't recommended for any bitness.
 
-How does one enable it for an existing filesystem?  Is it safe to just
-run btrfstune -x?  Can this be done on a mounted filesystem?  Are
-there any risks with converting?
 
---
-Rich
+Hi Ducan, 
+could you elaborate this sentence ? From my understanding 
+inode_cache is *needed* on 32bit system in order to avoid inode number
+overflow. Why are you saying that it is not recommended ?
+Even if there are bugs, these have to be corrected. A bugs cannot be
+a reason to remove a needed option.
+
+Inode exhaustion is worse than a slowness... Otherwise BTRFS would be not
+suitable to a 32 bit system... But please tell me your opinion because may 
+be I misunderstood something... 
+
+BR
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

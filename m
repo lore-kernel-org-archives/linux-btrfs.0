@@ -1,51 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43922 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:47398 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751143AbaJUJ3j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 05:29:39 -0400
+	id S1750978AbaJUJuy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Oct 2014 05:50:54 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XgVl3-0008Ay-Dq
-	for linux-btrfs@vger.kernel.org; Tue, 21 Oct 2014 11:29:37 +0200
+	id 1XgW5Z-0002VJ-V7
+	for linux-btrfs@vger.kernel.org; Tue, 21 Oct 2014 11:50:49 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 11:29:37 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 11:50:49 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 11:29:37 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 11:50:49 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Date: Tue, 21 Oct 2014 09:29:25 +0000 (UTC)
-Message-ID: <pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz>
+Subject: Re: strange 3.16.3 problem
+Date: Tue, 21 Oct 2014 09:50:37 +0000 (UTC)
+Message-ID: <pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
+References: <201410181454.19375.russell@coker.com.au>
+	<54426C16.5030206@pobox.com> <201410191041.42013.russell@coker.com.au>
+	<54454858.8010802@pobox.com> <54456EB0.9020503@inwind.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba posted on Mon, 20 Oct 2014 18:34:03 +0200 as excerpted:
+Goffredo Baroncelli posted on Mon, 20 Oct 2014 22:21:04 +0200 as
+excerpted:
 
-> On Thu, Oct 16, 2014 at 01:33:37PM +0200, David Sterba wrote:
->> I'd like to make it default with the 3.17 release of btrfs-progs.
->> Please let me know if you have objections.
+> On 10/20/2014 07:37 PM, Robert White wrote:
+>> On 10/18/2014 04:41 PM, Russell Coker wrote:
+> [...]
+>> Also you said that you are using a 32bit user space "copied from
+>> another server" under a 64bit kernel. Is the "ls" command a 32 bit
+>> executable then?
 > 
-> For the record, 3.17 will not change the defaults. The timing of the
-> poll was very bad to get enough feedback before the release. Let's keep
-> it open for now.
+> Could this be related to the inode overflow in 32 bit system (see
+> inode_cache options) ? If so running a 64bit "ls -i" should work....
 
-FWIW my own results agree with yours, I've had no problem with skinny-
-metadata here, and it has been my default now for a couple backup-and-new-
-mkfs.btrfs generations, now.
+Good point.  Russell might just owe you a beverage of choice.  =:^)
 
-As you know there were some problems with it in the first kernel cycle or 
-two after it was introduced as an option, and I waited awhile until they 
-died down before trying it here, but as I said, no problems since I 
-switched it on, and I've been running it awhile now.
+The inode_cache mount option isn't recommended for any bitness.
 
-So defaulting to skinny-metadata looks good from here. =:^)
+@ Russ, are you mounting with inode_cache?  If so, definitely try running 
+without it and see if it changes the results.
+
+(FWIW I wish that mount option would just go away as it would definitely 
+remove an invitation to a Russian roulette party with their data for the 
+unwary, but I suppose there's someone paying some bills somewhere that 
+wants it kept for some specific use-case where the performance gain must 
+be worth the calculated risk, thus continuing that invitation to data 
+Russian roulette for everyone else.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

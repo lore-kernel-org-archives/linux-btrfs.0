@@ -1,109 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:47685 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754922AbaJULCh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 07:02:37 -0400
-Received: by mail-ig0-f177.google.com with SMTP id a13so1049452igq.16
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 04:02:36 -0700 (PDT)
-Message-ID: <54463D45.1040309@gmail.com>
-Date: Tue, 21 Oct 2014 07:02:29 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-References: <20141016113337.GC22943@twin.jikos.cz>	<20141020163403.GW22943@twin.jikos.cz> <pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-In-Reply-To: <pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090304010607040607050709"
+Received: from plane.gmane.org ([80.91.229.3]:43100 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755293AbaJUMIr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Oct 2014 08:08:47 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XgYF4-0006Yb-DO
+	for linux-btrfs@vger.kernel.org; Tue, 21 Oct 2014 14:08:46 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 14:08:46 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 14:08:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: inode_cache  Re: strange 3.16.3 problem
+Date: Tue, 21 Oct 2014 12:08:34 +0000 (UTC)
+Message-ID: <pan$b739f$6a3f3cfa$f40a51eb$36a00e13@cox.net>
+References: <201410181454.19375.russell@coker.com.au>
+	<54426C16.5030206@pobox.com> <201410191041.42013.russell@coker.com.au>
+	<54454858.8010802@pobox.com> <54456EB0.9020503@inwind.it>
+	<pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
+	<20141021161611.0f78e6e2@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Roman Mamedov posted on Tue, 21 Oct 2014 16:16:11 +0600 as excerpted:
 
---------------ms090304010607040607050709
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+> On Tue, 21 Oct 2014 09:50:37 +0000 (UTC)
+> Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+>> (FWIW I wish that mount option would just go away as it would
+>> definitely remove an invitation to a Russian roulette party with their
+>> data for the unwary, but I suppose there's someone paying some bills
+>> somewhere that wants it kept for some specific use-case where the
+>> performance gain must be worth the calculated risk, thus continuing
+>> that invitation to data Russian roulette for everyone else.)
+> 
+> Why do you think it is so dangerous? Just because of possible bugs? But
+> bugs can be anywhere in Btrfs, why specifically single out one mount
+> option.
+> 
+> Let's take a look at its description in the wiki:
+> 
+> "inode_cache (since 3.0)
+> Enable free inode number caching. Not recommended to use unless files on
+> your filesystem get assigned inode numbers that are approaching 2^64.
+> Normally, new files in each subvolume get assigned incrementally (plus
+> one from the last time) and are not reused. The mount option turns on
+> caching of the existing inode numbers and reuse of inode numbers of
+> deleted files.
+> This option may slow down your system at first run, or after mounting
+> without the option."
+> https://btrfs.wiki.kernel.org/index.php/Mount_options
+> 
+> As you can see it's not about performance, but rather more of a
+> recognition that a filesystem with some pre-determined finite lifetime
+> expectancy is not a good thing to have; even though 2^64 is a lot, there
+> are various scenarios out there, including millions of files and
+> constant creation and removal of snapshots, that may make the FS hit the
+> limit faster than you would expect.
 
-On 2014-10-21 05:29, Duncan wrote:
-> David Sterba posted on Mon, 20 Oct 2014 18:34:03 +0200 as excerpted:
->
->> On Thu, Oct 16, 2014 at 01:33:37PM +0200, David Sterba wrote:
->>> I'd like to make it default with the 3.17 release of btrfs-progs.
->>> Please let me know if you have objections.
->>
->> For the record, 3.17 will not change the defaults. The timing of the
->> poll was very bad to get enough feedback before the release. Let's kee=
-p
->> it open for now.
->
-> FWIW my own results agree with yours, I've had no problem with skinny-
-> metadata here, and it has been my default now for a couple backup-and-n=
-ew-
-> mkfs.btrfs generations, now.
->
-> As you know there were some problems with it in the first kernel cycle =
-or
-> two after it was introduced as an option, and I waited awhile until the=
-y
-> died down before trying it here, but as I said, no problems since I
-> switched it on, and I've been running it awhile now.
->
-> So defaulting to skinny-metadata looks good from here. =3D:^)
->
-Same here, I've been using it on all my systems since I switched from=20
-3.15 to 3.16, and have had no issues whatsoever.
+inode_cache is generally not needed on 64-bit, and it is known to cause 
+problems on 32-bit where a cache overflow and non-unique cached inode-
+numbers is possible on large filesystems, as well as boot-time slowdowns 
+(including timeouts on mounting, for filesystems mounted at boot) on 64-
+bit.
 
+I guess the real trouble is that the problems with it aren't well 
+documented and relatively few people know about them, mostly regulars on 
+this list, so people end up enabling it even on 64-bit where about the 
+only effect is a boot-time slowdown and the increased chance of crash-
+corruption of yet another cache, as well as on 32-bit where it's actually 
+useful if somewhat risky (especially for large filesystems), thus getting 
+themselves in needless trouble.  If there was a big IF YOU USE THIS AND 
+IT GOES BAD YOU GET TO KEEP THE PIECES warning on it, I guess fewer 
+people would use it, but then people would be asking questions about why 
+it's there in the first place.
 
---------------ms090304010607040607050709
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+And I don't know why, as I've only seen it cause needless problems, never 
+actually help, and I know that everyone here recommends turning it off 
+without any exception I've seen.  But the conspiracy theory side of me 
+says if it's causing problems and not helping, and it's still there, 
+there must be a reason...
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDIxMTEwMjI5
-WjAjBgkqhkiG9w0BCQQxFgQUo4bqxK/IihKem1LSeOyfA/ljYrEwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAN3et0QAKA51cwU38P2r4o0SccmFo
-BIqxsRKo1jgs6xIc47Q5jyRxGkhvix88j/Nq34hblwmRDNbOsQubIdDMO6c2o/4U86eSvg3P
-lakdA/xiAiX9BeiL/Bq89Ol6kccTpiHHAMzFywePE/Kgay7lxIKftiDmo6reOHghbTGyhKjf
-EM8lr3JjCp2kEzaZwyPcMEGcH5Yr5+OPXHfWcFts86Y6FVMRWiEK9OuMWe9wMnD7maidu6fI
-jdAptRurMCj/ievJ4oNi64JPDsB9pyI1HuOphEDGF7mmD9DCH6Z58VrLdiga3OBb/bDssfGq
-O0z8bW7FDLJW7jRN4HC5ueNFNwAAAAAAAA==
---------------ms090304010607040607050709--
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

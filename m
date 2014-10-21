@@ -1,98 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:42318 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751211AbaJUJNI (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 21 Oct 2014 05:13:08 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from plane.gmane.org ([80.91.229.3]:35663 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755315AbaJUL1J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Oct 2014 07:27:09 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XgXai-0002XH-UY
+	for linux-btrfs@vger.kernel.org; Tue, 21 Oct 2014 13:27:04 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 13:27:04 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 13:27:04 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix snapshot inconsistency after a file write followed by truncate
-Date: Tue, 21 Oct 2014 11:12:43 +0100
-Message-Id: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: downgrade from kernel 3.17 to 3.10
+Date: Tue, 21 Oct 2014 11:26:53 +0000 (UTC)
+Message-ID: <pan$e55c6$e7985780$d6580cb2$76eb6d4@cox.net>
+References: <CAMo7R_e9=wdGhEm9P+DZgXrKQ+qrKqdELzwwi-OMTCp6Mk8aTg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If right after starting the snapshot creation ioctl we perform a write against a
-file followed by a truncate, with both operations increasing the file's size, we
-can get a snapshot tree that reflects a state of the source subvolume's tree where
-the file truncation happened but the write operation didn't. This leaves a gap
-between 2 file extent items of the inode, which makes btrfs' fsck complain about it.
+Cristian Falcas posted on Tue, 21 Oct 2014 11:13:48 +0300 as excerpted:
 
-For example, if we perform the following file operations:
+> Can I downgrade the kernel from 3.17.1 to latest 3.10 if I have a btrfs
+> partition formatted and used on 3.17.1?
+> 
+> I mean, is there something that could go wrong with the fs if suddenly I
+> use an older kernel?
+> 
+> I want to downgrade because last night we had some 1200 oops's in 1 hour
+> on the 3.17 kernel related to "CPU#n stuck" and what seems to be btrfs
+> work:
 
-    $ mkfs.btrfs -f /dev/vdd
-    $ mount /dev/vdd /mnt
-    $ xfs_io -f \
-          -c "pwrite -S 0xaa -b 32K 0 32K" \
-          -c "fsync" \
-          -c "pwrite -S 0xbb -b 32770 16K 32770" \
-          -c "truncate 90123" \
-          /mnt/foobar
+You definitely don't want to downgrade that far -- there's way too many 
+btrfs fixes since then and you'd be needlessly risking your data.
 
-and the snapshot creation ioctl was just called before the second write, we often
-can get the following inode items in the snapshot's btree:
+Much more viable would be to downgrade to the latest 3.16.x stable kernel 
+(definitely not 3.16.0 or 3.16.1 as they had an open issue much like 
+3.17.0 does), and then upgrade to the latest 3.17.x in a couple weeks, as 
+there's some critical stable fixes in the pipeline for it.
 
-        item 120 key (257 INODE_ITEM 0) itemoff 7987 itemsize 160
-                inode generation 146 transid 7 size 90123 block group 0 mode 100600 links 1 uid 0 gid 0 rdev 0 flags 0x0
-        item 121 key (257 INODE_REF 256) itemoff 7967 itemsize 20
-                inode ref index 282 namelen 10 name: foobar
-        item 122 key (257 EXTENT_DATA 0) itemoff 7914 itemsize 53
-                extent data disk byte 1104855040 nr 32768
-                extent data offset 0 nr 32768 ram 32768
-                extent compression 0
-        item 123 key (257 EXTENT_DATA 53248) itemoff 7861 itemsize 53
-                extent data disk byte 0 nr 0
-                extent data offset 0 nr 40960 ram 40960
-                extent compression 0
+Or if you must, 3.14.x is the latest long-term-stable series, and is 
+continuing to get btrfs-stable patches along with the other stable 
+patches it gets.
 
-There's a file range, corresponding to the interval [32K; ALIGN(16K + 32770, 4096)[
-for which there's no file extent item covering it. This is because the file write
-and file truncate operations happened both right after the snapshot creation ioctl
-called btrfs_start_delalloc_inodes(), which means we didn't start and wait for the
-ordered extent that matches the write and, in btrfs_setsize(), we were able to call
-btrfs_cont_expand() before being able to commit the current transaction in the
-snapshot creation ioctl. So this made it possibe to insert the hole file extent
-item in the source subvolume (which represents the region added by the truncate)
-right before the transaction commit from the snapshot creation ioctl.
+But I'd definitely not recommend reverting to older than 3.14.x stable 
+series, because even if it's a stable series and they catch and apply to 
+stable all the patches that ideally need to be applied back that far, if 
+you have problems, what you'd be running is simply too far back in 
+history to get much support on this list for.
 
-Btrfs' fsck tool complains about such cases with a message like the following:
+Also, keep in mind that the btrfs-is-experimental warnings didn't come 
+off until 3.12 or so.  Any btrfs older than that was officially 
+experimental when it came out, and even if it's a long-term-stable 
+kernel, no stable series patches are going to remove the still 
+experimental nature of btrfs in a kernel that old.
 
-    "root 331 inode 257 errors 100, file extent discount"
+So 3.10, no way if it were /my/ data!  Latest 3.14.x stable, I'd 
+consider.  But preferably step back to the latest 3.16.x (past 3.16.2 for 
+sure) temporarily, and try latest 3.17.x again in a couple weeks (or 3.18-
+live-git now) as there's some critical fixes for 3.17-stable now in 3.18 
+and still making their way to the stable releases.
 
->From a user perspective, the expectation when a snapshot is created while those
-file operations are being performed is that the snapshot will have a file that
-either:
-
-1) is empty
-2) only the first write was captured
-3) only the 2 writes were captured
-4) both writes and the truncation were captured
-
-But never capture a state where only the first write and the truncation were
-captured (since the second write was performed before the truncation).
-
-A test case for xfstests follows.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0d41741..c28b78f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4622,6 +4622,9 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 	}
- 
- 	if (newsize > oldsize) {
-+		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
-+		if (ret)
-+			return ret;
- 		truncate_pagecache(inode, newsize);
- 		ret = btrfs_cont_expand(inode, oldsize, newsize);
- 		if (ret)
 -- 
-1.9.1
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

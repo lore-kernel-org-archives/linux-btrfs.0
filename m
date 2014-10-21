@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-10v.sys.comcast.net ([69.252.207.42]:59179 "EHLO
-	resqmta-ch2-10v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755813AbaJUPN3 (ORCPT
+Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:53652 "EHLO
+	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750750AbaJUPUc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 11:13:29 -0400
-Message-ID: <54467817.5070307@pobox.com>
-Date: Tue, 21 Oct 2014 08:13:27 -0700
+	Tue, 21 Oct 2014 11:20:32 -0400
+Message-ID: <544679BE.9080901@pobox.com>
+Date: Tue, 21 Oct 2014 08:20:30 -0700
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
 To: Cristian Falcas <cristi.falcas@gmail.com>, Duncan <1i5t5.duncan@cox.net>
@@ -23,11 +23,17 @@ On 10/21/2014 06:18 AM, Cristian Falcas wrote:
 > I will reformat the disk with a 3.10 kernel in the meantime, because I
 > don't have any rpms for 3.16 now.
 
-Don't bother reformatting (yet). The on-disk layout is stable between 
-the releases. It should run fine and all the known-to-date issues with 
-3.17 only affected read-only snapshots, so your live data is still good.
+More concisely: Don't use 3.10 BTRFS for data you value. There is a 
+non-trivial chance that the problems you observed are/were due to "bad 
+things" on the disk written there by 3.10.
 
-I'd wait till things shake out before doing anything drastic to the 
-working set.
+There is no value to recreating your file systems under 3.10 as the same 
+thing is likely to go bad again when you get out of the dungeon.
 
+What are your RPM options? What about just getting the sources from 
+kernel.org and compiling your won 3.16.5?
+
+Seriously, 3.10.... just... no...
+
+8-)
 

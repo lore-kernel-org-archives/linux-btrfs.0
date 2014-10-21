@@ -1,49 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:33219 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933074AbaJUQkX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 12:40:23 -0400
-Message-ID: <54468C73.1070108@inwind.it>
-Date: Tue, 21 Oct 2014 18:40:19 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mail.virtall.com ([178.63.195.102]:55392 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932232AbaJUS7m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Oct 2014 14:59:42 -0400
+Received: from mailext.virtall.com (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP id ADCCA3E0108
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 20:59:38 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: device balance times
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: strange 3.16.3 problem
-References: <201410181454.19375.russell@coker.com.au>	<54426C16.5030206@pobox.com> <201410191041.42013.russell@coker.com.au>	<54454858.8010802@pobox.com> <54456EB0.9020503@inwind.it> <pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
-In-Reply-To: <pan$87a32$ab14c0c8$d31af00$391cbfd4@cox.net>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Tue, 21 Oct 2014 20:59:38 +0200
+From: Tomasz Chmielewski <tch@virtall.com>
+Message-ID: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/21/2014 11:50 AM, Duncan wrote:
-> Goffredo Baroncelli posted on Mon, 20 Oct 2014 22:21:04 +0200 as
-> excerpted:
-> 
-[...]
->> > 
->> > Could this be related to the inode overflow in 32 bit system (see
->> > inode_cache options) ? If so running a 64bit "ls -i" should work....
-> Good point.  Russell might just owe you a beverage of choice.  =:^)
-> 
-> The inode_cache mount option isn't recommended for any bitness.
+FYI - after a failed disk and replacing it I've run a balance; it took 
+almost 3 weeks to complete, for 120 GBs of data:
+
+# time btrfs balance start -v /home
+Dumping filters: flags 0x7, state 0x0, force is off
+   DATA (flags 0x0): balancing
+   METADATA (flags 0x0): balancing
+   SYSTEM (flags 0x0): balancing
+Done, had to relocate 124 out of 124 chunks
+
+real    30131m52.873s
+user    0m0.000s
+sys     74m59.180s
 
 
-Hi Ducan, 
-could you elaborate this sentence ? From my understanding 
-inode_cache is *needed* on 32bit system in order to avoid inode number
-overflow. Why are you saying that it is not recommended ?
-Even if there are bugs, these have to be corrected. A bugs cannot be
-a reason to remove a needed option.
+Kernel is 3.17.0-rc7.
 
-Inode exhaustion is worse than a slowness... Otherwise BTRFS would be not
-suitable to a 32 bit system... But please tell me your opinion because may 
-be I misunderstood something... 
 
-BR
-G.Baroncelli
+Filesystem is not that big, merely 124 GB used out of 1.8 TB:
+
+/dev/sdb4                                               1.8T  124G  1.6T 
+   8% /home
+
+# btrfs fi df /home
+Data, RAID1: total=121.00GiB, used=117.56GiB
+System, RAID1: total=32.00MiB, used=48.00KiB
+Metadata, RAID1: total=8.00GiB, used=4.99GiB
+GlobalReserve, single: total=512.00MiB, used=0.00
+
+# btrfs fi show /home
+Label: none  uuid: 84d087aa-3a32-46da-844f-a233237cf04f
+         Total devices 2 FS bytes used 122.56GiB
+         devid    2 size 1.71TiB used 129.03GiB path /dev/sdb4
+         devid    3 size 1.71TiB used 129.03GiB path /dev/sda4
+
+
+The only special thing about this filesystem is that there are ~250 
+snapshots there:
+
+# btrfs sub list /home|wc -l
+253
+
+It's using compression:
+
+/dev/sdb4 on /home type btrfs (rw,noatime,compress=lzo,space_cache)
+
+
+Other than taking occasional backups from remote, the server is idle.
+
+# hdparm -t /dev/sda /dev/sdb
+
+/dev/sda:
+  Timing buffered disk reads: 394 MB in  3.01 seconds = 131.03 MB/sec
+
+/dev/sdb:
+  Timing buffered disk reads: 402 MB in  3.00 seconds = 133.86 MB/sec
+
+
+
+How long does the balance take for others with "many" snapshots?
+
+
+
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Tomasz Chmielewski
+http://www.sslrack.com
+

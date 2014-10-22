@@ -1,96 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:39808 "EHLO
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:45494 "EHLO
 	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932474AbaJVLWk (ORCPT
+	with ESMTP id S932474AbaJVLav (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 07:22:40 -0400
-Received: by mail-ig0-f178.google.com with SMTP id h3so682382igd.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2014 04:22:39 -0700 (PDT)
-Message-ID: <54479379.2000502@gmail.com>
-Date: Wed, 22 Oct 2014 07:22:33 -0400
+	Wed, 22 Oct 2014 07:30:51 -0400
+Received: by mail-ig0-f178.google.com with SMTP id h3so682660igd.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2014 04:30:50 -0700 (PDT)
+Message-ID: <54479563.1050401@gmail.com>
+Date: Wed, 22 Oct 2014 07:30:43 -0400
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Arnaud Kapp <kapp.arno@gmail.com>,
+To: Robert White <rwhite@pobox.com>, Arnaud Kapp <kapp.arno@gmail.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: device balance times
-References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com> <5446BEC0.8070009@siedziba.pl> <5446C597.9080904@gmail.com>
-In-Reply-To: <5446C597.9080904@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms050908090104020300030402"
+Subject: Re: 5 _thousand_ snapshots? even 160?
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com> <5446BEC0.8070009@siedziba.pl> <5446C597.9080904@gmail.com> <54470403.8020904@pobox.com>
+In-Reply-To: <54470403.8020904@pobox.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms060002060407080103000300"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms050908090104020300030402
+--------------ms060002060407080103000300
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-10-21 16:44, Arnaud Kapp wrote:
-> Hello,
+On 2014-10-21 21:10, Robert White wrote:
 >
-> I would like to ask if the balance time is related to the number of
-> snapshot or if this is related only to data (or both).
+> I don't think balance will _ever_ move the contents of a read only
+> snapshot. I could be wrong. I think you just end up with an endlessly
+> fragmented storage space and balance has to take each chunk and search
+> for someplace else it might better fit. Which explains why it took so l=
+ong.
 >
-> I currently have about 4TB of data and around 5k snapshots. I'm thinkin=
-g
-> of going raid1 instead of single. From the numbers I see this seems
-> totally impossible as it would take *way* too long.
+> And just _forget_ single-extent large files at that point.
 >
-> Would destroying snapshots (those are hourly snapshots to prevent stupi=
-d
-> error to happens, like `rm my_important_file`) help?
->
-> Should I reconsider moving to raid1 because of the time it would take?
->
-> Sorry if I'm somehow hijacking this thread, but it seemed related :)
->
-> Thanks,
->
-The issue is the snapshots, because I regularly fully re-balance my home =
+> (Of course I could be wrong about the "never move" rule, but that would=
 
-directory on my desktop which is ~150GB on a BTRFS raid10 setup with=20
-only 3 or 4 snapshots (I only do daily snapshots, cause anything I need=20
-finer granularity on I have under git), and that takes only about 2 or 3 =
-
-hours depending on how many empty chunks I have.
-
-I would remove the snapshots, and also start keeping fewer of them (5k=20
-hourly snapshots is more than six months worth of file versions), and=20
-then run the balance.  I would also suggest converting data by itself=20
-first, and then converting metadata, as converting data chunks will=20
-require re-writing large parts of the metadata.
-> On 10/21/2014 10:14 PM, Piotr Paw=C5=82ow wrote:
->> On 21.10.2014 20:59, Tomasz Chmielewski wrote:
->>> FYI - after a failed disk and replacing it I've run a balance; it too=
-k
->>> almost 3 weeks to complete, for 120 GBs of data:
+> just make the checksums on the potentially hundreds or thousands of
+> references need to be recalculated after a move, which would make
+> incremental send/receive unfathomable.)
+>
+Balance doesn't do anything different for snapshots from what it does=20
+with regular data.  I think you are confusing balance with=20
+defragmentation, as that does (in theory) handle snapshots differently.=20
+  Balance just takes all of the blocks selected by the filters, and=20
+sends the through the block allocator again, and then updates the=20
+metadata to point to the new blocks.  It can result in some=20
+fragmentation, but usually only for files bigger than about 256M, and=20
+even then doesn't always cause fragmentation
+>
+> On 10/21/2014 01:44 PM, Arnaud Kapp wrote:
+>> Hello,
 >>
->> Looks normal to me. Last time I started a balance after adding 6th
->> device to my FS, it took 4 days to move 25GBs of data. Some chunks too=
-k
->> 20 hours to move. I currently have 156 snapshots on this FS (nightly
->> rsync backups).
+>> I would like to ask if the balance time is related to the number of
+>> snapshot or if this is related only to data (or both).
 >>
->> I think it is so slow, because it's disassembling chunks piece by piec=
-e
->> and stuffing these pieces elsewhere, instead of moving chunks as a
->> whole. If you have a lot of little pieces (as I do), it will take a
->> while...
+>> I currently have about 4TB of data and around 5k snapshots. I'm thinki=
+ng
+>> of going raid1 instead of single. From the numbers I see this seems
+>> totally impossible as it would take *way* too long.
 >>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
- in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Would destroying snapshots (those are hourly snapshots to prevent stup=
+id
+>> error to happens, like `rm my_important_file`) help?
+>>
+>> Should I reconsider moving to raid1 because of the time it would take?=
+
+>>
+>> Sorry if I'm somehow hijacking this thread, but it seemed related :)
+>>
+>> Thanks,
+>>
+>> On 10/21/2014 10:14 PM, Piotr Paw=C5=82ow wrote:
+>>> On 21.10.2014 20:59, Tomasz Chmielewski wrote:
+>>>> FYI - after a failed disk and replacing it I've run a balance; it to=
+ok
+>>>> almost 3 weeks to complete, for 120 GBs of data:
+>>>
+>>> Looks normal to me. Last time I started a balance after adding 6th
+>>> device to my FS, it took 4 days to move 25GBs of data. Some chunks to=
+ok
+>>> 20 hours to move. I currently have 156 snapshots on this FS (nightly
+>>> rsync backups).
+>>>
+>>> I think it is so slow, because it's disassembling chunks piece by pie=
+ce
+>>> and stuffing these pieces elsewhere, instead of moving chunks as a
+>>> whole. If you have a lot of little pieces (as I do), it will take a
+>>> while...
+>>>
 
 
 
---------------ms050908090104020300030402
+--------------ms060002060407080103000300
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -127,8 +130,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDIyMTEyMjMz
-WjAjBgkqhkiG9w0BCQQxFgQUtE/vVy/nCeDRfm9aApISQWW7bFwwbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDIyMTEzMDQz
+WjAjBgkqhkiG9w0BCQQxFgQUZFEulT8oVs4SvZ/bk/+GyhcN94swbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -136,10 +139,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAgu6Aw8cnQNLq/5qVnoKrrecJ5Htn
-h8qsdkHdtqlEn4SJHUHuNbM8ilzBamRZb286dF1a82Ck/fdAe9Ag8GlhOMFy+2LwnGKY3k6K
-bX1aJ0AA44o2r6SU7xqmG99Qm9JzNyntY3kD0/WKewCXF+6w5s6zmmvtWOSEdDs68WrD3WYE
-afR0gAQssqPa2XPsV92sfcuz0eR6Z1gAfgNDSY2Zvc0rzLKuIVPt2L9FlFd09zyz4GEGKwff
-A+5ocKycVXdDiiYgPUUBWOGMNiB6DtuyxKtKqV/vUfdVPvsjHlmHvl9PVW/uP8fMoFXU1CGU
-BMhXVyJd7y2z5XREsR39y3SAkAAAAAAAAA==
---------------ms050908090104020300030402--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAiLfwZuNK6xctQx2P+vQDcJLyuySf
+HgYiiePkm9Qz7oyvmZ5b2Ul6pz9jt8vrRy6b3ugwT0/v12l/kZQKrp3iIdRFjn5In5hOVDyc
+F0vamAEebusyGxqtBEi4cRkA7R3HPgdUzfFkgDFoESFWuUPDWGEYcDFKddFvNPSUe6ijJZ0y
+8U9ktBOT5epqn1/vi6jg5+mXGUqxHLlAGyIOFVeF3knxuVmamzZj/nYICaqTJ9Bc+cL7uJcv
+2Zu4sjIFRV7ry/s38CzX3i9b//dxFVaKIv8Zb3wMJc/KBWLlvacfW4rU8dxg5ShhRBd5oRzn
+0g9q9F+mYe82izpEF+2IJ9T2ugAAAAAAAA==
+--------------ms060002060407080103000300--

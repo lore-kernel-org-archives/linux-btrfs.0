@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:44469 "EHLO
-	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750756AbaJVGYW (ORCPT
+Received: from resqmta-ch2-10v.sys.comcast.net ([69.252.207.42]:42045 "EHLO
+	resqmta-ch2-10v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932071AbaJVTlN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 02:24:22 -0400
-Date: Wed, 22 Oct 2014 14:23:14 +0800
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Chris Mason <clm@fb.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, stable@vger.kernel.org
-Subject: Re: [GIT PULL] Btrfs for stable (mostly 3.17)
-Message-ID: <20141022062314.GA11748@kroah.com>
-References: <20141020221252.GA2101@kroah.com>
- <1413919149.13632.0@mail.thefacebook.com>
+	Wed, 22 Oct 2014 15:41:13 -0400
+Message-ID: <54480856.9020604@pobox.com>
+Date: Wed, 22 Oct 2014 12:41:10 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1413919149.13632.0@mail.thefacebook.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Uh, 1COW?... what happens when someone does this...
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 21, 2014 at 03:19:09PM -0400, Chris Mason wrote:
-> 
-> 
-> On Mon, Oct 20, 2014 at 6:12 PM, Greg KH <gregkh@linuxfoundation.org> wrote:
-> >On Mon, Oct 20, 2014 at 01:22:22PM +0100, Filipe Manana wrote:
-> >
-> >> May I suggest porting the following commit to 3.14 too?
-> >>
-> >>https://urldefense.proofpoint.com/v1/url?u=https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id%3D766b5e5ae78dd04a93a275690a49e23d7dcb1f39&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=4HB2GrskctbPsSOzamEf9hTilGJUhvqoPLn0LWCzaTI%3D%0A&s=c55d2716c1968c22c220de980059a704c31aa637a7036e25909da9cc960bd0f4
-> >>
-> >> It fixes a data corruption issue for an incremental send. Particularly
-> >> important, IMHO, as the corruption happens silently (no errors returned
-> >> to user space nor any sort of warnings/errors in syslog, etc). It
-> >> affects only 3.14, and the change applies cleanly on 3.14.22.
-> >
-> >Chris, any objection for me taking this?
-> 
-> On vacation, sorry for the lag.  Please do take this one too.  Thanks
-> Filipe.
+So I've been considering some NOCOW files (for VM disk images), but some 
+questions arose. IS there a "1COW" (copy on write only once) flag or are 
+the following operations dangerous or undefined?
 
-Great, now applied.
+(1) The page https://btrfs.wiki.kernel.org/index.php/FAQ (section "Can 
+copy-on-write be turned off for data blocks?") says "COW may still 
+happen if a snapshot is taken." Is that a "may" or a "will", e.g. if I 
+take a snapshot and then start the VM will the file in the snapshot 
+still be frozen or will it update as I alter the VM? Does the 
+read-only-or-not status of the snapshot matter in this outcome?
 
-greg k-h
+e.g. what does "may" mean in that section?
+
+(2) If you copy a file using "cp --reflink" and the destination is in a 
+directory marked NOCOW, what happens? How about when the resultant file 
+is modified in place?
+
+(3) when using a watever.qcow2 virtual machine image that does 
+copy-on-write in the VM (such as QEMU) is it better, worse, or a no-op 
+to have the NOCOW flag set on the file? All the advice on this matter I 
+can find in Google seems to be "VM images bad, but will be addressed 
+soon" and its old enough that I don't know if "soon" has come to pass.
+
+It seems like there is a 1COW flag implicit somewhere.
+
+Just curious.

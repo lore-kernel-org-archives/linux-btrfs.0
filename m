@@ -1,143 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30742 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:40346 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750862AbaJVItZ (ORCPT
+	with ESMTP id S932860AbaJVLKU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 04:49:25 -0400
-Message-ID: <54476F88.4040509@oracle.com>
-Date: Wed, 22 Oct 2014 16:49:12 +0800
+	Wed, 22 Oct 2014 07:10:20 -0400
+Message-ID: <54479095.8040803@oracle.com>
+Date: Wed, 22 Oct 2014 19:10:13 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Petr Janecek <janecek@ucw.cz>
-CC: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs-progs release 3.17
-References: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz>
-In-Reply-To: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz>
+To: dsterba@suse.cz
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: btrfs_scan_block_devices is unused function
+ delete it
+References: <1410571282-3482-4-git-send-email-anand.jain@oracle.com> <1412640511-21840-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1412640511-21840-1-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi,
 
-  You have mentioned two issues when balance and fi show running
-  concurrently
-   - stalling and
-   - errors.
-
-first of all..
-3.17 replaced our own system wide disk scan methods by lblkid scan
-methods. lblkid with its feature-rich is slower as reported here.
-   https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg37839.html
-
-Next, as of 3.17 it still miss the poor man's optimizations patches
-(without seeking for a new kernel interface)
-
-[PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use 
-btrfs_register_one_device()
-[PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
-[PATCH 2/2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
+   This is just a clean up patch which looks like you have missed
+   it in 3.17. sorry if it confused you.
 
 
-If you could, pls..
-  Now on 3.17 apply above 3 patches and see if you see any better
-  performance for the stalling issue.
-  can you do same steps on 3.16 and report what you observe
-
-
-Now about the 2nd issue errors when balance is running.. here is my
-initial analysis with some guess work..
-
- > just before the version information. During that time, it
- > often prints something like
-
- > parent transid verify failed on 2636556500992 wanted 2264 found 2268
-or
- > Check tree block failed, want=2730665181184, have=9727841172931608576
-
-  The default btrfs fi show will scan kernel for mounted FS first and
-  then for umounted btrfs disks.
-
-  When we already know about the mounted disks its just unnecessary that
-  we would still read the mounted disks and later drop them as seen,
-  looks like we need to write a real fix to replace this workaround fix..
-    btrfs filesystem show: skip duplicate fsids
-
-
-
--Anand
-
-
-On 10/22/14 05:28, Petr Janecek wrote:
-> Hello,
+On 10/07/14 08:08, Anand Jain wrote:
+> After Patch:
+>   remove BTRFS_SCAN_PROC scan method
+> There isn't any consumer for btrfs_scan_block_devices() so delete it.
 >
->> the version 3.17 of btrfs-progs has been released.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>   utils.c | 83 -----------------------------------------------------------------
+>   utils.h |  1 -
+>   2 files changed, 84 deletions(-)
 >
->    on a system with 3-disk raid1 and 4 and 5-disk raid10 fs,
-> "btrfs filesystem show" now stalls for approx. half a minute after the
-> listing, just before the version information. During that time, it
-> often prints something like
+> diff --git a/utils.c b/utils.c
+> index 48d2d9a..b23f332 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -1542,89 +1542,6 @@ int set_label(const char *btrfs_dev, const char *label)
+>   	return ret;
+>   }
 >
-
-
-> [...]
->          devid    4 size 2.73TiB used 806.01GiB path /dev/sdh
->          devid    5 size 3.64TiB used 123.00GiB path /dev/sdp
+> -int btrfs_scan_block_devices(int run_ioctl)
+> -{
+> -
+> -	struct stat st;
+> -	int ret;
+> -	int fd;
+> -	struct btrfs_fs_devices *tmp_devices;
+> -	u64 num_devices;
+> -	FILE *proc_partitions;
+> -	int i;
+> -	char buf[1024];
+> -	char fullpath[110];
+> -	int scans = 0;
+> -	int special;
+> -
+> -scan_again:
+> -	proc_partitions = fopen("/proc/partitions","r");
+> -	if (!proc_partitions) {
+> -		fprintf(stderr, "Unable to open '/proc/partitions' for scanning\n");
+> -		return -ENOENT;
+> -	}
+> -	/* skip the header */
+> -	for (i = 0; i < 2; i++)
+> -		if (!fgets(buf, 1023, proc_partitions)) {
+> -			fprintf(stderr,
+> -				"Unable to read '/proc/partitions' for scanning\n");
+> -			fclose(proc_partitions);
+> -			return -ENOENT;
+> -		}
+> -
+> -	strcpy(fullpath,"/dev/");
+> -	while(fgets(buf, 1023, proc_partitions)) {
+> -		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
+> -
+> -		/*
+> -		 * multipath and MD devices may register as a btrfs filesystem
+> -		 * both through the original block device and through
+> -		 * the special (/dev/mapper or /dev/mdX) entry.
+> -		 * This scans the special entries last
+> -		 */
+> -		special = strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")) == 0;
+> -		if (!special)
+> -			special = strncmp(fullpath, "/dev/md", strlen("/dev/md")) == 0;
+> -
+> -		if (scans == 0 && special)
+> -			continue;
+> -		if (scans > 0 && !special)
+> -			continue;
+> -
+> -		ret = lstat(fullpath, &st);
+> -		if (ret < 0) {
+> -			fprintf(stderr, "failed to stat %s\n", fullpath);
+> -			continue;
+> -		}
+> -		if (!S_ISBLK(st.st_mode)) {
+> -			continue;
+> -		}
+> -
+> -		fd = open(fullpath, O_RDONLY);
+> -		if (fd < 0) {
+> -			if (errno != ENOMEDIUM)
+> -				fprintf(stderr, "failed to open %s: %s\n",
+> -					fullpath, strerror(errno));
+> -			continue;
+> -		}
+> -		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+> -					    &num_devices,
+> -					    BTRFS_SUPER_INFO_OFFSET, 0);
+> -		if (ret == 0 && run_ioctl > 0) {
+> -			btrfs_register_one_device(fullpath);
+> -		}
+> -		close(fd);
+> -	}
+> -
+> -	fclose(proc_partitions);
+> -
+> -	if (scans == 0) {
+> -		scans++;
+> -		goto scan_again;
+> -	}
+> -	return 0;
+> -}
+> -
+>   /*
+>    * A not-so-good version fls64. No fascinating optimization since
+>    * no one except parse_size use it
+> diff --git a/utils.h b/utils.h
+> index 1536469..e332fd1 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -100,7 +100,6 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, unsigned unit_mo
+>   	})
 >
-> parent transid verify failed on 2636556500992 wanted 2264 found 2268
-> parent transid verify failed on 2636556500992 wanted 2264 found 2268
-> parent transid verify failed on 2636556500992 wanted 2264 found 2268
-> parent transid verify failed on 2636556500992 wanted 2264 found 2268
-> Ignoring transid failure
-> extent buffer leak: start 2636556091392 len 16384
-> Btrfs v3.17
->
-> I've had a balance running that time, but "btrfs fi sh /any/btrfs/mount"
-> returned always quickly as in previous versions.
->
->    Now, with the balance paused, the stalls continue to appear, but no
-> messages as above. During the stalls, btrfs is reading the disks at rate
-> several MB/s, probably seek limited. /proc/<btrfs fi sh pid>/fd shows
-> that it scans again the devices it has already written about.
-
->    Umounted all the btrfs, checked them -- nothing wrong.
->
->    Resumed the balance -- error messages are (sometimes) back:
->
-> [...]
-> Label: 'BTR3'  uuid: 0bf93650-fd12-4f82-8086-2c7484141e97
->          Total devices 5 FS bytes used 1.63TiB
->          devid    1 size 2.73TiB used 800.00GiB path /dev/sde
->          devid    2 size 2.73TiB used 800.00GiB path /dev/sdf
->          devid    3 size 2.73TiB used 800.03GiB path /dev/sdg
->          devid    4 size 2.73TiB used 801.00GiB path /dev/sdh
->          devid    5 size 3.64TiB used 143.03GiB path /dev/sdp
->
-> Check tree block failed, want=2730665181184, have=9727841172931608576
-> Check tree block failed, want=2730665181184, have=9727841172931608576
-> Check tree block failed, want=2730665181184, have=8388343671073157408
-> Check tree block failed, want=2730665181184, have=9727841172931608576
-> Check tree block failed, want=2730665181184, have=9727841172931608576
-> read block failed check_tree_block
-> Label: 'BTR1'  uuid: 2ec4b5a1-a2c4-4687-9015-cf5b519297f3
->          Total devices 3 FS bytes used 2.47TiB
->          devid    1 size 3.64TiB used 1.79TiB path /dev/sdm
->          devid    2 size 3.64TiB used 1.79TiB path /dev/sdn
->          devid    3 size 3.64TiB used 1.79TiB path /dev/sdo
->
-> Btrfs v3.17
->
->    (or the "parent transid verify failed..." + "extent buffer leak..." as
-> in the first case as well)
->
->    Kernel version 3.18-rc1
->
->
-> Regards,
->
-> Petr
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   int get_mountpt(char *dev, char *mntpt, size_t size);
+> -int btrfs_scan_block_devices(int run_ioctl);
+>   u64 parse_size(char *s);
+>   u64 arg_strtou64(const char *str);
+>   int open_file_or_dir(const char *fname, DIR **dirstream);
 >

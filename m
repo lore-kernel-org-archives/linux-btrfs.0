@@ -1,144 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40346 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932860AbaJVLKU (ORCPT
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:39808 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932474AbaJVLWk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 07:10:20 -0400
-Message-ID: <54479095.8040803@oracle.com>
-Date: Wed, 22 Oct 2014 19:10:13 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 22 Oct 2014 07:22:40 -0400
+Received: by mail-ig0-f178.google.com with SMTP id h3so682382igd.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2014 04:22:39 -0700 (PDT)
+Message-ID: <54479379.2000502@gmail.com>
+Date: Wed, 22 Oct 2014 07:22:33 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: btrfs_scan_block_devices is unused function
- delete it
-References: <1410571282-3482-4-git-send-email-anand.jain@oracle.com> <1412640511-21840-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1412640511-21840-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Arnaud Kapp <kapp.arno@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: device balance times
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com> <5446BEC0.8070009@siedziba.pl> <5446C597.9080904@gmail.com>
+In-Reply-To: <5446C597.9080904@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms050908090104020300030402"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
+
+--------------ms050908090104020300030402
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+
+On 2014-10-21 16:44, Arnaud Kapp wrote:
+> Hello,
+>
+> I would like to ask if the balance time is related to the number of
+> snapshot or if this is related only to data (or both).
+>
+> I currently have about 4TB of data and around 5k snapshots. I'm thinkin=
+g
+> of going raid1 instead of single. From the numbers I see this seems
+> totally impossible as it would take *way* too long.
+>
+> Would destroying snapshots (those are hourly snapshots to prevent stupi=
+d
+> error to happens, like `rm my_important_file`) help?
+>
+> Should I reconsider moving to raid1 because of the time it would take?
+>
+> Sorry if I'm somehow hijacking this thread, but it seemed related :)
+>
+> Thanks,
+>
+The issue is the snapshots, because I regularly fully re-balance my home =
+
+directory on my desktop which is ~150GB on a BTRFS raid10 setup with=20
+only 3 or 4 snapshots (I only do daily snapshots, cause anything I need=20
+finer granularity on I have under git), and that takes only about 2 or 3 =
+
+hours depending on how many empty chunks I have.
+
+I would remove the snapshots, and also start keeping fewer of them (5k=20
+hourly snapshots is more than six months worth of file versions), and=20
+then run the balance.  I would also suggest converting data by itself=20
+first, and then converting metadata, as converting data chunks will=20
+require re-writing large parts of the metadata.
+> On 10/21/2014 10:14 PM, Piotr Paw=C5=82ow wrote:
+>> On 21.10.2014 20:59, Tomasz Chmielewski wrote:
+>>> FYI - after a failed disk and replacing it I've run a balance; it too=
+k
+>>> almost 3 weeks to complete, for 120 GBs of data:
+>>
+>> Looks normal to me. Last time I started a balance after adding 6th
+>> device to my FS, it took 4 days to move 25GBs of data. Some chunks too=
+k
+>> 20 hours to move. I currently have 156 snapshots on this FS (nightly
+>> rsync backups).
+>>
+>> I think it is so slow, because it's disassembling chunks piece by piec=
+e
+>> and stuffing these pieces elsewhere, instead of moving chunks as a
+>> whole. If you have a lot of little pieces (as I do), it will take a
+>> while...
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-   This is just a clean up patch which looks like you have missed
-   it in 3.17. sorry if it confused you.
 
+--------------ms050908090104020300030402
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-On 10/07/14 08:08, Anand Jain wrote:
-> After Patch:
->   remove BTRFS_SCAN_PROC scan method
-> There isn't any consumer for btrfs_scan_block_devices() so delete it.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   utils.c | 83 -----------------------------------------------------------------
->   utils.h |  1 -
->   2 files changed, 84 deletions(-)
->
-> diff --git a/utils.c b/utils.c
-> index 48d2d9a..b23f332 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1542,89 +1542,6 @@ int set_label(const char *btrfs_dev, const char *label)
->   	return ret;
->   }
->
-> -int btrfs_scan_block_devices(int run_ioctl)
-> -{
-> -
-> -	struct stat st;
-> -	int ret;
-> -	int fd;
-> -	struct btrfs_fs_devices *tmp_devices;
-> -	u64 num_devices;
-> -	FILE *proc_partitions;
-> -	int i;
-> -	char buf[1024];
-> -	char fullpath[110];
-> -	int scans = 0;
-> -	int special;
-> -
-> -scan_again:
-> -	proc_partitions = fopen("/proc/partitions","r");
-> -	if (!proc_partitions) {
-> -		fprintf(stderr, "Unable to open '/proc/partitions' for scanning\n");
-> -		return -ENOENT;
-> -	}
-> -	/* skip the header */
-> -	for (i = 0; i < 2; i++)
-> -		if (!fgets(buf, 1023, proc_partitions)) {
-> -			fprintf(stderr,
-> -				"Unable to read '/proc/partitions' for scanning\n");
-> -			fclose(proc_partitions);
-> -			return -ENOENT;
-> -		}
-> -
-> -	strcpy(fullpath,"/dev/");
-> -	while(fgets(buf, 1023, proc_partitions)) {
-> -		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
-> -
-> -		/*
-> -		 * multipath and MD devices may register as a btrfs filesystem
-> -		 * both through the original block device and through
-> -		 * the special (/dev/mapper or /dev/mdX) entry.
-> -		 * This scans the special entries last
-> -		 */
-> -		special = strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")) == 0;
-> -		if (!special)
-> -			special = strncmp(fullpath, "/dev/md", strlen("/dev/md")) == 0;
-> -
-> -		if (scans == 0 && special)
-> -			continue;
-> -		if (scans > 0 && !special)
-> -			continue;
-> -
-> -		ret = lstat(fullpath, &st);
-> -		if (ret < 0) {
-> -			fprintf(stderr, "failed to stat %s\n", fullpath);
-> -			continue;
-> -		}
-> -		if (!S_ISBLK(st.st_mode)) {
-> -			continue;
-> -		}
-> -
-> -		fd = open(fullpath, O_RDONLY);
-> -		if (fd < 0) {
-> -			if (errno != ENOMEDIUM)
-> -				fprintf(stderr, "failed to open %s: %s\n",
-> -					fullpath, strerror(errno));
-> -			continue;
-> -		}
-> -		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
-> -					    &num_devices,
-> -					    BTRFS_SUPER_INFO_OFFSET, 0);
-> -		if (ret == 0 && run_ioctl > 0) {
-> -			btrfs_register_one_device(fullpath);
-> -		}
-> -		close(fd);
-> -	}
-> -
-> -	fclose(proc_partitions);
-> -
-> -	if (scans == 0) {
-> -		scans++;
-> -		goto scan_again;
-> -	}
-> -	return 0;
-> -}
-> -
->   /*
->    * A not-so-good version fls64. No fascinating optimization since
->    * no one except parse_size use it
-> diff --git a/utils.h b/utils.h
-> index 1536469..e332fd1 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -100,7 +100,6 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, unsigned unit_mo
->   	})
->
->   int get_mountpt(char *dev, char *mntpt, size_t size);
-> -int btrfs_scan_block_devices(int run_ioctl);
->   u64 parse_size(char *s);
->   u64 arg_strtou64(const char *str);
->   int open_file_or_dir(const char *fname, DIR **dirstream);
->
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDIyMTEyMjMz
+WjAjBgkqhkiG9w0BCQQxFgQUtE/vVy/nCeDRfm9aApISQWW7bFwwbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAgu6Aw8cnQNLq/5qVnoKrrecJ5Htn
+h8qsdkHdtqlEn4SJHUHuNbM8ilzBamRZb286dF1a82Ck/fdAe9Ag8GlhOMFy+2LwnGKY3k6K
+bX1aJ0AA44o2r6SU7xqmG99Qm9JzNyntY3kD0/WKewCXF+6w5s6zmmvtWOSEdDs68WrD3WYE
+afR0gAQssqPa2XPsV92sfcuz0eR6Z1gAfgNDSY2Zvc0rzLKuIVPt2L9FlFd09zyz4GEGKwff
+A+5ocKycVXdDiiYgPUUBWOGMNiB6DtuyxKtKqV/vUfdVPvsjHlmHvl9PVW/uP8fMoFXU1CGU
+BMhXVyJd7y2z5XREsR39y3SAkAAAAAAAAA==
+--------------ms050908090104020300030402--

@@ -1,117 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48892 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753462AbaJVCIf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 22:08:35 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XglLl-0000SH-Ee
-	for linux-btrfs@vger.kernel.org; Wed, 22 Oct 2014 04:08:33 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2014 04:08:33 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Oct 2014 04:08:33 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Date: Wed, 22 Oct 2014 02:08:21 +0000 (UTC)
-Message-ID: <pan$19856$ee791297$ceeef1ce$27ae8dc@cox.net>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz>
-	<pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-	<CAGfcS_nTbXQQTOC+QcBX8dbwk18Qbf-+JonQSw4WP6MOFg2z7A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34573 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750714AbaJVECz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Oct 2014 00:02:55 -0400
+Date: Wed, 22 Oct 2014 00:02:53 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Robert White <rwhite@pobox.com>
+Cc: Arnaud Kapp <kapp.arno@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 5 _thousand_ snapshots? even 160? (was: device balance times)
+Message-ID: <20141022040253.GD29401@hungrycats.org>
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
+ <5446BEC0.8070009@siedziba.pl>
+ <5446C597.9080904@gmail.com>
+ <54470403.8020904@pobox.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="qGV0fN9tzfkG3CxV"
+In-Reply-To: <54470403.8020904@pobox.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Freeman posted on Tue, 21 Oct 2014 12:40:01 -0400 as excerpted:
 
-> On Tue, Oct 21, 2014 at 5:29 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->> David Sterba posted on Mon, 20 Oct 2014 18:34:03 +0200 as excerpted:
->>
->>> On Thu, Oct 16, 2014 at 01:33:37PM +0200, David Sterba wrote:
->>>> I'd like to make it default with the 3.17 release of btrfs-progs.
->>>> Please let me know if you have objections.
->>>
->>> For the record, 3.17 will not change the defaults. The timing of the
->>> poll was very bad to get enough feedback before the release. Let's
->>> keep it open for now.
->>
->> FWIW my own results agree with yours, I've had no problem with skinny-
->> metadata here, and it has been my default now for a couple
->> backup-and-new-
->> mkfs.btrfs generations, now.
->>
->>
-> How does one enable it for an existing filesystem?  Is it safe to just
-> run btrfstune -x?  Can this be done on a mounted filesystem?  Are there
-> any risks with converting?
+--qGV0fN9tzfkG3CxV
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-AFAIK, enabling skinny-metadata with btrfstune simply enables it for 
-future metadata commits.  It doesn't change existing metadata.  However, 
-with skinny-metadata enabled, doing a balance start -m will rewrite 
-existing metadata, thus converting it to skinny if it wasn't skinny 
-before.
+On Tue, Oct 21, 2014 at 06:10:27PM -0700, Robert White wrote:
+> That's an unmanageably large and probably pointless number of
+> snapshots guys.
+>=20
+> I mean 150 is a heck of a lot, and 5000 is almost unfathomable in
+> terms of possible usefulness.
+>=20
+> Snapshots are cheap but they aren't free.
 
-Since the kernel has code for both "fat" metadata and skinny-metadata, 
-they can exist side-by-side and the kernel will use whichever code is 
-appropriate.  And since (afaik) a balance effects conversion of existing 
-metadata by simply rewriting it using the same metadata writing paths 
-it'd normally use only now on the skinny-metadata side, there should be 
-no additional risk to that, either.
+This could be better documented.  Most of the documentation about btrfs
+snapshots frankly just says how to make them and how awesome they are.
+In small-scale tests they seem cheap--a little more expensive than
+mkdir--but on larger scales they can become nightmares.
 
-The narrow-case additional risk there is would be due to the fact that 
-the code paths are different, and while both paths have been well 
-exercised by now with no bugs related to those specific code paths in 
-awhile, in theory anyway, it's narrowly possible that an individual 
-installation's use-case and data happened to work just fine on the 
-available metadata, but will trigger some exotic and as yet unseen bug 
-when you switch to skinny-metadata and thus exercise the other code-
-path.  I'd call the risk of that nonzero but extremely unlikely.  
+Things I learned the hard way about ~200 snapshots on a half-TB
+filesystem:
 
-IOW, if you're familiar with Douglas Adams' Hitchhiker's Guide series, 
-it's almost the kind of probability that you'd need an improbability 
-drive to hit. =:^)  
+btrfs balance cancel/pause take a long time.  Like 24+ hours.  Not the
+entire balance operation--just one block group.  Reboot and mount with
+skip_balance is a crude but effective way out.
 
-If not, compare it to winning the lottery or getting struck by 
-lightening, yes, people do sometimes do it, but it's not something you 
-should plan your life around, particularly if you aren't in the habit of 
-playing golf and sticking a club in the air, in the middle of a lightning 
-storm! =:^)
+Making new snapshots is cheap.  Deleting them is not.  btrfs-cleaner
+will systematically disassemble each snapshot, sequentially, one extent
+(or some similarly tiny fragment) at a time, for more than a week.
+fsync() will take several seconds on that filesystem for the entire
+time btrfs-cleaner is running.  There is no way to pause or stop the
+btrfs-cleaner kernel thread and as far as I can tell it's more or less
+immune to attempts to limit the amount of I/O bandwidth it demands with
+cgroup blkio.weight or ionice.  Rebooting won't even stop it--it will
+just resume the next time the filesystem is mounted.  mkfs and restore
+the filesystem from a backup of the original subvolume--it's an order
+of magnitude faster even with rsync.
 
-And if you're adverse to that sort of odds, why are you playing with 
-still not entirely stable btrfs at this point, anyway?
+2 or 3 are good numbers for snapshots.  0 or 1 are even better.
 
-As for the mounted filesystem question, since all it does is flip a 
-switch so that new metadata writes use the skinny-metadata code path, it 
-shouldn't be a problem.  However, I'd probably do it on an unmounted 
-filesystem here, simply because there's no reason to tempt fate... unless 
-your goal is to see what happens, of course. =:^)
+--qGV0fN9tzfkG3CxV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Matter of fact, personally, since I tend to periodically backup, do a 
-fresh mkfs.btrfs with the new features I want enabled, and restore, I've 
-never actually used btrfstune for this myself, either.  But that's more a 
-matter of that being the most convenient time to switch it over since I'm 
-already doing the fresh mkfs anyway, than because I'm being overly 
-cautious.  Still, for those with a similar btrfs rotation system already 
-in place, why tempt fate, unless of course your whole /object/ is a 
-deliberate test and tempt of fate?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-BTW...
+iEYEARECAAYFAlRHLG0ACgkQgfmLGlazG5xyZwCglMR69kgGjUgP10o+ehSetoZy
+DMQAoMYD/LZACpapl/YF4kVrtnGrpOCO
+=k6kl
+-----END PGP SIGNATURE-----
 
-@ Dave Sterba: I'm running no-holes too, and haven't had problems with it 
-either, tho it's obviously a bit newer and doesn't yet have the degree of 
-testing that skinny-metadata has.  Any idea when that'll go default?  
-It's probably best to stagger them, which probably means default no-holes 
-for the 3.19 userspace release since default skinny-metadata is 
-presumably going to be 3.18 now; does that sound about right?
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--qGV0fN9tzfkG3CxV--

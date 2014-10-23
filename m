@@ -1,134 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64856 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60079 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754497AbaJWIxf (ORCPT
+	with ESMTP id S1752057AbaJWJRs convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 04:53:35 -0400
-Message-ID: <1414054345.12350.6.camel@localhost.localdomain>
-Subject: Re: Btrfs-progs release 3.17
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: <dsterba@suse.cz>, Petr Janecek <janecek@ucw.cz>,
-        <linux-btrfs@vger.kernel.org>
-Date: Thu, 23 Oct 2014 16:52:25 +0800
-In-Reply-To: <5448B8A5.2010202@oracle.com>
-References: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz>
-	 <54476F88.4040509@oracle.com>
-	 <20141023065709.GA11511@atrey.karlin.mff.cuni.cz>
-	 <5448B8A5.2010202@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+	Thu, 23 Oct 2014 05:17:48 -0400
+Message-ID: <5448C81E.4060701@cn.fujitsu.com>
+Date: Thu, 23 Oct 2014 17:19:26 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
+To: =?UTF-8?B?UGlvdHIgUGF3xYJvdw==?= <pp@siedziba.pl>,
+        Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: device balance times
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com> <5446BEC0.8070009@siedziba.pl> <02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com> <5447A5CF.9060405@siedziba.pl>
+In-Reply-To: <5447A5CF.9060405@siedziba.pl>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-10-23 at 16:13 +0800, Anand Jain wrote:
+On Wed, 22 Oct 2014 14:40:47 +0200, Piotr Pawłow wrote:
+> On 22.10.2014 03:43, Chris Murphy wrote:
+>> On Oct 21, 2014, at 4:14 PM, Piotr Pawłow<pp@siedziba.pl>  wrote:
+>>> Looks normal to me. Last time I started a balance after adding 6th device to my FS, it took 4 days to move 25GBs of data.
+>> It's long term untenable. At some point it must be fixed. It's way, way slower than md raid.
+>> At a certain point it needs to fallback to block level copying, with a ~ 32KB block. It can't be treating things as if they're 1K files, doing file level copying that takes forever. It's just too risky that another device fails in the meantime.
 > 
-> Some of the disks on my system were missing and I was able to hit
-> this issue.
-> 
-> 
-> ----------------
-> Check tree block failed, want=12582912, have=0
-> read block failed check_tree_block
-> Couldn't read chunk root
-> warning devid 2 not found already
-> Check tree block failed, want=143360, have=0
-> read block failed check_tree_block
-> Couldn't read chunk root
-> warning, device 4 is missing
-> warning, device 3 is missing
-> warning, device 2 is missing
-> warning, device 1 is missing
-> ----------------
-> 
-> 
-> Did a bisect and it leads to this following patch.
-> 
-> ----------------
-> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
-> 
->      btrfs-progs: fix device missing of btrfs fi show with seed devices
-> ----------------
-> 
->   Also this patch stalls ~2sec in the cmd btrfs fi show, on my system
->   with 48 disks.
-> 
-> Also a simple test case hits some warnings...
-> 
-> ----------------
->   mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
->   mount /dev/sdb /btrfs && fillfs /btrfs 100 && umount /btrfs
->   wipefs -a /dev/sdb
->   modprobe -r btrfs && modprobe btrfs
->   mount -o degraded /dev/sdb /btrfs
->   btrfs fi show
-> Label: none  uuid: 9844cd05-1c8c-473e-a84b-bac95aab7bc9
->          Total devices 2 FS bytes used 1.59MiB
->          devid    2 size 967.87MiB used 104.75MiB path /dev/sdc
->          *** Some devices missing
-> 
-> warning, device 1 is missing
-> warning, device 1 is missing
-> warning devid 1 not found already
-> ----------------
-> 
+> There's "device replace" for restoring redundancy, which is fast, but not implemented yet for RAID5/6.
 
-Hi Anand and Petr,
+Now my colleague and I is implementing the scrub/replace for RAID5/6
+and I have a plan to reimplement the balance and split it off from the metadata/file data process. the main idea is
+- allocate a new chunk which has the same size as the relocated one, but don't insert it into the block group list, so we don't
+  allocate the free space from it.
+- set the source chunk to be Read-only
+- copy the data from the source chunk to the new chunk
+- replace the extent map of the source chunk with the one of the new chunk(The new chunk has
+  the same logical address and the length as the old one)
+- release the source chunk
 
-Oh, it seems that there are btrfs with missing devs that are bringing
-troubles to the @open_ctree_... function.
-This should be a missing case of the patch above which should only take
-effects when seeding devices are present.
-I will try my best to follow this case, suggestions are welcome, Thanks!
+By this way, we needn't deal the data one extent by one extent, and needn't do any space reservation,
+so the speed will be very fast even we have lots of snapshots.
 
--Gui
+Thanks
+Miao
 
 > 
+> I think the problem is that balance was originally used for balancing data / metadata split - moving stuff out of mostly empty chunks to free them and use for something else. It pretty much has to be done on the extent level.
 > 
+> Then balance was repurposed for things like converting RAID profiles and restoring redundancy and balancing device usage in multi-device configurations. It works, but the approach to do it extent by extent is slow.
 > 
-> On 10/23/14 14:57, Petr Janecek wrote:
-> > Hello,
-> >
-> >>   You have mentioned two issues when balance and fi show running
-> >>   concurrently
-> >
-> >    my mail was a bit chaotic, but I get the stalls even on idle system.
-> > Today I got
-> >
-> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> > Ignoring transid failure
-> > leaf parent key incorrect 1559973888000
-> >
-> > from 'btrfs fi sh' while I was just copying something, no balance running.
-> >
-> > [...]
-> >> [PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use
-> >> btrfs_register_one_device()
-> >> [PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
-> >> [PATCH 2/2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
-> >>
-> >> If you could, pls..
-> >>   Now on 3.17 apply above 3 patches and see if you see any better
-> >>   performance for the stalling issue.
-> >
-> >    no perceptible change: takes ~40 seconds both before and after
-> > applying. Old version <1 sec.
-> >
-> >>   can you do same steps on 3.16 and report what you observe
-> >
-> >    So many rejects -- do you have older versions of these patches?
-> >
-> >
-> > Thanks,
-> >
-> > Petr
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-
+> I wonder if we could do some of these operations by just copying whole chunks in bulk. Wasn't that the point of introducing logical addresses? - to be able to move chunks around quickly without changing anything except updating chunk pointers?
+> 
+> BTW: I'd love a simple interface to be able to select a chunk and tell it to move somewhere else. I'd like to tell chunks with metadata, or with tons of extents: Hey, chunks! Why don't you move to my SSDs? :)
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

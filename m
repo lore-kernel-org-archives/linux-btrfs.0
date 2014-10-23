@@ -1,48 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60909 "EHLO mx2.suse.de"
+Received: from rin.romanrm.net ([37.187.97.211]:59760 "EHLO rin.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752970AbaJWNh5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 09:37:57 -0400
-Date: Thu, 23 Oct 2014 15:37:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Message-ID: <20141023133755.GD22943@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20141016113337.GC22943@twin.jikos.cz>
- <20141020163403.GW22943@twin.jikos.cz>
- <pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
- <CAGfcS_nTbXQQTOC+QcBX8dbwk18Qbf-+JonQSw4WP6MOFg2z7A@mail.gmail.com>
- <pan$19856$ee791297$ceeef1ce$27ae8dc@cox.net>
- <CAAVQaYA9UWbF3ROXRRmcbKX9U7dwrT19Rc3NSX2vuzfVr3oXVA@mail.gmail.com>
- <pan$319b5$6b7e279$b22089f8$74c1c033@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$319b5$6b7e279$b22089f8$74c1c033@cox.net>
+	id S932178AbaJWOYP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Oct 2014 10:24:15 -0400
+Received: from natsu (unknown [IPv6:fd39::a60:6eff:fef3:b5b3])
+	by rin.romanrm.net (Postfix) with SMTP id 6A1AA6515A
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 14:24:12 +0000 (UTC)
+Date: Thu, 23 Oct 2014 20:24:11 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: linux-btrfs@vger.kernel.org
+Subject: "Transaction commit" in btrfs sub del
+Message-ID: <20141023202411.701bd1f3@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 23, 2014 at 02:41:47AM +0000, Duncan wrote:
-> Dave posted on Wed, 22 Oct 2014 08:49:46 -0400 as excerpted:
-> 
-> > On Tue, Oct 21, 2014 at 10:08 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> >> As for the mounted filesystem question, since all it does is flip a
-> >> switch so that new metadata writes use the skinny-metadata code path,
-> >> it shouldn't be a problem.
-> > 
-> > Nope.  Just tried it here:
-> > 
-> > # btrfs --version Btrfs v3.16.1-42-g140eccb
-> > 
-> > # btrfstune -x /dev/dm-0 /dev/dm-0 is mounted
-> 
-> Thanks.
-> 
-> So btrfstune refuses to set the skinny-metadata flag at all on mounted 
-> devices.  Nicely reduces risk, /and/ answers the question. =:^)
+Hello,
 
-btrfstune requires an unmounted device. The on-line change to features
-is done via the sysfs interface, eg /sys/fs/btrfs/<UUID>/features, then
-echo 1 > featurename. Right now only the extended refs (aka hardlink
-limit) can be turned on.
+I was under impression that the "Transaction commit:" setting in 'btrfs sub
+del' finally allows us to make it not return until all free space from the
+snapshots that are being deleted, is completely freed up.
+
+However that does not seem to be the case at all, deleting 14 snapshots with a
+heavy write-load occuring at the same time (Btrfs v3.14.1, kernel 3.14.22),
+with "Transaction commit: at the end", the 'btrfs' utility exited, and I still
+observe no change in free space numbers. It got finally freed only a couple of
+minutes later, i.e. as it usually would, without any commit options.
+
+So what is the purpose of these options, if they do not seem to have an effect?
+
+-- 
+With respect,
+Roman

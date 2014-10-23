@@ -1,69 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43661 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752010AbaJWHkD (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:17401 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932090AbaJWINl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 03:40:03 -0400
-In-Reply-To: <5447E273.3030901@shiftmail.org>
-References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com> <5446BEC0.8070009@siedziba.pl> <02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com> <5447A5CF.9060405@siedziba.pl> <5447E273.3030901@shiftmail.org>
+	Thu, 23 Oct 2014 04:13:41 -0400
+Message-ID: <5448B8A5.2010202@oracle.com>
+Date: Thu, 23 Oct 2014 16:13:25 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: device balance times
-From: Russell Coker <russell@coker.com.au>
-Date: Thu, 23 Oct 2014 18:39:52 +1100
-To: Bob Marley <bobmarley@shiftmail.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <4720D6B0-A157-4B68-8472-85176B9949A8@coker.com.au>
+To: dsterba@suse.cz, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+CC: Petr Janecek <janecek@ucw.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs-progs release 3.17
+References: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz> <54476F88.4040509@oracle.com> <20141023065709.GA11511@atrey.karlin.mff.cuni.cz>
+In-Reply-To: <20141023065709.GA11511@atrey.karlin.mff.cuni.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also a device replace operation requires that the replacement be the same size (or maybe larger). While a remove and replace allows the replacement to be merely large enough to contain all the data. Given the size variation in what might be called the same size disk by manufcturers this isn't uncommon - unless you just get a replacement of the next size up (which is a good option too).
 
-On October 23, 2014 3:59:31 AM GMT+11:00, Bob Marley <bobmarley@shiftmail.org> wrote:
->On 22/10/2014 14:40, Piotr Pawłow wrote:
->> On 22.10.2014 03:43, Chris Murphy wrote:
->>> On Oct 21, 2014, at 4:14 PM, Piotr Pawłow<pp@siedziba.pl>  wrote:
->>>> Looks normal to me. Last time I started a balance after adding 6th 
->>>> device to my FS, it took 4 days to move 25GBs of data.
->>> It's long term untenable. At some point it must be fixed. It's way, 
->>> way slower than md raid.
->>> At a certain point it needs to fallback to block level copying, with
+
+Some of the disks on my system were missing and I was able to hit
+this issue.
+
+
+----------------
+Check tree block failed, want=12582912, have=0
+read block failed check_tree_block
+Couldn't read chunk root
+warning devid 2 not found already
+Check tree block failed, want=143360, have=0
+read block failed check_tree_block
+Couldn't read chunk root
+warning, device 4 is missing
+warning, device 3 is missing
+warning, device 2 is missing
+warning, device 1 is missing
+----------------
+
+
+Did a bisect and it leads to this following patch.
+
+----------------
+commit 915902c5002485fb13d27c4b699a73fb66cc0f09
+
+     btrfs-progs: fix device missing of btrfs fi show with seed devices
+----------------
+
+  Also this patch stalls ~2sec in the cmd btrfs fi show, on my system
+  with 48 disks.
+
+Also a simple test case hits some warnings...
+
+----------------
+  mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
+  mount /dev/sdb /btrfs && fillfs /btrfs 100 && umount /btrfs
+  wipefs -a /dev/sdb
+  modprobe -r btrfs && modprobe btrfs
+  mount -o degraded /dev/sdb /btrfs
+  btrfs fi show
+Label: none  uuid: 9844cd05-1c8c-473e-a84b-bac95aab7bc9
+         Total devices 2 FS bytes used 1.59MiB
+         devid    2 size 967.87MiB used 104.75MiB path /dev/sdc
+         *** Some devices missing
+
+warning, device 1 is missing
+warning, device 1 is missing
+warning devid 1 not found already
+----------------
+
+
+
+
+
+On 10/23/14 14:57, Petr Janecek wrote:
+> Hello,
 >
->>> a ~ 32KB block. It can't be treating things as if they're 1K files, 
->>> doing file level copying that takes forever. It's just too risky
->that 
->>> another device fails in the meantime.
+>>   You have mentioned two issues when balance and fi show running
+>>   concurrently
+>
+>    my mail was a bit chaotic, but I get the stalls even on idle system.
+> Today I got
+>
+> parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> Ignoring transid failure
+> leaf parent key incorrect 1559973888000
+>
+> from 'btrfs fi sh' while I was just copying something, no balance running.
+>
+> [...]
+>> [PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use
+>> btrfs_register_one_device()
+>> [PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
+>> [PATCH 2/2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
 >>
->> There's "device replace" for restoring redundancy, which is fast, but
+>> If you could, pls..
+>>   Now on 3.17 apply above 3 patches and see if you see any better
+>>   performance for the stalling issue.
 >
->> not implemented yet for RAID5/6.
+>    no perceptible change: takes ~40 seconds both before and after
+> applying. Old version <1 sec.
 >
->"Device replace" on raid 0,1,10 works if the device to be replaced is 
->still alive, otherwise the operation is as long as a rebalance and
->works 
->similarly (AFAIR).
->Which is way too long in terms of the likelihood of another disk
->failing.
->Additionally, it seeks like crazy during the operation, which also 
->greatly increases the likelihood of another disk failing.
+>>   can you do same steps on 3.16 and report what you observe
 >
->Until this is fixed I am not confident in using btrfs on a production 
->system which requires RAID redundancy.
->
->The operation needs to be streamlined: it should be as sequential as 
->possible (sort files according to their LBA before reading/writing), 
->with the fewest number of seeks on every disk, and with large buffers, 
->so that reads from the source disk(s) and writes to the replacement
->disk 
->goes at platter-speed or near there.
+>    So many rejects -- do you have older versions of these patches?
 >
 >
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
--- 
-Sent from my Samsung Galaxy Note 3 with K-9 Mail.
+> Thanks,
+>
+> Petr
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,82 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:54608 "EHLO
-	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932328AbaJVUhT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 16:37:19 -0400
-Message-ID: <5448157B.8030102@pobox.com>
-Date: Wed, 22 Oct 2014 13:37:15 -0700
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Zygo Blaxell <zblaxell@furryterror.org>, Duncan <1i5t5.duncan@cox.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: 5 _thousand_ snapshots? even 160? (was: device balance times)
-References: <9cf38edae6c01b900d4ea0068d2dcfdd@admin.virtall.com> <pan$66073$b8603a2$c915bfb9$cd573e99@cox.net> <20141022200812.GA17395@hungrycats.org>
-In-Reply-To: <20141022200812.GA17395@hungrycats.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:58384 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932381AbaJWCmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Oct 2014 22:42:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xh8Lf-0008S4-77
+	for linux-btrfs@vger.kernel.org; Thu, 23 Oct 2014 04:41:59 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 04:41:59 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 04:41:59 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Poll: time to switch skinny-metadata on by default?
+Date: Thu, 23 Oct 2014 02:41:47 +0000 (UTC)
+Message-ID: <pan$319b5$6b7e279$b22089f8$74c1c033@cox.net>
+References: <20141016113337.GC22943@twin.jikos.cz>
+	<20141020163403.GW22943@twin.jikos.cz>
+	<pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
+	<CAGfcS_nTbXQQTOC+QcBX8dbwk18Qbf-+JonQSw4WP6MOFg2z7A@mail.gmail.com>
+	<pan$19856$ee791297$ceeef1ce$27ae8dc@cox.net>
+	<CAAVQaYA9UWbF3ROXRRmcbKX9U7dwrT19Rc3NSX2vuzfVr3oXVA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/22/2014 01:08 PM, Zygo Blaxell wrote:
-> I have datasets where I record 14000+ snapshots of filesystem directory
-> trees scraped from test machines and aggregated onto a single server
-> for deduplication...but I store each snapshot as a git commit, not as
-> a btrfs snapshot or even subvolume.
->
-> We do sometimes run queries like "in the last two years, how many times
-> did $CONDITION occur?" which will scan a handful files in all of the
-> snapshots.  The use case itself isn't unreasonable, although using the
-> filesystem instead of a more domain-specific tool to achieve it may be.
->
+Dave posted on Wed, 22 Oct 2014 08:49:46 -0400 as excerpted:
 
-Okay, sure. And as stated by others, there _are_ use cases that are 
-exceptional.
+> On Tue, Oct 21, 2014 at 10:08 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> As for the mounted filesystem question, since all it does is flip a
+>> switch so that new metadata writes use the skinny-metadata code path,
+>> it shouldn't be a problem.
+> 
+> Nope.  Just tried it here:
+> 
+> # btrfs --version Btrfs v3.16.1-42-g140eccb
+> 
+> # btrfstune -x /dev/dm-0 /dev/dm-0 is mounted
 
-But such an archival system most likely does not _need_ to be balanced 
-etc with any frequency, or likely ever because it isn't experiencing 
-churn from dynamic use.
+Thanks.
 
-In the world of trade-offs, trade-offs happen.
+So btrfstune refuses to set the skinny-metadata flag at all on mounted 
+devices.  Nicely reduces risk, /and/ answers the question. =:^)
 
-The guy who cited the 5000 snapshots said they were hourly and taken 
-because he might remove an important file or something. This is _way_ 
-more action than the feared condition.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-ASIDE: While fixing someone's document archive RAID device (a Sun 
-hardware device the size of a fridge) back in 1997 or so I discovered 
-that they'd disabled _all_ the hardware cache features. When asked I was 
-told that "the procedure for replacing a failed drive required the cache 
-device to be cleared by pressing the red button" and they were afraid 
-that, should that day come, someone would forget to press that button... 
-so they'd turned off the feature entirely. This is a form of 
-unreasonable paranoia. They were afraid that someone in the future would 
-not follow the directions would be printed on both the machine and the 
-new drive (these were _not_ commodity parts).
-
-When an over-abundance of caution passes beyond reasonable expectations, 
-performance will suffer. The system is immaterial, the rule holds.
-
-What's worse is it becomes very like "security theater" only its "a 
-backup show" where no actual backing up is really happening in any 
-useful sense. And god save you picking which version of a file was the 
-last "good one".
-
-So in your use case, your git repository of snapshots isn't actually 
-"live" on the production server you are archiving, right?
-
-So too, it would be reasonable to btrfs send periodic snapshots to an 
-archive system, retain lots and lots of them, and expect reasonable 
-performance of your queries.
-
-And you cold expect reasonable performance in your maintenance.
-
-But "reasonable performance" in the maintenance case is massively 
-different than reasonable performance in use cases. Indeed if you try to 
-balance multiple terabytes of data spread across thousands of snapshots 
-you'll be taking a lot of time. A _perfectly_ _reasonable_ lot of time 
-for the operation at hand.
-
-But if you expect to be able to do maintenance (like btrfsck your 
-production box with its 5k snapshots) in just a few minutes when you've 
-got logarithmic-rate meta data to shuffle through... well good luck with 
-that.

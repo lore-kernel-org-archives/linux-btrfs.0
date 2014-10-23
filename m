@@ -1,57 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45722 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752651AbaJWItX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 04:49:23 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XhE5C-0005pI-4L
-	for linux-btrfs@vger.kernel.org; Thu, 23 Oct 2014 10:49:22 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 10:49:22 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 10:49:22 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: device balance times
-Date: Thu, 23 Oct 2014 08:49:11 +0000 (UTC)
-Message-ID: <pan$dd83c$71fcc8de$b8588506$48afd8db@cox.net>
-References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
-	<5446BEC0.8070009@siedziba.pl>
-	<02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com>
-	<5447A5CF.9060405@siedziba.pl> <5447E273.3030901@shiftmail.org>
-	<4720D6B0-A157-4B68-8472-85176B9949A8@coker.com.au>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:64856 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754497AbaJWIxf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Oct 2014 04:53:35 -0400
+Message-ID: <1414054345.12350.6.camel@localhost.localdomain>
+Subject: Re: Btrfs-progs release 3.17
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+CC: <dsterba@suse.cz>, Petr Janecek <janecek@ucw.cz>,
+        <linux-btrfs@vger.kernel.org>
+Date: Thu, 23 Oct 2014 16:52:25 +0800
+In-Reply-To: <5448B8A5.2010202@oracle.com>
+References: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz>
+	 <54476F88.4040509@oracle.com>
+	 <20141023065709.GA11511@atrey.karlin.mff.cuni.cz>
+	 <5448B8A5.2010202@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Russell Coker posted on Thu, 23 Oct 2014 18:39:52 +1100 as excerpted:
+On Thu, 2014-10-23 at 16:13 +0800, Anand Jain wrote:
+> 
+> Some of the disks on my system were missing and I was able to hit
+> this issue.
+> 
+> 
+> ----------------
+> Check tree block failed, want=12582912, have=0
+> read block failed check_tree_block
+> Couldn't read chunk root
+> warning devid 2 not found already
+> Check tree block failed, want=143360, have=0
+> read block failed check_tree_block
+> Couldn't read chunk root
+> warning, device 4 is missing
+> warning, device 3 is missing
+> warning, device 2 is missing
+> warning, device 1 is missing
+> ----------------
+> 
+> 
+> Did a bisect and it leads to this following patch.
+> 
+> ----------------
+> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
+> 
+>      btrfs-progs: fix device missing of btrfs fi show with seed devices
+> ----------------
+> 
+>   Also this patch stalls ~2sec in the cmd btrfs fi show, on my system
+>   with 48 disks.
+> 
+> Also a simple test case hits some warnings...
+> 
+> ----------------
+>   mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
+>   mount /dev/sdb /btrfs && fillfs /btrfs 100 && umount /btrfs
+>   wipefs -a /dev/sdb
+>   modprobe -r btrfs && modprobe btrfs
+>   mount -o degraded /dev/sdb /btrfs
+>   btrfs fi show
+> Label: none  uuid: 9844cd05-1c8c-473e-a84b-bac95aab7bc9
+>          Total devices 2 FS bytes used 1.59MiB
+>          devid    2 size 967.87MiB used 104.75MiB path /dev/sdc
+>          *** Some devices missing
+> 
+> warning, device 1 is missing
+> warning, device 1 is missing
+> warning devid 1 not found already
+> ----------------
+> 
 
-> Also a device replace operation requires that the replacement be the
-> same size (or maybe larger). While a remove and replace allows the
-> replacement to be merely large enough to contain all the data. Given the
-> size variation in what might be called the same size disk by
-> manufcturers this isn't uncommon - unless you just get a replacement of
-> the next size up (which is a good option too).
+Hi Anand and Petr,
 
-Good argument for using user-configured partitions, even if you just use 
-one covering most of the physical device, instead of manufacturer's 
-rather arbitrarily convenience-chosen raw physical device sizes.
+Oh, it seems that there are btrfs with missing devs that are bringing
+troubles to the @open_ctree_... function.
+This should be a missing case of the patch above which should only take
+effects when seeding devices are present.
+I will try my best to follow this case, suggestions are welcome, Thanks!
 
-In such a scenario if you deliberately undersize that single partition by 
-a few gigs, you can be reasonably sure that any physical device of the 
-same claimed size as the original physical device can handle it.
+-Gui
 
-Plus that reserves room for GPT and dedicated EFI and/or reserved-BIOS 
-partitions too, since the BIOS partition might be a couple MiB and the 
-EFI partition a couple hundred MiB, well under a gig combined.  =:^)
+> 
+> 
+> 
+> On 10/23/14 14:57, Petr Janecek wrote:
+> > Hello,
+> >
+> >>   You have mentioned two issues when balance and fi show running
+> >>   concurrently
+> >
+> >    my mail was a bit chaotic, but I get the stalls even on idle system.
+> > Today I got
+> >
+> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> > parent transid verify failed on 1559973888000 wanted 1819 found 1821
+> > Ignoring transid failure
+> > leaf parent key incorrect 1559973888000
+> >
+> > from 'btrfs fi sh' while I was just copying something, no balance running.
+> >
+> > [...]
+> >> [PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use
+> >> btrfs_register_one_device()
+> >> [PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
+> >> [PATCH 2/2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
+> >>
+> >> If you could, pls..
+> >>   Now on 3.17 apply above 3 patches and see if you see any better
+> >>   performance for the stalling issue.
+> >
+> >    no perceptible change: takes ~40 seconds both before and after
+> > applying. Old version <1 sec.
+> >
+> >>   can you do same steps on 3.16 and report what you observe
+> >
+> >    So many rejects -- do you have older versions of these patches?
+> >
+> >
+> > Thanks,
+> >
+> > Petr
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

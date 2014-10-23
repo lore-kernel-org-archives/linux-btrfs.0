@@ -1,70 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:49304 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750850AbaJWBWp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Oct 2014 21:22:45 -0400
-Date: Wed, 22 Oct 2014 21:22:36 -0400
-From: Dave Jones <davej@redhat.com>
-To: Linux Kernel <linux-kernel@vger.kernel.org>, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs: WARN_ON(data_sinfo->bytes_may_use < bytes);
-Message-ID: <20141023012236.GA28429@redhat.com>
-References: <20141023010731.GA27796@redhat.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:33194 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753250AbaJWCiD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Oct 2014 22:38:03 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s9N2bq23027619
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 10:37:52 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to reduce ENOSPC caused by unbalanced data/metadata allocation.
+Date: Thu, 23 Oct 2014 10:37:51 +0800
+Message-ID: <1414031871-10859-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141023010731.GA27796@redhat.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 22, 2014 at 09:07:31PM -0400, Dave Jones wrote:
- > Just hit this while running trinity.
- > 
- > WARNING: CPU: 3 PID: 9612 at fs/btrfs/extent-tree.c:3799 btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]()
- > Modules linked in: rfcomm hidp bnep af_key llc2 scsi_transport_iscsi nfnetlink sctp libcrc32c can_raw can_bcm nfc caif_socket caif af_802154 ieee802154 phonet af_rxrpc bluetooth can pppoe pppox ppp_generic slhc irda crc_ccitt rds rose x25 atm netrom appletalk ipx p8023 psnap p8022 llc ax25 cfg80211 rfkill btrfs xor coretemp hwmon x86_pkg_temp_thermal kvm_intel snd_hda_codec_realtek snd_hda_codec_hdmi snd_hda_codec_generic kvm crct10dif_pclmul crc32c_intel ghash_clmulni_intel raid6_pq snd_hda_intel microcode snd_hda_controller pcspkr snd_hda_codec serio_raw snd_hwdep snd_seq snd_seq_device usb_debug snd_pcm e1000e ptp shpchp pps_core snd_timer snd soundcore
- > CPU: 3 PID: 9612 Comm: trinity-c85 Not tainted 3.18.0-rc1+ #74
- >  0000000000000009 000000009989d5b8 ffff88018a337ba8 ffffffffaf86cc97
- >  0000000000000000 0000000000000000 ffff88018a337be8 ffffffffaf07f301
- >  ffff88022ddf8d40 ffff88023f799148 000000007fbbf000 ffff88009c2b59c8
- > Call Trace:
- >  [<ffffffffaf86cc97>] dump_stack+0x4f/0x7c
- >  [<ffffffffaf07f301>] warn_slowpath_common+0x81/0xa0
- >  [<ffffffffaf07f41a>] warn_slowpath_null+0x1a/0x20
- >  [<ffffffffc045b831>] btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]
- >  [<ffffffffc045d0b2>] btrfs_delalloc_release_space+0x22/0x30 [btrfs]
- >  [<ffffffffc047994b>] btrfs_direct_IO+0x33b/0x350 [btrfs]
- >  [<ffffffffc0487400>] ? btrfs_page_exists_in_range+0x2c0/0x2c0 [btrfs]
- >  [<ffffffffc047b2b0>] ? btrfs_real_readdir+0x5e0/0x5e0 [btrfs]
- >  [<ffffffffaf1adbb4>] generic_file_direct_write+0xc4/0x1a0
- >  [<ffffffffc048b246>] btrfs_file_write_iter+0x186/0x560 [btrfs]
- >  [<ffffffffaf22abde>] new_sync_write+0x8e/0xd0
- >  [<ffffffffaf22b5ca>] vfs_write+0xba/0x1f0
- >  [<ffffffffaf24fbce>] ? __fget_light+0xbe/0xe0
- >  [<ffffffffaf22c2d2>] SyS_pwrite64+0x92/0xc0
- >  [<ffffffffaf877d49>] tracesys_phase2+0xd4/0xd9
+When btrfs allocate a chunk, it will try to alloc up to 1G for data and
+256M for metadata, or 10% of all the writeable space if there is enough
+space for the stripe on device.
 
-I also see this WARN_ON being hit from the sync path..
+However, when we run out of space, this allocation may cause unbalanced
+chunk allocation.
+For example, there are only 1G unallocated space, and request for
+allocate DATA chunk is sent, and all the space will be allocated as data
+chunk, making later metadata chunk alloc request unable to handle, which
+will cause ENOSPC.
+This is the one of the common complains from end users about why ENOSPC
+happens but there is still available space.
 
-WARNING: CPU: 2 PID: 11166 at fs/btrfs/extent-tree.c:3799 btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]()
-CPU: 2 PID: 11166 Comm: trinity-c61 Tainted: G        W      3.18.0-rc1+ #74
- 0000000000000009 00000000aee2e4e2 ffff8801b0dfbcc8 ffffffff8d86cc97
- 0000000000000000 0000000000000000 ffff8801b0dfbd08 ffffffff8d07f301
- ffff88023f328000 ffff88023953d668 0000000000040000 ffff880239358548
-Call Trace:
- [<ffffffff8d86cc97>] dump_stack+0x4f/0x7c
- [<ffffffff8d07f301>] warn_slowpath_common+0x81/0xa0
- [<ffffffff8d07f41a>] warn_slowpath_null+0x1a/0x20
- [<ffffffffc0253831>] btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]
- [<ffffffffc025ca63>] btrfs_write_dirty_block_groups+0x6f3/0x740 [btrfs]
- [<ffffffffc02f7a41>] commit_cowonly_roots+0x17a/0x234 [btrfs]
- [<ffffffffc026e60b>] btrfs_commit_transaction+0x45b/0xc10 [btrfs]
- [<ffffffffc023a09b>] btrfs_sync_fs+0x8b/0x270 [btrfs]
- [<ffffffff8d266ad0>] ? do_fsync+0x80/0x80
- [<ffffffff8d266af0>] sync_fs_one_sb+0x20/0x30
- [<ffffffff8d22f2f2>] iterate_supers+0xb2/0x110
- [<ffffffff8d266c24>] sys_sync+0x64/0xb0
- [<ffffffff8d877d49>] tracesys_phase2+0xd4/0xd9
+This patch will try not to alloc chunk which is more than half of the
+unallocated space, making the last space more balanced at a small cost
+of more fragmented chunk at the last 1G.
 
-After rebooting, and restarting the fuzzer, it happened again very quickly.
+Some easy example:
+Preallocate 17.5G on a 20G empty btrfs fs:
+[Before]
+ # btrfs fi show /mnt/test
+Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
+	Total devices 1 FS bytes used 17.50GiB
+	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
+All space is allocated. No space later metadata space.
 
-	Dave
+[After]
+ # btrfs fi show /mnt/test
+Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
+	Total devices 1 FS bytes used 17.50GiB
+	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
+About 230M is still available for later metadata allocation.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d47289c..fa8de79 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4240,6 +4240,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	u64 max_stripe_size;
+ 	u64 max_chunk_size;
++	u64 total_avail_space = 0;
+ 	u64 stripe_size;
+ 	u64 num_bytes;
+ 	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
+@@ -4352,10 +4353,27 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		devices_info[ndevs].max_avail = max_avail;
+ 		devices_info[ndevs].total_avail = total_avail;
+ 		devices_info[ndevs].dev = device;
++		total_avail_space += total_avail;
+ 		++ndevs;
+ 	}
+ 
+ 	/*
++	 * Try not to occupy more than half of the unallocated space.
++	 * When run short of space and alloc all the space to
++	 * data/metadata will cause ENOSPC to be triggered more easily.
++	 *
++	 * And since the minimum chunk size is 16M, the half-half will cause
++	 * 16M allocated from 20M available space and reset 4M will not be
++	 * used ever. In that case(16~32M), allocate all directly.
++	 */
++	if (total_avail_space < 32 * 1024 * 1024 &&
++	    total_avail_space > 16 * 1024 * 1024)
++		max_chunk_size = total_avail_space;
++	else
++		max_chunk_size = min(total_avail_space / 2, max_chunk_size);
++	max_chunk_size = min(total_avail_space / 2, max_chunk_size);
++
++	/*
+ 	 * now sort the devices by hole size / available space
+ 	 */
+ 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+-- 
+2.1.2
 

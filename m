@@ -1,76 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36064 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750964AbaJXBdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 21:33:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XhTlG-0001bV-BA
-	for linux-btrfs@vger.kernel.org; Fri, 24 Oct 2014 03:33:50 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 03:33:50 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 03:33:50 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Date: Fri, 24 Oct 2014 01:33:39 +0000 (UTC)
-Message-ID: <pan$c6d4f$2fb03bde$c07e7d4a$f7039042@cox.net>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz>
-	<pan$32992$bbc3a80d$ad912ad2$31fcc5ce@cox.net>
-	<CAGfcS_nTbXQQTOC+QcBX8dbwk18Qbf-+JonQSw4WP6MOFg2z7A@mail.gmail.com>
-	<pan$19856$ee791297$ceeef1ce$27ae8dc@cox.net>
-	<CAKFHe2RxEZo25+3ye6fLmfadSbVZ5rri8h_FPt5iAy3-AiSqPQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:44277 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751907AbaJXCFx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Oct 2014 22:05:53 -0400
+Date: Thu, 23 Oct 2014 22:05:50 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Robert White <rwhite@pobox.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Check tree block failed, want=17716610236416, have=0
+Message-ID: <20141024020545.GD17380@hungrycats.org>
+References: <20141023231622.GC17395@hungrycats.org>
+ <54499D4A.9050204@pobox.com>
+ <20141024012448.GC17380@hungrycats.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="J5MfuwkIyy7RmF4Q"
+In-Reply-To: <20141024012448.GC17380@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tobias Geerinckx-Rice posted on Thu, 23 Oct 2014 16:47:19 +0200 as
-excerpted:
 
-> On 22 October 2014 04:08, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
->> Since the kernel has code for both "fat" metadata and skinny-metadata,
->> they can exist side-by-side and the kernel will use whichever code is
->> appropriate.
-> 
-> I understand that the fat extent code will probably never be removed for
-> compatibility reasons, but do wonder why it's still the default.
-> Caution?
+--J5MfuwkIyy7RmF4Q
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Caution, backward kernel compatibility, and simply timing.
+On Thu, Oct 23, 2014 at 09:24:48PM -0400, Zygo Blaxell wrote:
+> On Thu, Oct 23, 2014 at 05:28:58PM -0700, Robert White wrote:
+> > You may be in deep error land from the long use of 3.10... that
+> > said, the --init-csum-tree or --init-extent-tree options may be your
+> > friend here. The backtrace shows you are in "open_ctree" so the
+> > former is more likely the better bet.
 
-The skinny code is newer, and there were several skinny-metadata related 
-bugs in the first couple kernel cycles it was available, so not making it 
-the immediate default was certainly wise.  Tho the new code has been 
-reasonably stable for awhile, now.  But that's exactly why this 
-discussion, is it time to make the new code the default yet, or not, 
-because it hasn't been done yet.
+Alas, both fail:
 
-Additionally, some people want to keep the flexibility to mount with old 
-kernels.  Consider a distro installation and rescue image (ISO or USB), 
-for instance.  Those can be used for rescue purposes for not only the 
-life of that distro release, but for sometime afterward.  If the only 
-rescue image you can find is a two year old image and it won't mount your 
-btrfs because the on-device format has changed since then and your 
-filesystem is the newer format, you're going to be one frustrated btrfs 
-user!
+	# btrfs check --repair --init-csum-tree --init-extent-tree /dev/mapper/md15
+	enabling repair mode
+	Creating a new CRC tree
+	Couldn't open file system
 
-> Petr Janecek's balancing problem [1] and similar bugs aside: is there a
-> functional reason to prefer "fat" over skinny metadata for future file
-> systems?
+Same result with each option individually, except that when
+--init-csum-tree is absent, so is the "Creating a new CRC tree" message.
 
-Other than keeping backward compatibility to work with old rescue images 
-and the like, as discussed above, not that I'm aware of.  IOW, I know of 
-no corner-case where fat metadata is now more efficient or more stable.
+I'm also trying 'btrfs rescue chunk-recover -v' but so far it has read
+many gigabytes but not had much to say.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+(LVM snapshots + kvm = attack this filesystem with multiple tools at once :-)
 
+--J5MfuwkIyy7RmF4Q
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlRJs/kACgkQgfmLGlazG5z0OwCfYNTELrNhwdIIB9ej66z5DLZY
+9gAAoK1PScXeuIDJNXxMgNNUatFSn3ej
+=mZtT
+-----END PGP SIGNATURE-----
+
+--J5MfuwkIyy7RmF4Q--

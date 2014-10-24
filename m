@@ -1,100 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:47390 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754560AbaJXDDa (ORCPT
+Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:56391 "EHLO
+	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750732AbaJXEHf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 23:03:30 -0400
-Date: Thu, 23 Oct 2014 23:03:29 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Eric Sandeen <sandeen@redhat.com>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.cz Sterba" <dsterba@suse.cz>
-Subject: Re: [bug] btrfs check --subvol-extents segfault
-Message-ID: <20141024030329.GE17395@hungrycats.org>
-References: <BB091951-5382-4788-901D-20E96546548A@colorremedies.com>
- <5418AD03.4090301@redhat.com>
- <5428CFE6.3060703@cn.fujitsu.com>
+	Fri, 24 Oct 2014 00:07:35 -0400
+Message-ID: <5449D085.9030801@pobox.com>
+Date: Thu, 23 Oct 2014 21:07:33 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="4Epv4kl9IRBfg3rk"
-In-Reply-To: <5428CFE6.3060703@cn.fujitsu.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Mounting(multiply)? Options(stored)? Options(barriers)?
+References: <544980BA.8080007@pobox.com> <pan$ce81d$b98a312d$87b2f050$bb8a9bd1@cox.net>
+In-Reply-To: <pan$ce81d$b98a312d$87b2f050$bb8a9bd1@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 10/23/2014 07:25 PM, Duncan wrote:
+> See the discussion above.  As for whether conflicting options error out,
+> get ignored, or update the whole filesystem, there has been some
+> discussion on the list but IDR the conclusion as it doesn't pertain to me
+> since I don't use subvolumes like that, preferring fully independent
+> filesystems on their own partitions, instead.  (If the filesystem
+> metadata gets corrupted, it can easily mean the loss of all data on it.
+> Subvolumes provide little if any protection in that regard.  I *STRONGLY*
+> prefer not to put all my data eggs in one filesystem basket, in case its
+> bottom falls out.)  I believe in some cases either the conflicting mount
+> will error out or it'll mount but ignore the conflicts (IOW, it shouldn't
+> arbitrarily rewrite the option for the entire filesystem, that's what
+> remount is for!), but don't know if it actually works that way for
+> everything yet.  Either watch for a response from someone with practical
+> knowledge of the situation, or do your own testing, before you depend on
+> it.
 
---4Epv4kl9IRBfg3rk
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Ouch, I abandoned multiple hard partitions on any one spindle a long, 
+long time ago. The failure modes likely to occur just don't justify the 
+restrictions and hassle. Let alone the competitive file-system 
+scheduling that can eat your system performance with a box of wine.
 
-I just stumbled across this bug a few hours ago.
-It's still in btrfs-progs 3.17.
+I've been in this mess since Unix System 3 release 4. The mythology of 
+the partitioned disk is deep and horrible. Ever since they stopped the 
+implementation of pipes as anonymous files on the root partition, most 
+of the reasoning ends up backward.
 
-On Mon, Sep 29, 2014 at 11:20:06AM +0800, Qu Wenruo wrote:
-> Ping.
->=20
-> No response?
->=20
-> Thanks,
-> Qu
-> -------- Original Message --------
-> Subject: Re: [bug] btrfs check --subvol-extents segfault
-> From: Eric Sandeen <sandeen@redhat.com>
-> To: Chris Murphy <lists@colorremedies.com>, Btrfs BTRFS
-> <linux-btrfs@vger.kernel.org>
-> Date: 2014=E5=B9=B409=E6=9C=8817=E6=97=A5 05:34
-> >On 9/16/14 4:33 PM, Chris Murphy wrote:
-> >>https://bugzilla.redhat.com/show_bug.cgi?id=3D1142421
-> >>
-> >>kernel-3.17.0-0.rc5.git0.1.fc22.x86_64
-> >>btrfs-progs-3.16-1.fc21.x86_64
-> >>
-> >>Steps to Reproduce:
-> >>1. mkfs.btrfs /dev/sdc
-> >>2. btrfs check --subvol-extents /dev/sdc
-> >>
-> >>Results:
-> >>Segmentation fault (core dumped)
-> >>
-> >>[  632.749774] btrfs[692]: segfault at 0 ip 00007fc9963fdd77 sp 00007ff=
-f93450880 error 4 in libc-2.19.90.so[7fc9963c2000+1bd000]
-> >>
-> >>Eric Sandeed writes in the bugzilla that this was broken by commit
-> >>d34cbe76c723a05a14bbcfdc46e8ede789c3f1f9 which drops the requirement
-> >>to specify a subvolid, but still does arg_strtou64(optarg) ->
-> >>arg_strtou64(NULL) so it crashes.
-> >Yeah, AFAICT (although it's not documented anywhere) the functionality is
-> >*supposed* to take a subvolid as an argument.
-> >
-> >The commit lets it pass w/ no args, but still does arg_strtou64(optarg) =
-to get
-> >the subvolid, and boom.
-> >
-> >I think the commit just needs to be reverted, and then manpages updated &
-> >testcases written...
-> >
-> >-Eric
-> >--
-> >To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >the body of a message to majordomo@vger.kernel.org
-> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Soft failures are likely to spray the damage all over all the 
+filesystems by type, and a disk failure isn't going to obey the 
+partition boundaries.
 
---4Epv4kl9IRBfg3rk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Better the efficiency of the whole disk file-systems and a decent backup 
+plan.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlRJwYEACgkQgfmLGlazG5y00QCaAqbn/4WOsbqBmqTlb4gB5wWg
-qrIAniTEMpTKNJNRvXRLVtj8NQGq9A9D
-=leQX
------END PGP SIGNATURE-----
-
---4Epv4kl9IRBfg3rk--
+Just my opinion.

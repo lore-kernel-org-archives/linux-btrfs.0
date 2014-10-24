@@ -1,55 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f51.google.com ([209.85.213.51]:40639 "EHLO
-	mail-yh0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755887AbaJXK60 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:57997 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756214AbaJXMsV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Oct 2014 06:58:26 -0400
-Received: by mail-yh0-f51.google.com with SMTP id t59so121230yho.38
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 03:58:26 -0700 (PDT)
+	Fri, 24 Oct 2014 08:48:21 -0400
+Date: Fri, 24 Oct 2014 04:49:16 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Larkin Lowrey <llowrey@nuclearwinter.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Heavy nocow'd VM image fragmentation
+Message-ID: <20141024114916.GI12554@merlins.org>
+References: <5449898B.4090708@nuclearwinter.com>
 MIME-Version: 1.0
-In-Reply-To: <20141024023529.GD17395@hungrycats.org>
-References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
-	<5446BEC0.8070009@siedziba.pl>
-	<02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com>
-	<5447A5CF.9060405@siedziba.pl>
-	<5448C81E.4060701@cn.fujitsu.com>
-	<5448E8F0.7070004@gmail.com>
-	<pan$d3176$38668d14$9f498698$7cd4113f@cox.net>
-	<20141024023529.GD17395@hungrycats.org>
-Date: Fri, 24 Oct 2014 06:58:25 -0400
-Message-ID: <CAGfcS_mVJ0WH0rootEHnXxgHVvRD+oYuF988ZLtV9OABM7x4JQ@mail.gmail.com>
-Subject: Re: device balance times
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5449898B.4090708@nuclearwinter.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 23, 2014 at 10:35 PM, Zygo Blaxell
-<ce3g8jdj@umail.furryterror.org> wrote:
->
->                 - single profile: we can tolerate zero missing disks,
->                 so we don't allow rw mounts even if degraded.
->
+On Thu, Oct 23, 2014 at 06:04:43PM -0500, Larkin Lowrey wrote:
+> I have a 240GB VirtualBox vdi image that is showing heavy fragmentation
+> (filefrag). The file was created in a dir that was chattr +C'd, the file
+> was created via fallocate and the contents of the orignal image were
+> copied into the file via dd. I verified that the image was +C.
+> 
+> After initial creation there were about 2800 fragments, according to
+> filefrag. That doesn't surprise me because this image took up about 60%
+> of the free space. After an hour of light use the filefrag count was the
+> same. But, after a day of heavy use, the count is now well over 600,000.
+> 
+> There were no snapshots during the period of use. The fs does not have
+> compression enabled. These usual suspects don't apply in my case.
+> 
 
-That seems like the wrong logic here.  By all means mount read-only by
-default for safety, but there should be a way to force a read-write
-mount on any filesystem, precisely because the RAID modes can be mixed
-and even if you lose two devices on a RAID1 system not ALL the data is
-lost if you have more than two drives.
+To be honest, I have the same problem, and it's vexing:
+legolas:/var/local/nobck/VirtualBox VMs/Win7# lsattr *
+---------------C Logs/VBox.log.3
+---------------C Logs/VBox.log.2
+---------------C Logs/VBox.log.1
+---------------C Logs/VBox.log
+---------------C Snapshots/2014-10-24T04-37-46-247921000Z.sav
+---------------C Win7.png
+---------------C Win7.vbox
+---------------C Win7.vbox-prev
+---------------C Win7.vdi
+legolas:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi
+Win7.vdi: 169130 extents found
 
-By all means return an error when reading a file that is completely
-missing.  By all means have an extra fsck mode that goes ahead and
-deletes all the missing files (assuming it has metadata) or perhaps
-moves them all to a new "lost+notfound" subvolume or something.
+Note that I already copied this file recently to lay it out properly
+but apparently it fragments again despite NOCOW.
+On the plus side, at least btrfs send works again, before my last copy
+of it setting it to NOCOW, btrfs send of that filesystem was taking 12H+
+instead of minutes.
 
-Indeed, if the lost device just happens to not actually contain any
-data you might be lucky and not lose any data at all when losing a
-single device in a filesystem that entirely uses the single profile.
-That would be a bit of an edge case though, but one that is
-automatically handled if you give the admin the ability to force
-read-write/etc.
-
---
-Rich
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,53 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:56391 "EHLO
-	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750732AbaJXEHf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Oct 2014 00:07:35 -0400
-Message-ID: <5449D085.9030801@pobox.com>
-Date: Thu, 23 Oct 2014 21:07:33 -0700
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Mounting(multiply)? Options(stored)? Options(barriers)?
-References: <544980BA.8080007@pobox.com> <pan$ce81d$b98a312d$87b2f050$bb8a9bd1@cox.net>
-In-Reply-To: <pan$ce81d$b98a312d$87b2f050$bb8a9bd1@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:56837 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752092AbaJXFNn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Oct 2014 01:13:43 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XhXBz-0002S5-Ml
+	for linux-btrfs@vger.kernel.org; Fri, 24 Oct 2014 07:13:39 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 07:13:39 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 07:13:39 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: device balance times
+Date: Fri, 24 Oct 2014 05:13:27 +0000 (UTC)
+Message-ID: <pan$e118d$d880428d$ebc41b4b$dabf1c21@cox.net>
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
+	<5446BEC0.8070009@siedziba.pl>
+	<02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com>
+	<5447A5CF.9060405@siedziba.pl> <5448C81E.4060701@cn.fujitsu.com>
+	<5448E8F0.7070004@gmail.com>
+	<pan$d3176$38668d14$9f498698$7cd4113f@cox.net>
+	<20141024023529.GD17395@hungrycats.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/23/2014 07:25 PM, Duncan wrote:
-> See the discussion above.  As for whether conflicting options error out,
-> get ignored, or update the whole filesystem, there has been some
-> discussion on the list but IDR the conclusion as it doesn't pertain to me
-> since I don't use subvolumes like that, preferring fully independent
-> filesystems on their own partitions, instead.  (If the filesystem
-> metadata gets corrupted, it can easily mean the loss of all data on it.
-> Subvolumes provide little if any protection in that regard.  I *STRONGLY*
-> prefer not to put all my data eggs in one filesystem basket, in case its
-> bottom falls out.)  I believe in some cases either the conflicting mount
-> will error out or it'll mount but ignore the conflicts (IOW, it shouldn't
-> arbitrarily rewrite the option for the entire filesystem, that's what
-> remount is for!), but don't know if it actually works that way for
-> everything yet.  Either watch for a response from someone with practical
-> knowledge of the situation, or do your own testing, before you depend on
-> it.
+Zygo Blaxell posted on Thu, 23 Oct 2014 22:35:29 -0400 as excerpted:
 
-Ouch, I abandoned multiple hard partitions on any one spindle a long, 
-long time ago. The failure modes likely to occur just don't justify the 
-restrictions and hassle. Let alone the competitive file-system 
-scheduling that can eat your system performance with a box of wine.
+> My pet peeve:  if balance is converting profiles from RAID1 to single,
+> the conversion should be *instantaneous* (or at least small_constant *
+> number_of_block_groups).  Pick one mirror, keep all the chunks on that
+> mirror, delete all the corresponding chunks on the other mirror.
 
-I've been in this mess since Unix System 3 release 4. The mythology of 
-the partitioned disk is deep and horrible. Ever since they stopped the 
-implementation of pipes as anonymous files on the root partition, most 
-of the reasoning ends up backward.
+That would argue for either a third balance mode, --convert-only, or a 
+different tool, avoiding a rewrite of existing chunks entirely, simply 
+replicating them if adding redundancy or deleting a copy if reducing it, 
+as necessary.
 
-Soft failures are likely to spray the damage all over all the 
-filesystems by type, and a disk failure isn't going to obey the 
-partition boundaries.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Better the efficiency of the whole disk file-systems and a decent backup 
-plan.
-
-Just my opinion.

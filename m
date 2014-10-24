@@ -1,132 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42071 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750964AbaJXCZu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 22:25:50 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XhUZU-0008SN-Ut
-	for linux-btrfs@vger.kernel.org; Fri, 24 Oct 2014 04:25:44 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 04:25:44 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Oct 2014 04:25:44 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Mounting(multiply)? Options(stored)? Options(barriers)?
-Date: Fri, 24 Oct 2014 02:25:34 +0000 (UTC)
-Message-ID: <pan$ce81d$b98a312d$87b2f050$bb8a9bd1@cox.net>
-References: <544980BA.8080007@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46103 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755127AbaJXCfa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Oct 2014 22:35:30 -0400
+Date: Thu, 23 Oct 2014 22:35:29 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: device balance times
+Message-ID: <20141024023529.GD17395@hungrycats.org>
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
+ <5446BEC0.8070009@siedziba.pl>
+ <02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com>
+ <5447A5CF.9060405@siedziba.pl>
+ <5448C81E.4060701@cn.fujitsu.com>
+ <5448E8F0.7070004@gmail.com>
+ <pan$d3176$38668d14$9f498698$7cd4113f@cox.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="J5MfuwkIyy7RmF4Q"
+In-Reply-To: <pan$d3176$38668d14$9f498698$7cd4113f@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Thu, 23 Oct 2014 15:27:06 -0700 as excerpted:
 
-> I've got several questions about mount features that I've been unable to
-> find definitive answers for.
-> 
-> ITEM: So there are some mount options that I'd like to be able to pin
-> onto a media like compress=lzo on a thumb drive I expect to get crowded.
-> Is there a feature equivalent to the -o option to tune2fs either present
-> or planned?
+--J5MfuwkIyy7RmF4Q
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Planned and already partially implemented, yes.  The infrastructure and a 
-few options for it have already been implemented as btrfs properties -- 
-via extended attributes.  See the btrfs-property (8) manpage in a recent 
-btrfs-progs and play with the command a bit to see what's already 
-available.  But AFAIK some planned properties remain to be implemented, 
-and some that are already there are only partially implemented.
+On Fri, Oct 24, 2014 at 01:05:39AM +0000, Duncan wrote:
+> Austin S Hemmelgarn posted on Thu, 23 Oct 2014 07:39:28 -0400 as
+> excerpted:
+>=20
+> > On 2014-10-23 05:19, Miao Xie wrote:
+> >>
+> >> Now my colleague and I is implementing the scrub/replace for RAID5/6
+> >> and I have a plan to reimplement the balance and split it off from the
+> >> metadata/file data process. the main idea is
+> >> - allocate a new chunk which has the same size as the relocated one,
+> >>   but don't insert it into the block group list, so we don't allocate
+> >>   the free space from it.
+> >> - set the source chunk to be Read-only
+> >> - copy the data from the source chunk to the new chunk
+> >> - replace the extent map of the source chunk with the one of the new
+> >>   chunk(The new chunk has the same logical address and the length as
+> >>   the old one)
+> >> - release the source chunk
+> >>
+> >> By this way, we needn't deal the data one extent by one extent, and
+> >> needn't do any space reservation, so the speed will be very fast even
+> >> [if] we have lots of snapshots.
+> >>
+> > Even if balance gets re-implemented this way, we should still provide
+> > some way to consolidate the data from multiple partially full chunks.
+> > Maybe keep the old balance path and have some option (maybe call it
+> > aggressive?) that turns it on instead of the new code.
+>=20
+> IMO:
+>=20
+> * Keep normal default balance behavior as-is.
+>=20
+> * Add two new options, --fast, and --aggressive.
+>=20
+> * --aggressive behaves as today and is the normal default.
+>=20
+> * --fast is the new chunk-by-chunk behavior.  This becomes the default if=
+=20
+> the convert filter is used, or if balance detects that it /is/ changing=
+=20
+> the mode, thus converting or filling in missing chunk copies, even when=
+=20
+> the convert filter was not specifically set.  Thus, if there's only one=
+=20
+> chunk copy (single or raid0 mode, or raid1/10 or dup with a missing/
+> invalid copy) and the balance would result in two copies, default to
+> --fast.  Similarly, if it's raid1/10 and switching to single/raid0,=20
+> default to --fast.  If no conversion is being done, keep the normal
+> --aggressive default.
 
-It's possible to set the compression attribute on an individual file, for 
-instance, but last I knew, it wasn't yet possible to specify the type of 
-compression, so the default (either the mount default or if that's not 
-set either, the btrfs default, gzip) would be used.
+My pet peeve:  if balance is converting profiles from RAID1 to single,
+the conversion should be *instantaneous* (or at least small_constant *
+number_of_block_groups).  Pick one mirror, keep all the chunks on that
+mirror, delete all the corresponding chunks on the other mirror.
 
-And there has been some discussion of the semantics of specifically set 
-no-compress, vs. the attribute/property not existing for the file at all, 
-how inherited compression should work, etc.  I believe that's already 
-hashed out, but last I knew, it wasn't yet coded up.  (But I've not 
-upgraded since the progs 3.17 announcement and don't know if it changed 
-anything in that regard, yet.)
+Sometimes when a RAID1 mirror dies we want to temporarily convert
+the remaining disk to single data / DUP metadata while we wait for
+a replacement.  Right now if we try to do this, we discover:
 
-Also, since these btrfs properties are normally recorded as extended 
-attributes, the various non-btrfs utilities, chattr (from e2fsprogs), 
-etc, that deal with extended attributes, will need to be updated to deal 
-with the richer semantics, as well.
+	- if the system reboots during the rebalance, btrfs now sees a
+	mix of single and RAID1 data profiles on the disk.  The rebalance
+	takes a long time, and a hardware replacement has been ordered,
+	so the probability of this happening is pretty close to 1.0.
 
-> ITEM: Is there a means (or a plan for a means) to use a subvol as a
-> means to prevent/change active features from propigating to a
-> subdirectory? An example would be a means to turn off autodefrag or
-> compression for a subvolume full of virtual machine images, whilest
-> having it active for the bulk of the filesystem.
+	- one disk is missing, so there's a check in the mount code path
+	that counts missing disks like this:
 
-The idea is to eventually have that set by mount.  If the subvolume is 
-separately mounted, some mount options will be (and some already are) 
-separately set for it.  If you're accessing it like a normal subdir on 
-the parent subvolume, however, without separately mounting it, then the 
-mount options for the parent will apply.
+		- RAID1 profile: we can tolerate 1 missing disk so just
+		mount rw,degraded
 
-Which gets interesting since it's then possible to mount a subvolume 
-separately in one location, with its own behavior, and access it from the 
-parent subvolume mounted elsewhere, with entirely different options, both 
-at the same time.  Tho of course the Linux VFS has been dealing with this 
-to a limited extent for bind-mounts, where one view may be readonly and 
-another writable, for instance, for some time now.
+		- single profile: we can tolerate zero missing disks,
+		so we don't allow rw mounts even if degraded.
 
-As to what mount options can be set separately already, see the 
-discussion on the btrfs wiki.  (Watch the link-wrap.)
+That filesystem is now permanently read-only (or at least it was in 3.14).
+It's not even possible to add or replace disks any more since that
+requires mounting the filesystem read-write.
 
-https://btrfs.wiki.kernel.org/index.php/
-FAQ#Can_I_mount_subvolumes_with_different_mount_options.3F
+> * Users could always specify the behavior they want, overriding the=20
+> default, using the appropriate option.
+>=20
+> * Of course defaults may result in some chunks being rebalanced in fast=
+=20
+> mode, while others are rebalanced in aggressive mode, if for instance=20
+> it's 3+ device raid1 mode filesystem with one device missing, since in=20
+> that case there'd be the usual two copies of some chunks and those would=
+=20
+> default to aggressive, while there'd be one copy of chunks where the=20
+> other one was on the missing device.  However, users could always specify=
+=20
+> the desired behavior using the last point above, thus getting the same=20
+> behavior for the entire balance.
+>=20
+> --=20
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-> ITEM: If I make one file system and have subvols /__System /home and
-> /VMs and mount those as / /home and /usr/local/VMs respectively, with
-> differing feature options for each, will those options be separately
-> honored or will the last-mounted or first-mounted subvolume's options
-> take dominant effect? Compression, auto-defragment, and commit interval
-> being of primary concern.
+--J5MfuwkIyy7RmF4Q
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-See the discussion above.  As for whether conflicting options error out, 
-get ignored, or update the whole filesystem, there has been some 
-discussion on the list but IDR the conclusion as it doesn't pertain to me 
-since I don't use subvolumes like that, preferring fully independent 
-filesystems on their own partitions, instead.  (If the filesystem 
-metadata gets corrupted, it can easily mean the loss of all data on it.  
-Subvolumes provide little if any protection in that regard.  I *STRONGLY* 
-prefer not to put all my data eggs in one filesystem basket, in case its 
-bottom falls out.)  I believe in some cases either the conflicting mount 
-will error out or it'll mount but ignore the conflicts (IOW, it shouldn't 
-arbitrarily rewrite the option for the entire filesystem, that's what 
-remount is for!), but don't know if it actually works that way for 
-everything yet.  Either watch for a response from someone with practical 
-knowledge of the situation, or do your own testing, before you depend on 
-it.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-> ITEM: Is there a no-compress attribute (or something similar) for
-> negating compress= mount options on specific files or directories? How
-> about a no-autodefrag?
+iEYEARECAAYFAlRJuvEACgkQgfmLGlazG5zM/gCg1rZtD1WbnP7cwZfJNNXD8GKa
+xQUAoIvQpDhGfw1JS8QilfHRXdwxcUCv
+=P5N5
+-----END PGP SIGNATURE-----
 
-Yes for no-compress, at least after they get everything setup as 
-discussed.  I don't believe so for autodefrag, as that's mount-option 
-controlled only, AFAIK.  But the plan is to let different subvolumes 
-mount with different autodefrag options, eventually.  But I don't believe 
-it's implemented yet.
-
-> (I'm about to set up a system and some standards that may last many
-> years and I'm trying to find the reasonable bounds of where I need to do
-> hard partitioning.)
-
-I guess my view on that should be obvious from the above comment.  I 
-strongly prefer hard partitioning as I don't want to risk all my data 
-eggs being in the same filesystem basket when its bottom falls out! =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--J5MfuwkIyy7RmF4Q--

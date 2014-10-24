@@ -1,82 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dub004-omc1s3.hotmail.com ([157.55.0.202]:56212 "EHLO
-	DUB004-OMC1S3.hotmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756432AbaJXNcM convert rfc822-to-8bit (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46903 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751391AbaJXPSJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Oct 2014 09:32:12 -0400
-Message-ID: <DUB118-W4605047D55E17E62C8F651DA930@phx.gbl>
-From: Jasper Verberk <jverberk@hotmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Problem converting data raid0 to raid1: enospc errors during balance
-Date: Fri, 24 Oct 2014 13:32:09 +0000
-Content-Type: text/plain; charset="iso-8859-1"
+	Fri, 24 Oct 2014 11:18:09 -0400
+Date: Fri, 24 Oct 2014 11:18:07 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: device balance times
+Message-ID: <20141024151807.GF17395@hungrycats.org>
+References: <845c0ca8cc78ed97da487bf7f4b7b122@admin.virtall.com>
+ <5446BEC0.8070009@siedziba.pl>
+ <02A17DFE-290C-4447-99E9-D39480D7A26A@colorremedies.com>
+ <5447A5CF.9060405@siedziba.pl>
+ <5448C81E.4060701@cn.fujitsu.com>
+ <5448E8F0.7070004@gmail.com>
+ <pan$d3176$38668d14$9f498698$7cd4113f@cox.net>
+ <20141024023529.GD17395@hungrycats.org>
+ <pan$e118d$d880428d$ebc41b4b$dabf1c21@cox.net>
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="7cm2iqirTL37Ot+N"
+In-Reply-To: <pan$e118d$d880428d$ebc41b4b$dabf1c21@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I'm trying to change my 4 disk btrfs data from raid0 to raid1. The metadata is allready in raid1 and now I'm trying to also make the data raid1.
+--7cm2iqirTL37Ot+N
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I'm getting the following errors and I got told on irc to go report this as a bug.
+On Fri, Oct 24, 2014 at 05:13:27AM +0000, Duncan wrote:
+> Zygo Blaxell posted on Thu, 23 Oct 2014 22:35:29 -0400 as excerpted:
+>=20
+> > My pet peeve:  if balance is converting profiles from RAID1 to single,
+> > the conversion should be *instantaneous* (or at least small_constant *
+> > number_of_block_groups).  Pick one mirror, keep all the chunks on that
+> > mirror, delete all the corresponding chunks on the other mirror.
+>=20
+> That would argue for either a third balance mode, --convert-only, or a=20
+> different tool, avoiding a rewrite of existing chunks entirely, simply=20
+> replicating them if adding redundancy or deleting a copy if reducing it,=
+=20
+> as necessary.
 
-Hoping there is anybody that can give me a hand here in solving it.
+Isn't that what soft does?  [reading noises]  OK, maybe not.
+'soft' leaves a chunk alone if it already fits all the target profile
+requirements; however, in this case the profile (and only the profile,
+no data) is changing.
 
+I think just two modes are sufficient:  one that does everything the most
+thorough way (throw scrub and defrag in there too, so we can do a single
+pass over the filesystem that does all the maintenance tasks at once),
+and one that takes advantage of every special-case shortcut available
+to achieve specific goals in the shortest time.
 
--------------------------------
-Command I issued was:
-
-  btrfs balance start -dconvert=raid1,soft /data
--------------------------------
-
--------------------------------
-Error I got:
-
-  ERROR: error during balancing '/data' - No space left on device
-  There may be more info in syslog - try dmesg | tail
--------------------------------
-
--------------------------------
-Last lines of dmesg:
-
-[60098.584459] BTRFS info (device sdc): relocating block group 18282971136 flags 9
-[60102.422310] BTRFS info (device sdc): relocating block group 5398069248 flags 9
-[60102.776406] BTRFS info (device sdc): relocating block group 1103101952 flags 9
-[60103.168554] BTRFS info (device sdc): relocating block group 4194304 flags 4
-[60103.619552] BTRFS info (device sdc): relocating block group 0 flags 2
-[60104.040776] BTRFS info (device sdc): 1046 enospc errors during balance
--------------------------------
-
--------------------------------
-Further info:
-
-root@BlackMesa:/mnt# btrfs fi show
-Label: 'data'  uuid: a1e36575-0843-45ab-850e-618a5d8a4b7e
-        Total devices 4 FS bytes used 2.75TiB
-        devid    1 size 2.73TiB used 1.94TiB path /dev/sdb
-        devid    2 size 2.73TiB used 1.94TiB path /dev/sdd
-        devid    3 size 2.73TiB used 1.94TiB path /dev/sdc
-        devid    4 size 2.73TiB used 1.94TiB path /dev/sde
+I also think it's a little odd that conversion and balance are the
+same tool.  Traditional RAID conversions don't care about filesystem
+layout, because they work on a completely separate layer (i.e. at the
+block level).  It's certainly possible to perform a RAID conversion
+by reallocating all the filesystem-level objects, but just because
+you can doesn't mean you should.  ;)
 
 
-root@BlackMesa:/mnt# btrfs fi df /data
-Data, RAID1: total=2.85TiB, used=790.46GiB
-Data, RAID0: total=2.04TiB, used=1.97TiB
-System, RAID1: total=8.00MiB, used=612.00KiB
-Metadata, RAID1: total=5.00GiB, used=3.39GiB
-unknown, single: total=512.00MiB, used=0.00
+--7cm2iqirTL37Ot+N
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-root@BlackMesa:/mnt# uname -a
-Linux BlackMesa 3.17-1-amd64 #1 SMP Debian 3.17-1~exp1 (2014-10-14) x86_64 GNU/Linux
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-root@BlackMesa:/mnt# btrfs --version
-Btrfs v3.14.1
--------------------------------
+iEYEARECAAYFAlRKba8ACgkQgfmLGlazG5wXYACdE4FDu37x1mxTu2AHwDzlyavW
+FMkAnRho0nnYIxygti0qgBQe+M7gmhPL
+=W5Jt
+-----END PGP SIGNATURE-----
 
--------------------------------
-And this is what happens when I try to make an image:
-
-root@BlackMesa:/mnt# btrfs-image -c9 -t4 /dev/sdb /home/jasper/dump.image
-btrfs-image: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
-Aborted
-------------------------------- 		 	   		  
+--7cm2iqirTL37Ot+N--

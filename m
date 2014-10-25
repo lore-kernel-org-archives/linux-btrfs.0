@@ -1,45 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:53178 "EHLO
-	resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752782AbaJYCle (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Oct 2014 22:41:34 -0400
-Message-ID: <544B0DDC.1020102@pobox.com>
-Date: Fri, 24 Oct 2014 19:41:32 -0700
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, Larkin Lowrey <llowrey@nuclearwinter.com>
-CC: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:49180 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751377AbaJYD2U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Oct 2014 23:28:20 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xhs1a-0005GQ-MK
+	for linux-btrfs@vger.kernel.org; Sat, 25 Oct 2014 05:28:18 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Oct 2014 05:28:18 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Oct 2014 05:28:18 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Heavy nocow'd VM image fragmentation
-References: <5449898B.4090708@nuclearwinter.com> <20141024114916.GI12554@merlins.org>
-In-Reply-To: <20141024114916.GI12554@merlins.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Sat, 25 Oct 2014 03:28:06 +0000 (UTC)
+Message-ID: <pan$37631$612ebdea$68e82275$b6e96b7b@cox.net>
+References: <5449898B.4090708@nuclearwinter.com>
+	<20141024114916.GI12554@merlins.org> <544B0DDC.1020102@pobox.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/24/2014 04:49 AM, Marc MERLIN wrote:
-> On Thu, Oct 23, 2014 at 06:04:43PM -0500, Larkin Lowrey wrote:
->> I have a 240GB VirtualBox vdi image that is showing heavy fragmentation
->> (filefrag). The file was created in a dir that was chattr +C'd, the file
->> was created via fallocate and the contents of the orignal image were
->> copied into the file via dd. I verified that the image was +C.
-> To be honest, I have the same problem, and it's vexing:
+Robert White posted on Fri, 24 Oct 2014 19:41:32 -0700 as excerpted:
 
-If I understand correctly, when you take a snapshot the file goes into 
-what I call "1COW" mode. The snapshot is pinning the old image into 
-place and the new data has to go somewhere. One explainer said it was 
-"on its head" but I suspect the fragmentation still ends up in the 
-written segment.
+> On 10/24/2014 04:49 AM, Marc MERLIN wrote:
+>> On Thu, Oct 23, 2014 at 06:04:43PM -0500, Larkin Lowrey wrote:
+>>> I have a 240GB VirtualBox vdi image that is showing heavy
+>>> fragmentation (filefrag). The file was created in a dir that was
+>>> chattr +C'd, the file was created via fallocate and the contents of
+>>> the orignal image were copied into the file via dd. I verified that
+>>> the image was +C.
+>> To be honest, I have the same problem, and it's vexing:
+> 
+> If I understand correctly, when you take a snapshot the file goes into
+> what I call "1COW" mode.
 
-Options may include transferring the VMs to a subvolume that you don't 
-snapshot very often.
+Yes, but the OP said he hadn't snapshotted since creating the file, and 
+MM's a regular that actually wrote much of the wiki documentation on 
+raid56 modes, so he better know about the snapshotting problem too.
 
-Doing backups by taking the snapshot, transfering it to backup, and then 
-dropping it before you restart the virtual machine.
+So that can't be it.  There's apparently a bug in some recent code, and 
+it's not honoring the NOCOW even in normal operation, when it should be.
 
-Honestly while autodefrag would be your enemy, I don't see a lot of 
-harm/degradation in leaving the VM images on my drive all normal COW and 
-doing the occasional defrag.
+(FWIW I'm not running any VMs or large DBs here, so don't have nocow set 
+on anything and can and do use autodefrag on all my btrfs.  So I can't 
+say one way or the other, personally.)
 
-I could, of course, be wrong.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

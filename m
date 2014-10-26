@@ -1,67 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f48.google.com ([209.85.216.48]:58534 "EHLO
-	mail-qa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751734AbaJZBl2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Oct 2014 21:41:28 -0400
-Received: by mail-qa0-f48.google.com with SMTP id x12so2458713qac.21
-        for <linux-btrfs@vger.kernel.org>; Sat, 25 Oct 2014 18:41:28 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAGfcS_nR-MP8VLWanvvs9dMQBi02JoCCUTYd_JwA9tmtPRGmSg@mail.gmail.com>
-References: <20141009141944.GA11525@atrey.karlin.mff.cuni.cz>
-	<CAGfcS_nR-MP8VLWanvvs9dMQBi02JoCCUTYd_JwA9tmtPRGmSg@mail.gmail.com>
-Date: Sat, 25 Oct 2014 21:41:27 -0400
-Message-ID: <CAGfcS_kFnqp5aeHMfTLJbTbVx=yobNf+Zp-ECYh1xNRFG7UjaA@mail.gmail.com>
+Received: from csamuel.org ([74.50.50.137]:50444 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751483AbaJZBvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 25 Oct 2014 21:51:24 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 75548405F8
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Oct 2014 12:51:23 +1100 (AEDT)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 22255-10 for <linux-btrfs@vger.kernel.org>;
+ Sun, 26 Oct 2014 12:51:23 +1100 (AEDT)
+Received: from quad.localnet (2001-44b8-41dd-d500-adbf-d613-85ec-96d9.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:adbf:d613:85ec:96d9])
+	by csamuel.org (Postfix) with ESMTPSA id 0A59C405F1
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Oct 2014 12:51:23 +1100 (AEDT)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs balance segfault, kernel BUG at fs/btrfs/extent-tree.c:7727
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Sun, 26 Oct 2014 12:51:28 +1100
+Message-ID: <1806363.zv92A65W1k@quad>
+In-Reply-To: <CAGfcS_kFnqp5aeHMfTLJbTbVx=yobNf+Zp-ECYh1xNRFG7UjaA@mail.gmail.com>
+References: <20141009141944.GA11525@atrey.karlin.mff.cuni.cz> <CAGfcS_nR-MP8VLWanvvs9dMQBi02JoCCUTYd_JwA9tmtPRGmSg@mail.gmail.com> <CAGfcS_kFnqp5aeHMfTLJbTbVx=yobNf+Zp-ECYh1xNRFG7UjaA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 13, 2014 at 11:12 AM, Rich Freeman
-<r-btrfs@thefreemanclan.net> wrote:
-> On Thu, Oct 9, 2014 at 10:19 AM, Petr Janecek <janecek@ucw.cz> wrote:
->>
->>   I have trouble finishing btrfs balance on five disk raid10 fs.
->> I added a disk to 4x3TB raid10 fs and run "btrfs balance start
->> /mnt/b3", which segfaulted after few hours, probably because of the BUG
->> below. "btrfs check" does not find any errors, both before the balance
->> and after reboot (the fs becomes un-umountable).
->>
->> [22744.238559] WARNING: CPU: 0 PID: 4211 at fs/btrfs/extent-tree.c:876 btrfs_lookup_extent_info+0x292/0x30a [btrfs]()
->>
->> [22744.532378] kernel BUG at fs/btrfs/extent-tree.c:7727!
->
-> I am running into something similar. I just added a 3TB drive to my
-> raid1 btrfs and started a balance.  The balance segfaulted, and I find
-> this in dmesg:
+On Sat, 25 Oct 2014 09:41:27 PM Rich Freeman wrote:
 
-I got another one of these crashes during a balance today, and this is
-on 3.17.1 with the "Btrfs: race free update of commit root for ro
-snapshots" patch.  So, there is something else in 3.17.1 that causes
-this problem.  I did see mention of an extent error of some kind on
-the lists and I don't have that patch - I believe it is planned for
-3.17.2.
+> So, there is something else in 3.17.1 that causes
+> this problem.  I did see mention of an extent error of some kind on
+> the lists and I don't have that patch - I believe it is planned for
+> 3.17.2.
 
-After the crash the filesystem became read-only.
+There are currently 13 patches for btrfs queued for 3.17.2:
 
-I didn't have any way to easily capture the logs, but I got repeated
-crashes when trying to re-mount the filesystem after rebooting.  The
-dmesg log showed read errors from one of the devices (bdev /dev/sdb2
-errs: wr 0, rd 1361, flush 0, corrupt 0, gen 0).  When I tried to
-btrfs check the filesystem with btrfs-progs 3.17 it abruptly
-terminated and output an error mentioning could not find extent items
-followed by root and a really large number.
+queue-3.17/btrfs-add-missing-compression-property-remove-in-btrfs_ioctl_setflags.patch                                                                                                                                                       
+queue-3.17/btrfs-cleanup-error-handling-in-build_backref_tree.patch                                                                                                                                                                          
+queue-3.17/btrfs-don-t-do-async-reclaim-during-log-replay.patch                                                                                                                                                                              
+queue-3.17/btrfs-don-t-go-readonly-on-existing-qgroup-items.patch                                                                                                                                                                            
+queue-3.17/btrfs-fix-a-deadlock-in-btrfs_dev_replace_finishing.patch                                                                                                                                                                         
+queue-3.17/btrfs-fix-and-enhance-merge_extent_mapping-to-insert-best-fitted-extent-map.patch                                                                                                                                                 
+queue-3.17/btrfs-fix-build_backref_tree-issue-with-multiple-shared-blocks.patch                                                                                                                                                              
+queue-3.17/btrfs-fix-race-in-wait_sync-ioctl.patch                                                                                                                                                                                           
+queue-3.17/btrfs-fix-the-wrong-condition-judgment-about-subset-extent-map.patch                                                                                                                                                              
+queue-3.17/btrfs-fix-up-bounds-checking-in-lseek.patch                                                                                                                                                                                       
+queue-3.17/btrfs-try-not-to-enospc-on-log-replay.patch                                                                                                                                                                                       
+queue-3.17/btrfs-wake-up-transaction-thread-from-sync_fs-ioctl.patch                                                                                                                                                                         
+queue-3.17/revert-btrfs-race-free-update-of-commit-root-for-ro-snapshots.patch
 
-I finally managed to recover by mounting the device with skip_balance
-- I suspect that it was crashing due to attempts to restart the
-failing balance.  Then after letting the filesystem settle down I
-unmounted it cleanly and rebooted and everything was back to normal.
+You can grab them here:
 
-However, i'm still getting "bdev /dev/sdb2 errs: wr 0, rd 1361, flush
-0, corrupt 0, gen 0" in my dmesg logs.  I have tried scrubbing the
-device with no errors found.
+http://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git/tree/queue-3.17
 
---
-Rich
+Hope this helps!
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+

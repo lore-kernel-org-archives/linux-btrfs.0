@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45667 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752443AbaJ0QvQ convert rfc822-to-8bit
+Received: from dub004-omc3s28.hotmail.com ([157.55.2.37]:57103 "EHLO
+	DUB004-OMC3S28.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751386AbaJ0Qy3 convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 12:51:16 -0400
-Subject: Re: BTRFS balance segfault, where to go from here
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Content-Type: text/plain; charset=us-ascii
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
-Date: Mon, 27 Oct 2014 10:51:16 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <5DD6D691-A067-4937-A5B4-545A0DFB9B1E@colorremedies.com>
-References: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
-To: Stephan Alz <stephan008@gmx.com>
+	Mon, 27 Oct 2014 12:54:29 -0400
+Message-ID: <DUB118-W2969E1F5128902D7B08B61DA9E0@phx.gbl>
+From: Jasper Verberk <jverberk@hotmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: RE: Problem converting data raid0 to raid1: enospc errors during
+ balance
+Date: Mon, 27 Oct 2014 16:54:27 +0000
+In-Reply-To: <3E982444-5500-45BB-A04F-CF16D735CDF7@colorremedies.com>
+References: <DUB406-EAS294A0E4ED8B326281AFD7C6DA9E0@phx.gbl>,<53BBD40F-B9F3-492C-9F56-15EAFC00119D@colorremedies.com>
+ <DUB118-W201FD897C8121E783F626CDA9E0@phx.gbl>,<3E982444-5500-45BB-A04F-CF16D735CDF7@colorremedies.com>
+Content-Type: text/plain; charset="iso-8859-1"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I actually tried going to raid1 with kernel 3.10 before....the reason I updated to 3.17 was to see if this would fix the error. 
 
-On Oct 27, 2014, at 3:26 AM, Stephan Alz <stephan008@gmx.com> wrote:
-> 
-> My question is where to go from here? What I going to do right now is to copy the most important data to another separated XFS drive.
-> What I planning to do is:
-> 
-> 1, Upgrade the kernel
-> 2, Upgrade BTRFS
-> 3, Continue the balancing.
+It still remained though....
 
-Definitely upgrade the kernel and see how that goes, there's been many many changes since 3.13. I would upgrade the user space tools also but that's not as important.
 
-FYI you can mount with skip_balance mount option to inhibit resuming balance, sometimes pausing the balance isn't fast enough when there are balance problems.
-
-> 
-> 
-> Could someone please also explain that how is exactly the raid10 setup works with ODD number of drives with btrfs? 
-> Raid10 should be a stripe of mirrors. Now then this sdf drive is mirrored or striped or what?
-
-I have no idea honestly. Btrfs is very tolerant of adding odd number and sizes of devices, but things get a bit nutty in actual operation sometimes. This might be one of them because traditionally raid10 is always even number of drives, odd numbers just don't make sense. But Btrfs allows the addition; I think the expectation is you'd have added two before doing the balance though.
-
-> Some btrfs gurus could tell me that should I be worried of dataloss because of this or not?
-
-Anything is possible so hopefully you have backups. My expectation is worse case scenario the fs gets confused and you can't mount rw anymore in which case you won't be able to make it an even drive raid10. But in the case even as ro you can update your backups, blow away the Btrfs volume and start from scratch with an even number of drives, right?
-
-> Would I need even more free space just to add a 5th drive? If so how much more?
-
-Gonna guess you'd need to add a drive that's at least 2.83TiB in size if you want to keep it raid10.
-
-Chris Murphy
+----------------------------------------
+> Subject: Re: Problem converting data raid0 to raid1: enospc errors during balance
+> From: lists@colorremedies.com
+> Date: Mon, 27 Oct 2014 10:43:41 -0600
+> CC: quwenruo@cn.fujitsu.com; linux-btrfs@vger.kernel.org
+> To: jverberk@hotmail.com
+>
+>
+> On Oct 27, 2014, at 9:56 AM, Jasper Verberk <jverberk@hotmail.com> wrote:
+>
+>> These are the results to a normal df:
+>>
+>> http://paste.debian.net/128932/
+>>
+>> The mountpoint is /data.
+>
+> OK so this is with the new computation in kernel 3.17 (which I think contains a bug by counting free space twice); so now it shows available blocks based on the loss due to mirroring or parity. So 1k blocks 5860533168 = 5.45TiB. If you boot an older kernel my expectation is this shows up as 10.91TiB. In any case, df says there's 1.77TiB worth of data, so there should be plenty of space.
+>
+> Somewhere there's a bug. Either the 'btrfs fi df' is insufficiently communicating whether the desired operation can be done, or there's actual kernel confusion on how much space is available to do the conversion.
+>
+> I wonder what happens if you go back to kernel 3.16 and try do do the conversion?
+>
+>
+> Chris Murphy--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html
+ 		 	   		  

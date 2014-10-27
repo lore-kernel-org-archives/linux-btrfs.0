@@ -1,145 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:60231 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751935AbaJ0J0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 05:26:42 -0400
+Received: from mail-ie0-f169.google.com ([209.85.223.169]:46391 "EHLO
+	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751191AbaJ0MFB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 08:05:01 -0400
+Received: by mail-ie0-f169.google.com with SMTP id tr6so4143132ieb.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 05:05:00 -0700 (PDT)
+Message-ID: <544E34E8.2060103@gmail.com>
+Date: Mon, 27 Oct 2014 08:04:56 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-Message-ID: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
-From: "Stephan Alz" <stephan008@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Subject: BTRFS balance segfault, where to go from here
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 27 Oct 2014 10:26:40 +0100
+To: Larkin Lowrey <llowrey@nuclearwinter.com>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Heavy nocow'd VM image fragmentation
+References: <5449898B.4090708@nuclearwinter.com>	<20141024114916.GI12554@merlins.org> <544B0DDC.1020102@pobox.com> <pan$37631$612ebdea$68e82275$b6e96b7b@cox.net> <544D2D6D.6050301@nuclearwinter.com>
+In-Reply-To: <544D2D6D.6050301@nuclearwinter.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030905060704000906050200"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Folks,
+This is a cryptographically signed message in MIME format.
 
-I used to have an array of 4x4TB drives with BTRFS in raid10.
-The kernel version is: 3.13-0.bpo.1-amd64
-BTRFS version is: v3.14.1
+--------------ms030905060704000906050200
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-When it was reaching 80% in space I added another 4TB drive to the array with:
+On 2014-10-26 13:20, Larkin Lowrey wrote:
+> On 10/24/2014 10:28 PM, Duncan wrote:
+>> Robert White posted on Fri, 24 Oct 2014 19:41:32 -0700 as excerpted:
+>>
+>>> On 10/24/2014 04:49 AM, Marc MERLIN wrote:
+>>>> On Thu, Oct 23, 2014 at 06:04:43PM -0500, Larkin Lowrey wrote:
+>>>>> I have a 240GB VirtualBox vdi image that is showing heavy
+>>>>> fragmentation (filefrag). The file was created in a dir that was
+>>>>> chattr +C'd, the file was created via fallocate and the contents of=
 
-> btrfs device add /dev/sdf /mnt/backup
+>>>>> the orignal image were copied into the file via dd. I verified that=
 
-And started the balancing to the new drive:
+>>>>> the image was +C.
+>>>> To be honest, I have the same problem, and it's vexing:
+>>> If I understand correctly, when you take a snapshot the file goes int=
+o
+>>> what I call "1COW" mode.
+>> Yes, but the OP said he hadn't snapshotted since creating the file, an=
+d
+>> MM's a regular that actually wrote much of the wiki documentation on
+>> raid56 modes, so he better know about the snapshotting problem too.
+>>
+>> So that can't be it.  There's apparently a bug in some recent code, an=
+d
+>> it's not honoring the NOCOW even in normal operation, when it should b=
+e.
+>>
+>> (FWIW I'm not running any VMs or large DBs here, so don't have nocow s=
+et
+>> on anything and can and do use autodefrag on all my btrfs.  So I can't=
 
-> btrfs filesystem balance /mnt/backup
+>> say one way or the other, personally.)
+>>
+>
+> Correct, there were no snapshots during VM usage when the fragmentation=
 
-This was going for a while for 5-6 hours before it segfaulted with not enough free space message.
-Now my configuration looks like this:
+> occurred.
+>
+> One unusual property of my setup is I have my fs on top of bcache. More=
 
-btrfs fi show /mnt/backup
-Label: 'backup'  uuid: ...
-	Total devices 5 FS bytes used 5.93TiB
-	devid    1 size 3.64TiB used 2.82TiB path /dev/sdd
-	devid    2 size 3.64TiB used 2.82TiB path /dev/sdc
-	devid    3 size 3.64TiB used 2.81TiB path /dev/sdb
-	devid    4 size 3.64TiB used 2.82TiB path /dev/sde
-	devid    5 size 3.64TiB used 638.50GiB path /dev/sdf
+> specifically, the stack is md raid6  -> bcache -> lvm -> btrfs. When th=
+e
+> fs mounts it has mount option 'ssd' due to the fact that bcache sets
+> /sys/block/bcache0/queue/rotational to 0.
+>
+> Is there any reason why either the 'ssd' mount option or being backed b=
+y
+> bcache could be responsible?
+>
 
-After this crash happend during the balancing (logs are attached at the end) the system remounted my /mnt/backup share as RO.
-At this point I started to really worry. I umounted and remounted it manually. At the beginning it run some self checks which took like 5 mins then as iotop showed it continued with the balancing which failed again the same way. For next time after mount I immediately put the balancing on pause (which helped). 
+Two things:
+First, regarding your question, the ssd mount option "shouldn't" be=20
+responsible for this, because it is supposed to spread out allocation=20
+only at the chunk level, not the block level, but some recent commit may =
 
-My question is where to go from here? What I going to do right now is to copy the most important data to another separated XFS drive.
-What I planning to do is:
+have changed that.  Are you using any kind of compression in btrfs?  If=20
+so, then filefrag won't report the number of fragments correctly (it=20
+currently reports the number of compressed blocks in the file instead),=20
+and in fact, if you are using compression in btrfs, I would expect the=20
+number of compressed blocks to go up as you use more space in the VM=20
+image, long runs of zero bytes compress well, other stuff (especially=20
+on-disk structures from encapsulated filesystems) doesn't.  You might=20
+consider putting the vm images directly on the LVM layer instead, that=20
+tends to get much better performance in my experience than storing them=20
+on a filesystem.
 
-1, Upgrade the kernel
-2, Upgrade BTRFS
-3, Continue the balancing.
-
-
-Could someone please also explain that how is exactly the raid10 setup works with ODD number of drives with btrfs? 
-Raid10 should be a stripe of mirrors. Now then this sdf drive is mirrored or striped or what? 
-Some btrfs gurus could tell me that should I be worried of dataloss because of this or not?
-
-Would I need even more free space just to add a 5th drive? If so how much more? 
-
-Kernel logs
------------
-
-
-Oct 24 17:25:44 backup kernel: [29396.873750] btrfs: relocating block group 5162588438528 flags 65
-Oct 24 17:26:09 backup kernel: [29421.594524] btrfs: found 13126 extents
-Oct 24 17:26:38 backup kernel: [29450.769228] btrfs: found 13126 extents
-Oct 24 17:26:39 backup kernel: [29451.345198] btrfs: relocating block group 5161514696704 flags 68
-Oct 24 17:31:33 backup kernel: [29745.776810] BTRFS debug (device sdb): run_one_delayed_ref returned -28
-Oct 24 17:31:33 backup kernel: [29745.776818] ------------[ cut here ]------------
-Oct 24 17:31:33 backup kernel: [29745.776847] WARNING: CPU: 1 PID: 1807 at /build/linux-t5aGFh/linux-3.13.10/fs/btrfs/super.c:254 __btrfs_abort_transaction+0x5a/0x140 [btrfs]()
-Oct 24 17:31:33 backup kernel: [29745.776849] btrfs: Transaction aborted (error -28)
-Oct 24 17:31:33 backup kernel: [29745.776851] Modules linked in: xen_gntdev xen_evtchn xenfs xen_privcmd nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc 8021q garp mrp bridge stp llc loop iTCO_wdt iTCO_vendor_support lpc_ich radeon mfd_core processor evdev ttm drm_kms_helper drm i2c_algo_bit coretemp rng_core serio_raw pcspkr i2c_i801 i2c_core i3000_edac thermal_sys button shpchp edac_core ext4 crc16 mbcache jbd2 btrfs xor raid6_pq crc32c libcrc32c dm_mod xen_pciback sg sd_mod sr_mod crc_t10dif cdrom crct10dif_common ata_generic ahci ata_piix libahci 3w_9xxx libata scsi_mod ehci_pci uhci_hcd ehci_hcd e1000e ptp pps_core usbcore usb_common
-Oct 24 17:31:33 backup kernel: [29745.776902] CPU: 1 PID: 1807 Comm: btrfs-transacti Not tainted 3.13-0.bpo.1-amd64 #1 Debian 3.13.10-1~bpo70+1
-Oct 24 17:31:33 backup kernel: [29745.776905] Hardware name: Supermicro PDSM4+/PDSM4+, BIOS 6.00 02/05/2007
-Oct 24 17:31:33 backup kernel: [29745.776907]  0000000000000000 ffffffffa0257130 ffffffff814d16c9 ffff88006a7f3cc8
-Oct 24 17:31:33 backup kernel: [29745.776911]  ffffffff81060967 00000000ffffffe4 ffff880004282800 ffff88003b813ec0
-Oct 24 17:31:33 backup kernel: [29745.776914]  0000000000000aaa ffffffffa0253b60 ffffffff81060a55 ffffffffa0257260
-Oct 24 17:31:33 backup kernel: [29745.776918] Call Trace:
-Oct 24 17:31:33 backup kernel: [29745.776926]  [<ffffffff814d16c9>] ? dump_stack+0x41/0x51
-Oct 24 17:31:33 backup kernel: [29745.776931]  [<ffffffff81060967>] ? warn_slowpath_common+0x87/0xc0
-Oct 24 17:31:33 backup kernel: [29745.776935]  [<ffffffff81060a55>] ? warn_slowpath_fmt+0x45/0x50
-Oct 24 17:31:33 backup kernel: [29745.776946]  [<ffffffffa01b73ca>] ? __btrfs_abort_transaction+0x5a/0x140 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.776959]  [<ffffffffa01d2e72>] ? btrfs_run_delayed_refs+0x372/0x530 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.776974]  [<ffffffffa01fa8c3>] ? btrfs_run_ordered_operations+0x213/0x2b0 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.776988]  [<ffffffffa01e2fea>] ? btrfs_commit_transaction+0x5a/0x990 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.777001]  [<ffffffffa01e1345>] ? transaction_kthread+0x1c5/0x240 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.777015]  [<ffffffffa01e1180>] ? open_ctree+0x1ff0/0x1ff0 [btrfs]
-Oct 24 17:31:33 backup kernel: [29745.777019]  [<ffffffff8108233c>] ? kthread+0xbc/0xe0
-Oct 24 17:31:33 backup kernel: [29745.777022]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
-Oct 24 17:31:33 backup kernel: [29745.777026]  [<ffffffff814dee4c>] ? ret_from_fork+0x7c/0xb0
-Oct 24 17:31:33 backup kernel: [29745.777030]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
-Oct 24 17:31:33 backup kernel: [29745.777032] ---[ end trace 5de5beb31698a3c1 ]---
-Oct 24 17:31:33 backup kernel: [29745.777035] BTRFS error (device sdb) in btrfs_run_delayed_refs:2730: errno=-28 No space left
-Oct 24 17:31:33 backup kernel: [29745.777512] BTRFS info (device sdb): forced readonly
-Oct 24 17:31:33 backup kernel: [29745.784767] BTRFS debug (device sdb): run_one_delayed_ref returned -28
-Oct 24 17:31:33 backup kernel: [29745.784773] BTRFS error (device sdb) in btrfs_run_delayed_refs:2730: errno=-28 No space left
-Oct 24 17:35:53 backup kernel: [30005.015967] btrfs: device label backup_fs devid 3 transid 86656 /dev/sdb
-Oct 24 17:35:53 backup kernel: [30005.063903] btrfs: disk space caching is enabled
-Oct 24 17:43:01 backup kernel: [30433.356660] BTRFS debug (device sdf): unlinked 1 orphans
-Oct 24 17:43:01 backup kernel: [30433.395645] btrfs: continuing balance
-Oct 24 17:43:02 backup kernel: [30434.395936] btrfs: relocating block group 7434626138112 flags 65
-Oct 24 17:43:17 backup kernel: [30449.104022] btrfs: found 8842 extents
-Oct 24 17:43:24 backup kernel: [30456.043235] btrfs: found 8834 extents
-Oct 24 17:43:24 backup kernel: [30456.580133] btrfs: relocating block group 7223098998784 flags 68
-Oct 24 17:48:42 backup kernel: [30774.465707] btrfs: found 37187 extents
-Oct 24 17:48:43 backup kernel: [30775.058570] btrfs: relocating block group 6782864850944 flags 68
-Oct 24 17:52:16 backup kernel: [30988.070735] BTRFS debug (device sdf): run_one_delayed_ref returned -28
-Oct 24 17:52:16 backup kernel: [30988.070742] ------------[ cut here ]------------
-Oct 24 17:52:16 backup kernel: [30988.070772] WARNING: CPU: 1 PID: 15920 at /build/linux-t5aGFh/linux-3.13.10/fs/btrfs/super.c:254 __btrfs_abort_transaction+0x5a/0x140 [btrfs]()
-Oct 24 17:52:16 backup kernel: [30988.070775] btrfs: Transaction aborted (error -28)
-Oct 24 17:52:16 backup kernel: [30988.070776] Modules linked in: xen_gntdev xen_evtchn xenfs xen_privcmd nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc 8021q garp mrp bridge stp llc loop iTCO_wdt iTCO_vendor_support lpc_ich radeon mfd_core processor evdev ttm drm_kms_helper drm i2c_algo_bit coretemp rng_core serio_raw pcspkr i2c_i801 i2c_core i3000_edac thermal_sys button shpchp edac_core ext4 crc16 mbcache jbd2 btrfs xor raid6_pq crc32c libcrc32c dm_mod xen_pciback sg sd_mod sr_mod crc_t10dif cdrom crct10dif_common ata_generic ahci ata_piix libahci 3w_9xxx libata scsi_mod ehci_pci uhci_hcd ehci_hcd e1000e ptp pps_core usbcore usb_common
-Oct 24 17:52:16 backup kernel: [30988.070828] CPU: 1 PID: 15920 Comm: btrfs-transacti Tainted: G        W    3.13-0.bpo.1-amd64 #1 Debian 3.13.10-1~bpo70+1
-Oct 24 17:52:16 backup kernel: [30988.070830] Hardware name: Supermicro PDSM4+/PDSM4+, BIOS 6.00 02/05/2007
-Oct 24 17:52:16 backup kernel: [30988.070833]  0000000000000000 ffffffffa0257130 ffffffff814d16c9 ffff880056d7bcc8
-Oct 24 17:52:16 backup kernel: [30988.070838]  ffffffff81060967 00000000ffffffe4 ffff880003c97000 ffff88006ba9abe0
-Oct 24 17:52:16 backup kernel: [30988.070841]  0000000000000aaa ffffffffa0253b60 ffffffff81060a55 ffffffffa0257260
-Oct 24 17:52:16 backup kernel: [30988.070845] Call Trace:
-Oct 24 17:52:16 backup kernel: [30988.070853]  [<ffffffff814d16c9>] ? dump_stack+0x41/0x51
-Oct 24 17:52:16 backup kernel: [30988.070858]  [<ffffffff81060967>] ? warn_slowpath_common+0x87/0xc0
-Oct 24 17:52:16 backup kernel: [30988.070862]  [<ffffffff81060a55>] ? warn_slowpath_fmt+0x45/0x50
-Oct 24 17:52:16 backup kernel: [30988.070873]  [<ffffffffa01b73ca>] ? __btrfs_abort_transaction+0x5a/0x140 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070886]  [<ffffffffa01d2e72>] ? btrfs_run_delayed_refs+0x372/0x530 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070901]  [<ffffffffa01fa8c3>] ? btrfs_run_ordered_operations+0x213/0x2b0 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070915]  [<ffffffffa01e2fea>] ? btrfs_commit_transaction+0x5a/0x990 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070929]  [<ffffffffa01e1345>] ? transaction_kthread+0x1c5/0x240 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070942]  [<ffffffffa01e1180>] ? open_ctree+0x1ff0/0x1ff0 [btrfs]
-Oct 24 17:52:16 backup kernel: [30988.070946]  [<ffffffff8108233c>] ? kthread+0xbc/0xe0
-Oct 24 17:52:16 backup kernel: [30988.070949]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
-Oct 24 17:52:16 backup kernel: [30988.070954]  [<ffffffff814dee4c>] ? ret_from_fork+0x7c/0xb0
-Oct 24 17:52:16 backup kernel: [30988.070957]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
-Oct 24 17:52:16 backup kernel: [30988.070960] ---[ end trace 5de5beb31698a3c2 ]---
-Oct 24 17:52:16 backup kernel: [30988.070963] BTRFS error (device sdf) in btrfs_run_delayed_refs:2730: errno=-28 No space left
-Oct 24 17:52:16 backup kernel: [30988.071439] BTRFS info (device sdf): forced readonly
-Oct 24 17:52:16 backup kernel: [30988.081154] BTRFS debug (device sdf): run_one_delayed_ref returned -28
-Oct 24 17:52:16 backup kernel: [30988.081161] BTRFS error (device sdf) in btrfs_run_delayed_refs:2730: errno=-28 No space left
-Oct 24 17:55:34 backup kernel: [31186.936384] btrfs: device label backup_fs devid 3 transid 86683 /dev/sdb
-Oct 24 17:55:35 backup kernel: [31187.067619] btrfs: disk space caching is enabled
-Oct 24 18:01:23 backup kernel: [31535.301582] BTRFS debug (device sdf): unlinked 1 orphans
-Oct 24 18:01:23 backup kernel: [31535.339410] btrfs: continuing balance
-Oct 24 18:01:23 backup kernel: [31535.624023] btrfs: relocating block group 7438921105408 flags 68
-Oct 24 18:02:37 backup kernel: [31609.293378] btrfs: found 26705 extents
+Secondly, I'd recommend switching from using bcache under LVM to using=20
+dm-cache on top of LVM, as it makes it much easier to recover from the=20
+various failure modes, and also to deal with a corrupted cache, due to=20
+the fact that dm-cache doesn't put any metadata on the backing device.=20
+It takes longer to shutdown when in write-back mode, and isn't SSD=20
+optimized, but has also been much more reliable in my experience.
 
 
-Thanks!
+--------------ms030905060704000906050200
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDI3MTIwNDU2
+WjAjBgkqhkiG9w0BCQQxFgQUjqLiY6Mi+jVOWvgDF0bGnzjoeHIwbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAu7TG75+zc43WiJymauVOsLJMCuJI
+i9iULbqmETMGGdyRsPf44hFyUXpLiJDsBwjvi2bDWFrY9DYW7KTlNOQH7OqYFRXSQOAr1SYI
+SzbU3ct79hoHYgHlc6268X5u6i1WwpJKIQqjXLmZTOtb4EPqAMg8MhncrLRrpiNoEn+/714p
+uotcenb0g2HVfqH8AgxzHMwWr31YHmZEE9GQFL7BHQqxk1Y/GXQCNmV1QaZDZndLwBkBecFh
+VYsAsl+PknHTOHAqqmuJ9nalOsJlsmgFGhByZfEk9Lh+ZQAoKgklnn8wu5d5ss7BrDeQYMe7
+VsWacQ68GFC5Ayn7PtiBpV2vVQAAAAAAAA==
+--------------ms030905060704000906050200--

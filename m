@@ -1,170 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13031 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751149AbaJ0Ie6 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 04:34:58 -0400
-Message-ID: <544E040A.3090407@cn.fujitsu.com>
-Date: Mon, 27 Oct 2014 16:36:26 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to reduce
- ENOSPC caused by unbalanced data/metadata allocation.
-References: <1414031871-10859-1-git-send-email-quwenruo@cn.fujitsu.com> <20141024110624.GB32526@localhost.localdomain> <544D8F44.8050706@cn.fujitsu.com> <20141027081456.GD27271@localhost.localdomain>
-In-Reply-To: <20141027081456.GD27271@localhost.localdomain>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:51883 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752358AbaJ0JS1 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 27 Oct 2014 05:18:27 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix invalid leaf slot access in btrfs_lookup_extent()
+Date: Mon, 27 Oct 2014 09:16:55 +0000
+Message-Id: <1414401415-27745-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+If we couldn't find our extent item, we accessed the current slot
+(path->slots[0]) to check if it corresponds to an equivalent skinny
+metadata item. However this slot could be beyond our last item in the
+leaf (i.e. path->slots[0] >= btrfs_header_nritems(leaf)), in which case
+we shouldn't process it.
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to 
-reduce ENOSPC caused by unbalanced data/metadata allocation.
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年10月27日 16:14
-> On Mon, Oct 27, 2014 at 08:18:12AM +0800, Qu Wenruo wrote:
->> -------- Original Message --------
->> Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm
->> to reduce ENOSPC caused by unbalanced data/metadata allocation.
->> From: Liu Bo <bo.li.liu@oracle.com>
->> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> Date: 2014年10月24日 19:06
->>> On Thu, Oct 23, 2014 at 10:37:51AM +0800, Qu Wenruo wrote:
->>>> When btrfs allocate a chunk, it will try to alloc up to 1G for data and
->>>> 256M for metadata, or 10% of all the writeable space if there is enough
->>> 10G for data,
->>>          if (type & BTRFS_BLOCK_GROUP_DATA) {
->>>                  max_stripe_size = 1024 * 1024 * 1024;
->>>                  max_chunk_size = 10 * max_stripe_size;
->> Oh, sorry, 10G is right.
->>
->> Any other comments?
->>
->> Thanks,
->> Qu
->>
->>
->>> 		...
->>>
->>> thanks,
->>> -liubo
->>>
->>>> space for the stripe on device.
->>>>
->>>> However, when we run out of space, this allocation may cause unbalanced
->>>> chunk allocation.
->>>> For example, there are only 1G unallocated space, and request for
->>>> allocate DATA chunk is sent, and all the space will be allocated as data
->>>> chunk, making later metadata chunk alloc request unable to handle, which
->>>> will cause ENOSPC.
->>>> This is the one of the common complains from end users about why ENOSPC
->>>> happens but there is still available space.
-> Okay, I don't think this is the common case, AFAIK, the most ENOSPC is caused
-> by our runtime worst case metadata reservation problem.
->
-> btrfs has been inclined to create a fairly large metadata chunk (1G) in its
-> initial mkfs stage and 256M metadata chunk is also a very large one.
->
-> As of your below example, yes, we don't have space for metadata
-> allocation, but do we really need to allocate a new one?
->
-> Or am I missing something?
->
-> thanks,
-> -liubo
-Yes that's true this is not the common cause, but at least this patch 
-may make the percentage
-of 'df' command reach as close to 100% as possible before hitting ENOSPC 
-under normal operations.
-(If not using balance)
+Since btrfs_lookup_extent() is only used to find extent items for data
+extents, fix this by removing completely the logic that looks up for an
+equivalent skinny metadata item, since it can not exist.
 
-And some case like the following mail may be improved by the patch:
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36097.html
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-I understand that most of the cases that a lot of free data space and no 
-metadata space is caused by
-create and then delete large files, but if the last giga bytes can be 
-allocated more carefully,
-at least the available bytes of 'df'  command should be reduced before 
-hit ENOSPC.
-
-How do you think about it?
-
-Thanks,
-Qu
->
->>>> This patch will try not to alloc chunk which is more than half of the
->>>> unallocated space, making the last space more balanced at a small cost
->>>> of more fragmented chunk at the last 1G.
->>>>
->>>> Some easy example:
->>>> Preallocate 17.5G on a 20G empty btrfs fs:
->>>> [Before]
->>>>   # btrfs fi show /mnt/test
->>>> Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
->>>> 	Total devices 1 FS bytes used 17.50GiB
->>>> 	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
->>>> All space is allocated. No space later metadata space.
->>>>
->>>> [After]
->>>>   # btrfs fi show /mnt/test
->>>> Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
->>>> 	Total devices 1 FS bytes used 17.50GiB
->>>> 	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
->>>> About 230M is still available for later metadata allocation.
->>>>
->>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> ---
->>>>   fs/btrfs/volumes.c | 18 ++++++++++++++++++
->>>>   1 file changed, 18 insertions(+)
->>>>
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index d47289c..fa8de79 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -4240,6 +4240,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->>>>   	int ret;
->>>>   	u64 max_stripe_size;
->>>>   	u64 max_chunk_size;
->>>> +	u64 total_avail_space = 0;
->>>>   	u64 stripe_size;
->>>>   	u64 num_bytes;
->>>>   	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
->>>> @@ -4352,10 +4353,27 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->>>>   		devices_info[ndevs].max_avail = max_avail;
->>>>   		devices_info[ndevs].total_avail = total_avail;
->>>>   		devices_info[ndevs].dev = device;
->>>> +		total_avail_space += total_avail;
->>>>   		++ndevs;
->>>>   	}
->>>>   	/*
->>>> +	 * Try not to occupy more than half of the unallocated space.
->>>> +	 * When run short of space and alloc all the space to
->>>> +	 * data/metadata will cause ENOSPC to be triggered more easily.
->>>> +	 *
->>>> +	 * And since the minimum chunk size is 16M, the half-half will cause
->>>> +	 * 16M allocated from 20M available space and reset 4M will not be
->>>> +	 * used ever. In that case(16~32M), allocate all directly.
->>>> +	 */
->>>> +	if (total_avail_space < 32 * 1024 * 1024 &&
->>>> +	    total_avail_space > 16 * 1024 * 1024)
->>>> +		max_chunk_size = total_avail_space;
->>>> +	else
->>>> +		max_chunk_size = min(total_avail_space / 2, max_chunk_size);
->>>> +	max_chunk_size = min(total_avail_space / 2, max_chunk_size);
->>>> +
->>>> +	/*
->>>>   	 * now sort the devices by hole size / available space
->>>>   	 */
->>>>   	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
->>>> -- 
->>>> 2.1.2
->>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0d599ba..9141b2b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -710,7 +710,7 @@ void btrfs_clear_space_info_full(struct btrfs_fs_info *info)
+ 	rcu_read_unlock();
+ }
+ 
+-/* simple helper to search for an existing extent at a given offset */
++/* simple helper to search for an existing data extent at a given offset */
+ int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len)
+ {
+ 	int ret;
+@@ -726,12 +726,6 @@ int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len)
+ 	key.type = BTRFS_EXTENT_ITEM_KEY;
+ 	ret = btrfs_search_slot(NULL, root->fs_info->extent_root, &key, path,
+ 				0, 0);
+-	if (ret > 0) {
+-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+-		if (key.objectid == start &&
+-		    key.type == BTRFS_METADATA_ITEM_KEY)
+-			ret = 0;
+-	}
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+-- 
+1.9.1
 

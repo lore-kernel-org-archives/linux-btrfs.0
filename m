@@ -1,100 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44004 "EHLO plane.gmane.org"
+Received: from mout.gmx.net ([212.227.17.22]:60231 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751711AbaJ0HvB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 03:51:01 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xif4t-000067-CI
-	for linux-btrfs@vger.kernel.org; Mon, 27 Oct 2014 08:50:59 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 08:50:59 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 08:50:59 +0100
+	id S1751935AbaJ0J0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 05:26:42 -0400
+MIME-Version: 1.0
+Message-ID: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
+From: "Stephan Alz" <stephan008@gmx.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Date: Mon, 27 Oct 2014 07:50:48 +0000 (UTC)
-Message-ID: <pan$1bd1f$ec6d13d0$43a21241$9f8eca24@cox.net>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz> <20141025142458.5d96970b@marcec>
-	<64867638-EADF-4258-ACD7-BC33014B3DA9@colorremedies.com>
-	<CF7BFF69-89E5-44EE-8CC3-E306531B88FE@colorremedies.com>
-	<20141027022415.14940745@marcec.fritz.box>
-Mime-Version: 1.0
+Subject: BTRFS balance segfault, where to go from here
 Content-Type: text/plain; charset=UTF-8
+Date: Mon, 27 Oct 2014 10:26:40 +0100
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc Joliet posted on Mon, 27 Oct 2014 02:24:15 +0100 as excerpted:
+Hello Folks,
 
-> Am Sat, 25 Oct 2014 14:35:33 -0600 schrieb Chris Murphy
-> <lists@colorremedies.com>:
-> 
-> 
->> On Oct 25, 2014, at 2:33 PM, Chris Murphy <lists@colorremedies.com>
->> wrote:
->> 
->> 
->> > On Oct 25, 2014, at 6:24 AM, Marc Joliet <marcec@gmx.de> wrote:
->> >> 
->> >> First of all: does grub2 support booting from a btrfs file system
->> >> with skinny-metadata, or is it irrelevant?
->> > 
->> > Seems plausible if older kernels don't understand skinny-metadata,
->> > that GRUB2 won't either. So I just tested it with grub2-2.02-0.8.fc21
->> > and it works. I'm surprised, actually.
->> 
->> I don't understand the nature of the incompatibility with older
->> kernels. Can they not mount a Btrfs volume even as ro? If so then I'd
->> expect GRUB to have a problem, so I'm going to guess that maybe a 3.9
->> or older kernel could ro mount a Btrfs volume with skinny extents and
->> the incompatibility is writing.
-> 
-> That sounds plausible, though I hope for a definitive answer. (FWIW, I
-> originally asked because I couldn't find any commits to grub2 related to
-> skinny metadata; the updates to the btrfs driver were fairly sparse.)
+I used to have an array of 4x4TB drives with BTRFS in raid10.
+The kernel version is: 3.13-0.bpo.1-amd64
+BTRFS version is: v3.14.1
 
-FWIW I have three /boot partitions, one one each of my main drives.  All 
-three are gpt with a reserved BIOS partition that grub2 installs its 
-monolithic grub2core into, but have dedicated /boot partitions as well, 
-for the grub2 config and additional grub2 modules, kernels, etc.  The 
-third one is reiserfs on spinning rust, but the other two are btrfs on 
-ssd.
+When it was reaching 80% in space I added another 4TB drive to the array with:
 
-Last time I updated I thought I switched them to skinny-metadata, but 
-just checking dmesg while mounting them now, the second one (first 
-backup) is skinny-metadata, but my working /boot is still fat-metadata.
+> btrfs device add /dev/sdf /mnt/backup
 
-I did test the backup (with the skinny-metadata) after I did the mkfs and 
-restore and it booted to grub2 and from grub2 to my main system just 
-fine, so grub2 with skinny-metadata *CAN* work.
+And started the balancing to the new drive:
 
-But because it's my backup, I don't update it with new kernels as 
-frequently as I do my working /boot, nor do I boot from it that often.  
-So while I can be sure grub2 /can/ work with skinny-metadata, I do not 
-yet know at this point if it does so /reliably/.
+> btrfs filesystem balance /mnt/backup
 
-And of course, to the extent that grub2 works differently on MBR and/or 
-on GPT when it doesn't have a reserved BIOS partition to put the 
-monolithic grub2core in, I haven't tested that.  Tho in theory that 
-should install in slack-space if available and the filesystem shouldn't 
-affect that at all.  But I know reiserfs used to screw up grub1 very  
-occasionally (maybe .5-1% of new kernel installations; it did it I think 
-twice in about 7 years, and I run git kernels so update them reasonably 
-frequently) on my old MBR setup without much slack-space to spare, and 
-I'd have to reinstall grub1.
+This was going for a while for 5-6 hours before it segfaulted with not enough free space message.
+Now my configuration looks like this:
 
-So that's a qualified skinny-metadata shouldn't affect grub2, as I've 
-booted using grub2 on a btrfs with skinny-metadata /boot.  But I've 
-simply not tested it enough to know whether it's reliable over time as 
-the filesystem updates and changes, or not.
+btrfs fi show /mnt/backup
+Label: 'backup'  uuid: ...
+	Total devices 5 FS bytes used 5.93TiB
+	devid    1 size 3.64TiB used 2.82TiB path /dev/sdd
+	devid    2 size 3.64TiB used 2.82TiB path /dev/sdc
+	devid    3 size 3.64TiB used 2.81TiB path /dev/sdb
+	devid    4 size 3.64TiB used 2.82TiB path /dev/sde
+	devid    5 size 3.64TiB used 638.50GiB path /dev/sdf
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+After this crash happend during the balancing (logs are attached at the end) the system remounted my /mnt/backup share as RO.
+At this point I started to really worry. I umounted and remounted it manually. At the beginning it run some self checks which took like 5 mins then as iotop showed it continued with the balancing which failed again the same way. For next time after mount I immediately put the balancing on pause (which helped). 
+
+My question is where to go from here? What I going to do right now is to copy the most important data to another separated XFS drive.
+What I planning to do is:
+
+1, Upgrade the kernel
+2, Upgrade BTRFS
+3, Continue the balancing.
+
+
+Could someone please also explain that how is exactly the raid10 setup works with ODD number of drives with btrfs? 
+Raid10 should be a stripe of mirrors. Now then this sdf drive is mirrored or striped or what? 
+Some btrfs gurus could tell me that should I be worried of dataloss because of this or not?
+
+Would I need even more free space just to add a 5th drive? If so how much more? 
+
+Kernel logs
+-----------
+
+
+Oct 24 17:25:44 backup kernel: [29396.873750] btrfs: relocating block group 5162588438528 flags 65
+Oct 24 17:26:09 backup kernel: [29421.594524] btrfs: found 13126 extents
+Oct 24 17:26:38 backup kernel: [29450.769228] btrfs: found 13126 extents
+Oct 24 17:26:39 backup kernel: [29451.345198] btrfs: relocating block group 5161514696704 flags 68
+Oct 24 17:31:33 backup kernel: [29745.776810] BTRFS debug (device sdb): run_one_delayed_ref returned -28
+Oct 24 17:31:33 backup kernel: [29745.776818] ------------[ cut here ]------------
+Oct 24 17:31:33 backup kernel: [29745.776847] WARNING: CPU: 1 PID: 1807 at /build/linux-t5aGFh/linux-3.13.10/fs/btrfs/super.c:254 __btrfs_abort_transaction+0x5a/0x140 [btrfs]()
+Oct 24 17:31:33 backup kernel: [29745.776849] btrfs: Transaction aborted (error -28)
+Oct 24 17:31:33 backup kernel: [29745.776851] Modules linked in: xen_gntdev xen_evtchn xenfs xen_privcmd nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc 8021q garp mrp bridge stp llc loop iTCO_wdt iTCO_vendor_support lpc_ich radeon mfd_core processor evdev ttm drm_kms_helper drm i2c_algo_bit coretemp rng_core serio_raw pcspkr i2c_i801 i2c_core i3000_edac thermal_sys button shpchp edac_core ext4 crc16 mbcache jbd2 btrfs xor raid6_pq crc32c libcrc32c dm_mod xen_pciback sg sd_mod sr_mod crc_t10dif cdrom crct10dif_common ata_generic ahci ata_piix libahci 3w_9xxx libata scsi_mod ehci_pci uhci_hcd ehci_hcd e1000e ptp pps_core usbcore usb_common
+Oct 24 17:31:33 backup kernel: [29745.776902] CPU: 1 PID: 1807 Comm: btrfs-transacti Not tainted 3.13-0.bpo.1-amd64 #1 Debian 3.13.10-1~bpo70+1
+Oct 24 17:31:33 backup kernel: [29745.776905] Hardware name: Supermicro PDSM4+/PDSM4+, BIOS 6.00 02/05/2007
+Oct 24 17:31:33 backup kernel: [29745.776907]  0000000000000000 ffffffffa0257130 ffffffff814d16c9 ffff88006a7f3cc8
+Oct 24 17:31:33 backup kernel: [29745.776911]  ffffffff81060967 00000000ffffffe4 ffff880004282800 ffff88003b813ec0
+Oct 24 17:31:33 backup kernel: [29745.776914]  0000000000000aaa ffffffffa0253b60 ffffffff81060a55 ffffffffa0257260
+Oct 24 17:31:33 backup kernel: [29745.776918] Call Trace:
+Oct 24 17:31:33 backup kernel: [29745.776926]  [<ffffffff814d16c9>] ? dump_stack+0x41/0x51
+Oct 24 17:31:33 backup kernel: [29745.776931]  [<ffffffff81060967>] ? warn_slowpath_common+0x87/0xc0
+Oct 24 17:31:33 backup kernel: [29745.776935]  [<ffffffff81060a55>] ? warn_slowpath_fmt+0x45/0x50
+Oct 24 17:31:33 backup kernel: [29745.776946]  [<ffffffffa01b73ca>] ? __btrfs_abort_transaction+0x5a/0x140 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.776959]  [<ffffffffa01d2e72>] ? btrfs_run_delayed_refs+0x372/0x530 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.776974]  [<ffffffffa01fa8c3>] ? btrfs_run_ordered_operations+0x213/0x2b0 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.776988]  [<ffffffffa01e2fea>] ? btrfs_commit_transaction+0x5a/0x990 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.777001]  [<ffffffffa01e1345>] ? transaction_kthread+0x1c5/0x240 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.777015]  [<ffffffffa01e1180>] ? open_ctree+0x1ff0/0x1ff0 [btrfs]
+Oct 24 17:31:33 backup kernel: [29745.777019]  [<ffffffff8108233c>] ? kthread+0xbc/0xe0
+Oct 24 17:31:33 backup kernel: [29745.777022]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
+Oct 24 17:31:33 backup kernel: [29745.777026]  [<ffffffff814dee4c>] ? ret_from_fork+0x7c/0xb0
+Oct 24 17:31:33 backup kernel: [29745.777030]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
+Oct 24 17:31:33 backup kernel: [29745.777032] ---[ end trace 5de5beb31698a3c1 ]---
+Oct 24 17:31:33 backup kernel: [29745.777035] BTRFS error (device sdb) in btrfs_run_delayed_refs:2730: errno=-28 No space left
+Oct 24 17:31:33 backup kernel: [29745.777512] BTRFS info (device sdb): forced readonly
+Oct 24 17:31:33 backup kernel: [29745.784767] BTRFS debug (device sdb): run_one_delayed_ref returned -28
+Oct 24 17:31:33 backup kernel: [29745.784773] BTRFS error (device sdb) in btrfs_run_delayed_refs:2730: errno=-28 No space left
+Oct 24 17:35:53 backup kernel: [30005.015967] btrfs: device label backup_fs devid 3 transid 86656 /dev/sdb
+Oct 24 17:35:53 backup kernel: [30005.063903] btrfs: disk space caching is enabled
+Oct 24 17:43:01 backup kernel: [30433.356660] BTRFS debug (device sdf): unlinked 1 orphans
+Oct 24 17:43:01 backup kernel: [30433.395645] btrfs: continuing balance
+Oct 24 17:43:02 backup kernel: [30434.395936] btrfs: relocating block group 7434626138112 flags 65
+Oct 24 17:43:17 backup kernel: [30449.104022] btrfs: found 8842 extents
+Oct 24 17:43:24 backup kernel: [30456.043235] btrfs: found 8834 extents
+Oct 24 17:43:24 backup kernel: [30456.580133] btrfs: relocating block group 7223098998784 flags 68
+Oct 24 17:48:42 backup kernel: [30774.465707] btrfs: found 37187 extents
+Oct 24 17:48:43 backup kernel: [30775.058570] btrfs: relocating block group 6782864850944 flags 68
+Oct 24 17:52:16 backup kernel: [30988.070735] BTRFS debug (device sdf): run_one_delayed_ref returned -28
+Oct 24 17:52:16 backup kernel: [30988.070742] ------------[ cut here ]------------
+Oct 24 17:52:16 backup kernel: [30988.070772] WARNING: CPU: 1 PID: 15920 at /build/linux-t5aGFh/linux-3.13.10/fs/btrfs/super.c:254 __btrfs_abort_transaction+0x5a/0x140 [btrfs]()
+Oct 24 17:52:16 backup kernel: [30988.070775] btrfs: Transaction aborted (error -28)
+Oct 24 17:52:16 backup kernel: [30988.070776] Modules linked in: xen_gntdev xen_evtchn xenfs xen_privcmd nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc 8021q garp mrp bridge stp llc loop iTCO_wdt iTCO_vendor_support lpc_ich radeon mfd_core processor evdev ttm drm_kms_helper drm i2c_algo_bit coretemp rng_core serio_raw pcspkr i2c_i801 i2c_core i3000_edac thermal_sys button shpchp edac_core ext4 crc16 mbcache jbd2 btrfs xor raid6_pq crc32c libcrc32c dm_mod xen_pciback sg sd_mod sr_mod crc_t10dif cdrom crct10dif_common ata_generic ahci ata_piix libahci 3w_9xxx libata scsi_mod ehci_pci uhci_hcd ehci_hcd e1000e ptp pps_core usbcore usb_common
+Oct 24 17:52:16 backup kernel: [30988.070828] CPU: 1 PID: 15920 Comm: btrfs-transacti Tainted: G        W    3.13-0.bpo.1-amd64 #1 Debian 3.13.10-1~bpo70+1
+Oct 24 17:52:16 backup kernel: [30988.070830] Hardware name: Supermicro PDSM4+/PDSM4+, BIOS 6.00 02/05/2007
+Oct 24 17:52:16 backup kernel: [30988.070833]  0000000000000000 ffffffffa0257130 ffffffff814d16c9 ffff880056d7bcc8
+Oct 24 17:52:16 backup kernel: [30988.070838]  ffffffff81060967 00000000ffffffe4 ffff880003c97000 ffff88006ba9abe0
+Oct 24 17:52:16 backup kernel: [30988.070841]  0000000000000aaa ffffffffa0253b60 ffffffff81060a55 ffffffffa0257260
+Oct 24 17:52:16 backup kernel: [30988.070845] Call Trace:
+Oct 24 17:52:16 backup kernel: [30988.070853]  [<ffffffff814d16c9>] ? dump_stack+0x41/0x51
+Oct 24 17:52:16 backup kernel: [30988.070858]  [<ffffffff81060967>] ? warn_slowpath_common+0x87/0xc0
+Oct 24 17:52:16 backup kernel: [30988.070862]  [<ffffffff81060a55>] ? warn_slowpath_fmt+0x45/0x50
+Oct 24 17:52:16 backup kernel: [30988.070873]  [<ffffffffa01b73ca>] ? __btrfs_abort_transaction+0x5a/0x140 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070886]  [<ffffffffa01d2e72>] ? btrfs_run_delayed_refs+0x372/0x530 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070901]  [<ffffffffa01fa8c3>] ? btrfs_run_ordered_operations+0x213/0x2b0 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070915]  [<ffffffffa01e2fea>] ? btrfs_commit_transaction+0x5a/0x990 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070929]  [<ffffffffa01e1345>] ? transaction_kthread+0x1c5/0x240 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070942]  [<ffffffffa01e1180>] ? open_ctree+0x1ff0/0x1ff0 [btrfs]
+Oct 24 17:52:16 backup kernel: [30988.070946]  [<ffffffff8108233c>] ? kthread+0xbc/0xe0
+Oct 24 17:52:16 backup kernel: [30988.070949]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
+Oct 24 17:52:16 backup kernel: [30988.070954]  [<ffffffff814dee4c>] ? ret_from_fork+0x7c/0xb0
+Oct 24 17:52:16 backup kernel: [30988.070957]  [<ffffffff81082280>] ? flush_kthread_worker+0xa0/0xa0
+Oct 24 17:52:16 backup kernel: [30988.070960] ---[ end trace 5de5beb31698a3c2 ]---
+Oct 24 17:52:16 backup kernel: [30988.070963] BTRFS error (device sdf) in btrfs_run_delayed_refs:2730: errno=-28 No space left
+Oct 24 17:52:16 backup kernel: [30988.071439] BTRFS info (device sdf): forced readonly
+Oct 24 17:52:16 backup kernel: [30988.081154] BTRFS debug (device sdf): run_one_delayed_ref returned -28
+Oct 24 17:52:16 backup kernel: [30988.081161] BTRFS error (device sdf) in btrfs_run_delayed_refs:2730: errno=-28 No space left
+Oct 24 17:55:34 backup kernel: [31186.936384] btrfs: device label backup_fs devid 3 transid 86683 /dev/sdb
+Oct 24 17:55:35 backup kernel: [31187.067619] btrfs: disk space caching is enabled
+Oct 24 18:01:23 backup kernel: [31535.301582] BTRFS debug (device sdf): unlinked 1 orphans
+Oct 24 18:01:23 backup kernel: [31535.339410] btrfs: continuing balance
+Oct 24 18:01:23 backup kernel: [31535.624023] btrfs: relocating block group 7438921105408 flags 68
+Oct 24 18:02:37 backup kernel: [31609.293378] btrfs: found 26705 extents
+
+
+Thanks!
+
 

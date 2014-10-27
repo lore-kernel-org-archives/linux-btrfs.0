@@ -1,56 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:64312 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756103AbaJXRAp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Oct 2014 13:00:45 -0400
-Date: Fri, 24 Oct 2014 13:00:29 -0400
-From: Dave Jones <davej@redhat.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs: WARN_ON(data_sinfo->bytes_may_use < bytes);
-Message-ID: <20141024170029.GA15926@redhat.com>
-References: <20141023010731.GA27796@redhat.com>
- <20141023012236.GA28429@redhat.com>
- <20141024155245.GA14709@localhost.localdomain>
+Received: from cn.fujitsu.com ([59.151.112.132]:4924 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751808AbaJ0AQa convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Oct 2014 20:16:30 -0400
+Message-ID: <544D8F44.8050706@cn.fujitsu.com>
+Date: Mon, 27 Oct 2014 08:18:12 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141024155245.GA14709@localhost.localdomain>
+To: <bo.li.liu@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to reduce
+ ENOSPC caused by unbalanced data/metadata allocation.
+References: <1414031871-10859-1-git-send-email-quwenruo@cn.fujitsu.com> <20141024110624.GB32526@localhost.localdomain>
+In-Reply-To: <20141024110624.GB32526@localhost.localdomain>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 24, 2014 at 11:52:47PM +0800, Liu Bo wrote:
- 
- > > I also see this WARN_ON being hit from the sync path..
- > > 
- > > WARNING: CPU: 2 PID: 11166 at fs/btrfs/extent-tree.c:3799 btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]()
- > > CPU: 2 PID: 11166 Comm: trinity-c61 Tainted: G        W      3.18.0-rc1+ #74
- > >  0000000000000009 00000000aee2e4e2 ffff8801b0dfbcc8 ffffffff8d86cc97
- > >  0000000000000000 0000000000000000 ffff8801b0dfbd08 ffffffff8d07f301
- > >  ffff88023f328000 ffff88023953d668 0000000000040000 ffff880239358548
- > > Call Trace:
- > >  [<ffffffff8d86cc97>] dump_stack+0x4f/0x7c
- > >  [<ffffffff8d07f301>] warn_slowpath_common+0x81/0xa0
- > >  [<ffffffff8d07f41a>] warn_slowpath_null+0x1a/0x20
- > >  [<ffffffffc0253831>] btrfs_free_reserved_data_space+0x1d1/0x280 [btrfs]
- > >  [<ffffffffc025ca63>] btrfs_write_dirty_block_groups+0x6f3/0x740 [btrfs]
- > >  [<ffffffffc02f7a41>] commit_cowonly_roots+0x17a/0x234 [btrfs]
- > >  [<ffffffffc026e60b>] btrfs_commit_transaction+0x45b/0xc10 [btrfs]
- > >  [<ffffffffc023a09b>] btrfs_sync_fs+0x8b/0x270 [btrfs]
- > >  [<ffffffff8d266ad0>] ? do_fsync+0x80/0x80
- > >  [<ffffffff8d266af0>] sync_fs_one_sb+0x20/0x30
- > >  [<ffffffff8d22f2f2>] iterate_supers+0xb2/0x110
- > >  [<ffffffff8d266c24>] sys_sync+0x64/0xb0
- > >  [<ffffffff8d877d49>] tracesys_phase2+0xd4/0xd9
- > > 
- > > After rebooting, and restarting the fuzzer, it happened again very quickly.
- > 
- > Could you please show us the trinity options you're using?
- > 
- > I also see this WARNing from other reports, but still try to reproduce..
 
-That one was nothing special, just -q -l off.
-I've not been able to reproduce it in the last two days though.
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to 
+reduce ENOSPC caused by unbalanced data/metadata allocation.
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年10月24日 19:06
+> On Thu, Oct 23, 2014 at 10:37:51AM +0800, Qu Wenruo wrote:
+>> When btrfs allocate a chunk, it will try to alloc up to 1G for data and
+>> 256M for metadata, or 10% of all the writeable space if there is enough
+> 10G for data,
+>          if (type & BTRFS_BLOCK_GROUP_DATA) {
+>                  max_stripe_size = 1024 * 1024 * 1024;
+>                  max_chunk_size = 10 * max_stripe_size;
+Oh, sorry, 10G is right.
 
-	Dave
+Any other comments?
+
+Thanks,
+Qu
+
+
+> 		...
+>
+> thanks,
+> -liubo
+>
+>> space for the stripe on device.
+>>
+>> However, when we run out of space, this allocation may cause unbalanced
+>> chunk allocation.
+>> For example, there are only 1G unallocated space, and request for
+>> allocate DATA chunk is sent, and all the space will be allocated as data
+>> chunk, making later metadata chunk alloc request unable to handle, which
+>> will cause ENOSPC.
+>> This is the one of the common complains from end users about why ENOSPC
+>> happens but there is still available space.
+>>
+>> This patch will try not to alloc chunk which is more than half of the
+>> unallocated space, making the last space more balanced at a small cost
+>> of more fragmented chunk at the last 1G.
+>>
+>> Some easy example:
+>> Preallocate 17.5G on a 20G empty btrfs fs:
+>> [Before]
+>>   # btrfs fi show /mnt/test
+>> Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
+>> 	Total devices 1 FS bytes used 17.50GiB
+>> 	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
+>> All space is allocated. No space later metadata space.
+>>
+>> [After]
+>>   # btrfs fi show /mnt/test
+>> Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
+>> 	Total devices 1 FS bytes used 17.50GiB
+>> 	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
+>> About 230M is still available for later metadata allocation.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>   fs/btrfs/volumes.c | 18 ++++++++++++++++++
+>>   1 file changed, 18 insertions(+)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index d47289c..fa8de79 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -4240,6 +4240,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>>   	int ret;
+>>   	u64 max_stripe_size;
+>>   	u64 max_chunk_size;
+>> +	u64 total_avail_space = 0;
+>>   	u64 stripe_size;
+>>   	u64 num_bytes;
+>>   	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
+>> @@ -4352,10 +4353,27 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>>   		devices_info[ndevs].max_avail = max_avail;
+>>   		devices_info[ndevs].total_avail = total_avail;
+>>   		devices_info[ndevs].dev = device;
+>> +		total_avail_space += total_avail;
+>>   		++ndevs;
+>>   	}
+>>   
+>>   	/*
+>> +	 * Try not to occupy more than half of the unallocated space.
+>> +	 * When run short of space and alloc all the space to
+>> +	 * data/metadata will cause ENOSPC to be triggered more easily.
+>> +	 *
+>> +	 * And since the minimum chunk size is 16M, the half-half will cause
+>> +	 * 16M allocated from 20M available space and reset 4M will not be
+>> +	 * used ever. In that case(16~32M), allocate all directly.
+>> +	 */
+>> +	if (total_avail_space < 32 * 1024 * 1024 &&
+>> +	    total_avail_space > 16 * 1024 * 1024)
+>> +		max_chunk_size = total_avail_space;
+>> +	else
+>> +		max_chunk_size = min(total_avail_space / 2, max_chunk_size);
+>> +	max_chunk_size = min(total_avail_space / 2, max_chunk_size);
+>> +
+>> +	/*
+>>   	 * now sort the devices by hole size / available space
+>>   	 */
+>>   	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+>> -- 
+>> 2.1.2
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

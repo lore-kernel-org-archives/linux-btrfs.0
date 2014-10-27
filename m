@@ -1,71 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23099 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751562AbaJ0Mk2 (ORCPT
+Received: from vm136.rz.uni-osnabrueck.de ([131.173.16.11]:40308 "EHLO
+	smtp-auth.serv.Uni-Osnabrueck.DE" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753001AbaJ0NpW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 08:40:28 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s9RCeJUH007504
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 20:40:19 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: get the accurate value of used_bytes in btrfs_get_block_group_info().
-Date: Mon, 27 Oct 2014 20:38:19 +0800
-Message-ID: <1414413499-28826-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+	Mon, 27 Oct 2014 09:45:22 -0400
+Received: from flach.fritz.box (ip4d160011.dynamic.kabel-deutschland.de [77.22.0.17])
+	(authenticated bits=0)
+	by smtp-auth.serv.Uni-Osnabrueck.DE (8.13.8/8.13.8) with ESMTP id s9RDNJH2026237
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 14:23:21 +0100
+Message-ID: <544E4747.2000008@uni-osnabrueck.de>
+Date: Mon, 27 Oct 2014 14:23:19 +0100
+From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs unmountable: read block failed check_tree_block; Couldn't read
+ tree root
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reproducer:
-	# mkfs.btrfs -f -b 20G /dev/sdb
-	# mount /dev/sdb /mnt/test
-	# fallocate  -l 17G /mnt/test/largefile
-	# btrfs fi df /mnt/test
-	Data, single: total=17.49GiB, used=6.00GiB <- only 6G, but actually it should be 17G.
-	System, DUP: total=8.00MiB, used=16.00KiB
-	System, single: total=4.00MiB, used=0.00B
-	Metadata, DUP: total=1.00GiB, used=112.00KiB
-	Metadata, single: total=8.00MiB, used=0.00B
-	GlobalReserve, single: total=16.00MiB, used=0.00B
-	# sync
-	# btrfs fi df /mnt/test
-	Data, single: total=17.49GiB, used=17.00GiB <- After sync, it is expected.
-	System, DUP: total=8.00MiB, used=16.00KiB
-	System, single: total=4.00MiB, used=0.00B
-	Metadata, DUP: total=1.00GiB, used=112.00KiB
-	Metadata, single: total=8.00MiB, used=0.00B
-	GlobalReserve, single: total=16.00MiB, used=0.00B
+Hi!
 
-The value of 6.00GiB is actually calculated in btrfs_get_block_group_info()
-by adding the @block_group->item->used for each group together. In this way,
-it did not consider the bytes in cache.
+My btrfs system partition went readonly. After reboot it doesnt mount 
+anymore. System was openSUSE 13.1 Tumbleweed (kernel 3.17.??). Now I'm 
+on openSUSE 13.2-RC1 rescue (kernel 3.16.3). I dumped (dd) the whole 250 
+GB SSD to some USB file and tried some btrfs tools on another copy per 
+loopback device. But everything failed with:
 
-This patch adds the value of @pinned, @reserved and @bytes_super in
-struct btrfs_block_group_cache to make sure we can get the accurate @used_bytes.
+kernel: BTRFS: failed to read tree root on dm-2
 
-Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c | 4 ++++
- 1 file changed, 4 insertions(+)
+See http://pastebin.com/raw.php?i=dPnU6nzg.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 33c80f5..bc2aaeb 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3892,6 +3892,10 @@ void btrfs_get_block_group_info(struct list_head *groups_list,
- 		space->total_bytes += block_group->key.offset;
- 		space->used_bytes +=
- 			btrfs_block_group_used(&block_group->item);
-+		/* Add bytes-info in cache */
-+		space->used_bytes += block_group->pinned;
-+		space->used_bytes += block_group->reserved;
-+		space->used_bytes += block_group->bytes_super;
- 	}
- }
- 
+Any hints where to go from here?
+
+Ciao
+	Ansgar
 -- 
-1.8.4.2
-
+Ansgar Hockmann-Stolle, Universität Osnabrück, Rechenzentrum
+Albrechtstraße 28, 49076 Osnabrück, Deutschland, Raum 31/E77B
++49 541 969-2749 (fax -2470), http://www.home.uos.de/anshockm

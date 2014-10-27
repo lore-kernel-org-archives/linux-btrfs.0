@@ -1,138 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55256 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21180 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751923AbaJ0C2B convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1750701AbaJ0EIb convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Oct 2014 22:28:01 -0400
-Message-ID: <544DAE18.8010205@cn.fujitsu.com>
-Date: Mon, 27 Oct 2014 10:29:44 +0800
+	Mon, 27 Oct 2014 00:08:31 -0400
+Message-ID: <544DC5A7.7020302@cn.fujitsu.com>
+Date: Mon, 27 Oct 2014 12:10:15 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Rene Thomas <re.thomas@gmx.de>, <linux-btrfs@vger.kernel.org>
-Subject: Re: read block failed check_tree_block / Couldn't read chunk tree
-References: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>
-In-Reply-To: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+References: <1405933349-6215-1-git-send-email-quwenruo@cn.fujitsu.com> <20140724130928.GY1553@twin.jikos.cz> <53D1A78E.8020802@cn.fujitsu.com> <53D9BCF3.80001@cn.fujitsu.com>
+In-Reply-To: <53D9BCF3.80001@cn.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Ping？
 
--------- Original Message --------
-Subject: read block failed check_tree_block / Couldn't read chunk tree
-From: Rene Thomas <re.thomas@gmx.de>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年10月25日 00:43
-> Dear Developers / Maintainer,
-> I’ve set up a running RAID5 with three devices (sda1 / sdb1 /sdc1)
->
-> Mountpoint was /home, filesystem was mounted
-> A chain of unfortunal circumstances gives me the chance to run as root
-> in a terminal.
->
-> mkfs.ntfs /dev/sdb1
->
-> where /dev/sdb1 is device 1 in the Array.
->
-> After a while I’ve realised that the terminal I used was the wrong one
-> and killed the process where the progress still was 0%.
-> The filesystem was still in a readable state switched to read only.
-> Write access was not able.
->
-> After a restart the RAID failed to mount.
->
-> Tried several steps to reactivate the Array.
->
-> All btrfs commands leads to:
->
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=65536
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> read block failed check_tree_block
-> Couldn't read chunk tree
-Chunk tree corruption will always lead to disaster :(
-
-What about remove sdb1 and mount sda1/sdc1 with -o degraded ?
-I hope the sda1/sdc1 is still in correct status...
->
-> Started with:
-> btrfs fi show
-> mount -o revovery,ro /dev/sdc1 /home
-> failed with error (see dmesg log at [311])
-> btrfs-image -c 9 -t 8 /dev/sdb1 /media/storageplace/fs_image
-> btrfs-zero-log /dev/sdb1
-> btrfs check /dev/sdb1
-> btrfs check --repair /dev/sdb1
->
-> At least I tried
-> btrfs rescue chunk-recover /dev/sdb1
->
-> Works for several hours on the arry and end up in (huge log available > 100k):
->
-> “Fail to recover the chunk tree.”
-If my previous defraded doesn't help, chunk-recover is the last chance 
-for it.
-If still failed, the chance to recover seems quite low.
-
-However, can you upload the huge log for developers to investigate and 
-improve the chunk-recover tools?
+Any new comments?
+It has been a long time and the patch still not merged....
 
 Thanks,
 Qu
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Date: 2014年07月31日 11:50
+> Hi David,
 >
->   I’ve checked the super block there are no errors
+> No mean to disturb you, but it has been serveral days since last comment.
 >
-> My question is there any chance on a broken c tree to get the data
-> back? Not necessarily fix the Array only get the data.
+> If you have any comment about the new patch, since due to my lack of 
+> explain the patch seems not
+> reviewed, I am very glad to hear.
 >
-> Thanks in advanced
+> If any other ideas occur to you, like the pro and cons about old mount 
+> trick vs show_path() implement,
+> it would be also quite nice.
 >
-> # uname -a
-> Linux engelserver 3.17.0-031700rc5-generic #201409151105 SMP Mon Sep
-> 15 15:08:10 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+> Thanks,
+> Qu
 >
->   # btrfs --version
-> Btrfs v3.17
 >
->   # btrfs fi show
-> Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
->          Total devices 1 FS bytes used 2.36MiB
->          devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
+> -------- Original Message --------
+> Subject: Re: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+> From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+> Date: 2014年07月25日 08:40
+>> Thanks for the comment.
+>>
+>> -------- Original Message --------
+>> Subject: Re: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+>> From: David Sterba <dsterba@suse.cz>
+>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date: 2014年07月24日 21:09
+>>> On Mon, Jul 21, 2014 at 05:02:29PM +0800, Qu Wenruo wrote:
+>>>> show_path() function in struct super_operations is used to output
+>>>> subtree mount info for mountinfo.
+>>>> Without the implement of show_path() function, user can not found 
+>>>> where
+>>>> each subvolume is mounted if using 'subvolid=' mount option.
+>>>> (When mounted with 'subvol=' mount option, vfs is aware of subtree 
+>>>> mount
+>>>> and can to the path resolve by vfs itself)
+>>> Your previous patches unify both to call mount_subtree, then the 
+>>> default
+>>> vfs implementation of show_path will do the right thing, ie
+>>> seq_dentry(...), and the path will be resolved for free.
+>>>
+>>> Means this patch is not needed, so I'll skip commenting it.
+>>
+>> I'm sorry that I forgot to mention this patch is going to replace the 
+>> previous patch(use mount_subtree method).
+>>
+>> Since vfs provide the show_path() function to do the fs specific 
+>> subtree showing things,
+>> I would like to use it other than previous mount_subtree() trick.
+>>
+>> Also. as mentioned by Chandan Rajendra, previous subtree patch can't 
+>> handle subvolume behind normal directory.
+>> This show_path() patch is somewhat v2 version of previous patch.
+>>>
+>>>> With this patch, end users will be able to use findmnt(8) or other
+>>>> programs reading mountinfo to find which btrfs subvolume is mounted.
+>>>>
+>>>> Though we use fs_info->subvol_sem to protect show_path() from 
+>>>> subvolume
+>>>> destroying/creating, if user renames/moves the parent non-subvolume
+>>>> dir of a subvolume, it is still possible that concurrency may 
+>>>> happen and
+>>>> cause btrfs_search_slot() fails to find the desired key.
+>>>> In that case, we just return -EBUSY and info user to try again since
+>>>> extra locking like locking the whole subvolume tree is too 
+>>>> expensive for
+>>>> such usage.
+>>> And the subvolume renames will be handled as well.
 >
->   Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=65536
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> read block failed check_tree_block
-> Couldn't read chunk tree
->
-> Label: none  uuid: 8ef575d9-2465-479c-bf9c-067e2e417770
->          Total devices 3 FS bytes used 3.02TiB
->          devid    1 size 2.73TiB used 1.77TiB path /dev/sdb1
->          devid    2 size 2.73TiB used 1.77TiB path /dev/sda1
->          devid    3 size 2.73TiB used 1.77TiB path /dev/sdc1
-> Btrfs v3.17
->
-> dmesg:
-> [  280.637338] init: plymouth-upstart-bridge main process ended, respawning
-> [  311.298682] BTRFS info (device sdc1): disk space caching is enabled
-> [  311.335674] BTRFS: bad tree block start 0 5845480062976
-> [  311.336215] BTRFS: bad tree block start 0 5845480062976
-> [  311.354660] BTRFS: bad tree block start 0 5845480054784
-> [  311.354762] BTRFS: bad tree block start 0 5845480054784
-> [  311.355024] BTRFS: bad tree block start 0 5845480067072
-> [  311.355145] BTRFS: bad tree block start 0 5845480067072
-> [  311.355496] BTRFS: bad tree block start 0 5845480050688
-> [  311.355612] BTRFS: bad tree block start 0 5845480050688
-> [  311.356347] BTRFS: bad tree block start 0 5845480071168
-> [  311.356458] BTRFS: bad tree block start 0 5845480071168
-> [  311.580203] BTRFS: Failed to read block groups: -5
-> [  311.605073] BTRFS: open_ctree failed
->
-> René
-> --
+> -- 
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html

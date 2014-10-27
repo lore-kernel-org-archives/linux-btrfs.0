@@ -1,78 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dub004-omc1s35.hotmail.com ([157.55.0.234]:60913 "EHLO
-	DUB004-OMC1S35.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752330AbaJ0QEV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 12:04:21 -0400
-Message-ID: <DUB118-W25D606066B84BE0694286DA9E0@phx.gbl>
-From: Jasper Verberk <jverberk@hotmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Problem converting data raid0 to raid1: enospc errors during
- balance
-Date: Mon, 27 Oct 2014 16:04:19 +0000
-In-Reply-To: <544DCECB.7060007@cn.fujitsu.com>
-References: <DUB118-W4605047D55E17E62C8F651DA930@phx.gbl>
- <544DA288.8040907@cn.fujitsu.com>
- <1304C47B-8A9D-4AEA-B64A-C6566C77A5E1@colorremedies.com>,<544DCECB.7060007@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
-MIME-Version: 1.0
-To: unlisted-recipients:; (no To-header on input)
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:58788 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752286AbaJ0Qnv convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 12:43:51 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Problem converting data raid0 to raid1: enospc errors during balance
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <DUB118-W201FD897C8121E783F626CDA9E0@phx.gbl>
+Date: Mon, 27 Oct 2014 10:43:41 -0600
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <3E982444-5500-45BB-A04F-CF16D735CDF7@colorremedies.com>
+References: <DUB406-EAS294A0E4ED8B326281AFD7C6DA9E0@phx.gbl>,<53BBD40F-B9F3-492C-9F56-15EAFC00119D@colorremedies.com> <DUB118-W201FD897C8121E783F626CDA9E0@phx.gbl>
+To: Jasper Verberk <jverberk@hotmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hej guys!
 
-Thanks for your input on the issue this far.
+On Oct 27, 2014, at 9:56 AM, Jasper Verberk <jverberk@hotmail.com> wrote:
 
-Too my knowledge raid1 in btrfs means 2 copies of each piece of data independent of the amount of disks used.
+> These are the results to a normal df:
+> 
+> http://paste.debian.net/128932/
+> 
+> The mountpoint is /data.
 
-So 4 x 2,73tb would result in a totaal storage of roughly 5,5tb right?
+OK so this is with the new computation in kernel 3.17 (which I think contains a bug by counting free space twice); so now it shows available blocks based on the loss due to mirroring or parity. So 1k blocks 5860533168 = 5.45TiB. If you boot an older kernel my expectation is this shows up as 10.91TiB. In any case, df says there's 1.77TiB worth of data, so there should be plenty of space.
 
-Shouldn't this be more then enough?
+Somewhere there's a bug. Either the 'btrfs fi df' is insufficiently communicating whether the desired operation can be done, or there's actual kernel confusion on how much space is available to do the conversion.
 
-btw, here is the output for df:
-
-http://paste.debian.net/128932/
+I wonder what happens if you go back to kernel 3.16 and try do do the conversion?
 
 
-----------------------------------------
-> Date: Mon, 27 Oct 2014 12:49:15 +0800
-> From: quwenruo@cn.fujitsu.com
-> To: lists@colorremedies.com
-> CC: jverberk@hotmail.com; linux-btrfs@vger.kernel.org
-> Subject: Re: Problem converting data raid0 to raid1: enospc errors during balance
->
->
-> -------- Original Message --------
-> Subject: Re: Problem converting data raid0 to raid1: enospc errors
-> during balance
-> From: Chris Murphy <lists@colorremedies.com>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2014$BG/(B10$B7n(B27$BF|(B 12:40
->> On Oct 26, 2014, at 7:40 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->>> Hi,
->>>
->>> Although I'm not completely sure, but it seems that, you really ran out of space.
->>>
->>> [1] Your array won't hold raid1 for 1.97T data
->>> Your array used up 1.97T raid0 data, it takes 1.97T for raid0.
->>> But if converted to 1.97T, it will occupy 1.97T X2 = 3.94T.
->>> Your array are only 2.73T, it is too small to contain the data.
->> I'm not understanding. The btrfs fi show, shows 4x 2.73TiB devices, so that seems like it's a 10+TiB array.
->>
->> There's 2.04TiB raid0 data chunks, so roughly 500GiB per device, yet 1.94TiB is reported used per device by fi show. Confusing.
->>
->> Also it's still very confusing: Data, RAID1: total=2.85TiB, used=790.46GiB whether this means 2.85TiB out of 10TiB is allocated, or if it's twice that due to raid1. I can't ever remember this presentation detail, so again the secret decode ring where the UI doesn't expressly tell us what's going on is going to continue to be a source of confusion for users.
->>
->>
->> Chris Murphy
-> Oh, I misread the output....
->
-> That turns strange now....
-> BTW what's the output of 'df' command?
->
-> Thanks,
-> Qu
->
- 		 	   		  ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Chris Murphy

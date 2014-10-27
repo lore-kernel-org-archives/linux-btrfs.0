@@ -1,78 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from trent.utfs.org ([94.185.90.103]:39793 "EHLO trent.utfs.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751141AbaJ0KnW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 06:43:22 -0400
-Received: from trent.utfs.org (localhost [127.0.0.1])
-	by trent.utfs.org (Postfix) with ESMTP id EAB943DD09
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 11:34:41 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-	by trent.utfs.org (Postfix) with ESMTP id D1FF53DCCF
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 11:34:41 +0100 (CET)
-Date: Mon, 27 Oct 2014 03:34:41 -0700 (PDT)
-From: Christian Kujau <lists@nerdbynature.de>
+Received: from victor.provo.novell.com ([137.65.250.26]:50912 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750967AbaJ0KqE (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 27 Oct 2014 06:46:04 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: suspicious number of devices: 72057594037927936
-Message-ID: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix invalid leaf slot access in btrfs_lookup_extent()
+Date: Mon, 27 Oct 2014 10:44:24 +0000
+Message-Id: <1414406664-29692-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1414401415-27745-1-git-send-email-fdmanana@suse.com>
+References: <1414401415-27745-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(somehow this message did not make it to the list)
+If we couldn't find our extent item, we accessed the current slot
+(path->slots[0]) to check if it corresponds to an equivalent skinny
+metadata item. However this slot could be beyond our last item in the
+leaf (i.e. path->slots[0] >= btrfs_header_nritems(leaf)), in which case
+we shouldn't process it.
 
-Hi,
+Since btrfs_lookup_extent() is only used to find extent items for data
+extents, fix this by removing completely the logic that looks up for an
+equivalent skinny metadata item, since it can not exist.
 
-After upgrading from linux 3.17.0 to 3.18.0-rc2, I cannot mount my btrfs 
-partition any more. It's just one btrfs partition, no raid, no 
-compression, no fancy mount options:
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-# mount -t btrfs -o ro /dev/sda6 /usr/local/
-mount: wrong fs type, bad option, bad superblock on /dev/sda6,
-[...]
-BTRFS: suspicious number of devices: 72057594037927936
-BTRFS: super offset mismatch 1099511627776 != 65536
-BTRFS: superblock contains fatal errors
-BTRFS: open_ctree failed
+V2: Renamed btrfs_lookup_extent() to btrfs_lookup_data_extent().
 
-The only thing fancy may be the machine: PowerBook G4 (powerpc 32 bit), 
-running Debian/Linux (stable).
+ fs/btrfs/ctree.h       |  2 +-
+ fs/btrfs/extent-tree.c | 10 ++--------
+ fs/btrfs/tree-log.c    |  2 +-
+ 3 files changed, 4 insertions(+), 10 deletions(-)
 
-The message comes from the newly added fs/btrfs/disk-io.c:
-
-if (sb->num_devices > (1UL << 31))
-     printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
-              sb->num_devices);
-
-And 72057594037927936 is 2^56, so maybe there's an endianess problem here?
-
-Some details below, please let me know what other details may be needed.
-Going back to 3.17 now...
-
-Thanks,
-Christian.
-
-# file -Ls /dev/sda6
-/dev/sda6: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096, 
-leafsize 4096)
-
-# btrfsck /dev/sda6
-checking extents
-checking fs roots
-checking root refs
-found 2035929088 bytes used err is 0
-total csum bytes: 1886920
-total tree bytes: 102936576
-total fs tree bytes: 94441472
-btree space waste bytes: 30875964
-file data blocks allocated: 1932992512
- referenced 1932849152
-Btrfs Btrfs v0.19
-# echo $?
-0
-
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index dd8b275..b72b358 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3276,7 +3276,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, unsigned long count);
+ int btrfs_async_run_delayed_refs(struct btrfs_root *root,
+ 				 unsigned long count, int wait);
+-int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len);
++int btrfs_lookup_data_extent(struct btrfs_root *root, u64 start, u64 len);
+ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 bytenr,
+ 			     u64 offset, int metadata, u64 *refs, u64 *flags);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0d599ba..87c0b46f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -710,8 +710,8 @@ void btrfs_clear_space_info_full(struct btrfs_fs_info *info)
+ 	rcu_read_unlock();
+ }
+ 
+-/* simple helper to search for an existing extent at a given offset */
+-int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len)
++/* simple helper to search for an existing data extent at a given offset */
++int btrfs_lookup_data_extent(struct btrfs_root *root, u64 start, u64 len)
+ {
+ 	int ret;
+ 	struct btrfs_key key;
+@@ -726,12 +726,6 @@ int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len)
+ 	key.type = BTRFS_EXTENT_ITEM_KEY;
+ 	ret = btrfs_search_slot(NULL, root->fs_info->extent_root, &key, path,
+ 				0, 0);
+-	if (ret > 0) {
+-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+-		if (key.objectid == start &&
+-		    key.type == BTRFS_METADATA_ITEM_KEY)
+-			ret = 0;
+-	}
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 2b26dad..6d58d72 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -672,7 +672,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 			 * is this extent already allocated in the extent
+ 			 * allocation tree?  If so, just add a reference
+ 			 */
+-			ret = btrfs_lookup_extent(root, ins.objectid,
++			ret = btrfs_lookup_data_extent(root, ins.objectid,
+ 						ins.offset);
+ 			if (ret == 0) {
+ 				ret = btrfs_inc_extent_ref(trans, root,
 -- 
-BOFH excuse #427:
+1.9.1
 
-network down, IP packets delivered via UPS

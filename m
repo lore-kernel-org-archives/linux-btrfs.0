@@ -1,103 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f176.google.com ([209.85.217.176]:58820 "EHLO
-	mail-lb0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750967AbaJ0K6B (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:25425 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751688AbaJ0MAK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 06:58:01 -0400
-Received: by mail-lb0-f176.google.com with SMTP id p9so5402329lbv.21
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 03:57:59 -0700 (PDT)
+	Mon, 27 Oct 2014 08:00:10 -0400
+Message-ID: <544E27C5.7060804@cn.fujitsu.com>
+Date: Mon, 27 Oct 2014 19:08:53 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org>
-References: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org>
-Date: Mon, 27 Oct 2014 10:57:59 +0000
-Message-ID: <CAL3q7H4MbLCVXxLzT5d4vim1pp8ffZRsLX2GwDqgXNK3p5+sLg@mail.gmail.com>
-Subject: Re: suspicious number of devices: 72057594037927936
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Christian Kujau <lists@nerdbynature.de>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Filipe Manana <fdmanana@suse.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix race that makes btrfs_lookup_extent_info miss
+ skinny extent items
+References: <1414401592-19476-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1414401592-19476-1-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 27, 2014 at 10:34 AM, Christian Kujau <lists@nerdbynature.de> wrote:
-> (somehow this message did not make it to the list)
->
-> Hi,
->
-> After upgrading from linux 3.17.0 to 3.18.0-rc2, I cannot mount my btrfs
-> partition any more. It's just one btrfs partition, no raid, no
-> compression, no fancy mount options:
->
-> # mount -t btrfs -o ro /dev/sda6 /usr/local/
-> mount: wrong fs type, bad option, bad superblock on /dev/sda6,
-> [...]
-> BTRFS: suspicious number of devices: 72057594037927936
-> BTRFS: super offset mismatch 1099511627776 != 65536
-> BTRFS: superblock contains fatal errors
-> BTRFS: open_ctree failed
->
-> The only thing fancy may be the machine: PowerBook G4 (powerpc 32 bit),
-> running Debian/Linux (stable).
->
-> The message comes from the newly added fs/btrfs/disk-io.c:
->
-> if (sb->num_devices > (1UL << 31))
->      printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
->               sb->num_devices);
->
-> And 72057594037927936 is 2^56, so maybe there's an endianess problem here?
+On Mon, 27 Oct 2014 09:19:52 +0000, Filipe Manana wrote:
+> We have a race that can lead us to miss skinny extent items in the function
+> btrfs_lookup_extent_info() when the skinny metadata feature is enabled.
+> So basically the sequence of steps is:
+> 
+> 1) We search in the extent tree for the skinny extent, which returns > 0
+>    (not found);
+> 
+> 2) We check the previous item in the returned leaf for a non-skinny extent,
+>    and we don't find it;
+> 
+> 3) Because we didn't find the non-skinny extent in step 2), we release our
+>    path to search the extent tree again, but this time for a non-skinny
+>    extent key;
+> 
+> 4) Right after we released our path in step 3), a skinny extent was inserted
+>    in the extent tree (delayed refs were run) - our second extent tree search
+>    will miss it, because it's not looking for a skinny extent;
+> 
+> 5) After the second search returned (with ret > 0), we look for any delayed
+>    ref for our extent's bytenr (and we do it while holding a read lock on the
+>    leaf), but we won't find any, as such delayed ref had just run and completed
+>    after we released out path in step 3) before doing the second search.
+> 
+> Fix this by removing completely the path release and re-search logic. This is
+> safe, because if we seach for a metadata item and we don't find it, we have the
+> guarantee that the returned leaf is the one where the item would be inserted,
+> and so path->slots[0] > 0 and path->slots[0] - 1 must be the slot where the
+> non-skinny extent item is if it exists. The only case where path->slots[0] is
 
-Sounds like you need to revert this patch:
-https://patchwork.kernel.org/patch/5004701/ (which ignored endianess)
-or go back to an older kernel (don't use 3.17 or 3.17.1 however, due
-to other serious issues, latest 3.16.x should be safe). There's a v2
-of that patch that fixes the endianess issue, but it didn't make it to
-3.18-rc1/2 (https://patchwork.kernel.org/patch/5082701/)
+I think this analysis is wrong if there are some independent shared ref metadata for
+a tree block, just like:
++------------------------+-------------+-------------+
+| tree block extent item | shared ref1 | shared ref2 |
++------------------------+-------------+-------------+
 
-regards
+Thanks
+Miao
 
->
-> Some details below, please let me know what other details may be needed.
-> Going back to 3.17 now...
->
-> Thanks,
-> Christian.
->
-> # file -Ls /dev/sda6
-> /dev/sda6: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096,
-> leafsize 4096)
->
-> # btrfsck /dev/sda6
-> checking extents
-> checking fs roots
-> checking root refs
-> found 2035929088 bytes used err is 0
-> total csum bytes: 1886920
-> total tree bytes: 102936576
-> total fs tree bytes: 94441472
-> btree space waste bytes: 30875964
-> file data blocks allocated: 1932992512
->  referenced 1932849152
-> Btrfs Btrfs v0.19
-> # echo $?
-> 0
->
->
-> --
-> BOFH excuse #427:
->
-> network down, IP packets delivered via UPS
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> zero is when there are no smaller keys in the tree (i.e. no left siblings for
+> our leaf), in which case the re-search logic isn't needed as well.
+> 
+> This race has been present since the introduction of skinny metadata (change
+> 3173a18f70554fe7880bb2d85c7da566e364eb3c).
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 8 --------
+>  1 file changed, 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9141b2b..2cedd06 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -780,7 +780,6 @@ search_again:
+>  	else
+>  		key.type = BTRFS_EXTENT_ITEM_KEY;
+>  
+> -again:
+>  	ret = btrfs_search_slot(trans, root->fs_info->extent_root,
+>  				&key, path, 0, 0);
+>  	if (ret < 0)
+> @@ -796,13 +795,6 @@ again:
+>  			    key.offset == root->nodesize)
+>  				ret = 0;
+>  		}
+> -		if (ret) {
+> -			key.objectid = bytenr;
+> -			key.type = BTRFS_EXTENT_ITEM_KEY;
+> -			key.offset = root->nodesize;
+> -			btrfs_release_path(path);
+> -			goto again;
+> -		}
+>  	}
+>  
+>  	if (ret == 0) {
+> 
 
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

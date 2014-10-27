@@ -1,54 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17549 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750705AbaJ0Erb convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 00:47:31 -0400
-Message-ID: <544DCECB.7060007@cn.fujitsu.com>
-Date: Mon, 27 Oct 2014 12:49:15 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Jasper Verberk <jverberk@hotmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Problem converting data raid0 to raid1: enospc errors during
- balance
-References: <DUB118-W4605047D55E17E62C8F651DA930@phx.gbl> <544DA288.8040907@cn.fujitsu.com> <1304C47B-8A9D-4AEA-B64A-C6566C77A5E1@colorremedies.com>
-In-Reply-To: <1304C47B-8A9D-4AEA-B64A-C6566C77A5E1@colorremedies.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37688 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750815AbaJ0GpM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 02:45:12 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xie3C-00075x-K3
+	for linux-btrfs@vger.kernel.org; Mon, 27 Oct 2014 07:45:10 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 07:45:10 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 07:45:10 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Heavy nocow'd VM image fragmentation
+Date: Mon, 27 Oct 2014 06:44:55 +0000 (UTC)
+Message-ID: <pan$4e84a$ffedf07b$87004c5f$2b46a75a@cox.net>
+References: <5449898B.4090708@nuclearwinter.com>
+	<20141024114916.GI12554@merlins.org> <544B0DDC.1020102@pobox.com>
+	<pan$37631$612ebdea$68e82275$b6e96b7b@cox.net>
+	<544D2D6D.6050301@nuclearwinter.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Larkin Lowrey posted on Sun, 26 Oct 2014 12:20:45 -0500 as excerpted:
 
--------- Original Message --------
-Subject: Re: Problem converting data raid0 to raid1: enospc errors 
-during balance
-From: Chris Murphy <lists@colorremedies.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年10月27日 12:40
-> On Oct 26, 2014, at 7:40 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->> Hi,
->>
->> Although I'm not completely sure, but it seems that, you really ran out of space.
->>
->> [1] Your array won't hold raid1 for 1.97T data
->> Your array used up 1.97T raid0 data, it takes 1.97T for raid0.
->> But if converted to 1.97T, it will occupy 1.97T X2 = 3.94T.
->> Your array are only 2.73T, it is too small to contain the data.
-> I'm not understanding. The btrfs fi show, shows 4x 2.73TiB devices, so that seems like it's a 10+TiB array.
->
-> There's 2.04TiB raid0 data chunks, so roughly 500GiB per device, yet 1.94TiB is reported used per device by fi show. Confusing.
->
-> Also it's still very confusing: Data, RAID1: total=2.85TiB, used=790.46GiB whether this means 2.85TiB out of 10TiB is allocated, or if it's twice that due to raid1. I can't ever remember this presentation detail, so again the secret decode ring where the UI doesn't expressly tell us what's going on is going to continue to be a source of confusion for users.
->
->
-> Chris Murphy
-Oh, I misread the output....
+> One unusual property of my setup is I have my fs on top of bcache. More
+> specifically, the stack is md raid6  -> bcache -> lvm -> btrfs. When the
+> fs mounts it has mount option 'ssd' due to the fact that bcache sets
+> /sys/block/bcache0/queue/rotational to 0.
+> 
+> Is there any reason why either the 'ssd' mount option or being backed by
+> bcache could be responsible?
 
-That turns strange now....
-BTW what's the output of 'df' command?
+Bcache... Some kernel cycles ago btrfs on bcache had known issues but IDR 
+the details.  I /think/ that was fixed, but if you don't know what I'm 
+referring to, I'd suggest looking back in the btrfs list archives (and 
+assuming there's a bcache list, there's too), to see what it was, whether 
+it was fixed, and (presumably on the bcache list) current status.
 
-Thanks,
-Qu
+... Actually just did a bcache keyword search in my archive and see you 
+on a thread, saying it was working fine for you, so never mind, looks 
+like you are aware of that thread, and actually know more about the 
+status than I do...
+
+I don't believe the ssd mount option /should/ be triggering 
+fragmentation; I use it here on real ssd, but as I said, I don't have 
+that sort of large-internal-write-pattern file to worry about and have 
+autodefrag set too, plus compress=lzo so filefrag's reports aren't 
+trustworthy here anyway.
+
+But what I DO know is that there's a nossd mount option available if the 
+detection's going whacky and it's adding the ssd mount option 
+inappropriately.  That has been there for a couple kernel cycles now.  
+See the btrfs (5) manpage for the mount options.
+
+So you could try the nossd mount option and see if it makes a difference.
+
+
+Meanwhile, that's quite a stack you have there.  Before I switched to 
+btrfs and btrfs raid, I was running mdraid here, and for a period ran lvm 
+on top of mdraid.  But as an admin I decided that was simply too complex 
+a setup for me to be confident in my own ability to properly handle 
+disaster recovery.  And because I could feed the appropriate root on 
+mdraid parameters directly to the kernel and didn't need an initr* for 
+it, while I did for lvm, I kept mdraid, and actually had a few chances to 
+practice disaster recovery on mdraid over time, becoming quite 
+comfortable with it.
+
+But not only do you have that, you have bcache thrown in too, and in 
+place of the traditional reiserfs I was using (and still use on my second 
+backups and media partitions on spinning rust as I've had very good 
+results with reiserfs since data=ordered became the default, even thru 
+various hardware issues... I'll avoid the stories), you're using btrfs, 
+which has its own raid modes, altho I suppose you're not using them.
+
+So that is indeed quite a stack.  If you're comfortable with your ability 
+to properly handle disaster recovery at all those levels, wow, you 
+definitely have my respect.  Or do you just have it all backed up and 
+figure if it blows up and disaster recovery isn't going to be trivial you 
+simply rebuild and restore from backup?  I guess with btrfs not yet fully 
+stable and mature that's the best idea at its level anyway, and if you 
+have it backed up for that, then you have it backed up for the others 
+and /can/ simply rebuild your stack and restore from backup, should you 
+need to.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

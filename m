@@ -1,151 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vm135.rz.uni-osnabrueck.de ([131.173.16.10]:53737 "EHLO
-	smtp-auth.serv.Uni-Osnabrueck.DE" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751736AbaJ0XDJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 19:03:09 -0400
-Received: from flach.local (ip4d160011.dynamic.kabel-deutschland.de [77.22.0.17])
-	(authenticated bits=0)
-	by smtp-auth.serv.Uni-Osnabrueck.DE (8.13.8/8.13.8) with ESMTP id s9RN30jw007735
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 00:03:06 +0100
-Message-ID: <544ECF24.7030504@uni-osnabrueck.de>
-Date: Tue, 28 Oct 2014 00:03:00 +0100
-From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:51125 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752259AbaJ0XSK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 19:18:10 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XitY8-0006IB-EL
+	for linux-btrfs@vger.kernel.org; Tue, 28 Oct 2014 00:18:08 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 00:18:08 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 00:18:08 +0100
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs unmountable: read block failed check_tree_block; Couldn't
  read tree root
+Date: Mon, 27 Oct 2014 23:17:58 +0000 (UTC)
+Message-ID: <pan$db558$7ef21104$8d3c61ca$273592f9@cox.net>
 References: <544E4747.2000008@uni-osnabrueck.de>
-In-Reply-To: <544E4747.2000008@uni-osnabrueck.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 27.10.14 um 14:23 schrieb Ansgar Hockmann-Stolle:
+Ansgar Hockmann-Stolle posted on Mon, 27 Oct 2014 14:23:19 +0100 as
+excerpted:
+
 > Hi!
->
+> 
 > My btrfs system partition went readonly. After reboot it doesnt mount
 > anymore. System was openSUSE 13.1 Tumbleweed (kernel 3.17.??). Now I'm
 > on openSUSE 13.2-RC1 rescue (kernel 3.16.3). I dumped (dd) the whole 250
 > GB SSD to some USB file and tried some btrfs tools on another copy per
 > loopback device. But everything failed with:
->
+> 
 > kernel: BTRFS: failed to read tree root on dm-2
->
+> 
 > See http://pastebin.com/raw.php?i=dPnU6nzg.
->
+> 
 > Any hints where to go from here?
 
-After an offlist hint (thanks Tom!) I compiled the latest btrfs-progs 
-3.17 and tried some more ...
+Good job posting initial problem information.  =:^)  A lot of folks take 
+2-3 rounds of request and reply before that much info is available on the 
+problem.
 
-linux:~/bin # ./btrfs --version
-Btrfs v3.17
-linux:~/bin # ./btrfs-find-root /dev/sda3
-Super think's the tree root is at 1015238656, chunk root 20971520
-Well block 239718400 seems great, but generation doesn't match, 
-have=661931, want=663595 level 0
-Well block 239722496 seems great, but generation doesn't match, 
-have=661931, want=663595 level 0
-Well block 320098304 seems great, but generation doesn't match, 
-have=662233, want=663595 level 0
-Well block 879341568 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879345664 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879382528 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879398912 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879403008 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879423488 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 879435776 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 880095232 seems great, but generation doesn't match, 
-have=663227, want=663595 level 0
-Well block 881504256 seems great, but generation doesn't match, 
-have=663228, want=663595 level 0
-Well block 881512448 seems great, but generation doesn't match, 
-have=663228, want=663595 level 0
-Well block 936271872 seems great, but generation doesn't match, 
-have=663397, want=663595 level 0
-Well block 1004490752 seems great, but generation doesn't match, 
-have=663571, want=663595 level 0
-Well block 1007804416 seems great, but generation doesn't match, 
-have=663572, want=663595 level 0
-Well block 1012031488 seems great, but generation doesn't match, 
-have=663575, want=663595 level 0
-Well block 1012396032 seems great, but generation doesn't match, 
-have=663575, want=663595 level 0
-Well block 1012633600 seems great, but generation doesn't match, 
-have=663586, want=663595 level 0
-Well block 1012871168 seems great, but generation doesn't match, 
-have=663585, want=663595 level 0
-Well block 1015201792 seems great, but generation doesn't match, 
-have=663588, want=663595 level 0
-Well block 1015836672 seems great, but generation doesn't match, 
-have=663596, want=663595 level 1
-Well block 44132536320 seems great, but generation doesn't match, 
-have=658774, want=663595 level 0
-Well block 44178280448 seems great, but generation doesn't match, 
-have=658774, want=663595 level 0
-Well block 87443644416 seems great, but generation doesn't match, 
-have=661349, want=663595 level 0
-Well block 87514079232 seems great, but generation doesn't match, 
-have=651051, want=663595 level 0
-Well block 87517679616 seems great, but generation doesn't match, 
-have=661349, want=663595 level 0
-Well block 98697822208 seems great, but generation doesn't match, 
-have=643548, want=663595 level 0
-Well block 103285026816 seems great, but generation doesn't match, 
-have=661672, want=663595 level 0
-Well block 103309553664 seems great, but generation doesn't match, 
-have=661674, want=663595 level 0
-Well block 103523430400 seems great, but generation doesn't match, 
-have=661767, want=663595 level 0
-No more metdata to scan, exiting
+While others may be able to assist you in restoring that filesystem to 
+working condition, my focus is more on recovering what can be recovered 
+from it and doing a fresh mkfs.
 
-This line I found interesting because "have" is "want + 1":
-Well block 1015836672 seems great, but generation doesn't match, 
-have=663596, want=663595 level 1
+System partition, 250 GB, looks to be just under 231 GiB based on the 
+total bytes from btrfs-show-super.
 
-And here the tail of "btrfs rescue chunk-recover" (full output at 
-http://pastebin.com/raw.php?i=1D5VgDxv)
+How recent is your backup, and/or being a system partition, is it simply 
+the distro installation, possibly without too much customization, thus 
+easily reinstalled?
 
-[..]
-Total Chunks:	234
-   Heathy:	231
-   Bad:	3
+IOW, if you were to call that partition a total loss and simply mkfs it, 
+would you lose anything real valuable that's not backed up?  (Of course, 
+the standard lecture at this point is that if it's not backed up, by 
+definition you didn't consider it valuable enough to be worth the hassle, 
+so by definition it's not valuable and you can simply blow it away, 
+but...)
 
-Orphan Block Groups:
+If you're in good shape in that regard, that's what I'd probably do at 
+this point, keeping the dd image you made in case someone's interested in 
+tracking the problem down and making btrfs handle that case.
 
-Orphan Device Extents:
-Couldn't map the block 1015238656
-btrfs: volumes.c:1140: btrfs_num_copies: Assertion `!(ce->start > 
-logical || ce->start + ce->size < logical)' failed.
-Aborted
+If there's important files on there that you don't have backed up, or if 
+you have a backup but it's older than you'd like and you want to try to 
+recover current versions of what you can (the situation I was in a few 
+months ago), then btrfs restore is what you're interested in.  Restore 
+works on an /unmounted/ (and potentially unmountable, as here) 
+filesystem, letting you retrieve files from it and copy them to other 
+filesystems.  It does NOT write anything to the damaged filesystem 
+itself, so no worries about making the problem worse.
 
+There's a page on the wiki describing how to use btrfs restore along with 
+btrfs-find-root in some detail, definitely more than is in the manpages 
+or that I want to do here.
 
-Sadly "btrfs check --repair" keep up refusing to do its job.
+https://btrfs.wiki.kernel.org/index.php/Restore
 
-linux:~ # btrfs check --repair /dev/sda3
-enabling repair mode
-Check tree block failed, want=1015238656, have=0
-Check tree block failed, want=1015238656, have=0
-Check tree block failed, want=1015238656, have=0
-Check tree block failed, want=1015238656, have=0
-Check tree block failed, want=1015238656, have=0
-read block failed check_tree_block
-Couldn't read tree root
-Checking filesystem on /dev/sda3
-UUID: 1af256b5-b1ad-443b-aeee-a6853e70b7e2
-Critical roots corrupted, unable to fsck the FS
-Segmentation fault
+Some useful hints that weren't originally clear to me as I used that page 
+here:
 
-Any more hints?
+* Generation and transid are the same thing, a sequentially increasing 
+number that updates every time the root tree is written.  The generation 
+recorded in your superblocks (from btrfs-show-super) is 663595, so the 
+idea would be that generation/transid, falling back one to 663594 if 95 
+isn't usable, then 93, then... etc.  The lower the number the further 
+back in history you're going, so obviously, you want the closest to 
+663595 that you can get, that still gives you access to a (nearly) whole 
+filesystem, or at least the parts of it you are interested in.
 
-Ciao
-	Ansgar
+* That page was written before restore's -D/--dry-run option was 
+available.  This option can be quite helpful, and I recommend using it to 
+see what will actually be restored at each generation and associated tree 
+root (bytenr/byte-number).  Tho (with -v/verbose) the list of files 
+restored will normally be too long to go thru in detail, you can either 
+scan it or pipe the output to wc -l to get a general idea of how many 
+files would be restored.
+
+* Restore's -l/list-tree-roots option isn't listed on the page either.  
+btrfs restore -l -t <bytenr> can be quite useful, giving you a nice list 
+of trees available for the generation corresponding to that bytenr (as 
+found using btrfs-find-root).  This is where the page's advice to pick 
+the latest tree root with all or as many as possible of the filesystem 
+trees in it, comes in, since this lets you easily see which trees each 
+root has available.
+
+* I don't use snapshots or subvolumes here, while I understand OpenSuSE 
+uses them rather heavily (via snapper).  Thus I have no direct experience 
+with restore's snapshot-related options.  Presumably you can either 
+ignore the snapshots (the apparent default) or restore them either in 
+general (using -s) or selectively (using -r, with the appropriate 
+snapshot rootid).
+
+* It's worth noting that restore simply lets you retrieve files.  It does 
+*NOT* retrieve file ownership or permissions, with the restored files all 
+being owned by the user you ran btrfs restore under (presumably root), 
+with $UMASK permissions.  You'll have to restore ownership and 
+permissions manually.
+
+When I used restore here I had a backup, but the backup was old.  So I 
+hacked up a bash scriptlet with a for loop, that went thru all the 
+restored files recursively, comparing them against the old backup.  If 
+the file existed in the old backup as well, the scriptlet did a chown and 
+a chmod using the --reference option, setting the new file's ownership 
+and permissions to that of the file in the backup.  That took care of 
+most files, but of course anything created since that (old) backup was 
+still left as root owned with default UMASK perms.  I then used
+find -user root to go thru the files again, giving me a list of those 
+which were still root, so I could manually do the chown and chmod on them 
+as appropriate.  Of course if you don't have even an old backup, that 
+could be quite a few files to have to update ownership and permissions 
+for, but at least you do get the file data back!
+
+* Similarly, restore seems to flat-out ignore symlinks.  It didn't 
+restore any symlinks at all and I had to manually recreate them as 
+necessary.
+
+* I didn't use it here, but restore's --path-regex option could be quite 
+useful if you decide you only want to restore some subset of the files, 
+either due to space constraints or because you have backups for the 
+others or they simply aren't worth the trouble.  You could use this for 
+instance to restore all files in /etc to a safe location, then do a mkfs 
+and a reinstall, before restoring your /etc files from that location, 
+thereby recustomizing your system config.
+
+Using the -D (dry-run) and --patch-regex options together could be useful 
+to either make sure your regex does what you expect, or to check what 
+files in a particular location of interest within the tree might be 
+restored, and which files aren't there and thus are likely to be lost.
+
+* I believe this is fixed in current btrfs-progs versions but when I ran 
+restore a couple kernel cycles ago (3.15 I think, would have been progs 
+3.14 or 3.14.1 I believe), if there were too many files in the same 
+subdir, restore would decide it was taking too long and would give up.  I 
+was able to overcome that by running restore repeatedly, pointing it at 
+the same restore-to location each time, since it'll normally skip 
+existing files.  That let it restore more files each time, and eventually 
+I didn't get any more of the taking too long errors, meaning it had 
+restored all it could find to restore.
+
+IIRC the fix was to prompt the user whether they wanted to continue or 
+not, with an override available to continually say yes, continue.  Of 
+course I've not used the newer version so I don't know how well that 
+actually works, but I guess it should be easier than my having to 
+repeatedly rerun the restore to get all the files.
+
+Hope that helps! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

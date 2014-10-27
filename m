@@ -1,44 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54692 "EHLO mx2.suse.de"
+Received: from trent.utfs.org ([94.185.90.103]:33520 "EHLO trent.utfs.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751497AbaJ0Pfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 11:35:34 -0400
-Date: Mon, 27 Oct 2014 16:35:32 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: Christian Kujau <lists@nerdbynature.de>,
+	id S1751755AbaJ0SVW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 14:21:22 -0400
+Date: Mon, 27 Oct 2014 11:21:13 -0700 (PDT)
+From: Christian Kujau <lists@nerdbynature.de>
+To: David Sterba <dsterba@suse.cz>
+cc: Filipe David Manana <fdmanana@gmail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: suspicious number of devices: 72057594037927936
-Message-ID: <20141027153532.GF22943@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org>
- <CAL3q7H4MbLCVXxLzT5d4vim1pp8ffZRsLX2GwDqgXNK3p5+sLg@mail.gmail.com>
+In-Reply-To: <20141027153532.GF22943@twin.jikos.cz>
+Message-ID: <alpine.DEB.2.19.4.1410271117030.9302@trent.utfs.org>
+References: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org> <CAL3q7H4MbLCVXxLzT5d4vim1pp8ffZRsLX2GwDqgXNK3p5+sLg@mail.gmail.com> <20141027153532.GF22943@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H4MbLCVXxLzT5d4vim1pp8ffZRsLX2GwDqgXNK3p5+sLg@mail.gmail.com>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 27, 2014 at 10:57:59AM +0000, Filipe David Manana wrote:
-> > The only thing fancy may be the machine: PowerBook G4 (powerpc 32 bit),
-> > running Debian/Linux (stable).
-> >
-> > The message comes from the newly added fs/btrfs/disk-io.c:
-> >
-> > if (sb->num_devices > (1UL << 31))
-> >      printk(KERN_WARNING "BTRFS: suspicious number of devices: %llu\n",
-> >               sb->num_devices);
-> >
-> > And 72057594037927936 is 2^56, so maybe there's an endianess problem here?
+On Mon, 27 Oct 2014 at 16:35, David Sterba wrote:
+> Yeah sorry, I sent the v2 too late, here's an incremental that applies
+> on top of current 3.18-rc
 > 
-> Sounds like you need to revert this patch:
-> https://patchwork.kernel.org/patch/5004701/ (which ignored endianess)
-> or go back to an older kernel (don't use 3.17 or 3.17.1 however, due
-> to other serious issues, latest 3.16.x should be safe). There's a v2
-> of that patch that fixes the endianess issue, but it didn't make it to
-> 3.18-rc1/2 (https://patchwork.kernel.org/patch/5082701/)
+> https://patchwork.kernel.org/patch/5160651/
 
-Yeah sorry, I sent the v2 too late, here's an incremental that applies
-on top of current 3.18-rc
+Yup, that fixes it. Thank you! If it's needed:
 
-https://patchwork.kernel.org/patch/5160651/
+  Tested-by: Christian Kujau <lists@nerdbynature.de>
+
+@Filipe: and thanks for warning me about 3.17 - I used 3.17.0 since it 
+came out and compiled kernels on the btrfs partition and haven't had any 
+issues. But it wasn't used very often, so whatever the serious issues 
+were, I haven't experienced any.
+
+Christian.
+-- 
+BOFH excuse #98:
+
+The vendor put the bug there.

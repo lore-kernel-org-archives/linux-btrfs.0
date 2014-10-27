@@ -1,80 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36671 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751650AbaJ0Sdm (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:60515 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751628AbaJ0T51 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 14:33:42 -0400
-Date: Mon, 27 Oct 2014 18:33:38 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Christian Kujau <lists@nerdbynature.de>
-Cc: David Sterba <dsterba@suse.cz>, Filipe David Manana <fdmanana@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: suspicious number of devices: 72057594037927936
-Message-ID: <20141027183338.GL18164@carfax.org.uk>
-References: <alpine.DEB.2.19.4.1410270333250.9302@trent.utfs.org>
- <CAL3q7H4MbLCVXxLzT5d4vim1pp8ffZRsLX2GwDqgXNK3p5+sLg@mail.gmail.com>
- <20141027153532.GF22943@twin.jikos.cz>
- <alpine.DEB.2.19.4.1410271117030.9302@trent.utfs.org>
+	Mon, 27 Oct 2014 15:57:27 -0400
+Date: Mon, 27 Oct 2014 15:57:19 -0400
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] Btrfs: fix snapshot inconsistency after a file write
+ followed by truncate
+To: Filipe Manana <fdmanana@suse.com>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+Message-ID: <1414439839.2166.2@mail.thefacebook.com>
+In-Reply-To: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
+References: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="aYrjF+tKt+ApYAdb"
-In-Reply-To: <alpine.DEB.2.19.4.1410271117030.9302@trent.utfs.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---aYrjF+tKt+ApYAdb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Oct 27, 2014 at 11:21:13AM -0700, Christian Kujau wrote:
-> On Mon, 27 Oct 2014 at 16:35, David Sterba wrote:
-> > Yeah sorry, I sent the v2 too late, here's an incremental that applies
-> > on top of current 3.18-rc
-> > 
-> > https://patchwork.kernel.org/patch/5160651/
+On Tue, Oct 21, 2014 at 6:12 AM, Filipe Manana <fdmanana@suse.com> 
+wrote:
+> If right after starting the snapshot creation ioctl we perform a 
+> write against a
+> file followed by a truncate, with both operations increasing the 
+> file's size, we
+> can get a snapshot tree that reflects a state of the source 
+> subvolume's tree where
+> the file truncation happened but the write operation didn't. This 
+> leaves a gap
+> between 2 file extent items of the inode, which makes btrfs' fsck 
+> complain about it.
 > 
-> Yup, that fixes it. Thank you! If it's needed:
+> For example, if we perform the following file operations:
 > 
->   Tested-by: Christian Kujau <lists@nerdbynature.de>
+>     $ mkfs.btrfs -f /dev/vdd
+>     $ mount /dev/vdd /mnt
+>     $ xfs_io -f \
+>           -c "pwrite -S 0xaa -b 32K 0 32K" \
+>           -c "fsync" \
+>           -c "pwrite -S 0xbb -b 32770 16K 32770" \
+>           -c "truncate 90123" \
+>           /mnt/foobar
 > 
-> @Filipe: and thanks for warning me about 3.17 - I used 3.17.0 since it 
-> came out and compiled kernels on the btrfs partition and haven't had any 
-> issues. But it wasn't used very often, so whatever the serious issues 
-> were, I haven't experienced any.
+> and the snapshot creation ioctl was just called before the second 
+> write, we often
+> can get the following inode items in the snapshot's btree:
+> 
+>         item 120 key (257 INODE_ITEM 0) itemoff 7987 itemsize 160
+>                 inode generation 146 transid 7 size 90123 block group 
+> 0 mode 100600 links 1 uid 0 gid 0 rdev 0 flags 0x0
+>         item 121 key (257 INODE_REF 256) itemoff 7967 itemsize 20
+>                 inode ref index 282 namelen 10 name: foobar
+>         item 122 key (257 EXTENT_DATA 0) itemoff 7914 itemsize 53
+>                 extent data disk byte 1104855040 nr 32768
+>                 extent data offset 0 nr 32768 ram 32768
+>                 extent compression 0
+>         item 123 key (257 EXTENT_DATA 53248) itemoff 7861 itemsize 53
+>                 extent data disk byte 0 nr 0
+>                 extent data offset 0 nr 40960 ram 40960
+>                 extent compression 0
+> 
+> There's a file range, corresponding to the interval [32K; ALIGN(16K + 
+> 32770, 4096)[
+> for which there's no file extent item covering it. This is because 
+> the file write
+> and file truncate operations happened both right after the snapshot 
+> creation ioctl
+> called btrfs_start_delalloc_inodes(), which means we didn't start and 
+> wait for the
+> ordered extent that matches the write and, in btrfs_setsize(), we 
+> were able to call
+> btrfs_cont_expand() before being able to commit the current 
+> transaction in the
+> snapshot creation ioctl. So this made it possibe to insert the hole 
+> file extent
+> item in the source subvolume (which represents the region added by 
+> the truncate)
+> right before the transaction commit from the snapshot creation ioctl.
+> 
+> Btrfs' fsck tool complains about such cases with a message like the 
+> following:
+> 
+>     "root 331 inode 257 errors 100, file extent discount"
+> 
+> From a user perspective, the expectation when a snapshot is created 
+> while those
+> file operations are being performed is that the snapshot will have a 
+> file that
+> either:
+> 
+> 1) is empty
+> 2) only the first write was captured
+> 3) only the 2 writes were captured
+> 4) both writes and the truncation were captured
+> 
+> But never capture a state where only the first write and the 
+> truncation were
+> captured (since the second write was performed before the truncation).
+> 
+> A test case for xfstests follows.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/inode.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 0d41741..c28b78f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4622,6 +4622,9 @@ static int btrfs_setsize(struct inode *inode, 
+> struct iattr *attr)
+>  	}
+> 
+>  	if (newsize > oldsize) {
+> +		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
+> +		if (ret)
+> +			return ret;
 
-   If you make read-only snapshots, there's a good chance of metadata
-corruption. It's fixed in 3.17.2.
+Expanding truncates aren't my favorite operation, but we don't want 
+them to imply fsync.  I'm holding off on this one while I work out the 
+rest of the vacation backlog ;)
 
-   Hugo.
+-chris
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Our so-called leaders speak/with words they try to jail ya/ ---   
-        They subjugate the meek/but it's the rhetoric of failure.        
-                                                                         
 
---aYrjF+tKt+ApYAdb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUTpACAAoJEFheFHXiqx3kizQP/iJ13byResxtdlbVW+r9q8JE
-gEwo5fjb6qDOEp14iJCZRxWdttLdLj+Z6Fw2/CLZplJ99+htUKp9aKUioLk4Ts/g
-lVO0gkR1U29wixWb/B6GOAHjKCpFrUoO/rqTdLmbBsCMlvPvuRxXk9YBZtm0tOTp
-KJJrimAYuE+520woUjSCDZpqZP2fPxYh/TfTwbsCS16U33JkKWeQSeUdr5LKzxE2
-WBn9xnDQREZAzl7j9QvbZpsiAYHJI0eTRNLGfYzWBmbW2HCeozM3zzPci+6Mlxjm
-5PHPI+nXnVgc+v/YV4od0pzPAk2t2rDhOU0c+5iMx1ufTTFQfOkOLhlVAUG97POc
-pNK0TZUykcrJBoP2/J/rVzQDvfYbJLFlyn+Mu2d7wzRVKcjQMr+SVU21L9Md1MN6
-7b9khEqupI5TlbMSONboYL+G+54nFJMH9JSBLbp43chx/TUkeunzLrSxFMMTJVEs
-Fv2LqBsToGRxHZ9FYMgStlHcwy7Lk3vsLlsgixpoufMj+TWQ6zGbloHg+z6Xt7tA
-ey9Fp466jKPos0d2LcykCCMrNJc8gX3BkoTadVaypefLNK5WNjvW4dD1dS4lecYb
-Zslqw15f0a1F3AHQrhpkVLr7TahesSoni5RDtEIWkSJWzy5xRJ/YRyNz05iPvyJ7
-nXI3fkRGJj7N3t8VPLLD
-=NA0q
------END PGP SIGNATURE-----
-
---aYrjF+tKt+ApYAdb--

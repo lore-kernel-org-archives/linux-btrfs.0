@@ -1,119 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:49435 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751728AbaJ0Bab (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Oct 2014 21:30:31 -0400
-Received: from marcec.fritz.box ([93.181.44.4]) by mail.gmx.com (mrgmx001)
- with ESMTPSA (Nemesis) id 0LjIit-1YEcN01mBj-00dYZE for
- <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 02:30:29 +0100
-Date: Mon, 27 Oct 2014 02:30:23 +0100
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Poll: time to switch skinny-metadata on by default?
-Message-ID: <20141027023023.0732985a@marcec.fritz.box>
-In-Reply-To: <20141025215808.1ad14aa0@marcec>
-References: <20141016113337.GC22943@twin.jikos.cz>
-	<20141020163403.GW22943@twin.jikos.cz>
-	<20141025142458.5d96970b@marcec>
-	<20141025215808.1ad14aa0@marcec>
-Reply-To: linux-btrfs@vger.kernel.org
+Received: from cn.fujitsu.com ([59.151.112.132]:18179 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751850AbaJ0Bk1 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Oct 2014 21:40:27 -0400
+Message-ID: <544DA288.8040907@cn.fujitsu.com>
+Date: Mon, 27 Oct 2014 09:40:24 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/5QsZbf8zHduCpEbYGaWiBmt"; protocol="application/pgp-signature"
+To: Jasper Verberk <jverberk@hotmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Problem converting data raid0 to raid1: enospc errors during
+ balance
+References: <DUB118-W4605047D55E17E62C8F651DA930@phx.gbl>
+In-Reply-To: <DUB118-W4605047D55E17E62C8F651DA930@phx.gbl>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/5QsZbf8zHduCpEbYGaWiBmt
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-Am Sat, 25 Oct 2014 21:58:08 +0200
-schrieb Marc Joliet <marcec@gmx.de>:
+Although I'm not completely sure, but it seems that, you really ran out 
+of space.
 
-> Am Sat, 25 Oct 2014 14:24:58 +0200
-> schrieb Marc Joliet <marcec@gmx.de>:
->=20
-> > I can still access files on MARCEC_BACKUP just fine, and the snapshots =
-are
-> > still there ("btrfs subvolume list" succeeds).
->=20
-> Just an update: that was true for a while, but at one point listing direc=
-tories
-> and accessing the file system in general stopped working (all processes t=
-hat
-> touched the FS hung/zombified). This necessitated a hard reboot, since "r=
-eboot"
-> and "halt" (so... "shutdown", really) didn't do anything other than spit =
-out the
-> usual "the system is rebooting" message.
->=20
-> Interestingly enough, the file system was (apparently) fine after that (j=
-ust as
-> Petr Janecek wrote), other than an invalid space cache file:
->=20
->   [   65.477006] BTRFS info (device sdg2): The free space cache file
->   (2466854731776) is invalid. skip it
->=20
-> That is, running my backup routine worked just as before, and I can access
-> files on the FS just fine.
->=20
-> Oh, and apparently the rebalance continued successfully?!
->=20
->   [  342.540865] BTRFS info (device sdg2): continuing balance
->   [  342.599991] BTRFS info (device sdg2): relocating block group 2502355=
-320832
->   flags 34 [  342.821608] BTRFS info (device sdg2): found 4 extents
->   [  343.056915] BTRFS info (device sdg2): relocating block group 2501818=
-449920
->   flags 36 [  437.932405] BTRFS info (device sdg2): found 25086 extents
->   [  438.727197] BTRFS info (device sdg2): relocating block group 2501281=
-579008
->   flags 36 [  557.319354] BTRFS info (device sdg2): found 83875 extents
->=20
->   # btrfs balance status /media/MARCEC_BACKUP
->   No balance found on '/media/MARCEC_BACKUP'
->=20
-> No SEGFAULT anywhere. All I can say right now is "huh". Although I'll try
-> starting a "balance -m" again tomorrow, because the continued balance only
-> took about 3-4 minutes (maybe it .
+[1] Your array won't hold raid1 for 1.97T data
+Your array used up 1.97T raid0 data, it takes 1.97T for raid0.
+But if converted to 1.97T, it will occupy 1.97T X2 = 3.94T.
+Your array are only 2.73T, it is too small to contain the data.
 
-Maybe it exploded, I don't know (sorry, clearly I didn't delete the entiret=
-y of
-that incomplete train of thought).
+[2]No unallocated free space
+When doing convert, btrfs will *NOT* convert the data/metadata in-place, 
+it allocate chunk and move data,
+which means, if btrfs wants to convert it needs to allocate some raid1 
+data chunk for the convert,
+and then copy the raid0 data to raid1 data chunk.
 
-Anyway, I did run a full "balance -m" again, and this time it finished
-successfully.  Make of that what you will, but it appears that the bug is
-non-deterministic (makes me wonder if Petr Janecek or anybody else who hit =
-the
-bug ever got a balance to finish).
+However, your 'btrfs fi show' output shows that there is no unallocated 
+free space for raid1 data chunk allocation.
+(2.75T space all used up for chunk allocation).
+Although your 'btrfs fi df' shows there is still about 800G free space, 
+that's just free space inside data/medata chunk,
+and chunk allocation needs completely free space, which is not allocated 
+for any chunk type.
+If you really want to free some space from the unused space, you can try 
+balance with -d/-m options,
+but it won't really do much help on your case due to [1].
 
-HTH
---=20
-Marc Joliet
---
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
+[Conculsion]
+So the ENOSPC error is not a false alert.
+Add more devices (easiest but expensive) or free up some space and then 
+use balance with -d/-m
+to free up some free space(balance speed maybe slow) seems to be the 
+only 2 ways to finish your RAID1
+setup.
 
---Sig_/5QsZbf8zHduCpEbYGaWiBmt
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+Thanks,
+Qu
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iQIcBAEBAgAGBQJUTaAzAAoJEL/Q5oYsiHj0ZT4QAJXzG1yttWLMPhyE9rBFwxmq
-Q/JIQI2EMvFf7AVSjyo82Uw/nPegejXTrL4l5q3ovVpcSFEru8lOEv3OQVvYgsDT
-YN5S6EFUJ0Zlmqf1rKlquKoBhGFvflKmQMx7Vku72vs6G3kipts21jwBiOHJu2yR
-11GURgxXpuEYKiABvybglp2CqipSlXPaOuO6R+ByRUsi8CHaw9amte7IpRH3KrIQ
-k59b633m90nmIJ7/dLW9CFReWY3C1/WYGF7lhvy4FKfIqERE9WpK0+ncWNw82/Ct
-aDJ0jFvf9IIMbTjTgJMG+LalAmfPJnxP4ymt50D6mTGRIKgs+FLqsvQ0RWcE2k0l
-Q7Yjjlgu004fv5mtPFuila6Gv8s7ZqHLWbx96dNxJ3ITEhnChfTMnor2/jM8CSqB
-lE4/ldh7dwj6BDluSZnUeVkcuNQG1ibJbkho+OwCfHPhGEe4QnWBzknKp4FHQo+V
-Su+G4n1hA6u62l/D0hhqfiXnWTtOlanR1MPviF4+SfItzqU/P+3/bAjlZk4V2677
-YuHs/p+dV9ehPIGPvH4/CMEq2qa4sEkFW6yuY3Orxroo7w5iNOaQBI7xBa/aKakx
-ZDyquYEWscOAQuU7sh8ZRlXkYu+TqoOEGezMZ4+misU482YHvS3nRmpFKR0qCPN4
-swzOeE2zvW6Pm7CXmvrm
-=yaK6
------END PGP SIGNATURE-----
+-------- Original Message --------
+Subject: Problem converting data raid0 to raid1: enospc errors during 
+balance
+From: Jasper Verberk <jverberk@hotmail.com>
+To: linux-btrfs@vger.kernel.org <linux-btrfs@vger.kernel.org>
+Date: 2014年10月24日 21:32
+> Hello,
+>
+> I'm trying to change my 4 disk btrfs data from raid0 to raid1. The metadata is allready in raid1 and now I'm trying to also make the data raid1.
+>
+> I'm getting the following errors and I got told on irc to go report this as a bug.
+>
+> Hoping there is anybody that can give me a hand here in solving it.
+>
+>
+> -------------------------------
+> Command I issued was:
+>
+>    btrfs balance start -dconvert=raid1,soft /data
+> -------------------------------
+>
+> -------------------------------
+> Error I got:
+>
+>    ERROR: error during balancing '/data' - No space left on device
+>    There may be more info in syslog - try dmesg | tail
+> -------------------------------
+>
+> -------------------------------
+> Last lines of dmesg:
+>
+> [60098.584459] BTRFS info (device sdc): relocating block group 18282971136 flags 9
+> [60102.422310] BTRFS info (device sdc): relocating block group 5398069248 flags 9
+> [60102.776406] BTRFS info (device sdc): relocating block group 1103101952 flags 9
+> [60103.168554] BTRFS info (device sdc): relocating block group 4194304 flags 4
+> [60103.619552] BTRFS info (device sdc): relocating block group 0 flags 2
+> [60104.040776] BTRFS info (device sdc): 1046 enospc errors during balance
+> -------------------------------
+>
+> -------------------------------
+> Further info:
+>
+> root@BlackMesa:/mnt# btrfs fi show
+> Label: 'data'  uuid: a1e36575-0843-45ab-850e-618a5d8a4b7e
+>          Total devices 4 FS bytes used 2.75TiB
+>          devid    1 size 2.73TiB used 1.94TiB path /dev/sdb
+>          devid    2 size 2.73TiB used 1.94TiB path /dev/sdd
+>          devid    3 size 2.73TiB used 1.94TiB path /dev/sdc
+>          devid    4 size 2.73TiB used 1.94TiB path /dev/sde
+>
+>
+> root@BlackMesa:/mnt# btrfs fi df /data
+> Data, RAID1: total=2.85TiB, used=790.46GiB
+> Data, RAID0: total=2.04TiB, used=1.97TiB
+> System, RAID1: total=8.00MiB, used=612.00KiB
+> Metadata, RAID1: total=5.00GiB, used=3.39GiB
+> unknown, single: total=512.00MiB, used=0.00
+>
+> root@BlackMesa:/mnt# uname -a
+> Linux BlackMesa 3.17-1-amd64 #1 SMP Debian 3.17-1~exp1 (2014-10-14) x86_64 GNU/Linux
+>
+> root@BlackMesa:/mnt# btrfs --version
+> Btrfs v3.14.1
+> -------------------------------
+>
+> -------------------------------
+> And this is what happens when I try to make an image:
+>
+> root@BlackMesa:/mnt# btrfs-image -c9 -t4 /dev/sdb /home/jasper/dump.image
+> btrfs-image: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
+> Aborted
+> ------------------------------- 		 	   		  --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---Sig_/5QsZbf8zHduCpEbYGaWiBmt--

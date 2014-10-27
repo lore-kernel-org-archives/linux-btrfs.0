@@ -1,55 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:52035 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751984AbaJ0M4L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 08:56:11 -0400
-Received: from fb07-iapwap2.physik.uni-giessen.de ([134.176.19.122]) by
- mail.gmx.com (mrgmx103) with ESMTPSA (Nemesis) id 0LmrZY-1YJCej2bCm-00h33c
- for <linux-btrfs@vger.kernel.org>; Mon, 27 Oct 2014 13:56:09 +0100
-From: Marc Dietrich <marvin24@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: nocow and compression
-Date: Mon, 27 Oct 2014 13:56:07 +0100
-Message-ID: <2033879.2EPALEPetI@fb07-iapwap2>
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:48999 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751377AbaJ0M72 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Oct 2014 08:59:28 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Marc Dietrich <marvin24@gmx.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: nocow and compression
+Date: Mon, 27 Oct 2014 13:59:24 +0100
+Message-ID: <2878318.cpxBgqOiao@vajra>
+In-Reply-To: <2033879.2EPALEPetI@fb07-iapwap2>
+References: <2033879.2EPALEPetI@fb07-iapwap2>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Le lundi 27 octobre 2014, 13:56:07 Marc Dietrich a écrit :
+> oops, no compression.
+> Is this intended?
 
-I created a filesystem and mounted it with compress-force=lzo. Then I did:
+« Compression does not work for NOCOW files » is clearly stated in
 
-# df -h .
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/loop0      100M  4.1M   96M   5% /mnt
+https://btrfs.wiki.kernel.org/index.php/Compression#How_does_compression_interact_with_direct_IO_or_COW.3F
 
-# yes "Hello World" | dd of=/mnt/test iflag=fullblock bs=1M count=20 
-status=none
-yes: standard output: Broken pipe
-yes: write error
+Kind regards.
 
-# sync; ls -l ; df -h .
-total 20480
--rw-r--r-- 1 root root 20971520 Oct 27 13:48 test
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/loop0      100M  4.7M   96M   5% /mnt
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
-so far so good ...
-
-# touch test2; chattr +C test2
-# dd if=test of=test2 conv=notrunc bs=1M iflag=fullblock oflag=append 
-status=none
-# sync; ls -l ; df -h .
-total 40960
--rw-r--r-- 1 root root 20971520 Oct 27 13:51 test
--rw-r--r-- 1 root root 20971520 Oct 27 13:51 test2
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/loop0      100M   25M   76M  25% /mnt
-
-oops, no compression.
-
-Is this intended?
-
-Marc
+Quand les doutes sont balayés, la foi véritable réapparaît, confirmée et 
+redressée. Plus rien ne demeure, rien qu'il faille se remémorer.
+-- Seng-Ts'an, Troisième Patriarche, Le Sin-sin-ming (VIIe s)
 

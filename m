@@ -1,59 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay2.ptmail.sapo.pt ([212.55.154.22]:50875 "EHLO sapo.pt"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750855AbaJ1Qts (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 12:49:48 -0400
-Received: from unknown (HELO undercity) (as13914087@sapo.pt@[5.43.61.212])
-          (envelope-sender <ab@tevsa.net>)
-          by mta-auth02 (qmail-ptmail-1.0.0) with SMTP
-          for <linux-btrfs@vger.kernel.org>; 28 Oct 2014 16:49:39 -0000
-Received: from [10.5.2.101] (faraday.azeroth.net [10.5.2.101])
-	by undercity (Postfix) with ESMTP id 1280D687713
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 16:49:38 +0000 (WET)
-Message-ID: <544FC921.2090900@tevsa.net>
-Date: Tue, 28 Oct 2014 16:49:37 +0000
-From: Alec Blayne <ab@tevsa.net>
+Received: from mail-qg0-f46.google.com ([209.85.192.46]:56361 "EHLO
+	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753109AbaJ1RBj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Oct 2014 13:01:39 -0400
+Received: by mail-qg0-f46.google.com with SMTP id z60so829437qgd.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 10:01:38 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Btrfs raid1 array has issues with rtorrent usage pattern.
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$9971f$f447ea56$689bac10$a0d10b02@cox.net>
+References: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
+	<5DD6D691-A067-4937-A5B4-545A0DFB9B1E@colorremedies.com>
+	<pan$98595$5149a38a$2d53014$f3ac0c62@cox.net>
+	<trinity-1f0ee155-d845-40b5-844d-77270be4d58e-1414495992747@3capp-mailcom-bs04>
+	<pan$9971f$f447ea56$689bac10$a0d10b02@cox.net>
+Date: Tue, 28 Oct 2014 13:01:35 -0400
+Message-ID: <CAGfcS_konOdjWxDnQLZQmUhiMRC3EJxZJCp=4bAwp0YMwdzzSA@mail.gmail.com>
+Subject: Re: BTRFS balance segfault, where to go from here
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, it seems that when using rtorrent to download into a btrfs system,
-it leads to the creation of files that fail to read properly.
-For instance, I get rtorrent to crash, but if I try to rsync the file he
-was writting into someplace else, rsync also fails with the message
-"can't map file "$file": Input/Output error (5)".
-If I give it time, eventually the file gets into a good state and I can
-rsync it somewhere else (as long as rtorrent doesn't keep writting into
-it). This doesn't happen using ext4 on the same system.
+On Tue, Oct 28, 2014 at 9:33 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Since it's not an option here I've not looked into it too closely
+> personally, and don't know if it'll fit your needs, but if it does, it
+> may well be simpler to substitute it into the existing backup setup
+> without rewriting the WHOLE thing, than to do that full rewrite from
+> scratch, without the btrfs/zfs features.  I'd at least look into it,
+> assuming you haven't already.
 
-No btrfs errors, or any other errors, show up in any log. Scrubbing or
-balancing don't turn up any issues. I've tried using a subvolume mounted
-with nodatacow and/or flushoncommit, which didn't help. I'm not using
-quotas and at some point had a single snapshot that I deleted. The
-filesystem was originally created recently (on a 3.16.4+ kernel).
+I haven't researched zfs as thoroughly as btrfs and I'm not running
+it, but you're certainly right that it is more mature (though I would
+not say that zfs on linux is as mature as zfs on BSD or especially
+Solaris).
 
-Here's what the array looks like:
+Keep in mind that ZFS is marketed more towards enterprise workloads.
+It isn't quite a dynamic as btrfs is intended to be, though in truth
+many of those btrfs features like reshaping a raid5 aren't implemented
+yet.  My sense is that you're going to need to plan ahead a bit more
+with ZFS and making changes without doing a full backup/re-create is
+going to be harder.  It also isn't designed for SSD (though it does
+have features for SSD caching of the write log and I think also
+read-caching, which is something that does not yet exist for btrfs).
 
-Label: 'data'  uuid: ffe83a3d-f4ba-46b7-8424-4ec3380cb811
-        Total devices 4 FS bytes used 3.14TiB
-        devid    4 size 2.73TiB used 2.36TiB path /dev/sdd1
-        devid    5 size 1.82TiB used 1.45TiB path /dev/sdc1
-        devid    6 size 1.82TiB used 1.45TiB path /dev/sdb1
-        devid    7 size 1.82TiB used 1.45TiB path /dev/sda1
+>From what I understand of both I'd say that btrfs actually has the
+better overall design, but zfs just has a LOT more maturity.  I think
+that btrfs will eventually overtake it, but just when that will happen
+is anybody's guess, and it certainly isn't there today.
 
-Btrfs v3.17
+The one thing that zfs does have going for you is that you're very
+unlikely to get BUGs and PANICs anytime you do something as simple as
+running rsync on it.
 
-Data, RAID1: total=3.34TiB, used=3.13TiB
-System, RAID1: total=32.00MiB, used=512.00KiB
-Metadata, RAID1: total=10.00GiB, used=7.31GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+I will also note that I rsync data off of my btrfs filesystem all the
+time without issue.  I do not have experience with using rsync to
+write TO a btrfs filesystem.  Right now I don't trust btrfs send
+enough to rely on it - the whole purpose of using rsync right now is
+to backup my btrfs data to an ext4 partition which lets me sleep well
+at night while still getting to play around with btrfs and make use of
+features like snapshots/etc.  :)
 
+If I was running a large (ie measured in 10s of disks) storage system
+I'd probably go with ZFS now.  In such a setup being limited to RAID6s
+of maybe 7 drives each and having to add/remove drives 7 at a time
+wouldn't be a big deal.  When you're running a system with 6 disks
+total that is a much bigger limitation.  If you look at something like
+Backblade's storage pods that is the perfect example of the kind of
+situation ZFS was designed to handle.  On the other hand, btrfs aims
+to eventually address that while being a decent default filesystem for
+your smartphone.
 
-On linux 3.17.1: Linux 3.17.1-gentoo-r1 #3 SMP PREEMPT Tue Oct 28
-02:43:11 WET 2014 x86_64 AMD Athlon(tm) 5350 APU with Radeon(tm) R3
-AuthenticAMD GNU/Linux
-
-I'm utterly puzzled and clueless at how to dig into this issue.
+--
+Rich

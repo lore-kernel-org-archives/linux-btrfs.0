@@ -1,18 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f169.google.com ([209.85.223.169]:61872 "EHLO
-	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751199AbaJ1USa (ORCPT
+Received: from mail-qa0-f45.google.com ([209.85.216.45]:37887 "EHLO
+	mail-qa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751419AbaJ1UcZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 16:18:30 -0400
-Received: by mail-ie0-f169.google.com with SMTP id tr6so1559658ieb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 13:18:30 -0700 (PDT)
+	Tue, 28 Oct 2014 16:32:25 -0400
+Received: by mail-qa0-f45.google.com with SMTP id dc16so1101568qab.32
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 13:32:25 -0700 (PDT)
+Received: from [10.1.42.124] ([50.241.177.193])
+        by mx.google.com with ESMTPSA id c63sm2237465qgf.14.2014.10.28.13.32.23
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Tue, 28 Oct 2014 13:32:24 -0700 (PDT)
+Message-ID: <544FFD52.6010604@gmail.com>
+Date: Tue, 28 Oct 2014 16:32:18 -0400
+From: Zack Coffey <tech42.clickwir@gmail.com>
 MIME-Version: 1.0
-Date: Tue, 28 Oct 2014 16:18:27 -0400
-Message-ID: <CAA8KC9KRJF_iDM5c5kwZW_+vdiTTAUNyERzqB812fYy29tTiLw@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
 Subject: RAID1 fails to recover chunk tree
-From: Zack Coffey <clickwir@gmail.com>
-To: BTRFS ML <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -30,9 +35,9 @@ Single drive btrfs was made on Ubuntu with kernel 3.13.0 and tools
 
 $ sudo mount -o degraded /dev/sdc1 /media/Data/
 mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+        missing codepage or helper program, or other error
+        In some cases useful info is found in syslog - try
+        dmesg | tail  or so
 
 $ dmesg | tail
 [45353.869448] KBD BUG in
@@ -118,9 +123,9 @@ ERROR: error removing the device 'missing' - Inappropriate ioctl for device
 
 $ sudo mount -o degraded,defaults,compress=lzo /dev/sdc1 /media/Data/
 mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+        missing codepage or helper program, or other error
+        In some cases useful info is found in syslog - try
+        dmesg | tail  or so
 
 $ dmesg | tail
 [106991.655384] btrfs: device fsid
@@ -141,49 +146,49 @@ bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
 
 $ sudo btrfs rescue super-recover -v /dev/sdc1
 All Devices:
-        Device: id = 1, name = /dev/sdc1
+         Device: id = 1, name = /dev/sdc1
 
 Before Recovering:
-        [All good supers]:
-                device name = /dev/sdc1
-                superblock bytenr = 65536
+         [All good supers]:
+                 device name = /dev/sdc1
+                 superblock bytenr = 65536
 
-                device name = /dev/sdc1
-                superblock bytenr = 67108864
+                 device name = /dev/sdc1
+                 superblock bytenr = 67108864
 
-                device name = /dev/sdc1
-                superblock bytenr = 274877906944
+                 device name = /dev/sdc1
+                 superblock bytenr = 274877906944
 
-        [All bad supers]:
+         [All bad supers]:
 
 All supers are valid, no need to recover
 
 $ btrfs rescue chunk-recover -v /dev/sdc1
 <<snipped>>
 Chunk: start = 860100755456, len = 1073741824, type = 1, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 26877100032
-      No block group.
-      No device extent.
-  Chunk: start = 861174497280, len = 1073741824, type = 1, num_stripes = 1
-      Stripes list:
-      [ 0] Stripe: devid = 1, offset = 27950841856
-      No block group.
-      No device extent.
+       Stripes list:
+       [ 0] Stripe: devid = 1, offset = 26877100032
+       No block group.
+       No device extent.
+   Chunk: start = 861174497280, len = 1073741824, type = 1, num_stripes = 1
+       Stripes list:
+       [ 0] Stripe: devid = 1, offset = 27950841856
+       No block group.
+       No device extent.
 
 Total Chunks:   333
-  Heathy:       305
-  Bad:  28
+   Heathy:       305
+   Bad:  28
 
 Orphan Block Groups:
-  Block Group: start = 872985657344, len = 1073741824, flag = 4
-  Block Group: start = 911673917440, len = 33554432, flag = 2
-  Block Group: start = 911707471872, len = 1073741824, flag = 4
+   Block Group: start = 872985657344, len = 1073741824, flag = 4
+   Block Group: start = 911673917440, len = 33554432, flag = 2
+   Block Group: start = 911707471872, len = 1073741824, flag = 4
 
 Orphan Device Extents:
-  Device extent: devid = 2, start = 2182086656, len = 33554432, chunk
+   Device extent: devid = 2, start = 2182086656, len = 33554432, chunk
 offset = 911673917440
-  Device extent: devid = 2, start = 2215641088, len = 1073741824,
+   Device extent: devid = 2, start = 2215641088, len = 1073741824,
 chunk offset = 911707471872
 Fail to recover the chunk tree.
 <</snipped>>

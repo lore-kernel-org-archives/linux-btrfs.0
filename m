@@ -1,206 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f45.google.com ([209.85.216.45]:37887 "EHLO
-	mail-qa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751419AbaJ1UcZ (ORCPT
+Received: from vm135.rz.uni-osnabrueck.de ([131.173.16.10]:54128 "EHLO
+	smtp-auth.serv.Uni-Osnabrueck.DE" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754300AbaJ1V4M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 16:32:25 -0400
-Received: by mail-qa0-f45.google.com with SMTP id dc16so1101568qab.32
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 13:32:25 -0700 (PDT)
-Received: from [10.1.42.124] ([50.241.177.193])
-        by mx.google.com with ESMTPSA id c63sm2237465qgf.14.2014.10.28.13.32.23
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Tue, 28 Oct 2014 13:32:24 -0700 (PDT)
-Message-ID: <544FFD52.6010604@gmail.com>
-Date: Tue, 28 Oct 2014 16:32:18 -0400
-From: Zack Coffey <tech42.clickwir@gmail.com>
+	Tue, 28 Oct 2014 17:56:12 -0400
+Message-ID: <545010F4.5090300@uni-osnabrueck.de>
+Date: Tue, 28 Oct 2014 22:56:04 +0100
+From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: RAID1 fails to recover chunk tree
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs unmountable: read block failed check_tree_block; Couldn't
+ read tree root
+References: <544E4747.2000008@uni-osnabrueck.de> <544ECF24.7030504@uni-osnabrueck.de> <544EEBBF.5080208@cn.fujitsu.com> <544EF415.6090308@cn.fujitsu.com>
+In-Reply-To: <544EF415.6090308@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Revisit of a previous issue. Setup a single 640GB drive with BTRFS and
-compression. This was not a system drive, just a place to put random
-junk.
+Am 28.10.14 um 02:40 schrieb Qu Wenruo:
+>
+> -------- Original Message --------
+> Subject: Re: btrfs unmountable: read block failed check_tree_block;
+> Couldn't read tree root
+> From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> To: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>,
+> <linux-btrfs@vger.kernel.org>
+> Date: 2014年10月28日 09:05
+>>
+>> -------- Original Message --------
+>> Subject: Re: btrfs unmountable: read block failed check_tree_block;
+>> Couldn't read tree root
+>> From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
+>> To: <linux-btrfs@vger.kernel.org>
+>> Date: 2014年10月28日 07:03
+>>> Am 27.10.14 um 14:23 schrieb Ansgar Hockmann-Stolle:
+>>>> Hi!
+>>>>
+>>>> My btrfs system partition went readonly. After reboot it doesnt mount
+>>>> anymore. System was openSUSE 13.1 Tumbleweed (kernel 3.17.??). Now I'm
+>>>> on openSUSE 13.2-RC1 rescue (kernel 3.16.3). I dumped (dd) the whole
+>>>> 250
+>>>> GB SSD to some USB file and tried some btrfs tools on another copy per
+>>>> loopback device. But everything failed with:
+>>>>
+>>>> kernel: BTRFS: failed to read tree root on dm-2
+>>>>
+>>>> See http://pastebin.com/raw.php?i=dPnU6nzg.
+>>>>
+>>>> Any hints where to go from here?
+>>>
+>>> After an offlist hint (thanks Tom!) I compiled the latest btrfs-progs
+>>> 3.17 and tried some more ...
+>>>
+>>> linux:~/bin # ./btrfs --version
+>>> Btrfs v3.17
+>>> linux:~/bin # ./btrfs-find-root /dev/sda3
+>>> Super think's the tree root is at 1015238656, chunk root 20971520
+>>> Well block 239718400 seems great, but generation doesn't match,
+>>> have=661931, want=663595 level 0
+>>> Well block 239722496 seems great, but generation doesn't match,
+>>> have=661931, want=663595 level 0
+>>> Well block 320098304 seems great, but generation doesn't match,
+>>> have=662233, want=663595 level 0
+>>> Well block 879341568 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879345664 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879382528 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879398912 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879403008 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879423488 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 879435776 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 880095232 seems great, but generation doesn't match,
+>>> have=663227, want=663595 level 0
+>>> Well block 881504256 seems great, but generation doesn't match,
+>>> have=663228, want=663595 level 0
+>>> Well block 881512448 seems great, but generation doesn't match,
+>>> have=663228, want=663595 level 0
+>>> Well block 936271872 seems great, but generation doesn't match,
+>>> have=663397, want=663595 level 0
+>>> Well block 1004490752 seems great, but generation doesn't match,
+>>> have=663571, want=663595 level 0
+>>> Well block 1007804416 seems great, but generation doesn't match,
+>>> have=663572, want=663595 level 0
+>>> Well block 1012031488 seems great, but generation doesn't match,
+>>> have=663575, want=663595 level 0
+>>> Well block 1012396032 seems great, but generation doesn't match,
+>>> have=663575, want=663595 level 0
+>>> Well block 1012633600 seems great, but generation doesn't match,
+>>> have=663586, want=663595 level 0
+>>> Well block 1012871168 seems great, but generation doesn't match,
+>>> have=663585, want=663595 level 0
+>>> Well block 1015201792 seems great, but generation doesn't match,
+>>> have=663588, want=663595 level 0
+>>> Well block 1015836672 seems great, but generation doesn't match,
+>>> have=663596, want=663595 level 1
+>>> Well block 44132536320 seems great, but generation doesn't match,
+>>> have=658774, want=663595 level 0
+>>> Well block 44178280448 seems great, but generation doesn't match,
+>>> have=658774, want=663595 level 0
+>>> Well block 87443644416 seems great, but generation doesn't match,
+>>> have=661349, want=663595 level 0
+>>> Well block 87514079232 seems great, but generation doesn't match,
+>>> have=651051, want=663595 level 0
+>>> Well block 87517679616 seems great, but generation doesn't match,
+>>> have=661349, want=663595 level 0
+>>> Well block 98697822208 seems great, but generation doesn't match,
+>>> have=643548, want=663595 level 0
+>>> Well block 103285026816 seems great, but generation doesn't match,
+>>> have=661672, want=663595 level 0
+>>> Well block 103309553664 seems great, but generation doesn't match,
+>>> have=661674, want=663595 level 0
+>>> Well block 103523430400 seems great, but generation doesn't match,
+>>> have=661767, want=663595 level 0
+>>> No more metdata to scan, exiting
+>>>
+>>> This line I found interesting because "have" is "want + 1":
+>>> Well block 1015836672 seems great, but generation doesn't match,
+>>> have=663596, want=663595 level 1
+>>>
+>>> And here the tail of "btrfs rescue chunk-recover" (full output at
+>>> http://pastebin.com/raw.php?i=1D5VgDxv)
+>>>
+>>> [..]
+>>> Total Chunks:    234
+>>>   Heathy:    231
+>>>   Bad:    3
+>>>
+>>> Orphan Block Groups:
+>>>
+>>> Orphan Device Extents:
+>>> Couldn't map the block 1015238656
+>>> btrfs: volumes.c:1140: btrfs_num_copies: Assertion `!(ce->start >
+>>> logical || ce->start + ce->size < logical)' failed.
+>>> Aborted
+>>>
+> After looking into the 3 bad chunks, it turns out that the logical
+> 1015238656 is covered by the bad chunk:
+>
+>    Chunk: start = 29360128, len = 1073741824, type = 24, num_stripes = 2
+>        Stripes list:
+>        [ 0] Stripe: devid = 1, offset = 37748736
+>        [ 1] Stripe: devid = 1, offset = 1111490560
+>        No block group.
+>        Device extent list:
+>            [ 0]Device extent: devid = 1, start = 1111490560, len =
+> 1073741824, chunk offset = 29360128
+>            [ 1]Device extent: devid = 1, start = 37748736, len =
+> 1073741824, chunk offset = 29360128
+>
+> Which means these bad chunks are in fact good chunks.
 
-Made a RAID1 with another drive of just the metadata. Was in
-that state for less than 12 hours-ish, removed the second drive and
-now cannot get to any data on the original drive. Data remained single
-while only metadata was RAID1.
+Great news!
 
-Single drive btrfs was made on Ubuntu with kernel 3.13.0 and tools
-3.12.
+> However current chunk-recovery can't rebuild block group
+> since it doesn't know how to rebuild the 'used' member.
+>
+> So these needed chunks can't be rebuilt.
+>
+> I'll try to implement the block group rebuild function,
+> but it may take some time.
 
-$ sudo mount -o degraded /dev/sdc1 /media/Data/
-mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-        missing codepage or helper program, or other error
-        In some cases useful info is found in syslog - try
-        dmesg | tail  or so
+Tell me if I can help anything.
 
-$ dmesg | tail
-[45353.869448] KBD BUG in
-../../../../../../../../
-drivers/2d/lnx/fgl/drm/kernel/
-gal.c at line:
-304!
-[45353.901511] KBD BUG in
-../../../../../../../../
-drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45353.901666] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45354.148488] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[45354.148573] KBD BUG in
-../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
-304!
-[46241.155350] btrfs: device fsid bd78815a-802b-43e2-8387-fc6ab4237d67
-devid 1 transid 60944 /dev/sdc1
-[46241.155923] btrfs: allowing degraded mounts
-[46241.155927] btrfs: disk space caching is enabled
-[46241.159436] btrfs: failed to read chunk root on sdc1
-[46241.177815] btrfs: open_ctree failed
+Thanks,
+Ansgar
 
-$ btrfs-show-super /dev/sdc1
-superblock: bytenr=65536, device=/dev/sdc1
-------------------------------
----------------------------
-csum                    0x93bcb1b5 [match]
-bytenr                  65536
-flags                   0x1
-magic                   _BHRfS_M [match]
-fsid                    bd78815a-802b-43e2-8387-fc6ab4237d67
-label
-generation              60944
-root                    909586694144
-sys_array_size          97
-chunk_root_generation   60938
-root_level              1
-chunk_root              911673917440
-chunk_root_level        1
-log_root                0
-log_root_transid        0
-log_root_level          0
-total_bytes             1115871535104
-bytes_used              321833435136
-sectorsize              4096
-nodesize                4096
-leafsize                4096
-stripesize              4096
-root_dir                6
-num_devices             2
-compat_flags            0x0
-compat_ro_flags         0x0
-incompat_flags          0x9
-csum_type               0
-csum_size               4
-cache_generation        60944
-uuid_tree_generation    60944
-dev_item.uuid           d82b2027-17b6-4513-a86d-9227a42d7ed1
-dev_item.fsid           bd78815a-802b-43e2-8387-fc6ab4237d67 [match]
-dev_item.type           0
-dev_item.total_bytes    615763673088
-dev_item.bytes_used     324270030848
-dev_item.io_align       4096
-dev_item.io_width       4096
-dev_item.sector_size    4096
-dev_item.devid          1
-dev_item.dev_group      0
-dev_item.seek_speed     0
-dev_item.bandwidth      0
-dev_item.generation     0
-
-
-$ sudo btrfs device add -f /dev/sdh1 /dev/sdc1
-ERROR: error adding the device '/dev/sdh1' - Inappropriate ioctl for device
-
-$ sudo btrfs device delete missing /dev/sdc1
-ERROR: error removing the device 'missing' - Inappropriate ioctl for device
-
-$ sudo mount -o degraded,defaults,compress=lzo /dev/sdc1 /media/Data/
-mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
-        missing codepage or helper program, or other error
-        In some cases useful info is found in syslog - try
-        dmesg | tail  or so
-
-$ dmesg | tail
-[106991.655384] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[106991.665066] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107019.954397] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107019.962009] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107070.124927] btrfs: device fsid
-bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
-[107070.126475] btrfs: allowing degraded mounts
-[107070.126479] btrfs: use lzo compression
-[107070.126480] btrfs: disk space caching is enabled
-[107070.127254] btrfs: failed to read chunk root on sdc1
-[107070.142983] btrfs: open_ctree failed
-
-$ sudo btrfs rescue super-recover -v /dev/sdc1
-All Devices:
-         Device: id = 1, name = /dev/sdc1
-
-Before Recovering:
-         [All good supers]:
-                 device name = /dev/sdc1
-                 superblock bytenr = 65536
-
-                 device name = /dev/sdc1
-                 superblock bytenr = 67108864
-
-                 device name = /dev/sdc1
-                 superblock bytenr = 274877906944
-
-         [All bad supers]:
-
-All supers are valid, no need to recover
-
-$ btrfs rescue chunk-recover -v /dev/sdc1
-<<snipped>>
-Chunk: start = 860100755456, len = 1073741824, type = 1, num_stripes = 1
-       Stripes list:
-       [ 0] Stripe: devid = 1, offset = 26877100032
-       No block group.
-       No device extent.
-   Chunk: start = 861174497280, len = 1073741824, type = 1, num_stripes = 1
-       Stripes list:
-       [ 0] Stripe: devid = 1, offset = 27950841856
-       No block group.
-       No device extent.
-
-Total Chunks:   333
-   Heathy:       305
-   Bad:  28
-
-Orphan Block Groups:
-   Block Group: start = 872985657344, len = 1073741824, flag = 4
-   Block Group: start = 911673917440, len = 33554432, flag = 2
-   Block Group: start = 911707471872, len = 1073741824, flag = 4
-
-Orphan Device Extents:
-   Device extent: devid = 2, start = 2182086656, len = 33554432, chunk
-offset = 911673917440
-   Device extent: devid = 2, start = 2215641088, len = 1073741824,
-chunk offset = 911707471872
-Fail to recover the chunk tree.
-<</snipped>>
-
-Here's the full snipped paste: http://pastebin.com/fEm3Gup7
-
-Now I'm on openSUSE Tumbleweed (kernel 3.17). Still get the same
-result from 'chunk-recover'. There's 305 healthy chunks, is there
-anyway to recover that data and forget about the bad ones?
-
-A good portion of the data on that drive was backed up, but some
-wasn't. My fault, I've learned. Can I get anything back from that
-drive?
-
-Thanks

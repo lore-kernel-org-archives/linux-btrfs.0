@@ -1,31 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42834 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754071AbaJ1Qkw convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 12:40:52 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:56609 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1Xj9pA-0043A2-RF
-	for linux-btrfs@vger.kernel.org; Tue, 28 Oct 2014 10:40:49 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: kworker/dying during scrubs
-Message-Id: <73AC627A-83C4-45E2-B202-7A65515F4557@colorremedies.com>
-Date: Tue, 28 Oct 2014 10:40:49 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from relay2.ptmail.sapo.pt ([212.55.154.22]:50875 "EHLO sapo.pt"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750855AbaJ1Qts (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Oct 2014 12:49:48 -0400
+Received: from unknown (HELO undercity) (as13914087@sapo.pt@[5.43.61.212])
+          (envelope-sender <ab@tevsa.net>)
+          by mta-auth02 (qmail-ptmail-1.0.0) with SMTP
+          for <linux-btrfs@vger.kernel.org>; 28 Oct 2014 16:49:39 -0000
+Received: from [10.5.2.101] (faraday.azeroth.net [10.5.2.101])
+	by undercity (Postfix) with ESMTP id 1280D687713
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 16:49:38 +0000 (WET)
+Message-ID: <544FC921.2090900@tevsa.net>
+Date: Tue, 28 Oct 2014 16:49:37 +0000
+From: Alec Blayne <ab@tevsa.net>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: Btrfs raid1 array has issues with rtorrent usage pattern.
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-3.16.6-203.fc20.x86_64+debug
-Doing a scrub on a raid1 volume, directly formatted 2 plain unpartitioned HDDs.
+Hi, it seems that when using rtorrent to download into a btrfs system,
+it leads to the creation of files that fail to read properly.
+For instance, I get rtorrent to crash, but if I try to rsync the file he
+was writting into someplace else, rsync also fails with the message
+"can't map file "$file": Input/Output error (5)".
+If I give it time, eventually the file gets into a good state and I can
+rsync it somewhere else (as long as rtorrent doesn't keep writting into
+it). This doesn't happen using ext4 on the same system.
 
-Every now and then I get a message:
-[  613.056923] kworker/dying (6) used greatest stack depth: 10600 bytes left
+No btrfs errors, or any other errors, show up in any log. Scrubbing or
+balancing don't turn up any issues. I've tried using a subvolume mounted
+with nodatacow and/or flushoncommit, which didn't help. I'm not using
+quotas and at some point had a single snapshot that I deleted. The
+filesystem was originally created recently (on a 3.16.4+ kernel).
 
-This doesn't happen when I'm not doing scrubs. It doesn't happen with kernel 3.14.22. There doesn't seem to be an immediate consequence of this but it's unexpected.
+Here's what the array looks like:
 
-Chris Murphy
+Label: 'data'  uuid: ffe83a3d-f4ba-46b7-8424-4ec3380cb811
+        Total devices 4 FS bytes used 3.14TiB
+        devid    4 size 2.73TiB used 2.36TiB path /dev/sdd1
+        devid    5 size 1.82TiB used 1.45TiB path /dev/sdc1
+        devid    6 size 1.82TiB used 1.45TiB path /dev/sdb1
+        devid    7 size 1.82TiB used 1.45TiB path /dev/sda1
+
+Btrfs v3.17
+
+Data, RAID1: total=3.34TiB, used=3.13TiB
+System, RAID1: total=32.00MiB, used=512.00KiB
+Metadata, RAID1: total=10.00GiB, used=7.31GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+On linux 3.17.1: Linux 3.17.1-gentoo-r1 #3 SMP PREEMPT Tue Oct 28
+02:43:11 WET 2014 x86_64 AMD Athlon(tm) 5350 APU with Radeon(tm) R3
+AuthenticAMD GNU/Linux
+
+I'm utterly puzzled and clueless at how to dig into this issue.

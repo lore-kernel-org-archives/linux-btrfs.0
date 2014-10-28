@@ -1,38 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-07v.sys.comcast.net ([69.252.207.39]:34402 "EHLO
-	resqmta-ch2-07v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752598AbaJ1AjS (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:7500 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752332AbaJ1BFK convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 20:39:18 -0400
-Message-ID: <544EE5B1.5040704@pobox.com>
-Date: Mon, 27 Oct 2014 17:39:13 -0700
-From: Robert White <rwhite@pobox.com>
+	Mon, 27 Oct 2014 21:05:10 -0400
+Message-ID: <544EEBBF.5080208@cn.fujitsu.com>
+Date: Tue, 28 Oct 2014 09:05:03 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Christian Tschabuschnig <tschaboo@gmx.at>, linux-btrfs@vger.kernel.org
-Subject: Re: Does btrfs-restore report missing/corrupt files?
-References: <trinity-716ca1fa-5a94-4624-9e01-8f4c4b500e46-1414310389248@3capp-gmx-bs26>
-In-Reply-To: <trinity-716ca1fa-5a94-4624-9e01-8f4c4b500e46-1414310389248@3capp-gmx-bs26>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs unmountable: read block failed check_tree_block; Couldn't
+ read tree root
+References: <544E4747.2000008@uni-osnabrueck.de> <544ECF24.7030504@uni-osnabrueck.de>
+In-Reply-To: <544ECF24.7030504@uni-osnabrueck.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/26/2014 12:59 AM, Christian Tschabuschnig wrote:
+
+-------- Original Message --------
+Subject: Re: btrfs unmountable: read block failed check_tree_block; 
+Couldn't read tree root
+From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2014年10月28日 07:03
+> Am 27.10.14 um 14:23 schrieb Ansgar Hockmann-Stolle:
+>> Hi!
+>>
+>> My btrfs system partition went readonly. After reboot it doesnt mount
+>> anymore. System was openSUSE 13.1 Tumbleweed (kernel 3.17.??). Now I'm
+>> on openSUSE 13.2-RC1 rescue (kernel 3.16.3). I dumped (dd) the whole 250
+>> GB SSD to some USB file and tried some btrfs tools on another copy per
+>> loopback device. But everything failed with:
+>>
+>> kernel: BTRFS: failed to read tree root on dm-2
+>>
+>> See http://pastebin.com/raw.php?i=dPnU6nzg.
+>>
+>> Any hints where to go from here?
 >
-> Hello,
+> After an offlist hint (thanks Tom!) I compiled the latest btrfs-progs 
+> 3.17 and tried some more ...
 >
-> currently I am trying to recover a btrfs filesystem which had a few subvolumes. When running
-> # btrfs restore -sx /dev/xxx .
-> one subvolume gets restored.
+> linux:~/bin # ./btrfs --version
+> Btrfs v3.17
+> linux:~/bin # ./btrfs-find-root /dev/sda3
+> Super think's the tree root is at 1015238656, chunk root 20971520
+> Well block 239718400 seems great, but generation doesn't match, 
+> have=661931, want=663595 level 0
+> Well block 239722496 seems great, but generation doesn't match, 
+> have=661931, want=663595 level 0
+> Well block 320098304 seems great, but generation doesn't match, 
+> have=662233, want=663595 level 0
+> Well block 879341568 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879345664 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879382528 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879398912 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879403008 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879423488 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 879435776 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 880095232 seems great, but generation doesn't match, 
+> have=663227, want=663595 level 0
+> Well block 881504256 seems great, but generation doesn't match, 
+> have=663228, want=663595 level 0
+> Well block 881512448 seems great, but generation doesn't match, 
+> have=663228, want=663595 level 0
+> Well block 936271872 seems great, but generation doesn't match, 
+> have=663397, want=663595 level 0
+> Well block 1004490752 seems great, but generation doesn't match, 
+> have=663571, want=663595 level 0
+> Well block 1007804416 seems great, but generation doesn't match, 
+> have=663572, want=663595 level 0
+> Well block 1012031488 seems great, but generation doesn't match, 
+> have=663575, want=663595 level 0
+> Well block 1012396032 seems great, but generation doesn't match, 
+> have=663575, want=663595 level 0
+> Well block 1012633600 seems great, but generation doesn't match, 
+> have=663586, want=663595 level 0
+> Well block 1012871168 seems great, but generation doesn't match, 
+> have=663585, want=663595 level 0
+> Well block 1015201792 seems great, but generation doesn't match, 
+> have=663588, want=663595 level 0
+> Well block 1015836672 seems great, but generation doesn't match, 
+> have=663596, want=663595 level 1
+> Well block 44132536320 seems great, but generation doesn't match, 
+> have=658774, want=663595 level 0
+> Well block 44178280448 seems great, but generation doesn't match, 
+> have=658774, want=663595 level 0
+> Well block 87443644416 seems great, but generation doesn't match, 
+> have=661349, want=663595 level 0
+> Well block 87514079232 seems great, but generation doesn't match, 
+> have=651051, want=663595 level 0
+> Well block 87517679616 seems great, but generation doesn't match, 
+> have=661349, want=663595 level 0
+> Well block 98697822208 seems great, but generation doesn't match, 
+> have=643548, want=663595 level 0
+> Well block 103285026816 seems great, but generation doesn't match, 
+> have=661672, want=663595 level 0
+> Well block 103309553664 seems great, but generation doesn't match, 
+> have=661674, want=663595 level 0
+> Well block 103523430400 seems great, but generation doesn't match, 
+> have=661767, want=663595 level 0
+> No more metdata to scan, exiting
+>
+> This line I found interesting because "have" is "want + 1":
+> Well block 1015836672 seems great, but generation doesn't match, 
+> have=663596, want=663595 level 1
+>
+> And here the tail of "btrfs rescue chunk-recover" (full output at 
+> http://pastebin.com/raw.php?i=1D5VgDxv)
+>
+> [..]
+> Total Chunks:    234
+>   Heathy:    231
+>   Bad:    3
+>
+> Orphan Block Groups:
+>
+> Orphan Device Extents:
+> Couldn't map the block 1015238656
+> btrfs: volumes.c:1140: btrfs_num_copies: Assertion `!(ce->start > 
+> logical || ce->start + ce->size < logical)' failed.
+> Aborted
+>
+First, I think the assertion could be dealt with.
 
-Important Aside: The one time I had to resort to btrfs restore I didn't 
-get the contents of _many_ of the really small files. My _guess_ is that 
-those where the files small enough to reside entirely within the 
-original filesystem's metadata.
+Second, much like the other one who encounters chunk tree corruption,
+the chunk-recovery did quite well and salvaged most of the chunks.
+However the codes is somewhat too strict to rebuild the chunk tree
+if there is *ANY* orphan chunk.
 
-You should mount the filesystem read-only and recursively copy the 
-hirearchy to another file system as well as doing a restore. The two 
-results can then be folded together, or at least the former might help 
-you find some of what the latter might miss.
+I prefer to make chunk-rescue less strict to rebuild chunk.
+Maybe it would help on your case but it may takes some time.
 
-I could be totally wrong, or restore could have been improved since 
-then, but it was what seemed to be happening.
+Thanks,
+Qu
+>
+> Sadly "btrfs check --repair" keep up refusing to do its job.
+>
+> linux:~ # btrfs check --repair /dev/sda3
+> enabling repair mode
+> Check tree block failed, want=1015238656, have=0
+> Check tree block failed, want=1015238656, have=0
+> Check tree block failed, want=1015238656, have=0
+> Check tree block failed, want=1015238656, have=0
+> Check tree block failed, want=1015238656, have=0
+> read block failed check_tree_block
+> Couldn't read tree root
+> Checking filesystem on /dev/sda3
+> UUID: 1af256b5-b1ad-443b-aeee-a6853e70b7e2
+> Critical roots corrupted, unable to fsck the FS
+> Segmentation fault
+>
+> Any more hints?
+>
+> Ciao
+>     Ansgar
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

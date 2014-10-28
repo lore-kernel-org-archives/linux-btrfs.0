@@ -1,128 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:60515 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751628AbaJ0T51 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:46042 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752636AbaJ1B6b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Oct 2014 15:57:27 -0400
-Date: Mon, 27 Oct 2014 15:57:19 -0400
-From: Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: fix snapshot inconsistency after a file write
- followed by truncate
-To: Filipe Manana <fdmanana@suse.com>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Message-ID: <1414439839.2166.2@mail.thefacebook.com>
-In-Reply-To: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
-References: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
+	Mon, 27 Oct 2014 21:58:31 -0400
+Message-ID: <544EF8AD.2090808@cn.fujitsu.com>
+Date: Tue, 28 Oct 2014 10:00:13 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: <fdmanana@gmail.com>
+CC: Filipe Manana <fdmanana@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix race that makes btrfs_lookup_extent_info miss
+ skinny extent items
+References: <1414401592-19476-1-git-send-email-fdmanana@suse.com>	<544E27C5.7060804@cn.fujitsu.com>	<CAL3q7H5K-i60BqYLJweH1+FZbDOKvP=UJ9FEsHJn=yMhA7EPHQ@mail.gmail.com> <CAL3q7H7FOFFLNYc-Sa1Za0v8mUtT_gvfNHN+KDM3u8N8oCxgMw@mail.gmail.com>
+In-Reply-To: <CAL3q7H7FOFFLNYc-Sa1Za0v8mUtT_gvfNHN+KDM3u8N8oCxgMw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 21, 2014 at 6:12 AM, Filipe Manana <fdmanana@suse.com> 
-wrote:
-> If right after starting the snapshot creation ioctl we perform a 
-> write against a
-> file followed by a truncate, with both operations increasing the 
-> file's size, we
-> can get a snapshot tree that reflects a state of the source 
-> subvolume's tree where
-> the file truncation happened but the write operation didn't. This 
-> leaves a gap
-> between 2 file extent items of the inode, which makes btrfs' fsck 
-> complain about it.
+On Mon, 27 Oct 2014 13:44:22 +0000, Filipe David Manana wrote:
+> On Mon, Oct 27, 2014 at 12:11 PM, Filipe David Manana
+> <fdmanana@gmail.com> wrote:
+>> On Mon, Oct 27, 2014 at 11:08 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>>> On Mon, 27 Oct 2014 09:19:52 +0000, Filipe Manana wrote:
+>>>> We have a race that can lead us to miss skinny extent items in the function
+>>>> btrfs_lookup_extent_info() when the skinny metadata feature is enabled.
+>>>> So basically the sequence of steps is:
+>>>>
+>>>> 1) We search in the extent tree for the skinny extent, which returns > 0
+>>>>    (not found);
+>>>>
+>>>> 2) We check the previous item in the returned leaf for a non-skinny extent,
+>>>>    and we don't find it;
+>>>>
+>>>> 3) Because we didn't find the non-skinny extent in step 2), we release our
+>>>>    path to search the extent tree again, but this time for a non-skinny
+>>>>    extent key;
+>>>>
+>>>> 4) Right after we released our path in step 3), a skinny extent was inserted
+>>>>    in the extent tree (delayed refs were run) - our second extent tree search
+>>>>    will miss it, because it's not looking for a skinny extent;
+>>>>
+>>>> 5) After the second search returned (with ret > 0), we look for any delayed
+>>>>    ref for our extent's bytenr (and we do it while holding a read lock on the
+>>>>    leaf), but we won't find any, as such delayed ref had just run and completed
+>>>>    after we released out path in step 3) before doing the second search.
+>>>>
+>>>> Fix this by removing completely the path release and re-search logic. This is
+>>>> safe, because if we seach for a metadata item and we don't find it, we have the
+>>>> guarantee that the returned leaf is the one where the item would be inserted,
+>>>> and so path->slots[0] > 0 and path->slots[0] - 1 must be the slot where the
+>>>> non-skinny extent item is if it exists. The only case where path->slots[0] is
+>>>
+>>> I think this analysis is wrong if there are some independent shared ref metadata for
+>>> a tree block, just like:
+>>> +------------------------+-------------+-------------+
+>>> | tree block extent item | shared ref1 | shared ref2 |
+>>> +------------------------+-------------+-------------+
 > 
-> For example, if we perform the following file operations:
+> Trying to guess what's in your mind.
 > 
->     $ mkfs.btrfs -f /dev/vdd
->     $ mount /dev/vdd /mnt
->     $ xfs_io -f \
->           -c "pwrite -S 0xaa -b 32K 0 32K" \
->           -c "fsync" \
->           -c "pwrite -S 0xbb -b 32770 16K 32770" \
->           -c "truncate 90123" \
->           /mnt/foobar
+> Is the concern that if after a non-skinny extent item we have
+> non-inlined references, the assumption that path->slots[0] - 1 points
+> to the extent item would be wrong when searching for a skinny extent?
 > 
-> and the snapshot creation ioctl was just called before the second 
-> write, we often
-> can get the following inode items in the snapshot's btree:
-> 
->         item 120 key (257 INODE_ITEM 0) itemoff 7987 itemsize 160
->                 inode generation 146 transid 7 size 90123 block group 
-> 0 mode 100600 links 1 uid 0 gid 0 rdev 0 flags 0x0
->         item 121 key (257 INODE_REF 256) itemoff 7967 itemsize 20
->                 inode ref index 282 namelen 10 name: foobar
->         item 122 key (257 EXTENT_DATA 0) itemoff 7914 itemsize 53
->                 extent data disk byte 1104855040 nr 32768
->                 extent data offset 0 nr 32768 ram 32768
->                 extent compression 0
->         item 123 key (257 EXTENT_DATA 53248) itemoff 7861 itemsize 53
->                 extent data disk byte 0 nr 0
->                 extent data offset 0 nr 40960 ram 40960
->                 extent compression 0
-> 
-> There's a file range, corresponding to the interval [32K; ALIGN(16K + 
-> 32770, 4096)[
-> for which there's no file extent item covering it. This is because 
-> the file write
-> and file truncate operations happened both right after the snapshot 
-> creation ioctl
-> called btrfs_start_delalloc_inodes(), which means we didn't start and 
-> wait for the
-> ordered extent that matches the write and, in btrfs_setsize(), we 
-> were able to call
-> btrfs_cont_expand() before being able to commit the current 
-> transaction in the
-> snapshot creation ioctl. So this made it possibe to insert the hole 
-> file extent
-> item in the source subvolume (which represents the region added by 
-> the truncate)
-> right before the transaction commit from the snapshot creation ioctl.
-> 
-> Btrfs' fsck tool complains about such cases with a message like the 
-> following:
-> 
->     "root 331 inode 257 errors 100, file extent discount"
-> 
-> From a user perspective, the expectation when a snapshot is created 
-> while those
-> file operations are being performed is that the snapshot will have a 
-> file that
-> either:
-> 
-> 1) is empty
-> 2) only the first write was captured
-> 3) only the 2 writes were captured
-> 4) both writes and the truncation were captured
-> 
-> But never capture a state where only the first write and the 
-> truncation were
-> captured (since the second write was performed before the truncation).
-> 
-> A test case for xfstests follows.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/inode.c | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0d41741..c28b78f 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4622,6 +4622,9 @@ static int btrfs_setsize(struct inode *inode, 
-> struct iattr *attr)
->  	}
-> 
->  	if (newsize > oldsize) {
-> +		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
-> +		if (ret)
-> +			return ret;
+> That wouldn't be the case because BTRFS_EXTENT_ITEM_KEY == 168 and
+> BTRFS_METADATA_ITEM_KEY == 169, with BTRFS_SHARED_BLOCK_REF_KEY ==
+> 182. So in the presence of such non-inlined shared tree block
+> reference items, searching for a skinny extent item leaves us at a
+> slot that points to the first non-inlined ref (regardless of its type,
+> since they're all > 169), and therefore path->slots[0] - 1 is the
+> non-skinny extent item.
 
-Expanding truncates aren't my favorite operation, but we don't want 
-them to imply fsync.  I'm holding off on this one while I work out the 
-rest of the vacation backlog ;)
+You are right. I forget to check the value of key type. Sorry.
 
--chris
+This patch seems good for me.
 
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
+> 
+> thanks.
+> 
+>>
+>> Why does that matters? Can you elaborate why it's not correct?
+>>
+>> We're looking for the extent item only in btrfs_lookup_extent_info(),
+>> and running a delayed ref, independently of being inlined/shared, it
+>> implies inserting a new extent item or updating an existing extent
+>> item (updating ref count).
+>>
+>> thanks
+>>
+>>>
+>>> Thanks
+>>> Miao
+>>>
+>>>> zero is when there are no smaller keys in the tree (i.e. no left siblings for
+>>>> our leaf), in which case the re-search logic isn't needed as well.
+>>>>
+>>>> This race has been present since the introduction of skinny metadata (change
+>>>> 3173a18f70554fe7880bb2d85c7da566e364eb3c).
+>>>>
+>>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>>>> ---
+>>>>  fs/btrfs/extent-tree.c | 8 --------
+>>>>  1 file changed, 8 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>> index 9141b2b..2cedd06 100644
+>>>> --- a/fs/btrfs/extent-tree.c
+>>>> +++ b/fs/btrfs/extent-tree.c
+>>>> @@ -780,7 +780,6 @@ search_again:
+>>>>       else
+>>>>               key.type = BTRFS_EXTENT_ITEM_KEY;
+>>>>
+>>>> -again:
+>>>>       ret = btrfs_search_slot(trans, root->fs_info->extent_root,
+>>>>                               &key, path, 0, 0);
+>>>>       if (ret < 0)
+>>>> @@ -796,13 +795,6 @@ again:
+>>>>                           key.offset == root->nodesize)
+>>>>                               ret = 0;
+>>>>               }
+>>>> -             if (ret) {
+>>>> -                     key.objectid = bytenr;
+>>>> -                     key.type = BTRFS_EXTENT_ITEM_KEY;
+>>>> -                     key.offset = root->nodesize;
+>>>> -                     btrfs_release_path(path);
+>>>> -                     goto again;
+>>>> -             }
+>>>>       }
+>>>>
+>>>>       if (ret == 0) {
+>>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>> --
+>> Filipe David Manana,
+>>
+>> "Reasonable men adapt themselves to the world.
+>>  Unreasonable men adapt the world to themselves.
+>>  That's why all progress depends on unreasonable men."
+> 
+> 
+> 
 

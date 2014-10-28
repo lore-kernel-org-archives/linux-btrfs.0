@@ -1,200 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25871 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752544AbaJ1Jos (ORCPT
+Received: from mout.gmx.net ([212.227.15.15]:51003 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752595AbaJ1LdO convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 05:44:48 -0400
-Message-ID: <1414489410.9767.24.camel@localhost.localdomain>
-Subject: Re: Btrfs-progs release 3.17
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: <dsterba@suse.cz>, Petr Janecek <janecek@ucw.cz>,
-        <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
-Date: Tue, 28 Oct 2014 17:43:30 +0800
-In-Reply-To: <544F5706.60503@oracle.com>
-References: <20141021212822.GA22009@atrey.karlin.mff.cuni.cz>
-	 <54476F88.4040509@oracle.com>
-	 <20141023065709.GA11511@atrey.karlin.mff.cuni.cz>
-	 <5448B8A5.2010202@oracle.com>
-	 <1414054345.12350.6.camel@localhost.localdomain>
-	 <54490479.6010901@oracle.com>
-	 <1414469002.4117.14.camel@localhost.localdomain>
-	 <544F5706.60503@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+	Tue, 28 Oct 2014 07:33:14 -0400
 MIME-Version: 1.0
+Message-ID: <trinity-1f0ee155-d845-40b5-844d-77270be4d58e-1414495992747@3capp-mailcom-bs04>
+From: "Stephan Alz" <stephan008@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS balance segfault, where to go from here
+Content-Type: text/plain; charset=UTF-8
+Date: Tue, 28 Oct 2014 12:33:12 +0100
+In-Reply-To: <pan$98595$5149a38a$2d53014$f3ac0c62@cox.net>
+References: <trinity-814e9704-84ce-4a27-a187-439cc5a13f06-1414401999856@3capp-mailcom-bs01>
+ <5DD6D691-A067-4937-A5B4-545A0DFB9B1E@colorremedies.com>,
+ <pan$98595$5149a38a$2d53014$f3ac0c62@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2014-10-28 at 16:42 +0800, Anand Jain wrote:
-> 
-> 
-> On 28/10/2014 12:03, Gui Hecheng wrote:
-> > On Thu, 2014-10-23 at 21:36 +0800, Anand Jain wrote:
-> >>
-> >>    there is no point in re-creating so many btrfs kernel's logic in user
-> >>    space. its just unnecessary, when kernel is already doing it. use
-> >>    some interface to get info from kernel after device is registered,
-> >>    (not necessarily mounted). so progs can be as sleek as possible.
-> >>    to me it started as just one more bug now we have fixed so many many.
-> >>    It all needs one good interface for kernel which provides anything
-> >>    anything from the kernel.
-> >>
-> >
-> > Oh, the interface for kernel you described is really interesting.
-> > But how to store the seed/sprout relationships so that we can fetch them
-> > correctly for umounted btrfs?
-> 
->   remember -  btrfs-control ioctl READY does not work yet when seed is
->   present. Some how we need to fix that in kernel right. ? for which
->   we need the seed/sprout relation when devices are unmounted. you may
->   get that working/accepted in the kernel first, a simple user space
->   interface (such as nacked /proc/fs/btrfs/devlist interface or
->   discussing sysfs interface (bit risky though)) is all that is needed
->   to get this working.
-> 
+Hello Folks,
 
-   As far as I could understand, so we have to make the ioctl READY to
-do the seed/sprout detecting relation detecting first.
-   And then, all the user space tool has to do is fetching stuff through
-a new user interface.
+Thanks for the help what I got so far. I did what you have recommended and upgraded the kernel to 3.16.
 
-   I think this is really a neat way. So is it on your schedule to make
-the ioctl READY 'ready'? If not, I am always ready to serve.
+After reboot it automatically resumed the balancing operation. For about 2 hours it went well:
 
-   Since there may be more discussions and comments on the above work,
-for now, I just plan to make the current way in 3.17 not so 'slow' and
-'noisy'.
+Label: 'backup' ...
+    Total devices 5 FS bytes used 5.81TiB
+    devid    1 size 3.64TiB used 2.77TiB path /dev/sdc
+    devid    2 size 3.64TiB used 2.77TiB path /dev/sdb
+    devid    3 size 3.64TiB used 2.77TiB path /dev/sda
+    devid    4 size 3.64TiB used 2.76TiB path /dev/sdd
+    devid    5 size 3.64TiB used 572.00GiB path /dev/sdf < interestingly the used is now lower than it was
 
-Thanks,
-Gui
+After that all the sudden I just lost the machine. As I thought it crashed with kernel panic but this wasn't like with the 3.13, it killed the whole system. Not even the magic keys worked.
 
-> 
-> > -Gui
-> >
-> >>
-> >> On 10/23/14 16:52, Gui Hecheng wrote:
-> >>> On Thu, 2014-10-23 at 16:13 +0800, Anand Jain wrote:
-> >>>>
-> >>>> Some of the disks on my system were missing and I was able to hit
-> >>>> this issue.
-> >>>>
-> >>>>
-> >>>> ----------------
-> >>>> Check tree block failed, want=12582912, have=0
-> >>>> read block failed check_tree_block
-> >>>> Couldn't read chunk root
-> >>>> warning devid 2 not found already
-> >>>> Check tree block failed, want=143360, have=0
-> >>>> read block failed check_tree_block
-> >>>> Couldn't read chunk root
-> >>>> warning, device 4 is missing
-> >>>> warning, device 3 is missing
-> >>>> warning, device 2 is missing
-> >>>> warning, device 1 is missing
-> >>>> ----------------
-> >>>>
-> >>>>
-> >>>> Did a bisect and it leads to this following patch.
-> >>>>
-> >>>> ----------------
-> >>>> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
-> >>>>
-> >>>>        btrfs-progs: fix device missing of btrfs fi show with seed devices
-> >>>> ----------------
-> >>>>
-> >>>>     Also this patch stalls ~2sec in the cmd btrfs fi show, on my system
-> >>>>     with 48 disks.
-> >>>>
-> >>>> Also a simple test case hits some warnings...
-> >>>>
-> >>>> ----------------
-> >>>>     mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
-> >>>>     mount /dev/sdb /btrfs && fillfs /btrfs 100 && umount /btrfs
-> >>>>     wipefs -a /dev/sdb
-> >>>>     modprobe -r btrfs && modprobe btrfs
-> >>>>     mount -o degraded /dev/sdb /btrfs
-> >>>>     btrfs fi show
-> >>>> Label: none  uuid: 9844cd05-1c8c-473e-a84b-bac95aab7bc9
-> >>>>            Total devices 2 FS bytes used 1.59MiB
-> >>>>            devid    2 size 967.87MiB used 104.75MiB path /dev/sdc
-> >>>>            *** Some devices missing
-> >>>>
-> >>>> warning, device 1 is missing
-> >>>> warning, device 1 is missing
-> >>>> warning devid 1 not found already
-> >>>> ----------------
-> >>>>
-> >>>
-> >>> Hi Anand and Petr,
-> >>>
-> >>> Oh, it seems that there are btrfs with missing devs that are bringing
-> >>> troubles to the @open_ctree_... function.
-> >>> This should be a missing case of the patch above which should only take
-> >>> effects when seeding devices are present.
-> >>> I will try my best to follow this case, suggestions are welcome, Thanks!
-> >>>
-> >>> -Gui
-> >>>
-> >>>>
-> >>>>
-> >>>>
-> >>>> On 10/23/14 14:57, Petr Janecek wrote:
-> >>>>> Hello,
-> >>>>>
-> >>>>>>     You have mentioned two issues when balance and fi show running
-> >>>>>>     concurrently
-> >>>>>
-> >>>>>      my mail was a bit chaotic, but I get the stalls even on idle system.
-> >>>>> Today I got
-> >>>>>
-> >>>>> parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> >>>>> parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> >>>>> parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> >>>>> parent transid verify failed on 1559973888000 wanted 1819 found 1821
-> >>>>> Ignoring transid failure
-> >>>>> leaf parent key incorrect 1559973888000
-> >>>>>
-> >>>>> from 'btrfs fi sh' while I was just copying something, no balance running.
-> >>>>>
-> >>>>> [...]
-> >>>>>> [PATCH 1/1] btrfs-progs: code optimize cmd_scan_dev() use
-> >>>>>> btrfs_register_one_device()
-> >>>>>> [PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
-> >>>>>> [PATCH 2/2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
-> >>>>>>
-> >>>>>> If you could, pls..
-> >>>>>>     Now on 3.17 apply above 3 patches and see if you see any better
-> >>>>>>     performance for the stalling issue.
-> >>>>>
-> >>>>>      no perceptible change: takes ~40 seconds both before and after
-> >>>>> applying. Old version <1 sec.
-> >>>>>
-> >>>>>>     can you do same steps on 3.16 and report what you observe
-> >>>>>
-> >>>>>      So many rejects -- do you have older versions of these patches?
-> >>>>>
-> >>>>>
-> >>>>> Thanks,
-> >>>>>
-> >>>>> Petr
-> >>>>> --
-> >>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >>>>> the body of a message to majordomo@vger.kernel.org
-> >>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>>>>
-> >>>
-> >>>
-> >>> --
-> >>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >>> the body of a message to majordomo@vger.kernel.org
-> >>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>>
-> >
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
+http://i59.tinypic.com/5we5ib.jpg
+
+Then when I tried to reboot it with 3.16 the system always segfaulted at boot time when it tried to mount the btrfs filesystem.
+
+With 3.13 it at least didn't crash the entire system so I booted back to that and managed to stop the balancing:
+
+>btrfs filesystem balance status /mnt/backup
+
+Balance on '/mnt/backup' is paused
+1 out of about 10 chunks balanced (1 considered),  90% left
+
+Now my filesystem is fortunately back to RW again. Backups can continue tonight.
+And about the "data not being important to backed up", hell yes it is so yesterday I did a "backup of the backups" to a good old XFS filesystem (something which is reliable). The problem is that our whole backup system was designed to use BTRFS. It rsync from a lot of servers to the backup server every night then creates snapshots. Changing this and going back to other filesystem would require a lot of time and effort, possibly rewriting all of our backup scripts.
+
+What else can I do?
+Should I try an even later 3.18 kernel version?
+Can this happen because it doesn't have enough space for real? 
 
 
+The counter now says that:
+ btrfs    19534313824 12468488824 3753187048  77%
+
+The whole point I added the new drive is because it was running out of space.
+Somebody could really explain how this balancing works with RAID10 mode. What I want to know that if ANY of the drives are fail do we lose data or not? And the fact that the balancing is paused now changes this or not? If any of the drives out of the 5 would completely fail right now, would I lose all the data? I definitely don't want to leave the system in an inconsistent state like this. At least the backups are only done at nights so if I can get the backup drive mounted to RW by the end of the day that's enough.
+
+Thanks
+
+At the end I attached some recent 3.13 crash logs (maybe it's any help).
+
+
+[Tue Oct 28 12:01:35 2014] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[Tue Oct 28 12:01:35 2014] btrfs           D ffff88007fc14280     0  3820   3202 0x00000000
+[Tue Oct 28 12:01:35 2014]  ffff88003735e800 0000000000000086 0000000000000000 ffffffff81813480
+[Tue Oct 28 12:01:35 2014]  0000000000014280 ffff880048feffd8 0000000000014280 ffff88003735e800
+[Tue Oct 28 12:01:35 2014]  0000000000000246 ffff880036c8a000 ffff880036c8b260 ffff880036c8b2a0
+[Tue Oct 28 12:01:35 2014] Call Trace:
+[Tue Oct 28 12:01:35 2014]  [<ffffffffa02c486d>] ? btrfs_pause_balance+0x7d/0xf0 [btrfs]
+[Tue Oct 28 12:01:35 2014]  [<ffffffff8109e400>] ? __wake_up_sync+0x10/0x10
+[Tue Oct 28 12:01:35 2014]  [<ffffffffa02d1692>] ? btrfs_ioctl+0x1652/0x1f00 [btrfs]
+[Tue Oct 28 12:01:35 2014]  [<ffffffff81199ea1>] ? path_openat+0xd1/0x630
+[Tue Oct 28 12:01:35 2014]  [<ffffffff811956ac>] ? getname_flags+0xbc/0x1a0
+[Tue Oct 28 12:01:35 2014]  [<ffffffff814dad78>] ? __do_page_fault+0x298/0x540
+[Tue Oct 28 12:01:35 2014]  [<ffffffff8119c4c1>] ? do_vfs_ioctl+0x81/0x4d0
+[Tue Oct 28 12:01:35 2014]  [<ffffffff81154a88>] ? do_brk+0x198/0x2f0
+[Tue Oct 28 12:01:35 2014]  [<ffffffff8119c9b0>] ? SyS_ioctl+0xa0/0xc0
+[Tue Oct 28 12:01:35 2014]  [<ffffffff814deef9>] ? system_call_fastpath+0x16/0x1b
+[Tue Oct 28 12:03:35 2014] INFO: task btrfs:3820 blocked for more than 120 seconds.
+[Tue Oct 28 12:03:35 2014]       Not tainted 3.13-0.bpo.1-amd64 #1
+[Tue Oct 28 12:03:35 2014] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[Tue Oct 28 12:03:35 2014] btrfs           D ffff88007fc14280     0  3820   3202 0x00000000
+[Tue Oct 28 12:03:35 2014]  ffff88003735e800 0000000000000086 0000000000000000 ffffffff81813480
+[Tue Oct 28 12:03:35 2014]  0000000000014280 ffff880048feffd8 0000000000014280 ffff88003735e800
+[Tue Oct 28 12:03:35 2014]  0000000000000246 ffff880036c8a000 ffff880036c8b260 ffff880036c8b2a0
+[Tue Oct 28 12:03:35 2014] Call Trace:
+[Tue Oct 28 12:03:35 2014]  [<ffffffffa02c486d>] ? btrfs_pause_balance+0x7d/0xf0 [btrfs]
+[Tue Oct 28 12:03:35 2014]  [<ffffffff8109e400>] ? __wake_up_sync+0x10/0x10
+[Tue Oct 28 12:03:35 2014]  [<ffffffffa02d1692>] ? btrfs_ioctl+0x1652/0x1f00 [btrfs]
+[Tue Oct 28 12:03:35 2014]  [<ffffffff81199ea1>] ? path_openat+0xd1/0x630
+[Tue Oct 28 12:03:35 2014]  [<ffffffff811956ac>] ? getname_flags+0xbc/0x1a0
+[Tue Oct 28 12:03:35 2014]  [<ffffffff814dad78>] ? __do_page_fault+0x298/0x540
+[Tue Oct 28 12:03:35 2014]  [<ffffffff8119c4c1>] ? do_vfs_ioctl+0x81/0x4d0
+[Tue Oct 28 12:03:35 2014]  [<ffffffff81154a88>] ? do_brk+0x198/0x2f0
+[Tue Oct 28 12:03:35 2014]  [<ffffffff8119c9b0>] ? SyS_ioctl+0xa0/0xc0
+[Tue Oct 28 12:03:35 2014]  [<ffffffff814deef9>] ? system_call_fastpath+0x16/0x1b
+[Tue Oct 28 12:03:48 2014] btrfs: found 16561 extents
+
+Sent: Tuesday, October 28, 2014 at 1:07 AM
+From: Duncan <1i5t5.duncan@cox.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS balance segfault, where to go from here
+Chris Murphy posted on Mon, 27 Oct 2014 10:51:16 -0600 as excerpted:
+
+> On Oct 27, 2014, at 3:26 AM, Stephan Alz <stephan008@gmx.com> wrote:
+>>
+>> My question is where to go from here? What I going to do right now is
+>> to copy the most important data to another separated XFS drive.
+>> What I planning to do is:
+>>
+>> 1, Upgrade the kernel 2, Upgrade BTRFS 3, Continue the balancing.
+>
+> Definitely upgrade the kernel and see how that goes, there's been many
+> many changes since 3.13. I would upgrade the user space tools also but
+> that's not as important.
+
+Just emphasizing...
+
+Because btrfs is still under heavy development and not yet fully stable,
+keeping particularly the kernel updated is vital, because running an old
+kernel often means running a kernel with known btrfs bugs, fixed in newer
+kernels.
+
+The userspace isn't quite as important since under normal operation it
+mostly simply tells the kernel what operations to perform, and an older
+userspace simply means you might be missing newer features. However,
+commands such as btrfs check (the old btrfsck) and btrfs restore work
+from userspace, so having a current btrfs-progs is important when you run
+into trouble and you're trying to fix things.
+
+That said, a couple of recent kernels has known issues. Don't use the
+3.15 series at all, and be sure you're on 3.16.3 or newer for the 3.16
+series. 3.17 introduced another bug, with the fix hopefully in 3.17.2
+(it didn't make 3.17.1) and in 3.18-rcs.
+
+So 3.16.3 or later for stable kernel, or the latest 3.18-rc or live-git
+kernel, is what I'd recommend. The other alternative if you're really
+conservative is the latest long-term stable series kernel, 3.14.x, as it
+gets critical bugfixes as well, tho it won't be quite as current as
+3.16.x or 3.18-rc. But anything older than the latest 3.14.x stable
+series is old and outdated in btrfs terms, and is thus not recommended.
+And 3.15, 3.16 before 3.16.3, and 3.17 before 3.17.2 (hopefully), are
+blackout versions due to known btrfs bugs. Avoid them.
+
+Of course with btrfs still not fully stable, the usual sysadmin rule of
+thumb that if you don't have a tested backup you don't have a backup, and
+if you don't have a backup, by definition you don't care if you lose the
+data, applies more than ever. If you're on not-yet-fully-stable btrfs
+and you don't have backups, by definition you don't care if you lose that
+data. There's people having to learn that the hard way, tho btrfs
+restore can often recover at least some of what would otherwise be lost.
+
+> FYI you can mount with skip_balance mount option to inhibit resuming
+> balance, sometimes pausing the balance isn't fast enough when there are
+> balance problems.
+
+=:^)
+
+>> Could someone please also explain that how is exactly the raid10 setup
+>> works with ODD number of drives with btrfs?
+>> Raid10 should be a stripe of mirrors. Now then this sdf drive is
+>> mirrored or striped or what?
+>
+> I have no idea honestly. Btrfs is very tolerant of adding odd number and
+> sizes of devices, but things get a bit nutty in actual operation
+> sometimes.
+
+In btrfs, raid1, including the raid1 side of raid10, is defined as
+exactly two copies of the data, one on each of two different devices.
+These copies are allocated by chunk size, 1 GiB size for data, quarter
+GiB size for metadata, and chunks are normally allocated on the device
+with the most unallocated space available, provided the other constraints
+(such as don't but both copies on the same device) are met.
+
+Btrfs raid0 stripes will be as wide as possible, but again are allocated
+a chunk at a time, in sub-chunk-size strips.
+
+While I've not run btrfs raid10 personally and thus (as a sysadmin not a
+dev) can't say for sure, what this implies to me is that, assuming equal
+sized devices, an odd number of devices in raid10 will alternate skipping
+one device at each chunk allocation.
+
+So with a five same-size device btrfs raid10, if I'm not mistaken, btrfs
+will allocate chunks from four at once, two mirrors, two stripes, with
+the fifth one unused for that chunk allocation. However, at the next
+chunk allocation, the device skipped in the previous allocation will now
+have the most free space and will thus get the first allocation, with the
+one of the other four devices skipped in that allocation round. After
+five allocation rounds (assuming all allocation rounds were 1 GiB data
+chunks, not quarter-GiB metadata), usage should thus be balanced across
+all five devices.
+
+Of course with six same-size devices, because btrfs raid1 does exactly
+two copies, no more, each stripe will be three devices wide.
+
+
+As for the dataloss question, unlike say raid56 mode which is known to be
+effectively little more than expensive raid0 at this point, raid10 should
+be as reliable as raid1, etc. But I'd refer again to that sysadmin's
+rule of thumb above. If you don't have tested backups, you don't have
+backups, and if you don't have backups, the data is by definition not
+valuable enough to be worth the hassle of backing it up; the calculated
+risk cost of data loss is lower than the given time required to make,
+test and keep current the backups. After that, it's your decision
+whether you value that data more than the time required to make and
+maintain those backups, or not, given the risk factor including the fact
+that btrfs is still under heavy development and is not yet fully stable.
+
+--
+Duncan - List replies preferred. No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master." Richard Stallman
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at http://vger.kernel.org/majordomo-info.html
+ 
+ 

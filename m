@@ -1,63 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63724 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934001AbaJ2Q4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 12:56:37 -0400
-Received: from [192.168.178.21] ([85.176.187.181]) by mail.gmx.com (mrgmx102)
- with ESMTPSA (Nemesis) id 0MQdAP-1XdqAx2Aov-00U1lx for
- <linux-btrfs@vger.kernel.org>; Wed, 29 Oct 2014 17:56:35 +0100
-Message-ID: <54511C41.5090603@gmx.de>
-Date: Wed, 29 Oct 2014 17:56:33 +0100
-From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+Received: from mail-qg0-f49.google.com ([209.85.192.49]:51041 "EHLO
+	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754198AbaJ2Tcq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Oct 2014 15:32:46 -0400
+Received: by mail-qg0-f49.google.com with SMTP id z60so35476qgd.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Oct 2014 12:32:45 -0700 (PDT)
+Message-ID: <545140D4.4060404@gmail.com>
+Date: Wed, 29 Oct 2014 15:32:36 -0400
+From: Zack Coffey <tech42.clickwir@gmail.com>
+Reply-To: zcoffey@mytech42.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: v3.18-rc2 at a 32 bit KVM gives :"INFO: trying to register non-static
- key.the code is fine but needs lockdep annotation."
-Content-Type: text/plain; charset=utf-8
+To: Anand Jain <Anand.Jain@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 fails to recover chunk tree
+References: <544FFD52.6010604@gmail.com> <5450651C.3010104@oracle.com>
+In-Reply-To: <5450651C.3010104@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is new in my eyes, or ? :
 
-Oct 29 17:53:04 n22kvmclone kernel: INFO: trying to register non-static key.
-Oct 29 17:53:04 n22kvmclone kernel: the code is fine but needs lockdep annotation.
-Oct 29 17:53:04 n22kvmclone kernel: turning off the locking correctness validator.
-Oct 29 17:53:04 n22kvmclone kernel: CPU: 0 PID: 2525 Comm: trinity-c0 Not tainted 3.18.0-rc2 #1
-Oct 29 17:53:04 n22kvmclone kernel: Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-Oct 29 17:53:04 n22kvmclone kernel:  00000000 00000000 f55e5b70 c2a5d3ba 00000000 f55e5bc4 c2684a7b c2ba5888
-Oct 29 17:53:04 n22kvmclone kernel:  c2a64822 f55a0000 f55e5bb4 00000000 00000000 00000001 00000000 f890b458
-Oct 29 17:53:04 n22kvmclone kernel:  00000000 f55a0df4 f55a0e04 f40c3000 01000000 c2d68578 f5719c94 f62b6ea0
-Oct 29 17:53:04 n22kvmclone kernel: Call Trace:
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2a5d3ba>] dump_stack+0x41/0x52
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2684a7b>] __lock_acquire.isra.31+0x89b/0x9a0
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2a64822>] ? _raw_spin_unlock+0x22/0x30
-Oct 29 17:53:04 n22kvmclone kernel:  [<f890b458>] ? btrfs_make_block_group+0x1d8/0x290 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<c263f360>] ? native_wbinvd+0x10/0x10
-Oct 29 17:53:04 n22kvmclone kernel:  [<c26850ff>] lock_acquire+0x8f/0x110
-Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] ? btrfs_alloc_chunk+0x41/0x50 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f8949304>] __btrfs_alloc_chunk+0x684/0xb10 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] ? btrfs_alloc_chunk+0x41/0x50 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] btrfs_alloc_chunk+0x41/0x50 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f8901f8d>] do_chunk_alloc+0x1dd/0x410 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f88fc196>] ? get_alloc_profile+0x166/0x2d0 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f8903144>] btrfs_check_data_free_space+0x144/0x320 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f8930e8b>] __btrfs_buffered_write+0x10b/0x550 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<f89316c0>] btrfs_file_write_iter+0x3f0/0x6c0 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2755eba>] ? do_iter_readv_writev+0x6a/0xa0
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2755eba>] do_iter_readv_writev+0x6a/0xa0
-Oct 29 17:53:04 n22kvmclone kernel:  [<f89312d0>] ? __btrfs_buffered_write+0x550/0x550 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2757210>] do_readv_writev+0xa0/0x270
-Oct 29 17:53:04 n22kvmclone kernel:  [<f89312d0>] ? __btrfs_buffered_write+0x550/0x550 [btrfs]
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2755f80>] ? do_sync_readv_writev+0x90/0x90
-Oct 29 17:53:04 n22kvmclone kernel:  [<c27720c0>] ? __fdget_pos+0x30/0x40
-Oct 29 17:53:04 n22kvmclone kernel:  [<c269d6c1>] ? do_setitimer+0x121/0x200
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2a64992>] ? _raw_spin_unlock_irq+0x22/0x40
-Oct 29 17:53:04 n22kvmclone kernel:  [<c269d6c1>] ? do_setitimer+0x121/0x200
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2757414>] vfs_writev+0x34/0x60
-Oct 29 17:53:04 n22kvmclone kernel:  [<c27575d6>] SyS_writev+0x56/0xe0
-Oct 29 17:53:04 n22kvmclone kernel:  [<c2a6522b>] sysenter_do_call+0x12/0x12
+$ sudo mount -o degraded,ro /dev/sdd1 /asdf
+mount: wrong fs type, bad option, bad superblock on /dev/sdd1,
+        missing codepage or helper program, or other error
 
--- 
-Toralf
-pgp key: 0076 E94E
+        In some cases useful info is found in syslog - try
+        dmesg | tail or so.
+$ dmesg | tail
+[524718.760792] BTRFS info (device sdd1): allowing degraded mounts
+[524718.760800] BTRFS info (device sdd1): disk space caching is enabled
+[524718.762087] BTRFS: failed to read chunk root on sdd1
+[524718.776524] BTRFS: open_ctree failed
+
+$ uname -a
+Linux mach 3.17.1-52.g5c4d099-desktop #1 SMP PREEMPT Sat Oct 18 23:36:23 
+UTC 2014 (5c4d099) x86_64 x86_64 x86_64 GNU/Linux
+$ btrfs --version
+Btrfs v3.16.2+20141003
+
+
+On 10/28/2014 11:55 PM, Anand Jain wrote:
+>
+>
+>  'mount degraded,ro'
+>   see if there is any non-zero non-raid1 group profile.
+>
+>
+>
+> On 10/29/14 04:32, Zack Coffey wrote:
+>> Revisit of a previous issue. Setup a single 640GB drive with BTRFS and
+>> compression. This was not a system drive, just a place to put random
+>> junk.
+>>
+>> Made a RAID1 with another drive of just the metadata. Was in
+>> that state for less than 12 hours-ish, removed the second drive and
+>> now cannot get to any data on the original drive. Data remained single
+>> while only metadata was RAID1.
+>>
+>> Single drive btrfs was made on Ubuntu with kernel 3.13.0 and tools
+>> 3.12.
+>>
+>> $ sudo mount -o degraded /dev/sdc1 /media/Data/
+>> mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
+>>         missing codepage or helper program, or other error
+>>         In some cases useful info is found in syslog - try
+>>         dmesg | tail  or so
+>>
+>> $ dmesg | tail
+>> [45353.869448] KBD BUG in
+>> ../../../../../../../../
+>> drivers/2d/lnx/fgl/drm/kernel/
+>> gal.c at line:
+>> 304!
+>> [45353.901511] KBD BUG in
+>> ../../../../../../../../
+>> drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
+>> 304!
+>> [45353.901666] KBD BUG in
+>> ../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
+>> 304!
+>> [45354.148488] KBD BUG in
+>> ../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
+>> 304!
+>> [45354.148573] KBD BUG in
+>> ../../../../../../../../drivers/2d/lnx/fgl/drm/kernel/gal.c at line:
+>> 304!
+>> [46241.155350] btrfs: device fsid bd78815a-802b-43e2-8387-fc6ab4237d67
+>> devid 1 transid 60944 /dev/sdc1
+>> [46241.155923] btrfs: allowing degraded mounts
+>> [46241.155927] btrfs: disk space caching is enabled
+>> [46241.159436] btrfs: failed to read chunk root on sdc1
+>> [46241.177815] btrfs: open_ctree failed
+>>
+>> $ btrfs-show-super /dev/sdc1
+>> superblock: bytenr=65536, device=/dev/sdc1
+>> ------------------------------
+>> ---------------------------
+>> csum                    0x93bcb1b5 [match]
+>> bytenr                  65536
+>> flags                   0x1
+>> magic                   _BHRfS_M [match]
+>> fsid                    bd78815a-802b-43e2-8387-fc6ab4237d67
+>> label
+>> generation              60944
+>> root                    909586694144
+>> sys_array_size          97
+>> chunk_root_generation   60938
+>> root_level              1
+>> chunk_root              911673917440
+>> chunk_root_level        1
+>> log_root                0
+>> log_root_transid        0
+>> log_root_level          0
+>> total_bytes             1115871535104
+>> bytes_used              321833435136
+>> sectorsize              4096
+>> nodesize                4096
+>> leafsize                4096
+>> stripesize              4096
+>> root_dir                6
+>> num_devices             2
+>> compat_flags            0x0
+>> compat_ro_flags         0x0
+>> incompat_flags          0x9
+>> csum_type               0
+>> csum_size               4
+>> cache_generation        60944
+>> uuid_tree_generation    60944
+>> dev_item.uuid           d82b2027-17b6-4513-a86d-9227a42d7ed1
+>> dev_item.fsid           bd78815a-802b-43e2-8387-fc6ab4237d67 [match]
+>> dev_item.type           0
+>> dev_item.total_bytes    615763673088
+>> dev_item.bytes_used     324270030848
+>> dev_item.io_align       4096
+>> dev_item.io_width       4096
+>> dev_item.sector_size    4096
+>> dev_item.devid          1
+>> dev_item.dev_group      0
+>> dev_item.seek_speed     0
+>> dev_item.bandwidth      0
+>> dev_item.generation     0
+>>
+>>
+>> $ sudo btrfs device add -f /dev/sdh1 /dev/sdc1
+>> ERROR: error adding the device '/dev/sdh1' - Inappropriate ioctl for 
+>> device
+>>
+>> $ sudo btrfs device delete missing /dev/sdc1
+>> ERROR: error removing the device 'missing' - Inappropriate ioctl for 
+>> device
+>>
+>> $ sudo mount -o degraded,defaults,compress=lzo /dev/sdc1 /media/Data/
+>> mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
+>>         missing codepage or helper program, or other error
+>>         In some cases useful info is found in syslog - try
+>>         dmesg | tail  or so
+>>
+>> $ dmesg | tail
+>> [106991.655384] btrfs: device fsid
+>> bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
+>> [106991.665066] btrfs: device fsid
+>> bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
+>> [107019.954397] btrfs: device fsid
+>> bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
+>> [107019.962009] btrfs: device fsid
+>> bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
+>> [107070.124927] btrfs: device fsid
+>> bd78815a-802b-43e2-8387-fc6ab4237d67 devid 1 transid 60944 /dev/sdc1
+>> [107070.126475] btrfs: allowing degraded mounts
+>> [107070.126479] btrfs: use lzo compression
+>> [107070.126480] btrfs: disk space caching is enabled
+>> [107070.127254] btrfs: failed to read chunk root on sdc1
+>> [107070.142983] btrfs: open_ctree failed
+>>
+>> $ sudo btrfs rescue super-recover -v /dev/sdc1
+>> All Devices:
+>>          Device: id = 1, name = /dev/sdc1
+>>
+>> Before Recovering:
+>>          [All good supers]:
+>>                  device name = /dev/sdc1
+>>                  superblock bytenr = 65536
+>>
+>>                  device name = /dev/sdc1
+>>                  superblock bytenr = 67108864
+>>
+>>                  device name = /dev/sdc1
+>>                  superblock bytenr = 274877906944
+>>
+>>          [All bad supers]:
+>>
+>> All supers are valid, no need to recover
+>>
+>> $ btrfs rescue chunk-recover -v /dev/sdc1
+>> <<snipped>>
+>> Chunk: start = 860100755456, len = 1073741824, type = 1, num_stripes = 1
+>>        Stripes list:
+>>        [ 0] Stripe: devid = 1, offset = 26877100032
+>>        No block group.
+>>        No device extent.
+>>    Chunk: start = 861174497280, len = 1073741824, type = 1, 
+>> num_stripes = 1
+>>        Stripes list:
+>>        [ 0] Stripe: devid = 1, offset = 27950841856
+>>        No block group.
+>>        No device extent.
+>>
+>> Total Chunks:   333
+>>    Heathy:       305
+>>    Bad:  28
+>>
+>> Orphan Block Groups:
+>>    Block Group: start = 872985657344, len = 1073741824, flag = 4
+>>    Block Group: start = 911673917440, len = 33554432, flag = 2
+>>    Block Group: start = 911707471872, len = 1073741824, flag = 4
+>>
+>> Orphan Device Extents:
+>>    Device extent: devid = 2, start = 2182086656, len = 33554432, chunk
+>> offset = 911673917440
+>>    Device extent: devid = 2, start = 2215641088, len = 1073741824,
+>> chunk offset = 911707471872
+>> Fail to recover the chunk tree.
+>> <</snipped>>
+>>
+>> Here's the full snipped paste: http://pastebin.com/fEm3Gup7
+>>
+>> Now I'm on openSUSE Tumbleweed (kernel 3.17). Still get the same
+>> result from 'chunk-recover'. There's 305 healthy chunks, is there
+>> anyway to recover that data and forget about the bad ones?
+>>
+>> A good portion of the data on that drive was backed up, but some
+>> wasn't. My fault, I've learned. Can I get anything back from that
+>> drive?
+>>
+>> Thanks
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
 

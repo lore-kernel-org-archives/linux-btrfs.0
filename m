@@ -1,48 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42240 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752058AbaJ1WpH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Oct 2014 18:45:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XjFVg-0000Kg-6G
-	for linux-btrfs@vger.kernel.org; Tue, 28 Oct 2014 23:45:04 +0100
-Received: from ip4d160011.dynamic.kabel-deutschland.de ([77.22.0.17])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 23:45:04 +0100
-Received: from Ansgar.Hockmann-Stolle by ip4d160011.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Oct 2014 23:45:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
-Subject: Re: btrfs unmountable: read block failed =?utf-8?b?Y2hlY2tfdHJlZV9ibG9jazs=?= Couldn't read tree root
-Date: Tue, 28 Oct 2014 22:42:11 +0000 (UTC)
-Message-ID: <loom.20141028T230928-805@post.gmane.org>
-References: <544E4747.2000008@uni-osnabrueck.de> <pan$db558$7ef21104$8d3c61ca$273592f9@cox.net>
-Mime-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48120 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753465AbaJ2CTl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Oct 2014 22:19:41 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50602 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XjIrN-0040yX-4C
+	for linux-btrfs@vger.kernel.org; Tue, 28 Oct 2014 20:19:41 -0600
+From: Chris Murphy <lists@colorremedies.com>
 Content-Type: text/plain; charset=us-ascii
+Subject: [bug] df reports wrong Size and Avail on raid1, 3.18rc2
+Message-Id: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>
+Date: Tue, 28 Oct 2014 20:19:40 -0600
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan <at> cox.net> writes:
+3.18.0-0.rc2.git1.1.fc22.x86_64
+btrfs-progs-3.17-1.fc21.x86_64
 
-[..]
-> 
-> Hope that helps! =:^)
-> 
+# btrfs fi show /mnt
+Label: 'btrfs1'  uuid: 0f1c615f-30a0-4166-8a3c-987849551513
+	Total devices 2 FS bytes used 233.54GiB
+	devid    1 size 465.76GiB used 236.03GiB path /dev/sdb
+	devid    2 size 298.09GiB used 236.03GiB path /dev/sdc
 
-Thanks a lot for that many hints!
-Unfortunately, btrfs restore does not find the tree root and so it does not
-find anything.
-
-I will wait for Qu Wenruo to enhance chunk-recovering.
-And in the meantime I will test openSUSE 13.2-RC1 by installing a fresh copy
-of it. I have the dd dump and a working copy of it to test. And backups ...
-I told each friend I helped in the last years to make regular backups but me
-... ;-)
-
-Thanks,
-Ansgar
+# df -h /mnt
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb        382G  234G   65G  79% /mnt
 
 
+a. df -h should report Size as 298GiB rather than as 382GiB.
+Because this is 2 device raid1, the limiting factor is devid 2 @ 298GiB.
+
+b. df -h should report Avail as 62GiB or less, rather than as 65GiB.
+298.09 - 236.03 = 62.06
+
+
+Chris Murphy

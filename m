@@ -1,42 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48066 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755728AbaJ2Vzz convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 17:55:55 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50577 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XjbDe-001qk9-Vq
-	for linux-btrfs@vger.kernel.org; Wed, 29 Oct 2014 15:55:55 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: [bug] allows umount before transactions complete
-Message-Id: <A74CB3CB-8C39-4CEE-BAEB-E7950D246CAB@colorremedies.com>
-Date: Wed, 29 Oct 2014 15:55:54 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:47574 "EHLO
+	resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757569AbaJ2W0g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Oct 2014 18:26:36 -0400
+Message-ID: <5451699B.4020507@pobox.com>
+Date: Wed, 29 Oct 2014 15:26:35 -0700
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Zack Coffey <tech42.clickwir@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 fails to recover chunk tree
+References: <544FFD52.6010604@gmail.com>
+In-Reply-To: <544FFD52.6010604@gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filed bug here with more details and complete dmesg attached:
-https://bugzilla.kernel.org/show_bug.cgi?id=87131
+On 10/28/2014 01:32 PM, Zack Coffey wrote:
+> Made a RAID1 with another drive of just the metadata. Was in
+> that state for less than 12 hours-ish, removed the second drive and
+> now cannot get to any data on the original drive. Data remained single
+> while only metadata was RAID1.
 
-kernel-3.18.0-0.rc2.git1.1.fc22.x86_64
+I don't know all the details but I would _never_ suspect the action you 
+described to _not_ hose up the file system.
 
-SUMMARY:
- After umount returning to prompt, and physical disconnected 2x devices (btrfs raid1 on raw devices), I get a backtrace with some scary messages. Here are some snippets:
-[10570.371285] BTRFS: error (device sdc) in btrfs_commit_transaction:1917: errno=-5 IO failure (Error while writing out transaction)
-[10570.372426] BTRFS info (device sdc): forced readonly
-[10570.372432] BTRFS warning (device sdc): Skipping commit of aborted transaction.
-[10570.372456] BTRFS: Transaction aborted (error -5)
-[10570.372807] BTRFS: error (device sdc) in cleanup_transaction:1599: errno=-5 IO failure
-[10570.373960] BTRFS info (device sdc): delayed_refs has NO entry
+The "single" mode is not "restrict to one drive" its concatenation, as 
+in treat the entire space as if it were a single drive.
 
-After reboot, kernel shows both devids have the same generation.
-btrfs check comes up clean.
-mount also has no complaints, and mounts rw.
+In that twelve hour window data migrated. I _think_ directories may 
+count as data in this sense. If a key element (say the root directory) 
+migrated onto the disk you eventually removed then there is no root 
+directory to read. And if not root, then any secondary directory you choose.
 
+So sure your checksum trees and your extent maps were all duplicated in 
+the mirror, but your actual data -- you know all those files that were 
+copied on write -- may well be only on that second drive you pulled out.
 
-Chris Murphy
+RAID metadata, and non RAID1 data, would not safely allow for failure 
+(or removal) of one drive.
+
+I'm not sure what you expected to happen but what you did is full of fail.
+
+You need to put the second drive back in and then coerce all the data 
+back to the first drive. "btrfs device delete" is what you want. You 
+_may_ need to switch the metadata back to "single" before the delete.
+
+--Rob.

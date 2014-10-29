@@ -1,64 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52115 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932994AbaJ2QTw convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 12:19:52 -0400
-Content-Type: text/plain; charset=iso-8859-1
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Unable to fixup (regular) error in RAID1 fs
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <ebfd8c4b1c8011693ffd3865f75aa052@miceliux.com>
-Date: Wed, 29 Oct 2014 10:19:45 -0600
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Message-Id: <ADF01B62-FA34-4355-8E54-DEB454C8AB0F@colorremedies.com>
-References: <a3d3305c6149a1aa5e2b3f29d76fff93@miceliux.com> <pan$926c2$2d969c3e$ebb0bb58$d02b674@cox.net> <ebfd8c4b1c8011693ffd3865f75aa052@miceliux.com>
-To: Juan Orti <juan.orti@miceliux.com>
+Received: from mout.gmx.net ([212.227.17.22]:63724 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S934001AbaJ2Q4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Oct 2014 12:56:37 -0400
+Received: from [192.168.178.21] ([85.176.187.181]) by mail.gmx.com (mrgmx102)
+ with ESMTPSA (Nemesis) id 0MQdAP-1XdqAx2Aov-00U1lx for
+ <linux-btrfs@vger.kernel.org>; Wed, 29 Oct 2014 17:56:35 +0100
+Message-ID: <54511C41.5090603@gmx.de>
+Date: Wed, 29 Oct 2014 17:56:33 +0100
+From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: v3.18-rc2 at a 32 bit KVM gives :"INFO: trying to register non-static
+ key.the code is fine but needs lockdep annotation."
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is new in my eyes, or ? :
 
-On Oct 29, 2014, at 2:08 AM, Juan Orti <juan.orti@miceliux.com> wrote:
+Oct 29 17:53:04 n22kvmclone kernel: INFO: trying to register non-static key.
+Oct 29 17:53:04 n22kvmclone kernel: the code is fine but needs lockdep annotation.
+Oct 29 17:53:04 n22kvmclone kernel: turning off the locking correctness validator.
+Oct 29 17:53:04 n22kvmclone kernel: CPU: 0 PID: 2525 Comm: trinity-c0 Not tainted 3.18.0-rc2 #1
+Oct 29 17:53:04 n22kvmclone kernel: Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+Oct 29 17:53:04 n22kvmclone kernel:  00000000 00000000 f55e5b70 c2a5d3ba 00000000 f55e5bc4 c2684a7b c2ba5888
+Oct 29 17:53:04 n22kvmclone kernel:  c2a64822 f55a0000 f55e5bb4 00000000 00000000 00000001 00000000 f890b458
+Oct 29 17:53:04 n22kvmclone kernel:  00000000 f55a0df4 f55a0e04 f40c3000 01000000 c2d68578 f5719c94 f62b6ea0
+Oct 29 17:53:04 n22kvmclone kernel: Call Trace:
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2a5d3ba>] dump_stack+0x41/0x52
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2684a7b>] __lock_acquire.isra.31+0x89b/0x9a0
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2a64822>] ? _raw_spin_unlock+0x22/0x30
+Oct 29 17:53:04 n22kvmclone kernel:  [<f890b458>] ? btrfs_make_block_group+0x1d8/0x290 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<c263f360>] ? native_wbinvd+0x10/0x10
+Oct 29 17:53:04 n22kvmclone kernel:  [<c26850ff>] lock_acquire+0x8f/0x110
+Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] ? btrfs_alloc_chunk+0x41/0x50 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f8949304>] __btrfs_alloc_chunk+0x684/0xb10 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] ? btrfs_alloc_chunk+0x41/0x50 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f894d001>] btrfs_alloc_chunk+0x41/0x50 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f8901f8d>] do_chunk_alloc+0x1dd/0x410 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f88fc196>] ? get_alloc_profile+0x166/0x2d0 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f8903144>] btrfs_check_data_free_space+0x144/0x320 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f8930e8b>] __btrfs_buffered_write+0x10b/0x550 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<f89316c0>] btrfs_file_write_iter+0x3f0/0x6c0 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2755eba>] ? do_iter_readv_writev+0x6a/0xa0
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2755eba>] do_iter_readv_writev+0x6a/0xa0
+Oct 29 17:53:04 n22kvmclone kernel:  [<f89312d0>] ? __btrfs_buffered_write+0x550/0x550 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2757210>] do_readv_writev+0xa0/0x270
+Oct 29 17:53:04 n22kvmclone kernel:  [<f89312d0>] ? __btrfs_buffered_write+0x550/0x550 [btrfs]
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2755f80>] ? do_sync_readv_writev+0x90/0x90
+Oct 29 17:53:04 n22kvmclone kernel:  [<c27720c0>] ? __fdget_pos+0x30/0x40
+Oct 29 17:53:04 n22kvmclone kernel:  [<c269d6c1>] ? do_setitimer+0x121/0x200
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2a64992>] ? _raw_spin_unlock_irq+0x22/0x40
+Oct 29 17:53:04 n22kvmclone kernel:  [<c269d6c1>] ? do_setitimer+0x121/0x200
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2757414>] vfs_writev+0x34/0x60
+Oct 29 17:53:04 n22kvmclone kernel:  [<c27575d6>] SyS_writev+0x56/0xe0
+Oct 29 17:53:04 n22kvmclone kernel:  [<c2a6522b>] sysenter_do_call+0x12/0x12
 
-> El 2014-10-29 04:02, Duncan escribió:
->> Juan Orti posted on Tue, 28 Oct 2014 16:54:19 +0100 as excerpted:
->>> [ 3713.086292] BTRFS: unable to fixup (regular) error at logical
->>> 483011874816 on dev /dev/sdb2
->>> [ 3713.092577] BTRFS: checksum error at logical 483011948544 on dev
->>> /dev/sdb2, sector 628793528, root 2500, inode 1436631, offset
->>> 4059963392, length 4096, links 1 (path:
->>> juan/.local/share/gnome-boxes/images/boxes-unknown)
->>> [ 3713.092584] BTRFS: bdev /dev/sdb2 errs: wr 0, rd 0, flush 0, corrupt
->>> 38, gen 0
->>> [ 3713.093035] BTRFS: unable to fixup (regular) error at logical
->>> 483011948544 on dev /dev/sdb2
->>> Why can't it fix the errors? a bad device? smartctl says the disk is ok.
->>> I'm currently running a full scrub to see if it finds more errors. What
->>> should I do?
->> Btrfs raid1, and I see you have it for both data and metadata.
->> During normal operation, when btrfs comes across a block that doesn't
->> match its checksum, it will look to see if there's another copy (which
->> there is with raid1, which has exactly two copies) of that block and will
->> try to use it instead if so.  If the second copy matches the checksum,
->> all is fine and btrfs will in fact attempt to rewrite the bad copy using
->> the good copy, as well as returning the good copy to whatever was
->> reading it.
->> Those corruption errors seem to indicate that it can't find a good
->> copy to update the bad copy with -- both copies ended up bad.  Either
->> that or it found the good copy and returned it to whatever was reading,
->> but couldn't rewrite the bad copy, for some reason.
->> I'm not sure which of those interpretations is correct, but given
->> that you didn't see anything else bad happening, no apps returning
->> errors due to read error, etc, I'd guess the second.  Because
->> otherwise whatever was doing the read should have returned an
->> error.
-> 
-> When this error happened, I was editing some text files with vi, and it was painfully slow, it took 30 seconds to open a 20 lines file, so something weird was going on. Anyway, no visible user space error could be seen.
-
-Anything in dmesg prior to the previously reported errors?
-
-Either with syslog messages or journalctl, filter by btrfs and see what you get for the past couple of days. And then also find out what ata port the two drives are on and filter by those; usually in the form ataX.00. You could also search for "exception Emask" and see if anything comes up. This would account for either controller or drive hardware error messages.
-
-
-Chris Murphy
+-- 
+Toralf
+pgp key: 0076 E94E
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:50861 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:49607 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932072AbaJ2AgR (ORCPT
+	by vger.kernel.org with ESMTP id S1756147AbaJ2IV6 (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 28 Oct 2014 20:36:17 -0400
+	Wed, 29 Oct 2014 04:21:58 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix snapshot inconsistency after a file write followed by truncate
-Date: Wed, 29 Oct 2014 00:35:57 +0000
-Message-Id: <1414542957-21317-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: fix snapshot inconsistency after a file write followed by truncate
+Date: Wed, 29 Oct 2014 08:21:12 +0000
+Message-Id: <1414570872-20666-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
 References: <1413886363-12442-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -84,11 +84,13 @@ V2: Use different approach to solve the problem. Don't start and wait for all
     flush at transaction commit time if we're doing a transaction commit that
     creates snapshots.
 
+V3: Removed useless test condition in +wait_pending_snapshot_roots_delalloc().
+
  fs/btrfs/transaction.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 59 insertions(+)
 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 396ae8b..18c356e 100644
+index 396ae8b..5e7f004 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
 @@ -1714,12 +1714,65 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
@@ -136,7 +138,7 @@ index 396ae8b..18c356e 100644
 +{
 +	struct btrfs_pending_snapshot *pending_snapshot;
 +
-+	if (list_empty(splice) || btrfs_test_opt(trans->root, FLUSHONCOMMIT))
++	if (list_empty(splice))
 +		return;
 +
 +	list_for_each_entry(pending_snapshot, splice, list)

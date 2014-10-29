@@ -1,72 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:65303 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932513AbaJ2MPJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 08:15:09 -0400
-Received: from mail-qg0-f54.google.com ([209.85.192.54]) by mail.gmx.com
- (mrgmx002) with ESMTPSA (Nemesis) id 0MY7dI-1XWCbb04I4-00Uobt for
- <linux-btrfs@vger.kernel.org>; Wed, 29 Oct 2014 13:15:07 +0100
-Received: by mail-qg0-f54.google.com with SMTP id q108so2135615qgd.27
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Oct 2014 05:15:05 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <545062CC.6020206@oracle.com>
-References: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>
-	<545062CC.6020206@oracle.com>
-Date: Wed, 29 Oct 2014 13:15:05 +0100
-Message-ID: <CAHOQfW2hKtjJ=oCGp2KbvbtBsWxQpo+zforzrashVO7zDAmLHg@mail.gmail.com>
-Subject: Re: read block failed check_tree_block / Couldn't read chunk tree
-From: Rene Thomas <re.thomas@gmx.de>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52115 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932994AbaJ2QTw convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Oct 2014 12:19:52 -0400
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Unable to fixup (regular) error in RAID1 fs
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <ebfd8c4b1c8011693ffd3865f75aa052@miceliux.com>
+Date: Wed, 29 Oct 2014 10:19:45 -0600
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Message-Id: <ADF01B62-FA34-4355-8E54-DEB454C8AB0F@colorremedies.com>
+References: <a3d3305c6149a1aa5e2b3f29d76fff93@miceliux.com> <pan$926c2$2d969c3e$ebb0bb58$d02b674@cox.net> <ebfd8c4b1c8011693ffd3865f75aa052@miceliux.com>
+To: Juan Orti <juan.orti@miceliux.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can't find commit in official repos
 
-Get "fatal: bad object 915902c5002485fb13d27c4b699a73fb66cc0f09" from git show
+On Oct 29, 2014, at 2:08 AM, Juan Orti <juan.orti@miceliux.com> wrote:
 
-Found
-----------------------------
-commit 2513077f2f830b4bc83d528bfb6979eb461918bd
+> El 2014-10-29 04:02, Duncan escribiÛ:
+>> Juan Orti posted on Tue, 28 Oct 2014 16:54:19 +0100 as excerpted:
+>>> [ 3713.086292] BTRFS: unable to fixup (regular) error at logical
+>>> 483011874816 on dev /dev/sdb2
+>>> [ 3713.092577] BTRFS: checksum error at logical 483011948544 on dev
+>>> /dev/sdb2, sector 628793528, root 2500, inode 1436631, offset
+>>> 4059963392, length 4096, links 1 (path:
+>>> juan/.local/share/gnome-boxes/images/boxes-unknown)
+>>> [ 3713.092584] BTRFS: bdev /dev/sdb2 errs: wr 0, rd 0, flush 0, corrupt
+>>> 38, gen 0
+>>> [ 3713.093035] BTRFS: unable to fixup (regular) error at logical
+>>> 483011948544 on dev /dev/sdb2
+>>> Why can't it fix the errors? a bad device? smartctl says the disk is ok.
+>>> I'm currently running a full scrub to see if it finds more errors. What
+>>> should I do?
+>> Btrfs raid1, and I see you have it for both data and metadata.
+>> During normal operation, when btrfs comes across a block that doesn't
+>> match its checksum, it will look to see if there's another copy (which
+>> there is with raid1, which has exactly two copies) of that block and will
+>> try to use it instead if so.  If the second copy matches the checksum,
+>> all is fine and btrfs will in fact attempt to rewrite the bad copy using
+>> the good copy, as well as returning the good copy to whatever was
+>> reading it.
+>> Those corruption errors seem to indicate that it can't find a good
+>> copy to update the bad copy with -- both copies ended up bad.  Either
+>> that or it found the good copy and returned it to whatever was reading,
+>> but couldn't rewrite the bad copy, for some reason.
+>> I'm not sure which of those interpretations is correct, but given
+>> that you didn't see anything else bad happening, no apps returning
+>> errors due to read error, etc, I'd guess the second.  Because
+>> otherwise whatever was doing the read should have returned an
+>> error.
+> 
+> When this error happened, I was editing some text files with vi, and it was painfully slow, it took 30 seconds to open a 20 lines file, so something weird was going on. Anyway, no visible user space error could be seen.
 
-btrfs-progs: fix device missing of btrfs fi show with seed devices
-----------------------------
+Anything in dmesg prior to the previously reported errors?
 
-Thanks
-Ren√©
+Either with syslog messages or journalctl, filter by btrfs and see what you get for the past couple of days. And then also find out what ata port the two drives are on and filter by those; usually in the form ataX.00. You could also search for "exception Emask" and see if anything comes up. This would account for either controller or drive hardware error messages.
 
-2014-10-29 4:45 GMT+01:00 Anand Jain <Anand.Jain@oracle.com>:
->
-> this is (most likely) due to patch below,
-> ----------------
-> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
->
->     btrfs-progs: fix device missing of btrfs fi show with seed devices
-> ----------------
->
->  Could you try to back out the patch from progs and give it a shot ?
->  and pls report what you see. Thanks.
->
->
->
->
->
-> On 10/25/14 00:43, Rene Thomas wrote:
->>
->>   # btrfs --version
->> Btrfs v3.17
->>
->>   # btrfs fi show
->> Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
->>          Total devices 1 FS bytes used 2.36MiB
->>          devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
->>
->>   Check tree block failed, want=5845480062976, have=0
->> Check tree block failed, want=5845480062976, have=0
->> Check tree block failed, want=5845480062976, have=65536
->> Check tree block failed, want=5845480062976, have=0
->> Check tree block failed, want=5845480062976, have=0
->> read block failed check_tree_block
->> Couldn't read chunk tree
+
+Chris Murphy
+

@@ -1,64 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59655 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751959AbaJUIbV (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48989 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750914AbaJ3EA4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Oct 2014 04:31:21 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s9L8VEx1032449
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Oct 2014 16:31:14 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] btrfs-progs: Fix number of arguments check of 'btrfs fi df'
-Date: Tue, 21 Oct 2014 16:31:17 +0800
-Message-ID: <1413880277-19691-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Thu, 30 Oct 2014 00:00:56 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s9U40tYq016054
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 04:00:55 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s9U40sbC028922
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 04:00:55 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s9U40sPp028916
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 04:00:54 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] revert btrfs-progs: do a separate probe for _transient_ replacing device
+Date: Thu, 30 Oct 2014 12:43:03 +0800
+Message-Id: <1414644183-19189-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1414579862-18951-1-git-send-email-anand.jain@oracle.com>
+References: <1414579862-18951-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'btrfs fi df' needs exactly one arguments as mount option,
-but as 3.17 we can run 'btrfs fi df' without any argument,
-and it will error as "ERROR: can't access '%s'" which means
-the argument number does not do what it should.
+There is a compatibility issue with older kernel with the progs commit id as below.
 
-The bug is caused by manually modify the optind and use check_argc_max()
-instead of the original check_argc_exact().
+d0588bfa479409b2a0f6243f894338a01a56221a
+btrfs-progs: do a separate probe for _transient_ replacing device
 
-This patch fixes it by not modifying the optind and use check_argc_exact()
-again.
+So as of now writing to revert the above commit id.
+The brewing sysfs interface would help to fix the impending issue, which is
+seed device would fail show in 'btrfs fi show' output of a sprout device.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-changlog:
-v2:
-   Don't introduce opt_num, use optind directly
----
- cmds-filesystem.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ v2: update commit with correct commit which this patch will revert
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index bb5881e..70223d8 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -241,7 +241,6 @@ static int cmd_df(int argc, char **argv)
- 	DIR *dirstream = NULL;
- 	unsigned unit_mode = UNITS_DEFAULT;
+ utils.c | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
+
+diff --git a/utils.c b/utils.c
+index a8691fe..1d1cc77 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1869,29 +1869,12 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	if (!fi_args->num_devices)
+ 		goto out;
  
--	optind = 1;
- 	while (1) {
- 		int long_index;
- 		static const struct option long_options[] = {
-@@ -290,7 +289,7 @@ static int cmd_df(int argc, char **argv)
- 		}
+-	/*
+-	 * with kernel patch
+-	 * btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO miss-matched with slots
+-	 * the kernel now returns total_devices which does not include
+-	 * replacing device if running.
+-	 * As we need to get dev info of the replace device if it is running,
+-	 * so just add one to fi_args->num_devices.
+-	 */
+-
+-	di_args = *di_ret = malloc((fi_args->num_devices + 1) * sizeof(*di_args));
++	di_args = *di_ret = malloc((fi_args->num_devices) * sizeof(*di_args));
+ 	if (!di_args) {
+ 		ret = -errno;
+ 		goto out;
  	}
  
--	if (check_argc_max(argc, optind + 1))
-+	if (check_argc_exact(argc, optind + 1))
- 		usage(cmd_df_usage);
- 
- 	path = argv[optind];
+-	/* get the replace target device if it is there */
+-	ret = get_device_info(fd, i, &di_args[ndevs]);
+-	if (!ret) {
+-		ndevs++;
+-		fi_args->num_devices++;
+-	}
+-	i++;
+-
+ 	for (; i <= fi_args->max_id; ++i) {
+ 		BUG_ON(ndevs >= fi_args->num_devices);
+ 		ret = get_device_info(fd, i, &di_args[ndevs]);
 -- 
-2.1.2
+2.0.0.153.g79dcccc
 

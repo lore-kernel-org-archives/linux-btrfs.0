@@ -1,163 +1,261 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:44140 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1759739AbaJ3QAF (ORCPT
+Received: from mout.gmx.net ([212.227.17.22]:52286 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759266AbaJ3Qrg convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 12:00:05 -0400
-Date: Thu, 30 Oct 2014 12:00:04 -0400
-From: Zygo Blaxell <zblaxell@furryterror.org>
-To: luvar@plaintext.sk
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs deduplication and linux cache management
-Message-ID: <20141030160004.GK17395@hungrycats.org>
-References: <1589590871.231414660858286.JavaMail.root@shiva>
- <650272300.271414661167523.JavaMail.root@shiva>
+	Thu, 30 Oct 2014 12:47:36 -0400
+Received: from mail-qc0-f170.google.com ([209.85.216.170]) by mail.gmx.com
+ (mrgmx103) with ESMTPSA (Nemesis) id 0MfVzj-1XPkPH2vZD-00P6ci for
+ <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 17:47:33 +0100
+Received: by mail-qc0-f170.google.com with SMTP id l6so4541348qcy.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 09:47:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="yr6OvWOSyJed8q4v"
-In-Reply-To: <650272300.271414661167523.JavaMail.root@shiva>
+In-Reply-To: <5451B65A.9090302@oracle.com>
+References: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>
+	<545062CC.6020206@oracle.com>
+	<CAHOQfW2hKtjJ=oCGp2KbvbtBsWxQpo+zforzrashVO7zDAmLHg@mail.gmail.com>
+	<5451B65A.9090302@oracle.com>
+Date: Thu, 30 Oct 2014 17:47:31 +0100
+Message-ID: <CAHOQfW1PJ4m4KEHkwp4sKBL9ttNwv+ZpLPG4PKx9ewXWsCJhQQ@mail.gmail.com>
+Subject: Re: read block failed check_tree_block / Couldn't read chunk tree
+From: Rene Thomas <re.thomas@gmx.de>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+With commit patched out.
 
---yr6OvWOSyJed8q4v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+All devices in Place
 
-On Thu, Oct 30, 2014 at 10:26:07AM +0100, luvar@plaintext.sk wrote:
-> Hi,
-> I want to ask, if deduplicated file content will be cached in linux kerne=
-l just once for two deduplicated files.
->=20
-> To explain in deep:
->  - I use btrfs for whole system with few subvolumes with some compression=
- on some subvolumes.
->  - I have two directories with eclipse SDK with slightly differences (sam=
-e version, different config)
->  - I assume that given directories is deduplicated and so two eclipse ins=
-tallations take place on hdd like one would (in rough estimation)
->  - I will start one of given eclipse
->  - linux kernel will cache all opened files during start of eclipse (I ha=
-ve enough free ram)
->  - I am just happy stupid linux user:
->     1. will kernel cache file content after decompression? (I think yes)
->     2. cached data will be in VFS layer or in block device layer?
+uname -a
+Linux engelserver 3.18.0-031800rc1-generic #201410192135 SMP Mon Oct
+20 01:37:04 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
 
-My guess based on behavior is the VFS layer.  See below.
+root@engelserver:/# btrfs --version
+Btrfs v3.17-dirty
 
->  - When I will lunch second eclipse (different from first, but deduplicat=
-ed from first) after first one:
->     1. will second start require less data to be read from HDD?
+root@engelserver:/# btrfs fi show
+Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
+Total devices 1 FS bytes used 4.27MiB
+devid    1 size 931.51GiB used 2.04GiB path /dev/sdh1
 
-No.
+Label: none  uuid: 8ef575d9-2465-479c-bf9c-067e2e417770
+Total devices 3 FS bytes used 3.02TiB
+devid    1 size 2.73TiB used 1.77TiB path /dev/sdf1
+devid    2 size 2.73TiB used 1.77TiB path /dev/sda1
+devid    3 size 2.73TiB used 1.77TiB path /dev/sdg1
 
->     2. will be metadata for second instance read from hdd? (I asume yes)
+Btrfs v3.17-dirty
 
-Yes (how could it not?).
+root@engelserver:/# dmesg | grep -i btrfs
+[   12.144778] Btrfs loaded
+[   12.155656] BTRFS: device label mythstorage devid 1 transid 633 /dev/sdh1
+[   12.167277] BTRFS info (device sdh1): enabling auto defrag
+[   12.178478] BTRFS info (device sdh1): disk space caching is enabled
+[   13.008943] BTRFS: device fsid 8ef575d9-2465-479c-bf9c-067e2e417770
+devid 1 transid 32270 /dev/sdf1
+[   13.017482] BTRFS: device fsid 8ef575d9-2465-479c-bf9c-067e2e417770
+devid 3 transid 32270 /dev/sdg1
+[   13.020782] BTRFS: device fsid 8ef575d9-2465-479c-bf9c-067e2e417770
+devid 2 transid 32270 /dev/sda1
 
->     3. will be actual data read second time? (I hope not)
+root@engelserver:/# mount -t btrfs -o recovery,ro /dev/sdf1 /home
+mount: wrong fs type, bad option, bad superblock on /dev/sdf1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
-Unfortunately, yes.
+[  440.600286] BTRFS info (device sda1): enabling auto recovery
+[  440.600288] BTRFS info (device sda1): disk space caching is enabled
+[  440.601304] BTRFS (device sda1): bad tree block start 0 5845480062976
+[  440.601854] BTRFS (device sda1): bad tree block start 0 5845480054784
+[  440.601971] BTRFS (device sda1): bad tree block start 0 5845480067072
+[  440.602203] BTRFS (device sda1): bad tree block start 0 5845480050688
+[  440.602467] BTRFS (device sda1): bad tree block start 0 5845480071168
+[  440.602720] BTRFS (device sda1): bad tree block start 0 5845480058880
+[  440.603000] BTRFS (device sda1): bad tree block start 0 5845480075264
+[  440.603270] BTRFS (device sda1): bad tree block start 0 5845480079360
+[  440.603558] BTRFS (device sda1): bad tree block start 0 5845480046592
+[  440.603685] BTRFS (device sda1): bad tree block start 0 5845480091648
+[  440.630760] BTRFS: Failed to read block groups: -5
+[  440.651385] BTRFS: open_ctree failed
 
-This is my test:
+Remove affected device (reboot)
 
-1.  Create a file full of compressible data that is big enough to take
-a few seconds to read from disk, but not too big to fit in RAM:
+dmesg
+[   11.809442] Btrfs loaded
+[   11.835961] BTRFS: device label mythstorage devid 1 transid 634 /dev/sdc1
+[   11.847034] BTRFS info (device sdc1): enabling auto defrag
+[   11.857649] BTRFS info (device sdc1): disk space caching is enabled
+[   12.586106] BTRFS: device fsid 8ef575d9-2465-479c-bf9c-067e2e417770
+devid 2 transid 32270 /dev/sda1
+[   12.599428] BTRFS: device fsid 8ef575d9-2465-479c-bf9c-067e2e417770
+devid 3 transid 32270 /dev/sdb1
 
-	yes $(date) | head -c 500m > a
+root@engelserver:/# btrfs fi sh
+Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
+Total devices 1 FS bytes used 4.27MiB
+devid    1 size 931.51GiB used 2.04GiB path /dev/sdc1
 
-2.  Create a "deduplicated" (shared extent) copy of same:
+Label: none  uuid: 8ef575d9-2465-479c-bf9c-067e2e417770
+Total devices 3 FS bytes used 3.02TiB
+devid    2 size 2.73TiB used 1.77TiB path /dev/sda1
+devid    3 size 2.73TiB used 1.77TiB path /dev/sdb1
+*** Some devices missing
 
-	cp --reflink=3Dalways a b
+Btrfs v3.17-dirty
 
-	(use filefrag -v to verify both files have same physical extents)
+root@engelserver:/# mount -t btrfs -o ro,degraded /dev/sda1 /home
+mount: wrong fs type, bad option, bad superblock on /dev/sda1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
-3.  Drop caches
+root@engelserver:/# dmesg | grep -i btrfs
+[  299.792397] BTRFS info (device sdb1): allowing degraded mounts
+[  299.792400] BTRFS info (device sdb1): disk space caching is enabled
+[  299.964814] BTRFS (device sdb1): bad tree block start 0 5845002854400
+[  299.964896] BTRFS (device sdb1): bad tree block start 0 5845002854400
+[  299.964965] BTRFS: Failed to read block groups: -5
+[  299.987542] BTRFS: open_ctree failed
 
-	sync; sysctl vm.drop_caches=3D1
+root@engelserver:/# btrfs restore -i /dev/sda1 /media/mythstorage/
+warning, device 1 is missing
+warning, device 1 is missing
+warning devid 1 not found already
+Check tree block failed, want=5845480062976, have=65536
+Check tree block failed, want=5845480062976, have=65536
+read block failed check_tree_block
+Couldn't read chunk tree
+Could not open root, trying backup super
+warning, device 1 is missing
+warning, device 1 is missing
+warning devid 1 not found already
+Check tree block failed, want=5845480062976, have=65536
+Check tree block failed, want=5845480062976, have=65536
+read block failed check_tree_block
+Couldn't read chunk tree
+Could not open root, trying backup super
+warning, device 1 is missing
+warning, device 1 is missing
+warning devid 1 not found already
+Check tree block failed, want=5845480062976, have=65536
+Check tree block failed, want=5845480062976, have=65536
+read block failed check_tree_block
+Couldn't read chunk tree
+Could not open root, trying backup super
 
-4.  Time reading both files with cold and hot cache:
+root@engelserver:/# btrfs rescue chunk-recover -v /dev/sdb1
 
-	time cat a > /dev/null
-	time cat b > /dev/null
-	time cat a > /dev/null
-	time cat b > /dev/null
+http://sebsauvage.net/paste/?ed4437f335d9a563#Hy3yzV8fIrgEotLNs3dPg+xX4loQZ/DMxOhXQ/HqdVc=
 
-Ideally, the first 'cat a' would load the file back from disk, so it
-will take a long time, and the other three would be very fast as the
-shared extent data would already be in RAM.
+root@engelserver:/# btrfs rescue super-recover -v /dev/sda1
+All Devices:
+Device: id = 3, name = /dev/sdc1
+Device: id = 1, name = /dev/sdb1
+Device: id = 2, name = /dev/sda1
 
-That is what happens on 3.17.1:
+Before Recovering:
+[All good supers]:
+device name = /dev/sdc1
+superblock bytenr = 65536
 
-	time cat a > /dev/null
-	real    0m18.870s
-	user    0m0.017s
-	sys     0m3.432s
+device name = /dev/sdc1
+superblock bytenr = 67108864
 
-	time cat b > /dev/null
-	real    0m16.931s
-	user    0m0.007s
-	sys     0m3.357s
+device name = /dev/sdc1
+superblock bytenr = 274877906944
 
-	time cat a > /dev/null
-	real    0m0.141s
-	user    0m0.001s
-	sys     0m0.136s
+device name = /dev/sdb1
+superblock bytenr = 65536
 
-	time cat b > /dev/null
-	real    0m0.121s
-	user    0m0.002s
-	sys     0m0.116s
+device name = /dev/sdb1
+superblock bytenr = 67108864
 
-Above we see that reading 'b' the first time takes almost as long as 'a'.
-The second reads are cached, so they finish two orders of magnitude
-faster.
+device name = /dev/sdb1
+superblock bytenr = 274877906944
 
-That suggests that deduplicated extents are read and cached as entirely
-separate copies of the data.  The sys time for the first read of 'b'
-would imply separate decompression as well.
+device name = /dev/sda1
+superblock bytenr = 65536
 
-Compare the above result with a hardlink, which might behave more like
-what we expect:
+device name = /dev/sda1
+superblock bytenr = 67108864
 
-	rm -f b
-	ln a b
-	sync; sysctl vm.drop_caches=3D1
+device name = /dev/sda1
+superblock bytenr = 274877906944
 
-	time cat a > /dev/null
-	real    0m20.262s
-	user    0m0.010s
-	sys     0m3.376s
+[All bad supers]:
 
-	time cat b > /dev/null
-	real    0m0.125s
-	user    0m0.003s
-	sys     0m0.120s
+All supers are valid, no need to recover
 
-	time cat a > /dev/null
-	real    0m0.103s
-	user    0m0.004s
-	sys     0m0.097s
+Did I miss anything?
 
-	time cat b > /dev/null
-	real    0m0.098s
-	user    0m0.002s
-	sys     0m0.091s
+Thanks
+René
 
-Above we clearly see that we read 'a' from disk only once, and use the
-cache three times.
-
---yr6OvWOSyJed8q4v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlRSYIQACgkQgfmLGlazG5x+jACeJp8yEa6Nhu94rM1GEjSUU/ks
-aJwAn1oO6gBATWyZfldh6nerYwpMZnYT
-=LEO1
------END PGP SIGNATURE-----
-
---yr6OvWOSyJed8q4v--
+2014-10-30 4:54 GMT+01:00 Anand Jain <Anand.Jain@oracle.com>:
+>
+>
+>
+>  yes that's the one.
+>
+>> btrfs-progs: fix device missing of btrfs fi show with seed devices
+>
+> Thanks
+>
+>
+>
+> On 10/29/2014 08:15 PM, Rene Thomas wrote:
+>>
+>> Can't find commit in official repos
+>>
+>> Get "fatal: bad object 915902c5002485fb13d27c4b699a73fb66cc0f09" from git
+>> show
+>>
+>> Found
+>> ----------------------------
+>> commit 2513077f2f830b4bc83d528bfb6979eb461918bd
+>>
+>> btrfs-progs: fix device missing of btrfs fi show with seed devices
+>> ----------------------------
+>>
+>> Thanks
+>> René
+>>
+>> 2014-10-29 4:45 GMT+01:00 Anand Jain <Anand.Jain@oracle.com>:
+>>>
+>>>
+>>> this is (most likely) due to patch below,
+>>> ----------------
+>>> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
+>>>
+>>>      btrfs-progs: fix device missing of btrfs fi show with seed devices
+>>> ----------------
+>>>
+>>>   Could you try to back out the patch from progs and give it a shot ?
+>>>   and pls report what you see. Thanks.
+>>>
+>>>
+>>>
+>>>
+>>>
+>>> On 10/25/14 00:43, Rene Thomas wrote:
+>>>>
+>>>>
+>>>>    # btrfs --version
+>>>> Btrfs v3.17
+>>>>
+>>>>    # btrfs fi show
+>>>> Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
+>>>>           Total devices 1 FS bytes used 2.36MiB
+>>>>           devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
+>>>>
+>>>>    Check tree block failed, want=5845480062976, have=0
+>>>> Check tree block failed, want=5845480062976, have=0
+>>>> Check tree block failed, want=5845480062976, have=65536
+>>>> Check tree block failed, want=5845480062976, have=0
+>>>> Check tree block failed, want=5845480062976, have=0
+>>>> read block failed check_tree_block
+>>>> Couldn't read chunk tree

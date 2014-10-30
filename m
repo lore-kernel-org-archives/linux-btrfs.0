@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 17.mo1.mail-out.ovh.net ([87.98.179.142]:60644 "EHLO
+Received: from 10.mo1.mail-out.ovh.net ([178.32.96.102]:57285 "EHLO
 	mo1.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1760856AbaJ3SrR convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1161277AbaJ3W1P convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 14:47:17 -0400
-Received: from mail636.ha.ovh.net (b6.ovh.net [213.186.33.56])
-	by mo1.mail-out.ovh.net (Postfix) with SMTP id 792E0FF98F9
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 19:37:34 +0100 (CET)
+	Thu, 30 Oct 2014 18:27:15 -0400
+Received: from mail98.ha.ovh.net (gw6.ovh.net [213.251.189.206])
+	by mo1.mail-out.ovh.net (Postfix) with SMTP id 07892FFB70C
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 17:28:48 +0100 (CET)
 From: Cyril Scetbon <cyril.scetbon@free.fr>
 Content-Type: text/plain; charset=us-ascii
 Subject: Quota question
-Message-Id: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr>
-Date: Thu, 30 Oct 2014 19:37:32 +0100
+Message-Id: <A97945F6-2C7C-40A1-A291-D1498DA2FE8C@free.fr>
+Date: Thu, 30 Oct 2014 17:28:41 +0100
 To: linux-btrfs@vger.kernel.org
 Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
 Sender: linux-btrfs-owner@vger.kernel.org

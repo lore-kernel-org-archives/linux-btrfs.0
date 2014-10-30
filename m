@@ -1,77 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45920 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752478AbaJ3Dtv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 23:49:51 -0400
-Message-ID: <5451B65A.9090302@oracle.com>
-Date: Thu, 30 Oct 2014 11:54:02 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Rene Thomas <re.thomas@gmx.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: read block failed check_tree_block / Couldn't read chunk tree
-References: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>	<545062CC.6020206@oracle.com> <CAHOQfW2hKtjJ=oCGp2KbvbtBsWxQpo+zforzrashVO7zDAmLHg@mail.gmail.com>
-In-Reply-To: <CAHOQfW2hKtjJ=oCGp2KbvbtBsWxQpo+zforzrashVO7zDAmLHg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:41922 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756126AbaJ3Huz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Oct 2014 03:50:55 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XjkVR-0004Oo-Jr
+	for linux-btrfs@vger.kernel.org; Thu, 30 Oct 2014 08:50:53 +0100
+Received: from ip4da2a5ae.direct-adsl.nl ([77.162.165.174])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 08:50:53 +0100
+Received: from koen by ip4da2a5ae.direct-adsl.nl with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 08:50:53 +0100
+To: linux-btrfs@vger.kernel.org
+From: Koen Kooi <koen@dominion.thruhere.net>
+Subject: Re: Btrfs raid1 array has issues with rtorrent usage pattern.
+Date: Thu, 30 Oct 2014 08:50:40 +0100
+Message-ID: <m2sqkg$l5p$1@ger.gmane.org>
+References: <544FC921.2090900@tevsa.net>	<CAPL5yKfQ1s4w9LbXwxGrJ-coSy8G1p=hpkkwhPT8oU8cqWS1eg@mail.gmail.com>	<54517726.5070507@tevsa.net> <CAPL5yKcYT7Nv0u3=6arGwxVk46HG4mSGf0b1po-euUGcWQJGEA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAPL5yKcYT7Nv0u3=6arGwxVk46HG4mSGf0b1po-euUGcWQJGEA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
+Dan Merillat schreef op 30-10-14 04:17:
+> It's specifically BTRFS related, I was able to reproduce it on a bare 
+> drive (no lvm, no md, no bcache).  It's not bad RAM, I was able to 
+> reproduce it on multiple machines running either 3.17 or late RCs.
+> 
+> I've tested 3.18-rc2 for about 2 hours now, can't get any failures, so 
+> that's good.  If anyone else can reproduce this it'll probably need to be
+> sent to 3.17-stable.
 
+3.17.2 has a lot of btrfs backports queued[1] already, could you see if the
+fix for your problem is already present?
 
-  yes that's the one.
+regards,
 
- > btrfs-progs: fix device missing of btrfs fi show with seed devices
+Koen
 
-Thanks
+[1]
+https://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git/commit/queue-3.17/btrfs-fix-a-deadlock-in-btrfs_dev_replace_finishing.patch?id=2792dbfd1e02a70a8eef7e0cc3f44cb77d6c100f
 
+> 
+> On Wed, Oct 29, 2014 at 7:24 PM, Alec Blayne <ab@tevsa.net> wrote:
+>> Really nice to know it's already getting handled :)
+>> 
+>> I'm already "downgrading" to 3.16.6 now that I know I won't have that 
+>> issue. I was already planning to because of the read-only snapshots
+>> issue.
+>> 
+>> Thank you and good luck debugging!
+>> 
+>> On 29-10-2014 21:50, Dan Merillat wrote:
+>>> I'm in the middle of debugging the exact same thing.  3.17.0 - 
+>>> rtorrent dies with SIGBUS.
+>>> 
+>>> I've done some debugging, the sequence is something like this: open a
+>>> new file fallocate() to the final size mmap() all (or a portion) of
+>>> the file write to the region run SHA1 on that mmap'd region to
+>>> validate the chink crash, eventually.  Generally not at the same
+>>> point.
+>>> 
+>>> Reading that file (cat > /dev/null) returns -EIO.
+>>> 
+>>> Looking up the process maps, the SIGBUS appears to be happening in
+>>> the middle of a mapped region of a pre-allocated file - I.E. it
+>>> shouldn't be.  I'm not completely ruling out a rtorrent bug but it
+>>> appears sane to me.
+>>> 
+>>> Weirder: "old" files, that have been around a while, work just fine
+>>> for seeding. I've re-hashed my entire collection without an error.
+>>> 
+>>> Seeing this on both inherit-COW and no-inherit-COW files, and the 
+>>> filesystem is not using compression.
+>>> 
+>>> The interesting part is going back and attempting to read the files 
+>>> later they sometimes don't throw an IO error.
+>>> 
+>>> Absolutely nothing in dmesg.
+>>> 
+>>> Working on a testcase that triggers it reliably but no luck so far.
+>>> I thought I had bad RAM but two people upgrading to 3.17 and seeing
+>>> the same bug at around the same time can't be a coincidence.  I
+>>> rebooted to 3.17 on the 25th, the first new download was on the 28th
+>>> and that failed.
+>>> 
+>>> Working on a testcase for it that's more reproducable than "go grab 
+>>> torrent files with rtorrent".
+>>> 
+>>> On Tue, Oct 28, 2014 at 12:49 PM, Alec Blayne <ab@tevsa.net> wrote:
+>>>> Hi, it seems that when using rtorrent to download into a btrfs
+>>>> system, it leads to the creation of files that fail to read
+>>>> properly. For instance, I get rtorrent to crash, but if I try to
+>>>> rsync the file he was writting into someplace else, rsync also
+>>>> fails with the message "can't map file "$file": Input/Output error
+>>>> (5)". If I give it time, eventually the file gets into a good state
+>>>> and I can rsync it somewhere else (as long as rtorrent doesn't keep
+>>>> writting into it). This doesn't happen using ext4 on the same
+>>>> system.
+>>>> 
+>>>> No btrfs errors, or any other errors, show up in any log. Scrubbing
+>>>> or balancing don't turn up any issues. I've tried using a subvolume
+>>>> mounted with nodatacow and/or flushoncommit, which didn't help. I'm
+>>>> not using quotas and at some point had a single snapshot that I
+>>>> deleted. The filesystem was originally created recently (on a
+>>>> 3.16.4+ kernel).
+>>>> 
+>>>> Here's what the array looks like:
+>>>> 
+>>>> Label: 'data'  uuid: ffe83a3d-f4ba-46b7-8424-4ec3380cb811 Total
+>>>> devices 4 FS bytes used 3.14TiB devid    4 size 2.73TiB used
+>>>> 2.36TiB path /dev/sdd1 devid    5 size 1.82TiB used 1.45TiB path
+>>>> /dev/sdc1 devid    6 size 1.82TiB used 1.45TiB path /dev/sdb1 devid
+>>>> 7 size 1.82TiB used 1.45TiB path /dev/sda1
+>>>> 
+>>>> Btrfs v3.17
+>>>> 
+>>>> Data, RAID1: total=3.34TiB, used=3.13TiB System, RAID1:
+>>>> total=32.00MiB, used=512.00KiB Metadata, RAID1: total=10.00GiB,
+>>>> used=7.31GiB GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>> 
+>>>> 
+>>>> On linux 3.17.1: Linux 3.17.1-gentoo-r1 #3 SMP PREEMPT Tue Oct 28 
+>>>> 02:43:11 WET 2014 x86_64 AMD Athlon(tm) 5350 APU with Radeon(tm)
+>>>> R3 AuthenticAMD GNU/Linux
+>>>> 
+>>>> I'm utterly puzzled and clueless at how to dig into this issue. -- 
+>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> 
+> -- To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> in the body of a message to majordomo@vger.kernel.org More majordomo info
+> at  http://vger.kernel.org/majordomo-info.html
+> 
 
-On 10/29/2014 08:15 PM, Rene Thomas wrote:
-> Can't find commit in official repos
->
-> Get "fatal: bad object 915902c5002485fb13d27c4b699a73fb66cc0f09" from git show
->
-> Found
-> ----------------------------
-> commit 2513077f2f830b4bc83d528bfb6979eb461918bd
->
-> btrfs-progs: fix device missing of btrfs fi show with seed devices
-> ----------------------------
->
-> Thanks
-> René
->
-> 2014-10-29 4:45 GMT+01:00 Anand Jain <Anand.Jain@oracle.com>:
->>
->> this is (most likely) due to patch below,
->> ----------------
->> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
->>
->>      btrfs-progs: fix device missing of btrfs fi show with seed devices
->> ----------------
->>
->>   Could you try to back out the patch from progs and give it a shot ?
->>   and pls report what you see. Thanks.
->>
->>
->>
->>
->>
->> On 10/25/14 00:43, Rene Thomas wrote:
->>>
->>>    # btrfs --version
->>> Btrfs v3.17
->>>
->>>    # btrfs fi show
->>> Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
->>>           Total devices 1 FS bytes used 2.36MiB
->>>           devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
->>>
->>>    Check tree block failed, want=5845480062976, have=0
->>> Check tree block failed, want=5845480062976, have=0
->>> Check tree block failed, want=5845480062976, have=65536
->>> Check tree block failed, want=5845480062976, have=0
->>> Check tree block failed, want=5845480062976, have=0
->>> read block failed check_tree_block
->>> Couldn't read chunk tree
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.5 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iD8DBQFUUe3QMkyGM64RGpERAn5dAJ9Bflg06EYS4kOlu61x85c9/yebngCgunfu
+DTpcyDmWwKf5dM0uK7tzheY=
+=y9b0
+-----END PGP SIGNATURE-----
+

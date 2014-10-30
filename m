@@ -1,153 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41922 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756126AbaJ3Huz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 03:50:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XjkVR-0004Oo-Jr
-	for linux-btrfs@vger.kernel.org; Thu, 30 Oct 2014 08:50:53 +0100
-Received: from ip4da2a5ae.direct-adsl.nl ([77.162.165.174])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 08:50:53 +0100
-Received: from koen by ip4da2a5ae.direct-adsl.nl with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 08:50:53 +0100
-To: linux-btrfs@vger.kernel.org
-From: Koen Kooi <koen@dominion.thruhere.net>
-Subject: Re: Btrfs raid1 array has issues with rtorrent usage pattern.
-Date: Thu, 30 Oct 2014 08:50:40 +0100
-Message-ID: <m2sqkg$l5p$1@ger.gmane.org>
-References: <544FC921.2090900@tevsa.net>	<CAPL5yKfQ1s4w9LbXwxGrJ-coSy8G1p=hpkkwhPT8oU8cqWS1eg@mail.gmail.com>	<54517726.5070507@tevsa.net> <CAPL5yKcYT7Nv0u3=6arGwxVk46HG4mSGf0b1po-euUGcWQJGEA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <CAPL5yKcYT7Nv0u3=6arGwxVk46HG4mSGf0b1po-euUGcWQJGEA@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:59816 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754161AbaJ3Iwe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Oct 2014 04:52:34 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s9U8qNxG022351
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 16:52:24 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Fix a lockdep warning when running xfstest.
+Date: Thu, 30 Oct 2014 16:52:31 +0800
+Message-ID: <1414659151-24777-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+The following lockdep warning is triggered during xfstests:
 
-Dan Merillat schreef op 30-10-14 04:17:
-> It's specifically BTRFS related, I was able to reproduce it on a bare 
-> drive (no lvm, no md, no bcache).  It's not bad RAM, I was able to 
-> reproduce it on multiple machines running either 3.17 or late RCs.
-> 
-> I've tested 3.18-rc2 for about 2 hours now, can't get any failures, so 
-> that's good.  If anyone else can reproduce this it'll probably need to be
-> sent to 3.17-stable.
+[ 1702.980872] =========================================================
+[ 1702.981181] [ INFO: possible irq lock inversion dependency detected ]
+[ 1702.981482] 3.18.0-rc1 #27 Not tainted
+[ 1702.981781] ---------------------------------------------------------
+[ 1702.982095] kswapd0/77 just changed the state of lock:
+[ 1702.982415]  (&delayed_node->mutex){+.+.-.}, at: [<ffffffffa03b0b51>] __btrfs_release_delayed_node+0x41/0x1f0 [btrfs]
+[ 1702.982794] but this lock took another, RECLAIM_FS-unsafe lock in the past:
+[ 1702.983160]  (&fs_info->dev_replace.lock){+.+.+.}
 
-3.17.2 has a lot of btrfs backports queued[1] already, could you see if the
-fix for your problem is already present?
+and interrupts could create inverse lock ordering between them.
 
-regards,
+[ 1702.984675]
+other info that might help us debug this:
+[ 1702.985524] Chain exists of:
+  &delayed_node->mutex --> &found->groups_sem --> &fs_info->dev_replace.lock
 
-Koen
+[ 1702.986799]  Possible interrupt unsafe locking scenario:
 
-[1]
-https://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git/commit/queue-3.17/btrfs-fix-a-deadlock-in-btrfs_dev_replace_finishing.patch?id=2792dbfd1e02a70a8eef7e0cc3f44cb77d6c100f
+[ 1702.987681]        CPU0                    CPU1
+[ 1702.988137]        ----                    ----
+[ 1702.988598]   lock(&fs_info->dev_replace.lock);
+[ 1702.989069]                                local_irq_disable();
+[ 1702.989534]                                lock(&delayed_node->mutex);
+[ 1702.990038]                                lock(&found->groups_sem);
+[ 1702.990494]   <Interrupt>
+[ 1702.990938]     lock(&delayed_node->mutex);
+[ 1702.991407]
+ *** DEADLOCK ***
 
-> 
-> On Wed, Oct 29, 2014 at 7:24 PM, Alec Blayne <ab@tevsa.net> wrote:
->> Really nice to know it's already getting handled :)
->> 
->> I'm already "downgrading" to 3.16.6 now that I know I won't have that 
->> issue. I was already planning to because of the read-only snapshots
->> issue.
->> 
->> Thank you and good luck debugging!
->> 
->> On 29-10-2014 21:50, Dan Merillat wrote:
->>> I'm in the middle of debugging the exact same thing.  3.17.0 - 
->>> rtorrent dies with SIGBUS.
->>> 
->>> I've done some debugging, the sequence is something like this: open a
->>> new file fallocate() to the final size mmap() all (or a portion) of
->>> the file write to the region run SHA1 on that mmap'd region to
->>> validate the chink crash, eventually.  Generally not at the same
->>> point.
->>> 
->>> Reading that file (cat > /dev/null) returns -EIO.
->>> 
->>> Looking up the process maps, the SIGBUS appears to be happening in
->>> the middle of a mapped region of a pre-allocated file - I.E. it
->>> shouldn't be.  I'm not completely ruling out a rtorrent bug but it
->>> appears sane to me.
->>> 
->>> Weirder: "old" files, that have been around a while, work just fine
->>> for seeding. I've re-hashed my entire collection without an error.
->>> 
->>> Seeing this on both inherit-COW and no-inherit-COW files, and the 
->>> filesystem is not using compression.
->>> 
->>> The interesting part is going back and attempting to read the files 
->>> later they sometimes don't throw an IO error.
->>> 
->>> Absolutely nothing in dmesg.
->>> 
->>> Working on a testcase that triggers it reliably but no luck so far.
->>> I thought I had bad RAM but two people upgrading to 3.17 and seeing
->>> the same bug at around the same time can't be a coincidence.  I
->>> rebooted to 3.17 on the 25th, the first new download was on the 28th
->>> and that failed.
->>> 
->>> Working on a testcase for it that's more reproducable than "go grab 
->>> torrent files with rtorrent".
->>> 
->>> On Tue, Oct 28, 2014 at 12:49 PM, Alec Blayne <ab@tevsa.net> wrote:
->>>> Hi, it seems that when using rtorrent to download into a btrfs
->>>> system, it leads to the creation of files that fail to read
->>>> properly. For instance, I get rtorrent to crash, but if I try to
->>>> rsync the file he was writting into someplace else, rsync also
->>>> fails with the message "can't map file "$file": Input/Output error
->>>> (5)". If I give it time, eventually the file gets into a good state
->>>> and I can rsync it somewhere else (as long as rtorrent doesn't keep
->>>> writting into it). This doesn't happen using ext4 on the same
->>>> system.
->>>> 
->>>> No btrfs errors, or any other errors, show up in any log. Scrubbing
->>>> or balancing don't turn up any issues. I've tried using a subvolume
->>>> mounted with nodatacow and/or flushoncommit, which didn't help. I'm
->>>> not using quotas and at some point had a single snapshot that I
->>>> deleted. The filesystem was originally created recently (on a
->>>> 3.16.4+ kernel).
->>>> 
->>>> Here's what the array looks like:
->>>> 
->>>> Label: 'data'  uuid: ffe83a3d-f4ba-46b7-8424-4ec3380cb811 Total
->>>> devices 4 FS bytes used 3.14TiB devid    4 size 2.73TiB used
->>>> 2.36TiB path /dev/sdd1 devid    5 size 1.82TiB used 1.45TiB path
->>>> /dev/sdc1 devid    6 size 1.82TiB used 1.45TiB path /dev/sdb1 devid
->>>> 7 size 1.82TiB used 1.45TiB path /dev/sda1
->>>> 
->>>> Btrfs v3.17
->>>> 
->>>> Data, RAID1: total=3.34TiB, used=3.13TiB System, RAID1:
->>>> total=32.00MiB, used=512.00KiB Metadata, RAID1: total=10.00GiB,
->>>> used=7.31GiB GlobalReserve, single: total=512.00MiB, used=0.00B
->>>> 
->>>> 
->>>> On linux 3.17.1: Linux 3.17.1-gentoo-r1 #3 SMP PREEMPT Tue Oct 28 
->>>> 02:43:11 WET 2014 x86_64 AMD Athlon(tm) 5350 APU with Radeon(tm)
->>>> R3 AuthenticAMD GNU/Linux
->>>> 
->>>> I'm utterly puzzled and clueless at how to dig into this issue. -- 
->>>> To unsubscribe from this list: send the line "unsubscribe
->>>> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> 
-> -- To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
-> in the body of a message to majordomo@vger.kernel.org More majordomo info
-> at  http://vger.kernel.org/majordomo-info.html
-> 
+It is because the btrfs_kobj_{add/rm}_device() will call memory
+allocation with GFP_KERNEL,
+which may flush fs page cache to free space, waiting for it self to do
+the commit, causing the deadlock.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.5 (Darwin)
-Comment: GPGTools - http://gpgtools.org
+To solve the problem, move btrfs_kobj_{add/rm}_device() out of the
+dev_replace lock range, also involing split the
+btrfs_rm_dev_replace_srcdev() function into remove and free parts.
 
-iD8DBQFUUe3QMkyGM64RGpERAn5dAJ9Bflg06EYS4kOlu61x85c9/yebngCgunfu
-DTpcyDmWwKf5dM0uK7tzheY=
-=y9b0
------END PGP SIGNATURE-----
+Now only btrfs_rm_dev_replace_remove_srcdev() is called in dev_replace
+lock range, and kobj_{add/rm} and btrfs_rm_dev_replace_free_srcdev() are
+called out of the lock range.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/dev-replace.c | 11 ++++++-----
+ fs/btrfs/volumes.c     | 10 ++++++++--
+ fs/btrfs/volumes.h     |  6 ++++--
+ 3 files changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 6f662b3..6e3e885 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -571,15 +571,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
+ 	fs_info->fs_devices->rw_devices++;
+ 
+-	/* replace the sysfs entry */
+-	btrfs_kobj_rm_device(fs_info, src_device);
+-	btrfs_kobj_add_device(fs_info, tgt_device);
+-
+ 	btrfs_dev_replace_unlock(dev_replace);
+ 
+ 	btrfs_rm_dev_replace_blocked(fs_info);
+ 
+-	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
++	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
+ 
+ 	btrfs_rm_dev_replace_unblocked(fs_info);
+ 
+@@ -594,6 +590,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 	mutex_unlock(&uuid_mutex);
+ 
++	/* replace the sysfs entry */
++	btrfs_kobj_rm_device(fs_info, src_device);
++	btrfs_kobj_add_device(fs_info, tgt_device);
++	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
++
+ 	/* write back the superblocks */
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (!IS_ERR(trans))
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d47289c..0192051 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1800,8 +1800,8 @@ error_undo:
+ 	goto error_brelse;
+ }
+ 
+-void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+-				 struct btrfs_device *srcdev)
++void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
++					struct btrfs_device *srcdev)
+ {
+ 	struct btrfs_fs_devices *fs_devices;
+ 
+@@ -1829,6 +1829,12 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+ 
+ 	if (srcdev->bdev)
+ 		fs_devices->open_devices--;
++}
++
++void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
++				      struct btrfs_device *srcdev)
++{
++	struct btrfs_fs_devices *fs_devices = srcdev->fs_devices;
+ 
+ 	call_rcu(&srcdev->rcu, free_device);
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 08980fa..4cc00e6 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -448,8 +448,10 @@ void btrfs_init_devices_late(struct btrfs_fs_info *fs_info);
+ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info);
+ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+ 			struct btrfs_fs_info *fs_info);
+-void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+-				 struct btrfs_device *srcdev);
++void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
++					struct btrfs_device *srcdev);
++void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
++				      struct btrfs_device *srcdev);
+ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+ 				      struct btrfs_device *tgtdev);
+ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+-- 
+2.1.2
 

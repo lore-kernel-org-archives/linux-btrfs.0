@@ -1,39 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:43554 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754579AbaJ3SEu convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 14:04:50 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: RAID1 fails to recover chunk tree
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <54523D86.5040906@gmail.com>
-Date: Thu, 30 Oct 2014 12:04:48 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <58060F93-3CB7-4575-9AF7-59DAF895CE7B@colorremedies.com>
-References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com> <54517338.7090606@pobox.com> <54523D86.5040906@gmail.com>
-To: Zack Coffey <tech42.clickwir@gmail.com>
+Received: from 17.mo1.mail-out.ovh.net ([87.98.179.142]:60644 "EHLO
+	mo1.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1760856AbaJ3SrR convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Oct 2014 14:47:17 -0400
+Received: from mail636.ha.ovh.net (b6.ovh.net [213.186.33.56])
+	by mo1.mail-out.ovh.net (Postfix) with SMTP id 792E0FF98F9
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 19:37:34 +0100 (CET)
+From: Cyril Scetbon <cyril.scetbon@free.fr>
+Content-Type: text/plain; charset=us-ascii
+Subject: Quota question
+Message-Id: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr>
+Date: Thu, 30 Oct 2014 19:37:32 +0100
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-On Oct 30, 2014, at 7:30 AM, Zack Coffey <tech42.clickwir@gmail.com> wrote:
+At https://btrfs.wiki.kernel.org/index.php/Quota_support it's said that "Using btrfs subvolume delete will break qgroup unshared space usage". Does it mean that if the qgroup associated with the subvolume is attached to another qgroup, this other qgroup won't be able to correctly apply its quota ? If yes, is there a workaround for that ?
 
-> Rob, That second drive was immediately put to use elsewhere. I figured having only the metadata on that drive, it wouldn't matter. The data stayed single and wasn't part of the second drive, only the metadata was. I must not be capable of understanding why that wouldn't work.
+Thanks
+-- 
+Cyril SCETBON
 
-single profile means all devices get btrfs chunks. If you do something like:
-
-# mkfs.btfs /dev/sda
-
-By default you get data profile = single, and metadata profile = DUP. If you then
-
-# btrfs add /dev/sdb /mnt/btrfs
-# btrfs -mconvert=raid1  /mnt/btrfs
-
-you now have a volume that is data = single and metadata = raid1. The way the allocator works is that it will first allocate 1GiB data chunks to the device with the most free space remaining, so if that's /dev/sdb it will allocate 1GiB data chunks there until free space is the same for both sda and sdb. And once they have equal space btrfs allocates 1GiB data chunks alternating sda and sdb.
-
-Single profile doesn't mean only one device gets data chunks. Is that the misunderstanding?
-
-
-Chris Murphy

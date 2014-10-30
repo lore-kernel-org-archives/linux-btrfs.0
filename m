@@ -1,96 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:52990 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752271AbaJ3OX2 (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41786 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S934118AbaJ3PXG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 10:23:28 -0400
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
-	by mailout.nyi.internal (Postfix) with ESMTP id 2EE0820783
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 10:23:27 -0400 (EDT)
-Received: from [192.168.0.10] (unknown [87.115.91.188])
-	by mail.messagingengine.com (Postfix) with ESMTPA id A8D82C00016
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 10:23:26 -0400 (EDT)
-Message-ID: <1414679004.7867.39.camel@zarniwoop.blob>
-Subject: Re: Performance Issues
-From: Rob Spanton <rob@robspanton.com>
-Reply-To: rob@robspanton.com
-To: linux-btrfs@vger.kernel.org
-Date: Thu, 30 Oct 2014 14:23:24 +0000
-In-Reply-To: <541C6BD1.7080604@fb.com>
-References: <1411129114.1811.7.camel@zarniwoop.blob>
-		 <541C464F.3030600@fb.com> <1411145469.1601.2.camel@zarniwoop.blob>
-	 <541C6BD1.7080604@fb.com>
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
-	boundary="=-EbWJIPZOb8701gLnRsT7"
-Mime-Version: 1.0
+	Thu, 30 Oct 2014 11:23:06 -0400
+Date: Thu, 30 Oct 2014 11:23:05 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Zack Coffey <tech42.clickwir@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 fails to recover chunk tree
+Message-ID: <20141030152259.GJ17395@hungrycats.org>
+References: <544FFD52.6010604@gmail.com>
+ <5451699B.4020507@pobox.com>
+ <54517338.7090606@pobox.com>
+ <54523D86.5040906@gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="CxDuMX1Cv2n9FQfo"
+In-Reply-To: <54523D86.5040906@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-EbWJIPZOb8701gLnRsT7
-Content-Type: text/plain; charset="UTF-8"
+--CxDuMX1Cv2n9FQfo
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Hi Everyone,
+On Thu, Oct 30, 2014 at 09:30:46AM -0400, Zack Coffey wrote:
+> Rob, That second drive was immediately put to use elsewhere. I
+> figured having only the metadata on that drive, it wouldn't matter.
+> The data stayed single and wasn't part of the second drive, only the
+> metadata was. I must not be capable of understanding why that
+> wouldn't work.
+>=20
+> I thought all I was doing was removing a duplication of metadata and
+> the worst I would see is a message complaining about a drive
+> missing.=20
 
-I wrote:
-> I have a particularly uncomplicated setup (a desktop PC with a hard
-> disk) and I'm seeing particularly slow performance from btrfs.  A `git
-> status` in the linux source tree takes about 46 seconds after dropping
-> caches, whereas on other machines using ext4 this takes about 13s.  My
-> mail client (evolution) also seems to perform particularly poorly on
-> this setup, and my hunch is that it's spending a lot of time waiting on
-> the filesystem.
+There is a check at mount time that counts the number of disks and the
+worst-case maximum number of missing disks for each profile.  That count
+says "you have data in single profile, and single profile cannot lose
+any disks, and you are missing one disk."  It doesn't check _where_
+the data is on the disks.
 
-So I recently upgraded my desktop (now an i7-5820K on a Gigabyte
-GA-X99-UD4 motherboard with 32GB of RAM), and moved the disk with this
-problematic filesystem across to it.  With this new setup, I still get
-reasonably poor performance: the git status now takes ~26 seconds after
-dropping caches.  (Although note that this git repo has had been
-repacked since I did the above benchmarks.)
+The check prevents read-write mounting (and therefore balance, adding or
+removing drives, resizing the filesystem so you can move the data to a
+new LV on the same disk, btrfs send/receive, and any other way you could
+fix the filesystem in-place).  As far as I know there is currently no
+way to recover from this without writing some new code.  Your filesystem
+is now permanently read-only.
 
-I have also had the disk out on a USB-to-SATA adapter plugged into my
-laptop, and seen similarly poor results.
+If you wrote anything to the filesystem while the second disk was present,
+it could be written to the second disk.  Since your data profile was
+single, there would be only one copy of that new data on the disk that
+is now missing.
 
-So I've put the output of this command:
+You should be able to retrieve most of the data.  Mount the filesystem
+read-only (options ro,degraded) and rsync the surviving data to a
+new filesystem.  If you have default options with checksums enabled,
+rsync will report I/O errors on the missing blocks, so you can make a
+note of which files are affected and must be replaced from backups.
 
-        trace-cmd record -T -e sched:sched_switch -o /tmp/trace.dat git sta=
-tus
+> Never thought the data or access to it could be compromised
+> in what seemed to be a simple situation.
 
-Here: http://robspanton.com/2014/10/trace.dat.xz
+The simple situation is when *all* your chunks are RAID1, not just the
+metadata.  RAID1 does work--I've had to RMA two disks in two btrfs RAID1
+arrays _this week alone_ and btrfs is fine with them.
 
-If anyone has any further ideas about how to remedy this situation,
-please do let me know!
+You have a filesystem with a mixture of chunk profiles with different
+redundancy levels.  That situation is not simple and will not tolerate
+a missing disk.  Your filesystem is now probably genuinely broken, and
+you have probably lost some data forever.  Redundant metadata will allow
+you to determine with certainty what data you have lost.
 
-Cheers,
+> Anand, I get the same output with mount -o recovery,ro.
+>=20
+> On 10/29/2014 7:07 PM, Robert White wrote:
+> >On 10/29/2014 03:26 PM, Robert White wrote:
+> >>On 10/28/2014 01:32 PM, Zack Coffey wrote:
+> >>>Made a RAID1 with another drive of just the metadata. Was in
+> >>>that state for less than 12 hours-ish, removed the second drive and
+> >>>now cannot get to any data on the original drive. Data remained single
+> >>>while only metadata was RAID1.
+> >>
+> >>I don't know all the details but I would _never_ suspect the action you
+> >>described to _not_ hose up the file system.
+> >>You need to put the second drive back in and then coerce all the data
+> >>back to the first drive. "btrfs device delete" is what you want. You
+> >>_may_ need to switch the metadata back to "single" before the delete.
+> >>
+> >>--Rob.
+> >>
+> >
+> >P.S. I am/was assuming you said "removed the second drive" in the
+> >normal sense of disconnecting and removing, as opposed to the
+> >semantic action of deleting the device element.
+> >
+> >If you did do the btrfs delete, you might have needed to do a
+> >"btrfs filesystem sync" to make sure that all the transactions
+> >involved in the delete were finished and flushed to disk.
+> >
+> >Either way, physically reattaching "the second drive" is your
+> >first step; presuming again that you haven't destroyed the
+> >partition or re-used the drive etc. If the partition will mount
+> >once the second drive is in place, do the delete operation (if you
+> >didn't) and then the sync (to make sure that everything has
+> >finished migrating etc). Then you should be able to re-remove the
+> >physical drive.
+> >
+> >If you already did the delete and sync as part of what you meant
+> >by "remove" then sorry for the interruption of your misery. 8-)
+> >
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Rob
-
-(Not subscribed to this list, so please CC me.)
-
-
---=-EbWJIPZOb8701gLnRsT7
+--CxDuMX1Cv2n9FQfo
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAABAgAGBQJUUkndAAoJELnJXuxeMxduW4MP/0/iJBGbNqCaiQ01byNcGwtY
-nTd3pFaL442lG/cX6iplxmr7HXJA1zbc+bJM7XBpqXW7FpMn1dFjszD1KXA6tF2T
-FHYQLhHQeRi7GdVBTOry0eVdaascUaK2kmRX3U4qwvMJWVJ1bZAcuMgW0PSMecK9
-jVNTui2N5ezxt70nTPfycPYJsjpbXWwz+CBhtxpZZa4XcEgApPpyIyEUYppT0oaO
-ZZuR7dVugBuiQyLhGQDCOJ30X2PHJNZk+Uir37/rBEQkifCTUF+7FukIMekbYdp2
-h7ytDYi/MUTsGLebt1LCVAxI0pz80rSZRvSOViSJ2WubO5qGvGjbCwS4YzIFh7b5
-zdqijdMdCa7gawP4xX1b8LzmdhAn3Parc/h2004R1QbXFga/Dh8PuT0a3aEjghuY
-8bL/E8LXWRr5e4ZW2ZOFsDMJowOS0D1LGlohb1F17biDzD9FdKGB249RN4guV1oj
-uaSxB26t5QN4K7WfffsvppQwKcBgtLkg7YqzlMzZvUVJ6adsF/lSg37CQ2Bd1miA
-cqTVzJBx4Q3b4dTj0uMU5aaQU3JIFX4M0gMdneZgMylppCp7Axrs2m0hp9y1dFPq
-YWFEpHUchVYAMD+20HTACVLVsFu1LV7jlemZDS3SnJF95NkSozFAhjl4gZezFLBt
-vFU/QkEU6IQDiIeTdn6O
-=73qM
+iEYEARECAAYFAlRSV9IACgkQgfmLGlazG5wWpwCdGSBraIprkffvYVKbC38MZgNd
+egMAoKgZOW8A0Tr2KmY9Pk2ulgJbwVwd
+=3mJL
 -----END PGP SIGNATURE-----
 
---=-EbWJIPZOb8701gLnRsT7--
-
+--CxDuMX1Cv2n9FQfo--

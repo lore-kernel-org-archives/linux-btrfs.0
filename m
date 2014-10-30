@@ -1,253 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51395 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758493AbaJ3Jjw (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:31664 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933566AbaJ3VDW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 05:39:52 -0400
-Date: Thu, 30 Oct 2014 17:39:42 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm to
- reduce ENOSPC caused by unbalanced data/metadata allocation.
-Message-ID: <20141030093941.GC26064@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1414031871-10859-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20141024110624.GB32526@localhost.localdomain>
- <544D8F44.8050706@cn.fujitsu.com>
- <20141027081456.GD27271@localhost.localdomain>
- <544E040A.3090407@cn.fujitsu.com>
- <20141029142917.GA9547@localhost.localdomain>
- <54518D1F.9040008@cn.fujitsu.com>
- <5451B48A.4080508@cn.fujitsu.com>
+	Thu, 30 Oct 2014 17:03:22 -0400
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9UL3Exg005212
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 14:03:21 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1qbsnrrryx-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 14:03:21 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: move read only block groups onto their own list
+Date: Thu, 30 Oct 2014 17:03:17 -0400
+Message-ID: <1414702997-13290-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <5451B48A.4080508@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 30, 2014 at 11:46:18AM +0800, Qu Wenruo wrote:
-> 
-> -------- Original Message --------
-> Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm
-> to reduce ENOSPC caused by unbalanced data/metadata allocation.
-> From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> To: bo.li.liu@oracle.com
-> Date: 2014年10月30日 08:58
-> >
-> >-------- Original Message --------
-> >Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation
-> >algorithm to reduce ENOSPC caused by unbalanced data/metadata
-> >allocation.
-> >From: Liu Bo <bo.li.liu@oracle.com>
-> >To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> >Date: 2014年10月29日 22:29
-> >>On Mon, Oct 27, 2014 at 04:36:26PM +0800, Qu Wenruo wrote:
-> >>>-------- Original Message --------
-> >>>Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm
-> >>>to reduce ENOSPC caused by unbalanced data/metadata allocation.
-> >>>From: Liu Bo <bo.li.liu@oracle.com>
-> >>>To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> >>>Date: 2014年10月27日 16:14
-> >>>>On Mon, Oct 27, 2014 at 08:18:12AM +0800, Qu Wenruo wrote:
-> >>>>>-------- Original Message --------
-> >>>>>Subject: Re: [PATCH] btrfs: Enhance btrfs chunk allocation algorithm
-> >>>>>to reduce ENOSPC caused by unbalanced data/metadata allocation.
-> >>>>>From: Liu Bo <bo.li.liu@oracle.com>
-> >>>>>To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> >>>>>Date: 2014年10月24日 19:06
-> >>>>>>On Thu, Oct 23, 2014 at 10:37:51AM +0800, Qu Wenruo wrote:
-> >>>>>>>When btrfs allocate a chunk, it will try to alloc up
-> >>>>>>>to 1G for data and
-> >>>>>>>256M for metadata, or 10% of all the writeable space
-> >>>>>>>if there is enough
-> >>>>>>10G for data,
-> >>>>>>         if (type & BTRFS_BLOCK_GROUP_DATA) {
-> >>>>>>                 max_stripe_size = 1024 * 1024 * 1024;
-> >>>>>>                 max_chunk_size = 10 * max_stripe_size;
-> >>>>>Oh, sorry, 10G is right.
-> >>>>>
-> >>>>>Any other comments?
-> >>>>>
-> >>>>>Thanks,
-> >>>>>Qu
-> >>>>>
-> >>>>>
-> >>>>>>        ...
-> >>>>>>
-> >>>>>>thanks,
-> >>>>>>-liubo
-> >>>>>>
-> >>>>>>>space for the stripe on device.
-> >>>>>>>
-> >>>>>>>However, when we run out of space, this allocation may
-> >>>>>>>cause unbalanced
-> >>>>>>>chunk allocation.
-> >>>>>>>For example, there are only 1G unallocated space, and request for
-> >>>>>>>allocate DATA chunk is sent, and all the space will be
-> >>>>>>>allocated as data
-> >>>>>>>chunk, making later metadata chunk alloc request
-> >>>>>>>unable to handle, which
-> >>>>>>>will cause ENOSPC.
-> >>>>>>>This is the one of the common complains from end users
-> >>>>>>>about why ENOSPC
-> >>>>>>>happens but there is still available space.
-> >>>>Okay, I don't think this is the common case, AFAIK, the most
-> >>>>ENOSPC is caused
-> >>>>by our runtime worst case metadata reservation problem.
-> >>>>
-> >>>>btrfs has been inclined to create a fairly large metadata
-> >>>>chunk (1G) in its
-> >>>>initial mkfs stage and 256M metadata chunk is also a very large one.
-> >>>>
-> >>>>As of your below example, yes, we don't have space for metadata
-> >>>>allocation, but do we really need to allocate a new one?
-> >>>>
-> >>>>Or am I missing something?
-> >>>>
-> >>>>thanks,
-> >>>>-liubo
-> >>>Yes that's true this is not the common cause, but at least this
-> >>>patch may make the percentage
-> >>>of 'df' command reach as close to 100% as possible before hitting
-> >>>ENOSPC under normal operations.
-> >>>(If not using balance)
-> >>>
-> >>>And some case like the following mail may be improved by the patch:
-> >>>https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36097.html
-> >>>
-> >>>I understand that most of the cases that a lot of free data space
-> >>>and no metadata space is caused by
-> >>>create and then delete large files, but if the last giga bytes can
-> >>>be allocated more carefully,
-> >>>at least the available bytes of 'df'  command should be reduced
-> >>>before hit ENOSPC.
-> >>>
-> >>>How do you think about it?
-> >>Sorry for the late reply.
-> >>
-> >>I just notice that a recent commit has fixed this problem.
-> >>
-> >>commit 47ab2a6c689913db23ccae38349714edf8365e0a
-> >>Author: Josef Bacik <jbacik@fb.com>
-> >>Date:   Thu Sep 18 11:20:02 2014 -0400
-> >>
-> >>     Btrfs: remove empty block groups automatically
-> >>     thanks,
-> >>-liubo
-> >Oh, that's much better than my patch.
-> >
-> >So please ignore my patch.
-> >
-> >Thanks,
-> >Qu
-> Wait a second,
-> that's true block group auto-reclaim can deal with some cases,
-> but it will not improve the vanilla 'df' used percentage before hit ENOSPC.
-> 
-> The old 10%/10G will still hit the ENOSPC below 90% used space if
-> using 100G disk.
-> This patch should improve it to above 95% or even above 99%.
-> 
-> The old behavior may leave a bad image on normal users that btrfs
-> can't use space effectively.
-> 
-> So I still consider the patch has positive effect on btrfs.
+Our gluster boxes were spending lots of time in statfs because our fs'es are
+huge.  The problem is statfs loops through all of the block groups looking for
+read only block groups, and when you have several terabytes worth of data that
+ends up being a lot of block groups.  Move the read only block groups onto a
+read only list and only proces that list in
+btrfs_account_ro_block_groups_free_space to reduce the amount of churn.  Thanks,
 
-Okay, I buy this.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/ctree.h       |  4 ++++
+ fs/btrfs/extent-tree.c | 36 +++++++++++++-----------------------
+ 2 files changed, 17 insertions(+), 23 deletions(-)
 
-> 
-> Thanks,
-> Qu
-> >>
-> >>>Thanks,
-> >>>Qu
-> >>>>>>>This patch will try not to alloc chunk which is more
-> >>>>>>>than half of the
-> >>>>>>>unallocated space, making the last space more balanced
-> >>>>>>>at a small cost
-> >>>>>>>of more fragmented chunk at the last 1G.
-> >>>>>>>
-> >>>>>>>Some easy example:
-> >>>>>>>Preallocate 17.5G on a 20G empty btrfs fs:
-> >>>>>>>[Before]
-> >>>>>>>  # btrfs fi show /mnt/test
-> >>>>>>>Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
-> >>>>>>>    Total devices 1 FS bytes used 17.50GiB
-> >>>>>>>    devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
-> >>>>>>>All space is allocated. No space later metadata space.
-> >>>>>>>
-> >>>>>>>[After]
-> >>>>>>>  # btrfs fi show /mnt/test
-> >>>>>>>Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
-> >>>>>>>    Total devices 1 FS bytes used 17.50GiB
-> >>>>>>>    devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
-> >>>>>>>About 230M is still available for later metadata allocation.
-> >>>>>>>
-> >>>>>>>Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> >>>>>>>---
-> >>>>>>>  fs/btrfs/volumes.c | 18 ++++++++++++++++++
-> >>>>>>>  1 file changed, 18 insertions(+)
-> >>>>>>>
-> >>>>>>>diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> >>>>>>>index d47289c..fa8de79 100644
-> >>>>>>>--- a/fs/btrfs/volumes.c
-> >>>>>>>+++ b/fs/btrfs/volumes.c
-> >>>>>>>@@ -4240,6 +4240,7 @@ static int
-> >>>>>>>__btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
-> >>>>>>>      int ret;
-> >>>>>>>      u64 max_stripe_size;
-> >>>>>>>      u64 max_chunk_size;
-> >>>>>>>+    u64 total_avail_space = 0;
-> >>>>>>>      u64 stripe_size;
-> >>>>>>>      u64 num_bytes;
-> >>>>>>>      u64 raid_stripe_len = BTRFS_STRIPE_LEN;
-> >>>>>>>@@ -4352,10 +4353,27 @@ static int
-> >>>>>>>__btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
-> >>>>>>>          devices_info[ndevs].max_avail = max_avail;
-> >>>>>>>          devices_info[ndevs].total_avail = total_avail;
-> >>>>>>>          devices_info[ndevs].dev = device;
-> >>>>>>>+        total_avail_space += total_avail;
-> >>>>>>>          ++ndevs;
-> >>>>>>>      }
-> >>>>>>>      /*
-> >>>>>>>+     * Try not to occupy more than half of the unallocated space.
-> >>>>>>>+     * When run short of space and alloc all the space to
-> >>>>>>>+     * data/metadata will cause ENOSPC to be
-> >>>>>>>triggered more easily.
-> >>>>>>>+     *
-> >>>>>>>+     * And since the minimum chunk size is 16M, the
-> >>>>>>>half-half will cause
-> >>>>>>>+     * 16M allocated from 20M available space and
-> >>>>>>>reset 4M will not be
-> >>>>>>>+     * used ever. In that case(16~32M), allocate all directly.
-> >>>>>>>+     */
-> >>>>>>>+    if (total_avail_space < 32 * 1024 * 1024 &&
-> >>>>>>>+        total_avail_space > 16 * 1024 * 1024)
-> >>>>>>>+        max_chunk_size = total_avail_space;
-> >>>>>>>+    else
-> >>>>>>>+        max_chunk_size = min(total_avail_space / 2,
-> >>>>>>>max_chunk_size);
-> >>>>>>>+    max_chunk_size = min(total_avail_space / 2, max_chunk_size);
-              ^^^^^^^^
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d557264e..438f087 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1170,6 +1170,7 @@ struct btrfs_space_info {
+ 	struct percpu_counter total_bytes_pinned;
+ 
+ 	struct list_head list;
++	struct list_head ro_bgs;
+ 
+ 	struct rw_semaphore groups_sem;
+ 	/* for block groups in our same type */
+@@ -1305,6 +1306,9 @@ struct btrfs_block_group_cache {
+ 
+ 	/* For delayed block group creation or deletion of empty block groups */
+ 	struct list_head bg_list;
++
++	/* For read-only block groups */
++	struct list_head ro_list;
+ };
+ 
+ /* delayed seq elem */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0d599ba..8d64701 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3518,6 +3518,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	found->chunk_alloc = 0;
+ 	found->flush = 0;
+ 	init_waitqueue_head(&found->wait);
++	INIT_LIST_HEAD(&found->ro_bgs);
+ 
+ 	ret = kobject_init_and_add(&found->kobj, &space_info_ktype,
+ 				    info->space_info_kobj, "%s",
+@@ -8525,6 +8526,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	    min_allocable_bytes <= sinfo->total_bytes) {
+ 		sinfo->bytes_readonly += num_bytes;
+ 		cache->ro = 1;
++		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
+ 		ret = 0;
+ 	}
+ out:
+@@ -8579,15 +8581,20 @@ int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+ 
+ /*
+  * helper to account the unused space of all the readonly block group in the
+- * list. takes mirrors into account.
++ * space_info. takes mirrors into account.
+  */
+-static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 free_bytes = 0;
+ 	int factor;
+ 
+-	list_for_each_entry(block_group, groups_list, list) {
++	/* It's df, we don't care if it's racey */
++	if (list_empty(&sinfo->ro_bgs))
++		return 0;
++
++	spin_lock(&sinfo->lock);
++	list_for_each_entry(block_group, &sinfo->ro_bgs, list) {
+ 		spin_lock(&block_group->lock);
+ 
+ 		if (!block_group->ro) {
+@@ -8608,26 +8615,6 @@ static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
+ 
+ 		spin_unlock(&block_group->lock);
+ 	}
+-
+-	return free_bytes;
+-}
+-
+-/*
+- * helper to account the unused space of all the readonly block group in the
+- * space_info. takes mirrors into account.
+- */
+-u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+-{
+-	int i;
+-	u64 free_bytes = 0;
+-
+-	spin_lock(&sinfo->lock);
+-
+-	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+-		if (!list_empty(&sinfo->block_groups[i]))
+-			free_bytes += __btrfs_get_ro_block_group_free_space(
+-						&sinfo->block_groups[i]);
+-
+ 	spin_unlock(&sinfo->lock);
+ 
+ 	return free_bytes;
+@@ -8647,6 +8634,7 @@ void btrfs_set_block_group_rw(struct btrfs_root *root,
+ 		    cache->bytes_super - btrfs_block_group_used(&cache->item);
+ 	sinfo->bytes_readonly -= num_bytes;
+ 	cache->ro = 0;
++	list_del_init(&cache->ro_list);
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&sinfo->lock);
+ }
+@@ -9016,6 +9004,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	INIT_LIST_HEAD(&cache->list);
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+ 	INIT_LIST_HEAD(&cache->bg_list);
++	INIT_LIST_HEAD(&cache->ro_list);
+ 	btrfs_init_free_space_ctl(cache);
+ 
+ 	return cache;
+@@ -9425,6 +9414,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	 * are still on the list after taking the semaphore
+ 	 */
+ 	list_del_init(&block_group->list);
++	list_del_init(&block_group->ro_list);
+ 	if (list_empty(&block_group->space_info->block_groups[index])) {
+ 		kobj = block_group->space_info->block_group_kobjs[index];
+ 		block_group->space_info->block_group_kobjs[index] = NULL;
+-- 
+1.8.3.1
 
-Why another one?  This won't make it use all space within [16M, 32M].
-
-thanks,
--liubo
-
-> >>>>>>>+
-> >>>>>>>+    /*
-> >>>>>>>       * now sort the devices by hole size / available space
-> >>>>>>>       */
-> >>>>>>>      sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-> >>>>>>>-- 
-> >>>>>>>2.1.2
-> >>>>>>>
-> >>>>>>>-- 
-> >>>>>>>To unsubscribe from this list: send the line
-> >>>>>>>"unsubscribe linux-btrfs" in
-> >>>>>>>the body of a message to majordomo@vger.kernel.org
-> >>>>>>>More majordomo info at http://vger.kernel.org/majordomo-info.html
-> >
-> 

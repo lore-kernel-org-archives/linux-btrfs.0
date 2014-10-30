@@ -1,74 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51131 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17729 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756515AbaJ3CqO (ORCPT
+	with ESMTP id S1751127AbaJ3GeJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Oct 2014 22:46:14 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s9U2k4Bw032459
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 10:46:04 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+	Thu, 30 Oct 2014 02:34:09 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs: skip mounted fs when deal with umounted ones for fi show
-Date: Thu, 30 Oct 2014 10:44:50 +0800
-Message-ID: <1414637090-4476-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1414637090-4476-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1414637090-4476-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+CC: <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: Fix the argument requirement for '--subvol-extents'
+Date: Thu, 30 Oct 2014 14:34:06 +0800
+Message-ID: <1414650846-23767-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stalling problems may happen when exec balance & fi show cmds concurrently.
+The following commit changed the argument requirement for
+'--subvol-extents', which causes it to call arg_strtou64() on NULL,
+resulting a segfault.
+d34cbe76 btrfs-progs: check: do not require argument for --subvol-extents
 
-With the following commit:
-        commit 915902c500
-        btrfs-progs: fix device missing of btrfs fi show with seed devices
+This patch revert the patch and change the help string and man page to
+make it no longer confusing.
 
-The fi show cmd will bother the mounted fs when only umounted fs should
-be handled after @btrfs_can_kernel() has finished showing all mounted ones.
-
-We could skip the mounted fs after @btrfs_can_kernel() is done, then tasks
-keeps going on mounted fs while fi show continues on umounted ones separately.
-
-Reported-by: Petr Janecek <janecek@ucw.cz>
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-filesystem.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ Documentation/btrfs-check.txt | 2 ++
+ cmds-check.c                  | 4 ++--
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 6437e57..67fe52b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -53,6 +53,15 @@ struct seen_fsid {
+diff --git a/Documentation/btrfs-check.txt b/Documentation/btrfs-check.txt
+index 8a8073f..821bfc9 100644
+--- a/Documentation/btrfs-check.txt
++++ b/Documentation/btrfs-check.txt
+@@ -32,6 +32,8 @@ create a new CRC tree.
+ create a new extent tree.
+ --check-data-csum::
+ verify checkums of data blocks.
++--subvol-extents <subvolid>::
++show extent state for a subvolume.
  
- static struct seen_fsid *seen_fsid_hash[SEEN_FSID_HASH_SIZE] = {NULL,};
+ EXIT STATUS
+ -----------
+diff --git a/cmds-check.c b/cmds-check.c
+index 2a5f823..923fb10 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -7544,7 +7544,7 @@ static struct option long_options[] = {
+ 	{ "init-extent-tree", 0, NULL, 0 },
+ 	{ "check-data-csum", 0, NULL, 0 },
+ 	{ "backup", 0, NULL, 0 },
+-	{ "subvol-extents", no_argument, NULL, 'E' },
++	{ "subvol-extents", 1, NULL, 'E' },
+ 	{ "qgroup-report", 0, NULL, 'Q' },
+ 	{ NULL, 0, NULL, 0}
+ };
+@@ -7560,7 +7560,7 @@ const char * const cmd_check_usage[] = {
+ 	"--init-extent-tree          create a new extent tree",
+ 	"--check-data-csum           verify checkums of data blocks",
+ 	"--qgroup-report             print a report on qgroup consistency",
+-	"--subvol-extents            print subvolume extents and sharing state",
++	"--subvol-extents <subvolid> print subvolume extents and sharing state",
+ 	NULL
+ };
  
-+static int is_seen_fsid(u8 *fsid)
-+{
-+	u8 hash = fsid[0];
-+	int slot = hash % SEEN_FSID_HASH_SIZE;
-+	struct seen_fsid *seen = seen_fsid_hash[slot];
-+
-+	return seen ? 1 : 0;
-+}
-+
- static int add_seen_fsid(u8 *fsid)
- {
- 	u8 hash = fsid[0];
-@@ -763,6 +772,10 @@ static int search_umounted_fs_uuids(struct list_head *all_uuids,
- 			ret = 1;
- 		}
- 
-+		/* skip all fs already shown as mounted fs */
-+		if (is_seen_fsid(cur_fs->fsid))
-+			continue;
-+
- 		fs_copy = malloc(sizeof(*fs_copy));
- 		if (!fs_copy) {
- 			ret = -ENOMEM;
 -- 
-1.8.1.4
+2.1.2
 

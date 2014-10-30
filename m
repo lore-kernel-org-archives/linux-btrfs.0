@@ -1,134 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:41786 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:44140 "EHLO
 	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S934118AbaJ3PXG (ORCPT
+	by vger.kernel.org with ESMTP id S1759739AbaJ3QAF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 11:23:06 -0400
-Date: Thu, 30 Oct 2014 11:23:05 -0400
+	Thu, 30 Oct 2014 12:00:05 -0400
+Date: Thu, 30 Oct 2014 12:00:04 -0400
 From: Zygo Blaxell <zblaxell@furryterror.org>
-To: Zack Coffey <tech42.clickwir@gmail.com>
+To: luvar@plaintext.sk
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: RAID1 fails to recover chunk tree
-Message-ID: <20141030152259.GJ17395@hungrycats.org>
-References: <544FFD52.6010604@gmail.com>
- <5451699B.4020507@pobox.com>
- <54517338.7090606@pobox.com>
- <54523D86.5040906@gmail.com>
+Subject: Re: btrfs deduplication and linux cache management
+Message-ID: <20141030160004.GK17395@hungrycats.org>
+References: <1589590871.231414660858286.JavaMail.root@shiva>
+ <650272300.271414661167523.JavaMail.root@shiva>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="CxDuMX1Cv2n9FQfo"
-In-Reply-To: <54523D86.5040906@gmail.com>
+	protocol="application/pgp-signature"; boundary="yr6OvWOSyJed8q4v"
+In-Reply-To: <650272300.271414661167523.JavaMail.root@shiva>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---CxDuMX1Cv2n9FQfo
+--yr6OvWOSyJed8q4v
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Oct 30, 2014 at 09:30:46AM -0400, Zack Coffey wrote:
-> Rob, That second drive was immediately put to use elsewhere. I
-> figured having only the metadata on that drive, it wouldn't matter.
-> The data stayed single and wasn't part of the second drive, only the
-> metadata was. I must not be capable of understanding why that
-> wouldn't work.
+On Thu, Oct 30, 2014 at 10:26:07AM +0100, luvar@plaintext.sk wrote:
+> Hi,
+> I want to ask, if deduplicated file content will be cached in linux kerne=
+l just once for two deduplicated files.
 >=20
-> I thought all I was doing was removing a duplication of metadata and
-> the worst I would see is a message complaining about a drive
-> missing.=20
+> To explain in deep:
+>  - I use btrfs for whole system with few subvolumes with some compression=
+ on some subvolumes.
+>  - I have two directories with eclipse SDK with slightly differences (sam=
+e version, different config)
+>  - I assume that given directories is deduplicated and so two eclipse ins=
+tallations take place on hdd like one would (in rough estimation)
+>  - I will start one of given eclipse
+>  - linux kernel will cache all opened files during start of eclipse (I ha=
+ve enough free ram)
+>  - I am just happy stupid linux user:
+>     1. will kernel cache file content after decompression? (I think yes)
+>     2. cached data will be in VFS layer or in block device layer?
 
-There is a check at mount time that counts the number of disks and the
-worst-case maximum number of missing disks for each profile.  That count
-says "you have data in single profile, and single profile cannot lose
-any disks, and you are missing one disk."  It doesn't check _where_
-the data is on the disks.
+My guess based on behavior is the VFS layer.  See below.
 
-The check prevents read-write mounting (and therefore balance, adding or
-removing drives, resizing the filesystem so you can move the data to a
-new LV on the same disk, btrfs send/receive, and any other way you could
-fix the filesystem in-place).  As far as I know there is currently no
-way to recover from this without writing some new code.  Your filesystem
-is now permanently read-only.
+>  - When I will lunch second eclipse (different from first, but deduplicat=
+ed from first) after first one:
+>     1. will second start require less data to be read from HDD?
 
-If you wrote anything to the filesystem while the second disk was present,
-it could be written to the second disk.  Since your data profile was
-single, there would be only one copy of that new data on the disk that
-is now missing.
+No.
 
-You should be able to retrieve most of the data.  Mount the filesystem
-read-only (options ro,degraded) and rsync the surviving data to a
-new filesystem.  If you have default options with checksums enabled,
-rsync will report I/O errors on the missing blocks, so you can make a
-note of which files are affected and must be replaced from backups.
+>     2. will be metadata for second instance read from hdd? (I asume yes)
 
-> Never thought the data or access to it could be compromised
-> in what seemed to be a simple situation.
+Yes (how could it not?).
 
-The simple situation is when *all* your chunks are RAID1, not just the
-metadata.  RAID1 does work--I've had to RMA two disks in two btrfs RAID1
-arrays _this week alone_ and btrfs is fine with them.
+>     3. will be actual data read second time? (I hope not)
 
-You have a filesystem with a mixture of chunk profiles with different
-redundancy levels.  That situation is not simple and will not tolerate
-a missing disk.  Your filesystem is now probably genuinely broken, and
-you have probably lost some data forever.  Redundant metadata will allow
-you to determine with certainty what data you have lost.
+Unfortunately, yes.
 
-> Anand, I get the same output with mount -o recovery,ro.
->=20
-> On 10/29/2014 7:07 PM, Robert White wrote:
-> >On 10/29/2014 03:26 PM, Robert White wrote:
-> >>On 10/28/2014 01:32 PM, Zack Coffey wrote:
-> >>>Made a RAID1 with another drive of just the metadata. Was in
-> >>>that state for less than 12 hours-ish, removed the second drive and
-> >>>now cannot get to any data on the original drive. Data remained single
-> >>>while only metadata was RAID1.
-> >>
-> >>I don't know all the details but I would _never_ suspect the action you
-> >>described to _not_ hose up the file system.
-> >>You need to put the second drive back in and then coerce all the data
-> >>back to the first drive. "btrfs device delete" is what you want. You
-> >>_may_ need to switch the metadata back to "single" before the delete.
-> >>
-> >>--Rob.
-> >>
-> >
-> >P.S. I am/was assuming you said "removed the second drive" in the
-> >normal sense of disconnecting and removing, as opposed to the
-> >semantic action of deleting the device element.
-> >
-> >If you did do the btrfs delete, you might have needed to do a
-> >"btrfs filesystem sync" to make sure that all the transactions
-> >involved in the delete were finished and flushed to disk.
-> >
-> >Either way, physically reattaching "the second drive" is your
-> >first step; presuming again that you haven't destroyed the
-> >partition or re-used the drive etc. If the partition will mount
-> >once the second drive is in place, do the delete operation (if you
-> >didn't) and then the sync (to make sure that everything has
-> >finished migrating etc). Then you should be able to re-remove the
-> >physical drive.
-> >
-> >If you already did the delete and sync as part of what you meant
-> >by "remove" then sorry for the interruption of your misery. 8-)
-> >
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This is my test:
 
---CxDuMX1Cv2n9FQfo
+1.  Create a file full of compressible data that is big enough to take
+a few seconds to read from disk, but not too big to fit in RAM:
+
+	yes $(date) | head -c 500m > a
+
+2.  Create a "deduplicated" (shared extent) copy of same:
+
+	cp --reflink=3Dalways a b
+
+	(use filefrag -v to verify both files have same physical extents)
+
+3.  Drop caches
+
+	sync; sysctl vm.drop_caches=3D1
+
+4.  Time reading both files with cold and hot cache:
+
+	time cat a > /dev/null
+	time cat b > /dev/null
+	time cat a > /dev/null
+	time cat b > /dev/null
+
+Ideally, the first 'cat a' would load the file back from disk, so it
+will take a long time, and the other three would be very fast as the
+shared extent data would already be in RAM.
+
+That is what happens on 3.17.1:
+
+	time cat a > /dev/null
+	real    0m18.870s
+	user    0m0.017s
+	sys     0m3.432s
+
+	time cat b > /dev/null
+	real    0m16.931s
+	user    0m0.007s
+	sys     0m3.357s
+
+	time cat a > /dev/null
+	real    0m0.141s
+	user    0m0.001s
+	sys     0m0.136s
+
+	time cat b > /dev/null
+	real    0m0.121s
+	user    0m0.002s
+	sys     0m0.116s
+
+Above we see that reading 'b' the first time takes almost as long as 'a'.
+The second reads are cached, so they finish two orders of magnitude
+faster.
+
+That suggests that deduplicated extents are read and cached as entirely
+separate copies of the data.  The sys time for the first read of 'b'
+would imply separate decompression as well.
+
+Compare the above result with a hardlink, which might behave more like
+what we expect:
+
+	rm -f b
+	ln a b
+	sync; sysctl vm.drop_caches=3D1
+
+	time cat a > /dev/null
+	real    0m20.262s
+	user    0m0.010s
+	sys     0m3.376s
+
+	time cat b > /dev/null
+	real    0m0.125s
+	user    0m0.003s
+	sys     0m0.120s
+
+	time cat a > /dev/null
+	real    0m0.103s
+	user    0m0.004s
+	sys     0m0.097s
+
+	time cat b > /dev/null
+	real    0m0.098s
+	user    0m0.002s
+	sys     0m0.091s
+
+Above we clearly see that we read 'a' from disk only once, and use the
+cache three times.
+
+--yr6OvWOSyJed8q4v
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlRSV9IACgkQgfmLGlazG5wWpwCdGSBraIprkffvYVKbC38MZgNd
-egMAoKgZOW8A0Tr2KmY9Pk2ulgJbwVwd
-=3mJL
+iEYEARECAAYFAlRSYIQACgkQgfmLGlazG5x+jACeJp8yEa6Nhu94rM1GEjSUU/ks
+aJwAn1oO6gBATWyZfldh6nerYwpMZnYT
+=LEO1
 -----END PGP SIGNATURE-----
 
---CxDuMX1Cv2n9FQfo--
+--yr6OvWOSyJed8q4v--

@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54768 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:54774 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753365AbaKAM5x (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Nov 2014 08:57:53 -0400
-Date: Fri, 31 Oct 2014 20:18:45 +0000
+	with ESMTP id S1756389AbaKAM6Q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Nov 2014 08:58:16 -0400
+Date: Fri, 31 Oct 2014 16:35:01 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
 To: Rich Turner <rturner@storix.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: which subvolume is mounted?
-Message-ID: <20141031201844.GH907@carfax.org.uk>
+Message-ID: <20141031163501.GG907@carfax.org.uk>
 References: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="VkqCAaSJIySsbD6j"
+	protocol="application/pgp-signature"; boundary="zGQnqpIoxlsbsOfg"
 In-Reply-To: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---VkqCAaSJIySsbD6j
+--zGQnqpIoxlsbsOfg
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
@@ -31,10 +31,10 @@ ev/sda3 is mounted at each mount point (/, /var, /opt, /home)? i would have=
  expected to see the mount option used to define the subvolume (subvolid or=
  subvol option) in /proc/mounts.
 
-   I already answered this on IRC, but just for the record (and to
-test whether my mail is working): it's in /proc/self/mountinfo. The
-fourth field of each line is the location that the mountpoint came
-=66rom in the filesystem, which is what you're after.
+   It's in /proc/self/mountinfo -- look at the fourth field in the
+table, which is the subvolume within the FS. Completely non-obvious,
+I'm afraid, but at least it is there. (Apparently there were some
+problems with getting the information into /proc/mounts).
 
    Hugo.
 
@@ -85,29 +85,28 @@ fourth field of each line is the location that the mountpoint came
 =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
  =3D=3D=3D
   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Your problem is that you've got too much taste to be ---      =20
-                             a web developer                            =20
+          --- Great films about cricket:  Silly Point Break ---         =20
 
---VkqCAaSJIySsbD6j
+--zGQnqpIoxlsbsOfg
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJUU+6kAAoJEFheFHXiqx3krTYQAKMt2Y6Y6HOMLiF66VfOB0La
-fgzZaP1jAp1CY52Qu1K5ZX3+DaVmwEXXrODoxsujXO338tUGU6rwrWoZ+L3O3mmX
-vqLkBwgBRstx/o6lRP/tTVFTgACXtucA92GnEd883pxxePGHawy63qbh1TQsYPpZ
-t6IJyL9aof8QmUQmfqnv8YFI4t/FT/g+H0d48kLvejYmG4XRg+iFa6KrKu26MB1b
-KM2YMz//g7q2TmUD8VHAtGSo49O/7tyXY42ORLEgaTvJbCSfjEBK73STZu99dJMA
-Mod6qOyABrCvmyGzGVAA8cPC0gzUvJ3891oysp1Xovz2s37rN48N3KU1coxFOn2E
-j75oNxeHG6rDBnpy37hdP2YiYdS0hDa6kHo7fLC7Fk7Hk14fdLltCXyWe9DRxZUx
-MI8X7+uHXxQCmHoUGLDo+kRihGPhpN2VtX07UodZhCcQXkGF0MB6d7VOoc01M+ji
-QkZqso3Fa0xMBl/LaGQZUJK0xaZXNK9fpcTwwcGGdCG+en9hghSlUsytTdoZDaMi
-d+RMqYX2YD0ptEAPCWs9rXMLsjf2fgUGhUCqnEanrbd34WR6FslaW9L3AQ14MyW/
-NQDBWIoW2MFSdnCe32zvEPB7IpdyBbZJQwRpaHEBumEuGmNK+V6CwKGW2ZT5HIzh
-6VNuXzgi7RfR4CLvKFkT
-=wL8m
+iQIcBAEBAgAGBQJUU7o1AAoJEFheFHXiqx3kJzQP/i4WHvwNGZwuP6hjsIrLk1MX
+q/bsCus5tX2C+Y6kyYi9hBsBGMYEeAuXnxwlM+VoiMskh3w5ThnlKdIOF1QQ94IP
+2pO9d8NdSkmNluT6bMQun2vtzxYsgISwcjcftxx3zfXmf+eYMbEvTOcdX60BFj2L
+WfwDnkpfxFSV+ttdTyA3cORIWMAi7jrNsWGNVrxh5+bnq9G6dOtfrKb1fwVO34so
+qoaz5qCuhGl3uumRJJD8hWK2uzEt/DTBZdFwRAVhBnG08c86PrzNqbpJiRmXj85c
+a6qbTJEf0ayMw0RmJVkv/7l5X3mNRYwfBnkD8E5vuohI+RUL3W/0D7XrM+OCMA7h
+4ujENHooqLDPf5G3gaMwTfnYqp5U1DGtdHsO8x8t712lSvtQTCJPdJ6eUB2cChAe
+O109IwQknne6VhvBxiZv5WCn5S64PImR92eZrz1eikoZvgzK/wSS7sCLoAUGQr4g
+w2GIYrY8LfsYIBDn6hqhWikGaGzLvuVEdrPb292QI0TeFlJRZjAoonAJMVIE2x+t
+TkmXC9MyKKk06we8ien7Ty229pggiJUmF3K81qqyCecKn6c9UcDm5dU5w2lhgFHa
+jCCREfZAAi4wik8eIOIoS5YNPsPe3/SKcmHODfPVYzLVUXyNHMTX3ayFTFAWksFd
+KNtZ8s4E3UynUK5DUdoi
+=rpTA
 -----END PGP SIGNATURE-----
 
---VkqCAaSJIySsbD6j--
+--zGQnqpIoxlsbsOfg--

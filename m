@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ausc60ps301.us.dell.com ([143.166.148.206]:21844 "EHLO
-	ausc60ps301.us.dell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757338AbaJaK5N (ORCPT
+Received: from AUSXIPPC110.us.dell.com ([143.166.85.200]:6411 "EHLO
+	ausxippc110.us.dell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756393AbaJaK7U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Oct 2014 06:57:13 -0400
+	Fri, 31 Oct 2014 06:59:20 -0400
 From: <Lakshmi_Narayanan_Du@Dell.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <Lakshmi_Narayanan_Du@Dell.com>
-Date: Fri, 31 Oct 2014 03:56:15 -0700
+To: <r-btrfs@thefreemanclan.net>, <tobby@tobby.eu>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Fri, 31 Oct 2014 03:48:34 -0700
 Subject: request for info on the list of parameters to tweak for PCIe SSDs
-Message-ID: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD334A@BLRX7MCDC204.AMER.DELL.COM>
+Message-ID: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD333D@BLRX7MCDC204.AMER.DELL.COM>
+References: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD332E@BLRX7MCDC204.AMER.DELL.COM>
+In-Reply-To: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD332E@BLRX7MCDC204.AMER.DELL.COM>
 Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org

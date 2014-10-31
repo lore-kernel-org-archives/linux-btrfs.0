@@ -1,112 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54774 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:54788 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756389AbaKAM6Q (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Nov 2014 08:58:16 -0400
-Date: Fri, 31 Oct 2014 16:35:01 +0000
+	with ESMTP id S1752903AbaKAM7n (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Nov 2014 08:59:43 -0400
+Date: Fri, 31 Oct 2014 11:32:33 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Rich Turner <rturner@storix.com>
+To: Lakshmi_Narayanan_Du@Dell.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: which subvolume is mounted?
-Message-ID: <20141031163501.GG907@carfax.org.uk>
-References: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
+Subject: Re: request for info on the list of parameters to tweak for PCIe SSDs
+Message-ID: <20141031113233.GF907@carfax.org.uk>
+References: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD334A@BLRX7MCDC204.AMER.DELL.COM>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="zGQnqpIoxlsbsOfg"
-In-Reply-To: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
+	protocol="application/pgp-signature"; boundary="TeJTyD9hb8KJN2Jy"
+In-Reply-To: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD334A@BLRX7MCDC204.AMER.DELL.COM>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---zGQnqpIoxlsbsOfg
-Content-Type: text/plain; charset=utf-8
+--TeJTyD9hb8KJN2Jy
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Fri, Oct 31, 2014 at 09:23:27AM -0700, Rich Turner wrote:
-> let=E2=80=99s first assume the contents of /etc/fstab are either not used=
- or invalid in mounting the subvolumes. given the following =E2=80=98df=E2=
-=80=99 command, how do i know which subvolume of the btrfs filesystem on /d=
-ev/sda3 is mounted at each mount point (/, /var, /opt, /home)? i would have=
- expected to see the mount option used to define the subvolume (subvolid or=
- subvol option) in /proc/mounts.
+On Fri, Oct 31, 2014 at 03:56:15AM -0700, Lakshmi_Narayanan_Du@Dell.com wrote:
+> Hi,
+> 
+> Could you kindly help us with the list of all the btrfs  file system parameters , that can be tweaked for the best performance of the PCIe based SSDs ?
 
-   It's in /proc/self/mountinfo -- look at the fourth field in the
-table, which is the subvolume within the FS. Completely non-obvious,
-I'm afraid, but at least it is there. (Apparently there were some
-problems with getting the information into /proc/mounts).
+   It should detect the ssd option automatically, but it doesn't hurt
+to specify explicitly. You can use the discard option, but I would
+only recommend it if the SSD supports queued TRIM -- the older
+unqueued TRIM can cause massive performance problems.
+
+   You may want to use autodefrag, which has less of an effect than it
+would on a rotational disk, but will still help to keep the number of
+extents down. That will reduce the metadata overhead.
+
+   That's about all there is for btrfs-specific options, I think.
 
    Hugo.
 
-> # df
-> Filesystem     1K-blocks    Used Available Use% Mounted on
-> /dev/sda3        6839296 1698564   4903212  26% /
-> devtmpfs          501464       0    501464   0% /dev
-> tmpfs             507316       0    507316   0% /dev/shm
-> tmpfs             507316    6720    500596   2% /run
-> tmpfs             507316       0    507316   0% /sys/fs/cgroup
-> /dev/sda3        6839296 1698564   4903212  26% /var
-> /dev/sda3        6839296 1698564   4903212  26% /opt
-> /dev/sda3        6839296 1698564   4903212  26% /home
-> /dev/sda1         517868   93040    424828  18% /boot
->=20
-> # btrfs subvolume list -a --sort=3D+rootid /
-> ID 257 gen 7800 top level 5 path <FS_TREE>/root
-> ID 258 gen 4127 top level 5 path <FS_TREE>/home
-> ID 259 gen 7801 top level 5 path <FS_TREE>/var
-> ID 260 gen 7795 top level 5 path <FS_TREE>/opt
->=20
-> # uname -a
-> Linux turner11.storix 3.10.0-123.el7.x86_64 #1 SMP Mon May 5 11:16:57 EDT=
- 2014 x86_64 x86_64 x86_64 GNU/Linux
->=20
-> # btrfs --version
-> Btrfs v3.12
->=20
-> # btrfs fi show
-> Label: rhel_turner11  uuid: cd3c0e50-d726-44e2-9bfa-19b11614136a
-> 	Total devices 1 FS bytes used 1.62GiB
-> 	devid    1 size 6.52GiB used 2.24GiB path /dev/sda3
->=20
-> Btrfs v3.12
->=20
-> # btrfs fi df /
-> Data, single: total=3D1.98GiB, used=3D1.58GiB
-> System, single: total=3D4.00MiB, used=3D16.00KiB
-> Metadata, single: total=3D264.00MiB, used=3D36.03MiB
->=20
-
-
->=20
->=20
-
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- Great films about cricket:  Silly Point Break ---         =20
+                      --- make bzImage, not war ---                      
 
---zGQnqpIoxlsbsOfg
+--TeJTyD9hb8KJN2Jy
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJUU7o1AAoJEFheFHXiqx3kJzQP/i4WHvwNGZwuP6hjsIrLk1MX
-q/bsCus5tX2C+Y6kyYi9hBsBGMYEeAuXnxwlM+VoiMskh3w5ThnlKdIOF1QQ94IP
-2pO9d8NdSkmNluT6bMQun2vtzxYsgISwcjcftxx3zfXmf+eYMbEvTOcdX60BFj2L
-WfwDnkpfxFSV+ttdTyA3cORIWMAi7jrNsWGNVrxh5+bnq9G6dOtfrKb1fwVO34so
-qoaz5qCuhGl3uumRJJD8hWK2uzEt/DTBZdFwRAVhBnG08c86PrzNqbpJiRmXj85c
-a6qbTJEf0ayMw0RmJVkv/7l5X3mNRYwfBnkD8E5vuohI+RUL3W/0D7XrM+OCMA7h
-4ujENHooqLDPf5G3gaMwTfnYqp5U1DGtdHsO8x8t712lSvtQTCJPdJ6eUB2cChAe
-O109IwQknne6VhvBxiZv5WCn5S64PImR92eZrz1eikoZvgzK/wSS7sCLoAUGQr4g
-w2GIYrY8LfsYIBDn6hqhWikGaGzLvuVEdrPb292QI0TeFlJRZjAoonAJMVIE2x+t
-TkmXC9MyKKk06we8ien7Ty229pggiJUmF3K81qqyCecKn6c9UcDm5dU5w2lhgFHa
-jCCREfZAAi4wik8eIOIoS5YNPsPe3/SKcmHODfPVYzLVUXyNHMTX3ayFTFAWksFd
-KNtZ8s4E3UynUK5DUdoi
-=rpTA
+iQIcBAEBAgAGBQJUU3NRAAoJEFheFHXiqx3kqZ0QAIOHXPnPxfN0E6HS6VeWjvj6
+0J/NS8VI65TK/myD5vxkaeplj3/Dcyk9ehmLX36f+vTWfRHqi2aeNoJvOaK7J7UR
+N94aU8Ejf/jLdC/EuMnQw1rmaA+f/JcsLGwPMMdYzylhB/DdpHHhlDpDvqkYM/U9
+GqQdqR4U4Tsyiy7VWS7EHtAXoNDg35+QTbeg0toOmbOMSEwJxPB76F1n+MAil3kk
+j9rJ6FI7RoLBen2k8tthhAVRC/8xn82yjutbWtqDxMo/QTFNnoLj5/aB8NEMVZ7b
+f7b/U6V7ny7XHiGZyNR6Mk6o6enS0hAwx1XAhnknx1FYACepMAkXh1Scn4xiLuRO
+93weKUT9oy/NcCnxCXvdTtK1y4vitmLiVdSNJh1+/O7KldKs9avPMreo/Vc0/S1Z
+epSBLulUg17eUZlGubYUvx0pw+5Ay0ducMOmZd38FtDRjK/nY4471hQjJc7tSOLR
+v+LV1dd7VWZl+edwlgZTNXmoaD85+KFdl/E0m/yt6WQ25aCSJ4HDpPSUgXXxYjUg
+R/woGGQzeZy7MBuIjtxFR+efyJShvOQgQfn6EOsBcWGwRMT3Sewph4Y4C2L/ti2K
+D1PJmJdXlxCqJKFVtL98tPIcq8EWhXIB0KOqt5PloGInVaSuP0ETK8mB6fRQ68gh
+yTuFtqeEcQ/kqTa9BIDS
+=S8D4
 -----END PGP SIGNATURE-----
 
---zGQnqpIoxlsbsOfg--
+--TeJTyD9hb8KJN2Jy--

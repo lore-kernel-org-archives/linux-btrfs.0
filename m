@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18395 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932157AbaJWNBS (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:30076 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161392AbaJaBiN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Oct 2014 09:01:18 -0400
+	Thu, 30 Oct 2014 21:38:13 -0400
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s9ND1Hsp013688
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s9V1cBxG008894
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 13:01:18 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s9ND1FHl022581
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 01:38:12 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s9V0o1TL008910
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 13:01:16 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s9ND1F6U018038
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Oct 2014 13:01:15 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 00:50:01 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s9V0o0b5008828
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 00:50:00 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2 v2] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
-Date: Thu, 23 Oct 2014 14:30:08 +0800
-Message-Id: <1414045808-6930-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/2 v3] btrfs-progs: optimize btrfs_scan_lblkid() for multiple calls
+Date: Fri, 31 Oct 2014 11:19:37 +0800
+Message-Id: <1414725577-20872-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1413334270-25766-2-git-send-email-anand.jain@oracle.com>
 References: <1413334270-25766-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -66,8 +66,6 @@ This patch will:
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v2: rebase on 3.17. And add more info to commit
-
  cmds-device.c     |  7 ++++++-
  cmds-filesystem.c |  2 +-
  disk-io.c         |  2 +-
@@ -129,14 +127,14 @@ index 77fc610..2fb50f9 100644
  			return ret;
  	}
 diff --git a/utils.c b/utils.c
-index 90e228b..a8691fe 100644
+index 90e228b..0689217 100644
 --- a/utils.c
 +++ b/utils.c
 @@ -52,6 +52,8 @@
  #define BLKDISCARD	_IO(0x12,119)
  #endif
  
-+int scan_done = 0;
++static int btrfs_scan_done = 0;
 +
  static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
  
@@ -163,7 +161,7 @@ index 90e228b..a8691fe 100644
  	blkid_cache cache = NULL;
  	char path[PATH_MAX];
  
-+	if (scan_done)
++	if (btrfs_scan_done)
 +		return 0;
 +
  	if (blkid_get_cache(&cache, 0) < 0) {
@@ -179,7 +177,7 @@ index 90e228b..a8691fe 100644
  	blkid_dev_iterate_end(iter);
  	blkid_put_cache(cache);
 +
-+	scan_done = 1;
++	btrfs_scan_done = 1;
 +
  	return 0;
  }

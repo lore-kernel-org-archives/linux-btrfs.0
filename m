@@ -1,53 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42655 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161558AbaJaC23 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 22:28:29 -0400
-Message-ID: <5452F3C3.3020906@oracle.com>
-Date: Fri, 31 Oct 2014 10:28:19 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:52242 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756286AbaJaJIg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 31 Oct 2014 05:08:36 -0400
+Date: Fri, 31 Oct 2014 10:08:30 +0100
+From: Karel Zak <kzak@redhat.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 2/2 v4] btrfs-progs: optimize btrfs_scan_lblkid() for
+ multiple calls
+Message-ID: <20141031090830.GP10134@x2.net.home>
+References: <1413334270-25766-1-git-send-email-anand.jain@oracle.com>
+ <1414728680-25468-1-git-send-email-anand.jain@oracle.com>
+ <1414728680-25468-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: [PATCH 1/2] btrfs-progs: introduce btrfs_register_all_device()
-References: <1413334270-25766-1-git-send-email-anand.jain@oracle.com> <20141030143310.GA21354@twin.jikos.cz>
-In-Reply-To: <20141030143310.GA21354@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1414728680-25468-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Oct 31, 2014 at 12:11:20PM +0800, Anand Jain wrote:
+> btrfs_scan_lblikd() is called by most the device related command functions.
+> And btrfs_scan_lblkid() is most expensive function and it becomes more expensive
+> as number of devices in the system increase. Further some threads call this
+
+wouldn't be possible to ask udev rather than scan all devices? I
+understand than in some cases it's necessary to have robust and
+independent solution, but for usual use-cases it would be less
+expensive to read the info from udev where we already keep track about
+all block devices and where we call libblkid. 
+
+It would be possible to implement it as optional feature (#ifdev HAVE_LIBUDEV),
+the library API is very easy to use.
+
+(For example lsblk uses libblkid as fallback, the default is udev).
+
+    Karel
 
 
-On 30/10/2014 22:33, David Sterba wrote:
-> On Wed, Oct 15, 2014 at 08:51:09AM +0800, Anand Jain wrote:
->> --- a/volumes.c
->> +++ b/volumes.c
->> @@ -30,6 +30,7 @@
->>   #include "print-tree.h"
->>   #include "volumes.h"
->>   #include "math.h"
->> +#include "utils.h"
->>
->>   struct stripe {
->>   	struct btrfs_device *dev;
->> @@ -1533,6 +1534,30 @@ btrfs_find_device_by_devid(struct btrfs_fs_devices *fs_devices,
->>   	return NULL;
->>   }
->>
->> +/*
->> + * Register all devices in the fs_uuid list created in the user
->> + * space. Ensure btrfs_scan_lblkid() is called before this func.
->> + */
->> +int btrfs_register_all_devices(void)
->
-> I think this belongs to utils.c, btrfs_register_one_device is also there
-> and it is an API funcion for the commands. You can use
-> btrfs_scanned_uuids() to get to the fs_uuids variable that's locally
-> defined in volumes.c .
-
-wonderful comment. Thanks. V4 is sent out.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

@@ -1,69 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:59565 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758257AbaJaMKr convert rfc822-to-8bit (ORCPT
+Received: from mail-qa0-f47.google.com ([209.85.216.47]:62965 "EHLO
+	mail-qa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758182AbaJaMPe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Oct 2014 08:10:47 -0400
-Received: by mail-pa0-f50.google.com with SMTP id eu11so7673613pac.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 05:10:47 -0700 (PDT)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: request for info on the list of parameters to tweak for PCIe SSDs
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD334A@BLRX7MCDC204.AMER.DELL.COM>
-Date: Fri, 31 Oct 2014 20:10:32 +0800
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <18D94FDC-34F7-405E-A35D-AE1A3C993E90@gmail.com>
-References: <6891C2FAE3B0F342A5B80AFBDCFB579713AACD334A@BLRX7MCDC204.AMER.DELL.COM>
-To: Lakshmi_Narayanan_Du@Dell.com
+	Fri, 31 Oct 2014 08:15:34 -0400
+Received: by mail-qa0-f47.google.com with SMTP id dc16so5199542qab.34
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 05:15:32 -0700 (PDT)
+Message-ID: <54537D5D.3020506@gmail.com>
+Date: Fri, 31 Oct 2014 08:15:25 -0400
+From: Zack Coffey <tech42.clickwir@gmail.com>
+Reply-To: zcoffey@mytech42.com
+MIME-Version: 1.0
+To: Robert White <rwhite@pobox.com>, linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 fails to recover chunk tree
+References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com> <54517338.7090606@pobox.com> <54523D86.5040906@gmail.com> <545349C4.2020104@pobox.com>
+In-Reply-To: <545349C4.2020104@pobox.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Lakshmi,
+Sadly I think I understand now.
 
-Personally, i haven¡¯t done many benchmarks about performance tuning, but
-there are some info you could refer to:
+So by adding the second drive, BTRFS saw it as an extension of data (ala 
+JBOD-ish?). Even though I thought I was only adding RAID1 for metadata, 
+was also adding to the data storage.
 
-If you feel intrested, you could take a look at following url which offers btrfs mount options:
-http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/filesystems/btrfs.txt
+I assume that even though chunk-recover reports healthy chunks, there's 
+little to no way to actually get them?
 
-And for Wiki, there are many information which might help you:
-https://btrfs.wiki.kernel.org/index.php/Main_Page
 
-There are also some options that you could tune for mkfs, see detailed info
-by ¡®man mkfs.btrfs¡¯.I supposed for example different ¡¯nodesize/leafsize¡¯ 
-will have effects for performance. Also there are some new features Btrfs,
-like skinny_metadata, no_holes etc, you could clone a Latest btrfs-progs tools from:
-http://git.kernel.org/cgit/linux/kernel/git/kdave/btrfs-progs.git/
-
-Some features are not enabled by default(skinny_medata,no_holes etc),
-but for benchmarking, you could turn on them and using latest kernel with latest btrfs-progs:
-
-root@localhost autotest]# mkfs.btrfs -O list-all
-Filesystem features available at mkfs time:
-mixed-bg            - mixed data and metadata block groups (0x4)
-extref              - increased hardlink limit per file to 65536 (0x40, default)
-raid56              - raid56 extended format (0x80)
-skinny-metadata     - reduced-size metadata extent refs (0x100)
-no-holes            - no explicit hole extents for files (0x200)
-
-It will be good that you could do some benchmarks for Btrfs with different parameters, and feel
-free to let others know your results(i am also curious).^_^
-
-Best Regards,
-Wang Shilong
-
-> Hi,
-> 
-> Could you kindly help us with the list of all the btrfs  file system parameters , that can be tweaked for the best performance of the PCIe based SSDs ?
-> 
-> Thanks,
-> Lakshmi
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-Best Regards,
-Wang Shilong
+On 10/31/2014 4:35 AM, Robert White wrote:
+> On 10/30/2014 06:30 AM, Zack Coffey wrote:
+>> Rob, That second drive was immediately put to use elsewhere. I figured
+>> having only the metadata on that drive, it wouldn't matter. The data
+>> stayed single and wasn't part of the second drive, only the metadata
+>> was. I must not be capable of understanding why that wouldn't work.
+>>
+>> I thought all I was doing was removing a duplication of metadata and the
+>> worst I would see is a message complaining about a drive missing. Never
+>> thought the data or access to it could be compromised in what seemed to
+>> be a simple situation.
+>>
+>> Anand, I get the same output with mount -o recovery,ro.
+>
+> Your data is gone if your other drive is gone.
+>
+> Single doesn't mean what you think it means. Single means "one single 
+> copy of your data", but it has _nothing_ to do with "one single 
+> drive". That would mean that after a "btrfs device add" the default 
+> would be to never, ever, use that added drive.
+>
+> So RAID0 means "striped", so there are chunks, then chunk=0 is on 
+> drive=0 at offset zero. Chunk=1 is on drive=1 at offset zero. (where 
+> there are N drives.) Chunk=N is on drive=N at offset zero. Chunk=N+1 
+> is on drive=0 at offset Chunk_Size+1. And so on.
+>
+> Concatenation is that drive=N follows drive=N-1 at offset 
+> sum(sizeofeach(all drives less than N)). So Byte=0 is on drive=0 at 
+> offset0; and Byte=(sizeof drive0) is on drive=1 at byte=0.
+>
+> The RAID standard never addressed bulk concatenation, so there is no 
+> "raid-number" for the one whole drive after another. BTRFS uses 
+> "single", others use other words.
+>
+> So if you had a 100G drive, and you added a second 100G drive, you'd 
+> have a logically 200G drive, where the first 100G is on drive one, and 
+> the second is on drive two.
+>
+> You've basically obliterated the second half of the filesystem storage 
+> when you physically removed the drive without semantically removing it 
+> first. Might as well have erased it with a magnet, and all the data 
+> with it. Worse still, if you did any sort of balance or defrag you 
+> likely moved huge numbers of "the _single_ copy of your data" clusters 
+> onto that other device.
+>
+> So the layout option isn't about limiting storage, that wouldn't make 
+> sense, that's what device add/delete is about. Its about how the data 
+> is laid out across all the drives.
+>
+> All those unreachable addresses are on that now-defunct drive. No 
+> mount option will ever get you that data back.
 

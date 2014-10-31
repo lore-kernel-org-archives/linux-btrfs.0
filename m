@@ -1,27 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:62278 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1422709AbaJ3XGz (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:52481 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1759330AbaJaNti (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 19:06:55 -0400
-Received: by mail-wi0-f179.google.com with SMTP id h11so8718679wiw.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Oct 2014 16:06:54 -0700 (PDT)
+	Fri, 31 Oct 2014 09:49:38 -0400
+Received: from pps.filterd (m0044008 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9VDjIIi025216
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 06:49:38 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0a-00082601.pphosted.com with ESMTP id 1qcb9001vy-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 06:49:38 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: move read only block groups onto their own list V2
+Date: Fri, 31 Oct 2014 09:49:34 -0400
+Message-ID: <1414763374-1744-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Date: Thu, 30 Oct 2014 18:06:54 -0500
-Message-ID: <CAAKzf7=u51=1zTBoXRt0-y1ZCnPegjkX3pUPcVTXf=DSQbbKJA@mail.gmail.com>
-Subject: 3.17.2 kernel patches for btrfs
-From: Tim Cuthbertson <ratcheer@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does the new Linux 3.17.2 kernel have sufficient patches to safely use
-btrfs with subvolume snapshots and incremental send/receive? I ask
-because 3.17.1 was released just before the btrfs patches for these
-issues, so I have been waiting for 3.17.2. However, from reading the
-kernel changelog, it appears that most of the included btrfs patches
-were from July, August, and September, still too early for the btrfs
-fixes I need. Thank you.
+Our gluster boxes were spending lots of time in statfs because our fs'es are
+huge.  The problem is statfs loops through all of the block groups looking for
+read only block groups, and when you have several terabytes worth of data that
+ends up being a lot of block groups.  Move the read only block groups onto a
+read only list and only proces that list in
+btrfs_account_ro_block_groups_free_space to reduce the amount of churn.  Thanks,
 
-Tim
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2:
+-list_for_each_entry was using the wrong ->member name.
+
+ fs/btrfs/ctree.h       |  4 ++++
+ fs/btrfs/extent-tree.c | 36 +++++++++++++-----------------------
+ 2 files changed, 17 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d557264e..438f087 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1170,6 +1170,7 @@ struct btrfs_space_info {
+ 	struct percpu_counter total_bytes_pinned;
+ 
+ 	struct list_head list;
++	struct list_head ro_bgs;
+ 
+ 	struct rw_semaphore groups_sem;
+ 	/* for block groups in our same type */
+@@ -1305,6 +1306,9 @@ struct btrfs_block_group_cache {
+ 
+ 	/* For delayed block group creation or deletion of empty block groups */
+ 	struct list_head bg_list;
++
++	/* For read-only block groups */
++	struct list_head ro_list;
+ };
+ 
+ /* delayed seq elem */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0d599ba..f51004f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3518,6 +3518,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	found->chunk_alloc = 0;
+ 	found->flush = 0;
+ 	init_waitqueue_head(&found->wait);
++	INIT_LIST_HEAD(&found->ro_bgs);
+ 
+ 	ret = kobject_init_and_add(&found->kobj, &space_info_ktype,
+ 				    info->space_info_kobj, "%s",
+@@ -8525,6 +8526,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	    min_allocable_bytes <= sinfo->total_bytes) {
+ 		sinfo->bytes_readonly += num_bytes;
+ 		cache->ro = 1;
++		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
+ 		ret = 0;
+ 	}
+ out:
+@@ -8579,15 +8581,20 @@ int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+ 
+ /*
+  * helper to account the unused space of all the readonly block group in the
+- * list. takes mirrors into account.
++ * space_info. takes mirrors into account.
+  */
+-static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 free_bytes = 0;
+ 	int factor;
+ 
+-	list_for_each_entry(block_group, groups_list, list) {
++	/* It's df, we don't care if it's racey */
++	if (list_empty(&sinfo->ro_bgs))
++		return 0;
++
++	spin_lock(&sinfo->lock);
++	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
+ 		spin_lock(&block_group->lock);
+ 
+ 		if (!block_group->ro) {
+@@ -8608,26 +8615,6 @@ static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
+ 
+ 		spin_unlock(&block_group->lock);
+ 	}
+-
+-	return free_bytes;
+-}
+-
+-/*
+- * helper to account the unused space of all the readonly block group in the
+- * space_info. takes mirrors into account.
+- */
+-u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+-{
+-	int i;
+-	u64 free_bytes = 0;
+-
+-	spin_lock(&sinfo->lock);
+-
+-	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+-		if (!list_empty(&sinfo->block_groups[i]))
+-			free_bytes += __btrfs_get_ro_block_group_free_space(
+-						&sinfo->block_groups[i]);
+-
+ 	spin_unlock(&sinfo->lock);
+ 
+ 	return free_bytes;
+@@ -8647,6 +8634,7 @@ void btrfs_set_block_group_rw(struct btrfs_root *root,
+ 		    cache->bytes_super - btrfs_block_group_used(&cache->item);
+ 	sinfo->bytes_readonly -= num_bytes;
+ 	cache->ro = 0;
++	list_del_init(&cache->ro_list);
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&sinfo->lock);
+ }
+@@ -9016,6 +9004,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	INIT_LIST_HEAD(&cache->list);
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+ 	INIT_LIST_HEAD(&cache->bg_list);
++	INIT_LIST_HEAD(&cache->ro_list);
+ 	btrfs_init_free_space_ctl(cache);
+ 
+ 	return cache;
+@@ -9425,6 +9414,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	 * are still on the list after taking the semaphore
+ 	 */
+ 	list_del_init(&block_group->list);
++	list_del_init(&block_group->ro_list);
+ 	if (list_empty(&block_group->space_info->block_groups[index])) {
+ 		kobj = block_group->space_info->block_group_kobjs[index];
+ 		block_group->space_info->block_group_kobjs[index] = NULL;
+-- 
+1.8.3.1
+

@@ -1,89 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49908 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751384AbaJaB1T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 21:27:19 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xk0zk-0007Wn-Gb
-	for linux-btrfs@vger.kernel.org; Fri, 31 Oct 2014 02:27:16 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 02:27:16 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 02:27:16 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID1 fails to recover chunk tree
-Date: Fri, 31 Oct 2014 01:27:03 +0000 (UTC)
-Message-ID: <pan$2cd78$85acd913$95d42126$8a9a4137@cox.net>
-References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com>
-	<54517338.7090606@pobox.com> <54523D86.5040906@gmail.com>
-	<58060F93-3CB7-4575-9AF7-59DAF895CE7B@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:40028 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161410AbaJaBgp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Oct 2014 21:36:45 -0400
+Date: Fri, 31 Oct 2014 09:36:27 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Toralf =?iso-8859-1?Q?F=F6rster?= <toralf.foerster@gmx.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: v3.18-rc2 at a 32 bit KVM gives :"INFO: trying to register
+ non-static key.the code is fine but needs lockdep annotation."
+Message-ID: <20141031013626.GA30764@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <54511C41.5090603@gmx.de>
+ <20141030101552.GD26064@localhost.localdomain>
+ <5452CAD7.30602@gmx.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <5452CAD7.30602@gmx.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Thu, 30 Oct 2014 12:04:48 -0600 as excerpted:
+On Fri, Oct 31, 2014 at 12:33:43AM +0100, Toralf Förster wrote:
+> On 10/30/2014 11:15 AM, Liu Bo wrote:
+> > On Wed, Oct 29, 2014 at 05:56:33PM +0100, Toralf Förster wrote:
+> >> > This is new in my eyes, or ? :
+> > Also new to me, could you please turn on lock debug and try again?
+> > 
+> > thanks,
+> > -liubo
+> you mean CONFIG_PROVE_LOCKING=y right ?
 
->> Rob, That second drive was immediately put to use elsewhere. I figured
->> having only the metadata on that drive, it wouldn't matter. The data
->> stayed single and wasn't part of the second drive, only the metadata
->> was. I must not be capable of understanding why that wouldn't work.
-> 
-> single profile means all devices get btrfs chunks. If you do something
-> like:
-> 
-> # mkfs.btfs /dev/sda
-> 
-> By default you get data profile = single, and metadata profile = DUP. If
-> you then
-> 
-> # btrfs add /dev/sdb /mnt/btrfs # btrfs -mconvert=raid1  /mnt/btrfs
-> 
-> you now have a volume that is data = single and metadata = raid1. The 
-way
-> the allocator works is that it will first allocate 1GiB data chunks to 
-the
-> device with the most free space remaining, so if that's /dev/sdb it will
-> allocate 1GiB data chunks there until free space is the same for both 
-sda
-> and sdb. And once they have equal space btrfs allocates 1GiB data chunks
-> alternating sda and sdb.
-> 
-> Single profile doesn't mean only one device gets data chunks. Is that 
-the
-> misunderstanding?
+I'd have these open,
 
-Just what I was going to say.
+CONFIG_DEBUG_SPINLOCK=y
+CONFIG_DEBUG_LOCK_ALLOC=y
+CONFIG_DEBUG_LOCKDEP=y
 
-Single profile means there's just one copy, and the normal chunk 
-allocation algorithm allocates new chunks from the device with the most 
-space left.  The freshly added device almost certainly had the most space 
-left, so as soon as the existing data chunk was full, probably all new 
-data chunks were allocated from the freshly added device.
+__btrfs_alloc_chunk() uses write_[un]lock and spin_[un]lock, it may tell us something.
 
-Then you (OP) go and kill that device as far as btrfs is concerned, and 
-all that new data written to it in single mode is ONLY on it because it 
-was written in single mode, so now it has suddenly disappeared!
-
-No WONDER that filesystem's having problems!
-
-Even old files, due to copy on write, would have likely been partially or 
-entirely moved to the new chunks on the new device if they were updated 
-during the time the filesystem was mounted writable with the new device 
-there.  And some desktop environments, for instance, have a habit of 
-rewriting what might well be the exact same thing back to their config 
-files, every time they shutdown, or sometimes as soon as they read it in 
-at startup, as well.  So much of your desktop config may well have been 
-on that second device, even if you didn't actively change any config 
-during that time.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+thanks,
+-liubo

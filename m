@@ -1,107 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54407 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751496AbaJaF2a (ORCPT
+Received: from resqmta-ch2-09v.sys.comcast.net ([69.252.207.41]:34504 "EHLO
+	resqmta-ch2-09v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751187AbaJaIfT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Oct 2014 01:28:30 -0400
-Message-ID: <1414733232.5809.22.camel@localhost.localdomain>
-Subject: Re: read block failed check_tree_block / Couldn't read chunk tree
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: Rene Thomas <re.thomas@gmx.de>, <linux-btrfs@vger.kernel.org>
-Date: Fri, 31 Oct 2014 13:27:12 +0800
-In-Reply-To: <545062CC.6020206@oracle.com>
-References: <CAHOQfW0CF1CrHrZ_T_G49kXh6scKK59aYYZn48fi112RfHX=wg@mail.gmail.com>
-	 <545062CC.6020206@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+	Fri, 31 Oct 2014 04:35:19 -0400
+Message-ID: <545349C4.2020104@pobox.com>
+Date: Fri, 31 Oct 2014 01:35:16 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
+To: Zack Coffey <tech42.clickwir@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 fails to recover chunk tree
+References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com> <54517338.7090606@pobox.com> <54523D86.5040906@gmail.com>
+In-Reply-To: <54523D86.5040906@gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2014-10-29 at 11:45 +0800, Anand Jain wrote:
-> this is (most likely) due to patch below,
-> ----------------
-> commit 915902c5002485fb13d27c4b699a73fb66cc0f09
-> 
->      btrfs-progs: fix device missing of btrfs fi show with seed devices
-> ----------------
-> 
->   Could you try to back out the patch from progs and give it a shot ?
->   and pls report what you see. Thanks.
+On 10/30/2014 06:30 AM, Zack Coffey wrote:
+> Rob, That second drive was immediately put to use elsewhere. I figured
+> having only the metadata on that drive, it wouldn't matter. The data
+> stayed single and wasn't part of the second drive, only the metadata
+> was. I must not be capable of understanding why that wouldn't work.
+>
+> I thought all I was doing was removing a duplication of metadata and the
+> worst I would see is a message complaining about a drive missing. Never
+> thought the data or access to it could be compromised in what seemed to
+> be a simple situation.
+>
+> Anand, I get the same output with mount -o recovery,ro.
 
-Hi Anand,
--------------------------------------------------------------------
- # btrfs fi show
-Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
-        Total devices 1 FS bytes used 2.36MiB
-        devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
+Your data is gone if your other drive is gone.
 
-[errors from open_ctree]
+Single doesn't mean what you think it means. Single means "one single 
+copy of your data", but it has _nothing_ to do with "one single drive". 
+That would mean that after a "btrfs device add" the default would be to 
+never, ever, use that added drive.
 
-Label: none  uuid: 8ef575d9-2465-479c-bf9c-067e2e417770
-        Total devices 3 FS bytes used 3.02TiB
-        devid    1 size 2.73TiB used 1.77TiB path /dev/sdb1
-        devid    2 size 2.73TiB used 1.77TiB path /dev/sda1
-        devid    3 size 2.73TiB used 1.77TiB path /dev/sdc1
-Btrfs v3.17
-------------------------------------------------------------------
+So RAID0 means "striped", so there are chunks, then chunk=0 is on 
+drive=0 at offset zero. Chunk=1 is on drive=1 at offset zero. (where 
+there are N drives.) Chunk=N is on drive=N at offset zero. Chunk=N+1 is 
+on drive=0 at offset Chunk_Size+1. And so on.
 
-The original output of btrfs fi show actually detect all devices in all
-btrfs successfully. I think the patch mentioned above really missed some
-case in which num of devices found match the num of all devices in one
-btrfs. In such case, we should not bother trying to detect seed devices.
+Concatenation is that drive=N follows drive=N-1 at offset 
+sum(sizeofeach(all drives less than N)). So Byte=0 is on drive=0 at 
+offset0; and Byte=(sizeof drive0) is on drive=1 at byte=0.
 
-And for now, we did. Unfortunately, the btrfs is some what corrupted by
-mkfs.ntfs, so @open_ctree call complains about corruption on the chunk
-root like the following:
+The RAID standard never addressed bulk concatenation, so there is no 
+"raid-number" for the one whole drive after another. BTRFS uses 
+"single", others use other words.
 
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=65536
-> Check tree block failed, want=5845480062976, have=0
-> Check tree block failed, want=5845480062976, have=0
-> read block failed check_tree_block
-> Couldn't read chunk tree
+So if you had a 100G drive, and you added a second 100G drive, you'd 
+have a logically 200G drive, where the first 100G is on drive one, and 
+the second is on drive two.
 
-I'll fix this case by avoiding @open_ctree call when all devices in
-btrfs are detected.
+You've basically obliterated the second half of the filesystem storage 
+when you physically removed the drive without semantically removing it 
+first. Might as well have erased it with a magnet, and all the data with 
+it. Worse still, if you did any sort of balance or defrag you likely 
+moved huge numbers of "the _single_ copy of your data" clusters onto 
+that other device.
 
-But if not all devices are detected, then there are 3 possible cases:
-1) seed devices present
-2) disk unpluged
-3) disk reformatted
+So the layout option isn't about limiting storage, that wouldn't make 
+sense, that's what device add/delete is about. Its about how the data is 
+laid out across all the drives.
 
-For case 1), *for now* we need the @open_ctree to detect them(After
-your former proposal implemented, things may be different).
-
-For case 2) & 3), @open_ctree complains as above. To clean the not so
-helpful and annoying complains, I think we could keep @open_ctree silent
-when called by btrfs fi show by introduce a new flag OPEN_CTREE_SILENT.
-
-Thanks
-Gui
-
-> 
-> 
-> On 10/25/14 00:43, Rene Thomas wrote:
-> >   # btrfs --version
-> > Btrfs v3.17
-> >
-> >   # btrfs fi show
-> > Label: 'mythstorage'  uuid: 9b454272-6800-4b3c-b196-9e180407a6cb
-> >          Total devices 1 FS bytes used 2.36MiB
-> >          devid    1 size 931.51GiB used 10.04GiB path /dev/sdd1
-> >
-> >   Check tree block failed, want=5845480062976, have=0
-> > Check tree block failed, want=5845480062976, have=0
-> > Check tree block failed, want=5845480062976, have=65536
-> > Check tree block failed, want=5845480062976, have=0
-> > Check tree block failed, want=5845480062976, have=0
-> > read block failed check_tree_block
-> > Couldn't read chunk tree
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+All those unreachable addresses are on that now-defunct drive. No mount 
+option will ever get you that data back.

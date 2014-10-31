@@ -1,167 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37907 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759544AbaJaOQG (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1962 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755317AbaJaP6T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Oct 2014 10:16:06 -0400
-Date: Fri, 31 Oct 2014 22:15:57 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: move read only block groups onto their own list V2
-Message-ID: <20141031141556.GB7522@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1414763374-1744-1-git-send-email-jbacik@fb.com>
+	Fri, 31 Oct 2014 11:58:19 -0400
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s9VFuvq3024987
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 08:58:18 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1qc8exh4y3-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Oct 2014 08:58:18 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in statfs
+Date: Fri, 31 Oct 2014 11:58:00 -0400
+Message-ID: <1414771080-10414-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1414763374-1744-1-git-send-email-jbacik@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 31, 2014 at 09:49:34AM -0400, Josef Bacik wrote:
-> Our gluster boxes were spending lots of time in statfs because our fs'es are
-> huge.  The problem is statfs loops through all of the block groups looking for
-> read only block groups, and when you have several terabytes worth of data that
-> ends up being a lot of block groups.  Move the read only block groups onto a
-> read only list and only proces that list in
-> btrfs_account_ro_block_groups_free_space to reduce the amount of churn.  Thanks,
+Our gluster boxes get several thousand statfs() calls per second, which begins
+to suck hardcore with all of the lock contention on the chunk mutex and dev list
+mutex.  We don't really need to hold these things, if we have transient
+weirdness with statfs() because of the chunk allocator we don't care, so remove
+this locking.
 
-Looks good.
+We still need the dev_list lock if you mount with -o alloc_start however, which
+is a good argument for nuking that thing from orbit, but that's a patch for
+another day.  Thanks,
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/super.c | 69 ++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 45 insertions(+), 24 deletions(-)
 
--liubo
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
-> V1->V2:
-> -list_for_each_entry was using the wrong ->member name.
-> 
->  fs/btrfs/ctree.h       |  4 ++++
->  fs/btrfs/extent-tree.c | 36 +++++++++++++-----------------------
->  2 files changed, 17 insertions(+), 23 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index d557264e..438f087 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1170,6 +1170,7 @@ struct btrfs_space_info {
->  	struct percpu_counter total_bytes_pinned;
->  
->  	struct list_head list;
-> +	struct list_head ro_bgs;
->  
->  	struct rw_semaphore groups_sem;
->  	/* for block groups in our same type */
-> @@ -1305,6 +1306,9 @@ struct btrfs_block_group_cache {
->  
->  	/* For delayed block group creation or deletion of empty block groups */
->  	struct list_head bg_list;
-> +
-> +	/* For read-only block groups */
-> +	struct list_head ro_list;
->  };
->  
->  /* delayed seq elem */
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 0d599ba..f51004f 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3518,6 +3518,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
->  	found->chunk_alloc = 0;
->  	found->flush = 0;
->  	init_waitqueue_head(&found->wait);
-> +	INIT_LIST_HEAD(&found->ro_bgs);
->  
->  	ret = kobject_init_and_add(&found->kobj, &space_info_ktype,
->  				    info->space_info_kobj, "%s",
-> @@ -8525,6 +8526,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
->  	    min_allocable_bytes <= sinfo->total_bytes) {
->  		sinfo->bytes_readonly += num_bytes;
->  		cache->ro = 1;
-> +		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
->  		ret = 0;
->  	}
->  out:
-> @@ -8579,15 +8581,20 @@ int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
->  
->  /*
->   * helper to account the unused space of all the readonly block group in the
-> - * list. takes mirrors into account.
-> + * space_info. takes mirrors into account.
->   */
-> -static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
-> +u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
->  {
->  	struct btrfs_block_group_cache *block_group;
->  	u64 free_bytes = 0;
->  	int factor;
->  
-> -	list_for_each_entry(block_group, groups_list, list) {
-> +	/* It's df, we don't care if it's racey */
-> +	if (list_empty(&sinfo->ro_bgs))
-> +		return 0;
-> +
-> +	spin_lock(&sinfo->lock);
-> +	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
->  		spin_lock(&block_group->lock);
->  
->  		if (!block_group->ro) {
-> @@ -8608,26 +8615,6 @@ static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
->  
->  		spin_unlock(&block_group->lock);
->  	}
-> -
-> -	return free_bytes;
-> -}
-> -
-> -/*
-> - * helper to account the unused space of all the readonly block group in the
-> - * space_info. takes mirrors into account.
-> - */
-> -u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
-> -{
-> -	int i;
-> -	u64 free_bytes = 0;
-> -
-> -	spin_lock(&sinfo->lock);
-> -
-> -	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
-> -		if (!list_empty(&sinfo->block_groups[i]))
-> -			free_bytes += __btrfs_get_ro_block_group_free_space(
-> -						&sinfo->block_groups[i]);
-> -
->  	spin_unlock(&sinfo->lock);
->  
->  	return free_bytes;
-> @@ -8647,6 +8634,7 @@ void btrfs_set_block_group_rw(struct btrfs_root *root,
->  		    cache->bytes_super - btrfs_block_group_used(&cache->item);
->  	sinfo->bytes_readonly -= num_bytes;
->  	cache->ro = 0;
-> +	list_del_init(&cache->ro_list);
->  	spin_unlock(&cache->lock);
->  	spin_unlock(&sinfo->lock);
->  }
-> @@ -9016,6 +9004,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
->  	INIT_LIST_HEAD(&cache->list);
->  	INIT_LIST_HEAD(&cache->cluster_list);
->  	INIT_LIST_HEAD(&cache->bg_list);
-> +	INIT_LIST_HEAD(&cache->ro_list);
->  	btrfs_init_free_space_ctl(cache);
->  
->  	return cache;
-> @@ -9425,6 +9414,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->  	 * are still on the list after taking the semaphore
->  	 */
->  	list_del_init(&block_group->list);
-> +	list_del_init(&block_group->ro_list);
->  	if (list_empty(&block_group->space_info->block_groups[index])) {
->  		kobj = block_group->space_info->block_group_kobjs[index];
->  		block_group->space_info->block_group_kobjs[index] = NULL;
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 54bd91e..2c9ba11 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1644,8 +1644,20 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	int i = 0, nr_devices;
+ 	int ret;
+ 
++	/*
++	 * We aren't under the device list lock, so this is racey-ish, but good
++	 * enough for our purposes.
++	 */
+ 	nr_devices = fs_info->fs_devices->open_devices;
+-	BUG_ON(!nr_devices);
++	if (!nr_devices) {
++		smp_mb();
++		nr_devices = fs_info->fs_devices->open_devices;
++		ASSERT(nr_devices);
++		if (!nr_devices) {
++			*free_bytes = 0;
++			return 0;
++		}
++	}
+ 
+ 	devices_info = kmalloc_array(nr_devices, sizeof(*devices_info),
+ 			       GFP_NOFS);
+@@ -1670,11 +1682,17 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	else
+ 		min_stripe_size = BTRFS_STRIPE_LEN;
+ 
+-	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++	if (fs_info->alloc_start)
++		mutex_lock(&fs_devices->device_list_mutex);
++	rcu_read_lock();
++	list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
+ 		if (!device->in_fs_metadata || !device->bdev ||
+ 		    device->is_tgtdev_for_dev_replace)
+ 			continue;
+ 
++		if (i >= nr_devices)
++			break;
++
+ 		avail_space = device->total_bytes - device->bytes_used;
+ 
+ 		/* align with stripe_len */
+@@ -1690,23 +1708,30 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 
+ 		/* user can set the offset in fs_info->alloc_start. */
+ 		if (fs_info->alloc_start + BTRFS_STRIPE_LEN <=
+-		    device->total_bytes)
++		    device->total_bytes) {
++			rcu_read_unlock();
+ 			skip_space = max(fs_info->alloc_start, skip_space);
+ 
+-		/*
+-		 * btrfs can not use the free space in [0, skip_space - 1],
+-		 * we must subtract it from the total. In order to implement
+-		 * it, we account the used space in this range first.
+-		 */
+-		ret = btrfs_account_dev_extents_size(device, 0, skip_space - 1,
+-						     &used_space);
+-		if (ret) {
+-			kfree(devices_info);
+-			return ret;
+-		}
++			/*
++			 * btrfs can not use the free space in
++			 * [0, skip_space - 1], we must subtract it from the
++			 * total. In order to implement it, we account the used
++			 * space in this range first.
++			 */
++			ret = btrfs_account_dev_extents_size(device, 0,
++							     skip_space - 1,
++							     &used_space);
++			if (ret) {
++				kfree(devices_info);
++				mutex_unlock(&fs_devices->device_list_mutex);
++				return ret;
++			}
+ 
+-		/* calc the free space in [0, skip_space - 1] */
+-		skip_space -= used_space;
++			rcu_read_lock();
++
++			/* calc the free space in [0, skip_space - 1] */
++			skip_space -= used_space;
++		}
+ 
+ 		/*
+ 		 * we can use the free space in [0, skip_space - 1], subtract
+@@ -1725,6 +1750,9 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 
+ 		i++;
+ 	}
++	rcu_read_unlock();
++	if (fs_info->alloc_start)
++		mutex_unlock(&fs_devices->device_list_mutex);
+ 
+ 	nr_devices = i;
+ 
+@@ -1787,8 +1815,6 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	 * holding chunk_muext to avoid allocating new chunks, holding
+ 	 * device_list_mutex to avoid the device being removed
+ 	 */
+-	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+-	mutex_lock(&fs_info->chunk_mutex);
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(found, head, list) {
+ 		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
+@@ -1826,15 +1852,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 
+ 	buf->f_bavail = total_free_data;
+ 	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
+-	if (ret) {
+-		mutex_unlock(&fs_info->chunk_mutex);
+-		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	if (ret)
+ 		return ret;
+-	}
+ 	buf->f_bavail += div_u64(total_free_data, factor);
+ 	buf->f_bavail = buf->f_bavail >> bits;
+-	mutex_unlock(&fs_info->chunk_mutex);
+-	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+-- 
+1.8.3.1
+

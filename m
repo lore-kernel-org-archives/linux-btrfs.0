@@ -1,43 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40028 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161410AbaJaBgp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Oct 2014 21:36:45 -0400
-Date: Fri, 31 Oct 2014 09:36:27 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Toralf =?iso-8859-1?Q?F=F6rster?= <toralf.foerster@gmx.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: v3.18-rc2 at a 32 bit KVM gives :"INFO: trying to register
- non-static key.the code is fine but needs lockdep annotation."
-Message-ID: <20141031013626.GA30764@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <54511C41.5090603@gmx.de>
- <20141030101552.GD26064@localhost.localdomain>
- <5452CAD7.30602@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <5452CAD7.30602@gmx.de>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:46112 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1422665AbaJaCJ7 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Oct 2014 22:09:59 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:57667 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Xk1f4-0031ZA-Du
+	for linux-btrfs@vger.kernel.org; Thu, 30 Oct 2014 20:09:58 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: RAID1 fails to recover chunk tree
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <pan$2cd78$85acd913$95d42126$8a9a4137@cox.net>
+Date: Thu, 30 Oct 2014 20:09:55 -0600
+Message-Id: <FC480E52-012E-41E7-902E-2EE3ECFFB90B@colorremedies.com>
+References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com> <54517338.7090606@pobox.com> <54523D86.5040906@gmail.com> <58060F93-3CB7-4575-9AF7-59DAF895CE7B@colorremedies.com> <pan$2cd78$85acd913$95d42126$8a9a4137@cox.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 31, 2014 at 12:33:43AM +0100, Toralf Förster wrote:
-> On 10/30/2014 11:15 AM, Liu Bo wrote:
-> > On Wed, Oct 29, 2014 at 05:56:33PM +0100, Toralf Förster wrote:
-> >> > This is new in my eyes, or ? :
-> > Also new to me, could you please turn on lock debug and try again?
-> > 
-> > thanks,
-> > -liubo
-> you mean CONFIG_PROVE_LOCKING=y right ?
 
-I'd have these open,
+On Oct 30, 2014, at 7:27 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-CONFIG_DEBUG_SPINLOCK=y
-CONFIG_DEBUG_LOCK_ALLOC=y
-CONFIG_DEBUG_LOCKDEP=y
+> Chris Murphy posted on Thu, 30 Oct 2014 12:04:48 -0600 as excerpted:
+> 
+>>> Rob, That second drive was immediately put to use elsewhere. I figured
+>>> having only the metadata on that drive, it wouldn't matter. The data
+>>> stayed single and wasn't part of the second drive, only the metadata
+>>> was. I must not be capable of understanding why that wouldn't work.
+>> 
+>> single profile means all devices get btrfs chunks. If you do something
+>> like:
+>> 
+>> # mkfs.btfs /dev/sda
+>> 
+>> By default you get data profile = single, and metadata profile = DUP. If
+>> you then
+>> 
+>> # btrfs add /dev/sdb /mnt/btrfs # btrfs -mconvert=raid1 /mnt/btrfs
 
-__btrfs_alloc_chunk() uses write_[un]lock and spin_[un]lock, it may tell us something.
+          ^device
 
-thanks,
--liubo
+
+> 
+> Then you (OP) go and kill that device as far as btrfs is concerned, and 
+> all that new data written to it in single mode is ONLY on it because it 
+> was written in single mode, so now it has suddenly disappeared!
+> 
+> No WONDER that filesystem's having problems!
+
+So what *is* possible in this case is still mount -o degraded,ro and try to extract what he can from the remaining device. 
+> 
+> Even old files, due to copy on write, would have likely been partially or 
+> entirely moved to the new chunks on the new device if they were updated 
+> during the time the filesystem was mounted writable with the new device 
+> there.  And some desktop environments, for instance, have a habit of 
+> rewriting what might well be the exact same thing back to their config 
+> files, every time they shutdown, or sometimes as soon as they read it in 
+> at startup, as well.  So much of your desktop config may well have been 
+> on that second device, even if you didn't actively change any config 
+> during that time.
+
+Is hard to say. If a balance hasn't recently been done, the original device may have a good amount of free space in allocated chunks. I'm pretty sure Btrfs will write first to already allocated chunks with free space before allocating new chunks? So a bunch of stuff could actually still be on the original device - it just needs -o degraded,ro to get access to it. And if the current version of the file isn't retrievable because all or part of it's on the other drive, it'll just cause an error to occur. I think rsync and the like can be set to not fail on such errors, so anything that can be retrieved, is.
+
+
+Chris Murphy

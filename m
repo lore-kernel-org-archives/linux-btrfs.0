@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:23757 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750889AbaJaSBv (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38162 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752903AbaJaSCa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Oct 2014 14:01:51 -0400
+	Fri, 31 Oct 2014 14:02:30 -0400
 From: Josef Bacik <jbacik@fb.com>
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 05/11] Btrfs-progs: spit out the broken file when ignoring errors
-Date: Fri, 31 Oct 2014 14:01:23 -0400
-Message-ID: <1414778489-4049-6-git-send-email-jbacik@fb.com>
+Subject: [PATCH 06/11] Btrfs-progs: make zero-log use partial open
+Date: Fri, 31 Oct 2014 14:01:24 -0400
+Message-ID: <1414778489-4049-7-git-send-email-jbacik@fb.com>
 In-Reply-To: <1414778489-4049-1-git-send-email-jbacik@fb.com>
 References: <1414778489-4049-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -16,36 +16,26 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's nice to ignore errors on restore, but spit out the filename so the user
-knows which files of his aren't going to look right.  Thanks,
+Because seriously, we only want to kill the tree log.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- cmds-restore.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ btrfs-zero-log.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 38a131e..b52d5c8 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -840,6 +840,8 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 			ret = copy_file(root, fd, &location, path_name);
- 			close(fd);
- 			if (ret) {
-+				fprintf(stderr, "Error copying data for %s\n",
-+					path_name);
- 				if (ignore_errors)
- 					goto next;
- 				btrfs_free_path(path);
-@@ -917,6 +919,8 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 					 output_rootdir, dir, mreg);
- 			free(dir);
- 			if (ret) {
-+				fprintf(stderr, "Error searching %s\n",
-+					path_name);
- 				if (ignore_errors)
- 					goto next;
- 				btrfs_free_path(path);
+diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
+index 88998e9..46c705c 100644
+--- a/btrfs-zero-log.c
++++ b/btrfs-zero-log.c
+@@ -61,7 +61,7 @@ int main(int ac, char **av)
+ 		goto out;
+ 	}
+ 
+-	root = open_ctree(av[1], 0, OPEN_CTREE_WRITES);
++	root = open_ctree(av[1], 0, OPEN_CTREE_WRITES | OPEN_CTREE_PARTIAL);
+ 
+ 	if (root == NULL)
+ 		return 1;
 -- 
 1.8.3.1
 

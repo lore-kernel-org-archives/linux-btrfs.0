@@ -1,110 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53641 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751303AbaKAHi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 1 Nov 2014 03:38:29 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XkTGV-0001bh-Ha
-	for linux-btrfs@vger.kernel.org; Sat, 01 Nov 2014 08:38:27 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:38:27 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:38:27 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from frost.carfax.org.uk ([85.119.82.111]:54768 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753365AbaKAM5x (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Nov 2014 08:57:53 -0400
+Date: Fri, 31 Oct 2014 20:18:45 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Rich Turner <rturner@storix.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: which subvolume is mounted?
-Date: Sat, 1 Nov 2014 07:38:15 +0000 (UTC)
-Message-ID: <pan$e3eb3$610d2ef0$6cd17483$51ecd2b4@cox.net>
+Message-ID: <20141031201844.GH907@carfax.org.uk>
 References: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="VkqCAaSJIySsbD6j"
+In-Reply-To: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Turner posted on Fri, 31 Oct 2014 09:23:27 -0700 as excerpted:
 
-> let’s first assume the contents of /etc/fstab are either not used or
-> invalid in mounting the subvolumes. given the following ‘df’ command,
-> how do i know which subvolume of the btrfs filesystem on /dev/sda3 is
-> mounted at each mount point (/, /var, /opt, /home)? i would have
-> expected to see the mount option used to define the subvolume (subvolid
-> or subvol option) in /proc/mounts.
+--VkqCAaSJIySsbD6j
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
+On Fri, Oct 31, 2014 at 09:23:27AM -0700, Rich Turner wrote:
+> let=E2=80=99s first assume the contents of /etc/fstab are either not used=
+ or invalid in mounting the subvolumes. given the following =E2=80=98df=E2=
+=80=99 command, how do i know which subvolume of the btrfs filesystem on /d=
+ev/sda3 is mounted at each mount point (/, /var, /opt, /home)? i would have=
+ expected to see the mount option used to define the subvolume (subvolid or=
+ subvol option) in /proc/mounts.
+
+   I already answered this on IRC, but just for the record (and to
+test whether my mail is working): it's in /proc/self/mountinfo. The
+fourth field of each line is the location that the mountpoint came
+=66rom in the filesystem, which is what you're after.
+
+   Hugo.
+
+> # df
+> Filesystem     1K-blocks    Used Available Use% Mounted on
+> /dev/sda3        6839296 1698564   4903212  26% /
+> devtmpfs          501464       0    501464   0% /dev
+> tmpfs             507316       0    507316   0% /dev/shm
+> tmpfs             507316    6720    500596   2% /run
+> tmpfs             507316       0    507316   0% /sys/fs/cgroup
+> /dev/sda3        6839296 1698564   4903212  26% /var
+> /dev/sda3        6839296 1698564   4903212  26% /opt
+> /dev/sda3        6839296 1698564   4903212  26% /home
+> /dev/sda1         517868   93040    424828  18% /boot
+>=20
+> # btrfs subvolume list -a --sort=3D+rootid /
+> ID 257 gen 7800 top level 5 path <FS_TREE>/root
+> ID 258 gen 4127 top level 5 path <FS_TREE>/home
+> ID 259 gen 7801 top level 5 path <FS_TREE>/var
+> ID 260 gen 7795 top level 5 path <FS_TREE>/opt
+>=20
 > # uname -a
-> Linux turner11.storix 3.10.0-123.el7.x86_64 #1 SMP
-> Mon May 5 11:16:57 EDT 2014 x86_64 x86_64 x86_64 GNU/Linux
-> 
+> Linux turner11.storix 3.10.0-123.el7.x86_64 #1 SMP Mon May 5 11:16:57 EDT=
+ 2014 x86_64 x86_64 x86_64 GNU/Linux
+>=20
 > # btrfs --version
 > Btrfs v3.12
+>=20
+> # btrfs fi show
+> Label: rhel_turner11  uuid: cd3c0e50-d726-44e2-9bfa-19b11614136a
+> 	Total devices 1 FS bytes used 1.62GiB
+> 	devid    1 size 6.52GiB used 2.24GiB path /dev/sda3
+>=20
+> Btrfs v3.12
+>=20
+> # btrfs fi df /
+> Data, single: total=3D1.98GiB, used=3D1.58GiB
+> System, single: total=3D4.00MiB, used=3D16.00KiB
+> Metadata, single: total=3D264.00MiB, used=3D36.03MiB
+>=20
 
-Your versions of both the kernel (3.10) and userspace (3.12) are quite 
-dated.  Your question was a known issue back then, with related fixes for 
-it in kernel 3.17.  Unfortunately, there were a few bugs with the fixes 
-that hit particular corner-cases, but most or all of them have now been 
-worked out and 3.17.2+ along with 3.18-rc2+ should be much better.  
-Another option would be the 3.16 stable series, now announced as a long-
-term-stable with Ubuntu continuing support for it beyond Greg KH's last 
-regular stable release, which just occurred.  However, I'm not sure if 
-the 3.16 stable series will get those fixes or not, as they may not be 
-considered proper stable-series candidates.
 
-In general, while btrfs is no longer considered entirely unstable and the 
-former warnings have been stripped now, the 3.10 kernel and 3.12 
-userspace were before that happened and mkfs.btrfs among other things 
-should warn you about the risks of running the not yet stable code.
+>=20
+>=20
 
-But even beyond that, while not as unstable as it was, btrfs is still not 
-entirely stable either, and keeping reasonably current is strongly 
-recommended, because older kernels in particular tend to have known bugs 
-and lacking features such as this one, and stable series backports won't 
-take care of all of them like keeping current will.  Userspace isn't 
-as critical in normal runtime as for the most part it simply forwards 
-instructions to the kernel, but if there's a problem and you end up 
-running tools such as btrfs check (aka btrfsck) and btrfs restore (iirc 
-the separate btrfs-restore tool back in 3.12), then a current userspace 
-is critical as well, because then it's userspace that's actually doing 
-the work and is thus bug-critical.
 
-So while you may not want to run absolute newest code, the mainline 
-development kernel rcs, for instance, or the very latest stable kernel 
-early in its stable series (until 3.x.2 or so), subscribing to this list 
-and keeping up with current bugs so you know when for instance the bugs 
-in all of 3.15 and early 3.16, as well as in early 3.17 occur and when 
-they are fixed, is recommended, as is running something approaching 
-current.  People staying a kernel series behind, say on 3.14 until 3.16's 
-release, would have known to avoid 3.15 by the time they would have 
-upgraded to it.  Similarly, once that bug was fixed for 3.16.2, people 
-staying on 3.16 thru the early 3.17 series would have been spared the 
-early bugs there and could upgrade to 3.17.2 now, knowing that the early 
-3.17 bug was there, and later, knowing that it was fixed for 3.17.2, 
-because they follow this list.
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- Your problem is that you've got too much taste to be ---      =20
+                             a web developer                            =20
 
-Or if you're conservative, stay with the latest long-term-stable, which 
-was 3.14, with 3.16 just announced as a long-term-stable sponsored by 
-Ubuntu.
+--VkqCAaSJIySsbD6j
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-If you're more conservative than that and don't want to update from your 
-3.10 series, then why are you on the still not entirely mature btrfs in 
-the first place?  In that case, a more mature filesystem such as ext4 or 
-xfs (or my personal choice, reiserfs, which has done well by me even thru 
-various hardware issues, since data=ordered became the default in 2.4.16 
-or some such) would be a more appropriate match for your kernel 
-conservatism.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-As for userspace, as I said it's not quite so vital, but you do want to 
-keep at least /semi/-current.  3.14.2 would be the earliest I'd recommend 
-there, with 3.16.1 and now 3.17 out as well.
+iQIcBAEBAgAGBQJUU+6kAAoJEFheFHXiqx3krTYQAKMt2Y6Y6HOMLiF66VfOB0La
+fgzZaP1jAp1CY52Qu1K5ZX3+DaVmwEXXrODoxsujXO338tUGU6rwrWoZ+L3O3mmX
+vqLkBwgBRstx/o6lRP/tTVFTgACXtucA92GnEd883pxxePGHawy63qbh1TQsYPpZ
+t6IJyL9aof8QmUQmfqnv8YFI4t/FT/g+H0d48kLvejYmG4XRg+iFa6KrKu26MB1b
+KM2YMz//g7q2TmUD8VHAtGSo49O/7tyXY42ORLEgaTvJbCSfjEBK73STZu99dJMA
+Mod6qOyABrCvmyGzGVAA8cPC0gzUvJ3891oysp1Xovz2s37rN48N3KU1coxFOn2E
+j75oNxeHG6rDBnpy37hdP2YiYdS0hDa6kHo7fLC7Fk7Hk14fdLltCXyWe9DRxZUx
+MI8X7+uHXxQCmHoUGLDo+kRihGPhpN2VtX07UodZhCcQXkGF0MB6d7VOoc01M+ji
+QkZqso3Fa0xMBl/LaGQZUJK0xaZXNK9fpcTwwcGGdCG+en9hghSlUsytTdoZDaMi
+d+RMqYX2YD0ptEAPCWs9rXMLsjf2fgUGhUCqnEanrbd34WR6FslaW9L3AQ14MyW/
+NQDBWIoW2MFSdnCe32zvEPB7IpdyBbZJQwRpaHEBumEuGmNK+V6CwKGW2ZT5HIzh
+6VNuXzgi7RfR4CLvKFkT
+=wL8m
+-----END PGP SIGNATURE-----
 
-Meanwhile, like I said above, a current kernel and userspace should be a 
-bit better about what they report, tho btrfs is still evolving a bit in 
-that area.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--VkqCAaSJIySsbD6j--

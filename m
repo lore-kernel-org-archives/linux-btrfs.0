@@ -1,81 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51149 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:53641 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755201AbaKAHAg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 1 Nov 2014 03:00:36 -0400
+	id S1751303AbaKAHi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 1 Nov 2014 03:38:29 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XkSfm-0003ik-PQ
-	for linux-btrfs@vger.kernel.org; Sat, 01 Nov 2014 08:00:30 +0100
+	id 1XkTGV-0001bh-Ha
+	for linux-btrfs@vger.kernel.org; Sat, 01 Nov 2014 08:38:27 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:00:30 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:38:27 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:00:30 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Nov 2014 08:38:27 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Quota question
-Date: Sat, 1 Nov 2014 07:00:20 +0000 (UTC)
-Message-ID: <pan$db0e5$7ee7229b$da3a292b$c1219b2@cox.net>
-References: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr>
-	<F924EC8F-D124-4E6D-A8FE-E03D82A8DAB8@free.fr>
+Subject: Re: which subvolume is mounted?
+Date: Sat, 1 Nov 2014 07:38:15 +0000 (UTC)
+Message-ID: <pan$e3eb3$610d2ef0$6cd17483$51ecd2b4@cox.net>
+References: <CFAACED5-055D-4586-A474-CA610881F367@storix.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cyril Scetbon posted on Fri, 31 Oct 2014 09:45:23 +0100 as excerpted:
+Rich Turner posted on Fri, 31 Oct 2014 09:23:27 -0700 as excerpted:
 
-> Besides the first question, I met an issue using parent groups (see
-> http://pastebin.com/asT5ZFsi). I can't reproduce it all the time, but it
-> seems to appear frequently. Is there any know BUG that can be the source
-> of this error ? I'm using version 3.12 on Trusty
+> let’s first assume the contents of /etc/fstab are either not used or
+> invalid in mounting the subvolumes. given the following ‘df’ command,
+> how do i know which subvolume of the btrfs filesystem on /dev/sda3 is
+> mounted at each mount point (/, /var, /opt, /home)? i would have
+> expected to see the mount option used to define the subvolume (subvolid
+> or subvol option) in /proc/mounts.
 
-I don't use quotas personally, but I know for quite some time they were 
-essentially "broken" in certain instances.  My recommendation as a list 
-regular then was, unless your goal is specific quota-feature-testing, if 
-you /need/ quotas, use a more mature filesystem that can reliably provide 
-them; if you don't need quotas, turn them off and avoid the quota related 
-btrfs bugs.
+> # uname -a
+> Linux turner11.storix 3.10.0-123.el7.x86_64 #1 SMP
+> Mon May 5 11:16:57 EDT 2014 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> # btrfs --version
+> Btrfs v3.12
 
-Recently, around 3.16 timeframe I believe, there was quite a btrfs quota-
-subsystem rewrite designed to tackle and eliminate these problems.  Now 
-since I don't use quotas personally and I've not seen a definitive 
-statement on-list one way or the other I'm not sure if the full rewrite 
-is done yet or not, but I've not see further followup patches either, so 
-barring further information to the contrary I'd guess it is.  However, 
-it's still early in the history of the new code  and it's still just 
-that, new.  While I've not seen many quota-related bug reports from it, 
-it may well be that enough people took the general recommendation above 
-that it simply hasn't gotten much testing.
+Your versions of both the kernel (3.10) and userspace (3.12) are quite 
+dated.  Your question was a known issue back then, with related fixes for 
+it in kernel 3.17.  Unfortunately, there were a few bugs with the fixes 
+that hit particular corner-cases, but most or all of them have now been 
+worked out and 3.17.2+ along with 3.18-rc2+ should be much better.  
+Another option would be the 3.16 stable series, now announced as a long-
+term-stable with Ubuntu continuing support for it beyond Greg KH's last 
+regular stable release, which just occurred.  However, I'm not sure if 
+the 3.16 stable series will get those fixes or not, as they may not be 
+considered proper stable-series candidates.
 
-So I honestly can't say what the state of the new quota code is, but one 
-thing I can say for sure is that the quota code in 3.12 is the old code, 
-known to be broken and now rewritten, dead quota code.  So for sure I'd 
-say don't use it.  It's known to be broken and there's simply no reason 
-to do so.
+In general, while btrfs is no longer considered entirely unstable and the 
+former warnings have been stripped now, the 3.10 kernel and 3.12 
+userspace were before that happened and mkfs.btrfs among other things 
+should warn you about the risks of running the not yet stable code.
 
-But with the rewrite you now have three choices instead of two.  If you 
-need quotas and are up for testing relatively new code (and btrfs itself 
-isn't exactly the maturest around, so if you're not up for testing new 
-code, why are you running btrfs at all?), try a recent enough btrfs that 
-you are running the new quota code and your tests and potentially bug 
-reports will be actually worthwhile.  I just read today that Ubuntu is 
-maintaining the 3.16 kernel for somewhat longer in coordination with 
-their distro releases, after Greg recently released the last planned 
-regular stable 3.16 release, so that's a reasonable kernel series to 
-settle with.  I /think/ it has the new quota code, and certainly, the bad 
-bug in the 3.15 series is fixed (in 3.16.2) and the bug that plagued 
-3.17, now fixed in 3.18-rc2 and headed for 3.17 stable, wouldn't be in 
-3.16 stable either.  Or you can of course follow current mainline.
+But even beyond that, while not as unstable as it was, btrfs is still not 
+entirely stable either, and keeping reasonably current is strongly 
+recommended, because older kernels in particular tend to have known bugs 
+and lacking features such as this one, and stable series backports won't 
+take care of all of them like keeping current will.  Userspace isn't 
+as critical in normal runtime as for the most part it simply forwards 
+instructions to the kernel, but if there's a problem and you end up 
+running tools such as btrfs check (aka btrfsck) and btrfs restore (iirc 
+the separate btrfs-restore tool back in 3.12), then a current userspace 
+is critical as well, because then it's userspace that's actually doing 
+the work and is thus bug-critical.
 
-The other two choices are as before, turn off quotas in btrfs, or switch 
-to a more mature filesystem with reliable quota support.  But staying 
-with 3.12 with btrfs quotas enabled simply doesn't make sense, because as 
-I said, the quota code there is dead and known broken, so that's not a 
-reasonable option at all.
+So while you may not want to run absolute newest code, the mainline 
+development kernel rcs, for instance, or the very latest stable kernel 
+early in its stable series (until 3.x.2 or so), subscribing to this list 
+and keeping up with current bugs so you know when for instance the bugs 
+in all of 3.15 and early 3.16, as well as in early 3.17 occur and when 
+they are fixed, is recommended, as is running something approaching 
+current.  People staying a kernel series behind, say on 3.14 until 3.16's 
+release, would have known to avoid 3.15 by the time they would have 
+upgraded to it.  Similarly, once that bug was fixed for 3.16.2, people 
+staying on 3.16 thru the early 3.17 series would have been spared the 
+early bugs there and could upgrade to 3.17.2 now, knowing that the early 
+3.17 bug was there, and later, knowing that it was fixed for 3.17.2, 
+because they follow this list.
+
+Or if you're conservative, stay with the latest long-term-stable, which 
+was 3.14, with 3.16 just announced as a long-term-stable sponsored by 
+Ubuntu.
+
+If you're more conservative than that and don't want to update from your 
+3.10 series, then why are you on the still not entirely mature btrfs in 
+the first place?  In that case, a more mature filesystem such as ext4 or 
+xfs (or my personal choice, reiserfs, which has done well by me even thru 
+various hardware issues, since data=ordered became the default in 2.4.16 
+or some such) would be a more appropriate match for your kernel 
+conservatism.
+
+As for userspace, as I said it's not quite so vital, but you do want to 
+keep at least /semi/-current.  3.14.2 would be the earliest I'd recommend 
+there, with 3.16.1 and now 3.17 out as well.
+
+Meanwhile, like I said above, a current kernel and userspace should be a 
+bit better about what they report, tho btrfs is still evolving a bit in 
+that area.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

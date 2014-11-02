@@ -1,85 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:60683 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751132AbaKBOWJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Nov 2014 09:22:09 -0500
-Received: by mail-la0-f44.google.com with SMTP id gf13so8329828lab.31
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Nov 2014 06:22:07 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20141102104952.GN907@carfax.org.uk>
-References: <1798985.8i0FJtRps5@zafu>
-	<20141102104952.GN907@carfax.org.uk>
-Date: Sun, 2 Nov 2014 14:22:07 +0000
-Message-ID: <CAL3q7H4iKLip_6KE19eLm2nAoLH05k8Ed=sTivLYr_VVy2=M5w@mail.gmail.com>
-Subject: Re: Kernel 3.17.2 and RO snapshots
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>,
-        linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:60677 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751292AbaKBPSl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 2 Nov 2014 10:18:41 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XkwvQ-0008Pk-KP
+	for linux-btrfs@vger.kernel.org; Sun, 02 Nov 2014 16:18:40 +0100
+Received: from hsi-kbw-149-172-191-171.hsi13.kabel-badenwuerttemberg.de ([149.172.191.171])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Nov 2014 16:18:40 +0100
+Received: from mailinglists by hsi-kbw-149-172-191-171.hsi13.kabel-badenwuerttemberg.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Nov 2014 16:18:40 +0100
+To: linux-btrfs@vger.kernel.org
+From: Florian Lindner <mailinglists@xgm.de>
+Subject: Can't mount: open_ctree failed!
+Date: Sun, 02 Nov 2014 16:18:27 +0100
+Message-ID: <m35i04$u5p$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 2, 2014 at 10:49 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Sun, Nov 02, 2014 at 11:42:58AM +0100, Swâmi Petaramesh wrote:
->> Hi there,
->>
->> I'm a little lost with latest kernel issues, and would like to know if the
->> "data corruption" with RO snapshots is fixed in 3.17.2, or not yet ?
->
->    Yes, it is.
->
->> Also about this issuse, I'd like to know if :
->>
->> - Data corruption occurs when creating RO snapshots,
->
->    Yes.
+Hello,
 
-More specifically, you won't lose your data or get it modified in some way.
-The problem was that when a ro snapshot was created under specific
-timings, the fs metadata on disk would never end up pointing to the
-current (most recent) root of the snapshot. And this caused all sorts
-of errors when accessing the snapshot after a umount + mount / reboot.
+all after sudden I can't mount my btrfs home partition anymore. System is 
+Arch with kernel 3.17.2, but I use snapper which does snapshopts regularly 
+and I had 3.17.1 before, which afaik had some problems with snapshops.
 
-Code to fix the issue (correct the metadata to point to the correct
-roots) went into btrfs' check command (btrfs-progs v3.17).
+Trying to mount without any options gives to the syslog:
 
->
->> - Or if it can occur with just using a FS that already has RO snapshots ?
->
->    No.
->
->> - Or if it can occur when deleting existing RO snapshots with 3.17 ?
->
->    Not that I'm aware of.
->
->> Which means : If I have mistakenty upgraded to 3.17.2 a system containing RO
->> snapshots and cannot downgrade (big distro and drivers mess...), what is the
->> safest way to go ?
->
->    Leave it as it is. :)
->
->> And if data corruption occurs, should I expect it to affect snapshots only, or
->> the whole system ?
->
->    I _think_ it only affects the snapshots, but could bring the system
-> down if you access the broken data. But you're safe with 3.17.2, so
-> it's a moot point for you right now.
->
->    Hugo.
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->       --- If it's December 1941 in Casablanca,  what time is it ---
->                               in New York?
+Nov 02 16:04:16 horus kernel: BTRFS: mismatching generation and 
+generation_v2 found in root item. This root was probably mounted with an 
+older kernel. Resetting all new fields.
+Nov 02 16:04:16 horus kernel: parent transid verify failed on 2121534193664 
+wanted 1073784832 found 45541
+Nov 02 16:04:16 horus kernel: parent transid verify failed on 2121534193664 
+wanted 1073784832 found 45541
+Nov 02 16:04:16 horus kernel: BTRFS: open_ctree failed
+
+btrfsck quits after about half a minute with
+
+# btrfsck /dev/sdb1
+root item for root 3377, current bytenr 2122078191616, current gen 
+8589934592, current level 64, new bytenr 2122078191616, new gen 49443, new 
+level 1
+root 3377 has a root item with a more recent gen (8589934592) compared to 
+the found root node (49443)
+
+I also tried -s 0 or -s 1 or -b options to btrfsck, as well as
+
+# btrfsck --init-extent-tree /dev/sdb1
+root 3377 has a root item with a more recent gen (8589934592) compared to 
+the found root node (49443)
+
+# btrfsck --init-csum-tree /dev/sdb1
+Creating a new CRC tree
+root 3377 has a root item with a more recent gen (8589934592) compared to 
+the found root node (49443)
 
 
+Mounting with -o recovery gives exact the same error. My usual mount options 
+were defaults,compress=lzo,subvol=__current.
 
--- 
-Filipe David Manana,
+I also tried btrfs-zero-log but this does not change anything either.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Any ideas are deeply appreciated! Please help!
+
+Florian 
+

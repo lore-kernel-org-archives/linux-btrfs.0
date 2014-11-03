@@ -1,46 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32719 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27859 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751981AbaKAQFK (ORCPT
+	by vger.kernel.org with ESMTP id S1751130AbaKCN4y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 1 Nov 2014 12:05:10 -0400
-Message-ID: <545504B1.9050408@fb.com>
-Date: Sat, 1 Nov 2014 12:05:05 -0400
-From: Chris Mason <clm@fb.com>
+	Mon, 3 Nov 2014 08:56:54 -0500
+Received: from pps.filterd (m0004347 [127.0.0.1])
+	by m0004347.ppops.net (8.14.5/8.14.5) with SMTP id sA3Dq3dp005857
+	for <linux-btrfs@vger.kernel.org>; Mon, 3 Nov 2014 05:56:53 -0800
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by m0004347.ppops.net with ESMTP id 1qe19ws3tn-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 03 Nov 2014 05:56:53 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in statfs V2
+Date: Mon, 3 Nov 2014 08:56:50 -0500
+Message-ID: <1415023010-12988-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Our gluster boxes get several thousand statfs() calls per second, which begins
+to suck hardcore with all of the lock contention on the chunk mutex and dev list
+mutex.  We don't really need to hold these things, if we have transient
+weirdness with statfs() because of the chunk allocator we don't care, so remove
+this locking.
 
-Hi Linus,
+We still need the dev_list lock if you mount with -o alloc_start however, which
+is a good argument for nuking that thing from orbit, but that's a patch for
+another day.  Thanks,
 
-We have a few fixes in my for-linus branch:
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2: make sure ->alloc_start is set before doing the dev extent lookup logic.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+ fs/btrfs/super.c | 72 ++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 47 insertions(+), 25 deletions(-)
 
-Filipe is nailing down some problems with our skinny extent variation,
-and Dave's patch fixes endian problems in the new super block checks.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 54bd91e..dc337d1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1644,8 +1644,20 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	int i = 0, nr_devices;
+ 	int ret;
+ 
++	/*
++	 * We aren't under the device list lock, so this is racey-ish, but good
++	 * enough for our purposes.
++	 */
+ 	nr_devices = fs_info->fs_devices->open_devices;
+-	BUG_ON(!nr_devices);
++	if (!nr_devices) {
++		smp_mb();
++		nr_devices = fs_info->fs_devices->open_devices;
++		ASSERT(nr_devices);
++		if (!nr_devices) {
++			*free_bytes = 0;
++			return 0;
++		}
++	}
+ 
+ 	devices_info = kmalloc_array(nr_devices, sizeof(*devices_info),
+ 			       GFP_NOFS);
+@@ -1670,11 +1682,17 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	else
+ 		min_stripe_size = BTRFS_STRIPE_LEN;
+ 
+-	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++	if (fs_info->alloc_start)
++		mutex_lock(&fs_devices->device_list_mutex);
++	rcu_read_lock();
++	list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
+ 		if (!device->in_fs_metadata || !device->bdev ||
+ 		    device->is_tgtdev_for_dev_replace)
+ 			continue;
+ 
++		if (i >= nr_devices)
++			break;
++
+ 		avail_space = device->total_bytes - device->bytes_used;
+ 
+ 		/* align with stripe_len */
+@@ -1689,24 +1707,32 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 		skip_space = 1024 * 1024;
+ 
+ 		/* user can set the offset in fs_info->alloc_start. */
+-		if (fs_info->alloc_start + BTRFS_STRIPE_LEN <=
+-		    device->total_bytes)
++		if (fs_info->alloc_start &&
++		    fs_info->alloc_start + BTRFS_STRIPE_LEN <=
++		    device->total_bytes) {
++			rcu_read_unlock();
+ 			skip_space = max(fs_info->alloc_start, skip_space);
+ 
+-		/*
+-		 * btrfs can not use the free space in [0, skip_space - 1],
+-		 * we must subtract it from the total. In order to implement
+-		 * it, we account the used space in this range first.
+-		 */
+-		ret = btrfs_account_dev_extents_size(device, 0, skip_space - 1,
+-						     &used_space);
+-		if (ret) {
+-			kfree(devices_info);
+-			return ret;
+-		}
++			/*
++			 * btrfs can not use the free space in
++			 * [0, skip_space - 1], we must subtract it from the
++			 * total. In order to implement it, we account the used
++			 * space in this range first.
++			 */
++			ret = btrfs_account_dev_extents_size(device, 0,
++							     skip_space - 1,
++							     &used_space);
++			if (ret) {
++				kfree(devices_info);
++				mutex_unlock(&fs_devices->device_list_mutex);
++				return ret;
++			}
+ 
+-		/* calc the free space in [0, skip_space - 1] */
+-		skip_space -= used_space;
++			rcu_read_lock();
++
++			/* calc the free space in [0, skip_space - 1] */
++			skip_space -= used_space;
++		}
+ 
+ 		/*
+ 		 * we can use the free space in [0, skip_space - 1], subtract
+@@ -1725,6 +1751,9 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 
+ 		i++;
+ 	}
++	rcu_read_unlock();
++	if (fs_info->alloc_start)
++		mutex_unlock(&fs_devices->device_list_mutex);
+ 
+ 	nr_devices = i;
+ 
+@@ -1787,8 +1816,6 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	 * holding chunk_muext to avoid allocating new chunks, holding
+ 	 * device_list_mutex to avoid the device being removed
+ 	 */
+-	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+-	mutex_lock(&fs_info->chunk_mutex);
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(found, head, list) {
+ 		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
+@@ -1826,15 +1853,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 
+ 	buf->f_bavail = total_free_data;
+ 	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
+-	if (ret) {
+-		mutex_unlock(&fs_info->chunk_mutex);
+-		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	if (ret)
+ 		return ret;
+-	}
+ 	buf->f_bavail += div_u64(total_free_data, factor);
+ 	buf->f_bavail = buf->f_bavail >> bits;
+-	mutex_unlock(&fs_info->chunk_mutex);
+-	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+-- 
+1.8.3.1
 
-Filipe Manana (2) commits (+4/-18):
-    Btrfs: fix race that makes btrfs_lookup_extent_info miss skinny extent items (+0/-8)
-    Btrfs: fix invalid leaf slot access in btrfs_lookup_extent() (+4/-10)
-
-Josef Bacik (1) commits (+1/-0):
-    Btrfs: properly clean up btrfs_end_io_wq_cache
-
-David Sterba (1) commits (+22/-21):
-    btrfs: use macro accessors in superblock validation checks
-
-Total: (4) commits (+27/-39)
-
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/disk-io.c     | 43 ++++++++++++++++++++++---------------------
- fs/btrfs/extent-tree.c | 18 ++----------------
- fs/btrfs/super.c       |  1 +
- fs/btrfs/tree-log.c    |  2 +-
- 5 files changed, 27 insertions(+), 39 deletions(-)

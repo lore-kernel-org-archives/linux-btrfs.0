@@ -1,95 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:43706 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:40737 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752307AbaKCOKb (ORCPT
+	by vger.kernel.org with ESMTP id S1751906AbaKCONQ (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 3 Nov 2014 09:10:31 -0500
+	Mon, 3 Nov 2014 09:13:16 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix freeing used extent after removing empty block group
-Date: Mon,  3 Nov 2014 14:08:39 +0000
-Message-Id: <1415023719-20899-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: avoid premature -ENOMEM in clear_extent_bit()
+Date: Mon,  3 Nov 2014 14:12:57 +0000
+Message-Id: <1415023977-1972-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Due to ignoring errors returned by clear_extent_bits (at the moment only
--ENOMEM is possible), we can end up freeing an extent that is actually in
-use (i.e. return the extent to the free space cache).
-
-The sequence of steps that lead to this:
-
-1) Cleaner thread starts execution and calls btrfs_delete_unused_bgs(), with
-   the goal of freeing empty block groups;
-
-2) btrfs_delete_unused_bgs() finds an empty block group, joins the current
-   transaction (or starts a new one if none is running) and attempts to
-   clear the EXTENT_DIRTY bit for the block group's range from freed_extents[0]
-   and freed_extents[1] (of which one corresponds to fs_info->pinned_extents);
-
-3) Clearing the EXTENT_DIRTY bit (via clear_extent_bits()) fails with
-   -ENOMEM, but such error is ignored and btrfs_delete_unused_bgs() proceeds
-   to delete the block group and the respective chunk, while pinned_extents
-   remains with that bit set for the whole (or a part of the) range covered
-   by the block group;
-
-4) Later while the transaction is still running, the chunk ends up being reused
-   for a new block group (maybe for different purpose, data or metadata), and
-   extents belonging to the new block group are allocated for file data or btree
-   nodes/leafs;
-
-5) The current transaction is committed, meaning that we unpinned one or more
-   extents from the new block group (through btrfs_finish_extent_commit() and
-   unpin_extent_range()) which are now being used for new file data or new
-   metadata (through btrfs_finish_extent_commit() and unpin_extent_range()).
-   And unpinning means we returned the extents to the free space cache of the
-   new block group, which implies those extents can be used for future allocations
-   while they're still in use.
-
-Alternatively, we can hit a BUG_ON() when doing a lookup for a block group's cache
-object in unpin_extent_range() if a new block group didn't end up being allocated for
-the same chunk (step 4 above).
-
-Fix this by not freeing the block group and chunk if we fail to clear the dirty bit.
+We try to allocate an extent state structure before acquiring the extent
+state tree's spinlock as we might need a new one later and therefore avoid
+doing later an atomic allocation while holding the tree's spinlock. However
+we returned -ENOMEM if that initial non-atomic allocation failed, which is
+a bit excessive since we might end up not needing the pre-allocated extent
+state at all - for the case where the tree doesn't have any extent states
+that cover the input range and cover too any other range. Therefore don't
+return -ENOMEM if that pre-allocation fails.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9ba886c..744b580 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9523,10 +9523,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 */
- 		start = block_group->key.objectid;
- 		end = start + block_group->key.offset - 1;
--		clear_extent_bits(&fs_info->freed_extents[0], start, end,
-+		ret = clear_extent_bits(&fs_info->freed_extents[0], start, end,
- 				  EXTENT_DIRTY, GFP_NOFS);
--		clear_extent_bits(&fs_info->freed_extents[1], start, end,
-+		if (ret) {
-+			btrfs_set_block_group_rw(root, block_group);
-+			goto end_trans;
-+		}
-+		ret = clear_extent_bits(&fs_info->freed_extents[1], start, end,
- 				  EXTENT_DIRTY, GFP_NOFS);
-+		if (ret) {
-+			btrfs_set_block_group_rw(root, block_group);
-+			goto end_trans;
-+		}
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 654ed3d..4ebabd2 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -595,9 +595,14 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		clear = 1;
+ again:
+ 	if (!prealloc && (mask & __GFP_WAIT)) {
++		/*
++		 * Don't care for allocation failure here because we might end
++		 * up not needing the pre-allocated extent state at all, which
++		 * is the case if we only have in the tree extent states that
++		 * cover our input range and don't cover too any other range.
++		 * If we end up needing a new extent state we allocate it later.
++		 */
+ 		prealloc = alloc_extent_state(mask);
+-		if (!prealloc)
+-			return -ENOMEM;
+ 	}
  
- 		/* Reset pinned so btrfs_put_block_group doesn't complain */
- 		block_group->pinned = 0;
-@@ -9537,6 +9545,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 */
- 		ret = btrfs_remove_chunk(trans, root,
- 					 block_group->key.objectid);
-+end_trans:
- 		btrfs_end_transaction(trans, root);
- next:
- 		btrfs_put_block_group(block_group);
+ 	spin_lock(&tree->lock);
 -- 
 1.9.1
 

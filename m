@@ -1,34 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-01v.sys.comcast.net ([69.252.207.33]:60532 "EHLO
-	resqmta-ch2-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752606AbaKCDtH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 2 Nov 2014 22:49:07 -0500
-Message-ID: <5456FB31.5030301@pobox.com>
-Date: Sun, 02 Nov 2014 19:49:05 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Tobias Holst <tobby@tobby.eu>
-CC: Rich Freeman <r-btrfs@thefreemanclan.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: filesystem corruption
-References: <CAGwxe4hoJa6h3=qmsa6k+AzienjwZ2eifakKzhanXZVCru9koA@mail.gmail.com> <CAGwxe4inBLYrbq2t1T004dGR_vfE-GwgU=fho=SCDBa6LOkWow@mail.gmail.com> <CAGfcS_=f2TRGbeWpE186xE89jnXmPb=qiN6mPgjQGJRRX3UJ1g@mail.gmail.com> <CAGwxe4hC_BtPd41YCnFnyMD3TnOeuNgAZ1dZUFRUYuOkFjy0Yg@mail.gmail.com> <5455B7E7.3020404@pobox.com> <CAGwxe4i1=S-qgp91YjqH11juaGx6h0FyM7rDAWhFix+beCRgPw@mail.gmail.com>
-In-Reply-To: <CAGwxe4i1=S-qgp91YjqH11juaGx6h0FyM7rDAWhFix+beCRgPw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:35036 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750739AbaKCGwX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Nov 2014 01:52:23 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XlBUy-00040R-IX
+	for linux-btrfs@vger.kernel.org; Mon, 03 Nov 2014 07:52:20 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Nov 2014 07:52:20 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Nov 2014 07:52:20 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID1 fails to recover chunk tree
+Date: Mon, 3 Nov 2014 06:52:08 +0000 (UTC)
+Message-ID: <pan$9eef8$ab1ab358$f95b3e8$941ea1a9@cox.net>
+References: <544FFD52.6010604@gmail.com> <5451699B.4020507@pobox.com>
+	<54517338.7090606@pobox.com> <54523D86.5040906@gmail.com>
+	<58060F93-3CB7-4575-9AF7-59DAF895CE7B@colorremedies.com>
+	<pan$2cd78$85acd913$95d42126$8a9a4137@cox.net>
+	<FC480E52-012E-41E7-902E-2EE3ECFFB90B@colorremedies.com>
+	<5455B25E.2070703@pobox.com> <20141102134855.33677567@natsu>
+	<545610BE.1080508@pobox.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/02/2014 06:55 PM, Tobias Holst wrote:
-> But I can't do a balance anymore?
->
-> root@t-mon:~# btrfs balance start /dev/sda1
-> ERROR: can't access '/dev/sda1'
+Robert White posted on Sun, 02 Nov 2014 03:08:46 -0800 as excerpted:
 
-Balance takes place on a mounted filesystem not a native block device.
+> Specifying none of -d -m and -s is the same as specifying all of them,
+> so "btrfs balance /path" and "btrfs balance -d -m -s /path" are the same
+> operation.
 
-So...
+It's actually a bit more complicated than that.
 
-mount -t btrfs /dev/sda1 /some/path/somewhere
-btrfs balance start /some/path/somewhere
+The system type is a subset of the metadata type, so -m includes -s by 
+implication.  Therefore, specifying -d -m is the same as specifying -d -s 
+-m, is the same as not specifying any of them.
 
+The normal way to balance system chunks is to balance metadata, which 
+includes but is not limited to system chunks.  The -s makes it possible 
+to do system chunks only, but to actually make it do it, you will need to 
+pass -f, to force the balance, since normally you'd just balance 
+metadata, and let system chunks be balanced as part of the metadata 
+balance.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

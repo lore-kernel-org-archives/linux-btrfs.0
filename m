@@ -1,172 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27859 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751130AbaKCN4y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Nov 2014 08:56:54 -0500
-Received: from pps.filterd (m0004347 [127.0.0.1])
-	by m0004347.ppops.net (8.14.5/8.14.5) with SMTP id sA3Dq3dp005857
-	for <linux-btrfs@vger.kernel.org>; Mon, 3 Nov 2014 05:56:53 -0800
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by m0004347.ppops.net with ESMTP id 1qe19ws3tn-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 03 Nov 2014 05:56:53 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in statfs V2
-Date: Mon, 3 Nov 2014 08:56:50 -0500
-Message-ID: <1415023010-12988-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:43706 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752307AbaKCOKb (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 3 Nov 2014 09:10:31 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix freeing used extent after removing empty block group
+Date: Mon,  3 Nov 2014 14:08:39 +0000
+Message-Id: <1415023719-20899-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Our gluster boxes get several thousand statfs() calls per second, which begins
-to suck hardcore with all of the lock contention on the chunk mutex and dev list
-mutex.  We don't really need to hold these things, if we have transient
-weirdness with statfs() because of the chunk allocator we don't care, so remove
-this locking.
+Due to ignoring errors returned by clear_extent_bits (at the moment only
+-ENOMEM is possible), we can end up freeing an extent that is actually in
+use (i.e. return the extent to the free space cache).
 
-We still need the dev_list lock if you mount with -o alloc_start however, which
-is a good argument for nuking that thing from orbit, but that's a patch for
-another day.  Thanks,
+The sequence of steps that lead to this:
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+1) Cleaner thread starts execution and calls btrfs_delete_unused_bgs(), with
+   the goal of freeing empty block groups;
+
+2) btrfs_delete_unused_bgs() finds an empty block group, joins the current
+   transaction (or starts a new one if none is running) and attempts to
+   clear the EXTENT_DIRTY bit for the block group's range from freed_extents[0]
+   and freed_extents[1] (of which one corresponds to fs_info->pinned_extents);
+
+3) Clearing the EXTENT_DIRTY bit (via clear_extent_bits()) fails with
+   -ENOMEM, but such error is ignored and btrfs_delete_unused_bgs() proceeds
+   to delete the block group and the respective chunk, while pinned_extents
+   remains with that bit set for the whole (or a part of the) range covered
+   by the block group;
+
+4) Later while the transaction is still running, the chunk ends up being reused
+   for a new block group (maybe for different purpose, data or metadata), and
+   extents belonging to the new block group are allocated for file data or btree
+   nodes/leafs;
+
+5) The current transaction is committed, meaning that we unpinned one or more
+   extents from the new block group (through btrfs_finish_extent_commit() and
+   unpin_extent_range()) which are now being used for new file data or new
+   metadata (through btrfs_finish_extent_commit() and unpin_extent_range()).
+   And unpinning means we returned the extents to the free space cache of the
+   new block group, which implies those extents can be used for future allocations
+   while they're still in use.
+
+Alternatively, we can hit a BUG_ON() when doing a lookup for a block group's cache
+object in unpin_extent_range() if a new block group didn't end up being allocated for
+the same chunk (step 4 above).
+
+Fix this by not freeing the block group and chunk if we fail to clear the dirty bit.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-V1->V2: make sure ->alloc_start is set before doing the dev extent lookup logic.
+ fs/btrfs/extent-tree.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
- fs/btrfs/super.c | 72 ++++++++++++++++++++++++++++++++++++--------------------
- 1 file changed, 47 insertions(+), 25 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 54bd91e..dc337d1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1644,8 +1644,20 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	int i = 0, nr_devices;
- 	int ret;
- 
-+	/*
-+	 * We aren't under the device list lock, so this is racey-ish, but good
-+	 * enough for our purposes.
-+	 */
- 	nr_devices = fs_info->fs_devices->open_devices;
--	BUG_ON(!nr_devices);
-+	if (!nr_devices) {
-+		smp_mb();
-+		nr_devices = fs_info->fs_devices->open_devices;
-+		ASSERT(nr_devices);
-+		if (!nr_devices) {
-+			*free_bytes = 0;
-+			return 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9ba886c..744b580 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9523,10 +9523,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		 */
+ 		start = block_group->key.objectid;
+ 		end = start + block_group->key.offset - 1;
+-		clear_extent_bits(&fs_info->freed_extents[0], start, end,
++		ret = clear_extent_bits(&fs_info->freed_extents[0], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
+-		clear_extent_bits(&fs_info->freed_extents[1], start, end,
++		if (ret) {
++			btrfs_set_block_group_rw(root, block_group);
++			goto end_trans;
 +		}
-+	}
- 
- 	devices_info = kmalloc_array(nr_devices, sizeof(*devices_info),
- 			       GFP_NOFS);
-@@ -1670,11 +1682,17 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	else
- 		min_stripe_size = BTRFS_STRIPE_LEN;
- 
--	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+	if (fs_info->alloc_start)
-+		mutex_lock(&fs_devices->device_list_mutex);
-+	rcu_read_lock();
-+	list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
- 		if (!device->in_fs_metadata || !device->bdev ||
- 		    device->is_tgtdev_for_dev_replace)
- 			continue;
- 
-+		if (i >= nr_devices)
-+			break;
-+
- 		avail_space = device->total_bytes - device->bytes_used;
- 
- 		/* align with stripe_len */
-@@ -1689,24 +1707,32 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 		skip_space = 1024 * 1024;
- 
- 		/* user can set the offset in fs_info->alloc_start. */
--		if (fs_info->alloc_start + BTRFS_STRIPE_LEN <=
--		    device->total_bytes)
-+		if (fs_info->alloc_start &&
-+		    fs_info->alloc_start + BTRFS_STRIPE_LEN <=
-+		    device->total_bytes) {
-+			rcu_read_unlock();
- 			skip_space = max(fs_info->alloc_start, skip_space);
- 
--		/*
--		 * btrfs can not use the free space in [0, skip_space - 1],
--		 * we must subtract it from the total. In order to implement
--		 * it, we account the used space in this range first.
--		 */
--		ret = btrfs_account_dev_extents_size(device, 0, skip_space - 1,
--						     &used_space);
--		if (ret) {
--			kfree(devices_info);
--			return ret;
--		}
-+			/*
-+			 * btrfs can not use the free space in
-+			 * [0, skip_space - 1], we must subtract it from the
-+			 * total. In order to implement it, we account the used
-+			 * space in this range first.
-+			 */
-+			ret = btrfs_account_dev_extents_size(device, 0,
-+							     skip_space - 1,
-+							     &used_space);
-+			if (ret) {
-+				kfree(devices_info);
-+				mutex_unlock(&fs_devices->device_list_mutex);
-+				return ret;
-+			}
- 
--		/* calc the free space in [0, skip_space - 1] */
--		skip_space -= used_space;
-+			rcu_read_lock();
-+
-+			/* calc the free space in [0, skip_space - 1] */
-+			skip_space -= used_space;
++		ret = clear_extent_bits(&fs_info->freed_extents[1], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
++		if (ret) {
++			btrfs_set_block_group_rw(root, block_group);
++			goto end_trans;
 +		}
  
- 		/*
- 		 * we can use the free space in [0, skip_space - 1], subtract
-@@ -1725,6 +1751,9 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 
- 		i++;
- 	}
-+	rcu_read_unlock();
-+	if (fs_info->alloc_start)
-+		mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	nr_devices = i;
- 
-@@ -1787,8 +1816,6 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	 * holding chunk_muext to avoid allocating new chunks, holding
- 	 * device_list_mutex to avoid the device being removed
- 	 */
--	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	mutex_lock(&fs_info->chunk_mutex);
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(found, head, list) {
- 		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
-@@ -1826,15 +1853,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 
- 	buf->f_bavail = total_free_data;
- 	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
--	if (ret) {
--		mutex_unlock(&fs_info->chunk_mutex);
--		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+	if (ret)
- 		return ret;
--	}
- 	buf->f_bavail += div_u64(total_free_data, factor);
- 	buf->f_bavail = buf->f_bavail >> bits;
--	mutex_unlock(&fs_info->chunk_mutex);
--	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 
- 	buf->f_type = BTRFS_SUPER_MAGIC;
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
+ 		/* Reset pinned so btrfs_put_block_group doesn't complain */
+ 		block_group->pinned = 0;
+@@ -9537,6 +9545,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		 */
+ 		ret = btrfs_remove_chunk(trans, root,
+ 					 block_group->key.objectid);
++end_trans:
+ 		btrfs_end_transaction(trans, root);
+ next:
+ 		btrfs_put_block_group(block_group);
 -- 
-1.8.3.1
+1.9.1
 

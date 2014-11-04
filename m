@@ -1,53 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f171.google.com ([209.85.220.171]:54398 "EHLO
-	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751929AbaK3P1O (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 10:27:14 -0500
-MIME-Version: 1.0
-In-Reply-To: <8881abdb8836e2d70f705baacc0fe491e75d66d4.1417335583.git.osandov@osandov.com>
-References: <cover.1417335583.git.osandov@osandov.com> <8881abdb8836e2d70f705baacc0fe491e75d66d4.1417335583.git.osandov@osandov.com>
-From: Pranith Kumar <bobby.prani@gmail.com>
-Date: Sun, 30 Nov 2014 10:26:43 -0500
-Message-ID: <CAJhHMCDNtQi0y8iYBXVJGwUAyK_sT74KmoZ-RwV_J0JPV3SgAA@mail.gmail.com>
-Subject: Re: [PATCH 3/3] btrfs: refactor btrfs_device->name updates
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Joe Perches <joe@perches.com>,
-        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:35410 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752232AbaKDV7K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Nov 2014 16:59:10 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xlm82-00011Q-HX
+	for linux-btrfs@vger.kernel.org; Tue, 04 Nov 2014 22:59:06 +0100
+Received: from ip4d160011.dynamic.kabel-deutschland.de ([77.22.0.17])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Nov 2014 22:59:06 +0100
+Received: from Ansgar.Hockmann-Stolle by ip4d160011.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Nov 2014 22:59:06 +0100
+To: linux-btrfs@vger.kernel.org
+From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
+Subject: Re: [PATCH 03/11] Btrfs-progs: allow fsck to take the tree bytenr
+Date: Tue, 4 Nov 2014 21:58:56 +0000 (UTC)
+Message-ID: <loom.20141104T122529-705@post.gmane.org>
+References: <1414778489-4049-1-git-send-email-jbacik@fb.com> <1414778489-4049-4-git-send-email-jbacik@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 3:26 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> The rcu_string API introduced some new sparse errors but also revealed existing
-> ones. First of all, the name in struct btrfs_device should be annotated as
-> __rcu to prevent unsafe reads. Additionally, updates should go through
-> rcu_dereference_protected to make it clear what's going on. This introduces
-> some helper functions that factor out this functionality.
->
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 6e04f27..2298a70 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -54,7 +54,7 @@ struct btrfs_device {
->
->         struct btrfs_root *dev_root;
->
-> -       struct rcu_string *name;
-> +       struct rcu_string __rcu *name;
->
->         u64 generation;
->
+Josef Bacik <jbacik <at> fb.com> writes:
+> Sometimes we have a pretty corrupted fs but have an old tree bytenr that we
+> could use, add the ability to specify the tree root bytenr.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik <at> fb.com>
+Tested-by: Ansgar Hockmann-Stolle <ansgar.hockmann-stolle <at>
+uni-osnabrueck.de>
 
-Since rcu_strings are rcu specific, why not annotate the char pointer
-in 'struct rcu_string' with __rcu annotation? That should catch all
-error-prone users of rcu_string.
+This patch fixed my case:
+http://www.spinics.net/lists/linux-btrfs/msg38714.html
+Thank you! And thank you, Qu Wenruo for the help!!
 
--- 
-Pranith
+I tested all blocks that find-root gave - but only the one with generation =
+want + 1 gave some possible root items. The btrfsck with --tree-root <that
+block> finally fixed my file system. Hooray!
+
+Ciao
+    Ansgar
+

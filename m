@@ -1,20 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20528 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750765AbaKDFaH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Nov 2014 00:30:07 -0500
-Message-ID: <54586562.4020900@oracle.com>
-Date: Tue, 04 Nov 2014 13:34:26 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Paul Jones <paul@pauljones.id.au>,
+Received: from pecan2-mail.exetel.com.au ([220.233.0.71]:40925 "EHLO
+	smtp.po.exetel.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750851AbaKDFfU convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Nov 2014 00:35:20 -0500
+From: Paul Jones <paul@pauljones.id.au>
+To: Anand Jain <Anand.Jain@oracle.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs check - Couldn't open file system
-References: <B7F2379062E32745A8651FBDB20F64593F39764B@Server.waterlogic.com.au> <54584403.1080501@oracle.com> <B7F2379062E32745A8651FBDB20F64593F397B93@Server.waterlogic.com.au>
-In-Reply-To: <B7F2379062E32745A8651FBDB20F64593F397B93@Server.waterlogic.com.au>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: RE: btrfs check - Couldn't open file system
+Date: Tue, 4 Nov 2014 05:35:14 +0000
+Message-ID: <B7F2379062E32745A8651FBDB20F64593F397C38@Server.waterlogic.com.au>
+References: <B7F2379062E32745A8651FBDB20F64593F39764B@Server.waterlogic.com.au>
+ <54584403.1080501@oracle.com>
+ <B7F2379062E32745A8651FBDB20F64593F397B93@Server.waterlogic.com.au>
+ <54586562.4020900@oracle.com>
+In-Reply-To: <54586562.4020900@oracle.com>
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+IWT-VM ~ # umount /media/backup/
+umount: /media/backup/: not mounted
+IWT-VM ~ # btrfs fi show -d
+Label: 'Fast'  uuid: c41dc6db-6f00-4d60-a2f7-acbceb25e4e7
+        Total devices 3 FS bytes used 332.62GiB
+        devid    1 size 471.93GiB used 423.02GiB path /dev/sdh1
+        devid    2 size 412.00GiB used 363.01GiB path /dev/sdi1
+        devid    3 size 163.57GiB used 114.01GiB path /dev/sdb1
+
+Label: 'Root'  uuid: 61f6ce80-6d05-414f-9f0f-3d540fa82f2e
+        Total devices 2 FS bytes used 6.58GiB
+        devid    4 size 60.00GiB used 18.03GiB path /dev/sdb2
+        devid    5 size 59.93GiB used 18.03GiB path /dev/sdi3
+
+Label: 'Backup'  uuid: 92162be2-e52f-42fe-a9fd-da4f26c6abd1
+        Total devices 5 FS bytes used 2.74TiB
+        devid    6 size 891.50GiB used 822.00GiB path /dev/sdg3
+        devid    8 size 698.64GiB used 629.00GiB path /dev/sdd1
+        devid    9 size 891.51GiB used 821.03GiB path /dev/sde3
+        devid   10 size 2.73TiB used 2.66TiB path /dev/sdc1
+        devid   11 size 931.51GiB used 924.00GiB path /dev/sdf1
+
+Label: 'Data'  uuid: 89181f84-bace-43f8-9534-693f99c4d033
+        Total devices 2 FS bytes used 42.50GiB
+        devid    1 size 279.46GiB used 211.03GiB path /dev/sda1
+        devid    2 size 279.46GiB used 211.03GiB path /dev/sdj1
+
+Btrfs v3.17
+
+-----Original Message-----
+From: Anand Jain [mailto:Anand.Jain@oracle.com] 
+Sent: Tuesday, 4 November 2014 4:34 PM
+To: Paul Jones; linux-btrfs@vger.kernel.org
+Subject: Re: btrfs check - Couldn't open file system
 
 
 
@@ -22,8 +60,7 @@ can you run,
   btrfs fi show -d
 when device is unmounted.
 
-some func called by __open_ctree_fd() is failing, we need to figure out 
-which.
+some func called by __open_ctree_fd() is failing, we need to figure out which.
 
 
 

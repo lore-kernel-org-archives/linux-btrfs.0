@@ -1,62 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35737 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751368AbaKDXmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Nov 2014 18:42:24 -0500
-Date: Tue, 4 Nov 2014 15:42:22 -0800
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: Erik Berg <btrfs@slipsprogrammoer.no>, linux-btrfs@vger.kernel.org
-Subject: Re: Kernel crash during "btrfs device delete" on raid6 volume
-Message-ID: <20141104234222.GB27026@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <m3ao9u$de7$1@ger.gmane.org> <1415112914.25930.0@mail.thefacebook.com> <1415116728.25930.1@mail.thefacebook.com>
-MIME-Version: 1.0
+Received: from 8.mo6.mail-out.ovh.net ([178.33.42.204]:33312 "EHLO
+	mo6.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751426AbaKEVhH convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Nov 2014 16:37:07 -0500
+Received: from mail179.ha.ovh.net (gw6.ovh.net [213.251.189.206])
+	by mo6.mail-out.ovh.net (Postfix) with SMTP id B031BFF8DF1
+	for <linux-btrfs@vger.kernel.org>; Wed,  5 Nov 2014 21:57:29 +0100 (CET)
+From: Cyril Scetbon <cyril.scetbon@free.fr>
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1415116728.25930.1@mail.thefacebook.com>
+Subject: Compatibility matrix kernel/tools
+Message-Id: <4CB60C7D-97C0-4DA5-830B-CAD0E3D0C22E@free.fr>
+Date: Wed, 5 Nov 2014 21:57:31 +0100
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 04, 2014 at 10:58:48AM -0500, Chris Mason wrote:
->> Not a new bug unfortunately, but since it is in the error handling people 
->> must not be hitting it often.  It's also not related to device replace.
->>
->>
->>        while (ret < 0 && !list_empty(&tmplist)) {
->>                sums = list_entry(&tmplist, struct btrfs_ordered_sum, 
->> list);
->>                list_del(&sums->list);
->>                kfree(sums);
->>        }
->>
->> We're trying to call kfree on the on-stack list head.  I'm fixing it up 
->> here, thanks for posting the oops!
->
-> Fix attached, or you can wait for the next rc.  Thanks.
->
-> -chris
->
->
+Hi,
 
-> >From 6e5aafb27419f32575b27ef9d6a31e5d54661aca Mon Sep 17 00:00:00 2001
-> From: Chris Mason <clm@fb.com>
-> Date: Tue, 4 Nov 2014 06:59:04 -0800
-> Subject: [PATCH] Btrfs: fix kfree on list_head in btrfs_lookup_csums_range
->  error cleanup
-> 
-> If we hit any errors in btrfs_lookup_csums_range, we'll loop through all
-> the csums we allocate and free them.  But the code was using list_entry
-> incorrectly, and ended up trying to free the on-stack list_head instead.
-> 
-> This bug came from commit 0678b6185
+Where can I find the compatibility matrix to know which btrfs-tools version should work with a chosen linux kernel ?
+-- 
+Cyril SCETBON
 
-Wow, that's an old commit! Thanks for the CC. The fix looks good to me, so
-you can add:
-
-Reviewed-by: Mark Fasheh <mfasheh@suse.de>
-
-if you like, thanks.
-	--Mark
-
---
-Mark Fasheh

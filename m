@@ -1,189 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32825 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751160AbaKDKZQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Nov 2014 05:25:16 -0500
-Message-ID: <5458A9F1.1070901@cn.fujitsu.com>
-Date: Tue, 4 Nov 2014 18:26:57 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in statfs
- V2
-References: <1415023010-12988-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1415023010-12988-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from victor.provo.novell.com ([137.65.250.26]:36399 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750860AbaKET4b (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Wed, 5 Nov 2014 14:56:31 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race when cleaning unused block groups
+Date: Wed,  5 Nov 2014 19:56:04 +0000
+Message-Id: <1415217364-32108-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 3 Nov 2014 08:56:50 -0500, Josef Bacik wrote:
-> Our gluster boxes get several thousand statfs() calls per second, which begins
-> to suck hardcore with all of the lock contention on the chunk mutex and dev list
-> mutex.  We don't really need to hold these things, if we have transient
-> weirdness with statfs() because of the chunk allocator we don't care, so remove
-> this locking.
-> 
-> We still need the dev_list lock if you mount with -o alloc_start however, which
-> is a good argument for nuking that thing from orbit, but that's a patch for
-> another day.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
-> V1->V2: make sure ->alloc_start is set before doing the dev extent lookup logic.
+We have a race while deleting unused block groups that causes extents written
+by past generations/transactions to be rewritten by the current transaction
+before that transaction is committed. The steps that lead to this issue:
 
-I am strange that why we need dev_list_lock if we mount with -o alloc_start. AFAIK.
-->alloc_start is protected by chunk_mutex.
+1) At transaction N one or more block groups became unused and we added them
+   to the list fs_info->unused_bgs;
 
-But I think we needn't care that someone changes ->alloc_start, in other words, 
-we needn't take chunk_mutex during the whole process, the following case can be
-tolerated by the users, I think.
+2) While still at transaction N we write btree extents to block group X and the
+   transaction is committed;
 
-	Task1						Task2
-	statfs
-	  mutex_lock(&fs_info->chunk_mutex);
-	  tmp = fs_info->alloc_start;
-	  mutex_unlock(&fs_info->chunk_mutex);
-	  btrfs_calc_avail_data_space(fs_info, tmp)
-	    ...
-							mount -o remount,alloc_start=xxxx
-	    ...
+3) The cleaner kthread is awaken and calls btrfs_delete_unused_bgs() to go through
+   the list fs_info->unused_bgs and remove unused block groups;
 
-Thanks
-Miao
+4) Transaction N + 1 starts;
 
-> 
->  fs/btrfs/super.c | 72 ++++++++++++++++++++++++++++++++++++--------------------
->  1 file changed, 47 insertions(+), 25 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 54bd91e..dc337d1 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1644,8 +1644,20 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
->  	int i = 0, nr_devices;
->  	int ret;
->  
-> +	/*
-> +	 * We aren't under the device list lock, so this is racey-ish, but good
-> +	 * enough for our purposes.
-> +	 */
->  	nr_devices = fs_info->fs_devices->open_devices;
-> -	BUG_ON(!nr_devices);
-> +	if (!nr_devices) {
-> +		smp_mb();
-> +		nr_devices = fs_info->fs_devices->open_devices;
-> +		ASSERT(nr_devices);
-> +		if (!nr_devices) {
-> +			*free_bytes = 0;
-> +			return 0;
-> +		}
-> +	}
->  
->  	devices_info = kmalloc_array(nr_devices, sizeof(*devices_info),
->  			       GFP_NOFS);
-> @@ -1670,11 +1682,17 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
->  	else
->  		min_stripe_size = BTRFS_STRIPE_LEN;
->  
-> -	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-> +	if (fs_info->alloc_start)
-> +		mutex_lock(&fs_devices->device_list_mutex);
-> +	rcu_read_lock();
-> +	list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
->  		if (!device->in_fs_metadata || !device->bdev ||
->  		    device->is_tgtdev_for_dev_replace)
->  			continue;
->  
-> +		if (i >= nr_devices)
-> +			break;
-> +
->  		avail_space = device->total_bytes - device->bytes_used;
->  
->  		/* align with stripe_len */
-> @@ -1689,24 +1707,32 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
->  		skip_space = 1024 * 1024;
->  
->  		/* user can set the offset in fs_info->alloc_start. */
-> -		if (fs_info->alloc_start + BTRFS_STRIPE_LEN <=
-> -		    device->total_bytes)
-> +		if (fs_info->alloc_start &&
-> +		    fs_info->alloc_start + BTRFS_STRIPE_LEN <=
-> +		    device->total_bytes) {
-> +			rcu_read_unlock();
->  			skip_space = max(fs_info->alloc_start, skip_space);
->  
-> -		/*
-> -		 * btrfs can not use the free space in [0, skip_space - 1],
-> -		 * we must subtract it from the total. In order to implement
-> -		 * it, we account the used space in this range first.
-> -		 */
-> -		ret = btrfs_account_dev_extents_size(device, 0, skip_space - 1,
-> -						     &used_space);
-> -		if (ret) {
-> -			kfree(devices_info);
-> -			return ret;
-> -		}
-> +			/*
-> +			 * btrfs can not use the free space in
-> +			 * [0, skip_space - 1], we must subtract it from the
-> +			 * total. In order to implement it, we account the used
-> +			 * space in this range first.
-> +			 */
-> +			ret = btrfs_account_dev_extents_size(device, 0,
-> +							     skip_space - 1,
-> +							     &used_space);
-> +			if (ret) {
-> +				kfree(devices_info);
-> +				mutex_unlock(&fs_devices->device_list_mutex);
-> +				return ret;
-> +			}
->  
-> -		/* calc the free space in [0, skip_space - 1] */
-> -		skip_space -= used_space;
-> +			rcu_read_lock();
-> +
-> +			/* calc the free space in [0, skip_space - 1] */
-> +			skip_space -= used_space;
-> +		}
->  
->  		/*
->  		 * we can use the free space in [0, skip_space - 1], subtract
-> @@ -1725,6 +1751,9 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
->  
->  		i++;
->  	}
-> +	rcu_read_unlock();
-> +	if (fs_info->alloc_start)
-> +		mutex_unlock(&fs_devices->device_list_mutex);
->  
->  	nr_devices = i;
->  
-> @@ -1787,8 +1816,6 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
->  	 * holding chunk_muext to avoid allocating new chunks, holding
->  	 * device_list_mutex to avoid the device being removed
->  	 */
-> -	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-> -	mutex_lock(&fs_info->chunk_mutex);
->  	rcu_read_lock();
->  	list_for_each_entry_rcu(found, head, list) {
->  		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
-> @@ -1826,15 +1853,10 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
->  
->  	buf->f_bavail = total_free_data;
->  	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->chunk_mutex);
-> -		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +	if (ret)
->  		return ret;
-> -	}
->  	buf->f_bavail += div_u64(total_free_data, factor);
->  	buf->f_bavail = buf->f_bavail >> bits;
-> -	mutex_unlock(&fs_info->chunk_mutex);
-> -	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->  
->  	buf->f_type = BTRFS_SUPER_MAGIC;
->  	buf->f_bsize = dentry->d_sb->s_blocksize;
-> 
+5) At transaction N + 1, block group X becomes unused and is added to the list
+   fs_info->unused_bgs - this implies delayed refs were run, so we had the
+   following function calls: btrfs_run_delayed_refs() -> __btrfs_free_extent()
+   -> update_block_group(). The update_block_group() function grabs the lock
+   fs_info->unused_bgs_lock, adds block group X to fs_info->unused_bgs and
+   releases that lock;
+
+6) The cleaner kthread, while at btrfs_delete_unused_bgs(), sees block group X
+   added by transaction N + 1 because it's doing a loop that finishes only when
+   the list fs_info->unused_bgs is empty and locks and unlocks the spinlock
+   fs_info->unused_bgs_lock on each iteration. So it deletes the block group
+   and its respective chunk is released. Even if it didn't do the lock/unlock
+   per iteration, it could still see block group X in the list, because the
+   cleaner kthread might call btrfs_delete_unused_bgs() multiple times (for
+   example if there are several snapshots to delete);
+
+7) A new block group X' is created for data, and it's associated to the same chunk
+   that block group X was associated to;
+
+8) Extents from block group X' are allocated for file data and for example an fsync
+   makes the file data be effectively written to disk;
+
+9) A crash/reboot happens before transaction N + 1 is committed;
+
+10) On the next mount, we will read extents from block group/chunk X but they no
+   longer have valid btree nodes/leafs - they have instead file data, and therefore
+   all sorts of errors will happen.
+
+So fix this by ensuring the cleaner kthread can never delete a block group that
+became unused in the current transaction, that is, only delete block groups that
+were added to the unused_bgs list by past transactions.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.h       | 1 +
+ fs/btrfs/disk-io.c     | 1 +
+ fs/btrfs/extent-tree.c | 5 +++--
+ fs/btrfs/transaction.c | 5 +++++
+ 4 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 36f82ba..a5e471a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1726,6 +1726,7 @@ struct btrfs_fs_info {
+ 
+ 	spinlock_t unused_bgs_lock;
+ 	struct list_head unused_bgs;
++	struct list_head unused_bgs_to_clean;
+ 
+ 	/* For btrfs to record security options */
+ 	struct security_mnt_opts security_opts;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2409718..702bbdf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2243,6 +2243,7 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->space_info);
+ 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
+ 	INIT_LIST_HEAD(&fs_info->unused_bgs);
++	INIT_LIST_HEAD(&fs_info->unused_bgs_to_clean);
+ 	btrfs_mapping_init(&fs_info->mapping_tree);
+ 	btrfs_init_block_rsv(&fs_info->global_block_rsv,
+ 			     BTRFS_BLOCK_RSV_GLOBAL);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 744b580..bc1c0b7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8858,6 +8858,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 	up_write(&info->commit_root_sem);
+ 
+ 	spin_lock(&info->unused_bgs_lock);
++	list_splice_init(&info->unused_bgs_to_clean, &info->unused_bgs);
+ 	while (!list_empty(&info->unused_bgs)) {
+ 		block_group = list_first_entry(&info->unused_bgs,
+ 					       struct btrfs_block_group_cache,
+@@ -9466,10 +9467,10 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		return;
+ 
+ 	spin_lock(&fs_info->unused_bgs_lock);
+-	while (!list_empty(&fs_info->unused_bgs)) {
++	while (!list_empty(&fs_info->unused_bgs_to_clean)) {
+ 		u64 start, end;
+ 
+-		block_group = list_first_entry(&fs_info->unused_bgs,
++		block_group = list_first_entry(&fs_info->unused_bgs_to_clean,
+ 					       struct btrfs_block_group_cache,
+ 					       bg_list);
+ 		space_info = block_group->space_info;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 396ae8b..86d7cf5 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1937,6 +1937,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_prepare_extent_commit(trans, root);
+ 
++	spin_lock(&root->fs_info->unused_bgs_lock);
++	list_splice_init(&root->fs_info->unused_bgs,
++			 &root->fs_info->unused_bgs_to_clean);
++	spin_unlock(&root->fs_info->unused_bgs_lock);
++
+ 	cur_trans = root->fs_info->running_transaction;
+ 
+ 	btrfs_set_root_node(&root->fs_info->tree_root->root_item,
+-- 
+1.9.1
 

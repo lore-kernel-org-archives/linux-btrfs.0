@@ -1,95 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 1.mo69.mail-out.ovh.net ([178.33.251.173]:47663 "EHLO
-	mo69.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751141AbaKFJ1m convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 04:27:42 -0500
-Received: from mail627.ha.ovh.net (b6.ovh.net [213.186.33.56])
-	by mo69.mail-out.ovh.net (Postfix) with SMTP id E8F0CFFAEC0
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2014 10:21:51 +0100 (CET)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
-Subject: Re: Compatibility matrix kernel/tools
-From: Cyril Scetbon <cyril.scetbon@free.fr>
-In-Reply-To: <545AD423.2010600@cn.fujitsu.com>
-Date: Thu, 6 Nov 2014 10:21:47 +0100
-Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <50788B41-C5FA-40B7-BFE8-008A85AB5669@free.fr>
-References: <4CB60C7D-97C0-4DA5-830B-CAD0E3D0C22E@free.fr> <20141105214515.GD21247@carfax.org.uk> <545AD423.2010600@cn.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-lb0-f169.google.com ([209.85.217.169]:47710 "EHLO
+	mail-lb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750926AbaKFLFz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 06:05:55 -0500
+Received: by mail-lb0-f169.google.com with SMTP id 10so700031lbg.28
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Nov 2014 03:05:53 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <201411061743.5znDnvlg%fengguang.wu@intel.com>
+References: <201411061743.5znDnvlg%fengguang.wu@intel.com>
+Date: Thu, 6 Nov 2014 12:05:52 +0100
+Message-ID: <CACeaM89cLbeSU1em6xxu3kASWMBMs_3g2+sLhki2eCOdOd-rMQ@mail.gmail.com>
+Subject: Re: fs/btrfs/ioctl.c:2204:29: sparse: incorrect type in argument 4
+ (different address spaces)
+From: Gerhard Heift <gerhard@heift.name>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=089e01182b1a04db6005072eae43
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you guys for this status ! I think you should add it somewhere in the documentation cause I'm pretty sure this is a repeated question from users.
--- 
-Cyril SCETBON
+--089e01182b1a04db6005072eae43
+Content-Type: text/plain; charset=UTF-8
 
-> On 06 Nov 2014, at 02:51, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> 
-> 
-> -------- Original Message --------
-> Subject: Re: Compatibility matrix kernel/tools
-> From: Hugo Mills <hugo@carfax.org.uk>
-> To: Cyril Scetbon <cyril.scetbon@free.fr>
-> Date: 2014年11月06日 05:45
->> On Wed, Nov 05, 2014 at 09:57:31PM +0100, Cyril Scetbon wrote:
->>> Hi,
->>> 
->>> Where can I find the compatibility matrix to know which btrfs-tools version should work with a chosen linux kernel ?
->>    Any of them should work with any kernel.
->> 
->>    For normal operation, if the tools are too old, they may not
->> support newer kernel features -- but that will simply mean you can't
->> access the feature, not that anything will be broken.
->> 
->>    If you're doing recovery work (btrfs check and friends) then using
->> the latest released version of the tools is strongly recommended.
->> 
->>    Hugo.
->> 
-> As Hugo mentioned, overall any kernel/user tool combination should be OK and won't cause disaster.
-> 
-> [Online operations]
-> More specifically, online(btrfs mounted) operations mostly depend on the kernel.
-> Like subvolume/snapshot device add/remove/replace balance/scrub and send/receive should mainly depend on the
-> kernel version.
-> 
-> [If version not match]
-> 1. Kernel ver > progs ver.
-> It may happens that progs don't know the new added ioctls, so some bleeding edge functions may not be available,
-> but everything should work fine without problem.(except some known/fixed progs bugs)
-> 
-> 2. Progs ver > kernel ver.
-> It may happen some ioctl not supported by kernel, if there is a fallback method everything should work without problem,
-> or progs should prompt the fact that some bleeding edge function is not supported by kernel.
-> Everything should also works fine except some known/fixed kernel bugs, which maybe worse than progs bugs.
-> 
-> [Offline operations]
-> Offline operations includes mkfs, btrfsck and all its friends(btrfs-find-roots btrfs-show-super btrfs-debug-tree ...)
-> Since offline operations needs to do some dirty job like reading/writing the superblock, it may cause big compatibility problem
-> if using some new incompact features.
-> 
-> [If version not match]
-> 1. kernel ver > progs ver.
-> There maybe some btrfs filesystems that kernel can mount but offline tools can't open.
-> For example, before v0.20-rc1 progs doesn't support skinny metadata, and 3.17 kernel supports it,
-> a btrfs created with skinny metadata can't be fscked using v0.20-rc1, but kernel can still mount it,
-> and online operations should be fine.
-> 
-> If not using the new features, it would be OK.
-> 
-> 2. kernel ver < progs ver
-> This maybe even worse.
-> If you create a fs with latest progs, which may enable some new feature like big metadata on *DEFAULT*,
-> kernels before v3.3 will be unable to even mount it since it can't understand the new incompact features.
-> 
-> 
-> [Conclusion]
-> If not using offline operations often, compatibility won't be a big problem.
-> If using offline operations often, better keep kernel/progs version from differing too much.
-> 
-> Also if you want to keep a matrix for it, it may take some time to git blame/log/describe...
-> Tips will be focus on INCOMPACT flags in fs/btrfs/ctree.h and ioctls change in fs/btrfs/ioctl.c.
-> 
-> Thanks,
-> Qu
+Hello,
 
+I got a warning from the kbuild test robot for an invalid address
+space cast, which was introduced by my patch for TREE_SEARCH_V2. Here
+is a patch, which should fix the warning.
+
+Regards,
+  Gerhard
+
+2014-11-06 10:48 GMT+01:00 kbuild test robot <fengguang.wu@intel.com>:
+> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   20f3963d8f48ae8309fbc777ef6787fd0a3f53c2
+> commit: cc68a8a5a4330a4bb72922d0c7a7044ae13ee692 btrfs: new ioctl TREE_SEARCH_V2
+> date:   5 months ago
+> reproduce:
+>   # apt-get install sparse
+>   git checkout cc68a8a5a4330a4bb72922d0c7a7044ae13ee692
+>   make ARCH=x86_64 allmodconfig
+>   make C=1 CF=-D__CHECK_ENDIAN__
+>
+>
+> sparse warnings: (new ones prefixed by >>)
+>
+>    fs/btrfs/ioctl.c:2204:29: sparse: cast removes address space of expression
+>>> fs/btrfs/ioctl.c:2204:29: sparse: incorrect type in argument 4 (different address spaces)
+>    fs/btrfs/ioctl.c:2204:29:    expected char [noderef] <asn:1>*ubuf
+>    fs/btrfs/ioctl.c:2204:29:    got char *<noident>
+>    fs/btrfs/ioctl.c:2729:27: sparse: incorrect type in assignment (different base types)
+>    fs/btrfs/ioctl.c:2729:27:    expected unsigned int [unsigned] [usertype] nodesize
+>    fs/btrfs/ioctl.c:2729:27:    got restricted __le32 [usertype] nodesize
+>    fs/btrfs/ioctl.c:2730:29: sparse: incorrect type in assignment (different base types)
+>    fs/btrfs/ioctl.c:2730:29:    expected unsigned int [unsigned] [usertype] sectorsize
+>    fs/btrfs/ioctl.c:2730:29:    got restricted __le32 [usertype] sectorsize
+>    fs/btrfs/ioctl.c:2731:34: sparse: incorrect type in assignment (different base types)
+>    fs/btrfs/ioctl.c:2731:34:    expected unsigned int [unsigned] [usertype] clone_alignment
+>    fs/btrfs/ioctl.c:2731:34:    got restricted __le32 [usertype] sectorsize
+>    fs/btrfs/ioctl.c:4275:29: sparse: incorrect type in argument 1 (different address spaces)
+>    fs/btrfs/ioctl.c:4275:29:    expected void [noderef] <asn:1>*to
+>    fs/btrfs/ioctl.c:4275:29:    got void *<noident>
+>    fs/btrfs/ioctl.c:4350:29: sparse: incorrect type in argument 1 (different address spaces)
+>    fs/btrfs/ioctl.c:4350:29:    expected void [noderef] <asn:1>*to
+>    fs/btrfs/ioctl.c:4350:29:    got void *<noident>
+>
+> vim +2204 fs/btrfs/ioctl.c
+>
+>   2188          /* copy search header and buffer size */
+>   2189          uarg = (struct btrfs_ioctl_search_args_v2 __user *)argp;
+>   2190          if (copy_from_user(&args, uarg, sizeof(args)))
+>   2191                  return -EFAULT;
+>   2192
+>   2193          buf_size = args.buf_size;
+>   2194
+>   2195          if (buf_size < sizeof(struct btrfs_ioctl_search_header))
+>   2196                  return -EOVERFLOW;
+>   2197
+>   2198          /* limit result size to 16MB */
+>   2199          if (buf_size > buf_limit)
+>   2200                  buf_size = buf_limit;
+>   2201
+>   2202          inode = file_inode(file);
+>   2203          ret = search_ioctl(inode, &args.key, &buf_size,
+>> 2204                             (char *)(&uarg->buf[0]));
+>   2205          if (ret == 0 && copy_to_user(&uarg->key, &args.key, sizeof(args.key)))
+>   2206                  ret = -EFAULT;
+>   2207          else if (ret == -EOVERFLOW &&
+>   2208                  copy_to_user(&uarg->buf_size, &buf_size, sizeof(buf_size)))
+>   2209                  ret = -EFAULT;
+>   2210
+>   2211          return ret;
+>   2212  }
+>
+> ---
+> 0-DAY kernel test infrastructure                Open Source Technology Center
+> http://lists.01.org/mailman/listinfo/kbuild                 Intel Corporation
+
+--089e01182b1a04db6005072eae43
+Content-Type: text/x-patch; charset=US-ASCII;
+	name="0001-btrfs-fix-address-space-cast-in-TREE_SEARCH_V2.patch"
+Content-Disposition: attachment;
+	filename="0001-btrfs-fix-address-space-cast-in-TREE_SEARCH_V2.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_i260c8g70
+
+RnJvbSA2MjBmZjE2NTI3YmQ3MTFlN2I2Njc3YmE3ZDVlY2ZiNDQ2N2MyMzFhIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBHZXJoYXJkIEhlaWZ0IDxnZXJoYXJkQGhlaWZ0Lm5hbWU+CkRh
+dGU6IFRodSwgNiBOb3YgMjAxNCAxMTozMDoxMCArMDEwMApTdWJqZWN0OiBbUEFUQ0hdIGJ0cmZz
+OiBmaXggYWRkcmVzcyBzcGFjZSBjYXN0IGluIFRSRUVfU0VBUkNIX1YyCgpUaGlzIHBhdGNoZXMg
+Zml4ZXMgYW4gaW52YWxpZCBjYXN0IG9mIGFuIHVzZXIgc3BhY2UgYWRkcmVzcyB0byBrZXJuZWwg
+c3BhY2UsCmJ1dCBpcyBzdGlsbCB1c2VkIGFzIHVzZXIgc3BhY2UgaW4gdGhlIGNhbGxlZCBmdW5j
+dGlvbi4KClRoaXMgY2FzdCB3b3VsZCBoYXZlIG5vdCBiZWVuIG5lY2Vzc2FyeSwgaWYgSSBoYWQg
+Y2hvb3NlbiB0aGUgdHlwZSBvZgooc3RydWN0IGJ0cmZzX2lvY3RsX3NlYXJjaF9hcmdzX3YyKS5i
+dWYgYXMgY2hhcltdIGFuZCBub3QgYXMgX191NjRbXSwgd2hpY2ggSQpkaWQgZm9yIGZvciB1bmtu
+b3duIHJlYXNvbnMuCgpTaWduZWQtb2ZmLWJ5OiBHZXJoYXJkIEhlaWZ0IDxnZXJoYXJkQGhlaWZ0
+Lm5hbWU+Ci0tLQogZnMvYnRyZnMvaW9jdGwuYyB8IDIgKy0KIDEgZmlsZSBjaGFuZ2VkLCAxIGlu
+c2VydGlvbigrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMg
+Yi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDZlYTE1NDYuLmRiZDU3N2UgMTAwNjQ0Ci0tLSBhL2Zz
+L2J0cmZzL2lvY3RsLmMKKysrIGIvZnMvYnRyZnMvaW9jdGwuYwpAQCAtMjIwMSw3ICsyMjAxLDcg
+QEAgc3RhdGljIG5vaW5saW5lIGludCBidHJmc19pb2N0bF90cmVlX3NlYXJjaF92MihzdHJ1Y3Qg
+ZmlsZSAqZmlsZSwKIAogCWlub2RlID0gZmlsZV9pbm9kZShmaWxlKTsKIAlyZXQgPSBzZWFyY2hf
+aW9jdGwoaW5vZGUsICZhcmdzLmtleSwgJmJ1Zl9zaXplLAotCQkJICAgKGNoYXIgKikoJnVhcmct
+PmJ1ZlswXSkpOworCQkJICAgKGNoYXIgX191c2VyICopKCZ1YXJnLT5idWZbMF0pKTsKIAlpZiAo
+cmV0ID09IDAgJiYgY29weV90b191c2VyKCZ1YXJnLT5rZXksICZhcmdzLmtleSwgc2l6ZW9mKGFy
+Z3Mua2V5KSkpCiAJCXJldCA9IC1FRkFVTFQ7CiAJZWxzZSBpZiAocmV0ID09IC1FT1ZFUkZMT1cg
+JiYKLS0gCjIuMS4xCgo=
+--089e01182b1a04db6005072eae43--

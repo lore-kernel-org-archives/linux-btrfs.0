@@ -1,99 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48217 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750828AbaKFFqI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 00:46:08 -0500
-Message-ID: <545B0C2A.3020408@oracle.com>
-Date: Thu, 06 Nov 2014 13:50:34 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] btrfs fi show lists wrong (old) devid size after btrfs
- replace
-References: <EC620053-6EDC-4122-AAA5-0AC86814B04A@colorremedies.com>
-In-Reply-To: <EC620053-6EDC-4122-AAA5-0AC86814B04A@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from 1.mo69.mail-out.ovh.net ([178.33.251.173]:47663 "EHLO
+	mo69.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751141AbaKFJ1m convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 04:27:42 -0500
+Received: from mail627.ha.ovh.net (b6.ovh.net [213.186.33.56])
+	by mo69.mail-out.ovh.net (Postfix) with SMTP id E8F0CFFAEC0
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2014 10:21:51 +0100 (CET)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
+Subject: Re: Compatibility matrix kernel/tools
+From: Cyril Scetbon <cyril.scetbon@free.fr>
+In-Reply-To: <545AD423.2010600@cn.fujitsu.com>
+Date: Thu, 6 Nov 2014 10:21:47 +0100
+Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <50788B41-C5FA-40B7-BFE8-008A85AB5669@free.fr>
+References: <4CB60C7D-97C0-4DA5-830B-CAD0E3D0C22E@free.fr> <20141105214515.GD21247@carfax.org.uk> <545AD423.2010600@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thank you guys for this status ! I think you should add it somewhere in the documentation cause I'm pretty sure this is a repeated question from users.
+-- 
+Cyril SCETBON
 
+> On 06 Nov 2014, at 02:51, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> 
+> 
+> -------- Original Message --------
+> Subject: Re: Compatibility matrix kernel/tools
+> From: Hugo Mills <hugo@carfax.org.uk>
+> To: Cyril Scetbon <cyril.scetbon@free.fr>
+> Date: 2014年11月06日 05:45
+>> On Wed, Nov 05, 2014 at 09:57:31PM +0100, Cyril Scetbon wrote:
+>>> Hi,
+>>> 
+>>> Where can I find the compatibility matrix to know which btrfs-tools version should work with a chosen linux kernel ?
+>>    Any of them should work with any kernel.
+>> 
+>>    For normal operation, if the tools are too old, they may not
+>> support newer kernel features -- but that will simply mean you can't
+>> access the feature, not that anything will be broken.
+>> 
+>>    If you're doing recovery work (btrfs check and friends) then using
+>> the latest released version of the tools is strongly recommended.
+>> 
+>>    Hugo.
+>> 
+> As Hugo mentioned, overall any kernel/user tool combination should be OK and won't cause disaster.
+> 
+> [Online operations]
+> More specifically, online(btrfs mounted) operations mostly depend on the kernel.
+> Like subvolume/snapshot device add/remove/replace balance/scrub and send/receive should mainly depend on the
+> kernel version.
+> 
+> [If version not match]
+> 1. Kernel ver > progs ver.
+> It may happens that progs don't know the new added ioctls, so some bleeding edge functions may not be available,
+> but everything should work fine without problem.(except some known/fixed progs bugs)
+> 
+> 2. Progs ver > kernel ver.
+> It may happen some ioctl not supported by kernel, if there is a fallback method everything should work without problem,
+> or progs should prompt the fact that some bleeding edge function is not supported by kernel.
+> Everything should also works fine except some known/fixed kernel bugs, which maybe worse than progs bugs.
+> 
+> [Offline operations]
+> Offline operations includes mkfs, btrfsck and all its friends(btrfs-find-roots btrfs-show-super btrfs-debug-tree ...)
+> Since offline operations needs to do some dirty job like reading/writing the superblock, it may cause big compatibility problem
+> if using some new incompact features.
+> 
+> [If version not match]
+> 1. kernel ver > progs ver.
+> There maybe some btrfs filesystems that kernel can mount but offline tools can't open.
+> For example, before v0.20-rc1 progs doesn't support skinny metadata, and 3.17 kernel supports it,
+> a btrfs created with skinny metadata can't be fscked using v0.20-rc1, but kernel can still mount it,
+> and online operations should be fine.
+> 
+> If not using the new features, it would be OK.
+> 
+> 2. kernel ver < progs ver
+> This maybe even worse.
+> If you create a fs with latest progs, which may enable some new feature like big metadata on *DEFAULT*,
+> kernels before v3.3 will be unable to even mount it since it can't understand the new incompact features.
+> 
+> 
+> [Conclusion]
+> If not using offline operations often, compatibility won't be a big problem.
+> If using offline operations often, better keep kernel/progs version from differing too much.
+> 
+> Also if you want to keep a matrix for it, it may take some time to git blame/log/describe...
+> Tips will be focus on INCOMPACT flags in fs/btrfs/ctree.h and ioctls change in fs/btrfs/ioctl.c.
+> 
+> Thanks,
+> Qu
 
-On 11/06/2014 10:57 AM, Chris Murphy wrote:
-> Summary: After successfully completed btrfs replace start, btrfs fi show lists the old devid size not the new devid size.
->
-> kernel-3.17.2-300.fc21.x86_64
-> btrfs-progs-3.17-1.fc21.x86_64
->
->
-> ##Before devid2 is missing (normal mount of 2x HDDs, raw block devices are formatted, no partitioning)
->
-> #btrfs fi show /mnt/btrfs1
->
-> Label: 'btrfs1'  uuid: 0f1c615f-30a0-4166-8a3c-987849551513
-> 	Total devices 2 FS bytes used 270.58GiB
-> 	devid    1 size 465.76GiB used 272.03GiB path /dev/sdc
-> 	devid    2 size 298.09GiB used 272.03GiB path /dev/sdb
->
-> ##During btrfs replace start 2 /dev/sdb /mnt/btrfs1; new /dev/sdb is 750GB
->
-> #btrfs fi show /mnt/btrfs1
-> Label: 'btrfs1'  uuid: 0f1c615f-30a0-4166-8a3c-987849551513
-> 	Total devices 4 FS bytes used 270.58GiB
-> 	devid    0 size 298.09GiB used 272.03GiB path /dev/sdb
-> 	devid    1 size 465.76GiB used 272.03GiB path /dev/sdc
-> 	*** Some devices missing
-
-  not to deviate from the actual issue - just a note, the missing
-  disk will go away if you apply.
-    revert btrfs-progs: do a separate probe for _transient_ replacing device
-
-Thanks
-
-> ##After btrfs replace completes, and after umount, physically disconnecting/reconnecting, and remounting
->
-> Label: 'btrfs1'  uuid: 0f1c615f-30a0-4166-8a3c-987849551513
-> 	Total devices 2 FS bytes used 270.58GiB
-> 	devid    1 size 465.76GiB used 272.03GiB path /dev/sdc
-> 	devid    2 size 298.09GiB used 272.03GiB path /dev/sdb
->
->
-> devid2/sdb is now the new device (750GB, 698.7GiB as reported by lsblk). The value from btrfs fi show is still the old value and is now wrong.
->
-> [ 6141.864212] usb 4-2: USB disconnect, device number 5
-> [ 6141.865378] sd 9:0:0:0: [sdb] Synchronizing SCSI cache
-> [ 6141.865448] sd 9:0:0:0: [sdb]
-> [ 6141.865452] Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK
-> [ 6145.254144] usb 4-1: new SuperSpeed USB device number 6 using xhci_hcd
-> [ 6145.266077] usb 4-1: New USB device found, idVendor=174c, idProduct=5136
-> [ 6145.266084] usb 4-1: New USB device strings: Mfr=2, Product=3, SerialNumber=1
-> [ 6145.266088] usb 4-1: Product: AS2105
-> [ 6145.266090] usb 4-1: Manufacturer: ASMedia
-> [ 6145.266093] usb 4-1: SerialNumber: 00000000000000000000
-> [ 6145.266861] usb-storage 4-1:1.0: USB Mass Storage device detected
-> [ 6145.267536] scsi host10: usb-storage 4-1:1.0
-> [ 6146.271397] scsi 10:0:0:0: Direct-Access     ASMT     2105             0    PQ: 0 ANSI: 6
-> [ 6146.272183] sd 10:0:0:0: Attached scsi generic sg2 type 0
-> [ 6148.239288] sd 10:0:0:0: [sdb] 1465149168 512-byte logical blocks: (750 GB/698 GiB)
-> [ 6148.239748] sd 10:0:0:0: [sdb] Write Protect is off
-> [ 6148.239755] sd 10:0:0:0: [sdb] Mode Sense: 43 00 00 00
-> [ 6148.240077] sd 10:0:0:0: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
-> [ 6148.265774]  sdb: unknown partition table
-> [ 6148.267153] sd 10:0:0:0: [sdb] Attached SCSI disk
->
->
->
-> # df -h
-> /dev/sdc        382G  271G   27G  92% /mnt/btrfs1
->
->
-> This is incorrect as well, it's the exact same information provided by df before the replace. It seems like btrfs replace is not doing a resize to fill all available space on the specified new block device.
->
->
-> Chris Murphy
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

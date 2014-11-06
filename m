@@ -1,59 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:25394 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751810AbaKFOhg (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:35381 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750955AbaKFPZL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Nov 2014 09:37:36 -0500
-Message-ID: <545B8725.40909@fb.com>
-Date: Thu, 6 Nov 2014 09:35:17 -0500
+	Thu, 6 Nov 2014 10:25:11 -0500
 From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <stable@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure we wait on logged extents when fsycning two subvols
+Date: Thu, 6 Nov 2014 10:19:54 -0500
+Message-ID: <1415287194-1967-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in statfs
- V2
-References: <1415023010-12988-1-git-send-email-jbacik@fb.com> <5458A9F1.1070901@cn.fujitsu.com>
-In-Reply-To: <5458A9F1.1070901@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/04/2014 05:26 AM, Miao Xie wrote:
-> On Mon, 3 Nov 2014 08:56:50 -0500, Josef Bacik wrote:
->> Our gluster boxes get several thousand statfs() calls per second, which begins
->> to suck hardcore with all of the lock contention on the chunk mutex and dev list
->> mutex.  We don't really need to hold these things, if we have transient
->> weirdness with statfs() because of the chunk allocator we don't care, so remove
->> this locking.
->>
->> We still need the dev_list lock if you mount with -o alloc_start however, which
->> is a good argument for nuking that thing from orbit, but that's a patch for
->> another day.  Thanks,
->>
->> Signed-off-by: Josef Bacik <jbacik@fb.com>
->> ---
->> V1->V2: make sure ->alloc_start is set before doing the dev extent lookup logic.
->
-> I am strange that why we need dev_list_lock if we mount with -o alloc_start. AFAIK.
-> ->alloc_start is protected by chunk_mutex.
->
-> But I think we needn't care that someone changes ->alloc_start, in other words,
-> we needn't take chunk_mutex during the whole process, the following case can be
-> tolerated by the users, I think.
->
-> 	Task1						Task2
-> 	statfs
-> 	  mutex_lock(&fs_info->chunk_mutex);
-> 	  tmp = fs_info->alloc_start;
-> 	  mutex_unlock(&fs_info->chunk_mutex);
-> 	  btrfs_calc_avail_data_space(fs_info, tmp)
-> 	    ...
-> 							mount -o remount,alloc_start=xxxx
-> 	    ...
+If we have two fsync()'s race on different subvols one will do all of its work
+to get into the log_tree, wait on it's outstanding IO, and then allow the
+log_tree to finish it's commit.  The problem is we were just free'ing that
+subvols logged extents instead of waiting on them, so whoever lost the race
+wouldn't really have their data on disk.  Fix this by waiting properly instead
+of freeing the logged extents.  Thanks,
 
-Yeah df if you change alloc_start in the middle of it is going to be 
-slightly racey, which is fine since I'm going to kill alloc_start soon 
-anyway.  Since we have to take the device mutex anyway I guess we could 
-do this, but I'm not super worried about it.  Thanks,
+cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/tree-log.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Josef
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 2d0fa43..70f99b1 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2600,9 +2600,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	if (atomic_read(&log_root_tree->log_commit[index2])) {
+ 		blk_finish_plug(&plug);
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
++		btrfs_wait_logged_extents(log, log_transid);
+ 		wait_log_commit(trans, log_root_tree,
+ 				root_log_ctx.log_transid);
+-		btrfs_free_logged_extents(log, log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		ret = root_log_ctx.log_ret;
+ 		goto out;
+-- 
+1.8.3.1
 

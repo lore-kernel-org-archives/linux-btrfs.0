@@ -1,39 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:61955 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750975AbaKFPCZ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 10:02:25 -0500
-Received: by mail-wi0-f169.google.com with SMTP id n3so1705126wiv.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Nov 2014 07:02:24 -0800 (PST)
-Received: from [192.168.2.15] ([212.103.222.226])
-        by mx.google.com with ESMTPSA id hk9sm8096111wjb.46.2014.11.06.07.02.22
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 06 Nov 2014 07:02:23 -0800 (PST)
-Message-ID: <545B8D7E.6060606@gmail.com>
-Date: Thu, 06 Nov 2014 16:02:22 +0100
-From: Francesco Morosinotto <jlord87@gmail.com>
+Received: from postler.lichtfels.com ([78.46.92.195]:58705 "EHLO
+	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751151AbaKFQLH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 11:11:07 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by postler.lichtfels.com (Postfix) with ESMTP id A6641123D7
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2014 17:11:05 +0100 (CET)
+Received: from postler.lichtfels.com ([127.0.0.1])
+ by localhost (postler.lichtfels.com [127.0.0.1]) (amavisd-maia, port 10024)
+ with LMTP id 25414-09 for <linux-btrfs@vger.kernel.org>;
+ Thu,  6 Nov 2014 17:11:04 +0100 (CET)
+Received: from [172.32.99.66] (mail.oops.co.at [213.129.238.225])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by postler.lichtfels.com (Postfix) with ESMTPSA id D73E2123CE
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Nov 2014 17:11:03 +0100 (CET)
+Message-ID: <545B9D97.3040206@xunil.at>
+Date: Thu, 06 Nov 2014 17:11:03 +0100
+From: "Stefan G. Weichinger" <lists@xunil.at>
+Reply-To: lists@xunil.at
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: are btrfs snapshot helpful for backing up kvm qcow2 vm?
-Content-Type: text/plain; charset=US-ASCII
+Subject: Re: "corrupt leaf" on kernel 3.17.2, w/ btrfs-progs 3.17
+References: <545B8981.2010603@xunil.at>
+In-Reply-To: <545B8981.2010603@xunil.at>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi guys,
+Am 06.11.2014 um 15:45 schrieb Stefan G. Weichinger:
 
-I need to improve the backup strategy of my vms; At the moment I backup the machines once a week by stopping them, making a snapshot, exporting the xml descriptor file and backing up these files.
+> Pls advise how to proceed.
+> 
+> Should I do some repair or btrfsck from a live-medium?
 
-I would prefer a daily online backup solution that allows me to take a snapshot with a minimum downtime.
+... had some hefty kernel crashes ...
 
-That's why I was planning to switch from etx4 to btrfs;
-my project will be to  pause the vm, dump the memory and the xml descriptor file, make a snapshot of the subvolume storing the qcow2 file and after that resuming the machine.
+Now I am on latest sysresccd.
 
-does this project makes any sense? What about performance? Am I going to experience bad performance having qcow2 over btrfs?
-I read on some old (two years) posts that btrfs was having bad fragmentation when dealing with qcow2 files, is this still happening?
+btrfsck v 3.16 ... fails as well
 
-Thank you
+Backing up.
 
-Francesco
+Seems I have to recreate the btrfs (with 3.16?) and all its subvolumes
+... *sigh*
 
+Maybe the SSD dies?
 
+S

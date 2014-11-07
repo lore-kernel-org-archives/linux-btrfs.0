@@ -1,81 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58628 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752042AbaKDR10 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Nov 2014 12:27:26 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B4EFFAC0F
-	for <linux-btrfs@vger.kernel.org>; Tue,  4 Nov 2014 17:27:24 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: use the correct SI prefixes
-Date: Tue,  4 Nov 2014 18:27:23 +0100
-Message-Id: <1415122043-8385-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:54000 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751160AbaKGCJQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 21:09:16 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sA7294Tm011250
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Nov 2014 10:09:04 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: remove BUG_ON on num of devices for btrfs fi show
+Date: Fri, 7 Nov 2014 10:07:42 +0800
+Message-ID: <1415326063-8838-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The SI standard defines lowercase 'k' and uppercase for the rest.
+The following BUG_ON:
+	BUG_ON(ndevs >= fi_args->num_devices)
+is not needed, because it always fails with seed devices present.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- Documentation/btrfs-filesystem.txt | 6 +++---
- cmds-filesystem.c                  | 8 ++++----
- utils.c                            | 2 +-
- 3 files changed, 8 insertions(+), 8 deletions(-)
+ utils.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index 6e63d2c9c2ae..a8f2972a0e1a 100644
---- a/Documentation/btrfs-filesystem.txt
-+++ b/Documentation/btrfs-filesystem.txt
-@@ -35,11 +35,11 @@ select the 1000 base for the following options, according to the SI standard
- -k|--kbytes::::
- show sizes in KiB, or kB with --si
- -m|--mbytes::::
--show sizes in MiB, or mB with --si
-+show sizes in MiB, or MB with --si
- -g|--gbytes::::
--show sizes in GiB, or gB with --si
-+show sizes in GiB, or GB with --si
- -t|--tbytes::::
--show sizes in TiB, or tB with --si
-+show sizes in TiB, or TB with --si
- 
- If conflicting options are passed, the last one takes precedence.
- 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index af56fbeb48ed..e4b278590ca6 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -128,11 +128,11 @@ static const char * const cmd_df_usage[] = {
- 	"-h                 human friendly numbers, base 1024 (default)",
- 	"-H                 human friendly numbers, base 1000",
- 	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
--	"--si               use 1000 as a base (kB, mB, gB, tB)",
-+	"--si               use 1000 as a base (kB, MB, GB, TB)",
- 	"-k|--kbytes        show sizes in KiB, or kB with --si",
--	"-m|--mbytes        show sizes in MiB, or mB with --si",
--	"-g|--gbytes        show sizes in GiB, or gB with --si",
--	"-t|--tbytes        show sizes in TiB, or tB with --si",
-+	"-m|--mbytes        show sizes in MiB, or MB with --si",
-+	"-g|--gbytes        show sizes in GiB, or GB with --si",
-+	"-t|--tbytes        show sizes in TiB, or TB with --si",
-        NULL
- };
- 
 diff --git a/utils.c b/utils.c
-index f51bc564d8f1..4b3bace4433a 100644
+index f10c178..9bcc1a0 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -1328,7 +1328,7 @@ out:
- static const char* unit_suffix_binary[] =
- 	{ "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"};
- static const char* unit_suffix_decimal[] =
--	{ "B", "kB", "mB", "gB", "tB", "pB", "eB"};
-+	{ "B", "kB", "MB", "GB", "TB", "PB", "EB"};
+@@ -1889,7 +1889,6 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	i++;
  
- int pretty_size_snprintf(u64 size, char *str, size_t str_size, unsigned unit_mode)
- {
+ 	for (; i <= fi_args->max_id; ++i) {
+-		BUG_ON(ndevs >= fi_args->num_devices);
+ 		ret = get_device_info(fd, i, &di_args[ndevs]);
+ 		if (ret == -ENODEV)
+ 			continue;
 -- 
-2.1.1
+1.8.1.4
 

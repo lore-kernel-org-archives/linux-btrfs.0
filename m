@@ -1,70 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52385 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59987 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751803AbaKJHyi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Nov 2014 02:54:38 -0500
-Message-ID: <1415605990.21952.12.camel@localhost.localdomain>
-Subject: Re: [PATCH 2/2] btrfs-progs: fix wrong num_devices for btrfs fi
- show with seed devices
+	with ESMTP id S1751051AbaKGCJP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 21:09:15 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sA7292Lb011247
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Nov 2014 10:09:02 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Mike Fleetwood <mike.fleetwood@googlemail.com>
-CC: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Mon, 10 Nov 2014 15:53:10 +0800
-In-Reply-To: <CAMU1PDjN0Q4Q=0kzrgjAKCmMdtMGBg-iMTONqQY3m0LuKDzJaA@mail.gmail.com>
-References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1415326063-8838-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20141107181628.GE25615@twin.jikos.cz>
-	 <CAMU1PDjN0Q4Q=0kzrgjAKCmMdtMGBg-iMTONqQY3m0LuKDzJaA@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: skip fs with no seed when build seed/sprout mapping for fi show
+Date: Fri, 7 Nov 2014 10:07:41 +0800
+Message-ID: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2014-11-08 at 19:47 +0000, Mike Fleetwood wrote:
-> On 7 November 2014 18:16, David Sterba <dsterba@suse.cz> wrote:
-> > On Fri, Nov 07, 2014 at 10:07:43AM +0800, Gui Hecheng wrote:
-> >> The @fi_args->num_devices in @get_fs_info() does not include seed devices.
-> >> We could just correct it by searching the chunk tree and count how
-> >> many dev_items there are in total which includes seed devices.
-> >>
-> >> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> >> ---
-> >> *Note*
-> >> This is just a temporary workaround to fix this problem in order to
-> >> make users happy, because a new ioctl or sysfs interface to handle this
-> >> problem needs more discussions and efforts. After the work implemented
-> >> and accepted, we could drop this.
-> >
-> > Nice, thanks. I agree that this kind of workaround is best possible for
-> > the moment, and I'm glad to see that it's not that much code to get the
-> > seeding devices right. This would also work with older kernels without
-> > the updated sysfs/ioctl interfaces, so this is likely to stay for a long
-> > time.
-> >
-> >> +u64 find_max_id(struct btrfs_ioctl_search_args *search_args, int nr_items)
-> >
-> > That's a very generic name for a function that does a very specialized
-> > thing, but I don't have a suggestion right now.
-> 
-> Is find_max_device_id a suitable name?
+There is no need to try to build seed/sprout mapping for those btrfs
+without seed devices, so just skip such fs.
+We could get the total number of devices from the disk super block, if it
+equals the number of items in list @fs_devices->devices, then there shouldn't
+be any seed devices.
 
-I think this one is really more clear.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ cmds-filesystem.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
 
-> >> +int correct_fs_info(int fd, struct btrfs_ioctl_fs_info_args *fi_args)
-> >
-> > Same here, make fs_info correct but in what way? A comment would be good
-> > as well.
-> 
-> Sorry, no suggestion for this function name.
-
-may be @search_chunk_tree_for_fs_info?
-
-Thanks for the suggestions.
-
--Gui
-
-> Thanks,
-> Mike
-
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 67fe52b..0d49cd1 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -795,6 +795,22 @@ out:
+ 	return ret;
+ }
+ 
++static int no_seed_devices(struct btrfs_fs_devices *fs_devices)
++{
++	struct btrfs_device *device;
++	int dev_cnt_total, dev_cnt = 0;
++
++	device = list_first_entry(&fs_devices->devices, struct btrfs_device,
++				  dev_list);
++
++	dev_cnt_total = device->total_devs;
++
++	list_for_each_entry(device, &fs_devices->devices, dev_list)
++		dev_cnt++;
++
++	return dev_cnt_total == dev_cnt;
++}
++
+ static int map_seed_devices(struct list_head *all_uuids)
+ {
+ 	struct btrfs_fs_devices *cur_fs, *cur_seed;
+@@ -812,6 +828,11 @@ static int map_seed_devices(struct list_head *all_uuids)
+ 						struct btrfs_device, dev_list);
+ 		if (!device)
+ 			continue;
++
++		/* skip fs without seeds */
++		if (no_seed_devices(cur_fs))
++			continue;
++
+ 		/*
+ 		 * open_ctree_* detects seed/sprout mapping
+ 		 */
+@@ -976,8 +997,8 @@ devs_only:
+ 	}
+ 
+ 	/*
+-	 * scan_for_btrfs() don't build seed/sprout mapping,
+-	 * do mapping build for each scanned fs here
++	 * The seed/sprout mapping are not detected yet,
++	 * do mapping build for all umounted fs
+ 	 */
+ 	ret = map_seed_devices(&all_uuids);
+ 	if (ret) {
+-- 
+1.8.1.4
 

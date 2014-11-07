@@ -1,46 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35410 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:53784 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752232AbaKDV7K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Nov 2014 16:59:10 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xlm82-00011Q-HX
-	for linux-btrfs@vger.kernel.org; Tue, 04 Nov 2014 22:59:06 +0100
-Received: from ip4d160011.dynamic.kabel-deutschland.de ([77.22.0.17])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Nov 2014 22:59:06 +0100
-Received: from Ansgar.Hockmann-Stolle by ip4d160011.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Nov 2014 22:59:06 +0100
+	id S1751496AbaKGRGS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Nov 2014 12:06:18 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D63BCAC89
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Nov 2014 17:06:16 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-From: Ansgar Hockmann-Stolle <Ansgar.Hockmann-Stolle@uni-osnabrueck.de>
-Subject: Re: [PATCH 03/11] Btrfs-progs: allow fsck to take the tree bytenr
-Date: Tue, 4 Nov 2014 21:58:56 +0000 (UTC)
-Message-ID: <loom.20141104T122529-705@post.gmane.org>
-References: <1414778489-4049-1-git-send-email-jbacik@fb.com> <1414778489-4049-4-git-send-email-jbacik@fb.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/5] Btrfs-progs updates to build
+Date: Fri,  7 Nov 2014 18:06:16 +0100
+Message-Id: <cover.1415379676.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik <jbacik <at> fb.com> writes:
-> Sometimes we have a pretty corrupted fs but have an old tree bytenr that we
-> could use, add the ability to specify the tree root bytenr.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik <at> fb.com>
-Tested-by: Ansgar Hockmann-Stolle <ansgar.hockmann-stolle <at>
-uni-osnabrueck.de>
+We've managed to break build of snapper two times now, a new make rule
+'test-build' should help us to check the build. Static build is not required to
+pass due to dependency on static libs that may not be widely available.
 
-This patch fixed my case:
-http://www.spinics.net/lists/linux-btrfs/msg38714.html
-Thank you! And thank you, Qu Wenruo for the help!!
+David Sterba (5):
+  btrfs-progs: build, add basic build test for library
+  btrfs-progs: build, add make target for a build test
+  btrfs-progs: build, gather utilities that are not built by default
+  btrfs-progs: build, update the clean rule
+  btrfs-progs: update .gitignore
 
-I tested all blocks that find-root gave - but only the one with generation =
-want + 1 gave some possible root items. The btrfsck with --tree-root <that
-block> finally fixed my file system. Hooray!
+ .gitignore     |  4 ++++
+ Makefile       | 28 ++++++++++++++++++++----
+ library-test.c | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 97 insertions(+), 4 deletions(-)
+ create mode 100644 library-test.c
 
-Ciao
-    Ansgar
+-- 
+1.8.4.5
 

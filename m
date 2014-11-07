@@ -1,45 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54000 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751160AbaKGCJQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Nov 2014 21:09:16 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sA7294Tm011250
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Nov 2014 10:09:04 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/2] btrfs-progs: remove BUG_ON on num of devices for btrfs fi show
-Date: Fri, 7 Nov 2014 10:07:42 +0800
-Message-ID: <1415326063-8838-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:53786 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751496AbaKGRGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Nov 2014 12:06:21 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 632C7AC89
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Nov 2014 17:06:20 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/5] btrfs-progs: build, add basic build test for library
+Date: Fri,  7 Nov 2014 18:06:19 +0100
+Message-Id: <effebebb42bb4263d8633b4252ce2ac573f1a7f8.1415379676.git.dsterba@suse.cz>
+In-Reply-To: <cover.1415379676.git.dsterba@suse.cz>
+References: <cover.1415379676.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following BUG_ON:
-	BUG_ON(ndevs >= fi_args->num_devices)
-is not needed, because it always fails with seed devices present.
+Basic test based on snapper code that uses the send stream API.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- utils.c | 1 -
- 1 file changed, 1 deletion(-)
+ Makefile       |  8 +++++++
+ library-test.c | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 77 insertions(+)
+ create mode 100644 library-test.c
 
-diff --git a/utils.c b/utils.c
-index f10c178..9bcc1a0 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1889,7 +1889,6 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 	i++;
+diff --git a/Makefile b/Makefile
+index 203597c3e23e..99b03658a406 100644
+--- a/Makefile
++++ b/Makefile
+@@ -240,6 +240,14 @@ send-test: $(objects) $(libs) send-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o send-test $(objects) send-test.o $(LDFLAGS) $(LIBS) -lpthread
  
- 	for (; i <= fi_args->max_id; ++i) {
--		BUG_ON(ndevs >= fi_args->num_devices);
- 		ret = get_device_info(fd, i, &di_args[ndevs]);
- 		if (ret == -ENODEV)
- 			continue;
++library-test: $(libs_shared) library-test.o
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(CFLAGS) -o library-test library-test.o $(LDFLAGS) -lbtrfs
++
++library-test.static: $(libs_static) library-test.o
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(CFLAGS) -o library-test-static library-test.o $(LDFLAGS) $(libs_static)
++
+ manpages:
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation
+ 
+diff --git a/library-test.c b/library-test.c
+new file mode 100644
+index 000000000000..142188a73b45
+--- /dev/null
++++ b/library-test.c
+@@ -0,0 +1,69 @@
++/*
++ * Copyright (C) 2014 SUSE.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "kerncompat.h"
++#include "version.h"
++#include "send-stream.h"
++
++/*
++ * Reduced code snippet from snapper.git/snapper/Btrfs.cc
++ */
++struct btrfs_send_ops send_ops = {
++	.subvol = NULL,
++	.snapshot = NULL,
++	.mkfile = NULL,
++	.mkdir = NULL,
++	.mknod = NULL,
++	.mkfifo = NULL,
++	.mksock = NULL,
++	.symlink = NULL,
++	.rename = NULL,
++	.link = NULL,
++	.unlink = NULL,
++	.rmdir = NULL,
++	.write = NULL,
++	.clone = NULL,
++	.set_xattr = NULL,
++	.remove_xattr = NULL,
++	.truncate = NULL,
++	.chmod = NULL,
++	.chown = NULL,
++	.utimes = NULL,
++	.update_extent = NULL,
++};
++
++/*
++ * Link test only, not intended to be executed.
++ */
++static int test_send_stream_api() {
++	int ret;
++	int fd = -1;
++
++#if BTRFS_LIB_VERSION < 101
++	ret = btrfs_read_and_process_send_stream(fd, &send_ops, NULL, 0);
++#else
++	ret = btrfs_read_and_process_send_stream(fd, &send_ops, NULL, 0, 1);
++#endif
++	return ret;
++}
++
++int main() {
++	test_send_stream_api();
++
++	return 0;
++}
 -- 
-1.8.1.4
+1.8.4.5
 

@@ -1,86 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35577 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751216AbaKGDih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Nov 2014 22:38:37 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XmaNg-00049q-Fn
-	for linux-btrfs@vger.kernel.org; Fri, 07 Nov 2014 04:38:36 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Nov 2014 04:38:36 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Nov 2014 04:38:36 +0100
+Received: from aquinas.techsquare.com ([75.125.237.226]:46038 "EHLO
+	techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753135AbaKGOy5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Nov 2014 09:54:57 -0500
+Received: from [18.189.78.89]
+	by techsquare.com with esmtpsa (TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
+	(Exim 4.71)
+	(envelope-from <matt@techsquare.com>)
+	id 1Xmkbh-0008Oi-IA
+	for linux-btrfs@vger.kernel.org; Fri, 07 Nov 2014 09:34:02 -0500
+Message-ID: <545CD848.8070308@techsquare.com>
+Date: Fri, 07 Nov 2014 09:33:44 -0500
+From: Matt McKinnon <matt@techsquare.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Compatibility matrix kernel/tools
-Date: Fri, 7 Nov 2014 03:38:23 +0000 (UTC)
-Message-ID: <pan$d2077$fec7cdea$56b28895$45042d2e@cox.net>
-References: <4CB60C7D-97C0-4DA5-830B-CAD0E3D0C22E@free.fr>
-	<20141105214515.GD21247@carfax.org.uk> <545AD423.2010600@cn.fujitsu.com>
-	<50788B41-C5FA-40B7-BFE8-008A85AB5669@free.fr>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: corruption, bad block, input/output errors - do i run --repair?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cyril Scetbon posted on Thu, 06 Nov 2014 10:21:47 +0100 as excerpted:
+Hi All,
 
->>> On Wed, Nov 05, 2014 at 09:57:31PM +0100, Cyril Scetbon wrote:
->>>> 
->>>> Where can I find the compatibility matrix to know which btrfs-tools
->>>> version should work with a chosen linux kernel ?
+I'm running into some corruption and I wanted to seek out advice on 
+whether or not to run btrfs check --repair, or if I should fall back to 
+my backup file server, or both.
 
-> Thank you guys for this status ! I think you should add it somewhere in
-> the documentation cause I'm pretty sure this is a repeated question from
-> users.
+The system is mountable, and usable.
 
-Looking backward it hasn't been that much of a FAQ, because (despite what 
-various commercial distros were willing to support for money) as far as 
-the list was concerned btrfs was experimental (and is currently still not 
-fully stable), so the very strong recommendation has always been, and 
-remains now altho the strength of the recommendation is gradually fading 
-as btrfs stabilizes, that users should always run the latest kernel as 
-otherwise they are missing fixes for known problems that may well bite 
-them if they don't.
+# uname -a
+Linux cbmm-fs 3.17.2-custom #1 SMP Thu Oct 30 14:09:57 EDT 2014 x86_64 
+x86_64 x86_64 GNU/Linux
 
-Similarly but not as critically and with some differences for userspace.  
-One difference was that until fairly recently userspace didn't have 
-regular releases, so users of an after all experimental filesystem were 
-expected to run git snapshots either built themselves and updated 
-regularly, or from the distro, provided the distro updated their 
-snapshots at least a couple times a year.  Older versions were mainly 
-missing features for the online stuff (as Chris mentioned), and users 
-were told they'd obtain best results for the offline stuff with current 
-live-git (where the master branch was and is release-maturity-only code) 
-or with specific testing patches.
+# btrfs --version
+Btrfs v3.14.2
+# btrfs fi show
+Label: none  uuid: 30c15060-8fb4-4926-87d4-f7d08c3033c5
+	Total devices 1 FS bytes used 58.92TiB
+	devid    1 size 76.40TiB used 59.05TiB path /dev/sda1
 
-Looking forward, however, as btrfs matures and stabilizes and as part of 
-that process the btrfs community and documentation begins to accommodate 
-users who routinely run years outdated code for the stability, and who 
-expect to do the same thing with btrfs, this question is as you 
-suggested, certain to BECOME a FAQ.
+# btrfs fi df /home
+Data, single: total=58.75TiB, used=58.75TiB
+System, DUP: total=32.00MiB, used=2.66MiB
+System, single: total=4.00MiB, used=3.68MiB
+Metadata, DUP: total=119.00GiB, used=116.63GiB
+Metadata, single: total=64.01GiB, used=57.68GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-So adding it "somewhere", with the most appropriate initial "somewhere" 
-likely being the user documentation section FAQ on the wiki, is indeed a 
-good idea.
 
-But it's a wiki and as such the expectation is that users themselves do 
-the editing.  Go right ahead.  Chris Mason's authoritative explanation's 
-a great start. =:^)
+I did run into some RO snapshot corruption which caused me to run btrfs 
+check:
 
-OTOH if you're like me you're more comfortable on the list, and editing 
-the wiki is a big hassle.  The information will probably get there 
-eventually either way, but if you do it you make sure it's done /now/, 
-not whenever someone else gets to it.  So if you are comfortable updating 
-the wiki, by all means do so, but if not, well, I've never done so 
-either, so...
+parent transid verify failed on 20809493159936 wanted 
+4486137218058286914 found
+390978
+parent transid verify failed on 20809493159936 wanted 
+4486137218058286914 found
+390978
+Ignoring transid failure
+Checking filesystem on /dev/sda1
+UUID: 30c15060-8fb4-4926-87d4-f7d08c3033c5
+checking extents
+bad block 69290357067776
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+...
 
+"dir isize wrong" 1 error
+"errors 500, file extent discount, nbytes wrong" 14 errors
+"errors 2001, no inode item, link count wrong" 257302 errors
+
+...
+
+found 185063071745 bytes used err is 1
+total csum bytes: 8428
+total tree bytes: 1889284096
+total fs tree bytes: 962678784
+total extent tree bytes: 159297536
+btree space waste bytes: 340014684
+file data blocks allocated: 57344
+  referenced 57344
+Btrfs v3.14.2
+
+Output of a scrub:
+
+ERROR: scrubbing /home failed for device id 1 (Input/output error)
+scrub canceled for 30c15060-8fb4-4926-87d4-f7d08c3033c5
+         scrub started at Mon Nov  3 06:43:58 2014 and was aborted after 
+7613 seconds
+         data_extents_scrubbed: 248507555
+         tree_extents_scrubbed: 10870729
+         data_bytes_scrubbed: 15375990317056
+         tree_bytes_scrubbed: 44526505984
+         read_errors: 0
+         csum_errors: 0
+         verify_errors: 0
+         no_csum: 15712
+         csum_discards: 988018
+         super_errors: 0
+         malloc_errors: 0
+         uncorrectable_errors: 0
+         unverified_errors: 0
+         corrected_errors: 0
+         last_physical: 15425663205376
+
+Output of a balance:
+
+ERROR: error during balancing '/home' - Input/output error
+There may be more info in syslog - try dmesg | tail
+
+[501087.506642] ------------[ cut here ]------------
+[501087.543971] WARNING: CPU: 5 PID: 31885 at fs/btrfs/relocation.c:925 
+build_backref_tree+0x11f0/0x1230 [btrfs]()
+[501087.543991] Modules linked in: ipmi_devintf(E) autofs4(E) sb_edac(E) 
+edac_core(E) joydev(E) mei_me(E) mei(E) lpc_ich(E) ioatdma(E) ipmi_si(E) 
+wmi(E) mac_hid(E) bnep(E) rfcomm(E) bluetooth(E) lp(E) parport(E) 
+nfsd(E) nfs_acl(E) auth_rpcgss(E) nfs(E) fscache(E) lockd(E) sunrpc(E) 
+ses(E) enclosure(E) hid_generic(E) ahci(E) libahci(E) usbhid(E) hid(E) 
+igb(E) dca(E) i2c_algo_bit(E) ptp(E) pps_core(E) megaraid_sas(E) 
+btrfs(E) raid6_pq(E) xor(E) libcrc32c(E)
+[501087.543995] CPU: 5 PID: 31885 Comm: btrfs Tainted: G      D     E 
+3.17.2-custom #1
+[501087.543997] Hardware name: Supermicro 
+X9DRH-7TF/7F/iTF/iF/X9DRH-7TF/7F/iTF/iF, BIOS 3.0a 12/27/2013
+[501087.543999]  000000000000039d ffff88000eadb808 ffffffff8176733c 
+0000000000000282
+[501087.544001]  0000000000000000 ffff88000eadb848 ffffffff8107163c 
+0000000000001000
+[501087.544003]  ffff8801d0d9acf0 ffff880497c70380 0000000000000001 
+0000000000000001
+[501087.544004] Call Trace:
+[501087.544014]  [<ffffffff8176733c>] dump_stack+0x46/0x58
+[501087.544022]  [<ffffffff8107163c>] warn_slowpath_common+0x8c/0xc0
+[501087.544024]  [<ffffffff8107168a>] warn_slowpath_null+0x1a/0x20
+[501087.544039]  [<ffffffffa00b4020>] build_backref_tree+0x11f0/0x1230 
+[btrfs]
+[501087.544052]  [<ffffffffa00b4331>] relocate_tree_blocks+0x2d1/0x690 
+[btrfs]
+[501087.544060]  [<ffffffff811c1609>] ? kmem_cache_alloc_trace+0x39/0x1f0
+[501087.544072]  [<ffffffffa00b54a2>] relocate_block_group+0x202/0x5f0 
+[btrfs]
+[501087.544083]  [<ffffffffa00b5a40>] 
+btrfs_relocate_block_group+0x1b0/0x2d0 [btrfs]
+[501087.544098]  [<ffffffffa0088cf5>] 
+btrfs_relocate_chunk.isra.62+0x75/0x760 [btrfs]
+[501087.544111]  [<ffffffffa0084d86>] ? release_extent_buffer+0x36/0xe0 
+[btrfs]
+[501087.544124]  [<ffffffffa0085281>] ? free_extent_buffer+0x61/0xc0 [btrfs]
+[501087.544136]  [<ffffffffa008d7db>] btrfs_balance+0x8ab/0xf50 [btrfs]
+[501087.544150]  [<ffffffffa00985ac>] btrfs_ioctl_balance+0x1cc/0x530 
+[btrfs]
+[501087.544156]  [<ffffffff811786eb>] ? 
+lru_cache_add_active_or_unevictable+0x2b/0xa0
+[501087.544168]  [<ffffffffa009aa82>] btrfs_ioctl+0x562/0x1f00 [btrfs]
+[501087.544173]  [<ffffffff811e9c0b>] ? putname+0x2b/0x40
+[501087.544176]  [<ffffffff811ef193>] ? user_path_at_empty+0x63/0xa0
+[501087.544183]  [<ffffffff8105f59c>] ? __do_page_fault+0x28c/0x550
+[501087.544187]  [<ffffffff8112528c>] ? acct_account_cputime+0x1c/0x20
+[501087.544189]  [<ffffffff811f1106>] do_vfs_ioctl+0x86/0x4f0
+[501087.544192]  [<ffffffff810244a5>] ? syscall_trace_enter+0x165/0x280
+[501087.544193]  [<ffffffff811f1601>] SyS_ioctl+0x91/0xb0
+[501087.544198]  [<ffffffff8176fc7f>] tracesys+0xe1/0xe6
+[501087.544199] ---[ end trace e2a77238816656f5 ]---
+[501087.579519] parent transid verify failed on 20809493159936 wanted 
+4486137218058286914 found 390978
+
+
+I have been sending incremental snapshot dumps over to an identical file 
+server as backups.  Everything checks out OK there.  Do I try to run 
+check with --repair first, and fall back to my backup if that fails?
+
+-Matt

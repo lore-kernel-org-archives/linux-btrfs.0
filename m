@@ -1,28 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21607 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752704AbaKHBDZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Nov 2014 20:03:25 -0500
-Message-ID: <545D6BC8.4030403@oracle.com>
-Date: Sat, 08 Nov 2014 09:03:04 +0800
-From: anand jain <anand.jain@oracle.com>
+Received: from mail-lb0-f178.google.com ([209.85.217.178]:42811 "EHLO
+	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751231AbaKHTrY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Nov 2014 14:47:24 -0500
+Received: by mail-lb0-f178.google.com with SMTP id f15so4692423lbj.9
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Nov 2014 11:47:22 -0800 (PST)
 MIME-Version: 1.0
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-CC: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+In-Reply-To: <20141107181628.GE25615@twin.jikos.cz>
+References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	<1415326063-8838-3-git-send-email-guihc.fnst@cn.fujitsu.com>
+	<20141107181628.GE25615@twin.jikos.cz>
+Date: Sat, 8 Nov 2014 19:47:22 +0000
+Message-ID: <CAMU1PDjN0Q4Q=0kzrgjAKCmMdtMGBg-iMTONqQY3m0LuKDzJaA@mail.gmail.com>
 Subject: Re: [PATCH 2/2] btrfs-progs: fix wrong num_devices for btrfs fi show
  with seed devices
-References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com> <1415326063-8838-3-git-send-email-guihc.fnst@cn.fujitsu.com> <20141107181628.GE25615@twin.jikos.cz>
-In-Reply-To: <20141107181628.GE25615@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+To: David Sterba <dsterba@suse.cz>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-really nice fix. Thanks Gui.
-Anand
-
-
-On 08/11/2014 02:16, David Sterba wrote:
+On 7 November 2014 18:16, David Sterba <dsterba@suse.cz> wrote:
 > On Fri, Nov 07, 2014 at 10:07:43AM +0800, Gui Hecheng wrote:
 >> The @fi_args->num_devices in @get_fs_info() does not include seed devices.
 >> We could just correct it by searching the chunk tree and count how
@@ -46,13 +45,15 @@ On 08/11/2014 02:16, David Sterba wrote:
 >
 > That's a very generic name for a function that does a very specialized
 > thing, but I don't have a suggestion right now.
->
+
+Is find_max_device_id a suitable name?
+
 >> +int correct_fs_info(int fd, struct btrfs_ioctl_fs_info_args *fi_args)
 >
 > Same here, make fs_info correct but in what way? A comment would be good
 > as well.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+
+Sorry, no suggestion for this function name.
+
+Thanks,
+Mike

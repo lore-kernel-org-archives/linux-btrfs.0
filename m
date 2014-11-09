@@ -1,59 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f178.google.com ([209.85.217.178]:42811 "EHLO
-	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751231AbaKHTrY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Nov 2014 14:47:24 -0500
-Received: by mail-lb0-f178.google.com with SMTP id f15so4692423lbj.9
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Nov 2014 11:47:22 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20141107181628.GE25615@twin.jikos.cz>
-References: <1415326063-8838-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	<1415326063-8838-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-	<20141107181628.GE25615@twin.jikos.cz>
-Date: Sat, 8 Nov 2014 19:47:22 +0000
-Message-ID: <CAMU1PDjN0Q4Q=0kzrgjAKCmMdtMGBg-iMTONqQY3m0LuKDzJaA@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs-progs: fix wrong num_devices for btrfs fi show
- with seed devices
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
-To: David Sterba <dsterba@suse.cz>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wg0-f51.google.com ([74.125.82.51]:62358 "EHLO
+	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751350AbaKIWRH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 17:17:07 -0500
+Received: by mail-wg0-f51.google.com with SMTP id l18so7315794wgh.24
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Nov 2014 14:17:06 -0800 (PST)
+From: Silvio Fricke <silvio.fricke@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Silvio Fricke <silvio.fricke@gmail.com>
+Subject: [PATCH 0/2] add progress indicator to btrfs-convert
+Date: Sun,  9 Nov 2014 23:16:54 +0100
+Message-Id: <cover.1415549388.git.silvio.fricke@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7 November 2014 18:16, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Nov 07, 2014 at 10:07:43AM +0800, Gui Hecheng wrote:
->> The @fi_args->num_devices in @get_fs_info() does not include seed devices.
->> We could just correct it by searching the chunk tree and count how
->> many dev_items there are in total which includes seed devices.
->>
->> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
->> ---
->> *Note*
->> This is just a temporary workaround to fix this problem in order to
->> make users happy, because a new ioctl or sysfs interface to handle this
->> problem needs more discussions and efforts. After the work implemented
->> and accepted, we could drop this.
->
-> Nice, thanks. I agree that this kind of workaround is best possible for
-> the moment, and I'm glad to see that it's not that much code to get the
-> seeding devices right. This would also work with older kernels without
-> the updated sysfs/ioctl interfaces, so this is likely to stay for a long
-> time.
->
->> +u64 find_max_id(struct btrfs_ioctl_search_args *search_args, int nr_items)
->
-> That's a very generic name for a function that does a very specialized
-> thing, but I don't have a suggestion right now.
+Hi btrfs-ml,
 
-Is find_max_device_id a suitable name?
+I have tried a ext4->btrfs conversation of a 1TB (90%full) and have seen that
+btrfs has no progressbar or something like that. Furthermore I have found [1] a
+project idea for this.
 
->> +int correct_fs_info(int fd, struct btrfs_ioctl_fs_info_args *fi_args)
->
-> Same here, make fs_info correct but in what way? A comment would be good
-> as well.
+I have tried a generic tasklet-based solution to print the status of the
+convert-process. Maybe it looks good to you than please add this to your repo.
+I have implemented this with the linux specific timerfd facility. To enable
+this you haver to use the '-p' option.
 
-Sorry, no suggestion for this function name.
+I have noticed that a conversation doesn't show all inodes as converted at the
+end. How can I improve this? A complete convert-process is showd here:
 
-Thanks,
-Mike
+	sfr@devhost ./btrfs-progs % ./btrfs-convert -p /dev/sde4
+	creating btrfs metadata.
+	copy inodes [o] [        96/       106]
+	creating ext2fs image file.
+	cleaning up system chunk.
+	conversion complete.
+
+[1] https://btrfs.wiki.kernel.org/index.php/Project_ideas#btrfs-convert
+
+Bye and thanks,
+Silvio
+
+
+Silvio Fricke (2):
+  btrfs-progs: add task-utils
+  btrfs-progs: convert: use task for progress indication of metadata
+    creation
+
+ Documentation/btrfs-convert.txt |   2 +
+ Makefile                        |   6 +--
+ btrfs-convert.c                 |  60 ++++++++++++++++++++++--
+ task-util.c                     | 101 ++++++++++++++++++++++++++++++++++++++++
+ task-util.h                     |  32 +++++++++++++
+ 5 files changed, 193 insertions(+), 8 deletions(-)
+ create mode 100644 task-util.c
+ create mode 100644 task-util.h
+
+-- 
+2.1.2
+

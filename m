@@ -1,136 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44785 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752807AbaKHEE7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Nov 2014 23:04:59 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XmxGj-0006gn-CF
-	for linux-btrfs@vger.kernel.org; Sat, 08 Nov 2014 05:04:57 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Nov 2014 05:04:57 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Nov 2014 05:04:57 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: corruption, bad block, input/output errors - do i run --repair?
-Date: Sat, 8 Nov 2014 04:04:45 +0000 (UTC)
-Message-ID: <pan$4647a$3e6e327a$4051c8f5$2fb711d5@cox.net>
-References: <545CD848.8070308@techsquare.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from 17.mo6.mail-out.ovh.net ([46.105.36.150]:34469 "EHLO
+	mo6.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751095AbaKIUWd convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 15:22:33 -0500
+Received: from mail179.ha.ovh.net (gw6.ovh.net [213.251.189.206])
+	by mo6.mail-out.ovh.net (Postfix) with SMTP id D89D7FF941A
+	for <linux-btrfs@vger.kernel.org>; Sun,  9 Nov 2014 18:55:34 +0100 (CET)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
+Subject: Re: Quota question
+From: Cyril Scetbon <cyril.scetbon@free.fr>
+In-Reply-To: <pan$648cb$e6ca8d21$192128f6$95e500d3@cox.net>
+Date: Sun, 9 Nov 2014 18:55:31 +0100
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <967D58C4-46E1-4508-A5A9-A0835C18E87D@free.fr>
+References: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr> <F924EC8F-D124-4E6D-A8FE-E03D82A8DAB8@free.fr> <pan$db0e5$7ee7229b$da3a292b$c1219b2@cox.net> <CCA13B0E-D1EE-44D8-A634-FD17C2B22C72@free.fr> <pan$648cb$e6ca8d21$192128f6$95e500d3@cox.net>
+To: Duncan <1i5t5.duncan@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Matt McKinnon posted on Fri, 07 Nov 2014 09:33:44 -0500 as excerpted:
-
-> I'm running into some corruption and I wanted to seek out advice on
-> whether or not to run btrfs check --repair, or if I should fall back to
-> my backup file server, or both.
-> 
-> The system is mountable, and usable.
-> 
-> # uname -a
-> Linux cbmm-fs 3.17.2-custom #1 SMP Thu Oct 30 14:09:57 EDT 2014
-> x86_64 x86_64 x86_64 GNU/Linux
-> 
-> # btrfs --version Btrfs v3.14.2
-
-> I did run into some RO snapshot corruption [...]
-
-> I have been sending incremental snapshot dumps over to an identical file
-> server as backups.  Everything checks out OK there.  Do I try to run
-> check with --repair first, and fall back to my backup if that fails?
-
-
-It looks like you may already know about the early 3.17 series RO-
-snapshot corruption bug, which you appear to have had, either from the 
-list or from elsewhere, but apparently haven't been following the list 
-closely enough to have noted the fix.
-
-Kernel 3.17.2, which you have, fixed the bug causing the problem, which 
-only affected earlier 3.17 series kernels and only filesystems with read-
-only snapshots.
-
-But that didn't entirely fix the problem for people (apparently including 
-you) who had already experienced corruption on their filesystems due to 
-it, since that didn't fix existing damage, only prevent new damage.
-
-The fix for existing damage is *ONLY* in btrfs-progs 3.17 or newer.  With 
-it, running btrfs check --repair should fix existing damage.
-
-*HOWEVER*, attempting to repair the damage with btrfs check --repair with 
-btrfs-progs versions PRIOR TO 3.17 WILL MAKE IT WORSE, basically 
-unrecoverable using existing tools.
-
-So for this specific damage, running btrfs check --repair from btrfs-progs 
-3.17 or newer should fix it.  Do NOT attempt to repair it with earlier 
-btrfs-progs versions.
-
-
-More generally, as recently discussed here in the "Compatibility matrix 
-kernels/tools" thread from last week, while any recent kernel version 
-should in general work with any recent userspace, and while keeping 
-reasonably current on kernels is strongly recommended as older ones have 
-now-fixed bugs that may trigger damage in some cases, keeping userspace 
-current isn't generally as vital, AS LONG AS you're primarily running 
-"online" tools (in general those that work with mounted filesystems), 
-which normally do their work via kernel calls anyway.  In that case, the 
-most you will be missing is some of the newer features.
-
-HOWEVER, once you get into the offline userspace tools like btrfs check 
-and btrfs restore, where the functionality is either fixing damaged 
-filesystems or retrieving data off of them while unmounted, a current 
-btrfs userspace becomes MUCH more important, since then it's the 
-userspace code working on the filesystem.
-
-Which is what we see here.  A kernel bug started creating damage in 
-certain corner cases but was relatively rapidly fixed.  However, that fix 
-only kept it from creating further damage, it didn't do anything to 
-correct existing filesystem damage of that type.  That's where the 
-userspace fix comes in, fixing existing damage.  However, only the newest 
-btrfs-progs (userspace) has the fixes to correct the existing damage 
-properly.  Older versions, including the 3.14.2 you're running, could see 
-some damage -- they detect that something isn't right-- but didn't 
-understand the problem and if they were used to try to fix it, would 
-instead make the problem worse.
-
-
-So... applying that to your specific case:
-
-Kernel 3.17.2 has the kernel fix and won't cause more damage.
-
-Your 3.14.2 userspace is too old to fix the existing damage, however.
-
-Since you have been wise enough to have backups, you are thus left with 
-two choices:
-
-1) Upgrade the userspace and fix the existing damage with the upgraded 
-userspace btrfs check --repair.
-
-2) Do a mkfs, thus eliminating the existing damage along with the data on 
-the existing filesystem, and restore from backup to the new filesystem, 
-recreated free of the damage.  Optionally upgrade the btrfs-progs 
-userspace.
-
-In either case, continue to run kernel 3.17.2 or newer so as not to have 
-either this bug or the one that affected the 3.15 kernel and early 3.16, 
-reappear.
-
-Either way should work.  Here, if the existing filesystem was older than 
-say kernel 3.14, I'd probably do the mkfs but do the optional userspace 
-upgrade too, taking advantage of newer filesystem options such as skinny-
-metadata and 16-KiB metadata nodes while I was at it.  If the filesystem 
-was new and already took advantage of those features, I'd probably just 
-do the userspace upgrade and btrfs check --repair.  But fortunately for 
-you, unlike many unfortunate posters here you have a backup available, 
-thus giving you the /choice/, and that choice is up to you. =:^)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Cyril SCETBON
 
+> 1)  but is the rewrite in that, or in 
+> 3.17, or in the coming 3.18, or not yet entirely there at all... that I 
+> simply don't know.
+
+If anyone can answer it'd be great !
+
+> 
+> 2) What I *DO* know and *CAN* say with quite some confidence is this:
+> 
+> With btrfs being in general a copy-on-write filesystem, even deletes 
+> normally require /some/ space, because the metadata pointing at the file 
+> in question must be rewritten, and that requires free space in ordered to 
+> happen.
+ok
+> 
+> At least in the case of full filesystem ENOSPC errors, the space-related 
+> questions in the FAQ on the btrfs wiki suggest truncating a file first.  
+> Find an existing file that either doesn't matter or that you have a 
+> backup of elsewhere, and echo > filename (or echo >| filename if you have 
+> noclobber set), therefore truncating the existing file.  A few of those 
+> and with luck you'll free enough space to do some actual deletions.
+> 
+> While to some extent I'm guessing here since I'm not directly familiar 
+> with quotas myself, it sounds as if such a severe ENOSPC condition, due 
+> in your case to quotas instead of the general filesystem limits I'm more 
+> familiar with, might be what you are seeing, particularly since in your 
+> tests you first triggered the limit, then found a way to write a bit more 
+> anyway, and only THEN found yourself unable to write anything.
+> 
+> If that's the case, then try the truncate trick and see if it helps.
+Unfortunately : http://pastebin.com/1Mw0yiUc
+> 
+> In the generic filesystem case, if the truncate trick doesn't help, 
+> another possible trick is to temporarily add another device of several 
+> gigs capacity to the filesystem, enough to let a balance work and 
+> hopefully reduce the data/metadata imbalance, after which there should be 
+> enough chunk-unallocated free space left on the original device, to do a 
+> btrfs device delete of the temporary device, generally still leaving 
+> space left, since the balance should have reclaimed some otherwise wasted 
+> chunk allocation.
+> 
+> I can't see how that'd apply to quotas, however, and suspect that the 
+> corresponding quota-system solution would be to temporarily up the quota 
+> for the affected user, only long enough to let them do the deletions they 
+> need to do.  But beyond that I can't go, since I simply don't know enough 
+> about the quota domain to further speculate, at this point.
+
+I'm pretty sure it'd work by setting a temporary higher quota, but my questions are : 
+
+- why can I exceed the quotas (580MB when 500MB was set as the limit) ?
+
+qgroupid  excl            max_excl
+-------------------------------------------
+1/101999 608632832 524288000
+
+- I really think that the quota limit should take into account an amount of space for operations that would free space
+
+For this last question I may think that this issue is caused by the fact that I have only one file taking all the space which won't really be the regular use case. but i'd like to get an answer :)
+> 
+> While admittedly limited due to my lack of quota-domain knowledge, 
+> perhaps that sheds at least some light on what happened and why, and 
+> hopefully on how to get out of the situation.
+
+Thank you Duncan !

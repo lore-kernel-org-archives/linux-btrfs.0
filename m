@@ -1,316 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47639 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753629AbaKHNBb (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 8 Nov 2014 08:01:31 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: make xattr replace operations atomic
-Date: Sat,  8 Nov 2014 13:01:06 +0000
-Message-Id: <1415451666-11866-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1415392765-1877-1-git-send-email-fdmanana@suse.com>
-References: <1415392765-1877-1-git-send-email-fdmanana@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:25319 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750962AbaKIBRR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Nov 2014 20:17:17 -0500
+Message-ID: <545EC097.2010005@fb.com>
+Date: Sat, 8 Nov 2014 20:17:11 -0500
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replacing a xattr consists of doing a lookup for its existing value, delete
-the current value from the respective leaf, release the search path and then
-finally insert the new value. This leaves a time window where readers (getxattr,
-listxattrs) won't see any value for the xattr. Xattrs are used to store ACLs,
-so this has security implications.
+Hi Linus,
 
-This change also fixes 2 other existing issues which were:
+Please pull my for-linus branch:
 
-*) Deleting the old xattr value without verifying first if the new xattr will
-   fit in the existing leaf item (in case multiple xattrs are packed in the
-   same item due to name hash collision);
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-*) Returning -EEXIST when the flag XATTR_CREATE is given and the xattr doesn't
-   exist but we have have an existing item that packs muliple xattrs with
-   the same name hash as the input xattr. In this case we should return ENOSPC.
+It's a one liner for an error cleanup path that leads to crashes.
 
-A test case for xfstests follows soon.
+Chris Mason (1) commits (+1/-1):
+    Btrfs: fix kfree on list_head in btrfs_lookup_csums_range error cleanup
 
-Thanks to Alexandre Oliva for reporting the non-atomicity of the xattr replace
-implementation.
+Total: (1) commits (+1/-1)
 
-Reported-by: Alexandre Oliva <oliva@gnu.org>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Added missing btrfs_mark_buffer_dirty() call for the case where a replace
-    happens for an item with no other xattrs and the new xattr value size is
-    the same as the old xattr value size;
-    Made btrfs_search_slot not release the path if it returns EOVERFLOW (from
-    split_leaf), so that we can get the current size of the item when doing
-    the replace and extend the leaf to a size smaller then what we passed to
-    btrfs_search_slot if the xattr exists in the item (and the new extend size
-    is new_size - old_size, excluding xattr's name and sizeof struct btrfs_dir_item).
-
-V3: Made btrfs_search_slot not release the path on error logic more explicit
-    and generic.
-
- fs/btrfs/ctree.c    |   2 +-
- fs/btrfs/ctree.h    |   5 ++
- fs/btrfs/dir-item.c |  10 ++--
- fs/btrfs/xattr.c    | 146 ++++++++++++++++++++++++++++++----------------------
- 4 files changed, 94 insertions(+), 69 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 19bc616..8172341 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2939,7 +2939,7 @@ done:
- 	 */
- 	if (!p->leave_spinning)
- 		btrfs_set_path_blocking(p);
--	if (ret < 0)
-+	if (ret < 0 && !p->skip_release_on_error)
- 		btrfs_release_path(p);
- 	return ret;
- }
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a5e471a..e3ab75e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -607,6 +607,7 @@ struct btrfs_path {
- 	unsigned int leave_spinning:1;
- 	unsigned int search_commit_root:1;
- 	unsigned int need_commit_sem:1;
-+	unsigned int skip_release_on_error:1;
- };
- 
- /*
-@@ -3687,6 +3688,10 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
- int verify_dir_item(struct btrfs_root *root,
- 		    struct extent_buffer *leaf,
- 		    struct btrfs_dir_item *dir_item);
-+struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
-+						 struct btrfs_path *path,
-+						 const char *name,
-+						 int name_len);
- 
- /* orphan.c */
- int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index fc8df86..1752625 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -21,10 +21,6 @@
- #include "hash.h"
- #include "transaction.h"
- 
--static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
--			      struct btrfs_path *path,
--			      const char *name, int name_len);
--
- /*
-  * insert a name into a directory, doing overflow properly if there is a hash
-  * collision.  data_size indicates how big the item inserted should be.  On
-@@ -383,9 +379,9 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
-  * this walks through all the entries in a dir item and finds one
-  * for a specific name.
-  */
--static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
--			      struct btrfs_path *path,
--			      const char *name, int name_len)
-+struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
-+						 struct btrfs_path *path,
-+						 const char *name, int name_len)
- {
- 	struct btrfs_dir_item *dir_item;
- 	unsigned long name_ptr;
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index dcf2013..b3b5632 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -29,6 +29,7 @@
- #include "xattr.h"
- #include "disk-io.h"
- #include "props.h"
-+#include "locking.h"
- 
- 
- ssize_t __btrfs_getxattr(struct inode *inode, const char *name,
-@@ -91,7 +92,7 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
- 		       struct inode *inode, const char *name,
- 		       const void *value, size_t size, int flags)
- {
--	struct btrfs_dir_item *di;
-+	struct btrfs_dir_item *di = NULL;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_path *path;
- 	size_t name_len = strlen(name);
-@@ -103,84 +104,107 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-+	path->skip_release_on_error = 1;
- 
--	if (flags & XATTR_REPLACE) {
--		di = btrfs_lookup_xattr(trans, root, path, btrfs_ino(inode), name,
--					name_len, -1);
--		if (IS_ERR(di)) {
--			ret = PTR_ERR(di);
--			goto out;
--		} else if (!di) {
-+	if (!value && ((flags & XATTR_REPLACE) || !flags)) {
-+		/*
-+		 * We're deleting only a xattr (no replace).
-+		 * Don't follow the path below because it could leave a leaf
-+		 * empty.
-+		 */
-+		di = btrfs_lookup_xattr(trans, root, path, btrfs_ino(inode),
-+					name, name_len, -1);
-+		if (!di && (flags & XATTR_REPLACE))
- 			ret = -ENODATA;
--			goto out;
--		}
--		ret = btrfs_delete_one_dir_name(trans, root, path, di);
--		if (ret)
--			goto out;
--		btrfs_release_path(path);
-+		else if (di)
-+			ret = btrfs_delete_one_dir_name(trans, root, path, di);
-+		goto out;
-+	}
- 
-+	ret = btrfs_insert_xattr_item(trans, root, path, btrfs_ino(inode),
-+				      name, name_len, value, size);
-+	if (ret == -EOVERFLOW) {
- 		/*
--		 * remove the attribute
-+		 * We have an existing item in a leaf, split_leaf couldn't
-+		 * expand it. That item might have or not a dir_item that
-+		 * matches our target xattr, so lets check.
- 		 */
--		if (!value)
--			goto out;
--	} else {
--		di = btrfs_lookup_xattr(NULL, root, path, btrfs_ino(inode),
--					name, name_len, 0);
--		if (IS_ERR(di)) {
--			ret = PTR_ERR(di);
-+		ret = 0;
-+		btrfs_assert_tree_locked(path->nodes[0]);
-+		di = btrfs_match_dir_item_name(root, path, name, name_len);
-+		if (!di && (flags & XATTR_CREATE)) {
-+			ret = -ENOSPC;
- 			goto out;
- 		}
--		if (!di && !value)
--			goto out;
--		btrfs_release_path(path);
-+	} else if (ret == -EEXIST) {
-+		ret = 0;
-+		di = btrfs_match_dir_item_name(root, path, name, name_len);
-+		ASSERT(di); /* logic error */
-+	} else if (ret) {
-+		goto out;
- 	}
- 
--again:
--	ret = btrfs_insert_xattr_item(trans, root, path, btrfs_ino(inode),
--				      name, name_len, value, size);
--	/*
--	 * If we're setting an xattr to a new value but the new value is say
--	 * exactly BTRFS_MAX_XATTR_SIZE, we could end up with EOVERFLOW getting
--	 * back from split_leaf.  This is because it thinks we'll be extending
--	 * the existing item size, but we're asking for enough space to add the
--	 * item itself.  So if we get EOVERFLOW just set ret to EEXIST and let
--	 * the rest of the function figure it out.
--	 */
--	if (ret == -EOVERFLOW)
-+	if (di && (flags & XATTR_CREATE))
- 		ret = -EEXIST;
-+	if (!di && (flags & XATTR_REPLACE))
-+		ret = -ENODATA;
-+	if (ret)
-+		goto out;
- 
--	if (ret == -EEXIST) {
--		if (flags & XATTR_CREATE)
--			goto out;
-+	if (di) {
- 		/*
--		 * We can't use the path we already have since we won't have the
--		 * proper locking for a delete, so release the path and
--		 * re-lookup to delete the thing.
-+		 * We're doing a replace, and it must be atomic, that is, at
-+		 * any point in time we have either the old or the new xattr
-+		 * value in the tree. We don't want readers (getxattr and
-+		 * listxattrs) to miss a value, this is specially important
-+		 * for ACLs.
- 		 */
--		btrfs_release_path(path);
--		di = btrfs_lookup_xattr(trans, root, path, btrfs_ino(inode),
--					name, name_len, -1);
--		if (IS_ERR(di)) {
--			ret = PTR_ERR(di);
--			goto out;
--		} else if (!di) {
--			/* Shouldn't happen but just in case... */
--			btrfs_release_path(path);
--			goto again;
-+		const int slot = path->slots[0];
-+		struct extent_buffer *leaf = path->nodes[0];
-+		const u16 old_data_len = btrfs_dir_data_len(leaf, di);
-+		const u32 item_size = btrfs_item_size_nr(leaf, slot);
-+		const u32 data_size = sizeof(*di) + name_len + size;
-+		struct btrfs_item *item;
-+		unsigned long data_ptr;
-+		char *ptr;
-+
-+		if (size > old_data_len) {
-+			if (btrfs_leaf_free_space(root, leaf) <
-+			    (size - old_data_len)) {
-+				ret = -ENOSPC;
-+				goto out;
-+			}
- 		}
- 
--		ret = btrfs_delete_one_dir_name(trans, root, path, di);
--		if (ret)
--			goto out;
-+		if (old_data_len + name_len + sizeof(*di) == item_size) {
-+			/* No other xattrs packed in the same leaf item. */
-+			if (size > old_data_len)
-+				btrfs_extend_item(root, path,
-+						  size - old_data_len);
-+			else if (size < old_data_len)
-+				btrfs_truncate_item(root, path, data_size, 1);
-+		} else {
-+			/* There are other xattrs packed in the same item. */
-+			ret = btrfs_delete_one_dir_name(trans, root, path, di);
-+			if (ret)
-+				goto out;
-+			btrfs_extend_item(root, path, data_size);
-+		}
- 
-+		item = btrfs_item_nr(slot);
-+		ptr = btrfs_item_ptr(leaf, slot, char);
-+		ptr += btrfs_item_size(leaf, item) - data_size;
-+		di = (struct btrfs_dir_item *)ptr;
-+		btrfs_set_dir_data_len(leaf, di, size);
-+		data_ptr = ((unsigned long)(di + 1)) + name_len;
-+		write_extent_buffer(leaf, value, data_ptr, size);
-+		btrfs_mark_buffer_dirty(leaf);
-+	} else {
- 		/*
--		 * We have a value to set, so go back and try to insert it now.
-+		 * Insert, and we had space for the xattr, so path->slots[0] is
-+		 * where our xattr dir_item is and btrfs_insert_xattr_item()
-+		 * filled it.
- 		 */
--		if (value) {
--			btrfs_release_path(path);
--			goto again;
--		}
- 	}
- out:
- 	btrfs_free_path(path);
--- 
-1.9.1
-
+ fs/btrfs/file-item.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)

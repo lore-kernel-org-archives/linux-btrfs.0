@@ -1,33 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:25319 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750962AbaKIBRR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 8 Nov 2014 20:17:17 -0500
-Message-ID: <545EC097.2010005@fb.com>
-Date: Sat, 8 Nov 2014 20:17:11 -0500
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Content-Type: text/plain; charset="utf-8"
+Received: from plane.gmane.org ([80.91.229.3]:54324 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751281AbaKIDzM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Nov 2014 22:55:12 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XnJam-0005ao-RS
+	for linux-btrfs@vger.kernel.org; Sun, 09 Nov 2014 04:55:11 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Nov 2014 04:55:08 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Nov 2014 04:55:08 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: [btrfs-progs] cmds-restore.c:182:20: warning: array subscript is
+ above array bounds [-Warray-bounds]
+Date: Sun, 9 Nov 2014 03:54:56 +0000 (UTC)
+Message-ID: <pan$7e207$ad1fefbf$2a4c2d19$75d64f5f@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Updating to the latest live-git btrfs-progs (on v3.17.1 tag), I chanced 
+across this (gentoo) warning, pointing to a gcc warning believed to be 
+severe:
 
-Please pull my for-linus branch:
+ * QA Notice: Package triggers severe warnings which indicate that it
+ *            may exhibit random runtime failures.
+ * cmds-restore.c:182:20: warning: array subscript is above array bounds 
+[-Warray-bounds]
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+ * Please do not file a Gentoo bug and instead report the above QA
+ * issues directly to the upstream developers of this software.
+ * Homepage: https://btrfs.wiki.kernel.org
 
-It's a one liner for an error cleanup path that leads to crashes.
+A bit more context:
 
-Chris Mason (1) commits (+1/-1):
-    Btrfs: fix kfree on list_head in btrfs_lookup_csums_range error cleanup
+cmds-restore.c: In function 'next_leaf':
+cmds-restore.c:182:20: warning: array subscript is above array bounds
+[-Warray-bounds]
+  slot = path->slots[level] + 1;
+                    ^
 
-Total: (1) commits (+1/-1)
+Not being a coder I've no idea if it's a false-alarm or not, and I 
+generally ignore these QA warnings since I've little hope of providing 
+much more than the basic information or help, but since I'm already 
+active here I thought I'd post it and see what happens.
 
- fs/btrfs/file-item.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+FWIW, gentoo/~amd64, gcc-4.8.3.
+
+Full build log available if needed altho I expect it should be easy 
+enough to trace without.  Note that I normally build with
+MAKEOPTS="-j10 -l8" so if log serialization is desired, please request
+a -j1 build log.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,101 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 8.mo6.mail-out.ovh.net ([178.33.42.204]:43834 "EHLO
-	mo6.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751564AbaKIWRa convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 17:17:30 -0500
-Received: from mail179.ha.ovh.net (gw6.ovh.net [213.251.189.206])
-	by mo6.mail-out.ovh.net (Postfix) with SMTP id AA0ACFF9366
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Nov 2014 23:10:47 +0100 (CET)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
-Subject: Re: Quota question
-From: Cyril Scetbon <cyril.scetbon@free.fr>
-In-Reply-To: <967D58C4-46E1-4508-A5A9-A0835C18E87D@free.fr>
-Date: Sun, 9 Nov 2014 23:10:43 +0100
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <EE8501C5-2A50-4E93-89F5-C08E28CE71DB@free.fr>
-References: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr> <F924EC8F-D124-4E6D-A8FE-E03D82A8DAB8@free.fr> <pan$db0e5$7ee7229b$da3a292b$c1219b2@cox.net> <CCA13B0E-D1EE-44D8-A634-FD17C2B22C72@free.fr> <pan$648cb$e6ca8d21$192128f6$95e500d3@cox.net> <967D58C4-46E1-4508-A5A9-A0835C18E87D@free.fr>
-To: Duncan <1i5t5.duncan@cox.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:2239 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751788AbaKJDMS convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 22:12:18 -0500
+Message-ID: <54602CF8.6030902@cn.fujitsu.com>
+Date: Mon, 10 Nov 2014 11:11:52 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Matt McKinnon <matt@techsquare.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: corruption, bad block, input/output errors - do i run --repair?
+References: <545CD848.8070308@techsquare.com>
+In-Reply-To: <545CD848.8070308@techsquare.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey,
 
-I did some new tests and the issue with quota exceeded comes from the fact that the data is not sync to disk : http://pastebin.com/fZdh2YRu
+-------- Original Message --------
+Subject: corruption, bad block, input/output errors - do i run --repair?
+From: Matt McKinnon <matt@techsquare.com>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2014年11月07日 22:33
+> Hi All,
+>
+> I'm running into some corruption and I wanted to seek out advice on 
+> whether or not to run btrfs check --repair, or if I should fall back 
+> to my backup file server, or both.
+>
+> The system is mountable, and usable.
+>
+> # uname -a
+> Linux cbmm-fs 3.17.2-custom #1 SMP Thu Oct 30 14:09:57 EDT 2014 x86_64 
+> x86_64 x86_64 GNU/Linux
+>
+> # btrfs --version
+> Btrfs v3.14.2
+> # btrfs fi show
+> Label: none  uuid: 30c15060-8fb4-4926-87d4-f7d08c3033c5
+>     Total devices 1 FS bytes used 58.92TiB
+>     devid    1 size 76.40TiB used 59.05TiB path /dev/sda1
+>
+> # btrfs fi df /home
+> Data, single: total=58.75TiB, used=58.75TiB
+> System, DUP: total=32.00MiB, used=2.66MiB
+> System, single: total=4.00MiB, used=3.68MiB
+> Metadata, DUP: total=119.00GiB, used=116.63GiB
+> Metadata, single: total=64.01GiB, used=57.68GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+>
+> I did run into some RO snapshot corruption which caused me to run 
+> btrfs check:
+This is a known bug in 3.17 with RO snapshot.
+It's fixable but not with your old 3.14 btrfs-progs.
 
--- 
-Cyril SCETBON
+Please update to 3.17 btrfs-progs, and re-run btrfsck(without --repair), 
+and it will prompt you to
+use --repair if this is the exact bug.
+Then run with --repair should fix it.
 
-> On 09 Nov 2014, at 18:55, Cyril Scetbon <cyril.scetbon@free.fr> wrote:
-> 
-> 
+Thanks,
+Qu
+>
+> parent transid verify failed on 20809493159936 wanted 
+> 4486137218058286914 found
+> 390978
+> parent transid verify failed on 20809493159936 wanted 
+> 4486137218058286914 found
+> 390978
+> Ignoring transid failure
+> Checking filesystem on /dev/sda1
+> UUID: 30c15060-8fb4-4926-87d4-f7d08c3033c5
+> checking extents
+> bad block 69290357067776
+> Errors found in extent allocation tree or chunk allocation
+> checking free space cache
+> checking fs roots
+>
+> ...
+>
+> "dir isize wrong" 1 error
+> "errors 500, file extent discount, nbytes wrong" 14 errors
+> "errors 2001, no inode item, link count wrong" 257302 errors
+>
+> ...
+>
+> found 185063071745 bytes used err is 1
+> total csum bytes: 8428
+> total tree bytes: 1889284096
+> total fs tree bytes: 962678784
+> total extent tree bytes: 159297536
+> btree space waste bytes: 340014684
+> file data blocks allocated: 57344
+>  referenced 57344
+> Btrfs v3.14.2
+>
+> Output of a scrub:
+>
+> ERROR: scrubbing /home failed for device id 1 (Input/output error)
+> scrub canceled for 30c15060-8fb4-4926-87d4-f7d08c3033c5
+>         scrub started at Mon Nov  3 06:43:58 2014 and was aborted 
+> after 7613 seconds
+>         data_extents_scrubbed: 248507555
+>         tree_extents_scrubbed: 10870729
+>         data_bytes_scrubbed: 15375990317056
+>         tree_bytes_scrubbed: 44526505984
+>         read_errors: 0
+>         csum_errors: 0
+>         verify_errors: 0
+>         no_csum: 15712
+>         csum_discards: 988018
+>         super_errors: 0
+>         malloc_errors: 0
+>         uncorrectable_errors: 0
+>         unverified_errors: 0
+>         corrected_errors: 0
+>         last_physical: 15425663205376
+>
+> Output of a balance:
+>
+> ERROR: error during balancing '/home' - Input/output error
+> There may be more info in syslog - try dmesg | tail
+>
+> [501087.506642] ------------[ cut here ]------------
+> [501087.543971] WARNING: CPU: 5 PID: 31885 at 
+> fs/btrfs/relocation.c:925 build_backref_tree+0x11f0/0x1230 [btrfs]()
+> [501087.543991] Modules linked in: ipmi_devintf(E) autofs4(E) 
+> sb_edac(E) edac_core(E) joydev(E) mei_me(E) mei(E) lpc_ich(E) 
+> ioatdma(E) ipmi_si(E) wmi(E) mac_hid(E) bnep(E) rfcomm(E) bluetooth(E) 
+> lp(E) parport(E) nfsd(E) nfs_acl(E) auth_rpcgss(E) nfs(E) fscache(E) 
+> lockd(E) sunrpc(E) ses(E) enclosure(E) hid_generic(E) ahci(E) 
+> libahci(E) usbhid(E) hid(E) igb(E) dca(E) i2c_algo_bit(E) ptp(E) 
+> pps_core(E) megaraid_sas(E) btrfs(E) raid6_pq(E) xor(E) libcrc32c(E)
+> [501087.543995] CPU: 5 PID: 31885 Comm: btrfs Tainted: G D     E 
+> 3.17.2-custom #1
+> [501087.543997] Hardware name: Supermicro 
+> X9DRH-7TF/7F/iTF/iF/X9DRH-7TF/7F/iTF/iF, BIOS 3.0a 12/27/2013
+> [501087.543999]  000000000000039d ffff88000eadb808 ffffffff8176733c 
+> 0000000000000282
+> [501087.544001]  0000000000000000 ffff88000eadb848 ffffffff8107163c 
+> 0000000000001000
+> [501087.544003]  ffff8801d0d9acf0 ffff880497c70380 0000000000000001 
+> 0000000000000001
+> [501087.544004] Call Trace:
+> [501087.544014]  [<ffffffff8176733c>] dump_stack+0x46/0x58
+> [501087.544022]  [<ffffffff8107163c>] warn_slowpath_common+0x8c/0xc0
+> [501087.544024]  [<ffffffff8107168a>] warn_slowpath_null+0x1a/0x20
+> [501087.544039]  [<ffffffffa00b4020>] build_backref_tree+0x11f0/0x1230 
+> [btrfs]
+> [501087.544052]  [<ffffffffa00b4331>] relocate_tree_blocks+0x2d1/0x690 
+> [btrfs]
+> [501087.544060]  [<ffffffff811c1609>] ? kmem_cache_alloc_trace+0x39/0x1f0
+> [501087.544072]  [<ffffffffa00b54a2>] relocate_block_group+0x202/0x5f0 
+> [btrfs]
+> [501087.544083]  [<ffffffffa00b5a40>] 
+> btrfs_relocate_block_group+0x1b0/0x2d0 [btrfs]
+> [501087.544098]  [<ffffffffa0088cf5>] 
+> btrfs_relocate_chunk.isra.62+0x75/0x760 [btrfs]
+> [501087.544111]  [<ffffffffa0084d86>] ? 
+> release_extent_buffer+0x36/0xe0 [btrfs]
+> [501087.544124]  [<ffffffffa0085281>] ? free_extent_buffer+0x61/0xc0 
+> [btrfs]
+> [501087.544136]  [<ffffffffa008d7db>] btrfs_balance+0x8ab/0xf50 [btrfs]
+> [501087.544150]  [<ffffffffa00985ac>] btrfs_ioctl_balance+0x1cc/0x530 
+> [btrfs]
+> [501087.544156]  [<ffffffff811786eb>] ? 
+> lru_cache_add_active_or_unevictable+0x2b/0xa0
+> [501087.544168]  [<ffffffffa009aa82>] btrfs_ioctl+0x562/0x1f00 [btrfs]
+> [501087.544173]  [<ffffffff811e9c0b>] ? putname+0x2b/0x40
+> [501087.544176]  [<ffffffff811ef193>] ? user_path_at_empty+0x63/0xa0
+> [501087.544183]  [<ffffffff8105f59c>] ? __do_page_fault+0x28c/0x550
+> [501087.544187]  [<ffffffff8112528c>] ? acct_account_cputime+0x1c/0x20
+> [501087.544189]  [<ffffffff811f1106>] do_vfs_ioctl+0x86/0x4f0
+> [501087.544192]  [<ffffffff810244a5>] ? syscall_trace_enter+0x165/0x280
+> [501087.544193]  [<ffffffff811f1601>] SyS_ioctl+0x91/0xb0
+> [501087.544198]  [<ffffffff8176fc7f>] tracesys+0xe1/0xe6
+> [501087.544199] ---[ end trace e2a77238816656f5 ]---
+> [501087.579519] parent transid verify failed on 20809493159936 wanted 
+> 4486137218058286914 found 390978
+>
+>
+> I have been sending incremental snapshot dumps over to an identical 
+> file server as backups.  Everything checks out OK there.  Do I try to 
+> run check with --repair first, and fall back to my backup if that fails?
+>
+> -Matt
 > -- 
-> Cyril SCETBON
-> 
->> 1)  but is the rewrite in that, or in 
->> 3.17, or in the coming 3.18, or not yet entirely there at all... that I 
->> simply don't know.
-> 
-> If anyone can answer it'd be great !
-> 
->> 
->> 2) What I *DO* know and *CAN* say with quite some confidence is this:
->> 
->> With btrfs being in general a copy-on-write filesystem, even deletes 
->> normally require /some/ space, because the metadata pointing at the file 
->> in question must be rewritten, and that requires free space in ordered to 
->> happen.
-> ok
->> 
->> At least in the case of full filesystem ENOSPC errors, the space-related 
->> questions in the FAQ on the btrfs wiki suggest truncating a file first.  
->> Find an existing file that either doesn't matter or that you have a 
->> backup of elsewhere, and echo > filename (or echo >| filename if you have 
->> noclobber set), therefore truncating the existing file.  A few of those 
->> and with luck you'll free enough space to do some actual deletions.
->> 
->> While to some extent I'm guessing here since I'm not directly familiar 
->> with quotas myself, it sounds as if such a severe ENOSPC condition, due 
->> in your case to quotas instead of the general filesystem limits I'm more 
->> familiar with, might be what you are seeing, particularly since in your 
->> tests you first triggered the limit, then found a way to write a bit more 
->> anyway, and only THEN found yourself unable to write anything.
->> 
->> If that's the case, then try the truncate trick and see if it helps.
-> Unfortunately : http://pastebin.com/1Mw0yiUc
->> 
->> In the generic filesystem case, if the truncate trick doesn't help, 
->> another possible trick is to temporarily add another device of several 
->> gigs capacity to the filesystem, enough to let a balance work and 
->> hopefully reduce the data/metadata imbalance, after which there should be 
->> enough chunk-unallocated free space left on the original device, to do a 
->> btrfs device delete of the temporary device, generally still leaving 
->> space left, since the balance should have reclaimed some otherwise wasted 
->> chunk allocation.
->> 
->> I can't see how that'd apply to quotas, however, and suspect that the 
->> corresponding quota-system solution would be to temporarily up the quota 
->> for the affected user, only long enough to let them do the deletions they 
->> need to do.  But beyond that I can't go, since I simply don't know enough 
->> about the quota domain to further speculate, at this point.
-> 
-> I'm pretty sure it'd work by setting a temporary higher quota, but my questions are : 
-> 
-> - why can I exceed the quotas (580MB when 500MB was set as the limit) ?
-> 
-> qgroupid  excl            max_excl
-> -------------------------------------------
-> 1/101999 608632832 524288000
-> 
-> - I really think that the quota limit should take into account an amount of space for operations that would free space
-> 
-> For this last question I may think that this issue is caused by the fact that I have only one file taking all the space which won't really be the regular use case. but i'd like to get an answer :)
->> 
->> While admittedly limited due to my lack of quota-domain knowledge, 
->> perhaps that sheds at least some light on what happened and why, and 
->> hopefully on how to get out of the situation.
-> 
-> Thank you Duncan !--
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html

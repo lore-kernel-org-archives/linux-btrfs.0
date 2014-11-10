@@ -1,201 +1,323 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59685 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750833AbaKJHhv (ORCPT
+Received: from mail-qc0-f175.google.com ([209.85.216.175]:40358 "EHLO
+	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753725AbaKJQkr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Nov 2014 02:37:51 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAA7bbkm009658
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Nov 2014 15:37:37 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: fix dead lock while running replace and defrag concurrently
-Date: Mon, 10 Nov 2014 15:36:08 +0800
-Message-ID: <1415604968-21916-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 10 Nov 2014 11:40:47 -0500
+Received: by mail-qc0-f175.google.com with SMTP id b13so6788591qcw.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Nov 2014 08:40:46 -0800 (PST)
+From: Milosz Tanski <milosz@adfin.com>
+To: linux-kernel@vger.kernel.org
+Cc: Christoph Hellwig <hch@lst.de>, Christoph Hellwig <hch@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-aio@kvack.org,
+        Mel Gorman <mgorman@suse.de>,
+        Volker Lendecke <Volker.Lendecke@sernet.de>, Tejun Heo <tj@kernel.org>,
+        Jeff Moyer <jmoyer@redhat.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Al Viro <viro@zeniv.linux.org.uk>, linux-api@vger.kernel.org,
+        Michael Kerrisk <mtk.manpages@gmail.com>, linux-arch@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        linux-xfs@vger.kernel.org, cluster-devel@redhat.com
+Subject: [PATCH v6 6/7] fs: pass iocb to generic_write_sync
+Date: Mon, 10 Nov 2014 11:40:29 -0500
+Message-Id: <14017825dfcd83378f28154d44897ef0352de447.1415636409.git.milosz@adfin.com>
+In-Reply-To: <cover.1415636409.git.milosz@adfin.com>
+References: <cover.1415636409.git.milosz@adfin.com>
+In-Reply-To: <cover.1415636409.git.milosz@adfin.com>
+References: <cover.1415636409.git.milosz@adfin.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This can be reproduced by fstests: btrfs/070
+From: Christoph Hellwig <hch@lst.de>
 
-The scenario is like the following:
+Clean up the generic_write_sync by just passing an iocb and a bytes
+written / negative errno argument.  In addition to simplifying the
+callers this also prepares for passing a per-operation O_DSYNC
+flag.  Two callers didn't quite fit that scheme:
 
-replace worker thread		defrag thread
----------------------		-------------
-copy_nocow_pages_worker		btrfs_defrag_file
-  copy_nocow_pages_for_inode	    ...
-				  btrfs_writepages
-  |A| lock_extent_bits		    extent_write_cache_pages
-				|B|   lock_page
-					__extent_writepage
-		...			  writepage_delalloc
-					    find_lock_delalloc_range
-				|B| 	      lock_extent_bits
-  find_or_create_page
-    pagecache_get_page
-  |A| lock_page
+ - dio_complete didn't both to update ki_pos as we don't need it
+   on a iocb that is about to be freed, so we had to add it. Additionally
+   it also synced out written data in the error case, which has been
+   changed to operate like the other callers.
+ - gfs2 also used generic_write_sync to implement a crude version
+   of fallocate.  It has been switched to use an open coded variant
+   instead.
 
-This leads to an ABBA pattern deadlock. To fix it,
-o we just change it to an AABB pattern which means to @unlock_extent_bits()
-  before we @lock_page(), and in this way the @extent_read_full_page_nolock()
-  is no longer in an locked context, so change it back to @extent_read_full_page()
-  to regain protection.
-
-o Since we @unlock_extent_bits() earlier, then before @write_page_nocow(),
-  the extent may not really point at the physical block we want, so we
-  have to check it before write.
-
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+[Small change in generic_write_sync() suggested by Anton Altaparmakov]
+Signed-off-by: Milosz Tanski <milosz@adfin.com>
+Acked-by: Steven Whitehouse <swhiteho@redhat.com>
+Acked-by: Anton Altaparmakov <anton@tuxera.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
 ---
- fs/btrfs/scrub.c | 90 +++++++++++++++++++++++++++++++++++++-------------------
- 1 file changed, 60 insertions(+), 30 deletions(-)
+ fs/block_dev.c     |  8 +-------
+ fs/btrfs/file.c    |  7 ++-----
+ fs/cifs/file.c     |  8 +-------
+ fs/direct-io.c     |  8 ++------
+ fs/ext4/file.c     |  8 +-------
+ fs/gfs2/file.c     |  9 +++++++--
+ fs/ntfs/file.c     |  8 ++------
+ fs/udf/file.c      | 11 ++---------
+ fs/xfs/xfs_file.c  |  8 +-------
+ include/linux/fs.h |  8 +-------
+ mm/filemap.c       | 31 +++++++++++++++++++++----------
+ 11 files changed, 41 insertions(+), 73 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index efa0831..4325bb0 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3310,6 +3310,50 @@ out:
- 	scrub_pending_trans_workers_dec(sctx);
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index cc9d411..c529b1c 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -1568,18 +1568,12 @@ static long block_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+  */
+ ssize_t blkdev_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ {
+-	struct file *file = iocb->ki_filp;
+ 	struct blk_plug plug;
+ 	ssize_t ret;
+ 
+ 	blk_start_plug(&plug);
+ 	ret = __generic_file_write_iter(iocb, from);
+-	if (ret > 0) {
+-		ssize_t err;
+-		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+-		if (err < 0)
+-			ret = err;
+-	}
++	ret = generic_write_sync(iocb, ret);
+ 	blk_finish_plug(&plug);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index a18ceab..4f4a6f7 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1820,11 +1820,8 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	 */
+ 	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
+ 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
+-	if (num_written > 0) {
+-		err = generic_write_sync(file, pos, num_written);
+-		if (err < 0)
+-			num_written = err;
+-	}
++
++	num_written = generic_write_sync(iocb, num_written);
+ 
+ 	if (sync)
+ 		atomic_dec(&BTRFS_I(inode)->sync_writers);
+diff --git a/fs/cifs/file.c b/fs/cifs/file.c
+index c485afa..32359de 100644
+--- a/fs/cifs/file.c
++++ b/fs/cifs/file.c
+@@ -2706,13 +2706,7 @@ cifs_writev(struct kiocb *iocb, struct iov_iter *from)
+ 		rc = __generic_file_write_iter(iocb, from);
+ 		mutex_unlock(&inode->i_mutex);
+ 
+-		if (rc > 0) {
+-			ssize_t err;
+-
+-			err = generic_write_sync(file, iocb->ki_pos - rc, rc);
+-			if (err < 0)
+-				rc = err;
+-		}
++		rc = generic_write_sync(iocb, rc);
+ 	} else {
+ 		mutex_unlock(&inode->i_mutex);
+ 	}
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index e181b6b..b72ac83 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -257,12 +257,8 @@ static ssize_t dio_complete(struct dio *dio, loff_t offset, ssize_t ret,
+ 	inode_dio_done(dio->inode);
+ 	if (is_async) {
+ 		if (dio->rw & WRITE) {
+-			int err;
+-
+-			err = generic_write_sync(dio->iocb->ki_filp, offset,
+-						 transferred);
+-			if (err < 0 && ret > 0)
+-				ret = err;
++			dio->iocb->ki_pos = offset + transferred;
++			ret = generic_write_sync(dio->iocb, ret);
+ 		}
+ 
+ 		aio_complete(dio->iocb, ret, 0);
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index aca7b24..79b000c 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -175,13 +175,7 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 	ret = __generic_file_write_iter(iocb, from);
+ 	mutex_unlock(&inode->i_mutex);
+ 
+-	if (ret > 0) {
+-		ssize_t err;
+-
+-		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+-		if (err < 0)
+-			ret = err;
+-	}
++	ret = generic_write_sync(iocb, ret);
+ 	if (o_direct)
+ 		blk_finish_plug(&plug);
+ 
+diff --git a/fs/gfs2/file.c b/fs/gfs2/file.c
+index 80dd44d..3fafeca 100644
+--- a/fs/gfs2/file.c
++++ b/fs/gfs2/file.c
+@@ -895,8 +895,13 @@ retry:
+ 		gfs2_quota_unlock(ip);
+ 	}
+ 
+-	if (error == 0)
+-		error = generic_write_sync(file, pos, count);
++	if (error)
++		goto out_unlock;
++
++	if ((file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host)) {
++		error = vfs_fsync_range(file, pos, pos + count - 1,
++			       (file->f_flags & __O_SYNC) ? 0 : 1);
++	}
+ 	goto out_unlock;
+ 
+ out_trans_fail:
+diff --git a/fs/ntfs/file.c b/fs/ntfs/file.c
+index 643faa4..4f3d664 100644
+--- a/fs/ntfs/file.c
++++ b/fs/ntfs/file.c
+@@ -2127,12 +2127,8 @@ static ssize_t ntfs_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
+ 	mutex_lock(&inode->i_mutex);
+ 	ret = ntfs_file_aio_write_nolock(iocb, iov, nr_segs, &iocb->ki_pos);
+ 	mutex_unlock(&inode->i_mutex);
+-	if (ret > 0) {
+-		int err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+-		if (err < 0)
+-			ret = err;
+-	}
+-	return ret;
++
++	return generic_write_sync(iocb, ret);
  }
  
-+static int check_extent_to_block(struct inode *inode, u64 start, u64 len,
-+				 u64 logical)
-+{
-+	struct extent_state *cached_state = NULL;
-+	struct btrfs_ordered_extent *ordered;
-+	struct extent_io_tree *io_tree;
-+	struct extent_map *em;
-+	u64 lockstart = start, lockend = start + len - 1;
-+	int ret = 0;
-+
-+	io_tree = &BTRFS_I(inode)->io_tree;
-+
-+	lock_extent_bits(io_tree, lockstart, lockend, 0, &cached_state);
-+	ordered = btrfs_lookup_ordered_range(inode, lockstart, len);
-+	if (ordered) {
-+		btrfs_put_ordered_extent(ordered);
-+		ret = 1;
-+		goto out_unlock;
-+	}
-+
-+	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
-+	if (IS_ERR(em)) {
-+		ret = PTR_ERR(em);
-+		goto out_unlock;
-+	}
-+
-+	/*
-+	 * This extent does not actually cover the logical extent anymore,
-+	 * move on to the next inode.
-+	 */
-+	if (em->block_start > logical ||
-+	    em->block_start + em->block_len < logical + len) {
-+		free_extent_map(em);
-+		ret = 1;
-+		goto out_unlock;
-+	}
-+	free_extent_map(em);
-+
-+out_unlock:
-+	unlock_extent_cached(io_tree, lockstart, lockend, &cached_state,
-+			     GFP_NOFS);
-+	return ret;
-+}
-+
- static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
- 				      struct scrub_copy_nocow_ctx *nocow_ctx)
- {
-@@ -3318,13 +3362,10 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
- 	struct inode *inode;
- 	struct page *page;
- 	struct btrfs_root *local_root;
--	struct btrfs_ordered_extent *ordered;
--	struct extent_map *em;
--	struct extent_state *cached_state = NULL;
- 	struct extent_io_tree *io_tree;
- 	u64 physical_for_dev_replace;
-+	u64 nocow_ctx_logical;
- 	u64 len = nocow_ctx->len;
--	u64 lockstart = offset, lockend = offset + len - 1;
- 	unsigned long index;
- 	int srcu_index;
- 	int ret = 0;
-@@ -3356,30 +3397,13 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
- 
- 	physical_for_dev_replace = nocow_ctx->physical_for_dev_replace;
- 	io_tree = &BTRFS_I(inode)->io_tree;
-+	nocow_ctx_logical = nocow_ctx->logical;
- 
--	lock_extent_bits(io_tree, lockstart, lockend, 0, &cached_state);
--	ordered = btrfs_lookup_ordered_range(inode, lockstart, len);
--	if (ordered) {
--		btrfs_put_ordered_extent(ordered);
--		goto out_unlock;
--	}
--
--	em = btrfs_get_extent(inode, NULL, 0, lockstart, len, 0);
--	if (IS_ERR(em)) {
--		ret = PTR_ERR(em);
--		goto out_unlock;
--	}
--
--	/*
--	 * This extent does not actually cover the logical extent anymore,
--	 * move on to the next inode.
--	 */
--	if (em->block_start > nocow_ctx->logical ||
--	    em->block_start + em->block_len < nocow_ctx->logical + len) {
--		free_extent_map(em);
--		goto out_unlock;
-+	ret = check_extent_to_block(inode, offset, len, nocow_ctx_logical);
-+	if (ret) {
-+		ret = ret > 0 ? 0 : ret;
-+		goto out;
- 	}
--	free_extent_map(em);
- 
- 	while (len >= PAGE_CACHE_SIZE) {
- 		index = offset >> PAGE_CACHE_SHIFT;
-@@ -3396,7 +3420,7 @@ again:
- 				goto next_page;
- 		} else {
- 			ClearPageError(page);
--			err = extent_read_full_page_nolock(io_tree, page,
-+			err = extent_read_full_page(io_tree, page,
- 							   btrfs_get_extent,
- 							   nocow_ctx->mirror_num);
- 			if (err) {
-@@ -3421,6 +3445,14 @@ again:
- 				goto next_page;
- 			}
- 		}
-+
-+		ret = check_extent_to_block(inode, offset, len,
-+					    nocow_ctx_logical);
-+		if (ret) {
-+			ret = ret > 0 ? 0 : ret;
-+			goto next_page;
-+		}
-+
- 		err = write_page_nocow(nocow_ctx->sctx,
- 				       physical_for_dev_replace, page);
- 		if (err)
-@@ -3434,12 +3466,10 @@ next_page:
- 
- 		offset += PAGE_CACHE_SIZE;
- 		physical_for_dev_replace += PAGE_CACHE_SIZE;
-+		nocow_ctx_logical += PAGE_CACHE_SIZE;
- 		len -= PAGE_CACHE_SIZE;
- 	}
- 	ret = COPY_COMPLETE;
--out_unlock:
--	unlock_extent_cached(io_tree, lockstart, lockend, &cached_state,
--			     GFP_NOFS);
- out:
+ /**
+diff --git a/fs/udf/file.c b/fs/udf/file.c
+index bb15771..1cdabd0 100644
+--- a/fs/udf/file.c
++++ b/fs/udf/file.c
+@@ -155,16 +155,9 @@ static ssize_t udf_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 	retval = __generic_file_write_iter(iocb, from);
  	mutex_unlock(&inode->i_mutex);
- 	iput(inode);
+ 
+-	if (retval > 0) {
+-		ssize_t err;
+-
++	if (retval > 0)
+ 		mark_inode_dirty(inode);
+-		err = generic_write_sync(file, iocb->ki_pos - retval, retval);
+-		if (err < 0)
+-			retval = err;
+-	}
+-
+-	return retval;
++	return generic_write_sync(iocb, retval);
+ }
+ 
+ long udf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+index 0655915..a8cab66 100644
+--- a/fs/xfs/xfs_file.c
++++ b/fs/xfs/xfs_file.c
+@@ -792,14 +792,8 @@ xfs_file_write_iter(
+ 		ret = xfs_file_buffered_aio_write(iocb, from);
+ 
+ 	if (ret > 0) {
+-		ssize_t err;
+-
+ 		XFS_STATS_ADD(xs_write_bytes, ret);
+-
+-		/* Handle various SYNC-type writes */
+-		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+-		if (err < 0)
+-			ret = err;
++		ret = generic_write_sync(iocb, ret);
+ 	}
+ 	return ret;
+ }
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index eaebd99..7d0e116 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2242,13 +2242,7 @@ extern int filemap_fdatawrite_range(struct address_space *mapping,
+ extern int vfs_fsync_range(struct file *file, loff_t start, loff_t end,
+ 			   int datasync);
+ extern int vfs_fsync(struct file *file, int datasync);
+-static inline int generic_write_sync(struct file *file, loff_t pos, loff_t count)
+-{
+-	if (!(file->f_flags & O_DSYNC) && !IS_SYNC(file->f_mapping->host))
+-		return 0;
+-	return vfs_fsync_range(file, pos, pos + count - 1,
+-			       (file->f_flags & __O_SYNC) ? 0 : 1);
+-}
++extern int generic_write_sync(struct kiocb *iocb, loff_t count);
+ extern void emergency_sync(void);
+ extern void emergency_remount(void);
+ #ifdef CONFIG_BLOCK
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 09d3af3..535967b 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -2664,6 +2664,25 @@ out:
+ }
+ EXPORT_SYMBOL(__generic_file_write_iter);
+ 
++int generic_write_sync(struct kiocb *iocb, loff_t count)
++{
++	struct file *file = iocb->ki_filp;
++
++	if (count > 0 &&
++	    ((file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host))) {
++		bool fdatasync = !(file->f_flags & __O_SYNC);
++		ssize_t ret;
++
++		ret = vfs_fsync_range(file, iocb->ki_pos - count,
++				      iocb->ki_pos - 1, fdatasync);
++		if (ret < 0)
++			return ret;
++	}
++
++	return count;
++}
++EXPORT_SYMBOL(generic_write_sync);
++
+ /**
+  * generic_file_write_iter - write data to a file
+  * @iocb:	IO state structure
+@@ -2675,22 +2694,14 @@ EXPORT_SYMBOL(__generic_file_write_iter);
+  */
+ ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ {
+-	struct file *file = iocb->ki_filp;
+-	struct inode *inode = file->f_mapping->host;
++	struct inode *inode = iocb->ki_filp->f_mapping->host;
+ 	ssize_t ret;
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 	ret = __generic_file_write_iter(iocb, from);
+ 	mutex_unlock(&inode->i_mutex);
+ 
+-	if (ret > 0) {
+-		ssize_t err;
+-
+-		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
+-		if (err < 0)
+-			ret = err;
+-	}
+-	return ret;
++	return generic_write_sync(iocb, ret);
+ }
+ EXPORT_SYMBOL(generic_file_write_iter);
+ 
 -- 
-1.8.1.4
+1.9.1
 

@@ -1,74 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:5357 "EHLO
+Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:6349 "EHLO
 	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751295AbaKJBpr (ORCPT
+	by vger.kernel.org with ESMTP id S1751647AbaKJBrh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Nov 2014 20:45:47 -0500
-Date: Mon, 10 Nov 2014 12:45:37 +1100
+	Sun, 9 Nov 2014 20:47:37 -0500
+Date: Mon, 10 Nov 2014 12:47:33 +1100
 From: Dave Chinner <david@fromorbit.com>
 To: Filipe Manana <fdmanana@suse.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] fstests: btrfs, add test for snapshoting after file
- write + truncate
-Message-ID: <20141110014537.GN28565@dastard>
-References: <1413886389-16144-1-git-send-email-fdmanana@suse.com>
- <1414323543-31557-1-git-send-email-fdmanana@suse.com>
+Subject: Re: [PATCH] fstests: btrfs, add regression test for clone ioctl
+Message-ID: <20141110014733.GO28565@dastard>
+References: <1413924191-30467-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1414323543-31557-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1413924191-30467-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ping for Btrfs folks, review please...
+Btrfs folks, review please...
 
-On Sun, Oct 26, 2014 at 11:39:03AM +0000, Filipe Manana wrote:
-> Regression test for a btrfs issue where if right after the snapshot
-> creation ioctl started, a file write followed by a file truncate
-> happened, with both operations increasing the file's size, the created
-> snapshot would capture an inconsistent state of the file system tree.
-> That state reflected the file truncation but it didn't reflect the
-> write operation, and left a gap between two file extent items (and
-> that gap corresponded to the total or a partial area of the write
-> operation's range).
+.....
+
+On Tue, Oct 21, 2014 at 09:43:11PM +0100, Filipe Manana wrote:
+> Regression test for a btrfs clone ioctl issue where races between
+> a clone operation and concurrent target file reads would result in
+> leaving stale data in the page cache. After the clone operation
+> finished, reading from the clone target file would return the old
+> and no longer valid data. This affected only buffered reads (i.e.
+> didn't affect direct IO reads).
 > 
 > This issue was fixed by the following linux kernel patch:
 > 
->     Btrfs: fix snapshot inconsistency after a file write followed by truncate
+>     Btrfs: ensure readers see new data after a clone operation
+>     (commit c125b8bff1d9f6c8c91ce4eb8bd5616058c7d510)
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
-> 
-> V2: Added some background processes to cause some cpu load. This makes the
->     test fail always on environments with a non-debug kernel and where no
->     other significant load (other the test itself) is running.
-> 
->  tests/btrfs/080     | 169 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/080.out |   2 +
+>  tests/btrfs/081     | 131 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/081.out |   4 ++
 >  tests/btrfs/group   |   1 +
->  3 files changed, 172 insertions(+)
->  create mode 100755 tests/btrfs/080
->  create mode 100644 tests/btrfs/080.out
+>  3 files changed, 136 insertions(+)
+>  create mode 100755 tests/btrfs/081
+>  create mode 100644 tests/btrfs/081.out
 > 
-> diff --git a/tests/btrfs/080 b/tests/btrfs/080
+> diff --git a/tests/btrfs/081 b/tests/btrfs/081
 > new file mode 100755
-> index 0000000..a5d3b38
+> index 0000000..d2e3767
 > --- /dev/null
-> +++ b/tests/btrfs/080
-> @@ -0,0 +1,169 @@
+> +++ b/tests/btrfs/081
+> @@ -0,0 +1,131 @@
 > +#! /bin/bash
-> +# FSQA Test No. 080
+> +# FSQA Test No. 081
 > +#
-> +# Regression test for a btrfs issue where if right after the snapshot creation
-> +# ioctl started, a file write followed by a file truncate happened, with both
-> +# operations increasing the file's size, the created snapshot would capture an
-> +# inconsistent state of the file system tree. That state reflected the file
-> +# truncation but it didn't reflect the write operation, and left a gap between
-> +# two file extent items (and that gap corresponded to the total or a partial
-> +# area of the write operation's range).
+> +# Regression test for a btrfs clone ioctl issue where races between
+> +# a clone operation and concurrent target file reads would result in
+> +# leaving stale data in the page cache. After the clone operation
+> +# finished, reading from the clone target file would return the old
+> +# and no longer valid data. This affected only buffered reads (i.e.
+> +# didn't affect direct IO reads).
 > +#
 > +# This issue was fixed by the following linux kernel patch:
 > +#
-> +#     Btrfs: fix snapshot inconsistency after a file write followed by truncate
+> +#     Btrfs: ensure readers see new data after a clone operation
+> +#     (commit c125b8bff1d9f6c8c91ce4eb8bd5616058c7d510)
 > +#
 > +#-----------------------------------------------------------------------
 > +#
@@ -99,9 +93,6 @@ On Sun, Oct 26, 2014 at 11:39:03AM +0000, Filipe Manana wrote:
 > +
 > +_cleanup()
 > +{
-> +	for p in ${cpu_stress_pids[*]}; do
-> +		kill $p &> /dev/null
-> +	done
 > +	rm -f $tmp.*
 > +}
 > +
@@ -113,134 +104,106 @@ On Sun, Oct 26, 2014 at 11:39:03AM +0000, Filipe Manana wrote:
 > +_need_to_be_root
 > +_supported_fs btrfs
 > +_supported_os Linux
-> +_require_scratch_nocheck
+> +_require_scratch
+> +_require_btrfs_cloner
 > +
 > +rm -f $seqres.full
 > +
-> +create_snapshot()
-> +{
-> +	local ts=`date +'%H_%M_%S_%N'`
+> +num_extents=100
+> +extent_size=8192
 > +
-> +	_run_btrfs_util_prog subvolume snapshot -r \
-> +		$SCRATCH_MNT $SCRATCH_MNT/"${ts}_snap"
+> +create_source_file()
+> +{
+> +	name=$1
+> +
+> +	# Create a file with $num_extents extents, each with a size of
+> +	# $extent_size bytes.
+> +	touch $SCRATCH_MNT/$name
+> +	for ((i = 0; i < $num_extents; i++)); do
+> +		off=$((i * $extent_size))
+> +		run_check $XFS_IO_PROG \
+> +			-c "pwrite -S $i -b $extent_size $off $extent_size" \
+> +			-c "fsync" $SCRATCH_MNT/$name
+
+xfs_io dumps errors into the output file and that causes failures.
+there is no need to use run_check here.
+
+-Dave.
+> +	done
 > +}
 > +
-> +create_file()
+> +create_target_file()
 > +{
-> +	local name=$1
+> +	name=$1
+> +	file_size=$(($num_extents * $extent_size))
 > +
-> +	run_check $XFS_IO_PROG -f \
-> +		-c "pwrite -S 0xaa -b 32K 0 32K" \
-> +		-c "fsync" \
-> +		-c "pwrite -S 0xbb -b 32770 16K 32770" \
-> +		-c "truncate 90123" \
-> +		$SCRATCH_MNT/$name
+> +	run_check $XFS_IO_PROG -f -c "pwrite -S 0xff 0 $file_size" \
+> +		-c "fsync" $SCRATCH_MNT/$name
 > +}
 > +
-> +workout()
+> +reader_loop()
 > +{
-> +	local name=$1
+> +	name=$1
 > +
-> +	create_file $name &
-> +	fpid=$!
-> +	create_snapshot &
-> +	spid=$!
-> +	wait $fpid
-> +	create_ret=$?
-> +	wait $spid
-> +	snap_ret=$?
-> +	if [ $create_ret != 0 -o $snap_ret != 0 ]; then
-> +		_fail "Failure creating file or snapshot, check $seqres.full for details"
-> +	fi
+> +	while true; do
+> +		cat $SCRATCH_MNT/$name > /dev/null
+> +	done
 > +}
 > +
-> +# If the installed btrfs mkfs supports the no-holes feature, make sure the
-> +# created fs doesn't get that feature enabled. With it enabled, the below fsck
-> +# call wouldn't fail. This feature hasn't been enabled by default since it was
-> +# introduced, but be safe and explicitly disable it.
-> +_scratch_mkfs -O list-all 2>&1 | grep -q '\bno\-holes\b'
-> +if [ $? -eq 0 ]; then
-> +	mkfs_options="-O ^no-holes"
-> +fi
-> +_scratch_mkfs "$mkfs_options" >>$seqres.full 2>&1
-> +
+> +_scratch_mkfs >>$seqres.full 2>&1
 > +_scratch_mount
 > +
-> +# Run some background load in order to make the issue easier to trigger.
-> +# Specially needed when testing with non-debug kernels and there isn't
-> +# any other significant load on the test machine other than this test.
-> +num_cpus=`$here/src/feature -o`
-> +num_procs=$(($num_cpus * 20))
-> +for ((i = 0; i < $num_procs; i++)); do
-> +	while true; do
-> +		true
-> +	done &
-> +	cpu_stress_pids[$i]=$!
-> +done
+> +create_source_file "foo"
+> +create_target_file "bar"
 > +
-> +for ((i = 1; i <= 100; i++)); do
-> +	workout "foobar_$i"
-> +done
+> +reader_loop "bar" &
+> +reader_pid=$!
 > +
-> +for ((i = 0; i < $num_procs; i++)); do
-> +	kill ${cpu_stress_pids[$i]} &> /dev/null
-> +	unset cpu_stress_pids[$i]
-> +done
+> +$CLONER_PROG -s 0 -d 0 -l $(($num_extents * $extent_size)) \
+> +	$SCRATCH_MNT/foo $SCRATCH_MNT/bar
 > +
-> +for f in $(find $SCRATCH_MNT -type f -name 'foobar_*'); do
-> +	digest=`md5sum $f | cut -d ' ' -f 1`
-> +	case $digest in
-> +	"d41d8cd98f00b204e9800998ecf8427e")
-> +		# ok, empty file
-> +		;;
-> +	"c28418534a020122aca59fd3ff9581b5")
-> +		# ok, only first write captured
-> +		;;
-> +	"cd0032da89254cdc498fda396e6a9b54")
-> +		# ok, only 2 first writes captured
-> +		;;
-> +	"a1963f914baf4d2579d643425f4e54bc")
-> +		# ok, the 2 writes and the truncate were captured
-> +		;;
-> +	*)
-> +		# not ok, truncate captured but not one or both writes
-> +		_fail "Unexpected digest for file $f"
-> +	esac
-> +done
+> +kill $reader_pid > /dev/null 2>&1
 > +
-> +# Check the filesystem for inconsistencies.
-> +# Before the btrfs kernel fix mentioned above, we would very often get fsck
-> +# error messages like: "root 306 inode 338 errors 100, file extent discount".
-> +#
-> +# This was because if right after the snapshot creation ioctl started, a file
-> +# write followed by a file truncate, with both operations increasing the file's
-> +# size, we would get a snapshot that reflected a state where the file truncation
-> +# was visible but the previous file write was not visible, breaking expected
-> +# total ordering of operations and causing a gap between 2 file extents, where a
-> +# file extent item representing the range [32K .. ALIGN(16K + 32770, 4096)] was
-> +# missing in the snapshot's btree.
-> +_check_scratch_fs
+> +# Now both foo and bar should have exactly the same content.
+> +# This didn't use to be the case before the btrfs kernel fix mentioned
+> +# above. The clone ioctl was racy, as it removed bar's pages from the
+> +# page cache and only after it would update bar's metadata to point to
+> +# the same extents that foo's metadata points to - and this was done in
+> +# an unprotected way, so that a file read request done right after the
+> +# clone ioctl removed the pages from the page cache and before it updated
+> +# bar's metadata, would result in populating the page cache with stale
+> +# data. Therefore a file read after the clone operation finished would
+> +# not get the cloned data but it would get instead the old and no longer
+> +# valid data.
+> +md5sum $SCRATCH_MNT/foo | _filter_scratch
+> +md5sum $SCRATCH_MNT/bar | _filter_scratch
 > +
-> +echo "Silence is golden"
+> +# Validate the content of bar still matches foo's content even after
+> +# clearing all of bar's data from the page cache.
+> +_scratch_remount
+> +md5sum $SCRATCH_MNT/bar | _filter_scratch
+> +
 > +status=0
 > +exit
-> diff --git a/tests/btrfs/080.out b/tests/btrfs/080.out
+> diff --git a/tests/btrfs/081.out b/tests/btrfs/081.out
 > new file mode 100644
-> index 0000000..11a4a1a
+> index 0000000..3c7c3d2
 > --- /dev/null
-> +++ b/tests/btrfs/080.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 080
-> +Silence is golden
+> +++ b/tests/btrfs/081.out
+> @@ -0,0 +1,4 @@
+> +QA output created by 081
+> +14968c092c68e32fa35e776392d14523  SCRATCH_MNT/foo
+> +14968c092c68e32fa35e776392d14523  SCRATCH_MNT/bar
+> +14968c092c68e32fa35e776392d14523  SCRATCH_MNT/bar
 > diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 40e7430..801fc73 100644
+> index 801fc73..fc60c63 100644
 > --- a/tests/btrfs/group
 > +++ b/tests/btrfs/group
-> @@ -81,3 +81,4 @@
->  076 auto quick
+> @@ -82,3 +82,4 @@
 >  077 auto quick
 >  078 auto
-> +080 auto
+>  080 auto
+> +081 auto quick
 > -- 
 > 1.9.1
 > 

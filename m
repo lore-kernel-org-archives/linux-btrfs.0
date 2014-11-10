@@ -1,202 +1,1168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f46.google.com ([209.85.215.46]:41901 "EHLO
-	mail-la0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751634AbaKJAtO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 19:49:14 -0500
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20141109234522.GK28565@dastard>
+Received: from victor.provo.novell.com ([137.65.250.26]:49416 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751320AbaKJAte (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Sun, 9 Nov 2014 19:49:34 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] fstests: add generic test to verify xattr replace operations are atomic
+Date: Mon, 10 Nov 2014 00:48:21 +0000
+Message-Id: <1415580501-26604-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1415392826-11606-1-git-send-email-fdmanana@suse.com>
 References: <1415392826-11606-1-git-send-email-fdmanana@suse.com>
-	<20141109234522.GK28565@dastard>
-Date: Mon, 10 Nov 2014 00:49:12 +0000
-Message-ID: <CAL3q7H5JqquwHeWSTMCnTiTGBTuh77w9HS2V2LW06TpON_saUg@mail.gmail.com>
-Subject: Re: [PATCH] fstests: add generic test to verify xattr replace
- operations are atomic
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Filipe Manana <fdmanana@suse.com>, fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 9, 2014 at 11:45 PM, Dave Chinner <david@fromorbit.com> wrote:
-> On Fri, Nov 07, 2014 at 08:40:26PM +0000, Filipe Manana wrote:
->> This test verifies that replacing a xattr's value is an atomic
->> operation. This is motivated by an issue in btrfs where replacing
->> a xattr's value wasn't an atomic operation, it consisted of
->> removing the old value and then inserting the new value in a
->> btree. This made readers (getxattr and listxattrs) not getting
->> neither the old nor the new value during a short time window.
->
-> OK, seems like a good thing to test that the application can only
-> see the old or the new value.
->
-> However, I can't help but wonder about whether the btrfs behaviour
-> is crash safe as it wasn't designed to be atomic from the ground up.
-> i.e. if the system crashes half way through a attribute overwrite,
-> what does btrfs end up with as a result? XFS is guaranteed at a
-> transactional level to return either the old or the new value,
-> depending on where in the operaiton the crash occurred, but I'd just
-> assumed that everyone did attribute replace atomically so it never
-> occurred to me that it might be an issue...
+This test verifies that replacing a xattr's value is an atomic
+operation. This is motivated by an issue in btrfs where replacing
+a xattr's value wasn't an atomic operation, it consisted of
+removing the old value and then inserting the new value in a
+btree. This made readers (getxattr and listxattrs) not getting
+neither the old nor the new value during a short time window.
 
-It's crash safe. Both the delete and insert were done in the same
-transaction, so a crash in between both operations (or after both and
-before the transaction commit) would result in always seeing the old
-value (or better saying, the last persisted value by a transaction
-commit or fsync).
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
->
-> Perhaps another test involving dm-flakey to trigger errors and
-> shutdowns whilst in the middle of replacing attributes might be a
-> good thing?
->
-> [....]
->
->> +_cleanup()
->> +{
->> +     if [ ! -z $setter_pid ]; then
->> +             kill $setter_pid &> /dev/null
->> +     fi
->
-> No need to do this if[] then. You're already redirecting all errors
-> to /dev/null, so if $setter_pid is empty it will just output the
-> help string.
->
->> +     rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +. ./common/attr
->> +
->> +# real QA test starts here
->> +_need_to_be_root
->> +_supported_fs generic
->> +_supported_os Linux
->> +_require_scratch
->> +_require_attrs
->> +
->> +rm -f $seqres.full
->> +
->> +xattr_name="user.something"
->> +xattr_value1="foobar"
->> +xattr_value2="rabbit_hole"
->> +
->> +set_xattr_loop()
->> +{
->> +     local name=$1
->> +
->> +     local cur_val=$xattr_value1
->> +     while true; do
->> +             $SETFATTR_PROG -n $xattr_name -v $cur_val $SCRATCH_MNT/$name
->> +             if [ "$cur_val" == "$xattr_value1" ]; then
->> +                     cur_val=$xattr_value2
->> +             else
->> +                     cur_val=$xattr_value1
->> +             fi
->> +     done
->> +}
->> +
->> +_scratch_mkfs >>$seqres.full 2>&1
->> +_scratch_mount
->> +
->> +test_file="test_xattr_replace"
->> +touch $SCRATCH_MNT/$test_file
->> +$SETFATTR_PROG -n $xattr_name -v $xattr_value1 $SCRATCH_MNT/$test_file
->> +
->> +set_xattr_loop $test_file &
->> +setter_pid=$!
->> +
->> +for ((i = 0; i < 1000; i++)); do
->> +     xattr_val=$($GETFATTR_PROG --absolute-names -n $xattr_name \
->> +             $SCRATCH_MNT/$test_file | grep "$xattr_name=" | cut -d '=' -f 2)
->> +     if [ "$xattr_val" != "\"$xattr_value1\"" -a \
->> +             "$xattr_val" != "\"$xattr_value2\"" ]; then
->> +             _fail "Missing or unexpected xattr value: $xattr_val"
->> +     fi
->
-> I'd suggest that a filter is a much better way to do this.
->
-> name_filter() {
->         grep "$xattr_name=" | cut -d '=' -f 2 | \
->                 sed -e "s/$xattr_value1/GOOD/" \
->                     -e "s/$xattr_value2/GOOD/"
-> }
->
-> for (); do
->         $GETFATTR_PROG --absolute-names -n $xattr_name \
->                 $SCRATCH_MNT/$test_file | name_filter
-> done
->
-> And so the output file should just be:
->
-> GOOD
-> GOOD
-> ....
->
-> And if it is bad, then it outputs the bad attribute value instead
-> of "GOOD", and the test fails on the golden output match.
->
->> +kill $setter_pid &> /dev/null
->> +unset setter_pid
->
-> See above, no need to unset the var.
->> +
->> +echo "Silence is golden"
->> +status=0
->> +exit
->> diff --git a/tests/generic/326.out b/tests/generic/326.out
->> new file mode 100644
->> index 0000000..4ac0db5
->> --- /dev/null
->> +++ b/tests/generic/326.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 326
->> +Silence is golden
->
-> Except when you are using comparisons and "_fail" instead of
-> filters. ;)
->
-> BTW, new tests should be numbere as the first unused number, not at
-> the tail (i.e generic/036). If there are collisions with other new
-> tests when I merge them, I'll renumber them at merge time.
->
->>  323 auto aio stress
->>  324 auto fsr quick
->>  325 auto quick data log
->> +326 auto quick xattr
->
-> There is no existing xattr group - normally xattr tests are
-> considered part of the "metadata" group. If you want to introduce an
-> xattr test group, do it as a separate patch and include all the
-> tests (across all the test directories) that manipulate xattrs in
-> some way.
+V2: Several changes after Dave's review. Renamed test file, added test to the
+    metadata category and filtered xattr value out of getfattr to include it
+    in the golden output.
 
-Agreed.
-V2 following.
+ tests/generic/036     |  102 +++++
+ tests/generic/036.out | 1001 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/group   |    1 +
+ 3 files changed, 1104 insertions(+)
+ create mode 100755 tests/generic/036
+ create mode 100644 tests/generic/036.out
 
-Thanks
-
->
-> Cheers,
->
-> Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/tests/generic/036 b/tests/generic/036
+new file mode 100755
+index 0000000..ff5bef7
+--- /dev/null
++++ b/tests/generic/036
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# FSQA Test No. 036
++#
++# Verify that replacing a xattr's value is an atomic operation.
++# This is motivated by an issue in btrfs where replacing a xattr's value
++# wasn't an atomic operation, it consisted of removing the old value and
++# then inserting the new value in a btree. This made readers (getxattr
++# and listxattrs) not getting neither the old nor the new value during
++# a short time window.
++#
++# The btrfs issue was fixed by the following linux kernel patch:
++#
++#    Btrfs: make xattr replace operations atomic
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	kill $setter_pid
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/attr
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_attrs
++
++rm -f $seqres.full
++
++xattr_name="user.something"
++xattr_value1="foobar"
++xattr_value2="rabbit_hole"
++
++set_xattr_loop()
++{
++	local name=$1
++	local cur_val=$xattr_value1
++	while true; do
++		$SETFATTR_PROG -n $xattr_name -v $cur_val $SCRATCH_MNT/$name
++		if [ "$cur_val" == "$xattr_value1" ]; then
++			cur_val=$xattr_value2
++		else
++			cur_val=$xattr_value1
++		fi
++	done
++}
++
++value_filter()
++{
++	grep "$xattr_name=" | cut -d '=' -f 2 | \
++		sed -e "s/$xattr_value1/GOOD/" -e "s/$xattr_value2/GOOD/"
++}
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++test_file="test_xattr_replace"
++touch $SCRATCH_MNT/$test_file
++$SETFATTR_PROG -n $xattr_name -v $xattr_value1 $SCRATCH_MNT/$test_file
++
++set_xattr_loop $test_file &
++setter_pid=$!
++
++for ((i = 0; i < 1000; i++)); do
++	$GETFATTR_PROG --absolute-names -n $xattr_name \
++		$SCRATCH_MNT/$test_file | value_filter
++done
++
++status=0
++exit
+diff --git a/tests/generic/036.out b/tests/generic/036.out
+new file mode 100644
+index 0000000..c440719
+--- /dev/null
++++ b/tests/generic/036.out
+@@ -0,0 +1,1001 @@
++QA output created by 036
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
++"GOOD"
+diff --git a/tests/generic/group b/tests/generic/group
+index 9c82a6f..4b67df7 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -38,6 +38,7 @@
+ 033 auto quick rw
+ 034 auto quick metadata log
+ 035 auto quick
++036 metadata auto quick
+ 053 acl repair auto quick
+ 062 attr udf auto quick
+ 068 other auto freeze dangerous stress
 -- 
-Filipe David Manana,
+1.9.1
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

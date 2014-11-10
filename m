@@ -1,80 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20181 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59685 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751101AbaKJETV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 23:19:21 -0500
-Message-ID: <54603D2A.1030800@cn.fujitsu.com>
-Date: Mon, 10 Nov 2014 12:20:58 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+	with ESMTP id S1750833AbaKJHhv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Nov 2014 02:37:51 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAA7bbkm009658
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Nov 2014 15:37:37 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: fix dead lock while running replace and defrag concurrently
+Date: Mon, 10 Nov 2014 15:36:08 +0800
+Message-ID: <1415604968-21916-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix incorrect compression ratio detection
-References: <1412721875-39569-1-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1412721875-39569-1-git-send-email-wangshilong1991@gmail.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 7 Oct 2014 18:44:35 -0400, Wang Shilong wrote:
-> Steps to reproduce:
->  # mkfs.btrfs -f /dev/sdb
->  # mount -t btrfs /dev/sdb /mnt -o compress=lzo
->  # dd if=/dev/zero of=/mnt/data bs=$((33*4096)) count=1
-> 
-> after previous steps, inode will be detected as bad compression ratio,
-> and NOCOMPRESS flag will be set for that inode.
-> 
-> Reason is that compress have a max limit pages every time(128K), if a
-> 132k write in, it will be splitted into two write(128k+4k), this bug
-> is a leftover for commit 68bb462d42a(Btrfs: don't compress for a small write)
-> 
-> Fix this problem by checking every time before compression, if it is a
-> small write(<=blocksize), we bail out and fall into nocompression directly.
-> 
-> Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+This can be reproduced by fstests: btrfs/070
 
-Looks good.
+The scenario is like the following:
 
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+replace worker thread		defrag thread
+---------------------		-------------
+copy_nocow_pages_worker		btrfs_defrag_file
+  copy_nocow_pages_for_inode	    ...
+				  btrfs_writepages
+  |A| lock_extent_bits		    extent_write_cache_pages
+				|B|   lock_page
+					__extent_writepage
+		...			  writepage_delalloc
+					    find_lock_delalloc_range
+				|B| 	      lock_extent_bits
+  find_or_create_page
+    pagecache_get_page
+  |A| lock_page
 
-> ---
->  fs/btrfs/inode.c | 16 ++++++++--------
->  1 file changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 344a322..b78e90a 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -411,14 +411,6 @@ static noinline int compress_file_range(struct inode *inode,
->  	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
->  		btrfs_add_inode_defrag(NULL, inode);
->  
-> -	/*
-> -	 * skip compression for a small file range(<=blocksize) that
-> -	 * isn't an inline extent, since it dosen't save disk space at all.
-> -	 */
-> -	if ((end - start + 1) <= blocksize &&
-> -	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
-> -		goto cleanup_and_bail_uncompressed;
-> -
->  	actual_end = min_t(u64, isize, end + 1);
->  again:
->  	will_compress = 0;
-> @@ -440,6 +432,14 @@ again:
->  
->  	total_compressed = actual_end - start;
->  
-> +	/*
-> +	 * skip compression for a small file range(<=blocksize) that
-> +	 * isn't an inline extent, since it dosen't save disk space at all.
-> +	 */
-> +	if (total_compressed <= blocksize &&
-> +	   (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
-> +		goto cleanup_and_bail_uncompressed;
-> +
->  	/* we want to make sure that amount of ram required to uncompress
->  	 * an extent is reasonable, so we limit the total size in ram
->  	 * of a compressed extent to 128k.  This is a crucial number
-> 
+This leads to an ABBA pattern deadlock. To fix it,
+o we just change it to an AABB pattern which means to @unlock_extent_bits()
+  before we @lock_page(), and in this way the @extent_read_full_page_nolock()
+  is no longer in an locked context, so change it back to @extent_read_full_page()
+  to regain protection.
+
+o Since we @unlock_extent_bits() earlier, then before @write_page_nocow(),
+  the extent may not really point at the physical block we want, so we
+  have to check it before write.
+
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/scrub.c | 90 +++++++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 60 insertions(+), 30 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index efa0831..4325bb0 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3310,6 +3310,50 @@ out:
+ 	scrub_pending_trans_workers_dec(sctx);
+ }
+ 
++static int check_extent_to_block(struct inode *inode, u64 start, u64 len,
++				 u64 logical)
++{
++	struct extent_state *cached_state = NULL;
++	struct btrfs_ordered_extent *ordered;
++	struct extent_io_tree *io_tree;
++	struct extent_map *em;
++	u64 lockstart = start, lockend = start + len - 1;
++	int ret = 0;
++
++	io_tree = &BTRFS_I(inode)->io_tree;
++
++	lock_extent_bits(io_tree, lockstart, lockend, 0, &cached_state);
++	ordered = btrfs_lookup_ordered_range(inode, lockstart, len);
++	if (ordered) {
++		btrfs_put_ordered_extent(ordered);
++		ret = 1;
++		goto out_unlock;
++	}
++
++	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
++	if (IS_ERR(em)) {
++		ret = PTR_ERR(em);
++		goto out_unlock;
++	}
++
++	/*
++	 * This extent does not actually cover the logical extent anymore,
++	 * move on to the next inode.
++	 */
++	if (em->block_start > logical ||
++	    em->block_start + em->block_len < logical + len) {
++		free_extent_map(em);
++		ret = 1;
++		goto out_unlock;
++	}
++	free_extent_map(em);
++
++out_unlock:
++	unlock_extent_cached(io_tree, lockstart, lockend, &cached_state,
++			     GFP_NOFS);
++	return ret;
++}
++
+ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ 				      struct scrub_copy_nocow_ctx *nocow_ctx)
+ {
+@@ -3318,13 +3362,10 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ 	struct inode *inode;
+ 	struct page *page;
+ 	struct btrfs_root *local_root;
+-	struct btrfs_ordered_extent *ordered;
+-	struct extent_map *em;
+-	struct extent_state *cached_state = NULL;
+ 	struct extent_io_tree *io_tree;
+ 	u64 physical_for_dev_replace;
++	u64 nocow_ctx_logical;
+ 	u64 len = nocow_ctx->len;
+-	u64 lockstart = offset, lockend = offset + len - 1;
+ 	unsigned long index;
+ 	int srcu_index;
+ 	int ret = 0;
+@@ -3356,30 +3397,13 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ 
+ 	physical_for_dev_replace = nocow_ctx->physical_for_dev_replace;
+ 	io_tree = &BTRFS_I(inode)->io_tree;
++	nocow_ctx_logical = nocow_ctx->logical;
+ 
+-	lock_extent_bits(io_tree, lockstart, lockend, 0, &cached_state);
+-	ordered = btrfs_lookup_ordered_range(inode, lockstart, len);
+-	if (ordered) {
+-		btrfs_put_ordered_extent(ordered);
+-		goto out_unlock;
+-	}
+-
+-	em = btrfs_get_extent(inode, NULL, 0, lockstart, len, 0);
+-	if (IS_ERR(em)) {
+-		ret = PTR_ERR(em);
+-		goto out_unlock;
+-	}
+-
+-	/*
+-	 * This extent does not actually cover the logical extent anymore,
+-	 * move on to the next inode.
+-	 */
+-	if (em->block_start > nocow_ctx->logical ||
+-	    em->block_start + em->block_len < nocow_ctx->logical + len) {
+-		free_extent_map(em);
+-		goto out_unlock;
++	ret = check_extent_to_block(inode, offset, len, nocow_ctx_logical);
++	if (ret) {
++		ret = ret > 0 ? 0 : ret;
++		goto out;
+ 	}
+-	free_extent_map(em);
+ 
+ 	while (len >= PAGE_CACHE_SIZE) {
+ 		index = offset >> PAGE_CACHE_SHIFT;
+@@ -3396,7 +3420,7 @@ again:
+ 				goto next_page;
+ 		} else {
+ 			ClearPageError(page);
+-			err = extent_read_full_page_nolock(io_tree, page,
++			err = extent_read_full_page(io_tree, page,
+ 							   btrfs_get_extent,
+ 							   nocow_ctx->mirror_num);
+ 			if (err) {
+@@ -3421,6 +3445,14 @@ again:
+ 				goto next_page;
+ 			}
+ 		}
++
++		ret = check_extent_to_block(inode, offset, len,
++					    nocow_ctx_logical);
++		if (ret) {
++			ret = ret > 0 ? 0 : ret;
++			goto next_page;
++		}
++
+ 		err = write_page_nocow(nocow_ctx->sctx,
+ 				       physical_for_dev_replace, page);
+ 		if (err)
+@@ -3434,12 +3466,10 @@ next_page:
+ 
+ 		offset += PAGE_CACHE_SIZE;
+ 		physical_for_dev_replace += PAGE_CACHE_SIZE;
++		nocow_ctx_logical += PAGE_CACHE_SIZE;
+ 		len -= PAGE_CACHE_SIZE;
+ 	}
+ 	ret = COPY_COMPLETE;
+-out_unlock:
+-	unlock_extent_cached(io_tree, lockstart, lockend, &cached_state,
+-			     GFP_NOFS);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	iput(inode);
+-- 
+1.8.1.4
 

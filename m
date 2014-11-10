@@ -1,43 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:14757 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751295AbaKJBfk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Nov 2014 20:35:40 -0500
-Date: Mon, 10 Nov 2014 12:35:34 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Eryu Guan <eguan@redhat.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: regression test for btrfs extent merge
-Message-ID: <20141110013534.GM28565@dastard>
-References: <1413423740-7022-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20141016081307.GZ13912@dhcp-13-216.nay.redhat.com>
- <543F8286.4060200@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:20181 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751101AbaKJETV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Nov 2014 23:19:21 -0500
+Message-ID: <54603D2A.1030800@cn.fujitsu.com>
+Date: Mon, 10 Nov 2014 12:20:58 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <543F8286.4060200@cn.fujitsu.com>
+To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix incorrect compression ratio detection
+References: <1412721875-39569-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1412721875-39569-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 16, 2014 at 04:32:06PM +0800, Qu Wenruo wrote:
-> -------- Original Message --------
-> Subject: Re: [PATCH] btrfs: regression test for btrfs extent merge
-> From: Eryu Guan <eguan@redhat.com>
-> >>+
-> >>+tmp=`mktemp -d`
-> >I'm a bit concerned about this. Some functions in common/rc use
-> >$tmp.some_sufix as temp file. If $tmp defined as a dir here, I'm not
-> >sure if it will cause any trouble.
-> It seems that most tests uses /tmp/$$ as tmp, only some exception
-> like btrfs/077 uses mktemp -d.
-> So I'd better use the old /tmp/$$ method.
+On Tue, 7 Oct 2014 18:44:35 -0400, Wang Shilong wrote:
+> Steps to reproduce:
+>  # mkfs.btrfs -f /dev/sdb
+>  # mount -t btrfs /dev/sdb /mnt -o compress=lzo
+>  # dd if=/dev/zero of=/mnt/data bs=$((33*4096)) count=1
+> 
+> after previous steps, inode will be detected as bad compression ratio,
+> and NOCOMPRESS flag will be set for that inode.
+> 
+> Reason is that compress have a max limit pages every time(128K), if a
+> 132k write in, it will be splitted into two write(128k+4k), this bug
+> is a leftover for commit 68bb462d42a(Btrfs: don't compress for a small write)
+> 
+> Fix this problem by checking every time before compression, if it is a
+> small write(<=blocksize), we bail out and fall into nocompression directly.
+> 
+> Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
 
-Can you please send a patch to fix btrfs/077 as well?
+Looks good.
 
-Cheers,
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+> ---
+>  fs/btrfs/inode.c | 16 ++++++++--------
+>  1 file changed, 8 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 344a322..b78e90a 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -411,14 +411,6 @@ static noinline int compress_file_range(struct inode *inode,
+>  	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+>  		btrfs_add_inode_defrag(NULL, inode);
+>  
+> -	/*
+> -	 * skip compression for a small file range(<=blocksize) that
+> -	 * isn't an inline extent, since it dosen't save disk space at all.
+> -	 */
+> -	if ((end - start + 1) <= blocksize &&
+> -	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+> -		goto cleanup_and_bail_uncompressed;
+> -
+>  	actual_end = min_t(u64, isize, end + 1);
+>  again:
+>  	will_compress = 0;
+> @@ -440,6 +432,14 @@ again:
+>  
+>  	total_compressed = actual_end - start;
+>  
+> +	/*
+> +	 * skip compression for a small file range(<=blocksize) that
+> +	 * isn't an inline extent, since it dosen't save disk space at all.
+> +	 */
+> +	if (total_compressed <= blocksize &&
+> +	   (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+> +		goto cleanup_and_bail_uncompressed;
+> +
+>  	/* we want to make sure that amount of ram required to uncompress
+>  	 * an extent is reasonable, so we limit the total size in ram
+>  	 * of a compressed extent to 128k.  This is a crucial number
+> 
+

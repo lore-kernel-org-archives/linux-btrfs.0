@@ -1,87 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-04v.sys.comcast.net ([96.114.154.163]:54166 "EHLO
-	resqmta-po-04v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750859AbaKKSH2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 13:07:28 -0500
-Message-ID: <5462505D.3000105@pobox.com>
-Date: Tue, 11 Nov 2014 10:07:25 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Florian Bruhin <me@the-compiler.org>, linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39151 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751567AbaKKUId convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 15:08:33 -0500
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:53695 helo=[192.168.1.126])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XoHjr-000AIU-Ix
+	for linux-btrfs@vger.kernel.org; Tue, 11 Nov 2014 13:08:31 -0700
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
 Subject: Re: open_ctree failed after ATA errors
-References: <20141111155153.GZ5944@lupin>
+From: Chris Murphy <lists@colorremedies.com>
 In-Reply-To: <20141111155153.GZ5944@lupin>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Tue, 11 Nov 2014 13:08:30 -0700
+Message-Id: <F3B39B1C-07DE-4D6E-97CF-81ACB3B9FD3A@colorremedies.com>
+References: <20141111155153.GZ5944@lupin>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The below is a hard disk going bad or other systematic problem at the 
-hardware level (controller card, interrupt conflict, etc).
 
-In fact, given "ata6.00: irq_stat 0x08000000, interface fatal error" its 
-pretty much a smoking gun about your controller.
+On Nov 11, 2014, at 8:51 AM, Florian Bruhin <me@the-compiler.org> wrote:
 
-Since you just upgraded your kernel I'd check to make sure you have the 
-correct chipset and controller card selected. Look at /proc/interrupts 
-and see if the controller is sharing an interrupt with some other device 
-that could be crossing it up. Play with your MSI/MSI-X settings (if they 
-are in use try disabling them).
+> I have the following setup:
+> 
+> - Two harddisks
+>    - Both individually encrypted using LUKS
+>    - Both combined into a btrfs using the btrfs raid1 feature
+> 
+> - The above duplicated twice:
+>    - /dev/mapper/data1 and /dev/mapper/data2 -> /mnt/data
+>    - /dev/mapper/secdata1 and /dev/mapper/secdata2 -> /mnt/secdata
+> 
+> Recently, I saw the following messages in my kernel logs all few days:
+> 
+>    ata6.00: exception Emask 0x10 SAct 0x40000 SErr 0x400000 action 0x6 frozen
+>    ata6.00: irq_stat 0x08000000, interface fatal error
+>    ata6: SError: { Handshk }
+>    ata6.00: failed command: WRITE FPDMA QUEUED
+>    ata6.00: cmd 61/08:90:e8:29:85/01:00:03:00:00/40 tag 18 ncq 135168 out
+>             res 40/00:94:e8:29:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
+>    ata6.00: status: { DRDY }
+>    ata6: hard resetting link
+>    ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
+>    ata6.00: configured for UDMA/133
+>    ata6: EH complete
+>    ata6.00: exception Emask 0x10 SAct 0x800000 SErr 0x400000 action 0x6 frozen
+>    ata6.00: irq_stat 0x08000000, interface fatal error
+>    ata6: SError: { Handshk }
+>    ata6.00: failed command: WRITE FPDMA QUEUED
+>    ata6.00: cmd 61/00:b8:f0:2a:85/02:00:03:00:00/40 tag 23 ncq 262144 out
+>             res 40/00:bc:f0:2a:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
+>    ata6.00: status: { DRDY }
+>    ata6: hard resetting link
+>    ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
+>    ata6.00: configured for UDMA/133
+>    ata6: EH complete
+> 
+> I thought maybe it was just a temporary problem or related to
+> upgrading the kernel recently (3.17.1 -> 3.17.2) and not rebooting
+> yet, so I rebooted.
+> 
+> Since then, I could run cryptsetup luksOpen without problems, but
+> mounting the devices hanged for ~15 seconds and then returned without
+> error, but didn't mount anything.
+> 
+> When strace'ing mount, it hanged here:
+> 
+>    mount("/dev/mapper/data1", "/mnt/data", "btrfs", MS_MGC_VAL, NULL)
+> 
+> (which then returned 0). I didn't see anything in the kernel logs.
+> 
+> I then tried the following:
+> 
+>    # cryptsetup luksClose ... # for all 4 disks
+>    # cryptsetup luksOpen ...  # for all 4 disks
+>    # btrfs device scan --all-devices
+>    # mount /dev/mapper/data1 /mnt/data
+>    # mount /dev/mapper/secdata1 /mnt/data
+> 
+> The same thing happened, and I then saw this in the kernel logs:
+> 
+>    [Nov11 15:33] BTRFS info (device dm-3): disk space caching is enabled
+>    [Nov11 15:34] BTRFS info (device dm-3): disk space caching is enabled
+>    [Nov11 15:35] BTRFS info (device dm-3): disk space caching is enabled
+>    [Nov11 15:36] BTRFS info (device dm-3): disk space caching is enabled
+>    [Nov11 15:37] BTRFS info (device dm-3): disk space caching is enabled
+>    [ +16.054127] BTRFS: open_ctree failed
+>    [Nov11 15:38] BTRFS info (device dm-3): disk space caching is enabled
+>    [Nov11 16:02] BTRFS info (device dm-2): disk space caching is enabled
+> 
+> How could I mount these volumes again? Is it a good idea to use
+> btrfs-zero-log as described in [1]?
 
-I'd also actvate SMART and get the smart tools (e.g. "smartmontools" in 
-gentoo, so probably something similar for your distro) and check the 
-drive health.
-
-So the stack is
-Application ->
-  File System ->
-   Device Mapper ->
-    Encryption ->
-     Controller ->
-      Wiring ->
-       Drive
-
-You are seeing write failures in the controller->wiring->drive section 
-somewhere.
-
-Cryptsetup is succeeding because the open operation is read-only. That 
-is cryptsetup reads the LUKS block (first 4k of the partition) and does 
-the key work and device mapper setup completely in memory without 
-writing to the physical media at all.
-
-Another possible area is if you ever resized the physical partitions but 
-didn't properly resize the cryptsetup layer with "cryptsetup resize", 
-but that woudl be unlikly to affect multiple drives (unless the mistake 
-was symmetric, e.g. you did it to both drives).
-
-Basically your problem is _way_ below the BTRFS level, but BTRFS is the 
-first layer thats actually trying to write to the drives so it's the 
-first level client to fail.
+First sort out the cause of the hardware problems reported. Persistent errors are going to make things worse. Then you can try -o ro,recovery and see if that works while likely also not altering anything on the drive. If it works, take the opportunity to update backups. Then you can see whether -o recovery works and fixes the problem permanently.
 
 
-On 11/11/2014 07:51 AM, Florian Bruhin wrote:
->      ata6.00: exception Emask 0x10 SAct 0x40000 SErr 0x400000 action 0x6 frozen
->      ata6.00: irq_stat 0x08000000, interface fatal error
->      ata6: SError: { Handshk }
->      ata6.00: failed command: WRITE FPDMA QUEUED
->      ata6.00: cmd 61/08:90:e8:29:85/01:00:03:00:00/40 tag 18 ncq 135168 out
->               res 40/00:94:e8:29:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
->      ata6.00: status: { DRDY }
->      ata6: hard resetting link
->      ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
->      ata6.00: configured for UDMA/133
->      ata6: EH complete
->      ata6.00: exception Emask 0x10 SAct 0x800000 SErr 0x400000 action 0x6 frozen
->      ata6.00: irq_stat 0x08000000, interface fatal error
->      ata6: SError: { Handshk }
->      ata6.00: failed command: WRITE FPDMA QUEUED
->      ata6.00: cmd 61/00:b8:f0:2a:85/02:00:03:00:00/40 tag 23 ncq 262144 out
->               res 40/00:bc:f0:2a:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
->      ata6.00: status: { DRDY }
->      ata6: hard resetting link
->      ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
->      ata6.00: configured for UDMA/133
->      ata6: EH complete
-
-
-
+Chris Murphy

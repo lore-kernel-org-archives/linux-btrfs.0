@@ -1,323 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f175.google.com ([209.85.216.175]:40358 "EHLO
-	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753725AbaKJQkr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Nov 2014 11:40:47 -0500
-Received: by mail-qc0-f175.google.com with SMTP id b13so6788591qcw.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Nov 2014 08:40:46 -0800 (PST)
-From: Milosz Tanski <milosz@adfin.com>
+Received: from mailhub.sw.ru ([195.214.232.25]:41600 "EHLO relay.sw.ru"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751626AbaKKLuA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 06:50:00 -0500
+From: Dmitry Monakhov <dmonakhov@openvz.org>
 To: linux-kernel@vger.kernel.org
-Cc: Christoph Hellwig <hch@lst.de>, Christoph Hellwig <hch@infradead.org>,
-        linux-fsdevel@vger.kernel.org, linux-aio@kvack.org,
-        Mel Gorman <mgorman@suse.de>,
-        Volker Lendecke <Volker.Lendecke@sernet.de>, Tejun Heo <tj@kernel.org>,
-        Jeff Moyer <jmoyer@redhat.com>, "Theodore Ts'o" <tytso@mit.edu>,
-        Al Viro <viro@zeniv.linux.org.uk>, linux-api@vger.kernel.org,
-        Michael Kerrisk <mtk.manpages@gmail.com>, linux-arch@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com
-Subject: [PATCH v6 6/7] fs: pass iocb to generic_write_sync
-Date: Mon, 10 Nov 2014 11:40:29 -0500
-Message-Id: <14017825dfcd83378f28154d44897ef0352de447.1415636409.git.milosz@adfin.com>
-In-Reply-To: <cover.1415636409.git.milosz@adfin.com>
-References: <cover.1415636409.git.milosz@adfin.com>
-In-Reply-To: <cover.1415636409.git.milosz@adfin.com>
-References: <cover.1415636409.git.milosz@adfin.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Dmitry Monakhov <dmonakhov@openvz.org>
+Subject: [PATCH] mm: check memory reclaim bugs caused fs reentrance
+Date: Tue, 11 Nov 2014 15:49:50 +0400
+Message-Id: <1415706590-24159-1-git-send-email-dmonakhov@openvz.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Christoph Hellwig <hch@lst.de>
+If filesystem holds transaction open 'current->journal_info' it should not
+performs memory allocations with __GFP_FS flag enabled otherwise this result in fs
+reentarance which lead to:
+1) reentrance to itself : deadlock or internal assertion failure due to incorrect journal credits
+1) entrance to another fs: assertion faulure or silient corruption due to incorrect journal
 
-Clean up the generic_write_sync by just passing an iocb and a bytes
-written / negative errno argument.  In addition to simplifying the
-callers this also prepares for passing a per-operation O_DSYNC
-flag.  Two callers didn't quite fit that scheme:
-
- - dio_complete didn't both to update ki_pos as we don't need it
-   on a iocb that is about to be freed, so we had to add it. Additionally
-   it also synced out written data in the error case, which has been
-   changed to operate like the other callers.
- - gfs2 also used generic_write_sync to implement a crude version
-   of fallocate.  It has been switched to use an open coded variant
-   instead.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-[Small change in generic_write_sync() suggested by Anton Altaparmakov]
-Signed-off-by: Milosz Tanski <milosz@adfin.com>
-Acked-by: Steven Whitehouse <swhiteho@redhat.com>
-Acked-by: Anton Altaparmakov <anton@tuxera.com>
-Reviewed-by: Jan Kara <jack@suse.cz>
+Signed-off-by: Dmitry Monakhov <dmonakhov@openvz.org>
 ---
- fs/block_dev.c     |  8 +-------
- fs/btrfs/file.c    |  7 ++-----
- fs/cifs/file.c     |  8 +-------
- fs/direct-io.c     |  8 ++------
- fs/ext4/file.c     |  8 +-------
- fs/gfs2/file.c     |  9 +++++++--
- fs/ntfs/file.c     |  8 ++------
- fs/udf/file.c      | 11 ++---------
- fs/xfs/xfs_file.c  |  8 +-------
- include/linux/fs.h |  8 +-------
- mm/filemap.c       | 31 +++++++++++++++++++++----------
- 11 files changed, 41 insertions(+), 73 deletions(-)
+ include/linux/kernel.h |    7 +++++++
+ mm/dmapool.c           |    1 +
+ mm/mempool.c           |    1 +
+ mm/page_alloc.c        |    1 +
+ mm/slab.c              |    1 +
+ mm/slub.c              |    1 +
+ 6 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/fs/block_dev.c b/fs/block_dev.c
-index cc9d411..c529b1c 100644
---- a/fs/block_dev.c
-+++ b/fs/block_dev.c
-@@ -1568,18 +1568,12 @@ static long block_ioctl(struct file *file, unsigned cmd, unsigned long arg)
-  */
- ssize_t blkdev_write_iter(struct kiocb *iocb, struct iov_iter *from)
+diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+index 3d770f5..69923d4 100644
+--- a/include/linux/kernel.h
++++ b/include/linux/kernel.h
+@@ -232,6 +232,13 @@ void might_fault(void);
+ static inline void might_fault(void) { }
+ #endif
+ 
++#ifdef CONFIG_PROVE_LOCKING
++#define might_enter_fs_if(cond) \
++	 WARN_ON_ONCE((cond) && current->journal_info)
++#else
++static inline void might_enter_fs_if(bool cond) { }
++#endif
++
+ extern struct atomic_notifier_head panic_notifier_list;
+ extern long (*panic_blink)(int state);
+ __printf(1, 2)
+diff --git a/mm/dmapool.c b/mm/dmapool.c
+index fd5fe43..c543eb8 100644
+--- a/mm/dmapool.c
++++ b/mm/dmapool.c
+@@ -324,6 +324,7 @@ void *dma_pool_alloc(struct dma_pool *pool, gfp_t mem_flags,
+ 	void *retval;
+ 
+ 	might_sleep_if(mem_flags & __GFP_WAIT);
++	might_enter_fs_if(mem_flags & __GFP_FS);
+ 
+ 	spin_lock_irqsave(&pool->lock, flags);
+ 	list_for_each_entry(page, &pool->page_list, page_list) {
+diff --git a/mm/mempool.c b/mm/mempool.c
+index e209c98..b5bb86f 100644
+--- a/mm/mempool.c
++++ b/mm/mempool.c
+@@ -204,6 +204,7 @@ void * mempool_alloc(mempool_t *pool, gfp_t gfp_mask)
+ 
+ 	VM_WARN_ON_ONCE(gfp_mask & __GFP_ZERO);
+ 	might_sleep_if(gfp_mask & __GFP_WAIT);
++	might_enter_fs_if(gfp_mask & __GFP_FS);
+ 
+ 	gfp_mask |= __GFP_NOMEMALLOC;	/* don't allocate emergency reserves */
+ 	gfp_mask |= __GFP_NORETRY;	/* don't loop in __alloc_pages */
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 9cd36b8..284a699 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -2805,6 +2805,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
+ 	lockdep_trace_alloc(gfp_mask);
+ 
+ 	might_sleep_if(gfp_mask & __GFP_WAIT);
++	might_enter_fs_if(gfp_mask & __GFP_FS);
+ 
+ 	if (should_fail_alloc_page(gfp_mask, order))
+ 		return NULL;
+diff --git a/mm/slab.c b/mm/slab.c
+index eb2b2ea..43b0d2f 100644
+--- a/mm/slab.c
++++ b/mm/slab.c
+@@ -2844,6 +2844,7 @@ static inline void cache_alloc_debugcheck_before(struct kmem_cache *cachep,
+ 						gfp_t flags)
  {
--	struct file *file = iocb->ki_filp;
- 	struct blk_plug plug;
- 	ssize_t ret;
+ 	might_sleep_if(flags & __GFP_WAIT);
++	might_enter_fs_if(flags & __GFP_FS);
+ #if DEBUG
+ 	kmem_flagcheck(cachep, flags);
+ #endif
+diff --git a/mm/slub.c b/mm/slub.c
+index ae7b9f1..474fc53 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -1238,6 +1238,7 @@ static inline int slab_pre_alloc_hook(struct kmem_cache *s, gfp_t flags)
+ 	flags &= gfp_allowed_mask;
+ 	lockdep_trace_alloc(flags);
+ 	might_sleep_if(flags & __GFP_WAIT);
++	might_enter_fs_if(flags & __GFP_FS);
  
- 	blk_start_plug(&plug);
- 	ret = __generic_file_write_iter(iocb, from);
--	if (ret > 0) {
--		ssize_t err;
--		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
--		if (err < 0)
--			ret = err;
--	}
-+	ret = generic_write_sync(iocb, ret);
- 	blk_finish_plug(&plug);
- 	return ret;
+ 	return should_failslab(s->object_size, flags, s->flags);
  }
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a18ceab..4f4a6f7 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1820,11 +1820,8 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	 */
- 	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
- 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
--	if (num_written > 0) {
--		err = generic_write_sync(file, pos, num_written);
--		if (err < 0)
--			num_written = err;
--	}
-+
-+	num_written = generic_write_sync(iocb, num_written);
- 
- 	if (sync)
- 		atomic_dec(&BTRFS_I(inode)->sync_writers);
-diff --git a/fs/cifs/file.c b/fs/cifs/file.c
-index c485afa..32359de 100644
---- a/fs/cifs/file.c
-+++ b/fs/cifs/file.c
-@@ -2706,13 +2706,7 @@ cifs_writev(struct kiocb *iocb, struct iov_iter *from)
- 		rc = __generic_file_write_iter(iocb, from);
- 		mutex_unlock(&inode->i_mutex);
- 
--		if (rc > 0) {
--			ssize_t err;
--
--			err = generic_write_sync(file, iocb->ki_pos - rc, rc);
--			if (err < 0)
--				rc = err;
--		}
-+		rc = generic_write_sync(iocb, rc);
- 	} else {
- 		mutex_unlock(&inode->i_mutex);
- 	}
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index e181b6b..b72ac83 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -257,12 +257,8 @@ static ssize_t dio_complete(struct dio *dio, loff_t offset, ssize_t ret,
- 	inode_dio_done(dio->inode);
- 	if (is_async) {
- 		if (dio->rw & WRITE) {
--			int err;
--
--			err = generic_write_sync(dio->iocb->ki_filp, offset,
--						 transferred);
--			if (err < 0 && ret > 0)
--				ret = err;
-+			dio->iocb->ki_pos = offset + transferred;
-+			ret = generic_write_sync(dio->iocb, ret);
- 		}
- 
- 		aio_complete(dio->iocb, ret, 0);
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index aca7b24..79b000c 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -175,13 +175,7 @@ ext4_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
- 	ret = __generic_file_write_iter(iocb, from);
- 	mutex_unlock(&inode->i_mutex);
- 
--	if (ret > 0) {
--		ssize_t err;
--
--		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
--		if (err < 0)
--			ret = err;
--	}
-+	ret = generic_write_sync(iocb, ret);
- 	if (o_direct)
- 		blk_finish_plug(&plug);
- 
-diff --git a/fs/gfs2/file.c b/fs/gfs2/file.c
-index 80dd44d..3fafeca 100644
---- a/fs/gfs2/file.c
-+++ b/fs/gfs2/file.c
-@@ -895,8 +895,13 @@ retry:
- 		gfs2_quota_unlock(ip);
- 	}
- 
--	if (error == 0)
--		error = generic_write_sync(file, pos, count);
-+	if (error)
-+		goto out_unlock;
-+
-+	if ((file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host)) {
-+		error = vfs_fsync_range(file, pos, pos + count - 1,
-+			       (file->f_flags & __O_SYNC) ? 0 : 1);
-+	}
- 	goto out_unlock;
- 
- out_trans_fail:
-diff --git a/fs/ntfs/file.c b/fs/ntfs/file.c
-index 643faa4..4f3d664 100644
---- a/fs/ntfs/file.c
-+++ b/fs/ntfs/file.c
-@@ -2127,12 +2127,8 @@ static ssize_t ntfs_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
- 	mutex_lock(&inode->i_mutex);
- 	ret = ntfs_file_aio_write_nolock(iocb, iov, nr_segs, &iocb->ki_pos);
- 	mutex_unlock(&inode->i_mutex);
--	if (ret > 0) {
--		int err = generic_write_sync(file, iocb->ki_pos - ret, ret);
--		if (err < 0)
--			ret = err;
--	}
--	return ret;
-+
-+	return generic_write_sync(iocb, ret);
- }
- 
- /**
-diff --git a/fs/udf/file.c b/fs/udf/file.c
-index bb15771..1cdabd0 100644
---- a/fs/udf/file.c
-+++ b/fs/udf/file.c
-@@ -155,16 +155,9 @@ static ssize_t udf_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
- 	retval = __generic_file_write_iter(iocb, from);
- 	mutex_unlock(&inode->i_mutex);
- 
--	if (retval > 0) {
--		ssize_t err;
--
-+	if (retval > 0)
- 		mark_inode_dirty(inode);
--		err = generic_write_sync(file, iocb->ki_pos - retval, retval);
--		if (err < 0)
--			retval = err;
--	}
--
--	return retval;
-+	return generic_write_sync(iocb, retval);
- }
- 
- long udf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
-index 0655915..a8cab66 100644
---- a/fs/xfs/xfs_file.c
-+++ b/fs/xfs/xfs_file.c
-@@ -792,14 +792,8 @@ xfs_file_write_iter(
- 		ret = xfs_file_buffered_aio_write(iocb, from);
- 
- 	if (ret > 0) {
--		ssize_t err;
--
- 		XFS_STATS_ADD(xs_write_bytes, ret);
--
--		/* Handle various SYNC-type writes */
--		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
--		if (err < 0)
--			ret = err;
-+		ret = generic_write_sync(iocb, ret);
- 	}
- 	return ret;
- }
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index eaebd99..7d0e116 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2242,13 +2242,7 @@ extern int filemap_fdatawrite_range(struct address_space *mapping,
- extern int vfs_fsync_range(struct file *file, loff_t start, loff_t end,
- 			   int datasync);
- extern int vfs_fsync(struct file *file, int datasync);
--static inline int generic_write_sync(struct file *file, loff_t pos, loff_t count)
--{
--	if (!(file->f_flags & O_DSYNC) && !IS_SYNC(file->f_mapping->host))
--		return 0;
--	return vfs_fsync_range(file, pos, pos + count - 1,
--			       (file->f_flags & __O_SYNC) ? 0 : 1);
--}
-+extern int generic_write_sync(struct kiocb *iocb, loff_t count);
- extern void emergency_sync(void);
- extern void emergency_remount(void);
- #ifdef CONFIG_BLOCK
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 09d3af3..535967b 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2664,6 +2664,25 @@ out:
- }
- EXPORT_SYMBOL(__generic_file_write_iter);
- 
-+int generic_write_sync(struct kiocb *iocb, loff_t count)
-+{
-+	struct file *file = iocb->ki_filp;
-+
-+	if (count > 0 &&
-+	    ((file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host))) {
-+		bool fdatasync = !(file->f_flags & __O_SYNC);
-+		ssize_t ret;
-+
-+		ret = vfs_fsync_range(file, iocb->ki_pos - count,
-+				      iocb->ki_pos - 1, fdatasync);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	return count;
-+}
-+EXPORT_SYMBOL(generic_write_sync);
-+
- /**
-  * generic_file_write_iter - write data to a file
-  * @iocb:	IO state structure
-@@ -2675,22 +2694,14 @@ EXPORT_SYMBOL(__generic_file_write_iter);
-  */
- ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
- {
--	struct file *file = iocb->ki_filp;
--	struct inode *inode = file->f_mapping->host;
-+	struct inode *inode = iocb->ki_filp->f_mapping->host;
- 	ssize_t ret;
- 
- 	mutex_lock(&inode->i_mutex);
- 	ret = __generic_file_write_iter(iocb, from);
- 	mutex_unlock(&inode->i_mutex);
- 
--	if (ret > 0) {
--		ssize_t err;
--
--		err = generic_write_sync(file, iocb->ki_pos - ret, ret);
--		if (err < 0)
--			ret = err;
--	}
--	return ret;
-+	return generic_write_sync(iocb, ret);
- }
- EXPORT_SYMBOL(generic_file_write_iter);
- 
 -- 
-1.9.1
+1.7.1
 

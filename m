@@ -1,102 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39151 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751567AbaKKUId convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 15:08:33 -0500
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:53695 helo=[192.168.1.126])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:RC4-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XoHjr-000AIU-Ix
-	for linux-btrfs@vger.kernel.org; Tue, 11 Nov 2014 13:08:31 -0700
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: open_ctree failed after ATA errors
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20141111155153.GZ5944@lupin>
-Date: Tue, 11 Nov 2014 13:08:30 -0700
-Message-Id: <F3B39B1C-07DE-4D6E-97CF-81ACB3B9FD3A@colorremedies.com>
-References: <20141111155153.GZ5944@lupin>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from ble59-2-81-56-123-40.fbx.proxad.net ([81.56.123.40]:36939 "EHLO
+	jmuchemb.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750790AbaKKUSx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 15:18:53 -0500
+Received: from [10.236.3.1] (tecra [10.236.3.1])
+	by jmuchemb.eu (Postfix) with ESMTP id 79A0C46A6D
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Nov 2014 21:10:14 +0100 (CET)
+Message-ID: <54626D23.20701@jmuchemb.eu>
+Date: Tue, 11 Nov 2014 21:10:11 +0100
+From: Julien Muchembled <jm@jmuchemb.eu>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: kernel >= 3.16 saturates I/O endlessly and without reason
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="NH1Gb8WkGNRicIRB4onElRwIKof80fjD0"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--NH1Gb8WkGNRicIRB4onElRwIKof80fjD0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-On Nov 11, 2014, at 8:51 AM, Florian Bruhin <me@the-compiler.org> wrote:
+Hello,
 
-> I have the following setup:
-> 
-> - Two harddisks
->    - Both individually encrypted using LUKS
->    - Both combined into a btrfs using the btrfs raid1 feature
-> 
-> - The above duplicated twice:
->    - /dev/mapper/data1 and /dev/mapper/data2 -> /mnt/data
->    - /dev/mapper/secdata1 and /dev/mapper/secdata2 -> /mnt/secdata
-> 
-> Recently, I saw the following messages in my kernel logs all few days:
-> 
->    ata6.00: exception Emask 0x10 SAct 0x40000 SErr 0x400000 action 0x6 frozen
->    ata6.00: irq_stat 0x08000000, interface fatal error
->    ata6: SError: { Handshk }
->    ata6.00: failed command: WRITE FPDMA QUEUED
->    ata6.00: cmd 61/08:90:e8:29:85/01:00:03:00:00/40 tag 18 ncq 135168 out
->             res 40/00:94:e8:29:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
->    ata6.00: status: { DRDY }
->    ata6: hard resetting link
->    ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
->    ata6.00: configured for UDMA/133
->    ata6: EH complete
->    ata6.00: exception Emask 0x10 SAct 0x800000 SErr 0x400000 action 0x6 frozen
->    ata6.00: irq_stat 0x08000000, interface fatal error
->    ata6: SError: { Handshk }
->    ata6.00: failed command: WRITE FPDMA QUEUED
->    ata6.00: cmd 61/00:b8:f0:2a:85/02:00:03:00:00/40 tag 23 ncq 262144 out
->             res 40/00:bc:f0:2a:85/00:00:03:00:00/40 Emask 0x10 (ATA bus error)
->    ata6.00: status: { DRDY }
->    ata6: hard resetting link
->    ata6: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
->    ata6.00: configured for UDMA/133
->    ata6: EH complete
-> 
-> I thought maybe it was just a temporary problem or related to
-> upgrading the kernel recently (3.17.1 -> 3.17.2) and not rebooting
-> yet, so I rebooted.
-> 
-> Since then, I could run cryptsetup luksOpen without problems, but
-> mounting the devices hanged for ~15 seconds and then returned without
-> error, but didn't mount anything.
-> 
-> When strace'ing mount, it hanged here:
-> 
->    mount("/dev/mapper/data1", "/mnt/data", "btrfs", MS_MGC_VAL, NULL)
-> 
-> (which then returned 0). I didn't see anything in the kernel logs.
-> 
-> I then tried the following:
-> 
->    # cryptsetup luksClose ... # for all 4 disks
->    # cryptsetup luksOpen ...  # for all 4 disks
->    # btrfs device scan --all-devices
->    # mount /dev/mapper/data1 /mnt/data
->    # mount /dev/mapper/secdata1 /mnt/data
-> 
-> The same thing happened, and I then saw this in the kernel logs:
-> 
->    [Nov11 15:33] BTRFS info (device dm-3): disk space caching is enabled
->    [Nov11 15:34] BTRFS info (device dm-3): disk space caching is enabled
->    [Nov11 15:35] BTRFS info (device dm-3): disk space caching is enabled
->    [Nov11 15:36] BTRFS info (device dm-3): disk space caching is enabled
->    [Nov11 15:37] BTRFS info (device dm-3): disk space caching is enabled
->    [ +16.054127] BTRFS: open_ctree failed
->    [Nov11 15:38] BTRFS info (device dm-3): disk space caching is enabled
->    [Nov11 16:02] BTRFS info (device dm-2): disk space caching is enabled
-> 
-> How could I mount these volumes again? Is it a good idea to use
-> btrfs-zero-log as described in [1]?
+I upgraded my kernel from 3.15.10 to 3.17.2 and after a while, btrfs kwor=
+kers started to read/write data at maximum speed for hours whereas I was =
+doing nothing. So I rebooted with kernel 3.15.10 and hopefully everything=
+ went back to normal. Later attempts to upgrade to 3.16.7 or 3.17.2 showe=
+d the same issue, immediately at boot or after a while.
 
-First sort out the cause of the hardware problems reported. Persistent errors are going to make things worse. Then you can try -o ro,recovery and see if that works while likely also not altering anything on the drive. If it works, take the opportunity to update backups. Then you can see whether -o recovery works and fixes the problem permanently.
+In order to investigate a little, I copied the partition and mounted it i=
+n qemu (snapshot mode, with cow file in tmpfs, debian kernel 3.16.7-2). I=
+ could see that btrfs always wrote the same ~8MB in loop. qemu used all c=
+pu and when I stopped it, it wrote 190G and the generation number raised =
+from 625955 to 853922.
+
+I dumped the FS with btrfs-image. The restored FS has the same issue so I=
+ can send the image (78M) to anyone who would like to debug.
+
+$ btrfs fi df /
+Data, single: total=3D13.62GiB, used=3D12.60GiB
+System, single: total=3D4.00MiB, used=3D16.00KiB
+Metadata, single: total=3D1.00GiB, used=3D747.48MiB
+GlobalReserve, single: total=3D256.00MiB, used=3D0.00B
+
+$ btrfs fi show --mounted
+Label: none  uuid: f5a13768-b968-49c7-8a09-fdad88b83ea8
+        Total devices 1 FS bytes used 13.33GiB
+        devid    1 size 14.62GiB used 14.62GiB path /dev/sdb2
+
+$ btrfs sub list -a /
+ID 257 gen 626025 top level 5 path <FS_TREE>/@
+ID 269 gen 28 top level 257 path @/usr/src/linux-sysrcd
+ID 278 gen 599690 top level 257 path @/usr/src/linux-3.15-1
+ID 279 gen 13003 top level 257 path @/usr/src/python3.3
+ID 281 gen 13036 top level 257 path @/usr/src/python3.4
+ID 282 gen 614068 top level 257 path @/usr/src/linux-3.16-1
+ID 283 gen 599642 top level 257 path @/usr/src/linux-3.17-1
 
 
-Chris Murphy
+--NH1Gb8WkGNRicIRB4onElRwIKof80fjD0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCAAGBQJUYm0mAAoJEEwjvlkacWMk4q8QAIISldEDF8lbVh2td7MG9V9I
+tx38s6RKq/ioRzePJullc/6WL9HKQRXn8X1U53Rr6NUkbvDY8OHGA/EVooXdN+5A
+8QIVfV5FF11LnJ0opBkH9xLuh1VXe6RhsKTVebQdOtNyIE03+eUkaIEGU4sQvVXy
+x8eC/MUqlWk35XorkeooYzgSeCJ3klCrg6J+RC4CjbzVLHimTdO4QbXzWCI0NHw0
+bY8a8D+iD/I1DVxpkDnx7PyrRmq4h0Y0p6WRkAxj/GcFce1ytnCgEY2wYCsCCl3D
+vhtwjRHsCaeyS1ipPHVmjTF+KxxTukNK/xQvoIvtpE2qbAeSP3Ar4mE585u/+zkr
+Wa/VYgeDGooZfMgEvCRF8L3NTaAzP9tyGJ4LziB4/iEXWpa8DTGaVWQjBoSqg9Wz
+aE/GglDtmzmmEGD2LNR/zz6EffjM6Xxafe+UkIWk91/QEH8Vr+II4y2qx3fRL+Dh
+AhixK3L9GvbLKPBTsqOQN3B70D/eMRbAAp3HqNcARdiZ8RHqzEJGfRFvsAy9+99Y
+ZJbG/nqTWdTj/f8RCY/N5fLIS+w+lavkS/jLxk3Hy2uMQdLn9F8nhOgkN3zn0fAa
+th0Qd79/ueVyr1Xli4tL0Z6nkTSrFUvpUqhzIFG4TzepX9dz5r8dkEmwdUUGSrbC
+ORiN3xbTjpne3hwHt3oR
+=jLfE
+-----END PGP SIGNATURE-----
+
+--NH1Gb8WkGNRicIRB4onElRwIKof80fjD0--

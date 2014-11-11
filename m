@@ -1,62 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:35006 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:57249 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751043AbaK1Jdk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Nov 2014 04:33:40 -0500
-Date: Fri, 28 Nov 2014 10:33:27 +0100
+	id S1751119AbaKKLgJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 06:36:09 -0500
 From: Karel Zak <kzak@redhat.com>
-To: dsterba@suse.cz, Anand Jain <Anand.Jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2 v4] btrfs-progs: optimize btrfs_scan_lblkid() for
- multiple calls
-Message-ID: <20141128093327.GA1994@x2.net.home>
-References: <1413334270-25766-1-git-send-email-anand.jain@oracle.com>
- <1414728680-25468-1-git-send-email-anand.jain@oracle.com>
- <1414728680-25468-2-git-send-email-anand.jain@oracle.com>
- <20141031090830.GP10134@x2.net.home>
- <54536CDA.4090901@oracle.com>
- <20141111114735.GA24268@x2.net.home>
- <20141114165127.GC8614@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141114165127.GC8614@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org, Anand Jain <Anand.Jain@oracle.com>
+Cc: dsterba@suse.cz, Karel Zak <kzak@redhat.com>
+Subject: [PATCH 1/2] btrfs-progs: rename btrfs_scan_lblkid() to btrfs_scan_devices()
+Date: Tue, 11 Nov 2014 12:35:58 +0100
+Message-Id: <1415705759-2681-1-git-send-email-kzak@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 14, 2014 at 05:51:27PM +0100, David Sterba wrote:
-> On Tue, Nov 11, 2014 at 12:47:35PM +0100, Karel Zak wrote:
-> >  What I see critical is missing ./configure, because it's pretty ugly
-> >  to add hardcoded dependencies (e.g. libudev), there is also no checks
-> >  for another libs, Makefile does not care about place where libs are
-> >  installed, header files,  etc. etc.
-> 
-> It does, prefix and libdir are set conditionally, DESTDIR works.
-> 
-> >  Is there any fundamental problem with autoconf? If no, then I'm ready
-> >  to send patches with some autotools stuff. Comments?
-> 
-> Yeah the build dependencies checks would be nice, there's no problem
-> with autoconf.
+It seems like bad idea to use a library name (lblkid) within generic
+function name. The currently used scanning library is implementation
+detail and this detail should be hidden for rest of the code.
 
- OK, I'll try to prepare something next week.
+Signed-off-by: Karel Zak <kzak@redhat.com>
+---
+ cmds-device.c     | 2 +-
+ cmds-filesystem.c | 2 +-
+ disk-io.c         | 2 +-
+ utils.c           | 6 +++---
+ utils.h           | 2 +-
+ 5 files changed, 7 insertions(+), 7 deletions(-)
 
-> The Makefile has been manualy crafted and supports some macro magic to
-> build several binaries from one rule, static targets, quiet/verbose
-> build. I want to preserve all of this so transition to automake may take
-> time (or may not happen in the end).
-
- Just note, it's fine to expect (require) some build-system features,
- but IMHO it's bad idea to think about build system as about stable
- and always backwardly compatible interface (./configure options,
- Makefile vars, etc).
-
- For example for util-linux we have changed many many things in last
- (~7) years without negative feedback from downstream maintainers or
- users. IMHO more important is to follow usual conventions than assume
- that my "make FOO=bar" will work forever.
-
-    Karel
-
+diff --git a/cmds-device.c b/cmds-device.c
+index 9323986..e18ef4b 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -235,7 +235,7 @@ static int cmd_scan_dev(int argc, char **argv)
+ 
+ 	if (all || argc == 1) {
+ 		printf("Scanning for Btrfs filesystems\n");
+-		ret = btrfs_scan_lblkid();
++		ret = btrfs_scan_devices();
+ 		if (ret)
+ 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
+ 		ret = btrfs_register_all_devices();
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index e4b2785..25ef382 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -948,7 +948,7 @@ static int cmd_show(int argc, char **argv)
+ 		goto out;
+ 
+ devs_only:
+-	ret = btrfs_scan_lblkid();
++	ret = btrfs_scan_devices();
+ 
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: %d while scanning\n", ret);
+diff --git a/disk-io.c b/disk-io.c
+index bade5f0..85a2a57 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1019,7 +1019,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
+ 	}
+ 
+ 	if (total_devs != 1) {
+-		ret = btrfs_scan_lblkid();
++		ret = btrfs_scan_devices();
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/utils.c b/utils.c
+index 4b3bace..cc33cfc 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1188,7 +1188,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 
+ 	/* scan other devices */
+ 	if (is_btrfs && total_devs > 1) {
+-		ret = btrfs_scan_lblkid();
++		ret = btrfs_scan_devices();
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -1270,7 +1270,7 @@ int btrfs_register_one_device(const char *fname)
+ 
+ /*
+  * Register all devices in the fs_uuid list created in the user
+- * space. Ensure btrfs_scan_lblkid() is called before this func.
++ * space. Ensure btrfs_scan_devices() is called before this func.
+  */
+ int btrfs_register_all_devices(void)
+ {
+@@ -2181,7 +2181,7 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
+ 	return 0;
+ }
+ 
+-int btrfs_scan_lblkid()
++int btrfs_scan_devices()
+ {
+ 	int fd = -1;
+ 	int ret;
+diff --git a/utils.h b/utils.h
+index 8c94624..919dfcf 100644
+--- a/utils.h
++++ b/utils.h
+@@ -128,7 +128,7 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			   int verify);
+ int ask_user(char *question);
+ int lookup_ino_rootid(int fd, u64 *rootid);
+-int btrfs_scan_lblkid(void);
++int btrfs_scan_devices(void);
+ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
+ int find_mount_root(const char *path, char **mount_root);
+ int get_device_info(int fd, u64 devid,
 -- 
- Karel Zak  <kzak@redhat.com>
- http://karelzak.blogspot.com
+1.9.3
+

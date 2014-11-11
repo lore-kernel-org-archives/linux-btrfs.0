@@ -1,47 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f175.google.com ([209.85.216.175]:45178 "EHLO
-	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751051AbaK3K10 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 05:27:26 -0500
-Received: by mail-qc0-f175.google.com with SMTP id b13so7175707qcw.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 02:27:26 -0800 (PST)
+Received: from mx1.redhat.com ([209.132.183.28]:60590 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754014AbaKKLrn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 06:47:43 -0500
+Date: Tue, 11 Nov 2014 12:47:35 +0100
+From: Karel Zak <kzak@redhat.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 2/2 v4] btrfs-progs: optimize btrfs_scan_lblkid() for
+ multiple calls
+Message-ID: <20141111114735.GA24268@x2.net.home>
+References: <1413334270-25766-1-git-send-email-anand.jain@oracle.com>
+ <1414728680-25468-1-git-send-email-anand.jain@oracle.com>
+ <1414728680-25468-2-git-send-email-anand.jain@oracle.com>
+ <20141031090830.GP10134@x2.net.home>
+ <54536CDA.4090901@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20141130042123.GD8916@merlins.org>
-References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
- <20141130042123.GD8916@merlins.org>
-From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Sun, 30 Nov 2014 15:57:06 +0530
-Message-ID: <CAH-HCWW9LQgTc-rhfbbLJBvGu7uCAFiTr_VJ0c=H_ZjYjDW5gA@mail.gmail.com>
-Subject: Re: Moving an entire subvol?
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54536CDA.4090901@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 9:51 AM, Marc MERLIN <marc@merlins.org> wrote:
->
->> So the Ubuntu Wiki BtrFS entry advises against using subvol
->> set-default because it boots its kernel using root=subvol=@ and home
->> as subvol=@home, and these two subvols are only present under the
->> subvol with ID 5. But isn't it just possible to move i.e. reparent a
->> subvol so I can move these two under another subvol and have that as
->> default?
->
-> Make a new subvolume called /root and just mount subvol=root
+On Fri, Oct 31, 2014 at 07:04:58PM +0800, Anand Jain wrote:
+> 
+> 
+> 
+> 
+> On 31/10/2014 17:08, Karel Zak wrote:
+> >On Fri, Oct 31, 2014 at 12:11:20PM +0800, Anand Jain wrote:
+> >>btrfs_scan_lblikd() is called by most the device related command functions.
+> >>And btrfs_scan_lblkid() is most expensive function and it becomes more expensive
+> >>as number of devices in the system increase. Further some threads call this
+> >
+> >wouldn't be possible to ask udev rather than scan all devices? I
+> >understand than in some cases it's necessary to have robust and
+> >independent solution, but for usual use-cases it would be less
+> >expensive to read the info from udev where we already keep track about
+> >all block devices and where we call libblkid.
+> >
+> >It would be possible to implement it as optional feature (#ifdev HAVE_LIBUDEV),
+> >the library API is very easy to use.
+> >
+> >(For example lsblk uses libblkid as fallback, the default is udev).
+> >
+> >     Karel
+> >
+> >
+> 
+> I might be missing something, correct me if wrong. Is there any udev API
+> which gives me a list of devices which hold btrfs ? I just browsed
+> through there isn't any.
 
-Sorry if my question wasn't clear: I wanted to know how to move a
-subvol to appear under another subvol other than its original parent.
-Turns out that sudo mv @ @home target/ is quite sufficient. If so why
-would the Ubuntu wiki require that set-default not be used? Just @
-@home need to be moved to the new place, no?
+ See  udev_enumerate_* API, nice example:
+ http://www.signal11.us/oss/udev/
 
-> Note that you can't mount subvols recursively in one mount AFAIK.
+ Anyway, I have sent patches that implement this feature to btrfs-progs. 
 
-I'm not sure what you mean. I have a few subvols in my external HDD
-which is entirely formatted as BtrFS and if I just mount the external
-HDD /dev/sdc1 I am able to access all the subvols' contents as well.
+ What I see critical is missing ./configure, because it's pretty ugly
+ to add hardcoded dependencies (e.g. libudev), there is also no checks
+ for another libs, Makefile does not care about place where libs are
+ installed, header files,  etc. etc.
+
+ Is there any fundamental problem with autoconf? If no, then I'm ready
+ to send patches with some autotools stuff. Comments?
+
+    Karel
 
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46940 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:43603 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752369AbaKKLgN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 06:36:13 -0500
+	id S1750799AbaKKMki (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Nov 2014 07:40:38 -0500
 From: Karel Zak <kzak@redhat.com>
 To: linux-btrfs@vger.kernel.org, Anand Jain <Anand.Jain@oracle.com>
 Cc: dsterba@suse.cz, Karel Zak <kzak@redhat.com>
-Subject: [PATCH 2/2] btrfs-progs: use udev to scan for devices
-Date: Tue, 11 Nov 2014 12:35:59 +0100
-Message-Id: <1415705759-2681-2-git-send-email-kzak@redhat.com>
-In-Reply-To: <1415705759-2681-1-git-send-email-kzak@redhat.com>
-References: <1415705759-2681-1-git-send-email-kzak@redhat.com>
+Subject: [PATCH 2/2] btrfs-progs: use udev to scan for devices (v2)
+Date: Tue, 11 Nov 2014 13:40:17 +0100
+Message-Id: <1415709617-4978-1-git-send-email-kzak@redhat.com>
+In-Reply-To: <1415705759-2681-2-git-send-email-kzak@redhat.com>
+References: <1415705759-2681-2-git-send-email-kzak@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -42,11 +42,14 @@ blkid:
 	user    0m0.008s
 	sys     0m0.024s
 
+V2:
+	- use udev_enumerate_add_match_property()
+
 Signed-off-by: Karel Zak <kzak@redhat.com>
 ---
  Makefile |   2 +-
- utils.c  | 107 +++++++++++++++++++++++++++++++++++++++++++++++++--------------
- 2 files changed, 84 insertions(+), 25 deletions(-)
+ utils.c  | 104 ++++++++++++++++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 81 insertions(+), 25 deletions(-)
 
 diff --git a/Makefile b/Makefile
 index 203597c..768c5e0 100644
@@ -62,7 +65,7 @@ index 203597c..768c5e0 100644
  incdir = $(prefix)/include/btrfs
  LIBS = $(lib_LIBS) $(libs_static)
 diff --git a/utils.c b/utils.c
-index cc33cfc..5c71336 100644
+index cc33cfc..8555589 100644
 --- a/utils.c
 +++ b/utils.c
 @@ -38,6 +38,7 @@
@@ -116,7 +119,7 @@ index cc33cfc..5c71336 100644
  	if (blkid_get_cache(&cache, 0) < 0) {
  		printf("ERROR: lblkid cache get failed\n");
  		return 1;
-@@ -2209,29 +2224,73 @@ int btrfs_scan_devices()
+@@ -2209,29 +2224,70 @@ int btrfs_scan_devices()
  		/* if we are here its definitely a btrfs disk*/
  		strncpy(path, blkid_dev_devname(dev), PATH_MAX);
  
@@ -159,6 +162,7 @@ index cc33cfc..5c71336 100644
 +		goto done;
 +
 +	udev_enumerate_add_match_subsystem(en, "block");
++	udev_enumerate_add_match_property(en, "ID_FS_TYPE", "btrfs");
 +	if (udev_enumerate_scan_devices(en) != 0)
 +		goto done;
 +	devs = udev_enumerate_get_list_entry(en);
@@ -166,18 +170,14 @@ index cc33cfc..5c71336 100644
 +		goto done;
 +
 +	udev_list_entry_foreach(ent, devs) {
-+		const char *val, *name = udev_list_entry_get_name(ent);
-+		struct udev_device *dev = udev_device_new_from_syspath(udev, name);
-+
-+		if (!dev)
-+			continue;
-+		val = udev_device_get_property_value(dev, "ID_FS_TYPE");
-+		if (val && strcmp(val, "btrfs") == 0) {
++		struct udev_device *dev = udev_device_new_from_syspath(udev,
++						udev_list_entry_get_name(ent));
++		if (dev) {
 +			const char *path = udev_device_get_devnode(dev);
 +			if (path)
 +				scan_device(path);
++			udev_device_unref(dev);
 +		}
-+		udev_device_unref(dev);
 +	}
 +
 +	rc = 0;

@@ -1,140 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37588 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752338AbaKKWkS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 17:40:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XoK6G-0001yP-NW
-	for linux-btrfs@vger.kernel.org; Tue, 11 Nov 2014 23:39:48 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Nov 2014 23:39:48 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Nov 2014 23:39:48 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: transid failed / mount Problem on Linux pc6 3.17.2-1-ARCH #1
- SMP PREEMPT Thu Oct 30 20:49:39 CET 2014 x86_64 GNU/Linux
-Date: Tue, 11 Nov 2014 22:39:28 +0000 (UTC)
-Message-ID: <pan$9e48b$dee08040$a812fe40$6995150@cox.net>
-References: <5461EF65.4040206@automatix.de>
+Received: from mehl.schokokeks.org ([46.4.40.247]:35799 "EHLO
+	mehl.schokokeks.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752909AbaKLFmI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Nov 2014 00:42:08 -0500
+Date: Wed, 12 Nov 2014 06:42:01 +0100
+From: Florian Bruhin <me@the-compiler.org>
+To: Robert White <rwhite@pobox.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: open_ctree failed after ATA errors
+Message-ID: <20141112054200.GB5944@lupin>
+References: <20141111155153.GZ5944@lupin>
+ <5462505D.3000105@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_mehl.schokokeks.org-28696-1415770921-0001-2"
+In-Reply-To: <5462505D.3000105@pobox.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Juergen Sauer posted on Tue, 11 Nov 2014 12:13:41 +0100 as excerpted:
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> this event occoured today in the morning.
-> Accidentially the Archive Machine was kickt  into hibernation.
-> 
-> After reactivating the archive Btrfs filesystem was "readonly", after
-> rebooting the system the "archive" btrfs filesystem was not mountable
-> anymore.
+--=_mehl.schokokeks.org-28696-1415770921-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-FWIW, I've had similar issues with both mdraid in the past, and with 
-btrfs now, with both hibernation and suspend-to-ram.
+Hi,
 
-Tho after early experiences I switched to mdraid-1 some time in the past, 
-and now btrfs raid1 mode, which (even with the more mature mdraid) tends 
-to be more resilient than raid5 and faster than raid6.  At least with 
-raid1, there's multiple copies of the data, and at least in my 
-experience, that dramatically increases the reliability of recovery from 
-temporary or permanent dropout of one device.
+First of all: I noticed was able to mount my partitions when doing
+with a different path, which made me investigate my /etc/fstab.
 
-The general problem seems to be that in the resume process, some devices 
-wake up faster than others, and even "awake" devices don't necessarily 
-fully stabilize for a minute or two.  Back on mdraid, I noticed some 
-devices coming up with model number strings and UIDs that would have 
-incorrect characters in some position, tho they'd stabilize over time.  
-Obviously, this plays havoc with kernel efforts to ensure the devices it 
-woke up to are the same devices it had when it went to sleep (either 
-suspend to ram or hibernate to disk).
+It contained this:
 
-And the same general problems continue to occur with the pair of SSDs I 
-have now, with suspend-to-ram instead of hibernate, while the original 
-devices I noticed the problem on were spinning rust of an entirely 
-different brand.
+    LABEL=3Ddata1       /mnt/data            btrfs           defaults,noati=
+me,nofail,device=3D/dev/disk/by-label/data1,device=3D/dev/disk/by-label/dat=
+a2        0 0
+    LABEL=3Dsecdata1    /mnt/secdata         btrfs            defaults,noat=
+ime,nofail,device=3D/dev/disk/by-label/secdata1,device=3D/dev/disk/by-label=
+/secdata2        0 0
 
-So it's not a btrfs-specific issue, or a device specific issue, or a 
-motherboard specific issue since I've upgraded since I first saw it too, 
-or a suspend/hibernate type specific issue.  It's a general issue.  Tho I 
-/have/ noticed on the current equipment, that if I suspend for a 
-relatively short period, an hour or two, it seems to come back with fewer 
-problems than if I suspend for 6 hours or more... say if I suspend while 
-I'm at work or overnite.  (FWIW, the old machine seemed to hibernate and 
-resume reasonably well other than this but couldn't reliably resume from 
-suspend, while the new machine is the opposite, I never got it to resume 
-from hibernation, but other than this, it reliably resumes from suspend.)
+I now changed it to:
 
-Unfortunately, the only reliable solution seems to be to fully shut down 
-instead of suspending or hibernating, and obviously, after running into 
-issues a few times, I eventually quit experimenting further.  But the 
-fact that I'm running systemd on fast ssds now, does ameliorate the 
-problem quite a bit, both due to faster booting, and by making the lost 
-cache of a reboot far less of an issue because reading the data back in 
-is so much faster on ssd.
+    /dev/mapper/data1    /mnt/data    btrfs defaults,noatime,nofail 0 0
+    /dev/mapper/secdata1 /mnt/secdata btrfs defaults,noatime,nofail 0 0
 
-So it seems both suspend and hibernate seem to work better with single 
-devices where one device being slower to stabilize won't be the issue it 
-is with raid (either mdraid or btrfs raid), and raid doesn't combine well 
-with suspend/hibernate. =:^(
+since my initramfs scans for btrfs devices anyways. Looking at
+/dev/disk/by-label, only the second disk respectively shows up:
 
-Too bad, as being able to suspend and wake up right away was saving on 
-the electric bill. =:^(
+    lrwxrwxrwx 1 root root 10 Nov 11 19:32 bootfs -> ../../sde1
+    lrwxrwxrwx 1 root root 10 Nov 11 19:32 data2 -> ../../dm-3
+    lrwxrwxrwx 1 root root 10 Nov 11 19:32 secdata2 -> ../../dm-4
 
-So if it's really critical, as it arguably might be on an archive 
-machine, I'd consider pointing whatever suspend/hibernate triggers at 
-shutdown or reboot, instead.  If it's not possible to accidentally 
-hibernate the thing, it triggers shutdown/reboot instead, it won't/can't 
-be accidentally hibernated. =:^)
+However in /dev/mapper, all of them are listed:
 
-> I tried every thing of recovery possibilities I know. Nothing worked.
-> 
-> Here I liste the Problem of the Machine, it would be very ugly to loose
-> thoes data.
-> 
-> Do you have any further ideas, what I may try to recover my archive
-> filesystem?
-> 
-> The archive Filesystem is an raid5-multi device btrfs.
+    lrwxrwxrwx 1 root root       7 Nov 11 19:32 data1 -> ../dm-3
+    lrwxrwxrwx 1 root root       7 Nov 11 19:32 data2 -> ../dm-1
+    lrwxrwxrwx 1 root root       7 Nov 11 19:32 rootfs -> ../dm-0
+    lrwxrwxrwx 1 root root       7 Nov 11 19:32 secdata1 -> ../dm-2
+    lrwxrwxrwx 1 root root       7 Nov 11 19:32 secdata2 -> ../dm-4
 
-Btrfs raid5, or mdraid-5 with btrfs on top?  Because it's common 
-knowledge that btrfs raid56 modes aren't yet fully implemented, and while 
-they work in normal operation, recovery from a lost device is iffy at 
-best because the code simply isn't complete for that yet.  As such a 
-raid5/6 mode btrfs is best effectively considered a raid0 in terms of 
-reliability, don't count on recovering anything if a single device is 
-lost, even temporarily.  Depending on the circumstances, it's not always 
-/quite/ that bad, but raid0 reliability, or more accurately the lack 
-thereof, is what you plan for when you setup a btrfs raid5 or raid6, 
-because that's effectively what it is until the recovery code is complete 
-and tested, and that way you won't be caught with critical data on it if 
-it does go south, any more than you would put critical data on a raid0.
+I don't know what's going on there exactly (pointers welcome!) but it
+seems the inability to mount is a different issue than the error
+messages.
 
-So I /hope/ you meant mdraid-5, on top of which you had btrfs.  With 
-that, once the mdraid level is recovered, you are basically looking at a 
-standard btrfs recovery as if it were a single device.  That's still not 
-a great position to be in as you are after all looking at a recovery with 
-a non-zero chance of failure, but let's call it an 80% chance of 
-recovery, over a 10% chance, you're still in far better shape than with 
-btrfs raid5/6 at that point.
+* Robert White <rwhite@pobox.com> [2014-11-11 10:07:25 -0800]:
+> Since you just upgraded your kernel I'd check to make sure you have the
+> correct chipset and controller card selected. Look at /proc/interrupts and
+> see if the controller is sharing an interrupt with some other device that
+> could be crossing it up.
 
-If you /did/ mean btrfs raid56 mode, then take a look at the raid56 
-information on the wiki and the links from there to additional 
-information on Marc MERLIN's site, as he is the regular around here that 
-has done the most intensive testing of raid56 mode and has written about 
-it extensively, and other than getting one of the devs to take personal 
-interest in your special case, that's the best chance you have at 
-recovery.
+I don't really get how to interpret that file I'm afraid. These are
+the contents:
 
-https://btrfs.wiki.kernel.org/index.php/RAID56
+               CPU0       CPU1
+      0:     754372          0   IO-APIC-edge      timer
+      8:          0          1   IO-APIC-edge      rtc0
+      9:          0          0   IO-APIC-fasteoi   acpi
+     17:        600     114573   IO-APIC  17-fasteoi   ehci_hcd:usb1, ehci_=
+hcd:usb2, ehci_hcd:usb3
+     18:        521    1240697   IO-APIC  18-fasteoi   ohci_hcd:usb4, ohci_=
+hcd:usb5, ohci_hcd:usb6, radeon
+     24:          0          0   PCI-MSI-edge      PCIe PME
+     25:        667     373771   PCI-MSI-edge      ahci
+     26:        408     179898   PCI-MSI-edge      eth0
+    NMI:         31         39   Non-maskable interrupts
+    LOC:      76628     498768   Local timer interrupts
+    SPU:          0          0   Spurious interrupts
+    PMI:         31         39   Performance monitoring interrupts
+    IWI:          0          2   IRQ work interrupts
+    RTR:          0          0   APIC ICR read retries
+    RES:     826089     252701   Rescheduling interrupts
+    CAL:        270        504   Function call interrupts
+    TLB:       5704       5023   TLB shootdowns
+    TRM:          0          0   Thermal event interrupts
+    THR:          0          0   Threshold APIC interrupts
+    MCE:          0          0   Machine check exceptions
+    MCP:        129        129   Machine check polls
+    THR:          0          0   Hypervisor callback interrupts
+    ERR:          0
+    MIS:          0
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Play with your MSI/MSI-X settings (if they are in use try disabling them).
 
+I'll try that if the errors show up again in the next few days - maybe
+the reboot actually fixed it after all.
+
+> I'd also actvate SMART and get the smart tools (e.g. "smartmontools" in
+> gentoo, so probably something similar for your distro) and check the drive
+> health.
+
+I already have a monitoring running which also checks SMART, never had
+any problems there. But I'll re-check by hand to be sure.
+
+> So the stack is
+> Application ->
+>  File System ->
+>   Device Mapper ->
+>    Encryption ->
+>     Controller ->
+>      Wiring ->
+>       Drive
+>=20
+> You are seeing write failures in the controller->wiring->drive section
+> somewhere.
+
+Since it started happening after the upgrade, I can still hope it was
+just some temporary issue if it doesn't show up again, right? ;)
+
+> Another possible area is if you ever resized the physical partitions but
+> didn't properly resize the cryptsetup layer with "cryptsetup resize", but
+> that woudl be unlikly to affect multiple drives (unless the mistake was
+> symmetric, e.g. you did it to both drives).
+
+This isn't the case.
+
+Thanks!
+
+Florian
+
+--=20
+http://www.the-compiler.org | me@the-compiler.org (Mail/XMPP)
+             GPG 0xFD55A072 | http://the-compiler.org/pubkey.asc
+         I love long mails! | http://email.is-not-s.ms/
+
+--=_mehl.schokokeks.org-28696-1415770921-0001-2
+Content-Type: application/pgp-signature
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJUYvMoAAoJEJFusMj9VaByRTUP/Rrz9y9YzdhCN0K0dFlni4Tc
+FTbZCrSdiFx4jGiuGFMwhMVlMXkuiwTbI6L5T0BHMK8MLxkGFGLOfVgC94OHTALk
+BPcyojMFh5pub3Jgr1/AOwGyauJ3GMo9nsTefmtrBB0+X9N0STDfHwZ0NYrFxVjv
+3kPQJlEoZtHP8e85iGHUXi9Yk5pO9WK1EB5mtk3Vy4lILIAC7MSvFiDyVkQAC79h
+ddrm7X74zvVtOuIB04eIwLVtDIX7CB8u4UbtA+KLqrBY4fEvLPBUpqPMC7DLfFOc
+ryIBs1lz0fmeTgmubT07pOOnfG23LAolSr3JfpLo8HqFCsqoPWi0FabL11DwHyXN
+JBpeW6rHik/H7MfJ38fwNtdYt6tn6RtjxOBPyjsP9BjyNVqToTCZ0WF/G91hyg34
+wKjlKGUnse9Btswsw6C2EjgWK0xLpuL1//a3lQ8TZTh4UIrkrxjv3ginn3u8bA1C
+3MHbrjSLaOOYHe55PPvw+LBI1n5qsupzJfOZiPwXHN74+gSAy6lJxSt7c0JQCxAY
+ERSD8dLsO35hAsDjXQUthjCJgb8Kark9BRP7nr/BfQaSw3HWeFWiVLOQxNsIbZdB
+CA6jNMxHAp9rj0tl9DvSQtRJeRmqXNIcUkAZCNu8I1lGHzwdQ3pl2Bg8/tcSqKy2
+pxgrQkO9cy9Ma23EFu/A
+=+EDY
+-----END PGP SIGNATURE-----
+
+--=_mehl.schokokeks.org-28696-1415770921-0001-2--

@@ -1,49 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx02.posteo.de ([89.146.194.165]:49589 "EHLO mx02.posteo.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752856AbaKLQkf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Nov 2014 11:40:35 -0500
-From: Martin Kepplinger <martink@posteo.de>
-To: clm@fb.com
-Cc: linux-btrfs@vger.kernel.org, gregkh@linuxfoundation.org,
-        linux-kernel@vger.kernel.org, Martin Kepplinger <martink@posteo.de>
-Subject: [PATCH] btrfs: Don't check for file->private_data on open(). It is set by the core.
-Date: Wed, 12 Nov 2014 17:38:28 +0100
-Message-Id: <1415810308-24243-1-git-send-email-martink@posteo.de>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:8458 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752872AbaKLSCa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Nov 2014 13:02:30 -0500
+Date: Wed, 12 Nov 2014 12:59:33 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] btrfs: Don't check for file->private_data on open(). It
+ is set by the core.
+To: Martin Kepplinger <martink@posteo.de>
+CC: <linux-btrfs@vger.kernel.org>, <gregkh@linuxfoundation.org>,
+        <linux-kernel@vger.kernel.org>, Martin Kepplinger <martink@posteo.de>
+Message-ID: <1415815173.25389.2@mail.thefacebook.com>
+In-Reply-To: <1415810308-24243-1-git-send-email-martink@posteo.de>
+References: <1415810308-24243-1-git-send-email-martink@posteo.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The miscdevice core now sets file->private_data to the struct miscdevice
-so don't fail when this is not NULL.
+On Wed, Nov 12, 2014 at 11:38 AM, Martin Kepplinger <martink@posteo.de> 
+wrote:
+> The miscdevice core now sets file->private_data to the struct 
+> miscdevice
+> so don't fail when this is not NULL.
+> 
+> Signed-off-by: Martin Kepplinger <martink@posteo.de>
+> ---
+> This is a question: what does this check provide and does overwriting
+> file->private_data make any difference?
+> 
+> Is miscdevice's open() by the user not allowed here, if 
+> file->private_data
+> is set?
+> 
+> thanks!!
 
-Signed-off-by: Martin Kepplinger <martink@posteo.de>
----
-This is a question: what does this check provide and does overwriting
-file->private_data make any difference?
+Btrfs uses this in the transaction start ioctl to record the 
+transaction handle being started.  Ceph is the main user of the ioctl, 
+and we could setup a hash table if needed.  But which call path in 
+miscdevice is doing this?
 
-Is miscdevice's open() by the user not allowed here, if file->private_data
-is set?
+With your patch in place, btrfs would end up overwriting the miscdevice 
+private_data field, which would probably cause problems.
 
-thanks!!
-
- fs/btrfs/ioctl.c |    4 ----
- 1 file changed, 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4399f0c..066ce41 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3752,10 +3752,6 @@ static long btrfs_ioctl_trans_start(struct file *file)
- 	if (!capable(CAP_SYS_ADMIN))
- 		goto out;
- 
--	ret = -EINPROGRESS;
--	if (file->private_data)
--		goto out;
--
- 	ret = -EROFS;
- 	if (btrfs_root_readonly(root))
- 		goto out;
--- 
-1.7.10.4
+-chris
 

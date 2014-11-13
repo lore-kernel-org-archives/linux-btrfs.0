@@ -1,128 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59876 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14787 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753395AbaKMBVK (ORCPT
+	with ESMTP id S1753723AbaKMBh7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Nov 2014 20:21:10 -0500
+	Wed, 12 Nov 2014 20:37:59 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAD1biIk026712
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 09:37:45 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2 2/2] btrfs-progs: fix wrong num_devices for btrfs fi show with seed devices
-Date: Thu, 13 Nov 2014 09:19:29 +0800
-Message-ID: <1415841569-2302-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: use canonical name for device in btrfs fi show when mounted
+Date: Thu, 13 Nov 2014 09:36:20 +0800
+Message-ID: <1415842580-2430-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The @fi_args->num_devices in @get_fs_info() does not include seed devices.
-We could just correct it by searching the chunk tree and count how
-many dev_items there are in total which includes seed devices.
+When using lvm volumes to check fstests: btrfs/006, it fails like:
+     Label: 'TestLabel.006'  uuid: <UUID>
+     	Total devices <EXACTNUM> FS bytes used <SIZE>
+     	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+    +	devid <DEVID> size <SIZE> used <SIZE> path /dev/dm-4
+    +	devid <DEVID> size <SIZE> used <SIZE> path /dev/dm-5
+    +	devid <DEVID> size <SIZE> used <SIZE> path /dev/dm-6
+
+The /dev/dm-* points to lvm volumes, use @canonicalize_path() to convert them
+and we will make it through. Of course we should do the same thing for dev stat.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
-changelog
-	v1->v2: adopt more clear function name
-		@find_max_device_id()
-		@search_chunk_tree_for_fs_info()
----
- utils.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ cmds-device.c     | 16 +++++++++++-----
+ cmds-filesystem.c |  7 ++++++-
+ 2 files changed, 17 insertions(+), 6 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index f3fca4f..0d3d7fa 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1812,6 +1812,75 @@ int get_device_info(int fd, u64 devid,
- 	return ret ? -errno : 0;
- }
- 
-+static u64 find_max_device_id(struct btrfs_ioctl_search_args *search_args,
-+			      int nr_items)
-+{
-+	struct btrfs_dev_item *dev_item;
-+	char *buf = search_args->buf;
+diff --git a/cmds-device.c b/cmds-device.c
+index 9323986..6cd41e1 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -408,31 +408,37 @@ static int cmd_dev_stats(int argc, char **argv)
+ 				path, strerror(errno));
+ 			err = 1;
+ 		} else {
++			char *canonical_path;
 +
-+	buf += (nr_items - 1) * (sizeof(struct btrfs_ioctl_search_header)
-+				       + sizeof(struct btrfs_dev_item));
-+	buf += sizeof(struct btrfs_ioctl_search_header);
++			canonical_path = canonicalize_path((char *)path);
 +
-+	dev_item = (struct btrfs_dev_item *)buf;
+ 			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1)
+ 				printf("[%s].write_io_errs   %llu\n",
+-				       path,
++				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_WRITE_ERRS]);
+ 			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1)
+ 				printf("[%s].read_io_errs    %llu\n",
+-				       path,
++				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_READ_ERRS]);
+ 			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1)
+ 				printf("[%s].flush_io_errs   %llu\n",
+-				       path,
++				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_FLUSH_ERRS]);
+ 			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1)
+ 				printf("[%s].corruption_errs %llu\n",
+-				       path,
++				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_CORRUPTION_ERRS]);
+ 			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1)
+ 				printf("[%s].generation_errs %llu\n",
+-				       path,
++				       canonical_path,
+ 				       (unsigned long long) args.values[
+ 					BTRFS_DEV_STAT_GENERATION_ERRS]);
 +
-+	return btrfs_stack_device_id(dev_item);
-+}
-+
-+static int search_chunk_tree_for_fs_info(int fd,
-+				struct btrfs_ioctl_fs_info_args *fi_args)
-+{
-+	int ret;
-+	int max_items;
-+	u64 start_devid = 1;
-+	struct btrfs_ioctl_search_args search_args;
-+	struct btrfs_ioctl_search_key *search_key = &search_args.key;
-+
-+	fi_args->num_devices = 0;
-+
-+	max_items = BTRFS_SEARCH_ARGS_BUFSIZE
-+	       / (sizeof(struct btrfs_ioctl_search_header)
-+			       + sizeof(struct btrfs_dev_item));
-+
-+	search_key->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
-+	search_key->min_objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	search_key->max_objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	search_key->min_type = BTRFS_DEV_ITEM_KEY;
-+	search_key->max_type = BTRFS_DEV_ITEM_KEY;
-+	search_key->min_transid = 0;
-+	search_key->max_transid = (u64)-1;
-+	search_key->nr_items = max_items;
-+	search_key->max_offset = (u64)-1;
-+
-+again:
-+	search_key->min_offset = start_devid;
-+
-+	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search_args);
-+	if (ret < 0)
-+		return -errno;
-+
-+	fi_args->num_devices += (u64)search_key->nr_items;
-+
-+	if (search_key->nr_items == max_items) {
-+		start_devid = find_max_device_id(&search_args,
-+					search_key->nr_items) + 1;
-+		goto again;
-+	}
-+
-+	/* get the lastest max_id to stay consistent with the num_devices */
-+	if (search_key->nr_items == 0)
-+		/*
-+		 * last tree_search returns an empty buf, use the devid of
-+		 * the last dev_item of the previous tree_search
-+		 */
-+		fi_args->max_id = start_devid - 1;
-+	else
-+		fi_args->max_id = find_max_device_id(&search_args,
-+						search_key->nr_items);
-+
-+	return 0;
-+}
-+
- /*
-  * For a given path, fill in the ioctl fs_ and info_ args.
-  * If the path is a btrfs mountpoint, fill info for all devices.
-@@ -1891,6 +1960,13 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 			ret = -errno;
- 			goto out;
++			free(canonical_path);
  		}
-+
-+		/*
-+		 * The fs_args->num_devices does not include seed devices
-+		 */
-+		ret = search_chunk_tree_for_fs_info(fd, fi_args);
-+		if (ret)
-+			goto out;
  	}
  
- 	if (!fi_args->num_devices)
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index e4b2785..cd6b3c6 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -510,7 +510,10 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 			pretty_size(calc_used_bytes(space_info)));
+ 
+ 	for (i = 0; i < fs_info->num_devices; i++) {
++		char *canonical_path;
++
+ 		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
++		canonical_path = canonicalize_path((char *)tmp_dev_info->path);
+ 
+ 		/* Add check for missing devices even mounted */
+ 		fd = open((char *)tmp_dev_info->path, O_RDONLY);
+@@ -523,7 +526,9 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 			tmp_dev_info->devid,
+ 			pretty_size(tmp_dev_info->total_bytes),
+ 			pretty_size(tmp_dev_info->bytes_used),
+-			tmp_dev_info->path);
++			canonical_path);
++
++		free(canonical_path);
+ 	}
+ 
+ 	if (missing)
 -- 
 1.8.1.4
 

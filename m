@@ -1,71 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:57086 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:45450 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751116AbaKMRAL (ORCPT
+	by vger.kernel.org with ESMTP id S1753543AbaKMRA4 (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 13 Nov 2014 12:00:11 -0500
+	Thu, 13 Nov 2014 12:00:56 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: don't ignore log btree writeback errors
-Date: Thu, 13 Nov 2014 16:59:53 +0000
-Message-Id: <1415897993-7556-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: collect only the necessary ordered extents on ranged fsync
+Date: Thu, 13 Nov 2014 17:00:35 +0000
+Message-Id: <1415898035-12249-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If an error happens during writeback of log btree extents, make sure the
-error is returned to the caller (fsync), so that it takes proper action
-(commit current transaction) instead of writing a superblock that points
-to log btrees with all or some nodes that weren't durably persisted.
+Instead of collecting all ordered extents from the inode's ordered tree
+and then wait for all of them to complete, just collect the ones that
+overlap the fsync range.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 21 +++++++++++++++------
- 1 file changed, 15 insertions(+), 6 deletions(-)
+ fs/btrfs/ordered-data.c | 16 +++++++++++++---
+ fs/btrfs/ordered-data.h |  4 +++-
+ fs/btrfs/tree-log.c     |  2 +-
+ 3 files changed, 17 insertions(+), 5 deletions(-)
 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 1401b1a..a45bb01 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -431,19 +431,29 @@ out:
+ 
+ /* Needs to either be called under a log transaction or the log_mutex */
+ void btrfs_get_logged_extents(struct inode *inode,
+-			      struct list_head *logged_list)
++			      struct list_head *logged_list,
++			      const loff_t start,
++			      const loff_t end)
+ {
+ 	struct btrfs_ordered_inode_tree *tree;
+ 	struct btrfs_ordered_extent *ordered;
+ 	struct rb_node *n;
++	struct rb_node *prev;
+ 
+ 	tree = &BTRFS_I(inode)->ordered_tree;
+ 	spin_lock_irq(&tree->lock);
+-	for (n = rb_first(&tree->tree); n; n = rb_next(n)) {
++	n = __tree_search(&tree->tree, end, &prev);
++	if (!n)
++		n = prev;
++	for (; n; n = rb_prev(n)) {
+ 		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
++		if (ordered->file_offset > end)
++			continue;
++		if (entry_end(ordered) <= start)
++			break;
+ 		if (!list_empty(&ordered->log_list))
+ 			continue;
+-		list_add_tail(&ordered->log_list, logged_list);
++		list_add(&ordered->log_list, logged_list);
+ 		atomic_inc(&ordered->refs);
+ 	}
+ 	spin_unlock_irq(&tree->lock);
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index d81a274..fb51515 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -193,7 +193,9 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr);
+ void btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr);
+ void btrfs_get_logged_extents(struct inode *inode,
+-			      struct list_head *logged_list);
++			      struct list_head *logged_list,
++			      const loff_t start,
++			      const loff_t end);
+ void btrfs_put_logged_extents(struct list_head *logged_list);
+ void btrfs_submit_logged_extents(struct list_head *logged_list,
+ 				 struct btrfs_root *log);
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 6d58d72..c8274d3 100644
+index c8274d3..38f1ee9 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -2599,12 +2599,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	index2 = root_log_ctx.log_transid % 2;
- 	if (atomic_read(&log_root_tree->log_commit[index2])) {
- 		blk_finish_plug(&plug);
--		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
-+		ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages,
-+						mark);
- 		wait_log_commit(trans, log_root_tree,
- 				root_log_ctx.log_transid);
- 		btrfs_free_logged_extents(log, log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
--		ret = root_log_ctx.log_ret;
-+		if (!ret)
-+			ret = root_log_ctx.log_ret;
- 		goto out;
- 	}
- 	ASSERT(root_log_ctx.log_transid == log_root_tree->log_transid);
-@@ -2641,10 +2643,17 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		goto out_wake_log_root;
- 	}
--	btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
--	btrfs_wait_marked_extents(log_root_tree,
--				  &log_root_tree->dirty_log_pages,
--				  EXTENT_NEW | EXTENT_DIRTY);
-+	ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
-+	if (!ret)
-+		ret = btrfs_wait_marked_extents(log_root_tree,
-+						&log_root_tree->dirty_log_pages,
-+						EXTENT_NEW | EXTENT_DIRTY);
-+	if (ret) {
-+		btrfs_set_log_full_commit(root->fs_info, trans);
-+		btrfs_free_logged_extents(log, log_transid);
-+		mutex_unlock(&log_root_tree->log_mutex);
-+		goto out_wake_log_root;
-+	}
- 	btrfs_wait_logged_extents(log, log_transid);
+@@ -3972,7 +3972,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
  
- 	btrfs_set_super_log_root(root->fs_info->super_for_commit,
+ 	mutex_lock(&BTRFS_I(inode)->log_mutex);
+ 
+-	btrfs_get_logged_extents(inode, &logged_list);
++	btrfs_get_logged_extents(inode, &logged_list, start, end);
+ 
+ 	/*
+ 	 * a brute force approach to making sure we get the most uptodate
 -- 
 1.9.1
 

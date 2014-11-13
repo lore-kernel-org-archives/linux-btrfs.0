@@ -1,57 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx02.posteo.de ([89.146.194.165]:40507 "EHLO mx02.posteo.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753100AbaKLSgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Nov 2014 13:36:46 -0500
-Message-ID: <5463A84A.8010606@posteo.de>
-Date: Wed, 12 Nov 2014 19:34:50 +0100
-From: Martin Kepplinger <martink@posteo.de>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: linux-btrfs@vger.kernel.org, gregkh@linuxfoundation.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Don't check for file->private_data on open().
- It is set by the core.
-References: <1415810308-24243-1-git-send-email-martink@posteo.de> <1415815173.25389.2@mail.thefacebook.com>
-In-Reply-To: <1415815173.25389.2@mail.thefacebook.com>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:57086 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751116AbaKMRAL (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 13 Nov 2014 12:00:11 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: don't ignore log btree writeback errors
+Date: Thu, 13 Nov 2014 16:59:53 +0000
+Message-Id: <1415897993-7556-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 2014-11-12 um 18:59 schrieb Chris Mason:
-> On Wed, Nov 12, 2014 at 11:38 AM, Martin Kepplinger <martink@posteo.de>
-> wrote:
->> The miscdevice core now sets file->private_data to the struct miscdevice
->> so don't fail when this is not NULL.
->>
->> Signed-off-by: Martin Kepplinger <martink@posteo.de>
->> ---
->> This is a question: what does this check provide and does overwriting
->> file->private_data make any difference?
->>
->> Is miscdevice's open() by the user not allowed here, if
->> file->private_data
->> is set?
->>
->> thanks!!
-> 
-> Btrfs uses this in the transaction start ioctl to record the transaction
-> handle being started.  Ceph is the main user of the ioctl, and we could
-> setup a hash table if needed.  But which call path in miscdevice is
-> doing this?
-> 
-> With your patch in place, btrfs would end up overwriting the miscdevice
-> private_data field, which would probably cause problems.
-> 
-> -chris
-> 
+If an error happens during writeback of log btree extents, make sure the
+error is returned to the caller (fsync), so that it takes proper action
+(commit current transaction) instead of writing a superblock that points
+to log btrees with all or some nodes that weren't durably persisted.
 
-I think i was mistaken, sorry. misc_open() used to set
-file->private_data _only_ if you use set .open in struct file_operations.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
 
-In current -next this changed and file->private_data is set to struct
-miscdevice on a (userspace's) open call (misc_open()) just in any case.
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 6d58d72..c8274d3 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2599,12 +2599,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	index2 = root_log_ctx.log_transid % 2;
+ 	if (atomic_read(&log_root_tree->log_commit[index2])) {
+ 		blk_finish_plug(&plug);
+-		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
++		ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages,
++						mark);
+ 		wait_log_commit(trans, log_root_tree,
+ 				root_log_ctx.log_transid);
+ 		btrfs_free_logged_extents(log, log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+-		ret = root_log_ctx.log_ret;
++		if (!ret)
++			ret = root_log_ctx.log_ret;
+ 		goto out;
+ 	}
+ 	ASSERT(root_log_ctx.log_transid == log_root_tree->log_transid);
+@@ -2641,10 +2643,17 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		goto out_wake_log_root;
+ 	}
+-	btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+-	btrfs_wait_marked_extents(log_root_tree,
+-				  &log_root_tree->dirty_log_pages,
+-				  EXTENT_NEW | EXTENT_DIRTY);
++	ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
++	if (!ret)
++		ret = btrfs_wait_marked_extents(log_root_tree,
++						&log_root_tree->dirty_log_pages,
++						EXTENT_NEW | EXTENT_DIRTY);
++	if (ret) {
++		btrfs_set_log_full_commit(root->fs_info, trans);
++		btrfs_free_logged_extents(log, log_transid);
++		mutex_unlock(&log_root_tree->log_mutex);
++		goto out_wake_log_root;
++	}
+ 	btrfs_wait_logged_extents(log, log_transid);
+ 
+ 	btrfs_set_super_log_root(root->fs_info->super_for_commit,
+-- 
+1.9.1
 
-You do set .open so this wouldn't affect you and this patch can be ignored.
-
-                        martin

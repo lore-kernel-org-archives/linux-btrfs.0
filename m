@@ -1,94 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:45450 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:47663 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753543AbaKMRA4 (ORCPT
+	by vger.kernel.org with ESMTP id S1753543AbaKMRB4 (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 13 Nov 2014 12:00:56 -0500
+	Thu, 13 Nov 2014 12:01:56 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: collect only the necessary ordered extents on ranged fsync
-Date: Thu, 13 Nov 2014 17:00:35 +0000
-Message-Id: <1415898035-12249-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: ensure ordered extent errors aren't missed on fsync
+Date: Thu, 13 Nov 2014 17:01:45 +0000
+Message-Id: <1415898105-22530-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Instead of collecting all ordered extents from the inode's ordered tree
-and then wait for all of them to complete, just collect the ones that
-overlap the fsync range.
+When doing a fsync with a fast path we have a time window where we can miss
+the fact that writeback of some file data failed, and therefore we endup
+returning success (0) from fsync when we should return an error.
+The steps that lead to this are the following:
+
+1) We start all ordered extents by calling filemap_fdatawrite_range();
+
+2) We do some other work like locking the inode's i_mutex, start a transaction,
+   start a log transaction, etc;
+
+3) We enter btrfs_log_inode(), acquire the inode's log_mutex and collect all the
+   ordered extents from inode's ordered tree into a list;
+
+4) But by the time we do ordered extent collection, some ordered extents we started
+   at step 1) might have already completed with an error, and therefore we didn't
+   found them in the ordered tree and had no idea they finished with an error. This
+   makes our fsync return success (0) to userspace, but has no bad effects on the log
+   like for example insertion of file extent items into the log that point to unwritten
+   extents, because the invalid extent maps were removed before the ordered extent
+   completed (in inode.c:btrfs_finish_ordered_io).
+
+So after collecting the ordered extents just check if the inode's i_mapping has any
+error flags set (AS_EIO or AS_ENOSPC) and leave with an error if it does. Whenever
+writeback fails for a page of an ordered extent, we call mapping_set_error (done in
+extent_io.c:end_extent_writepage, called by extent_io.c:end_bio_extent_writepage)
+that sets one of those error flags in the inode's i_mapping flags.
+
+This change also has the side effect of fixing the issue where for fast fsyncs we
+never checked/cleared the error flags from the inode's i_mapping flags, which means
+that a full fsync performed after a fast fsync could get such errors that belonged
+to the fast fsync - because the full fsync calls btrfs_wait_ordered_range() which
+calls filemap_fdatawait_range(), and the later checks for and clears those flags,
+while for fast fsyncs we never call filemap_fdatawait_range() or anything else
+that checks for and clears the error flags from the inode's i_mapping.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ordered-data.c | 16 +++++++++++++---
- fs/btrfs/ordered-data.h |  4 +++-
- fs/btrfs/tree-log.c     |  2 +-
- 3 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h    |  1 +
+ fs/btrfs/inode.c    | 15 +++++++++++++++
+ fs/btrfs/tree-log.c | 21 +++++++++++++++++++++
+ 3 files changed, 37 insertions(+)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 1401b1a..a45bb01 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -431,19 +431,29 @@ out:
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 299c439..d3ccd09 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3862,6 +3862,7 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
+ 				    struct btrfs_trans_handle *trans, int mode,
+ 				    u64 start, u64 num_bytes, u64 min_size,
+ 				    loff_t actual_len, u64 *alloc_hint);
++int btrfs_inode_check_errors(struct inode *inode);
+ extern const struct dentry_operations btrfs_dentry_operations;
  
- /* Needs to either be called under a log transaction or the log_mutex */
- void btrfs_get_logged_extents(struct inode *inode,
--			      struct list_head *logged_list)
-+			      struct list_head *logged_list,
-+			      const loff_t start,
-+			      const loff_t end)
- {
- 	struct btrfs_ordered_inode_tree *tree;
- 	struct btrfs_ordered_extent *ordered;
- 	struct rb_node *n;
-+	struct rb_node *prev;
+ /* ioctl.c */
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 455cfdf..f3fabf0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9497,6 +9497,21 @@ out_inode:
  
- 	tree = &BTRFS_I(inode)->ordered_tree;
- 	spin_lock_irq(&tree->lock);
--	for (n = rb_first(&tree->tree); n; n = rb_next(n)) {
-+	n = __tree_search(&tree->tree, end, &prev);
-+	if (!n)
-+		n = prev;
-+	for (; n; n = rb_prev(n)) {
- 		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
-+		if (ordered->file_offset > end)
-+			continue;
-+		if (entry_end(ordered) <= start)
-+			break;
- 		if (!list_empty(&ordered->log_list))
- 			continue;
--		list_add_tail(&ordered->log_list, logged_list);
-+		list_add(&ordered->log_list, logged_list);
- 		atomic_inc(&ordered->refs);
- 	}
- 	spin_unlock_irq(&tree->lock);
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index d81a274..fb51515 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -193,7 +193,9 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr);
- void btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr);
- void btrfs_get_logged_extents(struct inode *inode,
--			      struct list_head *logged_list);
-+			      struct list_head *logged_list,
-+			      const loff_t start,
-+			      const loff_t end);
- void btrfs_put_logged_extents(struct list_head *logged_list);
- void btrfs_submit_logged_extents(struct list_head *logged_list,
- 				 struct btrfs_root *log);
+ }
+ 
++/* Inspired by filemap_check_errors() */
++int btrfs_inode_check_errors(struct inode *inode)
++{
++	int ret = 0;
++
++	if (test_bit(AS_ENOSPC, &inode->i_mapping->flags) &&
++	    test_and_clear_bit(AS_ENOSPC, &inode->i_mapping->flags))
++		ret = -ENOSPC;
++	if (test_bit(AS_EIO, &inode->i_mapping->flags) &&
++	    test_and_clear_bit(AS_EIO, &inode->i_mapping->flags))
++		ret = -EIO;
++
++	return ret;
++}
++
+ static const struct inode_operations btrfs_dir_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.lookup		= btrfs_lookup,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c8274d3..38f1ee9 100644
+index 38f1ee9..46bd0850 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3972,7 +3972,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+@@ -3635,6 +3635,12 @@ static int wait_ordered_extents(struct btrfs_trans_handle *trans,
+ 			    test_bit(BTRFS_ORDERED_IOERR, &ordered->flags)));
  
- 	mutex_lock(&BTRFS_I(inode)->log_mutex);
- 
--	btrfs_get_logged_extents(inode, &logged_list);
-+	btrfs_get_logged_extents(inode, &logged_list, start, end);
- 
- 	/*
- 	 * a brute force approach to making sure we get the most uptodate
+ 		if (test_bit(BTRFS_ORDERED_IOERR, &ordered->flags)) {
++			/*
++			 * Clear the AS_EIO/AS_ENOSPC flags from the inode's
++			 * i_mapping flags, so that the next fsync won't get
++			 * an outdated io error too.
++			 */
++			btrfs_inode_check_errors(inode);
+ 			*ordered_io_error = true;
+ 			break;
+ 		}
+@@ -4097,6 +4103,21 @@ log_extents:
+ 	btrfs_release_path(path);
+ 	btrfs_release_path(dst_path);
+ 	if (fast_search) {
++		/*
++		 * Some ordered extents started by fsync might have completed
++		 * before we collected the ordered extents in logged_list, which
++		 * means they're gone, not in our logged_list nor in the inode's
++		 * ordered tree. We want the application/user space to know an
++		 * error happened while attempting to persist file data so that
++		 * it can take proper action. If such error happened, we leave
++		 * without writing to the log tree and the fsync must report the
++		 * file data write error and not commit the current transaction.
++		 */
++		err = btrfs_inode_check_errors(inode);
++		if (err) {
++			ctx->io_err = err;
++			goto out_unlock;
++		}
+ 		ret = btrfs_log_changed_extents(trans, root, inode, dst_path,
+ 						&logged_list, ctx);
+ 		if (ret) {
 -- 
 1.9.1
 

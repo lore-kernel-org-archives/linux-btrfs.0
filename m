@@ -1,45 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f54.google.com ([74.125.82.54]:35854 "EHLO
-	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934141AbaKMV3a (ORCPT
+Received: from zeniv.linux.org.uk ([195.92.253.2]:42691 "EHLO
+	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933765AbaKMWOr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Nov 2014 16:29:30 -0500
-From: Pieter Smith <pieter@boesman.nl>
-To: pieter@boesman.nl
-Cc: Josh Triplett <josh@joshtriplett.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
-        linux-kernel@vger.kernel.org (open list)
-Subject: [PATCH 12/56] fs/btrfs: support compiling out splice
-Date: Thu, 13 Nov 2014 22:22:49 +0100
-Message-Id: <1415913813-362-13-git-send-email-pieter@boesman.nl>
-In-Reply-To: <1415913813-362-1-git-send-email-pieter@boesman.nl>
-References: <pieter@boesman.nl>
- <1415913813-362-1-git-send-email-pieter@boesman.nl>
+	Thu, 13 Nov 2014 17:14:47 -0500
+Date: Thu, 13 Nov 2014 22:14:41 +0000
+From: Al Viro <viro@ZenIV.linux.org.uk>
+To: Martin Kepplinger <martink@posteo.de>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
+        gregkh@linuxfoundation.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Don't check for file->private_data on open(). It
+ is set by the core.
+Message-ID: <20141113221441.GL7996@ZenIV.linux.org.uk>
+References: <1415810308-24243-1-git-send-email-martink@posteo.de>
+ <1415815173.25389.2@mail.thefacebook.com>
+ <5463A84A.8010606@posteo.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5463A84A.8010606@posteo.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Compile out splice support from btrfs when the splice-family of syscalls is not
-supported by the system (i.e. CONFIG_SYSCALL_SPLICE is undefined).
+On Wed, Nov 12, 2014 at 07:34:50PM +0100, Martin Kepplinger wrote:
 
-Signed-off-by: Pieter Smith <pieter@boesman.nl>
----
- fs/btrfs/file.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> > Btrfs uses this in the transaction start ioctl to record the transaction
+> > handle being started.  Ceph is the main user of the ioctl, and we could
+> > setup a hash table if needed.  But which call path in miscdevice is
+> > doing this?
+> > 
+> > With your patch in place, btrfs would end up overwriting the miscdevice
+> > private_data field, which would probably cause problems.
+> > 
+> > -chris
+> > 
+> 
+> I think i was mistaken, sorry. misc_open() used to set
+> file->private_data _only_ if you use set .open in struct file_operations.
+> 
+> In current -next this changed and file->private_data is set to struct
+> miscdevice on a (userspace's) open call (misc_open()) just in any case.
+> 
+> You do set .open so this wouldn't affect you and this patch can be ignored.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index d3afac2..68c2f0a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2704,7 +2704,7 @@ const struct file_operations btrfs_file_operations = {
- 	.read		= new_sync_read,
- 	.write		= new_sync_write,
- 	.read_iter      = generic_file_read_iter,
--	.splice_read	= generic_file_splice_read,
-+	SPLICE_READ_INIT(generic_file_splice_read)
- 	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
- 	.open		= generic_file_open,
--- 
-1.9.1
-
+More to the point, this function is not reachable from anything in
+file_operations of any miscdevice.  btrfs_ioctl != btrfs_control_ioctl...

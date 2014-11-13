@@ -1,142 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 2.mo69.mail-out.ovh.net ([178.33.251.80]:59653 "EHLO
-	mo69.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932338AbaKMKty convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Nov 2014 05:49:54 -0500
-Received: from mail433.ha.ovh.net (b9.ovh.net [213.186.33.59])
-	by mo69.mail-out.ovh.net (Postfix) with SMTP id 6E4FBFFC563
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 11:49:51 +0100 (CET)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 8.0 \(1990.1\))
-Subject: Re: Quota question
-From: Cyril Scetbon <cyril.scetbon@free.fr>
-In-Reply-To: <54647C9C.3030000@cn.fujitsu.com>
-Date: Thu, 13 Nov 2014 11:49:47 +0100
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Message-Id: <460A55DA-37B0-4636-A1E7-1B89E33EE61F@free.fr>
-References: <23550138-C487-44E1-AA4A-B3B951D778D1@free.fr> <F924EC8F-D124-4E6D-A8FE-E03D82A8DAB8@free.fr> <pan$db0e5$7ee7229b$da3a292b$c1219b2@cox.net> <CCA13B0E-D1EE-44D8-A634-FD17C2B22C72@free.fr> <pan$648cb$e6ca8d21$192128f6$95e500d3@cox.net> <967D58C4-46E1-4508-A5A9-A0835C18E87D@free.fr> <EE8501C5-2A50-4E93-89F5-C08E28CE71DB@free.fr> <928A4C3A-2CE4-48E5-8831-BE6C1685ED8B@free.fr> <5464200D.1010600@cn.fujitsu.com> <54647C9C.3030000@cn.fujitsu.com>
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Received: from phd-imap.ethz.ch ([129.132.80.51]:54779 "EHLO phd-imap.ethz.ch"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932756AbaKMNcO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Nov 2014 08:32:14 -0500
+Received: from localhost (phd-mailscan.ethz.ch [192.168.127.2])
+	by phd-imap.ethz.ch (Postfix) with ESMTP id 051D716B43
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 14:32:12 +0100 (CET)
+Received: from phd-mxin.ethz.ch ([IPv6:::ffff:192.168.127.53])
+	by localhost (phd-mailscan.ethz.ch [::ffff:192.168.127.2]) (amavisd-new, port 10024)
+	with LMTP id Gj25SHK9wU8a for <linux-btrfs@vger.kernel.org>;
+	Thu, 13 Nov 2014 14:32:11 +0100 (CET)
+Received: from [192.33.96.28] (auror.ethz.ch [192.33.96.28])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: schmid@phd-mxin.ethz.ch)
+	by phd-mxin.ethz.ch (Postfix) with ESMTPSA id D90F9E075
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 14:32:11 +0100 (CET)
+Message-ID: <5464B2DB.7070008@phys.ethz.ch>
+Date: Thu, 13 Nov 2014 14:32:11 +0100
+From: Patrick Schmid <schmid@phys.ethz.ch>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: soft lockup - CPU#0 stuck - Kernel 3.17.2
+Content-Type: multipart/mixed;
+ boundary="------------090305080904050002050203"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey,
+This is a multi-part message in MIME format.
+--------------090305080904050002050203
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 
-I'm using ubuntu kernels provided at http://kernel.ubuntu.com/~kernel-ppa/mainline/v3.17.1-utopic/. I asked them how to rebuild one with a patch and will try it when I got the answer.
+Hi all,
 
-Thanks
+we run a > 500 TiB backup system on iSCSI targets using 19 BTRFS
+filesystems (the biggest of which is 110 TiB) on Ubuntu 14.04 LTS and
+various kernel versions. Btrfs-Progs v3.17.1. The hardware is a 24 core
+Xeon E5-2620 on an Intel S2600GZ board with 128 GiB RAM.
 
-PS : good news and I hope it'll fix the issue
+Since btrfs has changed to kworkers (I think in 3.15) the frontend
+server somewhat randomly crashes with soft lockups (see attachment). The
+system is rock solid with the 3.14.22 kernel.
+
+The lockups happen during the nightly cron-controlled rsync backups and
+occur at random times during this process.
+We are totally aware of the fact that this tends to be one of
+those âit doesnât workâ bug reports, but itâs really hard to pin
+down the source of the problem other than it seems to be related to the
+kworkers. Weâd love to provide any feedback we can, please let us know
+what you need.
+
+Regards
+Patrick
 -- 
-Cyril SCETBON
+Patrick Schmid  <schmid@phys.ethz.ch>     support: +41 44 633 2668
+IT Services Group, HPT H 8                voice:   +41 44 633 3997
+Departement Physik, ETH Zurich
+CH-8093 Zurich, Switzerland
 
-> On 13 Nov 2014, at 10:40, Dongsheng Yang <yangds.fnst@cn.fujitsu.com> wrote:
-> 
-> On 11/13/2014 11:05 AM, Dongsheng Yang wrote:
->> On 11/12/2014 10:04 PM, Cyril Scetbon wrote:
->>> Anyone on this ? There is an issue with quotas depending on the write rate. The more we can write before a sync, the more we can exceed quotas limits
->> 
->> Hi Cyril, I attempted to reproduce the problem you reported in Linux.3.17, but failed.
->> It seems that the issue in this thread was fixed already. Could you test on Linux.3.17 or later version?
-> 
-> Hi Cyril, after some more investigation, there actually is a problem you described here.
-> 
-> *reason*
-> The logic in fallocate to update qgroup->excl here is:
-> 1). btrfs_qgroup_reserve(). It reserves N_bytes.
-> 2). btrfs_prealloc_file_range(). It record a qgroup ref into trans->qgroup_ref_list.
-> 3). btrfs_qgroup_free(). It clear the N_bytes from reservation.
-> ... ...
-> commit_transaction().
-> 
-> Similar logic in writing data.
-> 
-> Currently qgroup->excl is updated in qgroup_excl_accounting and it is called in commit_transation().
-> It means there probably is a *window* between btrfs_qgroup_free() and commit_transaction() where
-> the N_bytes is not accounted into qgroup. In this *window*, more data request will be accepted
-> even the total size of these requests exceeds the limit, and qgroup can't realize it.
-> 
-> There is a quick fix attached on this mail, it delays the reserve_free operation after updating qgroup->excl.
-> 
-> *NOTE*
-> It is just a quick fix for your problem here, could you help to test is on your box? Patch is based on
-> Linux 3.17 (bfe01a5ba2490f299e1d2d5508cbbbadd897bbe9).
-> 
-> More work about btrfs quota is on the TODO list.
-> 
-> Thanx
->> 
->> Below is my log:
->> [root@atest-guest linux_btrfs]# uname -a
->> Linux atest-guest 3.17.0+ #60 SMP Thu Nov 13 06:51:55 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
->> [root@atest-guest linux_btrfs]# btrfs qgroup show -e /mnt
->> qgroupid rfer  excl  max_excl
->> -------- ----  ----  --------
->> 0/5      16384 16384 0
->> [root@atest-guest linux_btrfs]# btrfs sub create /mnt/sub
->> Create subvolume '/mnt/sub'
->> [root@atest-guest linux_btrfs]# sync
->> [root@atest-guest linux_btrfs]# btrfs qgroup show -e /mnt
->> qgroupid rfer  excl  max_excl
->> -------- ----  ----  --------
->> 0/5      16384 16384 0
->> 0/257    16384 16384 0
->> [root@atest-guest linux_btrfs]# btrfs qgroup limit -e 300M /mnt/sub
->> [root@atest-guest linux_btrfs]# btrfs qgroup show -e /mnt
->> qgroupid rfer  excl  max_excl
->> -------- ----  ----  --------
->> 0/5      16384 16384 0
->> 0/257    16384 16384 314572800
->> [root@atest-guest linux_btrfs]# for((i=0;i<10;i++));do dd if=/dev/zero of=/mnt/sub/data$i bs=6M count=10; done
->> 10+0 records in
->> 10+0 records out
->> 62914560 bytes (63 MB) copied, 0.0401096 s, 1.6 GB/s
->> 10+0 records in
->> 10+0 records out
->> 62914560 bytes (63 MB) copied, 0.0431105 s, 1.5 GB/s
->> 10+0 records in
->> 10+0 records out
->> 62914560 bytes (63 MB) copied, 0.0407304 s, 1.5 GB/s
->> 10+0 records in
->> 10+0 records out
->> 62914560 bytes (63 MB) copied, 0.041441 s, 1.5 GB/s
->> dd: error writing \u2018/mnt/sub/data4\u2019: Disk quota exceeded
->> 10+0 records in
->> 9+0 records out
->> 60817408 bytes (61 MB) copied, 0.0398122 s, 1.5 GB/s
->> dd: error writing \u2018/mnt/sub/data5\u2019: Disk quota exceeded
->> 1+0 records in
->> 0+0 records out
->> 1703936 bytes (1.7 MB) copied, 0.00318793 s, 534 MB/s
->> dd: error writing \u2018/mnt/sub/data6\u2019: Disk quota exceeded
->> 1+0 records in
->> 0+0 records out
->> 0 bytes (0 B) copied, 0.00239674 s, 0.0 kB/s
->> dd: error writing \u2018/mnt/sub/data7\u2019: Disk quota exceeded
->> 1+0 records in
->> 0+0 records out
->> 0 bytes (0 B) copied, 0.002271 s, 0.0 kB/s
->> dd: error writing \u2018/mnt/sub/data8\u2019: Disk quota exceeded
->> 1+0 records in
->> 0+0 records out
->> 0 bytes (0 B) copied, 0.00232063 s, 0.0 kB/s
->> dd: error writing \u2018/mnt/sub/data9\u2019: Disk quota exceeded
->> 1+0 records in
->> 0+0 records out
->> 0 bytes (0 B) copied, 0.00185336 s, 0.0 kB/s
->> [root@atest-guest linux_btrfs]# sync
->> [root@atest-guest linux_btrfs]# btrfs qgroup show -e /mnt
->> qgroupid rfer      excl      max_excl
->> -------- ----      ----      --------
->> 0/5      16384     16384     0
->> 0/257    314195968 314195968 314572800
->> 
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> .
->> 
-> 
-> <0001-btrfs-free-quota-reserved-in-delay_ref-handler.patch>
+--------------090305080904050002050203
+Content-Type: text/plain; charset=windows-1252;
+ name="NMI_soft_lockup_crash.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="NMI_soft_lockup_crash.txt"
 
+Tm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTA0XSBOTUkg
+d2F0Y2hkb2c6IEJVRzogc29mdCBsb2NrdXAgLSBDUFUjMCBzdHVjayBmb3IgMjNzISBba3dv
+cmtlci91NDgxOjI2OjEwODk2M10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVs
+OiBbMjk0MTEuMjA3MTQ3XSBNb2R1bGVzIGxpbmtlZCBpbjogYnRyZnMoRSkgeG9yKEUpIHJh
+aWQ2X3BxKEUpIHRjcF9kaWFnKEUpIGluZXRfZGlhZyhFKSBhdXRvZnM0KEUpIGliX2lzZXIo
+RSkgcmRtYV9jbShFKSBpd19jbShFKSBpYl9jbShFKSBpYl9zYShFKSBpYl9tYWQoRSkgaWJf
+Y29yZShFKSBpYl9hZGRyKEUpIGlzY3NpX3RjcChFKSBsaWJpc2NzaV90Y3AoRSkgbGliaXNj
+c2koRSkgc2NzaV90cmFuc3BvcnRfaXNjc2koRSkgeDg2X3BrZ190ZW1wX3RoZXJtYWwoRSkg
+aW50ZWxfcG93ZXJjbGFtcChFKSBjb3JldGVtcChFKSBjcmN0MTBkaWZfcGNsbXVsKEUpIGNy
+YzMyX3BjbG11bChFKSBnaGFzaF9jbG11bG5pX2ludGVsKEUpIGFlc25pX2ludGVsKEUpIGFl
+c194ODZfNjQoRSkgbHJ3KEUpIGdmMTI4bXVsKEUpIGdsdWVfaGVscGVyKEUpIGFibGtfaGVs
+cGVyKEUpIG1vdXNlZGV2KEUpIGNyeXB0ZChFKSBpb2F0ZG1hKEUpIHNiX2VkYWMoRSkgbWlj
+cm9jb2RlKEUpIGlwbWlfc2koRSkgZWRhY19jb3JlKEUpIGxwY19pY2goRSkgbWVpX21lKEUp
+IGlwbWlfbXNnaGFuZGxlcihFKSB0cG1fdGlzKEUpIG1laShFKSB3bWkoRSkgbmZzZChFKSBh
+dXRoX3JwY2dzcyhFKSBuZnNfYWNsKEUpIG5mcyhFKSBsb2NrZChFKSBzdW5ycGMoRSkgZnNj
+YWNoZShFKSBscChFKSBwYXJwb3J0KEUpIGhpZF9nZW5lcmljKEUpIHVzYmhpZChFKSBoaWQo
+RSkgaWdiKEUpIGl4Z2JlKEUpIGkyY19hbGdvX2JpdChFKSBkY2EoRSkgaXNjaShFKSBwdHAo
+RSkgYWhjaShFKSBsaWJzYXMoRSkgc2NzaV90cmFuc3BvcnRfc2FzKEUpIGxpYmFoY2koRSkg
+bWRpbyhFKSBhcmNtc3IoRSkgcHBzX2NvcmUoRSkKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3At
+Z3cga2VybmVsOiBbMjk0MTEuMjA3MTUyXSBDUFU6IDAgUElEOiAxMDg5NjMgQ29tbToga3dv
+cmtlci91NDgxOjI2IFRhaW50ZWQ6IEcgICAgICAgICAgICBFTCAzLjE3LjItc3RhYmxlLnNs
+dWIgIzYKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTU0
+XSBIYXJkd2FyZSBuYW1lOiBJbnRlbCBDb3Jwb3JhdGlvbiBTMjYwMEdaL1MyNjAwR1osIEJJ
+T1MgU0U1QzYwMC44NkIuMDIuMDMuMDAwMy4wNDE5MjAxNDEzMzMgMDQvMTkvMjAxNApOb3Yg
+MTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcxODVdIFdvcmtxdWV1
+ZTogYnRyZnMtZW5kaW8td3JpdGUgYnRyZnNfZW5kaW9fd3JpdGVfaGVscGVyIFtidHJmc10K
+Tm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTg2XSB0YXNr
+OiBmZmZmODgwMmUzNGE4MDAwIHRpOiBmZmZmODgwNzBhNWE4MDAwIHRhc2sudGk6IGZmZmY4
+ODA3MGE1YTgwMDAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
+MjA3MTk0XSBSSVA6IDAwMTA6WzxmZmZmZmZmZjgxMGIwYjM1Pl0gIFs8ZmZmZmZmZmY4MTBi
+MGIzNT5dIHF1ZXVlX3JlYWRfbG9ja19zbG93cGF0aCsweGI1LzB4ZDAKTm92IDEyIDIzOjI1
+OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTk1XSBSU1A6IDAwMTg6ZmZmZjg4
+MDcwYTVhYmEwMCAgRUZMQUdTOiAwMDAwMDIwNgpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1n
+dyBrZXJuZWw6IFsyOTQxMS4yMDcxOTZdIFJBWDogMDAwMDAwMDAwMDAwNDFiOCBSQlg6IGZm
+ZmY4ODA2YmRhYzNhMTggUkNYOiAwMDAwMDAwMDAwMDAzYmNjCk5vdiAxMiAyMzoyNToxNiBw
+aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzE5N10gUkRYOiBmZmZmODgwMGEyYzRmMzUw
+IFJTSTogMDAwMDAwMDAwMDAwM2JjYyBSREk6IGZmZmY4ODAwYTJjNGYzNTQKTm92IDEyIDIz
+OjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTk4XSBSQlA6IGZmZmY4ODA3
+MGE1YWJhMDggUjA4OiAwMDAwMDAwMDAwMDAzYmM2IFIwOTogMDAwMDAwMDAwMDAwMDAwMApO
+b3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcxOTldIFIxMDog
+MDAwMDAwMDBmZmZmZmZmZiBSMTE6IDAwMDAwMDAwMDAwMDAwMDEgUjEyOiBmZmZmODgwODFl
+ZTE0MzAwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIw
+MF0gUjEzOiBmZmZmODgxMDBlNmUwMDAwIFIxNDogZmZmZmZmZmY4MTA5NDZhYyBSMTU6IGZm
+ZmY4ODA3MGE1YWI5YTgKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0
+MTEuMjA3MjAyXSBGUzogIDAwMDAwMDAwMDAwMDAwMDAoMDAwMCkgR1M6ZmZmZjg4MDgxZWUw
+MDAwMCgwMDAwKSBrbmxHUzowMDAwMDAwMDAwMDAwMDAwCk5vdiAxMiAyMzoyNToxNiBwaGQt
+YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwM10gQ1M6ICAwMDEwIERTOiAwMDAwIEVTOiAw
+MDAwIENSMDogMDAwMDAwMDA4MDA1MDAzMwpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBr
+ZXJuZWw6IFsyOTQxMS4yMDcyMDRdIENSMjogMDAwMDAwMDAwMmI5N2ZjOCBDUjM6IDAwMDAw
+MDAwMDFjMTYwMDAgQ1I0OiAwMDAwMDAwMDAwMDQwN2YwCk5vdiAxMiAyMzoyNToxNiBwaGQt
+YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwNV0gU3RhY2s6Ck5vdiAxMiAyMzoyNToxNiBw
+aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwN10gIGZmZmZmZmZmODE3M2IwN2MgZmZm
+Zjg4MDcwYTVhYmE2OCBmZmZmZmZmZmEwNGQ4YTNiIDAwMDAwMDAwMDAwMDAwMDAKTm92IDEy
+IDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MjA5XSAgZmZmZjg4MDcw
+YTVhYmE3OCBmZmZmZmZmZmEwNDc1N2FmIDAwMDAzZjY2YTA0OTdmNmUgZmZmZjg4MDYxYzI5
+YWY2OApOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcyMTFd
+ICBmZmZmODgwMGEyYzRmMmUwIGZmZmY4ODEwMGYzNmQ4MDAgZmZmZjg4MDAwMDAwMDAwMCAw
+MDAwMTYwMDAwMDAwMDAwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
+NDExLjIwNzIxMl0gQ2FsbCBUcmFjZToKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2Vy
+bmVsOiBbMjk0MTEuMjA3MjE4XSAgWzxmZmZmZmZmZjgxNzNiMDdjPl0gPyBfcmF3X3JlYWRf
+bG9jaysweDFjLzB4MzAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0
+MTEuMjA3MjMzXSAgWzxmZmZmZmZmZmEwNGQ4YTNiPl0gYnRyZnNfdHJlZV9yZWFkX2xvY2sr
+MHg1Yi8weDEyMCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDog
+WzI5NDExLjIwNzI0MV0gIFs8ZmZmZmZmZmZhMDQ3NTdhZj5dID8gbGVhZl9zcGFjZV91c2Vk
+KzB4Y2YvMHgxMTAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6
+IFsyOTQxMS4yMDcyNDldICBbPGZmZmZmZmZmYTA0NzdkNmI+XSBidHJmc19yZWFkX2xvY2tf
+cm9vdF9ub2RlKzB4M2IvMHg1MCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3
+IGtlcm5lbDogWzI5NDExLjIwNzI1OF0gIFs8ZmZmZmZmZmZhMDQ3Y2JlZT5dIGJ0cmZzX3Nl
+YXJjaF9zbG90KzB4NTBlLzB4YTEwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3At
+Z3cga2VybmVsOiBbMjk0MTEuMjA3MjY5XSAgWzxmZmZmZmZmZmEwNDk0MjU3Pl0gYnRyZnNf
+bG9va3VwX2ZpbGVfZXh0ZW50KzB4MzcvMHg0MCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBw
+aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzI4Ml0gIFs8ZmZmZmZmZmZhMDRiMzVkYT5d
+IF9fYnRyZnNfZHJvcF9leHRlbnRzKzB4MTZhLzB4ZDkwIFtidHJmc10KTm92IDEyIDIzOjI1
+OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3Mjg1XSAgWzxmZmZmZmZmZjgxMDk0
+NmFjPl0gPyB0cnlfdG9fd2FrZV91cCsweDFmYy8weDM0MApOb3YgMTIgMjM6MjU6MTYgcGhk
+LWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcyOTldICBbPGZmZmZmZmZmYTA0YmM2NWI+XSA/
+IF9fc2V0X2V4dGVudF9iaXQrMHgxNWIvMHg1NDAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYg
+cGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczMDJdICBbPGZmZmZmZmZmODExYjBhMTI+
+XSA/IGttZW1fY2FjaGVfYWxsb2MrMHgxMjIvMHgxMzAKTm92IDEyIDIzOjI1OjE2IHBoZC1i
+a3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MzExXSAgWzxmZmZmZmZmZmEwNDc3YWVhPl0gPyBi
+dHJmc19hbGxvY19wYXRoKzB4MWEvMHgyMCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQt
+YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzMyM10gIFs8ZmZmZmZmZmZhMDRhMzZjZT5dIGlu
+c2VydF9yZXNlcnZlZF9maWxlX2V4dGVudC5jb25zdHByb3AuNTkrMHg5ZS8weDJmMCBbYnRy
+ZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzMzNV0g
+IFs8ZmZmZmZmZmZhMDRhOTRjNT5dIGJ0cmZzX2ZpbmlzaF9vcmRlcmVkX2lvKzB4MmU1LzB4
+NWYwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
+MjA3MzQ1XSAgWzxmZmZmZmZmZmEwNGE5YWQ1Pl0gZmluaXNoX29yZGVyZWRfZm4rMHgxNS8w
+eDIwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
+MjA3MzU4XSAgWzxmZmZmZmZmZmEwNGNmM2UyPl0gbm9ybWFsX3dvcmtfaGVscGVyKzB4YzIv
+MHgyYjAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQx
+MS4yMDczNjJdICBbPGZmZmZmZmZmODEwN2ZlMDk+XSA/IHB3cV9hY3RpdmF0ZV9kZWxheWVk
+X3dvcmsrMHgzOS8weDgwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
+NDExLjIwNzM3NF0gIFs8ZmZmZmZmZmZhMDRjZjc0Mj5dIGJ0cmZzX2VuZGlvX3dyaXRlX2hl
+bHBlcisweDEyLzB4MjAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJu
+ZWw6IFsyOTQxMS4yMDczNzddICBbPGZmZmZmZmZmODEwODIwMDA+XSBwcm9jZXNzX29uZV93
+b3JrKzB4MTUwLzB4M2YwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
+NDExLjIwNzM3OV0gIFs8ZmZmZmZmZmY4MTA4MjZmMT5dIHdvcmtlcl90aHJlYWQrMHgxMjEv
+MHg1MjAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3Mzgx
+XSAgWzxmZmZmZmZmZjgxMDgyNWQwPl0gPyByZXNjdWVyX3RocmVhZCsweDMzMC8weDMzMApO
+b3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczODVdICBbPGZm
+ZmZmZmZmODEwODc5OTI+XSBrdGhyZWFkKzB4ZDIvMHhmMApOb3YgMTIgMjM6MjU6MTYgcGhk
+LWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczODhdICBbPGZmZmZmZmZmODEwODc4YzA+XSA/
+IGt0aHJlYWRfY3JlYXRlX29uX25vZGUrMHgxODAvMHgxODAKTm92IDEyIDIzOjI1OjE2IHBo
+ZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MzkwXSAgWzxmZmZmZmZmZjgxNzNiNmJjPl0g
+cmV0X2Zyb21fZm9yaysweDdjLzB4YjAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2Vy
+bmVsOiBbMjk0MTEuMjA3MzkzXSAgWzxmZmZmZmZmZjgxMDg3OGMwPl0gPyBrdGhyZWFkX2Ny
+ZWF0ZV9vbl9ub2RlKzB4MTgwLzB4MTgwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtl
+cm5lbDogWzI5NDExLjIwNzQxM10gQ29kZTogOGIgMDIgM2MgZmYgNzQgZjggZjMgYzMgNTUg
+NDggODkgZTUgZTggYTggZGYgNjcgMDAgNWQgYzMgODMgZTEgZmUgMGYgYjcgZjEgYjggMDAg
+ODAgMDAgMDAgNDQgMGYgYjcgNDIgMDQgNjYgNDQgMzkgYzEgNzQgODMgZjMgOTAgPDgzPiBl
+OCAwMSA3NSBlZSA2NiA2NiA2NiA5MCA2NiA2NiA5MCBlYiBlMCA2NiAyZSAwZiAxZiA4NCAw
+MCAwMAo=
+--------------090305080904050002050203--

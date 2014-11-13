@@ -1,84 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47718 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933262AbaKMRn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Nov 2014 12:43:26 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XoyQW-0007RV-0Y
-	for linux-btrfs@vger.kernel.org; Thu, 13 Nov 2014 18:43:24 +0100
-Received: from pd953e883.dip0.t-ipconnect.de ([217.83.232.131])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 18:43:24 +0100
-Received: from holger.hoffstaette by pd953e883.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 18:43:24 +0100
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: [PATCH] Btrfs: don't ignore log btree writeback errors
-Date: Thu, 13 Nov 2014 17:43:12 +0000 (UTC)
-Message-ID: <pan.2014.11.13.17.43.12@googlemail.com>
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:38032 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933526AbaKMRrx convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Nov 2014 12:47:53 -0500
+Received: by mail-lb0-f175.google.com with SMTP id n15so11402633lbi.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 09:47:51 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <pan.2014.11.13.17.33.19@googlemail.com>
 References: <1415897993-7556-1-git-send-email-fdmanana@suse.com>
 	<pan.2014.11.13.17.33.19@googlemail.com>
-Mime-Version: 1.0
+Date: Thu, 13 Nov 2014 17:47:51 +0000
+Message-ID: <CAL3q7H7KcRDapbizQK6Dy5ECTWzVuHxyF3wmM8CJA34WEhccXw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: don't ignore log btree writeback errors
+From: Filipe David Manana <fdmanana@gmail.com>
+To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 13 Nov 2014 17:33:19 +0000, Holger Hoffstätte wrote:
-
+On Thu, Nov 13, 2014 at 5:33 PM, Holger Hoffstätte
+<holger.hoffstaette@googlemail.com> wrote:
 > On Thu, 13 Nov 2014 16:59:53 +0000, Filipe Manana wrote:
-> 
+>
 >> If an error happens during writeback of log btree extents, make sure the
 >> error is returned to the caller (fsync), so that it takes proper action
 >> (commit current transaction) instead of writing a superblock that points
 >> to log btrees with all or some nodes that weren't durably persisted.
->> 
+>>
 >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 >> ---
 >>  fs/btrfs/tree-log.c | 21 +++++++++++++++------
 >>  1 file changed, 15 insertions(+), 6 deletions(-)
->> 
+>>
 >> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
 >> index 6d58d72..c8274d3 100644
 >> --- a/fs/btrfs/tree-log.c
 >> +++ b/fs/btrfs/tree-log.c
 >> @@ -2599,12 +2599,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
->>  	index2 = root_log_ctx.log_transid % 2;
->>  	if (atomic_read(&log_root_tree->log_commit[index2])) {
->>  		blk_finish_plug(&plug);
->> -		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
->> +		ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages,
->> +						mark);
->>  		wait_log_commit(trans, log_root_tree,
->>  				root_log_ctx.log_transid);
->>  		btrfs_free_logged_extents(log, log_transid);
->>  		mutex_unlock(&log_root_tree->log_mutex);
->> -		ret = root_log_ctx.log_ret;
->> +		if (!ret)
->> +			ret = root_log_ctx.log_ret;
->>  		goto out;
->>  	}
->>  	ASSERT(root_log_ctx.log_transid == log_root_tree->log_transid);
-> 
+>>       index2 = root_log_ctx.log_transid % 2;
+>>       if (atomic_read(&log_root_tree->log_commit[index2])) {
+>>               blk_finish_plug(&plug);
+>> -             btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+>> +             ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages,
+>> +                                             mark);
+>>               wait_log_commit(trans, log_root_tree,
+>>                               root_log_ctx.log_transid);
+>>               btrfs_free_logged_extents(log, log_transid);
+>>               mutex_unlock(&log_root_tree->log_mutex);
+>> -             ret = root_log_ctx.log_ret;
+>> +             if (!ret)
+>> +                     ret = root_log_ctx.log_ret;
+>>               goto out;
+>>       }
+>>       ASSERT(root_log_ctx.log_transid == log_root_tree->log_transid);
+>
 > This first hunk didn't apply to my 3.14.x tree that is 99.999% in sync with
 > btrfs-3.18+, as a line is missing from the context. See:
-> 
+>
 > https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/tree/fs/btrfs/tree-log.c?h=for-linus#n2605
-> 
+>
 > Any idea where that missing btrfs_free_logged_extents() went?
 
-Found it: it went away with Josef's recent patch on Nov 6:
-"Btrfs: make sure we wait on logged extents when fsycning two subvols"
-(http://permalink.gmane.org/gmane.comp.file-systems.btrfs/40005)
+Probably because you picked the following patch:
 
-..which I have applied. boohoo.
+https://patchwork.kernel.org/patch/5244311/
 
-That patch also adds another call to btrfs_wait_marked_extents(), which should
-then probably also have its return value handled?
+While Chris' integration/for-linus branches don't have the patch
+included yet (nor do I in my local branch). Nevertheless, it's a
+trivial conflict to solve, just leave Josef's changes and mine.
 
-thanks,
-Holger
+thanks
 
+>
+> cheers
+> Holger
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

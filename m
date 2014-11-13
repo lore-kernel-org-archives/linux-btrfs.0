@@ -1,181 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from phd-imap.ethz.ch ([129.132.80.51]:54779 "EHLO phd-imap.ethz.ch"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932756AbaKMNcO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Nov 2014 08:32:14 -0500
-Received: from localhost (phd-mailscan.ethz.ch [192.168.127.2])
-	by phd-imap.ethz.ch (Postfix) with ESMTP id 051D716B43
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 14:32:12 +0100 (CET)
-Received: from phd-mxin.ethz.ch ([IPv6:::ffff:192.168.127.53])
-	by localhost (phd-mailscan.ethz.ch [::ffff:192.168.127.2]) (amavisd-new, port 10024)
-	with LMTP id Gj25SHK9wU8a for <linux-btrfs@vger.kernel.org>;
-	Thu, 13 Nov 2014 14:32:11 +0100 (CET)
-Received: from [192.33.96.28] (auror.ethz.ch [192.33.96.28])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: schmid@phd-mxin.ethz.ch)
-	by phd-mxin.ethz.ch (Postfix) with ESMTPSA id D90F9E075
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Nov 2014 14:32:11 +0100 (CET)
-Message-ID: <5464B2DB.7070008@phys.ethz.ch>
-Date: Thu, 13 Nov 2014 14:32:11 +0100
-From: Patrick Schmid <schmid@phys.ethz.ch>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6307 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932596AbaKMOnr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Nov 2014 09:43:47 -0500
+Message-ID: <5464C399.5040903@fb.com>
+Date: Thu, 13 Nov 2014 09:43:37 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: soft lockup - CPU#0 stuck - Kernel 3.17.2
-Content-Type: multipart/mixed;
- boundary="------------090305080904050002050203"
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: About leaf corruption recovery(currently only fs/subvol tree
+ recovery)
+References: <546473A6.2070905@cn.fujitsu.com>
+In-Reply-To: <546473A6.2070905@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------090305080904050002050203
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
+On 11/13/2014 04:02 AM, Qu Wenruo wrote:
+> Hi all,
+>
+> I'm trying to implement leaf corruption recovery.
+>
+> *CURRENT BEHAVIOR*
+> Btrfs now heavily rely on chunk level duplication to protect its tree
+> block(meta data).
+> That's completely good and works quite well.
+>
+> However small device with mixed single chunk will suffer from the lack
+> of duplication and when any
+> bit flip happens in tree block, the whole 16K leaf/node will be
+> unreadable and finally cause
+> metadata corruption.
+>
+> *OBJECT*
+> I hope btrfsck can repair such bit flip even with the cost of data lose.
+> (It will of course introduce data loss according to the following method)
+>
+> And the ultimate object will be making a randomly slightly(0.2% of all
+> bytes?) damaged btrfs
+> can pass btrfsck after repair.
+>
+> *RECOVERY METHOD*
+> Current recovery method is consist of the following procedure:
+> 1) find and record the unreadable extent buffers during normal fsck routine
+> With the record of the unreadable extent buffers, we can calculates the
+> inode number range where
+> next step will drop.
+>
+> 2) *delete* the slot pointing to the leaf in parent node
+> Yes, delete the corrupted leaves, at least this is the cleanest and
+> easiest method.
+> After the step, the metadata tree should at least be iteratable now.
+>
+> 3) cleanup the mess done in 2)
+> Need to do the following things in case btrfsck complains later
+> 3.1) salvage data from extent tree in the deleting range.
+> Although fs/subvol leaf is deleted, extent data is still there, using
+> EXTENT_ITEM in extent tree
+> may still recover some data.
+> Personally I prefer to create a lost+found dir in the root of its
+> subvolume and use inode number as
+> file name to restore them.
+>
+> 3.2) Remove backref to the inodes in deleting ranges and move them if
+> needed.
+> It is clear we need to remove the invalid backref, but if some inodes in
+> deleting ranges casuing
+> its children files unaccessible from the subvolume root, then these
+> files should be moved to 'lost+found' too,
+> even they are completely undamaged.
+>
+> Although after the above steps, metadata like filename, access bits,
+> owner, xattrs or inlined data will be
+> lost and some files/dirs will be moved to lost+found, it should at least
+> btrfsck not complain any more.
+>
+> *NEED ADVICE*
+> Any concern about the above recovery is welcomed, especially when some
+> guy like me want to
+> implement such an aggressive recovery method.
+>
 
-Hi all,
+So we already have a way to fix weird problems with blocks in btrfsck, 
+see try_to_fix_bad_block.  This doesn't fix everything, but it could 
+easily be expanded to just add anybody who can't be fixed to a list to 
+be deleted and then see what fsck comes up with.  If the block is in the 
+extent tree for example it's pretty easy to recover, fs tree's can 
+rebuild some missing stuff, csum tree doesn't do anything yet.
 
-we run a > 500 TiB backup system on iSCSI targets using 19 BTRFS
-filesystems (the biggest of which is 110 TiB) on Ubuntu 14.04 LTS and
-various kernel versions. Btrfs-Progs v3.17.1. The hardware is a 24 core
-Xeon E5-2620 on an Intel S2600GZ board with 128 GiB RAM.
+I think the best bet is to track these bad blocks and then adjust what 
+we do based on which tree they are in.  For example we don't want fsck 
+just randomly re-generating data csums, but if we've found a bad block 
+in the csum tree then we definitely want to re-generate the data csum in 
+that case.  But for the extent tree we can be sure that we'll put stuff 
+back in the right way, so you can just remove that block and know the 
+normal fsck code will fix things.  Thanks,
 
-Since btrfs has changed to kworkers (I think in 3.15) the frontend
-server somewhat randomly crashes with soft lockups (see attachment). The
-system is rock solid with the 3.14.22 kernel.
-
-The lockups happen during the nightly cron-controlled rsync backups and
-occur at random times during this process.
-We are totally aware of the fact that this tends to be one of
-those âit doesnât workâ bug reports, but itâs really hard to pin
-down the source of the problem other than it seems to be related to the
-kworkers. Weâd love to provide any feedback we can, please let us know
-what you need.
-
-Regards
-Patrick
--- 
-Patrick Schmid  <schmid@phys.ethz.ch>     support: +41 44 633 2668
-IT Services Group, HPT H 8                voice:   +41 44 633 3997
-Departement Physik, ETH Zurich
-CH-8093 Zurich, Switzerland
-
---------------090305080904050002050203
-Content-Type: text/plain; charset=windows-1252;
- name="NMI_soft_lockup_crash.txt"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="NMI_soft_lockup_crash.txt"
-
-Tm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTA0XSBOTUkg
-d2F0Y2hkb2c6IEJVRzogc29mdCBsb2NrdXAgLSBDUFUjMCBzdHVjayBmb3IgMjNzISBba3dv
-cmtlci91NDgxOjI2OjEwODk2M10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVs
-OiBbMjk0MTEuMjA3MTQ3XSBNb2R1bGVzIGxpbmtlZCBpbjogYnRyZnMoRSkgeG9yKEUpIHJh
-aWQ2X3BxKEUpIHRjcF9kaWFnKEUpIGluZXRfZGlhZyhFKSBhdXRvZnM0KEUpIGliX2lzZXIo
-RSkgcmRtYV9jbShFKSBpd19jbShFKSBpYl9jbShFKSBpYl9zYShFKSBpYl9tYWQoRSkgaWJf
-Y29yZShFKSBpYl9hZGRyKEUpIGlzY3NpX3RjcChFKSBsaWJpc2NzaV90Y3AoRSkgbGliaXNj
-c2koRSkgc2NzaV90cmFuc3BvcnRfaXNjc2koRSkgeDg2X3BrZ190ZW1wX3RoZXJtYWwoRSkg
-aW50ZWxfcG93ZXJjbGFtcChFKSBjb3JldGVtcChFKSBjcmN0MTBkaWZfcGNsbXVsKEUpIGNy
-YzMyX3BjbG11bChFKSBnaGFzaF9jbG11bG5pX2ludGVsKEUpIGFlc25pX2ludGVsKEUpIGFl
-c194ODZfNjQoRSkgbHJ3KEUpIGdmMTI4bXVsKEUpIGdsdWVfaGVscGVyKEUpIGFibGtfaGVs
-cGVyKEUpIG1vdXNlZGV2KEUpIGNyeXB0ZChFKSBpb2F0ZG1hKEUpIHNiX2VkYWMoRSkgbWlj
-cm9jb2RlKEUpIGlwbWlfc2koRSkgZWRhY19jb3JlKEUpIGxwY19pY2goRSkgbWVpX21lKEUp
-IGlwbWlfbXNnaGFuZGxlcihFKSB0cG1fdGlzKEUpIG1laShFKSB3bWkoRSkgbmZzZChFKSBh
-dXRoX3JwY2dzcyhFKSBuZnNfYWNsKEUpIG5mcyhFKSBsb2NrZChFKSBzdW5ycGMoRSkgZnNj
-YWNoZShFKSBscChFKSBwYXJwb3J0KEUpIGhpZF9nZW5lcmljKEUpIHVzYmhpZChFKSBoaWQo
-RSkgaWdiKEUpIGl4Z2JlKEUpIGkyY19hbGdvX2JpdChFKSBkY2EoRSkgaXNjaShFKSBwdHAo
-RSkgYWhjaShFKSBsaWJzYXMoRSkgc2NzaV90cmFuc3BvcnRfc2FzKEUpIGxpYmFoY2koRSkg
-bWRpbyhFKSBhcmNtc3IoRSkgcHBzX2NvcmUoRSkKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3At
-Z3cga2VybmVsOiBbMjk0MTEuMjA3MTUyXSBDUFU6IDAgUElEOiAxMDg5NjMgQ29tbToga3dv
-cmtlci91NDgxOjI2IFRhaW50ZWQ6IEcgICAgICAgICAgICBFTCAzLjE3LjItc3RhYmxlLnNs
-dWIgIzYKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTU0
-XSBIYXJkd2FyZSBuYW1lOiBJbnRlbCBDb3Jwb3JhdGlvbiBTMjYwMEdaL1MyNjAwR1osIEJJ
-T1MgU0U1QzYwMC44NkIuMDIuMDMuMDAwMy4wNDE5MjAxNDEzMzMgMDQvMTkvMjAxNApOb3Yg
-MTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcxODVdIFdvcmtxdWV1
-ZTogYnRyZnMtZW5kaW8td3JpdGUgYnRyZnNfZW5kaW9fd3JpdGVfaGVscGVyIFtidHJmc10K
-Tm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTg2XSB0YXNr
-OiBmZmZmODgwMmUzNGE4MDAwIHRpOiBmZmZmODgwNzBhNWE4MDAwIHRhc2sudGk6IGZmZmY4
-ODA3MGE1YTgwMDAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
-MjA3MTk0XSBSSVA6IDAwMTA6WzxmZmZmZmZmZjgxMGIwYjM1Pl0gIFs8ZmZmZmZmZmY4MTBi
-MGIzNT5dIHF1ZXVlX3JlYWRfbG9ja19zbG93cGF0aCsweGI1LzB4ZDAKTm92IDEyIDIzOjI1
-OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTk1XSBSU1A6IDAwMTg6ZmZmZjg4
-MDcwYTVhYmEwMCAgRUZMQUdTOiAwMDAwMDIwNgpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1n
-dyBrZXJuZWw6IFsyOTQxMS4yMDcxOTZdIFJBWDogMDAwMDAwMDAwMDAwNDFiOCBSQlg6IGZm
-ZmY4ODA2YmRhYzNhMTggUkNYOiAwMDAwMDAwMDAwMDAzYmNjCk5vdiAxMiAyMzoyNToxNiBw
-aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzE5N10gUkRYOiBmZmZmODgwMGEyYzRmMzUw
-IFJTSTogMDAwMDAwMDAwMDAwM2JjYyBSREk6IGZmZmY4ODAwYTJjNGYzNTQKTm92IDEyIDIz
-OjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MTk4XSBSQlA6IGZmZmY4ODA3
-MGE1YWJhMDggUjA4OiAwMDAwMDAwMDAwMDAzYmM2IFIwOTogMDAwMDAwMDAwMDAwMDAwMApO
-b3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcxOTldIFIxMDog
-MDAwMDAwMDBmZmZmZmZmZiBSMTE6IDAwMDAwMDAwMDAwMDAwMDEgUjEyOiBmZmZmODgwODFl
-ZTE0MzAwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIw
-MF0gUjEzOiBmZmZmODgxMDBlNmUwMDAwIFIxNDogZmZmZmZmZmY4MTA5NDZhYyBSMTU6IGZm
-ZmY4ODA3MGE1YWI5YTgKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0
-MTEuMjA3MjAyXSBGUzogIDAwMDAwMDAwMDAwMDAwMDAoMDAwMCkgR1M6ZmZmZjg4MDgxZWUw
-MDAwMCgwMDAwKSBrbmxHUzowMDAwMDAwMDAwMDAwMDAwCk5vdiAxMiAyMzoyNToxNiBwaGQt
-YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwM10gQ1M6ICAwMDEwIERTOiAwMDAwIEVTOiAw
-MDAwIENSMDogMDAwMDAwMDA4MDA1MDAzMwpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBr
-ZXJuZWw6IFsyOTQxMS4yMDcyMDRdIENSMjogMDAwMDAwMDAwMmI5N2ZjOCBDUjM6IDAwMDAw
-MDAwMDFjMTYwMDAgQ1I0OiAwMDAwMDAwMDAwMDQwN2YwCk5vdiAxMiAyMzoyNToxNiBwaGQt
-YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwNV0gU3RhY2s6Ck5vdiAxMiAyMzoyNToxNiBw
-aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzIwN10gIGZmZmZmZmZmODE3M2IwN2MgZmZm
-Zjg4MDcwYTVhYmE2OCBmZmZmZmZmZmEwNGQ4YTNiIDAwMDAwMDAwMDAwMDAwMDAKTm92IDEy
-IDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MjA5XSAgZmZmZjg4MDcw
-YTVhYmE3OCBmZmZmZmZmZmEwNDc1N2FmIDAwMDAzZjY2YTA0OTdmNmUgZmZmZjg4MDYxYzI5
-YWY2OApOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcyMTFd
-ICBmZmZmODgwMGEyYzRmMmUwIGZmZmY4ODEwMGYzNmQ4MDAgZmZmZjg4MDAwMDAwMDAwMCAw
-MDAwMTYwMDAwMDAwMDAwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
-NDExLjIwNzIxMl0gQ2FsbCBUcmFjZToKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2Vy
-bmVsOiBbMjk0MTEuMjA3MjE4XSAgWzxmZmZmZmZmZjgxNzNiMDdjPl0gPyBfcmF3X3JlYWRf
-bG9jaysweDFjLzB4MzAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0
-MTEuMjA3MjMzXSAgWzxmZmZmZmZmZmEwNGQ4YTNiPl0gYnRyZnNfdHJlZV9yZWFkX2xvY2sr
-MHg1Yi8weDEyMCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDog
-WzI5NDExLjIwNzI0MV0gIFs8ZmZmZmZmZmZhMDQ3NTdhZj5dID8gbGVhZl9zcGFjZV91c2Vk
-KzB4Y2YvMHgxMTAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6
-IFsyOTQxMS4yMDcyNDldICBbPGZmZmZmZmZmYTA0NzdkNmI+XSBidHJmc19yZWFkX2xvY2tf
-cm9vdF9ub2RlKzB4M2IvMHg1MCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3
-IGtlcm5lbDogWzI5NDExLjIwNzI1OF0gIFs8ZmZmZmZmZmZhMDQ3Y2JlZT5dIGJ0cmZzX3Nl
-YXJjaF9zbG90KzB4NTBlLzB4YTEwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3At
-Z3cga2VybmVsOiBbMjk0MTEuMjA3MjY5XSAgWzxmZmZmZmZmZmEwNDk0MjU3Pl0gYnRyZnNf
-bG9va3VwX2ZpbGVfZXh0ZW50KzB4MzcvMHg0MCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBw
-aGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzI4Ml0gIFs8ZmZmZmZmZmZhMDRiMzVkYT5d
-IF9fYnRyZnNfZHJvcF9leHRlbnRzKzB4MTZhLzB4ZDkwIFtidHJmc10KTm92IDEyIDIzOjI1
-OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3Mjg1XSAgWzxmZmZmZmZmZjgxMDk0
-NmFjPl0gPyB0cnlfdG9fd2FrZV91cCsweDFmYy8weDM0MApOb3YgMTIgMjM6MjU6MTYgcGhk
-LWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDcyOTldICBbPGZmZmZmZmZmYTA0YmM2NWI+XSA/
-IF9fc2V0X2V4dGVudF9iaXQrMHgxNWIvMHg1NDAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYg
-cGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczMDJdICBbPGZmZmZmZmZmODExYjBhMTI+
-XSA/IGttZW1fY2FjaGVfYWxsb2MrMHgxMjIvMHgxMzAKTm92IDEyIDIzOjI1OjE2IHBoZC1i
-a3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MzExXSAgWzxmZmZmZmZmZmEwNDc3YWVhPl0gPyBi
-dHJmc19hbGxvY19wYXRoKzB4MWEvMHgyMCBbYnRyZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQt
-YmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzMyM10gIFs8ZmZmZmZmZmZhMDRhMzZjZT5dIGlu
-c2VydF9yZXNlcnZlZF9maWxlX2V4dGVudC5jb25zdHByb3AuNTkrMHg5ZS8weDJmMCBbYnRy
-ZnNdCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5NDExLjIwNzMzNV0g
-IFs8ZmZmZmZmZmZhMDRhOTRjNT5dIGJ0cmZzX2ZpbmlzaF9vcmRlcmVkX2lvKzB4MmU1LzB4
-NWYwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
-MjA3MzQ1XSAgWzxmZmZmZmZmZmEwNGE5YWQ1Pl0gZmluaXNoX29yZGVyZWRfZm4rMHgxNS8w
-eDIwIFtidHJmc10KTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEu
-MjA3MzU4XSAgWzxmZmZmZmZmZmEwNGNmM2UyPl0gbm9ybWFsX3dvcmtfaGVscGVyKzB4YzIv
-MHgyYjAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQx
-MS4yMDczNjJdICBbPGZmZmZmZmZmODEwN2ZlMDk+XSA/IHB3cV9hY3RpdmF0ZV9kZWxheWVk
-X3dvcmsrMHgzOS8weDgwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
-NDExLjIwNzM3NF0gIFs8ZmZmZmZmZmZhMDRjZjc0Mj5dIGJ0cmZzX2VuZGlvX3dyaXRlX2hl
-bHBlcisweDEyLzB4MjAgW2J0cmZzXQpOb3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJu
-ZWw6IFsyOTQxMS4yMDczNzddICBbPGZmZmZmZmZmODEwODIwMDA+XSBwcm9jZXNzX29uZV93
-b3JrKzB4MTUwLzB4M2YwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtlcm5lbDogWzI5
-NDExLjIwNzM3OV0gIFs8ZmZmZmZmZmY4MTA4MjZmMT5dIHdvcmtlcl90aHJlYWQrMHgxMjEv
-MHg1MjAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3Mzgx
-XSAgWzxmZmZmZmZmZjgxMDgyNWQwPl0gPyByZXNjdWVyX3RocmVhZCsweDMzMC8weDMzMApO
-b3YgMTIgMjM6MjU6MTYgcGhkLWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczODVdICBbPGZm
-ZmZmZmZmODEwODc5OTI+XSBrdGhyZWFkKzB4ZDIvMHhmMApOb3YgMTIgMjM6MjU6MTYgcGhk
-LWJrcC1ndyBrZXJuZWw6IFsyOTQxMS4yMDczODhdICBbPGZmZmZmZmZmODEwODc4YzA+XSA/
-IGt0aHJlYWRfY3JlYXRlX29uX25vZGUrMHgxODAvMHgxODAKTm92IDEyIDIzOjI1OjE2IHBo
-ZC1ia3AtZ3cga2VybmVsOiBbMjk0MTEuMjA3MzkwXSAgWzxmZmZmZmZmZjgxNzNiNmJjPl0g
-cmV0X2Zyb21fZm9yaysweDdjLzB4YjAKTm92IDEyIDIzOjI1OjE2IHBoZC1ia3AtZ3cga2Vy
-bmVsOiBbMjk0MTEuMjA3MzkzXSAgWzxmZmZmZmZmZjgxMDg3OGMwPl0gPyBrdGhyZWFkX2Ny
-ZWF0ZV9vbl9ub2RlKzB4MTgwLzB4MTgwCk5vdiAxMiAyMzoyNToxNiBwaGQtYmtwLWd3IGtl
-cm5lbDogWzI5NDExLjIwNzQxM10gQ29kZTogOGIgMDIgM2MgZmYgNzQgZjggZjMgYzMgNTUg
-NDggODkgZTUgZTggYTggZGYgNjcgMDAgNWQgYzMgODMgZTEgZmUgMGYgYjcgZjEgYjggMDAg
-ODAgMDAgMDAgNDQgMGYgYjcgNDIgMDQgNjYgNDQgMzkgYzEgNzQgODMgZjMgOTAgPDgzPiBl
-OCAwMSA3NSBlZSA2NiA2NiA2NiA5MCA2NiA2NiA5MCBlYiBlMCA2NiAyZSAwZiAxZiA4NCAw
-MCAwMAo=
---------------090305080904050002050203--
+Josef

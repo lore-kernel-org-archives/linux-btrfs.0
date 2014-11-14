@@ -1,33 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34674 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965029AbaKNO5M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 09:57:12 -0500
-Date: Fri, 14 Nov 2014 15:57:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: Re: [PATCH 1/9] Btrfs: remove noused bbio_ret in __btrfs_map_block
- in condition
-Message-ID: <20141114145711.GI30713@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1415973061-8643-1-git-send-email-miaox@cn.fujitsu.com>
- <1415973061-8643-2-git-send-email-miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1415973061-8643-2-git-send-email-miaox@cn.fujitsu.com>
+Received: from e23smtp07.au.ibm.com ([202.81.31.140]:56650 "EHLO
+	e23smtp07.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965580AbaKNPjT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Nov 2014 10:39:19 -0500
+Received: from /spool/local
+	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Sat, 15 Nov 2014 01:39:17 +1000
+Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 1CA01357804F
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Nov 2014 02:39:15 +1100 (EST)
+Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
+	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sAEFcnCN33816650
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Nov 2014 02:38:58 +1100
+Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sAEFcfMA021004
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Nov 2014 02:38:42 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
+        chandan@mykolab.com, steve.capper@linaro.org
+Subject: [RFC PATCH V9 00/17] Btrfs: Subpagesize-blocksize: Get rid of whole page I/O.
+Date: Fri, 14 Nov 2014 21:08:02 +0530
+Message-Id: <1415979499-15821-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 14, 2014 at 09:50:53PM +0800, Miao Xie wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
-> 
-> bbio_ret in this condition is always !NULL because previous code
-> already have a check-and-skip:
-> 4908 if (!bbio_ret)
-> 4909     goto out;
-> 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+This patchset continues with the work posted earlier at
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg38775.html.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Changes from V1:
+1. Remove usage of bio_vec->bv_{len,offset} in end_bio_extent_readpage()
+   and end_bio_extent_writepage().
+
+Changes from V2:
+1. Get __extent_writepage() to write only the dirty blocks of a page.
+2. Fix "page private not zero on page" warning message which is printed
+   when running xfstests.
+
+Changes from V3:
+1. Get "Hole punching" and "Extent preallocation" to work correctly in
+   subpagesize-blocksize scenario.
+2. Get btrfs_page_mkwrite() to reserve space in sectorsized units.
+
+Changes from V4:
+1. V2's "Btrfs: subpagesize-blocksize: Get rid of whole page reads"
+   patch was incorrectly replaced with an older version when working
+   on V3 patches. Fix this.
+2. Fix btrfs_endio_direct_read() to compute checksums for all possible
+   blocks in a page.
+
+Changes from V5:
+1. Rebased patchset on top of current btrfs-next tree (i.e. commit
+   8d875f95da43c6a8f18f77869f2ef26e9594fecc). This involved using
+   "immutable biovecs".
+2. Deal with partially allocated ordered extents across a page.
+3. Explicitly track I/O status of blocks of an ordered extent.
+
+Changes from V6:
+1. Fix softlockup issue that occured during unmounting a 4k blocksized
+   filesystem instance.
+2. Track blocks of an ordered extent submitted for write I/O to avoid
+   I/O resubmission in certain scenarios.
+
+Changes from V7:
+1. Fix a softlockup issue that occured because the page corresponding
+   to the delalloc region did not exist. This bug was introduced by
+   the code added in btrfs_invalidatepage and related functions in V7
+   version.
+
+Changes from V8:
+1. In subpagesize-blocksize scenario, prevent writes to an extent
+   buffer when the corresponding page's PG_writeback flag is set. This
+   race condition was triggered when running xfstests' generic/083
+   test. With the new patch applied, I have run the complete xfstests
+   suite as well as run generic/083 multiple times on both 4k and 2k
+   block size setups. There were 2 non-related test failures that
+   occured rarely, but they were reproducible even when the patch was
+   not applied.
+
+Xfstests' generic tests were run on an x86_64 machine with the patches
+applied. The Btrfs kernel module was compiled without ACL support and
+hence tests related to that were not run.
+
+For 2k blocksize, the following xfstests' generic tests failed:
+1. generic/091
+2. generic/125
+3. generic/251
+4. generic/274
+
+The following xfstests' generic tests failed for both 2k and 4k blocksize:
+1. generic/224 (OOM)
+   This looks mostly an issue caused by non-btrfs code as the test failed
+   for the exact same reason when run on an ext4 filesystem instance.
+2. generic/263
+   FALLOC_FL_ZERO_RANGE isn't supported by Btrfs. Hence the test fails.
+
+The following is a list of known TODO items which will be implemented in
+future revisions of this patchset:
+1. Fix synchronization issues that occur in multi-processor setup.
+2. Get Xfstests' generic tests to successfully run on both 4k and 2k
+   blocksizes.
+2. Remove PAGE_CACHE_SIZE delalloc reservation in btrfs_writepage_fixup_worker().
+3. Create separate slab caches for 'extent buffer head' and 'extent buffer'.
+4. Add 'leak list' tracking for 'extent buffer' instances.
+5. Rename EXTENT_BUFFER_TREE_REF and EXTENT_BUFFER_IN_TREE to
+   EXTENT_BUFFER_HEAD_TREE_REF and EXTENT_BUFFER_HEAD_IN_TREE respectively.    
+
+Chandan Rajendra (15):
+  Btrfs: subpagesize-blocksize: Get rid of whole page reads.
+  Btrfs: subpagesize-blocksize: Get rid of whole page writes.
+  Btrfs: subpagesize-blocksize: __btrfs_buffered_write: Reserve/release
+    extents aligned to block size.
+  Btrfs: subpagesize-blocksize: Read tree blocks whose size is
+    <PAGE_CACHE_SIZE.
+  Btrfs: subpagesize-blocksize: Write only dirty extent buffers
+    belonging to a page
+  Btrfs: subpagesize-blocksize: Compute and look up csums based on
+    sectorsized blocks.
+  Btrfs: subpagesize-blocksize: __extent_writepage: Write only dirty
+    blocks of a page.
+  Btrfs: subpagesize-blocksize: fallocate: Work with sectorsized units.
+  Btrfs: subpagesize-blocksize: btrfs_page_mkwrite: Reserve space in
+    sectorsized units.
+  Btrfs: subpagesize-blocksize: Search for all ordered extents that
+    could span across a page.
+  Btrfs: subpagesize-blocksize: Deal with partial ordered extent
+    allocations.
+  Btrfs: subpagesize-blocksize: Explicitly Track I/O status of blocks of
+    an ordered extent.
+  Btrfs: subpagesize-blocksize: Revert commit
+    fc4adbff823f76577ece26dcb88bf6f8392dbd43.
+  Btrfs: subpagesize-blocksize: Track blocks of ordered extent submitted
+    for write I/O.
+  Btrfs: subpagesize-blocksize: Prevent writes to an extent buffer when
+    PG_writeback flag is set.
+
+Chandra Seetharaman (2):
+  Btrfs: subpagesize-blocksize: Define extent_buffer_head.
+  Btrfs: subpagesize-blocksize: Allow mounting filesystems where
+    sectorsize != PAGE_SIZE
+
+ fs/btrfs/backref.c           |    2 +-
+ fs/btrfs/btrfs_inode.h       |    2 -
+ fs/btrfs/ctree.c             |   22 +-
+ fs/btrfs/ctree.h             |    8 +-
+ fs/btrfs/disk-io.c           |  117 ++--
+ fs/btrfs/disk-io.h           |    3 +
+ fs/btrfs/extent-tree.c       |   18 +-
+ fs/btrfs/extent_io.c         | 1253 +++++++++++++++++++++++++++++-------------
+ fs/btrfs/extent_io.h         |   55 +-
+ fs/btrfs/file-item.c         |   87 +--
+ fs/btrfs/file.c              |   77 +--
+ fs/btrfs/inode.c             |  580 ++++++++++++-------
+ fs/btrfs/ordered-data.c      |   19 +
+ fs/btrfs/ordered-data.h      |    8 +
+ fs/btrfs/volumes.c           |    2 +-
+ include/trace/events/btrfs.h |    2 +-
+ 16 files changed, 1517 insertions(+), 738 deletions(-)
+
+-- 
+2.1.0
+

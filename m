@@ -1,47 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:44498 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751172AbaK0INM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Nov 2014 03:13:12 -0500
-Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 27 Nov 2014 13:43:07 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: lsf-pc@lists.linux-foundation.org
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [LSF/MM TOPIC]: Btrfs: Decoupling block-size and page-size in BTRFS.
-Date: Thu, 27 Nov 2014 13:43:03 +0630
-Message-ID: <4053596.iiH0KJPrOm@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from cantor2.suse.de ([195.135.220.15]:57119 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754988AbaKNKdD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Nov 2014 05:33:03 -0500
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, clm@fb.com
+Subject: [PULL] [PATCH 0/6] Support for 'pending changes'
+Date: Fri, 14 Nov 2014 11:33:01 +0100
+Message-Id: <cover.1415894837.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In BTRFS, BLOCK_SIZE, the basic IO size of the filesystem, is equal to the
-PAGE_SIZE of the architecture. Some 64-bit architectures, like PPC64 and
-ARM64, can/do have a default PAGE_SIZE of 64K, which means the filesystems
-handled in these architectures have a BLOCK_SIZE of 64K.
+There are some actions that modify global filesystem state but cannot be
+performed at the time of request, but rather later at the transaction commit
+time when the filesystem is in a known state.
 
-This works fine as long as you create and use the filesystems within
-these systems. But users cannot create a filesystem in an architecture
-of a specific BLOCK_SIZE and then use that filesystem in another. So a
-filesystem created on x86 cannot be used (mounted, read, ...) on a
-PPC64 or ARM64 system.
+The change can be requested from any context and is permanent after sync. This
+changes the semantics for the sysfs files that modify label or feature bits,
+but I think this does not break existing applications.
 
-9 versions of the subpagesize-blocksize patchset have been posted until today
-(see
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg38862.html). These
-patches address only the issues in regular I/O code path of Btrfs and still
-needs more work to get it working correctly. Other Btrfs features
-(e.g. compression, scrub, etc) also need some work to get them working in
-subpagesize-blocksize scenario.
+You can pull the series from
 
-I believe that a face-to-face discussion involving Btrfs
-maintainers/developers to address some of the design issues would enable us to
-fast track the inclusion of this feature into the mainline kernel tree.
+ git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/pending-changes
+
+David Sterba (6):
+  btrfs: add support for processing pending changes
+  btrfs: do commit in sync_fs if there are pending changes
+  btrfs: switch inode_cache option handling to pending changes
+  btrfs: introduce pending action: commit
+  btrfs: move commit out of sysfs when changing features
+  btrfs: move commit out of sysfs when changing label
+
+ fs/btrfs/ctree.h       | 50 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/disk-io.c     |  8 +++++---
+ fs/btrfs/inode-map.c   |  2 +-
+ fs/btrfs/super.c       | 18 +++++++++++++-----
+ fs/btrfs/sysfs.c       | 34 +++++++++++++---------------------
+ fs/btrfs/transaction.c | 38 ++++++++++++++++++++++++++++++++------
+ fs/btrfs/transaction.h |  2 ++
+ 7 files changed, 115 insertions(+), 37 deletions(-)
 
 -- 
-chandan
+1.8.4.5
 

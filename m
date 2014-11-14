@@ -1,86 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:31268 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1422741AbaKNWAg (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59806 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S934792AbaKNXrl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 17:00:36 -0500
-Message-ID: <54667B7A.8050704@fb.com>
-Date: Fri, 14 Nov 2014 17:00:26 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Fri, 14 Nov 2014 18:47:41 -0500
+Date: Fri, 14 Nov 2014 18:47:34 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: soft lockup - CPU#0 stuck - Kernel 3.17.2
+To: Patrick Schmid <schmid@phys.ethz.ch>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1416008854.25389.12@mail.thefacebook.com>
+In-Reply-To: <1415989860.25389.11@mail.thefacebook.com>
+References: <5464B2DB.7070008@phys.ethz.ch>
+	<1415890157.25389.3@mail.thefacebook.com> <54650166.1090800@phys.ethz.ch>
+	<1415905935.25389.4@mail.thefacebook.com> <54659FDB.6070300@phys.ethz.ch>
+	<1415986775.25389.10@mail.thefacebook.com> <54664884.9010307@phys.ethz.ch>
+	<1415989860.25389.11@mail.thefacebook.com>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>
-Subject: Re: Two persistent problems
-References: <20141114215159.GA32735@carfax.org.uk>
-In-Reply-To: <20141114215159.GA32735@carfax.org.uk>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/14/2014 04:51 PM, Hugo Mills wrote:
->     Chris, Josef, anyone else who's interested,
->
->     On IRC, I've been seeing reports of two persistent unsolved
-> problems. Neither is showing up very often, but both have turned up
-> often enough to indicate that there's something specific going on
-> worthy of investigation.
->
->     One of them is definitely a btrfs problem. The other may be btrfs,
-> or something in the block layer, or just broken hardware; it's hard to
-> tell from where I sit.
->
-> Problem 1: ENOSPC on balance
->
->     This has been going on since about March this year. I can
-> reasonably certainly recall 8-10 cases, possibly a number more. When
-> running a balance, the operation fails with ENOSPC when there's plenty
-> of space remaining unallocated. This happens on full balance, filtered
-> balance, and device delete. Other than the ENOSPC on balance, the FS
-> seems to work OK. It seems to be more prevalent on filesystems
-> converted from ext*. The first few or more reports of this didn't make
-> it to bugzilla, but a few of them since then have gone in.
->
-> Problem 2: Unexplained zeroes
->
->     Failure to mount. Transid failure, "expected xyz, have 0". Chris
-> looked at an early one of these (for Ke, on IRC) back in September
-> (the 27th -- sadly, the public IRC logs aren't there for it, but I can
-> supply a copy of the private log). He rapidly came to the conclusion
-> that it was something bad going on with TRIM, replacing some blocks
-> with zeroes. Since then, I've seen a bunch of these coming past on
-> IRC. It seems to be a 3.17 thing. I can successfully predict the
-> presence of an SSD and -odiscard from the "have 0". I've successfully
-> persuaded several people to put this into bugzilla and capture
-> btrfs-images.  btrfs recover doesn't generally seem to be helpful in
-> recovering data.
->
->
->     I think Josef had problem 1 in his sights, but I don't know if
-> additional images or reports are helpful at this point. For problem 2,
-> there's obviously something bad going on, but there's not much else to
-> go on -- and the inability to recover data isn't good.
->
->     For each of these, what more information should I be trying to
-> collect from any future reporters?
->
->
 
-So for #2 I've been looking at that the last two weeks.  I'm always 
-paranoid we're screwing up one of our data integrity sort of things, 
-either not waiting on IO to complete properly or something like that. 
-I've built a dm target to be as evil as possible and have been running 
-it trying to make bad things happen.  I got slightly side tracked since 
-my stress test exposed a bug in the tree log stuff an csums which I just 
-fixed.  Now that I've fixed that I'm going back to try and make the 
-"expected blah, have 0" type errors happen.
 
-As for the ENOSPC I keep meaning to look into it and I keep getting 
-distracted with other more horrible things.  Ideally I'd like to 
-reproduce it myself, so more info on that front would be good, like do 
-all reports use RAID/compression/some other odd set of features?  Thanks 
-for taking care of this stuff Hugo, #2 is the worst one and I'd like to 
-be absolutely sure it's not our bug, once I'm happy we aren't I'll look 
-at the balance thing.
+On Fri, Nov 14, 2014 at 1:31 PM, Chris Mason <clm@fb.com> wrote:
+> 
+> 
+> On Fri, Nov 14, 2014 at 1:23 PM, Patrick Schmid <schmid@phys.ethz.ch> 
+> wrote:
+>> 
+>>> What kind of machine is this?  I'm trying to reproduce here.
+>> 
+>> The "frontend" hardware is a 24 core Xeon E5-2620 on an Intel 
+>> S2600GZ board with 128 GiB RAM, the nic is a Intel X520-DA2 10Gb/s 
+>> SFP+, running Ubuntu 14.04LTS.
+>> 
+>> Do you need more infos?
+> 
+> No, I think I see the problem.  I'm testing a patch here and I'll 
+> send it later tonight.
+> 
 
-Josef
+Ok, I think this is related to the new fair read/writer lock 
+implementation in the generic kernel code.  btrfs_clear_path_blocking() 
+will end up taking locks outside of the strict locking order the rest 
+of Btrfs uses.  This used to be fine because we hold the blocking lock 
+while we do it, but with the new queued locks we're running into 
+trouble.  We hit a similar bug earlier and I convinced myself the 
+problem was only with btrfs_next_leaf and our trylock.  But it's a 
+bigger problem than I realized.
+
+So for now I've changed btrfs_clear_path_blocking to honor the rules 
+and fixed up our trylock to make it faster.
+
+I'm letting a test run on this patch over the weekend, since I don't 
+want any surprises with your backup farm.
+
+-chris
+
+
+

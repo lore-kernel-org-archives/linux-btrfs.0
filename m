@@ -1,71 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:60590 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:37975 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754014AbaKKLrn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 06:47:43 -0500
-Date: Tue, 11 Nov 2014 12:47:35 +0100
-From: Karel Zak <kzak@redhat.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+	id S933486AbaKNQv3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Nov 2014 11:51:29 -0500
+Date: Fri, 14 Nov 2014 17:51:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Karel Zak <kzak@redhat.com>
+Cc: Anand Jain <Anand.Jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.cz
 Subject: Re: [PATCH 2/2 v4] btrfs-progs: optimize btrfs_scan_lblkid() for
  multiple calls
-Message-ID: <20141111114735.GA24268@x2.net.home>
+Message-ID: <20141114165127.GC8614@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1413334270-25766-1-git-send-email-anand.jain@oracle.com>
  <1414728680-25468-1-git-send-email-anand.jain@oracle.com>
  <1414728680-25468-2-git-send-email-anand.jain@oracle.com>
  <20141031090830.GP10134@x2.net.home>
  <54536CDA.4090901@oracle.com>
+ <20141111114735.GA24268@x2.net.home>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54536CDA.4090901@oracle.com>
+In-Reply-To: <20141111114735.GA24268@x2.net.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 31, 2014 at 07:04:58PM +0800, Anand Jain wrote:
-> 
-> 
-> 
-> 
-> On 31/10/2014 17:08, Karel Zak wrote:
-> >On Fri, Oct 31, 2014 at 12:11:20PM +0800, Anand Jain wrote:
-> >>btrfs_scan_lblikd() is called by most the device related command functions.
-> >>And btrfs_scan_lblkid() is most expensive function and it becomes more expensive
-> >>as number of devices in the system increase. Further some threads call this
-> >
-> >wouldn't be possible to ask udev rather than scan all devices? I
-> >understand than in some cases it's necessary to have robust and
-> >independent solution, but for usual use-cases it would be less
-> >expensive to read the info from udev where we already keep track about
-> >all block devices and where we call libblkid.
-> >
-> >It would be possible to implement it as optional feature (#ifdev HAVE_LIBUDEV),
-> >the library API is very easy to use.
-> >
-> >(For example lsblk uses libblkid as fallback, the default is udev).
-> >
-> >     Karel
-> >
-> >
-> 
-> I might be missing something, correct me if wrong. Is there any udev API
-> which gives me a list of devices which hold btrfs ? I just browsed
-> through there isn't any.
+On Tue, Nov 11, 2014 at 12:47:35PM +0100, Karel Zak wrote:
+>  What I see critical is missing ./configure, because it's pretty ugly
+>  to add hardcoded dependencies (e.g. libudev), there is also no checks
+>  for another libs, Makefile does not care about place where libs are
+>  installed, header files,  etc. etc.
 
- See  udev_enumerate_* API, nice example:
- http://www.signal11.us/oss/udev/
+It does, prefix and libdir are set conditionally, DESTDIR works.
 
- Anyway, I have sent patches that implement this feature to btrfs-progs. 
+>  Is there any fundamental problem with autoconf? If no, then I'm ready
+>  to send patches with some autotools stuff. Comments?
 
- What I see critical is missing ./configure, because it's pretty ugly
- to add hardcoded dependencies (e.g. libudev), there is also no checks
- for another libs, Makefile does not care about place where libs are
- installed, header files,  etc. etc.
+Yeah the build dependencies checks would be nice, there's no problem
+with autoconf.
 
- Is there any fundamental problem with autoconf? If no, then I'm ready
- to send patches with some autotools stuff. Comments?
-
-    Karel
-
--- 
- Karel Zak  <kzak@redhat.com>
- http://karelzak.blogspot.com
+The Makefile has been manualy crafted and supports some macro magic to
+build several binaries from one rule, static targets, quiet/verbose
+build. I want to preserve all of this so transition to automake may take
+time (or may not happen in the end).

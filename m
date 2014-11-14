@@ -1,35 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33514 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:33867 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161140AbaKNNu3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 08:50:29 -0500
-Date: Fri, 14 Nov 2014 14:50:27 +0100
+	id S1754140AbaKNOFJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Nov 2014 09:05:09 -0500
 From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: miaox@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: don't take the chunk_mutex/dev_list mutex in
- statfs V2
-Message-ID: <20141114135027.GF30713@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1415023010-12988-1-git-send-email-jbacik@fb.com>
- <5458A9F1.1070901@cn.fujitsu.com>
- <545B8725.40909@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <545B8725.40909@fb.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: fix wrong accounting of raid1 data profile in statfs
+Date: Fri, 14 Nov 2014 15:05:06 +0100
+Message-Id: <1415973906-19990-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 06, 2014 at 09:35:17AM -0500, Josef Bacik wrote:
-> Yeah df if you change alloc_start in the middle of it is going to be 
-> slightly racey, which is fine since I'm going to kill alloc_start soon 
-> anyway.
+The sizes that are obtained from space infos are in raw units and have
+to be adjusted according to the raid factor. This was missing for
+f_bavail and df reported doubled size for raid1.
 
-Go on, seems that there was never a real usecase for that. According to
-the original post, it was to test resizer:
+Reported-by: Martin Steigerwald <Martin@lichtvoll.de>
+Fixes: ba7b6e62f420 ("btrfs: adjust statfs calculations according to raid profiles")
+CC: stable@vger.kernel.org
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-http://thread.gmane.org/gmane.linux.file-systems/20355
-"mount -o alloc_start=num forces allocation hints to start at least num
-bytes into the disk.  This was introduced to test the resizer."
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 54bd91ece35b..cde9c03e3913 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1824,7 +1824,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	buf->f_bfree -= block_rsv->size >> bits;
+ 	spin_unlock(&block_rsv->lock);
+ 
+-	buf->f_bavail = total_free_data;
++	buf->f_bavail = div_u64(total_free_data, factor);
+ 	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
+ 	if (ret) {
+ 		mutex_unlock(&fs_info->chunk_mutex);
+-- 
+1.8.4.5
 
-I'll probably remove it from mkfs as well.

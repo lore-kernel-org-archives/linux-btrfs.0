@@ -1,63 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:2495 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S965546AbaKNNtZ (ORCPT
+	with ESMTP id S965560AbaKNNt0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 08:49:25 -0500
+	Fri, 14 Nov 2014 08:49:26 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAEDn91q005807
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2014 21:49:09 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAEDnBfJ005813
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2014 21:49:11 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/9] Implement device scrub/replace for RAID56
-Date: Fri, 14 Nov 2014 21:50:52 +0800
-Message-ID: <1415973061-8643-1-git-send-email-miaox@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/9] Btrfs: remove unnecessary code of stripe_index assignment in __btrfs_map_block
+Date: Fri, 14 Nov 2014 21:50:54 +0800
+Message-ID: <1415973061-8643-3-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1415973061-8643-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1415973061-8643-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset implement the device scrub/replace function for RAID56, the
-most implementation of the common data is similar to the other RAID type.
-The differentia or difficulty is the parity process. In order to avoid
-that problem the data that is easy to be change out the stripe lock,
-we do most work in the RAID56 stripe lock context.
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-And in order to avoid making the code more and more complex, we copy some
-code of common data process for the parity, the cleanup work is in my
-TODO list.
+stripe_index's value was set again in latter line:
+stripe_index = 0;
 
-We have done some test, the patchset worked well. Of course, more tests
-are welcome. If you are interesting to use it or test it, you can pull
-the patchset from
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-  https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
-
-Thanks
-Miao
-
-Miao Xie (6):
-  Btrfs, raid56: don't change bbio and raid_map
-  Btrfs, scrub: repair the common data on RAID5/6 if it is corrupted
-  Btrfs,raid56: use a variant to record the operation type
-  Btrfs,raid56: support parity scrub on raid56
-  Btrfs, replace: write dirty pages into the replace target device
-  Btrfs, replace: write raid56 parity into the replace target device
-
-Zhao Lei (3):
-  Btrfs: remove noused bbio_ret in __btrfs_map_block in condition
-  Btrfs: remove unnecessary code of stripe_index assignment in
-    __btrfs_map_block
-  Btrfs, replace: enable dev-replace for raid56
-
- fs/btrfs/dev-replace.c |   5 -
- fs/btrfs/raid56.c      | 711 +++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/raid56.h      |  14 +-
- fs/btrfs/scrub.c       | 793 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.c     |  47 ++-
- fs/btrfs/volumes.h     |  14 +-
- 6 files changed, 1471 insertions(+), 113 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 41b0dff..66d5035 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5167,9 +5167,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 
+ 			/* push stripe_nr back to the start of the full stripe */
+ 			stripe_nr = raid56_full_stripe_start;
+-			do_div(stripe_nr, stripe_len);
+-
+-			stripe_index = do_div(stripe_nr, nr_data_stripes(map));
++			do_div(stripe_nr, stripe_len * nr_data_stripes(map));
+ 
+ 			/* RAID[56] write or recovery. Return all stripes */
+ 			num_stripes = map->num_stripes;
 -- 
 1.9.3
 

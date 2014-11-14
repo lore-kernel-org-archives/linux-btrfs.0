@@ -1,65 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57151 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57146 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755119AbaKNKdT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 05:33:19 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 09B17AD1E
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2014 10:33:18 +0000 (UTC)
+	id S1755091AbaKNKdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Nov 2014 05:33:15 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D452DAD35
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Nov 2014 10:33:14 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 5/6] btrfs: move commit out of sysfs when changing features
-Date: Fri, 14 Nov 2014 11:33:17 +0100
-Message-Id: <0eae2747ec1ddcef5018827bce8f7d33b7d920e1.1415894838.git.dsterba@suse.cz>
+Subject: [PATCH 4/6] btrfs: introduce pending action: commit
+Date: Fri, 14 Nov 2014 11:33:14 +0100
+Message-Id: <d51033d05547675f898ce4233a7d8d1a0dfe2984.1415894837.git.dsterba@suse.cz>
 In-Reply-To: <cover.1415894837.git.dsterba@suse.cz>
 References: <cover.1415894837.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In some contexts, like in sysfs handlers, we don't want to trigger a
+transaction commit. It's a heavy operation, we don't know what external
+locks may be taken. Instead, make it possible to finish the operation
+through sync syscall or SYNC_FS ioctl.
+
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/sysfs.c | 13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.h       | 1 +
+ fs/btrfs/transaction.c | 5 +++++
+ 2 files changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index b2e7bb4393f6..226f7261533a 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -111,7 +111,6 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- {
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
--	struct btrfs_trans_handle *trans;
- 	u64 features, set, clear;
- 	unsigned long val;
- 	int ret;
-@@ -153,10 +152,6 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	btrfs_info(fs_info, "%s %s feature flag",
- 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1c9157e4ab0c..817fc19b8159 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2132,6 +2132,7 @@ struct btrfs_ioctl_defrag_range_args {
  
--	trans = btrfs_start_transaction(fs_info->fs_root, 0);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
--
- 	spin_lock(&fs_info->super_lock);
- 	features = get_features(fs_info, fa->feature_set);
- 	if (val)
-@@ -166,9 +161,11 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	set_features(fs_info, fa->feature_set, features);
- 	spin_unlock(&fs_info->super_lock);
+ #define BTRFS_PENDING_SET_INODE_MAP_CACHE	(0)
+ #define BTRFS_PENDING_CLEAR_INODE_MAP_CACHE	(1)
++#define BTRFS_PENDING_COMMIT			(2)
  
--	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
--	if (ret)
--		return ret;
-+	/*
-+	 * We don't want to do full transaction commit from inside sysfs
-+	 */
-+	btrfs_set_pending(fs_info, COMMIT);
-+	wake_up_process(fs_info->transaction_kthread);
+ #define btrfs_test_pending(info, opt)	\
+ 	test_bit(BTRFS_PENDING_##opt, &(info)->pending_changes)
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 703238ed7337..9d8e2b8d12b4 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2036,6 +2036,11 @@ void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info)
+ 		btrfs_clear_opt(fs_info->mount_opt, INODE_MAP_CACHE);
+ 	prev &= ~bit;
  
- 	return count;
- }
++	bit = 1 << BTRFS_PENDING_COMMIT;
++	if (prev & bit)
++		btrfs_debug(fs_info, "pending commit done");
++	prev &= ~bit;
++
+ 	if (prev)
+ 		btrfs_warn(fs_info,
+ 			"unknown pending changes left 0x%lx, ignoring", prev);
 -- 
 1.8.4.5
 

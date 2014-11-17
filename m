@@ -1,73 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f182.google.com ([209.85.216.182]:42873 "EHLO
-	mail-qc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751620AbaKQU4Q (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:56167 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752315AbaKQWzS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Nov 2014 15:56:16 -0500
-Received: by mail-qc0-f182.google.com with SMTP id r5so5209187qcx.27
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2014 12:56:16 -0800 (PST)
-Message-ID: <546A60D0.8000800@ubuntu.com>
-Date: Mon, 17 Nov 2014 15:55:44 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Mon, 17 Nov 2014 17:55:18 -0500
+Received: by mail-wi0-f171.google.com with SMTP id bs8so16446wib.16
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2014 14:55:17 -0800 (PST)
 MIME-Version: 1.0
-To: kreijack@inwind.it, Bob Marley <bobmarley@shiftmail.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Re: What is the vision for btrfs fs repair?
-References: <54358C77.2070808@redhat.com> <9251D9EB-5B12-4885-8C6B-FFA10B1CDA24@colorremedies.com> <5437BAB2.1040605@shiftmail.org> <5438DC47.7000901@inwind.it>
-In-Reply-To: <5438DC47.7000901@inwind.it>
-Content-Type: text/plain; charset=windows-1252
+Date: Mon, 17 Nov 2014 16:55:17 -0600
+Message-ID: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
+Subject: Btrfs on a failing drive
+From: Fennec Fox <fennectech@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+well i am an arch linux user and machine owner using a failing drive
+  its still relyable enough for me but btrfs seems not to mark bad
+blocks as unusable and continues to try to write to them.
+/bbs.archlinux.org/viewtopic.php?pid=1476540#p1476540  this forum post
+ has a few more details regarding the problem  i really need a bit of
+help  thank you
 
-On 10/11/2014 3:29 AM, Goffredo Baroncelli wrote:
-> On 10/10/2014 12:53 PM, Bob Marley wrote:
->>> 
->>> If true, maybe the closest indication we'd get of btrfs
->>> stablity is the default enabling of autorecovery.
->> 
->> No way! I wouldn't want a default like that.
->> 
->> If you think at distributed transactions: suppose a sync was
->> issued on both sides of a distributed transaction, then power was
->> lost on one side, than btrfs had corruption. When I remount it,
->> definitely the worst thing that can happen is that it
->> auto-rolls-back to a previous known-good state.
-> 
-> I cannot agree. I consider a sane default to have a consistent
-> state with "the recently data written lost", instead of "require
-> the user intervention to not lost anything".
-> 
-> To address your requirement, we need a "super sync" command which 
-> ensure that the data are in the filesystem and not only in the log
-> (as sync should ensure).
+Btrfs v3.17.1
+Linux archos 3.17.3-1-ARCH #1 SMP PREEMPT Fri Nov 14 22:56:01 CET 2014
+i686 GNU/Linux
+Label: none  uuid: 9d7de4cb-d0a6-4b63-af65-9e055197808d
+Total devices 1 FS bytes used 75.62GiB
+devid    1 size 288.09GiB used 288.09GiB path /dev/sda1
 
-I have to agree.  There is a reason we have fsck -p and why that is what
-is run at boot time.  Some repairs involve a tradeoff that will result
-in permanent data loss that maybe could be avoided by going the other
-way, or performing manual recovery.  Such repairs should never be done
-automatically by default.
+Btrfs v3.17.1
 
-For that matter I'm not even sure this sort of thing should be there as
-a mount option at all.  It really should require a manual fsck run with
-a big warning that *THIS WILL THROW OUT SOME DATA*.
+[fennectech@archos ~]$ sudo   btrfs fi df /
+Data, single: total=286.06GiB, used=75.02GiB
+System, DUP: total=8.00MiB, used=48.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=1.00GiB, used=615.66MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=208.00MiB, used=0.00B
 
-Now if the data is saved to a snapshot or something so you can manually
-try to recover it later rather than being thrown out wholesale, I can
-see that being done automatically at boot time.  Of course, if btrfs is
-that damaged then wouldn't grub be unable to load your kernel in the
-first place?
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
-
-iQEcBAEBAgAGBQJUamDQAAoJEI5FoCIzSKrwaYAIAKXgkGBbBZj6yUuLC1+euim6
-6Xqer1DiGywEiO4UPaxmq3rHDOlZlyIamDpUi7nIvbfK+TgBWfEVtLvdd6shjfqA
-FvFv7t+X2mlAyk+iGffSK1w9/qgEhE55M35exba95Cdsn0ezos4LpvTsL1128nkx
-uGzYQcoYj1irkmDp133JuHYAxhrAp0Q6PB+5gIgWfRsVbGezcxg5FvqzotEq1J/d
-7MT1FvdoUo5qt2j/KzTUfD5AlFhsXE5beykakMdFmoHlTCQAxEeUU21z6APclkxF
-/b/ppLt603Vpb6rpKvNUyBy1TuPr6FJEx5O2qWUWlhRxkOUB98M86KHyWVBHtMM=
-=uG+h
------END PGP SIGNATURE-----
+10485756k FS
+[   15.003094] mousedev: PS/2 mouse device common for all mice
+[   17.894442] atl1c 0000:05:00.0: irq 30 for MSI/MSI-X
+[   17.907192] IPv6: ADDRCONF(NETDEV_UP): enp5s0: link is not ready
+[   17.927793] IPv6: ADDRCONF(NETDEV_UP): wlp4s0: link is not ready
+[   19.298877] wlp4s0: authenticate with 20:e5:2a:5f:38:9c
+[   19.313224] wlp4s0: send auth to 20:e5:2a:5f:38:9c (try 1/3)
+[   19.314876] wlp4s0: authenticated
+[   19.316730] wlp4s0: associate with 20:e5:2a:5f:38:9c (try 1/3)
+[   19.319151] wlp4s0: RX AssocResp from 20:e5:2a:5f:38:9c
+(capab=0x421 status=0 aid=1)
+[   19.319274] wlp4s0: associated
+[   19.319295] IPv6: ADDRCONF(NETDEV_CHANGE): wlp4s0: link becomes ready
+[   70.470562] fuse init (API version 7.23)
+[   83.050733] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[   83.052317] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[   84.305761] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[   84.306348] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[   84.318911] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780
+[   84.319115] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780
+[   84.319317] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780
+[   86.306536] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[   91.050707] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[  101.185462] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[  102.998155] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780
+[  103.140555] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[  103.464885] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780
+[  103.474580] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[  103.496146] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[  103.498569] BTRFS info (device sda1): csum failed ino 3048916 off
+33030144 csum 1217419445 expected csum 510562246
+[  103.499630] BTRFS info (device sda1): csum failed ino 3048916 off
+21884928 csum 1036763273 expected csum 3160828041
+[  103.499783] BTRFS info (device sda1): csum failed ino 3048916 off
+9314304 csum 786831086 expected csum 1264200780

@@ -1,87 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49255 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752146AbaKQBmh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Nov 2014 20:42:37 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XqBKs-0004ME-38
-	for linux-btrfs@vger.kernel.org; Mon, 17 Nov 2014 02:42:34 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2014 02:42:34 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2014 02:42:34 +0100
+Received: from fw6a-lucie.wadns.net ([41.185.62.28]:16451 "EHLO fw6a.wadns.net"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750967AbaKQHMb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Nov 2014 02:12:31 -0500
+Message-ID: <54699CC7.1050909@swiftspirit.co.za>
+Date: Mon, 17 Nov 2014 08:59:19 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+CC: bug-grub@gnu.org
 Subject: Re: BTRFS messes up snapshot LV with origin
-Date: Mon, 17 Nov 2014 01:42:23 +0000 (UTC)
-Message-ID: <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+In-Reply-To: <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-MegaBrutal posted on Sun, 16 Nov 2014 22:35:26 +0100 as excerpted:
+cc'd bug-grub@gnu.org for FYI
 
-> Hello guys,
-> 
-> I think you'll like this...
-> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1391429
+On 2014/11/17 03:42, Duncan wrote:
+> MegaBrutal posted on Sun, 16 Nov 2014 22:35:26 +0100 as excerpted:
+>
+>> Hello guys,
+>>
+>> I think you'll like this...
+>> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1391429
+> UUID is an initialism for "Universally Unique IDentifier".[1]
+>
+> If the UUID isn't unique, by definition, then, it can't be a UUID, and
+> that's a bug in whatever is making the non-unique would-be UUID that
+> isn't unique and thus cannot be a universally unique ID.  In this case
+> that would appear to be LVM.
+Perhaps the right question to ask is "Where should this bug be fixed?".
 
-UUID is an initialism for "Universally Unique IDentifier".[1]
+TL;DR: This needs more thought and input from btrfs devs. To LVM, the 
+bug is likely seen as being "out of scope". The "correct" fix probably 
+lies in the ecosystem design, which requires co-operation from btrfs.
 
-If the UUID isn't unique, by definition, then, it can't be a UUID, and 
-that's a bug in whatever is making the non-unique would-be UUID that 
-isn't unique and thus cannot be a universally unique ID.  In this case 
-that would appear to be LVM.
+Making a snapshot in LVM is a fundamental thing - and I feel LVM, in 
+making its snapshot, is doing its job "exactly as expected".
 
-Meanwhile, if two or more devices are btrfs and have the same UUID, btrfs 
-considers them part of the same filesystem, since btrfs /can/ be a multi-
-device filesystem.  That's not a bug; that's the way btrfs IDs multiple 
-devices as part of the same filesystem, because a UUID, by definition, 
-can be relied upon to be unique, or it's no longer a UUID.  Additionally, 
-the UUID is actually written into the metadata of the filesystem in such 
-a way that it's /not/ a simple task to change the UUID.  Put simply, it's 
-"ingrained" into the filesystem so deeply it cannot be changed, at least 
-not without rewriting pretty much all the metadata.  (FWIW, a btrfs 
-balance does just that, rewrite the data, metadata, or both.  However, I 
-don't believe a balance plugin to change the UUID is yet available.  
-You're simply not supposed to change the UUID once the filesystem is 
-created.)
+Additionally, there are other ways to get to a similar state without 
+LVM: ddrescue backup, SAN snapshot, old "missing" disk re-introduced, etc.
 
-So if LVM snapshots duplicate a UUID, as I believe they do, then there's 
-your bug, because they're breaking the definition of Universally *UNIQUE* 
-ID.  That being the case, using them with btrfs is pretty essentially 
-broken, because btrfs depends on UUIDs to be what they say on the label, 
-actually "unique", and UUIDs are deeply enough ingrained into the very 
-fabric of btrfs that it's simply not possible to change that on the btrfs 
-side.
+That leaves two places where this can be fixed: grub and btrfs
 
-Meanwhile, since btrfs *DOES* depend on UUIDs being unique, if there's 
-multiple btrfs that accidentally have the same UUID, btrfs will not 
-distinguish between them and will very possibly be writing into both of 
-them.  If I found myself in that situation, I'd very carefully copy all 
-the data I wanted to save off the filesystem and do a new mkfs as soon as 
-possible, because I would not consider the filesystem as it was at all 
-stable, and I'd count myself very lucky if I got everything off the 
-filesystem without damage.  In actuality, since the second device was a 
-snapshot of the first, if you catch it reasonably quickly you likely 
-won't have too many issues.  However, a btrfs in that condition is in an 
-undefined state, and the longer it exists in that state, the more likely 
-things are to go wrong, possibly VERY VERY wrong.  So if you don't 
-already have backups for anything you consider valuable on that thing, 
-get it off there as soon as you possibly can, and consider yourself very 
-lucky if nothing's damaged as a result.
+Grub is already a little smart here - it avoids snapshots. But in this 
+case it is relying on the UUID and only finding it in the snapshot. So 
+possibly this is a bug in grub affecting the bug reporter specifically - 
+but perhaps the bug is in btrfs where grub is relying on btrfs code.
 
----
-[1] http://en.wiktionary.org/wiki/UUID
+Yes, I'd rather use btrfs' snapshot mechanism - but this is often a 
+choice that is left to the user/admin/distro. I don't think saying "LVM 
+snapshots are incompatible with btrfs" is the right way to go either.
+
+That leaves two aspects of this issue which I view as two separate bugs:
+a) Btrfs cannot gracefully handle separate filesystems that have the 
+same UUID. At all.
+b) Grub appears to pick the wrong filesystem when presented with two 
+filesystems with the same UUID.
+
+I feel a) is a btrfs bug.
+I feel b) is a bug that is more about "ecosystem design" than grub being 
+silly.
+
+I imagine a couple of aspects that could help fix a):
+- Utilise a "unique drive identifier" in the btrfs metadata (surely this 
+exists already?). This way, any two filesystems will always have 
+different drive identifiers *except* in cases like a ddrescue'd copy or 
+a block-level snapshot. This will provide a sensible mechanism for 
+"defined behaviour", preventing corruption - even if that "defined 
+behaviour" is to simply give out lots of "PEBKAC" errors and panic.
+- Utilise a "drive list" to ensure that two unrelated filesystems with 
+the same UUID cannot get "mixed up". Yes, the user/admin would likely be 
+the culprit here (perhaps a VM rollout process that always gives out the 
+same UUID in all its filesystems). Again, does btrfs not already have 
+something like this built-in that we're simply not utilising fully?
+
+I'm not exactly sure of the "correct" way to fix b) except that I 
+imagine it would be trivial to fix once a) is fixed.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

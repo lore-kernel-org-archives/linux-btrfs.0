@@ -1,66 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63591 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1161810AbaKNVQf (ORCPT
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:49016 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752566AbaKQKh2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 16:16:35 -0500
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <stable@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not move em to modified list when unpinning
-Date: Fri, 14 Nov 2014 16:16:30 -0500
-Message-ID: <1415999790-4144-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 17 Nov 2014 05:37:28 -0500
+Received: by mail-pd0-f169.google.com with SMTP id fp1so3628222pdb.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Nov 2014 02:37:27 -0800 (PST)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org,
+        <linux-fsdevel@vger.kernel.org>, Omar Sandoval <osandov@osandov.com>
+Subject: [RFC PATCH 6/6] btrfs: enable swap file support
+Date: Mon, 17 Nov 2014 02:36:59 -0800
+Message-Id: <168a953b14d11e551d9d1a79f4c1ae3a87c2e1a3.1416219974.git.osandov@osandov.com>
+In-Reply-To: <cover.1416219974.git.osandov@osandov.com>
+References: <cover.1416219974.git.osandov@osandov.com>
+In-Reply-To: <cover.1416219974.git.osandov@osandov.com>
+References: <cover.1416219974.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use the modified list to keep track of which extents have been modified so we
-know which ones are candidates for logging at fsync() time.  Newly modified
-extents are added to the list at modification time, around the same time the
-ordered extent is created.  We do this so that we don't have to wait for ordered
-extents to complete before we know what we need to log.  The problem is when
-something like this happens
+Implement the swap file a_ops on btrfs. Activation simply checks for a usable
+swap file: it must be fully allocated (no holes), support direct I/O (so no
+compressed or inline extents) and should be nocow (I'm not sure about that last
+one).
 
-log extent 0-4k on inode 1
-copy csum for 0-4k from ordered extent into log
-sync log
-commit transaction
-log some other extent on inode 1
-ordered extent for 0-4k completes and adds itself onto modified list again
-log changed extents
-see ordered extent for 0-4k has already been logged
-	at this point we assume the csum has been copied
-sync log
-crash
-
-On replay we will see the extent 0-4k in the log, drop the original 0-4k extent
-which is the same one that we are replaying which also drops the csum, and then
-we won't find the csum in the log for that bytenr.  This of course causes us to
-have errors about not having csums for certain ranges of our inode.  So remove
-the modified list manipulation in unpin_extent_cache, any modified extents
-should have been added well before now, and we don't want them re-logged.  This
-fixes my test that I could reliably reproduce this problem with.  Thanks,
-
-cc: stable@vger.kernel.org
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/extent_map.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/inode.c | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 225302b..6a98bdd 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -287,8 +287,6 @@ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len,
- 	if (!em)
- 		goto out;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0e84316..c7cce4e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9442,6 +9442,75 @@ out_inode:
  
--	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
--		list_move(&em->list, &tree->modified_extents);
- 	em->generation = gen;
- 	clear_bit(EXTENT_FLAG_PINNED, &em->flags);
- 	em->mod_start = em->start;
+ }
+ 
++static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
++			       sector_t *span)
++{
++	struct inode *inode = file_inode(file);
++	struct btrfs_inode *ip = BTRFS_I(inode);
++	int ret = 0;
++	u64 isize = inode->i_size;
++	struct extent_state *cached_state = NULL;
++	struct extent_map *em;
++	u64 start, len;
++
++	if (ip->flags & BTRFS_INODE_COMPRESS) {
++		/* Can't do direct I/O on a compressed file. */
++		pr_err("BTRFS: swapfile is compressed");
++		return -EINVAL;
++	}
++	if (!(ip->flags & BTRFS_INODE_NODATACOW)) {
++		/* The swap file can't be copy-on-write. */
++		pr_err("BTRFS: swapfile is copy-on-write");
++		return -EINVAL;
++	}
++
++	lock_extent_bits(&ip->io_tree, 0, isize - 1, 0, &cached_state);
++
++	/*
++	 * All of the extents must be allocated and support direct I/O. Inline
++	 * extents and compressed extents fall back to buffered I/O, so those
++	 * are no good.
++	 */
++	start = 0;
++	while (start < isize) {
++		len = isize - start;
++		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
++		if (IS_ERR(em)) {
++			ret = PTR_ERR(em);
++			goto out;
++		}
++
++		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags) ||
++		    em->block_start == EXTENT_MAP_HOLE) {
++			pr_err("BTRFS: swapfile has holes");
++			ret = -EINVAL;
++			goto out;
++		}
++		if (em->block_start == EXTENT_MAP_INLINE) {
++			pr_err("BTRFS: swapfile is inline");
++			ret = -EINVAL;
++			goto out;
++		}
++		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
++			pr_err("BTRFS: swapfile is compresed");
++			ret = -EINVAL;
++			goto out;
++		}
++
++		start = extent_map_end(em);
++		free_extent_map(em);
++	}
++
++out:
++	unlock_extent_cached(&ip->io_tree, 0, isize - 1, &cached_state,
++			     GFP_NOFS);
++	return ret;
++}
++
++static void btrfs_swap_deactivate(struct file *file)
++{
++}
++
+ static const struct inode_operations btrfs_dir_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.lookup		= btrfs_lookup,
+@@ -9519,6 +9588,8 @@ static const struct address_space_operations btrfs_aops = {
+ 	.releasepage	= btrfs_releasepage,
+ 	.set_page_dirty	= btrfs_set_page_dirty,
+ 	.error_remove_page = generic_error_remove_page,
++	.swap_activate	= btrfs_swap_activate,
++	.swap_deactivate = btrfs_swap_deactivate,
+ };
+ 
+ static const struct address_space_operations btrfs_symlink_aops = {
 -- 
-1.8.3.1
+2.1.3
 

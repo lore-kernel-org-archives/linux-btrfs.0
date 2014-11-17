@@ -1,160 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw12a-leta.wadns.net ([41.185.62.175]:19180 "EHLO
-	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751464AbaKQJBP (ORCPT
+Received: from mout.web.de ([212.227.17.12]:65344 "EHLO mout.web.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752316AbaKQLAI convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Nov 2014 04:01:15 -0500
-Message-ID: <5469B945.3000405@swiftspirit.co.za>
-Date: Mon, 17 Nov 2014 11:00:53 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+	Mon, 17 Nov 2014 06:00:08 -0500
+Message-ID: <5469D524.7010808@web.de>
+Date: Mon, 17 Nov 2014 11:59:48 +0100
+From: Konstantin <newsbox1026@web.de>
 MIME-Version: 1.0
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        bug-grub@gnu.org
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <CAGC3nLDFYQpc+VGF2K5HLLiNr6TgSoxO0ES9cS581dnvRLNkBg@mail.gmail.com>
-In-Reply-To: <CAGC3nLDFYQpc+VGF2K5HLLiNr6TgSoxO0ES9cS581dnvRLNkBg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: unlisted-recipients:; (no To-header on input)
+To: Josef Bacik <jbacik@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
+Subject: Re: Two persistent problems
+References: <20141114215159.GA32735@carfax.org.uk> <54667B7A.8050704@fb.com>
+In-Reply-To: <54667B7A.8050704@fb.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/11/17 09:35, Daniel Dressler top-posted:
-> If a UUID is not unique enough how will adding a second UUID or
-> "unique drive identifier" help?
-A UUID is *supposed* to be unique by design. Isolated, the design is 
-adequate.
-
-But the bigger picture clearly shows the design is naive. And broken.
-
-A second per-disk id (note I said "unique" - but I never said universal 
-as in "UUID") would allow for better-defined behaviour where, presently, 
-we're simply saying "current behaviour is undefined and you're likely to 
-get corruption".
-
-On the other hand, I asked already if we have IDs of some sort (how else 
-do we know which disk a chunk is stored on?), thus I don't think we need 
-to add anything to the format.
-
-A simple scenario similar to the one the OP introduced:
-
-Disk sda -> says it is UUID Z with diskid 0
-Disk sdb -> says it is UUID Z with diskid 0
-
-If we're ignoring the fact that there are two disks with the same UUID 
-and diskid and it causes corruption, then the kernel is doing something 
-"stupid but fixable". We have some choices:
-- give a clear warning and ignore one of the disks (could just pick the 
-first one - or be a little smarter and pick one based on some heuristic 
-- for example extent generation number)
-- give a clear error and panic
-
-Normal multi-disk scenario:
-Disk sda -> UUID Z with diskid 1
-Disk sdb -> UUID Z with diskid 2
-
-These two disks are in the same filesystem and are supposed to work 
-together - no issues.
-
-My second suggestion covers another scenario as well:
-
-Disk sda -> UUID Z with diskid 1; root block indicates that only diskid 
-1 is recorded as being part of the filesystem
-Disk sdb -> UUID Z with diskid 3; root block indicates that only diskid 
-3 is recorded as being part of the filesystem
-
-Again, based on the existing featureset, it seems reasonable that this 
-information should already be recorded in the fs metadata. If the 
-behaviour is "undefined" and causing corruption, again the kernel is 
-currently doing something "stupid but fixable". Again, we have similar 
-choices:
-- give a clear warning and ignore bad disk(s)
-- give a clear error and panic
-
-> 2014-11-17 15:59 GMT+09:00 Brendan Hide <brendan@swiftspirit.co.za>:
->> cc'd bug-grub@gnu.org for FYI
+Josef Bacik wrote on 14.11.2014 at 23:00:
+> On 11/14/2014 04:51 PM, Hugo Mills wrote:
+>>     Chris, Josef, anyone else who's interested,
 >>
->> On 2014/11/17 03:42, Duncan wrote:
->>> MegaBrutal posted on Sun, 16 Nov 2014 22:35:26 +0100 as excerpted:
->>>
->>>> Hello guys,
->>>>
->>>> I think you'll like this...
->>>> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1391429
->>> UUID is an initialism for "Universally Unique IDentifier".[1]
->>>
->>> If the UUID isn't unique, by definition, then, it can't be a UUID, and
->>> that's a bug in whatever is making the non-unique would-be UUID that
->>> isn't unique and thus cannot be a universally unique ID.  In this case
->>> that would appear to be LVM.
->> Perhaps the right question to ask is "Where should this bug be fixed?".
+>>     On IRC, I've been seeing reports of two persistent unsolved
+>> problems. Neither is showing up very often, but both have turned up
+>> often enough to indicate that there's something specific going on
+>> worthy of investigation.
 >>
->> TL;DR: This needs more thought and input from btrfs devs. To LVM, the bug is
->> likely seen as being "out of scope". The "correct" fix probably lies in the
->> ecosystem design, which requires co-operation from btrfs.
+>>     One of them is definitely a btrfs problem. The other may be btrfs,
+>> or something in the block layer, or just broken hardware; it's hard to
+>> tell from where I sit.
 >>
->> Making a snapshot in LVM is a fundamental thing - and I feel LVM, in making
->> its snapshot, is doing its job "exactly as expected".
+>> Problem 1: ENOSPC on balance
 >>
->> Additionally, there are other ways to get to a similar state without LVM:
->> ddrescue backup, SAN snapshot, old "missing" disk re-introduced, etc.
+>>     This has been going on since about March this year. I can
+>> reasonably certainly recall 8-10 cases, possibly a number more. When
+>> running a balance, the operation fails with ENOSPC when there's plenty
+>> of space remaining unallocated. This happens on full balance, filtered
+>> balance, and device delete. Other than the ENOSPC on balance, the FS
+>> seems to work OK. It seems to be more prevalent on filesystems
+>> converted from ext*. The first few or more reports of this didn't make
+>> it to bugzilla, but a few of them since then have gone in.
 >>
->> That leaves two places where this can be fixed: grub and btrfs
+>> Problem 2: Unexplained zeroes
 >>
->> Grub is already a little smart here - it avoids snapshots. But in this case
->> it is relying on the UUID and only finding it in the snapshot. So possibly
->> this is a bug in grub affecting the bug reporter specifically - but perhaps
->> the bug is in btrfs where grub is relying on btrfs code.
->>
->> Yes, I'd rather use btrfs' snapshot mechanism - but this is often a choice
->> that is left to the user/admin/distro. I don't think saying "LVM snapshots
->> are incompatible with btrfs" is the right way to go either.
->>
->> That leaves two aspects of this issue which I view as two separate bugs:
->> a) Btrfs cannot gracefully handle separate filesystems that have the same
->> UUID. At all.
->> b) Grub appears to pick the wrong filesystem when presented with two
->> filesystems with the same UUID.
->>
->> I feel a) is a btrfs bug.
->> I feel b) is a bug that is more about "ecosystem design" than grub being
->> silly.
->>
->> I imagine a couple of aspects that could help fix a):
->> - Utilise a "unique drive identifier" in the btrfs metadata (surely this
->> exists already?). This way, any two filesystems will always have different
->> drive identifiers *except* in cases like a ddrescue'd copy or a block-level
->> snapshot. This will provide a sensible mechanism for "defined behaviour",
->> preventing corruption - even if that "defined behaviour" is to simply give
->> out lots of "PEBKAC" errors and panic.
->> - Utilise a "drive list" to ensure that two unrelated filesystems with the
->> same UUID cannot get "mixed up". Yes, the user/admin would likely be the
->> culprit here (perhaps a VM rollout process that always gives out the same
->> UUID in all its filesystems). Again, does btrfs not already have something
->> like this built-in that we're simply not utilising fully?
->>
->> I'm not exactly sure of the "correct" way to fix b) except that I imagine it
->> would be trivial to fix once a) is fixed.
->>
->> --
->> __________
->> Brendan Hide
->> http://swiftspirit.co.za/
->> http://www.webafrica.co.za/?AFF1E97
+>>     Failure to mount. Transid failure, "expected xyz, have 0". Chris
+>> looked at an early one of these (for Ke, on IRC) back in September
+>> (the 27th -- sadly, the public IRC logs aren't there for it, but I can
+>> supply a copy of the private log). He rapidly came to the conclusion
+>> that it was something bad going on with TRIM, replacing some blocks
+>> with zeroes. Since then, I've seen a bunch of these coming past on
+>> IRC. It seems to be a 3.17 thing. I can successfully predict the
+>> presence of an SSD and -odiscard from the "have 0". I've successfully
+>> persuaded several people to put this into bugzilla and capture
+>> btrfs-images.  btrfs recover doesn't generally seem to be helpful in
+>> recovering data.
 >>
 >>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>     I think Josef had problem 1 in his sights, but I don't know if
+>> additional images or reports are helpful at this point. For problem 2,
+>> there's obviously something bad going on, but there's not much else to
+>> go on -- and the inability to recover data isn't good.
+>>
+>>     For each of these, what more information should I be trying to
+>> collect from any future reporters?
+>>
+>>
+>
+> So for #2 I've been looking at that the last two weeks.  I'm always
+> paranoid we're screwing up one of our data integrity sort of things,
+> either not waiting on IO to complete properly or something like that.
+> I've built a dm target to be as evil as possible and have been running
+> it trying to make bad things happen.  I got slightly side tracked
+> since my stress test exposed a bug in the tree log stuff an csums
+> which I just fixed.  Now that I've fixed that I'm going back to try
+> and make the "expected blah, have 0" type errors happen.
+>
+> As for the ENOSPC I keep meaning to look into it and I keep getting
+> distracted with other more horrible things.  Ideally I'd like to
+> reproduce it myself, so more info on that front would be good, like do
+> all reports use RAID/compression/some other odd set of features? 
+> Thanks for taking care of this stuff Hugo, #2 is the worst one and I'd
+> like to be absolutely sure it's not our bug, once I'm happy we aren't
+> I'll look at the balance thing.
+>
+> Josef
 
+For #2, I had a strangely damaged BTRFS I reported a week or so ago
+which may have similar background. Dmesg gives:
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+parent transid verify failed on 586239082496 wanted 13329746340512024838
+found 588
+BTRFS: open_ctree failed
+
+The thing is that btrfsck crashes when trying to check this. As nobody
+seemed to be interested I reformatted this disk today.
 

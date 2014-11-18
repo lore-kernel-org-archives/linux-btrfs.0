@@ -1,53 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pecan2-mail.exetel.com.au ([220.233.0.71]:41342 "EHLO
-	smtp.po.exetel.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753020AbaKRMQW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 07:16:22 -0500
-From: Paul Jones <paul@pauljones.id.au>
-To: Robert White <rwhite@pobox.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: RE: BUG :: btrfs resize should require mount point not just
- /some/path
-Date: Tue, 18 Nov 2014 12:16:14 +0000
-Message-ID: <B7F2379062E32745A8651FBDB20F64593F3AD272@Server.waterlogic.com.au>
-References: <546B24E9.2020705@pobox.com>
-In-Reply-To: <546B24E9.2020705@pobox.com>
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:45753 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753774AbaKRMmM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 07:42:12 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xqi6h-0006KI-6H
+	for linux-btrfs@vger.kernel.org; Tue, 18 Nov 2014 13:42:07 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 13:42:07 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 13:42:07 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs filesystem show _exact_ freaking size?
+Date: Tue, 18 Nov 2014 12:41:55 +0000 (UTC)
+Message-ID: <pan$9f136$52d63466$99e9041e$481f97b4@cox.net>
+References: <546B21F4.8060203@pobox.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Robert White
-> Sent: Tuesday, 18 November 2014 9:52 PM
-> To: Btrfs BTRFS
-> Subject: BUG :: btrfs resize should require mount point not just /some/path
-> 
-> So here's a thing...
-> 
-> If you've got a BTRFS root file system and you mount go to resize a
-> removable media and you make a typo you can easily resize your root
-> instead of a target.
-> 
-> mkdir /media/vol1 /media/vol2
-> mount /dev/sdz1 /media/vol2 # intended vol1 btrfs resize -32G /media/vol1
-> umount /dev/sdz1 #proceed to fark up /dev/sdz1 with partitioning tools
-> 
-> Since resize will accept _any_ existing directory (or even filename?) as the
-> target of a resize instead of limiting the targets to known mount-points it
-> pretty much invites mistakes.
-> 
-> The system _should_ error out on any path thats not a mount point in the
-> name of safety alone.
-> 
-> A message like "/some/path not a mounted file system" would be less
-> surprising than operating on a file system when any arbitrary directory is
-> named.
+Robert White posted on Tue, 18 Nov 2014 02:39:48 -0800 as excerpted:
 
+> How does one get the exact size (in blocks preferably, but bytes okay)
+> of the filesystem inside a partition? I know how to get the partition
+> size, but that's not useful when shrinking a partition...
 
-I have done the same thing myself, commonly when using scrub, but also using add/del device.
-It's most alarming!
+> There needs to be an option to btrfs filesystem show that will tell you
+> XXXXXblocks, not Y.ZZ terabytes.
 
-Paul.
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+While having a btrfs fi show option for that would be nice, take a look 
+at the output of btrfs-show-super.
+
+The dev_item.total_bytes line appears to be the total filesystem bytes -- 
+at least here on my exactly-8-GiB partitions, that's /exactly/ what it 
+shows, 8589934592, which is 8*1024*1024*1024, and my /exactly/ 256 MiB 
+partition shows 268435456, /exactly/ 256 MiB, as well.
+
+The total_bytes line is the full /filesystem/ size, which should be the 
+same as the dev_item.total_bytes number on a single-device-filesystem.  
+Of course on my two-device btrfs filesystems here it's showing double the 
+single-device size, which is as it should be.
+
+But you're correct, having a btrfs fi show option for that would be more 
+end-user friendly.  The btrfs-show-super output is rather low-level for 
+that, but it does work.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

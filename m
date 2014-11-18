@@ -1,20 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f169.google.com ([209.85.216.169]:40991 "EHLO
-	mail-qc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756474AbaKRPn1 (ORCPT
+Received: from mail-qg0-f49.google.com ([209.85.192.49]:53223 "EHLO
+	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755221AbaKRQDD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 10:43:27 -0500
-Received: by mail-qc0-f169.google.com with SMTP id w7so4743773qcr.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 07:43:26 -0800 (PST)
-Message-ID: <546B68F8.6080008@ubuntu.com>
-Date: Tue, 18 Nov 2014 10:42:48 -0500
+	Tue, 18 Nov 2014 11:03:03 -0500
+Received: by mail-qg0-f49.google.com with SMTP id a108so5385744qge.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 08:03:00 -0800 (PST)
+Message-ID: <546B6D8F.7090005@ubuntu.com>
+Date: Tue, 18 Nov 2014 11:02:23 -0500
 From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
-In-Reply-To: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Brendan Hide <brendan@swiftspirit.co.za>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za> <546AF572.2020101@swiftspirit.co.za> <546B36A4.2030101@gmail.com>
+In-Reply-To: <546B36A4.2030101@gmail.com>
 Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -22,35 +23,32 @@ List-ID: <linux-btrfs.vger.kernel.org>
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 11/18/2014 1:16 AM, Chris Murphy wrote:
-> If fstab specifies rootfs as UUID, and there are two volumes with
-> the same UUID, it’s now ambiguous which one at boot time is the
-> intended rootfs. It’s no different than the days of /dev/sdXY where
-> X would change designations between boots = ambiguity and why we
-> went to UUID.
+On 11/18/2014 7:08 AM, Austin S Hemmelgarn wrote:
+> In addition to the storage controller being a possibility as
+> mentioned in another reply, there are some parts of the drive that
+> aren't covered by SMART attributes on most disks, most notably the
+> on-drive cache. There really isn't a way to disable the read cache
+> on the drive, but you can disable write-caching, which may improve
+> things (and if it's a cheap disk, may provide better reliability
+> for BTRFS as well).  The other thing I would suggest trying is a
+> different data cable to the drive itself, I've had issues with some
+> SATA cables (the cheap red ones you get in the retail packaging for
+> some hard disks in particular) having either bad connectors, or bad
+> strain-reliefs, and failing after only a few hundred hours of use.
 
-He already said he has NOT rebooted, so there is no way that the
-snapshot has actually been mounted, even if it were UUID confusion.
+SATA does CRC the data going across it so if it is a bad cable, you
+get CRC, or often times 8b10b coding errors and the transfer is
+aborted rather than returning bad data.
 
-> So we kinda need a way to distinguish derivative volumes. Maybe
-> XFS and ext4 could easily change the volume UUID, but my vague 
-> recollection is this is difficult on Btrfs? So that led me to the 
-> idea of a way to create an on-the-fly (but consistent) “virtual 
-> volume UUID” maybe based on a hash of both the LVM LV and fs
-> volume UUID.
-
-When using LVM, you should be referring to the volume by the LVM name
-rather than UUID.  LVM names are stable, and don't have the duplicate
-uuid problem.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (MingW32)
 
-iQEcBAEBAgAGBQJUa2j4AAoJEI5FoCIzSKrwvywH/3yS25MAIwsGfIwBfCrNN5Qo
-NlBttcUcrYgOD/nQHEuulHdilWrvz3q6jGwVL9W8MQsHm0Ah5dMatT5e5zr1DSNC
-ZqSEXSE8jsYJu99FUWevxO7wtb94ioKa+OF1u0zsaA5yQUdaj5smPqK3iUfskUhs
-jE/vsJmws5iBv0dxnZI/6n3YqOB1Qck4PcMItRj8xvZQ0GjARIVw36pgJnmboGfY
-vWRmUXnTeLMu9ilHWhqNUIh3lTTUvRdaYoZtTr6eYh9sIntDCegN71WGmO8FfdjP
-vXhikg7Yx7FhkhxAl1X2NzM93d7fUSQDeQfTLYLMDbbTV/n2HwcoZ6G2+IQEJnQ=
-=3Lv1
+iQEcBAEBAgAGBQJUa22PAAoJEI5FoCIzSKrwqlAH/3p1iftYkX3DAMgMmWra9AZT
+2OA4PIwzgKIhANpy+ZQo4c+W1ZUwo2V6sxLvG8/oM3HfITGyfwNA5HgTbQrlx/iU
+vdRHq+y60gCruIa0lRST5JCQMbez7eXvSNOWNAZYbtNH/BNyMxwFuav14zFZpNxO
+QovXxhk1D5vLf+ID2jwa5mF1Zj7b5GEhb4zzqK+xU1QNeWppLFhB3da+llae8qxf
+eFtNt8ebtknr7QMCFrbaYCq1z1I+Fy8EjskkdI4ZW6AgBRPQDDmB8gNCmAAbSaZC
+2Ze/AB4Xr6uuGQ4iK7nprKXUtPJFLzGYx+JQ2EeBJtin9ivno1fEY45CMreuzv4=
+=6Oy/
 -----END PGP SIGNATURE-----

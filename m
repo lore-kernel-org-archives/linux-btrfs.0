@@ -1,90 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52871 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751359AbaKRGV6 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 01:21:58 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: BTRFS messes up snapshot LV with origin
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <54699CC7.1050909@swiftspirit.co.za>
-Date: Mon, 17 Nov 2014 23:21:57 -0700
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, bug-grub@gnu.org
-Message-Id: <988DFC86-0C84-4735-AF3D-02CD394D5FEA@colorremedies.com>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za>
-To: unlisted-recipients:; (no To-header on input)
+Received: from fw12a-leta.wadns.net ([41.185.62.175]:21865 "EHLO
+	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751038AbaKRH35 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 02:29:57 -0500
+Received: from lnxwebr01.cpt.wa.co.za ([41.185.8.51])
+	by fw12a.wadns.net with esmtp (Exim 4.80)
+	(envelope-from <brendan@swiftspirit.co.za>)
+	id 1XqdEU-0004gQ-7S
+	for linux-btrfs@vger.kernel.org; Tue, 18 Nov 2014 09:29:53 +0200
+Received: from [196.220.32.228] (port=40374 helo=[10.4.64.103])
+	by lnxwebr01.cpt.wa.co.za with esmtpsa (TLSv1:DHE-RSA-CAMELLIA256-SHA:256)
+	(Exim 4.82)
+	(envelope-from <brendan@swiftspirit.co.za>)
+	id 1Xqd1m-0016CW-Rf
+	for linux-btrfs@vger.kernel.org; Tue, 18 Nov 2014 09:16:42 +0200
+Message-ID: <546AF572.2020101@swiftspirit.co.za>
+Date: Tue, 18 Nov 2014 09:29:54 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
+In-Reply-To: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
+Content-Type: multipart/mixed;
+ boundary="------------030106020006070600040903"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------030106020006070600040903
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-On Nov 16, 2014, at 11:59 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
+Hey, guys
 
-> cc'd bug-grub@gnu.org for FYI
-> 
-> On 2014/11/17 03:42, Duncan wrote:
->> MegaBrutal posted on Sun, 16 Nov 2014 22:35:26 +0100 as excerpted:
->> 
->>> Hello guys,
->>> 
->>> I think you'll like this...
->>> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1391429
->> UUID is an initialism for "Universally Unique IDentifier".[1]
->> 
->> If the UUID isn't unique, by definition, then, it can't be a UUID, and
->> that's a bug in whatever is making the non-unique would-be UUID that
->> isn't unique and thus cannot be a universally unique ID.  In this case
->> that would appear to be LVM.
-> Perhaps the right question to ask is "Where should this bug be fixed?”.
-> 
-> TL;DR: This needs more thought and input from btrfs devs. To LVM, the bug is likely seen as being "out of scope". The "correct" fix probably lies in the ecosystem design, which requires co-operation from btrfs.
+See further below extracted output from a daily scrub showing csum 
+errors on sdb, part of a raid1 btrfs. Looking back, it has been getting 
+errors like this for a few days now.
 
-I think the libblkid folks should be brought into this discussion, see what their take on this.
+The disk is patently unreliable but smartctl's output implies there are 
+no issues. Is this somehow standard faire for S.M.A.R.T. output?
 
-LVM conventional snapshots causing this problem is rare / self-limiting as they’re short lived. LVM thinp snapshots mean there can be dozens, and they can sanely endure for the life of the thin pool.
-
-Effectively we have derivative volumes. At snapshot time, should a.) the fs volume UUID be changed; b.) each fs adds an additional/secondary volume UUID at snapshot time; c.) each fs adds a derivative/version indicator, i.e. 0 at mkfs time and maybe epoch time stamped at snapshot time; d.) not use fs UUID for identifying volumes uniqueness, instead use a virtual volume UUID which is externally determined based on whether the fs is on an LV snapshot.
-
-
-
-> Making a snapshot in LVM is a fundamental thing - and I feel LVM, in making its snapshot, is doing its job "exactly as expected".
-> 
-> Additionally, there are other ways to get to a similar state without LVM: ddrescue backup, SAN snapshot, old "missing" disk re-introduced, etc.
-
-Sure and likewise self limiting problem. LVM thinp snapshots actually do make this confusion of multiple instances of the same volume UUID much much more likely.
-
-> 
-> That leaves two places where this can be fixed: grub and btrfs
-
-The GRUB os-prober and grub-mkconfig paradigm I think needs to come to an end. The grub.cfg is not supposed to be externally modified, the design is that os-prober + grub-mkconfig obliterate it and generate a whole new one from scratch anytime the system boot state changes, i.e. anytime a new kernel is added.
-
-GRUB isn’t good at OS discovery now, I think it should just be abandoned. It can have its grub.cfg generated to do whatever complex things are needed, but the individual boot menu entries should exist as drop-in scripts managed by whatever is changing the OS boot state. This is the fundamental part of the two bootloaderspecs:
-http://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/
-http://www.freedesktop.org/wiki/MatthewGarrett/BootLoaderSpec/
-
-And it’s a fundamental part of OSTree which supports multiple bootable trees on any filesystem, and currently uses a variation on bootloaderspec drop-in scripts to inform GRUB how to boot such a system:
-https://wiki.gnome.org/action/show/Projects/OSTree?action=show&redirect=OSTree
+Here are (I think) the important bits of the smartctl output for 
+$(smartctl -a /dev/sdb) (the full results are attached):
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE UPDATED  
+WHEN_FAILED RAW_VALUE
+   1 Raw_Read_Error_Rate     0x000f   100   253   006    Pre-fail 
+Always       -       0
+   5 Reallocated_Sector_Ct   0x0033   100   100   036    Pre-fail 
+Always       -       1
+   7 Seek_Error_Rate         0x000f   086   060   030    Pre-fail 
+Always       -       440801014
+197 Current_Pending_Sector  0x0012   100   100   000    Old_age 
+Always       -       0
+198 Offline_Uncorrectable   0x0010   100   100   000    Old_age 
+Offline      -       0
+199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age 
+Always       -       0
+200 Multi_Zone_Error_Rate   0x0000   100   253   000    Old_age 
+Offline      -       0
+202 Data_Address_Mark_Errs  0x0032   100   253   000    Old_age 
+Always       -       0
 
 
 
-
-> 
-> Grub is already a little smart here - it avoids snapshots. But in this case it is relying on the UUID and only finding it in the snapshot. So possibly this is a bug in grub affecting the bug reporter specifically - but perhaps the bug is in btrfs where grub is relying on btrfs code.
-> 
-> Yes, I'd rather use btrfs' snapshot mechanism - but this is often a choice that is left to the user/admin/distro. I don't think saying "LVM snapshots are incompatible with btrfs" is the right way to go either.
-> 
-> That leaves two aspects of this issue which I view as two separate bugs:
-> a) Btrfs cannot gracefully handle separate filesystems that have the same UUID. At all.
-> b) Grub appears to pick the wrong filesystem when presented with two filesystems with the same UUID.
-> 
-> I feel a) is a btrfs bug.
-> I feel b) is a bug that is more about "ecosystem design" than grub being silly.
-
-I think we’re well past the expiration date on grub.cfg, a line should be drawn in the sand to deprecate routine use of os-prober + grub-mkconfig, and move to drop-in scripts by whatever the distro presumes will be responsible for managing what “tree” will be booted or will be offered as a boot option, all GRUB needs to learn is how to use that drop in script file format.
-
-Ergo just because I’ve snapshot my root does not mean grub-mkconfig should be creating boot entries for it. But whatever usespace tool I’m using to do those snapshots (ostree, snapper, whatever the GNOME folks might come up with) should be the thing that creates the boot entry script; or as simple as this 2-4 line script should be, even hand done by a user, unlike the current grub.cfg file format.
-
-Further I’d like to get more traction from the syslinux/extlinux folks to support the same drop-in boot file format. There’s no good reason for us to not support a single file format for boot menu entries. 
+-------- Original Message --------
+Subject: 	Cron <root@watricky> /usr/local/sbin/btrfs-scrub-all
+Date: 	Tue, 18 Nov 2014 04:19:12 +0200
+From: 	(Cron Daemon) <root@watricky>
+To: 	brendan@watricky
 
 
-Chris Murphy
+
+WARNING: errors detected during scrubbing, corrected.
+[snip]
+scrub device /dev/sdb2 (id 2) done
+	scrub started at Tue Nov 18 03:22:58 2014 and finished after 2682 seconds
+	total bytes scrubbed: 189.49GiB with 5420 errors
+	error details: read=5 csum=5415
+	corrected errors: 5420, uncorrectable errors: 0, unverified errors: 164
+[snip]
+
+
+--------------030106020006070600040903
+Content-Type: text/plain; charset=windows-1252;
+ name="sdbres[1].txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="sdbres[1].txt"
+
+c21hcnRjdGwgNi4zIDIwMTQtMDctMjYgcjM5NzYgW3g4Nl82NC1saW51eC0zLjE3LjItMS1B
+UkNIXSAobG9jYWwgYnVpbGQpCkNvcHlyaWdodCAoQykgMjAwMi0xNCwgQnJ1Y2UgQWxsZW4s
+IENocmlzdGlhbiBGcmFua2UsIHd3dy5zbWFydG1vbnRvb2xzLm9yZwoKPT09IFNUQVJUIE9G
+IElORk9STUFUSU9OIFNFQ1RJT04gPT09Ck1vZGVsIEZhbWlseTogICAgIFNlYWdhdGUgQmFy
+cmFjdWRhIDcyMDAuMTAKRGV2aWNlIE1vZGVsOiAgICAgU1QzMjUwNDEwQVMKU2VyaWFsIE51
+bWJlcjogICAgNlJZRjVOUDcKRmlybXdhcmUgVmVyc2lvbjogNC5BQUEKVXNlciBDYXBhY2l0
+eTogICAgMjUwLDA1OSwzNTAsMDE2IGJ5dGVzIFsyNTAgR0JdClNlY3RvciBTaXplOiAgICAg
+IDUxMiBieXRlcyBsb2dpY2FsL3BoeXNpY2FsCkRldmljZSBpczogICAgICAgIEluIHNtYXJ0
+Y3RsIGRhdGFiYXNlIFtmb3IgZGV0YWlscyB1c2U6IC1QIHNob3ddCkFUQSBWZXJzaW9uIGlz
+OiAgIEFUQS9BVEFQSS03IChtaW5vciByZXZpc2lvbiBub3QgaW5kaWNhdGVkKQpMb2NhbCBU
+aW1lIGlzOiAgICBUdWUgTm92IDE4IDA5OjE2OjAzIDIwMTQgU0FTVApTTUFSVCBzdXBwb3J0
+IGlzOiBBdmFpbGFibGUgLSBkZXZpY2UgaGFzIFNNQVJUIGNhcGFiaWxpdHkuClNNQVJUIHN1
+cHBvcnQgaXM6IEVuYWJsZWQKCj09PSBTVEFSVCBPRiBSRUFEIFNNQVJUIERBVEEgU0VDVElP
+TiA9PT0KU01BUlQgb3ZlcmFsbC1oZWFsdGggc2VsZi1hc3Nlc3NtZW50IHRlc3QgcmVzdWx0
+OiBQQVNTRUQKU2VlIHZlbmRvci1zcGVjaWZpYyBBdHRyaWJ1dGUgbGlzdCBmb3IgbWFyZ2lu
+YWwgQXR0cmlidXRlcy4KCkdlbmVyYWwgU01BUlQgVmFsdWVzOgpPZmZsaW5lIGRhdGEgY29s
+bGVjdGlvbiBzdGF0dXM6ICAoMHg4MikJT2ZmbGluZSBkYXRhIGNvbGxlY3Rpb24gYWN0aXZp
+dHkKCQkJCQl3YXMgY29tcGxldGVkIHdpdGhvdXQgZXJyb3IuCgkJCQkJQXV0byBPZmZsaW5l
+IERhdGEgQ29sbGVjdGlvbjogRW5hYmxlZC4KU2VsZi10ZXN0IGV4ZWN1dGlvbiBzdGF0dXM6
+ICAgICAgKCAgIDApCVRoZSBwcmV2aW91cyBzZWxmLXRlc3Qgcm91dGluZSBjb21wbGV0ZWQK
+CQkJCQl3aXRob3V0IGVycm9yIG9yIG5vIHNlbGYtdGVzdCBoYXMgZXZlciAKCQkJCQliZWVu
+IHJ1bi4KVG90YWwgdGltZSB0byBjb21wbGV0ZSBPZmZsaW5lIApkYXRhIGNvbGxlY3Rpb246
+IAkJKCAgNDMwKSBzZWNvbmRzLgpPZmZsaW5lIGRhdGEgY29sbGVjdGlvbgpjYXBhYmlsaXRp
+ZXM6IAkJCSAoMHg1YikgU01BUlQgZXhlY3V0ZSBPZmZsaW5lIGltbWVkaWF0ZS4KCQkJCQlB
+dXRvIE9mZmxpbmUgZGF0YSBjb2xsZWN0aW9uIG9uL29mZiBzdXBwb3J0LgoJCQkJCVN1c3Bl
+bmQgT2ZmbGluZSBjb2xsZWN0aW9uIHVwb24gbmV3CgkJCQkJY29tbWFuZC4KCQkJCQlPZmZs
+aW5lIHN1cmZhY2Ugc2NhbiBzdXBwb3J0ZWQuCgkJCQkJU2VsZi10ZXN0IHN1cHBvcnRlZC4K
+CQkJCQlObyBDb252ZXlhbmNlIFNlbGYtdGVzdCBzdXBwb3J0ZWQuCgkJCQkJU2VsZWN0aXZl
+IFNlbGYtdGVzdCBzdXBwb3J0ZWQuClNNQVJUIGNhcGFiaWxpdGllczogICAgICAgICAgICAo
+MHgwMDAzKQlTYXZlcyBTTUFSVCBkYXRhIGJlZm9yZSBlbnRlcmluZwoJCQkJCXBvd2VyLXNh
+dmluZyBtb2RlLgoJCQkJCVN1cHBvcnRzIFNNQVJUIGF1dG8gc2F2ZSB0aW1lci4KRXJyb3Ig
+bG9nZ2luZyBjYXBhYmlsaXR5OiAgICAgICAgKDB4MDEpCUVycm9yIGxvZ2dpbmcgc3VwcG9y
+dGVkLgoJCQkJCUdlbmVyYWwgUHVycG9zZSBMb2dnaW5nIHN1cHBvcnRlZC4KU2hvcnQgc2Vs
+Zi10ZXN0IHJvdXRpbmUgCnJlY29tbWVuZGVkIHBvbGxpbmcgdGltZTogCSAoICAgMSkgbWlu
+dXRlcy4KRXh0ZW5kZWQgc2VsZi10ZXN0IHJvdXRpbmUKcmVjb21tZW5kZWQgcG9sbGluZyB0
+aW1lOiAJICggIDY0KSBtaW51dGVzLgpTQ1QgY2FwYWJpbGl0aWVzOiAJICAgICAgICgweDAw
+MDEpCVNDVCBTdGF0dXMgc3VwcG9ydGVkLgoKU01BUlQgQXR0cmlidXRlcyBEYXRhIFN0cnVj
+dHVyZSByZXZpc2lvbiBudW1iZXI6IDEwClZlbmRvciBTcGVjaWZpYyBTTUFSVCBBdHRyaWJ1
+dGVzIHdpdGggVGhyZXNob2xkczoKSUQjIEFUVFJJQlVURV9OQU1FICAgICAgICAgIEZMQUcg
+ICAgIFZBTFVFIFdPUlNUIFRIUkVTSCBUWVBFICAgICAgVVBEQVRFRCAgV0hFTl9GQUlMRUQg
+UkFXX1ZBTFVFCiAgMSBSYXdfUmVhZF9FcnJvcl9SYXRlICAgICAweDAwMGYgICAxMDAgICAy
+NTMgICAwMDYgICAgUHJlLWZhaWwgIEFsd2F5cyAgICAgICAtICAgICAgIDAKICAzIFNwaW5f
+VXBfVGltZSAgICAgICAgICAgIDB4MDAwMyAgIDA5OSAgIDA5NyAgIDAwMCAgICBQcmUtZmFp
+bCAgQWx3YXlzICAgICAgIC0gICAgICAgMAogIDQgU3RhcnRfU3RvcF9Db3VudCAgICAgICAg
+MHgwMDMyICAgMTAwICAgMTAwICAgMDIwICAgIE9sZF9hZ2UgICBBbHdheXMgICAgICAgLSAg
+ICAgICA2OAogIDUgUmVhbGxvY2F0ZWRfU2VjdG9yX0N0ICAgMHgwMDMzICAgMTAwICAgMTAw
+ICAgMDM2ICAgIFByZS1mYWlsICBBbHdheXMgICAgICAgLSAgICAgICAxCiAgNyBTZWVrX0Vy
+cm9yX1JhdGUgICAgICAgICAweDAwMGYgICAwODYgICAwNjAgICAwMzAgICAgUHJlLWZhaWwg
+IEFsd2F5cyAgICAgICAtICAgICAgIDQ0MDgwMTA1NwogIDkgUG93ZXJfT25fSG91cnMgICAg
+ICAgICAgMHgwMDMyICAgMDQ0ICAgMDQ0ICAgMDAwICAgIE9sZF9hZ2UgICBBbHdheXMgICAg
+ICAgLSAgICAgICA0OTEwNgogMTAgU3Bpbl9SZXRyeV9Db3VudCAgICAgICAgMHgwMDEzICAg
+MTAwICAgMTAwICAgMDk3ICAgIFByZS1mYWlsICBBbHdheXMgICAgICAgLSAgICAgICAwCiAx
+MiBQb3dlcl9DeWNsZV9Db3VudCAgICAgICAweDAwMzIgICAxMDAgICAxMDAgICAwMjAgICAg
+T2xkX2FnZSAgIEFsd2F5cyAgICAgICAtICAgICAgIDg5CjE4NyBSZXBvcnRlZF9VbmNvcnJl
+Y3QgICAgICAweDAwMzIgICAxMDAgICAxMDAgICAwMDAgICAgT2xkX2FnZSAgIEFsd2F5cyAg
+ICAgICAtICAgICAgIDAKMTg5IEhpZ2hfRmx5X1dyaXRlcyAgICAgICAgIDB4MDAzYSAgIDA5
+OCAgIDA5OCAgIDAwMCAgICBPbGRfYWdlICAgQWx3YXlzICAgICAgIC0gICAgICAgMgoxOTAg
+QWlyZmxvd19UZW1wZXJhdHVyZV9DZWwgMHgwMDIyICAgMDYwICAgMDMwICAgMDQ1ICAgIE9s
+ZF9hZ2UgICBBbHdheXMgICBJbl90aGVfcGFzdCA0MCAoTWluL01heCAyMy83MCAjMjUpCjE5
+NCBUZW1wZXJhdHVyZV9DZWxzaXVzICAgICAweDAwMjIgICAwNDAgICAwNzAgICAwMDAgICAg
+T2xkX2FnZSAgIEFsd2F5cyAgICAgICAtICAgICAgIDQwICgwIDIzIDAgMCAwKQoxOTUgSGFy
+ZHdhcmVfRUNDX1JlY292ZXJlZCAgMHgwMDFhICAgMDY5ICAgMDU1ICAgMDAwICAgIE9sZF9h
+Z2UgICBBbHdheXMgICAgICAgLSAgICAgICAxMjY2MzIwNTEKMTk3IEN1cnJlbnRfUGVuZGlu
+Z19TZWN0b3IgIDB4MDAxMiAgIDEwMCAgIDEwMCAgIDAwMCAgICBPbGRfYWdlICAgQWx3YXlz
+ICAgICAgIC0gICAgICAgMAoxOTggT2ZmbGluZV9VbmNvcnJlY3RhYmxlICAgMHgwMDEwICAg
+MTAwICAgMTAwICAgMDAwICAgIE9sZF9hZ2UgICBPZmZsaW5lICAgICAgLSAgICAgICAwCjE5
+OSBVRE1BX0NSQ19FcnJvcl9Db3VudCAgICAweDAwM2UgICAyMDAgICAyMDAgICAwMDAgICAg
+T2xkX2FnZSAgIEFsd2F5cyAgICAgICAtICAgICAgIDAKMjAwIE11bHRpX1pvbmVfRXJyb3Jf
+UmF0ZSAgIDB4MDAwMCAgIDEwMCAgIDI1MyAgIDAwMCAgICBPbGRfYWdlICAgT2ZmbGluZSAg
+ICAgIC0gICAgICAgMAoyMDIgRGF0YV9BZGRyZXNzX01hcmtfRXJycyAgMHgwMDMyICAgMTAw
+ICAgMjUzICAgMDAwICAgIE9sZF9hZ2UgICBBbHdheXMgICAgICAgLSAgICAgICAwCgpTTUFS
+VCBFcnJvciBMb2cgVmVyc2lvbjogMQpObyBFcnJvcnMgTG9nZ2VkCgpTTUFSVCBTZWxmLXRl
+c3QgbG9nIHN0cnVjdHVyZSByZXZpc2lvbiBudW1iZXIgMQpOdW0gIFRlc3RfRGVzY3JpcHRp
+b24gICAgU3RhdHVzICAgICAgICAgICAgICAgICAgUmVtYWluaW5nICBMaWZlVGltZShob3Vy
+cykgIExCQV9vZl9maXJzdF9lcnJvcgojIDEgIEV4dGVuZGVkIG9mZmxpbmUgICAgQ29tcGxl
+dGVkIHdpdGhvdXQgZXJyb3IgICAgICAgMDAlICAgICAzNzU5OCAgICAgICAgIC0KClNNQVJU
+IFNlbGVjdGl2ZSBzZWxmLXRlc3QgbG9nIGRhdGEgc3RydWN0dXJlIHJldmlzaW9uIG51bWJl
+ciAxCiBTUEFOICBNSU5fTEJBICBNQVhfTEJBICBDVVJSRU5UX1RFU1RfU1RBVFVTCiAgICAx
+ICAgICAgICAwICAgICAgICAwICBOb3RfdGVzdGluZwogICAgMiAgICAgICAgMCAgICAgICAg
+MCAgTm90X3Rlc3RpbmcKICAgIDMgICAgICAgIDAgICAgICAgIDAgIE5vdF90ZXN0aW5nCiAg
+ICA0ICAgICAgICAwICAgICAgICAwICBOb3RfdGVzdGluZwogICAgNSAgICAgICAgMCAgICAg
+ICAgMCAgTm90X3Rlc3RpbmcKU2VsZWN0aXZlIHNlbGYtdGVzdCBmbGFncyAoMHgwKToKICBB
+ZnRlciBzY2FubmluZyBzZWxlY3RlZCBzcGFucywgZG8gTk9UIHJlYWQtc2NhbiByZW1haW5k
+ZXIgb2YgZGlzay4KSWYgU2VsZWN0aXZlIHNlbGYtdGVzdCBpcyBwZW5kaW5nIG9uIHBvd2Vy
+LXVwLCByZXN1bWUgYWZ0ZXIgMCBtaW51dGUgZGVsYXkuCgo=
+--------------030106020006070600040903--

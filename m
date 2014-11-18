@@ -1,30 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45692 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:33446 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754348AbaKOAJC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Nov 2014 19:09:02 -0500
-Date: Sat, 15 Nov 2014 01:09:00 +0100
+	id S1754187AbaKRQuv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 11:50:51 -0500
+Date: Tue, 18 Nov 2014 17:50:50 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Silvio Fricke <silvio.fricke@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] add progress indicator to btrfs-convert
-Message-ID: <20141115000900.GE8614@twin.jikos.cz>
+To: WorMzy Tykashi <wormzy.tykashi@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-progs: ARGV0_BUF_SIZE causes problems with tests
+Message-ID: <20141118165050.GA7166@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1415549388.git.silvio.fricke@gmail.com>
+References: <CALOYprUMGsFEEUeYfd7Zs8_ZLM7_scApBCF=br42iq6suhA03w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1415549388.git.silvio.fricke@gmail.com>
+In-Reply-To: <CALOYprUMGsFEEUeYfd7Zs8_ZLM7_scApBCF=br42iq6suhA03w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 09, 2014 at 11:16:54PM +0100, Silvio Fricke wrote:
-> I have tried a ext4->btrfs conversation of a 1TB (90%full) and have seen that
-> btrfs has no progressbar or something like that. Furthermore I have found [1] a
-> project idea for this.
-> 
-> I have tried a generic tasklet-based solution to print the status of the
-> convert-process. Maybe it looks good to you than please add this to your repo.
+On Sat, Nov 15, 2014 at 01:27:13AM +0000, WorMzy Tykashi wrote:
+> I found a bit of a weird corner-case today. [1] It seems that, due to
+> the use of a 64-byte constant (ARGV0_BUF_SIZE) in utils.c, some tests
+> fail with a "buffer overflow detected" error if the progs are built in
+> a location with a sufficiently long path.
 
-Added to integration for now to give it some more testing. There are
-potential users for the 'progress' feature (scrub, balance, replace) so
-we may build it on top of your patches though I haven't looked closer.
+Ouch, thanks for the report. The correct fix is IMO to extend the buffer
+to PATH_MAX plus what you propose as fix.

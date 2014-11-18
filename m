@@ -1,72 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f169.google.com ([209.85.220.169]:53874 "EHLO
-	mail-vc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754349AbaKRUlR convert rfc822-to-8bit (ORCPT
+Received: from mail-qg0-f47.google.com ([209.85.192.47]:57251 "EHLO
+	mail-qg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932175AbaKRU65 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 15:41:17 -0500
-Received: by mail-vc0-f169.google.com with SMTP id hy10so5061923vcb.14
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 12:41:16 -0800 (PST)
+	Tue, 18 Nov 2014 15:58:57 -0500
+Received: by mail-qg0-f47.google.com with SMTP id z60so5250055qgd.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 12:58:56 -0800 (PST)
+Message-ID: <546BB2EA.5080809@ubuntu.com>
+Date: Tue, 18 Nov 2014 15:58:18 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-In-Reply-To: <546B68F8.6080008@ubuntu.com>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
-	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
-	<54699CC7.1050909@swiftspirit.co.za>
-	<546A46A5.8030603@inwind.it>
-	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
-	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
-	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
-	<546B68F8.6080008@ubuntu.com>
-Date: Tue, 18 Nov 2014 21:41:16 +0100
-Message-ID: <CAE8gLhmnqq4Z=Ktbf8HUkM89Jjik=w5t7EgHAT4Agnpz47OWUw@mail.gmail.com>
-Subject: Re: BTRFS messes up snapshot LV with origin
-From: MegaBrutal <megabrutal@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za> <546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org> <47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
+In-Reply-To: <47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-11-18 16:42 GMT+01:00 Phillip Susi <psusi@ubuntu.com>:
->
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 11/18/2014 1:16 AM, Chris Murphy wrote:
-> > If fstab specifies rootfs as UUID, and there are two volumes with
-> > the same UUID, itâ€™s now ambiguous which one at boot time is the
-> > intended rootfs. Itâ€™s no different than the days of /dev/sdXY where
-> > X would change designations between boots = ambiguity and why we
-> > went to UUID.
->
-> He already said he has NOT rebooted, so there is no way that the
-> snapshot has actually been mounted, even if it were UUID confusion.
->
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-That's right.
+On 11/18/2014 1:57 PM, Chris Murphy wrote:
+> So a.) use smartctl -l scterc to change the value below 30 seconds 
+> (300 deciseconds) with 70 deciseconds being reasonable. If the
+> drive doesn’t support SCT commands, then b.) change the linux scsi
+> command timer to be greater than 120 seconds.
+> 
+> Strictly speaking the command timer would be set to a value that 
+> ensures there are no link reset messages in dmesg, that it’s long 
+> enough that the drive itself times out and actually reports a read 
+> error. This could be much shorter than 120 seconds. I don’t know
+> if there are any consumer drives that try longer than 2 minutes to 
+> recover data from a marginally bad sector.
 
-Anyway, I've built a system to reproduce the bug. You can download the
-image and run it with KVM or other virtualization technology.
-Instructions are straightforward â€“ if you start the VM, you'll know
-what to do, and you'll see what I was talking about.
+Are there really any that take longer than 30 seconds?  That's enough
+time for thousands of retries.  If it can't be read after a dozen
+tries, it ain't never gonna work.  It seems absurd that a drive would
+keep trying for so long.
 
-http://undead.megabrutal.com/kvm-reproduce-1391429.img.xz
+> Ideally though, don’t use drives that lack SCT support in multiple 
+> device volume configurations. An up to 2 minute hang of the
+> storage stack isn’t production compatible for most workflows.
 
-Download size: 113 MB; Unpacked image size: 2 GB.
+Wasn't there an early failure flag that md ( and therefore, btrfs when
+doing raid ) sets so the scsi stack doesn't bother with recovery
+attempts and just fails the request?  Thus if the drive takes longer
+than the scsi_timeout, the failure would be reported to btrfs, which
+then can recover using the other copy, write it back to the bad drive,
+and hopefully that fixes it?
 
+In that case, you probably want to lower the timeout so that the
+recover kicks in sooner instead of hanging your IO stack for 30 seconds.
 
-> > So we kinda need a way to distinguish derivative volumes. Maybe
-> > XFS and ext4 could easily change the volume UUID, but my vague
-> > recollection is this is difficult on Btrfs? So that led me to the
-> > idea of a way to create an on-the-fly (but consistent) â€œvirtual
-> > volume UUIDâ€ maybe based on a hash of both the LVM LV and fs
-> > volume UUID.
->
-> When using LVM, you should be referring to the volume by the LVM name
-> rather than UUID.  LVM names are stable, and don't have the duplicate
-> uuid problem.
->
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
 
-I use LVM names to identify volumes. I initially suspected it's an
-UUID confusion, because I thought grub-probe looks for the volume by
-UUID. But now I think the problem is nothing to do with UUIDs.
-Probably I should have looked deeper into the problem before I
-hypothesized.
+iQEcBAEBAgAGBQJUa7LqAAoJEI5FoCIzSKrw2Y0H/3Q03vCTxXeGkqvOYG/arZgk
+yHq/ruWIKMgfaESdu0Ujzoqbe7XopUueU8luKon52LtbgIFhOM5XnMu/o52KPXIS
+CVLnNtRWNbykHJMQu0Sk4lpPrUVI5QP9Ya9ZGVFM4x2ehvJGDAT+wcRWP5OH0waf
+mgK+oOnadsckqiSbcQhGrxecjTWZFu5WUCzWFPx+4sEV5ta/tmL0obhHcyho+SDN
+lCib2KI9YGzS2sm+V/Qe2i/3ZMp8QY8aAD2x/KlV0DBxkRLZQdOoD3ZkBiaApxZX
+VMfXNCKLMexwpe+rGGemH/fCvhRpM/z1aHu8D1u4QVnoWPzD51vX7ySLkwRHaGo=
+=XZkM
+-----END PGP SIGNATURE-----

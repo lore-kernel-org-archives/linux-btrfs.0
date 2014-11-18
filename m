@@ -1,42 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f53.google.com ([209.85.192.53]:58628 "EHLO
-	mail-qg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754237AbaKRUS1 (ORCPT
+Received: from mail-vc0-f169.google.com ([209.85.220.169]:53874 "EHLO
+	mail-vc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754349AbaKRUlR convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 15:18:27 -0500
-Received: by mail-qg0-f53.google.com with SMTP id z107so17997225qgd.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 12:18:26 -0800 (PST)
-Message-ID: <546BA96D.4050805@ubuntu.com>
-Date: Tue, 18 Nov 2014 15:17:49 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Tue, 18 Nov 2014 15:41:17 -0500
+Received: by mail-vc0-f169.google.com with SMTP id hy10so5061923vcb.14
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 12:41:16 -0800 (PST)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <546B68F8.6080008@ubuntu.com>
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
+	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+	<54699CC7.1050909@swiftspirit.co.za>
+	<546A46A5.8030603@inwind.it>
+	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
+	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
+	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+	<546B68F8.6080008@ubuntu.com>
+Date: Tue, 18 Nov 2014 21:41:16 +0100
+Message-ID: <CAE8gLhmnqq4Z=Ktbf8HUkM89Jjik=w5t7EgHAT4Agnpz47OWUw@mail.gmail.com>
 Subject: Re: BTRFS messes up snapshot LV with origin
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com> <546B68F8.6080008@ubuntu.com> <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
-In-Reply-To: <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
-Content-Type: text/plain; charset=windows-1252
+From: MegaBrutal <megabrutal@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+2014-11-18 16:42 GMT+01:00 Phillip Susi <psusi@ubuntu.com>:
+>
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 11/18/2014 1:16 AM, Chris Murphy wrote:
+> > If fstab specifies rootfs as UUID, and there are two volumes with
+> > the same UUID, it’s now ambiguous which one at boot time is the
+> > intended rootfs. It’s no different than the days of /dev/sdXY where
+> > X would change designations between boots = ambiguity and why we
+> > went to UUID.
+>
+> He already said he has NOT rebooted, so there is no way that the
+> snapshot has actually been mounted, even if it were UUID confusion.
+>
 
-On 11/18/2014 2:17 PM, Chris Murphy wrote:
-> What if you have a Btrfs raid1 volume using two LV�s and then 
-> snapshot both LV�s?
+That's right.
 
-That's even more silly than a single lvm snapshot under btrfs.  Just
-don't do it.
+Anyway, I've built a system to reproduce the bug. You can download the
+image and run it with KVM or other virtualization technology.
+Instructions are straightforward – if you start the VM, you'll know
+what to do, and you'll see what I was talking about.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+http://undead.megabrutal.com/kvm-reproduce-1391429.img.xz
 
-iQEcBAEBAgAGBQJUa6lsAAoJEI5FoCIzSKrwzicIAJLXrsVpWxsI+wq8xGGumwoy
-s2QGUZ3Soknr30FAeZWFpS7diXOuuOWXjaObTlFMcUAqGE134d4I3W+k2PxejHns
-AfdKSdyiactcndea6aw5zBGzdk5N5bLaoCaS8GSeKVdIMWlLFh+lMzHX2q6tC+cS
-8RWJI7GYk193RmWkHKUhX57J9tnP7eJmXTkqdRJIDXmaaceYLR8057LZbNsuurFA
-h0ZptXKFUhp6dsEMV5JPnxKZ9l62ZNcL5zEE3D7sVU20ll/YEP7UHOYY/JTGwdLN
-KWOUIJ89gM6LqWTz2gFuz8JhPhmZCIKrpN6Fu/pKDHYSrdYyazZV/D6P/dX5TUA=
-=3LdX
------END PGP SIGNATURE-----
+Download size: 113 MB; Unpacked image size: 2 GB.
+
+
+> > So we kinda need a way to distinguish derivative volumes. Maybe
+> > XFS and ext4 could easily change the volume UUID, but my vague
+> > recollection is this is difficult on Btrfs? So that led me to the
+> > idea of a way to create an on-the-fly (but consistent) “virtual
+> > volume UUID” maybe based on a hash of both the LVM LV and fs
+> > volume UUID.
+>
+> When using LVM, you should be referring to the volume by the LVM name
+> rather than UUID.  LVM names are stable, and don't have the duplicate
+> uuid problem.
+>
+
+I use LVM names to identify volumes. I initially suspected it's an
+UUID confusion, because I thought grub-probe looks for the volume by
+UUID. But now I think the problem is nothing to do with UUIDs.
+Probably I should have looked deeper into the problem before I
+hypothesized.

@@ -1,40 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.97.166]:50921 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753121AbaKRHqm (ORCPT
+Received: from resqmta-po-12v.sys.comcast.net ([96.114.154.171]:32946 "EHLO
+	resqmta-po-12v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753766AbaKRKkC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 02:46:42 -0500
-Date: Tue, 18 Nov 2014 12:36:46 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Brendan Hide <brendan@swiftspirit.co.za>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-Message-ID: <20141118123646.01239614@natsu>
-In-Reply-To: <546AF572.2020101@swiftspirit.co.za>
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
-	<546AF572.2020101@swiftspirit.co.za>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	Tue, 18 Nov 2014 05:40:02 -0500
+Message-ID: <546B21F4.8060203@pobox.com>
+Date: Tue, 18 Nov 2014 02:39:48 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: btrfs filesystem show _exact_ freaking size?
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 18 Nov 2014 09:29:54 +0200
-Brendan Hide <brendan@swiftspirit.co.za> wrote:
+Howdy,
 
-> Hey, guys
-> 
-> See further below extracted output from a daily scrub showing csum 
-> errors on sdb, part of a raid1 btrfs. Looking back, it has been getting 
-> errors like this for a few days now.
-> 
-> The disk is patently unreliable but smartctl's output implies there are 
-> no issues. Is this somehow standard faire for S.M.A.R.T. output?
+How does one get the exact size (in blocks preferably, but bytes okay) 
+of the filesystem inside a partition? I know how to get the partition 
+size, but that's not useful when shrinking a partition...
 
-Not necessarily the disk's fault, could be a SATA controller issue. How are
-your disks connected, which controller brand and chip? Add lspci output, at
-least if something other than the ordinary "to the motherboard chipset's
-built-in ports".
+So, for example, you successfully do
 
--- 
-With respect,
-Roman
+btrfs filesystem resize -32G /dev/sdz2
+
+now you've got "some space" zero idea how many sectors can be trimmed 
+off the end of the partition, you can do the math but thats a little 
+iffy, especially if the file system didn't originally fill the partition 
+to begin with.
+
+The current methodology for most such actions is to way over-trim the 
+file system, then reallocate the space using your partition tool of 
+choice, then re-grow the filesystem to fit. This has been the way of 
+things forever and it blows...
+
+There needs to be an option to btrfs filesystem show that will tell you 
+XXXXXblocks, not Y.ZZ terabytes.
+

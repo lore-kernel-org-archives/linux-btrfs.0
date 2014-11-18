@@ -1,57 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.230]:13556 "EHLO
-	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752963AbaKRBRS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Nov 2014 20:17:18 -0500
-Message-ID: <546A9E0F.4070108@ubuntu.com>
-Date: Mon, 17 Nov 2014 20:17:03 -0500
-From: Phillip Susi <psusi@ubuntu.com>
-MIME-Version: 1.0
-To: Fennec Fox <fennectech@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs on a failing drive
-References: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
-In-Reply-To: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57234 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751145AbaKRGKP convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 01:10:15 -0500
 Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Subject: Re: Btrfs on a failing drive
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
+Date: Mon, 17 Nov 2014 23:10:11 -0700
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <D4DFA3D3-8BEB-4659-BC19-F3F09ADFA5B1@colorremedies.com>
+References: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
+To: Fennec Fox <fennectech@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA512
 
-On 11/17/2014 05:55 PM, Fennec Fox wrote:
-> well i am an arch linux user and machine owner using a failing
-> drive its still relyable enough for me but btrfs seems not to mark
-> bad blocks as unusable and continues to try to write to them. 
-> /bbs.archlinux.org/viewtopic.php?pid=1476540#p1476540  this forum
-> post has a few more details regarding the problem  i really need a
-> bit of help  thank you
+On Nov 17, 2014, at 3:55 PM, Fennec Fox <fennectech@gmail.com> wrote:
 
-If indeed writes are failing then the drive is only suitable for a
-door stop.  Drives remap bad sectors to a spare pool on write so if it
-is now failing writes, it has already exhausted its spare pool and you
-should have replaced it long ago.  Have a look at its SMART stats and
-it will probably confirm the drive is fubar.
+> well i am an arch linux user and machine owner using a failing drive
+>  its still relyable enough for me but btrfs seems not to mark bad
+> blocks as unusable and continues to try to write to them.
+
+It’s supposed to do try to write to them. If there is actual persistent write failure it’s the job of the firmware to reassign the affected LBA to a reserve physical sector. If it can’t do this, the drive is no longer normally operating, it should return a write error and ideally Btrfs would refuse to use the drive at all. I don’t know if that device rejection code exists yet. It hasn’t been the job of the filesystem to keep track of bad physical sectors since ancient times.
 
 
-> [   83.050733] BTRFS info (device sda1): csum failed ino 3048916
-> off 33030144 csum 1217419445 expected csum 510562246 [   83.052317]
-> BTRFS info (device sda1): csum failed ino 3048916 off 33030144 csum
-> 1217419445 expected csum 510562246
-
-That's not saying writes are failing; it is saying that your data has
-been silently corrupted, which means the drive is the worst kind of
-broken and should be thrown in a fire at once.
-
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQEcBAEBCgAGBQJUap4OAAoJENRVrw2cjl5RwBAH/1ceBd4i7WD7679x3bshYYTi
-Lv63xLRMjbo+T0md3ptcndyxFbZlRdWQiJbIKT40yn9xnqOWeXWTkSmODqGyEOdC
-M9HSlfZg8fOAha4kb7k1tzzqxdR1J3iAj03/G0B4+YKY0I7AaGdzhGLRAY8EVtRW
-UVG99451wwRyUpg3YLk+n12MMSlq8Sy9XSjMU5/ECDzemH5GF6pPNi39nCy6JFti
-oaTOwnAROfb7L3Y9ZBiIJ52Y7p4UIdS1jaSkLw0U2g0Gz+5V1/fb1hOhK5J/loYy
-bC4JyoJsxn9GyJGwM93s64aWE5X+N+i7RzmysQVBI/3wepGXpG0Tsq37NnKB3iU=
-=BctV
------END PGP SIGNATURE-----
+Chris Murphy

@@ -1,71 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36089 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:38453 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753704AbaKSDG6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 22:06:58 -0500
+	id S1753741AbaKSDiD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 22:38:03 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xqvbd-0008NB-4k
-	for linux-btrfs@vger.kernel.org; Wed, 19 Nov 2014 04:06:57 +0100
+	id 1Xqw5g-0000Lt-3t
+	for linux-btrfs@vger.kernel.org; Wed, 19 Nov 2014 04:38:00 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:06:57 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:38:00 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:06:57 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:38:00 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs on a failing drive
-Date: Wed, 19 Nov 2014 03:06:45 +0000 (UTC)
-Message-ID: <pan$4d12d$ac36086c$dc5d83e5$8040fa67@cox.net>
-References: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
-	<546A9E0F.4070108@ubuntu.com>
-	<CAD1x5BDJhZ6a=91G8+UzLTY+Oik7MVpr-XGKOQrOnXpkRLjwug@mail.gmail.com>
-	<546B676E.6040305@ubuntu.com>
+Subject: Re: BTRFS messes up snapshot LV with origin
+Date: Wed, 19 Nov 2014 03:37:50 +0000 (UTC)
+Message-ID: <pan$3715b$a39c802c$7c739200$ccd1cef0@cox.net>
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
+	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+	<54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it>
+	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
+	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
+	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+	<546B68F8.6080008@ubuntu.com> <546BF268.5050706@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Phillip Susi posted on Tue, 18 Nov 2014 10:36:14 -0500 as excerpted:
+Robert White posted on Tue, 18 Nov 2014 17:29:12 -0800 as excerpted:
 
-> As I said before though, the errors you posted from dmesg don't indicate
-> that the drive failed to read sectors, but rather that it returned
-> incorrect data, and this is *NEVER* supposed to happen.
+> On 11/18/2014 07:42 AM, Phillip Susi wrote:
 > 
-> I'd suggest running a few passes of badblocks over the drive, testing
-> writing different patterns and verifying that they read back correctly.
+>> On 11/18/2014 1:16 AM, Chris Murphy wrote:
+>>> (stuff about UUIDs and LVM snapshots).
+>  > (suggestion to use LVM paths instead).
+> 
+> This is also an XFS+LVM+LVM_Snapshot problem going back to at least
+> 2009. It's inherent to the block-device-level snapshot phenomonia.
+> 
+> q.v. http://www.miljan.org/main/2009/11/16/lvm-snapshots-and-xfs/ et al
+> 
+> In XFS you attack the snapshot with a command to regenerate the UUID as
+> soon as you take the snapshot. I don't think there is a "regenerate all
+> my UUIDs" command for BTRFS.
 
-+1 for badblocks! =:^)
+Which was part of my point in my reply.  Btrfs embeds the UUID in the 
+metadata deeply enough that it's no simple task to simply change it to 
+something else and be done.  It's quite a complicated operation for any 
+(future, none current) tool that attempts it, with the most likely 
+candidate being an option to btrfs balance or the like, but even then, 
+we're looking at a timescale of hours for spinning rust.
 
-Tho a hint if you decide to test multiple drives as I did some years 
-ago.  Doing a multiple passes (I'd suggest at least two) on a full drive 
-can take QUITE some time (days), due to the shear volume of data to be 
-written to the drive, then read back to verify, then written as a new 
-pattern and read back again.
+So while it's possible in theory, in practice such a regenerate-all UUIDs 
+command for btrfs isn't available yet, and given the time involved in 
+rewriting all those metadata UUIDs to something else, during which the 
+filesystem's in a critically unstable state, and the limited use-case 
+with other alternatives, such a tool isn't all /that/ practical in any 
+case.
 
-But unlike IDE, the bottleneck on at least spinning rust SATA (well, 
-unless you go heavy port-multiplier) tends to be the platters themselves, 
-not the buses as they're point-to-point now days, or the controllers.  
-Generally you can process four or more drives in parallel without slowing 
-down the individual results significantly at all.  Thus, while it takes 
-days to test a single drive, it normally takes the same time to process 
-four drives in parallel!  So if you have 4+ devices to badblocks-test, 
-definitely setup four (perhaps more, depending on hardware layout) 
-instances of badblocks running at once, one to each of the devices.  Cut 
-your time for all four done serially to say 8 days, to only two days when 
-done in parallel! =:^)
-
-Of course good SSDs tend to be both many times faster and several times 
-smaller in capacity, so a badblocks run on them should be MUCH faster, 
-perhaps a couple hours vs a couple days, and much less parallelizable 
-without slowing all of them down, since they tend to saturate the bus or 
-close to it (the reason fast SATA-based SSDs all tend to rate similarly 
-speed-wise, the SATA bus is the bottleneck and the PCI-E bus isn't /that/ 
-far behind!, tho the PCIE bus can be /enough/ faster to give direct PCIE-
-interface SSDs a definite speed boost over top-of-the-line SATA interface 
-devices... for those that can afford their accordingly higher prices).
+Making an entirely new btrfs and doing a btrfs send/receive for the 
+duplicate, or using btrfs snapshots, is a more practical way to go.  (Tho 
+watch out for the implications of btrfs snapshots on nocow files!)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

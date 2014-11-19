@@ -1,106 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35450 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753731AbaKSCqn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 21:46:43 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XqvI2-00031T-68
-	for linux-btrfs@vger.kernel.org; Wed, 19 Nov 2014 03:46:42 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 03:46:42 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 03:46:42 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-Date: Wed, 19 Nov 2014 02:46:29 +0000 (UTC)
-Message-ID: <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net>
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
-	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>
-	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
-	<546BB2EA.5080809@ubuntu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from resqmta-po-04v.sys.comcast.net ([96.114.154.163]:51798 "EHLO
+	resqmta-po-04v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754101AbaKSCsw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 21:48:52 -0500
+Message-ID: <546C0513.6020306@pobox.com>
+Date: Tue, 18 Nov 2014 18:48:51 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: NEEDED :: btrfs subvol recreate (and related UUID issues)
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Phillip Susi posted on Tue, 18 Nov 2014 15:58:18 -0500 as excerpted:
+So I finally figured out how to ask about this correctly.
 
-> Are there really any that take longer than 30 seconds?  That's enough
-> time for thousands of retries.  If it can't be read after a dozen tries,
-> it ain't never gonna work.  It seems absurd that a drive would keep
-> trying for so long.
+As near as I can tell the difference between a subvolume created with 
+create and a subvolume created with snapshot is the existence of the 
+parent_uuid datum. Create has no parent, snapshot has the its 
+parent_uuid equal to the doner/origin subvol.
 
-I'm not sure about normal operation, but certainly, many drives take 
-longer than 30 seconds to stabilize after power-on, and I routinely see 
-resets during this time.
+given
 
-In fact, as I recently posted, power-up stabilization time can and often 
-does kill reliable multi-drive device or filesystem (my experience is 
-with mdraid and btrfs raid) resume from suspend to RAM or hibernate to 
-disk, either one or both, because it's often enough the case that one 
-device or another will take enough longer to stabilize than the other, 
-that it'll be failed out of the raid.
+btrfs subvol create /vol1 #UUID=A
+# things happen
+btrfs subvol snap /vol1 /vol1_snap1 #UUID=B,PUUID=A
+# more things happen
+btrfs subvol snap /vol1 /vol1_snap2 #UUID=C,PUUID=A
 
-This doesn't happen on single-hardware-device block devices and 
-filesystems because in that case it's either up or down, if the device 
-doesn't come up in time the resume simply fails entirely, instead of 
-coming up with one or more devices there, but others missing as they 
-didn't stabilize in time, as is unfortunately all too common in the multi-
-device scenario.
+I _should_ be able to do something like
 
-I've seen this with both spinning rust and with SSDs, with mdraid and 
-btrfs, with multiple mobos and device controllers, and with resume both 
-from suspend to ram (if the machine powers down the storage devices in 
-that case, as most modern ones do) and hibernate to permanent storage 
-device, over several years worth of kernel series, so it's a reasonably 
-widespread phenomena, at least among consumer-level SATA devices.  (My 
-experience doesn't extend to enterprise-raid-level devices or proper 
-SCSI, etc, so I simply don't know, there.)
+btrfs subvol delete /vol1
+btrfs subvol recreate /vol1_snap1 /vol1 # any name really
 
-While two minutes is getting a bit long, I think it's still within normal 
-range, and some devices definitely take over a minute enough of the time 
-to be both noticeable and irritating.
+and if the first /vol1 had a UUID=A then the new /vol1 (or whatever 
+name) should also have a UUID=A which would effectively recreate the 
+parent as proper parent for /vol1_snap1 and /vol1_snap2 etc.
 
-That said, I SHOULD say I'd be far *MORE* irritated if the device simply 
-pretended it was stable and started reading/writing data before it really 
-had stabilized, particularly with SSDs where that sort of behavior has 
-been observed and is known to put some devices at risk of complete 
-scrambling of either media or firmware, beyond recovery at times.  That 
-of course is the risk of going the other direction, and I'd a WHOLE lot 
-rather have devices play it safe for another 30 seconds or so after they /
-think/ they're stable and be SURE, than pretend to be just fine when 
-voltages have NOT stabilized yet and thus end up scrambling things 
-irrecoverably.  I've never had that happen here tho I've never stress-
-tested for it, only done normal operation, but I've seen testing reports 
-where the testers DID make it happen surprisingly easily, to a surprising 
-number of their test devices.
+ADDITIONALLY
 
-So, umm... I suspect the 2-minute default is 2 minutes due to power-up 
-stabilizing issues, where two minutes is a reasonable compromise between 
-failing the boot most of the time if the timeout is too low, and taking 
-excessively long for very little further gain.
+There should be a --force option to recreate that would delete any 
+conflicting parent while doing the recreate within a transaction.
 
-And in my experience, the only way around that, at the consumer level at 
-least, would be to split the timeouts, perhaps setting something even 
-higher, 2.5-3 minutes on power-on, while lowering the operational timeout 
-to something more sane for operation, probably 30 seconds or so by 
-default, but easily tunable down to 10-20 seconds (or even lower, 5 
-seconds, even for consumer level devices?) for those who had hardware 
-that fit within that tolerance and wanted the performance.  But at least 
-to my knowledge, there's no such split in reset timeout values available 
-(maybe for SCSI?), and due to auto-spindown and power-saving, I'm not 
-sure whether it's even possible, without some specific hardware feature 
-available to tell the kernel that it has in fact NOT been in power-saving 
-mode for say 5-10 minutes, hopefully long enough that voltage readings 
-really /are/ fully stabilized and a shorter timeout is possible.
+e.g. btrfs subvol recreate --force /vol1_snap2 /newvol
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+would result in
+open_transaction;
+find UUID=A and delete;
+create new UUID=A with name /newvol (possibly the same name);
+copy/reflink in root items a-la snapshot, from donor object q.v #UUID=C;
+commit_transaction.
 
+ADDITIONALLY I'd _expect_
+
+btrfs subvol snap /vol1_snap2 /vol1_snap3
+to produce #UUID=D,PUUID=A instead of the current #UUID=D,PUUID=C either 
+as the default or in response to a theoretical opton such as --peer
+
+I understand that you are really copying/reflinking UUID=C or =B in the 
+respective cases, but the actual use cases I am hitting really do need a 
+more stable/predictable parentage tree.
+
+It is *particularly* vexing that the btrfs receive(d) incremental 
+snapshots have a completely different parentage layout compared to the 
+original snapshots and the non-relative ones.
+
+====== Example Use Case ======
+
+My "stock" drive layout is to make a btrfs as in
+
+mkfs.btrfs /dev/sdx
+mount /dev/sdx /target
+btrfs subvol create /target/__System # eventual root subvolume
+btrfs subvol create /target/home
+
+Then I do the normal sutff and make snapshots that I transfer to 
+external (USB) drive(s) for backup. I do the whole incremental send 
+thing etc. Typically two (one on-site, one off-site). The backup drives 
+have subdirectories for different hosts, so 
+"/backup/hostA/__System_BACKUP_$date" is a typical file name.
+
+In an emergency I'd want to be able to plug in that local copy USB drive 
+somewhere, do a "btrfs subvol recreate /hostA/__System_whatever 
+/__System" then plug it into the failed box and get it back up in least 
+available time _without_ breaking the parentage of the subsequent 
+off-site backups. (since the target drive _never_ had /__System this 
+isn't even an on-media collision).
+
+
+====== Total Apparent Expense =====
+
+I'm not gods gift to this code base (yet), it looks like a recreate 
+operation would involve adding boolean(s) to struct 
+btrfs_pending_snapshot just like the existing "readonly", so like 
+recreate_parent, peer_snap and then juggling transaction.c (at about 
+line 1249)
+
+         uuid_le_gen(&new_uuid);
+         memcpy(new_root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
+         memcpy(new_root_item->parent_uuid, root->root_item.uuid,
+                         BTRFS_UUID_SIZE);
+
+so that
+
+if (pending->recreate_parent) {
+         memcpy(new_root_item->uuid, root->root_item.parent_uuid,
+                         BTRFS_UUID_SIZE);
+} else if (pending->peer_snap)
+         uuid_le_gen(&new_uuid);
+         memcpy(new_root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
+         memcpy(new_root_item->parent_uuid, root->root_item.parent_uuid,
+                         BTRFS_UUID_SIZE);
+} else {
+         uuid_le_gen(&new_uuid);
+         memcpy(new_root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
+         memcpy(new_root_item->parent_uuid, root->root_item.uuid,
+                         BTRFS_UUID_SIZE);
+}
+
+plus the delete/collision check if it's not already in there...
+
+
+SO....
+
+Is this something worth doing?
+Am I on a wrong track technologically?
+
+Is there anything glaringly wrong with these ideas?
+
+-- Rob.

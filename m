@@ -1,38 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:59042 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753809AbaKSCy4 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 21:54:56 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
-Subject: Re: BTRFS messes up snapshot LV with origin
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <546BA96D.4050805@ubuntu.com>
-Date: Tue, 18 Nov 2014 19:54:55 -0700
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com> <546B68F8.6080008@ubuntu.com> <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com> <546BA96D.4050805@ubuntu.com>
-To: Phillip Susi <psusi@ubuntu.com>
+Received: from plane.gmane.org ([80.91.229.3]:36089 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753704AbaKSDG6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Nov 2014 22:06:58 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xqvbd-0008NB-4k
+	for linux-btrfs@vger.kernel.org; Wed, 19 Nov 2014 04:06:57 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:06:57 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:06:57 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs on a failing drive
+Date: Wed, 19 Nov 2014 03:06:45 +0000 (UTC)
+Message-ID: <pan$4d12d$ac36086c$dc5d83e5$8040fa67@cox.net>
+References: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>
+	<546A9E0F.4070108@ubuntu.com>
+	<CAD1x5BDJhZ6a=91G8+UzLTY+Oik7MVpr-XGKOQrOnXpkRLjwug@mail.gmail.com>
+	<546B676E.6040305@ubuntu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Phillip Susi posted on Tue, 18 Nov 2014 10:36:14 -0500 as excerpted:
 
-On Nov 18, 2014, at 1:17 PM, Phillip Susi <psusi@ubuntu.com> wrote:
-
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
+> As I said before though, the errors you posted from dmesg don't indicate
+> that the drive failed to read sectors, but rather that it returned
+> incorrect data, and this is *NEVER* supposed to happen.
 > 
-> On 11/18/2014 2:17 PM, Chris Murphy wrote:
->> What if you have a Btrfs raid1 volume using two LV’s and then 
->> snapshot both LV’s?
-> 
-> That's even more silly than a single lvm snapshot under btrfs.  Just
-> don't do it.
+> I'd suggest running a few passes of badblocks over the drive, testing
+> writing different patterns and verifying that they read back correctly.
 
-Why is it silly? Btrfs on a thin volume has practical use case aside from just being thinly provisioned, its snapshots are block device based, not merely that of an fs tree.
++1 for badblocks! =:^)
 
-Looks like lvm.conf does have a way to affect LV autoactivation, and there may be another way to achieve this also. Right after the snapshot(s) they’d need to have their autoactivation disabled to avoid UUID confusion.
+Tho a hint if you decide to test multiple drives as I did some years 
+ago.  Doing a multiple passes (I'd suggest at least two) on a full drive 
+can take QUITE some time (days), due to the shear volume of data to be 
+written to the drive, then read back to verify, then written as a new 
+pattern and read back again.
 
+But unlike IDE, the bottleneck on at least spinning rust SATA (well, 
+unless you go heavy port-multiplier) tends to be the platters themselves, 
+not the buses as they're point-to-point now days, or the controllers.  
+Generally you can process four or more drives in parallel without slowing 
+down the individual results significantly at all.  Thus, while it takes 
+days to test a single drive, it normally takes the same time to process 
+four drives in parallel!  So if you have 4+ devices to badblocks-test, 
+definitely setup four (perhaps more, depending on hardware layout) 
+instances of badblocks running at once, one to each of the devices.  Cut 
+your time for all four done serially to say 8 days, to only two days when 
+done in parallel! =:^)
 
-Chris Murphy
+Of course good SSDs tend to be both many times faster and several times 
+smaller in capacity, so a badblocks run on them should be MUCH faster, 
+perhaps a couple hours vs a couple days, and much less parallelizable 
+without slowing all of them down, since they tend to saturate the bus or 
+close to it (the reason fast SATA-based SSDs all tend to rate similarly 
+speed-wise, the SATA bus is the bottleneck and the PCI-E bus isn't /that/ 
+far behind!, tho the PCIE bus can be /enough/ faster to give direct PCIE-
+interface SSDs a definite speed boost over top-of-the-line SATA interface 
+devices... for those that can afford their accordingly higher prices).
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

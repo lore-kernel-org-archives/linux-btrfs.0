@@ -1,67 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f47.google.com ([209.85.192.47]:57251 "EHLO
-	mail-qg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932175AbaKRU65 (ORCPT
+Received: from resqmta-ch2-08v.sys.comcast.net ([69.252.207.40]:41357 "EHLO
+	resqmta-ch2-08v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932285AbaKSB3Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 15:58:57 -0500
-Received: by mail-qg0-f47.google.com with SMTP id z60so5250055qgd.34
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 12:58:56 -0800 (PST)
-Message-ID: <546BB2EA.5080809@ubuntu.com>
-Date: Tue, 18 Nov 2014 15:58:18 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Tue, 18 Nov 2014 20:29:16 -0500
+Message-ID: <546BF268.5050706@pobox.com>
+Date: Tue, 18 Nov 2014 17:29:12 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za> <546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org> <47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
-In-Reply-To: <47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
-Content-Type: text/plain; charset=windows-1252
+To: Phillip Susi <psusi@ubuntu.com>, Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS messes up snapshot LV with origin
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com> <546B68F8.6080008@ubuntu.com>
+In-Reply-To: <546B68F8.6080008@ubuntu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 11/18/2014 07:42 AM, Phillip Susi wrote:
 
-On 11/18/2014 1:57 PM, Chris Murphy wrote:
-> So a.) use smartctl -l scterc to change the value below 30 seconds 
-> (300 deciseconds) with 70 deciseconds being reasonable. If the
-> drive doesn’t support SCT commands, then b.) change the linux scsi
-> command timer to be greater than 120 seconds.
-> 
-> Strictly speaking the command timer would be set to a value that 
-> ensures there are no link reset messages in dmesg, that it’s long 
-> enough that the drive itself times out and actually reports a read 
-> error. This could be much shorter than 120 seconds. I don’t know
-> if there are any consumer drives that try longer than 2 minutes to 
-> recover data from a marginally bad sector.
+> On 11/18/2014 1:16 AM, Chris Murphy wrote:
+>> (stuff about UUIDs and LVM snapshots).
+ > (suggestion to use LVM paths instead).
 
-Are there really any that take longer than 30 seconds?  That's enough
-time for thousands of retries.  If it can't be read after a dozen
-tries, it ain't never gonna work.  It seems absurd that a drive would
-keep trying for so long.
+This is also an XFS+LVM+LVM_Snapshot problem going back to at least 
+2009. It's inherent to the block-device-level snapshot phenomonia.
 
-> Ideally though, don’t use drives that lack SCT support in multiple 
-> device volume configurations. An up to 2 minute hang of the
-> storage stack isn’t production compatible for most workflows.
+q.v. http://www.miljan.org/main/2009/11/16/lvm-snapshots-and-xfs/ et al
 
-Wasn't there an early failure flag that md ( and therefore, btrfs when
-doing raid ) sets so the scsi stack doesn't bother with recovery
-attempts and just fails the request?  Thus if the drive takes longer
-than the scsi_timeout, the failure would be reported to btrfs, which
-then can recover using the other copy, write it back to the bad drive,
-and hopefully that fixes it?
+In XFS you attack the snapshot with a command to regenerate the UUID as 
+soon as you take the snapshot. I don't think there is a "regenerate all 
+my UUIDs" command for BTRFS.
 
-In that case, you probably want to lower the timeout so that the
-recover kicks in sooner instead of hanging your IO stack for 30 seconds.
+There are other places this can bone you, like old-format mdadm mirrors, 
+where the metadata was only at the end of the partition so you could 
+accidentally see two copied of your RAID1 file system if you hand't 
+built/started the array.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+There is no really good way to prevent this other than "being really 
+careful" or "not doing that at all".
 
-iQEcBAEBAgAGBQJUa7LqAAoJEI5FoCIzSKrw2Y0H/3Q03vCTxXeGkqvOYG/arZgk
-yHq/ruWIKMgfaESdu0Ujzoqbe7XopUueU8luKon52LtbgIFhOM5XnMu/o52KPXIS
-CVLnNtRWNbykHJMQu0Sk4lpPrUVI5QP9Ya9ZGVFM4x2ehvJGDAT+wcRWP5OH0waf
-mgK+oOnadsckqiSbcQhGrxecjTWZFu5WUCzWFPx+4sEV5ta/tmL0obhHcyho+SDN
-lCib2KI9YGzS2sm+V/Qe2i/3ZMp8QY8aAD2x/KlV0DBxkRLZQdOoD3ZkBiaApxZX
-VMfXNCKLMexwpe+rGGemH/fCvhRpM/z1aHu8D1u4QVnoWPzD51vX7ySLkwRHaGo=
-=XZkM
------END PGP SIGNATURE-----
+Sorry. Cost of doing business. Cheers...
+Rob.

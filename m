@@ -1,100 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-12v.sys.comcast.net ([69.252.207.44]:55528 "EHLO
-	resqmta-ch2-12v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S933694AbaKSVFR (ORCPT
+Received: from mail-qc0-f173.google.com ([209.85.216.173]:35831 "EHLO
+	mail-qc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756941AbaKSVrc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 16:05:17 -0500
-Message-ID: <546D0609.9040105@pobox.com>
-Date: Wed, 19 Nov 2014 13:05:13 -0800
-From: Robert White <rwhite@pobox.com>
+	Wed, 19 Nov 2014 16:47:32 -0500
+Received: by mail-qc0-f173.google.com with SMTP id i17so1200557qcy.18
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 13:47:31 -0800 (PST)
+Message-ID: <546D0FEA.5000608@ubuntu.com>
+Date: Wed, 19 Nov 2014 16:47:22 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Phillip Susi <psusi@ubuntu.com>, Duncan <1i5t5.duncan@cox.net>,
+To: Robert White <rwhite@pobox.com>, Duncan <1i5t5.duncan@cox.net>,
         linux-btrfs@vger.kernel.org
 Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com>
-In-Reply-To: <546CC04F.6040207@ubuntu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com>
+In-Reply-To: <546D0609.9040105@pobox.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/19/2014 08:07 AM, Phillip Susi wrote:
-> On 11/18/2014 9:46 PM, Duncan wrote:
->> I'm not sure about normal operation, but certainly, many drives
->> take longer than 30 seconds to stabilize after power-on, and I
->> routinely see resets during this time.
->
-> As far as I have seen, typical drive spin up time is on the order of
-> 3-7 seconds.  Hell, I remember my pair of first generation seagate
-> cheetah 15,000 rpm drives seemed to take *forever* to spin up and that
-> still was maybe only 15 seconds.  If a drive takes longer than 30
-> seconds, then there is something wrong with it.  I figure there is a
-> reason why spin up time is tracked by SMART so it seems like long spin
-> up time is a sign of a sick drive.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-I was recently re-factoring Underdog (http://underdog.sourceforge.net) 
-startup scripts to separate out the various startup domains (e.g. lvm, 
-luks, mdadm) in the prtotype init.
+On 11/19/2014 4:05 PM, Robert White wrote:
+> It's cheaper, and less error prone, and less likely to generate
+> customer returns if the generic controller chips just "send init,
+> wait a fixed delay, then request a status" compared to trying to
+> "are-you-there-yet" poll each device like a nagging child. And you
+> are going to see that at every level. And you are going to see it
+> multiply with _sparsely_ provisioned buses where the cycle is going
+> to be retried for absent LUNs (one disk on a Wide SCSI bus and a
+> controller set to probe all LUNs is particularly egregious)
 
-So I notice you (Duncan) use the word "stabilize", as do a small number 
-of drivers in the linux kernel. This word has very little to do with 
-"disks" per se.
+No, they do not wait a fixed time, then proceed.  They do in fact
+issue the command, then poll or wait for an interrupt to know when it
+is done, then time out and give up if that doesn't happen within a
+reasonable amount of time.
 
-Between SCSI probing LUNs (where the controller tries every theoretical 
-address and gives a potential device ample time to reply), and 
-usb-storage having a simple timer delay set for each volume it sees, 
-there is a lot of "waiting in the name of safety" going on in the linux 
-kernel at device initialization.
+> One of the reasons that the whole industry has started favoring 
+> point-to-point (SATA, SAS) or physical intercessor chaining 
+> point-to-point (eSATA) buses is to remove a lot of those
+> wait-and-see delays.
 
-When I added the messages "scanning /dev/sd??" to the startup sequence 
-as I iterate through the disks and partitions present I discovered that 
-the first time I called blkid (e.g. right between /dev/sda and 
-/dev/sda1) I'd get a huge hit of many human seconds (I didn't time it, 
-but I'd say eight or so) just for having a 2Tb My Book WD 3.0 disk 
-enclosure attached as /dev/sdc. This enclosure having "spun up" in the 
-previous boot cycle and only bing a soft reboot was immaterial. In this 
-case usb-store is going to take its time and do its deal regardless of 
-the state of the physical drive itself.
+Nope... even with the ancient PIO mode PATA interface, you polled a
+ready bit in the status register to see if it was done yet.  If you
+always waited 30 seconds for every command your system wouldn't boot
+up until next year.
 
-So there are _lots_ of places where you are going to get delays and very 
-few of them involve the disk itself going from power-off to ready.
+> Another strong actor is selecting the wrong storage controller
+> chipset driver. In that case you may be faling back from high-end
+> device you think it is, through intermediate chip-set, and back to
+> ACPI or BIOS emulation
 
-You said it yourself with respect to SSDs.
+There is no such thing as ACPI or BIOS emulation.  AHCI SATA
+controllers do usually have an old IDE emulation mode instead of AHCI
+mode, but this isn't going to cause ridiculously long delays.
 
-It's cheaper, and less error prone, and less likely to generate customer 
-returns if the generic controller chips just "send init, wait a fixed 
-delay, then request a status" compared to trying to "are-you-there-yet" 
-poll each device like a nagging child. And you are going to see that at 
-every level. And you are going to see it multiply with _sparsely_ 
-provisioned buses where the cycle is going to be retried for absent LUNs 
-(one disk on a Wide SCSI bus and a controller set to probe all LUNs is 
-particularly egregious)
+> Another common cause is having a dedicated hardware RAID
+> controller (dell likes to put LSI MegaRaid controllers in their
+> boxes for example), many mother boards have hardware RAID support
+> available through the bios, etc, leaving that feature active, then
+> the adding a drive and
 
-One of the reasons that the whole industry has started favoring 
-point-to-point (SATA, SAS) or physical intercessor chaining 
-point-to-point (eSATA) buses is to remove a lot of those wait-and-see 
-delays.
+That would be fake raid, not hardware raid.
 
-That said, you should not see a drive (or target enclosure, or 
-controller) "reset" during spin up. In a SCSI setting this is almost 
-always a cabling, termination, or addressing issue. In IDE its jumper 
-mismatch (master vs slave vs cable-select). Less often its a 
-partitioning issue (trying to access sectors beyond the end of the drive).
+> _not_ initializing that drive with the RAID controller disk setup.
+> In this case the controller is going to repeatedly probe the drive
+> for its proprietary controller signature blocks (and reset the
+> drive after each attempt) and then finally fall back to raw block
+> pass-through. This can take a long time (thirty seconds to a
+> minute).
 
-Another strong actor is selecting the wrong storage controller chipset 
-driver. In that case you may be faling back from high-end device you 
-think it is, through intermediate chip-set, and back to ACPI or BIOS 
-emulation
+No, no, and no.  If it reads the drive and does not find its metadata,
+it falls back to pass through.  The actual read takes only
+milliseconds, though it may have to wait a few seconds for the drive
+to spin up.  There is no reason it would keep retrying after a
+successful read.
 
-Another common cause is having a dedicated hardware RAID controller 
-(dell likes to put LSI MegaRaid controllers in their boxes for example), 
-many mother boards have hardware RAID support available through the 
-bios, etc, leaving that feature active, then the adding a drive and 
-_not_ initializing that drive with the RAID controller disk setup. In 
-this case the controller is going to repeatedly probe the drive for its 
-proprietary controller signature blocks (and reset the drive after each 
-attempt) and then finally fall back to raw block pass-through. This can 
-take a long time (thirty seconds to a minute).
+The way you end up with 30-60 second startup time with a raid is if
+you have several drives and staggered spinup mode enabled, then each
+drive is started one at a time instead of all at once so their
+cumulative startup time can add up fairly high.
 
-But seriously, if you are seeing "reset" anywhere in any storage chain 
-during a normal power-on cycle then you've got a problem  with geometry 
-or configuration.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+
+iQEcBAEBAgAGBQJUbQ/qAAoJEI5FoCIzSKrwuhwH/R/+EVTpNlw36naJ8mxqMagt
+/xafq+1kGhwNjLTPV68CI4Wt24WSGOLqpq5FPWlTMxuN0VSnX/wqBeSbz4w2Vl3F
+VNic+4RqhmzS3EnLXNzkHyF2Z+hQEEldOlheAobkQb4hv/7jVxBri42nMdHQUq5w
+em181txT8zkltmV+dm8aYcro8Z4ewntQtyGaO6U/nCfxt9Odr2rfytyeuSyJi9uY
++dKlGSb5klIFwCOOSoRqEz2+KOFHF7td9RrcfIRcPRgjKROH0YilQ8T53lTMoNL1
+aUMsbyUy+edEBN1a4o/FqK3dEvBSu1nnRGRpSgm2fFGKhyi/z9gmJ1ZXTdYZRXE=
+=/O7+
+-----END PGP SIGNATURE-----

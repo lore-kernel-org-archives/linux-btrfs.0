@@ -1,64 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:63269 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755100AbaKSTX2 (ORCPT
+Received: from resqmta-ch2-12v.sys.comcast.net ([69.252.207.44]:55528 "EHLO
+	resqmta-ch2-12v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933694AbaKSVFR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 14:23:28 -0500
-Received: by mail-qc0-f174.google.com with SMTP id c9so963703qcz.33
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 11:23:27 -0800 (PST)
-Message-ID: <546CEE27.10706@ubuntu.com>
-Date: Wed, 19 Nov 2014 14:23:19 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Wed, 19 Nov 2014 16:05:17 -0500
+Message-ID: <546D0609.9040105@pobox.com>
+Date: Wed, 19 Nov 2014 13:05:13 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>	<54699CC7.1050909@swiftspirit.co.za>	<546A46A5.8030603@inwind.it>	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>	<546B68F8.6080008@ubuntu.com>	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>	<546BA96D.4050805@ubuntu.com>	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>	<546CB531.2060509@ubuntu.com> <CAJCQCtR6CZq2iz4_cP5Es4HHGsZiOmo55w8iy6MT+cEN0BE0yQ@mail.gmail.com>
-In-Reply-To: <CAJCQCtR6CZq2iz4_cP5Es4HHGsZiOmo55w8iy6MT+cEN0BE0yQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+To: Phillip Susi <psusi@ubuntu.com>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com>
+In-Reply-To: <546CC04F.6040207@ubuntu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 11/19/2014 08:07 AM, Phillip Susi wrote:
+> On 11/18/2014 9:46 PM, Duncan wrote:
+>> I'm not sure about normal operation, but certainly, many drives
+>> take longer than 30 seconds to stabilize after power-on, and I
+>> routinely see resets during this time.
+>
+> As far as I have seen, typical drive spin up time is on the order of
+> 3-7 seconds.  Hell, I remember my pair of first generation seagate
+> cheetah 15,000 rpm drives seemed to take *forever* to spin up and that
+> still was maybe only 15 seconds.  If a drive takes longer than 30
+> seconds, then there is something wrong with it.  I figure there is a
+> reason why spin up time is tracked by SMART so it seems like long spin
+> up time is a sign of a sick drive.
 
-On 11/19/2014 1:33 PM, Chris Murphy wrote:
-> Thin volumes are more efficient. And the user creating them doesn't
-> have to mess around with locating physical devices or possibly
-> partitioning them. Plus in enterprise environments with lots of
-> storage and many different kinds of use cases, even knowledable
-> users aren't always granted full access to the physical storage
-> anyway. They get a VG to play with, or now they can have a thin
-> pool and only consume on storage what is actually used, and not
-> what they've reserved. You can mkfs a 4TG virtual size volume, 
-> while it only uses 1MB of physical extents on storage. And all of 
-> that is orthogonal to using XFS or Btrfs which again comes down to 
-> use case. And whether I'd have LVM mirror or Btrfs mirror is again 
-> a question of use case, maybe I'm OK with LVM mirroring and I just 
-> get the rare corrupt file warning and that's OK. In another use 
-> case, corruption isn't OK, I need higher availability of known
-> good data therefore I need Btrfs doing the mirroring.
+I was recently re-factoring Underdog (http://underdog.sourceforge.net) 
+startup scripts to separate out the various startup domains (e.g. lvm, 
+luks, mdadm) in the prtotype init.
 
-Correct me if I'm wrong, but this kind of setup is basically where you
-have a provider running an lvm thin pool volume on their hardware, and
-exposing it to the customer's vm as a virtual disk.  In that case,
-then the provider can do their snapshots and it won't cause this
-problem since the snapshots aren't visible to the vm.  Also in these
-cases the provider is normally already providing data protection by
-having the vg on a raid6 or raid60 or something, so having the client
-vm mirror the data in btrfs is a bit redundant.
+So I notice you (Duncan) use the word "stabilize", as do a small number 
+of drivers in the linux kernel. This word has very little to do with 
+"disks" per se.
 
+Between SCSI probing LUNs (where the controller tries every theoretical 
+address and gives a potential device ample time to reply), and 
+usb-storage having a simple timer delay set for each volume it sees, 
+there is a lot of "waiting in the name of safety" going on in the linux 
+kernel at device initialization.
 
+When I added the messages "scanning /dev/sd??" to the startup sequence 
+as I iterate through the disks and partitions present I discovered that 
+the first time I called blkid (e.g. right between /dev/sda and 
+/dev/sda1) I'd get a huge hit of many human seconds (I didn't time it, 
+but I'd say eight or so) just for having a 2Tb My Book WD 3.0 disk 
+enclosure attached as /dev/sdc. This enclosure having "spun up" in the 
+previous boot cycle and only bing a soft reboot was immaterial. In this 
+case usb-store is going to take its time and do its deal regardless of 
+the state of the physical drive itself.
 
+So there are _lots_ of places where you are going to get delays and very 
+few of them involve the disk itself going from power-off to ready.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+You said it yourself with respect to SSDs.
 
-iQEcBAEBAgAGBQJUbO4nAAoJEI5FoCIzSKrwl/QIAJ7arJ0ZXVc16pBRjE2F66uV
-GAOhatdx8pLhGey6by+gV8Ltvx4bK3BG40dkvQIM9RN9UFC5vofQ4FnzIn1nfXZB
-qyyITE2mF+lE3RNCb8ZKxwG58rfa9NOModPCeNVFWkS6+fyyhGY23sliWbVO6b15
-w6BD5xu/Pp7Fhgkx81AL07XpusR9c8pKZd8ZHw4nozFHw20+13XuL+2g8axpZS+O
-Xd9W5GRlC+0k9jQ0q9xGi1jh6QpjMSWVj54MNS5jRubsY65TtmFPkdvgaMGD4U5k
-bADSEUMfij9NRMw8VwA4ik/JEi1IbukD4u1geKeZTowMGXReel2RimeA/PhFYcc=
-=tmDI
------END PGP SIGNATURE-----
+It's cheaper, and less error prone, and less likely to generate customer 
+returns if the generic controller chips just "send init, wait a fixed 
+delay, then request a status" compared to trying to "are-you-there-yet" 
+poll each device like a nagging child. And you are going to see that at 
+every level. And you are going to see it multiply with _sparsely_ 
+provisioned buses where the cycle is going to be retried for absent LUNs 
+(one disk on a Wide SCSI bus and a controller set to probe all LUNs is 
+particularly egregious)
+
+One of the reasons that the whole industry has started favoring 
+point-to-point (SATA, SAS) or physical intercessor chaining 
+point-to-point (eSATA) buses is to remove a lot of those wait-and-see 
+delays.
+
+That said, you should not see a drive (or target enclosure, or 
+controller) "reset" during spin up. In a SCSI setting this is almost 
+always a cabling, termination, or addressing issue. In IDE its jumper 
+mismatch (master vs slave vs cable-select). Less often its a 
+partitioning issue (trying to access sectors beyond the end of the drive).
+
+Another strong actor is selecting the wrong storage controller chipset 
+driver. In that case you may be faling back from high-end device you 
+think it is, through intermediate chip-set, and back to ACPI or BIOS 
+emulation
+
+Another common cause is having a dedicated hardware RAID controller 
+(dell likes to put LSI MegaRaid controllers in their boxes for example), 
+many mother boards have hardware RAID support available through the 
+bios, etc, leaving that feature active, then the adding a drive and 
+_not_ initializing that drive with the RAID controller disk setup. In 
+this case the controller is going to repeatedly probe the drive for its 
+proprietary controller signature blocks (and reset the drive after each 
+attempt) and then finally fall back to raw block pass-through. This can 
+take a long time (thirty seconds to a minute).
+
+But seriously, if you are seeing "reset" anywhere in any storage chain 
+during a normal power-on cycle then you've got a problem  with geometry 
+or configuration.

@@ -1,53 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f175.google.com ([209.85.216.175]:46818 "EHLO
-	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754452AbaKSSTJ (ORCPT
+Received: from mail-yk0-f182.google.com ([209.85.160.182]:45969 "EHLO
+	mail-yk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755474AbaKSSfW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 13:19:09 -0500
-Received: by mail-qc0-f175.google.com with SMTP id b13so965181qcw.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 10:19:09 -0800 (PST)
-Message-ID: <546CDF15.4020905@ubuntu.com>
-Date: Wed, 19 Nov 2014 13:19:01 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Wed, 19 Nov 2014 13:35:22 -0500
+Received: by mail-yk0-f182.google.com with SMTP id 131so533560ykp.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 10:35:21 -0800 (PST)
 MIME-Version: 1.0
-To: Fennec Fox <fennectech@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs on a failing drive
-References: <CAD1x5BB5uevNP4wUsp+2tgVhofGr53QTURunsiM-4ico95R9vQ@mail.gmail.com>	<546A9E0F.4070108@ubuntu.com>	<CAD1x5BDJhZ6a=91G8+UzLTY+Oik7MVpr-XGKOQrOnXpkRLjwug@mail.gmail.com>	<546B676E.6040305@ubuntu.com> <CAD1x5BDDrKoJ2Zf6Tf5MK4VBc3Q57jPaF43KOdhgcmw7uCK=Zg@mail.gmail.com>
-In-Reply-To: <CAD1x5BDDrKoJ2Zf6Tf5MK4VBc3Q57jPaF43KOdhgcmw7uCK=Zg@mail.gmail.com>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <546CB531.2060509@ubuntu.com>
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
+	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+	<54699CC7.1050909@swiftspirit.co.za>
+	<546A46A5.8030603@inwind.it>
+	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
+	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
+	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+	<546B68F8.6080008@ubuntu.com>
+	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
+	<546BA96D.4050805@ubuntu.com>
+	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
+	<546CB531.2060509@ubuntu.com>
+Date: Wed, 19 Nov 2014 11:35:21 -0700
+Message-ID: <CAJCQCtR6CZq2iz4_cP5Es4HHGsZiOmo55w8iy6MT+cEN0BE0yQ@mail.gmail.com>
+Subject: Re: BTRFS messes up snapshot LV with origin
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Wed, Nov 19, 2014 at 8:20 AM, Phillip Susi <psusi@ubuntu.com> wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 11/18/2014 9:54 PM, Chris Murphy wrote:
+>> Why is it silly? Btrfs on a thin volume has practical use case
+>> aside from just being thinly provisioned, its snapshots are block
+>> device based, not merely that of an fs tree.
+>
+> Umm... because one of the big selling points of btrfs is that it is in
+> a much better position to make snapshots being aware of the fs tree
+> rather than doing it in the block layer.
 
-Again, please stop taking this conversation private; keep the mailing
-list on the Cc.
+This is why we have fsfreeze before taking block level snapshots. And
+I point out that consistent snapshots with Btrfs have posed challenges
+too, there's a recent fstest "snapshoting after file write + truncate"
+for this reason.
 
-On 11/19/2014 11:37 AM, Fennec Fox wrote:
-> well ive used spinrite and its found a few sectors   and they
-> never move   so obviously the drives firmware isnt dealing with bad
-> blocks on the drive   anyways ive got a new drive on order  but
-> what can i do to prevent the drive from killing any more data?
+A block layer snapshot will snapshot the entire file system, not just
+one tree. We don't have a way in Btrfs to snapshot the entire volume.
+Considering how things still aren't exactly stable yet, in particular
+with many snapshots, it's not unreasonable to want to freeze then
+snapshot the entire volume before doing some possibly risky testing or
+usage where even a Btrfs snapshot doesn't protect your entire volume
+should things go wrong.
 
-The drive will only remap bad blocks when you try to write to them, so
-if you haven't written to them then it is no surprise that they aren't
-going anywhere.
+>
+>
+> So it is kind of silly in the first place to be using lvm snapshots
+> under btrfs, but it is is doubly silly to use lvm for snapshots, and
+> btrfs for the mirroring rather than lvm.  Pick one layer and use it
+> for both functions.  Even if that is lvm, then it should also be
+> handling the mirroring.
 
-If the drive is actually returning bad data rather than failing the
-read outright, then the only thing you can do is to have btrfs
-duplicate all data so if the checksum on one copy is bad it can try
-the other.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+Thin volumes are more efficient. And the user creating them doesn't
+have to mess around with locating physical devices or possibly
+partitioning them. Plus in enterprise environments with lots of
+storage and many different kinds of use cases, even knowledable users
+aren't always granted full access to the physical storage anyway. They
+get a VG to play with, or now they can have a thin pool and only
+consume on storage what is actually used, and not what they've
+reserved. You can mkfs a 4TG virtual size volume, while it only uses
+1MB of physical extents on storage. And all of that is orthogonal to
+using XFS or Btrfs which again comes down to use case. And whether I'd
+have LVM mirror or Btrfs mirror is again a question of use case, maybe
+I'm OK with LVM mirroring and I just get the rare corrupt file warning
+and that's OK. In another use case, corruption isn't OK, I need higher
+availability of known good data therefore I need Btrfs doing the
+mirroring.
 
-iQEcBAEBAgAGBQJUbN8VAAoJEI5FoCIzSKrwGjkIAKxXbBcMaItyBe08yC/bipUH
-2crWLj5MKej1sn1HEo1WqgJM1hCEZuHCBa8I6ZIECcZmzs4rvKhzU4WWIQ7J/tMN
-8OYUzdsWboxbKHY5hrNEVsi8QcUTbz7HT3doaaYDhI7qERu1Ib/4FH+m5yFYEIu8
-tx5+N2PzyXctDlNnjY/pcFg+I2+QyA5Rb9X+fLpvVoZCEW7TTMhejfKSQpMEfzHW
-JsYyKwDpQO6cGIWi19P7pgHc2bsCzShPtFo9UQJh5TtuxjsqP01ju1UfQBX0+Y25
-B2LDAjyGE71pY68tBuS7EC9XSB9Iks5yEJotmwYTv3/L7bgDeAGPrj5cFOKG9Tc=
-=8JoK
------END PGP SIGNATURE-----
+So I find your argument thus far uncompelling.
+
+
+Chris Murphy

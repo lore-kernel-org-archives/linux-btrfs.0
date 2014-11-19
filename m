@@ -1,197 +1,253 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f176.google.com ([209.85.192.176]:37665 "EHLO
-	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755117AbaKSHWi (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:46510 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755743AbaKSI2g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 02:22:38 -0500
-Received: by mail-pd0-f176.google.com with SMTP id y10so879pdj.35
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Nov 2014 23:22:37 -0800 (PST)
-Date: Tue, 18 Nov 2014 23:22:35 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: linux-btrfs@vger.kernel.org, Mel Gorman <mgorman@suse.de>,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [RFC PATCH 0/6] btrfs: implement swap file support
-Message-ID: <20141119072235.GA6541@mew>
-References: <cover.1416219974.git.osandov@osandov.com>
- <20141117154817.GA25670@infradead.org>
+	Wed, 19 Nov 2014 03:28:36 -0500
+Date: Wed, 19 Nov 2014 16:28:23 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: make sure logged extents complete in the current
+ transaction
+Message-ID: <20141119082822.GA13897@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1416349181-15023-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="HlL+5n6rz5pIUxbD"
-In-Reply-To: <20141117154817.GA25670@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1416349181-15023-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---HlL+5n6rz5pIUxbD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Nov 17, 2014 at 07:48:17AM -0800, Christoph Hellwig wrote:
-> With the new iov_iter infrastructure that supprots direct I/O to kernel
-> pages please get rid of the ->readpage hack first.  I'm still utterly
-> disapoined that this crap ever got merged.
+On Tue, Nov 18, 2014 at 05:19:41PM -0500, Josef Bacik wrote:
+> Liu Bo pointed out that my previous fix would lose the generation update in the
+> scenario I described.  It is actually much worse than that, we could lose the
+> entire extent if we lose power right after the transaction commits.  Consider
+> the following
 > 
-That seems reasonable. Using direct I/O circumvents the need for patches 3, 4,
-and 5, which were workarounds for readpage being fed a swapcache page, and
-patch 1, which is a big, error-prone mess.
+> write extent 0-4k
+> log extent in log tree
+> commit transaction
+> 	< power fail happens here
+> ordered extent completes
+> 
+> We would lose the 0-4k extent because it hasn't updated the actual fs tree, and
+> the transaction commit will reset the log so it isn't replayed.  If we lose
+> power before the transaction commit we are save, otherwise we are not.
+> 
+> Fix this by keeping track of all extents we logged in this transaction.  Then
+> when we go to commit the transaction make sure we wait for all of those ordered
+> extents to complete before proceeding.  This will make sure that if we lose
+> power after the transaction commit we still have our data.  This also fixes the
+> problem of the improperly updated extent generation.  Thanks,
 
-Here's a nice little bit of insanity I put together in that direction --
-consider it a discussion point more than a patch. It does two things:
+This looks saner.
 
-- Uses an ITER_BVEC iov_iter to do direct_IO for swap_readpage. This makes
-  swap_readpage a synchronous operation, but I think that's the best we can do
-  with the existing interface.
-- Unless I'm missing something, there don't appear to be any instances of
-  ITER_BVEC | READ in the kernel, so the dio path doesn't know not to dirty
-  pages it gets that way. Dave Kleikamp and Ming Lei each previously submitted
-  patches doing this as part of adding an aio_kernel interface. (The NFS direct
-  I/O implementation doesn't know how to deal with these either, so this patch
-  actually breaks the only existing user of this code path, but in the interest
-  of keeping the patch short, I didn't try to fix it :)
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Obviously, there's more to be done if that's how you'd prefer I do this. I'm
-far from being an expert in any of this, so please let me know if I'm spewing
-nonsense :)
+thanks,
+-liubo
 
--- 
-Omar
-
---HlL+5n6rz5pIUxbD
-Content-Type: text/x-diff; charset=us-ascii
-Content-Disposition: attachment; filename="0001-swap-use-direct_IO-for-swap_readpage.patch"
-
->From e58c52e69a9aef07c0089f9ce552fca96d42bce9 Mon Sep 17 00:00:00 2001
-Message-Id: <e58c52e69a9aef07c0089f9ce552fca96d42bce9.1416380574.git.osandov@osandov.com>
-From: Omar Sandoval <osandov@osandov.com>
-Date: Tue, 18 Nov 2014 22:42:10 -0800
-Subject: [PATCH] swap: use direct_IO for swap_readpage
-
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/direct-io.c |  8 +++++---
- mm/page_io.c   | 37 ++++++++++++++++++++++++++++++-------
- 2 files changed, 35 insertions(+), 10 deletions(-)
-
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index e181b6b..e542ce4 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -120,6 +120,7 @@ struct dio {
- 	spinlock_t bio_lock;		/* protects BIO fields below */
- 	int page_errors;		/* errno from get_user_pages() */
- 	int is_async;			/* is IO async ? */
-+	int should_dirty;		/* should we mark read pages dirty? */
- 	bool defer_completion;		/* defer AIO completion to workqueue? */
- 	int io_error;			/* IO error in completion path */
- 	unsigned long refcount;		/* direct_io_worker() and bios */
-@@ -392,7 +393,7 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
- 	dio->refcount++;
- 	spin_unlock_irqrestore(&dio->bio_lock, flags);
- 
--	if (dio->is_async && dio->rw == READ)
-+	if (dio->is_async && dio->rw == READ && dio->should_dirty)
- 		bio_set_pages_dirty(bio);
- 
- 	if (sdio->submit_io)
-@@ -463,13 +464,13 @@ static int dio_bio_complete(struct dio *dio, struct bio *bio)
- 	if (!uptodate)
- 		dio->io_error = -EIO;
- 
--	if (dio->is_async && dio->rw == READ) {
-+	if (dio->is_async && dio->rw == READ && dio->should_dirty) {
- 		bio_check_pages_dirty(bio);	/* transfers ownership */
- 	} else {
- 		bio_for_each_segment_all(bvec, bio, i) {
- 			struct page *page = bvec->bv_page;
- 
--			if (dio->rw == READ && !PageCompound(page))
-+			if (dio->rw == READ && !PageCompound(page) && dio->should_dirty)
- 				set_page_dirty_lock(page);
- 			page_cache_release(page);
- 		}
-@@ -1177,6 +1178,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 
- 	dio->inode = inode;
- 	dio->rw = rw;
-+	dio->should_dirty = !(iter->type & ITER_BVEC);
- 
- 	/*
- 	 * For AIO O_(D)SYNC writes we need to defer completions to a workqueue
-diff --git a/mm/page_io.c b/mm/page_io.c
-index 955db8b..b9b84b2 100644
---- a/mm/page_io.c
-+++ b/mm/page_io.c
-@@ -266,8 +266,8 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
- 		struct address_space *mapping = swap_file->f_mapping;
- 		struct bio_vec bv = {
- 			.bv_page = page,
--			.bv_len  = PAGE_SIZE,
--			.bv_offset = 0
-+			.bv_len = PAGE_SIZE,
-+			.bv_offset = 0,
- 		};
- 		struct iov_iter from = {
- 			.type = ITER_BVEC | WRITE,
-@@ -283,8 +283,7 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
- 
- 		set_page_writeback(page);
- 		unlock_page(page);
--		ret = mapping->a_ops->direct_IO(ITER_BVEC | WRITE,
--						&kiocb, &from,
-+		ret = mapping->a_ops->direct_IO(WRITE, &kiocb, &from,
- 						kiocb.ki_pos);
- 		if (ret == PAGE_SIZE) {
- 			count_vm_event(PSWPOUT);
-@@ -303,7 +302,7 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
- 			set_page_dirty(page);
- 			ClearPageReclaim(page);
- 			pr_err_ratelimited("Write error on dio swapfile (%Lu)\n",
--				page_file_offset(page));
-+					   page_file_offset(page));
- 		}
- 		end_page_writeback(page);
- 		return ret;
-@@ -348,12 +347,36 @@ int swap_readpage(struct page *page)
- 	}
- 
- 	if (sis->flags & SWP_FILE) {
-+		struct kiocb kiocb;
- 		struct file *swap_file = sis->swap_file;
- 		struct address_space *mapping = swap_file->f_mapping;
-+		struct bio_vec bv = {
-+			.bv_page = page,
-+			.bv_len = PAGE_SIZE,
-+			.bv_offset = 0,
-+		};
-+		struct iov_iter to = {
-+			.type = ITER_BVEC | READ,
-+			.count = PAGE_SIZE,
-+			.iov_offset = 0,
-+			.nr_segs = 1,
-+		};
-+		to.bvec = &bv;	/* older gcc versions are broken */
-+
-+		init_sync_kiocb(&kiocb, swap_file);
-+		kiocb.ki_pos = page_file_offset(page);
-+		kiocb.ki_nbytes = PAGE_SIZE;
- 
--		ret = mapping->a_ops->readpage(swap_file, page);
--		if (!ret)
-+		ret = mapping->a_ops->direct_IO(READ, &kiocb, &to,
-+						kiocb.ki_pos);
-+		if (ret == PAGE_SIZE) {
-+			SetPageUptodate(page);
- 			count_vm_event(PSWPIN);
-+			ret = 0;
-+		} else {
-+			PageError(page); /* XXX: maybe? */
-+		}
-+		unlock_page(page);
- 		return ret;
- 	}
- 
--- 
-2.1.3
-
-
---HlL+5n6rz5pIUxbD--
+> 
+> cc: stable@vger.kernel.org
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/ordered-data.c |  6 ++++--
+>  fs/btrfs/ordered-data.h |  6 +++++-
+>  fs/btrfs/transaction.c  | 33 +++++++++++++++++++++++++++++++++
+>  fs/btrfs/transaction.h  |  2 ++
+>  fs/btrfs/tree-log.c     |  6 +++---
+>  5 files changed, 47 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index ac734ec..7c2dd7a 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -220,6 +220,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>  	INIT_LIST_HEAD(&entry->work_list);
+>  	init_completion(&entry->completion);
+>  	INIT_LIST_HEAD(&entry->log_list);
+> +	INIT_LIST_HEAD(&entry->trans_list);
+>  
+>  	trace_btrfs_ordered_extent_add(inode, entry);
+>  
+> @@ -472,7 +473,8 @@ void btrfs_submit_logged_extents(struct list_head *logged_list,
+>  	spin_unlock_irq(&log->log_extents_lock[index]);
+>  }
+>  
+> -void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
+> +void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
+> +			       struct btrfs_root *log, u64 transid)
+>  {
+>  	struct btrfs_ordered_extent *ordered;
+>  	int index = transid % 2;
+> @@ -497,7 +499,7 @@ void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
+>  		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
+>  						   &ordered->flags));
+>  
+> -		btrfs_put_ordered_extent(ordered);
+> +		list_add_tail(&ordered->trans_list, &trans->ordered);
+>  		spin_lock_irq(&log->log_extents_lock[index]);
+>  	}
+>  	spin_unlock_irq(&log->log_extents_lock[index]);
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index d81a274..171a841 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -121,6 +121,9 @@ struct btrfs_ordered_extent {
+>  	/* If we need to wait on this to be done */
+>  	struct list_head log_list;
+>  
+> +	/* If the transaction needs to wait on this ordered extent */
+> +	struct list_head trans_list;
+> +
+>  	/* used to wait for the BTRFS_ORDERED_COMPLETE bit */
+>  	wait_queue_head_t wait;
+>  
+> @@ -197,7 +200,8 @@ void btrfs_get_logged_extents(struct inode *inode,
+>  void btrfs_put_logged_extents(struct list_head *logged_list);
+>  void btrfs_submit_logged_extents(struct list_head *logged_list,
+>  				 struct btrfs_root *log);
+> -void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid);
+> +void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
+> +			       struct btrfs_root *log, u64 transid);
+>  void btrfs_free_logged_extents(struct btrfs_root *log, u64 transid);
+>  int __init ordered_data_init(void);
+>  void ordered_data_exit(void);
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index dcaae36..63c6d05 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -220,6 +220,7 @@ loop:
+>  	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+>  	INIT_LIST_HEAD(&cur_trans->pending_chunks);
+>  	INIT_LIST_HEAD(&cur_trans->switch_commits);
+> +	INIT_LIST_HEAD(&cur_trans->pending_ordered);
+>  	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+>  	extent_io_tree_init(&cur_trans->dirty_pages,
+>  			     fs_info->btree_inode->i_mapping);
+> @@ -488,6 +489,7 @@ again:
+>  	h->sync = false;
+>  	INIT_LIST_HEAD(&h->qgroup_ref_list);
+>  	INIT_LIST_HEAD(&h->new_bgs);
+> +	INIT_LIST_HEAD(&h->ordered);
+>  
+>  	smp_mb();
+>  	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+> @@ -719,6 +721,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+>  	if (!list_empty(&trans->new_bgs))
+>  		btrfs_create_pending_block_groups(trans, root);
+>  
+> +	if (!list_empty(&trans->ordered)) {
+> +		spin_lock(&info->trans_lock);
+> +		list_splice(&trans->ordered, &cur_trans->pending_ordered);
+> +		spin_unlock(&info->trans_lock);
+> +	}
+> +
+>  	trans->delayed_ref_updates = 0;
+>  	if (!trans->sync) {
+>  		must_run_delayed_refs =
+> @@ -1652,6 +1660,28 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
+>  		btrfs_wait_ordered_roots(fs_info, -1);
+>  }
+>  
+> +static inline void
+> +btrfs_wait_pending_ordered(struct btrfs_transaction *cur_trans,
+> +			   struct btrfs_fs_info *fs_info)
+> +{
+> +	struct btrfs_ordered_extent *ordered;
+> +
+> +	spin_lock(&fs_info->trans_lock);
+> +	while (!list_empty(&cur_trans->pending_ordered)) {
+> +		ordered = list_first_entry(&cur_trans->pending_ordered,
+> +					   struct btrfs_ordered_extent,
+> +					   trans_list);
+> +		list_del_init(&ordered->trans_list);
+> +		spin_unlock(&fs_info->trans_lock);
+> +
+> +		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_COMPLETE,
+> +						   &ordered->flags));
+> +		btrfs_put_ordered_extent(ordered);
+> +		spin_lock(&fs_info->trans_lock);
+> +	}
+> +	spin_unlock(&fs_info->trans_lock);
+> +}
+> +
+>  int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_root *root)
+>  {
+> @@ -1702,6 +1732,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  	}
+>  
+>  	spin_lock(&root->fs_info->trans_lock);
+> +	list_splice(&trans->ordered, &cur_trans->pending_ordered);
+>  	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
+>  		spin_unlock(&root->fs_info->trans_lock);
+>  		atomic_inc(&cur_trans->use_count);
+> @@ -1754,6 +1785,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  
+>  	btrfs_wait_delalloc_flush(root->fs_info);
+>  
+> +	btrfs_wait_pending_ordered(cur_trans, root->fs_info);
+> +
+>  	btrfs_scrub_pause(root);
+>  	/*
+>  	 * Ok now we need to make sure to block out any other joins while we
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index d8f40e1..1ba9c3e 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -56,6 +56,7 @@ struct btrfs_transaction {
+>  	wait_queue_head_t commit_wait;
+>  	struct list_head pending_snapshots;
+>  	struct list_head pending_chunks;
+> +	struct list_head pending_ordered;
+>  	struct list_head switch_commits;
+>  	struct btrfs_delayed_ref_root delayed_refs;
+>  	int aborted;
+> @@ -105,6 +106,7 @@ struct btrfs_trans_handle {
+>  	 */
+>  	struct btrfs_root *root;
+>  	struct seq_list delayed_ref_elem;
+> +	struct list_head ordered;
+>  	struct list_head qgroup_ref_list;
+>  	struct list_head new_bgs;
+>  };
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 70f99b1..337e4bc 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -2600,7 +2600,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+>  	if (atomic_read(&log_root_tree->log_commit[index2])) {
+>  		blk_finish_plug(&plug);
+>  		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+> -		btrfs_wait_logged_extents(log, log_transid);
+> +		btrfs_wait_logged_extents(trans, log, log_transid);
+>  		wait_log_commit(trans, log_root_tree,
+>  				root_log_ctx.log_transid);
+>  		mutex_unlock(&log_root_tree->log_mutex);
+> @@ -2645,7 +2645,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+>  	btrfs_wait_marked_extents(log_root_tree,
+>  				  &log_root_tree->dirty_log_pages,
+>  				  EXTENT_NEW | EXTENT_DIRTY);
+> -	btrfs_wait_logged_extents(log, log_transid);
+> +	btrfs_wait_logged_extents(trans, log, log_transid);
+>  
+>  	btrfs_set_super_log_root(root->fs_info->super_for_commit,
+>  				log_root_tree->node->start);
+> @@ -3766,7 +3766,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+>  	fi = btrfs_item_ptr(leaf, path->slots[0],
+>  			    struct btrfs_file_extent_item);
+>  
+> -	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
+> +	btrfs_set_token_file_extent_generation(leaf, fi, trans->transid,
+>  					       &token);
+>  	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+>  		btrfs_set_token_file_extent_type(leaf, fi,
+> -- 
+> 1.8.3.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,65 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:22083 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54932 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754627AbaKSO5w (ORCPT
+	by vger.kernel.org with ESMTP id S1756065AbaKSPrJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 09:57:52 -0500
-Message-ID: <546CAFE3.6040207@fb.com>
-Date: Wed, 19 Nov 2014 09:57:39 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 19 Nov 2014 10:47:09 -0500
+Date: Wed, 19 Nov 2014 10:47:03 -0500
+From: Chris Mason <clm@fb.com>
+To: Patrick Schmid <schmid@phys.ethz.ch>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Fix lockups from btrfs_clear_path_blocking
+Message-ID: <20141119154703.GB11548@ret.masoncoding.com>
 MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: <linux-btrfs@vger.kernel.org>, <stable@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: do not move em to modified list when unpinning
-References: <1415999790-4144-1-git-send-email-jbacik@fb.com> <20141119034556.GG29950@dastard>
-In-Reply-To: <20141119034556.GG29950@dastard>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/18/2014 10:45 PM, Dave Chinner wrote:
-> On Fri, Nov 14, 2014 at 04:16:30PM -0500, Josef Bacik wrote:
->> We use the modified list to keep track of which extents have been modified so we
->> know which ones are candidates for logging at fsync() time.  Newly modified
->> extents are added to the list at modification time, around the same time the
->> ordered extent is created.  We do this so that we don't have to wait for ordered
->> extents to complete before we know what we need to log.  The problem is when
->> something like this happens
->>
->> log extent 0-4k on inode 1
->> copy csum for 0-4k from ordered extent into log
->> sync log
->> commit transaction
->> log some other extent on inode 1
->> ordered extent for 0-4k completes and adds itself onto modified list again
->> log changed extents
->> see ordered extent for 0-4k has already been logged
->> 	at this point we assume the csum has been copied
->> sync log
->> crash
->>
->> On replay we will see the extent 0-4k in the log, drop the original 0-4k extent
->> which is the same one that we are replaying which also drops the csum, and then
->> we won't find the csum in the log for that bytenr.  This of course causes us to
->> have errors about not having csums for certain ranges of our inode.  So remove
->> the modified list manipulation in unpin_extent_cache, any modified extents
->> should have been added well before now, and we don't want them re-logged.  This
->> fixes my test that I could reliably reproduce this problem with.  Thanks,
->
-> Is it possiible to turn this unspecified test in into another
-> generic fsync xfstest?
->
+The fair reader/writer locks mean that btrfs_clear_path_blocking needs
+to strictly follow lock ordering rules even when we already have
+blocking locks on a given path.
 
-It depends on a new dm target I'm working on to better test power fail 
-scenarios, once I have that merged I have a few xfstests I'll be 
-submitting in this area.  Would you actually mind taking a quick look at 
-it to make sure it seems sane?
+Before we can clear a blocking lock on the path, we need to make sure
+all of the locks have been converted to blocking.  This will remove lock
+inversions against anyone spinning in write_lock() against the buffers
+we're trying to get read locks on.  These inversions didn't exist before
+the fair read/writer locks, but now we need to be more careful.
 
-https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/log/?h=dm-powerfail
+We papered over this deadlock in the past by changing
+btrfs_try_read_lock() to be a true trylock against both the spinlock and
+the blocking lock.  This was slower, and not sufficient to fix all the
+deadlocks.  This patch adds a btrfs_tree_read_lock_atomic(), which
+basically means get the spinlock but trylock on the blocking lock.
 
-The 'split' option is what is meant for ext* and xfs (I haven't tested 
-that part yet), which will just return the old data in the case of 
-unflushed data/metadata.  Anything you'd like to see added or changed? 
-Thanks,
+Signed-off-by: Chris Mason <clm@fb.com>
+Reported-by: Patrick Schmid <schmid@phys.ethz.ch>
+cc: stable@vger.kernel.org #v3.15+
 
-Josef
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 19bc616..150822e 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -80,13 +80,6 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+ {
+ 	int i;
+ 
+-#ifdef CONFIG_DEBUG_LOCK_ALLOC
+-	/* lockdep really cares that we take all of these spinlocks
+-	 * in the right order.  If any of the locks in the path are not
+-	 * currently blocking, it is going to complain.  So, make really
+-	 * really sure by forcing the path to blocking before we clear
+-	 * the path blocking.
+-	 */
+ 	if (held) {
+ 		btrfs_set_lock_blocking_rw(held, held_rw);
+ 		if (held_rw == BTRFS_WRITE_LOCK)
+@@ -95,7 +88,6 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+ 			held_rw = BTRFS_READ_LOCK_BLOCKING;
+ 	}
+ 	btrfs_set_path_blocking(p);
+-#endif
+ 
+ 	for (i = BTRFS_MAX_LEVEL - 1; i >= 0; i--) {
+ 		if (p->nodes[i] && p->locks[i]) {
+@@ -107,10 +99,8 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+ 		}
+ 	}
+ 
+-#ifdef CONFIG_DEBUG_LOCK_ALLOC
+ 	if (held)
+ 		btrfs_clear_lock_blocking_rw(held, held_rw);
+-#endif
+ }
+ 
+ /* this also releases the path */
+@@ -2893,7 +2883,7 @@ cow_done:
+ 					}
+ 					p->locks[level] = BTRFS_WRITE_LOCK;
+ 				} else {
+-					err = btrfs_try_tree_read_lock(b);
++					err = btrfs_tree_read_lock_atomic(b);
+ 					if (!err) {
+ 						btrfs_set_path_blocking(p);
+ 						btrfs_tree_read_lock(b);
+@@ -3025,7 +3015,7 @@ again:
+ 			}
+ 
+ 			level = btrfs_header_level(b);
+-			err = btrfs_try_tree_read_lock(b);
++			err = btrfs_tree_read_lock_atomic(b);
+ 			if (!err) {
+ 				btrfs_set_path_blocking(p);
+ 				btrfs_tree_read_lock(b);
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 5665d21..f8229ef 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -128,6 +128,26 @@ again:
+ }
+ 
+ /*
++ * take a spinning read lock.
++ * returns 1 if we get the read lock and 0 if we don't
++ * this won't wait for blocking writers
++ */
++int btrfs_tree_read_lock_atomic(struct extent_buffer *eb)
++{
++	if (atomic_read(&eb->blocking_writers))
++		return 0;
++
++	read_lock(&eb->lock);
++	if (atomic_read(&eb->blocking_writers)) {
++		read_unlock(&eb->lock);
++		return 0;
++	}
++	atomic_inc(&eb->read_locks);
++	atomic_inc(&eb->spinning_readers);
++	return 1;
++}
++
++/*
+  * returns 1 if we get the read lock and 0 if we don't
+  * this won't wait for blocking writers
+  */
+@@ -158,9 +178,7 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+ 	    atomic_read(&eb->blocking_readers))
+ 		return 0;
+ 
+-	if (!write_trylock(&eb->lock))
+-		return 0;
+-
++	write_lock(&eb->lock);
+ 	if (atomic_read(&eb->blocking_writers) ||
+ 	    atomic_read(&eb->blocking_readers)) {
+ 		write_unlock(&eb->lock);
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index b81e0e9..c44a9d5 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -35,6 +35,8 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw);
+ void btrfs_assert_tree_locked(struct extent_buffer *eb);
+ int btrfs_try_tree_read_lock(struct extent_buffer *eb);
+ int btrfs_try_tree_write_lock(struct extent_buffer *eb);
++int btrfs_tree_read_lock_atomic(struct extent_buffer *eb);
++
+ 
+ static inline void btrfs_tree_unlock_rw(struct extent_buffer *eb, int rw)
+ {

@@ -1,39 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3362 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752938AbaKMPxa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Nov 2014 10:53:30 -0500
-Message-ID: <5464D3F4.6030706@fb.com>
-Date: Thu, 13 Nov 2014 10:53:24 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from sandeen.net ([63.231.237.45]:34418 "EHLO sandeen.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754350AbaKSPde (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Nov 2014 10:33:34 -0500
+Message-ID: <546CB84B.8010200@sandeen.net>
+Date: Wed, 19 Nov 2014 09:33:31 -0600
+From: Eric Sandeen <sandeen@sandeen.net>
 MIME-Version: 1.0
-To: Filipe Manana <fdmanana@suse.com>, <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] fstests: btrfs, add regression test for clone ioctl
-References: <1413924191-30467-1-git-send-email-fdmanana@suse.com> <1415619766-30814-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1415619766-30814-1-git-send-email-fdmanana@suse.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+To: fstests@vger.kernel.org
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] fstests: mark replace tests in btrfs/group
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/10/2014 06:42 AM, Filipe Manana wrote:
-> Regression test for a btrfs clone ioctl issue where races between
-> a clone operation and concurrent target file reads would result in
-> leaving stale data in the page cache. After the clone operation
-> finished, reading from the clone target file would return the old
-> and no longer valid data. This affected only buffered reads (i.e.
-> didn't affect direct IO reads).
->
-> This issue was fixed by the following linux kernel patch:
->
->      Btrfs: ensure readers see new data after a clone operation
->      (commit c125b8bff1d9f6c8c91ce4eb8bd5616058c7d510)
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
+A couple tests exercise replace but were not marked as such
+in the group file.
 
-Verified and the test looks sane, you can add
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 9adf862..1f23979 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -13,7 +13,7 @@
+ 008 auto quick
+ 009 auto quick
+ 010 auto quick
+-011 auto
++011 auto replace
+ 012 auto
+ 013 auto quick
+ 014 auto
+@@ -22,7 +22,7 @@
+ 017 auto quick
+ 018 auto quick
+ 019 auto quick
+-020 auto quick
++020 auto quick replace
+ 021 auto quick
+ 022 auto
+ 023 auto
 

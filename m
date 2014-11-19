@@ -1,50 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f46.google.com ([209.85.216.46]:35080 "EHLO
-	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752950AbaKSPU0 (ORCPT
+Received: from mail-qg0-f47.google.com ([209.85.192.47]:39023 "EHLO
+	mail-qg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755994AbaKSQHv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 10:20:26 -0500
-Received: by mail-qa0-f46.google.com with SMTP id u7so516827qaz.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 07:20:25 -0800 (PST)
-Message-ID: <546CB531.2060509@ubuntu.com>
-Date: Wed, 19 Nov 2014 10:20:17 -0500
+	Wed, 19 Nov 2014 11:07:51 -0500
+Received: by mail-qg0-f47.google.com with SMTP id z60so637033qgd.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 08:07:51 -0800 (PST)
+Message-ID: <546CC04F.6040207@ubuntu.com>
+Date: Wed, 19 Nov 2014 11:07:43 -0500
 From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com> <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net> <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com> <546B68F8.6080008@ubuntu.com> <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com> <546BA96D.4050805@ubuntu.com> <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
-In-Reply-To: <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
-Content-Type: text/plain; charset=windows-1252
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net>
+In-Reply-To: <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 11/18/2014 9:54 PM, Chris Murphy wrote:
-> Why is it silly? Btrfs on a thin volume has practical use case
-> aside from just being thinly provisioned, its snapshots are block
-> device based, not merely that of an fs tree.
+On 11/18/2014 9:46 PM, Duncan wrote:
+> I'm not sure about normal operation, but certainly, many drives
+> take longer than 30 seconds to stabilize after power-on, and I
+> routinely see resets during this time.
 
-Umm... because one of the big selling points of btrfs is that it is in
-a much better position to make snapshots being aware of the fs tree
-rather than doing it in the block layer.
+As far as I have seen, typical drive spin up time is on the order of
+3-7 seconds.  Hell, I remember my pair of first generation seagate
+cheetah 15,000 rpm drives seemed to take *forever* to spin up and that
+still was maybe only 15 seconds.  If a drive takes longer than 30
+seconds, then there is something wrong with it.  I figure there is a
+reason why spin up time is tracked by SMART so it seems like long spin
+up time is a sign of a sick drive.
 
-So it is kind of silly in the first place to be using lvm snapshots
-under btrfs, but it is is doubly silly to use lvm for snapshots, and
-btrfs for the mirroring rather than lvm.  Pick one layer and use it
-for both functions.  Even if that is lvm, then it should also be
-handling the mirroring.
+> This doesn't happen on single-hardware-device block devices and 
+> filesystems because in that case it's either up or down, if the
+> device doesn't come up in time the resume simply fails entirely,
+> instead of coming up with one or more devices there, but others
+> missing as they didn't stabilize in time, as is unfortunately all
+> too common in the multi- device scenario.
+
+No, the resume doesn't "fail entirely".  The drive is reset, and the
+IO request is retried, and by then it should succeed.
+
+> I've seen this with both spinning rust and with SSDs, with mdraid
+> and btrfs, with multiple mobos and device controllers, and with
+> resume both from suspend to ram (if the machine powers down the
+> storage devices in that case, as most modern ones do) and hibernate
+> to permanent storage device, over several years worth of kernel
+> series, so it's a reasonably widespread phenomena, at least among
+> consumer-level SATA devices.  (My experience doesn't extend to
+> enterprise-raid-level devices or proper SCSI, etc, so I simply
+> don't know, there.)
+
+If you are restoring from hibernation, then the drives are already
+spun up before the kernel is loaded.
+
+> While two minutes is getting a bit long, I think it's still within
+> normal range, and some devices definitely take over a minute enough
+> of the time to be both noticeable and irritating.
+
+It certainly is not normal for a drive to take that long to spin up.
+IIRC, the 30 second timeout comes from the ATA specs which state that
+it can take up to 30 seconds for a drive to spin up.
+
+> That said, I SHOULD say I'd be far *MORE* irritated if the device
+> simply pretended it was stable and started reading/writing data
+> before it really had stabilized, particularly with SSDs where that
+> sort of behavior has been observed and is known to put some devices
+> at risk of complete scrambling of either media or firmware, beyond
+> recovery at times.  That of course is the risk of going the other
+> direction, and I'd a WHOLE lot rather have devices play it safe for
+> another 30 seconds or so after they / think/ they're stable and be
+> SURE, than pretend to be just fine when voltages have NOT
+> stabilized yet and thus end up scrambling things irrecoverably.
+> I've never had that happen here tho I've never stress- tested for
+> it, only done normal operation, but I've seen testing reports where
+> the testers DID make it happen surprisingly easily, to a surprising
+>  number of their test devices.
+
+Power supply voltage is stable within milliseconds.  What takes HDDs
+time to start up is mechanically bringing the spinning rust up to
+speed.  On SSDs, I think you are confusing testing done on power
+*cycling* ( i.e. yanking the power cord in the middle of a write )
+with startup.
+
+> So, umm... I suspect the 2-minute default is 2 minutes due to
+> power-up stabilizing issues, where two minutes is a reasonable
+> compromise between failing the boot most of the time if the timeout
+> is too low, and taking excessively long for very little further
+> gain.
+
+The default is 30 seconds, not 2 minutes.
+
+> sure whether it's even possible, without some specific hardware
+> feature available to tell the kernel that it has in fact NOT been
+> in power-saving mode for say 5-10 minutes, hopefully long enough
+> that voltage readings really /are/ fully stabilized and a shorter
+> timeout is possible.
+
+Again, there is no several minute period where voltage stabilizes and
+the drive takes longer to access.  This is a complete red herring.
+
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (MingW32)
 
-iQEcBAEBAgAGBQJUbLUxAAoJEI5FoCIzSKrwh0oH/3TZ2oo8u2BjHYO3b0x8800/
-LFkmGFWrZFSnAvtWuN5B1WlhMXku4dxLRXz14fJKFp3fNmnYRNVvw3tu9btvsBsC
-sZdwLaKwKPHTK8RS+QCI2pZPX+cGB+F7/z9PCHrzIzzCKk/4SvnJ76e2nnZFpY1m
-Md3f1BCHEVUPMMXbqv6Ry6v7PDs/8bx8WITYyAL9uh3tjh0dXQsjbZJn5u4XDitS
-/CoE8eX4rf1vc7qHI4K56TtArCcXQxAHcC56fXmcmS03bVhAkkJ5Z+/uwi6+TkJe
-55rMFCd7UFy9pwKha3Q2flJHtDYG6ns7Njyff6BSL9Yzq7tHh4wLk1H3XxaOCP8=
-=ktv/
+iQEcBAEBAgAGBQJUbMBPAAoJEI5FoCIzSKrwcV0H/20pv7O5+CDf2cRg5G5vt7PR
+4J1NuVIBsboKwjwCj8qdxHQJHihvLYkTQKANqaqHv0+wx0u2DaQdPU/LRnqN71xA
+jP7b9lx9X6rPnAnZUDBbxzAc8HLeutgQ8YD/WB0sE5IXlI1/XFGW4tXIZ4iYmtN9
+GUdL+zcdtEiYE993xiGSMXF4UBrN8d/5buBRsUsPVivAZes6OHbf9bd72c1IXBuS
+ADZ7cH7XGmLL3OXA+hm7d99429HFZYAgI7DjrLWp6Tb9ja5Gvhy+AVvrbU5ZWMwu
+XUnNsLsBBhEGuZs5xpkotZgaQlmJpw4BFY4BKwC6PL+7ex7ud3hGCGeI6VDmI0U=
+=DLHU
 -----END PGP SIGNATURE-----

@@ -1,147 +1,259 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54932 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756065AbaKSPrJ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10123 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755674AbaKSR2b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 10:47:09 -0500
-Date: Wed, 19 Nov 2014 10:47:03 -0500
-From: Chris Mason <clm@fb.com>
-To: Patrick Schmid <schmid@phys.ethz.ch>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Fix lockups from btrfs_clear_path_blocking
-Message-ID: <20141119154703.GB11548@ret.masoncoding.com>
+	Wed, 19 Nov 2014 12:28:31 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <stable@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure logged extents complete in the current transaction V2
+Date: Wed, 19 Nov 2014 12:28:25 -0500
+Message-ID: <1416418105-5853-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The fair reader/writer locks mean that btrfs_clear_path_blocking needs
-to strictly follow lock ordering rules even when we already have
-blocking locks on a given path.
+Liu Bo pointed out that my previous fix would lose the generation update in the
+scenario I described.  It is actually much worse than that, we could lose the
+entire extent if we lose power right after the transaction commits.  Consider
+the following
 
-Before we can clear a blocking lock on the path, we need to make sure
-all of the locks have been converted to blocking.  This will remove lock
-inversions against anyone spinning in write_lock() against the buffers
-we're trying to get read locks on.  These inversions didn't exist before
-the fair read/writer locks, but now we need to be more careful.
+write extent 0-4k
+log extent in log tree
+commit transaction
+	< power fail happens here
+ordered extent completes
 
-We papered over this deadlock in the past by changing
-btrfs_try_read_lock() to be a true trylock against both the spinlock and
-the blocking lock.  This was slower, and not sufficient to fix all the
-deadlocks.  This patch adds a btrfs_tree_read_lock_atomic(), which
-basically means get the spinlock but trylock on the blocking lock.
+We would lose the 0-4k extent because it hasn't updated the actual fs tree, and
+the transaction commit will reset the log so it isn't replayed.  If we lose
+power before the transaction commit we are save, otherwise we are not.
 
-Signed-off-by: Chris Mason <clm@fb.com>
-Reported-by: Patrick Schmid <schmid@phys.ethz.ch>
-cc: stable@vger.kernel.org #v3.15+
+Fix this by keeping track of all extents we logged in this transaction.  Then
+when we go to commit the transaction make sure we wait for all of those ordered
+extents to complete before proceeding.  This will make sure that if we lose
+power after the transaction commit we still have our data.  This also fixes the
+problem of the improperly updated extent generation.  Thanks,
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 19bc616..150822e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -80,13 +80,6 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2: Don't add previously logged ordered extents into the logged list, this
+keeps us from moving ordered extents off of the global transaction list once
+it's already been added there.
+
+ fs/btrfs/ordered-data.c |  9 +++++++--
+ fs/btrfs/ordered-data.h |  8 +++++++-
+ fs/btrfs/transaction.c  | 33 +++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h  |  2 ++
+ fs/btrfs/tree-log.c     |  6 +++---
+ 5 files changed, 52 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index ac734ec..269e21d 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -220,6 +220,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	INIT_LIST_HEAD(&entry->work_list);
+ 	init_completion(&entry->completion);
+ 	INIT_LIST_HEAD(&entry->log_list);
++	INIT_LIST_HEAD(&entry->trans_list);
+ 
+ 	trace_btrfs_ordered_extent_add(inode, entry);
+ 
+@@ -443,6 +444,8 @@ void btrfs_get_logged_extents(struct inode *inode,
+ 		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
+ 		if (!list_empty(&ordered->log_list))
+ 			continue;
++		if (test_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
++			continue;
+ 		list_add_tail(&ordered->log_list, logged_list);
+ 		atomic_inc(&ordered->refs);
+ 	}
+@@ -472,7 +475,8 @@ void btrfs_submit_logged_extents(struct list_head *logged_list,
+ 	spin_unlock_irq(&log->log_extents_lock[index]);
+ }
+ 
+-void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
++void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *log, u64 transid)
  {
- 	int i;
+ 	struct btrfs_ordered_extent *ordered;
+ 	int index = transid % 2;
+@@ -497,7 +501,8 @@ void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
+ 		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
+ 						   &ordered->flags));
  
--#ifdef CONFIG_DEBUG_LOCK_ALLOC
--	/* lockdep really cares that we take all of these spinlocks
--	 * in the right order.  If any of the locks in the path are not
--	 * currently blocking, it is going to complain.  So, make really
--	 * really sure by forcing the path to blocking before we clear
--	 * the path blocking.
--	 */
- 	if (held) {
- 		btrfs_set_lock_blocking_rw(held, held_rw);
- 		if (held_rw == BTRFS_WRITE_LOCK)
-@@ -95,7 +88,6 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
- 			held_rw = BTRFS_READ_LOCK_BLOCKING;
+-		btrfs_put_ordered_extent(ordered);
++		if (!test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
++			list_add_tail(&ordered->trans_list, &trans->ordered);
+ 		spin_lock_irq(&log->log_extents_lock[index]);
  	}
- 	btrfs_set_path_blocking(p);
--#endif
+ 	spin_unlock_irq(&log->log_extents_lock[index]);
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index d81a274..0124bff 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -71,6 +71,8 @@ struct btrfs_ordered_sum {
+ 				       ordered extent */
+ #define BTRFS_ORDERED_TRUNCATED 9 /* Set when we have to truncate an extent */
  
- 	for (i = BTRFS_MAX_LEVEL - 1; i >= 0; i--) {
- 		if (p->nodes[i] && p->locks[i]) {
-@@ -107,10 +99,8 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
- 		}
- 	}
++#define BTRFS_ORDERED_LOGGED 10 /* Set when we've waited on this ordered extent
++				 * in the logging code. */
+ struct btrfs_ordered_extent {
+ 	/* logical offset in the file */
+ 	u64 file_offset;
+@@ -121,6 +123,9 @@ struct btrfs_ordered_extent {
+ 	/* If we need to wait on this to be done */
+ 	struct list_head log_list;
  
--#ifdef CONFIG_DEBUG_LOCK_ALLOC
- 	if (held)
- 		btrfs_clear_lock_blocking_rw(held, held_rw);
--#endif
- }
- 
- /* this also releases the path */
-@@ -2893,7 +2883,7 @@ cow_done:
- 					}
- 					p->locks[level] = BTRFS_WRITE_LOCK;
- 				} else {
--					err = btrfs_try_tree_read_lock(b);
-+					err = btrfs_tree_read_lock_atomic(b);
- 					if (!err) {
- 						btrfs_set_path_blocking(p);
- 						btrfs_tree_read_lock(b);
-@@ -3025,7 +3015,7 @@ again:
- 			}
- 
- 			level = btrfs_header_level(b);
--			err = btrfs_try_tree_read_lock(b);
-+			err = btrfs_tree_read_lock_atomic(b);
- 			if (!err) {
- 				btrfs_set_path_blocking(p);
- 				btrfs_tree_read_lock(b);
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 5665d21..f8229ef 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -128,6 +128,26 @@ again:
- }
- 
- /*
-+ * take a spinning read lock.
-+ * returns 1 if we get the read lock and 0 if we don't
-+ * this won't wait for blocking writers
-+ */
-+int btrfs_tree_read_lock_atomic(struct extent_buffer *eb)
-+{
-+	if (atomic_read(&eb->blocking_writers))
-+		return 0;
++	/* If the transaction needs to wait on this ordered extent */
++	struct list_head trans_list;
 +
-+	read_lock(&eb->lock);
-+	if (atomic_read(&eb->blocking_writers)) {
-+		read_unlock(&eb->lock);
-+		return 0;
+ 	/* used to wait for the BTRFS_ORDERED_COMPLETE bit */
+ 	wait_queue_head_t wait;
+ 
+@@ -197,7 +202,8 @@ void btrfs_get_logged_extents(struct inode *inode,
+ void btrfs_put_logged_extents(struct list_head *logged_list);
+ void btrfs_submit_logged_extents(struct list_head *logged_list,
+ 				 struct btrfs_root *log);
+-void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid);
++void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *log, u64 transid);
+ void btrfs_free_logged_extents(struct btrfs_root *log, u64 transid);
+ int __init ordered_data_init(void);
+ void ordered_data_exit(void);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index dcaae36..63c6d05 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -220,6 +220,7 @@ loop:
+ 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+ 	INIT_LIST_HEAD(&cur_trans->pending_chunks);
+ 	INIT_LIST_HEAD(&cur_trans->switch_commits);
++	INIT_LIST_HEAD(&cur_trans->pending_ordered);
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+@@ -488,6 +489,7 @@ again:
+ 	h->sync = false;
+ 	INIT_LIST_HEAD(&h->qgroup_ref_list);
+ 	INIT_LIST_HEAD(&h->new_bgs);
++	INIT_LIST_HEAD(&h->ordered);
+ 
+ 	smp_mb();
+ 	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+@@ -719,6 +721,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	if (!list_empty(&trans->new_bgs))
+ 		btrfs_create_pending_block_groups(trans, root);
+ 
++	if (!list_empty(&trans->ordered)) {
++		spin_lock(&info->trans_lock);
++		list_splice(&trans->ordered, &cur_trans->pending_ordered);
++		spin_unlock(&info->trans_lock);
 +	}
-+	atomic_inc(&eb->read_locks);
-+	atomic_inc(&eb->spinning_readers);
-+	return 1;
++
+ 	trans->delayed_ref_updates = 0;
+ 	if (!trans->sync) {
+ 		must_run_delayed_refs =
+@@ -1652,6 +1660,28 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
+ 		btrfs_wait_ordered_roots(fs_info, -1);
+ }
+ 
++static inline void
++btrfs_wait_pending_ordered(struct btrfs_transaction *cur_trans,
++			   struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_ordered_extent *ordered;
++
++	spin_lock(&fs_info->trans_lock);
++	while (!list_empty(&cur_trans->pending_ordered)) {
++		ordered = list_first_entry(&cur_trans->pending_ordered,
++					   struct btrfs_ordered_extent,
++					   trans_list);
++		list_del_init(&ordered->trans_list);
++		spin_unlock(&fs_info->trans_lock);
++
++		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_COMPLETE,
++						   &ordered->flags));
++		btrfs_put_ordered_extent(ordered);
++		spin_lock(&fs_info->trans_lock);
++	}
++	spin_unlock(&fs_info->trans_lock);
 +}
 +
-+/*
-  * returns 1 if we get the read lock and 0 if we don't
-  * this won't wait for blocking writers
-  */
-@@ -158,9 +178,7 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
- 	    atomic_read(&eb->blocking_readers))
- 		return 0;
- 
--	if (!write_trylock(&eb->lock))
--		return 0;
--
-+	write_lock(&eb->lock);
- 	if (atomic_read(&eb->blocking_writers) ||
- 	    atomic_read(&eb->blocking_readers)) {
- 		write_unlock(&eb->lock);
-diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
-index b81e0e9..c44a9d5 100644
---- a/fs/btrfs/locking.h
-+++ b/fs/btrfs/locking.h
-@@ -35,6 +35,8 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw);
- void btrfs_assert_tree_locked(struct extent_buffer *eb);
- int btrfs_try_tree_read_lock(struct extent_buffer *eb);
- int btrfs_try_tree_write_lock(struct extent_buffer *eb);
-+int btrfs_tree_read_lock_atomic(struct extent_buffer *eb);
-+
- 
- static inline void btrfs_tree_unlock_rw(struct extent_buffer *eb, int rw)
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
  {
+@@ -1702,6 +1732,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	spin_lock(&root->fs_info->trans_lock);
++	list_splice(&trans->ordered, &cur_trans->pending_ordered);
+ 	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
+ 		spin_unlock(&root->fs_info->trans_lock);
+ 		atomic_inc(&cur_trans->use_count);
+@@ -1754,6 +1785,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_wait_delalloc_flush(root->fs_info);
+ 
++	btrfs_wait_pending_ordered(cur_trans, root->fs_info);
++
+ 	btrfs_scrub_pause(root);
+ 	/*
+ 	 * Ok now we need to make sure to block out any other joins while we
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index d8f40e1..1ba9c3e 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -56,6 +56,7 @@ struct btrfs_transaction {
+ 	wait_queue_head_t commit_wait;
+ 	struct list_head pending_snapshots;
+ 	struct list_head pending_chunks;
++	struct list_head pending_ordered;
+ 	struct list_head switch_commits;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+@@ -105,6 +106,7 @@ struct btrfs_trans_handle {
+ 	 */
+ 	struct btrfs_root *root;
+ 	struct seq_list delayed_ref_elem;
++	struct list_head ordered;
+ 	struct list_head qgroup_ref_list;
+ 	struct list_head new_bgs;
+ };
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 70f99b1..337e4bc 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2600,7 +2600,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	if (atomic_read(&log_root_tree->log_commit[index2])) {
+ 		blk_finish_plug(&plug);
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+-		btrfs_wait_logged_extents(log, log_transid);
++		btrfs_wait_logged_extents(trans, log, log_transid);
+ 		wait_log_commit(trans, log_root_tree,
+ 				root_log_ctx.log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+@@ -2645,7 +2645,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	btrfs_wait_marked_extents(log_root_tree,
+ 				  &log_root_tree->dirty_log_pages,
+ 				  EXTENT_NEW | EXTENT_DIRTY);
+-	btrfs_wait_logged_extents(log, log_transid);
++	btrfs_wait_logged_extents(trans, log, log_transid);
+ 
+ 	btrfs_set_super_log_root(root->fs_info->super_for_commit,
+ 				log_root_tree->node->start);
+@@ -3766,7 +3766,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+ 
+-	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
++	btrfs_set_token_file_extent_generation(leaf, fi, trans->transid,
+ 					       &token);
+ 	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 		btrfs_set_token_file_extent_type(leaf, fi,
+-- 
+1.8.3.1
+

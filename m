@@ -1,73 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38453 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753741AbaKSDiD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Nov 2014 22:38:03 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xqw5g-0000Lt-3t
-	for linux-btrfs@vger.kernel.org; Wed, 19 Nov 2014 04:38:00 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:38:00 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 04:38:00 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS messes up snapshot LV with origin
-Date: Wed, 19 Nov 2014 03:37:50 +0000 (UTC)
-Message-ID: <pan$3715b$a39c802c$7c739200$ccd1cef0@cox.net>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
-	<pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
-	<54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it>
-	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
-	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
-	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
-	<546B68F8.6080008@ubuntu.com> <546BF268.5050706@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-qa0-f54.google.com ([209.85.216.54]:33887 "EHLO
+	mail-qa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754811AbaKSPLy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Nov 2014 10:11:54 -0500
+Received: by mail-qa0-f54.google.com with SMTP id i13so510397qae.27
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 07:11:54 -0800 (PST)
+Message-ID: <546CB332.3080705@ubuntu.com>
+Date: Wed, 19 Nov 2014 10:11:46 -0500
+From: Phillip Susi <psusi@ubuntu.com>
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za> <546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org> <47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com> <546BB2EA.5080809@ubuntu.com> <E47EA20E-375D-49A6-B4B0-C6594CE6A633@colorremedies.com>
+In-Reply-To: <E47EA20E-375D-49A6-B4B0-C6594CE6A633@colorremedies.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Tue, 18 Nov 2014 17:29:12 -0800 as excerpted:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> On 11/18/2014 07:42 AM, Phillip Susi wrote:
+On 11/18/2014 9:40 PM, Chris Murphy wrote:
+> It’s well known on linux-raid@ that consumer drives have well over
+> 30 second "deep recoveries" when they lack SCT command support. The
+> WDC and Seagate “green” drives are over 2 minutes apparently. This
+> isn’t easy to test because it requires a sector with enough error
+> that it requires the ECC to do something, and yet not so much error
+> that it gives up in less than 30 seconds. So you have to track down
+> a drive model spec document (one of those 100 pagers).
 > 
->> On 11/18/2014 1:16 AM, Chris Murphy wrote:
->>> (stuff about UUIDs and LVM snapshots).
->  > (suggestion to use LVM paths instead).
-> 
-> This is also an XFS+LVM+LVM_Snapshot problem going back to at least
-> 2009. It's inherent to the block-device-level snapshot phenomonia.
-> 
-> q.v. http://www.miljan.org/main/2009/11/16/lvm-snapshots-and-xfs/ et al
-> 
-> In XFS you attack the snapshot with a command to regenerate the UUID as
-> soon as you take the snapshot. I don't think there is a "regenerate all
-> my UUIDs" command for BTRFS.
+> This makes sense, sorta, because the manufacturer use case is 
+> typically single drive only, and most proscribe raid5/6 with such 
+> products. So it’s a “recover data at all costs” behavior because
+> it’s assumed to be the only (immediately) available copy.
 
-Which was part of my point in my reply.  Btrfs embeds the UUID in the 
-metadata deeply enough that it's no simple task to simply change it to 
-something else and be done.  It's quite a complicated operation for any 
-(future, none current) tool that attempts it, with the most likely 
-candidate being an option to btrfs balance or the like, but even then, 
-we're looking at a timescale of hours for spinning rust.
+It doesn't make sense to me.  If it can't recover the data after one
+or two hundred retries in one or two seconds, it can keep trying until
+the cows come home and it just isn't ever going to work.
 
-So while it's possible in theory, in practice such a regenerate-all UUIDs 
-command for btrfs isn't available yet, and given the time involved in 
-rewriting all those metadata UUIDs to something else, during which the 
-filesystem's in a critically unstable state, and the limited use-case 
-with other alternatives, such a tool isn't all /that/ practical in any 
-case.
+> I don’t see how that’s possible because anything other than the
+> drive explicitly producing  a read error (which includes the
+> affected LBA’s), it’s ambiguous what the actual problem is as far
+> as the kernel is concerned. It has no way of knowing which of
+> possibly dozens of ata commands queued up in the drive have
+> actually hung up the drive. It has no idea why the drive is hung up
+> as well.
 
-Making an entirely new btrfs and doing a btrfs send/receive for the 
-duplicate, or using btrfs snapshots, is a more practical way to go.  (Tho 
-watch out for the implications of btrfs snapshots on nocow files!)
+IIRC, this is true when the drive returns failure as well.  The whole
+bio is marked as failed, and the page cache layer then begins retrying
+with progressively smaller requests to see if it can get *some* data out.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> No I think 30 is pretty sane for servers using SATA drives because
+> if the bus is reset all pending commands in the queue get
+> obliterated which is worse than just waiting up to 30 seconds. With
+> SAS drives maybe less time makes sense. But in either case you
+> still need configurable SCT ERC, or it needs to be a sane fixed
+> default like 70 deciseconds.
 
+Who cares if multiple commands in the queue are obliterated if they
+can all be retried on the other mirror?  Better to fall back to the
+other mirror NOW instead of waiting 30 seconds ( or longer! ).  Sure,
+you might end up recovering more than you really had to, but that
+won't hurt anything.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+
+iQEcBAEBAgAGBQJUbLMyAAoJEI5FoCIzSKrwSM8IAJO2cwhHyxK4LFjINEbNT+ij
+fT4EpyzOCs704zhOTgssgSQ8ym85PRQ8VyAIrz338m+lHqKbktZtRt7vWaealmOp
+6eleIDJ/I7kggnlhkqg1V8Nctap8qBeRE34K/PaGtTrkRzBYnYxbGdDDz+rXaDi6
+CSEMLJBo3I69Oj9qSOV4O18ntV/S3eln0sQ8+w2btbc3xGkG3X2FwVIJokb6IAmu
+ngHUeDGXUgkEOvzw3aGDheLueGDPe+V3YlsjSbw2rH75svzXqFCUO8Jcg4NfxT0q
+Nl03eoTEGlyf8x2geMWfhoKFatJ7sCMy48K0ZFAAX1k8j0ssjNaEC+q6pwrA/xU=
+=Gehg
+-----END PGP SIGNATURE-----

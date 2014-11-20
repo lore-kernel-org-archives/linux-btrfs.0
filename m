@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-04v.sys.comcast.net ([69.252.207.36]:52100 "EHLO
-	resqmta-ch2-04v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756063AbaKTWpy (ORCPT
+Received: from resqmta-ch2-03v.sys.comcast.net ([69.252.207.35]:42309 "EHLO
+	resqmta-ch2-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757388AbaKTXIM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 17:45:54 -0500
-Message-ID: <546E6F19.40806@pobox.com>
-Date: Thu, 20 Nov 2014 14:45:45 -0800
+	Thu, 20 Nov 2014 18:08:12 -0500
+Message-ID: <546E7458.9040302@pobox.com>
+Date: Thu, 20 Nov 2014 15:08:08 -0800
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
 To: Phillip Susi <psusi@ubuntu.com>, Duncan <1i5t5.duncan@cox.net>,
         linux-btrfs@vger.kernel.org
 Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D18D9.60201@pobox.com> <546E4E6A.3060208@ubuntu.com>
-In-Reply-To: <546E4E6A.3060208@ubuntu.com>
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D1AD3.2010206@pobox.com> <546E5066.1040107@ubuntu.com>
+In-Reply-To: <546E5066.1040107@ubuntu.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/20/2014 12:26 PM, Phillip Susi wrote:
-> Yes, ACPI 4.0 added this mess.  I have yet to see a single system that
-> actually implements it.  I can't believe they even bothered adding
-> this driver to the kernel.  Is there anyone in the world who has ever
-> used it?  If no motherboard vendor has bothered implementing the ACPI
-> FAN specs, I very much doubt anyone will ever bother with this.
+On 11/20/2014 12:34 PM, Phillip Susi wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 11/19/2014 5:33 PM, Robert White wrote:
+>>> That would be fake raid, not hardware raid.
+>>
+>> The LSI MegaRaid controller people would _love_ to hear more about
+>> your insight into how their battery-backed multi-drive RAID
+>> controller is "fake". You should go work for them. Try the "contact
+>> us" link at the bottom of this page. I'm sure they are waiting for
+>> your insight with baited breath!
+>
+> Forgive me, I should have trimmed the quote a bit more.  I was
+> responding specifically to the "many mother boards have hardware RAID
+> support available through the bios" part, not the lsi part.
 
-Nice attempt at saving face, but wrong as _always_.
+Well you should have _actually_ trimmed your response down to not 
+pressing send.
 
-The CONFIG_PATA_ACPI option has been in the kernel since 2008 and lots 
-of people have used it.
+_Many_ motherboards have complete RAID support at levels 0, 1, 10, and 
+five 5. A few have RAID6.
 
-If you search for "ACPI ide" you'll find people complaining in 2008-2010 
-about windows error messages indicating the device is present in their 
-system but no OS driver is available.
+Some of them even use the LSI chip-set.
 
-That you "have yet to see a single system that implements it" is about 
-the worst piece of internet research I've ever seen. Do you not _get_ 
-that your opinion about what exists and how it works is not authoritative?
+Seriously... are you trolling this list with disinformation or just 
+repeating tribal knowledge from fifteen year old copies of PC Magazine?
 
-You can also find articles about both windows and linux systems actively 
-using ACPI fan control going back to 2009
+Yea, some of the IDE motherboards and that only had RAID1 and RAID0 (and 
+indeed some of the add-on controllers) back in the IDE-only days were 
+really lame just-forked-write devices with no integrity checks (hence 
+"fake raid") but that's from like the 1990s; it's paleolithic age 
+"wisdom" at this point.
 
-These are not hard searches to pull off. These are not obscure 
-references. Go to the google box and start typing "ACPI fan..." and 
-check the autocomplete.
-
-I'll skip ovea all the parts where you don't know how a chipset works 
-and blah, blah, blah...
-
-You really should have just stopped at "I don't know" and "I've never" 
-because you keep demonstrating that you _don't_ know, and that you 
-really _should_ _never_.
-
-Tell us more about the lizard aliens controlling your computer, I find 
-your versions of realty fascinating...
+Phillip say sky god angry, all go hide in cave! /D'oh...

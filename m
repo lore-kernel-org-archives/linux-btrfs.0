@@ -1,61 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:47004 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750973AbaKTK5K (ORCPT
+Received: from smtp-36-i2.italiaonline.it ([212.48.25.210]:51735 "EHLO
+	smtp-36.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750813AbaKTLOE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 05:57:10 -0500
-Message-ID: <546DC968.1020900@cn.fujitsu.com>
-Date: Thu, 20 Nov 2014 18:58:48 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+	Thu, 20 Nov 2014 06:14:04 -0500
+Message-ID: <546DCD20.6030602@inwind.it>
+Date: Thu, 20 Nov 2014 12:14:40 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-CC: <stable@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: make sure we wait on logged extents when fsycning
- two subvols
-References: <1415287194-1967-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1415287194-1967-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset="utf-8"
+To: =?UTF-8?B?SmFrb2IgU2Now7xyeg==?= <wertstoffe@nurfuerspam.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: systemd.setenv and a mount.unit
+References: <gbjvjb-oqp.ln1@venus.xundeenergie.ssh22.net> <546DBFCB.4090506@inwind.it> <546DC3EC.1020903@nurfuerspam.de>
+In-Reply-To: <546DC3EC.1020903@nurfuerspam.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 6 Nov 2014 10:19:54 -0500, Josef Bacik wrote:
-> If we have two fsync()'s race on different subvols one will do all of its work
-> to get into the log_tree, wait on it's outstanding IO, and then allow the
-> log_tree to finish it's commit.  The problem is we were just free'ing that
-> subvols logged extents instead of waiting on them, so whoever lost the race
-> wouldn't really have their data on disk.  Fix this by waiting properly instead
-> of freeing the logged extents.  Thanks,
+On 2014-11-20 11:35, Jakob Schürz wrote:
+> Am 2014-11-20 um 11:17 schrieb Goffredo Baroncelli:
+[....]
+>> 
+>> rootflags=subvol=debian
+>> 
+>> so, the subvol=debian option is passed to mount. When
+>> grub-mkconfig generates the grub menu entries, does so.
 > 
-> cc: stable@vger.kernel.org
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/tree-log.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 2d0fa43..70f99b1 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -2600,9 +2600,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
->  	if (atomic_read(&log_root_tree->log_commit[index2])) {
->  		blk_finish_plug(&plug);
->  		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
-> +		btrfs_wait_logged_extents(log, log_transid);
-
-Why not add this log root into a list of log root tree, and then the committer
-wait all ordered extents in each log root which is added in that list? By this
-way, we can let the committer do some work during the data of ordered extents is 
-being transferred to the disk.
-
-Thanks
-Miao
-
->  		wait_log_commit(trans, log_root_tree,
->  				root_log_ctx.log_transid);
-> -		btrfs_free_logged_extents(log, log_transid);
->  		mutex_unlock(&log_root_tree->log_mutex);
->  		ret = root_log_ctx.log_ret;
->  		goto out;
+> This I also have in my grub-config, and it works. But it doesn't
+> solve the challenge. Mounting more subvolumes according to the
+> root-subvolume... :-)
 > 
 
+Ah! You never told that this is your request.
+
+I can only suggest that after snapshooting the "/",
+you snapshot their subvolumes, placing these under
+the root snapshoot itself:
+
+Supposing to have the following four subvolumes
+
+/root/
+/root/etc
+/root/usr
+/root/var
+
+When you need to snapshot, you should:
+
+# btrfs subvolume snapshot /root /backup-root-20141120
+# btrfs subvolume snapshot /root/etc /backup-root-20141120/etc
+# btrfs subvolume snapshot /root/usr /backup-root-20141120/usr
+# btrfs subvolume snapshot /root/var /backup-root-20141120/var
+
+So in order to remount an "old" filesystem, you need to make only
+1 mount.
+
+
+
+
+
+
+
+
+
+
+> regards Jakob
+> 
+> -- To unsubscribe from this list: send the line "unsubscribe
+> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

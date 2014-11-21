@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:55923 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758236AbaKUKJN (ORCPT
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:53816 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758182AbaKUKJI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 05:09:13 -0500
-Received: by mail-pa0-f49.google.com with SMTP id eu11so4553569pac.36
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 02:09:12 -0800 (PST)
+	Fri, 21 Nov 2014 05:09:08 -0500
+Received: by mail-pd0-f178.google.com with SMTP id g10so2779323pdj.37
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 02:09:04 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
@@ -14,10 +14,12 @@ To: Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-mm@kvack.org, linux-nfs@vger.kernel.org,
         Trond Myklebust <trond.myklebust@primarydata.com>,
         Mel Gorman <mgorman@suse.de>
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 5/5] btrfs: enable swap file support
-Date: Fri, 21 Nov 2014 02:08:31 -0800
-Message-Id: <afd3c1009172a4a1cfa10e73a64caf35c631a6d4.1416563833.git.osandov@osandov.com>
+Cc: Omar Sandoval <osandov@osandov.com>,
+        Dave Kleikamp <dave.kleikamp@oracle.com>,
+        Ming Lei <ming.lei@canonical.com>
+Subject: [PATCH v2 1/5] direct-io: don't dirty ITER_BVEC pages on read
+Date: Fri, 21 Nov 2014 02:08:27 -0800
+Message-Id: <d5e6bbb3e54f76bbc11ffd106bc98a2c531b67ad.1416563833.git.osandov@osandov.com>
 In-Reply-To: <cover.1416563833.git.osandov@osandov.com>
 References: <cover.1416563833.git.osandov@osandov.com>
 In-Reply-To: <cover.1416563833.git.osandov@osandov.com>
@@ -25,105 +27,63 @@ References: <cover.1416563833.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Implement the swap file a_ops on btrfs. Activation simply checks for a usable
-swap file: it must be fully allocated (no holes), support direct I/O (so no
-compressed or inline extents) and should be nocow (I'm not sure about that last
-one).
+Reads through the iov_iter infrastructure for kernel pages shouldn't be dirtied
+by the direct I/O code.
 
+This is based on Dave Kleikamp's and Ming Lei's previously posted patches.
+
+Cc: Dave Kleikamp <dave.kleikamp@oracle.com>
+Cc: Ming Lei <ming.lei@canonical.com>
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/inode.c | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 71 insertions(+)
+ fs/direct-io.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d23362f..b8fd36b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9442,6 +9442,75 @@ out_inode:
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index e181b6b..e542ce4 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -120,6 +120,7 @@ struct dio {
+ 	spinlock_t bio_lock;		/* protects BIO fields below */
+ 	int page_errors;		/* errno from get_user_pages() */
+ 	int is_async;			/* is IO async ? */
++	int should_dirty;		/* should we mark read pages dirty? */
+ 	bool defer_completion;		/* defer AIO completion to workqueue? */
+ 	int io_error;			/* IO error in completion path */
+ 	unsigned long refcount;		/* direct_io_worker() and bios */
+@@ -392,7 +393,7 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
+ 	dio->refcount++;
+ 	spin_unlock_irqrestore(&dio->bio_lock, flags);
  
- }
+-	if (dio->is_async && dio->rw == READ)
++	if (dio->is_async && dio->rw == READ && dio->should_dirty)
+ 		bio_set_pages_dirty(bio);
  
-+static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
-+			       sector_t *span)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_inode *ip = BTRFS_I(inode);
-+	int ret = 0;
-+	u64 isize = inode->i_size;
-+	struct extent_state *cached_state = NULL;
-+	struct extent_map *em;
-+	u64 start, len;
-+
-+	if (ip->flags & BTRFS_INODE_COMPRESS) {
-+		/* Can't do direct I/O on a compressed file. */
-+		pr_err("BTRFS: swapfile is compressed");
-+		return -EINVAL;
-+	}
-+	if (!(ip->flags & BTRFS_INODE_NODATACOW)) {
-+		/* The swap file can't be copy-on-write. */
-+		pr_err("BTRFS: swapfile is copy-on-write");
-+		return -EINVAL;
-+	}
-+
-+	lock_extent_bits(&ip->io_tree, 0, isize - 1, 0, &cached_state);
-+
-+	/*
-+	 * All of the extents must be allocated and support direct I/O. Inline
-+	 * extents and compressed extents fall back to buffered I/O, so those
-+	 * are no good.
-+	 */
-+	start = 0;
-+	while (start < isize) {
-+		len = isize - start;
-+		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto out;
-+		}
-+
-+		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags) ||
-+		    em->block_start == EXTENT_MAP_HOLE) {
-+			pr_err("BTRFS: swapfile has holes");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (em->block_start == EXTENT_MAP_INLINE) {
-+			pr_err("BTRFS: swapfile is inline");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
-+			pr_err("BTRFS: swapfile is compresed");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+
-+		start = extent_map_end(em);
-+		free_extent_map(em);
-+	}
-+
-+out:
-+	unlock_extent_cached(&ip->io_tree, 0, isize - 1, &cached_state,
-+			     GFP_NOFS);
-+	return ret;
-+}
-+
-+static void btrfs_swap_deactivate(struct file *file)
-+{
-+}
-+
- static const struct inode_operations btrfs_dir_inode_operations = {
- 	.getattr	= btrfs_getattr,
- 	.lookup		= btrfs_lookup,
-@@ -9519,6 +9588,8 @@ static const struct address_space_operations btrfs_aops = {
- 	.releasepage	= btrfs_releasepage,
- 	.set_page_dirty	= btrfs_set_page_dirty,
- 	.error_remove_page = generic_error_remove_page,
-+	.swap_activate	= btrfs_swap_activate,
-+	.swap_deactivate = btrfs_swap_deactivate,
- };
+ 	if (sdio->submit_io)
+@@ -463,13 +464,13 @@ static int dio_bio_complete(struct dio *dio, struct bio *bio)
+ 	if (!uptodate)
+ 		dio->io_error = -EIO;
  
- static const struct address_space_operations btrfs_symlink_aops = {
+-	if (dio->is_async && dio->rw == READ) {
++	if (dio->is_async && dio->rw == READ && dio->should_dirty) {
+ 		bio_check_pages_dirty(bio);	/* transfers ownership */
+ 	} else {
+ 		bio_for_each_segment_all(bvec, bio, i) {
+ 			struct page *page = bvec->bv_page;
+ 
+-			if (dio->rw == READ && !PageCompound(page))
++			if (dio->rw == READ && !PageCompound(page) && dio->should_dirty)
+ 				set_page_dirty_lock(page);
+ 			page_cache_release(page);
+ 		}
+@@ -1177,6 +1178,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 
+ 	dio->inode = inode;
+ 	dio->rw = rw;
++	dio->should_dirty = !(iter->type & ITER_BVEC);
+ 
+ 	/*
+ 	 * For AIO O_(D)SYNC writes we need to defer completions to a workqueue
 -- 
 2.1.3
 

@@ -1,109 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:33363 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33476 "EHLO
 	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751368AbaKUEYY (ORCPT
+	by vger.kernel.org with ESMTP id S1756837AbaKUE2O (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 23:24:24 -0500
-Date: Thu, 20 Nov 2014 23:24:23 -0500
+	Thu, 20 Nov 2014 23:28:14 -0500
+Date: Thu, 20 Nov 2014 23:28:14 -0500
 From: Zygo Blaxell <zblaxell@furryterror.org>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org,
-        bug-grub@gnu.org
+To: Phillip Susi <psusi@ubuntu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: BTRFS messes up snapshot LV with origin
-Message-ID: <20141121042423.GQ17395@hungrycats.org>
-References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
- <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
- <54699CC7.1050909@swiftspirit.co.za>
+Message-ID: <20141121042814.GR17395@hungrycats.org>
+References: <54699CC7.1050909@swiftspirit.co.za>
  <546A46A5.8030603@inwind.it>
+ <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
+ <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
+ <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+ <546B68F8.6080008@ubuntu.com>
+ <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
+ <546BA96D.4050805@ubuntu.com>
+ <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
+ <546CB531.2060509@ubuntu.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="s2lX4GznBIrto1wi"
-In-Reply-To: <546A46A5.8030603@inwind.it>
+	protocol="application/pgp-signature"; boundary="HAv5+T9jbwMPl6Kw"
+In-Reply-To: <546CB531.2060509@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---s2lX4GznBIrto1wi
+--HAv5+T9jbwMPl6Kw
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Nov 17, 2014 at 08:04:05PM +0100, Goffredo Baroncelli wrote:
-> On 2014-11-17 07:59, Brendan Hide wrote:
-> >=20
-> > That leaves two aspects of this issue which I view as two separate bugs:
-> > a) Btrfs cannot gracefully handle separate filesystems that have the sa=
-me UUID. At all.
-> > b) Grub appears to pick the wrong filesystem when presented with two fi=
-lesystems with the same UUID.
-> >=20
-> > I feel a) is a btrfs bug.
-> > I feel b) is a bug that is more about "ecosystem design" than grub bein=
-g silly.
+On Wed, Nov 19, 2014 at 10:20:17AM -0500, Phillip Susi wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
 >=20
-> Regarding a)
-> IIRC, btrfs collects the filesystem information by UUID; if two=20
-> filesystems have the same UUID (like the LVM-snapshot case), the
-> last filesystem discovered overwrite the first one.
+> On 11/18/2014 9:54 PM, Chris Murphy wrote:
+> > Why is it silly? Btrfs on a thin volume has practical use case
+> > aside from just being thinly provisioned, its snapshots are block
+> > device based, not merely that of an fs tree.
 >=20
-> The filesystem discovering is done in user-space; so it should be simple
-> to skip a filesystem on a LVM-snapshot.
+> Umm... because one of the big selling points of btrfs is that it is in
+> a much better position to make snapshots being aware of the fs tree
+> rather than doing it in the block layer.
+
+One of the big selling points of LVM is that it is in a much better
+position to make snapshots so you can run btrfsck on the shattered
+remains of your broken btrfs filesystem.
+
+The UUID-driven behavior of btrfs is _really extremely annoying_.
+No other filesystem forces me to jump through the hoops btrfs does
+to get routine admin tasks done.
+
+e.g. if an ext4 filesystem explodes, I can:
+
+	1.  make a LVM snapshot of the broken filesystem
+
+	2.  run e2fsck on the snapshot
+
+	3.  mount and repair the snapshot, e.g. rsync any missing files
+	from backups, salvage anything that survived
+
+	4.  LVM merge the snapshot to its origin volume
+
+	5.  umount the origin volume and mount the merged volume
+	(or just reboot)
+
+=2E..and I can do all of this on a running system, in-place, with only a
+few minutes of downtime in the must-reboot case.
+
+None of the above works with btrfs at all.  Multi-device btrfs fails
+at 2, and mounting the filesystem fails at 3.  The closest I've gotten
+to this workflow is to set up a kvm instance that can see only the LVM
+snapshots, (only) and run the btrfsck or rsync there--and hope that the
+system doesn't crash and reboot during that time, or the filesystem will
+be more or less destroyed by the random combination of origin and
+snapshot LVs.
+
+I've also learned the hard way to always make an LVM snapshot before
+running btrfsck, just in case you discover a new btrfsck bug with your
+filesystem.  That at least works for single-device btrfs filesystems.
+
+> So it is kind of silly in the first place to be using lvm snapshots
+> under btrfs, but it is is doubly silly to use lvm for snapshots, and
+> btrfs for the mirroring rather than lvm.  Pick one layer and use it
+> for both functions.  Even if that is lvm, then it should also be
+> handling the mirroring.
 >=20
-> Regarding b)
-> I am bit confused: if I understood correctly, the root filesystem was
-> picked from a LVM-snapshot, so grub-probe *correctly* reported that
-> the root device is the snapshot.
-> The problem was that during the boot filesystem discovering: first
-> scanned the *real* device, then the LVM-snapshot; the latter
-> overwrote the former so the system booted from the LVM-snapshot.
-
-IMHO if the device UUID search finds multiple devices with the same device
-UUID, it should ignore _all_ of them as the identification problem
-is unsolvable without further user input.  This is what the 'device=3D'
-mount option is for.
-
-> My conclusion is that we should improve the btrfs scan so:
-> - in udev rules, a partition that is a LVM snapshot by default=20
-> should be not scanned by "btrfs dev scan"
-> - "btrfs dev scan", during the partition discovery should skip the=20
-> lvm-snapshot.
-
-That would mean I can't do this:
-
-	1.  lvm snapshot of ext4 filesystem
-
-	2.  btrfs-convert the snapshot
-
-	3.  mount the snapshot, make sure it's OK
-
-	4.  merge LVM snapshot to overwrite original ext4 filesystem
-
-which would be a shame since that's the only way I ever convert ext3/4
-filesystems to btrfs (btrfs-convert is a little buggy still).
-
-> BR
-> G.Baroncelli
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v2.0.17 (MingW32)
 >=20
->=20
->=20
-> --=20
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> iQEcBAEBAgAGBQJUbLUxAAoJEI5FoCIzSKrwh0oH/3TZ2oo8u2BjHYO3b0x8800/
+> LFkmGFWrZFSnAvtWuN5B1WlhMXku4dxLRXz14fJKFp3fNmnYRNVvw3tu9btvsBsC
+> sZdwLaKwKPHTK8RS+QCI2pZPX+cGB+F7/z9PCHrzIzzCKk/4SvnJ76e2nnZFpY1m
+> Md3f1BCHEVUPMMXbqv6Ry6v7PDs/8bx8WITYyAL9uh3tjh0dXQsjbZJn5u4XDitS
+> /CoE8eX4rf1vc7qHI4K56TtArCcXQxAHcC56fXmcmS03bVhAkkJ5Z+/uwi6+TkJe
+> 55rMFCd7UFy9pwKha3Q2flJHtDYG6ns7Njyff6BSL9Yzq7tHh4wLk1H3XxaOCP8=3D
+> =3Dktv/
+> -----END PGP SIGNATURE-----
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---s2lX4GznBIrto1wi
+--HAv5+T9jbwMPl6Kw
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEARECAAYFAlRuvnYACgkQgfmLGlazG5yBPQCg6WDr32+sdXJJKxAaX8F3C1+i
-P+4An3qjOHOIX76fgkspenvIcDRWIkrB
-=ouBM
+iEYEARECAAYFAlRuv14ACgkQgfmLGlazG5xlQQCgn6G/fVbuVLV2uaygpqY/9c08
+Q+EAn0R3iyAyXYYekILsf6AnKbW/Fq6L
+=PzEw
 -----END PGP SIGNATURE-----
 
---s2lX4GznBIrto1wi--
+--HAv5+T9jbwMPl6Kw--

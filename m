@@ -1,41 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f47.google.com ([209.85.213.47]:61543 "EHLO
-	mail-yh0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756947AbaKUCUX (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33363 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751368AbaKUEYY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 21:20:23 -0500
-Received: by mail-yh0-f47.google.com with SMTP id f73so1947276yha.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Nov 2014 18:20:22 -0800 (PST)
+	Thu, 20 Nov 2014 23:24:24 -0500
+Date: Thu, 20 Nov 2014 23:24:23 -0500
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org,
+        bug-grub@gnu.org
+Subject: Re: BTRFS messes up snapshot LV with origin
+Message-ID: <20141121042423.GQ17395@hungrycats.org>
+References: <CAE8gLhnLUBJmN=3n1SVTc3y0zbBAxSBXtMxe7rhANtwC+3dCow@mail.gmail.com>
+ <pan$f02e0$7a5e2052$d1925753$4ad202f9@cox.net>
+ <54699CC7.1050909@swiftspirit.co.za>
+ <546A46A5.8030603@inwind.it>
 MIME-Version: 1.0
-In-Reply-To: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>
-References: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>
-Date: Thu, 20 Nov 2014 19:20:22 -0700
-Message-ID: <CAJCQCtQb-hyYVHvhJkS01EKpr_ekSSsuUPY5hSmd03SoGqiPXA@mail.gmail.com>
-Subject: Re: Changing label few times killed filesystem?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="s2lX4GznBIrto1wi"
+In-Reply-To: <546A46A5.8030603@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 20, 2014 at 6:27 PM, Boris Chernov <aqs1024@hotmail.com> wrote:
 
->     Since it failed after "checking extents" I decided to try
-> --init-extent-tree:
+--s2lX4GznBIrto1wi
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-There might be hope yet if you didn't use --repair which is said on
-the wiki and many times on this list is kindof a last resort. But at
-the very least before going with the hammer approach you should
-upgrade your btrfs-progs which is kind old. Current is 3.17.2. I
-suggest upgrading and just posting the results from 'btrfs check
-<device>' without any options and see what you get. This check and
---repair code are mostly in btrfs-progs, whereas the mount time fixing
-code is in the kernel. So upgrading btrfs-progs may be sufficient for
-your case, but ultimately it might be necessary to go to a newer
-kernel also.
+On Mon, Nov 17, 2014 at 08:04:05PM +0100, Goffredo Baroncelli wrote:
+> On 2014-11-17 07:59, Brendan Hide wrote:
+> >=20
+> > That leaves two aspects of this issue which I view as two separate bugs:
+> > a) Btrfs cannot gracefully handle separate filesystems that have the sa=
+me UUID. At all.
+> > b) Grub appears to pick the wrong filesystem when presented with two fi=
+lesystems with the same UUID.
+> >=20
+> > I feel a) is a btrfs bug.
+> > I feel b) is a bug that is more about "ecosystem design" than grub bein=
+g silly.
+>=20
+> Regarding a)
+> IIRC, btrfs collects the filesystem information by UUID; if two=20
+> filesystems have the same UUID (like the LVM-snapshot case), the
+> last filesystem discovered overwrite the first one.
+>=20
+> The filesystem discovering is done in user-space; so it should be simple
+> to skip a filesystem on a LVM-snapshot.
+>=20
+> Regarding b)
+> I am bit confused: if I understood correctly, the root filesystem was
+> picked from a LVM-snapshot, so grub-probe *correctly* reported that
+> the root device is the snapshot.
+> The problem was that during the boot filesystem discovering: first
+> scanned the *real* device, then the LVM-snapshot; the latter
+> overwrote the former so the system booted from the LVM-snapshot.
 
-> Btrfs v3.14.1
+IMHO if the device UUID search finds multiple devices with the same device
+UUID, it should ignore _all_ of them as the identification problem
+is unsolvable without further user input.  This is what the 'device=3D'
+mount option is for.
 
+> My conclusion is that we should improve the btrfs scan so:
+> - in udev rules, a partition that is a LVM snapshot by default=20
+> should be not scanned by "btrfs dev scan"
+> - "btrfs dev scan", during the partition discovery should skip the=20
+> lvm-snapshot.
 
--- 
-Chris Murphy
+That would mean I can't do this:
+
+	1.  lvm snapshot of ext4 filesystem
+
+	2.  btrfs-convert the snapshot
+
+	3.  mount the snapshot, make sure it's OK
+
+	4.  merge LVM snapshot to overwrite original ext4 filesystem
+
+which would be a shame since that's the only way I ever convert ext3/4
+filesystems to btrfs (btrfs-convert is a little buggy still).
+
+> BR
+> G.Baroncelli
+>=20
+>=20
+>=20
+> --=20
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--s2lX4GznBIrto1wi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlRuvnYACgkQgfmLGlazG5yBPQCg6WDr32+sdXJJKxAaX8F3C1+i
+P+4An3qjOHOIX76fgkspenvIcDRWIkrB
+=ouBM
+-----END PGP SIGNATURE-----
+
+--s2lX4GznBIrto1wi--

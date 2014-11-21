@@ -1,64 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49591 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753877AbaKULzC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 06:55:02 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xrmnl-0005WB-GY
-	for linux-btrfs@vger.kernel.org; Fri, 21 Nov 2014 12:55:01 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 12:55:01 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 12:55:01 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS messes up snapshot LV with origin
-Date: Fri, 21 Nov 2014 11:54:50 +0000 (UTC)
-Message-ID: <pan$29f5b$f7fefd1b$7cfb47$d35d0e97@cox.net>
-References: <54699CC7.1050909@swiftspirit.co.za>
-	<546A46A5.8030603@inwind.it>
-	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
-	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
-	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
-	<546B68F8.6080008@ubuntu.com>
-	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
-	<546BA96D.4050805@ubuntu.com>
-	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
-	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>
-	<pan$29e1e$f368f5df$85fe86e7$dd12c3b5@cox.net>
-	<546F2369.8090605@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-ie0-f175.google.com ([209.85.223.175]:41479 "EHLO
+	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755075AbaKUMvJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Nov 2014 07:51:09 -0500
+Received: by mail-ie0-f175.google.com with SMTP id at20so4851112iec.34
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 04:51:07 -0800 (PST)
+Message-ID: <546F3537.6060003@gmail.com>
+Date: Fri, 21 Nov 2014 07:51:03 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send and an existing backup
+References: <o9rujb-sud.ln1@venus.xundeenergie.ssh22.net>	<m4kpm0$r52$1@ger.gmane.org> <pan$483ea$3a099fee$7e09d57b$ed49879a@cox.net>
+In-Reply-To: <pan$483ea$3a099fee$7e09d57b$ed49879a@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030006060606090103040002"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Fri, 21 Nov 2014 03:35:05 -0800 as excerpted:
+This is a cryptographically signed message in MIME format.
 
-> On 11/20/2014 10:22 PM, Duncan wrote:
->> But while other filesystems might allow un-UUIDs (heh, UUUIDs or U3IDs
->> =:^), because they're no longer unique, requiring them to be unique
->> just as the label says cannot be considered a bug.  It's simply
->> stricter enforcement of the rules, which are, after all, plainly stated
->> in the descriptive name.
-> 
-> You take "U"s away, not add them
-> 
-> UID = unique ID GUID = globally unique ID UUID = universally unique ID
+--------------ms030006060606090103040002
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-I was making a joke, as I happened to notice un-UUID =3 U-s just as I was 
-writing that.  Universally unique ID = UUID, un-UUID (not universally 
-unique ID) = UUUID = U^3ID. =:^)
+On 2014-11-20 09:10, Duncan wrote:
+> Bardur Arantsson posted on Thu, 20 Nov 2014 14:17:52 +0100 as excerpted=
+:
+>
+>> If you have no other backups, I would really recommend that you *don't=
+*
+>> use btrfs for your backup, or at least have a *third* backup which isn=
+'t
+>> on btrfs -- there are *still* problems with btrfs that can potentially=
 
-Of course formally it'd be NUID (not/non- unique) or some such, but un-
-UUID served my purpose well enough, including the joke once I noticed it, 
-so...
+>> wreck your backup filesystem. (Although it's obviously less likely if
+>> the external HDD will only be connected occasionally.)
+>>
+>> Don't get me wrong, btrfs is becoming more and more stable, but I
+>> wouldn't trust it with my *only* backup, especially if also running
+>> btrfs on the backed-up filesystem.
+>
+> This.
+>
+> My working versions and first backups are btrfs.  My secondary backups
+> are reiserfs (my old filesystem of choice, which has been very reliable=
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> for me), just in case both the btrfs versions bite the dust due to a bu=
+g
+> in btrfs itself.
+>
+Likewise, except I use compressed, encrypted tarballs stored on both=20
+Amazon S3 and Dropbox.
 
+
+--------------ms030006060606090103040002
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMTIxMTI1MTAz
+WjAjBgkqhkiG9w0BCQQxFgQURnOS37ztrkZ3yvIRFbiFYPGkYFkwbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAA5fMuWptDADZf2Yf30kRWprCDrBI
+uQVFBxliYB014+nZsIZWKqIfr4y0R9Yj1Pgb2S3Eo5mq3Rjjc2WW04+gB5l46dGNcyVQ+pdt
+Oblq4fklSrVCQzoaSy0KtCud6zQIsBPU65LXh9LktQX6iAVFkiFVVYAaGW7PGr283NfqpsQn
+voHZ1DEvkpHXPZhCWS6XaTDKevbcq6Kfg5PQRbM1ILRDWpiGsbpG9+3qTTUaGIc2w4n1phYE
+XKKFMA+miJgd+DoJOGpHrWj2hIvcuyM19qcRe4FvKsVOjUBR8sUyAcJN3tADpb+SrOVKTZU0
+b+raMDk5rzBsj6iT8kxPo9hRtAAAAAAAAA==
+--------------ms030006060606090103040002--

@@ -1,237 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:34334 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751596AbaKUE6D (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 23:58:03 -0500
-Date: Thu, 20 Nov 2014 23:58:01 -0500
-From: Zygo Blaxell <zblaxell@furryterror.org>
-To: Brendan Hide <brendan@swiftspirit.co.za>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-Message-ID: <20141121045801.GS17395@hungrycats.org>
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
- <546AF572.2020101@swiftspirit.co.za>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FNX2SHge3qdlDajY"
-In-Reply-To: <546AF572.2020101@swiftspirit.co.za>
+Received: from plane.gmane.org ([80.91.229.3]:60593 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750766AbaKUGXL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Nov 2014 01:23:11 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Xrhcc-0000Xb-GT
+	for linux-btrfs@vger.kernel.org; Fri, 21 Nov 2014 07:23:10 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 07:23:10 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 07:23:10 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS messes up snapshot LV with origin
+Date: Fri, 21 Nov 2014 06:22:57 +0000 (UTC)
+Message-ID: <pan$29e1e$f368f5df$85fe86e7$dd12c3b5@cox.net>
+References: <54699CC7.1050909@swiftspirit.co.za>
+	<546A46A5.8030603@inwind.it>
+	<CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
+	<CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
+	<27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+	<546B68F8.6080008@ubuntu.com>
+	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
+	<546BA96D.4050805@ubuntu.com>
+	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
+	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Zygo Blaxell posted on Thu, 20 Nov 2014 23:28:14 -0500 as excerpted:
 
---FNX2SHge3qdlDajY
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Wed, Nov 19, 2014 at 10:20:17AM -0500, Phillip Susi wrote:
+>> -----BEGIN PGP SIGNED MESSAGE-----
+>> Hash: SHA1
+>> 
+>> On 11/18/2014 9:54 PM, Chris Murphy wrote:
+>> > Why is it silly? Btrfs on a thin volume has practical use case aside
+>> > from just being thinly provisioned, its snapshots are block device
+>> > based, not merely that of an fs tree.
+>> 
+>> Umm... because one of the big selling points of btrfs is that it is in
+>> a much better position to make snapshots being aware of the fs tree
+>> rather than doing it in the block layer.
+> 
+> One of the big selling points of LVM is that it is in a much better
+> position to make snapshots so you can run btrfsck on the shattered
+> remains of your broken btrfs filesystem.
+> 
+> The UUID-driven behavior of btrfs is _really extremely annoying_.
+> No other filesystem forces me to jump through the hoops btrfs does to
+> get routine admin tasks done.
+> 
+> e.g. if an ext4 filesystem explodes, I can:
+> 
+> 	1.  make a LVM snapshot of the broken filesystem
+> 
+> 	2.  run e2fsck on the snapshot
+> 
+> 	3.  mount and repair the snapshot, e.g. rsync any missing files 
+from
+> 	backups, salvage anything that survived
+> 
+> 	4.  LVM merge the snapshot to its origin volume
+> 
+> 	5.  umount the origin volume and mount the merged volume (or just
+> 	reboot)
+> 
+> ...and I can do all of this on a running system, in-place, with only a
+> few minutes of downtime in the must-reboot case.
+> 
+> None of the above works with btrfs at all.  Multi-device btrfs fails at
+> 2,
+> and mounting the filesystem fails at 3.  The closest I've gotten to this
+> workflow is to set up a kvm instance that can see only the LVM
+> snapshots, (only) and run the btrfsck or rsync there--and hope that the
+> system doesn't crash and reboot during that time, or the filesystem will
+> be more or less destroyed by the random combination of origin and
+> snapshot LVs.
+> 
+> I've also learned the hard way to always make an LVM snapshot before
+> running btrfsck, just in case you discover a new btrfsck bug with your
+> filesystem.  That at least works for single-device btrfs filesystems.
 
-On Tue, Nov 18, 2014 at 09:29:54AM +0200, Brendan Hide wrote:
-> Hey, guys
->=20
-> See further below extracted output from a daily scrub showing csum
-> errors on sdb, part of a raid1 btrfs. Looking back, it has been
-> getting errors like this for a few days now.
->=20
-> The disk is patently unreliable but smartctl's output implies there
-> are no issues. Is this somehow standard faire for S.M.A.R.T. output?
->=20
-> Here are (I think) the important bits of the smartctl output for
-> $(smartctl -a /dev/sdb) (the full results are attached):
-> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE UPDATED
-> WHEN_FAILED RAW_VALUE
->   1 Raw_Read_Error_Rate     0x000f   100   253   006    Pre-fail
-> Always       -       0
->   5 Reallocated_Sector_Ct   0x0033   100   100   036    Pre-fail
-> Always       -       1
->   7 Seek_Error_Rate         0x000f   086   060   030    Pre-fail
-> Always       -       440801014
-> 197 Current_Pending_Sector  0x0012   100   100   000    Old_age
-> Always       -       0
-> 198 Offline_Uncorrectable   0x0010   100   100   000    Old_age
-> Offline      -       0
-> 199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age
-> Always       -       0
-> 200 Multi_Zone_Error_Rate   0x0000   100   253   000    Old_age
-> Offline      -       0
-> 202 Data_Address_Mark_Errs  0x0032   100   253   000    Old_age
-> Always       -       0
+When I have such a filesystem level problem, I simply dd from the backing 
+device to some other location, generally to a file that's on a different 
+filesystem (preferrably non-btrfs, I use reiserfs as I've found it very 
+resilient, here), in which case btrfs device scan won't see the UUID on 
+the copy as it scans block devices, not inside non-device files.
 
-You have one reallocated sector, so the drive has lost some data at some
-time in the last 49000(!) hours.  Normally reallocations happen during
-writes so the data that was "lost" was data you were in the process of
-overwriting anyway; however, the reallocated sector count could also be
-a sign of deteriorating drive integrity.
+After all, an LVM block-level snapshot takes the same space as a file 
+containing the same raw data, and if there's room for the data in an LVM 
+snapshot, given a different layout, there's room for exactly the same 
+amount of data as a file on a different filesystem, piped thru some 
+compressor if necessary due to tight datasize constraints.
 
-In /var/lib/smartmontools there might be a csv file with logged error
-attribute data that you could use to figure out whether that reallocation
-was recent.
+But while other filesystems might allow un-UUIDs (heh, UUUIDs or U3IDs 
+=:^), because they're no longer unique, requiring them to be unique just 
+as the label says cannot be considered a bug.  It's simply stricter 
+enforcement of the rules, which are, after all, plainly stated in the 
+descriptive name.
 
-I also notice you are not running regular SMART self-tests (e.g.
-by smartctl -t long) and the last (and first, and only!) self-test the
-drive ran was ~12000 hours ago.  That means most of your SMART data is
-about 18 months old.  The drive won't know about sectors that went bad
-in the last year and a half unless the host happens to stumble across
-them during a read.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-The drive is over five years old in operating hours alone.  It is probably
-so fragile now that it will break if you try to move it.
-
-
->=20
->=20
-> -------- Original Message --------
-> Subject: 	Cron <root@watricky> /usr/local/sbin/btrfs-scrub-all
-> Date: 	Tue, 18 Nov 2014 04:19:12 +0200
-> From: 	(Cron Daemon) <root@watricky>
-> To: 	brendan@watricky
->=20
->=20
->=20
-> WARNING: errors detected during scrubbing, corrected.
-> [snip]
-> scrub device /dev/sdb2 (id 2) done
-> 	scrub started at Tue Nov 18 03:22:58 2014 and finished after 2682 seconds
-> 	total bytes scrubbed: 189.49GiB with 5420 errors
-> 	error details: read=3D5 csum=3D5415
-> 	corrected errors: 5420, uncorrectable errors: 0, unverified errors: 164
-
-That seems a little off.  If there were 5 read errors, I'd expect the drive=
- to
-have errors in the SMART error log.
-
-Checksum errors could just as easily be a btrfs bug or a RAM/CPU problem.
-There have been a number of fixes to csums in btrfs pulled into the kernel
-recently, and I've retired two five-year-old computers this summer due
-to RAM/CPU failures.
-
-> [snip]
->=20
-
-> smartctl 6.3 2014-07-26 r3976 [x86_64-linux-3.17.2-1-ARCH] (local build)
-> Copyright (C) 2002-14, Bruce Allen, Christian Franke, www.smartmontools.o=
-rg
->=20
-> =3D=3D=3D START OF INFORMATION SECTION =3D=3D=3D
-> Model Family:     Seagate Barracuda 7200.10
-> Device Model:     ST3250410AS
-> Serial Number:    6RYF5NP7
-> Firmware Version: 4.AAA
-> User Capacity:    250,059,350,016 bytes [250 GB]
-> Sector Size:      512 bytes logical/physical
-> Device is:        In smartctl database [for details use: -P show]
-> ATA Version is:   ATA/ATAPI-7 (minor revision not indicated)
-> Local Time is:    Tue Nov 18 09:16:03 2014 SAST
-> SMART support is: Available - device has SMART capability.
-> SMART support is: Enabled
->=20
-> =3D=3D=3D START OF READ SMART DATA SECTION =3D=3D=3D
-> SMART overall-health self-assessment test result: PASSED
-> See vendor-specific Attribute list for marginal Attributes.
->=20
-> General SMART Values:
-> Offline data collection status:  (0x82)	Offline data collection activity
-> 					was completed without error.
-> 					Auto Offline Data Collection: Enabled.
-> Self-test execution status:      (   0)	The previous self-test routine co=
-mpleted
-> 					without error or no self-test has ever=20
-> 					been run.
-> Total time to complete Offline=20
-> data collection: 		(  430) seconds.
-> Offline data collection
-> capabilities: 			 (0x5b) SMART execute Offline immediate.
-> 					Auto Offline data collection on/off support.
-> 					Suspend Offline collection upon new
-> 					command.
-> 					Offline surface scan supported.
-> 					Self-test supported.
-> 					No Conveyance Self-test supported.
-> 					Selective Self-test supported.
-> SMART capabilities:            (0x0003)	Saves SMART data before entering
-> 					power-saving mode.
-> 					Supports SMART auto save timer.
-> Error logging capability:        (0x01)	Error logging supported.
-> 					General Purpose Logging supported.
-> Short self-test routine=20
-> recommended polling time: 	 (   1) minutes.
-> Extended self-test routine
-> recommended polling time: 	 (  64) minutes.
-> SCT capabilities: 	       (0x0001)	SCT Status supported.
->=20
-> SMART Attributes Data Structure revision number: 10
-> Vendor Specific SMART Attributes with Thresholds:
-> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED=
-  WHEN_FAILED RAW_VALUE
->   1 Raw_Read_Error_Rate     0x000f   100   253   006    Pre-fail  Always =
-      -       0
->   3 Spin_Up_Time            0x0003   099   097   000    Pre-fail  Always =
-      -       0
->   4 Start_Stop_Count        0x0032   100   100   020    Old_age   Always =
-      -       68
->   5 Reallocated_Sector_Ct   0x0033   100   100   036    Pre-fail  Always =
-      -       1
->   7 Seek_Error_Rate         0x000f   086   060   030    Pre-fail  Always =
-      -       440801057
->   9 Power_On_Hours          0x0032   044   044   000    Old_age   Always =
-      -       49106
->  10 Spin_Retry_Count        0x0013   100   100   097    Pre-fail  Always =
-      -       0
->  12 Power_Cycle_Count       0x0032   100   100   020    Old_age   Always =
-      -       89
-> 187 Reported_Uncorrect      0x0032   100   100   000    Old_age   Always =
-      -       0
-> 189 High_Fly_Writes         0x003a   098   098   000    Old_age   Always =
-      -       2
-> 190 Airflow_Temperature_Cel 0x0022   060   030   045    Old_age   Always =
-  In_the_past 40 (Min/Max 23/70 #25)
-> 194 Temperature_Celsius     0x0022   040   070   000    Old_age   Always =
-      -       40 (0 23 0 0 0)
-> 195 Hardware_ECC_Recovered  0x001a   069   055   000    Old_age   Always =
-      -       126632051
-> 197 Current_Pending_Sector  0x0012   100   100   000    Old_age   Always =
-      -       0
-> 198 Offline_Uncorrectable   0x0010   100   100   000    Old_age   Offline=
-      -       0
-> 199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age   Always =
-      -       0
-> 200 Multi_Zone_Error_Rate   0x0000   100   253   000    Old_age   Offline=
-      -       0
-> 202 Data_Address_Mark_Errs  0x0032   100   253   000    Old_age   Always =
-      -       0
->=20
-> SMART Error Log Version: 1
-> No Errors Logged
->=20
-> SMART Self-test log structure revision number 1
-> Num  Test_Description    Status                  Remaining  LifeTime(hour=
-s)  LBA_of_first_error
-> # 1  Extended offline    Completed without error       00%     37598     =
-    -
->=20
-> SMART Selective self-test log data structure revision number 1
->  SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
->     1        0        0  Not_testing
->     2        0        0  Not_testing
->     3        0        0  Not_testing
->     4        0        0  Not_testing
->     5        0        0  Not_testing
-> Selective self-test flags (0x0):
->   After scanning selected spans, do NOT read-scan remainder of disk.
-> If Selective self-test is pending on power-up, resume after 0 minute dela=
-y.
->=20
-
-
---FNX2SHge3qdlDajY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlRuxlkACgkQgfmLGlazG5wyXACfW8mo/nN+GkphJcYe2qilZs8R
-HmoAn1MI5d4vfXmSfy+BYlCsN13spN8L
-=XhCi
------END PGP SIGNATURE-----
-
---FNX2SHge3qdlDajY--

@@ -1,54 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-03v.sys.comcast.net ([69.252.207.35]:42309 "EHLO
-	resqmta-ch2-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757388AbaKTXIM (ORCPT
+Received: from blu004-omc1s36.hotmail.com ([65.55.116.47]:53201 "EHLO
+	BLU004-OMC1S36.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757234AbaKUB1Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Nov 2014 18:08:12 -0500
-Message-ID: <546E7458.9040302@pobox.com>
-Date: Thu, 20 Nov 2014 15:08:08 -0800
-From: Robert White <rwhite@pobox.com>
+	Thu, 20 Nov 2014 20:27:24 -0500
+Message-ID: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>
+Date: Fri, 21 Nov 2014 01:27:17 +0000
+From: Boris Chernov <aqs1024@hotmail.com>
 MIME-Version: 1.0
-To: Phillip Susi <psusi@ubuntu.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D1AD3.2010206@pobox.com> <546E5066.1040107@ubuntu.com>
-In-Reply-To: <546E5066.1040107@ubuntu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Changing label few times killed filesystem?
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/20/2014 12:34 PM, Phillip Susi wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 11/19/2014 5:33 PM, Robert White wrote:
->>> That would be fake raid, not hardware raid.
->>
->> The LSI MegaRaid controller people would _love_ to hear more about
->> your insight into how their battery-backed multi-drive RAID
->> controller is "fake". You should go work for them. Try the "contact
->> us" link at the bottom of this page. I'm sure they are waiting for
->> your insight with baited breath!
->
-> Forgive me, I should have trimmed the quote a bit more.  I was
-> responding specifically to the "many mother boards have hardware RAID
-> support available through the bios" part, not the lsi part.
 
-Well you should have _actually_ trimmed your response down to not 
-pressing send.
+     I have changed file system label few times in total. When I tried 
+to mount it after that, it became not mountable:
 
-_Many_ motherboards have complete RAID support at levels 0, 1, 10, and 
-five 5. A few have RAID6.
+# mount /dev/sdb1 /mnt
+mount: Not a directory
 
-Some of them even use the LSI chip-set.
+     In dmesg I see the following after above command:
 
-Seriously... are you trolling this list with disinformation or just 
-repeating tribal knowledge from fifteen year old copies of PC Magazine?
+[ 5198.413202] BTRFS info (device sdb1): disk space caching is enabled
+[ 5198.629958] BTRFS: checking UUID tree
 
-Yea, some of the IDE motherboards and that only had RAID1 and RAID0 (and 
-indeed some of the add-on controllers) back in the IDE-only days were 
-really lame just-forked-write devices with no integrity checks (hence 
-"fake raid") but that's from like the 1990s; it's paleolithic age 
-"wisdom" at this point.
+     I have lots of manually sorted downloaded files on this partition 
+(in other words nothing very important but downloading and sorting all 
+files again would require a lot of time), so I would appreciate any 
+help.  This is what I have tried so far to restore it:
 
-Phillip say sky god angry, all go hide in cave! /D'oh...
+# btrfs check /dev/sdb1
+Checking filesystem on /dev/sdb1
+UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
+checking extents
+btrfs: cmds-check.c:2266: check_owner_ref: Assertion `!(rec->is_root)' 
+failed.
+zsh: abort      btrfs check /dev/sdb1
+
+     Since it failed after "checking extents" I decided to try 
+--init-extent-tree:
+
+# btrfs check --init-extent-tree /dev/sdb1
+Checking filesystem on /dev/sdb1
+UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
+Creating a new extent tree
+Failed to find [29376512, 168, 16384]
+btrfs unable to find ref byte nr 29376512 parent 0 root 1  owner 1 offset 0
+Failed to find [30818304, 168, 16384]
+btrfs unable to find ref byte nr 30818304 parent 0 root 1  owner 0 offset 1
+Failed to find [47546368, 168, 16384]
+btrfs unable to find ref byte nr 47546368 parent 0 root 1  owner 0 offset 1
+parent transid verify failed on 29442048 wanted 4 found 2758
+Ignoring transid failure
+checking extents
+btrfs: cmds-check.c:2266: check_owner_ref: Assertion `!(rec->is_root)' 
+failed.
+zsh: abort      btrfs check --init-extent-tree /dev/sdb1
+
+# btrfs restore /dev/sdb1 /media/backup/sdb1  # this commands exits 
+after a second with 0 return code
+# echo $?
+0
+
+     I also tried btrfs restore with --path-regex and got the same result.
+
+# btrfs-find-root /dev/sdb1
+Super think's the tree root is at 29360128, chunk root 20971520
+Well block 4194304 seems great, but generation doesn't match, have=2, 
+want=2759 level 0
+Well block 4243456 seems great, but generation doesn't match, have=3, 
+want=2759 level 0
+Found tree root at 29360128 gen 2759 level 1
+
+https://btrfs.wiki.kernel.org/index.php/Restore talks about picking root 
+with largest transid, but I do not see "transid" in my output, so not 
+sure what to do.
+
+     I also tried btrfsck:
+
+# btrfsck /dev/sdb1
+*** Error in `btrfs check': double free or corruption (fasttop): 
+0x0000000001074020 ***
+zsh: abort      btrfsck /dev/sdb1
+
+# btrfsck -b /dev/sdb1
+*** Error in `btrfs check': double free or corruption (fasttop): 
+0x00000000024e8020 ***
+zsh: abort      btrfsck -b /dev/sdb1
+
+# btrfsck --repair /dev/sdb1
+enabling repair mode
+*** Error in `btrfs check': double free or corruption (fasttop): 
+0x0000000000e26020 ***
+zsh: abort      btrfsck --repair /dev/sdb1
+
+# uname -a
+Linux debian 3.15.0-pf2 #1 SMP Sat Jun 28 15:09:48 EEST 2014 x86_64 
+GNU/Linux
+# btrfs --version
+Btrfs v3.14.1
+# btrfs fi show
+Label: 'label'  uuid: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
+         Total devices 1 FS bytes used 411.76GiB
+         devid    1 size 465.76GiB used 465.76GiB path /dev/sdb1
+
+Btrfs v3.14.1
+

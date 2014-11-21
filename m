@@ -1,90 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40328 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750712AbaKUR4Z (ORCPT
+Received: from mail-yh0-f54.google.com ([209.85.213.54]:39366 "EHLO
+	mail-yh0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750770AbaKUSGT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 12:56:25 -0500
-Date: Fri, 21 Nov 2014 12:56:23 -0500
-From: Zygo Blaxell <zblaxell@furryterror.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS messes up snapshot LV with origin
-Message-ID: <20141121175623.GU17395@hungrycats.org>
-References: <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com>
- <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com>
- <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
- <546B68F8.6080008@ubuntu.com>
- <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
- <546BA96D.4050805@ubuntu.com>
- <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
- <546CB531.2060509@ubuntu.com>
- <20141121042814.GR17395@hungrycats.org>
- <pan$29e1e$f368f5df$85fe86e7$dd12c3b5@cox.net>
+	Fri, 21 Nov 2014 13:06:19 -0500
+Received: by mail-yh0-f54.google.com with SMTP id 29so2801059yhl.41
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 10:06:19 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="mgIE+9cwyCTt+85Z"
-In-Reply-To: <pan$29e1e$f368f5df$85fe86e7$dd12c3b5@cox.net>
+In-Reply-To: <20141121174229.GT17395@hungrycats.org>
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
+	<546AF572.2020101@swiftspirit.co.za>
+	<20141121045801.GS17395@hungrycats.org>
+	<546EE43C.7020900@swiftspirit.co.za>
+	<20141121174229.GT17395@hungrycats.org>
+Date: Fri, 21 Nov 2014 11:06:19 -0700
+Message-ID: <CAJCQCtQF9Lqeo_7OZQYAknTU_a7+k7b1-xt5DXe49_hwg-1QtQ@mail.gmail.com>
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+From: Chris Murphy <lists@colorremedies.com>
+To: Zygo Blaxell <zblaxell@furryterror.org>
+Cc: Brendan Hide <brendan@swiftspirit.co.za>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Nov 21, 2014 at 10:42 AM, Zygo Blaxell <zblaxell@furryterror.org> wrote:
 
---mgIE+9cwyCTt+85Z
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> I run 'smartctl -t long' from cron overnight (or whenever the drives
+> are most idle).  You can also set up smartd.conf to launch the self
+> tests; however, the syntax for test scheduling is byzantine compared to
+> cron (and that's saying something!).  On multi-drive systems I schedule
+> a different drive for each night.
+>
+> If you are also doing btrfs scrub, then stagger the scheduling so
+> e.g. smart runs in even weeks and btrfs scrub runs in odd weeks.
+>
+> smartd is OK for monitoring test logs and email alerts.  I've had no
+> problems there.
 
-On Fri, Nov 21, 2014 at 06:22:57AM +0000, Duncan wrote:
-> After all, an LVM block-level snapshot takes the same space as a file=20
-> containing the same raw data, and if there's room for the data in an LVM=
-=20
-> snapshot, given a different layout, there's room for exactly the same=20
-> amount of data as a file on a different filesystem, piped thru some=20
-> compressor if necessary due to tight datasize constraints.
+Most attributes are always updated without issuing a smart test of any
+kind. A drive I have here only has four offline updateable attributes.
 
-That isn't true at all.  A repairing fsck can take less than 1% of the
-overall volume size, and a full conversion from another filesystem type
-can take less than 10%.  Usually I can find enough space by blowing away
-the swap LV for a few hours.
+When it comes to bad sectors, the drive won't use a sector that
+persistently fails writes. So you don't really have to worry about
+latent bad sectors that don't have data on them already. The sectors
+you care about are the ones with data. A scrub reads all of those
+sectors.
 
-I do NOT usually have 13TB of slack space lying around in a 26TB disk
-array, nor do I have enough bandwidth to move those 13TB to another
-machine without great inconvenience.
+First the drive could report a read error in which case Btrfs
+raid1/10, and any (md, lvm, hardware) raid can use mirrored data, or
+rebuild it from parity, and write to the affected sector; and also
+this same mechanism happens in normal reads so it's a kind of passive
+scrub. But it happens to miss checking inactively read data, which a
+scrub will check.
 
-> But while other filesystems might allow un-UUIDs (heh, UUUIDs or U3IDs=20
-> =3D:^), because they're no longer unique, requiring them to be unique jus=
-t=20
-> as the label says cannot be considered a bug.  It's simply stricter=20
-> enforcement of the rules, which are, after all, plainly stated in the=20
-> descriptive name.
+Second, the drive could report no problem, and Btrfs raid1/10 could
+still fix the problem in case of a csum mismatch. And it looks like
+soonish we'll see this apply to raid5/6.
 
-It's not a bug as long as I can completely control which devices are
-searched for UUIDs, and the system behaves sanely when multiple UUIDs
-are found through automatic discovery; otherwise, it's not only a bug,
-it's a DoS attack security vulnerability.  Consider what happens if
-someone looks at /sys/fs/btrfs, reads the non-secret UUIDs, builds a fake
-filesystem with those UUIDs, puts the fake filesystem on a USB stick,
-and plugs it back into the victim machine...
+So I think a nightly long smart test is a bit overkill. I think you
+could do nightly -t short tests which will report problems scrub won't
+notice, such as higher seek times or lower throughput performance. And
+then scrub once a week.
 
-> --=20
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---mgIE+9cwyCTt+85Z
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> The drive itself could be failing in some way that prevents recording
+> SMART errors (e.g. because of host timeouts triggering a bus reset,
+> which also prevents the SMART counter update for what was going wrong at
+> the time).  This is unfortunately quite common, especially with drives
+> configured for non-RAID workloads.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Libata resetting the link should be recorded in kernel messages.
 
-iEYEARECAAYFAlRvfMcACgkQgfmLGlazG5x2OgCgpEddkt6F0fYHrGMaMseTiRFZ
-9kIAn2Oif2EKrIRfThd41lxYIkV9gEuy
-=JeYA
------END PGP SIGNATURE-----
 
---mgIE+9cwyCTt+85Z--
+
+-- 
+Chris Murphy

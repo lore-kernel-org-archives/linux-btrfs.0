@@ -1,72 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f52.google.com ([209.85.192.52]:61076 "EHLO
-	mail-qg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758638AbaKUP1r (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:39323 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750885AbaKURpK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 10:27:47 -0500
-Received: by mail-qg0-f52.google.com with SMTP id a108so3733531qge.25
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 07:27:47 -0800 (PST)
-Message-ID: <546F59E1.1040007@ubuntu.com>
-Date: Fri, 21 Nov 2014 10:27:29 -0500
-From: Phillip Susi <psusi@ubuntu.com>
-MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
+	Fri, 21 Nov 2014 12:45:10 -0500
+Date: Fri, 21 Nov 2014 12:42:30 -0500
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D1AD3.2010206@pobox.com> <546E5066.1040107@ubuntu.com> <546E7458.9040302@pobox.com>
-In-Reply-To: <546E7458.9040302@pobox.com>
-Content-Type: text/plain; charset=utf-8
+Message-ID: <20141121174229.GT17395@hungrycats.org>
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
+ <546AF572.2020101@swiftspirit.co.za>
+ <20141121045801.GS17395@hungrycats.org>
+ <546EE43C.7020900@swiftspirit.co.za>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="NAmHCRPXNp23hR9r"
+In-Reply-To: <546EE43C.7020900@swiftspirit.co.za>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 11/20/2014 6:08 PM, Robert White wrote:
-> Well you should have _actually_ trimmed your response down to not 
-> pressing send.
-> 
-> _Many_ motherboards have complete RAID support at levels 0, 1, 10,
-> and five 5. A few have RAID6.
-> 
-> Some of them even use the LSI chip-set.
+--NAmHCRPXNp23hR9r
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Yes, there are some expensive server class motherboards out there with
-integrated real raid chips.  Your average consumer class motherboards
-are not those.  They contain intel, nvidia, sil, promise, and via
-chipsets that are fake raid.
+On Fri, Nov 21, 2014 at 09:05:32AM +0200, Brendan Hide wrote:
+> On 2014/11/21 06:58, Zygo Blaxell wrote:
+> >You have one reallocated sector, so the drive has lost some data at some
+> >time in the last 49000(!) hours.  Normally reallocations happen during
+> >writes so the data that was "lost" was data you were in the process of
+> >overwriting anyway; however, the reallocated sector count could also be
+> >a sign of deteriorating drive integrity.
+> >
+> >In /var/lib/smartmontools there might be a csv file with logged error
+> >attribute data that you could use to figure out whether that reallocation
+> >was recent.
+> >
+> >I also notice you are not running regular SMART self-tests (e.g.
+> >by smartctl -t long) and the last (and first, and only!) self-test the
+> >drive ran was ~12000 hours ago.  That means most of your SMART data is
+> >about 18 months old.  The drive won't know about sectors that went bad
+> >in the last year and a half unless the host happens to stumble across
+> >them during a read.
+> >
+> >The drive is over five years old in operating hours alone.  It is probab=
+ly
+> >so fragile now that it will break if you try to move it.
+> All interesting points. Do you schedule SMART self-tests on your own
+> systems? I have smartd running. In theory it tracks changes and
+> sends alerts if it figures a drive is going to fail. But, based on
+> what you've indicated, that isn't good enough.
 
-> Seriously... are you trolling this list with disinformation or
-> just repeating tribal knowledge from fifteen year old copies of PC
-> Magazine?
+I run 'smartctl -t long' from cron overnight (or whenever the drives
+are most idle).  You can also set up smartd.conf to launch the self
+tests; however, the syntax for test scheduling is byzantine compared to
+cron (and that's saying something!).  On multi-drive systems I schedule
+a different drive for each night.
 
-Please drop the penis measuring.
+If you are also doing btrfs scrub, then stagger the scheduling so
+e.g. smart runs in even weeks and btrfs scrub runs in odd weeks.
 
-> Yea, some of the IDE motherboards and that only had RAID1 and RAID0
-> (and indeed some of the add-on controllers) back in the IDE-only
-> days were really lame just-forked-write devices with no integrity
-> checks (hence "fake raid") but that's from like the 1990s; it's
-> paleolithic age "wisdom" at this point.
+smartd is OK for monitoring test logs and email alerts.  I've had no
+problems there.
 
-Wrong again... fakeraid became popular with the advent of SATA since
-it was easy to add a knob to the bios to switch it between AHCI and
-RAID mode, and just change the pci device id.  These chipsets are
-still quite common today and several of them do support raid5 and
-raid10 ( well, really it's raid 0 + raid1, but that's a whole nother
-can of worms ).  Recent intel chips also now have a caching mode for
-having an SSD cache a larger HDD.  Intel has also done a lot of work
-integrating support for their chipset into mdadm in the last year or
-three.
+> >WARNING: errors detected during scrubbing, corrected.
+> >[snip]
+> >scrub device /dev/sdb2 (id 2) done
+> >	scrub started at Tue Nov 18 03:22:58 2014 and finished after 2682 secon=
+ds
+> >	total bytes scrubbed: 189.49GiB with 5420 errors
+> >	error details: read=3D5 csum=3D5415
+> >	corrected errors: 5420, uncorrectable errors: 0, unverified errors: 164
+> >That seems a little off.  If there were 5 read errors, I'd expect the dr=
+ive to
+> >have errors in the SMART error log.
+> >
+> >Checksum errors could just as easily be a btrfs bug or a RAM/CPU problem.
+> >There have been a number of fixes to csums in btrfs pulled into the kern=
+el
+> >recently, and I've retired two five-year-old computers this summer due
+> >to RAM/CPU failures.
+> The difference here is that the issue only affects the one drive.
+> This leaves the probable cause at:
+> - the drive itself
+> - the cable/ports
+>=20
+> with a negligibly-possible cause at the motherboard chipset.
 
+If it was cable, there should be UDMA CRC errors or similar in the SMART
+counters, but they are zero.  You can also try swapping the cable and
+seeing whether the errors move.  I've found many bad cables that way.
+
+The drive itself could be failing in some way that prevents recording
+SMART errors (e.g. because of host timeouts triggering a bus reset,
+which also prevents the SMART counter update for what was going wrong at
+the time).  This is unfortunately quite common, especially with drives
+configured for non-RAID workloads.
+
+>=20
+> --=20
+> __________
+> Brendan Hide
+> http://swiftspirit.co.za/
+> http://www.webafrica.co.za/?AFF1E97
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--NAmHCRPXNp23hR9r
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQEcBAEBAgAGBQJUb1ngAAoJEI5FoCIzSKrwqMQIAJ3MfA4n74aJ1KUdfHYOz96o
-vwPBNQJ953yozmCHfjERbTCQlKT5AzwQHWpHoFWsQ4gYoNGmeE1jy2rsqxMfujff
-eQekfISyX3POExnsr3LnfHWI2/Om39+EAxVPxbA5LN6SC1SCWRut7Q3bQqkuxj/S
-bYRU65XJ9BZ6eYznutMDFdEELyAr8b9/wnatI/ohzmebOBDgFzBrn8gwilCctz7X
-DI39HTkCvciWKVXNyVdUZKI5S+MRCEB2JZAkCy3x8LLsENmMnO0xN32o5Od0zlGn
-nFLcLQFrZfz5dY2ZusxP+z0z0x4RW3sikd4RZ99PEHBkFa5CgJIFrBxtQAsLi1c=
-=4Yg+
+iEYEARECAAYFAlRveXEACgkQgfmLGlazG5xGCgCfRn9F1szdU5fFG7j3MsXwBp5g
+/E0AoNBYW+hdX/+IqWX8IEf5yErosMwB
+=2cRO
 -----END PGP SIGNATURE-----
+
+--NAmHCRPXNp23hR9r--

@@ -1,296 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:17439 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751257AbaKUTwm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 14:52:42 -0500
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <stable@vger.kernel.org>
-Subject: [PATCH] Btrfs: make sure logged extents complete in the current transaction V3
-Date: Fri, 21 Nov 2014 14:52:38 -0500
-Message-ID: <1416599558-6990-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from imap.thunk.org ([74.207.234.97]:44447 "EHLO imap.thunk.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752100AbaKUT7o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Nov 2014 14:59:44 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: linux-fsdevel@vger.kernel.org
+Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, "Theodore Ts'o" <tytso@mit.edu>
+Subject: [PATCH 2/4] vfs: add support for a lazytime mount option
+Date: Fri, 21 Nov 2014 14:59:22 -0500
+Message-Id: <1416599964-21892-3-git-send-email-tytso@mit.edu>
+In-Reply-To: <1416599964-21892-1-git-send-email-tytso@mit.edu>
+References: <1416599964-21892-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Liu Bo pointed out that my previous fix would lose the generation update in the
-scenario I described.  It is actually much worse than that, we could lose the
-entire extent if we lose power right after the transaction commits.  Consider
-the following
+Add a new mount option which enables a new "lazytime" mode.  This mode
+causes atime, mtime, and ctime updates to only be made to the
+in-memory version of the inode.  The on-disk times will only get
+updated when (a) if the inode needs to be updated for some non-time
+related change, (b) if userspace calls fsync(), syncfs() or sync(), or
+(c) just before an undeleted inode is evicted from memory.
 
-write extent 0-4k
-log extent in log tree
-commit transaction
-	< power fail happens here
-ordered extent completes
+This is OK according to POSIX because there are no guarantees after a
+crash unless userspace explicitly requests via a fsync(2) call.
 
-We would lose the 0-4k extent because it hasn't updated the actual fs tree, and
-the transaction commit will reset the log so it isn't replayed.  If we lose
-power before the transaction commit we are save, otherwise we are not.
+For workloads which feature a large number of random write to a
+preallocated file, the lazytime mount option significantly reduces
+writes to the inode table.  The repeated 4k writes to a single block
+will result in undesirable stress on flash devices and SMR disk
+drives.  Even on conventional HDD's, the repeated writes to the inode
+table block will trigger Adjacent Track Interference (ATI) remediation
+latencies, which very negatively impact 99.9 percentile latencies ---
+which is a very big deal for web serving tiers (for example).
 
-Fix this by keeping track of all extents we logged in this transaction.  Then
-when we go to commit the transaction make sure we wait for all of those ordered
-extents to complete before proceeding.  This will make sure that if we lose
-power after the transaction commit we still have our data.  This also fixes the
-problem of the improperly updated extent generation.  Thanks,
+Google-Bug-Id: 18297052
 
-cc: stable@vger.kernel.org
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
 ---
-V2->V3: Cleanup pending ordered properly on transaction abort.
+ fs/fs-writeback.c       | 38 +++++++++++++++++++++++++++++++++++++-
+ fs/inode.c              | 18 ++++++++++++++++++
+ fs/proc_namespace.c     |  1 +
+ fs/sync.c               |  7 +++++++
+ include/linux/fs.h      |  1 +
+ include/uapi/linux/fs.h |  1 +
+ 6 files changed, 65 insertions(+), 1 deletion(-)
 
- fs/btrfs/disk-io.c      | 20 ++++++++++++++++++++
- fs/btrfs/ordered-data.c |  9 +++++++--
- fs/btrfs/ordered-data.h |  8 +++++++-
- fs/btrfs/transaction.c  | 33 +++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h  |  2 ++
- fs/btrfs/tree-log.c     |  6 +++---
- 6 files changed, 72 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2409718..fe4db97 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4128,6 +4128,25 @@ again:
- 	return 0;
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index ef9bef1..ce7de22 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -483,7 +483,7 @@ __writeback_single_inode(struct inode *inode, struct writeback_control *wbc)
+ 	if (!mapping_tagged(mapping, PAGECACHE_TAG_DIRTY))
+ 		inode->i_state &= ~I_DIRTY_PAGES;
+ 	dirty = inode->i_state & I_DIRTY;
+-	inode->i_state &= ~(I_DIRTY_SYNC | I_DIRTY_DATASYNC);
++	inode->i_state &= ~(I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_TIME);
+ 	spin_unlock(&inode->i_lock);
+ 	/* Don't write the inode if only I_DIRTY_PAGES was set */
+ 	if (dirty & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
+@@ -1277,6 +1277,41 @@ static void wait_sb_inodes(struct super_block *sb)
+ 	iput(old_inode);
  }
  
-+static void btrfs_free_pending_ordered(struct btrfs_transaction *cur_trans,
-+				       struct btrfs_fs_info *fs_info)
++/*
++ * This works like wait_sb_inodes(), but it is called *before* we kick
++ * the bdi so the inodes can get written out.
++ */
++static void flush_sb_dirty_time(struct super_block *sb)
 +{
-+	struct btrfs_ordered_extent *ordered;
++	struct inode *inode, *old_inode = NULL;
 +
-+	spin_lock(&fs_info->trans_lock);
-+	while (!list_empty(&cur_trans->pending_ordered)) {
-+		ordered = list_first_entry(&cur_trans->pending_ordered,
-+					   struct btrfs_ordered_extent,
-+					   trans_list);
-+		list_del_init(&ordered->trans_list);
-+		spin_unlock(&fs_info->trans_lock);
++	WARN_ON(!rwsem_is_locked(&sb->s_umount));
++	spin_lock(&inode_sb_list_lock);
++	list_for_each_entry(inode, &sb->s_inodes, i_sb_list) {
++		int dirty_time;
 +
-+		btrfs_put_ordered_extent(ordered);
-+		spin_lock(&fs_info->trans_lock);
-+	}
-+	spin_unlock(&fs_info->trans_lock);
-+}
-+
- void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 				   struct btrfs_root *root)
- {
-@@ -4139,6 +4158,7 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 	cur_trans->state = TRANS_STATE_UNBLOCKED;
- 	wake_up(&root->fs_info->transaction_wait);
- 
-+	btrfs_free_pending_ordered(cur_trans, root->fs_info);
- 	btrfs_destroy_delayed_inodes(root);
- 	btrfs_assert_delayed_root_empty(root);
- 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index ac734ec..269e21d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -220,6 +220,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	INIT_LIST_HEAD(&entry->work_list);
- 	init_completion(&entry->completion);
- 	INIT_LIST_HEAD(&entry->log_list);
-+	INIT_LIST_HEAD(&entry->trans_list);
- 
- 	trace_btrfs_ordered_extent_add(inode, entry);
- 
-@@ -443,6 +444,8 @@ void btrfs_get_logged_extents(struct inode *inode,
- 		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
- 		if (!list_empty(&ordered->log_list))
- 			continue;
-+		if (test_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
++		spin_lock(&inode->i_lock);
++		if (inode->i_state & (I_FREEING|I_WILL_FREE|I_NEW)) {
++			spin_unlock(&inode->i_lock);
 +			continue;
- 		list_add_tail(&ordered->log_list, logged_list);
- 		atomic_inc(&ordered->refs);
- 	}
-@@ -472,7 +475,8 @@ void btrfs_submit_logged_extents(struct list_head *logged_list,
- 	spin_unlock_irq(&log->log_extents_lock[index]);
- }
- 
--void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
-+void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *log, u64 transid)
- {
- 	struct btrfs_ordered_extent *ordered;
- 	int index = transid % 2;
-@@ -497,7 +501,8 @@ void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
- 		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
- 						   &ordered->flags));
- 
--		btrfs_put_ordered_extent(ordered);
-+		if (!test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
-+			list_add_tail(&ordered->trans_list, &trans->ordered);
- 		spin_lock_irq(&log->log_extents_lock[index]);
- 	}
- 	spin_unlock_irq(&log->log_extents_lock[index]);
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index d81a274..0124bff 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -71,6 +71,8 @@ struct btrfs_ordered_sum {
- 				       ordered extent */
- #define BTRFS_ORDERED_TRUNCATED 9 /* Set when we have to truncate an extent */
- 
-+#define BTRFS_ORDERED_LOGGED 10 /* Set when we've waited on this ordered extent
-+				 * in the logging code. */
- struct btrfs_ordered_extent {
- 	/* logical offset in the file */
- 	u64 file_offset;
-@@ -121,6 +123,9 @@ struct btrfs_ordered_extent {
- 	/* If we need to wait on this to be done */
- 	struct list_head log_list;
- 
-+	/* If the transaction needs to wait on this ordered extent */
-+	struct list_head trans_list;
++		}
++		dirty_time = inode->i_state & I_DIRTY_TIME;
++		__iget(inode);
++		spin_unlock(&inode->i_lock);
++		spin_unlock(&inode_sb_list_lock);
 +
- 	/* used to wait for the BTRFS_ORDERED_COMPLETE bit */
- 	wait_queue_head_t wait;
- 
-@@ -197,7 +202,8 @@ void btrfs_get_logged_extents(struct inode *inode,
- void btrfs_put_logged_extents(struct list_head *logged_list);
- void btrfs_submit_logged_extents(struct list_head *logged_list,
- 				 struct btrfs_root *log);
--void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid);
-+void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *log, u64 transid);
- void btrfs_free_logged_extents(struct btrfs_root *log, u64 transid);
- int __init ordered_data_init(void);
- void ordered_data_exit(void);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index dcaae36..63c6d05 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -220,6 +220,7 @@ loop:
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
- 	INIT_LIST_HEAD(&cur_trans->pending_chunks);
- 	INIT_LIST_HEAD(&cur_trans->switch_commits);
-+	INIT_LIST_HEAD(&cur_trans->pending_ordered);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-@@ -488,6 +489,7 @@ again:
- 	h->sync = false;
- 	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 	INIT_LIST_HEAD(&h->new_bgs);
-+	INIT_LIST_HEAD(&h->ordered);
- 
- 	smp_mb();
- 	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
-@@ -719,6 +721,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	if (!list_empty(&trans->new_bgs))
- 		btrfs_create_pending_block_groups(trans, root);
- 
-+	if (!list_empty(&trans->ordered)) {
-+		spin_lock(&info->trans_lock);
-+		list_splice(&trans->ordered, &cur_trans->pending_ordered);
-+		spin_unlock(&info->trans_lock);
++		iput(old_inode);
++		old_inode = inode;
++
++		if (dirty_time)
++			mark_inode_dirty(inode);
++		cond_resched();
++		spin_lock(&inode_sb_list_lock);
 +	}
-+
- 	trans->delayed_ref_updates = 0;
- 	if (!trans->sync) {
- 		must_run_delayed_refs =
-@@ -1652,6 +1660,28 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
- 		btrfs_wait_ordered_roots(fs_info, -1);
- }
- 
-+static inline void
-+btrfs_wait_pending_ordered(struct btrfs_transaction *cur_trans,
-+			   struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_ordered_extent *ordered;
-+
-+	spin_lock(&fs_info->trans_lock);
-+	while (!list_empty(&cur_trans->pending_ordered)) {
-+		ordered = list_first_entry(&cur_trans->pending_ordered,
-+					   struct btrfs_ordered_extent,
-+					   trans_list);
-+		list_del_init(&ordered->trans_list);
-+		spin_unlock(&fs_info->trans_lock);
-+
-+		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_COMPLETE,
-+						   &ordered->flags));
-+		btrfs_put_ordered_extent(ordered);
-+		spin_lock(&fs_info->trans_lock);
-+	}
-+	spin_unlock(&fs_info->trans_lock);
++	spin_unlock(&inode_sb_list_lock);
++	iput(old_inode);
 +}
 +
- int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root)
- {
-@@ -1702,6 +1732,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	}
+ /**
+  * writeback_inodes_sb_nr -	writeback dirty inodes from given super_block
+  * @sb: the superblock
+@@ -1388,6 +1423,7 @@ void sync_inodes_sb(struct super_block *sb)
+ 		return;
+ 	WARN_ON(!rwsem_is_locked(&sb->s_umount));
  
- 	spin_lock(&root->fs_info->trans_lock);
-+	list_splice(&trans->ordered, &cur_trans->pending_ordered);
- 	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
- 		spin_unlock(&root->fs_info->trans_lock);
- 		atomic_inc(&cur_trans->use_count);
-@@ -1754,6 +1785,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
++	flush_sb_dirty_time(sb);
+ 	bdi_queue_work(sb->s_bdi, &work);
+ 	wait_for_completion(&done);
  
- 	btrfs_wait_delalloc_flush(root->fs_info);
+diff --git a/fs/inode.c b/fs/inode.c
+index 8f5c4b5..6e91aca 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -534,6 +534,18 @@ static void evict(struct inode *inode)
+ 	BUG_ON(!(inode->i_state & I_FREEING));
+ 	BUG_ON(!list_empty(&inode->i_lru));
  
-+	btrfs_wait_pending_ordered(cur_trans, root->fs_info);
++	if (inode->i_nlink && inode->i_state & I_DIRTY_TIME) {
++		if (inode->i_op->write_time)
++			inode->i_op->write_time(inode);
++		else if (inode->i_sb->s_op->write_inode) {
++			struct writeback_control wbc = {
++				.sync_mode = WB_SYNC_NONE,
++			};
++			mark_inode_dirty(inode);
++			inode->i_sb->s_op->write_inode(inode, &wbc);
++		}
++	}
 +
- 	btrfs_scrub_pause(root);
- 	/*
- 	 * Ok now we need to make sure to block out any other joins while we
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index d8f40e1..1ba9c3e 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -56,6 +56,7 @@ struct btrfs_transaction {
- 	wait_queue_head_t commit_wait;
- 	struct list_head pending_snapshots;
- 	struct list_head pending_chunks;
-+	struct list_head pending_ordered;
- 	struct list_head switch_commits;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
-@@ -105,6 +106,7 @@ struct btrfs_trans_handle {
- 	 */
- 	struct btrfs_root *root;
- 	struct seq_list delayed_ref_elem;
-+	struct list_head ordered;
- 	struct list_head qgroup_ref_list;
- 	struct list_head new_bgs;
- };
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 70f99b1..337e4bc 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2600,7 +2600,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	if (atomic_read(&log_root_tree->log_commit[index2])) {
- 		blk_finish_plug(&plug);
- 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
--		btrfs_wait_logged_extents(log, log_transid);
-+		btrfs_wait_logged_extents(trans, log, log_transid);
- 		wait_log_commit(trans, log_root_tree,
- 				root_log_ctx.log_transid);
- 		mutex_unlock(&log_root_tree->log_mutex);
-@@ -2645,7 +2645,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	btrfs_wait_marked_extents(log_root_tree,
- 				  &log_root_tree->dirty_log_pages,
- 				  EXTENT_NEW | EXTENT_DIRTY);
--	btrfs_wait_logged_extents(log, log_transid);
-+	btrfs_wait_logged_extents(trans, log, log_transid);
+ 	if (!list_empty(&inode->i_wb_list))
+ 		inode_wb_list_del(inode);
  
- 	btrfs_set_super_log_root(root->fs_info->super_for_commit,
- 				log_root_tree->node->start);
-@@ -3766,7 +3766,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
+@@ -1515,6 +1527,12 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ 		if (flags & S_MTIME)
+ 			inode->i_mtime = *time;
+ 	}
++	if (inode->i_sb->s_flags & MS_LAZYTIME) {
++		spin_lock(&inode->i_lock);
++		inode->i_state |= I_DIRTY_TIME;
++		spin_unlock(&inode->i_lock);
++		return 0;
++	}
+ 	if (inode->i_op->write_time)
+ 		return inode->i_op->write_time(inode);
+ 	mark_inode_dirty_sync(inode);
+diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
+index 73ca174..f98234a 100644
+--- a/fs/proc_namespace.c
++++ b/fs/proc_namespace.c
+@@ -44,6 +44,7 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
+ 		{ MS_SYNCHRONOUS, ",sync" },
+ 		{ MS_DIRSYNC, ",dirsync" },
+ 		{ MS_MANDLOCK, ",mand" },
++		{ MS_LAZYTIME, ",lazytime" },
+ 		{ 0, NULL }
+ 	};
+ 	const struct proc_fs_info *fs_infop;
+diff --git a/fs/sync.c b/fs/sync.c
+index bdc729d..db7930e 100644
+--- a/fs/sync.c
++++ b/fs/sync.c
+@@ -177,8 +177,15 @@ SYSCALL_DEFINE1(syncfs, int, fd)
+  */
+ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
+ {
++	struct inode *inode = file->f_mapping->host;
++
+ 	if (!file->f_op->fsync)
+ 		return -EINVAL;
++	if (!datasync && inode->i_state & I_DIRTY_TIME) {
++		spin_lock(&inode->i_lock);
++		inode->i_state |= I_DIRTY_SYNC;
++		spin_unlock(&inode->i_lock);
++	}
+ 	return file->f_op->fsync(file, start, end, datasync);
+ }
+ EXPORT_SYMBOL(vfs_fsync_range);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 3633239..489b2f2 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1721,6 +1721,7 @@ struct super_operations {
+ #define __I_DIO_WAKEUP		9
+ #define I_DIO_WAKEUP		(1 << I_DIO_WAKEUP)
+ #define I_LINKABLE		(1 << 10)
++#define I_DIRTY_TIME		(1 << 11)
  
--	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
-+	btrfs_set_token_file_extent_generation(leaf, fi, trans->transid,
- 					       &token);
- 	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
- 		btrfs_set_token_file_extent_type(leaf, fi,
+ #define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
+ 
+diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+index 3735fa0..cc9713a 100644
+--- a/include/uapi/linux/fs.h
++++ b/include/uapi/linux/fs.h
+@@ -90,6 +90,7 @@ struct inodes_stat_t {
+ #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+ #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
+ #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
++#define MS_LAZYTIME	(1<<25) /* Update the on-disk [acm]times lazily */
+ 
+ /* These sb flags are internal to the kernel */
+ #define MS_NOSEC	(1<<28)
 -- 
-1.8.3.1
+2.1.0
 

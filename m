@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:53816 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758182AbaKUKJI (ORCPT
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:58329 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758209AbaKUKOR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 05:09:08 -0500
-Received: by mail-pd0-f178.google.com with SMTP id g10so2779323pdj.37
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 02:09:04 -0800 (PST)
+	Fri, 21 Nov 2014 05:14:17 -0500
+Received: by mail-pd0-f175.google.com with SMTP id y10so5001961pdj.34
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 02:14:14 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
@@ -14,12 +14,10 @@ To: Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-mm@kvack.org, linux-nfs@vger.kernel.org,
         Trond Myklebust <trond.myklebust@primarydata.com>,
         Mel Gorman <mgorman@suse.de>
-Cc: Omar Sandoval <osandov@osandov.com>,
-        Dave Kleikamp <dave.kleikamp@oracle.com>,
-        Ming Lei <ming.lei@canonical.com>
-Subject: [PATCH v2 1/5] direct-io: don't dirty ITER_BVEC pages on read
-Date: Fri, 21 Nov 2014 02:08:27 -0800
-Message-Id: <d5e6bbb3e54f76bbc11ffd106bc98a2c531b67ad.1416563833.git.osandov@osandov.com>
+Cc: Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v2 4/5] btrfs: don't allow -C or +c chattrs on a swap file
+Date: Fri, 21 Nov 2014 02:08:30 -0800
+Message-Id: <a422e8d7ce252474b998eeca3af5f1e2964c5c50.1416563833.git.osandov@osandov.com>
 In-Reply-To: <cover.1416563833.git.osandov@osandov.com>
 References: <cover.1416563833.git.osandov@osandov.com>
 In-Reply-To: <cover.1416563833.git.osandov@osandov.com>
@@ -27,63 +25,85 @@ References: <cover.1416563833.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reads through the iov_iter infrastructure for kernel pages shouldn't be dirtied
-by the direct I/O code.
+swap_activate will check for a compressed or copy-on-write file; we shouldn't
+allow it to become either once it has already been activated.
 
-This is based on Dave Kleikamp's and Ming Lei's previously posted patches.
-
-Cc: Dave Kleikamp <dave.kleikamp@oracle.com>
-Cc: Ming Lei <ming.lei@canonical.com>
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/direct-io.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 50 +++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 31 insertions(+), 19 deletions(-)
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index e181b6b..e542ce4 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -120,6 +120,7 @@ struct dio {
- 	spinlock_t bio_lock;		/* protects BIO fields below */
- 	int page_errors;		/* errno from get_user_pages() */
- 	int is_async;			/* is IO async ? */
-+	int should_dirty;		/* should we mark read pages dirty? */
- 	bool defer_completion;		/* defer AIO completion to workqueue? */
- 	int io_error;			/* IO error in completion path */
- 	unsigned long refcount;		/* direct_io_worker() and bios */
-@@ -392,7 +393,7 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
- 	dio->refcount++;
- 	spin_unlock_irqrestore(&dio->bio_lock, flags);
- 
--	if (dio->is_async && dio->rw == READ)
-+	if (dio->is_async && dio->rw == READ && dio->should_dirty)
- 		bio_set_pages_dirty(bio);
- 
- 	if (sdio->submit_io)
-@@ -463,13 +464,13 @@ static int dio_bio_complete(struct dio *dio, struct bio *bio)
- 	if (!uptodate)
- 		dio->io_error = -EIO;
- 
--	if (dio->is_async && dio->rw == READ) {
-+	if (dio->is_async && dio->rw == READ && dio->should_dirty) {
- 		bio_check_pages_dirty(bio);	/* transfers ownership */
- 	} else {
- 		bio_for_each_segment_all(bvec, bio, i) {
- 			struct page *page = bvec->bv_page;
- 
--			if (dio->rw == READ && !PageCompound(page))
-+			if (dio->rw == READ && !PageCompound(page) && dio->should_dirty)
- 				set_page_dirty_lock(page);
- 			page_cache_release(page);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4399f0c..f022dce 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -293,14 +293,21 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
  		}
-@@ -1177,6 +1178,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
+ 	} else {
+ 		/*
+-		 * Revert back under same assuptions as above
++		 * swap_activate checks that we don't swapon a copy-on-write
++		 * file, but we must also make sure that it doesn't become
++		 * copy-on-write.
+ 		 */
+-		if (S_ISREG(mode)) {
+-			if (inode->i_size == 0)
+-				ip->flags &= ~(BTRFS_INODE_NODATACOW
+-				             | BTRFS_INODE_NODATASUM);
+-		} else {
+-			ip->flags &= ~BTRFS_INODE_NODATACOW;
++		if (!IS_SWAPFILE(inode)) {
++			/*
++			 * Revert back under same assumptions as above
++			 */
++			if (S_ISREG(mode)) {
++				if (inode->i_size == 0)
++					ip->flags &= ~(BTRFS_INODE_NODATACOW |
++						       BTRFS_INODE_NODATASUM);
++			} else {
++				ip->flags &= ~BTRFS_INODE_NODATACOW;
++			}
+ 		}
+ 	}
  
- 	dio->inode = inode;
- 	dio->rw = rw;
-+	dio->should_dirty = !(iter->type & ITER_BVEC);
+@@ -317,20 +324,25 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 		if (ret && ret != -ENODATA)
+ 			goto out_drop;
+ 	} else if (flags & FS_COMPR_FL) {
+-		const char *comp;
+-
+-		ip->flags |= BTRFS_INODE_COMPRESS;
+-		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
++		/*
++		 * Like nodatacow, swap_activate checks that we don't swapon a
++		 * compressed file, so we shouldn't let it become compressed.
++		 */
++		if (!IS_SWAPFILE(inode)) {
++			const char *comp;
  
- 	/*
- 	 * For AIO O_(D)SYNC writes we need to defer completions to a workqueue
+-		if (root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
+-			comp = "lzo";
+-		else
+-			comp = "zlib";
+-		ret = btrfs_set_prop(inode, "btrfs.compression",
+-				     comp, strlen(comp), 0);
+-		if (ret)
+-			goto out_drop;
++			ip->flags |= BTRFS_INODE_COMPRESS;
++			ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
+ 
++			if (root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
++				comp = "lzo";
++			else
++				comp = "zlib";
++			ret = btrfs_set_prop(inode, "btrfs.compression",
++					     comp, strlen(comp), 0);
++			if (ret)
++				goto out_drop;
++		}
+ 	} else {
+ 		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+ 		if (ret && ret != -ENODATA)
 -- 
 2.1.3
 

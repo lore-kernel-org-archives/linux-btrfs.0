@@ -1,101 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mdfmta010.mxout.tbr.inty.net ([91.221.168.51]:60185 "EHLO
-	smtp.demon.co.uk" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750922AbaKUNQY (ORCPT
+Received: from mail-qg0-f50.google.com ([209.85.192.50]:41422 "EHLO
+	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755394AbaKUPMH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 08:16:24 -0500
-Received: from mdfmta010.tbr.inty.net (unknown [127.0.0.1])
-	by mdfmta010.tbr.inty.net (Postfix) with ESMTP id 2D9596F9D40
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 13:10:51 +0000 (GMT)
-Received: from mdfmta010.tbr.inty.net (unknown [127.0.0.1])
-	by mdfmta010.tbr.inty.net (Postfix) with ESMTP id 094706F9654
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 13:10:51 +0000 (GMT)
-Received: from iarmst.demon.co.uk (unknown [62.49.16.35])
-	by mdfmta010.tbr.inty.net (Postfix) with SMTP
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 13:10:50 +0000 (GMT)
-Date: Fri, 21 Nov 2014 12:55:48 +0000
-From: Ian Armstrong <btrfs@iarmst.co.uk>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-Message-ID: <20141121125548.4ed20963@spike.private.network>
-In-Reply-To: <546EE43C.7020900@swiftspirit.co.za>
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
- <546AF572.2020101@swiftspirit.co.za>
- <20141121045801.GS17395@hungrycats.org>
- <546EE43C.7020900@swiftspirit.co.za>
+	Fri, 21 Nov 2014 10:12:07 -0500
+Received: by mail-qg0-f50.google.com with SMTP id i50so606409qgf.37
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Nov 2014 07:12:06 -0800 (PST)
+Message-ID: <546F5631.5050701@ubuntu.com>
+Date: Fri, 21 Nov 2014 10:11:45 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+To: Robert White <rwhite@pobox.com>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D18D9.60201@pobox.com> <546E4E6A.3060208@ubuntu.com> <546E6F19.40806@pobox.com>
+In-Reply-To: <546E6F19.40806@pobox.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 21 Nov 2014 09:05:32 +0200, Brendan Hide wrote:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> On 2014/11/21 06:58, Zygo Blaxell wrote:
-
-> > I also notice you are not running regular SMART self-tests (e.g.
-> > by smartctl -t long) and the last (and first, and only!) self-test
-> > the drive ran was ~12000 hours ago.  That means most of your SMART
-> > data is about 18 months old.  The drive won't know about sectors
-> > that went bad in the last year and a half unless the host happens
-> > to stumble across them during a read.
-> >
-> > The drive is over five years old in operating hours alone.  It is
-> > probably so fragile now that it will break if you try to move it.
-
-> All interesting points. Do you schedule SMART self-tests on your own 
-> systems? I have smartd running. In theory it tracks changes and sends 
-> alerts if it figures a drive is going to fail. But, based on what
-> you've indicated, that isn't good enough.
-
-Simply monitoring the smart status without a self-test isn't really that
-great. I'm not sure on the default config, but smartd can be made to
-initiate a smart self-test at regular intervals. Depending on the test
-type (short, long, etc) it could include a full surface scan. This can
-reveal things like bad sectors before you ever hit them during normal
-system usage.
-
+On 11/20/2014 5:45 PM, Robert White wrote:
+> Nice attempt at saving face, but wrong as _always_.
 > 
-> > WARNING: errors detected during scrubbing, corrected.
-> > [snip]
-> > scrub device /dev/sdb2 (id 2) done
-> > 	scrub started at Tue Nov 18 03:22:58 2014 and finished
-> > after 2682 seconds total bytes scrubbed: 189.49GiB with 5420 errors
-> > 	error details: read=5 csum=5415
-> > 	corrected errors: 5420, uncorrectable errors: 0, unverified
-> > errors: 164 That seems a little off.  If there were 5 read errors,
-> > I'd expect the drive to have errors in the SMART error log.
-> >
-> > Checksum errors could just as easily be a btrfs bug or a RAM/CPU
-> > problem. There have been a number of fixes to csums in btrfs pulled
-> > into the kernel recently, and I've retired two five-year-old
-> > computers this summer due to RAM/CPU failures.
-
-> The difference here is that the issue only affects the one drive.
-> This leaves the probable cause at:
-> - the drive itself
-> - the cable/ports
+> The CONFIG_PATA_ACPI option has been in the kernel since 2008 and
+> lots of people have used it.
 > 
-> with a negligibly-possible cause at the motherboard chipset.
+> If you search for "ACPI ide" you'll find people complaining in
+> 2008-2010 about windows error messages indicating the device is
+> present in their system but no OS driver is available.
 
-This is the same problem that I'm currently trying to resolve. I have
-one drive in a raid1 setup which shows no issues in smart status but
-often has checksum errors.
+Nope... not finding it.  The closest thing was one or two people who
+said ACPI when they meant AHCI ( and were quickly corrected ).  This
+is probably what you were thinking of since windows xp did not ship
+with an ahci driver so it was quite common for winxp users to have
+this problem when in _AHCI_ mode.
 
-In my situation what I've found is that if I scrub & let it fix the
-errors then a second pass immediately after will show no errors. If I
-then leave it a few days & try again there will be errors, even in
-old files which have not been accessed for months.
+> That you "have yet to see a single system that implements it" is
+> about the worst piece of internet research I've ever seen. Do you
+> not _get_ that your opinion about what exists and how it works is
+> not authoritative?
 
-If I do a read-only scrub to get a list of errors, a second scrub
-immediately after will show exactly the same errors.
+Show me one and I'll give you a cookie.  I have disassembled a number
+of acpi tables and yet to see one that has it.  What's more,
+motherboard vendors tend to implement only the absolute minimum they
+have to.  Since nobody actually needs this feature, they aren't going
+to bother with it.  Do you not get that your hand waving arguments of
+"you can google for it" are not authoritative?
 
-Apart from the scrub errors the system logs shows no issues with that
-particular drive.
+> You can also find articles about both windows and linux systems
+> actively using ACPI fan control going back to 2009
 
-My next step is to disable autodefrag & see if the problem persists.
-(I'm not suggesting a problem with autodefrag, I just want to remove it
-from the equation & ensure that outside of normal file access, data
-isn't being rewritten between scrubs)
+Maybe you should have actually read those articles.  Linux supports
+acpi fan control, unfortunately, almost no motherboards actually
+implement it.  Almost everyone who wants fan control working in linux
+has to install lm-sensors and load a driver that directly accesses one
+of the embedded controllers that motherboards tend to use and run the
+fancontrol script to manipulate the pwm channels on that controller.
+These days you also have to boot with a kernel argument to allow
+loading the driver since ACPI claims those IO ports for its own use
+which creates a conflict.
 
--- 
-Ian
+Windows users that want to do this have to install a program... I
+believe a popular one is called q-fan, that likewise directly accesses
+the embedded controller registers to control the fan, since the acpi
+tables don't bother properly implementing the acpi fan spec.
+
+Then there are thinkpads, and one or two other laptops ( asus comes to
+mind ) that went and implemented their own proprietary acpi interfaces
+for fancontrol instead of following the spec, which required some
+reverse engineering and yet more drivers to handle these proprietary
+acpi interfaces.  You can google for "thinkfan" if you want to see this.
+
+> These are not hard searches to pull off. These are not obscure 
+> references. Go to the google box and start typing "ACPI fan..."
+> and check the autocomplete.
+> 
+> I'll skip ovea all the parts where you don't know how a chipset
+> works and blah, blah, blah...
+> 
+> You really should have just stopped at "I don't know" and "I've
+> never" because you keep demonstrating that you _don't_ know, and
+> that you really _should_ _never_.
+> 
+> Tell us more about the lizard aliens controlling your computer, I
+> find your versions of realty fascinating...
+
+By all means, keep embarrassing yourself with nonsense and trying to
+cover it up by being rude and insulting.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+
+iQEcBAEBAgAGBQJUb1YxAAoJEI5FoCIzSKrwi54H/Rkd7DloqC9x9QwN4QdmWcAZ
+/UQg3hcRbtB3wpmp34Mnb3SS0Ii2mCh/dtKmdRGBNE/x5nU1WiQEHHCicKX3Avvq
+8OXLNQrsf+xZL9/HGtUJ3RefpEkmwIG5NgFfKJHtv6Iq204Umq32JUxRla+ZQE5s
+MrUparigpUlj26lrnShc6ByDUqYK3wOTsDxEMxrOyAgi/n/7ESHV/dZVaqsE6jGQ
+OvPynf1FqJoJSSYC7sNE0XLqfHMu2wnSxcoF6MpuHXlDiwtrSH07tuwgrhCNPagY
+j7gQyxucew8oim8lcfs+4rrQ60wwVzlsEJwjA9rAXQF7U2x/WoB+ArYhgmJUMgA=
+=cXJr
+-----END PGP SIGNATURE-----

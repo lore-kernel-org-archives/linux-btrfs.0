@@ -1,101 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:54364 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751345AbaKVNOo (ORCPT
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:44301 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751345AbaKVNOp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 08:14:44 -0500
-Received: by mail-pa0-f51.google.com with SMTP id ey11so6659694pad.24
-        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 05:14:43 -0800 (PST)
+	Sat, 22 Nov 2014 08:14:45 -0500
+Received: by mail-pd0-f175.google.com with SMTP id y10so7074392pdj.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 05:14:45 -0800 (PST)
 Received: from promote.cache-dns.local.cache-dns.local ([223.65.142.103])
-        by mx.google.com with ESMTPSA id lr4sm7522107pab.42.2014.11.22.05.14.42
+        by mx.google.com with ESMTPSA id lr4sm7522107pab.42.2014.11.22.05.14.43
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 22 Nov 2014 05:14:42 -0800 (PST)
+        Sat, 22 Nov 2014 05:14:44 -0800 (PST)
 From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix allocationg memory failure for btrfsic_state structure
-Date: Sat, 22 Nov 2014 21:13:09 +0800
-Message-Id: <1416661990-20717-1-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH] Btrfs: switch to kvfree() helper
+Date: Sat, 22 Nov 2014 21:13:10 +0800
+Message-Id: <1416661990-20717-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1416661990-20717-1-git-send-email-wangshilong1991@gmail.com>
+References: <1416661990-20717-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-size of @btrfsic_state needs more than 2M, it is very likely to
-fail allocating memory using kzalloc(). see following mesage:
-
-[91428.902148] Call Trace:
-[<ffffffff816f6e0f>] dump_stack+0x4d/0x66
-[<ffffffff811b1c7f>] warn_alloc_failed+0xff/0x170
-[<ffffffff811b66e1>] __alloc_pages_nodemask+0x951/0xc30
-[<ffffffff811fd9da>] alloc_pages_current+0x11a/0x1f0
-[<ffffffff811b1e0b>] ? alloc_kmem_pages+0x3b/0xf0
-[<ffffffff811b1e0b>] alloc_kmem_pages+0x3b/0xf0
-[<ffffffff811d1018>] kmalloc_order+0x18/0x50
-[<ffffffff811d1074>] kmalloc_order_trace+0x24/0x140
-[<ffffffffa06c097b>] btrfsic_mount+0x8b/0xae0 [btrfs]
-[<ffffffff810af555>] ? check_preempt_curr+0x85/0xa0
-[<ffffffff810b2de3>] ? try_to_wake_up+0x103/0x430
-[<ffffffffa063d200>] open_ctree+0x1bd0/0x2130 [btrfs]
-[<ffffffffa060fdde>] btrfs_mount+0x62e/0x8b0 [btrfs]
-[<ffffffff811fd9da>] ? alloc_pages_current+0x11a/0x1f0
-[<ffffffff811b0a5e>] ? __get_free_pages+0xe/0x50
-[<ffffffff81230429>] mount_fs+0x39/0x1b0
-[<ffffffff812509fb>] vfs_kern_mount+0x6b/0x150
-[<ffffffff812537fb>] do_mount+0x27b/0xc30
-[<ffffffff811b0a5e>] ? __get_free_pages+0xe/0x50
-[<ffffffff812544f6>] SyS_mount+0x96/0xf0
-[<ffffffff81701970>] system_call_fastpath+0x16/0x1b
-
-Since we are allocating memory for hash table array, so
-it will be good if we could allocate continuous pages here.
-
-Fix this problem by firstly trying kzalloc(), if we fail,
-use vzalloc() instead.
+A new helper kvfree() in mm/utils.c will do this.
 
 Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
 ---
-v1->v2:
-	include vmalloc.h and swith kvfree() helper.
----
- fs/btrfs/check-integrity.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+ fs/btrfs/raid56.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index cb7f3fe..f88b3a6 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -94,6 +94,7 @@
- #include <linux/mutex.h>
- #include <linux/genhd.h>
- #include <linux/blkdev.h>
-+#include <linux/vmalloc.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "hash.h"
-@@ -3130,10 +3131,13 @@ int btrfsic_mount(struct btrfs_root *root,
- 		       root->sectorsize, PAGE_CACHE_SIZE);
- 		return -1;
- 	}
--	state = kzalloc(sizeof(*state), GFP_NOFS);
--	if (NULL == state) {
--		printk(KERN_INFO "btrfs check-integrity: kmalloc() failed!\n");
--		return -1;
-+	state = kzalloc(sizeof(*state), GFP_KERNEL | __GFP_NOWARN | __GFP_REPEAT);
-+	if (!state) {
-+		state = vzalloc(sizeof(*state));
-+		if (!state) {
-+			printk(KERN_INFO "btrfs check-integrity: vzalloc() failed!\n");
-+			return -1;
-+		}
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 6a41631..12e343b 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -221,12 +221,8 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info)
  	}
  
- 	if (!btrfsic_is_initialized) {
-@@ -3277,5 +3281,5 @@ void btrfsic_unmount(struct btrfs_root *root,
- 
- 	mutex_unlock(&btrfsic_mutex);
- 
--	kfree(state);
-+	kvfree(state);
+ 	x = cmpxchg(&info->stripe_hash_table, NULL, table);
+-	if (x) {
+-		if (is_vmalloc_addr(x))
+-			vfree(x);
+-		else
+-			kfree(x);
+-	}
++	if (x)
++		kvfree(x);
+ 	return 0;
  }
+ 
+@@ -436,10 +432,7 @@ void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info)
+ 	if (!info->stripe_hash_table)
+ 		return;
+ 	btrfs_clear_rbio_cache(info);
+-	if (is_vmalloc_addr(info->stripe_hash_table))
+-		vfree(info->stripe_hash_table);
+-	else
+-		kfree(info->stripe_hash_table);
++	kvfree(info->stripe_hash_table);
+ 	info->stripe_hash_table = NULL;
+ }
+ 
 -- 
 1.7.12.4
 

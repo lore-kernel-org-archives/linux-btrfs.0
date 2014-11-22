@@ -1,64 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f175.google.com ([209.85.192.175]:44301 "EHLO
-	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751345AbaKVNOp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 08:14:45 -0500
-Received: by mail-pd0-f175.google.com with SMTP id y10so7074392pdj.6
-        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 05:14:45 -0800 (PST)
-Received: from promote.cache-dns.local.cache-dns.local ([223.65.142.103])
-        by mx.google.com with ESMTPSA id lr4sm7522107pab.42.2014.11.22.05.14.43
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 22 Nov 2014 05:14:44 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: switch to kvfree() helper
-Date: Sat, 22 Nov 2014 21:13:10 +0800
-Message-Id: <1416661990-20717-2-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1416661990-20717-1-git-send-email-wangshilong1991@gmail.com>
-References: <1416661990-20717-1-git-send-email-wangshilong1991@gmail.com>
+Received: from imap.thunk.org ([74.207.234.97]:45346 "EHLO imap.thunk.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750809AbaKVQyg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 22 Nov 2014 11:54:36 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: linux-fsdevel@vger.kernel.org
+Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, "Theodore Ts'o" <tytso@mit.edu>
+Subject: [PATCH-v2 4/5] vfs: add lazytime tracepoints for better debugging
+Date: Sat, 22 Nov 2014 11:54:26 -0500
+Message-Id: <1416675267-2191-5-git-send-email-tytso@mit.edu>
+In-Reply-To: <1416675267-2191-1-git-send-email-tytso@mit.edu>
+References: <1416675267-2191-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A new helper kvfree() in mm/utils.c will do this.
-
-Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
 ---
- fs/btrfs/raid56.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
+ fs/fs-writeback.c         |  5 ++++-
+ fs/inode.c                |  5 +++++
+ include/trace/events/fs.h | 56 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+), 1 deletion(-)
+ create mode 100644 include/trace/events/fs.h
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 6a41631..12e343b 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -221,12 +221,8 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info)
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index eb04277..cab2d6d 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -27,6 +27,7 @@
+ #include <linux/backing-dev.h>
+ #include <linux/tracepoint.h>
+ #include <linux/device.h>
++#include <trace/events/fs.h>
+ #include "internal.h"
+ 
+ /*
+@@ -1304,8 +1305,10 @@ static void flush_sb_dirty_time(struct super_block *sb)
+ 		iput(old_inode);
+ 		old_inode = inode;
+ 
+-		if (dirty_time)
++		if (dirty_time) {
++			trace_fs_lazytime_flush(inode);
+ 			mark_inode_dirty(inode);
++		}
+ 		cond_resched();
+ 		spin_lock(&inode_sb_list_lock);
+ 	}
+diff --git a/fs/inode.c b/fs/inode.c
+index 0d939a8..5a9a7b0 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -20,6 +20,9 @@
+ #include <linux/list_lru.h>
+ #include "internal.h"
+ 
++#define CREATE_TRACE_POINTS
++#include <trace/events/fs.h>
++
+ /*
+  * Inode locking rules:
+  *
+@@ -544,6 +547,7 @@ static void evict(struct inode *inode)
+ 			mark_inode_dirty(inode);
+ 			inode->i_sb->s_op->write_inode(inode, &wbc);
+ 		}
++		trace_fs_lazytime_evict(inode);
  	}
  
- 	x = cmpxchg(&info->stripe_hash_table, NULL, table);
--	if (x) {
--		if (is_vmalloc_addr(x))
--			vfree(x);
--		else
--			kfree(x);
--	}
-+	if (x)
-+		kvfree(x);
- 	return 0;
- }
- 
-@@ -436,10 +432,7 @@ void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info)
- 	if (!info->stripe_hash_table)
- 		return;
- 	btrfs_clear_rbio_cache(info);
--	if (is_vmalloc_addr(info->stripe_hash_table))
--		vfree(info->stripe_hash_table);
--	else
--		kfree(info->stripe_hash_table);
-+	kvfree(info->stripe_hash_table);
- 	info->stripe_hash_table = NULL;
- }
- 
+ 	if (!list_empty(&inode->i_wb_list))
+@@ -1546,6 +1550,7 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ 		inode->i_state |= I_DIRTY_TIME;
+ 		spin_unlock(&inode->i_lock);
+ 		inode->i_ts_dirty_day = days_since_boot;
++		trace_fs_lazytime_defer(inode);
+ 		return 0;
+ 	}
+ 	inode->i_ts_dirty_day = 0;
+diff --git a/include/trace/events/fs.h b/include/trace/events/fs.h
+new file mode 100644
+index 0000000..ca06d5c
+--- /dev/null
++++ b/include/trace/events/fs.h
+@@ -0,0 +1,56 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM fs
++
++#if !defined(_TRACE_FS_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_FS_H
++
++#include <linux/tracepoint.h>
++
++DECLARE_EVENT_CLASS(fs__inode,
++	TP_PROTO(struct inode *inode),
++
++	TP_ARGS(inode),
++
++	TP_STRUCT__entry(
++		__field(	dev_t,	dev			)
++		__field(	ino_t,	ino			)
++		__field(	uid_t,	uid			)
++		__field(	gid_t,	gid			)
++		__field(	__u16, mode			)
++	),
++
++	TP_fast_assign(
++		__entry->dev	= inode->i_sb->s_dev;
++		__entry->ino	= inode->i_ino;
++		__entry->uid	= i_uid_read(inode);
++		__entry->gid	= i_gid_read(inode);
++		__entry->mode	= inode->i_mode;
++	),
++
++	TP_printk("dev %d,%d ino %lu mode 0%o uid %u gid %u",
++		  MAJOR(__entry->dev), MINOR(__entry->dev),
++		  (unsigned long) __entry->ino, __entry->mode,
++		  __entry->uid, __entry->gid)
++);
++
++DEFINE_EVENT(fs__inode, fs_lazytime_defer,
++	TP_PROTO(struct inode *inode),
++
++	TP_ARGS(inode)
++);
++
++DEFINE_EVENT(fs__inode, fs_lazytime_evict,
++	TP_PROTO(struct inode *inode),
++
++	TP_ARGS(inode)
++);
++
++DEFINE_EVENT(fs__inode, fs_lazytime_flush,
++	TP_PROTO(struct inode *inode),
++
++	TP_ARGS(inode)
++);
++#endif /* _TRACE_FS_H */
++
++/* This part must be outside protection */
++#include <trace/define_trace.h>
 -- 
-1.7.12.4
+2.1.0
 

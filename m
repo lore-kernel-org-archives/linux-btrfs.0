@@ -1,95 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18-i2.italiaonline.it ([212.48.25.198]:52625 "EHLO
-	smtp-18.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750802AbaKVReo (ORCPT
+Received: from mail-yk0-f180.google.com ([209.85.160.180]:45835 "EHLO
+	mail-yk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751409AbaKVTwg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 12:34:44 -0500
-Message-ID: <5470C92E.1070607@inwind.it>
-Date: Sat, 22 Nov 2014 18:34:38 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+	Sat, 22 Nov 2014 14:52:36 -0500
+Received: by mail-yk0-f180.google.com with SMTP id 9so3186902ykp.39
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 11:52:35 -0800 (PST)
 MIME-Version: 1.0
-To: Zygo Blaxell <zblaxell@furryterror.org>, Phillip Susi <psusi@ubuntu.com>
-CC: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <54699CC7.1050909@swiftspirit.co.za> <546A46A5.8030603@inwind.it> <CAE8gLh=VubBbZdeKTAuWRjOxPF7C+ouUeeVvmGfT2ckYWGhQVA@mail.gmail.com> <CAE8gLh=Lf+z2B_9EXQM_ODSOa5HZsFpFMB=kKGmQXJSjYdy5kg@mail.gmail.com> <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com> <546B68F8.6080008@ubuntu.com> <FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com> <546BA96D.4050805@ubuntu.com> <2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com> <546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>
-In-Reply-To: <20141121042814.GR17395@hungrycats.org>
-Content-Type: text/plain; charset=windows-1252
+Date: Sat, 22 Nov 2014 12:52:35 -0700
+Message-ID: <CAJCQCtRPa9fBmvBRt+RLbGy8iSUKq1_=2oZuioTKSaWAieBihQ@mail.gmail.com>
+Subject: Volume/subvolume UUID uniqueness, was: BTRFS messes up snapshot LV
+ with origin
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/21/2014 05:28 AM, Zygo Blaxell wrote:
-> e.g. if an ext4 filesystem explodes, I can:
-> 
-> 	1.  make a LVM snapshot of the broken filesystem
-> 
-> 	2.  run e2fsck on the snapshot
-> 
-> 	3.  mount and repair the snapshot, e.g. rsync any missing files
-> 	from backups, salvage anything that survived
-> 
-> 	4.  LVM merge the snapshot to its origin volume
-> 
-> 	5.  umount the origin volume and mount the merged volume
-> 	(or just reboot)
-> 
-> ...and I can do all of this on a running system, in-place, with only a
-> few minutes of downtime in the must-reboot case.
-> 
-> None of the above works with btrfs at all.  Multi-device btrfs fails
-> at 2, 
+I don't know how to fix this but I've convinced myself there's at
+least a small problem. And not just with LVM snapshots as in the
+originating thread.
 
-You can't compare ext4 with btrfs, if you are talking about a multi-device 
-filesystem: ext4 haven't this capability. 
-Try to make a md-raid over a snapshotted logical volume(s); I never tried
-that, but I suppose that there will be the same problems...
+- Via seed device method of creating a Btrfs volume, the resulting
+volume gets a new UUID. The volume UUID from the seed device doesn't
+pass through, is not inherited / copied. Therefore there's already
+recognition that snapshotting a Btrfs volume, which is what volume
+creation from a seed device effectively is, should result in the new
+volume getting a new UUID.
 
-> and mounting the filesystem fails at 3.  
-Are you sure ?
+Therefore it seems reasonable a mechanism to support new volume UUIDs
+upon LVM snapshots being taken is needed. Maybe leveraging existing
+seed code can help, consider existing volume data a virtual seed
+device, and the remaining free space as a virtual added device to
+enable changing volume UUID rather than rewriting possibly piles of
+UUIDs.
 
-ghigo@venice:/tmp$ # create a btrfs filesystem in a logical volume
-ghigo@venice:/tmp$ sudo truncate -s +10G disk.img
-ghigo@venice:/tmp$ sudo losetup -f disk.img 
-ghigo@venice:/tmp$ sudo pvcreate /dev/loop0 
-ghigo@venice:/tmp$ sudo vgcreate vgtest /dev/loop0 
-ghigo@venice:/tmp$ sudo lvcreate -n lvone -L 3G vgtest
-ghigo@venice:/tmp$ sudo mkfs.btrfs /dev/vgtest/lvone 
-ghigo@venice:/tmp$ mkdir t
 
-ghigo@venice:/tmp$ # create a file inside a btrfs fs
-ghigo@venice:/tmp$ sudo mount /dev/vgtest/lvone t/
-ghigo@venice:/tmp$ sudo dd if=/dev/zero of=t/disk-orig bs=1M count=1
-ghigo@venice:/tmp$ sudo umount t
+- While the seed device method of creating a Btrfs volume results in a
+new volume UUID, subvolume UUIDs from the seed pass through to the new
+volume. Since I can create many new volumes from one seed device, in
+effect I'm creating many instances of subvolumes with identical UUIDs
+and can now no longer be differentiated, locally and remotely. This
+seems to be a much bigger problem than the LVM case, since it occurs
+with only Btrfs tools being used.
 
-ghigo@venice:/tmp$ # make a lvm snapshot and add a 2nd file
-ghigo@venice:/tmp$ sudo lvcreate -s -n lvone_snap -L 3G vgtest/lvone
-ghigo@venice:/tmp$ sudo mount /dev/vgtest/lvone_snap t/
-ghigo@venice:/tmp$ sudo dd if=/dev/zero of=t/disk-snap bs=1M count=1
-ghigo@venice:/tmp$ sudo umount t
+The grandiose idea of UUIDs is persistence in identifying a specific
+object/resource for all time, anywhere in the universe. Reducing this
+to something practical, it should enable a way to identify an object
+or resource within one or two human lifetimes, within our solar
+system. Yet the current implementation has broken this on a much
+shorter time scale, on a single computer.
 
-ghigo@venice:/tmp$ # mount the first one lv, and check the file
-ghigo@venice:/tmp$ sudo mount /dev/vgtest/lvone t/
-ghigo@venice:/tmp$ ls -l t
-total 1024
--rw-r--r-- 1 root root 1048576 Nov 22 18:11 disk-orig
-ghigo@venice:/tmp$ sudo umount t
+Since we recognize subvolume snapshots should get new subvolume UUIDs,
+and volume snapshots via seed device method creation of new volumes
+get new volume UUIDs; a volume snapshot of course is also snapshotting
+the subvolumes too, so the subvolume UUIDs can't pass through the way
+they do right now. It's not correct behavior.
 
-ghigo@venice:/tmp$ # mount the first one lv, and check the files
-ghigo@venice:/tmp$ sudo mount /dev/vgtest/lvone_snap t/
-ghigo@venice:/tmp$ ls -l t
-total 2048
--rw-r--r-- 1 root root 1048576 Nov 22 18:11 disk-orig
--rw-r--r-- 1 root root 1048576 Nov 22 18:12 disk-snap
+Another matter is what to do with parent uuid and snapshot
+relationship metadata in the new volume. Assume all subvolumes get new
+UUIDs on the new volume, there are three potentials:
+1. parent uuid is always blank, no relationships between subvolumes is preserved
+2. parent uuid is the uuid of its identical "mirror" (the original) in
+the seed device.
+3. parent uuid is the new uuid of its relative parent on the current
+new volume, preserving relationships between subvolumes and snapshots.
 
-On the basis of the example above, in case you want to mount a 
-"single-disk", BTRFS seems me to work properly. You have to pay
-attention only to not mount the two filesystem at the same time.
-
-BR
-G.Baroncelli
+I think any of those three are better than UUID duplication (recycling
+actually). Maybe I'm not thinking of a use case for preserving these
+UUIDs but at the moment I think it's specious. We can't be attached to
+specific UUIDs, the instant a subvolume is effectively snapshot by LVM
+or Btrfs seed device, it's a unique object/resource, and should have
+its own URN. Afterall by default these objects are read/write. Maybe
+if by default they were readonly I could be convinced of the validity
+of UUID preservation.
 
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Chris Murphy

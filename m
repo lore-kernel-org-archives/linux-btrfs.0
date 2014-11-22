@@ -1,62 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39324 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752797AbaKVW0O (ORCPT
+Received: from resqmta-ch2-10v.sys.comcast.net ([69.252.207.42]:49080 "EHLO
+	resqmta-ch2-10v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750878AbaKVWvA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 17:26:14 -0500
-Date: Sat, 22 Nov 2014 14:26:06 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Patrik Lundquist <patrik.lundquist@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <20141122222606.GO8916@merlins.org>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	Sat, 22 Nov 2014 17:51:00 -0500
+Message-ID: <54711351.1040208@pobox.com>
+Date: Sat, 22 Nov 2014 14:50:57 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Volume/subvolume UUID uniqueness, was: BTRFS messes up snapshot
+ LV with origin
+References: <CAJCQCtRPa9fBmvBRt+RLbGy8iSUKq1_=2oZuioTKSaWAieBihQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtRPa9fBmvBRt+RLbGy8iSUKq1_=2oZuioTKSaWAieBihQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-+btrfs list so that someone can correct me if I'm wrong.
+On 11/22/2014 11:52 AM, Chris Murphy wrote:
+> I don't know how to fix this but I've convinced myself there's at
+> least a small problem. And not just with LVM snapshots as in the
+> originating thread.
 
-On Sat, Nov 22, 2014 at 09:34:59PM +0100, Patrik Lundquist wrote:
-> Hi,
-> 
-> I was scratching my head over a failing btrfs balance and read your
-> very informative
-> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html,
-> but shouldn't
-> 
-> "I can ask balance to rewrite all chunks that are more than 55% full"
-> 
-> be
-> 
-> "I can ask balance to rewrite all chunks that are less than 55% full"?
+Yes.
 
-This one hurts my brain every time I think about it :)
+You also run into this problem if you use multipath hardware but haven't 
+configured multipath support to be transparent.
 
-So, the bigger the -dusage number, the more work btrfs has to do.
+In any system, when you mix layers of abstraction you get problems.
 
--dusage=0 does almost nothing
--dusage=100 effectively rebalances everything
+LVM snapshots make "the same disk blocks" appear in multiple places but 
+don't actually present "the same disk blocks" since writes to "those 
+blocks" will cause COW divergence.
 
-But saying saying "less than 95% full" for -dusage=95 would mean
-rebalancing everything that isn't almost full, so I'm not sure it makes
-sense either (I would think you'd wan't to reblance full blocks first).
+This violates the Universally Unique constraint of the UUID promise.
 
-The logical wording would be "less than 95% space free".
+None of these are problems with the respective systems working at their 
+respective jobs, they are inherent problems with the fact that a servant 
+can not serve two masters.
 
-I'll update my page since this is what makes the most sense.
+As far as the parentage trees of subvolumes... I've been trying to get 
+_anybody_ on here to recognize the problems already inherent in that 
+system as implemented. Take a couple snapshots of a subvolume, and then 
+send those subvolumes to another file system with send/receive, and then 
+do "btrfs subvolume list -u -q" on the two filesystems and tell me that 
+mess makes sense. Or try to recreate a subvolume from its snapshot in a 
+way that doesn't shatter the relationships in your backup scheme. (I'm 
+researching for a couple patches but I'm not expecting a warm reception 
+given the silence to date).
 
-Now, just to be sure, if I'm getting this right, if your filesystem is
-55% full, you could rebalance all blocks that have less than 55% space
-free, and use -dusage=55
+So yea, UUID plus copy plus mirror plus snapshot equals a trip to caveat 
+city.
 
-Does that sound right?
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

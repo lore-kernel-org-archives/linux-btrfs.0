@@ -1,63 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.226]:12778 "EHLO
-	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750802AbaKVWGw (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:39324 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752797AbaKVW0O (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 17:06:52 -0500
-Message-ID: <547108FB.9070507@ubuntu.com>
-Date: Sat, 22 Nov 2014 17:06:51 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Sat, 22 Nov 2014 17:26:14 -0500
+Date: Sat, 22 Nov 2014 14:26:06 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Patrik Lundquist <patrik.lundquist@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <20141122222606.GO8916@merlins.org>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
 MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D18D9.60201@pobox.com> <546E4E6A.3060208@ubuntu.com> <546E6F19.40806@pobox.com> <546F5631.5050701@ubuntu.com> <546FAAD2.80608@pobox.com>
-In-Reply-To: <546FAAD2.80608@pobox.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA512
++btrfs list so that someone can correct me if I'm wrong.
 
-On 11/21/2014 04:12 PM, Robert White wrote:
-> Here's a bug from 2005 of someone having a problem with the ACPI
-> IDE support...
-
-That is not ACPI "emulation".  ACPI is not used to access the disk,
-but rather it has hooks that give it a chance to diddle with the disk
-to do things like configure it to lie about its maximum size, or issue
-a security unlock during suspend/resume.
-
-> People debating the merits of the ACPI IDE drivers in 2005.
-
-No... that's not a debate at all; it is one guy asking if he should
-use IDE or "ACPI" mode... someone who again meant AHCI and typed the
-wrong acronym.
-
-> Even when you "get me" for referencing windows, you're still 
-> wrong...
+On Sat, Nov 22, 2014 at 09:34:59PM +0100, Patrik Lundquist wrote:
+> Hi,
 > 
-> How many times will you try get out of being hideously horribly
-> wrong about ACPI supporting disk/storage IO? It is neither "recent"
-> nor "rare".
+> I was scratching my head over a failing btrfs balance and read your
+> very informative
+> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html,
+> but shouldn't
 > 
-> How much egg does your face really need before you just see that
-> your fantasy that it's "new" and uncommon is a delusional mistake?
+> "I can ask balance to rewrite all chunks that are more than 55% full"
+> 
+> be
+> 
+> "I can ask balance to rewrite all chunks that are less than 55% full"?
 
-Project much?
+This one hurts my brain every time I think about it :)
 
-It seems I've proven just about everything I originally said you got
-wrong now so hopefully we can be done.
+So, the bigger the -dusage number, the more work btrfs has to do.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+-dusage=0 does almost nothing
+-dusage=100 effectively rebalances everything
 
-iQEcBAEBCgAGBQJUcQj4AAoJENRVrw2cjl5RwmcH+gOW0LUQE4OXEToMY33brK8Z
-QMKw7T1y4dtXIeeWihugNs+vbwmoI2Wheeej4WPdiqvgqIfX4ov9+N9Nb39JiIsI
-7frPJ638n98Et5sirCGKfaVvDTwlF85ApHHtXrVLg2dBY3A+oLM9jVU7jpRBvW1m
-IFjhJH/SMGDpMhix9SFg6w6cALRh1U5WYV4zMZ1f5/ri/05TYmNJ/M23cjtBicPZ
-LaIFxOMGef4lylysNaVh0W03424oIJit6d7DB1gxCyjnkUvVuJ43NjuS5ay+y2sP
-FFrepKrOfhK1oOib9e63zNfRHhWrX4KN0Dqcu/3+/+lhD3q5G1fd4YK2RV/oaso=
-=nm9l
------END PGP SIGNATURE-----
+But saying saying "less than 95% full" for -dusage=95 would mean
+rebalancing everything that isn't almost full, so I'm not sure it makes
+sense either (I would think you'd wan't to reblance full blocks first).
+
+The logical wording would be "less than 95% space free".
+
+I'll update my page since this is what makes the most sense.
+
+Now, just to be sure, if I'm getting this right, if your filesystem is
+55% full, you could rebalance all blocks that have less than 55% space
+free, and use -dusage=55
+
+Does that sound right?
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

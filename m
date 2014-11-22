@@ -1,80 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f180.google.com ([209.85.160.180]:45835 "EHLO
-	mail-yk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751409AbaKVTwg (ORCPT
+Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.226]:12778 "EHLO
+	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750802AbaKVWGw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 14:52:36 -0500
-Received: by mail-yk0-f180.google.com with SMTP id 9so3186902ykp.39
-        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 11:52:35 -0800 (PST)
+	Sat, 22 Nov 2014 17:06:52 -0500
+Message-ID: <547108FB.9070507@ubuntu.com>
+Date: Sat, 22 Nov 2014 17:06:51 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-Date: Sat, 22 Nov 2014 12:52:35 -0700
-Message-ID: <CAJCQCtRPa9fBmvBRt+RLbGy8iSUKq1_=2oZuioTKSaWAieBihQ@mail.gmail.com>
-Subject: Volume/subvolume UUID uniqueness, was: BTRFS messes up snapshot LV
- with origin
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Robert White <rwhite@pobox.com>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>	<546AF572.2020101@swiftspirit.co.za> <20141118153526.GS20972@merlins.org>	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>	<546BB2EA.5080809@ubuntu.com> <pan$7c051$a7c25939$cafa59e$f63379c9@cox.net> <546CC04F.6040207@ubuntu.com> <546D0609.9040105@pobox.com> <546D0FEA.5000608@ubuntu.com> <546D18D9.60201@pobox.com> <546E4E6A.3060208@ubuntu.com> <546E6F19.40806@pobox.com> <546F5631.5050701@ubuntu.com> <546FAAD2.80608@pobox.com>
+In-Reply-To: <546FAAD2.80608@pobox.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I don't know how to fix this but I've convinced myself there's at
-least a small problem. And not just with LVM snapshots as in the
-originating thread.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
 
-- Via seed device method of creating a Btrfs volume, the resulting
-volume gets a new UUID. The volume UUID from the seed device doesn't
-pass through, is not inherited / copied. Therefore there's already
-recognition that snapshotting a Btrfs volume, which is what volume
-creation from a seed device effectively is, should result in the new
-volume getting a new UUID.
+On 11/21/2014 04:12 PM, Robert White wrote:
+> Here's a bug from 2005 of someone having a problem with the ACPI
+> IDE support...
 
-Therefore it seems reasonable a mechanism to support new volume UUIDs
-upon LVM snapshots being taken is needed. Maybe leveraging existing
-seed code can help, consider existing volume data a virtual seed
-device, and the remaining free space as a virtual added device to
-enable changing volume UUID rather than rewriting possibly piles of
-UUIDs.
+That is not ACPI "emulation".  ACPI is not used to access the disk,
+but rather it has hooks that give it a chance to diddle with the disk
+to do things like configure it to lie about its maximum size, or issue
+a security unlock during suspend/resume.
 
+> People debating the merits of the ACPI IDE drivers in 2005.
 
-- While the seed device method of creating a Btrfs volume results in a
-new volume UUID, subvolume UUIDs from the seed pass through to the new
-volume. Since I can create many new volumes from one seed device, in
-effect I'm creating many instances of subvolumes with identical UUIDs
-and can now no longer be differentiated, locally and remotely. This
-seems to be a much bigger problem than the LVM case, since it occurs
-with only Btrfs tools being used.
+No... that's not a debate at all; it is one guy asking if he should
+use IDE or "ACPI" mode... someone who again meant AHCI and typed the
+wrong acronym.
 
-The grandiose idea of UUIDs is persistence in identifying a specific
-object/resource for all time, anywhere in the universe. Reducing this
-to something practical, it should enable a way to identify an object
-or resource within one or two human lifetimes, within our solar
-system. Yet the current implementation has broken this on a much
-shorter time scale, on a single computer.
+> Even when you "get me" for referencing windows, you're still 
+> wrong...
+> 
+> How many times will you try get out of being hideously horribly
+> wrong about ACPI supporting disk/storage IO? It is neither "recent"
+> nor "rare".
+> 
+> How much egg does your face really need before you just see that
+> your fantasy that it's "new" and uncommon is a delusional mistake?
 
-Since we recognize subvolume snapshots should get new subvolume UUIDs,
-and volume snapshots via seed device method creation of new volumes
-get new volume UUIDs; a volume snapshot of course is also snapshotting
-the subvolumes too, so the subvolume UUIDs can't pass through the way
-they do right now. It's not correct behavior.
+Project much?
 
-Another matter is what to do with parent uuid and snapshot
-relationship metadata in the new volume. Assume all subvolumes get new
-UUIDs on the new volume, there are three potentials:
-1. parent uuid is always blank, no relationships between subvolumes is preserved
-2. parent uuid is the uuid of its identical "mirror" (the original) in
-the seed device.
-3. parent uuid is the new uuid of its relative parent on the current
-new volume, preserving relationships between subvolumes and snapshots.
+It seems I've proven just about everything I originally said you got
+wrong now so hopefully we can be done.
 
-I think any of those three are better than UUID duplication (recycling
-actually). Maybe I'm not thinking of a use case for preserving these
-UUIDs but at the moment I think it's specious. We can't be attached to
-specific UUIDs, the instant a subvolume is effectively snapshot by LVM
-or Btrfs seed device, it's a unique object/resource, and should have
-its own URN. Afterall by default these objects are read/write. Maybe
-if by default they were readonly I could be convinced of the validity
-of UUID preservation.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-
--- 
-Chris Murphy
+iQEcBAEBCgAGBQJUcQj4AAoJENRVrw2cjl5RwmcH+gOW0LUQE4OXEToMY33brK8Z
+QMKw7T1y4dtXIeeWihugNs+vbwmoI2Wheeej4WPdiqvgqIfX4ov9+N9Nb39JiIsI
+7frPJ638n98Et5sirCGKfaVvDTwlF85ApHHtXrVLg2dBY3A+oLM9jVU7jpRBvW1m
+IFjhJH/SMGDpMhix9SFg6w6cALRh1U5WYV4zMZ1f5/ri/05TYmNJ/M23cjtBicPZ
+LaIFxOMGef4lylysNaVh0W03424oIJit6d7DB1gxCyjnkUvVuJ43NjuS5ay+y2sP
+FFrepKrOfhK1oOib9e63zNfRHhWrX4KN0Dqcu/3+/+lhD3q5G1fd4YK2RV/oaso=
+=nm9l
+-----END PGP SIGNATURE-----

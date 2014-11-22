@@ -1,33 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-02v.sys.comcast.net ([96.114.154.161]:33046 "EHLO
-	resqmta-po-02v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751865AbaKVWzK (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:34302 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751149AbaKVX0k (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 17:55:10 -0500
-Message-ID: <5471144C.8090601@pobox.com>
-Date: Sat, 22 Nov 2014 14:55:08 -0800
-From: Robert White <rwhite@pobox.com>
+	Sat, 22 Nov 2014 18:26:40 -0500
+Received: by mail-wi0-f174.google.com with SMTP id h11so2500407wiw.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 15:26:39 -0800 (PST)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Volume/subvolume UUID uniqueness, was: BTRFS messes up snapshot
- LV with origin
-References: <CAJCQCtRPa9fBmvBRt+RLbGy8iSUKq1_=2oZuioTKSaWAieBihQ@mail.gmail.com> <54711351.1040208@pobox.com>
-In-Reply-To: <54711351.1040208@pobox.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20141122222606.GO8916@merlins.org>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	<20141122222606.GO8916@merlins.org>
+Date: Sun, 23 Nov 2014 00:26:38 +0100
+Message-ID: <CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/22/2014 02:50 PM, Robert White wrote:
-> Take a couple snapshots of a subvolume, and then
-> send those subvolumes to another file system with send/receive, and then
-> do "btrfs subvolume list -u -q" on the two filesystems and tell me that
-> mess makes sense. Or try to recreate a subvolume from its snapshot in a
-> way that doesn't shatter the relationships in your backup scheme. (I'm
-> researching for a couple patches but I'm not expecting a warm reception
-> given the silence to date).
+On 22 November 2014 at 23:26, Marc MERLIN <marc@merlins.org> wrote:
+>
+> This one hurts my brain every time I think about it :)
 
-(ASIDE In particular use "btrfs sub send -c SNAP1 SNAP2" and then "btrfs 
-sub send -c SNAP2 SNAP3" etc before doing the "btrfs sub list -u -q" to 
-view the mess I speak of.)
+I'm new to Btrfs so I may very well be wrong, since I haven't really
+read up on it. :-)
 
+
+> So, the bigger the -dusage number, the more work btrfs has to do.
+
+Agreed.
+
+
+> -dusage=0 does almost nothing
+> -dusage=100 effectively rebalances everything
+
+And -dusage=0 effectively reclaims empty chunks, right?
+
+
+> But saying saying "less than 95% full" for -dusage=95 would mean
+> rebalancing everything that isn't almost full,
+
+But isn't that what rebalance does? Rewriting chunks <=95% full to
+completely full chunks and effectively defragmenting chunks and most
+likely reduce the number of chunks.
+
+A -dusage=0 rebalance reduced my number of chunks from 1173 to 998 and
+dev_item.bytes_used went from 1593466421248 to 1491460947968.
+
+
+> Now, just to be sure, if I'm getting this right, if your filesystem is
+> 55% full, you could rebalance all blocks that have less than 55% space
+> free, and use -dusage=55
+
+I realize that I interpret the usage parameter as operating on blocks
+(chunks? are they the same in this case?) that are <= 55% full while
+you interpret it as <= 55% free.
+
+Which is correct?

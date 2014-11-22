@@ -1,120 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38737 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752503AbaKVCZR (ORCPT
+Received: from mdfmta010.mxout.tch.inty.net ([91.221.169.51]:34212 "EHLO
+	smtp.demon.co.uk" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750727AbaKVHSo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Nov 2014 21:25:17 -0500
-Date: Fri, 21 Nov 2014 21:25:12 -0500
-From: Zygo Blaxell <zblaxell@furryterror.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	Sat, 22 Nov 2014 02:18:44 -0500
+Received: from mdfmta010.tch.inty.net (unknown [127.0.0.1])
+	by mdfmta010.tch.inty.net (Postfix) with ESMTP id 047F5401CD2
+	for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 07:18:53 +0000 (GMT)
+Received: from mdfmta010.tch.inty.net (unknown [127.0.0.1])
+	by mdfmta010.tch.inty.net (Postfix) with ESMTP id CE358401CC8
+	for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 07:18:52 +0000 (GMT)
+Received: from iarmst.demon.co.uk (unknown [62.49.16.35])
+	by mdfmta010.tch.inty.net (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Sat, 22 Nov 2014 07:18:52 +0000 (GMT)
+Date: Sat, 22 Nov 2014 07:18:39 +0000
+From: Ian Armstrong <btrfs@iarmst.co.uk>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: scrub implies failing drive - smartctl blissfully unaware
-Message-ID: <20141122022510.GN17380@hungrycats.org>
+Message-ID: <20141122071839.3761fb78@spike.private.network>
+In-Reply-To: <CAJCQCtRFdhBVmW37xfyJraKZ7be3ba1Kuw-70W=FyZm3NLLJ1g@mail.gmail.com>
 References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
  <546AF572.2020101@swiftspirit.co.za>
  <20141121045801.GS17395@hungrycats.org>
  <546EE43C.7020900@swiftspirit.co.za>
- <20141121174229.GT17395@hungrycats.org>
- <CAJCQCtQF9Lqeo_7OZQYAknTU_a7+k7b1-xt5DXe49_hwg-1QtQ@mail.gmail.com>
+ <20141121125548.4ed20963@spike.private.network>
+ <CAJCQCtRFdhBVmW37xfyJraKZ7be3ba1Kuw-70W=FyZm3NLLJ1g@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="l3ej7W/Jb2pB3qL2"
-In-Reply-To: <CAJCQCtQF9Lqeo_7OZQYAknTU_a7+k7b1-xt5DXe49_hwg-1QtQ@mail.gmail.com>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, 21 Nov 2014 10:45:21 -0700 Chris Murphy wrote:
 
---l3ej7W/Jb2pB3qL2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Fri, Nov 21, 2014 at 5:55 AM, Ian Armstrong <btrfs@iarmst.co.uk>
+> wrote:
+> 
+> > In my situation what I've found is that if I scrub & let it fix the
+> > errors then a second pass immediately after will show no errors. If
+> > I then leave it a few days & try again there will be errors, even in
+> > old files which have not been accessed for months.
+> 
+> What are the devices? And if they're SSDs are they powered off for
+> these few days? I take it the scrub error type is corruption?
 
-On Fri, Nov 21, 2014 at 11:06:19AM -0700, Chris Murphy wrote:
-> On Fri, Nov 21, 2014 at 10:42 AM, Zygo Blaxell <zblaxell@furryterror.org>=
- wrote:
->=20
-> > I run 'smartctl -t long' from cron overnight (or whenever the drives
-> > are most idle).  You can also set up smartd.conf to launch the self
-> > tests; however, the syntax for test scheduling is byzantine compared to
-> > cron (and that's saying something!).  On multi-drive systems I schedule
-> > a different drive for each night.
-> >
-> > If you are also doing btrfs scrub, then stagger the scheduling so
-> > e.g. smart runs in even weeks and btrfs scrub runs in odd weeks.
-> >
-> > smartd is OK for monitoring test logs and email alerts.  I've had no
-> > problems there.
->=20
-> Most attributes are always updated without issuing a smart test of any
-> kind. A drive I have here only has four offline updateable attributes.
+It's spinning rust and the checksum error is always on the one drive
+(a SAMSUNG HD204UI). The firmware has been updated, since some were
+shipped with a bad version which could result in data corruption.
 
-One of those four is Offline_Uncorrectable, which is a really important
-attribute to monitor!
+> You can use badblocks to write a known pattern to the drive. Then
+> power off and leave it for a few days. Then read the drive, matching
+> against the pattern, and see if there are any discrepancies. Doing
+> this outside the code path of Btrfs would fairly conclusively indicate
+> whether it's hardware or software induced.
 
-> When it comes to bad sectors, the drive won't use a sector that
-> persistently fails writes. So you don't really have to worry about
-> latent bad sectors that don't have data on them already. The sectors
-> you care about are the ones with data. A scrub reads all of those
-> sectors.
+Unfortunately I'm reluctant to go the badblock route for the entire
+drive since it's the second drive in a 2 drive raid1 and I don't
+currently have a spare. There is a small 6G partition that I can use,
+but given that the drive is large and the errors are few, it could take
+a while for anything to show.
 
-A scrub reads all the _allocated_ sectors.  A long selftest reads
-_everything_, and also exercises the electronics and mechanics of the
-drive in ways that normal operation doesn't.  I have several disks that
-are less than 25% occupied, which means scrubs will ignore 75% of the
-disk surface at any given time.
+I also have a second 2 drive btrfs raid1 in the same machine that
+doesn't have this problem. All the drives are running off the same
+controller.
 
-A sharp increase in the number of bad sectors (no matter how they are
-detected) usually indicates a total drive failure is coming.  Many drives
-have been nice enough to give me enough warning for their RMA replacements
-to be delivered just a few hours before the drive totally fails.
+> Assuming you have another copy of all of these files :-) you could
+> just sha256sum the two copies to see if they have in fact changed. If
+> they have, well then you've got some silent data corruption somewhere
+> somehow. But if they always match, then that suggests a bug.
 
-> First the drive could report a read error in which case Btrfs
-> raid1/10, and any (md, lvm, hardware) raid can use mirrored data, or
-> rebuild it from parity, and write to the affected sector; and also
-> this same mechanism happens in normal reads so it's a kind of passive
-> scrub. But it happens to miss checking inactively read data, which a
-> scrub will check.
->=20
-> Second, the drive could report no problem, and Btrfs raid1/10 could
-> still fix the problem in case of a csum mismatch. And it looks like
-> soonish we'll see this apply to raid5/6.
->=20
-> So I think a nightly long smart test is a bit overkill. I think you
-> could do nightly -t short tests which will report problems scrub won't
-> notice, such as higher seek times or lower throughput performance. And
-> then scrub once a week.
+Some of the files already have an md5 linked to them, while others have
+parity files to give some level of recovery from corruption or damage.
+Checking against these show no problems, so I assume that btrfs is
+doing its job & only serving an intact file.
 
-Drives quite often drop a sector or two over the years, and it can
-be harmless.  What you want to be watching out for is hundreds of bad
-sectors showing up over a period of few days--that means something is
-rattling around on the disk platters, damaging the hardware as it goes.
-To get that data, you have to test the disks every few days.
+> I don't
+> see how you can get bogus corruption messages, and for it to not be a
+> bug. When you do these scrubs that come up clean, and then later come
+> up with corruptions, have you done any software updates?
 
-> > The drive itself could be failing in some way that prevents recording
-> > SMART errors (e.g. because of host timeouts triggering a bus reset,
-> > which also prevents the SMART counter update for what was going wrong at
-> > the time).  This is unfortunately quite common, especially with drives
-> > configured for non-RAID workloads.
->=20
-> Libata resetting the link should be recorded in kernel messages.
+No software updates between clean & corrupt. I don't have to power down
+or reboot either for checksum errors to appear.
 
-This is true, but the original question was about SMART data coverage.
-This is why it's important to monitor both.
+I don't think the corruption messages are bogus, but are indicating a
+genuine problem. What I would like to be able to do is compare the
+corrupt block with the one used to repair it and see what the difference
+is. As I've already stated, the system logs are clean & the smart logs
+aren't showing any issues. (Well, until today when a self-test failed
+with a read error, but it must be an unused sector since the scrub
+doesn't hit it & there are no re-allocated sectors yet)
 
-> --=20
-> Chris Murphy
+> > My next step is to disable autodefrag & see if the problem persists.
+> > (I'm not suggesting a problem with autodefrag, I just want to
+> > remove it from the equation & ensure that outside of normal file
+> > access, data isn't being rewritten between scrubs)
+> 
+> I wouldn't expect autodefrag to touch old files not accessed for
+> months. Doesn't it only affect actively used files?
 
---l3ej7W/Jb2pB3qL2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+The drive is mainly used to hold old archive files, though there are
+daily rotating files on it as well. The corruption affects both new and
+old files.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEUEARECAAYFAlRv9AYACgkQgfmLGlazG5w4KgCeJRVcux1zAyohN0wGHHaRjgmI
-1LYAl1EJOUBETmACANEjnV1d70NsyWQ=
-=6Lgd
------END PGP SIGNATURE-----
-
---l3ej7W/Jb2pB3qL2--
+-- 
+Ian

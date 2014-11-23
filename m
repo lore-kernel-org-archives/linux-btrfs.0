@@ -1,61 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:37800 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751314AbaKWPMz (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:49574 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752050AbaKWVRO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Nov 2014 10:12:55 -0500
-Received: by mail-wg0-f52.google.com with SMTP id a1so10237360wgh.11
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 07:12:54 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-	<20141122222606.GO8916@merlins.org>
-	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
-	<20141123000503.GQ32735@carfax.org.uk>
-	<20141123010742.GA16599@merlins.org>
-	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-Date: Sun, 23 Nov 2014 16:12:54 +0100
-Message-ID: <CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
+	Sun, 23 Nov 2014 16:17:14 -0500
+Date: Sun, 23 Nov 2014 13:16:50 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20141123211650.GU8916@merlins.org>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+ <20141122222606.GO8916@merlins.org>
+ <CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+ <20141123000503.GQ32735@carfax.org.uk>
+ <20141123010742.GA16599@merlins.org>
+ <pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23 November 2014 at 08:52, Duncan <1i5t5.duncan@cox.net> wrote:
-> [a whole lot]
+On Sun, Nov 23, 2014 at 07:52:29AM +0000, Duncan wrote:
+> > Right. So, why would you rebalance empty chunks or near empty chunks?
+> > Don't you want to rebalance almost full chunks first, and work you way
+> > to less and less full as needed?
+> 
+> No, the closer to empty a chunk is, the more effect you can get in 
+> rebalancing it along with others of the same fullness.
+ 
+Ok, now I see what I was thinking the wrong way around:
+Rebalancing is not rebalancing data within a chunk, optimizing some tree 
+data structure.
 
-Thanks for the long post, Duncan.
+Rebalancing is taking a nearly empty chunk and merging it with other
+chunks to free up that chunkspace.
 
-My venture into the finer details of balance began with converting an
-ext4 fs to btrfs and after an inital defrag having a full balance fail
-with about a third to go.
+So, -dusage=10 only picks chunks that are 10% used or less, and tries
+to free them up by putting their data elsewhere.
 
-Consecutive full balances further reduced the number of chunks and got
-me closer to finish without the infamous ENOSPC. After 3-4 full
-balance runs it failed with less than 8% to go.
+Did I get it right this time? :)
 
-The balance run now finishes without errors with usage=99 and I think
-I'll leave it at that. No RAID yet but will convert to RAID1.
+> IOW, rewriting 20 95% usage chunks to 19, freeing just one, is going to 
+> take you nearly 20 times as long as rewriting 20 5% usage chunks, freeing 
+> 19 of them, since in the latter case you're actually only rewriting one 
+> full chunk's worth of data or metadata.
 
-Is it correct that there is no reason to ever do a 100% balance as
-routine maintenance? I mean if you really need that last 1% space you
-actually need a disk upgrade instead.
+Right, that makes sense.
+ 
+> OK, so what /is/ the effect of a fuller filesystem?  Simply this.  As the 
+> filesystem fills up, there's less and less fully free unallocated space 
+> available even after a full balance, meaning that free space can be used 
+> up with fewer and fewer chunk allocations, so you have to rebalance more 
+> and more often to keep what's left from getting out of balance and 
+> running into ENOSPC conditions.
 
-How about running a monthly maintenance job that uses bytes_used and
-dev_item.bytes_used from btrfs-show-super to approximate the balance
-need?
+Yes, been there, done that :)
+ 
+> But, beware!  Just because your filesystem is say 55% full (number from 
+> your example earlier), does **NOT** mean usage=55 is the best number to 
+> use.  That may well be the case, or it may not.  There's simply no 
+> necessarily direct correlation in that regard, and a recommended N for 
+> usage=N cannot be determined without a LOT more use-case information than 
+> simply knowing the filesystem is at 55% capacity.
 
-(dev_item.bytes_used - bytes_used) / bytes_used == extra device space used
+Yeah, I remember that. I'm ok with using the same number but I
+understand it's not a given that it's the perfect number.
+ 
+> So the 55% filesystem capacity would probably inform my choice of jumps, 
+> say 20% at a time, but I'd still start much lower and jump at that 20% or 
+> so at a time.
 
-The extra device space used after my balance usage=99 is 0,15%. It was
-7,0% before I began tinkering with usage and ran into ENOSPC and I
-think it is safe to assume that it was a lot more right after the fs
-conversion.
-
-So lets iterate a balance run which begins with usage=0 and increases
-in steps of 5 or 10 and stops at 90 or 99 or when the extra device
-space used is less than 1%.
-
-Does it make sense?
+That makes sense. I'll try to synthetize all this and rewrite my blog
+post and the wiki to make this clearer.
+ 
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

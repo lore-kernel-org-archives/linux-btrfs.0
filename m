@@ -1,101 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu004-omc1s24.hotmail.com ([65.55.116.35]:51379 "EHLO
-	BLU004-OMC1S24.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750759AbaKWLAY (ORCPT
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:37800 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751314AbaKWPMz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Nov 2014 06:00:24 -0500
-Message-ID: <BLU437-SMTP10930A5E18E8322A8C259AAB750@phx.gbl>
-Date: Sun, 23 Nov 2014 11:00:16 +0000
-From: Boris Chernov <aqs1024@hotmail.com>
+	Sun, 23 Nov 2014 10:12:55 -0500
+Received: by mail-wg0-f52.google.com with SMTP id a1so10237360wgh.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 07:12:54 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Changing label few times killed filesystem?
-References: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl> <20141121093543.6685cbe5@natsu>
-In-Reply-To: <20141121093543.6685cbe5@natsu>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	<20141122222606.GO8916@merlins.org>
+	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+	<20141123000503.GQ32735@carfax.org.uk>
+	<20141123010742.GA16599@merlins.org>
+	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+Date: Sun, 23 Nov 2014 16:12:54 +0100
+Message-ID: <CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 23 November 2014 at 08:52, Duncan <1i5t5.duncan@cox.net> wrote:
+> [a whole lot]
 
- > I suggest upgrading and just posting the results from 'btrfs check 
-<device>'
- > without any options and see what you get.
-     OK, I have upgraded to 3.17.0 kernel and I also have upgraded 
-btrfs-tools:
-# btrfs --version
-Btrfs v3.17
+Thanks for the long post, Duncan.
 
-# btrfs check /dev/sdb1
-Checking filesystem on /dev/sdb1
-UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
-checking extents
-cmds-check.c:2645: check_owner_ref: Assertion `rec->is_root` failed.
-btrfs[0x41a081]
-btrfs[0x41a0a5]
-btrfs[0x409783]
-btrfs[0x40a45e]
-btrfs[0x41bfa9]
-btrfs[0x40b46a]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7feaf251cb45]
-btrfs[0x40b497]
+My venture into the finer details of balance began with converting an
+ext4 fs to btrfs and after an inital defrag having a full balance fail
+with about a third to go.
 
-     btrfsck /dev/sdb1 gives exactly the same output. It seems it does 
-not even try to check anything but just fails on the assertion. I also 
-tried btrfs restore:
+Consecutive full balances further reduced the number of chunks and got
+me closer to finish without the infamous ENOSPC. After 3-4 full
+balance runs it failed with less than 8% to go.
 
-# btrfs restore /dev/sdb1 /media/backup/sdb1 # Does nothing and exits 
-almost immediately
-# echo $?
-0
+The balance run now finishes without errors with usage=99 and I think
+I'll leave it at that. No RAID yet but will convert to RAID1.
 
-     After I have upgraded to new kernel, when I try to mount the 
-partition I get this:
+Is it correct that there is no reason to ever do a 100% balance as
+routine maintenance? I mean if you really need that last 1% space you
+actually need a disk upgrade instead.
 
-# mount /dev/sdb1 /mnt
-mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
-        missing codepage or helper program, or other error
-        In some cases useful info is found in syslog - try
-        dmesg | tail  or so
+How about running a monthly maintenance job that uses bytes_used and
+dev_item.bytes_used from btrfs-show-super to approximate the balance
+need?
 
-# dmesg | tail
-...
-[ 2505.921545] BTRFS info (device sdb1): disk space caching is enabled
-[ 2505.925079] parent transid verify failed on 29458432 wanted 5 found 2759
-[ 2505.944413] parent transid verify failed on 29458432 wanted 5 found 2759
-[ 2505.958450] BTRFS: open_ctree failed
+(dev_item.bytes_used - bytes_used) / bytes_used == extra device space used
 
- > However, if you are not now and never did use compression on that 
-filesystem,
- > that bug shouldn't affect you, but others might.
-     I did not use compression on this partition, but I have used it on 
-another btrfs disk (which seems to work fine, at least for now). I think 
-I did not use any of special features on the partition I have trouble 
-with (I was planning to, but it died before I got a chance).
+The extra device space used after my balance usage=99 is 0,15%. It was
+7,0% before I began tinkering with usage and ran into ENOSPC and I
+think it is safe to assume that it was a lot more right after the fs
+conversion.
 
- > it's quite possible you're seeing the one bug, and the relabeling is 
-simply coincidence.
-     I suppose it is possible that something else was the cause, but 
-only other thing I did with the file system at the time was 
-mounting/unmounting it. Also, I did not use it much, just for few weeks, 
-before that the disk was unplugged for a few months (with no files on 
-it). And only things I did with it (before it stopped working) was 
-creating, moving, copying and deleting files.
-     Before upgrading btrfs-tools and the kernel I tried to reproduce 
-the issue by creating big file with btrfs file system, but I was unable 
-to reproduce the problem, but I did not put as much files as on real 
-partition, and it was of a smaller size. In other words, the issue I 
-have encountered seems to be hard to reproduce, so I cannot tell with 
-100% certainty what exactly caused the corruption.
+So lets iterate a balance run which begins with usage=0 and increases
+in steps of 5 or 10 and stops at 90 or 99 or when the extra device
+space used is less than 1%.
 
-
-     Is there anything else I can try? If not to restore it then to 
-provide more useful debug information (if possible in this case). I 
-could try compiling latest development versions of kernel and/or 
-btrfs-tools if is there a chance that might help?
-
-
-     P.S. I received on my mail only shortest reply about "mount" 
-command, so I was able to read other replies only after few days when 
-they appeared on gmane (I wasn't subscribed at the time because I did 
-not expect gmane to be so slow). This time I subscribed to the list so 
-hopefully I will be able to read all replies without delay.
+Does it make sense?

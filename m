@@ -1,73 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40777 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751844AbaKWBHp (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:53998 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750836AbaKWHmM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Nov 2014 20:07:45 -0500
-Date: Sat, 22 Nov 2014 17:07:42 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Patrik Lundquist <patrik.lundquist@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-Message-ID: <20141123010742.GA16599@merlins.org>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com> <20141122222606.GO8916@merlins.org> <CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com> <20141123000503.GQ32735@carfax.org.uk>
+	Sun, 23 Nov 2014 02:42:12 -0500
+Received: from babycakes.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 7A3A42094C
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 18:42:09 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: linux-btrfs@vger.kernel.org
+Subject: Re: open_ctree problem
+Date: Sun, 23 Nov 2014 18:42:07 +1100
+References: <201411230220.05721.russell@coker.com.au>
+In-Reply-To: <201411230220.05721.russell@coker.com.au>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="vtzGhvizbBRQ85DL"
-In-Reply-To: <20141123000503.GQ32735@carfax.org.uk>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Message-Id: <201411231842.07259.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Strangely I repeated the same process on the same system (btrfs-zero-log and 
+mount read-only) and it worked.  While it's a concern that repeating the same 
+process gives different results it's nice that I'm getting all my data back.
 
---vtzGhvizbBRQ85DL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Sun, 23 Nov 2014, Russell Coker <russell@coker.com.au> wrote:
+> I have a workstation running Linux 3.14.something on a 120G SSD.  It
+> recently had a problem and now the root filesystem can't be mounted, here
+> is the message I get when trying to mount it read-only on Debian kernel
+> 3.16.2-3:
+> 
+> [4703937.784447] BTRFS info (device loop0): disk space caching is enabled
+> [4703938.754247] BTRFS: log replay required on RO media
+> [4703938.794148] BTRFS: open_ctree failed
+> 
+> When I tried to boot it normally it gave a lot of kernel messages and
+> failed to mount it.
+> 
+> Here's the error I get from the btrfs-zero-log in btrfs-tools
+> 0.19+20130501-1:
+> 
+> # btrfs-zero-log yayia-corrupt
+> extent buffer leak: start 157263929344 len 4096
+> *** Error in `btrfs-zero-log': corrupted double-linked list:
+> 0x0000000001068960 ***
+> Aborted
+> 
+> I installed btrfs-tools 3.17-1 and then btrfs-zero-log ran without error. 
+> But when I tried to mount the filesystem I got the attached kernel error
+> when trying to mount with Debian kernel 3.16.2-3.
+> 
+> Any suggestions on what I should do next?
 
-On Sun, Nov 23, 2014 at 12:05:04AM +0000, Hugo Mills wrote:
-> > Which is correct?
->=20
->    Less than or equal to 55% full.
-=20
-This confuses me. Does that mean that the fullest blocks do not get
-rebalanced?
-I guess I was under the mistaken impression that the more data you had the
-more you could be out of balance.
 
->    A chunk is the part of a block group that lives on one device, so
-> in RAID-1, every block group is precisely two chunks; in RAID-0, every
-> block group is 2 or more chunks, up to the number of devices in the
-> FS. A chunk is usually 1 GiB in size for data and 250 MiB for
-> metadata, but can be smaller under some circumstances.
-
-Right. So, why would you rebalance empty chunks or near empty chunks?
-Don't you want to rebalance almost full chunks first, and work you way to
-less and less full as needed?
-
-Thanks,
-Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
-
---vtzGhvizbBRQ85DL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQCVAwUBVHEzXn4xUKZ2O+kBAQJIHQP+KHWiCEPpjqRJPGjr7HXM6H7fUAa4fMRd
-J8/0yKKUxvjDVyM1g7eePAi8TT9m/uwXRMrf7bfLz6qGJksukrKx5sB10dnf3Y13
-G/nx7yH1x5Da/7dnYKV/bknIxCe7WS8WgQZea6vTB6WKUUrdPWiq3uDpKdArMkCx
-If9SiIp0/Lk=
-=Su6+
------END PGP SIGNATURE-----
-
---vtzGhvizbBRQ85DL--
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

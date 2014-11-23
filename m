@@ -1,67 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:57491 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750741AbaKWLKs (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11885 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751237AbaKWPRH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Nov 2014 06:10:48 -0500
-Date: Sun, 23 Nov 2014 11:10:44 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Robert White <rwhite@pobox.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Best GIT repository(s) for preparing patches?
-Message-ID: <20141123111044.GR32735@carfax.org.uk>
-References: <547126EB.5080206@pobox.com>
+	Sun, 23 Nov 2014 10:17:07 -0500
+Date: Sun, 23 Nov 2014 10:14:45 -0500
+From: Chris Mason <clm@fb.com>
+To: <torvalds@linux-foundation.org>
+CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs deadlock fix
+Message-ID: <20141123151439.GA16816@ret.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="wc6dtGz1CZgs+5WP"
-In-Reply-To: <547126EB.5080206@pobox.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Linus,
 
---wc6dtGz1CZgs+5WP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+My for-linus branch:
 
-On Sat, Nov 22, 2014 at 04:14:35PM -0800, Robert White wrote:
-> Which is the best GIT repository to clone for each of the kernel
-> support and btrfs-progs, for preparing a patch to submit to this
-> email list?
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-   For kernel, I would suggest using a repo with Linus's latest -rc
-tag (Linus's, for example :) ). For userspace, probably the latest -rc
-tag from kdave's repo.
+Has a fix for a long standing deadlock that we've been trying to nail
+down for a while.  It ended up being a bad interaction with the fair
+reader/writer locks and the order btrfs reacquires locks in the btree.
 
-See https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories
+Chris Mason (1) commits (+25/-15):
+    btrfs: fix lockups from btrfs_clear_path_blocking
 
-   Hugo.
+Total: (1) commits (+25/-15)
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- "Are you the man who rules the Universe?" "Well,  I ---       
-                              try not to."                               
-
---wc6dtGz1CZgs+5WP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUccCzAAoJEFheFHXiqx3kvbYQAJd2hAC6ZizIeD9Jd4tgP9mY
-4KcKH4YRI9OLHISLuj7eeKR5KwQgljS7NHZwdcTN4dNIKPoyKG53olKFpz2/OLct
-YXzUVP3nd7fpP4TwptUn15MbHRRXLV+D+OVkqYHPYq41sYZAxdTJ5i6DeAMCVwZ2
-f8N7uzDhfv+Dy0RcaEYtkgwAy67jD7oQXFHXjbceSzrXDvMgpi2cRyQXz1/fEDe0
-4OB/hL+TuradEa9V6YXKowVkFpKmvBrrhwErwlRULZIl0Phxh1kXBnaRfHxily5O
-TQrawGn97oyW8fqDyUKzD4Ze4RcTGgU/AlwohnYVTmkQ3joy+hoWg/kLlOCLr5aL
-G/5WO2F+6dj3C5+nWt74thScb6LR/QbW4m8JnOQDZyJijE0erdxgxMdD6KZKAxBm
-bfv39fObR4db5H6w/TU+dnWHhjDOsbg3r04oCNcjQ7aHylmDUndPcvEN0ePDJvr4
-XXr66xzglfDQZfy2dAUTY3gq0thbi8VrwXY/bp57AYbMPPyF4UXBO20ehj4YPZR+
-MHAp5cUicxIWT8IYYsGy38FK27Fljl0N1/ENnYPzDVz3L6WYBvrZICxkDZ/pf4H/
-TZqEaUTWM6pMwFmHrfuKwY66NtUD9Gp+5RUzKqgCloz319G5v/7Q/yh6S7N1T4yN
-vGZysXgooS/pad0XBvT9
-=UzVI
------END PGP SIGNATURE-----
-
---wc6dtGz1CZgs+5WP--
+ fs/btrfs/ctree.c   | 14 ++------------
+ fs/btrfs/locking.c | 24 +++++++++++++++++++++---
+ fs/btrfs/locking.h |  2 ++
+ 3 files changed, 25 insertions(+), 15 deletions(-)

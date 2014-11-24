@@ -1,37 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandstone.cs.wisc.edu ([128.105.6.39]:56304 "EHLO
-	sandstone.cs.wisc.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750764AbaKXBjl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Nov 2014 20:39:41 -0500
-Received: from webmail.cs.wisc.edu (lilo.cs.wisc.edu [128.105.7.102])
-	by sandstone.cs.wisc.edu (8.14.1/8.14.1) with ESMTP id sAO1Xf1C023696
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 19:33:42 -0600
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Sun, 23 Nov 2014 19:33:41 -0600
-From: ygovind <ygovind@cs.wisc.edu>
+Received: from plane.gmane.org ([80.91.229.3]:59361 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750884AbaKXCrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Nov 2014 21:47:10 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XsjgC-0002O0-Dx
+	for linux-btrfs@vger.kernel.org; Mon, 24 Nov 2014 03:47:08 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 03:47:08 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 03:47:08 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: Help with Btrfs TracePoints and FTrace
-Message-ID: <cba79e6d37aee8454d5f9672fe2c6545@cs.wisc.edu>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Changing label few times killed filesystem?
+Date: Mon, 24 Nov 2014 02:46:54 +0000 (UTC)
+Message-ID: <pan$f37fb$4727340$23550eda$69bcec61@cox.net>
+References: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>
+	<20141121093543.6685cbe5@natsu>
+	<BLU437-SMTP10930A5E18E8322A8C259AAB750@phx.gbl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi - I have taken minor project on Btrfs file system as my independent 
-study and trying to understand data/metadata allocation algorithm used 
-in Btrfs file system. I would like to know how can I use Btrfs 
-Tracepoints and Ftrace to debug. I was trying to find documents on web 
-but wasn't able to find any document which can guide me through step by 
-step process on using Btrfs Tracepoints or Ftrace on Btrfs.
+Boris Chernov posted on Sun, 23 Nov 2014 11:00:16 +0000 as excerpted:
 
-All the study so far is happening on a laptop with virtual box Ubuntu. I 
-have downloaded latest kernel and trying to understand the flow by 
-putting printk statements and compiling that module. In this setup - if 
-you can guide me through the process of setting up tracepoints or Ftrace 
-- that will really help me. Also, if you have any other suggestions on 
-understanding allocation algorithms for data/metadata - I am open to 
-learn.
+>  P.S. I received on my mail only shortest reply about "mount"
+> command, so I was able to read other replies only after few days when
+> they appeared on gmane (I wasn't subscribed at the time because I did
+> not expect gmane to be so slow). This time I subscribed to the list so
+> hopefully I will be able to read all replies without delay.
 
-Best Regards,
-Yash
+FWIW I use gmane's list2news service here, and didn't experience such 
+delays (maybe a few hours here and there, but...).
+
+However, if you were using gmane's web service, that explains things as 
+weaverd, the process that does the threading on the web side, was down 
+for some days, and Lars (gmane's owner and primary admin, there's others 
+but only Lars is able to do some things) only found out about it when he 
+followed up on a report from someone in gmane.discuss.  Check out that 
+list/group for more.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

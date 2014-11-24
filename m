@@ -1,48 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52105 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752089AbaKWWtX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Nov 2014 17:49:23 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xsfy4-0004dO-OH
-	for linux-btrfs@vger.kernel.org; Sun, 23 Nov 2014 23:49:20 +0100
-Received: from pd953ef80.dip0.t-ipconnect.de ([217.83.239.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 23:49:20 +0100
-Received: from holger.hoffstaette by pd953ef80.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 23:49:20 +0100
+Received: from sandstone.cs.wisc.edu ([128.105.6.39]:56304 "EHLO
+	sandstone.cs.wisc.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750764AbaKXBjl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Nov 2014 20:39:41 -0500
+Received: from webmail.cs.wisc.edu (lilo.cs.wisc.edu [128.105.7.102])
+	by sandstone.cs.wisc.edu (8.14.1/8.14.1) with ESMTP id sAO1Xf1C023696
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Nov 2014 19:33:42 -0600
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Sun, 23 Nov 2014 19:33:41 -0600
+From: ygovind <ygovind@cs.wisc.edu>
 To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-Date: Sun, 23 Nov 2014 22:49:01 +0000 (UTC)
-Message-ID: <pan.2014.11.23.22.49.01@googlemail.com>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-	<20141122222606.GO8916@merlins.org>
-	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
-	<20141123000503.GQ32735@carfax.org.uk>
-	<20141123010742.GA16599@merlins.org>
-	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-	<20141123211650.GU8916@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Help with Btrfs TracePoints and FTrace
+Message-ID: <cba79e6d37aee8454d5f9672fe2c6545@cs.wisc.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 23 Nov 2014 13:16:50 -0800, Marc MERLIN wrote:
+Hi - I have taken minor project on Btrfs file system as my independent 
+study and trying to understand data/metadata allocation algorithm used 
+in Btrfs file system. I would like to know how can I use Btrfs 
+Tracepoints and Ftrace to debug. I was trying to find documents on web 
+but wasn't able to find any document which can guide me through step by 
+step process on using Btrfs Tracepoints or Ftrace on Btrfs.
 
-(snip)
+All the study so far is happening on a laptop with virtual box Ubuntu. I 
+have downloaded latest kernel and trying to understand the flow by 
+putting printk statements and compiling that module. In this setup - if 
+you can guide me through the process of setting up tracepoints or Ftrace 
+- that will really help me. Also, if you have any other suggestions on 
+understanding allocation algorithms for data/metadata - I am open to 
+learn.
 
-> That makes sense. I'll try to synthetize all this and rewrite my blog
-> post and the wiki to make this clearer.
-
-Maybe also add that as of 3.18 empty block groups are automatically
-collected, so balancing to prevent ENOSPC-by-empty-chunks is no longer
-necessary. This works pretty well; I haven't run balance in weeks,
-and my total-vs.-used overhead has always been <10 GB.
-
-Holger
-
+Best Regards,
+Yash

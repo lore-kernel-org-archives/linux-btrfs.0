@@ -1,40 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39938 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751713AbaK3EZC (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:43543 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752926AbaKXJJP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Nov 2014 23:25:02 -0500
-Date: Sat, 29 Nov 2014 20:24:59 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Shriramana Sharma <samjnaa@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <20141130042459.GF8916@merlins.org>
-References: <CAH-HCWX--nvGJPZBS=XAAqXeFai_1UiAVv82eqDLacJdes0bAA@mail.gmail.com>
+	Mon, 24 Nov 2014 04:09:15 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAO98rq8012233
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 17:08:53 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/6] btrfs-progs: print root dir verbose error in fsck
+Date: Mon, 24 Nov 2014 17:07:00 +0800
+Message-ID: <1416820025-10373-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1416820025-10373-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1416820025-10373-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAH-HCWX--nvGJPZBS=XAAqXeFai_1UiAVv82eqDLacJdes0bAA@mail.gmail.com>
-Subject: Re: Experimental tag in FAQ?
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 09:16:38AM +0530, Shriramana Sharma wrote:
-> https://btrfs.wiki.kernel.org/index.php/FAQ#Is_btrfs_stable.3F still
-> reads experimental whereas the warning has been removed in the tools
-> recently IIUC. The FAQ item to be updated, no?
+Before this patch, when btrfsck found an error in root dir, it will only
+output the following message "root %llu root dir %llu error" without any
+detailed error.
 
-I would say no.
-Btrfs is still unstable, still gets changed heavily, and stability/no
-data loss doesn't seem to be the prime directive.
+Just add print_inode_error() to print out the whole error.
 
-Given that, it is experimental still.
-And I'm not just saying that, it does break.
-3.15 and 3.16.0 had serious stability issues, 3.17.0 also broke other
-stuff, and so on (they get fixed later, but if you say btrfs is stable,
-users will scream)
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Marc
+diff --git a/cmds-check.c b/cmds-check.c
+index 389674f..9fc1410 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1984,6 +1984,7 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			fprintf(stderr, "root %llu root dir %llu error\n",
+ 				(unsigned long long)root->root_key.objectid,
+ 				(unsigned long long)root_dirid);
++			print_inode_error(root, rec);
+ 			error++;
+ 		}
+ 	} else {
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+2.1.3
+

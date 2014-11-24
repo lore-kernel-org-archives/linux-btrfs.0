@@ -1,54 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56157 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755585AbaKSNmC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Nov 2014 08:42:02 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 088D9AC32
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Nov 2014 13:42:01 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: use system attr instead of attr library
-Date: Wed, 19 Nov 2014 14:42:00 +0100
-Message-Id: <1416404520-30045-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:62316 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752212AbaKXH3t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Nov 2014 02:29:49 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAO7TSI1005907
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 15:29:29 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Doc: Add explain on 'source' and 'target' for btrfs-image.
+Date: Mon, 24 Nov 2014 15:27:44 +0800
+Message-ID: <1416814064-29543-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use the attr version provided by system in other places already,
-now we can remove dependency on the separate attr library.
+Add explain on 'source' and 'target', which is somewhat confusing for
+users who want to restore dumped image.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- props.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ Documentation/btrfs-image.txt | 5 +++++
+ btrfs-image.c                 | 2 ++
+ 2 files changed, 7 insertions(+)
 
-diff --git a/props.c b/props.c
-index 9fd612f97026..c7c67529fd79 100644
---- a/props.c
-+++ b/props.c
-@@ -17,7 +17,7 @@
- #include <sys/stat.h>
- #include <sys/ioctl.h>
- #include <sys/types.h>
--#include <attr/xattr.h>
-+#include <sys/xattr.h>
- #include <fcntl.h>
- #include <unistd.h>
+diff --git a/Documentation/btrfs-image.txt b/Documentation/btrfs-image.txt
+index b7751f9..43c2e06 100644
+--- a/Documentation/btrfs-image.txt
++++ b/Documentation/btrfs-image.txt
+@@ -14,6 +14,11 @@ DESCRIPTION
+ *btrfs-image* is used to create an image of a btrfs filesystem.
+ All data will be zeroed, but metadata and the like is preserved.
  
-@@ -29,6 +29,12 @@
- #define XATTR_BTRFS_PREFIX     "btrfs."
- #define XATTR_BTRFS_PREFIX_LEN (sizeof(XATTR_BTRFS_PREFIX) - 1)
++Without '-r' option, <source> is the device/normal file containing the btrfs,
++and <target> is the output image file, or standard output if <target> is '-'.
++With '-r' option, <source> is the dump image file and <target> is the
++device/normal file where the restored fs lies.
++
+ Mainly used for debug purpose.
  
-+/*
-+ * Defined as synonyms in attr/xattr.h
-+ */
-+#ifndef ENOATTR
-+#define ENOATTR ENODATA
-+#endif
- 
- static int prop_read_only(enum prop_object_type type,
- 			  const char *object,
+ OPTIONS
+diff --git a/btrfs-image.c b/btrfs-image.c
+index cb17f16..12f04b7 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -2459,6 +2459,8 @@ out:
+ static void print_usage(void)
+ {
+ 	fprintf(stderr, "usage: btrfs-image [options] source target\n");
++	fprintf(stderr, "Without '-r' source is the btrfs fs and target is output image('-' for stdout)\n");
++	fprintf(stderr, "With '-r' source is the dumped image and target is the btrfs fs\n");
+ 	fprintf(stderr, "\t-r      \trestore metadump image\n");
+ 	fprintf(stderr, "\t-c value\tcompression level (0 ~ 9)\n");
+ 	fprintf(stderr, "\t-t value\tnumber of threads (1 ~ 32)\n");
 -- 
 2.1.3
 

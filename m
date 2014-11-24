@@ -1,35 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51954 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:57065 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751930AbaKXS1f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Nov 2014 13:27:35 -0500
-Date: Mon, 24 Nov 2014 19:27:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: dsterba@suse.cz, torvalds@linux-foundation.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [GIT PULL] Btrfs deadlock fix
-Message-ID: <20141124182734.GE26471@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20141123151439.GA16816@ret.masoncoding.com>
- <20141124173909.GC26471@twin.jikos.cz>
- <1416852070.3019.5@mail.thefacebook.com>
+	id S1754115AbaKXSqL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Nov 2014 13:46:11 -0500
+Date: Mon, 24 Nov 2014 10:45:35 -0800
+From: Zach Brown <zab@redhat.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com, sandeen@redhat.com,
+        clm@facebook.com, dm-devel@redhat.com, hch@infradead.org,
+        linux-fsdevel@vger.kernel.org, tytso@mit.edu
+Subject: Re: [RFC][PATCH] dm: add dm-power-fail target
+Message-ID: <20141124184534.GA24398@lenny.home.zabbo.net>
+References: <1416607231-8588-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1416852070.3019.5@mail.thefacebook.com>
+In-Reply-To: <1416607231-8588-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 24, 2014 at 01:01:10PM -0500, Chris Mason wrote:
-> > I've retested it again including this pull and still deadlocks 
-> > reliably
-> > at btrfs/070.
+On Fri, Nov 21, 2014 at 05:00:31PM -0500, Josef Bacik wrote:
+> Hello,
 > 
-> This wasn't a new problem, so I had it queued for the merge window.
+> I'm hoping some FS guys can weigh in and verify my approach for testing power
+> fail conditions, and the DM guys to of course verify I didn't completely fail at
+> making a DM target.  All suggestions welcome, I want to have a nice robust tool
+> for testing power fail so we can be sure our fsync/commit code is all working
+> properly.  Thanks,
 
-Well, I don't remember seeing this problem with anything 3.17 based but
-I can check. I know this does not mean that it was introduced in 3.18,
-only that other changes exposed the problem, but this still IMHO
-qualifies as a bug to be fixed within 3.18. Besides, it makes testing
-3.18-rc slightly more annoying (either skip the test or manually pick
-the patch after each pull).
+*All* suggestions welcome?  OK, I'll put on my skeptic hat.
+
+This implements a writeback cache in kernel data structures so that you
+can race to throw away cached blocks that haven't been flushed.  How is
+that meaningfully different than using an actual writeback caching dm
+target and racing to invalidate it?
+
+Using real caching dm target configurations would let you reuse their
+testing and corner case handling that is, presumably, already slightly
+more advanced than printk() swearing.
+
+Implementation of this specific mechanism aside, the architectural
+observation is that device ram disappearing during a power interruption
+is just one, and possibly the most forgiving, outcome.  Pulling the
+power out from under concurrnet cached writes can result in any
+combination of them being written, or not, or scrambled to the point of
+returning read errors.
+
+If we were to justify developing a specific power failure target, I'd
+like to see something that tracks write history and can replay the
+history to offer a resonably exhaustive set of possible write results.
+Verify *those* and you have much more confidence that the file system
+can handle reading the results of its interrupted writes.
+
+- z 

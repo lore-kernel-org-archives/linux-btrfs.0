@@ -1,35 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f54.google.com ([209.85.216.54]:53500 "EHLO
-	mail-qa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754849AbaKXTer convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33273 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754112AbaKXUHw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Nov 2014 14:34:47 -0500
-Received: by mail-qa0-f54.google.com with SMTP id i13so6905892qae.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 11:34:46 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <pan$e596a$cfc2cde2$6957e9d8$10a112b8@cox.net>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
-	<pan.2014.11.24.08.23.25@googlemail.com>
-	<pan$e596a$cfc2cde2$6957e9d8$10a112b8@cox.net>
-Date: Mon, 24 Nov 2014 11:34:46 -0800
-Message-ID: <CAJBj3veoV=QYF27+zFcJHf9OA0mXVzTU4gYrRz_9cAmVRxrF6Q@mail.gmail.com>
+	Mon, 24 Nov 2014 15:07:52 -0500
+Date: Mon, 24 Nov 2014 15:07:45 -0500
+From: Chris Mason <clm@fb.com>
 Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-From: John Williams <jwilliams4200@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <1416859665.3019.6@mail.thefacebook.com>
+In-Reply-To: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
+References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 24, 2014 at 12:23 AM, Holger Hoffstätte
-<holger.hoffstaette@googlemail.com> wrote:
+On Mon, Nov 24, 2014 at 12:23 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> This brings a strong-but-slow checksum algorithm, sha256.
+> 
+> Actually btrfs used sha256 at the early time, but then moved to 
+> crc32c for
+> performance purposes.
+> 
+> As crc32c is sort of weak due to its hash collision issue, we need a 
+> stronger
+> algorithm as an alternative.
+> 
+> Users can choose sha256 from mkfs.btrfs via
+> 
+> $ mkfs.btrfs -C 256 /device
 
-> Would there be room for a compromise with e.g. 128 bits?
+Agree with others about -C 256...-C sha256 is only three letters more ;)
 
-For example, Spooky V2 hash is 128 bits and is very fast. It is
-noncryptographic, but it is more than adequate for data checksums.
+What's the target for this mode?  Are we trying to find evil people 
+scribbling on the drive, or are we trying to find bad hardware?
 
-http://burtleburtle.net/bob/hash/spooky.html
+-chris
 
-SnapRAID uses this hash, and it runs at about 15 GB/sec on my machine
-(Xeon E3-1270 V2 @ 3.50Ghz)

@@ -1,48 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:47980 "EHLO imap.thunk.org"
+Received: from cantor2.suse.de ([195.135.220.15]:51030 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751680AbaKXRWT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Nov 2014 12:22:19 -0500
-Date: Mon, 24 Nov 2014 12:22:16 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: dsterba@suse.cz, Chris Mason <clm@fb.com>, linux-fsdevel@vger.kernel.org,
+	id S1754107AbaKXReb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Nov 2014 12:34:31 -0500
+Date: Mon, 24 Nov 2014 18:34:30 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, linux-fsdevel@vger.kernel.org,
         Ext4 Developers List <linux-ext4@vger.kernel.org>, xfs@oss.sgi.com,
         linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/4] fs: split update_time() into update_time() and
  write_time()
-Message-ID: <20141124172216.GC31339@thunk.org>
+Message-ID: <20141124173430.GB26471@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1416599964-21892-1-git-send-email-tytso@mit.edu>
  <1416599964-21892-2-git-send-email-tytso@mit.edu>
- <1416600528.24312.10@mail.thefacebook.com>
- <20141121214245.GG7112@thunk.org>
- <20141124163830.GA26471@twin.jikos.cz>
+ <20141124152101.GA12575@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141124163830.GA26471@twin.jikos.cz>
+In-Reply-To: <20141124152101.GA12575@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 24, 2014 at 05:38:30PM +0100, David Sterba wrote:
+On Mon, Nov 24, 2014 at 07:21:01AM -0800, Christoph Hellwig wrote:
+> On Fri, Nov 21, 2014 at 02:59:21PM -0500, Theodore Ts'o wrote:
+> > We needed to preserve update_time() because btrfs wants to have a
+> > special btrfs_root_readonly() check; otherwise we could drop the
+> > update_time() inode operation entirely.
 > 
-> It is necessary and the whole .update_time callback was added
-> intentionally, see commits
-> 
-> c3b2da314834499f34cba94f7053e55f6d6f92d8
-> fs: introduce inode operation ->update_time
-> 
-> e41f941a23115e84a8550b3d901a13a14b2edc2f
-> Btrfs: move over to use ->update_time
+> Can't btrfs just set the immutable flag on every inode that is read
+> when the root has the BTRFS_ROOT_SUBVOL_RDONLY flag? 
 
-Being able to signal an error if the time update fails is still
-possible even if we drop update_time(), because the new write_time()
-function will return an error.
+This would lead to change in return code from EROFS to EPERM/EACCESS for
+all syscalls that do not pass through permissions() callback. Also, now
+each file from a readonly subvol will show the 'i' attribute and there's
+now way to determine if the file had had the 'i' attribute before it was
+snapshotted.
 
-> 2bc5565286121d2a77ccd728eb3484dff2035b58
-> Btrfs: don't update atime on RO subvolumes
+> That would
+> cut down the places that need this check to the ioctl path so that
+> we prevent users from clearling the immutable flag.
 
-Yes, but this doesn't answer my question about other places where the
-VFS is only checking MS_RDONLY and MNT_READONLY besides just
-update_atime().  Maybe we should be exposing an "is_readonly(inode)"
-inode operations function to address this?
+This means that even the root or capable user are not able to clear the
+flag.
 
-						- Ted
+Even though the extra btrfs_root_readonly checks are not all great, the
+number of surprises that the immutable bit could bring is IMO not great
+either.
+
+These callbacks that now implement the extra check:
+
+- update_time
+- setattr
+- setflags (ioctl)
+- setxattr
+- removexattr
+
+The btrfs_root_readonly checks in setxattr and removexattr are
+unnecessary because they're done through xattr_permisssion. I'll send a
+patch to remove them.
+
+'setflags' is an ioctl and all the checks have to be done there.
+The generic permission() callback cannot be used here because it would
+fail to clear eg. the immutable flag.
+
+'setattr' does limited permission checks (IMMUTABLE and APPEND), nothing
+that calls to the filesystem directly or indirectly.
+
+The remaining one is 'update_time'. I'm not sure if the amount of work
+the switch to IMUUTABLE bit would need is justified, compared to this
+one instance of extra btrfs_root_readonly test. As the VFS layer has no
+notion of subvolume it's not able to determine the RO/RW status without
+asking the filesystem anyway.

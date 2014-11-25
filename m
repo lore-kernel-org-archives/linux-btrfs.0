@@ -1,211 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:43603 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750799AbaKKMki (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Nov 2014 07:40:38 -0500
-From: Karel Zak <kzak@redhat.com>
-To: linux-btrfs@vger.kernel.org, Anand Jain <Anand.Jain@oracle.com>
-Cc: dsterba@suse.cz, Karel Zak <kzak@redhat.com>
-Subject: [PATCH 2/2] btrfs-progs: use udev to scan for devices (v2)
-Date: Tue, 11 Nov 2014 13:40:17 +0100
-Message-Id: <1415709617-4978-1-git-send-email-kzak@redhat.com>
-In-Reply-To: <1415705759-2681-2-git-send-email-kzak@redhat.com>
-References: <1415705759-2681-2-git-send-email-kzak@redhat.com>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:65362 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751239AbaKYP5g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 10:57:36 -0500
+Received: by mail-wi0-f178.google.com with SMTP id hi2so1931607wib.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 07:57:35 -0800 (PST)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/4] New 'btrfs chunk list' command
+Date: Tue, 25 Nov 2014 16:57:21 +0100
+Message-Id: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs uses libblkid to scan for block devices with BTRFS.
-The disadvantage is that this method is expensive. The udevd maintains
-information about all block devices in udev db and all devices are
-probed by udevd (it's linked with libblkid). We don't have to duplicate
-this thing in btrfs.
+This is a revamp of a my previous patches set[1]. After more than
+year of attempts these patches were never merged, so I tried to
+simplify them and to change a bit the focus. The previous patches set
+had the focus to the disk usage.
+The aim of these patches now is to show the chunks distribution
+among the disks. So a new command 'btrfs chunk list' is added:
 
-This patch links btrfs with libudev, the original blkid based method
-is used as fallback (for systems without udev, etc.)
+$ sudo ./btrfs chunk list /mnt/btrfs1/
+Data,RAID6: Size:3.00GiB, Used:1.02MiB
+   /dev/vdb	   1.00GiB
+   /dev/vdd	   1.00GiB
+   /dev/vde	   1.00GiB
+   /dev/vdf	   1.00GiB
+   /dev/vdg	   1.00GiB
 
-Note that btrfs-progs project does not use autoconf, so dependence on
-libudev is hardcoded to Makefile for now. It would be probably better
-to add ./configure script to the project and make dependence on
-libudev optional.
+Metadata,RAID5: Size:1.00GiB, Used:112.00KiB
+   /dev/vdb	 256.00MiB
+   /dev/vdd	 256.00MiB
+   /dev/vde	 256.00MiB
+   /dev/vdf	 256.00MiB
+   /dev/vdg	 256.00MiB
 
-udev:
-	# time ./btrfs device scan
-	Scanning for Btrfs filesystems
-	real    0m0.012s
-	user    0m0.004s
-	sys     0m0.003s
+System,RAID1: Size:32.00MiB, Used:16.00KiB
+   /dev/vde	  32.00MiB
+   /dev/vdg	  32.00MiB
 
-blkid:
-	# time ./btrfs device scan
-	Scanning for Btrfs filesystems
-	real    0m0.076s
-	user    0m0.008s
-	sys     0m0.024s
+Unallocated:
+   /dev/vdb	  48.75GiB
+   /dev/vdd	  48.75GiB
+   /dev/vde	  48.72GiB
+   /dev/vdf	  48.75GiB
+   /dev/vdg	  48.72GiB
 
-V2:
-	- use udev_enumerate_add_match_property()
 
-Signed-off-by: Karel Zak <kzak@redhat.com>
----
- Makefile |   2 +-
- utils.c  | 104 ++++++++++++++++++++++++++++++++++++++++++++++++---------------
- 2 files changed, 81 insertions(+), 25 deletions(-)
+This command is smart enough to highlight that a disk is not preset
+(this happens when a mount -o degraded is used). In case 
+/dev/vdb disappears:
 
-diff --git a/Makefile b/Makefile
-index 203597c..768c5e0 100644
---- a/Makefile
-+++ b/Makefile
-@@ -26,7 +26,7 @@ TESTS = fsck-tests.sh convert-tests.sh
- INSTALL = install
- prefix ?= /usr/local
- bindir = $(prefix)/bin
--lib_LIBS = -luuid -lblkid -lm -lz -llzo2 -L.
-+lib_LIBS = -ludev -luuid -lblkid -lm -lz -llzo2 -L.
- libdir ?= $(prefix)/lib
- incdir = $(prefix)/include/btrfs
- LIBS = $(lib_LIBS) $(libs_static)
-diff --git a/utils.c b/utils.c
-index cc33cfc..8555589 100644
---- a/utils.c
-+++ b/utils.c
-@@ -38,6 +38,7 @@
- #include <linux/kdev_t.h>
- #include <limits.h>
- #include <blkid/blkid.h>
-+#include <libudev.h>
- #include "kerncompat.h"
- #include "radix-tree.h"
- #include "ctree.h"
-@@ -2181,20 +2182,34 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
- 	return 0;
- }
- 
--int btrfs_scan_devices()
-+static int scan_device(const char *path)
-+{
-+	int rc;
-+	int fd = open(path, O_RDONLY);
-+	struct btrfs_fs_devices *devs = NULL;
-+	u64 ndevs;
-+
-+	if (fd < 0) {
-+		printf("ERROR: could not open %s\n", path);
-+		return 1;
-+	}
-+
-+	rc = btrfs_scan_one_device(fd, path, &devs, &ndevs, BTRFS_SUPER_INFO_OFFSET, 0);
-+	if (rc)
-+		printf("ERROR: could not scan %s\n", path);
-+
-+	close(fd);
-+	return rc;
-+}
-+
-+
-+static int btrfs_scan_devices_by_blkid(void)
- {
--	int fd = -1;
--	int ret;
--	u64 num_devices;
--	struct btrfs_fs_devices *tmp_devices;
- 	blkid_dev_iterate iter = NULL;
- 	blkid_dev dev = NULL;
- 	blkid_cache cache = NULL;
- 	char path[PATH_MAX];
- 
--	if (btrfs_scan_done)
--		return 0;
--
- 	if (blkid_get_cache(&cache, 0) < 0) {
- 		printf("ERROR: lblkid cache get failed\n");
- 		return 1;
-@@ -2209,29 +2224,70 @@ int btrfs_scan_devices()
- 		/* if we are here its definitely a btrfs disk*/
- 		strncpy(path, blkid_dev_devname(dev), PATH_MAX);
- 
--		fd = open(path, O_RDONLY);
--		if (fd < 0) {
--			printf("ERROR: could not open %s\n", path);
--			continue;
--		}
--		ret = btrfs_scan_one_device(fd, path, &tmp_devices,
--				&num_devices, BTRFS_SUPER_INFO_OFFSET, 0);
--		if (ret) {
--			printf("ERROR: could not scan %s\n", path);
--			close (fd);
--			continue;
--		}
--
--		close(fd);
-+		scan_device(path);
- 	}
- 	blkid_dev_iterate_end(iter);
- 	blkid_put_cache(cache);
- 
--	btrfs_scan_done = 1;
--
- 	return 0;
- }
- 
-+static int btrfs_scan_devices_by_udev(void)
-+{
-+	int rc = 1;
-+	struct udev *udev = NULL;
-+	struct udev_enumerate *en = NULL;
-+	struct udev_list_entry *ent, *devs;
-+
-+	udev = udev_new();
-+	if (!udev)
-+		goto done;
-+	en = udev_enumerate_new(udev);
-+	if (!en)
-+		goto done;
-+
-+	udev_enumerate_add_match_subsystem(en, "block");
-+	udev_enumerate_add_match_property(en, "ID_FS_TYPE", "btrfs");
-+	if (udev_enumerate_scan_devices(en) != 0)
-+		goto done;
-+	devs = udev_enumerate_get_list_entry(en);
-+	if (!devs)
-+		goto done;
-+
-+	udev_list_entry_foreach(ent, devs) {
-+		struct udev_device *dev = udev_device_new_from_syspath(udev,
-+						udev_list_entry_get_name(ent));
-+		if (dev) {
-+			const char *path = udev_device_get_devnode(dev);
-+			if (path)
-+				scan_device(path);
-+			udev_device_unref(dev);
-+		}
-+	}
-+
-+	rc = 0;
-+done:
-+	udev_enumerate_unref(en);
-+	udev_unref(udev);
-+
-+	return rc;
-+}
-+
-+int btrfs_scan_devices()
-+{
-+	int rc = 1;
-+
-+	if (btrfs_scan_done)
-+		return 0;
-+
-+	rc = btrfs_scan_devices_by_udev();
-+	if (rc)
-+		rc = btrfs_scan_devices_by_blkid();
-+
-+	btrfs_scan_done = 1;
-+	return rc;
-+}
-+
- int is_vol_small(char *file)
- {
- 	int fd = -1;
+$ sudo ./btrfs chunk list /mnt/btrfs1/
+Data,RAID6: Size:3.00GiB, Used:1.02MiB
+   /dev/vdb	   1.00GiB
+   /dev/vde	   1.00GiB
+   /dev/vdf	   1.00GiB
+   /dev/vdg	   1.00GiB
+   [Missing: /dev/vdd]	   1.00GiB
+
+Metadata,RAID5: Size:1.00GiB, Used:112.00KiB
+   /dev/vdb	 256.00MiB
+   /dev/vde	 256.00MiB
+   /dev/vdf	 256.00MiB
+   /dev/vdg	 256.00MiB
+   [Missing: /dev/vdd]	 256.00MiB
+
+System,RAID1: Size:32.00MiB, Used:16.00KiB
+   /dev/vde	  32.00MiB
+   /dev/vdg	  32.00MiB
+
+Unallocated:
+   /dev/vdb	  48.75GiB
+   /dev/vde	  48.72GiB
+   /dev/vdf	  48.75GiB
+   /dev/vdg	  48.72GiB
+   [Missing: /dev/vdd]	  48.75GiB
+
+
+It is interesting to see what happens after a 
+'btrfs balance':
+
+$ sudo ./btrfs chunk list /mnt/btrfs1/
+Data,RAID6: Size:2.00GiB, Used:792.00KiB
+   /dev/vdb	   1.00GiB
+   /dev/vde	   1.00GiB
+   /dev/vdf	   1.00GiB
+   /dev/vdg	   1.00GiB
+
+Metadata,RAID5: Size:1.03GiB, Used:112.00KiB
+   /dev/vdb	 352.00MiB
+   /dev/vde	 352.00MiB
+   /dev/vdf	 352.00MiB
+   /dev/vdg	 352.00MiB
+
+System,RAID1: Size:32.00MiB, Used:16.00KiB
+   /dev/vdb	  32.00MiB
+   /dev/vdf	  32.00MiB
+
+Unallocated:
+   /dev/vdb	  48.63GiB
+   /dev/vde	  48.66GiB
+   /dev/vdf	  48.63GiB
+   /dev/vdg	  48.66GiB
+   [Missing: /dev/vdd]	  50.00GiB
+
+And what happens after a 'btrfs device delete missing':
+
+$ sudo ./btrfs chunk list /mnt/btrfs1/
+Data,RAID6: Size:2.00GiB, Used:792.00KiB
+   /dev/vdb	   1.00GiB
+   /dev/vde	   1.00GiB
+   /dev/vdf	   1.00GiB
+   /dev/vdg	   1.00GiB
+
+Metadata,RAID5: Size:1.03GiB, Used:112.00KiB
+   /dev/vdb	 352.00MiB
+   /dev/vde	 352.00MiB
+   /dev/vdf	 352.00MiB
+   /dev/vdg	 352.00MiB
+
+System,RAID1: Size:32.00MiB, Used:16.00KiB
+   /dev/vdb	  32.00MiB
+   /dev/vdf	  32.00MiB
+
+Unallocated:
+   /dev/vdb	  48.63GiB
+   /dev/vde	  48.66GiB
+   /dev/vdf	  48.63GiB
+   /dev/vdg	  48.66GiB
+
+Comments are welcome.
+BR
+G.Baroncelli
+
+
+
+[1] My last attempt was done in 
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/32647,
+then David resent the patches in 
+http://www.spinics.net/lists/linux-btrfs/msg33630.html
+
+
 -- 
-1.9.3
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D 17B2 0EDA 9B37 8B82 E0B5
 

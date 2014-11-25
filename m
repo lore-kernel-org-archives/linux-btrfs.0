@@ -1,58 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3575 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751176AbaKYFfi convert rfc822-to-8bit (ORCPT
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:48886 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751944AbaKYHYu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 00:35:38 -0500
-Message-ID: <1416893611.2576.7.camel@localhost.localdomain>
-Subject: Re: File test operator for subvols; possible bug in 'btrfs show
- <directory>'
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: boris <6401e46d@opayq.com>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Tue, 25 Nov 2014 13:33:31 +0800
-In-Reply-To: <loom.20141125T024507-20@post.gmane.org>
-References: <loom.20141125T024507-20@post.gmane.org>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+	Tue, 25 Nov 2014 02:24:50 -0500
+Received: by mail-pa0-f46.google.com with SMTP id lj1so6834pab.33
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 23:24:49 -0800 (PST)
+Received: from localhost.localdomain.localdomain ([112.23.171.71])
+        by mx.google.com with ESMTPSA id dp3sm570842pdb.46.2014.11.24.23.24.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 24 Nov 2014 23:24:49 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: deal with all 'subvol=xxx' options once
+Date: Tue, 25 Nov 2014 15:23:14 +0800
+Message-Id: <1416900194-17495-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2014-11-25 at 02:11 +0000, boris wrote:
-> Hi all,
-> 
-> I was looking for a quick method of testing whether a working directory is a 
-> subvolume.
-> 
-> Couldn't see an obvious one, so tried 'btrfs show <somesubvol≥'. It printed 
-> a fail message as expected but returned 0 exit status. Bug?
+Steps to reproduce:
+ # mkfs.btrfs -f /dev/sdb
+ # mount -t btrfs /dev/sdb /mnt
+ # btrfs sub create /mnt/dir
+ # mount -t btrfs /dev/sdb /mnt -o subvol=dir,subvol=dir
 
-Hi boris,
+It fails with:
+ mount: mount(2) failed: No such file or directory
 
-I take a quick look at the code branch and I think it is a Bug indeed.
-THe code just forgot to set the proper return value before leave out.
+Btrfs deal with subvolume mounting in a recursive way,
+to avoid looping, it will stripe out 'subvol=xxxx' string,
+then next loop will stop.Problem here is it only deal one
+string once, if users specify mount option multiple times.
+It will loop several times which is not good, and above
+reproducing steps will also return confusing results.
 
-To test whether a dir is a subvolume, what about
-	# btrfs sub list | grep <dirname>
-as 'btrfs sub list will list all subvolumes under <mntpoint>.
-The dirname should be relative path under <mntpoint> is as I could
-remember.
+Fix this problem by striping out all 'subvol=xxx' options,
+only last is valid.
 
-Thanks,
-Gui
+Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+---
+ fs/btrfs/super.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
-> Can I put in a feature request for a shell file test operator for subvols, 
-> please (or something of the kind)? http://tldp.org/LDP/abs/html/fto.html . 
-> The letter v (for volume, both upper and lower case forms; one for subvol, 
-> other for snapshots) is unused afaict. 
-> 
-> Have I missed the obvious? Or scored a false positive?
-> 
-> TIA.
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 54bd91e..2b2fa4b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1115,7 +1115,7 @@ static inline int is_subvolume_inode(struct inode *inode)
+  * subvolid=0 to make sure we get the actual tree root for path walking to the
+  * subvol we want.
+  */
+-static char *setup_root_args(char *args)
++static char *__setup_root_args(char *args)
+ {
+ 	unsigned len = strlen(args) + 2 + 1;
+ 	char *src, *dst, *buf;
+@@ -1161,6 +1161,24 @@ static char *setup_root_args(char *args)
+ 	return buf;
+ }
+ 
++static char *setup_root_args(char *args)
++{
++	char *p, *new_args;
++
++	p = new_args = __setup_root_args(args);
++	/* in case users specify subvol=xxx option multiple times */
++	while (p) {
++		p = __setup_root_args(new_args);
++		if (p) {
++			kfree(new_args);
++			new_args = p;
++		} else {
++			break;
++		}
++	}
++	return new_args;
++}
++
+ static struct dentry *mount_subvol(const char *subvol_name, int flags,
+ 				   const char *device_name, char *data)
+ {
+-- 
+1.7.12.4
 

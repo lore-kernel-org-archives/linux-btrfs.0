@@ -1,30 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44776 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750726AbaKYQNo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 11:13:44 -0500
-Date: Tue, 25 Nov 2014 17:13:43 +0100
-From: David Sterba <dsterba@suse.cz>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:43885 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750726AbaKYQRQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 11:17:16 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
 To: Goffredo Baroncelli <kreijack@gmail.com>
 Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
 Subject: Re: [PATCH 0/4] New 'btrfs chunk list' command
-Message-ID: <20141125161343.GI26471@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Date: Tue, 25 Nov 2014 17:08:15 +0100
+Message-ID: <1995604.saxct2VtQ4@merkaba>
+In-Reply-To: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
 References: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 25, 2014 at 04:57:21PM +0100, Goffredo Baroncelli wrote:
+Hi Goffredo,
+
+Am Dienstag, 25. November 2014, 16:57:21 schrieb Goffredo Baroncelli:
 > This is a revamp of a my previous patches set[1]. After more than
 > year of attempts these patches were never merged, so I tried to
 > simplify them and to change a bit the focus. The previous patches set
 > had the focus to the disk usage.
+> The aim of these patches now is to show the chunks distribution
+> among the disks. So a new command 'btrfs chunk list' is added:
+> 
+> $ sudo ./btrfs chunk list /mnt/btrfs1/
+> Data,RAID6: Size:3.00GiB, Used:1.02MiB
+>    /dev/vdb	   1.00GiB
+>    /dev/vdd	   1.00GiB
+>    /dev/vde	   1.00GiB
+>    /dev/vdf	   1.00GiB
+>    /dev/vdg	   1.00GiB
 
-The patches have been pending for last releases but I did not manage to
-fix all accounting problems in time and did not want to delay the
-releaes due to other important fixes. The 'new df' patchset is being
-refreshed each time and is part of the integration branches which might
-signify that they haven't been lost.
+I still like your previous patch set *a lot* and wonder why exactly is has 
+never been merged. I know there has been quite some discussion about it, but 
+in the end I lost track.
+
+Can the chunk list also display the usage inside the chunks?
+
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

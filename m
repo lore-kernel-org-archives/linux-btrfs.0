@@ -1,56 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu004-omc1s33.hotmail.com ([65.55.116.44]:52515 "EHLO
-	BLU004-OMC1S33.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751240AbaKYQqo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 11:46:44 -0500
-Message-ID: <BLU436-SMTP14172AF9A2DA601C46C2DA0AB730@phx.gbl>
-Date: Tue, 25 Nov 2014 16:46:38 +0000
-From: Boris Chernov <aqs1024@hotmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:45802 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750964AbaKYQrT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 11:47:19 -0500
+Date: Tue, 25 Nov 2014 17:47:17 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
+Message-ID: <20141125164717.GK26471@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
+ <1416859665.3019.6@mail.thefacebook.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Changing label few times killed filesystem?
-References: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>	<20141121093543.6685cbe5@natsu>	<BLU437-SMTP10930A5E18E8322A8C259AAB750@phx.gbl> <pan$f37fb$4727340$23550eda$69bcec61@cox.net>
-In-Reply-To: <pan$f37fb$4727340$23550eda$69bcec61@cox.net>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1416859665.3019.6@mail.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Nov 24, 2014 at 03:07:45PM -0500, Chris Mason wrote:
+> On Mon, Nov 24, 2014 at 12:23 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> > This brings a strong-but-slow checksum algorithm, sha256.
+> > 
+> > Actually btrfs used sha256 at the early time, but then moved to 
+> > crc32c for
+> > performance purposes.
+> > 
+> > As crc32c is sort of weak due to its hash collision issue, we need a 
+> > stronger
+> > algorithm as an alternative.
+> > 
+> > Users can choose sha256 from mkfs.btrfs via
+> > 
+> > $ mkfs.btrfs -C 256 /device
+> 
+> Agree with others about -C 256...-C sha256 is only three letters more ;)
+> 
+> What's the target for this mode?  Are we trying to find evil people 
+> scribbling on the drive, or are we trying to find bad hardware?
 
-     In attempt to get more information, I have commented out 
-BUG_ON(rec->is_root) in cmds-check.c to let btrfsck check my file system 
-without failing on this assertion. Below you can see the output. I would 
-appreciate any help or ideas...
-
-# btrfsck /dev/sdb1  # Full log can be downloaded here: 
-http://pastebin.com/D68vr69J
-Checking filesystem on /dev/sdb1
-UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
-checking extents
-...
-ref mismatch on [20987904 16384] extent item 0, found 1
-Backref 20987904 parent 3 root 3 not found in extent tree
-backpointer mismatch on [20987904 16384]
-owner ref check failed [20987904 16384]
-...messages like these repeat many times, download full log to see them 
-all...
-ref mismatch on [29540352 16384] extent item 0, found 1
-Backref 29540352 parent 18446744073709551607 root 18446744073709551607 
-not found in extent tree
-backpointer mismatch on [29540352 16384]
-owner ref check failed [29540352 16384]
-...
-Errors found in extent allocation tree or chunk allocation
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-root 5 root dir 256 not found
-found 409600 bytes used err is 1
-total csum bytes: 0
-total tree bytes: 49152
-total fs tree bytes: 0
-total extent tree bytes: 16384
-btree space waste bytes: 48246
-file data blocks allocated: 0
-  referenced 0
-Btrfs v3.17
+We could provide an interface for external applications that would make
+use of the strong checksums. Eg. external dedup, integrity db. The
+benefit here is that the checksum is always up to date, so there's no
+need to compute the checksums again. At the obvious cost.

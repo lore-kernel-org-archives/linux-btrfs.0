@@ -1,67 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f180.google.com ([209.85.223.180]:36303 "EHLO
-	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752211AbaKYKw5 convert rfc822-to-8bit (ORCPT
+Received: from blu004-omc1s32.hotmail.com ([65.55.116.43]:57685 "EHLO
+	BLU004-OMC1S32.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752273AbaKYLEW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 05:52:57 -0500
-Received: by mail-ie0-f180.google.com with SMTP id rp18so250418iec.25
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 02:52:56 -0800 (PST)
+	Tue, 25 Nov 2014 06:04:22 -0500
+Message-ID: <BLU436-SMTP1997275109CCFECC0054843AB730@phx.gbl>
+Date: Tue, 25 Nov 2014 11:04:16 +0000
+From: Boris Chernov <aqs1024@hotmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20141125103024.GC23574@localhost.localdomain>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
- <pan.2014.11.24.08.23.25@googlemail.com> <pan$e596a$cfc2cde2$6957e9d8$10a112b8@cox.net>
- <CAJBj3veoV=QYF27+zFcJHf9OA0mXVzTU4gYrRz_9cAmVRxrF6Q@mail.gmail.com> <20141125103024.GC23574@localhost.localdomain>
-From: =?UTF-8?Q?Daniel_Cegie=C5=82ka?= <daniel.cegielka@gmail.com>
-Date: Tue, 25 Nov 2014 11:52:36 +0100
-Message-ID: <CAPLrYEQeOS0n5WA_TazeG1N9AdtjkUc9GEZOUr7JUOxXqg_nnQ@mail.gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-To: bo.li.liu@oracle.com
-Cc: John Williams <jwilliams4200@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Changing label few times killed filesystem?
+References: <BLU436-SMTP7537F1DDEF63F43667E45CAB770@phx.gbl>	<20141121093543.6685cbe5@natsu>	<BLU437-SMTP10930A5E18E8322A8C259AAB750@phx.gbl> <pan$f37fb$4727340$23550eda$69bcec61@cox.net>
+In-Reply-To: <pan$f37fb$4727340$23550eda$69bcec61@cox.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-11-25 11:30 GMT+01:00 Liu Bo <bo.li.liu@oracle.com>:
-> On Mon, Nov 24, 2014 at 11:34:46AM -0800, John Williams wrote:
->> On Mon, Nov 24, 2014 at 12:23 AM, Holger Hoffstätte
->> <holger.hoffstaette@googlemail.com> wrote:
->>
->> > Would there be room for a compromise with e.g. 128 bits?
->>
->> For example, Spooky V2 hash is 128 bits and is very fast. It is
->> noncryptographic, but it is more than adequate for data checksums.
->>
->> http://burtleburtle.net/bob/hash/spooky.html
->>
->> SnapRAID uses this hash, and it runs at about 15 GB/sec on my machine
->> (Xeon E3-1270 V2 @ 3.50Ghz)
->
-> Thanks for the suggestion, I'll take a look.
->
-> Btw, it's not in kernel yet, is it?
->
+On 2014-11-24 02:46, Duncan wrote
+ > if you were using gmane's web service, that explains things as 
+weaverd, the process
+ > that does the threading on the web side, was down for some days
+     Yes, I have used gmane blog. Good to know it is not down anymore.
 
-The best option would be blake2b, but it isn't implemented in the
-kernel. It is not a problem to use it locally (I can upload the code
-stripped for usage in kernel).
+     Back on topic. Even after updating to the latest version, btrfsck 
+or any of its options including --repair still do not work. Does anyone 
+know what "Assertion `rec->is_root` failed" means? Is it worth trying to 
+compile my own version of btrfsck without this assertion?
+     With or without --repair option, it looks like this assertion stops 
+btrfsck very early, preventing btrfsck from checking the filesystem or 
+attempting to repair it.
 
-from https://blake2.net/
+# btrfsck /dev/sdb1
+Checking filesystem on /dev/sdb1
+UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
+checking extents
+cmds-check.c:2645: check_owner_ref: Assertion `rec->is_root` failed.
+btrfs check[0x41a081]
+btrfs check[0x41a0a5]
+btrfs check[0x409783]
+btrfs check[0x40a45e]
+btrfs check[0x41bfa9]
+btrfs check[0x40b46a]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fb275f24b45]
+btrfs check[0x40b497]
 
-Q: Why do you want BLAKE2 to be fast? Aren't fast hashes bad?
-
-A: You want your hash function to be fast if you are using it to
-compute the secure hash of a large amount of data, such as in
-distributed filesystems (e.g. Tahoe-LAFS), cloud storage systems (e.g.
-OpenStack Swift), intrusion detection systems (e.g. Samhain),
-integrity-checking local filesystems (e.g. ZFS), peer-to-peer
-file-sharing tools (e.g. BitTorrent), or version control systems (e.g.
-git). You only want your hash function to be slow if you're using it
-to "stretch" user-supplied passwords, in which case see the next
-question.
-
-https://blake2.net/
-https://github.com/floodyberry/blake2b-opt
-
-Best regards,
-Daniel
+# btrfsck --repair /dev/sdb1
+enabling repair mode
+Fixed 0 roots.
+Checking filesystem on /dev/sdb1
+UUID: 787e3bc1-7583-4bd8-a52e-e57fd7fc9243
+checking extents
+cmds-check.c:2645: check_owner_ref: Assertion `rec->is_root` failed.
+btrfs check[0x41a081]
+btrfs check[0x41a0a5]
+btrfs check[0x409783]
+btrfs check[0x40a45e]
+btrfs check[0x41bfa9]
+btrfs check[0x40b46a]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fbc5b8dab45]
+btrfs check[0x40b497]

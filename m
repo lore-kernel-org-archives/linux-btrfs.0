@@ -1,60 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62316 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752212AbaKXH3t (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:49796 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750841AbaKYJgC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Nov 2014 02:29:49 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAO7TSI1005907
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 15:29:29 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Doc: Add explain on 'source' and 'target' for btrfs-image.
-Date: Mon, 24 Nov 2014 15:27:44 +0800
-Message-ID: <1416814064-29543-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Tue, 25 Nov 2014 04:36:02 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id sAP9a0BZ019742
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 09:36:01 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id sAP9a0u5012217
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 09:36:00 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sAP9a0TY009693
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 09:36:00 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: fix a bug of converting sparse ext2/3/4
+Date: Tue, 25 Nov 2014 17:35:52 +0800
+Message-Id: <1416908152-8367-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add explain on 'source' and 'target', which is somewhat confusing for
-users who want to restore dumped image.
+When converting a sparse ext* filesystem, btrfs-convert adds checksum extents
+for empty extents, whose disk_bytenr = 0, and this can end up with some weird
+problems, one of them is the failure of reading free space cache inode on
+mounting converted btrfs.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+The fix is simple, just to skip making checksum on empty extents.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- Documentation/btrfs-image.txt | 5 +++++
- btrfs-image.c                 | 2 ++
- 2 files changed, 7 insertions(+)
+ btrfs-convert.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/btrfs-image.txt b/Documentation/btrfs-image.txt
-index b7751f9..43c2e06 100644
---- a/Documentation/btrfs-image.txt
-+++ b/Documentation/btrfs-image.txt
-@@ -14,6 +14,11 @@ DESCRIPTION
- *btrfs-image* is used to create an image of a btrfs filesystem.
- All data will be zeroed, but metadata and the like is preserved.
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index a544fc6..02c5e94 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -393,7 +393,7 @@ static int record_file_blocks(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_record_file_extent(trans, root, objectid, inode, file_pos,
+ 					disk_bytenr, num_bytes);
  
-+Without '-r' option, <source> is the device/normal file containing the btrfs,
-+and <target> is the output image file, or standard output if <target> is '-'.
-+With '-r' option, <source> is the dump image file and <target> is the
-+device/normal file where the restored fs lies.
-+
- Mainly used for debug purpose.
+-	if (ret || !checksum)
++	if (ret || !checksum || disk_bytenr == 0)
+ 		return ret;
  
- OPTIONS
-diff --git a/btrfs-image.c b/btrfs-image.c
-index cb17f16..12f04b7 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -2459,6 +2459,8 @@ out:
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: btrfs-image [options] source target\n");
-+	fprintf(stderr, "Without '-r' source is the btrfs fs and target is output image('-' for stdout)\n");
-+	fprintf(stderr, "With '-r' source is the dumped image and target is the btrfs fs\n");
- 	fprintf(stderr, "\t-r      \trestore metadump image\n");
- 	fprintf(stderr, "\t-c value\tcompression level (0 ~ 9)\n");
- 	fprintf(stderr, "\t-t value\tnumber of threads (1 ~ 32)\n");
+ 	return csum_disk_extent(trans, root, disk_bytenr, num_bytes);
 -- 
-2.1.3
+1.8.1.4
 

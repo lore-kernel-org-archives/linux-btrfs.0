@@ -1,84 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50751 "EHLO mx2.suse.de"
+Received: from imap.thunk.org ([74.207.234.97]:51337 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750942AbaKYSwC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 13:52:02 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2B2C3ADC5
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 18:52:01 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: fix spacing in error messages
-Date: Tue, 25 Nov 2014 19:52:00 +0100
-Message-Id: <1416941520-896-1-git-send-email-dsterba@suse.cz>
+	id S1751597AbaKYT0N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 14:26:13 -0500
+Date: Tue, 25 Nov 2014 14:26:09 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Jan Kara <jack@suse.cz>
+Cc: Dave Chinner <david@fromorbit.com>, linux-fsdevel@vger.kernel.org,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+Subject: Re: [PATCH 2/4] vfs: add support for a lazytime mount option
+Message-ID: <20141125192609.GA28449@thunk.org>
+References: <1416599964-21892-1-git-send-email-tytso@mit.edu>
+ <1416599964-21892-3-git-send-email-tytso@mit.edu>
+ <20141125015239.GD27262@dastard>
+ <20141125043335.GF31339@thunk.org>
+ <20141125173040.GD3228@quack.suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141125173040.GD3228@quack.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- btrfs-list.c | 4 ++--
- qgroup.c     | 2 +-
- send-utils.c | 4 ++--
- 3 files changed, 5 insertions(+), 5 deletions(-)
+On Tue, Nov 25, 2014 at 06:30:40PM +0100, Jan Kara wrote:
+>   This would be possible and as Boaz says, it might be possible to reuse
+> the same list_head in the inode for this. Getting rid of the full scan of
+> all superblock inodes would be nice (as the scan gets really expensive for
+> large numbers of inodes (think of i_sb_lock contention) and this makes it
+> twice as bad) so I'd prefer to do this if possible.
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index b6b84935109d..50edcf493869 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -1711,7 +1711,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
- 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
- 		e = errno;
- 		if (ret < 0) {
--			fprintf(stderr, "ERROR: can't perform the search- %s\n",
-+			fprintf(stderr, "ERROR: can't perform the search - %s\n",
- 				strerror(e));
- 			break;
- 		}
-@@ -1911,7 +1911,7 @@ int btrfs_list_get_path_rootid(int fd, u64 *treeid)
- 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
- 	if (ret < 0) {
- 		fprintf(stderr,
--			"ERROR: can't perform the search -%s\n",
-+			"ERROR: can't perform the search - %s\n",
- 			strerror(errno));
- 		return ret;
- 	}
-diff --git a/qgroup.c b/qgroup.c
-index 368b26284544..1a4866cb7345 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -1160,7 +1160,7 @@ u64 btrfs_get_path_rootid(int fd)
- 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
- 	if (ret < 0) {
- 		fprintf(stderr,
--			"ERROR: can't perform the search -%s\n",
-+			"ERROR: can't perform the search - %s\n",
- 			strerror(errno));
- 		return ret;
- 	}
-diff --git a/send-utils.c b/send-utils.c
-index 71b6ec1528e5..cbaf2e90acb4 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -556,7 +556,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 	ret = is_uuid_tree_supported(mnt_fd);
- 	if (ret < 0) {
- 		fprintf(stderr,
--			"ERROR: check if we support uuid tree fails- %s\n",
-+			"ERROR: check if we support uuid tree fails - %s\n",
- 			strerror(errno));
- 		return ret;
- 	} else if (ret) {
-@@ -579,7 +579,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
- 		ret = ioctl(mnt_fd, BTRFS_IOC_TREE_SEARCH, &args);
- 		e = errno;
- 		if (ret < 0) {
--			fprintf(stderr, "ERROR: can't perform the search- %s\n",
-+			fprintf(stderr, "ERROR: can't perform the search - %s\n",
- 				strerror(e));
- 			return ret;
- 		}
--- 
-2.1.3
+Fair enough, I'll give this a try.  Personally, I've never been that
+solicitous towards the efficiency of sync, since if you ever use it,
+you tend to destroy performance just because of contention of the disk
+drive head caused by the writeback, never mind the i_sb_lock
+contention.  ("I am sync(2), the destroyer of tail latency SLO's...")
 
+In fact there has sometimes been discussion about disabling sync(2)
+from non-root users, because the opportunity for mischief when a
+developer logs and types sync out of reflex is too high.  Of course,
+if we ever did this, I'm sure such a patch would never be accepted
+upstream, but that's OK, most people don't seem to care about tail
+latency outside of Facebook and Google anyway....
+
+					- Ted

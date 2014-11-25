@@ -1,44 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:62548 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750786AbaKXWRo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Nov 2014 17:17:44 -0500
-Received: by mail-pa0-f41.google.com with SMTP id rd3so10358870pab.14
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 14:17:44 -0800 (PST)
-Date: Mon, 24 Nov 2014 14:17:42 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
+Received: from fw5a-katy.wadns.net ([41.185.62.20]:28051 "EHLO fw5a.wadns.net"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751847AbaKYFzl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 00:55:41 -0500
+Message-ID: <547419D6.40905@swiftspirit.co.za>
+Date: Tue, 25 Nov 2014 07:55:34 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Omar Sandoval <osandov@osandov.com>
+CC: Filipe David Manana <fdmanana@gmail.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, linux-nfs@vger.kernel.org,
+        Josef Bacik <jbacik@fb.com>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        linux-nfs@vger.kernel.org,
         Trond Myklebust <trond.myklebust@primarydata.com>,
         Mel Gorman <mgorman@suse.de>
-Subject: Re: [PATCH v2 0/5] btrfs: implement swap file support
-Message-ID: <20141124221742.GA15745@mew.dhcp4.washington.edu>
-References: <cover.1416563833.git.osandov@osandov.com>
- <20141121101531.GB21814@mew>
- <20141121101914.GA380@infradead.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141121101914.GA380@infradead.org>
+Subject: Re: [PATCH v2 5/5] btrfs: enable swap file support
+References: <cover.1416563833.git.osandov@osandov.com> <afd3c1009172a4a1cfa10e73a64caf35c631a6d4.1416563833.git.osandov@osandov.com> <20141121180045.GF8568@twin.jikos.cz> <20141122200357.GA15189@mew> <20141124220302.GA5785@mew.dhcp4.washington.edu>
+In-Reply-To: <20141124220302.GA5785@mew.dhcp4.washington.edu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 21, 2014 at 02:19:14AM -0800, Christoph Hellwig wrote:
-> On Fri, Nov 21, 2014 at 02:15:31AM -0800, Omar Sandoval wrote:
-> > Sorry for the noise, looks like Christoph got back to me on the previous RFC
-> > just before I sent this out -- disregard this for now.
-> 
-> If the NFS people are fine with this version I'd certainly welcome it as
-> a first step.  Additional improvements are of course always welcome.
+On 2014/11/25 00:03, Omar Sandoval wrote:
+> [snip]
 >
-To follow up with the NFS people, there's some more review going on on the
-BTRFS side, but I'd like to have the infrastructure squared away here.
-Additional improvements should be mostly on the VFS side.
+> The snapshot issue is a little tricker to resolve. I see a few options:
+>
+> 1. Just do the COW and hope for the best
+> 2. As part of btrfs_swap_activate, COW any shared extents. If a snapshot
+> happens while a swap file is active, we'll fall back to 1.
+> 3. Clobber any swap file extents which are in a snapshot, i.e., always use the
+> existing extent.
+>
+> I'm partial to 3, as it's the simplest approach, and I don't think it makes
+> much sense for a swap file to be in a snapshot anyways. I'd appreciate any
+> comments that anyone might have.
+>
+Personally, 3 seems pragmatic - but not necessarily "correct". :-/
 
-Thanks!
 -- 
-Omar
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

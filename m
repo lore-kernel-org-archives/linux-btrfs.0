@@ -1,62 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:51058 "EHLO imap.thunk.org"
+Received: from cantor2.suse.de ([195.135.220.15]:50751 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751076AbaKYR5Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 12:57:25 -0500
-Date: Tue, 25 Nov 2014 12:57:16 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Jan Kara <jack@suse.cz>
-Cc: Dave Chinner <david@fromorbit.com>, linux-fsdevel@vger.kernel.org,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH 2/4] vfs: add support for a lazytime mount option
-Message-ID: <20141125175716.GC11648@thunk.org>
-References: <1416599964-21892-1-git-send-email-tytso@mit.edu>
- <1416599964-21892-3-git-send-email-tytso@mit.edu>
- <20141125015239.GD27262@dastard>
- <20141125043335.GF31339@thunk.org>
- <20141125171927.GC3228@quack.suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141125171927.GC3228@quack.suse.cz>
+	id S1750942AbaKYSwC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 13:52:02 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2B2C3ADC5
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 18:52:01 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: fix spacing in error messages
+Date: Tue, 25 Nov 2014 19:52:00 +0100
+Message-Id: <1416941520-896-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 25, 2014 at 06:19:27PM +0100, Jan Kara wrote:
->   Actually, I'd also prefer to do the writing from iput_final(). My main
-> reason is that shrinker starts behaving very differently when you put
-> inodes with I_DIRTY_TIME to the LRU. See inode_lru_isolate() and in
-> particular:
->         /*
->          * Referenced or dirty inodes are still in use. Give them another
->          * pass
->          * through the LRU as we canot reclaim them now.
->          */
->         if (atomic_read(&inode->i_count) ||
->             (inode->i_state & ~I_REFERENCED)) {
->                 list_del_init(&inode->i_lru);
->                 spin_unlock(&inode->i_lock);
->                 this_cpu_dec(nr_unused);
->                 return LRU_REMOVED;
->         }
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ btrfs-list.c | 4 ++--
+ qgroup.c     | 2 +-
+ send-utils.c | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
-I must be missing something; how would the shirnker behave
-differently?  I_DIRTY_TIME shouldn't have any effect on the shrinker;
-note that I_DIRTY_TIME is *not* part of I_DIRTY, and this was quite
-deliberate, because I didn't want I_DIRTY_TIME to have any affect on
-any of the other parts of the writeback or inode management parts.
+diff --git a/btrfs-list.c b/btrfs-list.c
+index b6b84935109d..50edcf493869 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1711,7 +1711,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+ 		e = errno;
+ 		if (ret < 0) {
+-			fprintf(stderr, "ERROR: can't perform the search- %s\n",
++			fprintf(stderr, "ERROR: can't perform the search - %s\n",
+ 				strerror(e));
+ 			break;
+ 		}
+@@ -1911,7 +1911,7 @@ int btrfs_list_get_path_rootid(int fd, u64 *treeid)
+ 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
+ 	if (ret < 0) {
+ 		fprintf(stderr,
+-			"ERROR: can't perform the search -%s\n",
++			"ERROR: can't perform the search - %s\n",
+ 			strerror(errno));
+ 		return ret;
+ 	}
+diff --git a/qgroup.c b/qgroup.c
+index 368b26284544..1a4866cb7345 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -1160,7 +1160,7 @@ u64 btrfs_get_path_rootid(int fd)
+ 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
+ 	if (ret < 0) {
+ 		fprintf(stderr,
+-			"ERROR: can't perform the search -%s\n",
++			"ERROR: can't perform the search - %s\n",
+ 			strerror(errno));
+ 		return ret;
+ 	}
+diff --git a/send-utils.c b/send-utils.c
+index 71b6ec1528e5..cbaf2e90acb4 100644
+--- a/send-utils.c
++++ b/send-utils.c
+@@ -556,7 +556,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 	ret = is_uuid_tree_supported(mnt_fd);
+ 	if (ret < 0) {
+ 		fprintf(stderr,
+-			"ERROR: check if we support uuid tree fails- %s\n",
++			"ERROR: check if we support uuid tree fails - %s\n",
+ 			strerror(errno));
+ 		return ret;
+ 	} else if (ret) {
+@@ -579,7 +579,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 		ret = ioctl(mnt_fd, BTRFS_IOC_TREE_SEARCH, &args);
+ 		e = errno;
+ 		if (ret < 0) {
+-			fprintf(stderr, "ERROR: can't perform the search- %s\n",
++			fprintf(stderr, "ERROR: can't perform the search - %s\n",
+ 				strerror(e));
+ 			return ret;
+ 		}
+-- 
+2.1.3
 
-> Regarding your concern that we'd write the inode when file is closed -
-> that's not true. We'll write the inode only after corresponding dentry is
-> evicted and thus drops inode reference. That doesn't seem too bad to me.
-
-True, fair enough.  It's not quite so lazy, but it should be close
-enough.
-
-I'm still not seeing the benefit in waiting until the last possible
-minute to write out the timestamps; evict() can block as it is if
-there are any writeback that needs to be completed, and if the
-writeback happens to pages subject to delalloc, the timestamp update
-could happen for free at that point.
-
-      						- Ted

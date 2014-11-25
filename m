@@ -1,210 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:49130 "EHLO imap.thunk.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751810AbaKYFet (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 00:34:49 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>
-Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        XFS Developers <xfs@oss.sgi.com>, "Theodore Ts'o" <tytso@mit.edu>
-Subject: [PATCH-v3 2/6] vfs: add support for a lazytime mount option
-Date: Tue, 25 Nov 2014 00:34:30 -0500
-Message-Id: <1416893674-419-3-git-send-email-tytso@mit.edu>
-In-Reply-To: <1416893674-419-1-git-send-email-tytso@mit.edu>
-References: <1416893674-419-1-git-send-email-tytso@mit.edu>
+Received: from cn.fujitsu.com ([59.151.112.132]:3575 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751176AbaKYFfi convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 00:35:38 -0500
+Message-ID: <1416893611.2576.7.camel@localhost.localdomain>
+Subject: Re: File test operator for subvols; possible bug in 'btrfs show
+ <directory>'
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: boris <6401e46d@opayq.com>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Tue, 25 Nov 2014 13:33:31 +0800
+In-Reply-To: <loom.20141125T024507-20@post.gmane.org>
+References: <loom.20141125T024507-20@post.gmane.org>
+Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a new mount option which enables a new "lazytime" mode.  This mode
-causes atime, mtime, and ctime updates to only be made to the
-in-memory version of the inode.  The on-disk times will only get
-updated when (a) if the inode needs to be updated for some non-time
-related change, (b) if userspace calls fsync(), syncfs() or sync(), or
-(c) just before an undeleted inode is evicted from memory.
+On Tue, 2014-11-25 at 02:11 +0000, boris wrote:
+> Hi all,
+> 
+> I was looking for a quick method of testing whether a working directory is a 
+> subvolume.
+> 
+> Couldn't see an obvious one, so tried 'btrfs show <somesubvol≥'. It printed 
+> a fail message as expected but returned 0 exit status. Bug?
 
-This is OK according to POSIX because there are no guarantees after a
-crash unless userspace explicitly requests via a fsync(2) call.
+Hi boris,
 
-For workloads which feature a large number of random write to a
-preallocated file, the lazytime mount option significantly reduces
-writes to the inode table.  The repeated 4k writes to a single block
-will result in undesirable stress on flash devices and SMR disk
-drives.  Even on conventional HDD's, the repeated writes to the inode
-table block will trigger Adjacent Track Interference (ATI) remediation
-latencies, which very negatively impact 99.9 percentile latencies ---
-which is a very big deal for web serving tiers (for example).
+I take a quick look at the code branch and I think it is a Bug indeed.
+THe code just forgot to set the proper return value before leave out.
 
-Google-Bug-Id: 18297052
+To test whether a dir is a subvolume, what about
+	# btrfs sub list | grep <dirname>
+as 'btrfs sub list will list all subvolumes under <mntpoint>.
+The dirname should be relative path under <mntpoint> is as I could
+remember.
 
-Signed-off-by: Theodore Ts'o <tytso@mit.edu>
----
- fs/fs-writeback.c       | 38 +++++++++++++++++++++++++++++++++++++-
- fs/inode.c              | 21 +++++++++++++++++++++
- fs/proc_namespace.c     |  1 +
- fs/sync.c               |  7 +++++++
- include/linux/fs.h      |  1 +
- include/uapi/linux/fs.h |  1 +
- 6 files changed, 68 insertions(+), 1 deletion(-)
+Thanks,
+Gui
 
-diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index ef9bef1..ce7de22 100644
---- a/fs/fs-writeback.c
-+++ b/fs/fs-writeback.c
-@@ -483,7 +483,7 @@ __writeback_single_inode(struct inode *inode, struct writeback_control *wbc)
- 	if (!mapping_tagged(mapping, PAGECACHE_TAG_DIRTY))
- 		inode->i_state &= ~I_DIRTY_PAGES;
- 	dirty = inode->i_state & I_DIRTY;
--	inode->i_state &= ~(I_DIRTY_SYNC | I_DIRTY_DATASYNC);
-+	inode->i_state &= ~(I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_TIME);
- 	spin_unlock(&inode->i_lock);
- 	/* Don't write the inode if only I_DIRTY_PAGES was set */
- 	if (dirty & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
-@@ -1277,6 +1277,41 @@ static void wait_sb_inodes(struct super_block *sb)
- 	iput(old_inode);
- }
- 
-+/*
-+ * This works like wait_sb_inodes(), but it is called *before* we kick
-+ * the bdi so the inodes can get written out.
-+ */
-+static void flush_sb_dirty_time(struct super_block *sb)
-+{
-+	struct inode *inode, *old_inode = NULL;
-+
-+	WARN_ON(!rwsem_is_locked(&sb->s_umount));
-+	spin_lock(&inode_sb_list_lock);
-+	list_for_each_entry(inode, &sb->s_inodes, i_sb_list) {
-+		int dirty_time;
-+
-+		spin_lock(&inode->i_lock);
-+		if (inode->i_state & (I_FREEING|I_WILL_FREE|I_NEW)) {
-+			spin_unlock(&inode->i_lock);
-+			continue;
-+		}
-+		dirty_time = inode->i_state & I_DIRTY_TIME;
-+		__iget(inode);
-+		spin_unlock(&inode->i_lock);
-+		spin_unlock(&inode_sb_list_lock);
-+
-+		iput(old_inode);
-+		old_inode = inode;
-+
-+		if (dirty_time)
-+			mark_inode_dirty(inode);
-+		cond_resched();
-+		spin_lock(&inode_sb_list_lock);
-+	}
-+	spin_unlock(&inode_sb_list_lock);
-+	iput(old_inode);
-+}
-+
- /**
-  * writeback_inodes_sb_nr -	writeback dirty inodes from given super_block
-  * @sb: the superblock
-@@ -1388,6 +1423,7 @@ void sync_inodes_sb(struct super_block *sb)
- 		return;
- 	WARN_ON(!rwsem_is_locked(&sb->s_umount));
- 
-+	flush_sb_dirty_time(sb);
- 	bdi_queue_work(sb->s_bdi, &work);
- 	wait_for_completion(&done);
- 
-diff --git a/fs/inode.c b/fs/inode.c
-index 8f5c4b5..2093a84 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -534,6 +534,18 @@ static void evict(struct inode *inode)
- 	BUG_ON(!(inode->i_state & I_FREEING));
- 	BUG_ON(!list_empty(&inode->i_lru));
- 
-+	if (inode->i_nlink && inode->i_state & I_DIRTY_TIME) {
-+		if (inode->i_op->write_time)
-+			inode->i_op->write_time(inode);
-+		else if (inode->i_sb->s_op->write_inode) {
-+			struct writeback_control wbc = {
-+				.sync_mode = WB_SYNC_NONE,
-+			};
-+			mark_inode_dirty(inode);
-+			inode->i_sb->s_op->write_inode(inode, &wbc);
-+		}
-+	}
-+
- 	if (!list_empty(&inode->i_wb_list))
- 		inode_wb_list_del(inode);
- 
-@@ -1515,6 +1527,15 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
- 		if (flags & S_MTIME)
- 			inode->i_mtime = *time;
- 	}
-+	if ((inode->i_sb->s_flags & MS_LAZYTIME) &&
-+	    !(flags & S_VERSION)) {
-+		if (inode->i_state & I_DIRTY_TIME)
-+			return 0;
-+		spin_lock(&inode->i_lock);
-+		inode->i_state |= I_DIRTY_TIME;
-+		spin_unlock(&inode->i_lock);
-+		return 0;
-+	}
- 	if (inode->i_op->write_time)
- 		return inode->i_op->write_time(inode);
- 	mark_inode_dirty_sync(inode);
-diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 73ca174..f98234a 100644
---- a/fs/proc_namespace.c
-+++ b/fs/proc_namespace.c
-@@ -44,6 +44,7 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
- 		{ MS_SYNCHRONOUS, ",sync" },
- 		{ MS_DIRSYNC, ",dirsync" },
- 		{ MS_MANDLOCK, ",mand" },
-+		{ MS_LAZYTIME, ",lazytime" },
- 		{ 0, NULL }
- 	};
- 	const struct proc_fs_info *fs_infop;
-diff --git a/fs/sync.c b/fs/sync.c
-index bdc729d..3a35506a 100644
---- a/fs/sync.c
-+++ b/fs/sync.c
-@@ -177,8 +177,15 @@ SYSCALL_DEFINE1(syncfs, int, fd)
-  */
- int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
- {
-+	struct inode *inode = file->f_mapping->host;
-+
- 	if (!file->f_op->fsync)
- 		return -EINVAL;
-+	if (!datasync && (inode->i_state & I_DIRTY_TIME)) {
-+		spin_lock(&inode->i_lock);
-+		inode->i_state |= I_DIRTY_SYNC;
-+		spin_unlock(&inode->i_lock);
-+	}
- 	return file->f_op->fsync(file, start, end, datasync);
- }
- EXPORT_SYMBOL(vfs_fsync_range);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 3633239..489b2f2 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1721,6 +1721,7 @@ struct super_operations {
- #define __I_DIO_WAKEUP		9
- #define I_DIO_WAKEUP		(1 << I_DIO_WAKEUP)
- #define I_LINKABLE		(1 << 10)
-+#define I_DIRTY_TIME		(1 << 11)
- 
- #define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
- 
-diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
-index 3735fa0..cc9713a 100644
---- a/include/uapi/linux/fs.h
-+++ b/include/uapi/linux/fs.h
-@@ -90,6 +90,7 @@ struct inodes_stat_t {
- #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
- #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
- #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
-+#define MS_LAZYTIME	(1<<25) /* Update the on-disk [acm]times lazily */
- 
- /* These sb flags are internal to the kernel */
- #define MS_NOSEC	(1<<28)
--- 
-2.1.0
+> Can I put in a feature request for a shell file test operator for subvols, 
+> please (or something of the kind)? http://tldp.org/LDP/abs/html/fto.html . 
+> The letter v (for volume, both upper and lower case forms; one for subvol, 
+> other for snapshots) is unused afaict. 
+> 
+> Have I missed the obvious? Or scored a false positive?
+> 
+> TIA.
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
 

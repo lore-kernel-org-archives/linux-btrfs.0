@@ -1,106 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f171.google.com ([209.85.192.171]:40939 "EHLO
-	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750974AbaKYIVq (ORCPT
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:41104 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751104AbaKYO6F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 03:21:46 -0500
-Received: by mail-pd0-f171.google.com with SMTP id y13so113486pdi.16
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 00:21:45 -0800 (PST)
-Received: from localhost.localdomain.localdomain ([112.23.171.71])
-        by mx.google.com with ESMTPSA id yc4sm748964pab.27.2014.11.25.00.21.44
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 25 Nov 2014 00:21:45 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: deal with all 'subvol=xxx' options once
-Date: Tue, 25 Nov 2014 16:20:11 +0800
-Message-Id: <1416903611-29812-1-git-send-email-wangshilong1991@gmail.com>
+	Tue, 25 Nov 2014 09:58:05 -0500
+Received: by mail-lb0-f175.google.com with SMTP id u10so685209lbd.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 06:58:03 -0800 (PST)
+From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Cc: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>
+Subject: Re: [PATCH-v3 3/6] vfs: don't let the dirty time inodes get more than a day stale
+References: <1416893674-419-1-git-send-email-tytso@mit.edu>
+	<1416893674-419-4-git-send-email-tytso@mit.edu>
+Date: Tue, 25 Nov 2014 15:58:01 +0100
+In-Reply-To: <1416893674-419-4-git-send-email-tytso@mit.edu> (Theodore Ts'o's
+	message of "Tue, 25 Nov 2014 00:34:31 -0500")
+Message-ID: <87ioi3iayu.fsf@rasmusvillemoes.dk>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs -f /dev/sdb
- # mount -t btrfs /dev/sdb /mnt
- # btrfs sub create /mnt/dir
- # mount -t btrfs /dev/sdb /mnt -o subvol=dir,subvol=dir
+On Tue, Nov 25 2014, Theodore Ts'o <tytso@mit.edu> wrote:
 
-It fails with:
- mount: mount(2) failed: No such file or directory
+>  static int update_time(struct inode *inode, struct timespec *time, int flags)
+>  {
+> +	struct timespec uptime;
+> +	unsigned short daycode;
+>  	int ret;
+>  
+>  	if (inode->i_op->update_time) {
+> @@ -1525,17 +1527,33 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+>  		if (flags & S_CTIME)
+>  			inode->i_ctime = *time;
+>  		if (flags & S_MTIME)
+> -			inode->i_mtime = *time;
+> +		inode->i_mtime = *time;
+>  	}
+> +	/*
+> +	 * If i_ts_dirty_day is zero, then either we have not deferred
+> +	 * timestamp updates, or the system has been up for less than
+> +	 * a day (so days_since_boot is zero), so we defer timestamp
+> +	 * updates in that case and set the I_DIRTY_TIME flag.  If a
+> +	 * day or more has passed, then i_ts_dirty_day will be
+> +	 * different from days_since_boot, and then we should update
+> +	 * the on-disk inode and then we can clear i_ts_dirty_day.
+> +	 */
 
-Btrfs deal with subvolume mounting in a recursive way,
-to avoid looping, it will stripe out 'subvol=xxxx' string,
-then next loop will stop.Problem here is it only deal one
-string once, if users specify mount option multiple times.
-It will loop several times which is not good, and above
-reproducing steps will also return confusing results.
+I think days_since_boot was a lot clearer than daycode. In any case,
+please make the comment and the code consistent.
 
-Fix this problem by striping out all 'subvol=xxx' options,
-only last is valid.
+>  	if ((inode->i_sb->s_flags & MS_LAZYTIME) &&
+>  	    !(flags & S_VERSION)) {
+>  		if (inode->i_state & I_DIRTY_TIME)
+>  			return 0;
+> -		spin_lock(&inode->i_lock);
+> -		inode->i_state |= I_DIRTY_TIME;
+> -		spin_unlock(&inode->i_lock);
+> -		return 0;
+> +		get_monotonic_boottime(&uptime);
+> +		daycode = div_u64(uptime.tv_sec, (HZ * 86400));
 
-Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
----
-v1->v2: error handling and comment update
----
- fs/btrfs/super.c | 26 +++++++++++++++++++++++---
- 1 file changed, 23 insertions(+), 3 deletions(-)
+You should probably divide by the number of seconds in a day, not the
+number of jiffies in a day.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 54bd91e..42f3176 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1115,7 +1115,7 @@ static inline int is_subvolume_inode(struct inode *inode)
-  * subvolid=0 to make sure we get the actual tree root for path walking to the
-  * subvol we want.
-  */
--static char *setup_root_args(char *args)
-+static char *__setup_root_args(char *args)
- {
- 	unsigned len = strlen(args) + 2 + 1;
- 	char *src, *dst, *buf;
-@@ -1129,13 +1129,12 @@ static char *setup_root_args(char *args)
- 	 */
- 
- 	src = strstr(args, "subvol=");
--	/* This shouldn't happen, but just in case.. */
- 	if (!src)
- 		return NULL;
- 
- 	buf = dst = kmalloc(len, GFP_NOFS);
- 	if (!buf)
--		return NULL;
-+		return ERR_PTR(-ENOMEM);
- 
- 	/*
- 	 * If the subvol= arg is not at the start of the string,
-@@ -1161,6 +1160,27 @@ static char *setup_root_args(char *args)
- 	return buf;
- }
- 
-+static char *setup_root_args(char *args)
-+{
-+	char *p, *new_args;
-+
-+	p = new_args = __setup_root_args(args);
-+	/* in case users specify subvol=xxx option multiple times */
-+	while (p) {
-+		p = __setup_root_args(new_args);
-+		if (!p)
-+			break;
-+		if (!IS_ERR(p)) {
-+			kfree(new_args);
-+			new_args = p;
-+		} else {
-+			kfree(new_args);
-+			return NULL;
-+		}
-+	}
-+	return new_args;
-+}
-+
- static struct dentry *mount_subvol(const char *subvol_name, int flags,
- 				   const char *device_name, char *data)
- {
--- 
-1.7.12.4
+Isn't div_u64 mostly for when the divisor is not known at compile time?
+Technically, "(u64)uptime.tv_sec / 86400" is of course a u64/u64 division,
+but the compiler should see that the divisor is only 32 bits and hence
+should be able to generate code which is at least as efficient as
+whatever inline asm the arch provides for u64/u32 divisions.
 
+
+Rasmus

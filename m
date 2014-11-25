@@ -1,76 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:36774 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751277AbaKYP5l (ORCPT
+Received: from mail-wg0-f51.google.com ([74.125.82.51]:47071 "EHLO
+	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751278AbaKYP5o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 10:57:41 -0500
-Received: by mail-wi0-f178.google.com with SMTP id hi2so1931930wib.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 07:57:40 -0800 (PST)
+	Tue, 25 Nov 2014 10:57:44 -0500
+Received: by mail-wg0-f51.google.com with SMTP id k14so1236004wgh.24
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 07:57:43 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>, Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/4] Add the btrfs chunk list command
-Date: Tue, 25 Nov 2014 16:57:24 +0100
-Message-Id: <1416931045-24259-4-git-send-email-kreijack@inwind.it>
+Subject: [PATCH 4/4] Add man page for the 'btrfs chunk' family commands.
+Date: Tue, 25 Nov 2014 16:57:25 +0100
+Message-Id: <1416931045-24259-5-git-send-email-kreijack@inwind.it>
 In-Reply-To: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
 References: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds the 'btrfs chunk' groups command.
+Add btrfs-chunk(8) man page, and update btrfs(8) man page.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- Makefile   | 2 +-
- btrfs.c    | 1 +
- commands.h | 2 ++
- 3 files changed, 4 insertions(+), 1 deletion(-)
+ Documentation/Makefile        |  1 +
+ Documentation/btrfs-chunk.txt | 58 +++++++++++++++++++++++++++++++++++++++++++
+ Documentation/btrfs.txt       |  5 ++++
+ 3 files changed, 64 insertions(+)
+ create mode 100644 Documentation/btrfs-chunk.txt
 
-diff --git a/Makefile b/Makefile
-index 4cae30c..1744f9c 100644
---- a/Makefile
-+++ b/Makefile
-@@ -15,7 +15,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
- 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
--	       cmds-property.o
-+	       cmds-property.o cmds-chunk.o
- libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
- 		   uuid-tree.o utils-lib.o rbtree-utils.o
- libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
-diff --git a/btrfs.c b/btrfs.c
-index e83349c..25fbb71 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -197,6 +197,7 @@ static const struct cmd_group btrfs_cmd_group = {
- 		{ "device", cmd_device, NULL, &device_cmd_group, 0 },
- 		{ "scrub", cmd_scrub, NULL, &scrub_cmd_group, 0 },
- 		{ "check", cmd_check, cmd_check_usage, NULL, 0 },
-+		{ "chunk", cmd_chunk, NULL, &chunk_cmd_group, 0 },
- 		{ "rescue", cmd_rescue, NULL, &rescue_cmd_group, 0 },
- 		{ "restore", cmd_restore, cmd_restore_usage, NULL, 0 },
- 		{ "inspect-internal", cmd_inspect, NULL, &inspect_cmd_group, 0 },
-diff --git a/commands.h b/commands.h
-index 4d870f6..41d69b0 100644
---- a/commands.h
-+++ b/commands.h
-@@ -80,6 +80,7 @@ extern const struct cmd_group filesystem_cmd_group;
- extern const struct cmd_group balance_cmd_group;
- extern const struct cmd_group device_cmd_group;
- extern const struct cmd_group scrub_cmd_group;
-+extern const struct cmd_group chunk_cmd_group;
- extern const struct cmd_group inspect_cmd_group;
- extern const struct cmd_group property_cmd_group;
- extern const struct cmd_group quota_cmd_group;
-@@ -101,6 +102,7 @@ int cmd_balance(int argc, char **argv);
- int cmd_device(int argc, char **argv);
- int cmd_scrub(int argc, char **argv);
- int cmd_check(int argc, char **argv);
-+int cmd_chunk(int argc, char **argv);
- int cmd_chunk_recover(int argc, char **argv);
- int cmd_super_recover(int argc, char **argv);
- int cmd_inspect(int argc, char **argv);
+diff --git a/Documentation/Makefile b/Documentation/Makefile
+index ef4f1bd..f47f62b 100644
+--- a/Documentation/Makefile
++++ b/Documentation/Makefile
+@@ -18,6 +18,7 @@ MAN8_TXT += mkfs.btrfs.txt
+ MAN8_TXT += btrfs-subvolume.txt
+ MAN8_TXT += btrfs-filesystem.txt
+ MAN8_TXT += btrfs-balance.txt
++MAN8_TXT += btrfs-chunk.txt
+ MAN8_TXT += btrfs-device.txt
+ MAN8_TXT += btrfs-scrub.txt
+ MAN8_TXT += btrfs-check.txt
+diff --git a/Documentation/btrfs-chunk.txt b/Documentation/btrfs-chunk.txt
+new file mode 100644
+index 0000000..85d1ea6
+--- /dev/null
++++ b/Documentation/btrfs-chunk.txt
+@@ -0,0 +1,58 @@
++btrfs-chunk(8)
++===============
++
++NAME
++----
++btrfs-chunk - control btrfs chunks
++
++SYNOPSIS
++--------
++*btrfs chunk* <subcommand> <args>
++
++DESCRIPTION
++-----------
++*btrfs chunk* is used to control the btrfs chunks.
++
++CHUNK DESCRIPTION
++-----------------
++Block devices are divided into chunks. Chunks may be
++mirrored or striped across multiple devices. The mirroring/striping
++arrangement is transparent to the rest of the filesystem, which simply
++sees the single, logical address space that chunks are mapped into.
++
++There are three main types of chunks: Data, Metadata and System. Sometime
++(when the device is small) Data and Metadata can be grouped togheter; in
++this case the chunk is called 'Data+Metadata'. Usually the Data chunks
++are used to store the file content; but if the data is small enough, this
++may be stored in the Metadata chunk togheter with the filesystem data
++structures.
++
++The striping/mirroring levels (called profiles) may be different
++among the chunk types. The chunk profiles are assigned during the filesystem
++creation and these can be changed by the 'btrfs balance' commands.
++
++See `mkfs.btrfs`(8) and `btrfs-balance`(8) for more details.
++
++SUBCOMMAND
++----------
++*list*  <path>::
++Shows the chunks grouped by type and profile; after each group
++the command lists the devices which host the chunks.
++If a device is not present (i.e. the filesystem is mounted in 'degraded' mode),
++it is marked as 'Missing:'.
++
++EXIT STATUS
++-----------
++*btrf chunk* returns a zero exit status if it succeeds. Non zero is
++returned in case of failure.
++
++AVAILABILITY
++------------
++*btrfs* is part of btrfs-progs.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++further details.
++
++SEE ALSO
++--------
++`mkfs.btrfs`(8),
++`btrfs-balance`(8)
+diff --git a/Documentation/btrfs.txt b/Documentation/btrfs.txt
+index 3bdc6b4..fc02004 100644
+--- a/Documentation/btrfs.txt
++++ b/Documentation/btrfs.txt
+@@ -41,6 +41,10 @@ COMMANDS
+ 	Balance btrfs filesystem chunks across single or several devices. +
+ 	See `btrfs-balance`(8) for details.
+ 
++*chunk*::
++	Manage filesystem chunk; currently only listing is suported. +
++	See `btrfs-chunk`(8) for details.
++
+ *device*::
+ 	Manage devices managed by btrfs, including add/delete/scan and so
+ 	on. +
+@@ -102,6 +106,7 @@ SEE ALSO
+ `btrfs-subvolume`(8),
+ `btrfs-filesystem`(8),
+ `btrfs-balance`(8),
++`btrfs-chunk`(8),
+ `btrfs-device`(8),
+ `btrfs-scrub`(8),
+ `btrfs-check`(8),
 -- 
 2.1.3
 

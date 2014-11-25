@@ -1,109 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40202 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750706AbaKYFN5 (ORCPT
+Received: from mail-ob0-f180.google.com ([209.85.214.180]:57119 "EHLO
+	mail-ob0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750841AbaKYFOs convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 00:13:57 -0500
-Date: Tue, 25 Nov 2014 00:13:53 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Hugo Mills <hugo@carfax.org.uk>, Chris Mason <clm@fb.com>,
-        Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-Message-ID: <20141125051353.GV17395@hungrycats.org>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
- <1416859665.3019.6@mail.thefacebook.com>
- <20141124205825.GX32735@carfax.org.uk>
+	Tue, 25 Nov 2014 00:14:48 -0500
+Received: by mail-ob0-f180.google.com with SMTP id wp4so8197759obc.25
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Nov 2014 21:14:47 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="1PHmS26pdpOR3Xc0"
-In-Reply-To: <20141124205825.GX32735@carfax.org.uk>
+In-Reply-To: <54740F42.2040301@cn.fujitsu.com>
+References: <CAPRQymMYBhy0mxG1qTxqt2OGezm3qnq+rAZOLAk1TpkOoixNWw@mail.gmail.com>
+ <54740F42.2040301@cn.fujitsu.com>
+From: Daniel Miranda <danielkza2@gmail.com>
+Date: Tue, 25 Nov 2014 03:14:27 -0200
+Message-ID: <CAPRQymNp3+387P-nmXKoWGNV31TKaYLBWv6g63WwJPqN4g-fYg@mail.gmail.com>
+Subject: Re: Apparent metadata corruption (file that simultaneously does/does
+ not exist) on kernel 3.17.3
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'll go run that and get you the output.
 
---1PHmS26pdpOR3Xc0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I can do the image dump, sure. I don't know how long it might take to
+upload it somewhere though. Right now `btrfs fi df` shows about 2GiB
+of metadata (it's a 120GiB volume). I'll see how large it ends up
+after compression.
 
-On Mon, Nov 24, 2014 at 08:58:25PM +0000, Hugo Mills wrote:
-> On Mon, Nov 24, 2014 at 03:07:45PM -0500, Chris Mason wrote:
-> > On Mon, Nov 24, 2014 at 12:23 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > >This brings a strong-but-slow checksum algorithm, sha256.
-> > >
-> > >Actually btrfs used sha256 at the early time, but then moved to
-> > >crc32c for
-> > >performance purposes.
-> > >
-> > >As crc32c is sort of weak due to its hash collision issue, we need
-> > >a stronger
-> > >algorithm as an alternative.
-> > >
-> > >Users can choose sha256 from mkfs.btrfs via
-> > >
-> > >$ mkfs.btrfs -C 256 /device
-> >=20
-> > Agree with others about -C 256...-C sha256 is only three letters more ;)
-> >=20
-> > What's the target for this mode?  Are we trying to find evil people
-> > scribbling on the drive, or are we trying to find bad hardware?
->=20
->    You're going to need a hell of a lot more infrastructure to deal
-> with the first of those two cases. If someone can write arbitrary data
-> to your storage without going through the filesystem, you've already
-> lost the game.
+Thanks for the quick response,
+Daniel
 
-If the filesystem can be arranged as a Merkle tree then you can store a
-copy of the root SHA256 with a signature to detect arbitrary tampering.
-Of course the magnitude of the "If" in that sentence is startlingly
-large, especially if you are starting from where btrfs is now.  ;)
-
->    I don't know what the stats are like for random error detection
-> (probably just what you'd expect in the naive case -- 1/2^n chance of
-> failing to detect an error for an n-bit hash). More bits likely are
-> better for that, but how much CPU time do you want to burn on it?
-
-crc64 should be more than adequate for simple disk corruption errors.
-crc32's error rate works out to one false positive per dozen megabytes
-*of random errors*, and crc64 FP rate is a few billion times lower
-(one FP per petabyte or so).  If you have the kind of storage subsystem
-that corrupts a petabyte of data, it'd be amazing if you could get
-anything out of your filesystem at all.
-
->    I could see this possibly being useful for having fewer false
-> positives when using the inbuilt checksums for purposes of dedup.
-
-Even then it's massive overkill.  A 16TB filesystem will average about
-one hash collision from a good 64-bit hash.  Compared to a 256bit hash,
-you'd be continuously maintaining a data structure on disk that is 96GB
-larger than it has to be to save an average of *one* 4K read during a
-full-filesystem dedup.
-
-If your users are filling your disks with data blocks that all have
-the same 64-bit hash (with any algorithm), SHA256 could be more
-attractive...but you'd probably still be OK at half that size.
-
->    Hugo.
->=20
-> --=20
-> Hugo Mills             | That's not rain, that's a lake with slots in it
-> hugo@... carfax.org.uk |
-> http://carfax.org.uk/  |
-> PGP: 65E74AC0          |
-
-
-
---1PHmS26pdpOR3Xc0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlR0EBAACgkQgfmLGlazG5xUJwCfSC2yuA+vbzBRrTqCxtvPezqT
-oJwAnRYP7+LyKdMRngg49Aez+QT7KCsW
-=GTZO
------END PGP SIGNATURE-----
-
---1PHmS26pdpOR3Xc0--
+On Tue, Nov 25, 2014 at 3:10 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Hi,
+>
+> What's the btrfsck output? Without --repair option.
+>
+> Also, if it is OK for you, would you please dump the btrfs with
+> 'btrfs-image' command?
+> '-c 9' option is highly recommended considering the size of it.
+> This will helps a lot for developers to test the btrfsck repair function.
+>
+> Thanks,
+> Qu
+>
+>
+> -------- Original Message --------
+> Subject: Apparent metadata corruption (file that simultaneously does/does
+> not exist) on kernel 3.17.3
+> From: Daniel Miranda <danielkza2@gmail.com>
+> To: <linux-btrfs@vger.kernel.org>
+> Date: 2014年11月25日 13:04
+>>
+>> Hello,
+>>
+>> After I had some brief stability issues with my computer, it seems
+>> some form of metadata corruption took place in my BTRFS filesystem,
+>> and now a particular file seems to exist, but I cannot access any
+>> details on it or delete it.
+>>
+>> If I try to `ls` in the directory it is in, that's what I get:
+>>
+>> ls: cannot access string.h: No such file or directory
+>> total 0
+>> drwxr-xr-x. 1 danielkza mock 16 Nov 21 14:18 ./
+>> drwxr-xr-x. 1 danielkza mock  6 Nov 21 14:18 ../
+>> -?????????? ? ?         ?     ?            ? string.h
+>>
+>> If I try to delete it I get:
+>>
+>> rm: cannot remove ‘string.h’: No such file or directory
+>>
+>> I'm using kernel 3.17.3 from Fedora 21. I got no messages on dmesg or
+>> anything of the sort. I know the btrfs fsck situation is complicated,
+>> but is there any utility I should use to try and repair this? Losing
+>> this file is not a problem, it's just one header from the kernel I was
+>> building.
+>>
+>> Regards,
+>> Daniel Miranda
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>

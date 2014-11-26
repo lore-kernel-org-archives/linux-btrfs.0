@@ -1,69 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:52545 "EHLO imap.thunk.org"
+Received: from imap.thunk.org ([74.207.234.97]:52546 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750848AbaKZKYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1750951AbaKZKYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 26 Nov 2014 05:24:05 -0500
 From: "Theodore Ts'o" <tytso@mit.edu>
 To: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>
 Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>, "Theodore Ts'o" <tytso@mit.edu>
-Subject: [PATCH-v4 4/7] vfs: add lazytime tracepoints for better debugging
-Date: Wed, 26 Nov 2014 05:23:54 -0500
-Message-Id: <1416997437-26092-5-git-send-email-tytso@mit.edu>
+Subject: [PATCH-v4 3/7] vfs: don't let the dirty time inodes get more than a day stale
+Date: Wed, 26 Nov 2014 05:23:53 -0500
+Message-Id: <1416997437-26092-4-git-send-email-tytso@mit.edu>
 In-Reply-To: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Guarantee that the on-disk timestamps will be no more than 24 hours
+stale.
+
 Signed-off-by: Theodore Ts'o <tytso@mit.edu>
 ---
- fs/fs-writeback.c | 1 +
- fs/inode.c        | 5 +++++
- 2 files changed, 6 insertions(+)
+ fs/fs-writeback.c  |  1 +
+ fs/inode.c         | 18 ++++++++++++++++++
+ include/linux/fs.h |  1 +
+ 3 files changed, 20 insertions(+)
 
 diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index 529480a..3d87174 100644
+index ef8c5d8..529480a 100644
 --- a/fs/fs-writeback.c
 +++ b/fs/fs-writeback.c
-@@ -27,6 +27,7 @@
- #include <linux/backing-dev.h>
- #include <linux/tracepoint.h>
- #include <linux/device.h>
-+#include <trace/events/fs.h>
- #include "internal.h"
+@@ -1143,6 +1143,7 @@ void __mark_inode_dirty(struct inode *inode, int flags)
+ 	if (flags & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
+ 		trace_writeback_dirty_inode_start(inode, flags);
  
- /*
++		inode->i_ts_dirty_day = 0;
+ 		if (sb->s_op->dirty_inode)
+ 			sb->s_op->dirty_inode(inode, flags);
+ 
 diff --git a/fs/inode.c b/fs/inode.c
-index 37c0429..b2fea60 100644
+index 9e464cc..37c0429 100644
 --- a/fs/inode.c
 +++ b/fs/inode.c
-@@ -20,6 +20,9 @@
- #include <linux/list_lru.h>
- #include "internal.h"
+@@ -1510,6 +1510,8 @@ static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
+  */
+ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ {
++	struct timespec uptime;
++	unsigned short days_since_boot;
+ 	int ret;
  
-+#define CREATE_TRACE_POINTS
-+#include <trace/events/fs.h>
+ 	if (inode->i_op->update_time) {
+@@ -1526,11 +1528,26 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ 		if (flags & S_MTIME)
+ 			inode->i_mtime = *time;
+ 	}
++	/*
++	 * If i_ts_dirty_day is zero, then either we have not deferred
++	 * timestamp updates, or the system has been up for less than
++	 * a day (so days_since_boot is zero), so we defer timestamp
++	 * updates in that case and set the I_DIRTY_TIME flag.  If a
++	 * day or more has passed, then i_ts_dirty_day will be
++	 * different from days_since_boot, and then we should update
++	 * the on-disk inode and then we can clear i_ts_dirty_day.
++	 */
+ 	if ((inode->i_sb->s_flags & MS_LAZYTIME) &&
+ 	    !(flags & S_VERSION) &&
+ 	    !(inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC))) {
+ 		if (inode->i_state & I_DIRTY_TIME)
+ 			return 0;
++		get_monotonic_boottime(&uptime);
++		days_since_boot = div_u64(uptime.tv_sec, 86400);
++		if (inode->i_ts_dirty_day &&
++		    (inode->i_ts_dirty_day != days_since_boot))
++			goto force_dirty;
 +
- /*
-  * Inode locking rules:
-  *
-@@ -1443,6 +1446,7 @@ retry:
- 				inode->i_op->write_time(inode);
- 			else if (inode->i_sb->s_op->write_inode)
- 				mark_inode_dirty_sync(inode);
-+			trace_fs_lazytime_iput(inode);
- 			goto retry;
+ 		spin_lock(&inode->i_lock);
+ 		if (inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
+ 			spin_unlock(&inode->i_lock);
+@@ -1541,6 +1558,7 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ 			return 0;
  		}
- 		iput_final(inode);
-@@ -1561,6 +1565,7 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
- 		inode->i_ts_dirty_day = days_since_boot;
+ 		inode->i_state |= I_DIRTY_TIME;
++		inode->i_ts_dirty_day = days_since_boot;
  		spin_unlock(&inode->i_lock);
  		inode_requeue_dirtytime(inode);
-+		trace_fs_lazytime_defer(inode);
  		return 0;
- 	}
- force_dirty:
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 55cf34d..d0a2181 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -575,6 +575,7 @@ struct inode {
+ 	struct timespec		i_ctime;
+ 	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
+ 	unsigned short          i_bytes;
++	unsigned short		i_ts_dirty_day;
+ 	unsigned int		i_blkbits;
+ 	blkcnt_t		i_blocks;
+ 
 -- 
 2.1.0
 

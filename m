@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33668 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17394 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751688AbaKZNDY (ORCPT
+	with ESMTP id S1751847AbaKZNDZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 08:03:24 -0500
+	Wed, 26 Nov 2014 08:03:25 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAQD32jF015519
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAQD32lv015522
 	for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 21:03:02 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 09/11] Btrfs, raid56: fix use-after-free problem in the final device replace procedure on raid56
-Date: Wed, 26 Nov 2014 21:04:49 +0800
-Message-ID: <1417007091-11885-10-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v3 10/11] Btrfs: fix possible deadlock caused by pending I/O in plug list
+Date: Wed, 26 Nov 2014 21:04:50 +0800
+Message-ID: <1417007091-11885-11-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1417007091-11885-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
@@ -19,236 +19,56 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1417007091-11885-1-git-send-email-miaox@cn.fujitsu.com>
 
-The commit c404e0dc (Btrfs: fix use-after-free in the finishing
-procedure of the device replace) fixed a use-after-free problem
-which happened when removing the source device at the end of device
-replace, but at that time, btrfs didn't support device replace
-on raid56, so we didn't fix the problem on the raid56 profile.
-Currently, we implemented device replace for raid56, so we need
-kick that problem out before we enable that function for raid56.
-
-The fix method is very simple, we just increase the bio per-cpu
-counter before we submit a raid56 io, and decrease the counter
-when the raid56 io ends.
+The increase/decrease of bio counter is on the I/O path, so we should
+use io_schedule() instead of schedule(), or the deadlock might be
+triggered by the pending I/O in the plug list. io_schedule() can help
+us because it will flush all the pending I/O before the task is going
+to sleep.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v2 -> v3:
-- New patch to fix undealt use-after-free problem of the source device
-  in the final device replace procedure.
+- New patch to fix possible deadlock caused by the pending bios in the
+  plug list when the io submitters were going to sleep.
 
 Changelog v1 -> v2:
 - None.
 ---
- fs/btrfs/ctree.h       |  7 ++++++-
- fs/btrfs/dev-replace.c |  4 ++--
- fs/btrfs/raid56.c      | 41 ++++++++++++++++++++++++++++++++---------
- fs/btrfs/raid56.h      |  4 ++--
- fs/btrfs/scrub.c       |  2 +-
- fs/btrfs/volumes.c     |  7 ++-----
- 6 files changed, 45 insertions(+), 20 deletions(-)
+ fs/btrfs/dev-replace.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index fe69edd..470e317 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4097,7 +4097,12 @@ int btrfs_scrub_progress(struct btrfs_root *root, u64 devid,
- /* dev-replace.c */
- void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info);
- void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info);
--void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info);
-+void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount);
-+
-+static inline void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info)
-+{
-+	btrfs_bio_counter_sub(fs_info, 1);
-+}
- 
- /* reada.c */
- struct reada_control {
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 6f662b3..fa27b4e 100644
+index fa27b4e..894796a 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -920,9 +920,9 @@ void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
- 	percpu_counter_inc(&fs_info->bio_counter);
- }
- 
--void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info)
-+void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
- {
--	percpu_counter_dec(&fs_info->bio_counter);
-+	percpu_counter_sub(&fs_info->bio_counter, amount);
- 
- 	if (waitqueue_active(&fs_info->replace_wait))
+@@ -928,16 +928,23 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
  		wake_up(&fs_info->replace_wait);
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index cfa449f..4bdb822 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -155,6 +155,8 @@ struct btrfs_raid_bio {
- 	 */
- 	int bio_list_bytes;
- 
-+	int generic_bio_cnt;
-+
- 	atomic_t refs;
- 
- 	atomic_t stripes_pending;
-@@ -347,6 +349,7 @@ static void merge_rbio(struct btrfs_raid_bio *dest,
- {
- 	bio_list_merge(&dest->bio_list, &victim->bio_list);
- 	dest->bio_list_bytes += victim->bio_list_bytes;
-+	dest->generic_bio_cnt += victim->generic_bio_cnt;
- 	bio_list_init(&victim->bio_list);
  }
  
-@@ -884,6 +887,10 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, int err, int uptodate)
++#define btrfs_wait_event_io(wq, condition)				\
++do {									\
++	if (condition)							\
++		break;							\
++	(void)___wait_event(wq, condition, TASK_UNINTERRUPTIBLE, 0, 0,	\
++			    io_schedule());				\
++} while (0)
++
+ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
  {
- 	struct bio *cur = bio_list_get(&rbio->bio_list);
- 	struct bio *next;
-+
-+	if (rbio->generic_bio_cnt)
-+		btrfs_bio_counter_sub(rbio->fs_info, rbio->generic_bio_cnt);
-+
- 	free_raid_bio(rbio);
- 
- 	while (cur) {
-@@ -1768,6 +1775,7 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 	struct btrfs_raid_bio *rbio;
- 	struct btrfs_plug_cb *plug = NULL;
- 	struct blk_plug_cb *cb;
-+	int ret;
- 
- 	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
- 	if (IS_ERR(rbio)) {
-@@ -1778,12 +1786,19 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
- 	rbio->operation = BTRFS_RBIO_WRITE;
- 
-+	btrfs_bio_counter_inc_noblocked(root->fs_info);
-+	rbio->generic_bio_cnt = 1;
-+
- 	/*
- 	 * don't plug on full rbios, just get them out the door
- 	 * as quickly as we can
- 	 */
--	if (rbio_is_full(rbio))
--		return full_stripe_write(rbio);
-+	if (rbio_is_full(rbio)) {
-+		ret = full_stripe_write(rbio);
-+		if (ret)
-+			btrfs_bio_counter_dec(root->fs_info);
-+		return ret;
-+	}
- 
- 	cb = blk_check_plugged(btrfs_raid_unplug, root->fs_info,
- 			       sizeof(*plug));
-@@ -1794,10 +1809,13 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 			INIT_LIST_HEAD(&plug->rbio_list);
- 		}
- 		list_add_tail(&rbio->plug_list, &plug->rbio_list);
-+		ret = 0;
- 	} else {
--		return __raid56_parity_write(rbio);
-+		ret = __raid56_parity_write(rbio);
-+		if (ret)
-+			btrfs_bio_counter_dec(root->fs_info);
- 	}
--	return 0;
-+	return ret;
- }
- 
- /*
-@@ -2132,19 +2150,17 @@ cleanup:
-  */
- int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- 			  struct btrfs_bio *bbio, u64 *raid_map,
--			  u64 stripe_len, int mirror_num, int hold_bbio)
-+			  u64 stripe_len, int mirror_num, int generic_io)
- {
- 	struct btrfs_raid_bio *rbio;
- 	int ret;
- 
- 	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
- 	if (IS_ERR(rbio)) {
--		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
-+		__free_bbio_and_raid_map(bbio, raid_map, generic_io);
- 		return PTR_ERR(rbio);
+-	DEFINE_WAIT(wait);
+ again:
+ 	percpu_counter_inc(&fs_info->bio_counter);
+ 	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
+ 		btrfs_bio_counter_dec(fs_info);
+-		wait_event(fs_info->replace_wait,
+-			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
+-				     &fs_info->fs_state));
++		btrfs_wait_event_io(fs_info->replace_wait,
++				    !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
++					      &fs_info->fs_state));
+ 		goto again;
  	}
  
--	if (hold_bbio)
--		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
- 	rbio->operation = BTRFS_RBIO_READ_REBUILD;
- 	bio_list_add(&rbio->bio_list, bio);
- 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
-@@ -2152,11 +2168,18 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- 	rbio->faila = find_logical_bio_stripe(rbio, bio);
- 	if (rbio->faila == -1) {
- 		BUG();
--		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
-+		__free_bbio_and_raid_map(bbio, raid_map, generic_io);
- 		kfree(rbio);
- 		return -EIO;
- 	}
- 
-+	if (generic_io) {
-+		btrfs_bio_counter_inc_noblocked(root->fs_info);
-+		rbio->generic_bio_cnt = 1;
-+	} else {
-+		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
-+	}
-+
- 	/*
- 	 * reconstruct from the q stripe if they are
- 	 * asking for mirror 3
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 3d4ddb3..31d4a15 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -43,8 +43,8 @@ struct btrfs_raid_bio;
- struct btrfs_device;
- 
- int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
--				 struct btrfs_bio *bbio, u64 *raid_map,
--				 u64 stripe_len, int mirror_num, int hold_bbio);
-+			  struct btrfs_bio *bbio, u64 *raid_map,
-+			  u64 stripe_len, int mirror_num, int generic_io);
- int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 			       struct btrfs_bio *bbio, u64 *raid_map,
- 			       u64 stripe_len);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 0ae837f..27f2e16cd 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1477,7 +1477,7 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
- 	ret = raid56_parity_recover(fs_info->fs_root, bio, page->recover->bbio,
- 				    page->recover->raid_map,
- 				    page->recover->map_length,
--				    page->mirror_num, 1);
-+				    page->mirror_num, 0);
- 	if (ret)
- 		return ret;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 28d42ba..4bcbb2b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5844,12 +5844,9 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 		} else {
- 			ret = raid56_parity_recover(root, bio, bbio,
- 						    raid_map, map_length,
--						    mirror_num, 0);
-+						    mirror_num, 1);
- 		}
--		/*
--		 * FIXME, replace dosen't support raid56 yet, please fix
--		 * it in the future.
--		 */
-+
- 		btrfs_bio_counter_dec(root->fs_info);
- 		return ret;
- 	}
 -- 
 1.9.3
 

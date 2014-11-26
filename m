@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:50088 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750736AbaKZTYV (ORCPT
+Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:21850 "EHLO
+	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753142AbaKZWsq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 14:24:21 -0500
-Date: Wed, 26 Nov 2014 11:24:20 -0800
-From: Christoph Hellwig <hch@infradead.org>
+	Wed, 26 Nov 2014 17:48:46 -0500
+Date: Thu, 27 Nov 2014 09:48:43 +1100
+From: Dave Chinner <david@fromorbit.com>
 To: "Theodore Ts'o" <tytso@mit.edu>
 Cc: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>,
         Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>
 Subject: Re: [PATCH-v4 6/7] ext4: add support for a lazytime mount option
-Message-ID: <20141126192420.GB20436@infradead.org>
+Message-ID: <20141126224843.GG9561@dastard>
 References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
  <1416997437-26092-7-git-send-email-tytso@mit.edu>
 MIME-Version: 1.0
@@ -21,6 +21,94 @@ In-Reply-To: <1416997437-26092-7-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The subject line seems incorrect, this seems to implement some form
-of dirty inode writeback clustering.
+On Wed, Nov 26, 2014 at 05:23:56AM -0500, Theodore Ts'o wrote:
+> Add an optimization for the MS_LAZYTIME mount option so that we will
+> opportunistically write out any inodes with the I_DIRTY_TIME flag set
+> in a particular inode table block when we need to update some inode in
+> that inode table block anyway.
+> 
+> Also add some temporary code so that we can set the lazytime mount
+> option without needing a modified /sbin/mount program which can set
+> MS_LAZYTIME.  We can eventually make this go away once util-linux has
+> added support.
+> 
+> Google-Bug-Id: 18297052
+> 
+> Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+> ---
+>  fs/ext4/inode.c             | 49 ++++++++++++++++++++++++++++++++++++++++++---
+>  fs/ext4/super.c             |  9 +++++++++
+>  include/trace/events/ext4.h | 30 +++++++++++++++++++++++++++
+>  3 files changed, 85 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+> index 5653fa4..8308c82 100644
+> --- a/fs/ext4/inode.c
+> +++ b/fs/ext4/inode.c
+> @@ -4140,6 +4140,51 @@ static int ext4_inode_blocks_set(handle_t *handle,
+>  }
+>  
+>  /*
+> + * Opportunistically update the other time fields for other inodes in
+> + * the same inode table block.
+> + */
+> +static void ext4_update_other_inodes_time(struct super_block *sb,
+> +					  unsigned long orig_ino, char *buf)
+> +{
+> +	struct ext4_inode_info	*ei;
+> +	struct ext4_inode	*raw_inode;
+> +	unsigned long		ino;
+> +	struct inode		*inode;
+> +	int		i, inodes_per_block = EXT4_SB(sb)->s_inodes_per_block;
+> +	int		inode_size = EXT4_INODE_SIZE(sb);
+> +
+> +	ino = orig_ino & ~(inodes_per_block - 1);
+> +	for (i = 0; i < inodes_per_block; i++, ino++, buf += inode_size) {
+> +		if (ino == orig_ino)
+> +			continue;
+> +		inode = find_active_inode_nowait(sb, ino);
+> +		if (!inode ||
+> +		    (inode->i_state & I_DIRTY_TIME) == 0 ||
+> +		    !spin_trylock(&inode->i_lock)) {
+> +			iput(inode);
+> +			continue;
+> +		}
+> +		inode->i_state &= ~I_DIRTY_TIME;
+> +		inode->i_ts_dirty_day = 0;
+> +		spin_unlock(&inode->i_lock);
+> +		inode_requeue_dirtytime(inode);
+> +
+> +		ei = EXT4_I(inode);
+> +		raw_inode = (struct ext4_inode *) buf;
+> +
+> +		spin_lock(&ei->i_raw_lock);
+> +		EXT4_INODE_SET_XTIME(i_ctime, inode, raw_inode);
+> +		EXT4_INODE_SET_XTIME(i_mtime, inode, raw_inode);
+> +		EXT4_INODE_SET_XTIME(i_atime, inode, raw_inode);
+> +		ext4_inode_csum_set(inode, raw_inode, ei);
+> +		spin_unlock(&ei->i_raw_lock);
+> +		trace_ext4_other_inode_update_time(inode, orig_ino);
+> +		iput(inode);
+> +	}
+> +}
 
+Am I right in that this now does unlogged timestamp updates of
+inodes? What happens when that buffer gets overwritten by log
+recover after a crash? The timestamp updates get lost?
+
+FYI, XFS has had all sorts of nasty log recovery corner cases
+caused by log recovery overwriting non-logged inode updates like
+this. In the past few years we've removed every single non-logged
+inode update "optimisation" so that all changes (including timestamps)
+are transactional so inode state on disk not matching what log
+recovery wrote to disk for all the other inode metadata...
+
+Optimistic unlogged inode updates are a slippery slope, and history
+tells me that it doesn't lead to a nice place....
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,103 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:52546 "EHLO imap.thunk.org"
+Received: from imap.thunk.org ([74.207.234.97]:52557 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750951AbaKZKYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 05:24:05 -0500
+	id S1751338AbaKZKYI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Nov 2014 05:24:08 -0500
 From: "Theodore Ts'o" <tytso@mit.edu>
 To: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>
 Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>, "Theodore Ts'o" <tytso@mit.edu>
-Subject: [PATCH-v4 3/7] vfs: don't let the dirty time inodes get more than a day stale
-Date: Wed, 26 Nov 2014 05:23:53 -0500
-Message-Id: <1416997437-26092-4-git-send-email-tytso@mit.edu>
+Subject: [PATCH-v4 5/7] vfs: add find_active_inode_nowait() function
+Date: Wed, 26 Nov 2014 05:23:55 -0500
+Message-Id: <1416997437-26092-6-git-send-email-tytso@mit.edu>
 In-Reply-To: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Guarantee that the on-disk timestamps will be no more than 24 hours
-stale.
+Add a new function find_active_inode_nowait() which will never block.
+If there is an inode being freed or is still being initialized, this
+function will return NULL instead of blocking waiting for an inode to
+be freed or to finish initializing.  Hence, a negative return from
+this function does not mean that inode number is free for use.  It is
+useful for callers that want to opportunistically do some work on an
+inode only if it is present and available in the cache, and where
+blocking is not an option.
 
 Signed-off-by: Theodore Ts'o <tytso@mit.edu>
 ---
- fs/fs-writeback.c  |  1 +
- fs/inode.c         | 18 ++++++++++++++++++
- include/linux/fs.h |  1 +
- 3 files changed, 20 insertions(+)
+ fs/inode.c         | 36 ++++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |  2 ++
+ 2 files changed, 38 insertions(+)
 
-diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index ef8c5d8..529480a 100644
---- a/fs/fs-writeback.c
-+++ b/fs/fs-writeback.c
-@@ -1143,6 +1143,7 @@ void __mark_inode_dirty(struct inode *inode, int flags)
- 	if (flags & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
- 		trace_writeback_dirty_inode_start(inode, flags);
- 
-+		inode->i_ts_dirty_day = 0;
- 		if (sb->s_op->dirty_inode)
- 			sb->s_op->dirty_inode(inode, flags);
- 
 diff --git a/fs/inode.c b/fs/inode.c
-index 9e464cc..37c0429 100644
+index b2fea60..0b4c6ae 100644
 --- a/fs/inode.c
 +++ b/fs/inode.c
-@@ -1510,6 +1510,8 @@ static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
-  */
- static int update_time(struct inode *inode, struct timespec *time, int flags)
- {
-+	struct timespec uptime;
-+	unsigned short days_since_boot;
- 	int ret;
+@@ -1283,6 +1283,42 @@ struct inode *ilookup(struct super_block *sb, unsigned long ino)
+ }
+ EXPORT_SYMBOL(ilookup);
  
- 	if (inode->i_op->update_time) {
-@@ -1526,11 +1528,26 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
- 		if (flags & S_MTIME)
- 			inode->i_mtime = *time;
- 	}
-+	/*
-+	 * If i_ts_dirty_day is zero, then either we have not deferred
-+	 * timestamp updates, or the system has been up for less than
-+	 * a day (so days_since_boot is zero), so we defer timestamp
-+	 * updates in that case and set the I_DIRTY_TIME flag.  If a
-+	 * day or more has passed, then i_ts_dirty_day will be
-+	 * different from days_since_boot, and then we should update
-+	 * the on-disk inode and then we can clear i_ts_dirty_day.
-+	 */
- 	if ((inode->i_sb->s_flags & MS_LAZYTIME) &&
- 	    !(flags & S_VERSION) &&
- 	    !(inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC))) {
- 		if (inode->i_state & I_DIRTY_TIME)
- 			return 0;
-+		get_monotonic_boottime(&uptime);
-+		days_since_boot = div_u64(uptime.tv_sec, 86400);
-+		if (inode->i_ts_dirty_day &&
-+		    (inode->i_ts_dirty_day != days_since_boot))
-+			goto force_dirty;
++/**
++ * find_active_inode_nowait - find an active inode in the inode cache
++ * @sb:		super block of file system to search
++ * @ino:	inode number to search for
++ *
++ * Search for an active inode @ino in the inode cache, and if the
++ * inode is in the cache, the inode is returned with an incremented
++ * reference count.  If the inode is being freed or is newly
++ * initialized, return nothing instead of trying to wait for the inode
++ * initialization or destruction to be complete.
++ */
++struct inode *find_active_inode_nowait(struct super_block *sb,
++				       unsigned long ino)
++{
++	struct hlist_head *head = inode_hashtable + hash(sb, ino);
++	struct inode *inode, *ret_inode = NULL;
 +
- 		spin_lock(&inode->i_lock);
- 		if (inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
- 			spin_unlock(&inode->i_lock);
-@@ -1541,6 +1558,7 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
- 			return 0;
- 		}
- 		inode->i_state |= I_DIRTY_TIME;
-+		inode->i_ts_dirty_day = days_since_boot;
- 		spin_unlock(&inode->i_lock);
- 		inode_requeue_dirtytime(inode);
- 		return 0;
++	spin_lock(&inode_hash_lock);
++	hlist_for_each_entry(inode, head, i_hash) {
++		if ((inode->i_ino != ino) ||
++		    (inode->i_sb != sb))
++			continue;
++		spin_lock(&inode->i_lock);
++		if ((inode->i_state & (I_FREEING | I_WILL_FREE | I_NEW)) == 0) {
++			__iget(inode);
++			ret_inode = inode;
++		}
++		spin_unlock(&inode->i_lock);
++		goto out;
++	}
++out:
++	spin_unlock(&inode_hash_lock);
++	return ret_inode;
++}
++EXPORT_SYMBOL(find_active_inode_nowait);
++
+ int insert_inode_locked(struct inode *inode)
+ {
+ 	struct super_block *sb = inode->i_sb;
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 55cf34d..d0a2181 100644
+index d0a2181..dc615ec 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -575,6 +575,7 @@ struct inode {
- 	struct timespec		i_ctime;
- 	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
- 	unsigned short          i_bytes;
-+	unsigned short		i_ts_dirty_day;
- 	unsigned int		i_blkbits;
- 	blkcnt_t		i_blocks;
+@@ -2419,6 +2419,8 @@ extern struct inode *ilookup(struct super_block *sb, unsigned long ino);
  
+ extern struct inode * iget5_locked(struct super_block *, unsigned long, int (*test)(struct inode *, void *), int (*set)(struct inode *, void *), void *);
+ extern struct inode * iget_locked(struct super_block *, unsigned long);
++extern struct inode *find_active_inode_nowait(struct super_block *,
++					      unsigned long);
+ extern int insert_inode_locked4(struct inode *, unsigned long, int (*test)(struct inode *, void *), void *);
+ extern int insert_inode_locked(struct inode *);
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
 -- 
 2.1.0
 

@@ -1,149 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:30845 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751028AbaKZQCv (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40106 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751212AbaKZQHM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 11:02:51 -0500
-Message-ID: <5475F9A5.7020309@fb.com>
-Date: Wed, 26 Nov 2014 11:02:45 -0500
+	Wed, 26 Nov 2014 11:07:12 -0500
+Message-ID: <5475FAA9.7080507@fb.com>
+Date: Wed, 26 Nov 2014 11:07:05 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
 To: Filipe Manana <fdmanana@suse.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/6] Btrfs: fix freeing used extents after removing empty
- block group
-References: <1417015735-8581-1-git-send-email-fdmanana@suse.com> <1417015735-8581-4-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1417015735-8581-4-git-send-email-fdmanana@suse.com>
+Subject: Re: [PATCH 6/6] Btrfs: make btrfs_abort_transaction consider existence
+ of new block groups
+References: <1417015735-8581-1-git-send-email-fdmanana@suse.com> <1417015735-8581-7-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1417015735-8581-7-git-send-email-fdmanana@suse.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 11/26/2014 10:28 AM, Filipe Manana wrote:
-> There's a race between adding a block group to the list of the unused
-> block groups and removing an unused block group (cleaner kthread) that
-> leads to freeing extents that are in use or a crash during transaction
-> commmit. Basically the cleaner kthread, when executing
-> btrfs_delete_unused_bgs(), might catch the newly added block group to
-> the list fs_info->unused_bgs and clear the range representing the whole
-> group from fs_info->freed_extents[] before the task that added the block
-> group to the list (running update_block_group()) marked the last freed
-> extent as dirty in fs_info->freed_extents (pinned_extents).
+> If the transaction handle doesn't have used blocks but has created new block
+> groups make sure we turn the fs into readonly mode too. This is because the
+> new block groups didn't get all their metadata persisted into the chunk and
+> device trees, and therefore if a subsequent transaction starts, allocates
+> space from the new block groups, writes data or metadata into that space,
+> commits successfully and then after we unmount and mount the filesystem
+> again, the same space can be allocated again for a new block group,
+> resulting in file data or metadata corruption.
 >
-> That is:
+> Example where we don't abort the transaction when we fail to finish the
+> chunk allocation (add items to the chunk and device trees) and later a
+> future transaction where the block group is removed fails because it can't
+> find the chunk item in the chunk tree:
 >
->       CPU 1                                CPU 2
->
->                                    btrfs_delete_unused_bgs()
-> update_block_group()
->     add block group to
->     fs_info->unused_bgs
->                                      got block group from the list
->                                      clear_extent_bits for the whole
->                                      block group range in freed_extents[]
->     set_extent_dirty for the
->     range covering the freed
->     extent in freed_extents[]
->     (fs_info->pinned_extents)
->
->                                    block group deleted, and a new block
->                                    group with the same logical address is
->                                    created
->
->                                    reserve space from the new block group
->                                    for new data or metadata - the reserved
->                                    space overlaps the range specified by
->                                    CPU 1 for set_extent_dirty()
->
->                                    commit transaction
->                                      find all ranges marked as dirty in
->                                      fs_info->pinned_extents, clear them
->                                      and add them to the free space cache
->
-> Alternatively, if CPU 2 doesn't create a new block group with the same
-> logical address, we get a crash/BUG_ON at transaction commit when unpining
-> extent ranges because we can't find a block group for the range marked as
-> dirty by CPU 1. Sample trace:
->
-> [ 2163.426462] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
-> [ 2163.426640] Modules linked in: btrfs xor raid6_pq dm_thin_pool dm_persistent_data dm_bio_prison dm_bufio crc32c_generic libcrc32c dm_mod nfsd auth_rpc
-> gss oid_registry nfs_acl nfs lockd fscache sunrpc loop psmouse parport_pc parport i2c_piix4 processor thermal_sys i2ccore evdev button pcspkr microcode serio_raw ext4 crc16 jbd2 mbcache
->   sg sr_mod cdrom sd_mod crc_t10dif crct10dif_generic crct10dif_common ata_generic virtio_scsi floppy ata_piix libata e1000 scsi_mod virtio_pci virtio_ring virtio
-> [ 2163.428209] CPU: 0 PID: 11858 Comm: btrfs-transacti Tainted: G        W      3.17.0-rc5-btrfs-next-1+ #1
-> [ 2163.428519] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-> [ 2163.428875] task: ffff88009f2c0650 ti: ffff8801356bc000 task.ti: ffff8801356bc000
-> [ 2163.429157] RIP: 0010:[<ffffffffa037728e>]  [<ffffffffa037728e>] unpin_extent_range.isra.58+0x62/0x192 [btrfs]
-> [ 2163.429562] RSP: 0018:ffff8801356bfda8  EFLAGS: 00010246
-> [ 2163.429802] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000
-> [ 2163.429990] RDX: 0000000041bfffff RSI: 0000000001c00000 RDI: ffff880024307080
-> [ 2163.430042] RBP: ffff8801356bfde8 R08: 0000000000000068 R09: ffff88003734f118
-> [ 2163.430042] R10: ffff8801356bfcb8 R11: fffffffffffffb69 R12: ffff8800243070d0
-> [ 2163.430042] R13: 0000000083c04000 R14: ffff8800751b0f00 R15: ffff880024307000
-> [ 2163.430042] FS:  0000000000000000(0000) GS:ffff88013f400000(0000) knlGS:0000000000000000
-> [ 2163.430042] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [ 2163.430042] CR2: 00007ff10eb43fc0 CR3: 0000000004cb8000 CR4: 00000000000006f0
-> [ 2163.430042] Stack:
-> [ 2163.430042]  ffff8800243070d0 0000000083c08000 0000000083c07fff ffff88012d6bc800
-> [ 2163.430042]  ffff8800243070d0 ffff8800751b0f18 ffff8800751b0f00 0000000000000000
-> [ 2163.430042]  ffff8801356bfe18 ffffffffa037a481 0000000083c04000 0000000083c07fff
-> [ 2163.430042] Call Trace:
-> [ 2163.430042]  [<ffffffffa037a481>] btrfs_finish_extent_commit+0xac/0xbf [btrfs]
-> [ 2163.430042]  [<ffffffffa038c06d>] btrfs_commit_transaction+0x6ee/0x882 [btrfs]
-> [ 2163.430042]  [<ffffffffa03881f1>] transaction_kthread+0xf2/0x1a4 [btrfs]
-> [ 2163.430042]  [<ffffffffa03880ff>] ? btrfs_cleanup_transaction+0x3d8/0x3d8 [btrfs]
-> [ 2163.430042]  [<ffffffff8105966b>] kthread+0xb7/0xbf
-> [ 2163.430042]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
-> [ 2163.430042]  [<ffffffff813ebeac>] ret_from_fork+0x7c/0xb0
-> [ 2163.430042]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
->
-> So fix this by making update_block_group() first set the range as dirty
-> in pinned_extents before adding the block group to the unused_bgs list.
+> [25230.404300] WARNING: CPU: 0 PID: 7721 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x50/0xfc [btrfs]()
+> [25230.404301] BTRFS: Transaction aborted (error -28)
+> [25230.404302] Modules linked in: btrfs dm_flakey nls_utf8 fuse xor raid6_pq ntfs vfat msdos fat xfs crc32c_generic libcrc32c ext3 jbd ext2 dm_mod nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc loop psmouse i2c_piix4 i2ccore parport_pc parport processor button pcspkr serio_raw thermal_sys evdev microcode ext4 crc16 jbd2 mbcache sr_mod cdrom ata_generic sg sd_mod crc_t10dif crct10dif_generic crct10dif_common virtio_scsi floppy e1000 ata_piix libata virtio_pci virtio_ring scsi_mod virtio [last unloaded: btrfs]
+> [25230.404325] CPU: 0 PID: 7721 Comm: xfs_io Not tainted 3.17.0-rc5-btrfs-next-1+ #1
+> [25230.404326] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+> [25230.404328]  0000000000000000 ffff88004581bb08 ffffffff813e7a13 ffff88004581bb50
+> [25230.404330]  ffff88004581bb40 ffffffff810423aa ffffffffa049386a 00000000ffffffe4
+> [25230.404332]  ffffffffa05214c0 000000000000240c ffff88010fc8f800 ffff88004581bba8
+> [25230.404334] Call Trace:
+> [25230.404338]  [<ffffffff813e7a13>] dump_stack+0x45/0x56
+> [25230.404342]  [<ffffffff810423aa>] warn_slowpath_common+0x7f/0x98
+> [25230.404351]  [<ffffffffa049386a>] ? __btrfs_abort_transaction+0x50/0xfc [btrfs]
+> [25230.404353]  [<ffffffff8104240b>] warn_slowpath_fmt+0x48/0x50
+> [25230.404362]  [<ffffffffa049386a>] __btrfs_abort_transaction+0x50/0xfc [btrfs]
+> [25230.404374]  [<ffffffffa04a8c43>] btrfs_create_pending_block_groups+0x10c/0x135 [btrfs]
+> [25230.404387]  [<ffffffffa04b77fd>] __btrfs_end_transaction+0x7e/0x2de [btrfs]
+> [25230.404398]  [<ffffffffa04b7a6d>] btrfs_end_transaction+0x10/0x12 [btrfs]
+> [25230.404408]  [<ffffffffa04a3d64>] btrfs_check_data_free_space+0x111/0x1f0 [btrfs]
+> [25230.404421]  [<ffffffffa04c53bd>] __btrfs_buffered_write+0x160/0x48d [btrfs]
+> [25230.404425]  [<ffffffff811a9268>] ? cap_inode_need_killpriv+0x2d/0x37
+> [25230.404429]  [<ffffffff810f6501>] ? get_page+0x1a/0x2b
+> [25230.404441]  [<ffffffffa04c7c95>] btrfs_file_write_iter+0x321/0x42f [btrfs]
+> [25230.404443]  [<ffffffff8110f5d9>] ? handle_mm_fault+0x7f3/0x846
+> [25230.404446]  [<ffffffff813e98c5>] ? mutex_unlock+0x16/0x18
+> [25230.404449]  [<ffffffff81138d68>] new_sync_write+0x7c/0xa0
+> [25230.404450]  [<ffffffff81139401>] vfs_write+0xb0/0x112
+> [25230.404452]  [<ffffffff81139c9d>] SyS_pwrite64+0x66/0x84
+> [25230.404454]  [<ffffffff813ebf52>] system_call_fastpath+0x16/0x1b
+> [25230.404455] ---[ end trace 5aa5684fdf47ab38 ]---
+> [25230.404458] BTRFS warning (device sdc): btrfs_create_pending_block_groups:9228: Aborting unused transaction(No space left).
+> [25288.084814] BTRFS: error (device sdc) in btrfs_free_chunk:2509: errno=-2 No such entry (Failed lookup while freeing chunk.)
 >
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
->   fs/btrfs/extent-tree.c | 21 ++++++++++-----------
->   1 file changed, 10 insertions(+), 11 deletions(-)
+>   fs/btrfs/extent-tree.c | 5 +++--
+>   fs/btrfs/super.c       | 2 +-
+>   2 files changed, 4 insertions(+), 3 deletions(-)
 >
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index b7e40ef..92f61f2 100644
+> index 4bf8f02..0a5e770 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -5439,7 +5439,17 @@ static int update_block_group(struct btrfs_root *root,
->   			spin_unlock(&cache->space_info->lock);
->   		} else {
->   			old_val -= num_bytes;
-> +			btrfs_set_block_group_used(&cache->item, old_val);
-> +			cache->pinned += num_bytes;
-> +			cache->space_info->bytes_pinned += num_bytes;
-> +			cache->space_info->bytes_used -= num_bytes;
-> +			cache->space_info->disk_used -= num_bytes * factor;
-> +			spin_unlock(&cache->lock);
-> +			spin_unlock(&cache->space_info->lock);
+> @@ -9209,9 +9209,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+>   	int ret = 0;
 >
-> +			set_extent_dirty(info->pinned_extents,
-> +					 bytenr, bytenr + num_bytes - 1,
-> +					 GFP_NOFS | __GFP_NOFAIL);
->   			/*
->   			 * No longer have used bytes in this block group, queue
->   			 * it for deletion.
-> @@ -5453,17 +5463,6 @@ static int update_block_group(struct btrfs_root *root,
->   				}
->   				spin_unlock(&info->unused_bgs_lock);
->   			}
-> -			btrfs_set_block_group_used(&cache->item, old_val);
-> -			cache->pinned += num_bytes;
-> -			cache->space_info->bytes_pinned += num_bytes;
-> -			cache->space_info->bytes_used -= num_bytes;
-> -			cache->space_info->disk_used -= num_bytes * factor;
-> -			spin_unlock(&cache->lock);
-> -			spin_unlock(&cache->space_info->lock);
-> -
-> -			set_extent_dirty(info->pinned_extents,
-> -					 bytenr, bytenr + num_bytes - 1,
-> -					 GFP_NOFS | __GFP_NOFAIL);
->   		}
->   		btrfs_put_block_group(cache);
->   		total -= num_bytes;
+>   	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs, bg_list) {
+> -		list_del_init(&block_group->bg_list);
+>   		if (ret)
+> -			continue;
+> +			goto next;
+>
+>   		spin_lock(&block_group->lock);
+>   		memcpy(&item, &block_group->item, sizeof(item));
+> @@ -9226,6 +9225,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+>   					       key.objectid, key.offset);
+>   		if (ret)
+>   			btrfs_abort_transaction(trans, extent_root, ret);
+> +next:
+> +		list_del_init(&block_group->bg_list);
+>   	}
+>   }
 >
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+I don't understand this change, logically it seems the same as what we 
+had before.  Thanks,
 
 Josef

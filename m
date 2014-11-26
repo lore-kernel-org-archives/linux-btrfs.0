@@ -1,68 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f53.google.com ([209.85.216.53]:58895 "EHLO
-	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751556AbaKYXR7 (ORCPT
+Received: from mail-ie0-f171.google.com ([209.85.223.171]:38836 "EHLO
+	mail-ie0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750929AbaKZBxh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 18:17:59 -0500
-Received: by mail-qa0-f53.google.com with SMTP id bm13so1152194qab.26
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 15:17:58 -0800 (PST)
+	Tue, 25 Nov 2014 20:53:37 -0500
+Received: by mail-ie0-f171.google.com with SMTP id rl12so1789132iec.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 17:53:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20141125103024.GC23574@localhost.localdomain>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
-	<pan.2014.11.24.08.23.25@googlemail.com>
-	<pan$e596a$cfc2cde2$6957e9d8$10a112b8@cox.net>
-	<CAJBj3veoV=QYF27+zFcJHf9OA0mXVzTU4gYrRz_9cAmVRxrF6Q@mail.gmail.com>
-	<20141125103024.GC23574@localhost.localdomain>
-Date: Tue, 25 Nov 2014 15:17:58 -0800
-Message-ID: <CAJBj3vckdFCwh0vr7kF-_z8-PnTN5zL1zy_zcma2waDfTqj6GA@mail.gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-From: John Williams <jwilliams4200@gmail.com>
-To: bo.li.liu@oracle.com
+In-Reply-To: <CAJCQCtSYFBj=KLZpdB5J+mXZwE5SCAR-H9mz5BXpsukOOp8SZQ@mail.gmail.com>
+References: <E1XqYMg-0000YI-8y@watricky.valid.co.za>
+	<546AF572.2020101@swiftspirit.co.za>
+	<20141118153526.GS20972@merlins.org>
+	<47FB8035-FEA6-40E1-9672-5BBF92B283A9@colorremedies.com>
+	<546BB2EA.5080809@ubuntu.com>
+	<E47EA20E-375D-49A6-B4B0-C6594CE6A633@colorremedies.com>
+	<546CB332.3080705@ubuntu.com>
+	<CAJCQCtTfhxW2w+mT6rqyr+WwVdj8SAEAGV+LB8_S3mcw0agxaw@mail.gmail.com>
+	<5474F5D1.2070908@ubuntu.com>
+	<CAJCQCtSYFBj=KLZpdB5J+mXZwE5SCAR-H9mz5BXpsukOOp8SZQ@mail.gmail.com>
+Date: Tue, 25 Nov 2014 20:53:37 -0500
+Message-ID: <CAGfcS_=SAnwfTSVodAPjdwmL9PUijoK2gf7+X7MNpET+_-DXOA@mail.gmail.com>
+Subject: Re: scrub implies failing drive - smartctl blissfully unaware
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Chris Murphy <lists@colorremedies.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 25, 2014 at 2:30 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Mon, Nov 24, 2014 at 11:34:46AM -0800, John Williams wrote:
->> For example, Spooky V2 hash is 128 bits and is very fast. It is
->> noncryptographic, but it is more than adequate for data checksums.
->>
->> http://burtleburtle.net/bob/hash/spooky.html
->>
->> SnapRAID uses this hash, and it runs at about 15 GB/sec on my machine
->> (Xeon E3-1270 V2 @ 3.50Ghz)
->
-> Thanks for the suggestion, I'll take a look.
->
-> Btw, it's not in kernel yet, is it?
+On Tue, Nov 25, 2014 at 6:13 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> A few years ago companies including Western Digital started shipping
+> large cheap drives, think of the "green" drives. These had very high
+> TLER (Time Limited Error Recovery) settings, a.k.a. SCT ERC. Later
+> they completely took out the ability to configure this error recovery
+> timing so you only get the upward of 2 minutes to actually get a read
+> error reported by the drive.
 
-No, as far as I know, it is not in the kernel.
+Why sell an $80 hard drive when you can change a few bytes in the
+firmware and sell a crippled $80 drive and an otherwise-identical
+non-crippled $130 drive?
 
-By the way, as for the suggestion of blake2 hash, note that it is much
-slower than Spooky V2 hash. That is to be expected, since blake2 is a
-cryptographic hash (even if it is one that is fast relative to other
-cryptographic hashes) and as a class, cryptographic hashes tend to be
-an order of magnitude slower than the fastest noncryptographic hashes.
-
-The hashes that I would recommend for use with btrfs checksums are:
-
-1) SpookyHash V2 : for 128 bit hashes on 64-bit systems
-http://burtleburtle.net/bob/hash/spooky.html
-
-2) CityHash : for 256-bit hashes on all systems
-https://code.google.com/p/cityhash/
-
-3) Murmur3 :for 128-bit hashes on 32-bit systems (since Spooky and
-City are not the fastest on most 32-bit systems)
-https://code.google.com/p/smhasher/wiki/MurmurHash3
-
-All of those are noncryptographic, but they all have good properties
-that should make them more than adequate for data checksums and dedup
-usage.
-
-For more information, here are some comparisons of fast hash functions
-(note that these comparisons were written 2 to 3 years ago):
-
-http://blog.reverberate.org/2012/01/state-of-hash-functions-2012.html
-http://research.neustar.biz/tag/spooky-hash/
+--
+Rich

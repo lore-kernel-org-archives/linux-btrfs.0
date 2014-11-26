@@ -1,254 +1,378 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:52549 "EHLO imap.thunk.org"
+Received: from imap.thunk.org ([74.207.234.97]:52548 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751065AbaKZKYG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751036AbaKZKYG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 26 Nov 2014 05:24:06 -0500
 From: "Theodore Ts'o" <tytso@mit.edu>
 To: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>
 Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>, "Theodore Ts'o" <tytso@mit.edu>
-Subject: [PATCH-v4 1/7] vfs: split update_time() into update_time() and write_time()
-Date: Wed, 26 Nov 2014 05:23:51 -0500
-Message-Id: <1416997437-26092-2-git-send-email-tytso@mit.edu>
+Subject: [PATCH-v4 2/7] vfs: add support for a lazytime mount option
+Date: Wed, 26 Nov 2014 05:23:52 -0500
+Message-Id: <1416997437-26092-3-git-send-email-tytso@mit.edu>
 In-Reply-To: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In preparation for adding support for the lazytime mount option, we
-need to be able to separate out the update_time() and write_time()
-inode operations.  Currently, only btrfs and xfs uses update_time().
+Add a new mount option which enables a new "lazytime" mode.  This mode
+causes atime, mtime, and ctime updates to only be made to the
+in-memory version of the inode.  The on-disk times will only get
+updated when (a) if the inode needs to be updated for some non-time
+related change, (b) if userspace calls fsync(), syncfs() or sync(), or
+(c) just before an undeleted inode is evicted from memory.
 
-We needed to preserve update_time() because btrfs wants to have a
-special btrfs_root_readonly() check; otherwise we could drop the
-update_time() inode operation entirely.
+This is OK according to POSIX because there are no guarantees after a
+crash unless userspace explicitly requests via a fsync(2) call.
+
+For workloads which feature a large number of random write to a
+preallocated file, the lazytime mount option significantly reduces
+writes to the inode table.  The repeated 4k writes to a single block
+will result in undesirable stress on flash devices and SMR disk
+drives.  Even on conventional HDD's, the repeated writes to the inode
+table block will trigger Adjacent Track Interference (ATI) remediation
+latencies, which very negatively impact 99.9 percentile latencies ---
+which is a very big deal for web serving tiers (for example).
+
+Google-Bug-Id: 18297052
 
 Signed-off-by: Theodore Ts'o <tytso@mit.edu>
-Cc: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org
-Acked-by: David Sterba <dsterba@suse.cz>
 ---
- Documentation/filesystems/Locking |  2 ++
- fs/btrfs/inode.c                  | 10 ++++++++++
- fs/inode.c                        | 29 ++++++++++++++++++-----------
- fs/xfs/xfs_iops.c                 | 39 ++++++++++++++++-----------------------
- include/linux/fs.h                |  1 +
- 5 files changed, 47 insertions(+), 34 deletions(-)
+ fs/fs-writeback.c           | 55 ++++++++++++++++++++++++++++++++++++++++-----
+ fs/inode.c                  | 43 ++++++++++++++++++++++++++++++-----
+ fs/proc_namespace.c         |  1 +
+ fs/sync.c                   |  8 +++++++
+ include/linux/backing-dev.h |  1 +
+ include/linux/fs.h          | 11 +++++++--
+ include/uapi/linux/fs.h     |  1 +
+ mm/backing-dev.c            |  9 ++++++--
+ 8 files changed, 113 insertions(+), 16 deletions(-)
 
-diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
-index b30753c..e49861d 100644
---- a/Documentation/filesystems/Locking
-+++ b/Documentation/filesystems/Locking
-@@ -63,6 +63,7 @@ prototypes:
- 	int (*removexattr) (struct dentry *, const char *);
- 	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start, u64 len);
- 	void (*update_time)(struct inode *, struct timespec *, int);
-+	void (*write_time)(struct inode *);
- 	int (*atomic_open)(struct inode *, struct dentry *,
- 				struct file *, unsigned open_flag,
- 				umode_t create_mode, int *opened);
-@@ -95,6 +96,7 @@ listxattr:	no
- removexattr:	yes
- fiemap:		no
- update_time:	no
-+write_time:	no
- atomic_open:	yes
- tmpfile:	no
- dentry_open:	no
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d23362f..a5e0d0d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5574,6 +5574,11 @@ static int btrfs_update_time(struct inode *inode, struct timespec *now,
- 		inode->i_mtime = *now;
- 	if (flags & S_ATIME)
- 		inode->i_atime = *now;
-+	return 0;
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index ef9bef1..ef8c5d8 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -397,7 +397,7 @@ static void requeue_inode(struct inode *inode, struct bdi_writeback *wb,
+ 	 * shot. If still dirty, it will be redirty_tail()'ed below.  Update
+ 	 * the dirty time to prevent enqueue and sync it again.
+ 	 */
+-	if ((inode->i_state & I_DIRTY) &&
++	if ((inode->i_state & I_DIRTY_WB) &&
+ 	    (wbc->sync_mode == WB_SYNC_ALL || wbc->tagged_writepages))
+ 		inode->dirtied_when = jiffies;
+ 
+@@ -428,13 +428,15 @@ static void requeue_inode(struct inode *inode, struct bdi_writeback *wb,
+ 			 */
+ 			redirty_tail(inode, wb);
+ 		}
+-	} else if (inode->i_state & I_DIRTY) {
++	} else if (inode->i_state & I_DIRTY_WB) {
+ 		/*
+ 		 * Filesystems can dirty the inode during writeback operations,
+ 		 * such as delayed allocation during submission or metadata
+ 		 * updates after data IO completion.
+ 		 */
+ 		redirty_tail(inode, wb);
++	} else if (inode->i_state & I_DIRTY_TIME) {
++		list_move(&inode->i_wb_list, &wb->b_dirty_time);
+ 	} else {
+ 		/* The inode is clean. Remove from writeback lists. */
+ 		list_del_init(&inode->i_wb_list);
+@@ -482,11 +484,11 @@ __writeback_single_inode(struct inode *inode, struct writeback_control *wbc)
+ 	/* Clear I_DIRTY_PAGES if we've written out all dirty pages */
+ 	if (!mapping_tagged(mapping, PAGECACHE_TAG_DIRTY))
+ 		inode->i_state &= ~I_DIRTY_PAGES;
+-	dirty = inode->i_state & I_DIRTY;
+-	inode->i_state &= ~(I_DIRTY_SYNC | I_DIRTY_DATASYNC);
++	dirty = inode->i_state & I_DIRTY_INODE;
++	inode->i_state &= ~I_DIRTY_INODE;
+ 	spin_unlock(&inode->i_lock);
+ 	/* Don't write the inode if only I_DIRTY_PAGES was set */
+-	if (dirty & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
++	if (dirty) {
+ 		int err = write_inode(inode, wbc);
+ 		if (ret == 0)
+ 			ret = err;
+@@ -1162,7 +1164,7 @@ void __mark_inode_dirty(struct inode *inode, int flags)
+ 
+ 	spin_lock(&inode->i_lock);
+ 	if ((inode->i_state & flags) != flags) {
+-		const int was_dirty = inode->i_state & I_DIRTY;
++		const int was_dirty = inode->i_state & I_DIRTY_WB;
+ 
+ 		inode->i_state |= flags;
+ 
+@@ -1224,6 +1226,24 @@ out_unlock_inode:
+ }
+ EXPORT_SYMBOL(__mark_inode_dirty);
+ 
++void inode_requeue_dirtytime(struct inode *inode)
++{
++	struct backing_dev_info *bdi = inode_to_bdi(inode);
++
++	spin_lock(&bdi->wb.list_lock);
++	spin_lock(&inode->i_lock);
++	if ((inode->i_state & I_DIRTY_WB) == 0) {
++		if (inode->i_state & I_DIRTY_TIME)
++			list_move(&inode->i_wb_list, &bdi->wb.b_dirty_time);
++		else
++			list_del_init(&inode->i_wb_list);
++	}
++	spin_unlock(&inode->i_lock);
++	spin_unlock(&bdi->wb.list_lock);
++
++}
++EXPORT_SYMBOL(inode_requeue_dirtytime);
++
+ static void wait_sb_inodes(struct super_block *sb)
+ {
+ 	struct inode *inode, *old_inode = NULL;
+@@ -1277,6 +1297,28 @@ static void wait_sb_inodes(struct super_block *sb)
+ 	iput(old_inode);
+ }
+ 
++/*
++ * Take all of the indoes on the dirty_time list, and mark them as
++ * dirty, so they will be written out.
++ */
++static void flush_sb_dirty_time(struct super_block *sb)
++{
++	struct bdi_writeback *wb = &sb->s_bdi->wb;
++	LIST_HEAD(tmp);
++
++	spin_lock(&wb->list_lock);
++	list_cut_position(&tmp, &wb->b_dirty_time, wb->b_dirty_time.prev);
++	while (!list_empty(&tmp)) {
++		struct inode *inode = wb_inode(tmp.prev);
++
++		list_del_init(&inode->i_wb_list);
++		spin_unlock(&wb->list_lock);
++		mark_inode_dirty_sync(inode);
++		spin_lock(&wb->list_lock);
++	}
++	spin_unlock(&wb->list_lock);
 +}
 +
-+static int btrfs_write_time(struct inode *inode)
-+{
- 	return btrfs_dirty_inode(inode);
- }
+ /**
+  * writeback_inodes_sb_nr -	writeback dirty inodes from given super_block
+  * @sb: the superblock
+@@ -1388,6 +1430,7 @@ void sync_inodes_sb(struct super_block *sb)
+ 		return;
+ 	WARN_ON(!rwsem_is_locked(&sb->s_umount));
  
-@@ -9462,6 +9467,7 @@ static const struct inode_operations btrfs_dir_inode_operations = {
- 	.get_acl	= btrfs_get_acl,
- 	.set_acl	= btrfs_set_acl,
- 	.update_time	= btrfs_update_time,
-+	.write_time	= btrfs_write_time,
- 	.tmpfile        = btrfs_tmpfile,
- };
- static const struct inode_operations btrfs_dir_ro_inode_operations = {
-@@ -9470,6 +9476,7 @@ static const struct inode_operations btrfs_dir_ro_inode_operations = {
- 	.get_acl	= btrfs_get_acl,
- 	.set_acl	= btrfs_set_acl,
- 	.update_time	= btrfs_update_time,
-+	.write_time	= btrfs_write_time,
- };
++	flush_sb_dirty_time(sb);
+ 	bdi_queue_work(sb->s_bdi, &work);
+ 	wait_for_completion(&done);
  
- static const struct file_operations btrfs_dir_file_operations = {
-@@ -9540,6 +9547,7 @@ static const struct inode_operations btrfs_file_inode_operations = {
- 	.get_acl	= btrfs_get_acl,
- 	.set_acl	= btrfs_set_acl,
- 	.update_time	= btrfs_update_time,
-+	.write_time	= btrfs_write_time,
- };
- static const struct inode_operations btrfs_special_inode_operations = {
- 	.getattr	= btrfs_getattr,
-@@ -9552,6 +9560,7 @@ static const struct inode_operations btrfs_special_inode_operations = {
- 	.get_acl	= btrfs_get_acl,
- 	.set_acl	= btrfs_set_acl,
- 	.update_time	= btrfs_update_time,
-+	.write_time	= btrfs_write_time,
- };
- static const struct inode_operations btrfs_symlink_inode_operations = {
- 	.readlink	= generic_readlink,
-@@ -9565,6 +9574,7 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
- 	.listxattr	= btrfs_listxattr,
- 	.removexattr	= btrfs_removexattr,
- 	.update_time	= btrfs_update_time,
-+	.write_time	= btrfs_write_time,
- };
- 
- const struct dentry_operations btrfs_dentry_operations = {
 diff --git a/fs/inode.c b/fs/inode.c
-index 26753ba..8f5c4b5 100644
+index 8f5c4b5..9e464cc 100644
 --- a/fs/inode.c
 +++ b/fs/inode.c
-@@ -1499,17 +1499,24 @@ static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
+@@ -30,7 +30,7 @@
+  * inode_sb_list_lock protects:
+  *   sb->s_inodes, inode->i_sb_list
+  * bdi->wb.list_lock protects:
+- *   bdi->wb.b_{dirty,io,more_io}, inode->i_wb_list
++ *   bdi->wb.b_{dirty,io,more_io,dirty_time}, inode->i_wb_list
+  * inode_hash_lock protects:
+  *   inode_hashtable, inode->i_hash
+  *
+@@ -1430,11 +1430,22 @@ static void iput_final(struct inode *inode)
   */
- static int update_time(struct inode *inode, struct timespec *time, int flags)
+ void iput(struct inode *inode)
  {
--	if (inode->i_op->update_time)
--		return inode->i_op->update_time(inode, time, flags);
+-	if (inode) {
+-		BUG_ON(inode->i_state & I_CLEAR);
 -
--	if (flags & S_ATIME)
--		inode->i_atime = *time;
--	if (flags & S_VERSION)
--		inode_inc_iversion(inode);
--	if (flags & S_CTIME)
--		inode->i_ctime = *time;
--	if (flags & S_MTIME)
--		inode->i_mtime = *time;
-+	int ret;
-+
-+	if (inode->i_op->update_time) {
-+		ret = inode->i_op->update_time(inode, time, flags);
-+		if (ret)
-+			return ret;
-+	} else {
-+		if (flags & S_ATIME)
-+			inode->i_atime = *time;
-+		if (flags & S_VERSION)
-+			inode_inc_iversion(inode);
-+		if (flags & S_CTIME)
-+			inode->i_ctime = *time;
-+		if (flags & S_MTIME)
-+			inode->i_mtime = *time;
-+	}
-+	if (inode->i_op->write_time)
-+		return inode->i_op->write_time(inode);
- 	mark_inode_dirty_sync(inode);
- 	return 0;
- }
-diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
-index ec6dcdc..0e9653c 100644
---- a/fs/xfs/xfs_iops.c
-+++ b/fs/xfs/xfs_iops.c
-@@ -984,10 +984,8 @@ xfs_vn_setattr(
- }
- 
- STATIC int
--xfs_vn_update_time(
--	struct inode		*inode,
--	struct timespec		*now,
--	int			flags)
-+xfs_vn_write_time(
-+	struct inode		*inode)
- {
- 	struct xfs_inode	*ip = XFS_I(inode);
- 	struct xfs_mount	*mp = ip->i_mount;
-@@ -1004,21 +1002,16 @@ xfs_vn_update_time(
+-		if (atomic_dec_and_lock(&inode->i_count, &inode->i_lock))
+-			iput_final(inode);
++	if (!inode)
++		return;
++	BUG_ON(inode->i_state & I_CLEAR);
++retry:
++	if (atomic_dec_and_lock(&inode->i_count, &inode->i_lock)) {
++		if (inode->i_nlink && (inode->i_state & I_DIRTY_TIME)) {
++			atomic_inc(&inode->i_count);
++			inode->i_state &= ~I_DIRTY_TIME;
++			spin_unlock(&inode->i_lock);
++			if (inode->i_op->write_time)
++				inode->i_op->write_time(inode);
++			else if (inode->i_sb->s_op->write_inode)
++				mark_inode_dirty_sync(inode);
++			goto retry;
++		}
++		iput_final(inode);
  	}
- 
- 	xfs_ilock(ip, XFS_ILOCK_EXCL);
--	if (flags & S_CTIME) {
--		inode->i_ctime = *now;
--		ip->i_d.di_ctime.t_sec = (__int32_t)now->tv_sec;
--		ip->i_d.di_ctime.t_nsec = (__int32_t)now->tv_nsec;
--	}
--	if (flags & S_MTIME) {
--		inode->i_mtime = *now;
--		ip->i_d.di_mtime.t_sec = (__int32_t)now->tv_sec;
--		ip->i_d.di_mtime.t_nsec = (__int32_t)now->tv_nsec;
--	}
--	if (flags & S_ATIME) {
--		inode->i_atime = *now;
--		ip->i_d.di_atime.t_sec = (__int32_t)now->tv_sec;
--		ip->i_d.di_atime.t_nsec = (__int32_t)now->tv_nsec;
--	}
+ }
+ EXPORT_SYMBOL(iput);
+@@ -1515,6 +1526,26 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
+ 		if (flags & S_MTIME)
+ 			inode->i_mtime = *time;
+ 	}
++	if ((inode->i_sb->s_flags & MS_LAZYTIME) &&
++	    !(flags & S_VERSION) &&
++	    !(inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC))) {
++		if (inode->i_state & I_DIRTY_TIME)
++			return 0;
++		spin_lock(&inode->i_lock);
++		if (inode->i_state & (I_DIRTY_SYNC | I_DIRTY_DATASYNC)) {
++			spin_unlock(&inode->i_lock);
++			goto force_dirty;
++		}
++		if (inode->i_state & I_DIRTY_TIME) {
++			spin_unlock(&inode->i_lock);
++			return 0;
++		}
++		inode->i_state |= I_DIRTY_TIME;
++		spin_unlock(&inode->i_lock);
++		inode_requeue_dirtytime(inode);
++		return 0;
++	}
++force_dirty:
+ 	if (inode->i_op->write_time)
+ 		return inode->i_op->write_time(inode);
+ 	mark_inode_dirty_sync(inode);
+diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
+index 73ca174..f98234a 100644
+--- a/fs/proc_namespace.c
++++ b/fs/proc_namespace.c
+@@ -44,6 +44,7 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
+ 		{ MS_SYNCHRONOUS, ",sync" },
+ 		{ MS_DIRSYNC, ",dirsync" },
+ 		{ MS_MANDLOCK, ",mand" },
++		{ MS_LAZYTIME, ",lazytime" },
+ 		{ 0, NULL }
+ 	};
+ 	const struct proc_fs_info *fs_infop;
+diff --git a/fs/sync.c b/fs/sync.c
+index bdc729d..6ac7bf0 100644
+--- a/fs/sync.c
++++ b/fs/sync.c
+@@ -177,8 +177,16 @@ SYSCALL_DEFINE1(syncfs, int, fd)
+  */
+ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
+ {
++	struct inode *inode = file->f_mapping->host;
 +
-+	ip->i_d.di_ctime.t_sec = (__int32_t) inode->i_ctime.tv_sec;
-+	ip->i_d.di_ctime.t_nsec = (__int32_t) inode->i_ctime.tv_nsec;
-+
-+	ip->i_d.di_mtime.t_sec = (__int32_t)inode->i_mtime.tv_sec;
-+	ip->i_d.di_mtime.t_nsec = (__int32_t) inode->i_mtime.tv_nsec;
-+
-+	ip->i_d.di_atime.t_sec = (__int32_t) inode->i_atime.tv_sec;
-+	ip->i_d.di_atime.t_nsec = (__int32_t) inode->i_atime.tv_nsec;
-+
- 	xfs_trans_ijoin(tp, ip, XFS_ILOCK_EXCL);
- 	xfs_trans_log_inode(tp, ip, XFS_ILOG_TIMESTAMP);
- 	return xfs_trans_commit(tp, 0);
-@@ -1129,7 +1122,7 @@ static const struct inode_operations xfs_inode_operations = {
- 	.removexattr		= generic_removexattr,
- 	.listxattr		= xfs_vn_listxattr,
- 	.fiemap			= xfs_vn_fiemap,
--	.update_time		= xfs_vn_update_time,
-+	.write_time		= xfs_vn_write_time,
+ 	if (!file->f_op->fsync)
+ 		return -EINVAL;
++	if (!datasync && (inode->i_state & I_DIRTY_TIME)) {
++		spin_lock(&inode->i_lock);
++		inode->i_state &= ~I_DIRTY_TIME;
++		spin_unlock(&inode->i_lock);
++		mark_inode_dirty_sync(inode);
++	}
+ 	return file->f_op->fsync(file, start, end, datasync);
+ }
+ EXPORT_SYMBOL(vfs_fsync_range);
+diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
+index 5da6012..4cdf733 100644
+--- a/include/linux/backing-dev.h
++++ b/include/linux/backing-dev.h
+@@ -55,6 +55,7 @@ struct bdi_writeback {
+ 	struct list_head b_dirty;	/* dirty inodes */
+ 	struct list_head b_io;		/* parked for writeback */
+ 	struct list_head b_more_io;	/* parked for more writeback */
++	struct list_head b_dirty_time;	/* time stamps are dirty */
+ 	spinlock_t list_lock;		/* protects the b_* lists */
  };
  
- static const struct inode_operations xfs_dir_inode_operations = {
-@@ -1156,7 +1149,7 @@ static const struct inode_operations xfs_dir_inode_operations = {
- 	.getxattr		= generic_getxattr,
- 	.removexattr		= generic_removexattr,
- 	.listxattr		= xfs_vn_listxattr,
--	.update_time		= xfs_vn_update_time,
-+	.write_time		= xfs_vn_write_time,
- 	.tmpfile		= xfs_vn_tmpfile,
- };
- 
-@@ -1184,7 +1177,7 @@ static const struct inode_operations xfs_dir_ci_inode_operations = {
- 	.getxattr		= generic_getxattr,
- 	.removexattr		= generic_removexattr,
- 	.listxattr		= xfs_vn_listxattr,
--	.update_time		= xfs_vn_update_time,
-+	.write_time		= xfs_vn_write_time,
- 	.tmpfile		= xfs_vn_tmpfile,
- };
- 
-@@ -1198,7 +1191,7 @@ static const struct inode_operations xfs_symlink_inode_operations = {
- 	.getxattr		= generic_getxattr,
- 	.removexattr		= generic_removexattr,
- 	.listxattr		= xfs_vn_listxattr,
--	.update_time		= xfs_vn_update_time,
-+	.write_time		= xfs_vn_write_time,
- };
- 
- STATIC void
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 9ab779e..3633239 100644
+index 3633239..55cf34d 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1545,6 +1545,7 @@ struct inode_operations {
- 	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
- 		      u64 len);
- 	int (*update_time)(struct inode *, struct timespec *, int);
-+	int (*write_time)(struct inode *);
- 	int (*atomic_open)(struct inode *, struct dentry *,
- 			   struct file *, unsigned open_flag,
- 			   umode_t create_mode, int *opened);
+@@ -1721,19 +1721,26 @@ struct super_operations {
+ #define __I_DIO_WAKEUP		9
+ #define I_DIO_WAKEUP		(1 << I_DIO_WAKEUP)
+ #define I_LINKABLE		(1 << 10)
++#define I_DIRTY_TIME		(1 << 11)
+ 
+-#define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
++/* Inode should be on the b_dirty/b_io/b_more_io lists */
++#define I_DIRTY_WB (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
++/* Inode should be on the b_dirty/b_io/b_more_io/b_dirty_time lists */
++#define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES | I_DIRTY_TIME)
++/* The inode itself is dirty  */
++#define I_DIRTY_INODE (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_TIME)
+ 
+ extern void __mark_inode_dirty(struct inode *, int);
+ static inline void mark_inode_dirty(struct inode *inode)
+ {
+-	__mark_inode_dirty(inode, I_DIRTY);
++	__mark_inode_dirty(inode, I_DIRTY_WB);
+ }
+ 
+ static inline void mark_inode_dirty_sync(struct inode *inode)
+ {
+ 	__mark_inode_dirty(inode, I_DIRTY_SYNC);
+ }
++extern void inode_requeue_dirtytime(struct inode *);
+ 
+ extern void inc_nlink(struct inode *inode);
+ extern void drop_nlink(struct inode *inode);
+diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+index 3735fa0..cc9713a 100644
+--- a/include/uapi/linux/fs.h
++++ b/include/uapi/linux/fs.h
+@@ -90,6 +90,7 @@ struct inodes_stat_t {
+ #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+ #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
+ #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
++#define MS_LAZYTIME	(1<<25) /* Update the on-disk [acm]times lazily */
+ 
+ /* These sb flags are internal to the kernel */
+ #define MS_NOSEC	(1<<28)
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index 0ae0df5..14851fe 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -69,10 +69,10 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 	unsigned long background_thresh;
+ 	unsigned long dirty_thresh;
+ 	unsigned long bdi_thresh;
+-	unsigned long nr_dirty, nr_io, nr_more_io;
++	unsigned long nr_dirty, nr_io, nr_more_io, nr_dirty_time;
+ 	struct inode *inode;
+ 
+-	nr_dirty = nr_io = nr_more_io = 0;
++	nr_dirty = nr_io = nr_more_io = nr_dirty_time = 0;
+ 	spin_lock(&wb->list_lock);
+ 	list_for_each_entry(inode, &wb->b_dirty, i_wb_list)
+ 		nr_dirty++;
+@@ -80,6 +80,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 		nr_io++;
+ 	list_for_each_entry(inode, &wb->b_more_io, i_wb_list)
+ 		nr_more_io++;
++	list_for_each_entry(inode, &wb->b_dirty_time, i_wb_list)
++		nr_dirty_time++;
+ 	spin_unlock(&wb->list_lock);
+ 
+ 	global_dirty_limits(&background_thresh, &dirty_thresh);
+@@ -98,6 +100,7 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 		   "b_dirty:            %10lu\n"
+ 		   "b_io:               %10lu\n"
+ 		   "b_more_io:          %10lu\n"
++		   "b_dirty_time:       %10lu\n"
+ 		   "bdi_list:           %10u\n"
+ 		   "state:              %10lx\n",
+ 		   (unsigned long) K(bdi_stat(bdi, BDI_WRITEBACK)),
+@@ -111,6 +114,7 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 		   nr_dirty,
+ 		   nr_io,
+ 		   nr_more_io,
++		   nr_dirty_time,
+ 		   !list_empty(&bdi->bdi_list), bdi->state);
+ #undef K
+ 
+@@ -418,6 +422,7 @@ static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
+ 	INIT_LIST_HEAD(&wb->b_dirty);
+ 	INIT_LIST_HEAD(&wb->b_io);
+ 	INIT_LIST_HEAD(&wb->b_more_io);
++	INIT_LIST_HEAD(&wb->b_dirty_time);
+ 	spin_lock_init(&wb->list_lock);
+ 	INIT_DELAYED_WORK(&wb->dwork, bdi_writeback_workfn);
+ }
 -- 
 2.1.0
 

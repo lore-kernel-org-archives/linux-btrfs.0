@@ -1,45 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.97.166]:51876 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750736AbaKZTzb (ORCPT
+Received: from resqmta-po-03v.sys.comcast.net ([96.114.154.162]:43406 "EHLO
+	resqmta-po-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752903AbaKZWIR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 14:55:31 -0500
-Received: from natsu (unknown [IPv6:fd39::a60:6eff:fef3:b5b3])
-	by meiko.romanrm.net (Postfix) with SMTP id 1DC7417118
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 19:55:28 +0000 (UTC)
-Date: Thu, 27 Nov 2014 00:55:27 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: <linux-btrfs@vger.kernel.org>
-Subject: Can't cp --reflink files on a Ext4-converted FS w/o checksums
-Message-ID: <20141127005527.42a7fe59@natsu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	Wed, 26 Nov 2014 17:08:17 -0500
+Message-ID: <54764F4E.80405@pobox.com>
+Date: Wed, 26 Nov 2014 14:08:14 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS messes up snapshot LV with origin
+References: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>	<546B68F8.6080008@ubuntu.com>	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>	<546BA96D.4050805@ubuntu.com>	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>	<5470C92E.1070607@inwind.it> <20141123001927.GO17380@hungrycats.org>	<5474AF87.6090702@inwind.it> <20141125202948.GP17380@hungrycats.org>	<5474FBD9.5070709@inwind.it> <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
+In-Reply-To: <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 11/25/2014 07:22 PM, Duncan wrote:
+>>From my perspective, however, btrfs is simply incompatible with lvm
+> snapshots, because the basic assumptions are incompatible.  Btrfs assumes
+> UUIDs will be exactly what they say on the label, /unique/, while lvm's
+> snapshot feature directly breaks that uniqueness by copying the (former)
+> UUID, thus making the former UUID no longer unique and thus no longer
+> truly UUID.  Thus, part of the lvm /feature/ of snapshots is in direct
+> contradiction to a basic assumption of btrfs, that UUIDs are exactly
+> that, unique, making that feature directly incompatible with btrfs on a
+> very basic level.
 
-I used btrfs-convert to switch my FS from Ext4 to Btrfs. As it was a rather
-large 10 TB filesystem, to save on the conversion time, I used the "-d,
-disable data checksum" option of btrfs-convert.
+A finer point here. LVM doesn't "copy" the UUID. AN LVM snapshot is a 
+copy-on-write entity so it _exposes_ the single sector(s) of the 
+superblock(s) in both views of the underlying storage. This is universal 
+to the idea of a snapshot. Just as a "btrfs subvol snap /old /new" 
+exposes all the "unique" elements of "/old" under the name "/new" (in 
+preparation for the user to implement subsequent divergence); "lvmcreate 
+--snapshot Old New" causes every block-N of Old to be identically 
+available as block-N of New (in preparation for the user to implement 
+subsequent divergence).
 
-Turns out now I can't "cp --reflink" any files that were already on the FS
-prior to conversion. The error message from cp is "failed to clone [...]
-Invalid argument".
+In point of fact the LVM snapshot operation is a zero-copy operation at 
+its heart. After the snapshot is established, when a block in modified 
+in Old, it's original content is saved in New. When blocks are written 
+in New, they are written in place and the reference to the block content 
+in Old is overwritten.
 
-I assume this is because of the lack of checksums; the only way to make old
-files cloneable is to plain copy them to a different place and then delete the
-originals, but that's what I was trying to avoid in the first place.
+This is the reason that fsfreeze is unnecessary for things above LVM 
+snapshots as the instant-in-time divergence is _instant_. It's not that 
+LVM goes out and does an fsfreeze equivalent action, its that the switch 
+to write-divergence is essentially atomic. A bunch of metatdata is setup 
+and then all-at-once one write behavior is switched with another by 
+re-mapping the device access routines.
 
-Also I thought maybe defragmenting will help, but nope, doesn't seem to be the
-case, even ordering it to recompress data to a different method doesn't fix
-the problem. (Even if it did, it's still a lot of unnecessary rewriting).
+So while you may have a point about btrfs being unprepared for LVM, 
+neither party is particularly "at fault" in any way.
 
-Is there really a good reason to stop these files without checksums from being
-cloneable? It's not like they have the noCoW attribute, so I'd assume any new
-write to these files would cause a CoW and proper checksums for all new blocks
-anyways.
+The "damn you photocopier for making photocopies so identically" nature 
+of your problem with LVM seems to be leading you to misplaced conclusions.
 
--- 
-With respect,
-Roman
+If you need to harmonize these sorts of things, you need to be able to 
+re-write blocks in question with disambiguating information (like new 
+UUIDS) or restrict your accesses in some other manner.
+
+If you are waiting for someone to "code it up" perhaps you should do so. 
+But it will _never_ be automatic because the use cases that don't match 
+your expectations may need the founding assumptions to be as they are today.
+
+In other words, your belief that your position is "entirely logical" may 
+be a little off, particularly if you think LVM is "Copying" things when 
+it does a snapshot.
+
+As previously stated XFS solved this problem by providing a tool that 
+would change the UUID of a file system. This tool cold then be pointed 
+at either (or both) the original and/or snapshot volumes as needed.
+
+I don't see a "re-make the btrfs" option for changing UUIDs and LVM 
+doesn't care _at_ _all_ about what is actually in its volumes (okay, 
+lvresize has some fsck nonsense, but that's just messy).
+
+It might even be "wrong" to try to harmonize those features, like trying 
+to put a manual clutch into a car with an automatic transmission... it 
+may just not fit.
+
+Given that BTRFS want's to play in the same level of abstraction as LVM, 
+its kind of a given that they'll butt heads over things like conflicting 
+definitions of what it means to take a snapshot.

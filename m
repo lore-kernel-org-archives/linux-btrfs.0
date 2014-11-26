@@ -1,151 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51406 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29301 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750927AbaKZQTb (ORCPT
+	by vger.kernel.org with ESMTP id S1753861AbaKZQYr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 11:19:31 -0500
-Message-ID: <5475FD8A.2000602@fb.com>
-Date: Wed, 26 Nov 2014 11:19:22 -0500
+	Wed, 26 Nov 2014 11:24:47 -0500
+Message-ID: <5475FEC7.2050606@fb.com>
+Date: Wed, 26 Nov 2014 11:24:39 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
 To: <fdmanana@gmail.com>
 CC: Filipe Manana <fdmanana@suse.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 6/6] Btrfs: make btrfs_abort_transaction consider existence
- of new block groups
-References: <1417015735-8581-1-git-send-email-fdmanana@suse.com>	<1417015735-8581-7-git-send-email-fdmanana@suse.com>	<5475FAA9.7080507@fb.com> <CAL3q7H64Y_94sbe+j3WsK6P9XUZ3xyAH4J=4q-Pyn8YSQbT=QA@mail.gmail.com>
-In-Reply-To: <CAL3q7H64Y_94sbe+j3WsK6P9XUZ3xyAH4J=4q-Pyn8YSQbT=QA@mail.gmail.com>
+Subject: Re: [PATCH 2/6] Btrfs: fix crash caused by block group removal
+References: <1417015735-8581-1-git-send-email-fdmanana@suse.com>	<1417015735-8581-3-git-send-email-fdmanana@suse.com>	<5475F85F.7090705@fb.com> <CAL3q7H4-gUg8W2zFR15Uk38b6S4K9P66mdf7JUMBni8WSjT75Q@mail.gmail.com>
+In-Reply-To: <CAL3q7H4-gUg8W2zFR15Uk38b6S4K9P66mdf7JUMBni8WSjT75Q@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/26/2014 11:15 AM, Filipe David Manana wrote:
-> On Wed, Nov 26, 2014 at 4:07 PM, Josef Bacik <jbacik@fb.com> wrote:
+On 11/26/2014 11:09 AM, Filipe David Manana wrote:
+> On Wed, Nov 26, 2014 at 3:57 PM, Josef Bacik <jbacik@fb.com> wrote:
 >> On 11/26/2014 10:28 AM, Filipe Manana wrote:
 >>>
->>> If the transaction handle doesn't have used blocks but has created new
->>> block
->>> groups make sure we turn the fs into readonly mode too. This is because
->>> the
->>> new block groups didn't get all their metadata persisted into the chunk
->>> and
->>> device trees, and therefore if a subsequent transaction starts, allocates
->>> space from the new block groups, writes data or metadata into that space,
->>> commits successfully and then after we unmount and mount the filesystem
->>> again, the same space can be allocated again for a new block group,
->>> resulting in file data or metadata corruption.
+>>> If we remove a block group (because it became empty), we might have left
+>>> a caching_ctl structure in fs_info->caching_block_groups that points to
+>>> the block group and is accessed at transaction commit time. This results
+>>> in accessing an invalid or incorrect block group. This issue became
+>>> visible
+>>> after Josef's patch "Btrfs: remove empty block groups automatically".
 >>>
->>> Example where we don't abort the transaction when we fail to finish the
->>> chunk allocation (add items to the chunk and device trees) and later a
->>> future transaction where the block group is removed fails because it can't
->>> find the chunk item in the chunk tree:
+>>> So if the block group is removed make sure we don't leave a dangling
+>>> caching_ctl in caching_block_groups.
 >>>
->>> [25230.404300] WARNING: CPU: 0 PID: 7721 at fs/btrfs/super.c:260
->>> __btrfs_abort_transaction+0x50/0xfc [btrfs]()
->>> [25230.404301] BTRFS: Transaction aborted (error -28)
->>> [25230.404302] Modules linked in: btrfs dm_flakey nls_utf8 fuse xor
->>> raid6_pq ntfs vfat msdos fat xfs crc32c_generic libcrc32c ext3 jbd ext2
->>> dm_mod nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc loop
->>> psmouse i2c_piix4 i2ccore parport_pc parport processor button pcspkr
->>> serio_raw thermal_sys evdev microcode ext4 crc16 jbd2 mbcache sr_mod cdrom
+>>> Sample crash trace:
+>>>
+>>> [58380.439449] BUG: unable to handle kernel paging request at
+>>> ffff8801446eaeb8
+>>> [58380.439707] IP: [<ffffffffa03f6d05>]
+>>> block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+>>> [58380.440879] PGD 1acb067 PUD 23f5ff067 PMD 23f5db067 PTE
+>>> 80000001446ea060
+>>> [58380.441220] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+>>> [58380.441486] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd
+>>> auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc loop psmouse
+>>> processor i2c_piix4 parport_pc parport pcspkr serio_raw evdev i2ccore
+>>> thermal_sys microcode button ext4 crc16 jbd2 mbcache sr_mod cdrom
 >>> ata_generic sg sd_mod crc_t10dif crct10dif_generic crct10dif_common
->>> virtio_scsi floppy e1000 ata_piix libata virtio_pci virtio_ring scsi_mod
+>>> virtio_scsi floppy ata_piix e1000 libata virtio_pci scsi_mod virtio_ring
 >>> virtio [last unloaded: btrfs]
->>> [25230.404325] CPU: 0 PID: 7721 Comm: xfs_io Not tainted
+>>> [58380.443238] CPU: 3 PID: 25728 Comm: btrfs-transacti Tainted: G        W
 >>> 3.17.0-rc5-btrfs-next-1+ #1
->>> [25230.404326] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
+>>> [58380.443238] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
 >>> rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
->>> [25230.404328]  0000000000000000 ffff88004581bb08 ffffffff813e7a13
->>> ffff88004581bb50
->>> [25230.404330]  ffff88004581bb40 ffffffff810423aa ffffffffa049386a
->>> 00000000ffffffe4
->>> [25230.404332]  ffffffffa05214c0 000000000000240c ffff88010fc8f800
->>> ffff88004581bba8
->>> [25230.404334] Call Trace:
->>> [25230.404338]  [<ffffffff813e7a13>] dump_stack+0x45/0x56
->>> [25230.404342]  [<ffffffff810423aa>] warn_slowpath_common+0x7f/0x98
->>> [25230.404351]  [<ffffffffa049386a>] ? __btrfs_abort_transaction+0x50/0xfc
+>>> [58380.443238] task: ffff88013ac82090 ti: ffff88013896c000 task.ti:
+>>> ffff88013896c000
+>>> [58380.443238] RIP: 0010:[<ffffffffa03f6d05>]  [<ffffffffa03f6d05>]
+>>> block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+>>> [58380.443238] RSP: 0018:ffff88013896fdd8  EFLAGS: 00010283
+>>> [58380.443238] RAX: ffff880222cae850 RBX: ffff880119ba74c0 RCX:
+>>> 0000000000000000
+>>> [58380.443238] RDX: 0000000000000000 RSI: ffff880185e16800 RDI:
+>>> ffff8801446eaeb8
+>>> [58380.443238] RBP: ffff88013896fdd8 R08: ffff8801a9ca9fa8 R09:
+>>> ffff88013896fc60
+>>> [58380.443238] R10: ffff88013896fd28 R11: 0000000000000000 R12:
+>>> ffff880222cae000
+>>> [58380.443238] R13: ffff880222cae850 R14: ffff880222cae6b0 R15:
+>>> ffff8801446eae00
+>>> [58380.443238] FS:  0000000000000000(0000) GS:ffff88023ed80000(0000)
+>>> knlGS:0000000000000000
+>>> [58380.443238] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>>> [58380.443238] CR2: ffff8801446eaeb8 CR3: 0000000001811000 CR4:
+>>> 00000000000006e0
+>>> [58380.443238] Stack:
+>>> [58380.443238]  ffff88013896fe18 ffffffffa03fe2d5 ffff880222cae850
+>>> ffff880185e16800
+>>> [58380.443238]  ffff88000dc41c20 0000000000000000 ffff8801a9ca9f00
+>>> 0000000000000000
+>>> [58380.443238]  ffff88013896fe80 ffffffffa040fbcf ffff88018b0dcdb0
+>>> ffff88013ac82090
+>>> [58380.443238] Call Trace:
+>>> [58380.443238]  [<ffffffffa03fe2d5>] btrfs_prepare_extent_commit+0x5a/0xd7
 >>> [btrfs]
->>> [25230.404353]  [<ffffffff8104240b>] warn_slowpath_fmt+0x48/0x50
->>> [25230.404362]  [<ffffffffa049386a>] __btrfs_abort_transaction+0x50/0xfc
+>>> [58380.443238]  [<ffffffffa040fbcf>] btrfs_commit_transaction+0x45c/0x882
 >>> [btrfs]
->>> [25230.404374]  [<ffffffffa04a8c43>]
->>> btrfs_create_pending_block_groups+0x10c/0x135 [btrfs]
->>> [25230.404387]  [<ffffffffa04b77fd>] __btrfs_end_transaction+0x7e/0x2de
+>>> [58380.443238]  [<ffffffffa040c058>] transaction_kthread+0xf2/0x1a4
 >>> [btrfs]
->>> [25230.404398]  [<ffffffffa04b7a6d>] btrfs_end_transaction+0x10/0x12
->>> [btrfs]
->>> [25230.404408]  [<ffffffffa04a3d64>]
->>> btrfs_check_data_free_space+0x111/0x1f0 [btrfs]
->>> [25230.404421]  [<ffffffffa04c53bd>] __btrfs_buffered_write+0x160/0x48d
->>> [btrfs]
->>> [25230.404425]  [<ffffffff811a9268>] ? cap_inode_need_killpriv+0x2d/0x37
->>> [25230.404429]  [<ffffffff810f6501>] ? get_page+0x1a/0x2b
->>> [25230.404441]  [<ffffffffa04c7c95>] btrfs_file_write_iter+0x321/0x42f
->>> [btrfs]
->>> [25230.404443]  [<ffffffff8110f5d9>] ? handle_mm_fault+0x7f3/0x846
->>> [25230.404446]  [<ffffffff813e98c5>] ? mutex_unlock+0x16/0x18
->>> [25230.404449]  [<ffffffff81138d68>] new_sync_write+0x7c/0xa0
->>> [25230.404450]  [<ffffffff81139401>] vfs_write+0xb0/0x112
->>> [25230.404452]  [<ffffffff81139c9d>] SyS_pwrite64+0x66/0x84
->>> [25230.404454]  [<ffffffff813ebf52>] system_call_fastpath+0x16/0x1b
->>> [25230.404455] ---[ end trace 5aa5684fdf47ab38 ]---
->>> [25230.404458] BTRFS warning (device sdc):
->>> btrfs_create_pending_block_groups:9228: Aborting unused transaction(No space
->>> left).
->>> [25288.084814] BTRFS: error (device sdc) in btrfs_free_chunk:2509:
->>> errno=-2 No such entry (Failed lookup while freeing chunk.)
+>>> [58380.443238]  [<ffffffffa040bf66>] ?
+>>> btrfs_cleanup_transaction+0x3d8/0x3d8 [btrfs]
+>>> [58380.443238]  [<ffffffff8105966b>] kthread+0xb7/0xbf
+>>> [58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
+>>> [58380.443238]  [<ffffffff813ebeac>] ret_from_fork+0x7c/0xb0
+>>> [58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
 >>>
 >>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 >>> ---
->>>    fs/btrfs/extent-tree.c | 5 +++--
->>>    fs/btrfs/super.c       | 2 +-
->>>    2 files changed, 4 insertions(+), 3 deletions(-)
+>>>    fs/btrfs/ctree.h       |  1 +
+>>>    fs/btrfs/extent-tree.c | 27 +++++++++++++++++++++++++++
+>>>    2 files changed, 28 insertions(+)
 >>>
->>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>> index 4bf8f02..0a5e770 100644
->>> --- a/fs/btrfs/extent-tree.c
->>> +++ b/fs/btrfs/extent-tree.c
->>> @@ -9209,9 +9209,8 @@ void btrfs_create_pending_block_groups(struct
->>> btrfs_trans_handle *trans,
->>>          int ret = 0;
->>>
->>>          list_for_each_entry_safe(block_group, tmp, &trans->new_bgs,
->>> bg_list) {
->>> -               list_del_init(&block_group->bg_list);
->>>                  if (ret)
->>> -                       continue;
->>> +                       goto next;
->>>
->>>                  spin_lock(&block_group->lock);
->>>                  memcpy(&item, &block_group->item, sizeof(item));
->>> @@ -9226,6 +9225,8 @@ void btrfs_create_pending_block_groups(struct
->>> btrfs_trans_handle *trans,
->>>                                                 key.objectid, key.offset);
->>>                  if (ret)
->>>                          btrfs_abort_transaction(trans, extent_root, ret);
->>> +next:
->>> +               list_del_init(&block_group->bg_list);
->>>          }
->>>    }
+>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>>> index d3ccd09..7f40a65 100644
+>>> --- a/fs/btrfs/ctree.h
+>>> +++ b/fs/btrfs/ctree.h
+>>> @@ -1277,6 +1277,7 @@ struct btrfs_block_group_cache {
+>>>          unsigned int ro:1;
+>>>          unsigned int dirty:1;
+>>>          unsigned int iref:1;
+>>> +       unsigned int has_caching_ctl:1;
 >>>
 >>
->> I don't understand this change, logically it seems the same as what we had
->> before.  Thanks,
+>> Don't do this, just unconditionally call get_caching_control in
+>> btrfs_remove_block_group, then if we get something we can do stuff,
+>> otherwise we can just continue.  Thanks,
 >
-> It isn't. Before we would not turn the fs readonly if the transaction
-> had no blocks used but had new block groups. This change just makes it
-> turn into readonly mode if it has new block groups (even if no blocks
-> were used).
-> See the trace in the log where it shows we failed to finish the chunk
-> allocation but the transaction was aborted and didn't turn the fs into
-> readonly mode.
+> That's what I initially thought too. However, get_caching_control only
+> returns us the caching_ctl if block_group->cached ==
+> BTRFS_CACHE_STARTED, so it's not enough to use it exclusively. The
+> has_caching_ctl flag is just to avoid holding the semaphore and search
+> through the list (since block_group->caching_ctl can be NULL but a
+> caching_ctl point to the block group can be in the list).
 >
 
-Yeah the bit below makes sense, its the above change that is the same. 
-Before we deleted the entry from the list and then if there is an error 
-we just continue, now if there is an error you go to next and delete the 
-entry and continue, which is the same thing.  Thanks,
+Oh God that's not good, we need to change get_caching_control to return 
+if there is a caching control at all, since the other users want to wait 
+for the fast caching to finish too.  So change that and then use it 
+unconditionally.  I bet this has been causing us the random early ENOSPC 
+problems.  Thanks,
 
 Josef
 

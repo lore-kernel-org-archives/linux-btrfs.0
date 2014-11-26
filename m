@@ -1,85 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-03v.sys.comcast.net ([96.114.154.162]:43406 "EHLO
+Received: from resqmta-po-03v.sys.comcast.net ([96.114.154.162]:58290 "EHLO
 	resqmta-po-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752903AbaKZWIR (ORCPT
+	by vger.kernel.org with ESMTP id S1753794AbaKZXSa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 17:08:17 -0500
-Message-ID: <54764F4E.80405@pobox.com>
-Date: Wed, 26 Nov 2014 14:08:14 -0800
+	Wed, 26 Nov 2014 18:18:30 -0500
+Message-ID: <54765FC2.2050309@pobox.com>
+Date: Wed, 26 Nov 2014 15:18:26 -0800
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>	<546B68F8.6080008@ubuntu.com>	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>	<546BA96D.4050805@ubuntu.com>	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>	<5470C92E.1070607@inwind.it> <20141123001927.GO17380@hungrycats.org>	<5474AF87.6090702@inwind.it> <20141125202948.GP17380@hungrycats.org>	<5474FBD9.5070709@inwind.it> <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
-In-Reply-To: <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Can't cp --reflink files on a Ext4-converted FS w/o checksums
+References: <20141127005527.42a7fe59@natsu>
+In-Reply-To: <20141127005527.42a7fe59@natsu>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/25/2014 07:22 PM, Duncan wrote:
->>From my perspective, however, btrfs is simply incompatible with lvm
-> snapshots, because the basic assumptions are incompatible.  Btrfs assumes
-> UUIDs will be exactly what they say on the label, /unique/, while lvm's
-> snapshot feature directly breaks that uniqueness by copying the (former)
-> UUID, thus making the former UUID no longer unique and thus no longer
-> truly UUID.  Thus, part of the lvm /feature/ of snapshots is in direct
-> contradiction to a basic assumption of btrfs, that UUIDs are exactly
-> that, unique, making that feature directly incompatible with btrfs on a
-> very basic level.
+On 11/26/2014 11:55 AM, Roman Mamedov wrote:
+> Is there really a good reason to stop these files without checksums from being
+> cloneable? It's not like they have the noCoW attribute, so I'd assume any new
+> write to these files would cause a CoW and proper checksums for all new blocks
+> anyways.
 
-A finer point here. LVM doesn't "copy" the UUID. AN LVM snapshot is a 
-copy-on-write entity so it _exposes_ the single sector(s) of the 
-superblock(s) in both views of the underlying storage. This is universal 
-to the idea of a snapshot. Just as a "btrfs subvol snap /old /new" 
-exposes all the "unique" elements of "/old" under the name "/new" (in 
-preparation for the user to implement subsequent divergence); "lvmcreate 
---snapshot Old New" causes every block-N of Old to be identically 
-available as block-N of New (in preparation for the user to implement 
-subsequent divergence).
+The problem seems to be that you are trying to clone a NODATASUM file to 
+a file that would have data checsums. The resulting file _might_ then 
+end up with some extents with, and others without, checksums if that 
+target file were modified.
 
-In point of fact the LVM snapshot operation is a zero-copy operation at 
-its heart. After the snapshot is established, when a block in modified 
-in Old, it's original content is saved in New. When blocks are written 
-in New, they are written in place and the reference to the block content 
-in Old is overwritten.
+So you _could_ reflink the file but you'd have to do it to another file 
+with no data checksums -- which basically means a NOCOW file, or 
+mounting with nodatasum while you do the reflink, but now you have more 
+problem files.
 
-This is the reason that fsfreeze is unnecessary for things above LVM 
-snapshots as the instant-in-time divergence is _instant_. It's not that 
-LVM goes out and does an fsfreeze equivalent action, its that the switch 
-to write-divergence is essentially atomic. A bunch of metatdata is setup 
-and then all-at-once one write behavior is switched with another by 
-re-mapping the device access routines.
+linux/fs/btrfs/ioctl.c @ ~ line 2930
+         /* don't make the dst file partly checksummed */
+         if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+             (BTRFS_I(dst)->flags & BTRFS_INODE_NODATASUM)) {
+                 ret = -EINVAL;
+                 goto out_unlock;
+         }
 
-So while you may have a point about btrfs being unprepared for LVM, 
-neither party is particularly "at fault" in any way.
+Basically if the system allowed you to reflink from a no-data-sum to a 
+data-sum file the results would be instantly unreadable for failing 
+every single data checksum test. That or the entire checksum system 
+would have to be advisory instead of functional.
 
-The "damn you photocopier for making photocopies so identically" nature 
-of your problem with LVM seems to be leading you to misplaced conclusions.
+So yes, there is a good reason.
 
-If you need to harmonize these sorts of things, you need to be able to 
-re-write blocks in question with disambiguating information (like new 
-UUIDS) or restrict your accesses in some other manner.
 
-If you are waiting for someone to "code it up" perhaps you should do so. 
-But it will _never_ be automatic because the use cases that don't match 
-your expectations may need the founding assumptions to be as they are today.
+David Foster Wallace famously said "act in haste, repent in leasure". 
+You kind-of shot yourself in the foot while attempting to save time. You 
+promised yourself that you didn't need the checksums.
 
-In other words, your belief that your position is "entirely logical" may 
-be a little off, particularly if you think LVM is "Copying" things when 
-it does a snapshot.
+Now at this point I'm going to make a few guesses...
 
-As previously stated XFS solved this problem by providing a tool that 
-would change the UUID of a file system. This tool cold then be pointed 
-at either (or both) the original and/or snapshot volumes as needed.
+I don't see _anywhere_ in the kernel source or btrfs-progs where 
+BTRFS_INODE_NODATASUM is explicitly cleared from any inode ever. It 
+might be implicitly cleared somewhere but I couldn't find it. So all 
+those unsummed files are probably unsummed for life.
 
-I don't see a "re-make the btrfs" option for changing UUIDs and LVM 
-doesn't care _at_ _all_ about what is actually in its volumes (okay, 
-lvresize has some fsck nonsense, but that's just messy).
+I also don't see anything in the code that says "this ioctl will create 
+the checksums for the selected file" so you may have to do the copy you 
+tried to avoid.
 
-It might even be "wrong" to try to harmonize those features, like trying 
-to put a manual clutch into a car with an automatic transmission... it 
-may just not fit.
+Sorry man...
 
-Given that BTRFS want's to play in the same level of abstraction as LVM, 
-its kind of a given that they'll butt heads over things like conflicting 
-definitions of what it means to take a snapshot.
+If you haven't done much with the file system yet, you might want to 
+reverse the conversion and do it again.
+
+Otherwise, you will want to copy the files long-hand, possibly in 
+batches if you are more than 50% full on disk space.
+
+On the bright side...
+
+This would be the perfect moment to think about your backup/snapshot 
+scheme. I always have a /whatever (e.g. /__System for a root partition) 
+as my default subvolume that I normally mount. When I do my backups I 
+mount -o subvol=/ /dev/whathaveyou /mnt/maintenance and then do my 
+snapshots in /mnt/maintenance. That way every file in my N snapshots 
+doesn't show up in the output of locate N+1 times. (e.g. this lets me 
+"hide" my local snapshots/backups from normal operations)
+
+Also, now would be the perfect time to add compression to your default 
+regime. Compressing the files only happens on write and so using 
+compression involves a copy anyway.
+
+-- Rob.

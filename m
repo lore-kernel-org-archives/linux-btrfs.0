@@ -1,283 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:56546 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753799AbaKZP3e (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Wed, 26 Nov 2014 10:29:34 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 5/6] Btrfs: fix race between writing free space cache and trimming
-Date: Wed, 26 Nov 2014 15:28:54 +0000
-Message-Id: <1417015735-8581-6-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1417015735-8581-1-git-send-email-fdmanana@suse.com>
-References: <1417015735-8581-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17443 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752754AbaKZP50 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Nov 2014 10:57:26 -0500
+Message-ID: <5475F85F.7090705@fb.com>
+Date: Wed, 26 Nov 2014 10:57:19 -0500
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Filipe Manana <fdmanana@suse.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/6] Btrfs: fix crash caused by block group removal
+References: <1417015735-8581-1-git-send-email-fdmanana@suse.com> <1417015735-8581-3-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1417015735-8581-3-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Trimming is completely transactionless, and the way it operates consists
-of hiding free space entries from a block group, perform the trim/discard
-and then make the free space entries visible again.
-Therefore while free space entry is being trimmed, we can have free space
-cache writing running in parallel (as part of a transaction commit) which
-will miss the free space entry. This means that an unmount (or crash/reboot)
-after that transaction commit and mount again before another transaction
-starts/commits, we will have some free space that won't be used again unless
-the free space cache is rebuilt. After the unmount, fsck (btrfsck, btrfs check)
-reports the issue like the following example:
+On 11/26/2014 10:28 AM, Filipe Manana wrote:
+> If we remove a block group (because it became empty), we might have left
+> a caching_ctl structure in fs_info->caching_block_groups that points to
+> the block group and is accessed at transaction commit time. This results
+> in accessing an invalid or incorrect block group. This issue became visible
+> after Josef's patch "Btrfs: remove empty block groups automatically".
+>
+> So if the block group is removed make sure we don't leave a dangling
+> caching_ctl in caching_block_groups.
+>
+> Sample crash trace:
+>
+> [58380.439449] BUG: unable to handle kernel paging request at ffff8801446eaeb8
+> [58380.439707] IP: [<ffffffffa03f6d05>] block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+> [58380.440879] PGD 1acb067 PUD 23f5ff067 PMD 23f5db067 PTE 80000001446ea060
+> [58380.441220] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+> [58380.441486] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc loop psmouse processor i2c_piix4 parport_pc parport pcspkr serio_raw evdev i2ccore thermal_sys microcode button ext4 crc16 jbd2 mbcache sr_mod cdrom ata_generic sg sd_mod crc_t10dif crct10dif_generic crct10dif_common virtio_scsi floppy ata_piix e1000 libata virtio_pci scsi_mod virtio_ring virtio [last unloaded: btrfs]
+> [58380.443238] CPU: 3 PID: 25728 Comm: btrfs-transacti Tainted: G        W      3.17.0-rc5-btrfs-next-1+ #1
+> [58380.443238] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+> [58380.443238] task: ffff88013ac82090 ti: ffff88013896c000 task.ti: ffff88013896c000
+> [58380.443238] RIP: 0010:[<ffffffffa03f6d05>]  [<ffffffffa03f6d05>] block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+> [58380.443238] RSP: 0018:ffff88013896fdd8  EFLAGS: 00010283
+> [58380.443238] RAX: ffff880222cae850 RBX: ffff880119ba74c0 RCX: 0000000000000000
+> [58380.443238] RDX: 0000000000000000 RSI: ffff880185e16800 RDI: ffff8801446eaeb8
+> [58380.443238] RBP: ffff88013896fdd8 R08: ffff8801a9ca9fa8 R09: ffff88013896fc60
+> [58380.443238] R10: ffff88013896fd28 R11: 0000000000000000 R12: ffff880222cae000
+> [58380.443238] R13: ffff880222cae850 R14: ffff880222cae6b0 R15: ffff8801446eae00
+> [58380.443238] FS:  0000000000000000(0000) GS:ffff88023ed80000(0000) knlGS:0000000000000000
+> [58380.443238] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [58380.443238] CR2: ffff8801446eaeb8 CR3: 0000000001811000 CR4: 00000000000006e0
+> [58380.443238] Stack:
+> [58380.443238]  ffff88013896fe18 ffffffffa03fe2d5 ffff880222cae850 ffff880185e16800
+> [58380.443238]  ffff88000dc41c20 0000000000000000 ffff8801a9ca9f00 0000000000000000
+> [58380.443238]  ffff88013896fe80 ffffffffa040fbcf ffff88018b0dcdb0 ffff88013ac82090
+> [58380.443238] Call Trace:
+> [58380.443238]  [<ffffffffa03fe2d5>] btrfs_prepare_extent_commit+0x5a/0xd7 [btrfs]
+> [58380.443238]  [<ffffffffa040fbcf>] btrfs_commit_transaction+0x45c/0x882 [btrfs]
+> [58380.443238]  [<ffffffffa040c058>] transaction_kthread+0xf2/0x1a4 [btrfs]
+> [58380.443238]  [<ffffffffa040bf66>] ? btrfs_cleanup_transaction+0x3d8/0x3d8 [btrfs]
+> [58380.443238]  [<ffffffff8105966b>] kthread+0xb7/0xbf
+> [58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
+> [58380.443238]  [<ffffffff813ebeac>] ret_from_fork+0x7c/0xb0
+> [58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>   fs/btrfs/ctree.h       |  1 +
+>   fs/btrfs/extent-tree.c | 27 +++++++++++++++++++++++++++
+>   2 files changed, 28 insertions(+)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index d3ccd09..7f40a65 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1277,6 +1277,7 @@ struct btrfs_block_group_cache {
+>   	unsigned int ro:1;
+>   	unsigned int dirty:1;
+>   	unsigned int iref:1;
+> +	unsigned int has_caching_ctl:1;
+>
 
-        *** fsck.btrfs output ***
-        checking extents
-        checking free space cache
-        There is no free space entry for 521764864-521781248
-        There is no free space entry for 521764864-1103101952
-        cache appears valid but isnt 29360128
-        Checking filesystem on /dev/sdc
-        UUID: b4789e27-4774-4626-98e9-ae8dfbfb0fb5
-        found 1235681286 bytes used err is -22
-        (...)
+Don't do this, just unconditionally call get_caching_control in 
+btrfs_remove_block_group, then if we get something we can do stuff, 
+otherwise we can just continue.  Thanks,
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/free-space-cache.c | 59 ++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/free-space-cache.h |  2 ++
- fs/btrfs/inode-map.c        |  2 ++
- 3 files changed, 60 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 16c2d39..6380863 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -31,6 +31,12 @@
- #define BITS_PER_BITMAP		(PAGE_CACHE_SIZE * 8)
- #define MAX_CACHE_BYTES_PER_GIG	(32 * 1024)
- 
-+struct btrfs_trim_range {
-+	u64 start;
-+	u64 bytes;
-+	struct list_head list;
-+};
-+
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info);
- static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
-@@ -881,6 +887,7 @@ int write_cache_extent_entries(struct io_ctl *io_ctl,
- 	int ret;
- 	struct btrfs_free_cluster *cluster = NULL;
- 	struct rb_node *node = rb_first(&ctl->free_space_offset);
-+	struct btrfs_trim_range *trim_entry;
- 
- 	/* Get the cluster for this block_group if it exists */
- 	if (block_group && !list_empty(&block_group->cluster_list)) {
-@@ -916,6 +923,21 @@ int write_cache_extent_entries(struct io_ctl *io_ctl,
- 			cluster = NULL;
- 		}
- 	}
-+
-+	/*
-+	 * Make sure we don't miss any range that was removed from our rbtree
-+	 * because trimming is running. Otherwise after a umount+mount (or crash
-+	 * after committing the transaction) we would leak free space and get
-+	 * an inconsistent free space cache report from fsck.
-+	 */
-+	list_for_each_entry(trim_entry, &ctl->trimming_ranges, list) {
-+		ret = io_ctl_add_entry(io_ctl, trim_entry->start,
-+				       trim_entry->bytes, NULL);
-+		if (ret)
-+			goto fail;
-+		*entries += 1;
-+	}
-+
- 	return 0;
- fail:
- 	return -ENOSPC;
-@@ -1135,10 +1157,12 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 
- 	io_ctl_set_generation(&io_ctl, trans->transid);
- 
-+	mutex_lock(&ctl->cache_writeout_mutex);
- 	/* Write out the extent entries in the free space cache */
- 	ret = write_cache_extent_entries(&io_ctl, ctl,
- 					 block_group, &entries, &bitmaps,
- 					 &bitmap_list);
-+	mutex_unlock(&ctl->cache_writeout_mutex);
- 	if (ret)
- 		goto out_nospc;
- 
-@@ -2295,6 +2319,8 @@ void btrfs_init_free_space_ctl(struct btrfs_block_group_cache *block_group)
- 	ctl->start = block_group->key.objectid;
- 	ctl->private = block_group;
- 	ctl->op = &free_space_op;
-+	INIT_LIST_HEAD(&ctl->trimming_ranges);
-+	mutex_init(&ctl->cache_writeout_mutex);
- 
- 	/*
- 	 * we only want to have 32k of ram per block group for keeping
-@@ -2911,10 +2937,12 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
- 
- static int do_trimming(struct btrfs_block_group_cache *block_group,
- 		       u64 *total_trimmed, u64 start, u64 bytes,
--		       u64 reserved_start, u64 reserved_bytes)
-+		       u64 reserved_start, u64 reserved_bytes,
-+		       struct btrfs_trim_range *trim_entry)
- {
- 	struct btrfs_space_info *space_info = block_group->space_info;
- 	struct btrfs_fs_info *fs_info = block_group->fs_info;
-+	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	int ret;
- 	int update = 0;
- 	u64 trimmed = 0;
-@@ -2934,7 +2962,10 @@ static int do_trimming(struct btrfs_block_group_cache *block_group,
- 	if (!ret)
- 		*total_trimmed += trimmed;
- 
-+	mutex_lock(&ctl->cache_writeout_mutex);
- 	btrfs_add_free_space(block_group, reserved_start, reserved_bytes);
-+	list_del(&trim_entry->list);
-+	mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 	if (update) {
- 		spin_lock(&space_info->lock);
-@@ -2962,16 +2993,21 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 	u64 bytes;
- 
- 	while (start < end) {
-+		struct btrfs_trim_range trim_entry;
-+
-+		mutex_lock(&ctl->cache_writeout_mutex);
- 		spin_lock(&ctl->tree_lock);
- 
- 		if (ctl->free_space < minlen) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			break;
- 		}
- 
- 		entry = tree_search_offset(ctl, start, 0, 1);
- 		if (!entry) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			break;
- 		}
- 
-@@ -2980,6 +3016,7 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 			node = rb_next(&entry->offset_index);
- 			if (!node) {
- 				spin_unlock(&ctl->tree_lock);
-+				mutex_unlock(&ctl->cache_writeout_mutex);
- 				goto out;
- 			}
- 			entry = rb_entry(node, struct btrfs_free_space,
-@@ -2988,6 +3025,7 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 
- 		if (entry->offset >= end) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			break;
- 		}
- 
-@@ -2997,6 +3035,7 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 		bytes = min(extent_start + extent_bytes, end) - start;
- 		if (bytes < minlen) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			goto next;
- 		}
- 
-@@ -3004,9 +3043,13 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 		kmem_cache_free(btrfs_free_space_cachep, entry);
- 
- 		spin_unlock(&ctl->tree_lock);
-+		trim_entry.start = extent_start;
-+		trim_entry.bytes = extent_bytes;
-+		list_add_tail(&trim_entry.list, &ctl->trimming_ranges);
-+		mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 		ret = do_trimming(block_group, total_trimmed, start, bytes,
--				  extent_start, extent_bytes);
-+				  extent_start, extent_bytes, &trim_entry);
- 		if (ret)
- 			break;
- next:
-@@ -3035,17 +3078,21 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 
- 	while (offset < end) {
- 		bool next_bitmap = false;
-+		struct btrfs_trim_range trim_entry;
- 
-+		mutex_lock(&ctl->cache_writeout_mutex);
- 		spin_lock(&ctl->tree_lock);
- 
- 		if (ctl->free_space < minlen) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			break;
- 		}
- 
- 		entry = tree_search_offset(ctl, offset, 1, 0);
- 		if (!entry) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
- 			goto next;
- 		}
-@@ -3054,6 +3101,7 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 		ret2 = search_bitmap(ctl, entry, &start, &bytes);
- 		if (ret2 || start >= end) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
- 			goto next;
- 		}
-@@ -3061,6 +3109,7 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 		bytes = min(bytes, end - start);
- 		if (bytes < minlen) {
- 			spin_unlock(&ctl->tree_lock);
-+			mutex_unlock(&ctl->cache_writeout_mutex);
- 			goto next;
- 		}
- 
-@@ -3069,9 +3118,13 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 			free_bitmap(ctl, entry);
- 
- 		spin_unlock(&ctl->tree_lock);
-+		trim_entry.start = start;
-+		trim_entry.bytes = bytes;
-+		list_add_tail(&trim_entry.list, &ctl->trimming_ranges);
-+		mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 		ret = do_trimming(block_group, total_trimmed, start, bytes,
--				  start, bytes);
-+				  start, bytes, &trim_entry);
- 		if (ret)
- 			break;
- next:
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 0cf4977..88b2238 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -38,6 +38,8 @@ struct btrfs_free_space_ctl {
- 	u64 start;
- 	struct btrfs_free_space_op *op;
- 	void *private;
-+	struct mutex cache_writeout_mutex;
-+	struct list_head trimming_ranges;
- };
- 
- struct btrfs_free_space_op {
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 83d646b..81efd83 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -364,6 +364,8 @@ void btrfs_init_free_ino_ctl(struct btrfs_root *root)
- 	ctl->start = 0;
- 	ctl->private = NULL;
- 	ctl->op = &free_ino_op;
-+	INIT_LIST_HEAD(&ctl->trimming_ranges);
-+	mutex_init(&ctl->cache_writeout_mutex);
- 
- 	/*
- 	 * Initially we allow to use 16K of ram to cache chunks of
--- 
-2.1.3
-
+Josef

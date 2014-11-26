@@ -1,58 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f41.google.com ([209.85.213.41]:48456 "EHLO
-	mail-yh0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751054AbaKZFL3 (ORCPT
+Received: from mail-pd0-f176.google.com ([209.85.192.176]:63049 "EHLO
+	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751305AbaKZIxG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 00:11:29 -0500
-Received: by mail-yh0-f41.google.com with SMTP id a41so999835yho.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 21:11:28 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
-References: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
-	<546B68F8.6080008@ubuntu.com>
-	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
-	<546BA96D.4050805@ubuntu.com>
-	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
-	<546CB531.2060509@ubuntu.com>
-	<20141121042814.GR17395@hungrycats.org>
-	<5470C92E.1070607@inwind.it>
-	<20141123001927.GO17380@hungrycats.org>
-	<5474AF87.6090702@inwind.it>
-	<20141125202948.GP17380@hungrycats.org>
-	<5474FBD9.5070709@inwind.it>
-	<pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
-Date: Tue, 25 Nov 2014 22:11:28 -0700
-Message-ID: <CAJCQCtRn7d4PHWJMexOA3SLhOnNMREk7N8aZR4VGXZbxeqpgRw@mail.gmail.com>
-Subject: Re: BTRFS messes up snapshot LV with origin
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Wed, 26 Nov 2014 03:53:06 -0500
+Received: by mail-pd0-f176.google.com with SMTP id y10so2410037pdj.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 00:53:05 -0800 (PST)
+Received: from localhost.localdomain.localdomain ([112.23.171.71])
+        by mx.google.com with ESMTPSA id bn13sm3671603pdb.4.2014.11.26.00.53.04
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 26 Nov 2014 00:53:05 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] Btrfs: deal with all 'subvol=xxx' options once
+Date: Wed, 26 Nov 2014 16:51:29 +0800
+Message-Id: <1416991889-8403-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 25, 2014 at 8:22 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> From my perspective, however, btrfs is simply incompatible with lvm
-> snapshots, because the basic assumptions are incompatible.  Btrfs assumes
-> UUIDs will be exactly what they say on the label, /unique/, while lvm's
-> snapshot feature directly breaks that uniqueness by copying the (former)
-> UUID, thus making the former UUID no longer unique and thus no longer
-> truly UUID.
+Steps to reproduce:
+ # mkfs.btrfs -f /dev/sdb
+ # mount -t btrfs /dev/sdb /mnt
+ # btrfs sub create /mnt/dir
+ # mount -t btrfs /dev/sdb /mnt -o subvol=dir,subvol=dir
 
-The seed device has a mechanism to change volume UUID without
-rewriting a bunch of stuff in the original, the gotcha is that it
-requires adding a device.
+It fails with:
+ mount: mount(2) failed: No such file or directory
 
-man fsfreeze says "fsfreeze is unncessary for device-mapper devices.
-The device-mapper (and LVM) automatically freezes filesystem on the
-device when a snapshot creation is requested." So if it's possible to
-communicate snapshotting/freezing to the fs at snapshot time, then
-maybe btrfs could 'btrfstune -S 1' the volume in the snapshot. That
-way that snapshot actually contains a btrfs seed device, which is read
-only. At least the snapshot copy isn't going to get obliterated in an
-accident; even though most people would probably want the origin LV to
-be protected while considering the snapshot disposable.
+Btrfs deal with subvolume mounting in a recursive way,
+to avoid looping, it will stripe out 'subvol=xxxx' string,
+then next loop will stop.Problem here is it only deal one
+string once, if users specify mount option multiple times.
+It will loop several times which is not good, and above
+reproducing steps will also return confusing results.
 
+Fix this problem by striping out all 'subvol=xxx' options,
+only last is valid.
 
+Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+---
+v3: avoid loop way that David addressed.
+---
+ fs/btrfs/super.c | 44 +++++++++++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 19 deletions(-)
 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 21c60ee..cac8e36 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1117,44 +1117,50 @@ static inline int is_subvolume_inode(struct inode *inode)
+  */
+ static char *setup_root_args(char *args)
+ {
+-	unsigned len = strlen(args) + 2 + 1;
+-	char *src, *dst, *buf;
++	unsigned len;
++	char *src = args;
++	char *p = args;
++	char *dst, *buf;
+ 
+ 	/*
+ 	 * We need the same args as before, but with this substitution:
+ 	 * s!subvol=[^,]+!subvolid=0!
+ 	 *
+ 	 * Since the replacement string is up to 2 bytes longer than the
+-	 * original, allocate strlen(args) + 2 + 1 bytes.
++	 * original, allocate strlen(args) + 2 * N + 1 bytes.
+ 	 */
+-
+-	src = strstr(args, "subvol=");
++	p = strstr(src, "subvol=");
+ 	/* This shouldn't happen, but just in case.. */
+-	if (!src)
++	if (!p)
+ 		return NULL;
+ 
++	len = strlen(args) + 1;
++	while (p) {
++		len += 2;
++		p = strchr(p, ',');
++		if (!p)
++			break;
++		p = strstr(p, "subvol=");
++	}
++
+ 	buf = dst = kmalloc(len, GFP_NOFS);
+ 	if (!buf)
+ 		return NULL;
+ 
+-	/*
+-	 * If the subvol= arg is not at the start of the string,
+-	 * copy whatever precedes it into buf.
+-	 */
+-	if (src != args) {
+-		*src++ = '\0';
+-		strcpy(buf, args);
+-		dst += strlen(args);
++	/* loop and replace all subvol=xxx string */
++	while ((p = strstr(src, "subvol="))) {
++		strncat(dst, src, p - src);
++		dst += p - src;
++		strcpy(dst, "subvolid=0");
++		dst += strlen("subvolid=0");
++		src = p = strchr(p, ',');
++		if (!src)
++			break;
+ 	}
+-
+-	strcpy(dst, "subvolid=0");
+-	dst += strlen("subvolid=0");
+-
+ 	/*
+ 	 * If there is a "," after the original subvol=... string,
+ 	 * copy that suffix into our buffer.  Otherwise, we're done.
+ 	 */
+-	src = strchr(src, ',');
+ 	if (src)
+ 		strcpy(dst, src);
+ 
 -- 
-Chris Murphy
+2.1.0
+

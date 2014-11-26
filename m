@@ -1,72 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:57762 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:50860 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753585AbaKZP3T (ORCPT
+	by vger.kernel.org with ESMTP id S1753259AbaKZP3e (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Wed, 26 Nov 2014 10:29:19 -0500
+	Wed, 26 Nov 2014 10:29:34 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/6] Btrfs: fix invalid block group rbtree access after bg is removed
-Date: Wed, 26 Nov 2014 15:28:50 +0000
-Message-Id: <1417015735-8581-2-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/6] Btrfs: fix crash caused by block group removal
+Date: Wed, 26 Nov 2014 15:28:51 +0000
+Message-Id: <1417015735-8581-3-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1417015735-8581-1-git-send-email-fdmanana@suse.com>
 References: <1417015735-8581-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we grab a block group, for example in btrfs_trim_fs(), we will be holding
-a reference on it but the block group can be removed after we got it (via
-btrfs_remove_block_group), which means it will no longer be part of the
-rbtree.
+If we remove a block group (because it became empty), we might have left
+a caching_ctl structure in fs_info->caching_block_groups that points to
+the block group and is accessed at transaction commit time. This results
+in accessing an invalid or incorrect block group. This issue became visible
+after Josef's patch "Btrfs: remove empty block groups automatically".
 
-However, btrfs_remove_block_group() was only calling rb_erase() which leaves
-the block group's rb_node left and right child pointers with the same content
-they had before calling rb_erase. This was dangerous because a call to
-next_block_group() would access the node's left and right child pointers (via
-rb_next), which can be no longer valid.
+So if the block group is removed make sure we don't leave a dangling
+caching_ctl in caching_block_groups.
 
-Fix this by clearing a block group's node after removing it from the tree,
-and have next_block_group() do a tree search to get the next block group
-instead of using rb_next() if our block group was removed.
+Sample crash trace:
+
+[58380.439449] BUG: unable to handle kernel paging request at ffff8801446eaeb8
+[58380.439707] IP: [<ffffffffa03f6d05>] block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+[58380.440879] PGD 1acb067 PUD 23f5ff067 PMD 23f5db067 PTE 80000001446ea060
+[58380.441220] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+[58380.441486] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc loop psmouse processor i2c_piix4 parport_pc parport pcspkr serio_raw evdev i2ccore thermal_sys microcode button ext4 crc16 jbd2 mbcache sr_mod cdrom ata_generic sg sd_mod crc_t10dif crct10dif_generic crct10dif_common virtio_scsi floppy ata_piix e1000 libata virtio_pci scsi_mod virtio_ring virtio [last unloaded: btrfs]
+[58380.443238] CPU: 3 PID: 25728 Comm: btrfs-transacti Tainted: G        W      3.17.0-rc5-btrfs-next-1+ #1
+[58380.443238] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[58380.443238] task: ffff88013ac82090 ti: ffff88013896c000 task.ti: ffff88013896c000
+[58380.443238] RIP: 0010:[<ffffffffa03f6d05>]  [<ffffffffa03f6d05>] block_group_cache_done.isra.21+0xc/0x1c [btrfs]
+[58380.443238] RSP: 0018:ffff88013896fdd8  EFLAGS: 00010283
+[58380.443238] RAX: ffff880222cae850 RBX: ffff880119ba74c0 RCX: 0000000000000000
+[58380.443238] RDX: 0000000000000000 RSI: ffff880185e16800 RDI: ffff8801446eaeb8
+[58380.443238] RBP: ffff88013896fdd8 R08: ffff8801a9ca9fa8 R09: ffff88013896fc60
+[58380.443238] R10: ffff88013896fd28 R11: 0000000000000000 R12: ffff880222cae000
+[58380.443238] R13: ffff880222cae850 R14: ffff880222cae6b0 R15: ffff8801446eae00
+[58380.443238] FS:  0000000000000000(0000) GS:ffff88023ed80000(0000) knlGS:0000000000000000
+[58380.443238] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[58380.443238] CR2: ffff8801446eaeb8 CR3: 0000000001811000 CR4: 00000000000006e0
+[58380.443238] Stack:
+[58380.443238]  ffff88013896fe18 ffffffffa03fe2d5 ffff880222cae850 ffff880185e16800
+[58380.443238]  ffff88000dc41c20 0000000000000000 ffff8801a9ca9f00 0000000000000000
+[58380.443238]  ffff88013896fe80 ffffffffa040fbcf ffff88018b0dcdb0 ffff88013ac82090
+[58380.443238] Call Trace:
+[58380.443238]  [<ffffffffa03fe2d5>] btrfs_prepare_extent_commit+0x5a/0xd7 [btrfs]
+[58380.443238]  [<ffffffffa040fbcf>] btrfs_commit_transaction+0x45c/0x882 [btrfs]
+[58380.443238]  [<ffffffffa040c058>] transaction_kthread+0xf2/0x1a4 [btrfs]
+[58380.443238]  [<ffffffffa040bf66>] ? btrfs_cleanup_transaction+0x3d8/0x3d8 [btrfs]
+[58380.443238]  [<ffffffff8105966b>] kthread+0xb7/0xbf
+[58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
+[58380.443238]  [<ffffffff813ebeac>] ret_from_fork+0x7c/0xb0
+[58380.443238]  [<ffffffff810595b4>] ? __kthread_parkme+0x67/0x67
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d3ccd09..7f40a65 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1277,6 +1277,7 @@ struct btrfs_block_group_cache {
+ 	unsigned int ro:1;
+ 	unsigned int dirty:1;
+ 	unsigned int iref:1;
++	unsigned int has_caching_ctl:1;
+ 
+ 	int disk_cache_state;
+ 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 744b580..3ba65d9 100644
+index 3ba65d9..b7e40ef 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3162,7 +3162,19 @@ next_block_group(struct btrfs_root *root,
- 		 struct btrfs_block_group_cache *cache)
- {
- 	struct rb_node *node;
-+
- 	spin_lock(&root->fs_info->block_group_cache_lock);
-+
-+	/* If our block group was removed, we need a full search. */
-+	if (RB_EMPTY_NODE(&cache->cache_node)) {
-+		const u64 next_bytenr = cache->key.objectid + cache->key.offset;
-+
-+		spin_unlock(&root->fs_info->block_group_cache_lock);
-+		btrfs_put_block_group(cache);
-+		cache = btrfs_lookup_first_block_group(root->fs_info,
-+						       next_bytenr);
-+		return cache;
-+	}
- 	node = rb_next(&cache->cache_node);
- 	btrfs_put_block_group(cache);
- 	if (node) {
-@@ -9400,6 +9412,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	spin_lock(&root->fs_info->block_group_cache_lock);
- 	rb_erase(&block_group->cache_node,
- 		 &root->fs_info->block_group_cache_tree);
-+	RB_CLEAR_NODE(&block_group->cache_node);
+@@ -607,6 +607,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 				cache->cached = BTRFS_CACHE_NO;
+ 			} else {
+ 				cache->cached = BTRFS_CACHE_STARTED;
++				cache->has_caching_ctl = 1;
+ 			}
+ 		}
+ 		spin_unlock(&cache->lock);
+@@ -627,6 +628,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 			cache->cached = BTRFS_CACHE_NO;
+ 		} else {
+ 			cache->cached = BTRFS_CACHE_STARTED;
++			cache->has_caching_ctl = 1;
+ 		}
+ 		spin_unlock(&cache->lock);
+ 		wake_up(&caching_ctl->wait);
+@@ -9328,6 +9330,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	int index;
+ 	int factor;
++	struct btrfs_caching_control *caching_ctl = NULL;
  
- 	if (root->fs_info->first_logical_byte == block_group->key.objectid)
- 		root->fs_info->first_logical_byte = (u64)-1;
+ 	root = root->fs_info->extent_root;
+ 
+@@ -9435,8 +9438,32 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 		kobject_put(kobj);
+ 	}
+ 
++	if (block_group->has_caching_ctl)
++		caching_ctl = get_caching_control(block_group);
+ 	if (block_group->cached == BTRFS_CACHE_STARTED)
+ 		wait_block_group_cache_done(block_group);
++	if (block_group->has_caching_ctl) {
++		down_write(&root->fs_info->commit_root_sem);
++		if (!caching_ctl) {
++			struct btrfs_caching_control *ctl;
++
++			list_for_each_entry(ctl,
++				    &root->fs_info->caching_block_groups, list)
++				if (ctl->block_group == block_group) {
++					caching_ctl = ctl;
++					atomic_inc(&caching_ctl->count);
++					break;
++				}
++		}
++		if (caching_ctl)
++			list_del_init(&caching_ctl->list);
++		up_write(&root->fs_info->commit_root_sem);
++		if (caching_ctl) {
++			/* Once for the caching bgs list and once for us. */
++			put_caching_control(caching_ctl);
++			put_caching_control(caching_ctl);
++		}
++	}
+ 
+ 	btrfs_remove_free_space_cache(block_group);
+ 
 -- 
 2.1.3
 

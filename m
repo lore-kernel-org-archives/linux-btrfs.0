@@ -1,43 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49248 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752397AbaKZMuS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 07:50:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xtc2w-0004lf-W9
-	for linux-btrfs@vger.kernel.org; Wed, 26 Nov 2014 13:50:15 +0100
-Received: from p4ff5822c.dip0.t-ipconnect.de ([79.245.130.44])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 13:50:14 +0100
-Received: from holger.hoffstaette by p4ff5822c.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 13:50:14 +0100
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
+Received: from fw8a-maryann.wadns.net ([41.185.62.88]:9558 "EHLO
+	fw8a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752613AbaKZNgy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Nov 2014 08:36:54 -0500
+Message-ID: <5475D76A.8060603@swiftspirit.co.za>
+Date: Wed, 26 Nov 2014 15:36:42 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-Date: Wed, 26 Nov 2014 12:50:03 +0000 (UTC)
-Message-ID: <pan.2014.11.26.12.50.03@googlemail.com>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
-	<pan.2014.11.24.08.23.25@googlemail.com>
-	<pan$e596a$cfc2cde2$6957e9d8$10a112b8@cox.net>
-	<CAJBj3veoV=QYF27+zFcJHf9OA0mXVzTU4gYrRz_9cAmVRxrF6Q@mail.gmail.com>
-	<20141125103024.GC23574@localhost.localdomain>
-	<CAJBj3vckdFCwh0vr7kF-_z8-PnTN5zL1zy_zcma2waDfTqj6GA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com> <1416859665.3019.6@mail.thefacebook.com> <20141125113023.GD23574@localhost.localdomain>
+In-Reply-To: <20141125113023.GD23574@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 25 Nov 2014 15:17:58 -0800, John Williams wrote:
+On 2014/11/25 13:30, Liu Bo wrote:
+> This is actually inspired by ZFS, who offers checksum functions ranging
+> from the simple-and-fast fletcher2 to the slower-but-secure sha256.
+>
+> Back to btrfs, crc32c is the only choice.
+>
+> And also for the slowness of sha256, Intel has a set of instructions for
+> it, "Intel SHA Extensions", that may help a lot.
 
-> 2) CityHash : for 256-bit hashes on all systems
-> https://code.google.com/p/cityhash/
+I think the advantage will be in giving a choice with some strong 
+suggestions:
 
-Btw this is now superseded by Farmhash:
-https://code.google.com/p/farmhash/
+An example of suggestions - if using sha256 on an old or "low-power" 
+CPU, detect that the CPU doesn't support the appropriate acceleration 
+functions and print a warning at mount or a warning-and-prompt at mkfs-time.
 
--h
+The default could even be changed based on the architecture - though I 
+suspect crc32c is already a good default on most architectures.
+
+The choice allowance gives flexibility where admins know it optimally 
+could be used - and David's suggestion (separate thread) would be able 
+to take advantage of that.
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

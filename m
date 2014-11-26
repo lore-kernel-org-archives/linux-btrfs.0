@@ -1,191 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:52556 "EHLO imap.thunk.org"
+Received: from imap.thunk.org ([74.207.234.97]:52547 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751285AbaKZKYI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 05:24:08 -0500
+	id S1750988AbaKZKYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Nov 2014 05:24:05 -0500
 From: "Theodore Ts'o" <tytso@mit.edu>
 To: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>
 Cc: Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>, "Theodore Ts'o" <tytso@mit.edu>
-Subject: [PATCH-v4 6/7] ext4: add support for a lazytime mount option
-Date: Wed, 26 Nov 2014 05:23:56 -0500
-Message-Id: <1416997437-26092-7-git-send-email-tytso@mit.edu>
-In-Reply-To: <1416997437-26092-1-git-send-email-tytso@mit.edu>
-References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
+Subject: [PATCH-v4 0/7] add support for a lazytime mount option
+Date: Wed, 26 Nov 2014 05:23:50 -0500
+Message-Id: <1416997437-26092-1-git-send-email-tytso@mit.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add an optimization for the MS_LAZYTIME mount option so that we will
-opportunistically write out any inodes with the I_DIRTY_TIME flag set
-in a particular inode table block when we need to update some inode in
-that inode table block anyway.
+This is an updated version of what had originally been an
+ext4-specific patch which significantly improves performance by lazily
+writing timestamp updates (and in particular, mtime updates) to disk.
+The in-memory timestamps are always correct, but they are only written
+to disk when required for correctness.
 
-Also add some temporary code so that we can set the lazytime mount
-option without needing a modified /sbin/mount program which can set
-MS_LAZYTIME.  We can eventually make this go away once util-linux has
-added support.
+This provides a huge performance boost for ext4 due to how it handles
+journalling, but it's valuable for all file systems running on flash
+storage or drive-managed SMR disks by reducing the metadata write
+load.  So upon request, I've moved the functionality to the VFS layer.
+Once the /sbin/mount program adds support for MS_LAZYTIME, all file
+systems should be able to benefit from this optimization.
 
-Google-Bug-Id: 18297052
+There is still an ext4-specific optimization, which may be applicable
+for other file systems which store more than one inode in a block, but
+it will require file system specific code.  It is purely optional,
+however.
 
-Signed-off-by: Theodore Ts'o <tytso@mit.edu>
----
- fs/ext4/inode.c             | 49 ++++++++++++++++++++++++++++++++++++++++++---
- fs/ext4/super.c             |  9 +++++++++
- include/trace/events/ext4.h | 30 +++++++++++++++++++++++++++
- 3 files changed, 85 insertions(+), 3 deletions(-)
+Please note the changes to update_time() and the new write_time() inode
+operations functions, which impact btrfs and xfs.  The changes are
+fairly simple, but I would appreciate confirmation from the btrfs and
+xfs teams that I got things right.   Thanks!!
 
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 5653fa4..8308c82 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -4140,6 +4140,51 @@ static int ext4_inode_blocks_set(handle_t *handle,
- }
- 
- /*
-+ * Opportunistically update the other time fields for other inodes in
-+ * the same inode table block.
-+ */
-+static void ext4_update_other_inodes_time(struct super_block *sb,
-+					  unsigned long orig_ino, char *buf)
-+{
-+	struct ext4_inode_info	*ei;
-+	struct ext4_inode	*raw_inode;
-+	unsigned long		ino;
-+	struct inode		*inode;
-+	int		i, inodes_per_block = EXT4_SB(sb)->s_inodes_per_block;
-+	int		inode_size = EXT4_INODE_SIZE(sb);
-+
-+	ino = orig_ino & ~(inodes_per_block - 1);
-+	for (i = 0; i < inodes_per_block; i++, ino++, buf += inode_size) {
-+		if (ino == orig_ino)
-+			continue;
-+		inode = find_active_inode_nowait(sb, ino);
-+		if (!inode ||
-+		    (inode->i_state & I_DIRTY_TIME) == 0 ||
-+		    !spin_trylock(&inode->i_lock)) {
-+			iput(inode);
-+			continue;
-+		}
-+		inode->i_state &= ~I_DIRTY_TIME;
-+		inode->i_ts_dirty_day = 0;
-+		spin_unlock(&inode->i_lock);
-+		inode_requeue_dirtytime(inode);
-+
-+		ei = EXT4_I(inode);
-+		raw_inode = (struct ext4_inode *) buf;
-+
-+		spin_lock(&ei->i_raw_lock);
-+		EXT4_INODE_SET_XTIME(i_ctime, inode, raw_inode);
-+		EXT4_INODE_SET_XTIME(i_mtime, inode, raw_inode);
-+		EXT4_INODE_SET_XTIME(i_atime, inode, raw_inode);
-+		ext4_inode_csum_set(inode, raw_inode, ei);
-+		spin_unlock(&ei->i_raw_lock);
-+		trace_ext4_other_inode_update_time(inode, orig_ino);
-+		iput(inode);
-+	}
-+}
-+
-+
-+/*
-  * Post the struct inode info into an on-disk inode location in the
-  * buffer-cache.  This gobbles the caller's reference to the
-  * buffer_head in the inode location struct.
-@@ -4237,7 +4282,6 @@ static int ext4_do_update_inode(handle_t *handle,
- 		for (block = 0; block < EXT4_N_BLOCKS; block++)
- 			raw_inode->i_block[block] = ei->i_data[block];
- 	}
--
- 	if (likely(!test_opt2(inode->i_sb, HURD_COMPAT))) {
- 		raw_inode->i_disk_version = cpu_to_le32(inode->i_version);
- 		if (ei->i_extra_isize) {
-@@ -4248,10 +4292,9 @@ static int ext4_do_update_inode(handle_t *handle,
- 				cpu_to_le16(ei->i_extra_isize);
- 		}
- 	}
--
- 	ext4_inode_csum_set(inode, raw_inode, ei);
--
- 	spin_unlock(&ei->i_raw_lock);
-+	ext4_update_other_inodes_time(inode->i_sb, inode->i_ino, bh->b_data);
- 
- 	BUFFER_TRACE(bh, "call ext4_handle_dirty_metadata");
- 	rc = ext4_handle_dirty_metadata(handle, NULL, bh);
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index 58859bc..93a2b7a 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -1132,6 +1132,7 @@ enum {
- 	Opt_noquota, Opt_barrier, Opt_nobarrier, Opt_err,
- 	Opt_usrquota, Opt_grpquota, Opt_i_version,
- 	Opt_stripe, Opt_delalloc, Opt_nodelalloc, Opt_mblk_io_submit,
-+	Opt_lazytime, Opt_nolazytime,
- 	Opt_nomblk_io_submit, Opt_block_validity, Opt_noblock_validity,
- 	Opt_inode_readahead_blks, Opt_journal_ioprio,
- 	Opt_dioread_nolock, Opt_dioread_lock,
-@@ -1195,6 +1196,8 @@ static const match_table_t tokens = {
- 	{Opt_i_version, "i_version"},
- 	{Opt_stripe, "stripe=%u"},
- 	{Opt_delalloc, "delalloc"},
-+	{Opt_lazytime, "lazytime"},
-+	{Opt_nolazytime, "nolazytime"},
- 	{Opt_nodelalloc, "nodelalloc"},
- 	{Opt_removed, "mblk_io_submit"},
- 	{Opt_removed, "nomblk_io_submit"},
-@@ -1452,6 +1455,12 @@ static int handle_mount_opt(struct super_block *sb, char *opt, int token,
- 	case Opt_i_version:
- 		sb->s_flags |= MS_I_VERSION;
- 		return 1;
-+	case Opt_lazytime:
-+		sb->s_flags |= MS_LAZYTIME;
-+		return 1;
-+	case Opt_nolazytime:
-+		sb->s_flags &= ~MS_LAZYTIME;
-+		return 1;
- 	}
- 
- 	for (m = ext4_mount_opts; m->token != Opt_err; m++)
-diff --git a/include/trace/events/ext4.h b/include/trace/events/ext4.h
-index 6cfb841..6e5abd6 100644
---- a/include/trace/events/ext4.h
-+++ b/include/trace/events/ext4.h
-@@ -73,6 +73,36 @@ struct extent_status;
- 	{ FALLOC_FL_ZERO_RANGE,		"ZERO_RANGE"})
- 
- 
-+TRACE_EVENT(ext4_other_inode_update_time,
-+	TP_PROTO(struct inode *inode, ino_t orig_ino),
-+
-+	TP_ARGS(inode, orig_ino),
-+
-+	TP_STRUCT__entry(
-+		__field(	dev_t,	dev			)
-+		__field(	ino_t,	ino			)
-+		__field(	ino_t,	orig_ino		)
-+		__field(	uid_t,	uid			)
-+		__field(	gid_t,	gid			)
-+		__field(	__u16, mode			)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->orig_ino = orig_ino;
-+		__entry->dev	= inode->i_sb->s_dev;
-+		__entry->ino	= inode->i_ino;
-+		__entry->uid	= i_uid_read(inode);
-+		__entry->gid	= i_gid_read(inode);
-+		__entry->mode	= inode->i_mode;
-+	),
-+
-+	TP_printk("dev %d,%d orig_ino %lu ino %lu mode 0%o uid %u gid %u",
-+		  MAJOR(__entry->dev), MINOR(__entry->dev),
-+		  (unsigned long) __entry->orig_ino,
-+		  (unsigned long) __entry->ino, __entry->mode,
-+		  __entry->uid, __entry->gid)
-+);
-+
- TRACE_EVENT(ext4_free_inode,
- 	TP_PROTO(struct inode *inode),
- 
+Any objections to my carrying these patches in the ext4 git tree?
+
+Changes since -v3:
+   - inodes with I_DIRTY_TIME set are placed on a new bdi list,
+        b_dirty_time.  This allows filesystem-level syncs to more
+        easily iterate over those inodes that need to have their
+        timestamps written to disk.
+   - dirty timestamps will be written out asynchronously on the final
+        iput, instead of when the inode gets evicted.
+   - separate the definition of the new function
+        find_active_inode_nowait() to a separate patch
+   - create separate flag masks: I_DIRTY_WB and I_DIRTY_INODE, which
+       indicate whether the inode needs to be on the write back lists,
+       or whether the inode itself is dirty, while I_DIRTY means any one
+       of the inode dirty flags are set.  This simplifies the fs
+       writeback logic which needs to test for different combinations of
+       the inode dirty flags in different places.
+
+Changes since -v2:
+   - If update_time() updates i_version, it will not use lazytime (i..e,
+       the inode will be marked dirty so the change will be persisted on to
+       disk sooner rather than later).  Yes, this eliminates the
+       benefits of lazytime if the user is experting the file system via
+       NFSv4.  Sad, but NFS's requirements seem to mandate this.
+   - Fix time wrapping bug 49 days after the system boots (on a system
+        with a 32-bit jiffies).   Use get_monotonic_boottime() instead.
+   - Clean up type warning in include/tracing/ext4.h
+   - Added explicit parenthesis for stylistic reasons    
+   - Added an is_readonly() inode operations method so btrfs doesn't
+       have to duplicate code in update_time().
+
+Changes since -v1:
+   - Added explanatory comments in update_time() regarding i_ts_dirty_days
+   - Fix type used for days_since_boot
+   - Improve SMP scalability in update_time and ext4_update_other_inodes_time
+   - Added tracepoints to help test and characterize how often and under
+         what circumstances inodes have their timestamps lazily updated
+
+
+Theodore Ts'o (7):
+  vfs: split update_time() into update_time() and write_time()
+  vfs: add support for a lazytime mount option
+  vfs: don't let the dirty time inodes get more than a day stale
+  vfs: add lazytime tracepoints for better debugging
+  vfs: add find_active_inode_nowait() function
+  ext4: add support for a lazytime mount option
+  btrfs: add an is_readonly() so btrfs can use common code for
+    update_time()
+
+ Documentation/filesystems/Locking |   2 +
+ fs/btrfs/inode.c                  |  34 +++++-------
+ fs/ext4/inode.c                   |  49 ++++++++++++++++-
+ fs/ext4/super.c                   |   9 +++
+ fs/fs-writeback.c                 |  57 +++++++++++++++++--
+ fs/inode.c                        | 113 +++++++++++++++++++++++++++++++++++---
+ fs/proc_namespace.c               |   1 +
+ fs/sync.c                         |   8 +++
+ fs/xfs/xfs_iops.c                 |  39 ++++++-------
+ include/linux/backing-dev.h       |   1 +
+ include/linux/fs.h                |  17 +++++-
+ include/trace/events/ext4.h       |  30 ++++++++++
+ include/uapi/linux/fs.h           |   1 +
+ mm/backing-dev.c                  |   9 ++-
+ 14 files changed, 306 insertions(+), 64 deletions(-)
+
 -- 
 2.1.0
 

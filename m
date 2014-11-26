@@ -1,226 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f169.google.com ([209.85.214.169]:46579 "EHLO
-	mail-ob0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751923AbaKZDHp convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 22:07:45 -0500
-Received: by mail-ob0-f169.google.com with SMTP id vb8so1559197obc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 19:07:44 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <54753DF0.9090505@cn.fujitsu.com>
-References: <CAPRQymMYBhy0mxG1qTxqt2OGezm3qnq+rAZOLAk1TpkOoixNWw@mail.gmail.com>
- <54740F42.2040301@cn.fujitsu.com> <CAPRQymNp3+387P-nmXKoWGNV31TKaYLBWv6g63WwJPqN4g-fYg@mail.gmail.com>
- <547411B3.2040309@cn.fujitsu.com> <CAPRQymO3rODHMw+=BzURdOYfxGUshCrt48LY4gWT7g=Yd=z8jg@mail.gmail.com>
- <54742F42.2050202@cn.fujitsu.com> <CAPRQymN4zKWcnFGTziEExg62c6_qQx7kYyjw08ZUvt+fdp3qKQ@mail.gmail.com>
- <54753DF0.9090505@cn.fujitsu.com>
-From: Daniel Miranda <danielkza2@gmail.com>
-Date: Wed, 26 Nov 2014 01:07:24 -0200
-Message-ID: <CAPRQymP2ZpO1GpNMra7121+5E87aqNbSmaZSfW2CKAfkF66N8Q@mail.gmail.com>
-Subject: Re: Apparent metadata corruption (file that simultaneously does/does
- not exist) on kernel 3.17.3
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:53893 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751149AbaKZDWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Nov 2014 22:22:42 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XtTBg-00047G-VN
+	for linux-btrfs@vger.kernel.org; Wed, 26 Nov 2014 04:22:40 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 04:22:40 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 04:22:40 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS messes up snapshot LV with origin
+Date: Wed, 26 Nov 2014 03:22:29 +0000 (UTC)
+Message-ID: <pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net>
+References: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>
+	<546B68F8.6080008@ubuntu.com>
+	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>
+	<546BA96D.4050805@ubuntu.com>
+	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>
+	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>
+	<5470C92E.1070607@inwind.it> <20141123001927.GO17380@hungrycats.org>
+	<5474AF87.6090702@inwind.it> <20141125202948.GP17380@hungrycats.org>
+	<5474FBD9.5070709@inwind.it>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alright, I'll just have to understand how to build btrfs-progs now,
-since I'm currently just using the packages from the Fedora repo.
+Goffredo Baroncelli posted on Tue, 25 Nov 2014 22:59:53 +0100 as
+excerpted:
 
-Thanks for all the help and time spent so far,
-Daniel
+> However I still doesn't understood why you want btrfs-w/multiple disk
+> over LVM ?
 
+While I'm not an LVM person here, and he already replied with essentially 
+the same point, I think it's worth repeating...
 
-On Wed, Nov 26, 2014 at 12:41 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Hi Daniel,
->
-> With your btrfs-image dump, I tested with my patchset sent to maillist, my
-> patchset succeeds fixing the image.
->
-> You can get the patchset and then apply it on 3.17.2, and --repair should
-> fix it.
-> The file with nlink error will be moved to 'lost+found' dir.
->
-> Although the best fixing should be just adding the missing dir_index,
-> but currently the patchset does quite well and does not need to do any
-> modify.
->
-> The patchset can be extracted using patchwork:
-> 0001: https://patchwork.kernel.org/patch/5364131/mbox/
-> 0002: https://patchwork.kernel.org/patch/5364141/mbox/
-> 0003: https://patchwork.kernel.org/patch/5364101/mbox/
-> 0004 v2: https://patchwork.kernel.org/patch/5383611/mbox/
-> 0005 v2: https://patchwork.kernel.org/patch/5383601/mbox/
-> 0006: https://patchwork.kernel.org/patch/5364151/mbox
->
-> Any feedback is welcomed to improve the patches.
->
-> Thanks,
-> Qu
->
->
-> -------- Original Message --------
-> Subject: Re: Apparent metadata corruption (file that simultaneously
-> does/does not exist) on kernel 3.17.3
-> From: Daniel Miranda <danielkza2@gmail.com>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2014年11月25日 15:42
->>
->> I just ran the repair but the ghost file has not disappeared,
->> unfortunately.
->>
->> On Tue, Nov 25, 2014 at 5:26 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->> wrote:
->>>
->>> -------- Original Message --------
->>> Subject: Re: Apparent metadata corruption (file that simultaneously
->>> does/does not exist) on kernel 3.17.3
->>> From: Daniel Miranda <danielkza2@gmail.com>
->>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> Date: 2014年11月25日 15:20
->>>>
->>>> Here are the logs. I'll send you a link to my dump directly after I
->>>> finish uploading it. Please notify me when you have downloaded it so I
->>>> can delete it.
->>>>
->>>> checking extents
->>>> checking free space cache
->>>> checking fs roots
->>>> root 5 inode 17149868 errors 2000, link count wrong
->>>>       unresolved ref dir 17182377 index 245 namelen 8 name string.h
->>>> filetype 1 errors 1, no dir item
->>>
->>> link count error seems resolved by Josef's patch commit already in
->>> 3.17.2.
->>> If using 3.17.2, josef's commit will rebuild the dir item and dir index.
->>>>
->>>> root 5 inode 17182377 errors 200, dir isize wrong
->>>
->>> This isize error seems caused by previous line.
->>> If 3.17.2 can repair above problem, it should not be a problem and will
->>> disappear.
->>>
->>> According to the above output, btrfsck --repair with btrfs-progs 3.17.2
->>> has
->>> a good chance repairing it.
->>> Just have a try.
->>>
->>> Thanks,
->>> Qu
->>>
->>>> Checking filesystem on /dev/mapper/fedora_daniel--pc-root
->>>> UUID: fef8f718-0622-4cb1-9597-749650d366a4
->>>> found 55108022156 bytes used err is 1
->>>> total csum bytes: 89787396
->>>> total tree bytes: 2303455232
->>>> total fs tree bytes: 2024841216
->>>> total extent tree bytes: 145272832
->>>> btree space waste bytes: 529672422
->>>> file data blocks allocated: 253414481920
->>>>    referenced 94127726592
->>>> Btrfs v3.17
->>>>
->>>>
->>>> Regards,
->>>> Daniel
->>>>
->>>> On Tue, Nov 25, 2014 at 3:20 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> wrote:
->>>>>
->>>>> -------- Original Message --------
->>>>> Subject: Re: Apparent metadata corruption (file that simultaneously
->>>>> does/does not exist) on kernel 3.17.3
->>>>> From: Daniel Miranda <danielkza2@gmail.com>
->>>>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>>> Date: 2014年11月25日 13:14
->>>>>>
->>>>>> I'll go run that and get you the output.
->>>>>
->>>>> Thanks.
->>>>>>
->>>>>>
->>>>>> I can do the image dump, sure. I don't know how long it might take to
->>>>>> upload it somewhere though. Right now `btrfs fi df` shows about 2GiB
->>>>>> of metadata (it's a 120GiB volume). I'll see how large it ends up
->>>>>> after compression.
->>>>>
->>>>> 120G volume seems quite small, compared the images I received recently
->>>>> (1T
->>>>> x2 RAID1 and 4T single).
->>>>> With '-c 9' it shouldn't be too huge I think(The 1T raid1 is about 1G
->>>>> metadata with -c9).
->>>>>
->>>>> BTW, btrfs-image dump will have all the filenames and hierarchy, even
->>>>> without its data,
->>>>> it is still better considering your privacy twice before uploading.
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>>
->>>>>> Thanks for the quick response,
->>>>>> Daniel
->>>>>>
->>>>>> On Tue, Nov 25, 2014 at 3:10 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>>>> wrote:
->>>>>>>
->>>>>>> Hi,
->>>>>>>
->>>>>>> What's the btrfsck output? Without --repair option.
->>>>>>>
->>>>>>> Also, if it is OK for you, would you please dump the btrfs with
->>>>>>> 'btrfs-image' command?
->>>>>>> '-c 9' option is highly recommended considering the size of it.
->>>>>>> This will helps a lot for developers to test the btrfsck repair
->>>>>>> function.
->>>>>>>
->>>>>>> Thanks,
->>>>>>> Qu
->>>>>>>
->>>>>>>
->>>>>>> -------- Original Message --------
->>>>>>> Subject: Apparent metadata corruption (file that simultaneously
->>>>>>> does/does
->>>>>>> not exist) on kernel 3.17.3
->>>>>>> From: Daniel Miranda <danielkza2@gmail.com>
->>>>>>> To: <linux-btrfs@vger.kernel.org>
->>>>>>> Date: 2014年11月25日 13:04
->>>>>>>>
->>>>>>>> Hello,
->>>>>>>>
->>>>>>>> After I had some brief stability issues with my computer, it seems
->>>>>>>> some form of metadata corruption took place in my BTRFS filesystem,
->>>>>>>> and now a particular file seems to exist, but I cannot access any
->>>>>>>> details on it or delete it.
->>>>>>>>
->>>>>>>> If I try to `ls` in the directory it is in, that's what I get:
->>>>>>>>
->>>>>>>> ls: cannot access string.h: No such file or directory
->>>>>>>> total 0
->>>>>>>> drwxr-xr-x. 1 danielkza mock 16 Nov 21 14:18 ./
->>>>>>>> drwxr-xr-x. 1 danielkza mock  6 Nov 21 14:18 ../
->>>>>>>> -?????????? ? ?         ?     ?            ? string.h
->>>>>>>>
->>>>>>>> If I try to delete it I get:
->>>>>>>>
->>>>>>>> rm: cannot remove ‘string.h’: No such file or directory
->>>>>>>>
->>>>>>>> I'm using kernel 3.17.3 from Fedora 21. I got no messages on dmesg
->>>>>>>> or
->>>>>>>> anything of the sort. I know the btrfs fsck situation is
->>>>>>>> complicated,
->>>>>>>> but is there any utility I should use to try and repair this? Losing
->>>>>>>> this file is not a problem, it's just one header from the kernel I
->>>>>>>> was
->>>>>>>> building.
->>>>>>>>
->>>>>>>> Regards,
->>>>>>>> Daniel Miranda
->>>>>>>> --
->>>>>>>> To unsubscribe from this list: send the line "unsubscribe
->>>>>>>> linux-btrfs"
->>>>>>>> in
->>>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>>
->>>>>>>
->
+Btrfs' checksummed error detection and automatic rewrite from a different 
+copy isn't a small thing, and simply isn't available at all with most 
+would-be alternatives (zfs being the only similar thing I know of for 
+Linux, and of course it has its own issues both technical and social/
+legal/license).  That alone is worth running multi-device btrfs to get.  
+That makes btrfs a near-mandatory part of the picture, whatever it's on.
+
+And for people wanting LVM's volume management (including partitioning 
+without many of the limitations), the direct result is multi-device btrfs 
+on lvm.
+
+>From my perspective, however, btrfs is simply incompatible with lvm 
+snapshots, because the basic assumptions are incompatible.  Btrfs assumes 
+UUIDs will be exactly what they say on the label, /unique/, while lvm's 
+snapshot feature directly breaks that uniqueness by copying the (former) 
+UUID, thus making the former UUID no longer unique and thus no longer 
+truly UUID.  Thus, part of the lvm /feature/ of snapshots is in direct 
+contradiction to a basic assumption of btrfs, that UUIDs are exactly 
+that, unique, making that feature directly incompatible with btrfs on a 
+very basic level.
+
+So people can have their btrfs on lvm, but if they do, they have to forego 
+LVM snapshots because btrfs isn't compatible with their usage.  To me 
+it's as simple as that, and people can choose either btrfs or lvm 
+snapshots, but not both, it's one XOR the other.  So for me it's simply 
+choose the one you will have the most difficulty doing without and forgo 
+the other one.  Not a problem, just make your choice and move on.
+
+OTOH, there's that common signature about the reasonable man folding to 
+the circumstance while the unreasonable man insisting on folding the 
+circumstance to his wishes instead, so progress depends on the 
+unreasonable man...
+
+But that's exactly what I see here, an unreasonable man insisting that 
+entirely logical circumstance bend to his will.  Which, given someone to 
+actually code it up, it might well do. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

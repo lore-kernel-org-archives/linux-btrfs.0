@@ -1,52 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33668 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750863AbaKZNDZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 08:03:25 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAQD33wX015526
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Nov 2014 21:03:03 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 11/11] Btrfs, replace: enable dev-replace for raid56
-Date: Wed, 26 Nov 2014 21:04:51 +0800
-Message-ID: <1417007091-11885-12-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1417007091-11885-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from imap.thunk.org ([74.207.234.97]:55816 "EHLO imap.thunk.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750876AbaK0UNX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Nov 2014 15:13:23 -0500
+Date: Thu, 27 Nov 2014 15:13:16 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Jan Kara <jack@suse.cz>
+Cc: Dave Chinner <david@fromorbit.com>, Andreas Dilger <adilger@dilger.ca>,
+        Linux Filesystem Development List
+	<linux-fsdevel@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>
+Subject: Re: [PATCH-v4 6/7] ext4: add support for a lazytime mount option
+Message-ID: <20141127201316.GE14091@thunk.org>
+References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
+ <1416997437-26092-7-git-send-email-tytso@mit.edu>
+ <20141126224843.GG9561@dastard>
+ <1A106262-D64C-4493-856F-AAAFC3BE2647@dilger.ca>
+ <20141126233537.GH9561@dastard>
+ <20141127132752.GF30152@quack.suse.cz>
+ <20141127133227.GA11872@quack.suse.cz>
+ <20141127152524.GB14091@thunk.org>
+ <20141127154159.GA11922@quack.suse.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141127154159.GA11922@quack.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1417007091-11885-1-git-send-email-miaox@cn.fujitsu.com>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Thu, Nov 27, 2014 at 04:41:59PM +0100, Jan Kara wrote:
+>   Hum, but this puts lots of stuff under inode_hash_lock, including
+> writeback list lock. I don't like this too much. I understand that getting
+> handle for each inode is rather more CPU intensive but it should still be a
+> clear win over the current situation and avoids entangling locks like this.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v3:
-- None.
----
- fs/btrfs/dev-replace.c | 5 -----
- 1 file changed, 5 deletions(-)
+Hmm, if we dropped the inode_requeue_dirtytime(), then we can avoid
+taking the writeback list lock.  The net result is that we would have
+some inodes still on the b_dirty_time list that were no longer
+I_DIRTY_TIME, but since I_DIRTY_TIME wouldn't be set, it's mostly
+harmless since when we do iterate over the b_dirty_time list, those
+inodes can be quickly identified and skipped over.  (And if the inode
+ever gets dirtied for real, then it will get moved onto the b_dirty
+list and that will be that.)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 894796a..9f6a464 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -316,11 +316,6 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	struct btrfs_device *tgt_device = NULL;
- 	struct btrfs_device *src_device = NULL;
- 
--	if (btrfs_fs_incompat(fs_info, RAID56)) {
--		btrfs_warn(fs_info, "dev_replace cannot yet handle RAID5/RAID6");
--		return -EOPNOTSUPP;
--	}
--
- 	switch (args->start.cont_reading_from_srcdev_mode) {
- 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS:
- 	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID:
--- 
-1.9.3
+The problem with getting a handle on the inode is not just that it is
+more CPU intensive, but that can't let the iput_final() call happen
+until after we have finished the transaction handle.  We could keep a
+linked list of inodes attached to the handle, and then only call iput
+on them once ext4_journal_stop(handle) gets called, but that's a
+complication I'd like to avoid if at all possible.
 
+Being able to opporunistically write the timestamps when we are
+journalling an inode table block is a pretty big win, so if we end up
+extending the hold time on inode_hash_lock (only when we come across a
+I_DIRTY_TIME inode that we can clear) a tiny bit, there will be a lot
+of workloads where I think it's a worthwhile tradeoff.  If we can
+avoid entangling the writebakc list lock, does that make you happier
+about this approach?
+
+	     	      	       	     	 - Ted

@@ -1,70 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:55866 "EHLO
-	resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752544AbaK0A5I (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43938 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752861AbaK0DbW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 19:57:08 -0500
-Message-ID: <547676DF.5080601@pobox.com>
-Date: Wed, 26 Nov 2014 16:57:03 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
+	Wed, 26 Nov 2014 22:31:22 -0500
+Date: Thu, 27 Nov 2014 11:31:08 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 To: Roman Mamedov <rm@romanrm.net>
-CC: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Can't cp --reflink files on a Ext4-converted FS w/o checksums
-References: <20141127005527.42a7fe59@natsu> <54765FC2.2050309@pobox.com> <20141127043337.198d6084@natsu> <54766997.1040101@pobox.com> <20141127052021.47734be0@natsu> <547670FF.3090407@pobox.com>
-In-Reply-To: <547670FF.3090407@pobox.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Message-ID: <20141127033107.GA2224@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20141127005527.42a7fe59@natsu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141127005527.42a7fe59@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/26/2014 04:31 PM, Robert White wrote:
-> On 11/26/2014 04:20 PM, Roman Mamedov wrote:
->> On Wed, 26 Nov 2014 16:00:23 -0800
->> Robert White <rwhite@pobox.com> wrote:
->>> You might want to go experiment. Make another new subvol (or at least a
->>> directory in a directory/root/subvol that never had the +C attribute
->>> set) and see if you can cp --reflink any of these files into that
->>> subdirectory without repeating the +C trick.
->>
->> Ha, indeed I can't. Maybe there should be a way to generate checksums
->> without
->> rewriting files, just via reading them, then calculating and writing
->> checksum
->> to metadata.
->
-> That problem would be "computationally hard" because you'd have to
-> verify that no other file was using that extent before you put that
-> extent under control of the csum machinery, otherwise you might break
-> later break the COW promise when the file that knows those blocks by
-> their checksum changes the contents out from underneath the other
-> references.
+On Thu, Nov 27, 2014 at 12:55:27AM +0500, Roman Mamedov wrote:
+> Hello,
+> 
+> I used btrfs-convert to switch my FS from Ext4 to Btrfs. As it was a rather
+> large 10 TB filesystem, to save on the conversion time, I used the "-d,
+> disable data checksum" option of btrfs-convert.
+> 
+> Turns out now I can't "cp --reflink" any files that were already on the FS
+> prior to conversion. The error message from cp is "failed to clone [...]
+> Invalid argument".
+> 
+> I assume this is because of the lack of checksums; the only way to make old
+> files cloneable is to plain copy them to a different place and then delete the
+> originals, but that's what I was trying to avoid in the first place.
+> 
+> Also I thought maybe defragmenting will help, but nope, doesn't seem to be the
+> case, even ordering it to recompress data to a different method doesn't fix
+> the problem. (Even if it did, it's still a lot of unnecessary rewriting).
+> 
+> Is there really a good reason to stop these files without checksums from being
+> cloneable? It's not like they have the noCoW attribute, so I'd assume any new
+> write to these files would cause a CoW and proper checksums for all new blocks
+> anyways.
 
-I explained this poorly/incorrectly...
+Just FYI, I recently send a patch[1] to fix btrfs-convert's checksum
+problem, it'll produce checksum for empty extents, which makes slow
+btrrfs-convert even slower.
 
-So some guy like yourself converts a file system, or mounts an existing 
-file system with nodatasum and creates some file. As a result there is a 
-file called /One that has no checksums on its extents.
+With this patch, you may try to convert your ext4 without disabling checksum and see if time is improved. 
 
-Then the guy creates a directory and sets +C on it, and copies the file 
-into that directory with "cp --reflink /One /d/Two". File /d/Two is a 
-no-cow file.
+[1]: Btrfs-progs: fix a bug of converting sparse ext2/3/4
+https://patchwork.kernel.org/patch/5374741/
 
-Now the guy somes back and decides to put the data checksums onto the 
-extents of /One.
-
-At this moment everything _looks_ fine.
-
-Then the guy alters the first byte of /d/Two, which modifies the no-cow 
-file in place.
-
-Now the guy tires to read /One ... what happens? The checksum doesn't 
-match and the data has changed because of the NOCOW.
-
-(So I think, in practice, the 1COW mechanism prevents this just like it 
-works for snapshots)
-
-But thats a _lot_ of corner cases that can be solved by telling someone 
-to copy the file if they want the checksums to be recreated.
-
-e.g. the set of all files and all possibilities gets well into the 
-"computationally hard" end of the swimming pool.
+thanks,
+-liubo
+> 
+> -- 
+> With respect,
+> Roman
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

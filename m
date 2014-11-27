@@ -1,62 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:55816 "EHLO imap.thunk.org"
+Received: from imap.thunk.org ([74.207.234.97]:55840 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750876AbaK0UNX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Nov 2014 15:13:23 -0500
-Date: Thu, 27 Nov 2014 15:13:16 -0500
+	id S1752435AbaK0UUF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Nov 2014 15:20:05 -0500
+Date: Thu, 27 Nov 2014 15:19:54 -0500
 From: "Theodore Ts'o" <tytso@mit.edu>
 To: Jan Kara <jack@suse.cz>
-Cc: Dave Chinner <david@fromorbit.com>, Andreas Dilger <adilger@dilger.ca>,
-        Linux Filesystem Development List
-	<linux-fsdevel@vger.kernel.org>,
+Cc: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>,
         Ext4 Developers List <linux-ext4@vger.kernel.org>,
         Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
         XFS Developers <xfs@oss.sgi.com>
-Subject: Re: [PATCH-v4 6/7] ext4: add support for a lazytime mount option
-Message-ID: <20141127201316.GE14091@thunk.org>
+Subject: Re: [PATCH-v4 2/7] vfs: add support for a lazytime mount option
+Message-ID: <20141127201954.GF14091@thunk.org>
 References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
- <1416997437-26092-7-git-send-email-tytso@mit.edu>
- <20141126224843.GG9561@dastard>
- <1A106262-D64C-4493-856F-AAAFC3BE2647@dilger.ca>
- <20141126233537.GH9561@dastard>
- <20141127132752.GF30152@quack.suse.cz>
- <20141127133227.GA11872@quack.suse.cz>
- <20141127152524.GB14091@thunk.org>
- <20141127154159.GA11922@quack.suse.cz>
+ <1416997437-26092-3-git-send-email-tytso@mit.edu>
+ <20141127131421.GE30152@quack.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141127154159.GA11922@quack.suse.cz>
+In-Reply-To: <20141127131421.GE30152@quack.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 27, 2014 at 04:41:59PM +0100, Jan Kara wrote:
->   Hum, but this puts lots of stuff under inode_hash_lock, including
-> writeback list lock. I don't like this too much. I understand that getting
-> handle for each inode is rather more CPU intensive but it should still be a
-> clear win over the current situation and avoids entangling locks like this.
+On Thu, Nov 27, 2014 at 02:14:21PM +0100, Jan Kara wrote:
+> Looking into the code & your patch I'd prefer to do something like:
+> * add support for I_DIRTY_TIME in __mark_inode_dirty() - update_time will
+>   call __mark_inode_dirty() with this flag if any of the times was updated.
+>   That way we can just remove your ->write_time() callback - filesystems
+>   can just handle this in their ->dirty_inode() methods if they wish.
+>   __mark_inode_dirty() will take care of moving inode into proper writeback
+>   list (i_dirty / i_dirty_time), dirtied_when will be set to current time.
 
-Hmm, if we dropped the inode_requeue_dirtytime(), then we can avoid
-taking the writeback list lock.  The net result is that we would have
-some inodes still on the b_dirty_time list that were no longer
-I_DIRTY_TIME, but since I_DIRTY_TIME wouldn't be set, it's mostly
-harmless since when we do iterate over the b_dirty_time list, those
-inodes can be quickly identified and skipped over.  (And if the inode
-ever gets dirtied for real, then it will get moved onto the b_dirty
-list and that will be that.)
+One of the tricky bits about this is that btrfs wants to be able to
+return an error from write_time() which gets reflected up through
+update_time() to the callers of file_update_time().  Currently
+__mark_inode_dirty() and family return a void, and changing this is
+going to be a bit of a mess, since doing this correctly would require
+auditing all of the callers of mark_inode_dirty(),
+mark_inode_dirty_sync(), __mark_inode_dirty(), etc.
 
-The problem with getting a handle on the inode is not just that it is
-more CPU intensive, but that can't let the iput_final() call happen
-until after we have finished the transaction handle.  We could keep a
-linked list of inodes attached to the handle, and then only call iput
-on them once ext4_journal_stop(handle) gets called, but that's a
-complication I'd like to avoid if at all possible.
+Doing this would be a good thing, and eventually I think it would be
+nice if we could allow the mark_inode_dirty() functions return an
+error instead of void, but I wonder if that's a cleanup that's better
+saved for later.  While we were at it, maybe we should rename
+mark_inode_dirty() to inode_dirty(), since that way we can be sure
+we've looked at all of the call site of mark_inode_dirty() and friends
+--- and we have a number of file systems, including btrfs, ext3, and
+ext4, where mark_inode_dirty() is doing a lot more than just marking
+the inode is dirty, and the only reason why it's named that is mostly
+historical.
 
-Being able to opporunistically write the timestamps when we are
-journalling an inode table block is a pretty big win, so if we end up
-extending the hold time on inode_hash_lock (only when we come across a
-I_DIRTY_TIME inode that we can clear) a tiny bit, there will be a lot
-of workloads where I think it's a worthwhile tradeoff.  If we can
-avoid entangling the writebakc list lock, does that make you happier
-about this approach?
-
-	     	      	       	     	 - Ted
+						- Ted

@@ -1,51 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.97.166]:51911 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752869AbaK0AUY (ORCPT
+Received: from resqmta-ch2-07v.sys.comcast.net ([69.252.207.39]:49008 "EHLO
+	resqmta-ch2-07v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753669AbaK0AUw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Nov 2014 19:20:24 -0500
-Date: Thu, 27 Nov 2014 05:20:21 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Robert White <rwhite@pobox.com>
-Cc: linux-btrfs@vger.kernel.org
+	Wed, 26 Nov 2014 19:20:52 -0500
+Message-ID: <54766E5C.8010909@pobox.com>
+Date: Wed, 26 Nov 2014 16:20:44 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Roman Mamedov <rm@romanrm.net>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: Can't cp --reflink files on a Ext4-converted FS w/o checksums
-Message-ID: <20141127052021.47734be0@natsu>
-In-Reply-To: <54766997.1040101@pobox.com>
-References: <20141127005527.42a7fe59@natsu>
- <54765FC2.2050309@pobox.com>
- <20141127043337.198d6084@natsu>
- <54766997.1040101@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+References: <20141127005527.42a7fe59@natsu>	<54765FC2.2050309@pobox.com> <20141127043337.198d6084@natsu>
+In-Reply-To: <20141127043337.198d6084@natsu>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 26 Nov 2014 16:00:23 -0800
-Robert White <rwhite@pobox.com> wrote:
+On 11/26/2014 03:33 PM, Roman Mamedov wrote:
+> Finished with no rewriting necessary. After that I recursively-removed the +C
+> attribute from all newly reflinked files, and cp --reflink as well as
+> snapshotting of those works fine.
 
-> Uh... you may _still_ have no checksums on any of those data extents. 
-> They are not going to come back until you write them to a normal file 
-> with a normal copy. So you may be lacking most of the data validation 
-> features of this filesystem.
+I did some double checking and I think you'll find that if you lsattr 
+those files they still have the C (NoCOW) attribute, which also means 
+they are still unsummed.
 
-Well, this FS is coming from being Ext4 for years, so it's not worse off now
-than it was before. And anyways the main feature that I wanted were snapshots.
+Which also means that when you cp --reflink them the target files you 
+create are also NoCOW.
 
-> You might want to go experiment. Make another new subvol (or at least a 
-> directory in a directory/root/subvol that never had the +C attribute 
-> set) and see if you can cp --reflink any of these files into that 
-> subdirectory without repeating the +C trick.
+So you harmonized the lack of checksums with the linux-level C 
+attribute. This has hidden your problem but not fixed it.
 
-Ha, indeed I can't. Maybe there should be a way to generate checksums without
-rewriting files, just via reading them, then calculating and writing checksum
-to metadata.
-
-> Clearing NODATACOW does _not_ clear NODATASUM (at least not on a 
-> non-empty file) as near as I can tell, so that directory hierarchy and 
-> its subsequent snapshots is likely "less safe" than you think.
-
-The nodatasum flag also isn't accessible via chattr, is it?
-
--- 
-With respect,
-Roman
+(Trying to clear the NOCOW attribute on a file in BTRFS is _silently_ 
+ignored as invalid. That recursive removal only changed the directories.)

@@ -1,84 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37521 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:30604 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751268AbaKJH5D (ORCPT
+	with ESMTP id S1753746AbaK0DET convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Nov 2014 02:57:03 -0500
+	Wed, 26 Nov 2014 22:04:19 -0500
+Message-ID: <1417057358.14696.7.camel@localhost.localdomain>
+Subject: Re: [PATCH v4] btrfs-progs: fix page align issue for lzo compress
+ in restore
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs-progs: skip fs with no seed when build seed/sprout mapping for fi show
-Date: Mon, 10 Nov 2014 15:55:02 +0800
-Message-ID: <1415606102-22506-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Thu, 27 Nov 2014 11:02:38 +0800
+In-Reply-To: <20141014093234.GP22943@twin.jikos.cz>
+References: <20140922134115.GP9715@twin.jikos.cz>
+	 <1411461294-24093-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <1929724.Hf7kupaGA7@fb07-iapwap2> <20141014093234.GP22943@twin.jikos.cz>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no need to try to build seed/sprout mapping for those btrfs
-without seed devices, so just skip such fs.
-We could get the total number of devices from the disk super block, if it
-equals the number of items in list @fs_devices->devices, then there shouldn't
-be any seed devices.
+On Tue, 2014-10-14 at 11:32 +0200, David Sterba wrote:
+> On Tue, Oct 14, 2014 at 10:06:16AM +0200, Marc Dietrich wrote:
+> > This hasn't landed in an btrfs-progs branch I found. Any update?
+> 
+> I had it tagged for review and found something that needs fixing. The
+> PAGE_CACHE_SIZE is hardcoded to 4k, this will break on filesystems with
+> larger sectors (eg. the powerpc machines). I'll scheudule the patch post
+> 3.17, with a fix.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
-changlog
-	v1->v2: adopt more natural function name:
-		no_seed_devices ==> has_seed_devices
----
- cmds-filesystem.c | 24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+Hi David，
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index e4b2785..c55c486 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -750,6 +750,22 @@ static int find_and_copy_seed(struct btrfs_fs_devices *seed,
- 	return 1;
- }
- 
-+static int has_seed_devices(struct btrfs_fs_devices *fs_devices)
-+{
-+	struct btrfs_device *device;
-+	int dev_cnt_total, dev_cnt = 0;
-+
-+	device = list_first_entry(&fs_devices->devices, struct btrfs_device,
-+				  dev_list);
-+
-+	dev_cnt_total = device->total_devs;
-+
-+	list_for_each_entry(device, &fs_devices->devices, dev_list)
-+		dev_cnt++;
-+
-+	return dev_cnt_total != dev_cnt;
-+}
-+
- static int map_seed_devices(struct list_head *all_uuids,
- 			    char *search, int *found)
- {
-@@ -775,6 +791,10 @@ static int map_seed_devices(struct list_head *all_uuids,
- 			*found = 1;
- 		}
- 
-+		/* skip fs without seeds */
-+		if (!has_seed_devices(cur_fs))
-+			continue;
-+
- 		/* skip all fs already shown as mounted fs */
- 		if (is_seen_fsid(cur_fs->fsid))
- 			continue;
-@@ -956,8 +976,8 @@ devs_only:
- 	}
- 
- 	/*
--	 * scan_for_btrfs() don't build seed/sprout mapping,
--	 * do mapping build for each scanned fs here
-+	 * The seed/sprout mapping are not detected yet,
-+	 * do mapping build for all umounted fs
- 	 */
- 	ret = map_seed_devices(&all_uuids, search, &found);
- 	if (ret) {
--- 
-1.8.1.4
+I note that this patch is not yet in the latest integration, how's the
+fix going?
+
+-Gui
 

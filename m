@@ -1,80 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f171.google.com ([209.85.192.171]:62737 "EHLO
-	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751699AbaKZDAi (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:15539 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751882AbaK0CDZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 22:00:38 -0500
-Received: by mail-pd0-f171.google.com with SMTP id y13so1849194pdi.30
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Nov 2014 19:00:37 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 3/3] Btrfs-progs, fsck: move root items repair after root rebuilding
-Date: Wed, 26 Nov 2014 10:58:52 +0800
-Message-Id: <1416970736-26623-4-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1416970736-26623-1-git-send-email-wangshilong1991@gmail.com>
-References: <1416970736-26623-1-git-send-email-wangshilong1991@gmail.com>
+	Wed, 26 Nov 2014 21:03:25 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sAR233e5010587
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Nov 2014 10:03:03 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: fix return value problem for btrfs sub show
+Date: Thu, 27 Nov 2014 10:01:34 +0800
+Message-ID: <1417053695-14210-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If some critical roots are corrupt, reapr_root_items() will fail,
-this is detected by fsck_tests.sh's extent rebuilding tests.
+If you exec:
+	# btrfs sub show <dir>	<== non-subvolume dir
+The cmd print error messages as expected, but returns 0.
+By convetion, it should return non-zero and we should explicitly
+set it before it goto out.
 
-Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+With other pieces adopted:
+1) removed a unnecessary return value set -EINVAL
+2) fixed another code branch which may return 0 upon error.
+3) with 2) applied, the ret = 0 follows can be removed
+
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 32 ++++++++++++++++----------------
- 1 file changed, 16 insertions(+), 16 deletions(-)
+ cmds-subvolume.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index a102752..ae9005e 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -7987,22 +7987,6 @@ int cmd_check(int argc, char **argv)
- 
- 	root = info->fs_root;
- 
--	ret = repair_root_items(info);
--	if (ret < 0)
--		goto close_out;
--	if (repair) {
--		fprintf(stderr, "Fixed %d roots.\n", ret);
--		ret = 0;
--	} else if (ret > 0) {
--		fprintf(stderr,
--		       "Found %d roots with an outdated root item.\n",
--		       ret);
--		fprintf(stderr,
--			"Please run a filesystem check with the option --repair to fix them.\n");
--		ret = 1;
--		goto close_out;
--	}
--
- 	/*
- 	 * repair mode will force us to commit transaction which
- 	 * will make us fail to load log tree when mounting.
-@@ -8101,6 +8085,22 @@ int cmd_check(int argc, char **argv)
- 	if (ret)
- 		fprintf(stderr, "Errors found in extent allocation tree or chunk allocation\n");
- 
-+	ret = repair_root_items(info);
-+	if (ret < 0)
-+		goto close_out;
-+	if (repair) {
-+		fprintf(stderr, "Fixed %d roots.\n", ret);
-+		ret = 0;
-+	} else if (ret > 0) {
-+		fprintf(stderr,
-+		       "Found %d roots with an outdated root item.\n",
-+		       ret);
-+		fprintf(stderr,
-+			"Please run a filesystem check with the option --repair to fix them.\n");
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index fa58a24..53eec46 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -906,6 +906,7 @@ static int cmd_subvol_show(int argc, char **argv)
+ 	}
+ 	if (!ret) {
+ 		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", fullpath);
 +		ret = 1;
-+		goto close_out;
-+	}
-+
- 	fprintf(stderr, "checking free space cache\n");
- 	ret = check_space_cache(root);
- 	if (ret)
+ 		goto out;
+ 	}
+ 
+@@ -919,7 +920,6 @@ static int cmd_subvol_show(int argc, char **argv)
+ 		fprintf(stderr,
+ 			"ERROR: %s doesn't belong to btrfs mount point\n",
+ 			fullpath);
+-		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 	ret = 1;
+@@ -958,13 +958,13 @@ static int cmd_subvol_show(int argc, char **argv)
+ 	memset(&get_ri, 0, sizeof(get_ri));
+ 	get_ri.root_id = sv_id;
+ 
+-	if (btrfs_get_subvol(mntfd, &get_ri)) {
++	ret = btrfs_get_subvol(mntfd, &get_ri);
++	if (ret) {
+ 		fprintf(stderr, "ERROR: can't find '%s'\n",
+ 			svpath);
+ 		goto out;
+ 	}
+ 
+-	ret = 0;
+ 	/* print the info */
+ 	printf("%s\n", fullpath);
+ 	printf("\tName: \t\t\t%s\n", get_ri.name);
 -- 
-2.1.0
+1.8.1.4
 

@@ -1,49 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51839 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751574AbaK2VHf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Nov 2014 16:07:35 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XupEr-0000Gh-QS
-	for linux-btrfs@vger.kernel.org; Sat, 29 Nov 2014 22:07:33 +0100
-Received: from 66.87.138.157 ([66.87.138.157])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Nov 2014 22:07:33 +0100
-Received: from eternaleye by 66.87.138.157 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Nov 2014 22:07:33 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-Date: Sat, 29 Nov 2014 13:07:20 -0800
-Message-ID: <m5dcia$tk8$1@ger.gmane.org>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com> <20141125163905.GJ26471@twin.jikos.cz> <m5dash$58v$1@ger.gmane.org> <CAJBj3vd5tY93jkN7S25Am=c1A5iW=msqFDrOe-i9vYx9Phxwcg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from magic.merlins.org ([209.81.13.136]:36607 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751672AbaK2VL6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 29 Nov 2014 16:11:58 -0500
+Date: Sat, 29 Nov 2014 13:11:54 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Jakob =?iso-8859-1?Q?Sch=FCrz?= <wertstoffe@nurfuerspam.de>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20141129211154.GY8916@merlins.org>
+References: <p6npkb-0nh.ln1@venus.xundeenergie.ssh22.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <p6npkb-0nh.ln1@venus.xundeenergie.ssh22.net>
+Subject: Re: Skript for backup btrfs on external HD
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-John Williams wrote:
-
-> On Sat, Nov 29, 2014 at 12:38 PM, Alex Elsayed <eternaleye@gmail.com>
-> wrote:
->> Why not just use the kernel crypto API? Then the user can just specify
->> any hash the kernel supports.
+On Sat, Nov 29, 2014 at 09:34:01PM +0100, Jakob Schürz wrote:
+> Hi there!
 > 
-> One reason is that crytographic hashes are an order of magnitude
-> slower than the fastest non-cryptographic hashes. And for filesystem
-> checksums, I do not see a need for crypotgraphic hashes.
+> I made a script to do backup with btrfs on a external HD.
+> You can see the function, how it works, and how it's to be used on
+> my site http://linux.xundeenergie.at/doku.php?id=mkbtrbackup
+> The site is in german. An english one will follow later.
+> 
+> Do you want some explanations?
 
-I'd suggest looking more closely at the crypto api section of menuconfig - 
-it already has crc32c, among others. Just because it's called the "crypto 
-api" doesn't mean it only has cryptographically-strong algorithms. As a side 
-benefit, if someone implements (say) SipHash for it, then not only could 
-btrfs benefit, but also all other users of the API, including (now) 
-userspace.
+Sure, how is it different from those 3?
+https://btrfs.wiki.kernel.org/index.php/Incremental_Backup#Available_Backup_Tools
 
-The crypto api also has compression, for zlib/lzo/lz4/lz4hc, but I'm given 
-to understand that btrfs' usage of compression doesn't match well to that 
-API.
-
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

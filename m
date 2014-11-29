@@ -1,83 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-07v.sys.comcast.net ([96.114.154.166]:58859 "EHLO
-	resqmta-po-07v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751334AbaK2QvA (ORCPT
+Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:52665 "EHLO
+	resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751232AbaK2RHI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Nov 2014 11:51:00 -0500
-Message-ID: <5479F971.3030607@pobox.com>
-Date: Sat, 29 Nov 2014 08:50:57 -0800
+	Sat, 29 Nov 2014 12:07:08 -0500
+Message-ID: <5479FD39.6030208@pobox.com>
+Date: Sat, 29 Nov 2014 09:07:05 -0800
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS messes up snapshot LV with origin
-References: <27BDAC3B-789C-4477-B065-E703CE425F54@colorremedies.com>	<546B68F8.6080008@ubuntu.com>	<FC0BA13C-21E3-44DD-A87C-4BEAE4FBF9EA@colorremedies.com>	<546BA96D.4050805@ubuntu.com>	<2A57F99C-80AA-4FD4-AA41-57F02AD4E1A2@colorremedies.com>	<546CB531.2060509@ubuntu.com> <20141121042814.GR17395@hungrycats.org>	<5470C92E.1070607@inwind.it> <20141123001927.GO17380@hungrycats.org>	<5474AF87.6090702@inwind.it> <20141125202948.GP17380@hungrycats.org>	<5474FBD9.5070709@inwind.it>	<pan$8a1fe$cae59052$c5e19c35$9858d5fc@cox.net> <54764F4E.80405@pobox.com>	<pan$7d8df$684921c0$5b1accb1$bf431820@cox.net>	<CAJCQCtSGT_CCYZ5WBo_xqw5xWgFbovoWca0-yBEk5WiR7PYQwg@mail.gmail.com> <pan$40148$39c282ee$365818$9e1ebdba@cox.net> <547981BB.7030206@pobox.com>
-In-Reply-To: <547981BB.7030206@pobox.com>
+To: Shriramana Sharma <samjnaa@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Moving contents from one subvol to another
+References: <CAH-HCWUR4QPDn=M8nchdRedzGU3DYDHC8d6YRH8-FBm6trWCJg@mail.gmail.com> <20141129142813.GD32735@carfax.org.uk> <CAH-HCWWh02invDCdx4-bPORdg4r39efsW=buKXTVtfspSQ9sVA@mail.gmail.com>
+In-Reply-To: <CAH-HCWWh02invDCdx4-bPORdg4r39efsW=buKXTVtfspSQ9sVA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To those reading along who don't already know. My explanation below is 
-factually inadequate or wrong in various places...
+On 11/29/2014 07:15 AM, Shriramana Sharma wrote:
+> On Sat, Nov 29, 2014 at 7:58 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>>     The latest version of mv should be able to use CoW copies to make
+>> it more efficient. It has a --reflink option, the same as cp. Note
+>> that you can't make reflinks crossing a mount boundary, but you can do
+>> so crossing a subvolume boundary (as you're doing here).
 
-The "type codes" as presented in the various EFI/GUID disk partitioning 
-tools as 0700, 8200, 8300, EF02, and so on are never written to disk as 
-such. They are short-hand values (chosen to be deliberately similar to 
-the MS-DOS partitioning type codes of 07, 82, 83, etc) to select 
-standardized GUIDs for the partition type field.
+One thing to keep in mind is that mv, when crossing any of these 
+boundaries degenerates to a copy-and-remove operation and _none_ of the 
+source files will be removed until _all_ of the files have been copied. 
+If any of the copy operations fail the removes will not take place at 
+all. It would only take a couple large NOCOW files to put you over a 
+limit somewhere.
 
-So there is the two-digit code from the ms-dos partitoning scheme, then 
-there are the four-digit codes that let you select which type GUID will 
-be written in an EFI partition scheme.
+So if you get to an out-of-space condition mid-move you are going to 
+have to disentangle your stuff by hand anyway.
 
-The question of "reuse" is still improper as the type codes were 
-assigned by the EFI standard for specific use as type codes. The EFI 
-tool used (gdisk, or windows disk partitioning tool, etc) is immaterial 
-as the result codes are selected by standard.
+If you are consolidating sub-volumes (as per the original question) on a 
+"nearly full" drive you may want to do it all long-hand with a script 
+moving various chunks or something instead of just trying a move/copy of 
+"cp --reflinks /vol1/* /vol2/" (same for mv when you get that --reflinks 
+revision).
 
-I could have, and should have, been _way_ more clear, and/or less wrong. 8-)
+ASIDE: Also be aware that such a moment would be the perfect time to 
+consider compression and so on. A regular copy (non reflinks) will apply 
+the currently selected compress= regime (and reconsider sparsity etc) in 
+a way that the move will not.  e.g. once you decide to do intrusive 
+maintenance you might be well served by taking the extra time to 
+restructure your storage. 8-)
 
-http://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
-
-
-On 11/29/2014 12:20 AM, Robert White wrote:
-> On 11/28/2014 11:29 PM, Duncan wrote:
->> Since I can't/won't run pretty much anything proprietary, there's little
->> chance of it being taken as anything but Linux, here.  (Tho I actually
->> use (c)gdisk for partitioning here and it appears to use a different
->> GUID.
->> (0700 in its short form which AFAIK is gdisk specific, for MS basic data,
->> while it uses 8300 for general Linux filesystems.  I could look up the
->> long form GUIDs, but meh...)
->
-> Partition type codes (e.g. 0700, 8300, EF00, etc) have _nothing_ to do
-> with UUIDs. They are type codes. They aren't "short form" of anything
-> else at all. In fact 0700 is the _long_ _form_ of the original code of
-> "7", but in big-endian order now that it went from one byte to two.
->
-> Microsoft started using pre-assigned UUIDs as "classes", e.g. type codes
-> they could cram into their various registry files. If you actually read
-> the registry you'll find a lot of places where "rational word" is
-> defined as {some_uuid_here} and then eslwere {some_uuid_here} has a
-> bunch of data items attached to it.
->
-> So gpartd didn;t "reuse" microsoft UUIDs.
->
-> In some/many of the older formats there was a code for "operating system
-> data" (which I think is what 7 was originally). Others came by and said
-> "since we're going to put in a type code for "linux swap" (82) then lets
-> put in a code for linux data as well (83), and all this before the whole
-> byte expansion to turn these things from bytes into two-byte words.
->
-> Once everybody else picked their own type codes for their data
-> partitions, everybody just started calling "7" microsoft data. And linux
-> doesn't care at all since it's noise since every partition just ends up
-> as /dev/[sh]d? anyway.
->
-> All this stuff has historical reasons. GNU/Linux attempts to be an
-> egalitarian actor so it adapts to whatever you do.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
 

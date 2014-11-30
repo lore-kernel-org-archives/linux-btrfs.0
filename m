@@ -1,99 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54693 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751614AbaK3Nxa (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20219 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751679AbaK3Oi3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 08:53:30 -0500
-Date: Sun, 30 Nov 2014 13:53:28 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Shriramana Sharma <samjnaa@gmail.com>
+	Sun, 30 Nov 2014 09:38:29 -0500
+Date: Sun, 30 Nov 2014 22:37:59 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Guenther Starnberger <linux-btrfs@gst.priv.at>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: root subvol id is 0 or 5?
-Message-ID: <20141130135328.GG32735@carfax.org.uk>
-References: <CAH-HCWWVR=g6mZFZyu6wYRfP7Harr5bxokJi+_qW8QHsniFPFg@mail.gmail.com>
- <20141130115908.GF32735@carfax.org.uk>
- <CAH-HCWWk7J6N0M1z=2N__T0TQ1qffORnxdVNrpjGHh1gtQx3dg@mail.gmail.com>
+Subject: Re: Running out of disk space during BTRFS_IOC_CLONE - rebalance
+ doesn't help
+Message-ID: <20141130143758.GA8026@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20141130072942.GA475@gst.name>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="n7zTieg8iIQ1Wja9"
-In-Reply-To: <CAH-HCWWk7J6N0M1z=2N__T0TQ1qffORnxdVNrpjGHh1gtQx3dg@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141130072942.GA475@gst.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---n7zTieg8iIQ1Wja9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sun, Nov 30, 2014 at 07:08:51PM +0530, Shriramana Sharma wrote:
-> On Sun, Nov 30, 2014 at 5:29 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> >
-> >    In the data structures on disk, it's 5. The kernel aliases 0 to
-> > mean subvolid 5.
+On Sun, Nov 30, 2014 at 08:29:42AM +0100, Guenther Starnberger wrote:
+> I'm having an issue with a filesystem where I'm regularly running out of disk
+> space during deduplication with bedup. Rebalancing does not help and the same
+> issue occurs even after a full rebalance.
 > 
-> So why 5 and not just 0 which seems a logical choice? On top of this,
-> one needs to alias 0 to 5!
+> Main use-case for this filesystem is a 3 TB backup disk where I'm creating
+> backups by copying a newer version of the data into a new directory and then
+> afterwards running bedup to deduplicate the data (using the older already
+> existing data).
+> 
+> What happens is that bedup will deduplicate some files successfully, but at
+> some point fails with an errno 28 (no space left on device) during
+> deduplication. I had some very limited success with running a balance, but
+> afterwards the same issue happens again after a few more files are
+> deduplicated (applies to balances with and without filters). According to fsck
+> the filesystem appears to be OK.
+> 
+> Is there anything else that I can try out in order to fix this issue? Or should
+> I try to create a new filesystem and copy the existing data?
+> 
+> Here's the log output:
+> 
+> dmesg:
+> 
+> [235491.227888] ------------[ cut here ]------------
+> [235491.227912] WARNING: CPU: 0 PID: 14837 at fs/btrfs/super.c:259 __btrfs_abort_transaction+0x50/0x110 [btrfs]()
+> [235491.227914] BTRFS: Transaction aborted (error -28)
 
-   All of the trees used in the FS metadata have an ID number. The
-"well-known" trees have small, fixed IDs:
+There is something wrong in these codes, clone_finish_inode_update() is supposed to
+be successful since we've reserved some space in btrfs_start_transaction() for it.
 
-#define BTRFS_ROOT_TREE_OBJECTID 1ULL
-#define BTRFS_EXTENT_TREE_OBJECTID 2ULL
-#define BTRFS_CHUNK_TREE_OBJECTID 3ULL
-#define BTRFS_DEV_TREE_OBJECTID 4ULL
-#define BTRFS_FS_TREE_OBJECTID 5ULL
-#define BTRFS_ROOT_TREE_DIR_OBJECTID 6ULL
-#define BTRFS_CSUM_TREE_OBJECTID 7ULL
-#define BTRFS_QUOTA_TREE_OBJECTID 8ULL
-#define BTRFS_UUID_TREE_OBJECTID 9ULL
+Thanks,
 
-   Note that "the" FS tree has ID 5. A subvolume is basically another
-FS tree. Subvolumes other than the top level are given dynamically-
-allocated IDs starting from 256. Note also that the root, chunk,
-device and extent trees are all more important, lower level
-information than any FS tree, so they logically have lower numbers
-(and were probably implemented earlier).
+-liubo
 
-   There's no particular reason that it couldn't have been designed
-with the initial FS tree as ID 0, but it simply wasn't. However,
-changing this value now would result in two incompatible versions of
-btrfs -- neither one would be able to deal with the other's
-filesystems, because the FS tree has a different ID. (And writing code
-to cope with both would be painful, disruptive and error-prone.)
-
-   The cost of fixing this minor nit would, I think, far outweigh any
-benefits you'd get from it. Hence the "alias" for 0, which is (IIRC)
-done up-front in the ioctl interface, and therefore has few places
-that it could go wrong or affect the main code of the FS.
-
-   Hugo.
-
--- 
-Hugo Mills             | "How deep will this sub go?"
-hugo@... carfax.org.uk | "Oh, she'll go all the way to the bottom if we don't
-http://carfax.org.uk/  | stop her."
-PGP: 65E74AC0          |                                                  U571
-
---n7zTieg8iIQ1Wja9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUeyFYAAoJEFheFHXiqx3k56IP/R1IXjMibR1c2e0gQbIatmFm
-eLasLA4bpWZv24B01LOeKsjVjkFLNMO31eI3VcC5KoKKxLTfzeGBn/+rsFTL8oTY
-JBF38kv7dO4B6ZoZRzThy1vLzhGw1ZvPNQ+SstzE1nUA0Nng3qQDWtJVbXwFWQaD
-sUb25RSkBub6CdBiLznAYyylvRVcHSr1OKRVTNxq6TmulZWJU446WlovyUSk7cHF
-4WsTLE9SRs5wAauH5feuE9eYRdBr40sGoc5rUQzGl5+4cyiXDh9Xo5lcNFUFyWbO
-+l+MOAwq3bzkc74tfQZW3J5uP6HoOQii1Q11T0hAiX0BKMvTPe9qXketPZcNoWrt
-eBi5eTFLr58jWqRRo4qit5e3s5rpIuZ2YlyEJ1VlXJNgJSjFudT3JoYgviVB3tVn
-GDrLKjXMdJaQExsmF9UX1tMEsxugis09hg9AXEwJKe6L1yNzXsDIEDeZY3uhvMGQ
-V01373KU1CzNIv6KmkqcJARKsZYlr1RDZ3BQw1Dnm/dn31+m7WPJSBKfEcgw9bIh
-WIbEcr2VHBFVhMApCtmf56AoHBY2aoDqsdvcXJG6D9GyH+OjtVPemtxEmaZ+NMRC
-jgBZVQ2Lq/zDTIp2DV8cTC9SBVDXwqKFb4VLKv9fRrBpb7CpZYf9z+lvqGf+KXvh
-zzuR23oplyFMizTitae7
-=bVzr
------END PGP SIGNATURE-----
-
---n7zTieg8iIQ1Wja9--
+> [235491.227916] Modules linked in: fuse btrfs xor raid6_pq uas usb_storage ctr ccm toshiba_acpi sparse_keymap toshiba_haps joydev hp_accel lis3lv02d input_polldev hdaps(O) btusb bluetooth uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_core v4l2_common videodev qcserial media usb_wwan usbserial arc4 iwldvm snd_hda_codec_hdmi mousedev snd_hda_codec_conexant snd_hda_codec_generic mac80211 iTCO_wdt iTCO_vendor_support coretemp intel_powerclamp snd_hda_intel snd_hda_controller snd_hda_codec kvm_intel snd_hwdep iwlwifi thinkpad_acpi mei_me mei cfg80211 snd_pcm nvram lpc_ich kvm evdev snd_timer i915 snd mac_hid ac serio_raw e1000e psmouse led_class wmi rfkill shpchp drm_kms_helper intel_ips i2c_i801 soundcore drm battery hwmon ptp thermal pps_core i2c_algo_bit i2c_core video intel_agp intel_gtt button
+> [235491.227968]  acpi_cpufreq processor sch_fq_codel tp_smapi(O) thinkpad_ec(O) nfs lockd sunrpc fscache ext4 crc16 mbcache jbd2 algif_skcipher af_alg dm_crypt dm_mod atkbd libps2 crc32_pclmul crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd ehci_pci ehci_hcd usbcore usb_common i8042 serio ata_piix sd_mod crct10dif_generic crct10dif_pclmul crc_t10dif crct10dif_common ahci libahci ata_generic libata scsi_mod
+> [235491.228001] CPU: 0 PID: 14837 Comm: bedup Tainted: G        W  O   3.17.4-1-ARCH #1
+> [235491.228003] Hardware name: LENOVO 3680U4M/3680U4M, BIOS 6QET68WW (1.38 ) 12/01/2011
+> [235491.228004]  0000000000000000 000000005deed0d1 ffff880144a57a90 ffffffff81537b0e
+> [235491.228006]  ffff880144a57ad8 ffff880144a57ac8 ffffffff8107078d 00000000ffffffe4
+> [235491.228008]  ffff8801719dcaa0 ffff88009e273800 ffffffffa09f7630 0000000000000c46
+> [235491.228010] Call Trace:
+> [235491.228017]  [<ffffffff81537b0e>] dump_stack+0x4d/0x6f
+> [235491.228021]  [<ffffffff8107078d>] warn_slowpath_common+0x7d/0xa0
+> [235491.228024]  [<ffffffff8107080c>] warn_slowpath_fmt+0x5c/0x80
+> [235491.228029]  [<ffffffffa0949d10>] __btrfs_abort_transaction+0x50/0x110 [btrfs]
+> [235491.228040]  [<ffffffffa09aa9ba>] clone_finish_inode_update+0xda/0xf0 [btrfs]
+> [235491.228046]  [<ffffffffa09ad0de>] btrfs_clone+0x6ae/0xcc0 [btrfs]
+> [235491.228053]  [<ffffffffa09ade69>] btrfs_ioctl_clone+0x779/0x7b0 [btrfs]
+> [235491.228059]  [<ffffffffa09b18b7>] btrfs_ioctl+0x10d7/0x2810 [btrfs]
+> [235491.228063]  [<ffffffff81193b19>] ? free_pages_and_swap_cache+0xb9/0xe0
+> [235491.228066]  [<ffffffff8117d14c>] ? tlb_flush_mmu_free+0x2c/0x50
+> [235491.228068]  [<ffffffff8117dd2d>] ? tlb_finish_mmu+0x4d/0x50
+> [235491.228070]  [<ffffffff81185cd2>] ? unmap_region+0xe2/0x130
+> [235491.228073]  [<ffffffff811ac539>] ? kmem_cache_free+0x199/0x1d0
+> [235491.228075]  [<ffffffff811da5f0>] do_vfs_ioctl+0x2d0/0x4b0
+> [235491.228076]  [<ffffffff81187fd0>] ? do_munmap+0x260/0x400
+> [235491.228078]  [<ffffffff811da851>] SyS_ioctl+0x81/0xa0
+> [235491.228081]  [<ffffffff8153db29>] system_call_fastpath+0x16/0x1b
+> [235491.228082] ---[ end trace 636d52c4c1dff6bc ]---
+> 
+> btrfs fi show:
+> 
+> Label: none  uuid: 36c795fe-acb8-458e-87f4-721fedd81b8e
+>         Total devices 1 FS bytes used 2.14TiB
+>         devid    1 size 2.73TiB used 2.17TiB path /dev/mapper/crypt
+> 
+> btrfs fi df:
+> 
+> Data, single: total=2.12TiB, used=2.12TiB
+> System, DUP: total=32.00MiB, used=248.00KiB
+> Metadata, DUP: total=25.00GiB, used=23.64GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> I reported the same issue a year ago in <20131202081543.GA1104@gst.name> and
+> didn't receive a reply back then. The report in this email still applies to the
+> same filesystem. I just didn't use that filesystem a lot since then and also I
+> just recently retried to deduplicate the data on it.
+> 
+> - Guenther
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

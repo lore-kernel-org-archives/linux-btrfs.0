@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw02.dd24.net ([193.46.215.43]:37319 "EHLO
+Received: from mailgw02.dd24.net ([193.46.215.43]:37352 "EHLO
 	mailgw02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752017AbaK3W6P (ORCPT
+	with ESMTP id S1752179AbaK3W7v (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 17:58:15 -0500
-Received: from localhost (amavis01.live.igb.homer.key-systems.net [192.168.1.111])
-	by mailgw02.dd24.net (Postfix) with ESMTP id 9FC805FBBA
-	for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 22:52:00 +0000 (UTC)
+	Sun, 30 Nov 2014 17:59:51 -0500
+Received: from localhost (amavis02.live.igb.homer.key-systems.net [192.168.1.113])
+	by mailgw02.dd24.net (Postfix) with ESMTP id 1CB0C5FBB7
+	for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 22:59:50 +0000 (UTC)
 Received: from mailgw02.dd24.net ([192.168.1.36])
-	by localhost (amavis01.dd24.net [192.168.1.105]) (amavisd-new, port 10236)
-	with ESMTP id APvXAmnHTpaj for <linux-btrfs@vger.kernel.org>;
-	Sun, 30 Nov 2014 22:52:00 +0000 (GMT)
+	by localhost (amavis02.dd24.net [192.168.1.106]) (amavisd-new, port 10236)
+	with ESMTP id GAfA3JJ0+FNA for <linux-btrfs@vger.kernel.org>;
+	Sun, 30 Nov 2014 22:59:49 +0000 (GMT)
 Received: from heisenberg.fritz.box (ppp-188-174-19-245.dynamic.mnet-online.de [188.174.19.245])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
 	by mailgw02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 22:52:00 +0000 (UTC)
-Message-ID: <1417387919.4707.33.camel@scientia.net>
+	for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 22:59:49 +0000 (UTC)
+Message-ID: <1417388388.4707.34.camel@scientia.net>
 Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Sun, 30 Nov 2014 23:51:59 +0100
+Date: Sun, 30 Nov 2014 23:59:48 +0100
 In-Reply-To: <m5dash$58v$1@ger.gmane.org>
 References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
 	 <20141125163905.GJ26471@twin.jikos.cz> <m5dash$58v$1@ger.gmane.org>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-+4S6XOpKhdDLJOl5Jm2S"
+	boundary="=-4XWlbvTx3kFdwT9qUUVf"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-+4S6XOpKhdDLJOl5Jm2S
+--=-4XWlbvTx3kFdwT9qUUVf
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -48,7 +48,7 @@ Chris.
 
 
 
---=-+4S6XOpKhdDLJOl5Jm2S
+--=-4XWlbvTx3kFdwT9qUUVf
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -135,19 +135,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MTEzMDIyNTE1
-OVowTwYJKoZIhvcNAQkEMUIEQOB43H/maPvi9nsGR8REkyP1w9zasoxGlb5mtjkKX/V57pkHcK0f
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MTEzMDIyNTk0
+OFowTwYJKoZIhvcNAQkEMUIEQOB43H/maPvi9nsGR8REkyP1w9zasoxGlb5mtjkKX/V57pkHcK0f
 UNkM194NzJOWK3TV1Mpj45GnVZ5J/p29hxcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBI8HhnfAazPdqdBH2quwpEnEWyo3TP
-KemnlxH/0WGOJxAXMqJwjAizeAg5q3JdMSZ5MB6NsG41XCKs1DSzBnUTfN9ZLvDKx/djKVD6DS9l
-Ku46rho+Fg8bxjYpFEEga8T/m2pd/WyPcKTJ5KIPm4HaDtDarEIc5ZtRdhotVeqVNO4OPmzLd6kg
-g/DoFYPEWouPYi4bXrppyaR1MAWgGTmHUNRLmSVompuCvsUCHM/637JXf3JiRXRfey6yLLGQzc4z
-YDsmtTi0PYUVic05VY3wZq+KvxZKHzTs6vSLFFnxbypjT/qQk7tAPu1g6YSRUcTRP8vEc8e4ppOo
-A3QJlvc6AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQA2yKRzMW/HOAcsCAMH5R6a3WcKqznY
+qkZXGLYdQ18V7Tfqw70PoIGastSzaZ/+qOdU0LB0mxKulbzfLOrMrjEPdQv9pyTSz8Fa8xhjvSmk
+I1gEm3dxPJvlrK44QnJTRsYeFtlsQ66QZkbEsxaTeEMFzEQLcxFGqmtAguCDwtJRIzCfTcZehLKl
+AnfIW6/26K8KbhRY0g/aixF0D9xYFXlNvIDoJ/XBxzhck8jDhdPiTjBHGwR3Qwg7kX+E1dqxP8SV
+Nza3vwEgE3MR0lyZNuGkfwTvURabqnI9/WHiaS5gt/Y34ComJCr9KULkQly5HnpGXjsoKhXLSe9n
+H0tntTviAAAAAAAA
 
 
---=-+4S6XOpKhdDLJOl5Jm2S--
+--=-4XWlbvTx3kFdwT9qUUVf--
 

@@ -1,35 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f45.google.com ([209.85.216.45]:47951 "EHLO
-	mail-qa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751718AbaK3EAe convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:39915 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751718AbaK3EXJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Nov 2014 23:00:34 -0500
-Received: by mail-qa0-f45.google.com with SMTP id x12so5916584qac.32
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Nov 2014 20:00:33 -0800 (PST)
+	Sat, 29 Nov 2014 23:23:09 -0500
+Date: Sat, 29 Nov 2014 20:23:06 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20141130042306.GE8916@merlins.org>
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAH-HCWXVn3pyejxzy7_sQmGPwARf6hLxYdHPWBrhd5bkZvExpQ@mail.gmail.com>
-References: <CAH-HCWXVn3pyejxzy7_sQmGPwARf6hLxYdHPWBrhd5bkZvExpQ@mail.gmail.com>
-From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Sun, 30 Nov 2014 09:30:12 +0530
-Message-ID: <CAH-HCWV9dBN4Z0B2p_hRAOdwTgAHr7bOcPLjZ7oRKBp9780emQ@mail.gmail.com>
-Subject: Re: Change "total" in btrfs filesystem df output to "alloc"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+Subject: Re: Possible to undo subvol delete?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 31, 2014 at 7:25 AM, Shriramana Sharma <samjnaa@gmail.com> wrote:
-> Hello. There seem to be lots of questions in various forums re the
-> output of btrfs fi df -- especially w.r.t. the usage of the word
-> "total". For example see https://community.oracle.com/thread/2459838
->
-> I feel it would make the intent clearer if "total" were changed to
-> "alloc" or "allocated" (if the short form is felt unclear). It would
-> also help people understand the output of regular df on a btrfs system
-> since one can understand easier that pre-allocated space would count
-> as "used" space as it is not free!
+On Sun, Nov 30, 2014 at 09:03:14AM +0530, Shriramana Sharma wrote:
+> IIUC with BtrFS while it is possible to easily undelete a file or
+> ordinary directory if a snapshot of the containing subvol exists, it
+> seems that it's not elementary to undelete a subvol itself, because
+> all subvols are under the root-level subvol (id 0 or 5, see my other
+> q) but even snapshotting the root subvol will not snapshot any subvols
+> under it.
+> 
+> So is there any way to undo a subvol delete?
 
-Where should I report a bug to get this fixed? Thanks.
+If you didn't snapshot that volume before deleting it, you're SOL.
+If you snapshotted it, rename that snapshot to the other name, and
+you're done.
 
+Btrfs doesn't offer undelete, it only lets you keep multiple copies of
+your data at very little cost, so you can retrieve a snapshot copy if
+you deleted your current volume's data.
+
+Marc
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,77 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43297 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752051AbaK3MwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 07:52:15 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xv3z3-0008Fc-GS
-	for linux-btrfs@vger.kernel.org; Sun, 30 Nov 2014 13:52:13 +0100
-Received: from 213.47.207.20 ([213.47.207.20])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 13:52:13 +0100
-Received: from wertstoffe by 213.47.207.20 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 13:52:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: =?UTF-8?B?SmFrb2IgU2Now7xyeg==?= <wertstoffe@nurfuerspam.de>
-Subject: Re: Skript for backup btrfs on external HD
-Date: Sun, 30 Nov 2014 11:42:43 +0100
-Message-ID: <3u8rkb-psc.ln1@venus.xundeenergie.ssh22.net>
-References: <p6npkb-0nh.ln1@venus.xundeenergie.ssh22.net> <20141129211154.GY8916@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-In-Reply-To: <20141129211154.GY8916@merlins.org>
+Received: from mail-qg0-f51.google.com ([209.85.192.51]:59043 "EHLO
+	mail-qg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751942AbaK3NFN convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Nov 2014 08:05:13 -0500
+Received: by mail-qg0-f51.google.com with SMTP id l89so6487441qgf.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 05:05:12 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAH-HCWXhm6a2jU-eO+YRV9EW-LV6Z-NQeNR5RL_cC91txQc6zw@mail.gmail.com>
+References: <CAH-HCWUR4QPDn=M8nchdRedzGU3DYDHC8d6YRH8-FBm6trWCJg@mail.gmail.com>
+ <20141129142813.GD32735@carfax.org.uk> <CAH-HCWWh02invDCdx4-bPORdg4r39efsW=buKXTVtfspSQ9sVA@mail.gmail.com>
+ <5479FD39.6030208@pobox.com> <CAH-HCWXhm6a2jU-eO+YRV9EW-LV6Z-NQeNR5RL_cC91txQc6zw@mail.gmail.com>
+From: Shriramana Sharma <samjnaa@gmail.com>
+Date: Sun, 30 Nov 2014 18:34:52 +0530
+Message-ID: <CAH-HCWVt=w0bvcfpTMBa=vAqCJGhEzoaZ+Q1QXF+vSFS21mVgw@mail.gmail.com>
+Subject: Re: Moving contents from one subvol to another
+To: Robert White <rwhite@pobox.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 2014-11-29 um 22:11 schrieb Marc MERLIN:
-> On Sat, Nov 29, 2014 at 09:34:01PM +0100, Jakob Schürz wrote:
->> Hi there!
->>
->> I made a script to do backup with btrfs on a external HD.
->> You can see the function, how it works, and how it's to be used on
->> my site http://linux.xundeenergie.at/doku.php?id=mkbtrbackup
->> The site is in german. An english one will follow later.
->>
->> Do you want some explanations?
+On Sun, Nov 30, 2014 at 9:23 AM, Shriramana Sharma <samjnaa@gmail.com> wrote:
 >
-> Sure, how is it different from those 3?
-> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup#Available_Backup_Tools
+>
+> Why should noCoW affect cp --reflink anyhow? I just created a 500 MiB
+> file from /dev/urandom under a chattr +C-ed dir, and copied to another
+> subvol using cp --reflink, and fi df still shows 500 MiB, not 1 GiB.
 
-Wheter i haven't seen it, or this scripts can't do recursive backup...
+Looks like I might have spoken too soon (because I've read that some
+changes aren't visible until the next FS commit) so right now it
+actually says 1 GiB used, which I can't grok because why should a
+nocow file be physically copied (to new blocks) just because it's
+nocow? Is it because it is possible that the two copies are
+overwritten separately at the same time?
 
-If you have subvolumes in subvolumes (for example: /home, /home/user1, 
-/home/user2 /var, /var/spool, /var/lib are extra subvolumes IN the 
-normal filetree from linux), my script takes them all.
-It looks on the external storage, if there's an older snapshot (i call 
-all subvolumes together in this case a snapshot!!) which is also on the 
-local machine. If so, is makes a incremental backup. If not, a initial 
-transfer is started. For each subvolume in the snapshot!
+But still, it seems to me that mv should make it so that the nocow
+attr is temporarily (atomically?) suspended/ignored just for the
+duration of the relocation, since there aren't going to be any two
+copies to be overwritten at the same time.
 
-And my script changes the fstab-entry in the new snapshot.
-The original has the option "subvol=@SUBVOL", where @SUBVOL is the name 
-of the original system.
-It changes the @SUBVOLUME to the subvolume-id, so you can mount your 
-snapshot easy.
-
-One Point is missing... Modifying of grub to serve boot-menu-entries for 
-older snapshots.
-
-You get a systemd-unit, in the tarball, which makes a snapshot from your 
-system, on successful boot, so you can switch back fast, if an update 
-destroyed your system.
-
-And it is for minimal-systems... no python, no perl, no java... only 
-shell(bash) :-)
-
-regards
-jakob
-
+Comments?
 
 -- 
-http://xundeenergie.at
-http://verkehrsloesungen.wordpress.com/
-http://cogitationum.wordpress.com/
-
+Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा

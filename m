@@ -1,31 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48251 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750935AbaKYRlz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Nov 2014 12:41:55 -0500
-Date: Tue, 25 Nov 2014 18:41:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: kreijack@inwind.it
-Cc: Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH 0/4] New 'btrfs chunk list' command
-Message-ID: <20141125174154.GM26471@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1416931045-24259-1-git-send-email-kreijack@inwind.it>
- <1995604.saxct2VtQ4@merkaba>
- <5474B805.1090806@gmail.com>
+Received: from mail-yk0-f180.google.com ([209.85.160.180]:51313 "EHLO
+	mail-yk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752032AbaK3XF0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Nov 2014 18:05:26 -0500
+Received: by mail-yk0-f180.google.com with SMTP id 9so4276852ykp.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 15:05:25 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5474B805.1090806@gmail.com>
+In-Reply-To: <1417388388.4707.34.camel@scientia.net>
+References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
+	<20141125163905.GJ26471@twin.jikos.cz>
+	<m5dash$58v$1@ger.gmane.org>
+	<1417388388.4707.34.camel@scientia.net>
+Date: Sun, 30 Nov 2014 23:05:25 +0000
+Message-ID: <CANBHLUiJNZ_hH-tKp=985hNzi9ZjjB-XrxiTRxneLk6cMB3b8w@mail.gmail.com>
+Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
+From: Dimitri John Ledkov <xnox@debian.org>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 25, 2014 at 06:10:29PM +0100, Goffredo Baroncelli wrote:
-> > Can the chunk list also display the usage inside the chunks?
-> Unfortunately not. I don't know how it would be possible to get this info.
+On 30 November 2014 at 22:59, Christoph Anton Mitterer
+<calestyo@scientia.net> wrote:
+>>Agree with others about -C 256...-C sha256 is only three
+>>letters more ;)
+>
+> Ideally, sha2-256 would be used, since there will be (are) other
+> versions of sha which have 256 bits size.
+>
 
-It takes some more parsing of the fs structures, doable via the
-SEARCH_TREE ioctl. I have an unpolished patch to show the logical chunks
-(though without actual chunk usage), similar can be done for per-device
-chunks. The patch was a debugging helper so it hasn't been submitted yet
-until it's more user friendly. I'll keep the per-device request in mind.
+Nope, we should use standard names. SHA-2 256 was the first SHA algo
+to use 256 bits, thus it's commonly referred to as sha256 across the
+board in multiple pieces of software.
+SHA-3 family of hashes started to have the same length and thus will
+be known as sha3-256 etc.
+
+Shorthand variant names in this table here
+http://en.wikipedia.org/wiki/SHA-1#Comparison_of_SHA_functions appear
+to me how SHA hashes are currently referred as.
+
+-- 
+Regards,
+
+Dimitri.

@@ -1,56 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49149 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752390AbaLAISX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 03:18:23 -0500
-Received: from babycakes.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 9E6AC20876
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Dec 2014 19:18:21 +1100 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:57951 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752719AbaLAJ0g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 04:26:36 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XvNFb-0000Ay-8F
+	for linux-btrfs@vger.kernel.org; Mon, 01 Dec 2014 10:26:35 +0100
+Received: from 94.250.180.197 ([94.250.180.197])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 10:26:35 +0100
+Received: from gour by 94.250.180.197 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 10:26:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: Gour <gour@atmarama.net>
 Subject: Re: pro/cons of raid1 with mdadm/lvm2
-Date: Mon, 1 Dec 2014 19:18:19 +1100
-References: <20141130121147.45884217@atmarama> <E4D50A09-CBA8-47DB-833B-D80D7BD6BD92@coker.com.au> <CAJCQCtTM8JpH_-E6dsbV53aCx7V9ptH94peST63KJ6AR=OCDqQ@mail.gmail.com>
-In-Reply-To: <CAJCQCtTM8JpH_-E6dsbV53aCx7V9ptH94peST63KJ6AR=OCDqQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201412011918.19753.russell@coker.com.au>
+Date: Mon, 1 Dec 2014 10:26:24 +0100
+Message-ID: <20141201102624.1224bc54@atmarama>
+References: <20141130121147.45884217@atmarama>
+	<E4D50A09-CBA8-47DB-833B-D80D7BD6BD92@coker.com.au>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 1 Dec 2014, Chris Murphy <lists@colorremedies.com> wrote:
-> On Sun, Nov 30, 2014 at 3:06 PM, Russell Coker <russell@coker.com.au> wrote:
-> > When the 2 disks have different data mdadm has no way of knowing which
-> > one is correct and has a 50% chance of overwriting good data. But BTRFS
-> > does checksums on all reads and solves the problem of corrupt data - as
-> > long as you don't have 2 corrupt sectors in matching blocks.
-> 
-> Yeah. I'm not sure though if openSUSE 13.2 prevents users from
-> creating btrfs raid1 volumes entirely, or if it's just an install time
-> limitation.
+On Mon, 01 Dec 2014 09:06:19 +1100
+Russell Coker <russell@coker.com.au> wrote:
 
-With BTRFS you can make it RAID-1 afterwards.  The possibility of data loss 
-during system install usually isn't something you are concerned about so this 
-shouldn't be a problem.
+> When the 2 disks have different data mdadm has no way of knowing
+> which one is correct and has a 50% chance of overwriting good data.
+> But BTRFS does checksums on all reads and solves the problem of
+> corrupt data - as long as you don't have 2 corrupt sectors in
+> matching blocks.
 
-> I know that Fedora's installer won't allow the user to create Btrfs on
-> LVM, and it probably doesn't allow it on md raid either.
+Hmm, this is very interesting and valuable info. Thank you.
 
-For LVM that's reasonable, for MD-RAID that would be a bug IMHO.
 
-On Mon, 1 Dec 2014, Roman Mamedov <rm@romanrm.net> wrote:
->   * mdadm RAID has much better read balancing;
->     Btrfs reads are satisfied from what's in effect a random drive
-> (PID-based balancing of threads to drives), mdadm reads from the
-> less-loaded drive. Also mdadm has a way to specify some RAID1 array
-> members as to be never used for reads if at all possible ("write-mostly"),
-> which helps in RAID1 of HDD and SSD.
-
-True.  But that's just a lack of performance tuning in the current code, it 
-will be fixed at some future time.
+Sincerely,
+Gour
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Many, many births both you and I have passed. I can remember 
+all of them, but you cannot, O subduer of the enemy!
+
+-- 
+One is understood to be in full knowledge whose every endeavor 
+is devoid of desire for sense gratification. He is said by sages 
+to be a worker for whom the reactions of work have been burned 
+up by the fire of perfect knowledge.
+
+http://www.atmarama.net | Hlapicina (Croatia) | GPG: 52B5C810
+
+

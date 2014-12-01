@@ -1,57 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47750 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753661AbaLAShh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 13:37:37 -0500
-Date: Mon, 1 Dec 2014 19:37:29 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>, dsterba@suse.cz,
-        Chris Mason <clm@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-Message-ID: <20141201183729.GM12140@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
- <1416859665.3019.6@mail.thefacebook.com>
- <20141125164717.GK26471@twin.jikos.cz>
- <5475D7F3.4040408@swiftspirit.co.za>
- <5475DC9A.3060003@gmail.com>
+Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:43748 "EHLO
+	resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751287AbaLASrq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 13:47:46 -0500
+Message-ID: <547CB7D0.4040800@pobox.com>
+Date: Mon, 01 Dec 2014 10:47:44 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5475DC9A.3060003@gmail.com>
+To: Peter Volkov <pva@gentoo.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs stuck with lot's of files
+References: <1417434411.20237.1.camel@gentoo.org>
+In-Reply-To: <1417434411.20237.1.camel@gentoo.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 26, 2014 at 08:58:50AM -0500, Austin S Hemmelgarn wrote:
-> On 2014-11-26 08:38, Brendan Hide wrote:
-> > On 2014/11/25 18:47, David Sterba wrote:
-> >> We could provide an interface for external applications that would make
-> >> use of the strong checksums. Eg. external dedup, integrity db. The
-> >> benefit here is that the checksum is always up to date, so there's no
-> >> need to compute the checksums again. At the obvious cost.
-> >
-> > I can imagine some use-cases where you might even want more than one
-> > algorithm to be used and stored. Not sure if that makes me a madman,
-> > though. ;)
-> >
-> Not crazy at all, I would love to have the ability to store multiple 
-> different weak but fast hash values.  For example, on my laptop, it is 
-> actually faster to compute crc32c, adler32, and md5 hashes together than 
-> it is to compute pretty much any 256-bit hash I've tried.
+On 12/01/2014 03:46 AM, Peter Volkov wrote:
+> Hi, guys.
+ > (stuff about getting hung up trying to write to one drive)
 
-Well, this is doable :) there's space for 256 bits in general, the order of
-checksum bytes in one "checksum word" would be given by fixed order the
-algorighms are defined. The code complexity would increase, but not that
-much I think.
+That drive (/dev/sdn) is probably starting to fail. Some older drives 
+basically go unresponsive when they start to go bad. Particularly if 
+they've gone bad enough to have run out of spare tracks/sectors. 
+Sometimes they will just refuse to answer. Sometimes they will go into 
+"try again" mode, and the same activity will be retried indefinitely. 
+This will then fill up your write queues and jam up all sorts of subsystems.
 
-> This then brings up the issue of what to do when we try to mount such a 
-> fs on a system that doesn't support some or all of the hashes used.
+Step 1: Backup your data. Since you didn't RAID your data at all, when 
+that drive dies your data is going to go away in fascinating and 
+unpredictable ways. (RAID1 metadata with no RAID1 or RAID5 of the data 
+means you have essentially no media failure protection.)
 
-I see two modes: first fail if all not present, or relaxed by a mount
-option to accept at least one.
+Step 2: Turn on SMART (if you can and you can) and check whether the 
+drive is in its final moments of life. If your disk is all green lights 
+according to smart, you may be able to un-jamb it by just doing a 
+balance as described and explained after the next time I quote you.
 
-But let's keep this open, I'm not yet convinced that combining more weak
-algos makes sense from the crypto POV. If this should protect against
-random bitflips, would one fast-but-weak be comparable to a combination?
-Or other expectations.
+Step 3: Switch your data mode to RAID5. It will cost you about half of 
+your currenly free data space, but it won't leave you _as_ _vulnerable_ 
+to complete data loss as you are now. SMART might be wrong about your 
+drive being fine if it says it is.
+
+>   # btrfs filesystem df /store/
+> Data, single: total=11.92TiB, used=10.86TiB
+
+Reguardless of the above...
+
+You have a terabyte of unused but allocated data storage. You probably 
+need to balance your system to un-jamb that. That's a lot of space that 
+is unavailable to the metadata (etc).
+
+ASIDE: Having your metadata set to RAID1 (as opposed to the default of 
+DUP) seems a little iffy since your data is still set to DUP. This 
+configuration is not going to leave you with a mountable filesystem if 
+you lose a disk. I'm not sure if the RAID1 layout is going to want to 
+put specific datum in specific places, but it might, which if it does 
+might leave you in an irreconcilable position.
+
+Either way, you will probably un-jam your system in the short run by 
+doing a balance. A full balance (no filter args at all) would be your 
+best bet.
+
+FUTHER ASIDE: raid1 metadata and raid5 data might be good for you given 
+22 volumes and 10% empty empty space it would only cost you half of your 
+existing empty space. If you don't RAID your data, there is no real 
+point to putting your metadata in RAID.
+
+[Yes, I said my basic points about your current layout two different 
+ways and times. You are either "just a little over-committed on space" 
+or you are "about to lose all your data" and it's impossible to tell 
+which is the case from here.]
+
+Backup your data. NOW!
+

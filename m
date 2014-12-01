@@ -1,34 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f174.google.com ([209.85.160.174]:57337 "EHLO
-	mail-yk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752126AbaLABAh convert rfc822-to-8bit (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:30643 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752190AbaLAB65 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 20:00:37 -0500
-Received: by mail-yk0-f174.google.com with SMTP id 10so4275212ykt.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 17:00:37 -0800 (PST)
+	Sun, 30 Nov 2014 20:58:57 -0500
+Message-ID: <547BCB43.5020505@cn.fujitsu.com>
+Date: Mon, 1 Dec 2014 09:58:27 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <E4D50A09-CBA8-47DB-833B-D80D7BD6BD92@coker.com.au>
-References: <20141130121147.45884217@atmarama>
-	<E4D50A09-CBA8-47DB-833B-D80D7BD6BD92@coker.com.au>
-Date: Sun, 30 Nov 2014 18:00:37 -0700
-Message-ID: <CAJCQCtTM8JpH_-E6dsbV53aCx7V9ptH94peST63KJ6AR=OCDqQ@mail.gmail.com>
-Subject: Re: pro/cons of raid1 with mdadm/lvm2
-From: Chris Murphy <lists@colorremedies.com>
-To: Russell Coker <russell@coker.com.au>
-Cc: Gour <gour@atmarama.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dsterba@suse.cz>
+Subject: Crazy idea of cleanup the inode_record btrfsck things with SQL?
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 3:06 PM, Russell Coker <russell@coker.com.au> wrote:
-> When the 2 disks have different data mdadm has no way of knowing which one is correct and has a 50% chance of overwriting good data. But BTRFS does checksums on all reads and solves the problem of corrupt data - as long as you don't have 2 corrupt sectors in matching blocks.
+[BACKGROUND]
+I'm trying to implement the function to repair missing inode item.
+Under that case, inode type must be salvaged(although it can be fallback to
+FILE).
 
-Yeah. I'm not sure though if openSUSE 13.2 prevents users from
-creating btrfs raid1 volumes entirely, or if it's just an install time
-limitation.
+One case should be, if there is any dir_item/index or inode_ref refers the
+inode as parent, the type of that inode must be DIR.
 
-I know that Fedora's installer won't allow the user to create Btrfs on
-LVM, and it probably doesn't allow it on md raid either.
+However, currently btrfsck implement (inode_record only records backref), we
+are unable to search the inode_backref whose parent is given inode number.
 
--- 
-Chris Murphy
+[FIRST IMPLEMENT DESIGN]
+My first thought is to implement an generic inode-relation structure,
+recording parent ino, child ino, name and namelen, and restore the structure
+in a rbtree, not in the child/parent's list.
+
+But I soon recognize that this is a perfect use case for relational 
+database,
+as 'ino' as the primary key for INODE table,
+('parent_ino', 'child_ino', 'name') as the primary key for INODE_REF table.
+
+[CRAZY IDEA]
+So why not using SQL to implement the btrfsck inode-record things?
+
+With such crazy idea, it will be much much easier to do any iteration from a
+given ino, and with the already mature RDB implement, like sqlite3, we can
+save hundreds of lines of codes implementing the rb-tree or list.
+
+[PROS]
+1. Easy to maintain
+    Now we don't need to maintain the rbtree searching or list 
+iteration, but
+    easy SQL lines and its wrapper.
+
+2. Easy to extend
+    If we need to record something more, like extents and its relation to
+    inode, we only need to create 2 tables and several SQL and wrappers.
+
+3. Reduced memory usage for HUGE fs.
+    When metadata grows to several TB or even more, current rb-tree based
+    implement may run short of memory since they are all stored in memory.
+    But if use SQL, RDBMS like sqlite3 can restore things in either 
+memory or
+    disk, which may hugely reduce the memory usage for huge btrfs.
+
+    If not use existing RDBMS, we need to implement complicated memory 
+control
+    system to manage memory in userland.
+
+[CONS]
+1. Heavy implement
+    SQL hide the rb-tree or B+ tree implement but costs more memory(if not
+    compressed) and CPU cycles, which will be slower than the simple rb-tree
+    implement even using lightweight RDBMS like sqlite3.
+
+2. Heavy dependency
+    If use it, btrfs-progs will include RDBMS as the make and runtime
+    dependency.
+    Such low level progs depend on high level programs like sqlite3 may 
+be very
+    strange.
+
+3. A lot of rework on existing codes.
+    Even SQL is easier to maintain and extend, if we use it, we still 
+need to
+    reimplement several hundreds or even thousands lines of code to 
+implement
+    it, not to mention the regression tests.
+
+4. Copyright
+    Will it cause any copyright problem if using non-GPL RDBMS like 
+sqlite3 in
+    GPLv2 btrfs-progs?
+
+[NEED FEEDBACK]
+Any feedback or discussion on the crazy idea is welcomed, since this may 
+needs
+a lot of work, it definitely needs a lot review on the idea before it 
+comes to
+codes.
+
+Thanks,
+Qu
+

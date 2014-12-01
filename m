@@ -1,58 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46328 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47463 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750937AbaLARTC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 12:19:02 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E92D3AC7D
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Dec 2014 17:18:59 +0000 (UTC)
-Date: Mon, 1 Dec 2014 18:18:54 +0100
+	id S1753689AbaLASSa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 13:18:30 -0500
+Date: Mon, 1 Dec 2014 19:18:28 +0100
 From: David Sterba <dsterba@suse.cz>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Christoph Hellwig <hch@infradead.org>,
-        Linux Filesystem Development List
-	<linux-fsdevel@vger.kernel.org>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        XFS Developers <xfs@oss.sgi.com>
-Subject: Re: [PATCH-v4 1/7] vfs: split update_time() into update_time() and
- write_time()
-Message-ID: <20141201171854.GH12140@twin.jikos.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Filipe David Manana <fdmanana@gmail.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
+        Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        linux-nfs@vger.kernel.org,
+        Trond Myklebust <trond.myklebust@primarydata.com>,
+        Mel Gorman <mgorman@suse.de>
+Subject: Re: [PATCH v2 5/5] btrfs: enable swap file support
+Message-ID: <20141201181828.GL12140@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
- <1416997437-26092-2-git-send-email-tytso@mit.edu>
- <20141126192328.GA20436@infradead.org>
- <20141127144116.GA14091@thunk.org>
- <20141127153315.GC14091@thunk.org>
- <20141127164952.GA1622@infradead.org>
- <20141127202731.GG14091@thunk.org>
- <20141201092810.GA5538@infradead.org>
- <20141201150450.GA3337@thunk.org>
+References: <cover.1416563833.git.osandov@osandov.com>
+ <afd3c1009172a4a1cfa10e73a64caf35c631a6d4.1416563833.git.osandov@osandov.com>
+ <20141121180045.GF8568@twin.jikos.cz>
+ <20141122200357.GA15189@mew>
+ <20141124220302.GA5785@mew.dhcp4.washington.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141201150450.GA3337@thunk.org>
+In-Reply-To: <20141124220302.GA5785@mew.dhcp4.washington.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 01, 2014 at 10:04:50AM -0500, Theodore Ts'o wrote:
-> On Mon, Dec 01, 2014 at 01:28:10AM -0800, Christoph Hellwig wrote:
-> > 
-> > The ->is_readonly method seems like a clear winner to me, I'm all for
-> > adding it, and thus suggested moving it first in the series.
+On Mon, Nov 24, 2014 at 02:03:02PM -0800, Omar Sandoval wrote:
+> Alright, I took a look at this. My understanding is that a PREALLOC extent
+> represents a region on disk that has already been allocated but isn't in use
+> yet, but please correct me if I'm wrong. Judging by this comment in
+> btrfs_get_blocks_direct, we don't have to worry about PREALLOC extents in
+> general:
 > 
-> It's a real winner for me as well, but the reason why I dropped it is
-> because if btrfs() has to keep its ->update_time function, we wouldn't
-> actually have a user for is_readonly().  I suppose we could have
-> update_time() call ->is_readonly() and then ->update_time() if they
-> exist, but it only seemed to add an extra call and a bit of extra
-> overhead without really simplifying things for btrfs.
+> /*
+>  * We don't allocate a new extent in the following cases
+>  *
+>  * 1) The inode is marked as NODATACOW.  In this case we'll just use the
+>  * existing extent.
+>  * 2) The extent is marked as PREALLOC.  We're good to go here and can
+>  * just use the extent.
+>  *
+>  */
 
-We would use is_readonly in order to remove some extra checks from btrfs
-(setxattr, removexattr, possibly setsize).
+Ok, thanks for checking.
 
-> If there were other users of ->is_readonly, then it would make sense,
-> but it seemed better to move into a separate code refactoring series.
+> A couple of other considerations that cropped up:
+> 
+> - btrfs_get_extent does a bunch of extra work if the extent is not cached in
+>   the extent map tree that would be nice to avoid when swapping
+> - We might still have to do a COW if the swap file is in a snapshot
+> 
+> We can avoid the btrfs_get_extent by pinning the extents in memory one way or
+> another in btrfs_swap_activate.
 
-Yeah it would be better addressed separately as it's not the point of
-lazytime patchset and only turned out to be a good idea during the
-iterations.
+That's preferrable, the overhead should be small.
+
+> The snapshot issue is a little tricker to resolve. I see a few options:
+> 
+> 1. Just do the COW and hope for the best
+
+Snapshotting of NODATACOW files work, the extents are COWed on the first
+write, the original owner sees no change.
+
+> 2. As part of btrfs_swap_activate, COW any shared extents. If a snapshot
+> happens while a swap file is active, we'll fall back to 1.
+
+So we should make sure that any write to the swapfile will not lead to
+the first-COW, this would require to scan all the extents and see if
+we're the owner and COW eventually.
+
+Doing that automatically is IMO better from the user perspective,
+compared to an erroring out and requesting a manual "dd" over the file.
+
+Possibly, the implied COW could create preallocated extents so we do not
+have to rewrite the data.
+
+> 3. Clobber any swap file extents which are in a snapshot, i.e., always use the
+> existing extent.
+
+Easy to implement but could lead to bad suprises.
+
+More thoughts:
+
+There are some guards in the generic code to prevent unwanted
+modifications to the swapfiles (eg. no truncate, no fallocate, no
+deletion). Further we should audit btrfs ioctls that may interfere with
+swap and forbid any action (notably the cloning and deduplication ones).

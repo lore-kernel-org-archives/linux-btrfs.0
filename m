@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:40475 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752227AbaLADP7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 22:15:59 -0500
-Received: by mail-pa0-f42.google.com with SMTP id et14so10141457pad.15
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 19:15:59 -0800 (PST)
-Date: Sun, 30 Nov 2014 19:15:55 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: Pranith Kumar <bobby.prani+lkml@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Joe Perches <joe@perches.com>,
-        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: fix suspicious RCU in BTRFS_IOC_DEV_INFO
-Message-ID: <20141201031555.GB14040@mew>
-References: <cover.1417335583.git.osandov@osandov.com>
- <6566ef127f0d7ad4d33dd90362dd76e431359ef8.1417335583.git.osandov@osandov.com>
- <CAJhHMCD6voVEry=CkSyu5FpjiYXzh1aWxNq2_gmxasHqgV+csA@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:19090 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752124AbaLAKCj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 05:02:39 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB1A2HwW020996
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Dec 2014 18:02:17 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix wrong list access on the failure of reading out checksum
+Date: Mon, 1 Dec 2014 18:04:13 +0800
+Message-ID: <1417428253-3139-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJhHMCD6voVEry=CkSyu5FpjiYXzh1aWxNq2_gmxasHqgV+csA@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 10:11:41AM -0500, Pranith Kumar wrote:
-> On Sun, Nov 30, 2014 at 3:26 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> > A naked read of the value of an RCU pointer isn't safe. Put the whole access in
-> > an RCU critical section, not just the pointer dereference.
-> >
-> > Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> 
-> You can use rcu_access_pointer() in the if() condition check rather
-> than increasing the read critical section. We should try to keep the
-> critical section as small as possible.
-> 
-> Also, since we have rcu_str_deref() we can use that instead of
-> rcu_dereference() on device->name. Thoughts?
-> 
-That's right, I forgot about rcu_access_pointer. The difference is probably
-negligible, and I doubt the performance of this ioctl is very important. Since
-we're going to be dereferencing the pointer anyways in some (most?) cases, I
-think this is a bit more readable.
+If we failed to reading out the checksum, we would free all the checksums
+in the list. But the current code accessed the list head, not the entry
+in the list. Fix it.
 
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/file-item.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 783a943..c26b58f 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -413,7 +413,8 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 	ret = 0;
+ fail:
+ 	while (ret < 0 && !list_empty(&tmplist)) {
+-		sums = list_entry(&tmplist, struct btrfs_ordered_sum, list);
++		sums = list_first_entry(&tmplist, struct btrfs_ordered_sum,
++					list);
+ 		list_del(&sums->list);
+ 		kfree(sums);
+ 	}
 -- 
-Omar
+1.9.3
+

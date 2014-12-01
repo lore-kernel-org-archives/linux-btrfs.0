@@ -1,53 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f52.google.com ([209.85.216.52]:63011 "EHLO
-	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753187AbaLAQkF convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 11:40:05 -0500
-Received: by mail-qa0-f52.google.com with SMTP id dc16so7289080qab.25
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 08:40:05 -0800 (PST)
+Received: from mail-qc0-f182.google.com ([209.85.216.182]:58412 "EHLO
+	mail-qc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752039AbaLAQlI convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 11:41:08 -0500
+Received: by mail-qc0-f182.google.com with SMTP id r5so7964175qcx.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 08:41:06 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20141201184621.5dd7fcd9@natsu>
+In-Reply-To: <CAE8gLhnyTWjfTk-W+BHdfovV8pJH-yqo7joR+kf6vgs1FU00hw@mail.gmail.com>
 References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
  <20141130042306.GE8916@merlins.org> <547C6922.6030206@gmail.com>
- <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com> <20141201184621.5dd7fcd9@natsu>
+ <CAE8gLhmn3aX88t1FO2=BnHXk0-+2xQ4dnW57dga93iA-bFaUzQ@mail.gmail.com>
+ <20141201184749.0fd67b62@natsu> <CAE8gLhnyTWjfTk-W+BHdfovV8pJH-yqo7joR+kf6vgs1FU00hw@mail.gmail.com>
 From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Mon, 1 Dec 2014 22:09:44 +0530
-Message-ID: <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
+Date: Mon, 1 Dec 2014 22:10:46 +0530
+Message-ID: <CAH-HCWWZ4FXHtb42dVOaKtLzmndc=e_LAqrufUZRt36CD_g34g@mail.gmail.com>
 Subject: Re: Possible to undo subvol delete?
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: MegaBrutal <megabrutal@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Roman Mamedov <rm@romanrm.net>,
+        Marc MERLIN <marc@merlins.org>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 1, 2014 at 7:16 PM, Roman Mamedov <rm@romanrm.net> wrote:
+On Mon, Dec 1, 2014 at 7:24 PM, MegaBrutal <megabrutal@gmail.com> wrote:
 >
-> A more sensible idea could be adding a global-level '-i' switch, same as in
-> 'rm', so that you or distros could then alias 'btrfs' to 'btrfs -i' (ask
-> confirmation on any irreversible action).
+>> If you want to make snapshots which can't be removed by ordinary tools, use
+>> the 'read-only' mode when creating them.
+>
+> Yeah, good idea! Anyway, is it possible to change a read-only snapshot
+> to read-write and vica-versa, or you can only specify read-only while
+> creating them?
 
-Well the difference being that there doesn't seem to be any other
-irreversible action from my scan of man btrfs -- am I missing
-anything? This is the only thing that actually leads to loss of data.
-
-When btrfs has so many features (esp snapshots) to prevent user
-accidentally deleting data (I liked especially
-http://www.youtube.com/v/9H7e6BcI5Fo?start=209) I think there has to
-be *some* modicum of support for warning against deleting a subvolume
-(and it seems others agree too).
-
-But I see what you mean in the bugzilla comment about not wanting your
-existing backup snapshot scripts to fail because they don't have a -f.
-At the same time, aliasing via -i on top level btrfs binary may not be
-so practical here because this is the only command which will actually
-use it (again, correct if wrong).
-
-Perhaps exporting some envvar in the default shell's rc file (or
-whichever file will be read only if the shell is interactive) would
-work? Like in ~/.bashrc:
-
-export BTRFS_SUBVOLUME_DELETE_CONFIRM=1
-
-Ideas?
+IIUC you can only specify RO while creating but you can always cheaply
+create a RW snapshot of an RO one or an RO snapshot of an RW one...
 
 -- 
 Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा

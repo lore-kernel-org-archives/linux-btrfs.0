@@ -1,45 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53091 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750934AbaL2HTW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 02:19:22 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstests: btrfs/079: Fix wrong value passed to available space check.
-Date: Mon, 29 Dec 2014 15:17:18 +0800
-Message-ID: <1419837438-13771-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from bombadil.infradead.org ([198.137.202.9]:59531 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752738AbaLAJ2L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 04:28:11 -0500
+Date: Mon, 1 Dec 2014 01:28:10 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Cc: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>
+Subject: Re: [PATCH-v4 1/7] vfs: split update_time() into update_time() and
+ write_time()
+Message-ID: <20141201092810.GA5538@infradead.org>
+References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
+ <1416997437-26092-2-git-send-email-tytso@mit.edu>
+ <20141126192328.GA20436@infradead.org>
+ <20141127144116.GA14091@thunk.org>
+ <20141127153315.GC14091@thunk.org>
+ <20141127164952.GA1622@infradead.org>
+ <20141127202731.GG14091@thunk.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141127202731.GG14091@thunk.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before the patch, we passed wrong value to _require_fs_space, which
-should be in unit of 1024, but passed in unit of GB.
+On Thu, Nov 27, 2014 at 03:27:31PM -0500, Theodore Ts'o wrote:
+> I can do that, but part of the reason why we were doing this rather
+> involved set of changes was to allow other file systems to be able to
+> take advantage of lazytime.  I suppose there is value in allowing
+> other file systems, such as jfs, f2fs, etc., to use it, but still,
+> it's a bit of a shame to drop btrfs and xfs support for this feature.
 
-Fix it and add better prompt for falloc failure.
+I want to see xfs and btrfs support, but I think we're running in some
+conceptual problems here.  I don't have the time right now to fully
+review the XFS changes for correctness and test them, and I'd rather
+keep things as-is for a while and then add properly designed and fully
+teste support in rather than something possible broken.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/btrfs/079 | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+> I'll note by the way that ext3 and ext4 doesn't really use VFS dirty
+> tracking either --- see my other comments about the naming of
+> "mark_inode_dirty" being a bit misleading, at least for all/most of
+> the major file systems.  The problem seems to be that replacement
+> schemes that we've all using are slightly different.  :-/
 
-diff --git a/tests/btrfs/079 b/tests/btrfs/079
-index 202d3e6..99d0187 100755
---- a/tests/btrfs/079
-+++ b/tests/btrfs/079
-@@ -73,8 +73,9 @@ rm -f $seqres.full
- 
- _scratch_mkfs >>$seqres.full 2>&1
- _scratch_mount
--_require_fs_space $SCRATCH_MNT $(($filesize / 1024 / 1024 / 1024))
--$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile
-+_require_fs_space $SCRATCH_MNT $(($filesize / 1024))
-+$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile || \
-+	_fail "falloc failed"
- 
- dd_work() {
- 	out=$1
--- 
-2.2.1
+Indeed.  It seems all existing ->dirty_inode instances basically
+just try to work around the problem that the VFS simply updates
+timestamps by writing into the inode without involving the filesystem.
+There are all kinds of bugs in different instances, as well as comments
+mentioning an assumption that this only happens for atime although
+the VFS also dos this "trick" for c/mtime, including a caller from
+the page fault code that the filesystems can't even avoid by providing
+non-default methods everywhere.
+
+> I suppose should let the btrfs folks decide whether they want to add
+> is_readonly() and write_time() function --- or maybe help with the
+> cleanup work so that mark_inode_dirty() can reflect an error to its
+> callers.   Chris, David, what do you think?
+
+
+The ->is_readonly method seems like a clear winner to me, I'm all for
+adding it, and thus suggested moving it first in the series.
+
+I've read a bit more through the series and would like to suggest
+the following approach for the rest:
+
+ - convert ext3/4 to use ->update_time instead of the ->dirty_time
+   callout so it gets and exact notifications (preferably the few
+   remaining filesystems as well, although that shouldn't really be a
+   blocker)
+ - defer timestamp updates for any filesystems not defining
+   ->update_time (or ->dirty_time for now), and allow filesystems
+   using ->update_time to defer the update as well by calling
+   mark_inode_dirty with the I_DIRTY_TIME flag so that XFS and btrfs
+   don't have to opt-in without testing.
+ - Convert xfs, btrfs and the remaining filesystes using ->dirty_inode
+   incrementally.
 

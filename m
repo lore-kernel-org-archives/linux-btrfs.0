@@ -1,43 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f52.google.com ([209.85.216.52]:59511 "EHLO
-	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932080AbaLAUwA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 15:52:00 -0500
-Received: by mail-qa0-f52.google.com with SMTP id dc16so7937784qab.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 12:52:00 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <547CD129.2030007@gmail.com>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com>
-	<1416859665.3019.6@mail.thefacebook.com>
-	<20141125164717.GK26471@twin.jikos.cz>
-	<5475D7F3.4040408@swiftspirit.co.za>
-	<5475DC9A.3060003@gmail.com>
-	<20141201183729.GM12140@twin.jikos.cz>
-	<547CD129.2030007@gmail.com>
-Date: Mon, 1 Dec 2014 12:51:59 -0800
-Message-ID: <CAJBj3vfr+awjY1iztH-wcy9PSzsCa2cYsDhmRz2cV-O=SFifHw@mail.gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-From: John Williams <jwilliams4200@gmail.com>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: dsterba@suse.cz, Brendan Hide <brendan@swiftspirit.co.za>,
-        Chris Mason <clm@fb.com>, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:57239 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932389AbaLAVYn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 16:24:43 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XvYSX-00039f-H0
+	for linux-btrfs@vger.kernel.org; Mon, 01 Dec 2014 22:24:41 +0100
+Received: from 179.181.70.116 ([179.181.70.116])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 22:24:41 +0100
+Received: from bcdonadio by 179.181.70.116 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 22:24:41 +0100
+To: linux-btrfs@vger.kernel.org
+From: Bernardo Donadio <bcdonadio@gmail.com>
+Subject: Kernel lockup: "fs/btrfs/delayed-inoce.c:1410 btrfs_assert_delayed_root_empty"
+Date: Mon, 01 Dec 2014 19:24:30 -0200
+Message-ID: <m5imaf$s9b$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 1, 2014 at 12:35 PM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> My only reasoning is that with this set of hashes (crc32c, adler32, and
-> md5), the statistical likely-hood of running into a hash collision with more
-> than one of them at a time is infinitesimally small compared to the
-> likely-hood of any one of them having a collision (or even compared to
-> something ridiculous like the probability of being killed by a meteor
-> strike), and the combination is faster on most systems that I have tried
-> than many 256-bit crypto hashes.
+Hi,
 
-I have not seen any evidence that combining hashes like that actually
-reduces the chances of collision, but if we assume it does, then
-again, the non-crypto hashes would be faster. For example, 128-bit
-Spooky2 combined with 128-bit CityHash would produce a 256-bit hash
-and would be faster than MD5 + whatever.
+I'm having fairly frequent kernel lockups caused by btrfs, which I think 
+it might be a serious bug. I'm using linux-3.17.3.200.fc20.x86_64. It 
+freezes the whole system, and spits the error trace in the journal a few 
+seconds later.
+
+Here's the journal log, notice that there are 2 stack traces with little 
+time between them:
+
+Dez 01 19:15:12 darwin.donadio.be kernel: ------------[ cut here 
+]------------
+Dez 01 19:15:12 darwin.donadio.be kernel: WARNING: CPU: 3 PID: 494 at 
+fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty+0x34/0x40 
+[btrfs]()
+Dez 01 19:15:12 darwin.donadio.be kernel: Modules linked in: ufs hfsplus 
+hfs minix vfat msdos fat jfs xfs libcrc32c reiserfs rfcomm fuse 
+xt_CHECKSUM iptable_mangle tun bridge stp llc ip6table_filter ip6_tables 
+ebtable_nat ebtables cfg80211 bnep usblp btusb bluetooth rfkill uvcvideo 
+videobuf2_vmalloc videobuf2_memops videobuf2_core snd_usb_audio 
+v4l2_common videodev snd_usbmidi_lib snd_rawmidi media joydev kvm_amd 
+kvm serio_raw k10temp edac_core snd_hda_codec_realtek snd_hda_codec_hdmi 
+snd_hda_codec_generic edac_mce_amd snd_hda_intel snd_hda_controller 
+sp5100_tco snd_hda_codec snd_seq i2c_piix4 snd_hwdep snd_seq_device 
+snd_pcm snd_timer snd soundcore shpchp acpi_cpufreq binfmt_misc nfsd 
+auth_rpcgss nfs_acl lockd sunrpc btrfs xor raid6_pq r8169 mii radeon 
+i2c_algo_bit drm_kms_helper ttm drm
+Dez 01 19:15:12 darwin.donadio.be kernel: CPU: 3 PID: 494 Comm: 
+btrfs-transacti Tainted: G        W      3.17.3-200.fc20.x86_64 #1
+Dez 01 19:15:12 darwin.donadio.be kernel: Hardware name: ECS 
+A890GXM-A/A890GXM-A, BIOS 080015  03/24/2010
+Dez 01 19:15:12 darwin.donadio.be kernel:  0000000000000000 
+00000000314b2122 ffff8802213e3db8 ffffffff81728acc
+Dez 01 19:15:12 darwin.donadio.be kernel:  0000000000000000 
+ffff8802213e3df0 ffffffff81094e6d ffff8801e6d78000
+Dez 01 19:15:12 darwin.donadio.be kernel:  ffff88022101e800 
+ffff8802097d9f00 0000000000000000 0000000000000000
+Dez 01 19:15:12 darwin.donadio.be kernel: Call Trace:
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff81728acc>] 
+dump_stack+0x45/0x56
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff81094e6d>] 
+warn_slowpath_common+0x7d/0xa0
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff81094f9a>] 
+warn_slowpath_null+0x1a/0x20
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffffa02cc674>] 
+btrfs_assert_delayed_root_empty+0x34/0x40 [btrfs]
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffffa02771b2>] 
+btrfs_commit_transaction+0x3a2/0x9c0 [btrfs]
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffffa0272c45>] 
+transaction_kthread+0x1c5/0x250 [btrfs]
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffffa0272a80>] ? 
+btrfs_cleanup_transaction+0x550/0x550 [btrfs]
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff810b2498>] 
+kthread+0xd8/0xf0
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff810b23c0>] ? 
+kthread_create_on_node+0x190/0x190
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff817300fc>] 
+ret_from_fork+0x7c/0xb0
+Dez 01 19:15:12 darwin.donadio.be kernel:  [<ffffffff810b23c0>] ? 
+kthread_create_on_node+0x190/0x190
+Dez 01 19:15:12 darwin.donadio.be kernel: ---[ end trace 
+81e909e70c8984e0 ]---
+Dez 01 19:15:42 darwin.donadio.be kernel: ------------[ cut here 
+]------------
+Dez 01 19:15:42 darwin.donadio.be kernel: WARNING: CPU: 2 PID: 494 at 
+fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty+0x34/0x40 
+[btrfs]()
+Dez 01 19:15:42 darwin.donadio.be kernel: Modules linked in: ufs hfsplus 
+hfs minix vfat msdos fat jfs xfs libcrc32c reiserfs rfcomm fuse 
+xt_CHECKSUM iptable_mangle tun bridge stp llc ip6table_filter ip6_tables 
+ebtable_nat ebtables cfg80211 bnep usblp btusb bluetooth rfkill uvcvideo 
+videobuf2_vmalloc videobuf2_memops videobuf2_core snd_usb_audio 
+v4l2_common videodev snd_usbmidi_lib snd_rawmidi media joydev kvm_amd 
+kvm serio_raw k10temp edac_core snd_hda_codec_realtek snd_hda_codec_hdmi 
+snd_hda_codec_generic edac_mce_amd snd_hda_intel snd_hda_controller 
+sp5100_tco snd_hda_codec snd_seq i2c_piix4 snd_hwdep snd_seq_device 
+snd_pcm snd_timer snd soundcore shpchp acpi_cpufreq binfmt_misc nfsd 
+auth_rpcgss nfs_acl lockd sunrpc btrfs xor raid6_pq r8169 mii radeon 
+i2c_algo_bit drm_kms_helper ttm drm
+Dez 01 19:15:42 darwin.donadio.be kernel: CPU: 2 PID: 494 Comm: 
+btrfs-transacti Tainted: G        W      3.17.3-200.fc20.x86_64 #1
+Dez 01 19:15:42 darwin.donadio.be kernel: Hardware name: ECS 
+A890GXM-A/A890GXM-A, BIOS 080015  03/24/2010
+Dez 01 19:15:42 darwin.donadio.be kernel:  0000000000000000 
+00000000314b2122 ffff8802213e3db8 ffffffff81728acc
+Dez 01 19:15:42 darwin.donadio.be kernel:  0000000000000000 
+ffff8802213e3df0 ffffffff81094e6d ffff8801eb8fc140
+Dez 01 19:15:42 darwin.donadio.be kernel:  ffff88022101e800 
+ffff88009da84b40 0000000000000000 0000000000000000
+Dez 01 19:15:42 darwin.donadio.be kernel: Call Trace:
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff81728acc>] 
+dump_stack+0x45/0x56
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff81094e6d>] 
+warn_slowpath_common+0x7d/0xa0
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff81094f9a>] 
+warn_slowpath_null+0x1a/0x20
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffffa02cc674>] 
+btrfs_assert_delayed_root_empty+0x34/0x40 [btrfs]
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffffa02771b2>] 
+btrfs_commit_transaction+0x3a2/0x9c0 [btrfs]
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffffa0272c45>] 
+transaction_kthread+0x1c5/0x250 [btrfs]
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffffa0272a80>] ? 
+btrfs_cleanup_transaction+0x550/0x550 [btrfs]
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff810b2498>] 
+kthread+0xd8/0xf0
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff810b23c0>] ? 
+kthread_create_on_node+0x190/0x190
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff817300fc>] 
+ret_from_fork+0x7c/0xb0
+Dez 01 19:15:42 darwin.donadio.be kernel:  [<ffffffff810b23c0>] ? 
+kthread_create_on_node+0x190/0x190
+Dez 01 19:15:42 darwin.donadio.be kernel: ---[ end trace 
+81e909e70c8984e1 ]---
+
+--
+Bernardo Donadio
+

@@ -1,42 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:3302 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752014AbaLSOkd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 09:40:33 -0500
-Date: Fri, 19 Dec 2014 09:40:28 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs pull part two
-Message-ID: <20141219144028.GA29009@ret.masoncoding.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46877 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753486AbaLARua (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 12:50:30 -0500
+Date: Mon, 1 Dec 2014 18:50:21 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: ToS page does not exist?
+Message-ID: <20141201175021.GK12140@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAH-HCWXcFMt_z123UJNDQDV+_iRhW09DgJoFtzONWiWTZOkaag@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAH-HCWXcFMt_z123UJNDQDV+_iRhW09DgJoFtzONWiWTZOkaag@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Nov 30, 2014 at 09:21:26AM +0530, Shriramana Sharma wrote:
+> I am asked to read the ToS before signing up on the wiki:
+> 
+> Make sure that you first read the Terms of Service before requesting an account.
+> 
+> ... but the link is red and the page does not exist.
 
-Hi Linus,
-
-Please pull my for-linus branch:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-
-It has part two of our merge window patches.  These are all from Filipe,
-and fix some really hard to find races that can cause corruptions.  Most
-of them involved block group removal (balance) or discard.
-
-Filipe Manana (4) commits (+20/-25):
-    Btrfs: fix fs corruption on transaction abort if device supports discard (+6/-10)
-    Btrfs: always clear a block group node when removing it from the tree (+3/-0)
-    Btrfs: remove non-sense btrfs_error_discard_extent() function (+6/-12)
-    Btrfs: ensure deletion from pinned_chunks list is protected (+5/-3)
-
-Total: (4) commits (+20/-25)
-
- fs/btrfs/ctree.h            |  4 ++--
- fs/btrfs/disk-io.c          |  6 ------
- fs/btrfs/extent-tree.c      | 23 +++++++++++------------
- fs/btrfs/free-space-cache.c | 12 +++++++-----
- 4 files changed, 20 insertions(+), 25 deletions(-)
+Reported to kernel.org maintainers.

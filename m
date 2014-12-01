@@ -1,49 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.97.166]:52569 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752057AbaLAFmo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 00:42:44 -0500
-Date: Mon, 1 Dec 2014 10:42:36 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Gour <gour@atmarama.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: pro/cons of raid1 with mdadm/lvm2
-Message-ID: <20141201104236.1506b0a9@natsu>
-In-Reply-To: <20141130121147.45884217@atmarama>
-References: <20141130121147.45884217@atmarama>
+Received: from plane.gmane.org ([80.91.229.3]:50035 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752596AbaLAFre (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 00:47:34 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XvJpd-0002W7-FI
+	for linux-btrfs@vger.kernel.org; Mon, 01 Dec 2014 06:47:33 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 06:47:33 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 06:47:33 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
+Date: Mon, 1 Dec 2014 05:47:18 +0000 (UTC)
+Message-ID: <pan$6be5e$a00482b7$895022c1$577dcbfa@cox.net>
+References: <547BCB43.5020505@cn.fujitsu.com>
+	<pan$d4d18$d4463d$8df93dd7$d770703b@cox.net>
+	<547BDF82.3030305@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 30 Nov 2014 12:11:47 +0100
-Gour <gour@atmarama.net> wrote:
+Qu Wenruo posted on Mon, 01 Dec 2014 11:24:50 +0800 as excerpted:
 
-> However, I wonder if there are some 'cons' in having raid-1 partition
-> under mdadm and not using native mirroring capabilities of btrfs fs?
+> The db file is mostly used in memory, only when the metadata is really
+> really big, maybe when the fs tree's level is 7 or 8 we may need to use
+> db file.
 
-Pros:
+So fscking the database in ordered to fsck the database isn't an issue.  
+One objection down! =:^)
 
-  * mdadm RAID has much better read balancing;
-    Btrfs reads are satisfied from what's in effect a random drive (PID-based
-    balancing of threads to drives), mdadm reads from the less-loaded drive.
-    Also mdadm has a way to specify some RAID1 array members as to be never
-    used for reads if at all possible ("write-mostly"), which helps in RAID1 of
-    HDD and SSD.
-
-  * mdadm RAID has much better write submission;
-    In my experience [1] Btrfs RAID1 on heavy write operations first writes to
-    one drive, then to another. The whole process takes up to 2x longer than
-    with a single drive. On the other hand mdadm writes to both drives
-    simultaneously.
-
-[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg34103.html
-
-Con:
-
-  * You only get the ability to recover from a checksum failure with Btrfs
-    RAID1, not with mdadm RAID1 (see Russell's reply).
+But seriously, the politics of the idea remains its biggest nemesis in my 
+opinion.  And in systemd we've unfortunately a live demonstration of just 
+how big a nemesis that can be.  =:^(  If the technical reasoning for it 
+is sound and the benefit high enough, great, but IMO the benefit will 
+need to be pretty high to justify the risk of political fallout, and I 
+doubt it's anything close to that high.  But it's not my call, so we'll 
+see.  Thinks could certainly get interesting if it's judged to be worth 
+it.  < Checking popcorn stash >
 
 -- 
-With respect,
-Roman
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

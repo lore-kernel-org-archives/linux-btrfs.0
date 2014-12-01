@@ -1,50 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f170.google.com ([209.85.220.170]:42383 "EHLO
-	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753767AbaLANy0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 08:54:26 -0500
-Received: by mail-vc0-f170.google.com with SMTP id hy4so4687556vcb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 05:54:26 -0800 (PST)
+Received: from mout.web.de ([212.227.15.3]:50871 "EHLO mout.web.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753696AbaLAOrj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 09:47:39 -0500
+Received: from [139.20.7.1] ([139.20.7.1]) by smtp.web.de (mrweb002) with
+ ESMTPSA (Nemesis) id 0Mare6-1Xc7vO2upW-00KLh4 for
+ <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 15:47:36 +0100
+Message-ID: <547C7F7C.3080701@web.de>
+Date: Mon, 01 Dec 2014 15:47:24 +0100
+From: Oliver <r.oliver@web.de>
 MIME-Version: 1.0
-In-Reply-To: <20141201184749.0fd67b62@natsu>
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
-	<20141130042306.GE8916@merlins.org>
-	<547C6922.6030206@gmail.com>
-	<CAE8gLhmn3aX88t1FO2=BnHXk0-+2xQ4dnW57dga93iA-bFaUzQ@mail.gmail.com>
-	<20141201184749.0fd67b62@natsu>
-Date: Mon, 1 Dec 2014 14:54:25 +0100
-Message-ID: <CAE8gLhnyTWjfTk-W+BHdfovV8pJH-yqo7joR+kf6vgs1FU00hw@mail.gmail.com>
-Subject: Re: Possible to undo subvol delete?
-From: MegaBrutal <megabrutal@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Roman Mamedov <rm@romanrm.net>, Marc MERLIN <marc@merlins.org>,
-        Shriramana Sharma <samjnaa@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Online Drive Replacement: BTRFS with RAID 6
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-12-01 14:47 GMT+01:00 Roman Mamedov <rm@romanrm.net>:
-> On Mon, 1 Dec 2014 14:38:16 +0100
-> MegaBrutal <megabrutal@gmail.com> wrote:
->
->> I've also noticed, a subvolume can just be deleted with an "rm -r",
->> just like an ordinary directory. I'd consider to only allow subvolume
->> deletions with exact "btrfs subvolume delete" commands, and they
->
-> This is already the case. 'rm -r' will remove all files in a subvolume, but
-> the empty subvolume itself is only deletable via the 'btrfs' command.
+Hi All,
 
-That's great! And there is no way to protect against recursive
-deletions (besides setting the subvolume read-only, as you suggested
-below), as files are processes individually by "rm". But it's OK,
-people should always be very careful with "rm", and it doesn't change
-with btrfs. ;)
+on a testing machine I installed four HDDs and they are configured as 
+RAID6. For a test I removed one of the drives (/dev/sdk) while the 
+volume was mounted and data was written to it. This worked well, as far 
+as I can see. Some I/O errors were written to /var/log/syslog, but the 
+volume kept working. Unfortunately the command "btrfs fi sh" did not 
+show any missing drives. So I remounted the volume in degraded mode: 
+"mount -t btrfs /dev/sdx1 -o remount,rw,degraded,noatime /mnt". This way 
+the drive in question was reported as missing. Then I plugged in the HDD 
+again (it is of course /dev/sdk again) and started a balancing in hope 
+that this will restore RAID6: "btrfs filesystem balance start /mnt". Now 
+the volume looks like this:
+
+$ btrfs fi sh
+Label: none  uuid: 28410e37-77c1-4c01-8075-0d5068d9ffc2
+     Total devices 4 FS bytes used 257.05GiB
+     devid    1 size 465.76GiB used 262.03GiB path /dev/sdi1
+     devid    2 size 465.76GiB used 262.00GiB path /dev/sdj1
+     devid    3 size 465.76GiB used 261.03GiB path /dev/sdh1
+     devid    4 size 465.76GiB used 0.00 path /dev/sdk1
+
+How do I reinitiate /dev/sdk1? As running "btrfs fi ba start /mnt" does 
+not help, I tried to remove the hdd, but
+
+$ btrfs de de /dev/sdk1 /mnt/
+ERROR: error removing the device '/dev/sdk1' - unable to go below four 
+devices on raid6
+
+A replacement does not work this way either:
+
+$ btrfs replace start -f -r /dev/sdk1 /dev/sdk1 /mnt
+/dev/sdk1 is mounted
+
+Are there other ways to replace/reinitiate the hdd then converting to 
+RAID 5?
 
 
-> If you want to make snapshots which can't be removed by ordinary tools, use
-> the 'read-only' mode when creating them.
+Here are some more information about my configuration:
 
-Yeah, good idea! Anyway, is it possible to change a read-only snapshot
-to read-write and vica-versa, or you can only specify read-only while
-creating them?
+$   uname -a
+Linux hostname 3.13.0-30-generic #55-Ubuntu SMP Fri Jul 4 21:40:53 UTC 
+2014 x86_64 x86_64 x86_64 GNU/Linux
+$   btrfs --version
+Btrfs v3.12
+$ btrfs fi df /mnt
+Data, RAID6: total=263.00GiB, used=256.82GiB
+System, RAID1: total=32.00MiB, used=36.00KiB
+Metadata, RAID1: total=1.00GiB, used=271.13MiB

@@ -1,38 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-05v.sys.comcast.net ([69.252.207.37]:48124 "EHLO
-	resqmta-ch2-05v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753787AbaLAR1H (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 12:27:07 -0500
-Message-ID: <547CA4E7.8060209@pobox.com>
-Date: Mon, 01 Dec 2014 09:27:03 -0800
-From: Robert White <rwhite@pobox.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46531 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753121AbaLAR2c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 12:28:32 -0500
+Date: Mon, 1 Dec 2014 18:28:32 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: MegaBrutal <megabrutal@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Marc MERLIN <marc@merlins.org>, Shriramana Sharma <samjnaa@gmail.com>
+Subject: Re: Possible to undo subvol delete?
+Message-ID: <20141201172832.GI12140@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+ <20141130042306.GE8916@merlins.org>
+ <547C6922.6030206@gmail.com>
+ <CAE8gLhmn3aX88t1FO2=BnHXk0-+2xQ4dnW57dga93iA-bFaUzQ@mail.gmail.com>
+ <547C7211.3070809@gmail.com>
 MIME-Version: 1.0
-To: MegaBrutal <megabrutal@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
-References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>
-In-Reply-To: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <547C7211.3070809@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/01/2014 04:56 AM, MegaBrutal wrote:
-> Since the other thread went off into theoretical debates about UUIDs
-> and their generic relation to BTRFS, their everyday use cases, and the
-> philosophical meaning behind uniqueness of copies and UUIDs; I'd like
-> to specifically ask you to only post here about the ACTUAL problem at
-> hand. Don't get me wrong, I find the discussion in the other thread
-> really interesting, I'm following it, but it is only very remotely
-> related to the original issue, so please keep it there! If you're
-> interested to catch up about the actual bug symptoms, please read the
-> bug report linked above, and (optionally) reproduce the problem
-> yourself!
+On Mon, Dec 01, 2014 at 08:50:09AM -0500, Austin S Hemmelgarn wrote:
+> It would not surprise 
+> me though if RHEL or SuSE had patched the kernel to allow using rm on a 
+> subvolume.
 
-That discussion _was_ the actual discussion of the actual problem. A 
-problem that is not particularly theoretical, a problem that is common 
-to block-level snapshots, and a discussion that contained the actual 
-work-arounds.
-
-I suggest a re-read. 8-)
-
+This would be quite a big change in behaviour that we would not do
+without taking it upstream first.

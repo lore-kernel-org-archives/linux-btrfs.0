@@ -1,133 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11625 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751754AbaLRDkJ (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:48850 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751920AbaLAAKL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 22:40:09 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dePC002171
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:40 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/5] btrfs-progs: Add repair function for discount file extent hole.
-Date: Thu, 18 Dec 2014 11:38:00 +0800
-Message-ID: <1418873880-7916-6-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Sun, 30 Nov 2014 19:10:11 -0500
+Date: Sun, 30 Nov 2014 16:10:08 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20141201001008.GS8916@merlins.org>
+References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
+ <20141130042123.GD8916@merlins.org>
+ <CAH-HCWW9LQgTc-rhfbbLJBvGu7uCAFiTr_VJ0c=H_ZjYjDW5gA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAH-HCWW9LQgTc-rhfbbLJBvGu7uCAFiTr_VJ0c=H_ZjYjDW5gA@mail.gmail.com>
+Subject: Re: Moving an entire subvol?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since orphan extents are handled in previous patches, now just punch
-holes to fill the file extents hole.
+On Sun, Nov 30, 2014 at 03:57:06PM +0530, Shriramana Sharma wrote:
+> On Sun, Nov 30, 2014 at 9:51 AM, Marc MERLIN <marc@merlins.org> wrote:
+> >
+> >> So the Ubuntu Wiki BtrFS entry advises against using subvol
+> >> set-default because it boots its kernel using root=subvol=@ and home
+> >> as subvol=@home, and these two subvols are only present under the
+> >> subvol with ID 5. But isn't it just possible to move i.e. reparent a
+> >> subvol so I can move these two under another subvol and have that as
+> >> default?
+> >
+> > Make a new subvolume called /root and just mount subvol=root
+> 
+> Sorry if my question wasn't clear: I wanted to know how to move a
+> subvol to appear under another subvol other than its original parent.
+> Turns out that sudo mv @ @home target/ is quite sufficient. If so why
+> would the Ubuntu wiki require that set-default not be used? Just @
+> @home need to be moved to the new place, no?
 
-Also since now btrfsck is aware of whether the inode has orphan file
-extent, allow repair_inode_no_item() to determine filetype according to
-orphan file extent.
+I've never done that. If I had to move them, I'd just change the
+mountpoint.
+ 
+> > Note that you can't mount subvols recursively in one mount AFAIK.
+> 
+> I'm not sure what you mean. I have a few subvols in my external HDD
+> which is entirely formatted as BtrFS and if I just mount the external
+> HDD /dev/sdc1 I am able to access all the subvols' contents as well.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- cmds-check.c | 51 ++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 40 insertions(+), 11 deletions(-)
+Yes, if you mount the root, it works of course.
+If you mount a subvol, you cannot have it automatically have it mount
+other subvols.
+Subvols don't really know or care where they are mounted compared to one
+another, and who is under whom. It's just mount setup.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 1e9bc56..6c43b62 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2460,12 +2460,6 @@ static int repair_inode_no_item(struct btrfs_trans_handle *trans,
- 	int type_recovered = 0;
- 	int ret = 0;
- 
--	/*
--	 * TODO:
--	 * 1. salvage data from existing file extent and
--	 *    punch hole to keep fi ext consistent.
--	 * 2. salvage data from extent tree
--	 */
- 	printf("Trying to rebuild inode:%llu\n", rec->ino);
- 
- 	type_recovered = !find_file_type(rec, &filetype);
-@@ -2479,9 +2473,7 @@ static int repair_inode_no_item(struct btrfs_trans_handle *trans,
- 	 * For undetermined one, use FILE as fallback.
- 	 *
- 	 * TODO:
--	 * 1. If found extent belong to it in extent tree, it must be FILE
--	 *    Need extra hook in extent tree scan.
--	 * 2. If found backref(inode_index/item is already handled) to it,
-+	 * 1. If found backref(inode_index/item is already handled) to it,
- 	 *    it must be DIR.
- 	 *    Need new inode-inode ref structure to allow search for that.
- 	 */
-@@ -2493,7 +2485,10 @@ static int repair_inode_no_item(struct btrfs_trans_handle *trans,
- 		} else if (rec->found_dir_item) {
- 			type_recovered = 1;
- 			filetype = BTRFS_FT_DIR;
--		} else {
-+		} else if (!list_empty(&rec->orphan_extents)) {
-+			type_recovered = 1;
-+			filetype = BTRFS_FT_REG_FILE;
-+		} else{
- 			printf("Can't determint the filetype for inode %llu, assume it is a normal file\n",
- 			       rec->ino);
- 			type_recovered = 1;
-@@ -2584,6 +2579,37 @@ out:
- 	return ret;
- }
- 
-+static int repair_inode_discount_extent(struct btrfs_trans_handle *trans,
-+					struct btrfs_root *root,
-+					struct btrfs_path *path,
-+					struct inode_record *rec)
-+{
-+	struct rb_node *node;
-+	struct file_extent_hole *hole;
-+	int ret = 0;
-+
-+	node = rb_first(&rec->holes);
-+
-+	while (node) {
-+		hole = rb_entry(node, struct file_extent_hole, node);
-+		ret = btrfs_punch_hole(trans, root, rec->ino,
-+				       hole->start, hole->len);
-+		if (ret < 0)
-+			goto out;
-+		ret = del_file_extent_hole(&rec->holes, hole->start,
-+					   hole->len);
-+		if (ret < 0)
-+			goto out;
-+		if (RB_EMPTY_ROOT(&rec->holes))
-+			rec->errors &= ~I_ERR_FILE_EXTENT_DISCOUNT;
-+		node = rb_first(&rec->holes);
-+	}
-+	printf("Fixed discount file extents for inode: %llu in root: %llu\n",
-+	       rec->ino, root->objectid);
-+out:
-+	return ret;
-+}
-+
- static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
- {
- 	struct btrfs_trans_handle *trans;
-@@ -2594,7 +2620,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
- 			     I_ERR_NO_ORPHAN_ITEM |
- 			     I_ERR_LINK_COUNT_WRONG |
- 			     I_ERR_NO_INODE_ITEM |
--			     I_ERR_FILE_EXTENT_ORPHAN)))
-+			     I_ERR_FILE_EXTENT_ORPHAN |
-+			     I_ERR_FILE_EXTENT_DISCOUNT)))
- 		return rec->errors;
- 
- 	path = btrfs_alloc_path();
-@@ -2618,6 +2645,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
- 		ret = repair_inode_no_item(trans, root, path, rec);
- 	if (!ret && rec->errors & I_ERR_FILE_EXTENT_ORPHAN)
- 		ret = repair_inode_orphan_extent(trans, root, path, rec);
-+	if (!ret && rec->errors & I_ERR_FILE_EXTENT_DISCOUNT)
-+		ret = repair_inode_discount_extent(trans, root, path, rec);
- 	if (!ret && rec->errors & I_ERR_DIR_ISIZE_WRONG)
- 		ret = repair_inode_isize(trans, root, path, rec);
- 	if (!ret && rec->errors & I_ERR_NO_ORPHAN_ITEM)
+Marc
 -- 
-2.1.3
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

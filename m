@@ -1,52 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48293 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751243AbaLAGZf convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 01:25:35 -0500
-Message-ID: <547C09DC.9080803@cn.fujitsu.com>
-Date: Mon, 1 Dec 2014 14:25:32 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49149 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752390AbaLAISX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 03:18:23 -0500
+Received: from babycakes.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 9E6AC20876
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Dec 2014 19:18:21 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: pro/cons of raid1 with mdadm/lvm2
+Date: Mon, 1 Dec 2014 19:18:19 +1100
+References: <20141130121147.45884217@atmarama> <E4D50A09-CBA8-47DB-833B-D80D7BD6BD92@coker.com.au> <CAJCQCtTM8JpH_-E6dsbV53aCx7V9ptH94peST63KJ6AR=OCDqQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtTM8JpH_-E6dsbV53aCx7V9ptH94peST63KJ6AR=OCDqQ@mail.gmail.com>
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
-References: <547BCB43.5020505@cn.fujitsu.com>	<pan$d4d18$d4463d$8df93dd7$d770703b@cox.net>	<547BDF82.3030305@cn.fujitsu.com> <pan$6be5e$a00482b7$895022c1$577dcbfa@cox.net>
-In-Reply-To: <pan$6be5e$a00482b7$895022c1$577dcbfa@cox.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201412011918.19753.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 1 Dec 2014, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sun, Nov 30, 2014 at 3:06 PM, Russell Coker <russell@coker.com.au> wrote:
+> > When the 2 disks have different data mdadm has no way of knowing which
+> > one is correct and has a 50% chance of overwriting good data. But BTRFS
+> > does checksums on all reads and solves the problem of corrupt data - as
+> > long as you don't have 2 corrupt sectors in matching blocks.
+> 
+> Yeah. I'm not sure though if openSUSE 13.2 prevents users from
+> creating btrfs raid1 volumes entirely, or if it's just an install time
+> limitation.
 
--------- Original Message --------
-Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
-From: Duncan <1i5t5.duncan@cox.net>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年12月01日 13:47
-> Qu Wenruo posted on Mon, 01 Dec 2014 11:24:50 +0800 as excerpted:
->
->> The db file is mostly used in memory, only when the metadata is really
->> really big, maybe when the fs tree's level is 7 or 8 we may need to use
->> db file.
-> So fscking the database in ordered to fsck the database isn't an issue.
-> One objection down! =:^)
->
-> But seriously, the politics of the idea remains its biggest nemesis in my
-> opinion.  And in systemd we've unfortunately a live demonstration of just
-> how big a nemesis that can be.  =:^(  If the technical reasoning for it
-> is sound and the benefit high enough, great, but IMO the benefit will
-> need to be pretty high to justify the risk of political fallout, and I
-> doubt it's anything close to that high.  But it's not my call, so we'll
-> see.  Thinks could certainly get interesting if it's judged to be worth
-> it.  < Checking popcorn stash >
->
-No (systemd civilian) war, make love!
+With BTRFS you can make it RAID-1 afterwards.  The possibility of data loss 
+during system install usually isn't something you are concerned about so this 
+shouldn't be a problem.
 
-I seldom consider the politics problem of the insane idea even the 
-systemd warfare is still here.
-(Emmm, maybe it is because Arch accept systemd too long time ago without 
-too much problem?)
+> I know that Fedora's installer won't allow the user to create Btrfs on
+> LVM, and it probably doesn't allow it on md raid either.
 
-Anyway, it is just an insane idea and any feedback killing the seed of 
-insanity as soon as possible is welcomed.
+For LVM that's reasonable, for MD-RAID that would be a bug IMHO.
 
-Thanks,
-Qu
+On Mon, 1 Dec 2014, Roman Mamedov <rm@romanrm.net> wrote:
+>   * mdadm RAID has much better read balancing;
+>     Btrfs reads are satisfied from what's in effect a random drive
+> (PID-based balancing of threads to drives), mdadm reads from the
+> less-loaded drive. Also mdadm has a way to specify some RAID1 array
+> members as to be never used for reads if at all possible ("write-mostly"),
+> which helps in RAID1 of HDD and SSD.
+
+True.  But that's just a lack of performance tuning in the current code, it 
+will be fixed at some future time.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

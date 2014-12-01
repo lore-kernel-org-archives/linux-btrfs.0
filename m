@@ -1,60 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:48850 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751920AbaLAAKL (ORCPT
+Received: from mail-yh0-f45.google.com ([209.85.213.45]:58730 "EHLO
+	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751505AbaLAAyo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 19:10:11 -0500
-Date: Sun, 30 Nov 2014 16:10:08 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Shriramana Sharma <samjnaa@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <20141201001008.GS8916@merlins.org>
-References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
- <20141130042123.GD8916@merlins.org>
- <CAH-HCWW9LQgTc-rhfbbLJBvGu7uCAFiTr_VJ0c=H_ZjYjDW5gA@mail.gmail.com>
+	Sun, 30 Nov 2014 19:54:44 -0500
+Received: by mail-yh0-f45.google.com with SMTP id f10so4390939yha.32
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 16:54:44 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAH-HCWW9LQgTc-rhfbbLJBvGu7uCAFiTr_VJ0c=H_ZjYjDW5gA@mail.gmail.com>
+In-Reply-To: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
+References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
+Date: Sun, 30 Nov 2014 17:54:44 -0700
+Message-ID: <CAJCQCtT3EeGUOpZ9q78BcWv_Cc_5UGY=uPVJX+bqex9Zo_bWYg@mail.gmail.com>
 Subject: Re: Moving an entire subvol?
+From: Chris Murphy <lists@colorremedies.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 30, 2014 at 03:57:06PM +0530, Shriramana Sharma wrote:
-> On Sun, Nov 30, 2014 at 9:51 AM, Marc MERLIN <marc@merlins.org> wrote:
-> >
-> >> So the Ubuntu Wiki BtrFS entry advises against using subvol
-> >> set-default because it boots its kernel using root=subvol=@ and home
-> >> as subvol=@home, and these two subvols are only present under the
-> >> subvol with ID 5. But isn't it just possible to move i.e. reparent a
-> >> subvol so I can move these two under another subvol and have that as
-> >> default?
-> >
-> > Make a new subvolume called /root and just mount subvol=root
-> 
-> Sorry if my question wasn't clear: I wanted to know how to move a
-> subvol to appear under another subvol other than its original parent.
-> Turns out that sudo mv @ @home target/ is quite sufficient. If so why
-> would the Ubuntu wiki require that set-default not be used? Just @
-> @home need to be moved to the new place, no?
+On Sat, Nov 29, 2014 at 8:31 PM, Shriramana Sharma <samjnaa@gmail.com> wrote:
+> So the Ubuntu Wiki BtrFS entry advises against using subvol
+> set-default because it boots its kernel using root=subvol=@ and home
+> as subvol=@home, and these two subvols are only present under the
+> subvol with ID 5.
 
-I've never done that. If I had to move them, I'd just change the
-mountpoint.
- 
-> > Note that you can't mount subvols recursively in one mount AFAIK.
-> 
-> I'm not sure what you mean. I have a few subvols in my external HDD
-> which is entirely formatted as BtrFS and if I just mount the external
-> HDD /dev/sdc1 I am able to access all the subvols' contents as well.
+The advice may have had to do with GRUB behavior prior to 2.02.
+Previously GRUB attempted to honor the btrfs default subvolume, and
+therefore treated any path in grub.cfg relative to the default
+subvolume. Now, GRUB behaves the same as the subvol= mount option, it
+is always treated as an absolute path from subvol id 5, hence the
+default subvolume is ignored.
 
-Yes, if you mount the root, it works of course.
-If you mount a subvol, you cannot have it automatically have it mount
-other subvols.
-Subvols don't really know or care where they are mounted compared to one
-another, and who is under whom. It's just mount setup.
+Since the default subvolume is set by a user space program I think
+it's a domain violation for anything to subvert this; it really should
+remain a shortcut for the user's benefit only, so they can use mount
+without -o subvol=. Everything else should explicitly pass subvol=
 
-Marc
+
+
+> But isn't it just possible to move i.e. reparent a
+> subvol so I can move these two under another subvol and have that as
+> default?
+
+You can move subvolumes. My suggestion is subvolumes containing
+binaries shouldn't be located within another subvolume that ends up
+being mounted, that way old binaries with possible vulnerabilities
+aren't exposed in the normal search path.
+
+>
+> Possibly this is a hypothetical question as I'm not sure whether it
+> would be actually practically required but looking at the specific
+> Ubuntu advice on this I thought I should ask.
+>
+> I'm also not sure what openSUSE (or other distros) do about this... Do
+> they mount root using subvolid, or subvol name or such?
+
+openSUSE uses subvol id 5 for installing the OS to, and some
+directories are made subvolumes such as home var and maybe usr.
+Therefore when subvolid 5 is snapshot, those are exempt, and have to
+be individually snapshot. The snapshots are found in the same root
+directory everything else is, in a . directory (I think .snapshots ?)
+
+Fedora uses subvolumes root and home by default, and fstab uses
+subvol=root and subvol=home to mount them at / and /home respectively.
+
+I don't know any distro using subvolid right now but that might be
+prudent as it's far less user domain than subvolume names.
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Chris Murphy

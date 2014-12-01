@@ -1,52 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31728 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752734AbaLAKwQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 05:52:16 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB1AptSI024041
-	for <linux-btrfs@vger.kernel.org>; Mon, 1 Dec 2014 18:51:55 +0800
-Message-ID: <547C48C5.3020808@cn.fujitsu.com>
-Date: Mon, 1 Dec 2014 18:53:57 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix wrong list access on the failure of reading
- out checksum
-References: <1417428253-3139-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1417428253-3139-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from victor.provo.novell.com ([137.65.250.26]:59048 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752993AbaLARFp (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 1 Dec 2014 12:05:45 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix memory leak after block remove + trimming
+Date: Mon,  1 Dec 2014 17:04:40 +0000
+Message-Id: <1417453480-14158-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore this patch, Chris has fixed this problem.
+There was a free space entry structure memeory leak if a block
+group is remove while a free space entry is being trimmed, which
+the following diagram explains:
 
-Thanks
-Miao
+           CPU 1                                          CPU 2
 
-On Mon, 1 Dec 2014 18:04:13 +0800, Miao Xie wrote:
-> If we failed to reading out the checksum, we would free all the checksums
-> in the list. But the current code accessed the list head, not the entry
-> in the list. Fix it.
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/file-item.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 783a943..c26b58f 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -413,7 +413,8 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
->  	ret = 0;
->  fail:
->  	while (ret < 0 && !list_empty(&tmplist)) {
-> -		sums = list_entry(&tmplist, struct btrfs_ordered_sum, list);
-> +		sums = list_first_entry(&tmplist, struct btrfs_ordered_sum,
-> +					list);
->  		list_del(&sums->list);
->  		kfree(sums);
->  	}
-> 
+  btrfs_trim_block_group()
+      trim_no_bitmap()
+          remove free space entry from
+          block group cache's rbtree
+          do_trimming()
+
+                                                btrfs_remove_block_group()
+                                                    btrfs_remove_free_space_cache()
+
+              add back free space entry to
+              block group's cache rbtree
+  btrfs_put_block_group()
+
+                                                    (...)
+                                                    btrfs_put_block_group()
+                                                        kfree(bg->free_space_ctl)
+                                                        kfree(bg)
+
+The free space entry added after doing the discard of its respective
+range ends up never being freed.
+Detected after doing an "rmmod btrfs" after running the stress test
+recently submitted for fstests:
+
+[ 8234.642212] kmem_cache_destroy btrfs_free_space: Slab cache still has objects
+[ 8234.642657] CPU: 1 PID: 32276 Comm: rmmod Tainted: G        W    L 3.17.0-rc5-btrfs-next-2+ #1
+[ 8234.642660] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[ 8234.642664]  0000000000000000 ffff8801af1b3eb8 ffffffff8140c7b6 ffff8801dbedd0c0
+[ 8234.642670]  ffff8801af1b3ed0 ffffffff811149ce 0000000000000000 ffff8801af1b3ee0
+[ 8234.642676]  ffffffffa042dbe7 ffff8801af1b3ef0 ffffffffa0487422 ffff8801af1b3f78
+[ 8234.642682] Call Trace:
+[ 8234.642692]  [<ffffffff8140c7b6>] dump_stack+0x4d/0x66
+[ 8234.642699]  [<ffffffff811149ce>] kmem_cache_destroy+0x4d/0x92
+[ 8234.642731]  [<ffffffffa042dbe7>] btrfs_destroy_cachep+0x63/0x76 [btrfs]
+[ 8234.642757]  [<ffffffffa0487422>] exit_btrfs_fs+0x9/0xbe7 [btrfs]
+[ 8234.642762]  [<ffffffff810a76a5>] SyS_delete_module+0x155/0x1c6
+[ 8234.642768]  [<ffffffff8122a7eb>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+[ 8234.642773]  [<ffffffff814122d2>] system_call_fastpath+0x16/0x1b
+
+This applies on top (depends on) of my previous patch titled:
+"Btrfs: fix race between fs trimming and block group remove/allocation"
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 2ee73c2..030847b 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3200,6 +3200,12 @@ out:
+ 		/* once for us and once for the tree */
+ 		free_extent_map(em);
+ 		free_extent_map(em);
++
++		/*
++		 * We've left one free space entry and other tasks trimming
++		 * this block group have left 1 entry each one. Free them.
++		 */
++		__btrfs_remove_free_space_cache(block_group->free_space_ctl);
+ 	} else {
+ 		spin_unlock(&block_group->lock);
+ 	}
+-- 
+2.1.3
 

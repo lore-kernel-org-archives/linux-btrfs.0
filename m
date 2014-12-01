@@ -1,60 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f169.google.com ([209.85.160.169]:64698 "EHLO
-	mail-yk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750860AbaLEQti (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 11:49:38 -0500
-Received: by mail-yk0-f169.google.com with SMTP id 79so484509ykr.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Dec 2014 08:49:37 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <3146bf116f41e590e8ce4fdb610def31@admin.virtall.com>
-References: <3146bf116f41e590e8ce4fdb610def31@admin.virtall.com>
-Date: Fri, 5 Dec 2014 09:49:37 -0700
-Message-ID: <CAJCQCtRNt=4HpUP6XL4sjBZKQAB95xKOojh+QQp2AwpmwKttTg@mail.gmail.com>
-Subject: Re: btrfs device delete missing - Input/output error
-From: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:46239 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752483AbaLADtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Nov 2014 22:49:46 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XvHzd-0007s0-8i
+	for linux-btrfs@vger.kernel.org; Mon, 01 Dec 2014 04:49:45 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 04:49:45 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 04:49:45 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: root subvol id is 0 or 5?
+Date: Mon, 1 Dec 2014 03:49:34 +0000 (UTC)
+Message-ID: <pan$ce947$5d255e02$2716ded9$f6df99fd@cox.net>
+References: <CAH-HCWWVR=g6mZFZyu6wYRfP7Harr5bxokJi+_qW8QHsniFPFg@mail.gmail.com>
+	<20141130115908.GF32735@carfax.org.uk>
+	<CAH-HCWWk7J6N0M1z=2N__T0TQ1qffORnxdVNrpjGHh1gtQx3dg@mail.gmail.com>
+	<20141130135328.GG32735@carfax.org.uk>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 5, 2014 at 3:03 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
->> The first way to try to recover the current volume would be to
->> overwrite LBA 2262535088 which you should only do with the filesystem
->> unmounted. That's the sector causing the read error. If this is a 512
->> byte drive:
->>
->> dd if=/dev/zero of=/dev/sdb count=1 seek=2262535088
->
->
-> It is a 512 byte drive.
->
-> Unfortunately overwriting that fails - which is quite weird, given that
-> there are 0 reallocated sectors, according to SMART.
->
-> Is there a way to determine what's stored there (i.e. if it's a file?).
->
->
-> # dd if=/dev/zero of=/dev/sdb count=1 seek=2262535088
-> dd: writing to `/dev/sdb': Input/output error
-> 1+0 records in
-> 0+0 records out
-> 0 bytes (0 B) copied, 2.88439 s, 0.0 kB/s
->
-> # dmesg -c
-> [ 8177.713212] ata4.00: exception Emask 0x0 SAct 0x400 SErr 0x0 action 0x0
-> [ 8177.713285] ata4.00: irq_stat 0x40000008
-> [ 8177.713349] ata4.00: failed command: READ FPDMA QUEUED
+Hugo Mills posted on Sun, 30 Nov 2014 13:53:28 +0000 as excerpted:
 
+> On Sun, Nov 30, 2014 at 07:08:51PM +0530, Shriramana Sharma wrote:
+>> On Sun, Nov 30, 2014 at 5:29 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> >
+>> >    In the data structures on disk, it's 5. The kernel aliases 0 to
+>> > mean subvolid 5.
+>> 
+>> So why 5 and not just 0 which seems a logical choice? On top of this,
+>> one needs to alias 0 to 5!
+> 
+>    All of the trees used in the FS metadata have an ID number. The
+> "well-known" trees have small, fixed IDs:
 
+Thanks, Hugo.
 
-You're getting a read error when writing. This is expected when writing 512
-bytes to a 4k sector.
+You might wish to find a place in the wiki (probably in the FAQ) for 
+that, since your explanation was both the clearest I can imagine and 
+cleared up some lingering "but why?" questions along that line for me, as 
+well.
 
-What do you get for
-parted /dev/sdb u s p
-
-
+And if an answer to that basic a btrfs question is still clearing stuff 
+up for me, I expect it could be useful to well over 90% of potential 
+btrfs wiki FAQ readers...
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,53 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48272 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932085AbaLANvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 08:51:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XvRNh-0007kp-Sm
-	for linux-btrfs@vger.kernel.org; Mon, 01 Dec 2014 14:51:13 +0100
-Received: from p4ff586ea.dip0.t-ipconnect.de ([79.245.134.234])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 14:51:13 +0100
-Received: from holger.hoffstaette by p4ff586ea.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 14:51:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Possible to undo subvol delete?
-Date: Mon, 1 Dec 2014 13:50:57 +0000 (UTC)
-Message-ID: <pan.2014.12.01.13.50.56@googlemail.com>
+Received: from mail-vc0-f170.google.com ([209.85.220.170]:42383 "EHLO
+	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753767AbaLANy0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 08:54:26 -0500
+Received: by mail-vc0-f170.google.com with SMTP id hy4so4687556vcb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 05:54:26 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20141201184749.0fd67b62@natsu>
 References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
-	<20141130042306.GE8916@merlins.org> <547C6922.6030206@gmail.com>
+	<20141130042306.GE8916@merlins.org>
+	<547C6922.6030206@gmail.com>
 	<CAE8gLhmn3aX88t1FO2=BnHXk0-+2xQ4dnW57dga93iA-bFaUzQ@mail.gmail.com>
-Mime-Version: 1.0
+	<20141201184749.0fd67b62@natsu>
+Date: Mon, 1 Dec 2014 14:54:25 +0100
+Message-ID: <CAE8gLhnyTWjfTk-W+BHdfovV8pJH-yqo7joR+kf6vgs1FU00hw@mail.gmail.com>
+Subject: Re: Possible to undo subvol delete?
+From: MegaBrutal <megabrutal@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Roman Mamedov <rm@romanrm.net>, Marc MERLIN <marc@merlins.org>,
+        Shriramana Sharma <samjnaa@gmail.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 01 Dec 2014 14:38:16 +0100, MegaBrutal wrote:
+2014-12-01 14:47 GMT+01:00 Roman Mamedov <rm@romanrm.net>:
+> On Mon, 1 Dec 2014 14:38:16 +0100
+> MegaBrutal <megabrutal@gmail.com> wrote:
+>
+>> I've also noticed, a subvolume can just be deleted with an "rm -r",
+>> just like an ordinary directory. I'd consider to only allow subvolume
+>> deletions with exact "btrfs subvolume delete" commands, and they
+>
+> This is already the case. 'rm -r' will remove all files in a subvolume, but
+> the empty subvolume itself is only deletable via the 'btrfs' command.
 
-> I've also noticed, a subvolume can just be deleted with an "rm -r",
-> just like an ordinary directory. I'd consider to only allow subvolume
+That's great! And there is no way to protect against recursive
+deletions (besides setting the subvolume read-only, as you suggested
+below), as files are processes individually by "rm". But it's OK,
+people should always be very careful with "rm", and it doesn't change
+with btrfs. ;)
 
-Nope:
 
-root>btrfs subvolume create foo
-Create subvolume './foo'
-root>touch foo/bla
-root>ll foo 
-total 0
--rw-r--r-- 1 root root 0 Dec  1 14:47 bla
-root>rm -rf foo 
-rm: cannot remove ‘foo’: Operation not permitted
-root>
+> If you want to make snapshots which can't be removed by ordinary tools, use
+> the 'read-only' mode when creating them.
 
-The files of the subvolume do get deleted though, but that's correct.
-
-Not sure what you did, but what you want is already the case.
-
--h
-
+Yeah, good idea! Anyway, is it possible to change a read-only snapshot
+to read-write and vica-versa, or you can only specify read-only while
+creating them?

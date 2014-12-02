@@ -1,56 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f42.google.com ([74.125.83.42]:61917 "EHLO
-	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751916AbaLBSB5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 13:01:57 -0500
-Received: by mail-ee0-f42.google.com with SMTP id d17so143993eek.15
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 10:01:55 -0800 (PST)
-Message-ID: <547DFD24.9070805@plexistor.com>
-Date: Tue, 02 Dec 2014 19:55:48 +0200
-From: Boaz Harrosh <boaz@plexistor.com>
-MIME-Version: 1.0
-To: Jan Kara <jack@suse.cz>, "Ted Ts'o" <tytso@mit.edu>
-CC: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH-v5 1/5] vfs: add support for a lazytime mount option
-References: <1417154411-5367-1-git-send-email-tytso@mit.edu> <1417154411-5367-2-git-send-email-tytso@mit.edu> <20141128172323.GD738@quack.suse.cz> <20141128181421.GA19461@google.com> <20141202125820.GE9092@quack.suse.cz>
-In-Reply-To: <20141202125820.GE9092@quack.suse.cz>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:47670 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932488AbaLBSHr (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 2 Dec 2014 13:07:47 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/2] Btrfs: fix fs mapping extent map leak
+Date: Tue,  2 Dec 2014 18:07:30 +0000
+Message-Id: <1417543650-18002-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/02/2014 02:58 PM, Jan Kara wrote:
-> On Fri 28-11-14 13:14:21, Ted Tso wrote:
->> On Fri, Nov 28, 2014 at 06:23:23PM +0100, Jan Kara wrote:
->>> Hum, when someone calls fsync() for an inode, you likely want to sync
->>> timestamps to disk even if everything else is clean. I think that doing
->>> what you did in last version:
->>> 	dirty = inode->i_state & I_DIRTY_INODE;
->>> 	inode->i_state &= ~I_DIRTY_INODE;
->>> 	spin_unlock(&inode->i_lock);
->>> 	if (dirty & I_DIRTY_TIME)
->>> 		mark_inode_dirty_sync(inode);
->>> looks better to me. IMO when someone calls __writeback_single_inode() we
->>> should write whatever we have...
->>
->> Yes, but we also have to distinguish between what happens on an
->> fsync() versus what happens on a periodic writeback if I_DIRTY_PAGES
->> (but not I_DIRTY_SYNC or I_DIRTY_DATASYNC) is set.  So there is a
->> check in the fsync() code path to handle the concern you raised above.
->   Ah, this is the thing you have been likely talking about but which I was
-> constantly missing in my thoughts. You don't want to write times when inode
-> has only dirty pages and timestamps - 
+On chunk allocation error (label "error_del_extent"), after adding the
+extent map to the tree and to the pending chunks list, we would leave
+decrementing the extent map's refcount by 2 instead of 3 (our allocation
++ tree reference + list reference).
 
-This I do not understand. I thought that I_DIRTY_TIME, and the all
-lazytime mount option, is only for atime. So if there are dirty
-pages then there are also m/ctime that changed and surly we want to
-write these times to disk ASAP.
+Also, on chunk/block group removal, if the block group was on the list
+pending_chunks we weren't decrementing the respective list reference.
 
-if we are lazytime also with m/ctime then I think I would like an
-option for only atime lazy. because m/ctime is cardinal to some
-operations even though I might want atime lazy.
+Detected by 'rmmod btrfs':
 
-Sorry for the slowness, I'm probably missing something
-Thanks
-Boaz
+[20770.105881] kmem_cache_destroy btrfs_extent_map: Slab cache still has objects
+[20770.106127] CPU: 2 PID: 11093 Comm: rmmod Tainted: G        W    L 3.17.0-rc5-btrfs-next-1+ #1
+[20770.106128] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[20770.106130]  0000000000000000 ffff8800ba867eb8 ffffffff813e7a13 ffff8800a2e11040
+[20770.106132]  ffff8800ba867ed0 ffffffff81105d0c 0000000000000000 ffff8800ba867ee0
+[20770.106134]  ffffffffa035d65e ffff8800ba867ef0 ffffffffa03b0654 ffff8800ba867f78
+[20770.106136] Call Trace:
+[20770.106142]  [<ffffffff813e7a13>] dump_stack+0x45/0x56
+[20770.106145]  [<ffffffff81105d0c>] kmem_cache_destroy+0x4b/0x90
+[20770.106164]  [<ffffffffa035d65e>] extent_map_exit+0x1a/0x1c [btrfs]
+[20770.106176]  [<ffffffffa03b0654>] exit_btrfs_fs+0x27/0x9d3 [btrfs]
+[20770.106179]  [<ffffffff8109dc97>] SyS_delete_module+0x153/0x1c4
+[20770.106182]  [<ffffffff8121261b>] ? trace_hardirqs_on_thunk+0x3a/0x3c
+[20770.106184]  [<ffffffff813ebf52>] system_call_fastpath+0x16/0x1b
+
+This applies on top (depends on) of my previous patch titled:
+"Btrfs: fix race between fs trimming and block group remove/allocation"
+
+But the issue in fact was already present before that change, it only
+became easier to hit after Josef's 3.18 patch that added automatic
+removal of empty block groups.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+This replaces my previous patch titled:
+"Btrfs: fix extent map leak on chunk allocation failure"
+
+ fs/btrfs/extent-tree.c | 4 ++++
+ fs/btrfs/volumes.c     | 2 ++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a811ed2..17d429d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9479,6 +9479,10 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	memcpy(&key, &block_group->key, sizeof(key));
+ 
+ 	lock_chunks(root);
++	if (!list_empty(&em->list)) {
++		/* We're in the transaction->pending_chunks list. */
++		free_extent_map(em);
++	}
+ 	spin_lock(&block_group->lock);
+ 	block_group->removed = 1;
+ 	/*
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 66a5a1e..e936fe3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4496,6 +4496,8 @@ error_del_extent:
+ 	free_extent_map(em);
+ 	/* One for the tree reference */
+ 	free_extent_map(em);
++	/* One for the pending_chunks list reference */
++	free_extent_map(em);
+ error:
+ 	kfree(devices_info);
+ 	return ret;
+-- 
+2.1.3
 

@@ -1,17 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58192 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:36379 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754608AbaLBMiH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:07 -0500
+	with ESMTP id S932724AbaLBMiL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:11 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2CbfEk001459
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:41 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2CbiXG001470
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:44 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v4 02/10] Btrfs: remove unnecessary code of stripe_index assignment in __btrfs_map_block
-Date: Tue, 2 Dec 2014 20:39:23 +0800
-Message-ID: <1417523971-15553-3-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v4 05/10] Btrfs, raid56: use a variant to record the operation type
+Date: Tue, 2 Dec 2014 20:39:26 +0800
+Message-ID: <1417523971-15553-6-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,36 +18,147 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+We will introduce new operation type later, if we still use integer
+variant as bool variant to record the operation type, we would add new
+variant and increase the size of raid bio structure. It is not good,
+by this patch, we define different number for different operation,
+and we can just use a variant to record the operation type.
 
-stripe_index's value was set again in latter line:
-stripe_index = 0;
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
 Changelog v1 -> v4:
 - None.
 ---
- fs/btrfs/volumes.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/raid56.c | 31 +++++++++++++++++--------------
+ 1 file changed, 17 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6f80aef..eeb5b31 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5172,9 +5172,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index c954537..4924388 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -69,6 +69,11 @@
  
- 			/* push stripe_nr back to the start of the full stripe */
- 			stripe_nr = raid56_full_stripe_start;
--			do_div(stripe_nr, stripe_len);
+ #define RBIO_CACHE_SIZE 1024
+ 
++enum btrfs_rbio_ops {
++	BTRFS_RBIO_WRITE	= 0,
++	BTRFS_RBIO_READ_REBUILD	= 1,
++};
++
+ struct btrfs_raid_bio {
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_bio *bbio;
+@@ -131,7 +136,7 @@ struct btrfs_raid_bio {
+ 	 * differently from a parity rebuild as part of
+ 	 * rmw
+ 	 */
+-	int read_rebuild;
++	enum btrfs_rbio_ops operation;
+ 
+ 	/* first bad stripe */
+ 	int faila;
+@@ -154,7 +159,6 @@ struct btrfs_raid_bio {
+ 
+ 	atomic_t refs;
+ 
 -
--			stripe_index = do_div(stripe_nr, nr_data_stripes(map));
-+			do_div(stripe_nr, stripe_len * nr_data_stripes(map));
+ 	atomic_t stripes_pending;
  
- 			/* RAID[56] write or recovery. Return all stripes */
- 			num_stripes = map->num_stripes;
+ 	atomic_t error;
+@@ -590,8 +594,7 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
+ 		return 0;
+ 
+ 	/* reads can't merge with writes */
+-	if (last->read_rebuild !=
+-	    cur->read_rebuild) {
++	if (last->operation != cur->operation) {
+ 		return 0;
+ 	}
+ 
+@@ -784,9 +787,9 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 			spin_unlock(&rbio->bio_list_lock);
+ 			spin_unlock_irqrestore(&h->lock, flags);
+ 
+-			if (next->read_rebuild)
++			if (next->operation == BTRFS_RBIO_READ_REBUILD)
+ 				async_read_rebuild(next);
+-			else {
++			else if (next->operation == BTRFS_RBIO_WRITE){
+ 				steal_rbio(rbio, next);
+ 				async_rmw_stripe(next);
+ 			}
+@@ -1720,6 +1723,7 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
+ 	}
+ 	bio_list_add(&rbio->bio_list, bio);
+ 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
++	rbio->operation = BTRFS_RBIO_WRITE;
+ 
+ 	/*
+ 	 * don't plug on full rbios, just get them out the door
+@@ -1768,7 +1772,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 	faila = rbio->faila;
+ 	failb = rbio->failb;
+ 
+-	if (rbio->read_rebuild) {
++	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
+ 		spin_lock_irq(&rbio->bio_list_lock);
+ 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+ 		spin_unlock_irq(&rbio->bio_list_lock);
+@@ -1785,7 +1789,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 			 * if we're rebuilding a read, we have to use
+ 			 * pages from the bio list
+ 			 */
+-			if (rbio->read_rebuild &&
++			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
+ 			    (stripe == faila || stripe == failb)) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 0);
+ 			} else {
+@@ -1878,7 +1882,7 @@ pstripe:
+ 		 * know they can be trusted.  If this was a read reconstruction,
+ 		 * other endio functions will fiddle the uptodate bits
+ 		 */
+-		if (!rbio->read_rebuild) {
++		if (rbio->operation == BTRFS_RBIO_WRITE) {
+ 			for (i = 0;  i < nr_pages; i++) {
+ 				if (faila != -1) {
+ 					page = rbio_stripe_page(rbio, faila, i);
+@@ -1895,7 +1899,7 @@ pstripe:
+ 			 * if we're rebuilding a read, we have to use
+ 			 * pages from the bio list
+ 			 */
+-			if (rbio->read_rebuild &&
++			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
+ 			    (stripe == faila || stripe == failb)) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 0);
+ 			} else {
+@@ -1910,8 +1914,7 @@ cleanup:
+ 	kfree(pointers);
+ 
+ cleanup_io:
+-
+-	if (rbio->read_rebuild) {
++	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
+ 		if (err == 0 &&
+ 		    !test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags))
+ 			cache_rbio_pages(rbio);
+@@ -2050,7 +2053,7 @@ out:
+ 	return 0;
+ 
+ cleanup:
+-	if (rbio->read_rebuild)
++	if (rbio->operation == BTRFS_RBIO_READ_REBUILD)
+ 		rbio_orig_end_io(rbio, -EIO, 0);
+ 	return -EIO;
+ }
+@@ -2076,7 +2079,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 
+ 	if (hold_bbio)
+ 		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
+-	rbio->read_rebuild = 1;
++	rbio->operation = BTRFS_RBIO_READ_REBUILD;
+ 	bio_list_add(&rbio->bio_list, bio);
+ 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
+ 
 -- 
 1.9.3
 

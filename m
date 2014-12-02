@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15348 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58192 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932961AbaLBMiO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:14 -0500
+	with ESMTP id S932605AbaLBMiK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:10 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2Cbltm001483
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:47 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2Cbhls001465
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:43 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v4 09/10] Btrfs, raid56: fix use-after-free problem in the final device replace procedure on raid56
-Date: Tue, 2 Dec 2014 20:39:30 +0800
-Message-ID: <1417523971-15553-10-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v4 04/10] Btrfs, scrub: repair the common data on RAID5/6 if it is corrupted
+Date: Tue, 2 Dec 2014 20:39:25 +0800
+Message-ID: <1417523971-15553-5-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,239 +18,559 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The commit c404e0dc (Btrfs: fix use-after-free in the finishing
-procedure of the device replace) fixed a use-after-free problem
-which happened when removing the source device at the end of device
-replace, but at that time, btrfs didn't support device replace
-on raid56, so we didn't fix the problem on the raid56 profile.
-Currently, we implemented device replace for raid56, so we need
-kick that problem out before we enable that function for raid56.
-
-The fix method is very simple, we just increase the bio per-cpu
-counter before we submit a raid56 io, and decrease the counter
-when the raid56 io ends.
+This patch implement the RAID5/6 common data repair function, the
+implementation is similar to the scrub on the other RAID such as
+RAID1, the differentia is that we don't read the data from the
+mirror, we use the data repair function of RAID5/6.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v3 -> v4:
-- None.
+- Fix the problem that the scrub's raid bio was cached, which was reported by
+  Chris.
 
 Changelog v2 -> v3:
-- New patch to fix undealt use-after-free problem of the source device
-  in the final device replace procedure.
+- None.
 
 Changelog v1 -> v2:
-- None.
+- Change some function names in raid56.c to make them fit the code style
+  of the raid56.
 ---
- fs/btrfs/ctree.h       |  7 ++++++-
- fs/btrfs/dev-replace.c |  4 ++--
- fs/btrfs/raid56.c      | 41 ++++++++++++++++++++++++++++++++---------
- fs/btrfs/raid56.h      |  4 ++--
- fs/btrfs/scrub.c       |  2 +-
- fs/btrfs/volumes.c     |  7 ++-----
- 6 files changed, 45 insertions(+), 20 deletions(-)
+ fs/btrfs/raid56.c  |  52 ++++++++++----
+ fs/btrfs/raid56.h  |   2 +-
+ fs/btrfs/scrub.c   | 194 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/volumes.c |  16 ++++-
+ fs/btrfs/volumes.h |   4 ++
+ 5 files changed, 235 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index fc73e86..3770f4c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4156,7 +4156,12 @@ int btrfs_scrub_progress(struct btrfs_root *root, u64 devid,
- /* dev-replace.c */
- void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info);
- void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info);
--void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info);
-+void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount);
-+
-+static inline void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info)
-+{
-+	btrfs_bio_counter_sub(fs_info, 1);
-+}
- 
- /* reada.c */
- struct reada_control {
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 91f6b8f..326919b 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -928,9 +928,9 @@ void btrfs_bio_counter_inc_noblocked(struct btrfs_fs_info *fs_info)
- 	percpu_counter_inc(&fs_info->bio_counter);
- }
- 
--void btrfs_bio_counter_dec(struct btrfs_fs_info *fs_info)
-+void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
- {
--	percpu_counter_dec(&fs_info->bio_counter);
-+	percpu_counter_sub(&fs_info->bio_counter, amount);
- 
- 	if (waitqueue_active(&fs_info->replace_wait))
- 		wake_up(&fs_info->replace_wait);
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 7e6f239..44573bf 100644
+index cb31cc6..c954537 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -162,6 +162,8 @@ struct btrfs_raid_bio {
- 	 */
- 	int bio_list_bytes;
+@@ -58,6 +58,15 @@
+  */
+ #define RBIO_CACHE_READY_BIT	3
  
-+	int generic_bio_cnt;
++/*
++ * bbio and raid_map is managed by the caller, so we shouldn't free
++ * them here. And besides that, all rbios with this flag should not
++ * be cached, because we need raid_map to check the rbios' stripe
++ * is the same or not, but it is very likely that the caller has
++ * free raid_map, so don't cache those rbios.
++ */
++#define RBIO_HOLD_BBIO_MAP_BIT	4
 +
- 	atomic_t refs;
+ #define RBIO_CACHE_SIZE 1024
  
- 	atomic_t stripes_pending;
-@@ -354,6 +356,7 @@ static void merge_rbio(struct btrfs_raid_bio *dest,
- {
- 	bio_list_merge(&dest->bio_list, &victim->bio_list);
- 	dest->bio_list_bytes += victim->bio_list_bytes;
-+	dest->generic_bio_cnt += victim->generic_bio_cnt;
- 	bio_list_init(&victim->bio_list);
+ struct btrfs_raid_bio {
+@@ -799,6 +808,21 @@ done_nolock:
+ 		remove_rbio_from_cache(rbio);
  }
  
-@@ -891,6 +894,10 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, int err, int uptodate)
++static inline void
++__free_bbio_and_raid_map(struct btrfs_bio *bbio, u64 *raid_map, int need)
++{
++	if (need) {
++		kfree(raid_map);
++		kfree(bbio);
++	}
++}
++
++static inline void free_bbio_and_raid_map(struct btrfs_raid_bio *rbio)
++{
++	__free_bbio_and_raid_map(rbio->bbio, rbio->raid_map,
++			!test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags));
++}
++
+ static void __free_raid_bio(struct btrfs_raid_bio *rbio)
  {
- 	struct bio *cur = bio_list_get(&rbio->bio_list);
- 	struct bio *next;
+ 	int i;
+@@ -817,8 +841,9 @@ static void __free_raid_bio(struct btrfs_raid_bio *rbio)
+ 			rbio->stripe_pages[i] = NULL;
+ 		}
+ 	}
+-	kfree(rbio->raid_map);
+-	kfree(rbio->bbio);
 +
-+	if (rbio->generic_bio_cnt)
-+		btrfs_bio_counter_sub(rbio->fs_info, rbio->generic_bio_cnt);
++	free_bbio_and_raid_map(rbio);
 +
- 	free_raid_bio(rbio);
+ 	kfree(rbio);
+ }
  
- 	while (cur) {
-@@ -1775,6 +1782,7 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 	struct btrfs_raid_bio *rbio;
- 	struct btrfs_plug_cb *plug = NULL;
+@@ -933,11 +958,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
+ 
+ 	rbio = kzalloc(sizeof(*rbio) + num_pages * sizeof(struct page *) * 2,
+ 			GFP_NOFS);
+-	if (!rbio) {
+-		kfree(raid_map);
+-		kfree(bbio);
++	if (!rbio)
+ 		return ERR_PTR(-ENOMEM);
+-	}
+ 
+ 	bio_list_init(&rbio->bio_list);
+ 	INIT_LIST_HEAD(&rbio->plug_list);
+@@ -1692,8 +1714,10 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
  	struct blk_plug_cb *cb;
-+	int ret;
  
  	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
- 	if (IS_ERR(rbio)) {
-@@ -1785,12 +1793,19 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
- 	rbio->operation = BTRFS_RBIO_WRITE;
- 
-+	btrfs_bio_counter_inc_noblocked(root->fs_info);
-+	rbio->generic_bio_cnt = 1;
-+
- 	/*
- 	 * don't plug on full rbios, just get them out the door
- 	 * as quickly as we can
- 	 */
--	if (rbio_is_full(rbio))
--		return full_stripe_write(rbio);
-+	if (rbio_is_full(rbio)) {
-+		ret = full_stripe_write(rbio);
-+		if (ret)
-+			btrfs_bio_counter_dec(root->fs_info);
-+		return ret;
+-	if (IS_ERR(rbio))
++	if (IS_ERR(rbio)) {
++		__free_bbio_and_raid_map(bbio, raid_map, 1);
+ 		return PTR_ERR(rbio);
 +	}
+ 	bio_list_add(&rbio->bio_list, bio);
+ 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
  
- 	cb = blk_check_plugged(btrfs_raid_unplug, root->fs_info,
- 			       sizeof(*plug));
-@@ -1801,10 +1816,13 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 			INIT_LIST_HEAD(&plug->rbio_list);
- 		}
- 		list_add_tail(&rbio->plug_list, &plug->rbio_list);
-+		ret = 0;
- 	} else {
--		return __raid56_parity_write(rbio);
-+		ret = __raid56_parity_write(rbio);
-+		if (ret)
-+			btrfs_bio_counter_dec(root->fs_info);
- 	}
--	return 0;
-+	return ret;
- }
+@@ -1888,7 +1912,8 @@ cleanup:
+ cleanup_io:
  
- /*
-@@ -2139,19 +2157,17 @@ cleanup:
+ 	if (rbio->read_rebuild) {
+-		if (err == 0)
++		if (err == 0 &&
++		    !test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags))
+ 			cache_rbio_pages(rbio);
+ 		else
+ 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
+@@ -2038,15 +2063,19 @@ cleanup:
   */
  int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
  			  struct btrfs_bio *bbio, u64 *raid_map,
--			  u64 stripe_len, int mirror_num, int hold_bbio)
-+			  u64 stripe_len, int mirror_num, int generic_io)
+-			  u64 stripe_len, int mirror_num)
++			  u64 stripe_len, int mirror_num, int hold_bbio)
  {
  	struct btrfs_raid_bio *rbio;
  	int ret;
  
  	rbio = alloc_rbio(root, bbio, raid_map, stripe_len);
- 	if (IS_ERR(rbio)) {
--		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
-+		__free_bbio_and_raid_map(bbio, raid_map, generic_io);
+-	if (IS_ERR(rbio))
++	if (IS_ERR(rbio)) {
++		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
  		return PTR_ERR(rbio);
- 	}
++	}
  
--	if (hold_bbio)
--		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
- 	rbio->operation = BTRFS_RBIO_READ_REBUILD;
++	if (hold_bbio)
++		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
+ 	rbio->read_rebuild = 1;
  	bio_list_add(&rbio->bio_list, bio);
  	rbio->bio_list_bytes = bio->bi_iter.bi_size;
-@@ -2159,11 +2175,18 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+@@ -2054,8 +2083,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
  	rbio->faila = find_logical_bio_stripe(rbio, bio);
  	if (rbio->faila == -1) {
  		BUG();
--		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
-+		__free_bbio_and_raid_map(bbio, raid_map, generic_io);
+-		kfree(raid_map);
+-		kfree(bbio);
++		__free_bbio_and_raid_map(bbio, raid_map, !hold_bbio);
  		kfree(rbio);
  		return -EIO;
  	}
- 
-+	if (generic_io) {
-+		btrfs_bio_counter_inc_noblocked(root->fs_info);
-+		rbio->generic_bio_cnt = 1;
-+	} else {
-+		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
-+	}
-+
- 	/*
- 	 * reconstruct from the q stripe if they are
- 	 * asking for mirror 3
 diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 3d4ddb3..31d4a15 100644
+index ea5d73b..b310e8c 100644
 --- a/fs/btrfs/raid56.h
 +++ b/fs/btrfs/raid56.h
-@@ -43,8 +43,8 @@ struct btrfs_raid_bio;
- struct btrfs_device;
+@@ -41,7 +41,7 @@ static inline int nr_data_stripes(struct map_lookup *map)
  
  int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
--				 struct btrfs_bio *bbio, u64 *raid_map,
--				 u64 stripe_len, int mirror_num, int hold_bbio);
-+			  struct btrfs_bio *bbio, u64 *raid_map,
-+			  u64 stripe_len, int mirror_num, int generic_io);
+ 				 struct btrfs_bio *bbio, u64 *raid_map,
+-				 u64 stripe_len, int mirror_num);
++				 u64 stripe_len, int mirror_num, int hold_bbio);
  int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
  			       struct btrfs_bio *bbio, u64 *raid_map,
  			       u64 stripe_len);
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 1d6f16a..1807101 100644
+index 73ef9d2..738ccff 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1478,7 +1478,7 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
- 	ret = raid56_parity_recover(fs_info->fs_root, bio, page->recover->bbio,
- 				    page->recover->raid_map,
- 				    page->recover->map_length,
--				    page->mirror_num, 1);
-+				    page->mirror_num, 0);
- 	if (ret)
- 		return ret;
+@@ -63,6 +63,13 @@ struct scrub_ctx;
+  */
+ #define SCRUB_MAX_PAGES_PER_BLOCK	16	/* 64k per node/leaf/sector */
  
++struct scrub_recover {
++	atomic_t		refs;
++	struct btrfs_bio	*bbio;
++	u64			*raid_map;
++	u64			map_length;
++};
++
+ struct scrub_page {
+ 	struct scrub_block	*sblock;
+ 	struct page		*page;
+@@ -79,6 +86,8 @@ struct scrub_page {
+ 		unsigned int	io_error:1;
+ 	};
+ 	u8			csum[BTRFS_CSUM_SIZE];
++
++	struct scrub_recover	*recover;
+ };
+ 
+ struct scrub_bio {
+@@ -196,7 +205,7 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 				struct scrub_block *sblock, int is_metadata,
+ 				int have_csum, u8 *csum, u64 generation,
+-				u16 csum_size);
++				u16 csum_size, int retry_failed_mirror);
+ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
+ 					 struct scrub_block *sblock,
+ 					 int is_metadata, int have_csum,
+@@ -791,6 +800,20 @@ out:
+ 	scrub_pending_trans_workers_dec(sctx);
+ }
+ 
++static inline void scrub_get_recover(struct scrub_recover *recover)
++{
++	atomic_inc(&recover->refs);
++}
++
++static inline void scrub_put_recover(struct scrub_recover *recover)
++{
++	if (atomic_dec_and_test(&recover->refs)) {
++		kfree(recover->bbio);
++		kfree(recover->raid_map);
++		kfree(recover);
++	}
++}
++
+ /*
+  * scrub_handle_errored_block gets called when either verification of the
+  * pages failed or the bio failed to read, e.g. with EIO. In the latter
+@@ -907,7 +930,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 
+ 	/* build and submit the bios for the failed mirror, check checksums */
+ 	scrub_recheck_block(fs_info, sblock_bad, is_metadata, have_csum,
+-			    csum, generation, sctx->csum_size);
++			    csum, generation, sctx->csum_size, 1);
+ 
+ 	if (!sblock_bad->header_error && !sblock_bad->checksum_error &&
+ 	    sblock_bad->no_io_error_seen) {
+@@ -1020,7 +1043,7 @@ nodatasum_case:
+ 		/* build and submit the bios, check checksums */
+ 		scrub_recheck_block(fs_info, sblock_other, is_metadata,
+ 				    have_csum, csum, generation,
+-				    sctx->csum_size);
++				    sctx->csum_size, 0);
+ 
+ 		if (!sblock_other->header_error &&
+ 		    !sblock_other->checksum_error &&
+@@ -1170,7 +1193,7 @@ nodatasum_case:
+ 			 */
+ 			scrub_recheck_block(fs_info, sblock_bad,
+ 					    is_metadata, have_csum, csum,
+-					    generation, sctx->csum_size);
++					    generation, sctx->csum_size, 1);
+ 			if (!sblock_bad->header_error &&
+ 			    !sblock_bad->checksum_error &&
+ 			    sblock_bad->no_io_error_seen)
+@@ -1202,11 +1225,18 @@ out:
+ 		     mirror_index++) {
+ 			struct scrub_block *sblock = sblocks_for_recheck +
+ 						     mirror_index;
++			struct scrub_recover *recover;
+ 			int page_index;
+ 
+ 			for (page_index = 0; page_index < sblock->page_count;
+ 			     page_index++) {
+ 				sblock->pagev[page_index]->sblock = NULL;
++				recover = sblock->pagev[page_index]->recover;
++				if (recover) {
++					scrub_put_recover(recover);
++					sblock->pagev[page_index]->recover =
++									NULL;
++				}
+ 				scrub_page_put(sblock->pagev[page_index]);
+ 			}
+ 		}
+@@ -1216,14 +1246,63 @@ out:
+ 	return 0;
+ }
+ 
++static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio, u64 *raid_map)
++{
++	if (raid_map) {
++		if (raid_map[bbio->num_stripes - 1] == RAID6_Q_STRIPE)
++			return 3;
++		else
++			return 2;
++	} else {
++		return (int)bbio->num_stripes;
++	}
++}
++
++static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
++						 u64 mapped_length,
++						 int nstripes, int mirror,
++						 int *stripe_index,
++						 u64 *stripe_offset)
++{
++	int i;
++
++	if (raid_map) {
++		/* RAID5/6 */
++		for (i = 0; i < nstripes; i++) {
++			if (raid_map[i] == RAID6_Q_STRIPE ||
++			    raid_map[i] == RAID5_P_STRIPE)
++				continue;
++
++			if (logical >= raid_map[i] &&
++			    logical < raid_map[i] + mapped_length)
++				break;
++		}
++
++		*stripe_index = i;
++		*stripe_offset = logical - raid_map[i];
++	} else {
++		/* The other RAID type */
++		*stripe_index = mirror;
++		*stripe_offset = 0;
++	}
++}
++
+ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+ 				     struct btrfs_fs_info *fs_info,
+ 				     struct scrub_block *original_sblock,
+ 				     u64 length, u64 logical,
+ 				     struct scrub_block *sblocks_for_recheck)
+ {
++	struct scrub_recover *recover;
++	struct btrfs_bio *bbio;
++	u64 *raid_map;
++	u64 sublen;
++	u64 mapped_length;
++	u64 stripe_offset;
++	int stripe_index;
+ 	int page_index;
+ 	int mirror_index;
++	int nmirrors;
+ 	int ret;
+ 
+ 	/*
+@@ -1234,23 +1313,39 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+ 
+ 	page_index = 0;
+ 	while (length > 0) {
+-		u64 sublen = min_t(u64, length, PAGE_SIZE);
+-		u64 mapped_length = sublen;
+-		struct btrfs_bio *bbio = NULL;
++		sublen = min_t(u64, length, PAGE_SIZE);
++		mapped_length = sublen;
++		bbio = NULL;
++		raid_map = NULL;
+ 
+ 		/*
+ 		 * with a length of PAGE_SIZE, each returned stripe
+ 		 * represents one mirror
+ 		 */
+-		ret = btrfs_map_block(fs_info, REQ_GET_READ_MIRRORS, logical,
+-				      &mapped_length, &bbio, 0);
++		ret = btrfs_map_sblock(fs_info, REQ_GET_READ_MIRRORS, logical,
++				       &mapped_length, &bbio, 0, &raid_map);
+ 		if (ret || !bbio || mapped_length < sublen) {
+ 			kfree(bbio);
++			kfree(raid_map);
+ 			return -EIO;
+ 		}
+ 
++		recover = kzalloc(sizeof(struct scrub_recover), GFP_NOFS);
++		if (!recover) {
++			kfree(bbio);
++			kfree(raid_map);
++			return -ENOMEM;
++		}
++
++		atomic_set(&recover->refs, 1);
++		recover->bbio = bbio;
++		recover->raid_map = raid_map;
++		recover->map_length = mapped_length;
++
+ 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
+-		for (mirror_index = 0; mirror_index < (int)bbio->num_stripes;
++
++		nmirrors = scrub_nr_raid_mirrors(bbio, raid_map);
++		for (mirror_index = 0; mirror_index < nmirrors;
+ 		     mirror_index++) {
+ 			struct scrub_block *sblock;
+ 			struct scrub_page *page;
+@@ -1266,26 +1361,38 @@ leave_nomem:
+ 				spin_lock(&sctx->stat_lock);
+ 				sctx->stat.malloc_errors++;
+ 				spin_unlock(&sctx->stat_lock);
+-				kfree(bbio);
++				scrub_put_recover(recover);
+ 				return -ENOMEM;
+ 			}
+ 			scrub_page_get(page);
+ 			sblock->pagev[page_index] = page;
+ 			page->logical = logical;
+-			page->physical = bbio->stripes[mirror_index].physical;
++
++			scrub_stripe_index_and_offset(logical, raid_map,
++						      mapped_length,
++						      bbio->num_stripes,
++						      mirror_index,
++						      &stripe_index,
++						      &stripe_offset);
++			page->physical = bbio->stripes[stripe_index].physical +
++					 stripe_offset;
++			page->dev = bbio->stripes[stripe_index].dev;
++
+ 			BUG_ON(page_index >= original_sblock->page_count);
+ 			page->physical_for_dev_replace =
+ 				original_sblock->pagev[page_index]->
+ 				physical_for_dev_replace;
+ 			/* for missing devices, dev->bdev is NULL */
+-			page->dev = bbio->stripes[mirror_index].dev;
+ 			page->mirror_num = mirror_index + 1;
+ 			sblock->page_count++;
+ 			page->page = alloc_page(GFP_NOFS);
+ 			if (!page->page)
+ 				goto leave_nomem;
++
++			scrub_get_recover(recover);
++			page->recover = recover;
+ 		}
+-		kfree(bbio);
++		scrub_put_recover(recover);
+ 		length -= sublen;
+ 		logical += sublen;
+ 		page_index++;
+@@ -1294,6 +1401,51 @@ leave_nomem:
+ 	return 0;
+ }
+ 
++struct scrub_bio_ret {
++	struct completion event;
++	int error;
++};
++
++static void scrub_bio_wait_endio(struct bio *bio, int error)
++{
++	struct scrub_bio_ret *ret = bio->bi_private;
++
++	ret->error = error;
++	complete(&ret->event);
++}
++
++static inline int scrub_is_page_on_raid56(struct scrub_page *page)
++{
++	return page->recover && page->recover->raid_map;
++}
++
++static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
++					struct bio *bio,
++					struct scrub_page *page)
++{
++	struct scrub_bio_ret done;
++	int ret;
++
++	init_completion(&done.event);
++	done.error = 0;
++	bio->bi_iter.bi_sector = page->logical >> 9;
++	bio->bi_private = &done;
++	bio->bi_end_io = scrub_bio_wait_endio;
++
++	ret = raid56_parity_recover(fs_info->fs_root, bio, page->recover->bbio,
++				    page->recover->raid_map,
++				    page->recover->map_length,
++				    page->mirror_num, 1);
++	if (ret)
++		return ret;
++
++	wait_for_completion(&done.event);
++	if (done.error)
++		return -EIO;
++
++	return 0;
++}
++
+ /*
+  * this function will check the on disk data for checksum errors, header
+  * errors and read I/O errors. If any I/O errors happen, the exact pages
+@@ -1304,7 +1456,7 @@ leave_nomem:
+ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 				struct scrub_block *sblock, int is_metadata,
+ 				int have_csum, u8 *csum, u64 generation,
+-				u16 csum_size)
++				u16 csum_size, int retry_failed_mirror)
+ {
+ 	int page_num;
+ 
+@@ -1330,11 +1482,17 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 			continue;
+ 		}
+ 		bio->bi_bdev = page->dev->bdev;
+-		bio->bi_iter.bi_sector = page->physical >> 9;
+ 
+ 		bio_add_page(bio, page->page, PAGE_SIZE, 0);
+-		if (btrfsic_submit_bio_wait(READ, bio))
+-			sblock->no_io_error_seen = 0;
++		if (!retry_failed_mirror && scrub_is_page_on_raid56(page)) {
++			if (scrub_submit_raid56_bio_wait(fs_info, bio, page))
++				sblock->no_io_error_seen = 0;
++		} else {
++			bio->bi_iter.bi_sector = page->physical >> 9;
++
++			if (btrfsic_submit_bio_wait(READ, bio))
++				sblock->no_io_error_seen = 0;
++		}
+ 
+ 		bio_put(bio);
+ 	}
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b6c4730..d13b253 100644
+index eeb5b31..4aeac14 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5849,12 +5849,9 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+@@ -5167,7 +5167,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 				BTRFS_BLOCK_GROUP_RAID6)) {
+ 		u64 tmp;
+ 
+-		if (raid_map_ret && ((rw & REQ_WRITE) || mirror_num > 1)) {
++		if (raid_map_ret &&
++		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
++		     mirror_num > 1)) {
+ 			int i, rot;
+ 
+ 			/* push stripe_nr back to the start of the full stripe */
+@@ -5446,6 +5448,16 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 				 mirror_num, NULL);
+ }
+ 
++/* For Scrub/replace */
++int btrfs_map_sblock(struct btrfs_fs_info *fs_info, int rw,
++		     u64 logical, u64 *length,
++		     struct btrfs_bio **bbio_ret, int mirror_num,
++		     u64 **raid_map_ret)
++{
++	return __btrfs_map_block(fs_info, rw, logical, length, bbio_ret,
++				 mirror_num, raid_map_ret);
++}
++
+ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		     u64 chunk_start, u64 physical, u64 devid,
+ 		     u64 **logical, int *naddrs, int *stripe_len)
+@@ -5815,7 +5827,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
  		} else {
  			ret = raid56_parity_recover(root, bio, bbio,
  						    raid_map, map_length,
--						    mirror_num, 0);
-+						    mirror_num, 1);
+-						    mirror_num);
++						    mirror_num, 0);
  		}
--		/*
--		 * FIXME, replace dosen't support raid56 yet, please fix
--		 * it in the future.
--		 */
-+
- 		btrfs_bio_counter_dec(root->fs_info);
- 		return ret;
- 	}
+ 		/*
+ 		 * FIXME, replace dosen't support raid56 yet, please fix
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 4cc00e6..9c87a06 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -393,6 +393,10 @@ int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
+ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_bio **bbio_ret, int mirror_num);
++int btrfs_map_sblock(struct btrfs_fs_info *fs_info, int rw,
++		     u64 logical, u64 *length,
++		     struct btrfs_bio **bbio_ret, int mirror_num,
++		     u64 **raid_map_ret);
+ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		     u64 chunk_start, u64 physical, u64 devid,
+ 		     u64 **logical, int *naddrs, int *stripe_len);
 -- 
 1.9.3
 

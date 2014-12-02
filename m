@@ -1,52 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42007 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753085AbaLBFuF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 00:50:05 -0500
-Date: Mon, 1 Dec 2014 21:50:02 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: MegaBrutal <megabrutal@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Shriramana Sharma <samjnaa@gmail.com>
-Message-ID: <20141202055002.GD8916@merlins.org>
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
- <20141130042306.GE8916@merlins.org>
- <547C6922.6030206@gmail.com>
- <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
- <20141201184621.5dd7fcd9@natsu>
- <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
- <CAE8gLhkiv0YnFArrzwLfnrGcqm1pRsuYBgakwrMs2W61xuothw@mail.gmail.com>
+Received: from fgwmail7.fujitsu.co.jp ([192.51.44.37]:52076 "EHLO
+	fgwmail7.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750869AbaLBHOf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 02:14:35 -0500
+Received: from fgwmail6.fujitsu.co.jp (fgwmail6.fujitsu.co.jp [192.51.44.36])
+	by fgwmail7.fujitsu.co.jp (Postfix) with ESMTP id 39DA81792418
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 16:14:07 +0900 (JST)
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 9D9B53EE0BD
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 16:14:05 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 9DD1DAC0418
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 16:14:04 +0900 (JST)
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 4E03CE08009
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 16:14:04 +0900 (JST)
+Message-ID: <547D663A.3020201@jp.fujitsu.com>
+Date: Tue, 2 Dec 2014 16:11:54 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAE8gLhkiv0YnFArrzwLfnrGcqm1pRsuYBgakwrMs2W61xuothw@mail.gmail.com>
+To: Shriramana Sharma <samjnaa@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Possible to undo subvol delete?
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+In-Reply-To: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 02, 2014 at 06:33:38AM +0100, MegaBrutal wrote:
-> 2014-12-01 17:39 GMT+01:00 Shriramana Sharma <samjnaa@gmail.com>:
-> >
-> > When btrfs has so many features (esp snapshots) to prevent user
-> > accidentally deleting data (I liked especially
-> > http://www.youtube.com/v/9H7e6BcI5Fo?start=209) I think there has to
-> > be *some* modicum of support for warning against deleting a subvolume
-> > (and it seems others agree too).
-> >
-> 
-> WOW, this is pretty neat? How can I do the same actions from the
-> command-line? E.g. I would be curious whether a file changed since the
-> last snapshot. Today I have to use traditional methods like plain "ls
+Hi,
 
-It's not trivial. See
-http://marc.merlins.org/perso/btrfs/2014-05.html#Btrfs-diff-Between-Snapshots
+(2014/11/30 12:33), Shriramana Sharma wrote:
+> IIUC with BtrFS while it is possible to easily undelete a file or
+> ordinary directory if a snapshot of the containing subvol exists, it
+> seems that it's not elementary to undelete a subvol itself, because
+> all subvols are under the root-level subvol (id 0 or 5, see my other
+> q) but even snapshotting the root subvol will not snapshot any subvols
+> under it.
+>
+> So is there any way to undo a subvol delete?
+>
+> [If no, then ordinary users should probably prefer regular directories
+> to subvols.]
+>
 
->From what I understand, the only way to do this better is to use
-btrfs-send and parse the output, but that's not trivial either since
-btrfs-send has lots of intermediate renames.
+One solution is using snapper instead of using btrfs directly.
+Snapper can automatically take a snapshot just before
+taking/deleting snapshots. So, if you delete a snapshot
+by mistake, it's still alive.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+For more information, please refer to the following URLs.
+
+https://en.opensuse.org/Portal:Snapper
+http://events.linuxfoundation.org/sites/events/files/slides/LinuxCon_Europe_2014_Full_system_rollback_btrfs_snapper_0.pdf
+
+Thanks,
+Satoru
+

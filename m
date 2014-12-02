@@ -1,153 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:34573 "EHLO smtp.gentoo.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752816AbaLBCAh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 21:00:37 -0500
-Message-ID: <1417485630.4310.27.camel@gentoo.org>
-Subject: Re: btrfs stuck with lot's of files
-From: Peter Volkov <pva@gentoo.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Tue, 02 Dec 2014 05:00:30 +0300
-In-Reply-To: <547D16F0.60809@cn.fujitsu.com>
-References: <1417434411.20237.1.camel@gentoo.org>
-	 <547D16F0.60809@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48486 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753557AbaLBDOG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Dec 2014 22:14:06 -0500
+Date: Mon, 1 Dec 2014 22:14:03 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Possible to undo subvol delete?
+Message-ID: <20141202031403.GZ17395@hungrycats.org>
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+ <20141130042306.GE8916@merlins.org>
+ <547C6922.6030206@gmail.com>
+ <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
+ <20141201184621.5dd7fcd9@natsu>
+ <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="4mUolEm2oNas7DxE"
+In-Reply-To: <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-В Вт, 02/12/2014 в 09:33 +0800, Qu Wenruo пишет:
-> -------- Original Message --------
-> Subject: btrfs stuck with lot's of files
-> From: Peter Volkov <pva@gentoo.org>
-> To: linux-btrfs@vger.kernel.org <linux-btrfs@vger.kernel.org>
-> Date: 2014年12月01日 19:46
-> > Hi, guys.
-> >
-> > We have a problem with btrfs file system: sometimes it became stuck
-> > without leaving me any way to interrupt it (shutdown -r now is unable to
-> > restart server). By stuck I mean some processes that previously were
-> > able to write on disk are unable to cope with load and load average goes
-> > up:
-> >
-> > top - 13:10:58 up 1 day,  9:26,  5 users,  load average: 157.76, 156.61,
-> > 149.29
-> > Tasks: 235 total,   2 running, 233 sleeping,   0 stopped,   0 zombie
-> > %Cpu(s): 19.8 us, 15.0 sy,  0.0 ni, 60.7 id,  3.9 wa,  0.0 hi,  0.6 si,
-> > 0.0 st
-> > KiB Mem:  65922104 total, 65414856 used,   507248 free,     1844 buffers
-> > KiB Swap:        0 total,        0 used,        0 free. 62570804 cached
-> > Mem
-> >
-> >    PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+
-> > COMMAND
-> >   8644 root      20   0       0      0      0 R  96.5  0.0 127:21.95
-> > kworker/u16:16
-> >   5047 dvr       20   0 6884292 122668   4132 S   6.4  0.2 258:59.49
-> > dvrserver
-> > 30223 root      20   0   20140   2600   2132 R   6.4  0.0   0:00.01
-> > top
-> >      1 root      20   0    4276   1628   1524 S   0.0  0.0   0:40.19
-> > init
-> >
-> >
-> >
-> > There are about 300 treads on server, some of which are writing on disk.
-> > A bit information about this btrfs filesystem: this is 22 disk file
-> > system with raid1 for metadata and raid0 for data:
-> >
-> >   # btrfs filesystem df /store/
-> > Data, single: total=11.92TiB, used=10.86TiB
-> > System, RAID1: total=8.00MiB, used=1.27MiB
-> > System, single: total=4.00MiB, used=0.00B
-> > Metadata, RAID1: total=46.00GiB, used=33.49GiB
-> > Metadata, single: total=8.00MiB, used=0.00B
-> > GlobalReserve, single: total=512.00MiB, used=128.00KiB
-> >   # btrfs property get /store/
-> > ro=false
-> > label=store
-> >   # btrfs device stats /store/
-> > (shows all zeros)
-> >   # btrfs balance status /store/
-> > No balance found on '/store/'
-> >   # btrfs filesystem show /store/
-> > Btrfs v3.17.1
-> > (btw, is it supposed to have only version here?)
-> This is a small bug that if there is appending '/' in the path for 
-> 'btrfs fi show', it can't recognize it....
-> Patch is already sent and maybe included next version.
-> >
-> > As for load we write quite small files of size (some of 313K, some of
-> > 800K), that's why metadata takes that much. So back to the problem.
-> > iostat 1 exposes following problem:
-> >
-> > avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-> >            16.96    0.00   17.09   65.95    0.00    0.00
-> >
-> > Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
-> > sda               0.00         0.00         0.00          0          0
-> > sdc               0.00         0.00         0.00          0          0
-> > sdb               0.00         0.00         0.00          0          0
-> > sde               0.00         0.00         0.00          0          0
-> > sdd               0.00         0.00         0.00          0          0
-> > sdf               0.00         0.00         0.00          0          0
-> > sdg               0.00         0.00         0.00          0          0
-> > sdj               0.00         0.00         0.00          0          0
-> > sdh               0.00         0.00         0.00          0          0
-> > sdk               0.00         0.00         0.00          0          0
-> > sdi               1.00         0.00       200.00          0        200
-> > sdl               0.00         0.00         0.00          0          0
-> > sdn              48.00         0.00     17260.00          0      17260
-> > sdm               0.00         0.00         0.00          0          0
-> > sdp               0.00         0.00         0.00          0          0
-> > sdo               0.00         0.00         0.00          0          0
-> > sdq               0.00         0.00         0.00          0          0
-> > sdr               0.00         0.00         0.00          0          0
-> > sds               0.00         0.00         0.00          0          0
-> > sdt               0.00         0.00         0.00          0          0
-> > sdv               0.00         0.00         0.00          0          0
-> > sdw               0.00         0.00         0.00          0          0
-> > sdu               0.00         0.00         0.00          0          0
-> >
-> >
-> > write goes to one disk. I've tried to debug what's going in kworker and
-> > did
-> >
-> > $ echo workqueue:workqueue_queue_work
-> >> /sys/kernel/debug/tracing/set_event
-> > $ cat /sys/kernel/debug/tracing/trace_pipe > trace_pipe.out2
-> >
-> > trace_pipe2.out.xz in attachment. Could you comment, what goes wrong
-> > here?
-> It seems that attachment is blocked by mail-list so I didn't see the 
-> attachment.
 
-I've put it here:
-https://drive.google.com/file/d/0BygFL6N3ZVUAMWxCQ0tDREE1Uzg/view?usp=sharing
+--4mUolEm2oNas7DxE
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-And some additional information I've put in another letter that just
-sent to mailing list.
+On Mon, Dec 01, 2014 at 10:09:44PM +0530, Shriramana Sharma wrote:
+> On Mon, Dec 1, 2014 at 7:16 PM, Roman Mamedov <rm@romanrm.net> wrote:
+> >
+> > A more sensible idea could be adding a global-level '-i' switch, same a=
+s in
+> > 'rm', so that you or distros could then alias 'btrfs' to 'btrfs -i' (ask
+> > confirmation on any irreversible action).
+>=20
+> Well the difference being that there doesn't seem to be any other
+> irreversible action from my scan of man btrfs -- am I missing
+> anything? This is the only thing that actually leads to loss of data.
+>=20
+> When btrfs has so many features (esp snapshots) to prevent user
+> accidentally deleting data (I liked especially
+> http://www.youtube.com/v/9H7e6BcI5Fo?start=3D209) I think there has to
+> be *some* modicum of support for warning against deleting a subvolume
+> (and it seems others agree too).
+>=20
+> But I see what you mean in the bugzilla comment about not wanting your
+> existing backup snapshot scripts to fail because they don't have a -f.
+> At the same time, aliasing via -i on top level btrfs binary may not be
+> so practical here because this is the only command which will actually
+> use it (again, correct if wrong).
+>=20
+> Perhaps exporting some envvar in the default shell's rc file (or
+> whichever file will be read only if the shell is interactive) would
+> work? Like in ~/.bashrc:
+>=20
+> export BTRFS_SUBVOLUME_DELETE_CONFIRM=3D1
+>=20
+> Ideas?
 
-> > Server has 64Gb of RAM. Is it possible that it is unable to keep all
-> > metadata in memory, can we encrease this memory limit, if exists?
-> Not possible, it will never happen (if nothing goes wrong....).
-> Kernel has the outstanding page cache mechanism, when memory comes short,
-> some cached metadata/data can be flushed back(if dirty) to disk to free 
-> space.
-> And re-read from disk if needed later.
-> 
-> So kernel don't need to load all the metadata/data into memory, and 
-> that's mostly impossible for large fs.
+Never rely on aliasing or environment variables for defaults, and never
+change default behavior if your releases are old enough that someone
+has built scripts on top of them.  ;)
 
-Thanks for this explanation! Still I'm looking for suggestion on how to
-cope with btrfs_async_reclaim_metadata_space that is mentioned most
-frequently in kworker trace.
+	fprintf(stderr, "Deleting subvolume '%s' in 5 seconds.\n", subvol_path);
+	if (!f_flag_on_cmd_line) {
+		fprintf(stderr, "If this is not what you want,\n");
+		fprintf(stderr, "*** PRESS Ctrl-C TO ABORT NOW!!! ***\a\n");
+		sleep(5);
+	}
 
-> And one missing important informantion: kernel version.
+Of course, in an init-shell-type environment, Ctrl-C doesn't work
+either...
 
-This is kernel 3.16.7-gentoo. 
+If I had to pick the least evil, I'd go for interactive prompting by
+default (do nothing if the interaction fails, e.g. no TTY) and add a
+'-f'/'--force' flag to bypass the prompt.  This is consistent with the
+way lvm2 and mdadm work when presented with data-losing or otherwise
+questionable commands and parameters.  It will break scripts, but btrfs
+users should still be expecting that for a while as undesirable default
+behaviors are identified.
 
---
-Peter.
+OTOH maybe there is no issue with the current behavior.  Only root can
+delete subvolumes, and maybe we assume root knows what they're doing?
 
+On a side note...only root can delete subvolumes, but non-root users
+can create them, which results in...this:
+
+	$ /sbin/btrfs sub create foo
+	Create subvolume './foo'
+	$ date > foo/bar
+	$ /sbin/btrfs sub delete foo
+	Transaction commit: none (default)
+	Delete subvolume '/home/testuser/foo'
+	ERROR: cannot delete '/home/testuser/foo' - Operation not permitted
+	$ rm -rf foo
+	rm: cannot remove `foo': Operation not permitted
+	$ cat /proc/version
+	Linux version 3.17.1-zb64+ (root@buildbot) (gcc version 4.7.2 (Debian 4.7.=
+2-5) ) #1 SMP PREEMPT Tue Oct 21 00:17:49 EDT 2014
+
+=2E..uh oh?
+
+> --=20
+> Shriramana Sharma =E0=AE=B6=E0=AF=8D=E0=AE=B0=E0=AF=80=E0=AE=B0=E0=AE=AE=
+=E0=AE=A3=E0=AE=B6=E0=AE=B0=E0=AF=8D=E0=AE=AE=E0=AE=BE =E0=A4=B6=E0=A5=8D=
+=E0=A4=B0=E0=A5=80=E0=A4=B0=E0=A4=AE=E0=A4=A3=E0=A4=B6=E0=A4=B0=E0=A5=8D=E0=
+=A4=AE=E0=A4=BE
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--4mUolEm2oNas7DxE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlR9LnsACgkQgfmLGlazG5wLTACdHz/czQZ6XudlWm+pcI28FyBF
+clMAoIb1LtwD5V+KjwxPjMlGIHHfmMfa
+=Umkf
+-----END PGP SIGNATURE-----
+
+--4mUolEm2oNas7DxE--

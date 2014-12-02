@@ -1,120 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39708 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932805AbaLBDGT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 22:06:19 -0500
-Date: Tue, 2 Dec 2014 11:06:11 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: add btrfs test to stress chunk
- allocation/removal and fstrim
-Message-ID: <20141202030611.GQ29912@dhcp-13-216.nay.redhat.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:40844 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754631AbaLBSLR (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 2 Dec 2014 13:11:17 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3] fstests: add btrfs test to stress chunk allocation/removal and fstrim
+Date: Tue,  2 Dec 2014 18:10:43 +0000
+Message-Id: <1417543843-31117-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1417015839-26985-1-git-send-email-fdmanana@suse.com>
 References: <1417015839-26985-1-git-send-email-fdmanana@suse.com>
- <1417453889-16317-1-git-send-email-fdmanana@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1417453889-16317-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 01, 2014 at 05:11:29PM +0000, Filipe Manana wrote:
-> Stress btrfs' block group allocation and deallocation while running
-> fstrim in parallel. Part of the goal is also to get data block groups
-> deallocated so that new metadata block groups, using the same physical
-> device space ranges, get allocated while fstrim is running. This caused
-> several issues ranging from invalid memory accesses, kernel crashes,
-> metadata or data corruption, free space cache inconsistencies, free
-> space leaks and memory leaks.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Addressed Dave's comments.
-> 
->  tests/generic/038     | 152 ++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/038.out |   2 +
->  tests/generic/group   |   1 +
->  3 files changed, 155 insertions(+)
->  create mode 100755 tests/generic/038
->  create mode 100644 tests/generic/038.out
-> 
-> diff --git a/tests/generic/038 b/tests/generic/038
-> new file mode 100755
-> index 0000000..217aa7a
-> --- /dev/null
-> +++ b/tests/generic/038
-> @@ -0,0 +1,152 @@
-> +#! /bin/bash
-> +# FSQA Test No. 038
-> +#
-> +# This test was motivated by btrfs issues, but it's generic enough as it
-> +# doesn't use any btrfs specific features.
-> +#
-> +# Stress btrfs' block group allocation and deallocation while running fstrim in
-> +# parallel. Part of the goal is also to get data block groups deallocated so
-> +# that new metadata block groups, using the same physical device space ranges,
-> +# get allocated while fstrim is running. This caused several issues ranging
-> +# from invalid memory accesses, kernel crashes, metadata or data corruption,
-> +# free space cache inconsistencies, free space leaks and memory leaks.
-> +#
-> +# These issues were fixed by the following btrfs linux kernel patches:
-> +#
-> +#   Btrfs: fix invalid block group rbtree access after bg is removed
-> +#   Btrfs: fix crash caused by block group removal
-> +#   Btrfs: fix freeing used extents after removing empty block group
-> +#   Btrfs: fix race between fs trimming and block group remove/allocation
-> +#   Btrfs: fix race between writing free space cache and trimming
-> +#   Btrfs: make btrfs_abort_transaction consider existence of new block groups
-> +#   Btrfs: fix memory leak after block remove + trimming
-> +#   Btrfs: fix extent map leak on chunk allocation failure
-> +#
-> +# The issues were found on a qemu/kvm guest with 4 virtual CPUs, 4Gb of ram and
-> +# scsi-hd devices with discard support enabled (that means hole punching in the
-> +# disk's image file is performed by the host).
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-> +# Author: Filipe Manana <fdmanana@suse.com>
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +	rm -fr $tmp
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_need_to_be_root
-> +_supported_fs btrfs
+Stress btrfs' block group allocation and deallocation while running
+fstrim in parallel. Part of the goal is also to get data block groups
+deallocated so that new metadata block groups, using the same physical
+device space ranges, get allocated while fstrim is running. This caused
+several issues ranging from invalid memory accesses, kernel crashes,
+metadata or data corruption, free space cache inconsistencies, free
+space leaks and memory leaks.
 
-This should be "_supported_fs generic"
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-Thanks,
-Eryu
+V2: Addressed Dave's comments.
+
+V3: Missing s/_supported_fs btrfs/_supported_fs generic/
+    Thanks Eryu.
+
+ tests/generic/038     | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/038.out |   2 +
+ tests/generic/group   |   1 +
+ 3 files changed, 156 insertions(+)
+ create mode 100755 tests/generic/038
+ create mode 100644 tests/generic/038.out
+
+diff --git a/tests/generic/038 b/tests/generic/038
+new file mode 100755
+index 0000000..5db718c
+--- /dev/null
++++ b/tests/generic/038
+@@ -0,0 +1,153 @@
++#! /bin/bash
++# FSQA Test No. 038
++#
++# This test was motivated by btrfs issues, but it's generic enough as it
++# doesn't use any btrfs specific features.
++#
++# Stress btrfs' block group allocation and deallocation while running fstrim in
++# parallel. Part of the goal is also to get data block groups deallocated so
++# that new metadata block groups, using the same physical device space ranges,
++# get allocated while fstrim is running. This caused several issues ranging
++# from invalid memory accesses, kernel crashes, metadata or data corruption,
++# free space cache inconsistencies, free space leaks and memory leaks.
++#
++# These issues were fixed by the following btrfs linux kernel patches:
++#
++#   Btrfs: fix invalid block group rbtree access after bg is removed
++#   Btrfs: fix crash caused by block group removal
++#   Btrfs: fix freeing used extents after removing empty block group
++#   Btrfs: fix race between fs trimming and block group remove/allocation
++#   Btrfs: fix race between writing free space cache and trimming
++#   Btrfs: make btrfs_abort_transaction consider existence of new block groups
++#   Btrfs: fix memory leak after block remove + trimming
++#   Btrfs: fix fs mapping extent map leak
++#   Btrfs: fix unprotected deletion from pending_chunks list
++#
++# The issues were found on a qemu/kvm guest with 4 virtual CPUs, 4Gb of ram and
++# scsi-hd devices with discard support enabled (that means hole punching in the
++# disk's image file is performed by the host).
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_fstrim
++
++rm -f $seqres.full
++
++# Keep allocating and deallocating 1G of data space with the goal of creating
++# and deleting 1 block group constantly. The intention is to race with the
++# fstrim loop below.
++fallocate_loop()
++{
++	local name=$1
++	while true; do
++		$XFS_IO_PROG -f -c "falloc -k 0 1G" \
++			$SCRATCH_MNT/$name &> /dev/null
++		sleep 3
++		$XFS_IO_PROG -c "truncate 0" \
++			$SCRATCH_MNT/$name &> /dev/null
++		sleep 3
++	done
++}
++
++trim_loop()
++{
++	while true; do
++		$FSTRIM_PROG $SCRATCH_MNT
++	done
++}
++
++# Create a bunch of small files that get their single extent inlined in the
++# btree, so that we consume a lot of metadata space and get a chance of a
++# data block group getting deleted and reused for metadata later. Sometimes
++# the creation of all these files succeeds other times we get ENOSPC failures
++# at some point - this depends on how fast the btrfs' cleaner kthread is
++# notified about empty block groups, how fast it deletes them and how fast
++# the fallocate calls happen. So we don't really care if they all succeed or
++# not, the goal is just to keep metadata space usage growing while data block
++# groups are deleted.
++create_files()
++{
++	local prefix=$1
++
++	for ((i = 1; i <= 400000; i++)); do
++		$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 3900" \
++			$SCRATCH_MNT/"${prefix}_$i" &> /dev/null
++		if [ $? -ne 0 ]; then
++			echo "Failed creating file ${prefix}_$i" >>$seqres.full
++			break
++		fi
++	done
++
++}
++
++_scratch_mkfs >>$seqres.full 2>&1
++_require_fs_space $SCRATCH_MNT $((10 * 1024 * 1024))
++_scratch_mount
++
++for ((i = 0; i < $((4 * $LOAD_FACTOR)); i++)); do
++	trim_loop &
++	trim_pids[$i]=$!
++done
++
++for ((i = 0; i < $((1 * $LOAD_FACTOR)); i++)); do
++	fallocate_loop "falloc_file_$i" &
++	fallocate_pids[$i]=$!
++done
++
++create_files "foobar"
++
++kill ${fallocate_pids[@]}
++kill ${trim_pids[@]}
++wait
++
++# Sleep a bit, otherwise umount fails often with EBUSY (TODO: investigate why).
++sleep 3
++
++# The fstests framework will now check for fs consistency with fsck.
++# The trimming was racy and caused some btree nodes to get full of zeroes on
++# disk, which obviously caused fs metadata corruption. The race often lead
++# to missing free space entries in a block group's free space cache too.
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/generic/038.out b/tests/generic/038.out
+new file mode 100644
+index 0000000..5e0f13e
+--- /dev/null
++++ b/tests/generic/038.out
+@@ -0,0 +1,2 @@
++QA output created by 038
++Silence is golden
+diff --git a/tests/generic/group b/tests/generic/group
+index 9f355fc..1e89848 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -40,6 +40,7 @@
+ 035 auto quick
+ 036 auto aio rw stress
+ 037 metadata auto quick
++038 auto stress
+ 053 acl repair auto quick
+ 062 attr udf auto quick
+ 068 other auto freeze dangerous stress
+-- 
+2.1.3
+

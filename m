@@ -1,49 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f177.google.com ([209.85.220.177]:43862 "EHLO
-	mail-vc0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752714AbaLBFrd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 00:47:33 -0500
-Received: by mail-vc0-f177.google.com with SMTP id ij19so5411857vcb.36
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 21:47:32 -0800 (PST)
+Received: from magic.merlins.org ([209.81.13.136]:42007 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753085AbaLBFuF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 00:50:05 -0500
+Date: Mon, 1 Dec 2014 21:50:02 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: MegaBrutal <megabrutal@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Shriramana Sharma <samjnaa@gmail.com>
+Message-ID: <20141202055002.GD8916@merlins.org>
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
+ <20141130042306.GE8916@merlins.org>
+ <547C6922.6030206@gmail.com>
+ <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
+ <20141201184621.5dd7fcd9@natsu>
+ <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
+ <CAE8gLhkiv0YnFArrzwLfnrGcqm1pRsuYBgakwrMs2W61xuothw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <547CE175.6060409@web.de>
-References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>
-	<547CE175.6060409@web.de>
-Date: Tue, 2 Dec 2014 06:47:32 +0100
-Message-ID: <CAE8gLhmVRn1OPsMgXAPSxg=3ROvNig+73d6dZpTs6fAz-02G2A@mail.gmail.com>
-Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
-From: MegaBrutal <megabrutal@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Konstantin <newsbox1026@web.de>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAE8gLhkiv0YnFArrzwLfnrGcqm1pRsuYBgakwrMs2W61xuothw@mail.gmail.com>
+Subject: Re: Possible to undo subvol delete?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-12-01 22:45 GMT+01:00 Konstantin <newsbox1026@web.de>:
->
-> MegaBrutal schrieb am 01.12.2014 um 13:56:
->> Hi all,
->>
->> I've reported the bug I've previously posted about in "BTRFS messes up
->> snapshot LV with origin" in the Kernel Bug Tracker.
->> https://bugzilla.kernel.org/show_bug.cgi?id=89121
-> Hi MegaBrutal. If I understand your report correctly, I can give you
-> another example where this bug is appearing. It is so bad that it leads
-> to freezing the system and I'm quite sure it's the same thing. I was
-> thinking about filing a bug but didn't have the time for that yet. Maybe
-> you could add this case to your bug report as well.
->
-> The bug appears also when using mdadm RAID1 - when one of the drives is
-> detached from the array then the OS discovers it and after a while (not
-> directly, it takes several minutes) it appears under /proc/mounts:
-> instead of /dev/md0p1 I see there /dev/sdb1. And usually after some hour
-> or so (depending on system workload) the PC completely freezes. So
-> discussion about the uniqueness of UUIDs or not, a crashing kernel is
-> telling me that there is a serious bug.
->
+On Tue, Dec 02, 2014 at 06:33:38AM +0100, MegaBrutal wrote:
+> 2014-12-01 17:39 GMT+01:00 Shriramana Sharma <samjnaa@gmail.com>:
+> >
+> > When btrfs has so many features (esp snapshots) to prevent user
+> > accidentally deleting data (I liked especially
+> > http://www.youtube.com/v/9H7e6BcI5Fo?start=209) I think there has to
+> > be *some* modicum of support for warning against deleting a subvolume
+> > (and it seems others agree too).
+> >
+> 
+> WOW, this is pretty neat? How can I do the same actions from the
+> command-line? E.g. I would be curious whether a file changed since the
+> last snapshot. Today I have to use traditional methods like plain "ls
 
-Hmm, I also suspect our symptoms have the same root cause. It seems
-the same thing happens: the BTRFS module notices another device with
-the same file system and starts to report it as the root device. It
-seems like it has no idea that it's part of a RAID configuration or
-anything.
+It's not trivial. See
+http://marc.merlins.org/perso/btrfs/2014-05.html#Btrfs-diff-Between-Snapshots
+
+>From what I understand, the only way to do this better is to use
+btrfs-send and parse the output, but that's not trivial either since
+btrfs-send has lots of intermediate renames.
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

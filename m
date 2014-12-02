@@ -1,42 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47670 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38557 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932488AbaLBSHr (ORCPT
+	by vger.kernel.org with ESMTP id S932488AbaLBSIC (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 2 Dec 2014 13:07:47 -0500
+	Tue, 2 Dec 2014 13:08:02 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2] Btrfs: fix fs mapping extent map leak
-Date: Tue,  2 Dec 2014 18:07:30 +0000
-Message-Id: <1417543650-18002-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2] Btrfs: fix unprotected deletion from pending_chunks list
+Date: Tue,  2 Dec 2014 18:07:49 +0000
+Message-Id: <1417543669-22685-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On chunk allocation error (label "error_del_extent"), after adding the
-extent map to the tree and to the pending chunks list, we would leave
-decrementing the extent map's refcount by 2 instead of 3 (our allocation
-+ tree reference + list reference).
-
-Also, on chunk/block group removal, if the block group was on the list
-pending_chunks we weren't decrementing the respective list reference.
-
-Detected by 'rmmod btrfs':
-
-[20770.105881] kmem_cache_destroy btrfs_extent_map: Slab cache still has objects
-[20770.106127] CPU: 2 PID: 11093 Comm: rmmod Tainted: G        W    L 3.17.0-rc5-btrfs-next-1+ #1
-[20770.106128] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-[20770.106130]  0000000000000000 ffff8800ba867eb8 ffffffff813e7a13 ffff8800a2e11040
-[20770.106132]  ffff8800ba867ed0 ffffffff81105d0c 0000000000000000 ffff8800ba867ee0
-[20770.106134]  ffffffffa035d65e ffff8800ba867ef0 ffffffffa03b0654 ffff8800ba867f78
-[20770.106136] Call Trace:
-[20770.106142]  [<ffffffff813e7a13>] dump_stack+0x45/0x56
-[20770.106145]  [<ffffffff81105d0c>] kmem_cache_destroy+0x4b/0x90
-[20770.106164]  [<ffffffffa035d65e>] extent_map_exit+0x1a/0x1c [btrfs]
-[20770.106176]  [<ffffffffa03b0654>] exit_btrfs_fs+0x27/0x9d3 [btrfs]
-[20770.106179]  [<ffffffff8109dc97>] SyS_delete_module+0x153/0x1c4
-[20770.106182]  [<ffffffff8121261b>] ? trace_hardirqs_on_thunk+0x3a/0x3c
-[20770.106184]  [<ffffffff813ebf52>] system_call_fastpath+0x16/0x1b
+On block group remove if the corresponding extent map was on the
+transaction->pending_chunks list, we were deleting the extent map
+from that list, through remove_extent_mapping(), without any
+synchronization with chunk allocation (which iterates that list
+and adds new elements to it). Fix this by ensure that this is done
+while the chunk mutex is held, since that's the mutex that protects
+the list in the chunk allocation code path.
 
 This applies on top (depends on) of my previous patch titled:
 "Btrfs: fix race between fs trimming and block group remove/allocation"
@@ -47,42 +30,40 @@ removal of empty block groups.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-
-This replaces my previous patch titled:
-"Btrfs: fix extent map leak on chunk allocation failure"
-
- fs/btrfs/extent-tree.c | 4 ++++
- fs/btrfs/volumes.c     | 2 ++
- 2 files changed, 6 insertions(+)
+ fs/btrfs/extent-tree.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a811ed2..17d429d 100644
+index 17d429d..a7b81b4 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9479,6 +9479,10 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	memcpy(&key, &block_group->key, sizeof(key));
+@@ -9524,19 +9524,25 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 		list_move_tail(&em->list, &root->fs_info->pinned_chunks);
+ 	}
+ 	spin_unlock(&block_group->lock);
+-	unlock_chunks(root);
  
- 	lock_chunks(root);
-+	if (!list_empty(&em->list)) {
-+		/* We're in the transaction->pending_chunks list. */
-+		free_extent_map(em);
-+	}
- 	spin_lock(&block_group->lock);
- 	block_group->removed = 1;
- 	/*
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 66a5a1e..e936fe3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4496,6 +4496,8 @@ error_del_extent:
- 	free_extent_map(em);
- 	/* One for the tree reference */
- 	free_extent_map(em);
-+	/* One for the pending_chunks list reference */
-+	free_extent_map(em);
- error:
- 	kfree(devices_info);
- 	return ret;
+ 	if (remove_em) {
+ 		struct extent_map_tree *em_tree;
+ 
+ 		em_tree = &root->fs_info->mapping_tree.map_tree;
+ 		write_lock(&em_tree->lock);
++		/*
++		 * The em might be in the pending_chunks list, so make sure the
++		 * chunk mutex is locked, since remove_extent_mapping() will
++		 * delete us from that list.
++		 */
+ 		remove_extent_mapping(em_tree, em);
+ 		write_unlock(&em_tree->lock);
+ 		/* once for the tree */
+ 		free_extent_map(em);
+ 	}
+ 
++	unlock_chunks(root);
++
+ 	btrfs_put_block_group(block_group);
+ 	btrfs_put_block_group(block_group);
+ 
 -- 
 2.1.3
 

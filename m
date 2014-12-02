@@ -1,92 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mdfmta010.mxout.tbr.inty.net ([91.221.168.51]:51600 "EHLO
-	smtp.demon.co.uk" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751141AbaLBS4T convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 13:56:19 -0500
-Received: from mdfmta010.tbr.inty.net (unknown [127.0.0.1])
-	by mdfmta010.tbr.inty.net (Postfix) with ESMTP id 380676F92BE
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 18:55:58 +0000 (GMT)
-Received: from mdfmta010.tbr.inty.net (unknown [127.0.0.1])
-	by mdfmta010.tbr.inty.net (Postfix) with ESMTP id 12AB56F97B2
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 18:55:58 +0000 (GMT)
-Received: from iarmst.demon.co.uk (unknown [62.49.16.35])
-	by mdfmta010.tbr.inty.net (Postfix) with SMTP
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Dec 2014 18:55:57 +0000 (GMT)
-Date: Tue, 2 Dec 2014 18:56:13 +0000
-From: Ian Armstrong <btrfs@iarmst.co.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs stuck with lot's of files
-Message-ID: <20141202185613.72992959@spike.private.network>
-In-Reply-To: <pan$9649c$5bf442fc$686ccac2$96f1d79b@cox.net>
-References: <1417434411.20237.1.camel@gentoo.org>
-	<547CB7D0.4040800@pobox.com>
-	<1417485029.4310.22.camel@gentoo.org>
-	<pan$9649c$5bf442fc$686ccac2$96f1d79b@cox.net>
+Received: from mail-qc0-f176.google.com ([209.85.216.176]:58221 "EHLO
+	mail-qc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932073AbaLBTLx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 14:11:53 -0500
+Received: by mail-qc0-f176.google.com with SMTP id i17so9834702qcy.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 11:11:53 -0800 (PST)
+Message-ID: <547E0EE5.2040504@ubuntu.com>
+Date: Tue, 02 Dec 2014 14:11:33 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Anand Jain <Anand.Jain@oracle.com>, kreijack@inwind.it,
+        MegaBrutal <megabrutal@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Robert White <rwhite@pobox.com>, Chris Mason <clm@fb.com>
+Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>	<547CA4E7.8060209@pobox.com>	<CAE8gLhmbws6E7YQVBLHfaUXF6Jz1qob9iOFiAEW7pRTq65YCyw@mail.gmail.com>	<547CF8B1.4000303@pobox.com>	<CAE8gLhkxgi8nTab0rzmLNzhsek_v2zs6RxPDL9GU_EAen9+kvA@mail.gmail.com>	<547D6F42.9000009@inwind.it> <CAE8gLhmVqPTArDKxBenbRasUwifGOEoy+askejqneEA9WH-iOQ@mail.gmail.com> <547D9F18.3030400@inwind.it> <547DA86C.4050100@oracle.com> <547DAF2A.7020902@gmail.com>
+In-Reply-To: <547DAF2A.7020902@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2 Dec 2014 12:48:21 +0000 (UTC)
-Duncan <1i5t5.duncan@cox.net> wrote:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> Peter Volkov posted on Tue, 02 Dec 2014 04:50:29 +0300 as excerpted:
-> 
-> > В Пн, 01/12/2014 в 10:47 -0800, Robert White пишет:
-> >> On 12/01/2014 03:46 AM, Peter Volkov wrote:
-> >>  > (stuff about getting hung up trying to write to one drive)
-> >> 
-> >> That drive (/dev/sdn) is probably starting to fail.
-> >> (about failed drive)
-> > 
-> > Thank you Robert for the answer. It is not likely that drive fails
-> > here. Similar condition (write to a single drive) happens with
-> > other drives i.e. such write pattern may happen with any drive.
-> >
-> > After looking at what happens longer I see the following. During
-> > stuck single processor core is busy 100% of CPU in kernel space
-> > (some kworker is taking 100% CPU).
-> 
-> FWIW, agreed that it's unlikely to be the drive, especially if you're
-> not seeing bus resets or drive errors in dmesg and smart says the
-> drive is fine, as I expect it does/will.  It may be a btrfs bug or
-> scaling issue, of which btrfs still has some, or it could simply be
-> the single mode vs raid0 mode issue I explain below.
+On 12/2/2014 7:23 AM, Austin S Hemmelgarn wrote:
+> Stupid thought, why don't we just add blacklisting based on device
+> path like LVM has for pvscan?
 
-I encountered a similar problem here a few days ago on a btrfs raid1
-partition while using rsync to clone a (~30GB) directory.
+That isn't logic that belongs in the kernel, so that is going down the
+path of yanking out the device auto probing from btrfs and instead
+writing a mount.btrfs helper that can use policies like blacklisting
+to auto locate all of the correct devices and pass them all to the
+kernel at mount time.
 
-Everything started fine, but I came back an hour later to find rsync had
-apparently stalled at about 20% with cpu usage at 100% on a single
-kworker thread. I was able to kill rsync eventually, and after a while
-(don't know how long, but >10 minutes) cpu usage returned to normal.
-Restarting rsync resulted in kworker at 100% cpu in less than a minute.
-Once stalled there was little drive access happening. Another raid1
-partition (mdadm/ext4) on the same drive pair was having no problems.
-Nothing showed in the system logs.
 
-In this instance I'd forgotten to delete a temporary 500GB file before
-starting rsync, so although recently balanced (musage=80/dusage=80) it
-was running at near capacity.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
 
-After a reboot, deleting the 500GB file & running balance, everything
-returned to normal. Ran rsync again & it completed fine.
-
-Running slackware current, with Kernel 3.16.4
-
-# btrfs filesystem df /mnt/general
-Data, RAID1: total=1.38TiB, used=1.38TiB
-System, RAID1: total=32.00MiB, used=256.00KiB
-Metadata, RAID1: total=6.00GiB, used=4.67GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-# btrfs filesystem show /mnt/general
-Label: none  uuid: 592376ea-769f-4abb-915e-aa5e49162d90
-        Total devices 2 FS bytes used 1.38TiB
-        devid    1 size 1.79TiB used 1.39TiB path /dev/sda4
-        devid    2 size 1.79TiB used 1.39TiB path /dev/sdd4
-
-Btrfs v3.17.2
-
--- 
-Ian
+iQEcBAEBAgAGBQJUfg7lAAoJENRVrw2cjl5RAakIAKLsIKgjzUO8J/PBBDTmcCQh
+IvkEMlQ6ME+Zi7xCKM9p+J5Skcu22zj8w2Ip0s/zNo3ydGorajxehUqtU983l5Hd
+VklKOuNGZ0wrOtwCH8IkRt9HUvT3I7982jByi2Uk9jxpRbL/BruaJ4NF+Z9HnvHO
+cmMNavcKvwOkYpPHPPbeyjNwWALe/WRZZ2cgsKqs/vB2nakxFntUc1UOsnIMfLJ7
+dMF0l9GudoIoNaqRUNoxV1/Lh9MxKx0p9mBK6Pc+V+wLulUyOUSQ6OkUTsznCabk
+iUyzX9IYiF83hWO3g+1vxR+GCeYNVGvC/Rj8ZkLSt9Tpi7JH0kbXnq6wKedSfE0=
+=Lxfb
+-----END PGP SIGNATURE-----

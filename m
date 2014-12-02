@@ -1,21 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f46.google.com ([209.85.192.46]:39119 "EHLO
-	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753495AbaLBTO3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 14:14:29 -0500
-Received: by mail-qg0-f46.google.com with SMTP id z107so9732904qgd.33
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 11:14:28 -0800 (PST)
-Message-ID: <547E0F81.70308@ubuntu.com>
-Date: Tue, 02 Dec 2014 14:14:09 -0500
+Received: from mail-qc0-f182.google.com ([209.85.216.182]:54079 "EHLO
+	mail-qc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753906AbaLBTTm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 14:19:42 -0500
+Received: by mail-qc0-f182.google.com with SMTP id r5so10001237qcx.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 11:19:41 -0800 (PST)
+Message-ID: <547E10BA.6000707@ubuntu.com>
+Date: Tue, 02 Dec 2014 14:19:22 -0500
 From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>, kreijack@inwind.it,
-        MegaBrutal <megabrutal@gmail.com>,
+To: Konstantin <newsbox1026@web.de>, MegaBrutal <megabrutal@gmail.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Robert White <rwhite@pobox.com>, Chris Mason <clm@fb.com>
 Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
-References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>	<547CA4E7.8060209@pobox.com>	<CAE8gLhmbws6E7YQVBLHfaUXF6Jz1qob9iOFiAEW7pRTq65YCyw@mail.gmail.com>	<547CF8B1.4000303@pobox.com>	<CAE8gLhkxgi8nTab0rzmLNzhsek_v2zs6RxPDL9GU_EAen9+kvA@mail.gmail.com>	<547D6F42.9000009@inwind.it> <CAE8gLhmVqPTArDKxBenbRasUwifGOEoy+askejqneEA9WH-iOQ@mail.gmail.com> <547D9F18.3030400@inwind.it> <547DA86C.4050100@oracle.com>
-In-Reply-To: <547DA86C.4050100@oracle.com>
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com> <547CE175.6060409@web.de>
+In-Reply-To: <547CE175.6060409@web.de>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,25 +21,32 @@ List-ID: <linux-btrfs.vger.kernel.org>
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 12/2/2014 6:54 AM, Anand Jain wrote:
-> we have some fundamentally wrong stuff. My original patch tried to
-> fix it. But later discovered that some external entities like 
-> systmed and boot process is using that bug as a feature and we had 
-> to revert the patch.
+On 12/1/2014 4:45 PM, Konstantin wrote:
+> The bug appears also when using mdadm RAID1 - when one of the
+> drives is detached from the array then the OS discovers it and
+> after a while (not directly, it takes several minutes) it appears
+> under /proc/mounts: instead of /dev/md0p1 I see there /dev/sdb1.
+> And usually after some hour or so (depending on system workload)
+> the PC completely freezes. So discussion about the uniqueness of
+> UUIDs or not, a crashing kernel is telling me that there is a
+> serious bug.
 
-If systemd is depending on the kernel lieing about what device it has
-mounted then something is *extremely* broken there and that should be
-fixed instead of breaking the kernel.
+I'm guessing you are using metadata format 0.9 or 1.0, which put the
+metadata at the end of the drive and the filesystem still starts in
+sector zero.  1.2 is now the default and would not have this problem
+as its metadata is at the start of the disk ( well, 4k from the start
+) and the fs starts further down.
+
 
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (MingW32)
 
-iQEcBAEBAgAGBQJUfg+BAAoJENRVrw2cjl5REm8H/j2MEbF2yeTsGtOGhszl82rZ
-ngSvVfEEPq1D+tpi28+oZnSLYxIKEGudqTciyeb8Z1jCTD065D/T0xpGJZyd6pUG
-KGahBpnPvhP5xg4RaoSxSzNcFzPPFfz+EIPyV+l3OlHbyeq0whkKj5OAq15Grz6c
-RDWViqRFRE+dC2k70fAt6mlxWs7ChCVs9fPuuWVTFW+lXBoCKUZhnZ5Kc2orsKx6
-rVTNTo6LxZQX7m+9WzIy5lqH+WgqxtfEacAlM/6jXWwPe09DDT3z0s3ogf+dfO0D
-3/efDv1XJ/LwmbyQrGxiS0LQWoPA+d+MX0Od3XRcaeml3d7k/tZjDsrFOY6anIg=
-=Rxh6
+iQEcBAEBAgAGBQJUfhC6AAoJENRVrw2cjl5RQ2EH/0Z0iCFjOs3e5oGuGqT5Wtlc
+rXV8R1EfGSxESK0g6QAe7QIvJu+0CdIgccDp8z3ezfPcm1/YRfBXxXA/Y1Wl4hqw
+0wuk3bNqMjUmNwIFjEZCkgOSn4Whuppbh3hOOVGNropr4cwd84GP1Cr2vrzwYnkm
+If1I3RTaBhAJRSngkP9X+L5J6zBBjaZLlF4AjC/WP/1bd5vkHpGqnFpRTquCPiNV
+9LFWQIB+xYdoRdK2l7huS2jQ5kfw+qLZUQO17dU3fcicwwNk56V4HcLEPg9nx9es
+pxJo9BAWmQXDpeMcCL4eFECoeAhn0IXoaXb363mmpq11qyYj73r3FzhNQ+ALzPY=
+=U65Z
 -----END PGP SIGNATURE-----

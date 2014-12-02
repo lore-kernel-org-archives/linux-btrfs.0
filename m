@@ -1,37 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38450 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751415AbaLBAPE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 19:15:04 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xvb7O-0003Fv-Qo
-	for linux-btrfs@vger.kernel.org; Tue, 02 Dec 2014 01:15:02 +0100
-Received: from 50.245.141.77 ([50.245.141.77])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 01:15:02 +0100
-Received: from eternaleye by 50.245.141.77 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 01:15:02 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: add sha256 checksum option
-Date: Mon, 01 Dec 2014 16:10:05 -0800
-Message-ID: <m5j00u$g6r$2@ger.gmane.org>
-References: <1416806586-18050-1-git-send-email-bo.li.liu@oracle.com> <20141125163905.GJ26471@twin.jikos.cz> <m5dash$58v$1@ger.gmane.org> <CAJBj3vd5tY93jkN7S25Am=c1A5iW=msqFDrOe-i9vYx9Phxwcg@mail.gmail.com> <m5dcia$tk8$1@ger.gmane.org> <CAJBj3ve8rfdAVLNwQ0ZxD8nQ3+5TwtTYXZ6BOMK0NquzHK15WA@mail.gmail.com> <547C618C.8020201@gmail.com> <CAJBj3vfvBd5robRak1j-q0qGVT46BTR6VM=SRg5S-2p8GxjX6A@mail.gmail.com> <547CA870.9040904@gmail.com> <CAJBj3vekJ6B45SnbL_TSuCm6Z-YOX-B1XNPxUuJgu4Cy2b3y-A@mail.gmail.com> <m5ifgo$c1e$1@ger.gmane.org> <CAJBj3veLYPPhsiX12BdSerJwP4izsb4d-=HN91CnSm-+vKE5Tw@mail.gmail.com> <m5ihkj$cep$1@ger.gmane.org> <m5ihs4$cep$2@ger.gmane.org> <CAJBj3venQGosBDUrKicGK1qgymBEBF=VWSiJjQiPpnis+Rrhpg@mail.gmail.com> <m5is7h$peq$1@ger.gmane.org> <CAJBj3vc3oQ1CKpLi7sMT59=camxVOZa3q-tN6i604VKYpFew1A@mail.gmail.com> <m5ivqh$g6r$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mail-vc0-f179.google.com ([209.85.220.179]:51997 "EHLO
+	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932477AbaLBAPa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 19:15:30 -0500
+Received: by mail-vc0-f179.google.com with SMTP id le20so5305732vcb.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 16:15:30 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <547CF8B1.4000303@pobox.com>
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>
+	<547CA4E7.8060209@pobox.com>
+	<CAE8gLhmbws6E7YQVBLHfaUXF6Jz1qob9iOFiAEW7pRTq65YCyw@mail.gmail.com>
+	<547CF8B1.4000303@pobox.com>
+Date: Tue, 2 Dec 2014 01:15:30 +0100
+Message-ID: <CAE8gLhkxgi8nTab0rzmLNzhsek_v2zs6RxPDL9GU_EAen9+kvA@mail.gmail.com>
+Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
+From: MegaBrutal <megabrutal@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Robert White <rwhite@pobox.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex Elsayed wrote:
+2014-12-02 0:24 GMT+01:00 Robert White <rwhite@pobox.com>:
+> On 12/01/2014 02:10 PM, MegaBrutal wrote:
+>>
+>> Since having duplicate UUIDs on devices is not a problem for me since
+>> I can tell them apart by LVM names, the discussion is of little
+>> relevance to my use case. Of course it's interesting and I like to
+>> read it along, it is not about the actual problem at hand.
+>>
+>
+> Which is why you use the device= mount option, which would take LVM names
+> and which was repeatedly discussed as solving this very problem.
+>
+> Once you decide to duplicate the UUIDs with LVM snapshots you take up the
+> burden of disambiguating your storage.
+>
+> Which is part of why re-reading was suggested as this was covered in some
+> depth and _is_ _exactly_ about the problem at hand.
 
-> So CityHash is - at best - half as fast as SHA1 with acceleration.
-> 
-> In fact, on the Apple A7, it would likely be slower than _software_ SHA-1.
+Nope.
 
-Argh, ignore this. The CityHash readme is in bytes/cycle, which I missed on 
-first readthrough (why on earth they are  not using either MB/s for rate, or 
-cycles/byte, eludes  me completely.)
+root@reproduce-1391429:~# cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-3.18.0-031800rc5-generic
+root=/dev/mapper/vg-rootlv ro
+rootflags=device=/dev/mapper/vg-rootlv,subvol=@
 
+Observe, device= mount option is added.
+
+
+root@reproduce-1391429:~# ./reproduce-1391429.sh
+#!/bin/sh -v
+lvs
+  LV     VG   Attr      LSize   Pool Origin Data%  Move Log Copy%  Convert
+  rootlv vg   -wi-ao---   1.00g
+  swap0  vg   -wi-ao--- 256.00m
+
+grub-probe --target=device /
+/dev/mapper/vg-rootlv
+
+grep " / " /proc/mounts
+rootfs / rootfs rw 0 0
+/dev/dm-1 / btrfs rw,relatime,space_cache 0 0
+
+lvcreate --snapshot --size=128M --name z vg/rootlv
+  Logical volume "z" created
+
+lvs
+  LV     VG   Attr      LSize   Pool Origin Data%  Move Log Copy%  Convert
+  rootlv vg   owi-aos--   1.00g
+  swap0  vg   -wi-ao--- 256.00m
+  z      vg   swi-a-s-- 128.00m      rootlv   0.11
+
+ls -l /dev/vg/
+total 0
+lrwxrwxrwx 1 root root 7 Dec  2 00:12 rootlv -> ../dm-1
+lrwxrwxrwx 1 root root 7 Dec  2 00:12 swap0 -> ../dm-0
+lrwxrwxrwx 1 root root 7 Dec  2 00:12 z -> ../dm-2
+
+grub-probe --target=device /
+/dev/mapper/vg-z
+
+grep " / " /proc/mounts
+rootfs / rootfs rw 0 0
+/dev/dm-2 / btrfs rw,relatime,space_cache 0 0
+
+lvremove --force vg/z
+  Logical volume "z" successfully removed
+
+grub-probe --target=device /
+/dev/mapper/vg-rootlv
+
+grep " / " /proc/mounts
+rootfs / rootfs rw 0 0
+/dev/dm-1 / btrfs rw,relatime,space_cache 0 0
+
+
+Problem still reproduces.

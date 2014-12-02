@@ -1,91 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:15348 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751211AbaLBMiH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:07 -0500
+	with ESMTP id S932588AbaLBMiJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:09 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2CbeSx001453
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:40 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2Cbg4t001462
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:42 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v4 00/10] Implement device scrub/replace for RAID56
-Date: Tue, 2 Dec 2014 20:39:21 +0800
-Message-ID: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v4 03/10] Btrfs, raid56: don't change bbio and raid_map
+Date: Tue, 2 Dec 2014 20:39:24 +0800
+Message-ID: <1417523971-15553-4-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset implement the device scrub/replace function for RAID56, the
-most implementation of the common data is similar to the other RAID type.
-The differentia or difficulty is the parity process. The basic idea is reading
-and check the data which has checksum out of the raid56 stripe lock, if the
-data is right, then lock the raid56 stripe, read out the other data in the
-same stripe, if no IO error happens, calculate the parity and check the
-original one, if the original parity is right, the scrub parity passes.
-or write out the new one. But if the common data(not parity) that we read out
-is wrong, we will try to recover it, and then check and repair the parity.
+Because we will reuse bbio and raid_map during the scrub later, it is
+better that we don't change any variant of bbio and don't free it at
+the end of IO request. So we introduced similar variants into the raid
+bio, and don't access those bbio's variants any more.
 
-And in order to avoid making the code more and more complex, we copy some
-code of common data process for the parity, the cleanup work is in my
-TODO list.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v1 -> v4:
+- None.
+---
+ fs/btrfs/raid56.c | 42 +++++++++++++++++++++++-------------------
+ 1 file changed, 23 insertions(+), 19 deletions(-)
 
-We have done some test, the patchset worked well. Of course, more tests
-are welcome. If you are interesting to use it or test it, you can pull
-the patchset from
-
-  https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
-
-Changelog v3 -> v4:
-- Fix the problem that the scrub's raid bio was cached, which was reported
-  by Chris.
-- Remove the 10st patch, the deadlock that was described in that patch doesn't
-  exist on the current kernel.
-- Rebase the patchset to the top of integration branch
-
-Changelog v2 -> v3:
-- Fix wrong stripe start logical address calculation which was reported
-  by Chris.
-- Fix unhandled raid bios for parity scrub, which are added into the plug
-  list of the head raid bio.
-- Fix possible deadlock caused by the pending bios in the plug list
-  when the io submitters were going to sleep.
-- Fix undealt use-after-free problem of the source device in the final
-  device replace procedure.
-- Modify the code that is used to avoid the rbio merge.
-
-Changelog v1 -> v2:
-- Change some function names in raid56.c to make them fit the code style
-  of the raid56.
-
-Thanks
-Miao
-
-Miao Xie (7):
-  Btrfs, raid56: don't change bbio and raid_map
-  Btrfs, scrub: repair the common data on RAID5/6 if it is corrupted
-  Btrfs, raid56: use a variant to record the operation type
-  Btrfs, raid56: support parity scrub on raid56
-  Btrfs, replace: write dirty pages into the replace target device
-  Btrfs, replace: write raid56 parity into the replace target device
-  Btrfs, raid56: fix use-after-free problem in the final device replace
-    procedure on raid56
-
-Zhao Lei (3):
-  Btrfs: remove noused bbio_ret in __btrfs_map_block in condition
-  Btrfs: remove unnecessary code of stripe_index assignment in
-    __btrfs_map_block
-  Btrfs, replace: enable dev-replace for raid56
-
- fs/btrfs/ctree.h       |   7 +-
- fs/btrfs/dev-replace.c |   9 +-
- fs/btrfs/raid56.c      | 763 +++++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/raid56.h      |  16 +-
- fs/btrfs/scrub.c       | 803 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.c     |  52 +++-
- fs/btrfs/volumes.h     |  14 +-
- 7 files changed, 1531 insertions(+), 133 deletions(-)
-
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 66944b9..cb31cc6 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -58,7 +58,6 @@
+  */
+ #define RBIO_CACHE_READY_BIT	3
+ 
+-
+ #define RBIO_CACHE_SIZE 1024
+ 
+ struct btrfs_raid_bio {
+@@ -146,6 +145,10 @@ struct btrfs_raid_bio {
+ 
+ 	atomic_t refs;
+ 
++
++	atomic_t stripes_pending;
++
++	atomic_t error;
+ 	/*
+ 	 * these are two arrays of pointers.  We allocate the
+ 	 * rbio big enough to hold them both and setup their
+@@ -858,13 +861,13 @@ static void raid_write_end_io(struct bio *bio, int err)
+ 
+ 	bio_put(bio);
+ 
+-	if (!atomic_dec_and_test(&rbio->bbio->stripes_pending))
++	if (!atomic_dec_and_test(&rbio->stripes_pending))
+ 		return;
+ 
+ 	err = 0;
+ 
+ 	/* OK, we have read all the stripes we need to. */
+-	if (atomic_read(&rbio->bbio->error) > rbio->bbio->max_errors)
++	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
+ 		err = -EIO;
+ 
+ 	rbio_orig_end_io(rbio, err, 0);
+@@ -949,6 +952,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
+ 	rbio->faila = -1;
+ 	rbio->failb = -1;
+ 	atomic_set(&rbio->refs, 1);
++	atomic_set(&rbio->error, 0);
++	atomic_set(&rbio->stripes_pending, 0);
+ 
+ 	/*
+ 	 * the stripe_pages and bio_pages array point to the extra
+@@ -1169,7 +1174,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 	set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+ 	spin_unlock_irq(&rbio->bio_list_lock);
+ 
+-	atomic_set(&rbio->bbio->error, 0);
++	atomic_set(&rbio->error, 0);
+ 
+ 	/*
+ 	 * now that we've set rmw_locked, run through the
+@@ -1245,8 +1250,8 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 		}
+ 	}
+ 
+-	atomic_set(&bbio->stripes_pending, bio_list_size(&bio_list));
+-	BUG_ON(atomic_read(&bbio->stripes_pending) == 0);
++	atomic_set(&rbio->stripes_pending, bio_list_size(&bio_list));
++	BUG_ON(atomic_read(&rbio->stripes_pending) == 0);
+ 
+ 	while (1) {
+ 		bio = bio_list_pop(&bio_list);
+@@ -1331,11 +1336,11 @@ static int fail_rbio_index(struct btrfs_raid_bio *rbio, int failed)
+ 	if (rbio->faila == -1) {
+ 		/* first failure on this rbio */
+ 		rbio->faila = failed;
+-		atomic_inc(&rbio->bbio->error);
++		atomic_inc(&rbio->error);
+ 	} else if (rbio->failb == -1) {
+ 		/* second failure on this rbio */
+ 		rbio->failb = failed;
+-		atomic_inc(&rbio->bbio->error);
++		atomic_inc(&rbio->error);
+ 	} else {
+ 		ret = -EIO;
+ 	}
+@@ -1394,11 +1399,11 @@ static void raid_rmw_end_io(struct bio *bio, int err)
+ 
+ 	bio_put(bio);
+ 
+-	if (!atomic_dec_and_test(&rbio->bbio->stripes_pending))
++	if (!atomic_dec_and_test(&rbio->stripes_pending))
+ 		return;
+ 
+ 	err = 0;
+-	if (atomic_read(&rbio->bbio->error) > rbio->bbio->max_errors)
++	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
+ 		goto cleanup;
+ 
+ 	/*
+@@ -1439,7 +1444,6 @@ static void async_read_rebuild(struct btrfs_raid_bio *rbio)
+ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ {
+ 	int bios_to_read = 0;
+-	struct btrfs_bio *bbio = rbio->bbio;
+ 	struct bio_list bio_list;
+ 	int ret;
+ 	int nr_pages = DIV_ROUND_UP(rbio->stripe_len, PAGE_CACHE_SIZE);
+@@ -1455,7 +1459,7 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ 
+ 	index_rbio_pages(rbio);
+ 
+-	atomic_set(&rbio->bbio->error, 0);
++	atomic_set(&rbio->error, 0);
+ 	/*
+ 	 * build a list of bios to read all the missing parts of this
+ 	 * stripe
+@@ -1503,7 +1507,7 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ 	 * the bbio may be freed once we submit the last bio.  Make sure
+ 	 * not to touch it after that
+ 	 */
+-	atomic_set(&bbio->stripes_pending, bios_to_read);
++	atomic_set(&rbio->stripes_pending, bios_to_read);
+ 	while (1) {
+ 		bio = bio_list_pop(&bio_list);
+ 		if (!bio)
+@@ -1917,10 +1921,10 @@ static void raid_recover_end_io(struct bio *bio, int err)
+ 		set_bio_pages_uptodate(bio);
+ 	bio_put(bio);
+ 
+-	if (!atomic_dec_and_test(&rbio->bbio->stripes_pending))
++	if (!atomic_dec_and_test(&rbio->stripes_pending))
+ 		return;
+ 
+-	if (atomic_read(&rbio->bbio->error) > rbio->bbio->max_errors)
++	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
+ 		rbio_orig_end_io(rbio, -EIO, 0);
+ 	else
+ 		__raid_recover_end_io(rbio);
+@@ -1951,7 +1955,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	if (ret)
+ 		goto cleanup;
+ 
+-	atomic_set(&rbio->bbio->error, 0);
++	atomic_set(&rbio->error, 0);
+ 
+ 	/*
+ 	 * read everything that hasn't failed.  Thanks to the
+@@ -1960,7 +1964,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	 */
+ 	for (stripe = 0; stripe < bbio->num_stripes; stripe++) {
+ 		if (rbio->faila == stripe || rbio->failb == stripe) {
+-			atomic_inc(&rbio->bbio->error);
++			atomic_inc(&rbio->error);
+ 			continue;
+ 		}
+ 
+@@ -1990,7 +1994,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 		 * were up to date, or we might have no bios to read because
+ 		 * the devices were gone.
+ 		 */
+-		if (atomic_read(&rbio->bbio->error) <= rbio->bbio->max_errors) {
++		if (atomic_read(&rbio->error) <= rbio->bbio->max_errors) {
+ 			__raid_recover_end_io(rbio);
+ 			goto out;
+ 		} else {
+@@ -2002,7 +2006,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	 * the bbio may be freed once we submit the last bio.  Make sure
+ 	 * not to touch it after that
+ 	 */
+-	atomic_set(&bbio->stripes_pending, bios_to_read);
++	atomic_set(&rbio->stripes_pending, bios_to_read);
+ 	while (1) {
+ 		bio = bio_list_pop(&bio_list);
+ 		if (!bio)
 -- 
 1.9.3
 

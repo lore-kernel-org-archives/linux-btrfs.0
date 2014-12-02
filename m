@@ -1,91 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47463 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753689AbaLASSa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Dec 2014 13:18:30 -0500
-Date: Mon, 1 Dec 2014 19:18:28 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Filipe David Manana <fdmanana@gmail.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        linux-nfs@vger.kernel.org,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Mel Gorman <mgorman@suse.de>
-Subject: Re: [PATCH v2 5/5] btrfs: enable swap file support
-Message-ID: <20141201181828.GL12140@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1416563833.git.osandov@osandov.com>
- <afd3c1009172a4a1cfa10e73a64caf35c631a6d4.1416563833.git.osandov@osandov.com>
- <20141121180045.GF8568@twin.jikos.cz>
- <20141122200357.GA15189@mew>
- <20141124220302.GA5785@mew.dhcp4.washington.edu>
+Received: from bombadil.infradead.org ([198.137.202.9]:57093 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751061AbaLBJUd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 04:20:33 -0500
+Date: Tue, 2 Dec 2014 01:20:33 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Cc: Christoph Hellwig <hch@infradead.org>,
+        Linux Filesystem Development List
+	<linux-fsdevel@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>, Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH-v4 1/7] vfs: split update_time() into update_time() and
+ write_time()
+Message-ID: <20141202092033.GA29712@infradead.org>
+References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
+ <1416997437-26092-2-git-send-email-tytso@mit.edu>
+ <20141126192328.GA20436@infradead.org>
+ <20141127144116.GA14091@thunk.org>
+ <20141127153315.GC14091@thunk.org>
+ <20141127164952.GA1622@infradead.org>
+ <20141127202731.GG14091@thunk.org>
+ <20141201092810.GA5538@infradead.org>
+ <20141201150450.GA3337@thunk.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141124220302.GA5785@mew.dhcp4.washington.edu>
+In-Reply-To: <20141201150450.GA3337@thunk.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 24, 2014 at 02:03:02PM -0800, Omar Sandoval wrote:
-> Alright, I took a look at this. My understanding is that a PREALLOC extent
-> represents a region on disk that has already been allocated but isn't in use
-> yet, but please correct me if I'm wrong. Judging by this comment in
-> btrfs_get_blocks_direct, we don't have to worry about PREALLOC extents in
-> general:
+On Mon, Dec 01, 2014 at 10:04:50AM -0500, Theodore Ts'o wrote:
+> >  - convert ext3/4 to use ->update_time instead of the ->dirty_time
+> >    callout so it gets and exact notifications (preferably the few
+> >    remaining filesystems as well, although that shouldn't really be a
+> >    blocker)
 > 
-> /*
->  * We don't allocate a new extent in the following cases
->  *
->  * 1) The inode is marked as NODATACOW.  In this case we'll just use the
->  * existing extent.
->  * 2) The extent is marked as PREALLOC.  We're good to go here and can
->  * just use the extent.
->  *
->  */
-
-Ok, thanks for checking.
-
-> A couple of other considerations that cropped up:
+> We could do that, although ext3/4's ->update_time() would be exactly
+> the same as the generic update_time() function, so there would be code
+> duplication.  If the goal is to get rid of the magic in
+> -->dirty_inode() being used to work around how the VFS makes changes
+> to fields that end up in the on-disk inode, we would need to audit a
+> lot of extra code paths; at the very least, in how the generic quota
+> code handles updates to i_size and i_blocks (for example).
 > 
-> - btrfs_get_extent does a bunch of extra work if the extent is not cached in
->   the extent map tree that would be nice to avoid when swapping
-> - We might still have to do a COW if the swap file is in a snapshot
+> And BTW, we don't actually have a dirty_time() function any more in
+> the current patch series.  update_time() is currently looking like
+> this:
+
+Sorry, I actually meant ->dirty_inode, which is where ext4 currently
+hooks in for time updates.  ->update_time was introduced to
+
+ a) more specificly catch the kind of update
+ b) allow the filesystem to take locks or a start a transaction
+    before the inode fields are updated to provide proper atomicy.
+
+It seems like the quota code has the same problem, but given that
+neither XFS nor btrfs use it it seems like no one cared enough to sort
+it out properly..
+
+> static int update_time(struct inode *inode, struct timespec *time, int flags)
+> {
+> 	if (inode->i_op->update_time)
+> 		return inode->i_op->update_time(inode, time, flags);
 > 
-> We can avoid the btrfs_get_extent by pinning the extents in memory one way or
-> another in btrfs_swap_activate.
-
-That's preferrable, the overhead should be small.
-
-> The snapshot issue is a little tricker to resolve. I see a few options:
+> 	if (flags & S_ATIME)
+> 		inode->i_atime = *time;
+> 	if (flags & S_VERSION)
+> 		inode_inc_iversion(inode);
+> 	if (flags & S_CTIME)
+> 		inode->i_ctime = *time;
+> 	if (flags & S_MTIME)
+> 		inode->i_mtime = *time;
 > 
-> 1. Just do the COW and hope for the best
+> 	if ((inode->i_sb->s_flags & MS_LAZYTIME) && !(flags & S_VERSION) &&
+> 	    !(inode->i_state & I_DIRTY))
+> 		__mark_inode_dirty(inode, I_DIRTY_TIME);
+> 	else
+> 		__mark_inode_dirty(inode, I_DIRTY_SYNC);
+> 	return 0;
 
-Snapshotting of NODATACOW files work, the extents are COWed on the first
-write, the original owner sees no change.
+Why do you need the additional I_DIRTY flag?  A "lesser"
+__mark_inode_dirty should never override a stronger one.
 
-> 2. As part of btrfs_swap_activate, COW any shared extents. If a snapshot
-> happens while a swap file is active, we'll fall back to 1.
+Otherwise this looks fine to me, except that I would split the default
+implementation into a new generic_update_time helper.
 
-So we should make sure that any write to the swapfile will not lead to
-the first-COW, this would require to scan all the extents and see if
-we're the owner and COW eventually.
+> XFS doesn't have a ->dirty_time yet, but that way XFS would be able to
+> use the I_DIRTY_TIME flag to log the journal timestamps if it so
+> desires, and perhaps drop the need for it to use update_time().
 
-Doing that automatically is IMO better from the user perspective,
-compared to an erroring out and requesting a manual "dd" over the file.
+We will probably always need a ->update_time to proide proper locking
+around the timestamp updates.
 
-Possibly, the implied COW could create preallocated extents so we do not
-have to rewrite the data.
+> (And
+> with XFS doing logical journalling, it may be that you might want to
+> include the timestamp update in the journal if you have a journal
+> transaction open already, so the disk is spun up or likely to be spin
+> up anyway, right?)
 
-> 3. Clobber any swap file extents which are in a snapshot, i.e., always use the
-> existing extent.
+XFS transactions are explicitly opened and closed, so during the atime
+updates we'll never have one open.
 
-Easy to implement but could lead to bad suprises.
+What we could try is to have CIL items that are on "indefinit" hold
+before they are batched into a checkpoint.  We'd still commit them to
+an in-memory transaction in ->upate_time for that.  All this requires
+a lot of through and will take some time, though.
 
-More thoughts:
-
-There are some guards in the generic code to prevent unwanted
-modifications to the swapfiles (eg. no truncate, no fallocate, no
-deletion). Further we should audit btrfs ioctls that may interfere with
-swap and forbid any action (notably the cloning and deduplication ones).
+In the current from the generic lazytime might even be a loss for XFS as
+we're already really good at batching updates from multiple inodes in
+the same cluster for the in-place writeback, so I really don't want
+to just enable it without those optimizations without a lot of testing.

@@ -1,72 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:58730 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751505AbaLAAyo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Nov 2014 19:54:44 -0500
-Received: by mail-yh0-f45.google.com with SMTP id f10so4390939yha.32
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Nov 2014 16:54:44 -0800 (PST)
+Received: from mail-qg0-f50.google.com ([209.85.192.50]:33182 "EHLO
+	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753889AbaLBDWC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Dec 2014 22:22:02 -0500
+Received: by mail-qg0-f50.google.com with SMTP id i50so8524661qgf.23
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 19:22:01 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtT3EeGUOpZ9q78BcWv_Cc_5UGY=uPVJX+bqex9Zo_bWYg@mail.gmail.com>
 References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
-Date: Sun, 30 Nov 2014 17:54:44 -0700
-Message-ID: <CAJCQCtT3EeGUOpZ9q78BcWv_Cc_5UGY=uPVJX+bqex9Zo_bWYg@mail.gmail.com>
+ <CAJCQCtT3EeGUOpZ9q78BcWv_Cc_5UGY=uPVJX+bqex9Zo_bWYg@mail.gmail.com>
+From: Shriramana Sharma <samjnaa@gmail.com>
+Date: Tue, 2 Dec 2014 08:51:40 +0530
+Message-ID: <CAH-HCWUSX+N2Byo4vpCxac89TSX2YGoP39VgFsq6952k9V9cmQ@mail.gmail.com>
 Subject: Re: Moving an entire subvol?
-From: Chris Murphy <lists@colorremedies.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 29, 2014 at 8:31 PM, Shriramana Sharma <samjnaa@gmail.com> wrote:
-> So the Ubuntu Wiki BtrFS entry advises against using subvol
-> set-default because it boots its kernel using root=subvol=@ and home
-> as subvol=@home, and these two subvols are only present under the
-> subvol with ID 5.
-
-The advice may have had to do with GRUB behavior prior to 2.02.
-Previously GRUB attempted to honor the btrfs default subvolume, and
-therefore treated any path in grub.cfg relative to the default
-subvolume. Now, GRUB behaves the same as the subvol= mount option, it
-is always treated as an absolute path from subvol id 5, hence the
-default subvolume is ignored.
-
-Since the default subvolume is set by a user space program I think
-it's a domain violation for anything to subvert this; it really should
-remain a shortcut for the user's benefit only, so they can use mount
-without -o subvol=. Everything else should explicitly pass subvol=
-
-
-
-> But isn't it just possible to move i.e. reparent a
-> subvol so I can move these two under another subvol and have that as
-> default?
-
-You can move subvolumes. My suggestion is subvolumes containing
-binaries shouldn't be located within another subvolume that ends up
-being mounted, that way old binaries with possible vulnerabilities
-aren't exposed in the normal search path.
-
+On Mon, Dec 1, 2014 at 6:24 AM, Chris Murphy <lists@colorremedies.com> wrote:
+>> But isn't it just possible to move i.e. reparent a
+>> subvol so I can move these two under another subvol and have that as
+>> default?
 >
-> Possibly this is a hypothetical question as I'm not sure whether it
-> would be actually practically required but looking at the specific
-> Ubuntu advice on this I thought I should ask.
->
-> I'm also not sure what openSUSE (or other distros) do about this... Do
-> they mount root using subvolid, or subvol name or such?
+> You can move subvolumes.
 
-openSUSE uses subvol id 5 for installing the OS to, and some
-directories are made subvolumes such as home var and maybe usr.
-Therefore when subvolid 5 is snapshot, those are exempt, and have to
-be individually snapshot. The snapshots are found in the same root
-directory everything else is, in a . directory (I think .snapshots ?)
+OK so I just found out that just mv test1/foo test2/ where test1,
+test2 and foo are all subvolumes is sufficient to reparent foo to
+test2, if what btr sub list shows as "top level" is indeed the parent
+subvolume.
 
-Fedora uses subvolumes root and home by default, and fstab uses
-subvol=root and subvol=home to mount them at / and /home respectively.
+Is that correct: what btr sub list shows as "top level" is indeed the
+parent subvolume?
 
-I don't know any distro using subvolid right now but that might be
-prudent as it's far less user domain than subvolume names.
+> My suggestion is subvolumes containing
+> binaries shouldn't be located within another subvolume that ends up
+> being mounted, that way old binaries with possible vulnerabilities
+> aren't exposed in the normal search path.
 
+I'm not sure what you mean. Are you saying that for example /usr/bin should be:
 
--- 
-Chris Murphy
+1) a separate subvolume than / or /usr,
+2) not a child subvolume of / or /usr?
+
+> openSUSE uses subvol id 5 for installing the OS to, and some
+> directories are made subvolumes such as home var and maybe usr.
+> Therefore when subvolid 5 is snapshot, those are exempt, and have to
+> be individually snapshot.
+
+Yes I also noticed that openSUSE creates such separate subvols, but is
+there any particular benefit to making it so?
+
+> Fedora uses subvolumes root and home by default, and fstab uses
+> subvol=root and subvol=home to mount them at / and /home respectively.
+
+This seems similar to Ubuntu's @ and @home setup.
+
+Is there any advantage to either? That is, one model installs root to
+the topmost subvol and makes usr, home etc nested subvols, whereas
+another makes root a nested subvol under the topmost just like usr
+home etc, and then mounts it to /...
+
+In general it seems people (or at least distros) prefer avoiding
+nesting subvolumes. Is there any particular reason for this? Esp in
+regard to /usr etc it would seem that if they are nested within the
+subvol for /, then just mounting that subvol would automatically mount
+all nested subvolumes, right? So the extra effort needed to mount the
+nested subvols would not be necessary, no?
+
+Shriramana.

@@ -1,44 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:39053 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753822AbaLBFjR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 00:39:17 -0500
-Received: by mail-vc0-f174.google.com with SMTP id id10so5438369vcb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 21:39:16 -0800 (PST)
+Received: from mail-vc0-f177.google.com ([209.85.220.177]:43862 "EHLO
+	mail-vc0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752714AbaLBFrd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 00:47:33 -0500
+Received: by mail-vc0-f177.google.com with SMTP id ij19so5411857vcb.36
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Dec 2014 21:47:32 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
-	<20141130042306.GE8916@merlins.org>
-	<547C6922.6030206@gmail.com>
-	<CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
-	<20141201184621.5dd7fcd9@natsu>
-	<CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
-	<20141202031403.GZ17395@hungrycats.org>
-	<CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
-Date: Tue, 2 Dec 2014 06:39:16 +0100
-Message-ID: <CAE8gLhkOb1mq_To6SEteN-RWGEb2Mi+PNJ89CcqYMkCN+gn+Ag@mail.gmail.com>
-Subject: Re: Possible to undo subvol delete?
+In-Reply-To: <547CE175.6060409@web.de>
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>
+	<547CE175.6060409@web.de>
+Date: Tue, 2 Dec 2014 06:47:32 +0100
+Message-ID: <CAE8gLhmVRn1OPsMgXAPSxg=3ROvNig+73d6dZpTs6fAz-02G2A@mail.gmail.com>
+Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
 From: MegaBrutal <megabrutal@gmail.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Shriramana Sharma <samjnaa@gmail.com>
+Cc: Konstantin <newsbox1026@web.de>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-12-02 4:40 GMT+01:00 Shriramana Sharma <samjnaa@gmail.com>:
+2014-12-01 22:45 GMT+01:00 Konstantin <newsbox1026@web.de>:
 >
-> Well in office environs, where the root password is with a certain
-> person only, then that's fine because that person is going to be wary
-> of doing anything that's make others angry at them, but on single-user
-> systems, one's regular password *is* the root password and the
-> situation is such that because ordinary (and mostly non-destructive)
-> things like installing requires entering it, so one gets accustomed to
-> entering it without too much thought, leading to the requirement for
-> such safety nets.
+> MegaBrutal schrieb am 01.12.2014 um 13:56:
+>> Hi all,
+>>
+>> I've reported the bug I've previously posted about in "BTRFS messes up
+>> snapshot LV with origin" in the Kernel Bug Tracker.
+>> https://bugzilla.kernel.org/show_bug.cgi?id=89121
+> Hi MegaBrutal. If I understand your report correctly, I can give you
+> another example where this bug is appearing. It is so bad that it leads
+> to freezing the system and I'm quite sure it's the same thing. I was
+> thinking about filing a bug but didn't have the time for that yet. Maybe
+> you could add this case to your bug report as well.
+>
+> The bug appears also when using mdadm RAID1 - when one of the drives is
+> detached from the array then the OS discovers it and after a while (not
+> directly, it takes several minutes) it appears under /proc/mounts:
+> instead of /dev/md0p1 I see there /dev/sdb1. And usually after some hour
+> or so (depending on system workload) the PC completely freezes. So
+> discussion about the uniqueness of UUIDs or not, a crashing kernel is
+> telling me that there is a serious bug.
 >
 
-It reminds me of this accidental deletion:
-http://serverfault.com/questions/587102/monday-morning-mistake-sudo-rm-rf-no-preserve-root
-
-LOL at "How do you even type --no-preserve-root accidentally?! :-o".
+Hmm, I also suspect our symptoms have the same root cause. It seems
+the same thing happens: the BTRFS module notices another device with
+the same file system and starts to report it as the root device. It
+seems like it has no idea that it's part of a RAID configuration or
+anything.

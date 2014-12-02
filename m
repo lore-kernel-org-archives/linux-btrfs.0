@@ -1,164 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36379 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35677 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932724AbaLBMiL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 07:38:11 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB2CbiXG001470
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Dec 2014 20:37:44 +0800
+	with ESMTP id S933105AbaLBNAh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 08:00:37 -0500
+Message-ID: <547DB851.8020905@cn.fujitsu.com>
+Date: Tue, 2 Dec 2014 21:02:09 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v4 05/10] Btrfs, raid56: use a variant to record the operation type
-Date: Tue, 2 Dec 2014 20:39:26 +0800
-Message-ID: <1417523971-15553-6-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
-References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Chris Mason <clm@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 10/11] Btrfs: fix possible deadlock caused by pending
+ I/O in plug list
+References: <1416928481.3019.13@mail.thefacebook.com>	<1417007091-11885-1-git-send-email-miaox@cn.fujitsu.com>	<1417007091-11885-11-git-send-email-miaox@cn.fujitsu.com>	<1417014143.2258.0@mail.thefacebook.com> <547680EC.7030705@cn.fujitsu.com>	<547693D9.3040904@cn.fujitsu.com> <1417210323.6046.3@mail.thefacebook.com>
+In-Reply-To: <1417210323.6046.3@mail.thefacebook.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We will introduce new operation type later, if we still use integer
-variant as bool variant to record the operation type, we would add new
-variant and increase the size of raid bio structure. It is not good,
-by this patch, we define different number for different operation,
-and we can just use a variant to record the operation type.
+hi, Chris
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v4:
-- None.
----
- fs/btrfs/raid56.c | 31 +++++++++++++++++--------------
- 1 file changed, 17 insertions(+), 14 deletions(-)
+On Fri, 28 Nov 2014 16:32:03 -0500, Chris Mason wrote:
+> On Wed, Nov 26, 2014 at 10:00 PM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>> On Thu, 27 Nov 2014 09:39:56 +0800, Miao Xie wrote:
+>>>  On Wed, 26 Nov 2014 10:02:23 -0500, Chris Mason wrote:
+>>>>  On Wed, Nov 26, 2014 at 8:04 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>>>>>  The increase/decrease of bio counter is on the I/O path, so we should
+>>>>>  use io_schedule() instead of schedule(), or the deadlock might be
+>>>>>  triggered by the pending I/O in the plug list. io_schedule() can help
+>>>>>  us because it will flush all the pending I/O before the task is going
+>>>>>  to sleep.
+>>>>
+>>>>  Can you please describe this deadlock in more detail?  schedule() also triggers
+>>>>  a flush of the plug list, and if that's no longer sufficient we can run into other
+>>>>  problems (especially with preemption on).
+>>>
+>>>  Sorry for my miss. I forgot to check the current implementation of schedule(), which flushes the plug list unconditionally. Please ignore this patch.
+>>
+>> I have updated my raid56-scrub-replace branch, please re-pull the branch.
+>>
+>>   https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
+> 
+> Sorry, I wasn't clear.  I do like the patch because it uses a slightly better trigger mechanism for the flush.  I was just worried about a larger deadlock.
+> 
+> I ran the raid56 work with stress.sh overnight, then scrubbed the resulting filesystem and ran balance when the scrub completed.  All of these passed without errors (excellent!).
+> 
+> Then I zero'd 4GB of one drive and ran scrub again.  This was the result.  Please make sure CONFIG_DEBUG_PAGEALLOC is enabled and you should be able to reproduce.
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index c954537..4924388 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -69,6 +69,11 @@
- 
- #define RBIO_CACHE_SIZE 1024
- 
-+enum btrfs_rbio_ops {
-+	BTRFS_RBIO_WRITE	= 0,
-+	BTRFS_RBIO_READ_REBUILD	= 1,
-+};
-+
- struct btrfs_raid_bio {
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_bio *bbio;
-@@ -131,7 +136,7 @@ struct btrfs_raid_bio {
- 	 * differently from a parity rebuild as part of
- 	 * rmw
- 	 */
--	int read_rebuild;
-+	enum btrfs_rbio_ops operation;
- 
- 	/* first bad stripe */
- 	int faila;
-@@ -154,7 +159,6 @@ struct btrfs_raid_bio {
- 
- 	atomic_t refs;
- 
--
- 	atomic_t stripes_pending;
- 
- 	atomic_t error;
-@@ -590,8 +594,7 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
- 		return 0;
- 
- 	/* reads can't merge with writes */
--	if (last->read_rebuild !=
--	    cur->read_rebuild) {
-+	if (last->operation != cur->operation) {
- 		return 0;
- 	}
- 
-@@ -784,9 +787,9 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
- 			spin_unlock(&rbio->bio_list_lock);
- 			spin_unlock_irqrestore(&h->lock, flags);
- 
--			if (next->read_rebuild)
-+			if (next->operation == BTRFS_RBIO_READ_REBUILD)
- 				async_read_rebuild(next);
--			else {
-+			else if (next->operation == BTRFS_RBIO_WRITE){
- 				steal_rbio(rbio, next);
- 				async_rmw_stripe(next);
- 			}
-@@ -1720,6 +1723,7 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 	}
- 	bio_list_add(&rbio->bio_list, bio);
- 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
-+	rbio->operation = BTRFS_RBIO_WRITE;
- 
- 	/*
- 	 * don't plug on full rbios, just get them out the door
-@@ -1768,7 +1772,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 	faila = rbio->faila;
- 	failb = rbio->failb;
- 
--	if (rbio->read_rebuild) {
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
- 		spin_lock_irq(&rbio->bio_list_lock);
- 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
- 		spin_unlock_irq(&rbio->bio_list_lock);
-@@ -1785,7 +1789,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->read_rebuild &&
-+			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1878,7 +1882,7 @@ pstripe:
- 		 * know they can be trusted.  If this was a read reconstruction,
- 		 * other endio functions will fiddle the uptodate bits
- 		 */
--		if (!rbio->read_rebuild) {
-+		if (rbio->operation == BTRFS_RBIO_WRITE) {
- 			for (i = 0;  i < nr_pages; i++) {
- 				if (faila != -1) {
- 					page = rbio_stripe_page(rbio, faila, i);
-@@ -1895,7 +1899,7 @@ pstripe:
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->read_rebuild &&
-+			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1910,8 +1914,7 @@ cleanup:
- 	kfree(pointers);
- 
- cleanup_io:
--
--	if (rbio->read_rebuild) {
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
- 		if (err == 0 &&
- 		    !test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags))
- 			cache_rbio_pages(rbio);
-@@ -2050,7 +2053,7 @@ out:
- 	return 0;
- 
- cleanup:
--	if (rbio->read_rebuild)
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD)
- 		rbio_orig_end_io(rbio, -EIO, 0);
- 	return -EIO;
- }
-@@ -2076,7 +2079,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- 
- 	if (hold_bbio)
- 		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
--	rbio->read_rebuild = 1;
-+	rbio->operation = BTRFS_RBIO_READ_REBUILD;
- 	bio_list_add(&rbio->bio_list, bio);
- 	rbio->bio_list_bytes = bio->bi_iter.bi_size;
- 
--- 
-1.9.3
+I sent out the 4th version of the patchset, please try it.
+
+I have pushed the new patchset to my git tree, you can re-pull it.
+  https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
+
+Thanks
+Miao
+
+> 
+> [192392.495260] BUG: unable to handle kernel paging request at ffff880303062f80
+> [192392.495279] IP: [<ffffffffa05fe77a>] lock_stripe_add+0xba/0x390 [btrfs]
+> [192392.495281] PGD 2bdb067 PUD 107e7fd067 PMD 107e7e4067 PTE 8000000303062060
+> [192392.495283] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+> [192392.495307] Modules linked in: ipmi_devintf loop fuse k10temp coretemp hwmon btrfs raid6_pq zlib_deflate lzo_compress xor xfs exportfs libcrc32c tcp_diag inet_diag nfsv4 ip6table_filter ip6_tables xt_NFLOG nfnetlink_log nfnetlink xt_comment xt_statistic iptable_filter ip_tables x_tables mptctl netconsole autofs4 nfsv3 nfs lockd grace rpcsec_gss_krb5 auth_rpcgss oid_registry sunrpc ipv6 ext3 jbd dm_mod rtc_cmos ipmi_si ipmi_msghandler iTCO_wdt iTCO_vendor_support pcspkr i2c_i801 lpc_ich mfd_core shpchp ehci_pci ehci_hcd mlx4_en ptp pps_core mlx4_core sg ses enclosure button megaraid_sas
+> [192392.495310] CPU: 0 PID: 11992 Comm: kworker/u65:2 Not tainted 3.18.0-rc6-mason+ #7
+> [192392.495310] Hardware name: ZTSYSTEMS Echo Ridge T4  /A9DRPF-10D, BIOS 1.07 05/10/2012
+> [192392.495323] Workqueue: btrfs-btrfs-scrub btrfs_scrub_helper [btrfs]
+> [192392.495324] task: ffff88013dae9110 ti: ffff8802296a0000 task.ti: ffff8802296a0000
+> [192392.495335] RIP: 0010:[<ffffffffa05fe77a>]  [<ffffffffa05fe77a>] lock_stripe_add+0xba/0x390 [btrfs]
+> [192392.495335] RSP: 0018:ffff8802296a3ac8  EFLAGS: 00010006
+> [192392.495336] RAX: ffff880577e85018 RBX: ffff880497f0b2f8 RCX: ffff8801190fb000
+> [192392.495337] RDX: 000000000000013d RSI: ffff880303062f80 RDI: 0000040c275a0000
+> [192392.495338] RBP: ffff8802296a3b48 R08: ffff880497f00000 R09: 0000000000000001
+> [192392.495339] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000282
+> [192392.495339] R13: 000000000000b250 R14: ffff880577e85000 R15: ffff880497f0b2a0
+> [192392.495340] FS:  0000000000000000(0000) GS:ffff88085fc00000(0000) knlGS:0000000000000000
+> [192392.495341] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [192392.495342] CR2: ffff880303062f80 CR3: 0000000005289000 CR4: 00000000000407f0
+> [192392.495342] Stack:
+> [192392.495344]  ffff880755e28000 ffff880497f00000 000000000000013d ffff8801190fb000
+> [192392.495346]  0000000000000000 ffff88013dae9110 ffffffff81090d40 ffff8802296a3b00
+> [192392.495347]  ffff8802296a3b00 0000000000000010 ffff8802296a3b68 ffff8801190fb000
+> [192392.495348] Call Trace:
+> [192392.495353]  [<ffffffff81090d40>] ? bit_waitqueue+0xa0/0xa0
+> [192392.495363]  [<ffffffffa05fea66>] raid56_parity_submit_scrub_rbio+0x16/0x30 [btrfs]
+> [192392.495372]  [<ffffffffa05e2f0e>] scrub_parity_check_and_repair+0x15e/0x1e0 [btrfs]
+> [192392.495380]  [<ffffffffa05e301d>] scrub_block_put+0x8d/0x90 [btrfs]
+> [192392.495388]  [<ffffffffa05e6ed7>] ? scrub_bio_end_io_worker+0xd7/0x870 [btrfs]
+> [192392.495396]  [<ffffffffa05e6ee9>] scrub_bio_end_io_worker+0xe9/0x870 [btrfs]
+> [192392.495405]  [<ffffffffa05b8c44>] normal_work_helper+0x84/0x330 [btrfs]
+> [192392.495414]  [<ffffffffa05b8f42>] btrfs_scrub_helper+0x12/0x20 [btrfs]
+> [192392.495417]  [<ffffffff8106c50f>] process_one_work+0x1bf/0x520
+> [192392.495419]  [<ffffffff8106c48d>] ? process_one_work+0x13d/0x520
+> [192392.495421]  [<ffffffff8106c98e>] worker_thread+0x11e/0x4b0
+> [192392.495424]  [<ffffffff81653ac9>] ? __schedule+0x389/0x880
+> [192392.495426]  [<ffffffff8106c870>] ? process_one_work+0x520/0x520
+> [192392.495428]  [<ffffffff81071e2e>] kthread+0xde/0x100
+> [192392.495430]  [<ffffffff81071d50>] ? __init_kthread_worker+0x70/0x70
+> [192392.495431]  [<ffffffff81659eac>] ret_from_fork+0x7c/0xb0
+> [192392.495433]  [<ffffffff81071d50>] ? __init_kthread_worker+0x70/0x70
+> [192392.495449] Code: 45 88 49 89 c4 4f 8d 7c 28 50 4b 8b 44 28 50 48 8b 55 90 4c 8d 70 e8 4c 39 f8 48 8b 4d 98 74 32 48 8b 71 10 48 8b 3e 48 8b 70 f8 <48> 39 3e 75 12 eb 6f 0f 1f 80 00 00 00 00 48 8b 76 f8 48 39 3e
+> [192392.495458] RIP  [<ffffffffa05fe77a>] lock_stripe_add+0xba/0x390 [btrfs]
+> [192392.495458]  RSP <ffff8802296a3ac8>
+> [192392.495458] CR2: ffff880303062f80
+> [192392.496389] ---[ end trace c04c23ee0d843df0 ]---
+> 
+> 
+> 
+> .
+> 
 

@@ -1,83 +1,238 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36-i2.italiaonline.it ([212.48.25.210]:41203 "EHLO
-	smtp-36.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751013AbaLCIY0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 03:24:26 -0500
-Message-ID: <547EC8B5.1060002@inwind.it>
-Date: Wed, 03 Dec 2014 09:24:21 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mail-ob0-f171.google.com ([209.85.214.171]:38507 "EHLO
+	mail-ob0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750833AbaLCMvA convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 07:51:00 -0500
+Received: by mail-ob0-f171.google.com with SMTP id uz6so11372571obc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Dec 2014 04:50:59 -0800 (PST)
 MIME-Version: 1.0
-To: Phillip Susi <psusi@ubuntu.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Anand Jain <Anand.Jain@oracle.com>, MegaBrutal <megabrutal@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Robert White <rwhite@pobox.com>, Chris Mason <clm@fb.com>
-Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
-References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>	<547CA4E7.8060209@pobox.com>	<CAE8gLhmbws6E7YQVBLHfaUXF6Jz1qob9iOFiAEW7pRTq65YCyw@mail.gmail.com>	<547CF8B1.4000303@pobox.com>	<CAE8gLhkxgi8nTab0rzmLNzhsek_v2zs6RxPDL9GU_EAen9+kvA@mail.gmail.com>	<547D6F42.9000009@inwind.it> <CAE8gLhmVqPTArDKxBenbRasUwifGOEoy+askejqneEA9WH-iOQ@mail.gmail.com> <547D9F18.3030400@inwind.it> <547DA86C.4050100@oracle.com> <547DAF2A.7020902@gmail.com> <547E0EE5.2040504@ubuntu.com>
-In-Reply-To: <547E0EE5.2040504@ubuntu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAPRQymP2ZpO1GpNMra7121+5E87aqNbSmaZSfW2CKAfkF66N8Q@mail.gmail.com>
+References: <CAPRQymMYBhy0mxG1qTxqt2OGezm3qnq+rAZOLAk1TpkOoixNWw@mail.gmail.com>
+ <54740F42.2040301@cn.fujitsu.com> <CAPRQymNp3+387P-nmXKoWGNV31TKaYLBWv6g63WwJPqN4g-fYg@mail.gmail.com>
+ <547411B3.2040309@cn.fujitsu.com> <CAPRQymO3rODHMw+=BzURdOYfxGUshCrt48LY4gWT7g=Yd=z8jg@mail.gmail.com>
+ <54742F42.2050202@cn.fujitsu.com> <CAPRQymN4zKWcnFGTziEExg62c6_qQx7kYyjw08ZUvt+fdp3qKQ@mail.gmail.com>
+ <54753DF0.9090505@cn.fujitsu.com> <CAPRQymP2ZpO1GpNMra7121+5E87aqNbSmaZSfW2CKAfkF66N8Q@mail.gmail.com>
+From: Daniel Miranda <danielkza2@gmail.com>
+Date: Wed, 3 Dec 2014 10:50:39 -0200
+Message-ID: <CAPRQymOsZJJBAyUL3jfaBX-2mqVxCUXhmgkr6WV+cgHS5H+-cQ@mail.gmail.com>
+Subject: Re: Apparent metadata corruption (file that simultaneously does/does
+ not exist) on kernel 3.17.3
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/02/2014 08:11 PM, Phillip Susi wrote:
-> On 12/2/2014 7:23 AM, Austin S Hemmelgarn wrote:
->> Stupid thought, why don't we just add blacklisting based on device
->> path like LVM has for pvscan?
-> 
-> That isn't logic that belongs in the kernel, so that is going down the
-> path of yanking out the device auto probing from btrfs and instead
-> writing a mount.btrfs helper that can use policies like blacklisting
-> to auto locate all of the correct devices and pass them all to the
-> kernel at mount time.
-> 
-I am thinking about that. Today the device discovery happens:
-a) when a device appears, two udev rules run "btrfs dev scan <device>"
+Hello again,
 
-/lib/udev/rules.d/70-btrfs.rules
-/lib/udev/rules.d/80-btrfs-lvm.rules
+Sorry for the delay, I had some things to do this past week, including
+figuring out the stability problems that I was having, but everything
+is good now. I rebuilt the Fedora package for btrfs-progs 3.17.2 with
+your patches, and btrfsck successfully removed the orphan file! The
+contents seem to be intact in /lost+found. Thank you very much Qu,
+you've been immensily helpful.
 
-b) during the boot it is ran a "btrfs device scan", which scan all 
-the device (this happens in debian for other distros may be different)
-
-c) after a btrfs.mkfs, which starts a device scan on each devices of
-the new filesystem
-
-d) by the user
+Regards,
+Daniel
 
 
-Regarding a), the problem is simply solved adding a line like:
-
-ENV{DM_UDEV_LOW_PRIORITY_FLAG}=="1", GOTO="btrfs_end"
-
-Regarding c), it is not a problem
-
-Regarding b) and d), the only solution that I found is to query the 
-udev DB inside the "btrfs dev scan" program and to skip the devices
-with DM_UDEV_LOW_PRIORITY_FLAG==1. But implementing this, it would 
-solve all the points a), b), c), d) with one shot !
-
-
-BR
-G.Baroncelli
-
-P.S.
-This is the comment made by LVM by DM_UDEV_LOW_PRIORITY_FLAG:
-
-/*
- * DM_UDEV_LOW_PRIORITY_FLAG is set in case we need to instruct the
- * udev rules to give low priority to the device that is currently
- * processed. For example, this provides a way to select which symlinks
- * could be overwritten by high priority ones if their names are equal.
- * Common situation is a name based on FS UUID while using origin and
- * snapshot devices.
- */
-#define DM_UDEV_LOW_PRIORITY_FLAG 0x0010
-
-https://git.fedorahosted.org/cgit/lvm2.git/tree/libdm/libdevmapper.h#n1969
-
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+On Wed, Nov 26, 2014 at 1:07 AM, Daniel Miranda <danielkza2@gmail.com> wrote:
+> Alright, I'll just have to understand how to build btrfs-progs now,
+> since I'm currently just using the packages from the Fedora repo.
+>
+> Thanks for all the help and time spent so far,
+> Daniel
+>
+>
+> On Wed, Nov 26, 2014 at 12:41 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> Hi Daniel,
+>>
+>> With your btrfs-image dump, I tested with my patchset sent to maillist, my
+>> patchset succeeds fixing the image.
+>>
+>> You can get the patchset and then apply it on 3.17.2, and --repair should
+>> fix it.
+>> The file with nlink error will be moved to 'lost+found' dir.
+>>
+>> Although the best fixing should be just adding the missing dir_index,
+>> but currently the patchset does quite well and does not need to do any
+>> modify.
+>>
+>> The patchset can be extracted using patchwork:
+>> 0001: https://patchwork.kernel.org/patch/5364131/mbox/
+>> 0002: https://patchwork.kernel.org/patch/5364141/mbox/
+>> 0003: https://patchwork.kernel.org/patch/5364101/mbox/
+>> 0004 v2: https://patchwork.kernel.org/patch/5383611/mbox/
+>> 0005 v2: https://patchwork.kernel.org/patch/5383601/mbox/
+>> 0006: https://patchwork.kernel.org/patch/5364151/mbox
+>>
+>> Any feedback is welcomed to improve the patches.
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>> -------- Original Message --------
+>> Subject: Re: Apparent metadata corruption (file that simultaneously
+>> does/does not exist) on kernel 3.17.3
+>> From: Daniel Miranda <danielkza2@gmail.com>
+>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date: 2014年11月25日 15:42
+>>>
+>>> I just ran the repair but the ghost file has not disappeared,
+>>> unfortunately.
+>>>
+>>> On Tue, Nov 25, 2014 at 5:26 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> wrote:
+>>>>
+>>>> -------- Original Message --------
+>>>> Subject: Re: Apparent metadata corruption (file that simultaneously
+>>>> does/does not exist) on kernel 3.17.3
+>>>> From: Daniel Miranda <danielkza2@gmail.com>
+>>>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> Date: 2014年11月25日 15:20
+>>>>>
+>>>>> Here are the logs. I'll send you a link to my dump directly after I
+>>>>> finish uploading it. Please notify me when you have downloaded it so I
+>>>>> can delete it.
+>>>>>
+>>>>> checking extents
+>>>>> checking free space cache
+>>>>> checking fs roots
+>>>>> root 5 inode 17149868 errors 2000, link count wrong
+>>>>>       unresolved ref dir 17182377 index 245 namelen 8 name string.h
+>>>>> filetype 1 errors 1, no dir item
+>>>>
+>>>> link count error seems resolved by Josef's patch commit already in
+>>>> 3.17.2.
+>>>> If using 3.17.2, josef's commit will rebuild the dir item and dir index.
+>>>>>
+>>>>> root 5 inode 17182377 errors 200, dir isize wrong
+>>>>
+>>>> This isize error seems caused by previous line.
+>>>> If 3.17.2 can repair above problem, it should not be a problem and will
+>>>> disappear.
+>>>>
+>>>> According to the above output, btrfsck --repair with btrfs-progs 3.17.2
+>>>> has
+>>>> a good chance repairing it.
+>>>> Just have a try.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>> Checking filesystem on /dev/mapper/fedora_daniel--pc-root
+>>>>> UUID: fef8f718-0622-4cb1-9597-749650d366a4
+>>>>> found 55108022156 bytes used err is 1
+>>>>> total csum bytes: 89787396
+>>>>> total tree bytes: 2303455232
+>>>>> total fs tree bytes: 2024841216
+>>>>> total extent tree bytes: 145272832
+>>>>> btree space waste bytes: 529672422
+>>>>> file data blocks allocated: 253414481920
+>>>>>    referenced 94127726592
+>>>>> Btrfs v3.17
+>>>>>
+>>>>>
+>>>>> Regards,
+>>>>> Daniel
+>>>>>
+>>>>> On Tue, Nov 25, 2014 at 3:20 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>> wrote:
+>>>>>>
+>>>>>> -------- Original Message --------
+>>>>>> Subject: Re: Apparent metadata corruption (file that simultaneously
+>>>>>> does/does not exist) on kernel 3.17.3
+>>>>>> From: Daniel Miranda <danielkza2@gmail.com>
+>>>>>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>>> Date: 2014年11月25日 13:14
+>>>>>>>
+>>>>>>> I'll go run that and get you the output.
+>>>>>>
+>>>>>> Thanks.
+>>>>>>>
+>>>>>>>
+>>>>>>> I can do the image dump, sure. I don't know how long it might take to
+>>>>>>> upload it somewhere though. Right now `btrfs fi df` shows about 2GiB
+>>>>>>> of metadata (it's a 120GiB volume). I'll see how large it ends up
+>>>>>>> after compression.
+>>>>>>
+>>>>>> 120G volume seems quite small, compared the images I received recently
+>>>>>> (1T
+>>>>>> x2 RAID1 and 4T single).
+>>>>>> With '-c 9' it shouldn't be too huge I think(The 1T raid1 is about 1G
+>>>>>> metadata with -c9).
+>>>>>>
+>>>>>> BTW, btrfs-image dump will have all the filenames and hierarchy, even
+>>>>>> without its data,
+>>>>>> it is still better considering your privacy twice before uploading.
+>>>>>>
+>>>>>> Thanks,
+>>>>>> Qu
+>>>>>>
+>>>>>>> Thanks for the quick response,
+>>>>>>> Daniel
+>>>>>>>
+>>>>>>> On Tue, Nov 25, 2014 at 3:10 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>>>> wrote:
+>>>>>>>>
+>>>>>>>> Hi,
+>>>>>>>>
+>>>>>>>> What's the btrfsck output? Without --repair option.
+>>>>>>>>
+>>>>>>>> Also, if it is OK for you, would you please dump the btrfs with
+>>>>>>>> 'btrfs-image' command?
+>>>>>>>> '-c 9' option is highly recommended considering the size of it.
+>>>>>>>> This will helps a lot for developers to test the btrfsck repair
+>>>>>>>> function.
+>>>>>>>>
+>>>>>>>> Thanks,
+>>>>>>>> Qu
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> -------- Original Message --------
+>>>>>>>> Subject: Apparent metadata corruption (file that simultaneously
+>>>>>>>> does/does
+>>>>>>>> not exist) on kernel 3.17.3
+>>>>>>>> From: Daniel Miranda <danielkza2@gmail.com>
+>>>>>>>> To: <linux-btrfs@vger.kernel.org>
+>>>>>>>> Date: 2014年11月25日 13:04
+>>>>>>>>>
+>>>>>>>>> Hello,
+>>>>>>>>>
+>>>>>>>>> After I had some brief stability issues with my computer, it seems
+>>>>>>>>> some form of metadata corruption took place in my BTRFS filesystem,
+>>>>>>>>> and now a particular file seems to exist, but I cannot access any
+>>>>>>>>> details on it or delete it.
+>>>>>>>>>
+>>>>>>>>> If I try to `ls` in the directory it is in, that's what I get:
+>>>>>>>>>
+>>>>>>>>> ls: cannot access string.h: No such file or directory
+>>>>>>>>> total 0
+>>>>>>>>> drwxr-xr-x. 1 danielkza mock 16 Nov 21 14:18 ./
+>>>>>>>>> drwxr-xr-x. 1 danielkza mock  6 Nov 21 14:18 ../
+>>>>>>>>> -?????????? ? ?         ?     ?            ? string.h
+>>>>>>>>>
+>>>>>>>>> If I try to delete it I get:
+>>>>>>>>>
+>>>>>>>>> rm: cannot remove ‘string.h’: No such file or directory
+>>>>>>>>>
+>>>>>>>>> I'm using kernel 3.17.3 from Fedora 21. I got no messages on dmesg
+>>>>>>>>> or
+>>>>>>>>> anything of the sort. I know the btrfs fsck situation is
+>>>>>>>>> complicated,
+>>>>>>>>> but is there any utility I should use to try and repair this? Losing
+>>>>>>>>> this file is not a problem, it's just one header from the kernel I
+>>>>>>>>> was
+>>>>>>>>> building.
+>>>>>>>>>
+>>>>>>>>> Regards,
+>>>>>>>>> Daniel Miranda
+>>>>>>>>> --
+>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>> linux-btrfs"
+>>>>>>>>> in
+>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>>>
+>>>>>>>>
+>>

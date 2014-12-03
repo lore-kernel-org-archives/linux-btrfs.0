@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37080 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37122 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751030AbaLCSso (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Dec 2014 13:48:44 -0500
-Date: Wed, 3 Dec 2014 19:48:43 +0100
+	id S1751164AbaLCSxM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Dec 2014 13:53:12 -0500
+Date: Wed, 3 Dec 2014 19:53:11 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Shriramana Sharma <samjnaa@gmail.com>,
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: dsterba <dsterba@suse.cz>, Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Possible to undo subvol delete?
-Message-ID: <20141203184843.GW12140@suse.cz>
+Message-ID: <20141203185311.GX12140@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
  <20141130042306.GE8916@merlins.org>
@@ -18,49 +18,21 @@ References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
  <20141201184621.5dd7fcd9@natsu>
  <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
  <20141202031403.GZ17395@hungrycats.org>
- <20141202125252.GR12140@twin.jikos.cz>
- <20141202152555.GA17395@hungrycats.org>
+ <CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
+ <20141202125610.GS12140@twin.jikos.cz>
+ <CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141202152555.GA17395@hungrycats.org>
+In-Reply-To: <CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 02, 2014 at 10:25:55AM -0500, Zygo Blaxell wrote:
-> On Tue, Dec 02, 2014 at 01:52:52PM +0100, David Sterba wrote:
-> > > On a side note...only root can delete subvolumes, but non-root users
-> > > can create them, which results in...this:
-> > > 
-> > > 	$ /sbin/btrfs sub create foo
-> > > 	Create subvolume './foo'
-> > > 	$ date > foo/bar
-> > > 	$ /sbin/btrfs sub delete foo
-> > > 	Transaction commit: none (default)
-> > > 	Delete subvolume '/home/testuser/foo'
-> > > 	ERROR: cannot delete '/home/testuser/foo' - Operation not permitted
-> > > 	$ rm -rf foo
-> > > 	rm: cannot remove `foo': Operation not permitted
-> > > 	$ cat /proc/version
-> > > 	Linux version 3.17.1-zb64+ (root@buildbot) (gcc version 4.7.2 (Debian 4.7.2-5) ) #1 SMP PREEMPT Tue Oct 21 00:17:49 EDT 2014
-> > > 
-> > > ...uh oh?
-> > 
-> > That's how it works now. I'd like to enable the user to delete their
-> > subvolumes even without the user_subvol_rm_allowed option someday.
+On Tue, Dec 02, 2014 at 08:45:10PM +0530, Shriramana Sharma wrote:
+> On Tue, Dec 2, 2014 at 6:26 PM, David Sterba <dsterba@suse.cz> wrote:
+> >
+> > Works for me without the root password on a Tumbleweed installation
+> > (without apparmor/selinux).
 > 
-> That seems...odd.  It should be symmetrical, i.e. if you can create a
-> subvol you should be able to delete it, and if can't delete a subvol
-> then you shouldn't be able to create them either.
+> Are you then referring to a btrfs partition mounted with user_subvol_rm_allowed?
 
-It should and I don't know the exact reasons why it's been restricted.
-AFAICS it should be safe to enable the user_subvol_rm_allowed mode by
-default.
-
-> I can imagine
-> quite a bit of havoc could be wrought by an unprivileged user creating
-> subvols indiscriminately (or in various specific, targeted locations).
-
-Is this different from creating directories the same way?
-
-There is a difference in metadata consumption between subvolume and
-directory, but this would lead to "just" ENOSPC.
+The context was 'does creating a subvolume require root password'.

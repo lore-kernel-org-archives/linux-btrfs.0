@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53921 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56144 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750830AbaLCBRt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 20:17:49 -0500
-Message-ID: <547E651A.6080409@cn.fujitsu.com>
-Date: Wed, 3 Dec 2014 09:19:22 +0800
+	with ESMTP id S1750780AbaLCC2c (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 21:28:32 -0500
+Message-ID: <547E757E.1000700@cn.fujitsu.com>
+Date: Wed, 3 Dec 2014 10:29:18 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,8 +18,6 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Tue, 2 Dec 2014 08:28:22 -0500, Chris Mason wrote:
-> 
-> 
 > On Tue, Dec 2, 2014 at 7:39 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
 >> This patchset implement the device scrub/replace function for RAID56, the
 >> most implementation of the common data is similar to the other RAID type.
@@ -50,13 +48,11 @@ On Tue, 2 Dec 2014 08:28:22 -0500, Chris Mason wrote:
 > 
 > Thanks, I'll try this today.  I need to rebase in a new version of the RCU patches, can you please cook one on top of v3.18-rc6 instead?
 
-No problem.
+I have updated my raid56-scrub-replace branch, please re-pull it.
+  https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
+
+The v4 patchset in the mail list can be applied on v3.18-rc6 successfully, so
+I don't update it.
 
 Thanks
 Miao
-
-> 
-> -chris
-> 
-> 
-

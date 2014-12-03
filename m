@@ -1,65 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:34939 "EHLO imap.thunk.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751191AbaLBSqG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Dec 2014 13:46:06 -0500
-Date: Tue, 2 Dec 2014 10:09:12 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Linux Filesystem Development List <linux-fsdevel@vger.kernel.org>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        XFS Developers <xfs@oss.sgi.com>, Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH-v4 1/7] vfs: split update_time() into update_time() and
- write_time()
-Message-ID: <20141202150912.GA3496@thunk.org>
-References: <1416997437-26092-1-git-send-email-tytso@mit.edu>
- <1416997437-26092-2-git-send-email-tytso@mit.edu>
- <20141126192328.GA20436@infradead.org>
- <20141127144116.GA14091@thunk.org>
- <20141127153315.GC14091@thunk.org>
- <20141127164952.GA1622@infradead.org>
- <20141127202731.GG14091@thunk.org>
- <20141201092810.GA5538@infradead.org>
- <20141201150450.GA3337@thunk.org>
- <20141202092033.GA29712@infradead.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:53921 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750830AbaLCBRt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 20:17:49 -0500
+Message-ID: <547E651A.6080409@cn.fujitsu.com>
+Date: Wed, 3 Dec 2014 09:19:22 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141202092033.GA29712@infradead.org>
+To: Chris Mason <clm@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v4 00/10] Implement device scrub/replace for RAID56
+References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com> <1417526902.21136.1@mail.thefacebook.com>
+In-Reply-To: <1417526902.21136.1@mail.thefacebook.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 02, 2014 at 01:20:33AM -0800, Christoph Hellwig wrote:
-> Why do you need the additional I_DIRTY flag?  A "lesser"
-> __mark_inode_dirty should never override a stronger one.
-
-Agreed, will fix.
-
-> Otherwise this looks fine to me, except that I would split the default
-> implementation into a new generic_update_time helper.
-
-Sure, I can do that.
-
-> > XFS doesn't have a ->dirty_time yet, but that way XFS would be able to
-> > use the I_DIRTY_TIME flag to log the journal timestamps if it so
-> > desires, and perhaps drop the need for it to use update_time().
+On Tue, 2 Dec 2014 08:28:22 -0500, Chris Mason wrote:
 > 
-> We will probably always need a ->update_time to proide proper locking
-> around the timestamp updates.
+> 
+> On Tue, Dec 2, 2014 at 7:39 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+>> This patchset implement the device scrub/replace function for RAID56, the
+>> most implementation of the common data is similar to the other RAID type.
+>> The differentia or difficulty is the parity process. The basic idea is reading
+>> and check the data which has checksum out of the raid56 stripe lock, if the
+>> data is right, then lock the raid56 stripe, read out the other data in the
+>> same stripe, if no IO error happens, calculate the parity and check the
+>> original one, if the original parity is right, the scrub parity passes.
+>> or write out the new one. But if the common data(not parity) that we read out
+>> is wrong, we will try to recover it, and then check and repair the parity.
+>>
+>> And in order to avoid making the code more and more complex, we copy some
+>> code of common data process for the parity, the cleanup work is in my
+>> TODO list.
+>>
+>> We have done some test, the patchset worked well. Of course, more tests
+>> are welcome. If you are interesting to use it or test it, you can pull
+>> the patchset from
+>>
+>>   https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
+>>
+>> Changelog v3 -> v4:
+>> - Fix the problem that the scrub's raid bio was cached, which was reported
+>>   by Chris.
+>> - Remove the 10st patch, the deadlock that was described in that patch doesn't
+>>   exist on the current kernel.
+>> - Rebase the patchset to the top of integration branch
+> 
+> Thanks, I'll try this today.  I need to rebase in a new version of the RCU patches, can you please cook one on top of v3.18-rc6 instead?
 
-Couldn't you let the VFS set the inode timesstamps and then have xfs's
-->dirty_time(inode, I_DIRTY_TIME) copy the timestamps to the on-disk
-inode structure under the appropriate lock, or am I missing something?
+No problem.
 
-> In the current from the generic lazytime might even be a loss for XFS as
-> we're already really good at batching updates from multiple inodes in
-> the same cluster for the in-place writeback, so I really don't want
-> to just enable it without those optimizations without a lot of testing.
+Thanks
+Miao
 
-Fair enough; it's not surprising that this might be much more
-effective as an optimization for ext4, for no other reason that
-timestamp updates are so much heavyweight for us.  I suspect that it
-should be a win for btrfs, though, and it should definitely be a win
-for those file systems that don't use journalling at all.
+> 
+> -chris
+> 
+> 
 
-    	       	       	    	      		     - Ted

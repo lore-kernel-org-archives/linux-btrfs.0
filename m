@@ -1,129 +1,366 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5855 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750707AbaLCHlW convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 02:41:22 -0500
-Message-ID: <547EBE9F.3070805@cn.fujitsu.com>
-Date: Wed, 3 Dec 2014 15:41:19 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail001.aei.ca ([206.123.6.130]:51285 "EHLO mail001.aei.ca"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753112AbaLCOav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Dec 2014 09:30:51 -0500
+From: Ed Tomlinson <edt@aei.ca>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
+        Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH v2 6/6] btrfs-progs: Add fixing function for inodes whose nlink dismatch
+Date: Wed, 03 Dec 2014 09:30:48 -0500
+Message-ID: <3392890.p9hJPZbuVy@grover>
+In-Reply-To: <1417580312-8516-7-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1417580312-8516-1-git-send-email-quwenruo@cn.fujitsu.com> <1417580312-8516-7-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Ed Tomlinson <edt@aei.ca>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/6] More generic inode nlink repair function
-References: <1417580312-8516-1-git-send-email-quwenruo@cn.fujitsu.com> <2026580.dXZxrES2AW@grover> <547EB7F1.9090408@jp.fujitsu.com>
-In-Reply-To: <547EB7F1.9090408@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
--------- Original Message --------
-Subject: Re: [PATCH 0/6] More generic inode nlink repair function
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-To: Ed Tomlinson <edt@aei.ca>, <linux-btrfs@vger.kernel.org>
-Date: 2014年12月03日 15:12
-> Hi,
->
-> (2014/12/03 14:03), Ed Tomlinson wrote:
->> Hi,
->>
->> I'd really like to see these patches included in btrfsck - they 
->> repaired my fs.   Once
->> Qu got them working they found additional corruptions.  This time 
->> there was no crash or stall
->> just an umount that left (chromium) files unlinked...  The bug with 
->> these files has been
->> hitting me for a while - just did not recognize what was causing it 
->> or notice the corruption.
->>
->> The only objection I have seen to these patches is that they may 
->> create a "lost+found"
->> directory.  I submit this is an expected behavior for a fsck 
->> utility.  When --repair is specified
->> I expect a fsck to make changes to my fs one of which may be adding 
->> and populating a
->> lost+found directory.
->
-> How about making lost+found on mkfs.btrfs like ext4?
->
-> Thanks,
-> Satoru
->
-I hope most user won't see the lost+found dir.
+Looks like 
 
-Due to the COW feature especially on all the metadata,
-btrfs is *supposed* to be fsck free and self repairing fs, make 
-lost+found at mkfs time
-may make btrfs not so special among the old time ext* fs.
+Reported-by:  Daniel Miranda <danielkza2@gmail.com>
 
-IMHO, most user will not see the lost+found dir, if hardware and kernel 
-works as they should be,
-usual bit flip can be recovered by the default DUP or higher RAID 
-metadata profile.
-The lost+found dir will only occur if the fs is really badly damaged or 
-kernel bug.
-(or intently damaged by btrfs-corrupt-block for QA reason).
+also needs to be added see: "Re: Apparent metadata corruption (file that simultaneously does/does not exist) on kernel 3.17.3"
+Where Daniel reports these patches fixed his fs too.  
 
-With the maturing of btrfs, such case should be more and more rare and 
-most user will forget
-the fact that btrfsck will create lost+found dir, but it will still be 
-the last hope.
-So lost+found should only occur when it is needed, and when it is needed 
-it will be created.
+I expect an fsck with --repair specified to change my fs and creating and populating an lost+found directory is not an unexpected result.
+While btrfs is not supposed to need this - its obvious that it does and that this corruption is not that uncommon.
 
-Thanks,
-Qu
->>
->> Thanks
->> Ed Tomlinson
->>
->> PS. It would be very interesting to find out WHY these files are 
->> ending up unlinked.  Ideas?
->>
->>
->> On Wednesday 03 December 2014 12:18:26 you wrote:
->>> Update on patch 4 and 6, other is not changed.
->>> This nlink repair function is more generic than the original one.
->>>
->>> The old one can only handle a specific case that the inode_ref is
->>> invalid, either point to a non-exist parent inode or point to a invalid
->>> inode(not dir or conflicting index/name).
->>>
->>> The new one will reset all the backref, no matter it is valid or not,
->>> and re-add all the valid backref, this make the nlink handles more
->>> corrupt cases.
->>>
->>> Qu Wenruo (6):
->>>    btrfs-progs: print root dir verbose error in fsck
->>>    btrfs-progs: Import btrfs_insert/del/lookup_extref() functions.
->>>    btrfs-progs: Import lookup/del_inode_ref() function.
->>>    btrfs-progs: Add btrfs_unlink() and btrfs_add_link() functions.
->>>    btrfs-progs: Add btrfs_mkdir() function for the incoming 
->>> 'lost+found'
->>>         fsck mechanism.
->>>    btrfs-progs: Add fixing function for inodes whose nlink dismatch
->>>
->>>   Makefile     |   2 +-
->>>   cmds-check.c | 311 ++++++++++++++++++++++++++++++++++++--
->>>   ctree.c      |   6 +
->>>   ctree.h      |  38 +++++
->>>   inode-item.c | 318 +++++++++++++++++++++++++++++++++++++++
->>>   inode.c      | 484 
->>> +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>   6 files changed, 1148 insertions(+), 11 deletions(-)
->>>   create mode 100644 inode.c
->>>
->>>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
->>
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Three victims repaired in less than two weeks - how many more are out there?
+
+Thanks
+Ed
+
+PS. The other important question is how do we find the bug causing this and fix it?
+
+On Wednesday 03 December 2014 12:18:32 Qu Wenruo wrote:
+> [BUG]
+> At least two users have already hit a bug in btrfs causing file
+> missing(Chromium config file).
+> The missing file's nlink is still 1 but its backref points to non-exist
+> parent inode.
+> 
+> This should be a kernel bug, but btrfsck fix is needed anyway.
+> 
+> [FIX]
+> For such nlink mismatch inode, we will delete all the invalid backref,
+> if there is no valid backref for it, create 'lost+found' under the root
+> of the subvolume and add link to the directory.
+> 
+> Reported-by: Mike Gavrilov <mikhail.v.gavrilov@gmail.com>
+> Reported-by: Ed Tomlinson <edt@aei.ca>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> 
+> ---
+> changelog:
+> v2:
+>    Use the a more generic fucntion, reset_nlink(), to repair the inode
+>    nlink.
+>    It will remove all, including valid, backref(along with
+>    dir_item/index) and set nlink to 0, and add valid ones back.
+>    This reset_nlink() method can handle more nlink error, not only
+>    invalid inode_ref but also pure nlinks mismatch(2 valid inode_ref but
+>    nlink is 1)
+> ---
+>  cmds-check.c | 236 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 file changed, 232 insertions(+), 4 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 6419caf..627b794 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -27,6 +27,7 @@
+>  #include <unistd.h>
+>  #include <getopt.h>
+>  #include <uuid/uuid.h>
+> +#include <math.h>
+>  #include "ctree.h"
+>  #include "volumes.h"
+>  #include "repair.h"
+> @@ -1837,6 +1838,18 @@ static int repair_inode_backrefs(struct btrfs_root *root,
+>  			struct btrfs_trans_handle *trans;
+>  			struct btrfs_key location;
+>  
+> +			ret = check_dir_conflict(root, backref->name,
+> +						 backref->namelen,
+> +						 backref->dir,
+> +						 backref->index);
+> +			if (ret) {
+> +				/*
+> +				 * let nlink fixing routine to handle it,
+> +				 * which can do it better.
+> +				 */
+> +				ret = 0;
+> +				break;
+> +			}
+>  			location.objectid = rec->ino;
+>  			location.type = BTRFS_INODE_ITEM_KEY;
+>  			location.offset = 0;
+> @@ -1874,20 +1887,233 @@ static int repair_inode_backrefs(struct btrfs_root *root,
+>  	return ret ? ret : repaired;
+>  }
+>  
+> +/*
+> + * Search for the inode_ref of given 'ino' to get the filename and
+> + * btrfs type.
+> + * This will only use the first inode_ref.
+> + */
+> +static int find_file_name_type(struct btrfs_root *root,
+> +			       struct btrfs_path *path,
+> +			       u64 ino, char *buf,
+> +			       int *namelen, u8 *type)
+> +{
+> +	struct btrfs_key key;
+> +	struct btrfs_key found_key;
+> +	struct btrfs_inode_ref *inode_ref;
+> +	struct btrfs_inode_item *inode_item;
+> +	struct extent_buffer *node;
+> +	u32 ret_namelen;
+> +	int slot;
+> +	int ret = 0;
+> +
+> +	/* Search for name in backref(Use the first one) */
+> +	key.objectid = ino;
+> +	key.type = BTRFS_INODE_REF_KEY;
+> +	key.offset = 0;
+> +
+> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +	if (ret < 0)
+> +		goto out;
+> +	node = path->nodes[0];
+> +	slot = path->slots[0];
+> +	btrfs_item_key_to_cpu(node, &found_key, slot);
+> +	if (found_key.objectid != ino ||
+> +	    found_key.type != BTRFS_INODE_REF_KEY) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	inode_ref = btrfs_item_ptr(node, slot, struct btrfs_inode_ref);
+> +	ret_namelen = btrfs_inode_ref_name_len(node, inode_ref);
+> +	read_extent_buffer(node, buf, (unsigned long)(inode_ref + 1),
+> +			   ret_namelen);
+> +	/* Search for inode type */
+> +	ret = btrfs_previous_item(root, path, ino, BTRFS_INODE_ITEM_KEY);
+> +	if (ret) {
+> +		if (ret > 0)
+> +			ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	node = path->nodes[0];
+> +	slot = path->slots[0];
+> +	inode_item = btrfs_item_ptr(node, slot, struct btrfs_inode_item);
+> +
+> +	if (namelen)
+> +		*namelen = ret_namelen;
+> +	if (type)
+> +		*type = imode_to_type(btrfs_inode_mode(node, inode_item));
+> +out:
+> +	btrfs_release_path(path);
+> +	return ret;
+> +}
+> +
+> +/* Reset the nlink of the inode to the correct one */
+> +static int reset_nlink(struct btrfs_trans_handle *trans,
+> +		       struct btrfs_root *root,
+> +		       struct btrfs_path *path,
+> +		       struct inode_record *rec)
+> +{
+> +	struct inode_backref *backref;
+> +	struct inode_backref *tmp;
+> +	struct btrfs_key key;
+> +	struct btrfs_inode_item *inode_item;
+> +	int ret = 0;
+> +
+> +	/* Remove all backref including the valid ones */
+> +	list_for_each_entry_safe(backref, tmp, &rec->backrefs, list) {
+> +		ret = btrfs_unlink(trans, root, rec->ino, backref->dir,
+> +				   backref->index, backref->name,
+> +				   backref->namelen, 0);
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		/* remove invalid backref, so it won't be added back */
+> +		if (!(backref->found_dir_index &&
+> +		      backref->found_dir_item &&
+> +		      backref->found_inode_ref)) {
+> +			list_del(&backref->list);
+> +			free(backref);
+> +		}
+> +	}
+> +
+> +	/* Set nlink to 0 */
+> +	key.objectid = rec->ino;
+> +	key.type = BTRFS_INODE_ITEM_KEY;
+> +	key.offset = 0;
+> +	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+> +	if (ret < 0)
+> +		goto out;
+> +	if (ret > 0) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +				    struct btrfs_inode_item);
+> +	btrfs_set_inode_nlink(path->nodes[0], inode_item, 0);
+> +	btrfs_mark_buffer_dirty(path->nodes[0]);
+> +	btrfs_release_path(path);
+> +
+> +	/*
+> +	 * Add back valid inode_ref/dir_item/dir_index,
+> +	 * add_link() will handle the nlink inc, so new nlink must be correct
+> +	 */
+> +	list_for_each_entry(backref, &rec->backrefs, list) {
+> +		ret = btrfs_add_link(trans, root, rec->ino, backref->dir,
+> +				     backref->name, backref->namelen,
+> +				     backref->ref_type, &backref->index, 1);
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +out:
+> +	btrfs_release_path(path);
+> +	return ret;
+> +}
+> +
+> +static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
+> +			       struct btrfs_root *root,
+> +			       struct btrfs_path *path,
+> +			       struct inode_record *rec)
+> +{
+> +	char *dir_name = "lost+found";
+> +	char namebuf[BTRFS_NAME_LEN] = {0};
+> +	u64 lost_found_ino;
+> +	u32 mode = 0700;
+> +	u8 type = 0;
+> +	int namelen = 0;
+> +	int ret = 0;
+> +
+> +	/*
+> +	 * Get file name and type first before these invalid inode ref
+> +	 * are deleted by remove_all_invalid_backref()
+> +	 */
+> +	ret = find_file_name_type(root, path, rec->ino, namebuf,
+> +				  &namelen, &type);
+> +	if (ret < 0) {
+> +		fprintf(stderr,
+> +			"Fail to get file name of inode %llu: %s\n",
+> +			rec->ino, strerror(-ret));
+> +		goto out;
+> +	}
+> +	ret = reset_nlink(trans, root, path, rec);
+> +	if (ret < 0) {
+> +		fprintf(stderr,
+> +			"Fail to reset nlink for inode %llu: %s\n",
+> +			rec->ino, strerror(-ret));
+> +		goto out;
+> +	}
+> +
+> +	if (rec->found_link == 0) {
+> +		ret = btrfs_mkdir(trans, root, dir_name, strlen(dir_name),
+> +				  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
+> +				  mode);
+> +		if (ret < 0) {
+> +			fprintf(stderr, "Failed to create '%s' dir: %s",
+> +				dir_name, strerror(-ret));
+> +			goto out;
+> +		}
+> +		ret = btrfs_add_link(trans, root, rec->ino, lost_found_ino,
+> +				     namebuf, namelen, type, NULL, 1);
+> +		if (ret == -EEXIST) {
+> +			/*
+> +			 * Conflicting file name, add ".INO" as suffix
+> +			 * +1 for '.' and +1 for log10
+> +			 */
+> +			if (namelen + log10(rec->ino) + 2 > BTRFS_NAME_LEN) {
+> +				ret = -EFBIG;
+> +				goto out;
+> +			}
+> +			snprintf(namebuf + namelen, BTRFS_NAME_LEN - namelen,
+> +				 ".%llu", rec->ino);
+> +			namelen += (log10(rec->ino) + 2);
+> +			ret = btrfs_add_link(trans, root, rec->ino,
+> +					     lost_found_ino, namebuf,
+> +					     namelen, type, NULL, 1);
+> +		}
+> +		if (ret < 0) {
+> +			fprintf(stderr,
+> +				"Fail to link the inode %llu to %s dir: %s",
+> +				rec->ino, dir_name, strerror(-ret));
+> +			goto out;
+> +		}
+> +		/*
+> +		 * Just increase the found_link, don't actually add the
+> +		 * backref. This will make things easiler and this inode
+> +		 * record will be freed after the repair is done.
+> +		 * So fsck will not report problem about this inode.
+> +		 */
+> +		rec->found_link++;
+> +		printf("Moving file '%.*s' to '%s' dir since it has no valid backref\n",
+> +		       namelen, namebuf, dir_name);
+> +	}
+> +	rec->errors &= ~I_ERR_LINK_COUNT_WRONG;
+> +	printf("Fixed the nlink of inode %llu\n", rec->ino);
+> +out:
+> +	btrfs_release_path(path);
+> +	return ret;
+> +}
+> +
+>  static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+>  {
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_path *path;
+>  	int ret = 0;
+>  
+> -	if (!(rec->errors & (I_ERR_DIR_ISIZE_WRONG | I_ERR_NO_ORPHAN_ITEM)))
+> +	if (!(rec->errors & (I_ERR_DIR_ISIZE_WRONG |
+> +			     I_ERR_NO_ORPHAN_ITEM |
+> +			     I_ERR_LINK_COUNT_WRONG)))
+>  		return rec->errors;
+>  
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+>  		return -ENOMEM;
+>  
+> -	trans = btrfs_start_transaction(root, 1);
+> +	/*
+> +	 * For nlink repair, it may create a dir and add link, so
+> +	 * 2 for parent(256)'s dir_index and dir_item
+> +	 * 2 for lost+found dir's inode_item and inode_ref
+> +	 * 1 for the new inode_ref of the file
+> +	 * 2 for lost+found dir's dir_index and dir_item for the file
+> +	 */
+> +	trans = btrfs_start_transaction(root, 7);
+>  	if (IS_ERR(trans)) {
+>  		btrfs_free_path(path);
+>  		return PTR_ERR(trans);
+> @@ -1897,6 +2123,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+>  		ret = repair_inode_isize(trans, root, path, rec);
+>  	if (!ret && rec->errors & I_ERR_NO_ORPHAN_ITEM)
+>  		ret = repair_inode_orphan_item(trans, root, path, rec);
+> +	if (!ret && rec->errors & I_ERR_LINK_COUNT_WRONG)
+> +		ret = repair_inode_nlinks(trans, root, path, rec);
+>  	btrfs_commit_transaction(trans, root);
+>  	btrfs_free_path(path);
+>  	return ret;
+> @@ -2032,6 +2260,8 @@ static int check_inode_recs(struct btrfs_root *root,
+>  			}
+>  		}
+>  
+> +		if (rec->found_link != rec->nlink)
+> +			rec->errors |= I_ERR_LINK_COUNT_WRONG;
+>  		if (repair) {
+>  			ret = try_repair_inode(root, rec);
+>  			if (ret == 0 && can_free_inode_rec(rec)) {
+> @@ -2044,8 +2274,6 @@ static int check_inode_recs(struct btrfs_root *root,
+>  		error++;
+>  		if (!rec->found_inode_item)
+>  			rec->errors |= I_ERR_NO_INODE_ITEM;
+> -		if (rec->found_link != rec->nlink)
+> -			rec->errors |= I_ERR_LINK_COUNT_WRONG;
+>  		print_inode_error(root, rec);
+>  		list_for_each_entry(backref, &rec->backrefs, list) {
+>  			if (!backref->found_dir_item)
+> 
 

@@ -1,63 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:33585 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750833AbaLCDB0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 22:01:26 -0500
-In-Reply-To: <547E10BA.6000707@ubuntu.com>
-References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com> <547CE175.6060409@web.de> <547E10BA.6000707@ubuntu.com>
+Received: from smtp-36-i2.italiaonline.it ([212.48.25.210]:41203 "EHLO
+	smtp-36.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751013AbaLCIY0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 03:24:26 -0500
+Message-ID: <547EC8B5.1060002@inwind.it>
+Date: Wed, 03 Dec 2014 09:24:21 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
-From: Russell Coker <russell@coker.com.au>
-Date: Wed, 03 Dec 2014 14:01:18 +1100
-To: Phillip Susi <psusi@ubuntu.com>, Konstantin <newsbox1026@web.de>,
-        MegaBrutal <megabrutal@gmail.com>,
+To: Phillip Susi <psusi@ubuntu.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Anand Jain <Anand.Jain@oracle.com>, MegaBrutal <megabrutal@gmail.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <97AF1D81-03EF-47DF-97CB-0EFF4E3CFEA7@coker.com.au>
+CC: Robert White <rwhite@pobox.com>, Chris Mason <clm@fb.com>
+Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com>	<547CA4E7.8060209@pobox.com>	<CAE8gLhmbws6E7YQVBLHfaUXF6Jz1qob9iOFiAEW7pRTq65YCyw@mail.gmail.com>	<547CF8B1.4000303@pobox.com>	<CAE8gLhkxgi8nTab0rzmLNzhsek_v2zs6RxPDL9GU_EAen9+kvA@mail.gmail.com>	<547D6F42.9000009@inwind.it> <CAE8gLhmVqPTArDKxBenbRasUwifGOEoy+askejqneEA9WH-iOQ@mail.gmail.com> <547D9F18.3030400@inwind.it> <547DA86C.4050100@oracle.com> <547DAF2A.7020902@gmail.com> <547E0EE5.2040504@ubuntu.com>
+In-Reply-To: <547E0EE5.2040504@ubuntu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Maybe we should have a warning in mkfs.btrfs for the problematic RAID layouts.
+On 12/02/2014 08:11 PM, Phillip Susi wrote:
+> On 12/2/2014 7:23 AM, Austin S Hemmelgarn wrote:
+>> Stupid thought, why don't we just add blacklisting based on device
+>> path like LVM has for pvscan?
+> 
+> That isn't logic that belongs in the kernel, so that is going down the
+> path of yanking out the device auto probing from btrfs and instead
+> writing a mount.btrfs helper that can use policies like blacklisting
+> to auto locate all of the correct devices and pass them all to the
+> kernel at mount time.
+> 
+I am thinking about that. Today the device discovery happens:
+a) when a device appears, two udev rules run "btrfs dev scan <device>"
 
-On December 3, 2014 6:19:22 AM GMT+11:00, Phillip Susi <psusi@ubuntu.com> wrote:
->-----BEGIN PGP SIGNED MESSAGE-----
->Hash: SHA1
->
->On 12/1/2014 4:45 PM, Konstantin wrote:
->> The bug appears also when using mdadm RAID1 - when one of the
->> drives is detached from the array then the OS discovers it and
->> after a while (not directly, it takes several minutes) it appears
->> under /proc/mounts: instead of /dev/md0p1 I see there /dev/sdb1.
->> And usually after some hour or so (depending on system workload)
->> the PC completely freezes. So discussion about the uniqueness of
->> UUIDs or not, a crashing kernel is telling me that there is a
->> serious bug.
->
->I'm guessing you are using metadata format 0.9 or 1.0, which put the
->metadata at the end of the drive and the filesystem still starts in
->sector zero.  1.2 is now the default and would not have this problem
->as its metadata is at the start of the disk ( well, 4k from the start
->) and the fs starts further down.
->
->
->
->-----BEGIN PGP SIGNATURE-----
->Version: GnuPG v2.0.17 (MingW32)
->
->iQEcBAEBAgAGBQJUfhC6AAoJENRVrw2cjl5RQ2EH/0Z0iCFjOs3e5oGuGqT5Wtlc
->rXV8R1EfGSxESK0g6QAe7QIvJu+0CdIgccDp8z3ezfPcm1/YRfBXxXA/Y1Wl4hqw
->0wuk3bNqMjUmNwIFjEZCkgOSn4Whuppbh3hOOVGNropr4cwd84GP1Cr2vrzwYnkm
->If1I3RTaBhAJRSngkP9X+L5J6zBBjaZLlF4AjC/WP/1bd5vkHpGqnFpRTquCPiNV
->9LFWQIB+xYdoRdK2l7huS2jQ5kfw+qLZUQO17dU3fcicwwNk56V4HcLEPg9nx9es
->pxJo9BAWmQXDpeMcCL4eFECoeAhn0IXoaXb363mmpq11qyYj73r3FzhNQ+ALzPY=
->=U65Z
->-----END PGP SIGNATURE-----
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
+/lib/udev/rules.d/70-btrfs.rules
+/lib/udev/rules.d/80-btrfs-lvm.rules
+
+b) during the boot it is ran a "btrfs device scan", which scan all 
+the device (this happens in debian for other distros may be different)
+
+c) after a btrfs.mkfs, which starts a device scan on each devices of
+the new filesystem
+
+d) by the user
+
+
+Regarding a), the problem is simply solved adding a line like:
+
+ENV{DM_UDEV_LOW_PRIORITY_FLAG}=="1", GOTO="btrfs_end"
+
+Regarding c), it is not a problem
+
+Regarding b) and d), the only solution that I found is to query the 
+udev DB inside the "btrfs dev scan" program and to skip the devices
+with DM_UDEV_LOW_PRIORITY_FLAG==1. But implementing this, it would 
+solve all the points a), b), c), d) with one shot !
+
+
+BR
+G.Baroncelli
+
+P.S.
+This is the comment made by LVM by DM_UDEV_LOW_PRIORITY_FLAG:
+
+/*
+ * DM_UDEV_LOW_PRIORITY_FLAG is set in case we need to instruct the
+ * udev rules to give low priority to the device that is currently
+ * processed. For example, this provides a way to select which symlinks
+ * could be overwritten by high priority ones if their names are equal.
+ * Common situation is a name based on FS UUID while using origin and
+ * snapshot devices.
+ */
+#define DM_UDEV_LOW_PRIORITY_FLAG 0x0010
+
+https://git.fedorahosted.org/cgit/lvm2.git/tree/libdm/libdevmapper.h#n1969
+
+
 
 -- 
-Sent from my Samsung Galaxy Note 3 with K-9 Mail.
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

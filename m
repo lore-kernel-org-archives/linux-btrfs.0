@@ -1,42 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f54.google.com ([209.85.216.54]:36672 "EHLO
-	mail-qa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750862AbaLCCfa convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 21:35:30 -0500
-Received: by mail-qa0-f54.google.com with SMTP id i13so9645378qae.41
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Dec 2014 18:35:29 -0800 (PST)
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:33585 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750833AbaLCDB0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 22:01:26 -0500
+In-Reply-To: <547E10BA.6000707@ubuntu.com>
+References: <CAE8gLhm8Oma6kWdeJtdc1-U2e4+TJDzhmw2Vfr=CYwvJ78GRJQ@mail.gmail.com> <547CE175.6060409@web.de> <547E10BA.6000707@ubuntu.com>
 MIME-Version: 1.0
-In-Reply-To: <547E5544.7090907@jp.fujitsu.com>
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
- <547D663A.3020201@jp.fujitsu.com> <CAH-HCWV8upw8prPvCiJcpL2NRmuiWaAM+5ZEayD3OoEZrcsyaw@mail.gmail.com>
- <547E5544.7090907@jp.fujitsu.com>
-From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Wed, 3 Dec 2014 08:05:08 +0530
-Message-ID: <CAH-HCWXBEkR3uVr7SPoiuYx2bSbrWQvvE=BWDw-5b+j7HES8+g@mail.gmail.com>
-Subject: Re: Possible to undo subvol delete?
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+ charset=UTF-8
+Subject: Re: PROBLEM: #89121 BTRFS mixes up mounted devices with their snapshots
+From: Russell Coker <russell@coker.com.au>
+Date: Wed, 03 Dec 2014 14:01:18 +1100
+To: Phillip Susi <psusi@ubuntu.com>, Konstantin <newsbox1026@web.de>,
+        MegaBrutal <megabrutal@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <97AF1D81-03EF-47DF-97CB-0EFF4E3CFEA7@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 3, 2014 at 5:41 AM, Satoru Takeuchi
-<takeuchi_satoru@jp.fujitsu.com> wrote:
-> 2. You delete /snap by "snapper delete" command by mistake.
->    Then snapper takes a "pre" snapshot just before deleting
->    /snap.
-> 3. Now /snap is deleted, however, a "pre" snapshot which is
->    the same as /snap before deleting, is still alive.
->
-> I don't know how Btrfs itself undo the deletion of a snapshot.
-> It works if you manages snapshots not by btrfs directly,
-> but by snapper.
->
-> If I misunderstanding something, sorry for noise.
+Maybe we should have a warning in mkfs.btrfs for the problematic RAID layouts.
 
-No nothing misunderstood. Excellent illustration. So using snapper is
-sorta like using the higher-level trash instead of lower-level rm, so
-that even after we "delete", it's still available...
+On December 3, 2014 6:19:22 AM GMT+11:00, Phillip Susi <psusi@ubuntu.com> wrote:
+>-----BEGIN PGP SIGNED MESSAGE-----
+>Hash: SHA1
+>
+>On 12/1/2014 4:45 PM, Konstantin wrote:
+>> The bug appears also when using mdadm RAID1 - when one of the
+>> drives is detached from the array then the OS discovers it and
+>> after a while (not directly, it takes several minutes) it appears
+>> under /proc/mounts: instead of /dev/md0p1 I see there /dev/sdb1.
+>> And usually after some hour or so (depending on system workload)
+>> the PC completely freezes. So discussion about the uniqueness of
+>> UUIDs or not, a crashing kernel is telling me that there is a
+>> serious bug.
+>
+>I'm guessing you are using metadata format 0.9 or 1.0, which put the
+>metadata at the end of the drive and the filesystem still starts in
+>sector zero.  1.2 is now the default and would not have this problem
+>as its metadata is at the start of the disk ( well, 4k from the start
+>) and the fs starts further down.
+>
+>
+>
+>-----BEGIN PGP SIGNATURE-----
+>Version: GnuPG v2.0.17 (MingW32)
+>
+>iQEcBAEBAgAGBQJUfhC6AAoJENRVrw2cjl5RQ2EH/0Z0iCFjOs3e5oGuGqT5Wtlc
+>rXV8R1EfGSxESK0g6QAe7QIvJu+0CdIgccDp8z3ezfPcm1/YRfBXxXA/Y1Wl4hqw
+>0wuk3bNqMjUmNwIFjEZCkgOSn4Whuppbh3hOOVGNropr4cwd84GP1Cr2vrzwYnkm
+>If1I3RTaBhAJRSngkP9X+L5J6zBBjaZLlF4AjC/WP/1bd5vkHpGqnFpRTquCPiNV
+>9LFWQIB+xYdoRdK2l7huS2jQ5kfw+qLZUQO17dU3fcicwwNk56V4HcLEPg9nx9es
+>pxJo9BAWmQXDpeMcCL4eFECoeAhn0IXoaXb363mmpq11qyYj73r3FzhNQ+ALzPY=
+>=U65Z
+>-----END PGP SIGNATURE-----
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+Sent from my Samsung Galaxy Note 3 with K-9 Mail.

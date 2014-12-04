@@ -1,130 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55865 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751241AbaLDD2l convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 22:28:41 -0500
-Message-ID: <547FD4E6.7020108@cn.fujitsu.com>
-Date: Thu, 4 Dec 2014 11:28:38 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:59716 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752639AbaLDEqx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 23:46:53 -0500
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id DF46B3EE1AB
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Dec 2014 13:46:51 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id F2404AC07C6
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Dec 2014 13:46:50 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 990E6E08008
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Dec 2014 13:46:50 +0900 (JST)
+Message-ID: <547FE72E.4020007@jp.fujitsu.com>
+Date: Thu, 4 Dec 2014 13:46:38 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Sandy McArthur Jr <sandymac@gmail.com>,
+To: <dsterba@suse.cz>, Shriramana Sharma <samjnaa@gmail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: If btrfs-find-root doesn't find tree roots is the filesystem
- lost?
-References: <CAPs0BigJG7_Z34iZXdjSQjSkMGi6SOMnbf60_DjYTotrmqYJ8w@mail.gmail.com>
-In-Reply-To: <CAPs0BigJG7_Z34iZXdjSQjSkMGi6SOMnbf60_DjYTotrmqYJ8w@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Subject: Re: Possible to undo subvol delete?
+References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com> <547D663A.3020201@jp.fujitsu.com> <CAH-HCWV8upw8prPvCiJcpL2NRmuiWaAM+5ZEayD3OoEZrcsyaw@mail.gmail.com> <547E5544.7090907@jp.fujitsu.com> <20141203191240.GZ12140@twin.jikos.cz>
+In-Reply-To: <20141203191240.GZ12140@twin.jikos.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi David,
 
--------- Original Message --------
-Subject: If btrfs-find-root doesn't find tree roots is the filesystem lost?
-From: Sandy McArthur Jr <sandymac@gmail.com>
-To: linux-btrfs@vger.kernel.org <linux-btrfs@vger.kernel.org>
-Date: 2014年12月04日 09:20
-> I have a many-disk btrfs filesystem that I cannot access after a
-> crash. When I run btrfs-find-root I get lots of "Well block [#] seems
-> great [...]" lines but zero "Generation: [...]" lines.
-> Is this filesystem lost?
+(2014/12/04 4:12), David Sterba wrote:
+> On Wed, Dec 03, 2014 at 09:11:48AM +0900, Satoru Takeuchi wrote:
+>> It's not a Btrfs itself's feature. It's a snapper's feature.
+>> It works as a helper of snapshot management.
+>>
+>> 1. You takes /snap by "snapper create" command.
+>> 2. You delete /snap by "snapper delete" command by mistake.
+>>      Then snapper takes a "pre" snapshot just before deleting
+>>      /snap.
+>> 3. Now /snap is deleted, however, a "pre" snapshot which is
+>>      the same as /snap before deleting, is still alive.
 >
+> Can you please post exact commands how you achieve that?
 >
-> Context info below. I'll upgrade to a 3.17.4 kernel soon and try again
-> just in case.
+> The 'create' subcommand may take a --type parameter, without it it
+> creates 'single', and does not create pre or post snapshots
+> automatically.
 >
-> mcplex src # uname -a
-> Linux mcplex 3.16.5-gentoo #1 SMP Mon Dec 1 22:03:39 EST 2014 x86_64
-> Intel(R) Core(TM) i7-2600S CPU @ 2.80GHz GenuineIntel GNU/Linux
->
-> mcplex src #   btrfs --version
-> Btrfs v3.17.2
->
-> mcplex src #   btrfs fi show
-> parent transid verify failed on 18948425080832 wanted 720141 found 720122
-> parent transid verify failed on 18948425080832 wanted 720141 found 720122
-> parent transid verify failed on 18948425080832 wanted 720141 found 720122
-> parent transid verify failed on 18948425080832 wanted 720141 found 720122
-> Ignoring transid failure
-> Couldn't setup extent tree
-> Couldn't setup device tree
-> Label: 'mcmedia'  uuid: 94b3345e-2589-423c-a228-d569bf94ab58
-> Total devices 10 FS bytes used 11.38TiB
-> devid    1 size 2.73TiB used 2.27TiB path /dev/sdb1
-> devid    2 size 2.73TiB used 2.27TiB path /dev/sdc1
-> devid    3 size 2.73TiB used 2.27TiB path /dev/sdd1
-> devid    5 size 2.73TiB used 2.27TiB path /dev/sde1
-> devid    6 size 2.73TiB used 2.27TiB path /dev/sdf1
-> devid    7 size 2.73TiB used 2.27TiB path /dev/sdg1
-> devid    8 size 3.64TiB used 3.18TiB path /dev/sdh1
-> devid    9 size 3.64TiB used 3.18TiB path /dev/sdi1
-> devid   10 size 3.64TiB used 1.40TiB path /dev/sdj1
-> devid   11 size 3.64TiB used 1.40TiB path /dev/sdk1
->
-> Btrfs v3.17.2
->
-> [Note: devid #4 isn't there because it was cleanly removed months ago.]
->
-> The relevent dmesg output from attempting to access the filesystem
-> [85870.630827] BTRFS info (device sdc1): enabling auto recovery
-> [85870.630832] BTRFS info (device sdc1): disk space caching is enabled
-> [85870.848351] parent transid verify failed on 18948425080832 wanted
-> 720141 found 720122
-> [85870.848848] parent transid verify failed on 18948425080832 wanted
-> 720141 found 720122
-> [85870.848852] BTRFS: failed to read tree root on sdc1
-> [85870.849365] parent transid verify failed on 18948425080832 wanted
-> 720141 found 720122
-> [85870.849974] parent transid verify failed on 18948425080832 wanted
-> 720141 found 720122
-> [85870.849976] BTRFS: failed to read tree root on sdc1
-> [85870.850602] parent transid verify failed on 18948423397376 wanted
-> 720140 found 720113
-> [85870.851228] parent transid verify failed on 18948423397376 wanted
-> 720140 found 720113
-> [85870.851230] BTRFS: failed to read tree root on sdc1
-> [85870.851857] parent transid verify failed on 18948466679808 wanted
-> 720139 found 720091
-> [85870.852482] parent transid verify failed on 18948466679808 wanted
-> 720139 found 720091
-> [85870.852485] BTRFS: failed to read tree root on sdc1
-> [85870.853120] parent transid verify failed on 18948421505024 wanted
-> 720138 found 720122
-> [85870.853731] parent transid verify failed on 18948421505024 wanted
-> 720138 found 720122
-> [85870.853734] BTRFS: failed to read tree root on sdc1
-> [85870.985258] BTRFS: open_ctree failed
-Only transid error,IMHO it should be recoverable.
->
-> mcplex src # btrfs-find-root /dev/sdh1
-> Super think's the tree root is at 18948425080832, chunk root 22179840
-> Well block 31789056 seems great, but generation doesn't match,
-> have=720011, want=720141 level 0
-> [many lines similar to the above repeated a lot but no Generation lines]
->
-Since it is a transid mismatch problem, it is common since 
-btrfs-find-root can't find the root which completely
-matches with the transid in btrfs super block.
 
-In that case, btrfs-find-root is a very good help tool to find the real 
-root but you need to find it by hand(in 3.17.2).
-1. The root node should have the highest level
-2. The higher generation, the higher chance the fs can be recovered 
-using that root.
+Oh, I misunderstood the concept of snapper and my explanation
+was wrong. I apologize you, David and Shriramana.
 
-Or you can try my patch sent sometimes ago:
-https://patchwork.kernel.org/patch/5285521/
+I confused taking automatic pre/post snapshots at YAST and
+something and on deleting snapshots. "snapper delete" doesn't
+take "pre" snapshot.
 
-With this patch, btrfs-find-root should only output the highest level 
-node and sort them with generation,
-which can help you find the best tree root.
+Thanks,
+Satoru
 
-After you got the possible root bytenr(something like "31789056" in your 
-output), with the following patch:
-https://patchwork.kernel.org/patch/5206201/
-
-You can pass the bytenr to --tree-root option.
-If btrfsck reports no or only small error, you can try btrfsck --repair 
---tree-root <bytenr> to fix it.
-
-Thank,
-Qu

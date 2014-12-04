@@ -1,76 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:56000 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932215AbaLDSju (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:39:50 -0500
-Received: by mail-wg0-f52.google.com with SMTP id a1so23362025wgh.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:39:49 -0800 (PST)
+Received: from mail-wg0-f54.google.com ([74.125.82.54]:52981 "EHLO
+	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932845AbaLDSjs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:39:48 -0500
+Received: by mail-wg0-f54.google.com with SMTP id l2so23404409wgh.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:39:47 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/5] Abort in case of device uuid conflict.
-Date: Thu,  4 Dec 2014 19:39:42 +0100
-Message-Id: <1417718382-6753-6-git-send-email-kreijack@inwind.it>
+Subject: [PATCH 3/5] Update 'btrfs device scan' man page.
+Date: Thu,  4 Dec 2014 19:39:40 +0100
+Message-Id: <1417718382-6753-4-git-send-email-kreijack@inwind.it>
 In-Reply-To: <1417718382-6753-1-git-send-email-kreijack@inwind.it>
 References: <1417718382-6753-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a check to ensure that the all devices have differents device uuid.
-In case of conflict the program ends.
-Pay attention that it is still possible to insert two device with
-the same dev uuid via the "btrfs device scan <device>" command.
+This patch documents the '-s' switch and the environment variable
+BTRFS_SKIP_LVM_SNAPSHOT.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- volumes.c | 27 ++++++++++++++++++++++++++-
- 1 file changed, 26 insertions(+), 1 deletion(-)
+ Documentation/btrfs-device.txt | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/volumes.c b/volumes.c
-index 5b007fc..6ff4b4a 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -17,6 +17,7 @@
-  */
- #define _XOPEN_SOURCE 600
- #define __USE_XOPEN2K
-+#define _BSD_SOURCE		/* for minor/major macro */
- #include <stdio.h>
- #include <stdlib.h>
- #include <sys/types.h>
-@@ -139,7 +140,31 @@ static int device_list_add(const char *path,
- 		list_add(&device->dev_list, &fs_devices->devices);
- 		device->fs_devices = fs_devices;
- 	} else if (!device->name || strcmp(device->name, path)) {
--		char *name = strdup(path);
-+		char *name;
-+		struct stat statbuf1;
-+
-+		/*
-+		 * check if the old device and the new device are differents
-+		 * if so abort because we can't say which one is the right one
-+		 */
-+		if (device->name && !stat(device->name, &statbuf1)) {
-+			struct stat statbuf2;
-+
-+			if (stat(path, &statbuf2))
-+				return -ENOENT;
-+
-+			if (major(statbuf1.st_rdev) != major(statbuf2.st_rdev) ||
-+				minor(statbuf1.st_rdev) != minor(statbuf2.st_rdev)) {
-+				fprintf(stderr, "ERROR: two devices (%s and %s) have the same dev uuid !!\n",
-+					device->name, path);
-+				fprintf(stderr, "ERROR: remove one of the device and retry\n");
-+				fprintf(stderr, "ERROR: the program will abort now\n");
-+
-+				exit(100);
-+			}
-+		}
-+
-+		name = strdup(path);
-                 if (!name)
-                         return -ENOMEM;
-                 kfree(device->name);
+diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
+index 46c54b9..ce5d69d 100644
+--- a/Documentation/btrfs-device.txt
++++ b/Documentation/btrfs-device.txt
+@@ -77,7 +77,7 @@ force overwrite of existing filesystem on the given disk(s)
+ *delete* <dev> [<dev>...] <path>::
+ Remove device(s) from a filesystem identified by <path>.
+ 
+-*scan* [(--all-devices|-d)|<device> [<device>...]]::
++*scan* [-s][(--all-devices|-d)|<device> [<device>...]]::
+ Scan devices for a btrfs filesystem.
+ +
+ If one or more devices are passed, these are scanned for a btrfs filesystem. 
+@@ -85,6 +85,9 @@ If no devices are passed, btrfs uses block devices containing btrfs
+ filesystem as listed by blkid.
+ Finally, if '--all-devices' or '-d' is passed, all the devices under /dev are 
+ scanned.
++By default, the lvm snapshots are skipped. If '-s' is passed, these aren't
++skipped anymore. See also BTRFS_SKIP_LVM_SNAPSHOT environmental variable
++in the main btrfs man page.
+ 
+ *ready* <device>::
+ Check device to see if it has all of it's devices in cache for mounting.
+@@ -114,3 +117,4 @@ SEE ALSO
+ `mkfs.btrfs`(8),
+ `btrfs-replace`(8),
+ `btrfs-balance`(8)
++`btrfs` (8)
 -- 
 2.1.3
 

@@ -1,47 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f180.google.com ([209.85.216.180]:44417 "EHLO
-	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754399AbaLDNvH convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 08:51:07 -0500
-Received: by mail-qc0-f180.google.com with SMTP id i8so12884505qcq.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 05:51:06 -0800 (PST)
-MIME-Version: 1.0
-From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Thu, 4 Dec 2014 19:20:46 +0530
-Message-ID: <CAH-HCWUcMofyaE8pBXRM5LTHjWcabz+DKouVbauH=Oh9fv2g4g@mail.gmail.com>
-Subject: btrfs fi show not accepting mount path as arg?
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from victor.provo.novell.com ([137.65.250.26]:49141 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754360AbaLDPbw (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 4 Dec 2014 10:31:52 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: ensure deletion from pinned_chunks list is protected
+Date: Thu,  4 Dec 2014 15:31:01 +0000
+Message-Id: <1417707061-21985-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using SuSE Tumbleweed. Observe:
+The call to remove_extent_mapping() actually deletes the extent map
+from the list it's included in - fs_info->pinned_chunks - and that
+list is protected by the chunk mutex. Therefore make that call
+while holding the chunk mutex and remove the redundant list delete
+call because it's a noop.
 
-[samjnaa:~] sudo btrfs fi show
-root's password:
-Label: 'BRIHATII'  uuid: 57836428-576e-466b-8a28-7961712867ab
-        Total devices 1 FS bytes used 460.19GiB
-        devid    1 size 931.51GiB used 464.04GiB path /dev/sdb1
+This fixes an overlook of the patch titled
+"Btrfs: fix race between fs trimming and block group remove/allocation"
+following the same obvervation from the patch titled
+"Btrfs: fix unprotected deletion from pending_chunks list".
 
-Btrfs v3.17+20141103
-[samjnaa:~] sudo btrfs fi show /dev/sdb1
-Label: 'BRIHATII'  uuid: 57836428-576e-466b-8a28-7961712867ab
-        Total devices 1 FS bytes used 460.16GiB
-        devid    1 size 931.51GiB used 464.04GiB path /dev/sdb1
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-Btrfs v3.17+20141103
-[samjnaa:~] mount | grep btrfs
-/dev/sdb1 on /run/media/samjnaa/BRIHATII type btrfs
-(rw,nosuid,nodev,relatime,space_cache,uhelper=udisks2)
-[samjnaa:~] sudo btrfs fi show /run/media/samjnaa/BRIHATII/
-Btrfs v3.17+20141103
-[samjnaa:~]
-
-But the manpage of btrfs filesystem says that <path> is an acceptable
-argument to show, by which I understand to mean the mounted path of
-the filesystem (or a subvolume thereof?).
-
-Some problem here?
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 030847b..edf32c5 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3185,16 +3185,18 @@ out:
+ 
+ 		spin_unlock(&block_group->lock);
+ 
++		lock_chunks(block_group->fs_info->chunk_root);
+ 		em_tree = &block_group->fs_info->mapping_tree.map_tree;
+ 		write_lock(&em_tree->lock);
+ 		em = lookup_extent_mapping(em_tree, block_group->key.objectid,
+ 					   1);
+ 		BUG_ON(!em); /* logic error, can't happen */
++		/*
++		 * remove_extent_mapping() will delete us from the pinned_chunks
++		 * list, which is protected by the chunk mutex.
++		 */
+ 		remove_extent_mapping(em_tree, em);
+ 		write_unlock(&em_tree->lock);
+-
+-		lock_chunks(block_group->fs_info->chunk_root);
+-		list_del_init(&em->list);
+ 		unlock_chunks(block_group->fs_info->chunk_root);
+ 
+ 		/* once for us and once for the tree */
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+2.1.3
+

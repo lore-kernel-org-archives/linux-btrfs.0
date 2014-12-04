@@ -1,120 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48431 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751890AbaLWDAa convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 22:00:30 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBN2XZJc004224
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 10:33:37 +0800
-Message-ID: <5498D496.7070503@cn.fujitsu.com>
-Date: Tue, 23 Dec 2014 10:33:58 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56423 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753442AbaLDQA4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Dec 2014 11:00:56 -0500
+Date: Thu, 4 Dec 2014 17:00:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RFC] btrfs-progs: Add simple python front end to the
+ search ioctl
+Message-ID: <20141204160056.GF9754@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <5421A23B.3000401@fb.com>
 MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: Enhance btrfs chunk allocation algorithm to
- reduce ENOSPC caused by unbalanced data/metadata allocation.
-References: <1418894805-3439-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1418894805-3439-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5421A23B.3000401@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore the patch, since __btrfs_alloc_chun() has other problems, 
-mainly a mixed calculation on
-on-disk space and logical space.
+On Tue, Sep 23, 2014 at 12:39:23PM -0400, Chris Mason wrote:
+> This is a starting point for a debugfs style python interface using
+> the search ioctl.  For now it can only do one thing, which is to
+> print out all the extents in a file and calculate the compression ratio.
+> 
+> Over time it will grow more features, especially for the kinds of things
+> we might run btrfs-debug-tree to find out.  Expect the usage and output
+> to change dramatically over time (don't hard code to it).
+> 
+> Signed-off-by: Chris Mason <clm@fb.com>
 
-So I will send a patch first fixing the on-disk space and logical space 
-things and implement the half-half
-on-disk space allocation algorithm on the base of that patch.
-
-Thanks,
-Qu
--------- Original Message --------
-Subject: [PATCH v2] btrfs: Enhance btrfs chunk allocation algorithm to 
-reduce ENOSPC caused by unbalanced data/metadata allocation.
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年12月18日 17:26
-> When btrfs allocate a chunk, it will try to alloc up to 1G for data and
-> 256M for metadata, or 10% of all the writeable space if there is enough
-> space for the stripe on device.
->
-> However, when we run out of space, this allocation may cause unbalanced
-> chunk allocation.
-> For example, there are only 1G unallocated space, and request for
-> allocate DATA chunk is sent, and all the space will be allocated as data
-> chunk, making later metadata chunk alloc request unable to handle, which
-> will cause ENOSPC.
-> This is the one of the common complains from end users about why ENOSPC
-> happens but there is still available space.
->
-> This patch will try not to alloc chunk which is more than half of the
-> unallocated space, making the last space more balanced at a small cost
-> of more fragmented chunk at the last 1G.
->
-> Some easy example:
-> Preallocate 17.5G on a 20G empty btrfs fs:
-> [Before]
->   # btrfs fi show /mnt/test
-> Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
-> 	Total devices 1 FS bytes used 17.50GiB
-> 	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
-> All space is allocated. No space later metadata space.
->
-> [After]
->   # btrfs fi show /mnt/test
-> Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
-> 	Total devices 1 FS bytes used 17.50GiB
-> 	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
-> About 230M is still available for later metadata allocation.
->
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> Changelog:
-> v2:
->     Fix a dead judgement which will cause last 16~32M size unavailable.
-> ---
->   fs/btrfs/volumes.c | 17 +++++++++++++++++
->   1 file changed, 17 insertions(+)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 0144790..1cd0256 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4236,6 +4236,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->   	int ret;
->   	u64 max_stripe_size;
->   	u64 max_chunk_size;
-> +	u64 total_avail_space = 0;
->   	u64 stripe_size;
->   	u64 num_bytes;
->   	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
-> @@ -4348,10 +4349,26 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->   		devices_info[ndevs].max_avail = max_avail;
->   		devices_info[ndevs].total_avail = total_avail;
->   		devices_info[ndevs].dev = device;
-> +		total_avail_space += total_avail;
->   		++ndevs;
->   	}
->   
->   	/*
-> +	 * Try not to occupy more than half of the unallocated space.
-> +	 * When run short of space and alloc all the space to
-> +	 * data/metadata will cause ENOSPC to be triggered more easily.
-> +	 *
-> +	 * And since the minimum chunk size is 16M, the half-half will cause
-> +	 * 16M allocated from 20M available space and reset 4M will not be
-> +	 * used ever. In that case(16~32M), allocate all directly.
-> +	 */
-> +	if (total_avail_space < 32 * 1024 * 1024 &&
-> +	    total_avail_space > 16 * 1024 * 1024)
-> +		max_chunk_size = total_avail_space;
-> +	else
-> +		max_chunk_size = min(total_avail_space / 2, max_chunk_size);
-> +
-> +	/*
->   	 * now sort the devices by hole size / available space
->   	 */
->   	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-
+FYI, I'm adding the script to progs git.

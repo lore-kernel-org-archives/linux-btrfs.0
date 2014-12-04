@@ -1,98 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:47831 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750833AbaLCTyS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Dec 2014 14:54:18 -0500
-Date: Wed, 3 Dec 2014 14:54:14 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
-        Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Possible to undo subvol delete?
-Message-ID: <20141203195408.GY17380@hungrycats.org>
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com>
- <20141130042306.GE8916@merlins.org>
- <547C6922.6030206@gmail.com>
- <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
- <20141201184621.5dd7fcd9@natsu>
- <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
- <20141202031403.GZ17395@hungrycats.org>
- <20141202125252.GR12140@twin.jikos.cz>
- <20141202140945.GM32735@carfax.org.uk>
- <20141203182633.GV12140@suse.cz>
+Received: from mail-yh0-f44.google.com ([209.85.213.44]:40381 "EHLO
+	mail-yh0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750833AbaLDBUj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 20:20:39 -0500
+Received: by mail-yh0-f44.google.com with SMTP id c41so7718398yho.17
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Dec 2014 17:20:38 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="1PHmS26pdpOR3Xc0"
-In-Reply-To: <20141203182633.GV12140@suse.cz>
+Date: Wed, 3 Dec 2014 20:20:38 -0500
+Message-ID: <CAPs0BigJG7_Z34iZXdjSQjSkMGi6SOMnbf60_DjYTotrmqYJ8w@mail.gmail.com>
+Subject: If btrfs-find-root doesn't find tree roots is the filesystem lost?
+From: Sandy McArthur Jr <sandymac@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---1PHmS26pdpOR3Xc0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Dec 03, 2014 at 07:26:33PM +0100, David Sterba wrote:
-> On Tue, Dec 02, 2014 at 02:09:45PM +0000, Hugo Mills wrote:
-> > On Tue, Dec 02, 2014 at 01:52:52PM +0100, David Sterba wrote:
-> > > On Mon, Dec 01, 2014 at 10:14:03PM -0500, Zygo Blaxell wrote:
-> > > > > export BTRFS_SUBVOLUME_DELETE_CONFIRM=3D1
-> > > > >=20
-> > > > > Ideas?
-> > > >=20
-> > > > Never rely on aliasing or environment variables for defaults, and n=
-ever
-> > > > change default behavior if your releases are old enough that someone
-> > > > has built scripts on top of them.  ;)
-> > >=20
-> > > Exactly.
-> > >=20
-> > > > If I had to pick the least evil, I'd go for interactive prompting by
-> > > > default (do nothing if the interaction fails, e.g. no TTY) and add a
-> > > > '-f'/'--force' flag to bypass the prompt.
-> > >=20
-> > > This sounds acceptable.
-> > >=20
-> > > > This is consistent with the
-> > > > way lvm2 and mdadm work when presented with data-losing or otherwise
-> > > > questionable commands and parameters.  It will break scripts, but b=
-trfs
-> > > > users should still be expecting that for a while as undesirable def=
-ault
-> > > > behaviors are identified.
-> > >=20
-> > > How is this going to break scripts?
-> >=20
-> >    Any script which relies on being able to delete subvolumes in
-> > unattended operation will now require modification to use -f.
->=20
-> Even with the tty/interactive shell detection in place? Maybe I
-> understood the reference to lvm/mdadm tools wrong. My idea is that the
-> scripts would work as now, no prompts there.
-
-How do we reliably distinguish between "running in a script
-interactively", "running in a script non-interactively", and "running
-interactively"?
-
-I could easily run a script from the command line that creates and
-destroys subvols and runs for days or weeks (in fact, I quite often do).
-It would be a significant productivity hit if an upgrade made it stop
-every night waiting for confirmation from a user who went home hours
-ago and won't be back for hours more.
+I have a many-disk btrfs filesystem that I cannot access after a
+crash. When I run btrfs-find-root I get lots of "Well block [#] seems
+great [...]" lines but zero "Generation: [...]" lines.
+Is this filesystem lost?
 
 
---1PHmS26pdpOR3Xc0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Context info below. I'll upgrade to a 3.17.4 kernel soon and try again
+just in case.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+mcplex src # uname -a
+Linux mcplex 3.16.5-gentoo #1 SMP Mon Dec 1 22:03:39 EST 2014 x86_64
+Intel(R) Core(TM) i7-2600S CPU @ 2.80GHz GenuineIntel GNU/Linux
 
-iEYEARECAAYFAlR/amAACgkQgfmLGlazG5wCMQCghFYZRugMA3jjXdiR9YK2niNV
-yXsAn2syhZPHhKDWs4vdnKjGCxJ2XsI5
-=bjV7
------END PGP SIGNATURE-----
+mcplex src #   btrfs --version
+Btrfs v3.17.2
 
---1PHmS26pdpOR3Xc0--
+mcplex src #   btrfs fi show
+parent transid verify failed on 18948425080832 wanted 720141 found 720122
+parent transid verify failed on 18948425080832 wanted 720141 found 720122
+parent transid verify failed on 18948425080832 wanted 720141 found 720122
+parent transid verify failed on 18948425080832 wanted 720141 found 720122
+Ignoring transid failure
+Couldn't setup extent tree
+Couldn't setup device tree
+Label: 'mcmedia'  uuid: 94b3345e-2589-423c-a228-d569bf94ab58
+Total devices 10 FS bytes used 11.38TiB
+devid    1 size 2.73TiB used 2.27TiB path /dev/sdb1
+devid    2 size 2.73TiB used 2.27TiB path /dev/sdc1
+devid    3 size 2.73TiB used 2.27TiB path /dev/sdd1
+devid    5 size 2.73TiB used 2.27TiB path /dev/sde1
+devid    6 size 2.73TiB used 2.27TiB path /dev/sdf1
+devid    7 size 2.73TiB used 2.27TiB path /dev/sdg1
+devid    8 size 3.64TiB used 3.18TiB path /dev/sdh1
+devid    9 size 3.64TiB used 3.18TiB path /dev/sdi1
+devid   10 size 3.64TiB used 1.40TiB path /dev/sdj1
+devid   11 size 3.64TiB used 1.40TiB path /dev/sdk1
+
+Btrfs v3.17.2
+
+[Note: devid #4 isn't there because it was cleanly removed months ago.]
+
+The relevent dmesg output from attempting to access the filesystem
+[85870.630827] BTRFS info (device sdc1): enabling auto recovery
+[85870.630832] BTRFS info (device sdc1): disk space caching is enabled
+[85870.848351] parent transid verify failed on 18948425080832 wanted
+720141 found 720122
+[85870.848848] parent transid verify failed on 18948425080832 wanted
+720141 found 720122
+[85870.848852] BTRFS: failed to read tree root on sdc1
+[85870.849365] parent transid verify failed on 18948425080832 wanted
+720141 found 720122
+[85870.849974] parent transid verify failed on 18948425080832 wanted
+720141 found 720122
+[85870.849976] BTRFS: failed to read tree root on sdc1
+[85870.850602] parent transid verify failed on 18948423397376 wanted
+720140 found 720113
+[85870.851228] parent transid verify failed on 18948423397376 wanted
+720140 found 720113
+[85870.851230] BTRFS: failed to read tree root on sdc1
+[85870.851857] parent transid verify failed on 18948466679808 wanted
+720139 found 720091
+[85870.852482] parent transid verify failed on 18948466679808 wanted
+720139 found 720091
+[85870.852485] BTRFS: failed to read tree root on sdc1
+[85870.853120] parent transid verify failed on 18948421505024 wanted
+720138 found 720122
+[85870.853731] parent transid verify failed on 18948421505024 wanted
+720138 found 720122
+[85870.853734] BTRFS: failed to read tree root on sdc1
+[85870.985258] BTRFS: open_ctree failed
+
+mcplex src # btrfs-find-root /dev/sdh1
+Super think's the tree root is at 18948425080832, chunk root 22179840
+Well block 31789056 seems great, but generation doesn't match,
+have=720011, want=720141 level 0
+[many lines similar to the above repeated a lot but no Generation lines]
+
+-- 
+Sandy McArthur

@@ -1,59 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:33451 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932215AbaLDSio (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 4 Dec 2014 13:38:44 -0500
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:60193 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932215AbaLDSjq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:39:46 -0500
+Received: by mail-wi0-f179.google.com with SMTP id ex7so28945170wid.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:39:44 -0800 (PST)
+From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: always clear a block group node when removing it from the tree
-Date: Thu,  4 Dec 2014 18:38:30 +0000
-Message-Id: <1417718310-13230-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH V2][BTRFS-PROGS] Don't use LVM snapshot device
+Date: Thu,  4 Dec 2014 19:39:37 +0100
+Message-Id: <1417718382-6753-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Always clear a block group's rbnode after removing it from the rbtree to
-ensure that any tasks that might be holding a reference on the block group
-don't end up accessing stale rbnode left and right child pointers through
-next_block_group().
 
-This is a leftover from the change titled:
-"Btrfs: fix invalid block group rbtree access after bg is removed"
+LVM snapshots are a problem for the btrfs devices management.
+BTRFS assumes that each device have an unique 'device UUID'. 
+A LVM snapshot breaks this assumption.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 3 +++
- 1 file changed, 3 insertions(+)
+This causes a lot of problems if some btrfs device are snapshotted:
+- the set of devices for a btrfs multi-volume filesystem may be mixed
+(i.e. some NON snapshotted device with some snapshotted devices)
+- /proc/mount may returns a wrong device. 
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a7b81b4..c2fc261 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8886,6 +8886,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 				       cache_node);
- 		rb_erase(&block_group->cache_node,
- 			 &info->block_group_cache_tree);
-+		RB_CLEAR_NODE(&block_group->cache_node);
- 		spin_unlock(&info->block_group_cache_lock);
- 
- 		down_write(&block_group->space_info->groups_sem);
-@@ -9143,6 +9144,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 			spin_lock(&info->block_group_cache_lock);
- 			rb_erase(&cache->cache_node,
- 				 &info->block_group_cache_tree);
-+			RB_CLEAR_NODE(&cache->cache_node);
- 			spin_unlock(&info->block_group_cache_lock);
- 			btrfs_put_block_group(cache);
- 			goto error;
-@@ -9284,6 +9286,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 		spin_lock(&root->fs_info->block_group_cache_lock);
- 		rb_erase(&cache->cache_node,
- 			 &root->fs_info->block_group_cache_tree);
-+		RB_CLEAR_NODE(&cache->cache_node);
- 		spin_unlock(&root->fs_info->block_group_cache_lock);
- 		btrfs_put_block_group(cache);
- 		return ret;
+In the mailing list some posts reported these incidents.
+
+This patch allows btrfs to skip LVM snapshot during the device scan 
+phase.
+
+But if you need to consider a LVM snapshot you can set the
+environment variable BTRFS_SKIP_LVM_SNAPSHOT to "no". In this case
+the old behavior is applied.
+
+To check if a device is a LVM snapshot, it is checked the 'udev'
+device property 'DM_UDEV_LOW_PRIORITY_FLAG' . If it is set to 1,
+the device has to be skipped.
+
+As consequence, btrfs now depends also by the libudev.
+
+The last patch is a check to ensure that the devices list 
+doesn't contain two devices with the same dev.uuid. This check is 
+performed *ONLY* when btrfs collects the information about all devices (
+i.e. btrfs device scan <device> is not this case).
+
+This patch addresses the following cases:
+- scanning performed by udev rules
+- "btrfs device scan" performed in the initramdisk
+- btrfs device scan <device>
+- other programs which call btrfs_scan_lblkid()
+
+BR
+G.Baroncelli
+
 -- 
-2.1.3
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 
+Changelog
+V2: moved some chunk from patch#5 to patch#2
+V1: first issue

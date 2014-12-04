@@ -1,80 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:59292 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753837AbaLDOS3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 09:18:29 -0500
-Received: by mail-ie0-f174.google.com with SMTP id rl12so15320520iec.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 06:18:28 -0800 (PST)
-Message-ID: <54806D2F.6000809@gmail.com>
-Date: Thu, 04 Dec 2014 09:18:23 -0500
+Received: from mail-ie0-f173.google.com ([209.85.223.173]:33659 "EHLO
+	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932184AbaLDOW7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 09:22:59 -0500
+Received: by mail-ie0-f173.google.com with SMTP id y20so15883227ier.18
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 06:22:58 -0800 (PST)
+Message-ID: <54806E3D.2020103@gmail.com>
+Date: Thu, 04 Dec 2014 09:22:53 -0500
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
 To: Shriramana Sharma <samjnaa@gmail.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Possible to undo subvol delete?
-References: <CAH-HCWW+C9VSV0vb5D1SfU+5md8=zfrZiAbK4cqFiGFW4bKR4w@mail.gmail.com> <20141130042306.GE8916@merlins.org> <547C6922.6030206@gmail.com> <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com> <20141201184621.5dd7fcd9@natsu> <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com> <20141202031403.GZ17395@hungrycats.org> <CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com> <20141202125610.GS12140@twin.jikos.cz> <CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com> <20141203185311.GX12140@twin.jikos.cz> <CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
-In-Reply-To: <CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms070303080404060108080305"
+Subject: Re: System/single + Metadata/single as leftover cruft of mkfs?
+References: <CAH-HCWUp0yOZRsW2p2kDjw=eeK4_BQ9DgtKCM2MEC4G=9QtM3w@mail.gmail.com> <54806C19.4090503@gmail.com>
+In-Reply-To: <54806C19.4090503@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms020902090509000409000304"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms070303080404060108080305
+--------------ms020902090509000409000304
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-12-04 09:06, Shriramana Sharma wrote:
-> On Thu, Dec 4, 2014 at 12:23 AM, David Sterba <dsterba@suse.cz> wrote:
->> On Tue, Dec 02, 2014 at 08:45:10PM +0530, Shriramana Sharma wrote:
->>> On Tue, Dec 2, 2014 at 6:26 PM, David Sterba <dsterba@suse.cz> wrote:=
-
->>>>
->>>> Works for me without the root password on a Tumbleweed installation
->>>> (without apparmor/selinux).
->>>
->>> Are you then referring to a btrfs partition mounted with user_subvol_=
-rm_allowed?
+On 2014-12-04 09:13, Austin S Hemmelgarn wrote:
+> On 2014-12-04 08:53, Shriramana Sharma wrote:
+>> I observe that whenever I create a BtrFS instance using mkfs.btrfs,
+>> there is always the leftover cruft of two System/Metadata-Single
+>> allocation profiles:
 >>
->> The context was 'does creating a subvolume require root password'.
->
-> Well I don't know about you, but I'm just running an openSUSE 13.2
-> system updated to Tumbleweed here, and even if I just hit "btrfs"
-> enter (no sudo, no btrfs commands) on my regular (non-root) prompt, I
-> am getting:
->
-> $ btrfs
-> Absolute path to 'btrfs' is '/usr/sbin/btrfs', so running it may
-> require superuser privileges (eg. root).
-> $
->
-> ... so what to say of btrfs subvol, whether followed by crea or del!
->
-> On Kubuntu Trusty, doing the above at least gives me the help list of
-> btrfs subcommands and only when I try to execute some actual *action*
-> which requires privileges (like accessing some root-read-only file or
-> such) do I get an error message for not using sudo. For some (wierd)
-> reason SuSE (possibly thinking it's being helpful) is requiring me to
-> use sudo and enter password for even just *running* the btrfs
-> executable. If there were a way to disable this and/or get the Kubuntu
-> behaviour it'd be great (but of course this is not a SuSE forum!).
->
-> What seems weird to me here is that it says it *may* require root
-> privileges but simply drops me back to the prompt -- it doesn't seem
-> to check whether the executable *actually* requires root permission.
-> Granted, if it's under /sbin or /ust/sbin, it probably does, but the
-> wording is quite strange, and the behaviour stranger.
->
-AFAIK, the behavior is something in whatever patched version of whatever =
+>> btrfs fi df /run/media/samjnaa/BRIHATII/
+>> Data, single: total=3D460.01GiB, used=3D458.47GiB
+>> System, DUP: total=3D8.00MiB, used=3D80.00KiB
+>> System, single: total=3D4.00MiB, used=3D0.00B
+>> Metadata, DUP: total=3D1.50GiB, used=3D736.86MiB
+>> Metadata, single: total=3D8.00MiB, used=3D0.00B
+>> GlobalReserve, single: total=3D256.00MiB, used=3D0.00B
+>>
+>> Doing btrfs balance eventually removes these (but since I forgot to do=
 
-shell SuSE uses by default (IIRC, it's bash, but I'm not 100% certain=20
-about that).  I would go looking in /etc/profile and the other system=20
-wide startup files for that shell to see if you could override the=20
-behavior there.  It may also be something SELinux or file permissions=20
-related though.
+>> it *before* copying 400+ G of data to the drive it's still running)
+>> but I don't understand why these have to be created in the first
+>> place? (I just used SuSE Tumbleweed's default mkfs.btrfs without any
+>> -m or -d options.)
+>>
+> SuSE may have an old version of btrfs-progs then (which wouldn't
+> surprise me, it is an 'enterprise' distribution after all), because I
+> haven't seen this on anything since 3.16.
+Correction, this happens even on current versions, I just hadn't noticed =
+
+it.  It also seems to create a data chunk in single mode when data is=20
+set to some other profile.
+>
+> The really interesting thing in this case is that the metadata chunk is=
+
+> 8M, when they are usually 256M.
+>
+> Also, for future reference, you can use the switch -mprofiles=3Dsingle =
+to
+> just balance out those chunks.
+>
 
 
---------------ms070303080404060108080305
+
+--------------ms020902090509000409000304
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -111,8 +101,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjA0MTQxODIz
-WjAjBgkqhkiG9w0BCQQxFgQUskegeWfyEoZaM1Eo/kx+B2VlY10wbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjA0MTQyMjUz
+WjAjBgkqhkiG9w0BCQQxFgQU5oWl2kFeDQmFcMZl+Zw0/X2dtCwwbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -120,10 +110,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAnplMl0bJX1/Jn02S6FnBXf4nN1L8
-TnTAiC0ThboXBTgxrfNsrHrZjX7IYpSDHwWaaJWxgc9+njRDLi88MjnNVXAzt/8mKyz3Pwed
-1dxPenqu/+ST8vfCBtgUBaZ/gbjFgAp+TXrAsk1Mj62fnAevB+dt6ThC2f3SDvyT4ZWI6whA
-m4YW7dcHDYZOeyxx7TfHV7srDf9nkfsfhgh3H26SnD/6V+SlFk0vXWL8XiTH+UXvmEzmPo1w
-X1rUfRJJpu251curTTsaiKruT8YWnStZLJPtzVkcijmHYm8yYgup6L160qkiUsN2tr0p5IP3
-8x+1q0i/IuJ81EO+B/+/NXaDjwAAAAAAAA==
---------------ms070303080404060108080305--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEApP4pqQWczRtPX3i82meitkOTakof
+jokWR5jtss/vPmItLHesOneHMwBQ87Y6XYjnoj5YL3Wln/iRNaD6OfB35QNHGjwjzkbn/476
++F8uTGm7naP6K4RLdq78M9e4kor77zdedvkBcWtwFH69K6HlHcVSGlFlzNYpuQGcIqTFAW/N
+YxrLEhi+QSU3KyqZ6PxeV4EPSSpkPf+0f0ZYGVsW3dJuq8Pit536kItwobOBzShKmE/CXHsN
+WL01MjLBEoTPu1+jv+g3OlNOU2etghxVu4R5ZrTuovrHRtYHU1Hacug26s/CrrHnQwkPgewo
+KZ+KBdaHF8rv3hqzYDnArVWzdAAAAAAAAA==
+--------------ms020902090509000409000304--

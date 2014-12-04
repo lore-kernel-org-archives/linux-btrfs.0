@@ -1,43 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f180.google.com ([209.85.214.180]:44003 "EHLO
-	mail-ob0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751082AbaLSRAG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 12:00:06 -0500
-Received: by mail-ob0-f180.google.com with SMTP id wp4so13285091obc.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 09:00:06 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:4818 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752558AbaLDCys (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Dec 2014 21:54:48 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB42sQIk003322
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Dec 2014 10:54:26 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/3] Add repair function for btree and missing inode
+Date: Thu, 4 Dec 2014 10:52:42 +0800
+Message-ID: <1417661565-14595-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20141219134810.GH27601@twin.jikos.cz>
-References: <4A7D957D-FE36-452D-B6DB-12117FF75AB9@gmail.com>
-	<719D86DC-BC2F-4A9C-9D17-F90AFFF3FFC2@gmail.com>
-	<5493C450.8060204@cn.fujitsu.com>
-	<20141219134810.GH27601@twin.jikos.cz>
-Date: Fri, 19 Dec 2014 17:00:06 +0000
-Message-ID: <CALOYprWtWrfy4K7MMuF-j+VCA6_HzkD1GEp6Z+u7tJhLDWFojw@mail.gmail.com>
-Subject: Re: btrfs-progs: integration-20141218 possible corruption test regression
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: David Sterba <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        WorMzy Tykashi <wormzy.tykashi@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19 December 2014 at 13:48, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Dec 19, 2014 at 02:23:12PM +0800, Qu Wenruo wrote:
->> In fact, it's not a regression.
->>
->> The 013 testcase is a special case that uses a script to corrupt the
->> image and then do the btrfsck test.
->>
->> There is a patch before the commit, to allow btrfs-progs test script
->> call corruption script.
->> But since there is still some discussion about the corruption script and
->> maybe later verify script,
->> the previous patch is not picked.
->
-> Yes, I'm waiting for final version of the patch, but wanted to add all
-> test images that were available.
+When a leaf/node is corrupted in fs root, btrfsck will only complain
+like "Check tree block failed, wanted=XXX, have=XXX" and skip wrong
+leaf.
+Such case will cause a lot of err, one of these err will mainly be
+I_ERR_NO_INODE_ITEM.
 
-Thanks for the clarification, Qu, David. I've disabled test 013 in my
-local builds for the mean time.
+This patchset will info user which leaf of the tree is corrupted and try
+it best to recovery the missing inode.
+Although this is just a basis for the large use case of
+corrupted-leaf/node repair, it is already working if the corrupted leaf
+contains no extent data, not to mention the normal inode_item missing
+case.
+
+TODO: 
+1. Cooperate with extent tree check/recover
+   Current extent tree check will not record EXTENT_DATA extents, which
+   can be used to improve the inode type recovery.
+
+   Also extent tree repair can't handle EXTENT_DATA extents if the key
+   can't be find and cause btrfsck exit.
+
+   Need to cooperate with it to handle leaf recover better.
+
+2. Add file extent recovery function
+   In some case, even we recover the inode item, its file extents can
+   still discount.
+   To provide a fully repair making it pass btrfsck, we still need to
+   repair such case.
+
+3. Enhance inode_record
+   Need a better inode_record to provide search function about
+   inode_ref/dir_index/dir_item for given parent or child inode number,
+   to help inode type detection and extent<->inode relation mapping for
+   EXTENT_DATA.
+
+Qu Wenruo (3):
+  btrfs-progs: record and report leaf/node corruption in fs/subvol tree
+  btrfs-progs:fsck: Recover btree with some corrupted leaf/node.
+  btrfs-progs: Add inode item rebuild function.
+
+ cmds-check.c | 328 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ ctree.c      |   3 +
+ ctree.h      |   3 +
+ inode.c      |   6 +-
+ 4 files changed, 323 insertions(+), 17 deletions(-)
+
+-- 
+2.1.3
+

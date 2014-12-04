@@ -1,58 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36-i2.italiaonline.it ([212.48.25.210]:54104 "EHLO
-	smtp-36.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932455AbaLDSck (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:32:40 -0500
-Message-ID: <5480A8C6.8010201@inwind.it>
-Date: Thu, 04 Dec 2014 19:32:38 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Hugo Mills <hugo-lkml@carfax.org.uk>
-Subject: Re: System/single + Metadata/single as leftover cruft of mkfs?
-References: <CAH-HCWUp0yOZRsW2p2kDjw=eeK4_BQ9DgtKCM2MEC4G=9QtM3w@mail.gmail.com>
-In-Reply-To: <CAH-HCWUp0yOZRsW2p2kDjw=eeK4_BQ9DgtKCM2MEC4G=9QtM3w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:33451 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932215AbaLDSio (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 4 Dec 2014 13:38:44 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: always clear a block group node when removing it from the tree
+Date: Thu,  4 Dec 2014 18:38:30 +0000
+Message-Id: <1417718310-13230-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/04/2014 02:53 PM, Shriramana Sharma wrote:
-> I observe that whenever I create a BtrFS instance using mkfs.btrfs,
-> there is always the leftover cruft of two System/Metadata-Single
-> allocation profiles:
-> 
-> btrfs fi df /run/media/samjnaa/BRIHATII/
-> Data, single: total=460.01GiB, used=458.47GiB
-> System, DUP: total=8.00MiB, used=80.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, DUP: total=1.50GiB, used=736.86MiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=256.00MiB, used=0.00B
+Always clear a block group's rbnode after removing it from the rbtree to
+ensure that any tasks that might be holding a reference on the block group
+don't end up accessing stale rbnode left and right child pointers through
+next_block_group().
 
-Time, to time this question returns:
-this was a explanation from Hugo Mills
-	http://permalink.gmane.org/gmane.comp.file-systems.btrfs/38205
+This is a leftover from the change titled:
+"Btrfs: fix invalid block group rbtree access after bg is removed"
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-: I believe it comes from mkfs creating a trivial basic filesystem
-: (with the single profiles), and then setting enough flags on it that the
-: kernel can bootstrap it with the desired chunks in it -- but I may be
-: wrong about that.
-
-
-> 
-> Doing btrfs balance eventually removes these (but since I forgot to do
-> it *before* copying 400+ G of data to the drive it's still running)
-> but I don't understand why these have to be created in the first
-> place? (I just used SuSE Tumbleweed's default mkfs.btrfs without any
-> -m or -d options.)
-> 
-
-
-
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a7b81b4..c2fc261 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8886,6 +8886,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 				       cache_node);
+ 		rb_erase(&block_group->cache_node,
+ 			 &info->block_group_cache_tree);
++		RB_CLEAR_NODE(&block_group->cache_node);
+ 		spin_unlock(&info->block_group_cache_lock);
+ 
+ 		down_write(&block_group->space_info->groups_sem);
+@@ -9143,6 +9144,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 			spin_lock(&info->block_group_cache_lock);
+ 			rb_erase(&cache->cache_node,
+ 				 &info->block_group_cache_tree);
++			RB_CLEAR_NODE(&cache->cache_node);
+ 			spin_unlock(&info->block_group_cache_lock);
+ 			btrfs_put_block_group(cache);
+ 			goto error;
+@@ -9284,6 +9286,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 		spin_lock(&root->fs_info->block_group_cache_lock);
+ 		rb_erase(&cache->cache_node,
+ 			 &root->fs_info->block_group_cache_tree);
++		RB_CLEAR_NODE(&cache->cache_node);
+ 		spin_unlock(&root->fs_info->block_group_cache_lock);
+ 		btrfs_put_block_group(cache);
+ 		return ret;
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+2.1.3
+

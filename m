@@ -1,55 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:45482 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932455AbaLDSYn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:24:43 -0500
-Received: by mail-wi0-f171.google.com with SMTP id bs8so35590396wib.16
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:24:42 -0800 (PST)
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:45001 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932640AbaLDSYo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:24:44 -0500
+Received: by mail-wg0-f47.google.com with SMTP id n12so23573932wgh.34
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:24:43 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH][BTRFS-PROGS] Skip LVM snapshot device
-Date: Thu,  4 Dec 2014 19:24:25 +0100
-Message-Id: <1417717470-6298-1-git-send-email-kreijack@inwind.it>
+Cc: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 3/5] Update 'btrfs device scan' man page.
+Date: Thu,  4 Dec 2014 19:24:28 +0100
+Message-Id: <1417717470-6298-4-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1417717470-6298-1-git-send-email-kreijack@inwind.it>
+References: <1417717470-6298-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patch documents the '-s' switch and the environment variable
+BTRFS_SKIP_LVM_SNAPSHOT.
 
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ Documentation/btrfs-device.txt | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-LVM snapshots are a problem for the btrfs devices management.
-BTRFS assumes that each device have an unique 'device UUID'. 
-A LVM snapshot breaks this assumption.
-
-This causes a lot of problems if some btrfs device are snapshotted:
-- the set of devices for a btrfs multi-volume filesystem may be mixed
-(i.e. some NON snapshotted device with some snapshotted devices)
-- /proc/mount may returns a wrong device. 
-
-In the mailing list some posts reported these incidents.
-
-This patch allows btrfs to skip LVM snapshot during the device scan 
-phase.
-
-But if you need to consider a LVM snapshot you can set the
-environment variable BTRFS_SKIP_LVM_SNAPSHOT to "no". In this case
-the old behavior is applied.
-
-To check if a device is a LVM snapshot, it is checked the 'udev'
-device property 'DM_UDEV_LOW_PRIORITY_FLAG' . If it is set to 1,
-the device has to be skipped.
-
-As consequence, btrfs now depends also by the libudev.
-
-The last patch is a check to ensure that the devices list 
-doesn't contain two devices with the same dev.uuid. This check is 
-performed *ONLY* when btrfs collects the information about all devices (
-i.e. btrfs device scan <device> is not this case).
-
-This patch addresses the following cases:
-- scanning performed by udev rules
-- "btrfs device scan" performed in the initramdisk
-- btrfs device scan <device>
-- other programs which call btrfs_scan_lblkid()
-
-BR
-G.Baroncelli
+diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
+index 46c54b9..ce5d69d 100644
+--- a/Documentation/btrfs-device.txt
++++ b/Documentation/btrfs-device.txt
+@@ -77,7 +77,7 @@ force overwrite of existing filesystem on the given disk(s)
+ *delete* <dev> [<dev>...] <path>::
+ Remove device(s) from a filesystem identified by <path>.
+ 
+-*scan* [(--all-devices|-d)|<device> [<device>...]]::
++*scan* [-s][(--all-devices|-d)|<device> [<device>...]]::
+ Scan devices for a btrfs filesystem.
+ +
+ If one or more devices are passed, these are scanned for a btrfs filesystem. 
+@@ -85,6 +85,9 @@ If no devices are passed, btrfs uses block devices containing btrfs
+ filesystem as listed by blkid.
+ Finally, if '--all-devices' or '-d' is passed, all the devices under /dev are 
+ scanned.
++By default, the lvm snapshots are skipped. If '-s' is passed, these aren't
++skipped anymore. See also BTRFS_SKIP_LVM_SNAPSHOT environmental variable
++in the main btrfs man page.
+ 
+ *ready* <device>::
+ Check device to see if it has all of it's devices in cache for mounting.
+@@ -114,3 +117,4 @@ SEE ALSO
+ `mkfs.btrfs`(8),
+ `btrfs-replace`(8),
+ `btrfs-balance`(8)
++`btrfs` (8)
+-- 
+2.1.3
 

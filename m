@@ -1,72 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-09v.sys.comcast.net ([96.114.154.168]:39518 "EHLO
-	resqmta-po-09v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751532AbaLDSRu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Dec 2014 13:17:50 -0500
-Message-ID: <5480A54C.6050900@pobox.com>
-Date: Thu, 04 Dec 2014 10:17:48 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Shriramana Sharma <samjnaa@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: System/single + Metadata/single as leftover cruft of mkfs?
-References: <CAH-HCWUp0yOZRsW2p2kDjw=eeK4_BQ9DgtKCM2MEC4G=9QtM3w@mail.gmail.com> <54806C19.4090503@gmail.com> <CAH-HCWXXerTeeXGoQhpj-eXO78H45f6rDje4Oh2CDuZDS8-cww@mail.gmail.com>
-In-Reply-To: <CAH-HCWXXerTeeXGoQhpj-eXO78H45f6rDje4Oh2CDuZDS8-cww@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:45482 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932455AbaLDSYn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 13:24:43 -0500
+Received: by mail-wi0-f171.google.com with SMTP id bs8so35590396wib.16
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Dec 2014 10:24:42 -0800 (PST)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH][BTRFS-PROGS] Skip LVM snapshot device
+Date: Thu,  4 Dec 2014 19:24:25 +0100
+Message-Id: <1417717470-6298-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I _think_ the "extra" single entries are the entries that deal with the 
-disk/partition itself and therefore can not ever be distributed.
 
-So like the BTRFS signatures that say "this is the third disk of this 
-array" (as opposed to the first, second, or fourth etc) and "this is 
-where my superblocks are" or whatever. Well that data is in its own 
-small space that needs to be accounted for.
 
-So the per-disk copy of the filesystem layout information (all the UUIDS 
-of all the disks) and the per-disk copy of the disk specific information 
-need to be somewhere, and they are naturally "single" since they are 
-per-disk.
+LVM snapshots are a problem for the btrfs devices management.
+BTRFS assumes that each device have an unique 'device UUID'. 
+A LVM snapshot breaks this assumption.
 
-Compare to the LVM or MDADM signatures written to/about each element 
-those systems control.
+This causes a lot of problems if some btrfs device are snapshotted:
+- the set of devices for a btrfs multi-volume filesystem may be mixed
+(i.e. some NON snapshotted device with some snapshotted devices)
+- /proc/mount may returns a wrong device. 
 
-If those disappeared, or got stripped off onto other drives then 
-not-amusing things would happen.
+In the mailing list some posts reported these incidents.
 
-On 12/04/2014 06:25 AM, Shriramana Sharma wrote:
-> On Thu, Dec 4, 2014 at 7:43 PM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> SuSE may have an old version of btrfs-progs then (which wouldn't surprise
->> me, it is an 'enterprise' distribution after all), because I haven't seen
->> this on anything since 3.16.
->
-> Well OK I kinda like the "old" name SuSE since that was the name I was
-> using back when I was on 9.3, but actually I'm running openSUSE
-> Tumbleweed. See:
->
-> $ btrfs --version
-> Btrfs v3.17+20141103
->
-> I suppose Tumbleweed should be short and clear enough for my future usage.
->
->> Also, for future reference, you can use the switch -mprofiles=single to just
->> balance out those chunks.
->
-> Wow, thanks, that returned quickly. (Thankfully I did btrfs bal from a
-> separate terminal can rather than ^C.)
->
-> BTW I thought you had unintentionally (for brevity) omitted the
-> -sprofiles=single and I gave it but it complained saying:
->
-> Refusing to explicitly operate on system chunks.
-> Pass --force if you really want to do that.
->
-> So I did give --force. (Is it the same as -f?)
->
-> I hope that was OK?
->
+This patch allows btrfs to skip LVM snapshot during the device scan 
+phase.
+
+But if you need to consider a LVM snapshot you can set the
+environment variable BTRFS_SKIP_LVM_SNAPSHOT to "no". In this case
+the old behavior is applied.
+
+To check if a device is a LVM snapshot, it is checked the 'udev'
+device property 'DM_UDEV_LOW_PRIORITY_FLAG' . If it is set to 1,
+the device has to be skipped.
+
+As consequence, btrfs now depends also by the libudev.
+
+The last patch is a check to ensure that the devices list 
+doesn't contain two devices with the same dev.uuid. This check is 
+performed *ONLY* when btrfs collects the information about all devices (
+i.e. btrfs device scan <device> is not this case).
+
+This patch addresses the following cases:
+- scanning performed by udev rules
+- "btrfs device scan" performed in the initramdisk
+- btrfs device scan <device>
+- other programs which call btrfs_scan_lblkid()
+
+BR
+G.Baroncelli
 

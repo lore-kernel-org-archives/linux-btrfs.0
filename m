@@ -1,24 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58669 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751583AbaLDRlu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Dec 2014 12:41:50 -0500
-Date: Thu, 4 Dec 2014 18:41:50 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs-progs: Add inode item rebuild function.
-Message-ID: <20141204174150.GJ9754@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1417661565-14595-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1417661565-14595-4-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:20897 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751620AbaLEAWh convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 19:22:37 -0500
+Message-ID: <5480FACB.7090601@cn.fujitsu.com>
+Date: Fri, 5 Dec 2014 08:22:35 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1417661565-14595-4-git-send-email-quwenruo@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/3] btrfs-progs:fsck: Recover btree with some corrupted
+ leaf/node.
+References: <1417661565-14595-1-git-send-email-quwenruo@cn.fujitsu.com> <1417661565-14595-3-git-send-email-quwenruo@cn.fujitsu.com> <20141204173546.GI9754@twin.jikos.cz>
+In-Reply-To: <20141204173546.GI9754@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 04, 2014 at 10:52:45AM +0800, Qu Wenruo wrote:
-> +		namelen = (u16)log10(rec->ino) + 1;
 
-Please get rid of log10 and count the digits without the math library.
+-------- Original Message --------
+Subject: Re: [PATCH 2/3] btrfs-progs:fsck: Recover btree with some 
+corrupted leaf/node.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年12月05日 01:35
+> On Thu, Dec 04, 2014 at 10:52:44AM +0800, Qu Wenruo wrote:
+>> +	trans = btrfs_start_transaction(root, -1);
+> What does '-1' mean here? I've never seen this before, just curious.
+I'am not completely sure, but when deleting item, num_blocks will be 
+minus or still 1?
+
+Thanks,
+Qu

@@ -1,40 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f50.google.com ([209.85.216.50]:42440 "EHLO
-	mail-qa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751068AbaLESLE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 13:11:04 -0500
-Received: by mail-qa0-f50.google.com with SMTP id w8so775248qac.23
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Dec 2014 10:11:03 -0800 (PST)
+Received: from smtp-36-i2.italiaonline.it ([212.48.25.210]:43894 "EHLO
+	smtp-36.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750862AbaLESP5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 13:15:57 -0500
+Message-ID: <5481F657.8090307@inwind.it>
+Date: Fri, 05 Dec 2014 19:15:51 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <CAH-HCWVAuiAsL_XNBH_GM1zB38KqOZfjMP3ORz3=XOjADu1t1w@mail.gmail.com>
-References: <547C6922.6030206@gmail.com>
-	<CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
-	<20141201184621.5dd7fcd9@natsu>
-	<CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
-	<20141202031403.GZ17395@hungrycats.org>
-	<CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
-	<20141202125610.GS12140@twin.jikos.cz>
-	<CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
-	<20141203185311.GX12140@twin.jikos.cz>
-	<CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
-	<20141205174601.GM9754@twin.jikos.cz>
-	<CAH-HCWVAuiAsL_XNBH_GM1zB38KqOZfjMP3ORz3=XOjADu1t1w@mail.gmail.com>
-Date: Fri, 5 Dec 2014 23:41:01 +0530
-Message-ID: <CAH-HCWVKKHs3EpxucCbF-quii3hciBfrfTyVaEJOYn5o5MLAeg@mail.gmail.com>
-Subject: Re: Possible to undo subvol delete?
-From: Shriramana Sharma <samjnaa@gmail.com>
-To: dsterba@suse.cz, Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: dsterba@suse.cz, Dimitri John Ledkov <xnox@debian.org>,
+        Chris Mason <clm@fb.com>, cwillu <cwillu@cwillu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Zygo Blaxell <zblaxell@furryterror.org>
+Subject: Re: [RFC][PATCH v2] mount.btrfs helper
+References: <547B5724.1060507@libero.it> <CANBHLUh9nXu4-wexFJimBvL-FtwPXQ7MeURi3COskJf-YJqGQA@mail.gmail.com> <CAE5mzvhOAi_Y2icLHOiUzG121ZALLZCTYhpjY8mkio3AyHrECA@mail.gmail.com> <CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com> <1417793566.21214.11@mail.thefacebook.com> <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com> <20141205164144.GK9754@suse.cz>
+In-Reply-To: <20141205164144.GK9754@suse.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK so from https://forums.opensuse.org/showthread.php/440209-ifconfig
-I learnt that it's because /sbin, /usr/sbin etc is not on the normal
-user's path on openSUSE (they are, on Kubuntu). Adding them to PATH
-fixes the situation. (I wasn't even able to do ifconfig without giving
-the password. No idea why this is the openSUSE default...)
+On 12/05/2014 05:41 PM, David Sterba wrote:
+> We're looking
+> for good reasons to justify the existence of the helper, but this is
+> still not enough IMHO. I can see the convenience to do it automatically,
+> but this assumes no udev available which is probably rare these days.
 
+I have the following reasons to support a mount.btrfs helper:
+1) it is in a good point to check that everything is ok (see the thread
+related LVM snapshot, due to a dev.uuid conflicts), 
+2) it is in a good point to issue a good error explanation (missing 
+device....)
+3) it may handle case like "degraded" mode, where the filesystem is not
+fully functional but even as degraded have "some" functionals..
+
+
+On 12/05/2014 04:32 PM, Chris Mason wrote:
+> I definitely agree that assembling the filesystem from userland is
+> somewhat awkward, and people that don't want initrds end up needing
+> to jump through hoops to get things done.
+> 
+> But, the tools we have to avoid the hoops are initrds and udev, and
+> I'd much rather spend time fixing filesystem bugs than recreating
+> those tools.  If people are having trouble with udev, or having
+> trouble with tools in the initrd, lets contribute fixes to those
+> projects instead.
+
+Chris, I am bit confused by your answer: mount.btrfs helper is not 
+a solution for the initrd-less system (whom I am not a fan 
+anymore [*]). And I don't think that the awkward-ness of btrfs is due to
+udev deficiencies.
+Btrfs is new because acts both as filesystem and as dm/md layer. We 
+know that there are very good reasons to do that. But also it
+highlights new problems whom the old tools may be not a right solution.
+
+See this from another point of view: md/dm have specific tools to
+assemble the disks. So why btrfs wouldn't need a specific tool?
+
+BR
+G.Baroncelli
+
+
+[*] I hope to not start another flame-war. I am not against to the 
+initrd-less system; but if you want a multidevice filesystem (with 
+or without md/dm) simply you cannot rely to the kernel only (IMHO).
 
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

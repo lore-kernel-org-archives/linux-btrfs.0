@@ -1,131 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:38488 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751265AbaLENa1 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 08:30:27 -0500
-Received: from mfilter13-d.gandi.net (mfilter13-d.gandi.net [217.70.178.141])
-	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 3574B41C07A
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Dec 2014 14:30:25 +0100 (CET)
-Received: from relay5-d.mail.gandi.net ([217.70.183.197])
-	by mfilter13-d.gandi.net (mfilter13-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id rjzzPADW07ky for <linux-btrfs@vger.kernel.org>;
-	Fri,  5 Dec 2014 14:30:23 +0100 (CET)
-Received: from vajra.localnet (port-mbouisso.univ-montp2.fr [162.38.105.117])
-	(Authenticated sender: swami@petaramesh.org)
-	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 96FC041C06D
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Dec 2014 14:30:23 +0100 (CET)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
-Subject: More and more kernel oopses in 3.17.4
-Date: Fri, 05 Dec 2014 14:30:22 +0100
-Message-ID: <13252483.6C90zYvgUF@vajra>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57917 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751085AbaLEPdA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 5 Dec 2014 10:33:00 -0500
+Date: Fri, 5 Dec 2014 10:32:46 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [RFC][PATCH v2] mount.btrfs helper
+To: Dimitri John Ledkov <xnox@debian.org>
+CC: cwillu <cwillu@cwillu.com>, "kreijack@inwind.it" <kreijack@inwind.it>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>,
+        Zygo Blaxell <zblaxell@furryterror.org>
+Message-ID: <1417793566.21214.11@mail.thefacebook.com>
+In-Reply-To: <CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com>
+References: <547B5724.1060507@libero.it>
+	<CANBHLUh9nXu4-wexFJimBvL-FtwPXQ7MeURi3COskJf-YJqGQA@mail.gmail.com>
+	<CAE5mzvhOAi_Y2icLHOiUzG121ZALLZCTYhpjY8mkio3AyHrECA@mail.gmail.com>
+	<CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fedora Core21 with 3.17.4-301.fc21.x86_64
+On Sun, Nov 30, 2014 at 5:57 PM, Dimitri John Ledkov <xnox@debian.org> 
+wrote:
+> On 30 November 2014 at 22:31, cwillu <cwillu@cwillu.com> wrote:
+>> 
+>>  In ubuntu, the initfs runs a btrfs dev scan, which should catch
+>>  anything that would be missed there.
+>> 
+> 
+> I'm sorry, udev rule(s) is not sufficient in the initramfs-less case,
+> as outlined.
+> 
+> In case of booting with initramfs, indeed, both Debian & Ubuntu
+> include snippets there to run btrfs scan.
 
-Now BTRFS sux bigtime :-/
+In an initramfs-less system, the root filesystem mount is done by the 
+kernel, without calling any mount.btrfs.  The mount helper has all the 
+same problems that calling btrfs dev scan does, it's just being run by 
+mount.
 
-And my syslog is full of :
+I definitely agree that assembling the filesystem from userland is 
+somewhat awkward, and people that don't want initrds end up needing to 
+jump through hoops to get things done.
 
-éc. 05 14:28:11 vajra kernel: ------------[ cut here ]------------
-déc. 05 14:28:11 vajra kernel: WARNING: CPU: 3 PID: 613 at fs/btrfs/delayed-
-inode.c:1410 btrfs_assert_delayed_root_empty+0x39/0x40 [btrfs]()
-déc. 05 14:28:11 vajra kernel: Modules linked in: vfat fat uas usb_storage ccm 
-rfcomm ip6t_rpfilter ip6t_REJECT xt_conntrack ebtable_nat ebtable_broute bridge 
-stp llc ebtabl
-déc. 05 14:28:11 vajra kernel:  snd_seq_device serio_raw memstick snd_pcm 
-cfg80211 parport_pc rfkill parport wmi i2c_i801 snd_timer snd hp_accel 
-lis3lv02d tpm_tis hp_wireles
-déc. 05 14:28:11 vajra kernel: CPU: 3 PID: 613 Comm: btrfs-transacti Tainted: 
-G        W  OE  3.17.4-301.fc21.x86_64 #1
-déc. 05 14:28:11 vajra kernel: Hardware name: Hewlett-Packard HP EliteBook 820 
-G1/1991, BIOS L71 Ver. 01.12 06/25/2014
-déc. 05 14:28:11 vajra kernel:  0000000000000000 000000002dda6cf7 
-ffff88022df6bdb8 ffffffff8173f929
-déc. 05 14:28:11 vajra kernel:  0000000000000000 ffff88022df6bdf0 ffffffff810970ad 
-ffff88013f6378c0
-déc. 05 14:28:11 vajra kernel:  0000000000000000 ffff88003672f000 ffff8801f7014b40 
-0000000000000000
-déc. 05 14:28:11 vajra kernel: Call Trace:
-déc. 05 14:28:11 vajra kernel:  [<ffffffff8173f929>] dump_stack+0x45/0x56
-déc. 05 14:28:11 vajra kernel:  [<ffffffff810970ad>] 
-warn_slowpath_common+0x7d/0xa0
-déc. 05 14:28:11 vajra kernel:  [<ffffffff810971da>] warn_slowpath_null+0x1a/0x20
-déc. 05 14:28:11 vajra kernel:  [<ffffffffa0300169>] 
-btrfs_assert_delayed_root_empty+0x39/0x40 [btrfs]
-déc. 05 14:28:11 vajra kernel:  [<ffffffffa02ab5e8>] 
-btrfs_commit_transaction+0x388/0x950 [btrfs]
-déc. 05 14:28:11 vajra kernel:  [<ffffffffa02a72b5>] 
-transaction_kthread+0x245/0x260 [btrfs]
-déc. 05 14:28:11 vajra kernel:  [<ffffffffa02a7070>] ? 
-btrfs_cleanup_transaction+0x550/0x550 [btrfs]
-déc. 05 14:28:11 vajra kernel:  [<ffffffff810b52fa>] kthread+0xea/0x100
-déc. 05 14:28:11 vajra kernel:  [<ffffffff810b5210>] ? 
-kthread_create_on_node+0x1a0/0x1a0
-déc. 05 14:28:11 vajra kernel:  [<ffffffff81746a3c>] ret_from_fork+0x7c/0xb0
-déc. 05 14:28:11 vajra kernel:  [<ffffffff810b5210>] ? 
-kthread_create_on_node+0x1a0/0x1a0
-déc. 05 14:28:11 vajra kernel: ---[ end trace 6138896e6248d2bf ]---
-déc. 05 14:28:12 vajra abrt-dump-journal-oops[1102]: abrt-dump-journal-oops: 
-Found oopses: 1
-déc. 05 14:28:12 vajra abrt-dump-journal-oops[1102]: abrt-dump-journal-oops: 
-Creating problem directories
-déc. 05 14:28:12 vajra abrt-server[11566]: Deleting problem directory 
-oops-2014-12-05-14:28:12-1102-0 (dup of oops-2014-12-01-12:12:02-1332-0)
-déc. 05 14:28:13 vajra abrt-dump-journal-oops[1102]: Reported 1 kernel oopses 
-to Abrt
-déc. 05 14:28:41 vajra kernel: ------------[ cut here ]------------
-déc. 05 14:28:41 vajra kernel: WARNING: CPU: 3 PID: 613 at fs/btrfs/delayed-
-inode.c:1410 btrfs_assert_delayed_root_empty+0x39/0x40 [btrfs]()
-déc. 05 14:28:41 vajra kernel: Modules linked in: vfat fat uas usb_storage ccm 
-rfcomm ip6t_rpfilter ip6t_REJECT xt_conntrack ebtable_nat ebtable_broute bridge 
-stp llc ebtabl
-déc. 05 14:28:41 vajra kernel:  snd_seq_device serio_raw memstick snd_pcm 
-cfg80211 parport_pc rfkill parport wmi i2c_i801 snd_timer snd hp_accel 
-lis3lv02d tpm_tis hp_wireles
-déc. 05 14:28:41 vajra kernel: CPU: 3 PID: 613 Comm: btrfs-transacti Tainted: 
-G        W  OE  3.17.4-301.fc21.x86_64 #1
-déc. 05 14:28:41 vajra kernel: Hardware name: Hewlett-Packard HP EliteBook 820 
-G1/1991, BIOS L71 Ver. 01.12 06/25/2014
-déc. 05 14:28:41 vajra kernel:  0000000000000000 000000002dda6cf7 
-ffff88022df6bdb8 ffffffff8173f929
-déc. 05 14:28:41 vajra kernel:  0000000000000000 ffff88022df6bdf0 ffffffff810970ad 
-ffff88008364e0a0
-déc. 05 14:28:41 vajra kernel:  0000000000000000 ffff88003672f000 ffff8801f7014c30 
-0000000000000000
-déc. 05 14:28:41 vajra kernel: Call Trace:
-déc. 05 14:28:41 vajra kernel:  [<ffffffff8173f929>] dump_stack+0x45/0x56
-déc. 05 14:28:41 vajra kernel:  [<ffffffff810970ad>] 
-warn_slowpath_common+0x7d/0xa0
-déc. 05 14:28:41 vajra kernel:  [<ffffffff810971da>] warn_slowpath_null+0x1a/0x20
-déc. 05 14:28:41 vajra kernel:  [<ffffffffa0300169>] 
-btrfs_assert_delayed_root_empty+0x39/0x40 [btrfs]
-déc. 05 14:28:41 vajra kernel:  [<ffffffffa02ab5e8>] 
-btrfs_commit_transaction+0x388/0x950 [btrfs]
-déc. 05 14:28:41 vajra kernel:  [<ffffffffa02a72b5>] 
-transaction_kthread+0x245/0x260 [btrfs]
-déc. 05 14:28:41 vajra kernel:  [<ffffffffa02a7070>] ? 
-btrfs_cleanup_transaction+0x550/0x550 [btrfs]
-déc. 05 14:28:41 vajra kernel:  [<ffffffff810b52fa>] kthread+0xea/0x100
-déc. 05 14:28:41 vajra kernel:  [<ffffffff810b5210>] ? 
-kthread_create_on_node+0x1a0/0x1a0
-déc. 05 14:28:41 vajra kernel:  [<ffffffff81746a3c>] ret_from_fork+0x7c/0xb0
-déc. 05 14:28:41 vajra kernel:  [<ffffffff810b5210>] ? 
-kthread_create_on_node+0x1a0/0x1a0
-déc. 05 14:28:41 vajra kernel: ---[ end trace 6138896e6248d2c0 ]---
-déc. 05 14:28:42 vajra abrt-dump-journal-oops[1102]: abrt-dump-journal-oops: 
-Found oopses: 1
-déc. 05 14:28:42 vajra abrt-dump-journal-oops[1102]: abrt-dump-journal-oops: 
-Creating problem directories
-déc. 05 14:28:42 vajra abrt-server[11581]: Deleting problem directory 
-oops-2014-12-05-14:28:42-1102-0 (dup of oops-2014-12-01-12:12:02-1332-0)
-déc. 05 14:28:43 vajra abrt-dump-journal-oops[1102]: Reported 1 kernel oopses 
-to Abrt
+But, the tools we have to avoid the hoops are initrds and udev, and I'd 
+much rather spend time fixing filesystem bugs than recreating those 
+tools.  If people are having trouble with udev, or having trouble with 
+tools in the initrd, lets contribute fixes to those projects instead.
+
+For people that really really don't want initrds, pass the devices on 
+the command line.  If that isn't working, we'll fix it, but if you 
+really want a scan, please try an initrd.  You can even make one 
+without any kernel modules, and then you don't have to recreate it 
+until you want to update the userland in your initrd.
+
+-chris
 
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 

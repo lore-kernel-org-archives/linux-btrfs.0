@@ -1,52 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49598 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751378AbaLERzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Dec 2014 12:55:05 -0500
-Date: Fri, 5 Dec 2014 18:55:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
-        Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Possible to undo subvol delete?
-Message-ID: <20141205175504.GN9754@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20141130042306.GE8916@merlins.org>
- <547C6922.6030206@gmail.com>
- <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
- <20141201184621.5dd7fcd9@natsu>
- <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
- <20141202031403.GZ17395@hungrycats.org>
- <20141202125252.GR12140@twin.jikos.cz>
- <20141202140945.GM32735@carfax.org.uk>
- <20141203182633.GV12140@suse.cz>
- <20141203195408.GY17380@hungrycats.org>
+Received: from mail-qc0-f178.google.com ([209.85.216.178]:60054 "EHLO
+	mail-qc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751355AbaLER4i convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 12:56:38 -0500
+Received: by mail-qc0-f178.google.com with SMTP id b13so946007qcw.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Dec 2014 09:56:38 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141203195408.GY17380@hungrycats.org>
+In-Reply-To: <20141205174601.GM9754@twin.jikos.cz>
+References: <547C6922.6030206@gmail.com>
+	<CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
+	<20141201184621.5dd7fcd9@natsu>
+	<CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
+	<20141202031403.GZ17395@hungrycats.org>
+	<CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
+	<20141202125610.GS12140@twin.jikos.cz>
+	<CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
+	<20141203185311.GX12140@twin.jikos.cz>
+	<CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
+	<20141205174601.GM9754@twin.jikos.cz>
+Date: Fri, 5 Dec 2014 23:26:37 +0530
+Message-ID: <CAH-HCWVAuiAsL_XNBH_GM1zB38KqOZfjMP3ORz3=XOjADu1t1w@mail.gmail.com>
+Subject: Re: Possible to undo subvol delete?
+From: Shriramana Sharma <samjnaa@gmail.com>
+To: dsterba@suse.cz, Shriramana Sharma <samjnaa@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 03, 2014 at 02:54:14PM -0500, Zygo Blaxell wrote:
-> > Even with the tty/interactive shell detection in place? Maybe I
-> > understood the reference to lvm/mdadm tools wrong. My idea is that the
-> > scripts would work as now, no prompts there.
-> 
-> How do we reliably distinguish between
-> "running in a script interactively",
-> "running in a script non-interactively",
-> and "running interactively"?
+David,
 
-The first choice is to use isatty() function, but this would not be
-enough to detect #1, which would require an extra option to force the
-itneractive mode.
+I'm just running default openSUSE 13.2 now (had to reinstall for other
+reasons) and it's there. It's not something I added. Given that you're
+also on either openSUSE or SLED/SLES, I'd expect your system to act
+similarly as well. If not, it's downright curious.
 
-> I could easily run a script from the command line that creates and
-> destroys subvols and runs for days or weeks (in fact, I quite often do).
-> It would be a significant productivity hit if an upgrade made it stop
-> every night waiting for confirmation from a user who went home hours
-> ago and won't be back for hours more.
+I guess I'll ask around on the openSUSE Forum...
 
-Yeah, we want to avoid such surprises. Besides isatty, there could be
-more shell magic to detect the interactive mode reliably, I don't know.
+-- 
+Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा

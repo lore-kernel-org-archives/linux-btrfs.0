@@ -1,39 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49358 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751154AbaLEReV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Dec 2014 12:34:21 -0500
-Date: Fri, 5 Dec 2014 18:34:21 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Shriramana Sharma <samjnaa@gmail.com>
-Cc: dsterba@suse.cz, Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Moving an entire subvol?
-Message-ID: <20141205173421.GL9754@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAH-HCWVcu9FW0c3zwEg_KR_yaPGRQ58yHbXsUx1JCKRu4s7NXQ@mail.gmail.com>
- <CAJCQCtT3EeGUOpZ9q78BcWv_Cc_5UGY=uPVJX+bqex9Zo_bWYg@mail.gmail.com>
- <CAH-HCWUSX+N2Byo4vpCxac89TSX2YGoP39VgFsq6952k9V9cmQ@mail.gmail.com>
- <20141202132842.GT12140@twin.jikos.cz>
- <CAH-HCWVubkp+viAEVqGoJFxJ_t1chTVC08xm6A15ucosqbWqxQ@mail.gmail.com>
+Received: from rx0ar-terminal-systems-international.ed.BIGPIPEINC.COM ([208.118.95.38]:50884
+	"EHLO mail.terminalsystems.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750943AbaLEShr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 5 Dec 2014 13:37:47 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mail.terminalsystems.com (Postfix) with ESMTP id 49FAB40671
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Dec 2014 12:27:51 -0600 (CST)
+Received: from mail.terminalsystems.com ([127.0.0.1])
+	by localhost (tsiblade9.terminalsystems.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id bEpSeYygFq2F for <linux-btrfs@vger.kernel.org>;
+	Fri,  5 Dec 2014 12:27:45 -0600 (CST)
+Received: from [192.168.7.202] (unknown [192.168.7.202])
+	(using TLSv1 with cipher ECDHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: jwest)
+	by mail.terminalsystems.com (Postfix) with ESMTPSA id BA41B40670
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Dec 2014 12:27:45 -0600 (CST)
+Message-ID: <5481F91B.6090700@terminalsystems.com>
+Date: Fri, 05 Dec 2014 12:27:39 -0600
+From: James West <james@terminalsystems.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAH-HCWVubkp+viAEVqGoJFxJ_t1chTVC08xm6A15ucosqbWqxQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Possibility to have a "transient" snapshot?
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 02, 2014 at 08:41:35PM +0530, Shriramana Sharma wrote:
-> That makes sense. Is there anywhere that the "official" SuSE
-> recommended subvol layout is mentioned that I can refer to without
-> having to start up an installer?
+This is just a random idea that popped through my mind while I was 
+looking into hardening a filesystem against damage, might be 
+impractical, but the idea seems promising, and well suited to a snapshot 
+file system.
 
-https://www.suse.com/documentation/sles-12/singlehtml/book_sle_admin/book_sle_admin.html#sec.snapper.setup
-"Directories that are Excluded from Snapshots"
+I'm sure some creative shell scripting could do something like this 
+already, but I was more looking for something more bulletproof.
 
-> I am now reading a SuSECon 2013 presentation by Nyers and Schnell but
-> they are very generic about the recommendations.
+General idea would be to have a transient snapshot (optional quota 
+support possibility here) on top of a base snapshot (possibly readonly). 
+On system start/restart (whether clean or dirty), the transient snapshot 
+would be flushed, and the system would restart the snapshot, basically 
+restarting from the base snapshot. If desired, the transient snapshot 
+could be promoted to a regular snapshot (say after a software upgrade). 
+If desired, a different base snapshot could be selected (although I'm 
+sure the file system would have to be restarted to do this)
 
-There are some recommended defaults that should be ok, the configuration
-is flexible and the user can tune the settings later according to the
-usage pattern (expected amount of data changes between snapshots,
-frequency of changes).
+ From a caching perspective, this could make a noticable performance 
+difference, since if you're running in a transient snapshot, the file 
+system can be _extremely_ lazy about committing changes to disk.
+
+For the optional quote support I mentioned, on an unattended box, if the 
+quota gets exceeded, a system reboot would probably fully correct the 
+system. (Presumably a log file got out of control in that situation).

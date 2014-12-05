@@ -1,43 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49494 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49598 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751112AbaLERqC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Dec 2014 12:46:02 -0500
-Date: Fri, 5 Dec 2014 18:46:01 +0100
+	id S1751378AbaLERzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 5 Dec 2014 12:55:05 -0500
+Date: Fri, 5 Dec 2014 18:55:04 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Shriramana Sharma <samjnaa@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
+        Shriramana Sharma <samjnaa@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Possible to undo subvol delete?
-Message-ID: <20141205174601.GM9754@twin.jikos.cz>
+Message-ID: <20141205175504.GN9754@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <547C6922.6030206@gmail.com>
+References: <20141130042306.GE8916@merlins.org>
+ <547C6922.6030206@gmail.com>
  <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
  <20141201184621.5dd7fcd9@natsu>
  <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
  <20141202031403.GZ17395@hungrycats.org>
- <CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
- <20141202125610.GS12140@twin.jikos.cz>
- <CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
- <20141203185311.GX12140@twin.jikos.cz>
- <CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
+ <20141202125252.GR12140@twin.jikos.cz>
+ <20141202140945.GM32735@carfax.org.uk>
+ <20141203182633.GV12140@suse.cz>
+ <20141203195408.GY17380@hungrycats.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
+In-Reply-To: <20141203195408.GY17380@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 04, 2014 at 07:36:34PM +0530, Shriramana Sharma wrote:
-> Well I don't know about you, but I'm just running an openSUSE 13.2
-> system updated to Tumbleweed here, and even if I just hit "btrfs"
-> enter (no sudo, no btrfs commands) on my regular (non-root) prompt, I
-> am getting:
+On Wed, Dec 03, 2014 at 02:54:14PM -0500, Zygo Blaxell wrote:
+> > Even with the tty/interactive shell detection in place? Maybe I
+> > understood the reference to lvm/mdadm tools wrong. My idea is that the
+> > scripts would work as now, no prompts there.
 > 
-> $ btrfs
-> Absolute path to 'btrfs' is '/usr/sbin/btrfs', so running it may
-> require superuser privileges (eg. root).
-> $
-> 
-> ... so what to say of btrfs subvol, whether followed by crea or del!
+> How do we reliably distinguish between
+> "running in a script interactively",
+> "running in a script non-interactively",
+> and "running interactively"?
 
-Oh I see. That must be some clever shell addon that prints that if you
-don't have /sbin in PATH and try to call a command from that path.
+The first choice is to use isatty() function, but this would not be
+enough to detect #1, which would require an extra option to force the
+itneractive mode.
+
+> I could easily run a script from the command line that creates and
+> destroys subvols and runs for days or weeks (in fact, I quite often do).
+> It would be a significant productivity hit if an upgrade made it stop
+> every night waiting for confirmation from a user who went home hours
+> ago and won't be back for hours more.
+
+Yeah, we want to avoid such surprises. Besides isatty, there could be
+more shell magic to detect the interactive mode reliably, I don't know.

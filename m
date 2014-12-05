@@ -1,59 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48618 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751523AbaLEQlp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Dec 2014 11:41:45 -0500
-Date: Fri, 5 Dec 2014 17:41:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Dimitri John Ledkov <xnox@debian.org>
-Cc: Chris Mason <clm@fb.com>, cwillu <cwillu@cwillu.com>,
-        "kreijack@inwind.it" <kreijack@inwind.it>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Zygo Blaxell <zblaxell@furryterror.org>
-Subject: Re: [RFC][PATCH v2] mount.btrfs helper
-Message-ID: <20141205164144.GK9754@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <547B5724.1060507@libero.it>
- <CANBHLUh9nXu4-wexFJimBvL-FtwPXQ7MeURi3COskJf-YJqGQA@mail.gmail.com>
- <CAE5mzvhOAi_Y2icLHOiUzG121ZALLZCTYhpjY8mkio3AyHrECA@mail.gmail.com>
- <CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com>
- <1417793566.21214.11@mail.thefacebook.com>
- <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com>
+Received: from mail-yk0-f169.google.com ([209.85.160.169]:64698 "EHLO
+	mail-yk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750860AbaLEQti (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Dec 2014 11:49:38 -0500
+Received: by mail-yk0-f169.google.com with SMTP id 79so484509ykr.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Dec 2014 08:49:37 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com>
+In-Reply-To: <3146bf116f41e590e8ce4fdb610def31@admin.virtall.com>
+References: <3146bf116f41e590e8ce4fdb610def31@admin.virtall.com>
+Date: Fri, 5 Dec 2014 09:49:37 -0700
+Message-ID: <CAJCQCtRNt=4HpUP6XL4sjBZKQAB95xKOojh+QQp2AwpmwKttTg@mail.gmail.com>
+Subject: Re: btrfs device delete missing - Input/output error
+From: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 05, 2014 at 04:01:37PM +0000, Dimitri John Ledkov wrote:
-> On 5 December 2014 at 15:32, Chris Mason <clm@fb.com> wrote:
-> > On Sun, Nov 30, 2014 at 5:57 PM, Dimitri John Ledkov <xnox@debian.org>
-> > wrote:
-> >>
-> >> On 30 November 2014 at 22:31, cwillu <cwillu@cwillu.com> wrote:
-> >>>
-> >>>
-> >>>  In ubuntu, the initfs runs a btrfs dev scan, which should catch
-> >>>  anything that would be missed there.
-> >>>
-> >>
-> >> I'm sorry, udev rule(s) is not sufficient in the initramfs-less case,
-> >> as outlined.
-> >>
-> >> In case of booting with initramfs, indeed, both Debian & Ubuntu
-> >> include snippets there to run btrfs scan.
-> >
-> >
-> > In an initramfs-less system, the root filesystem mount is done by the
-> > kernel, without calling any mount.btrfs.  The mount helper has all the same
-> > problems that calling btrfs dev scan does, it's just being run by mount.
-> >
-> 
-> Sure. in my initramfs-less system case the root filesystem was not
-> btrfs. Simply there was a btrfs filesystem defined in /etc/fstab.
+On Fri, Dec 5, 2014 at 3:03 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
+>> The first way to try to recover the current volume would be to
+>> overwrite LBA 2262535088 which you should only do with the filesystem
+>> unmounted. That's the sector causing the read error. If this is a 512
+>> byte drive:
+>>
+>> dd if=/dev/zero of=/dev/sdb count=1 seek=2262535088
+>
+>
+> It is a 512 byte drive.
+>
+> Unfortunately overwriting that fails - which is quite weird, given that
+> there are 0 reallocated sectors, according to SMART.
+>
+> Is there a way to determine what's stored there (i.e. if it's a file?).
+>
+>
+> # dd if=/dev/zero of=/dev/sdb count=1 seek=2262535088
+> dd: writing to `/dev/sdb': Input/output error
+> 1+0 records in
+> 0+0 records out
+> 0 bytes (0 B) copied, 2.88439 s, 0.0 kB/s
+>
+> # dmesg -c
+> [ 8177.713212] ata4.00: exception Emask 0x0 SAct 0x400 SErr 0x0 action 0x0
+> [ 8177.713285] ata4.00: irq_stat 0x40000008
+> [ 8177.713349] ata4.00: failed command: READ FPDMA QUEUED
 
-So you could add a 'btrfs dev scan' before the fstab is going to be
-mounted. Either a local boot script or via some unit file. We're looking
-for good reasons to justify the existence of the helper, but this is
-still not enough IMHO. I can see the convenience to do it automatically,
-but this assumes no udev available which is probably rare these days.
+
+
+You're getting a read error when writing. This is expected when writing 512
+bytes to a 4k sector.
+
+What do you get for
+parted /dev/sdb u s p
+
+
+
+-- 
+Chris Murphy

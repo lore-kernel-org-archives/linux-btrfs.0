@@ -1,54 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f175.google.com ([209.85.160.175]:47374 "EHLO
-	mail-yk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753268AbaLGTU6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 14:20:58 -0500
-Received: by mail-yk0-f175.google.com with SMTP id 200so1698623ykr.20
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Dec 2014 11:20:57 -0800 (PST)
+Received: from lb1.pop2.wanet.net ([65.244.248.2]:59857 "EHLO
+	serv004.pop2.wanet.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752220AbaLGTjK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 14:39:10 -0500
+Message-ID: <11f1f0272aa7bda76f07ead45ad415ab.squirrel@webmail.wanet.net>
+In-Reply-To: <20141207183444.GA1442@carfax.org.uk>
+References: <CAH-HCWU9GEjvZLH=rwYev_O0S4_Cs9FJvRiJgBiOK8gdxqK5CQ@mail.gmail.com>
+    <44320137.fRRuR6EFMP@merkaba>
+    <88937b9f24bc72160d80977c9edefba2.squirrel@webmail.wanet.net>
+    <20141207183444.GA1442@carfax.org.uk>
+Date: Sun, 7 Dec 2014 11:39:09 -0800
+Subject: Re: Why is the actual disk usage of btrfs considered unknowable?
+From: ashford@whisperpc.com
+To: "Hugo Mills" <hugo@carfax.org.uk>, ashford@whisperpc.com,
+        "Martin Steigerwald" <Martin@lichtvoll.de>,
+        "Shriramana Sharma" <samjnaa@gmail.com>,
+        "linux-btrfs" <linux-btrfs@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAAuLxcZJ1VDTrvRtaaXgqUo91sBcBkLYUUTe-_CNLm1zMEZp7g@mail.gmail.com>
-References: <m5imaf$s9b$1@ger.gmane.org>
-	<CAAuLxcZJ1VDTrvRtaaXgqUo91sBcBkLYUUTe-_CNLm1zMEZp7g@mail.gmail.com>
-Date: Sun, 7 Dec 2014 12:20:57 -0700
-Message-ID: <CAJCQCtR98rCHHmZ9zjB93znfwEEitGxbnrMzDqRn1wV0sxvi=w@mail.gmail.com>
-Subject: Re: Kernel lockup: "fs/btrfs/delayed-inoce.c:1410 btrfs_assert_delayed_root_empty"
-From: Chris Murphy <lists@colorremedies.com>
-To: andrew.j.wade@gmail.com
-Cc: Bernardo Donadio <bcdonadio@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 6, 2014 at 7:45 PM, Andrew Wade <andrew.j.wade@gmail.com> wrote:
-> I've had repeated lockups as well; I can trigger them by attempting to
-> copy files off of a damaged DVD.
+> On Sun, Dec 07, 2014 at 10:20:27AM -0800, ashford@whisperpc.com wrote:
+> [snip]
+>> > 3) From what I gathered it is planned to allow different raid /
+>> > redundancy levels for different subvolumes. BTRFS can´t know
+>> > beforehand where applications request to save future data, i.e.
+>> > in which subvolume.
+>>
+>> Same as above.
+>>
+>> If a user will be requesting to use a specific subvolume, it is up to
+>> them
+>> to verify that adequate free space exists there, or handle the
+>> exception.
 >
-> I saw the btrfs_assert_delayed_root_empty warning as well, but not
-> during the lockup; instead I saw it on a boot after a lockup.
+>    OK, so let's say I've got a filesystem with 100 GiB of unallocated
+> space. I have two subvolumes, one configured for RAID-1 and one
+> configured for single storage.
 >
-> During the lockup I sometimes get a different message:
+>    What number should be shown in the free output of df?
 >
-> Dec  6 19:41:11 pluto kernel: [347280.104032] INFO: task init:1228
-> blocked for more than 120 seconds.
-> Dec  6 19:41:11 pluto kernel: [347280.104038]       Tainted: G
->    E  3.18.0-rc7-ajw #78
-> Dec  6 19:41:11 pluto kernel: [347280.104039] "echo 0 >
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Dec  6 19:41:11 pluto kernel: [347280.104041] init            D
-> ffff88011fc13640     0  1228   1215 0x00000000
+>    100 GiB? But I can only write 50 GiB to the RAID-1 subvolume before
+> it runs out of space.
+>
+>    50 GiB? I can get twice that much on the single subvolume.
+>
+>    *Any* value shown here is going to be inaccurate, and whatever way
+> round we show it, someone will complain.
 
-Typically a dev will want to see the result of sysrq+w to show details
-on the blocked tasks. I suggest reproducing the conditions, then issue
-sysrq+w, then recapture dmesg. And also you might look at your own
-previous post in the archives and see if it formats legibly because
-the result I've got in gmail (above) is wrapping poorly and makes it
-hard to read. If you can't figure that out, then it's easier to just
-file a bug at bugzilla.kernel.org, and attach the dmesg output as a
-text file, then cite the bug URL in this thread.
+As an example, let's assume that the file-system is mounted as /data, with
+a non-mirrored subvolume of /data/1 and a mirrored subvolume of /data/2. 
+A df should should 100GiB free in both /data and /data/1, and 50GiB free
+in /data/2.
 
-https://www.kernel.org/doc/Documentation/sysrq.txt
+Peter Ashford
 
-
--- 
-Chris Murphy

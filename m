@@ -1,56 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lb1.pop2.wanet.net ([65.244.248.2]:57980 "EHLO
+Received: from lb1.pop2.wanet.net ([65.244.248.2]:38686 "EHLO
 	serv004.pop2.wanet.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753045AbaLGToH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 14:44:07 -0500
-Message-ID: <f93aee6392f64cc092304699c250cd59.squirrel@webmail.wanet.net>
-In-Reply-To: <2268945.SsYGbSXAx5@merkaba>
+	with ESMTP id S1751255AbaLGUcc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 15:32:32 -0500
+Message-ID: <6554b2b132dd3f9803bcf8c10f11a156.squirrel@webmail.wanet.net>
+In-Reply-To: <5484A83A.5090109@inwind.it>
 References: <CAH-HCWU9GEjvZLH=rwYev_O0S4_Cs9FJvRiJgBiOK8gdxqK5CQ@mail.gmail.com>
-    <44320137.fRRuR6EFMP@merkaba>
-    <88937b9f24bc72160d80977c9edefba2.squirrel@webmail.wanet.net>
-    <2268945.SsYGbSXAx5@merkaba>
-Date: Sun, 7 Dec 2014 11:44:06 -0800
+    <44320137.fRRuR6EFMP@merkaba> <5484A83A.5090109@inwind.it>
+Date: Sun, 7 Dec 2014 12:32:31 -0800
 Subject: Re: Why is the actual disk usage of btrfs considered unknowable?
 From: ashford@whisperpc.com
-To: "Martin Steigerwald" <Martin@lichtvoll.de>
-Cc: ashford@whisperpc.com, "Shriramana Sharma" <samjnaa@gmail.com>,
+To: kreijack@inwind.it
+Cc: "Shriramana Sharma" <samjnaa@gmail.com>,
+        "Martin Steigerwald" <martin@lichtvoll.de>,
         "linux-btrfs" <linux-btrfs@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Am Sonntag, 7. Dezember 2014, 10:20:27 schrieb ashford@whisperpc.com:
->> Martin,
->>
->> > I read that the actual
->> > what is free is unknown. And there are several reasons for that:
->> >
->> > 1) On a compressed filesystem you cannot know, but only estimate the
->> > compression ratio for future data.
->>
->> It is NOT the job of BTRFS, or ANY file-system, to try to prodict the
->> future.  The future is unknown.  Don't try to account for it.  When
->> asked
->> for the status (i.e. 'df'), it should return the current status.
->>
->> > 2) On a compressed filesystem you can choose to have parts of it
->> > uncompressed by file / directory attributes, I think. BTRFS can't
->> > know how much of the
->> > future data you are going to store compressed or uncompressed.
->>
->> Same as above.
->
-> What is the point you are trying to make?
->
-> I just described the reasons on what problems there are with trying to
-> predict
-> available free space, with BTRFS as an example. Some points apply to all
-> filesystems, some do not, so what is the point you are trying to make?
+> 3.1) even in the case of a single disk filesystem, data and metadata
+> have different profiles: the data chunk doesn't have any redundancy,
+> so 64kb of data consume 64kb of disk space. The metadata chunks
+> usually are stored as DUP, so 64kb of metadata consume 128kb on disk.
+> Moreover you have to consider that small files are stored in metadata
+> chunk. This means that for big file the disk space consumed is equal
+> to the data size, but for small file this is doubled.
 
-My point is that you don't try to predict, as that's a guaranteed path to
-failure.  You deliver what you know.  This is what every other file-system
-does.  There's no reason to do anything else.
+As there's no way to predict what the user will be doing, I see no reason
+to do anything except return the actual amount of free space.
+
+> Going back to your request, to be more clear I used the following terms:
+> 1- disk space used: the space used on the disk
+> 2- size of data: the size of the data stored on the disks
+> 3- disk free space: the unused space of the disk
+> 4- free space: the size of data that the system is able to contain
+>
+> The value 1,2,3 are known. Which is unknown is the point 4. In
+> the past I posted some patch which try to estimate the point 4 as:
+>
+>                                  size_of_data
+> free_space = disk_free_space * -----------------
+>                                 disk_space_used
+>
+> This estimation assumes that the ratio size_of_data/disk_space_used
+> is constant. But for the point above this assumption may be wrong.
+
+While I expect that this is the best simple prediction, it's still a
+prediction, with all the possible problems that a prediction entails.  My
+contention is that predictions should be avoided whenever possible.
+
+> In conclusion, the disk usage is well known; which is unknown is
+> the space that is available to the user (who is uninterested to
+> all the details inside a filesystem). The best that is doable
+> is an estimation like the above one.
+
+I disagree.  My experiences with other file-systems, including ZFS, show
+that the most common solution is to just deliver to the user the actual
+amount of unused disk space.  Anything else changes this known value into
+a guess or prediction.
 
 Peter Ashford
 

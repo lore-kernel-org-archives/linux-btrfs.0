@@ -1,39 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f172.google.com ([209.85.216.172]:50533 "EHLO
-	mail-qc0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755487AbaLHOQq convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Dec 2014 09:16:46 -0500
-Received: by mail-qc0-f172.google.com with SMTP id m20so3591630qcx.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Dec 2014 06:16:45 -0800 (PST)
+Received: from smtp-16-i2.italiaonline.it ([212.48.25.194]:49678 "EHLO
+	smtp-16.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751164AbaLHOdK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Dec 2014 09:33:10 -0500
+Message-ID: <5485B6EB.1030101@inwind.it>
+Date: Mon, 08 Dec 2014 15:34:19 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <5485A145.9010004@gmail.com>
-References: <547C6922.6030206@gmail.com> <CAH-HCWW4vUXzM6S1fCzwxdPiWHBZaf5ZNZexjRmND2WkzNK-qg@mail.gmail.com>
- <20141201184621.5dd7fcd9@natsu> <CAH-HCWV7mAz0cqO9r910aNa+wzufauvc_nOOpoB9ogDPdf7RsA@mail.gmail.com>
- <20141202031403.GZ17395@hungrycats.org> <CAH-HCWWnxqExQOexPF3jY6F1=jJA35Se5RkVw87u52F6BSic2g@mail.gmail.com>
- <20141202125610.GS12140@twin.jikos.cz> <CAH-HCWUm1CiapmHjy66DRKHa6NRegEW03es1DkK1SWv0159ZMw@mail.gmail.com>
- <20141203185311.GX12140@twin.jikos.cz> <CAH-HCWUj-3PAPDPnQcSvBm7DidzfFfiOB+v-LTOi08uTMZQaWw@mail.gmail.com>
- <20141205174601.GM9754@twin.jikos.cz> <CAH-HCWVAuiAsL_XNBH_GM1zB38KqOZfjMP3ORz3=XOjADu1t1w@mail.gmail.com>
- <CAH-HCWVKKHs3EpxucCbF-quii3hciBfrfTyVaEJOYn5o5MLAeg@mail.gmail.com> <5485A145.9010004@gmail.com>
-From: Shriramana Sharma <samjnaa@gmail.com>
-Date: Mon, 8 Dec 2014 19:46:24 +0530
-Message-ID: <CAH-HCWU2twhtVOOguxVpe7mGhJ5hod3dLDSFCEJArGjz=1mdyA@mail.gmail.com>
-Subject: Re: Possible to undo subvol delete?
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: dsterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: ashford@whisperpc.com
+CC: Shriramana Sharma <samjnaa@gmail.com>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Why is the actual disk usage of btrfs considered unknowable?
+References: <CAH-HCWU9GEjvZLH=rwYev_O0S4_Cs9FJvRiJgBiOK8gdxqK5CQ@mail.gmail.com>    <44320137.fRRuR6EFMP@merkaba> <5484A83A.5090109@inwind.it>    <6554b2b132dd3f9803bcf8c10f11a156.squirrel@webmail.wanet.net>    <5484DC3C.7040409@inwind.it> <73b1fa42cc61f5a843206a8164952f74.squirrel@webmail.wanet.net>
+In-Reply-To: <73b1fa42cc61f5a843206a8164952f74.squirrel@webmail.wanet.net>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 8, 2014 at 6:31 PM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> Personally, I prefer a somewhat hybrid approach where everyone has *sbin in
-> their path, but file permissions are used to control what non-administrators
-> can run.
+On 12/08/2014 01:12 AM, ashford@whisperpc.com wrote:
+> Goffredo,
+> 
+>> So in case you have a raid1 filesystem on two disks; each disk has 300GB
+>> free; which is the free space that you expected: 300GB or 600GB and why ?
+> 
+> You should see 300GB free.  That's what you'll see with RAID-1 with a
+> hardware RAID controller, and with MD RAID.  Why would you expect to see
+> anything else with BTRFS RAID?
 
-This is exactly the same approach as Ubuntu, since non-superuser can't
-really do anything active (whether creating or deleting) with */sbin
-commands, but only querying (like ifconfig, btrfs subvol list etc). So
-this is not really hybrid of anything it seems.
+I had to ask you because in a your previous email you stated something
+different:
+
+On 12/07/2014 09:32 PM, ashford@whisperpc.com wrote:
+> I disagree.  My experiences with other file-systems, including ZFS, show
+> that the most common solution is to just deliver to the user the actual
+> amount of *unused disk space*
+            ^^^^^^^^^^^^^^^^^^^
+
+So I expected that you answered with 600GB. But you have told the true:
+the user want to know how many data is able to store on the disk, and
+not the unused disk space.
+
+But I have to point out that the common case is one disk filesystem
+where the metadata chunks have a ratio data stored/disk space 
+consumed of 1:2; the data chunks have a ratio of 1:1. This is one
+reason why is difficult to evaluate the free space: if you have
+all metadata chunks, you have to half the disk space. 
+Another reason is that there is the idea to allow different raid 
+profiles in the same filesystem. This will further complicate the
+free space evaluation.
+
+
+> Peter Ashford
+
+G.Baroncelli
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
 
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

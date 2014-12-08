@@ -1,188 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:38631 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751521AbaLGVdC (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sun, 7 Dec 2014 16:33:02 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, stable@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix fs corruption on transaction abort if device supports discard
-Date: Sun,  7 Dec 2014 21:31:47 +0000
-Message-Id: <1417987953-31549-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34049 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751183AbaLHNxU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Dec 2014 08:53:20 -0500
+Date: Mon, 8 Dec 2014 08:53:11 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH v2] Btrfs: fix fs corruption on transaction abort if
+ device supports discard
+To: Filipe Manana <fdmanana@suse.com>
+CC: <linux-btrfs@vger.kernel.org>, <stable@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Message-ID: <1418046791.4845.5@mail.thefacebook.com>
+In-Reply-To: <1417987953-31549-1-git-send-email-fdmanana@suse.com>
+References: <1417987953-31549-1-git-send-email-fdmanana@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we abort a transaction we iterate over all the ranges marked as dirty
-in fs_info->freed_extents[0] and fs_info->freed_extents[1], clear them
-from those trees, add them back (unpin) to the free space caches and, if
-the fs was mounted with "-o discard", perform a discard on those regions.
-Also, after adding the regions to the free space caches, a fitrim ioctl call
-can see those ranges in a block group's free space cache and perform a discard
-on the ranges, so the same issue can happen without "-o discard" as well.
+On Sun, Dec 7, 2014 at 4:31 PM, Filipe Manana <fdmanana@suse.com> wrote:
+> When we abort a transaction we iterate over all the ranges marked as 
+> dirty
+> in fs_info->freed_extents[0] and fs_info->freed_extents[1], clear them
+> from those trees, add them back (unpin) to the free space caches and, 
+> if
+> the fs was mounted with "-o discard", perform a discard on those 
+> regions.
+> Also, after adding the regions to the free space caches, a fitrim 
+> ioctl call
+> can see those ranges in a block group's free space cache and perform 
+> a discard
+> on the ranges, so the same issue can happen without "-o discard" as 
+> well.
+> 
+> This causes corruption, affecting one or multiple btree nodes (in the 
+> worst
+> case leaving the fs unmountable) because some of those ranges (the 
+> ones in
+> the fs_info->pinned_extents tree) correspond to btree nodes/leafs 
+> that are
+> referred by the last committed super block - breaking the rule that 
+> anything
+> that was committed by a transaction is untouched until the next 
+> transaction
+> commits successfully.
 
-This causes corruption, affecting one or multiple btree nodes (in the worst
-case leaving the fs unmountable) because some of those ranges (the ones in
-the fs_info->pinned_extents tree) correspond to btree nodes/leafs that are
-referred by the last committed super block - breaking the rule that anything
-that was committed by a transaction is untouched until the next transaction
-commits successfully.
+This is great work Filipe, thank you!
 
-I ran into this while running in a loop (for several hours) the fstest that
-I recently submitted:
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 7e2405a..ce65b0c 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -4134,12 +4134,6 @@ again:
+>  		if (ret)
+>  			break;
+> 
+> -		/* opt_discard */
+> -		if (btrfs_test_opt(root, DISCARD))
+> -			ret = btrfs_error_discard_extent(root, start,
+> -							 end + 1 - start,
+> -							 NULL);
+> -
 
-  [PATCH] fstests: add btrfs test to stress chunk allocation/removal and fstrim
+While you're here, can you please just delete 
+btrfs_error_discard_extent and use btrfs_discard_extent directly?  It's 
+already being used in non-error cases, and since it only discards, I 
+don't see how we want to do that on errors anyway.
 
-The corruption always happened when a transaction aborted and then fsck complained
-like this:
+-chris
 
-   _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
-   *** fsck.btrfs output ***
-   Check tree block failed, want=94945280, have=0
-   Check tree block failed, want=94945280, have=0
-   Check tree block failed, want=94945280, have=0
-   Check tree block failed, want=94945280, have=0
-   Check tree block failed, want=94945280, have=0
-   read block failed check_tree_block
-   Couldn't open file system
-
-In this case 94945280 corresponded to the root of a tree.
-Using frace what I observed was the following sequence of steps happened:
-
-   1) transaction N started, fs_info->pinned_extents pointed to
-      fs_info->freed_extents[0];
-
-   2) node/eb 94945280 is created;
-
-   3) eb is persisted to disk;
-
-   4) transaction N commit starts, fs_info->pinned_extents now points to
-      fs_info->freed_extents[1], and transaction N completes;
-
-   5) transaction N + 1 starts;
-
-   6) eb is COWed, and btrfs_free_tree_block() called for this eb;
-
-   7) eb range (94945280 to 94945280 + 16Kb) is added to
-      fs_info->pinned_extents (fs_info->freed_extents[1]);
-
-   8) Something goes wrong in transaction N + 1, like hitting ENOSPC
-      for example, and the transaction is aborted, turning the fs into
-      readonly mode. The stack trace I got for example:
-
-      [112065.253935]  [<ffffffff8140c7b6>] dump_stack+0x4d/0x66
-      [112065.254271]  [<ffffffff81042984>] warn_slowpath_common+0x7f/0x98
-      [112065.254567]  [<ffffffffa0325990>] ? __btrfs_abort_transaction+0x50/0x10b [btrfs]
-      [112065.261674]  [<ffffffff810429e5>] warn_slowpath_fmt+0x48/0x50
-      [112065.261922]  [<ffffffffa032949e>] ? btrfs_free_path+0x26/0x29 [btrfs]
-      [112065.262211]  [<ffffffffa0325990>] __btrfs_abort_transaction+0x50/0x10b [btrfs]
-      [112065.262545]  [<ffffffffa036b1d6>] btrfs_remove_chunk+0x537/0x58b [btrfs]
-      [112065.262771]  [<ffffffffa033840f>] btrfs_delete_unused_bgs+0x1de/0x21b [btrfs]
-      [112065.263105]  [<ffffffffa0343106>] cleaner_kthread+0x100/0x12f [btrfs]
-      (...)
-      [112065.264493] ---[ end trace dd7903a975a31a08 ]---
-      [112065.264673] BTRFS: error (device sdc) in btrfs_remove_chunk:2625: errno=-28 No space left
-      [112065.264997] BTRFS info (device sdc): forced readonly
-
-   9) The clear kthread sees that the BTRFS_FS_STATE_ERROR bit is set in
-      fs_info->fs_state and calls btrfs_cleanup_transaction(), which in
-      turn calls btrfs_destroy_pinned_extent();
-
-   10) Then btrfs_destroy_pinned_extent() iterates over all the ranges
-       marked as dirty in fs_info->freed_extents[], and for each one
-       it calls discard, if the fs was mounted with "-o discard", and
-       adds the range to the free space cache of the respective block
-       group;
-
-   11) btrfs_trim_block_group(), invoked from the fitrim ioctl code path,
-       sees the free space entries and performs a discard;
-
-   12) After an umount and mount (or fsck), our eb's location on disk was full
-       of zeroes, and it should have been untouched, because it was marked as
-       dirty in the fs_info->pinned_extents tree, and therefore used by the
-       trees that the last committed superblock points to.
-
-Fix this by not performing a discard and not adding the ranges to the free space
-caches - it's useless from this point since the fs is now in readonly mode and
-we won't write free space caches to disk anymore (otherwise we would leak space)
-nor any new superblock. By not adding the ranges to the free space caches, it
-prevents other code paths from allocating that space and write to it as well,
-therefore being safer and simpler.
-
-This isn't a new problem, as it's been present since 2011 (git commit
-acce952b0263825da32cf10489413dec78053347).
-
-Cc: stable@vger.kernel.org  # any kernel released after 2011-01-06
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Avoid a warning when freeing the block group objects, since they got
-    their pinned field with a value > 0 when their ref count dropped to
-    zero. Harmless warning however, but unnecessary.
-
- fs/btrfs/disk-io.c     |  6 ------
- fs/btrfs/extent-tree.c | 10 ++++++----
- 2 files changed, 6 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7e2405a..ce65b0c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4134,12 +4134,6 @@ again:
- 		if (ret)
- 			break;
- 
--		/* opt_discard */
--		if (btrfs_test_opt(root, DISCARD))
--			ret = btrfs_error_discard_extent(root, start,
--							 end + 1 - start,
--							 NULL);
--
- 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
- 		btrfs_error_unpin_extent_range(root, start, end);
- 		cond_resched();
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c2fc261..fc74a9b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5728,7 +5728,8 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
- 	update_global_block_rsv(fs_info);
- }
- 
--static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
-+static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end,
-+			      const bool return_free_space)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_group_cache *cache = NULL;
-@@ -5752,7 +5753,8 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- 
- 		if (start < cache->last_byte_to_unpin) {
- 			len = min(len, cache->last_byte_to_unpin - start);
--			btrfs_add_free_space(cache, start, len);
-+			if (return_free_space)
-+				btrfs_add_free_space(cache, start, len);
- 		}
- 
- 		start += len;
-@@ -5816,7 +5818,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 						   end + 1 - start, NULL);
- 
- 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
--		unpin_extent_range(root, start, end);
-+		unpin_extent_range(root, start, end, true);
- 		cond_resched();
- 	}
- 
-@@ -9705,7 +9707,7 @@ out:
- 
- int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- {
--	return unpin_extent_range(root, start, end);
-+	return unpin_extent_range(root, start, end, false);
- }
- 
- int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
--- 
-2.1.3
+> 
+>  		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+>  		btrfs_error_unpin_extent_range(root, start, end);
+>  		cond_resched();
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index c2fc261..fc74a9b 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5728,7 +5728,8 @@ void btrfs_prepare_extent_commit(struct 
+> btrfs_trans_handle *trans,
+>  	update_global_block_rsv(fs_info);
+>  }
+> 
+> -static int unpin_extent_range(struct btrfs_root *root, u64 start, 
+> u64 end)
+> +static int unpin_extent_range(struct btrfs_root *root, u64 start, 
+> u64 end,
+> +			      const bool return_free_space)
+>  {
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>  	struct btrfs_block_group_cache *cache = NULL;
+> @@ -5752,7 +5753,8 @@ static int unpin_extent_range(struct btrfs_root 
+> *root, u64 start, u64 end)
+> 
+>  		if (start < cache->last_byte_to_unpin) {
+>  			len = min(len, cache->last_byte_to_unpin - start);
+> -			btrfs_add_free_space(cache, start, len);
+> +			if (return_free_space)
+> +				btrfs_add_free_space(cache, start, len);
+>  		}
+> 
+>  		start += len;
+> @@ -5816,7 +5818,7 @@ int btrfs_finish_extent_commit(struct 
+> btrfs_trans_handle *trans,
+>  						   end + 1 - start, NULL);
+> 
+>  		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+> -		unpin_extent_range(root, start, end);
+> +		unpin_extent_range(root, start, end, true);
+>  		cond_resched();
+>  	}
+> 
+> @@ -9705,7 +9707,7 @@ out:
+> 
+>  int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 
+> start, u64 end)
+>  {
+> -	return unpin_extent_range(root, start, end);
+> +	return unpin_extent_range(root, start, end, false);
+>  }
+> 
+>  int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+> --
+> 2.1.3
+> 
 

@@ -1,282 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44313 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:36152 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753885AbaLHB7E convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 20:59:04 -0500
-Message-ID: <548506A3.3010409@cn.fujitsu.com>
-Date: Mon, 8 Dec 2014 10:02:11 +0800
+	with ESMTP id S1750858AbaLHCjw convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 21:39:52 -0500
+Message-ID: <54851033.7010601@cn.fujitsu.com>
+Date: Mon, 8 Dec 2014 10:42:59 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Goffredo Baroncelli <kreijack@gmail.com>, <linux-btrfs@vger.kernel.org>
-CC: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 1/5] Avoid to consider lvm snapshots when scanning devices.
-References: <1417718382-6753-1-git-send-email-kreijack@inwind.it> <1417718382-6753-2-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1417718382-6753-2-git-send-email-kreijack@inwind.it>
+To: <ashford@whisperpc.com>, <kreijack@inwind.it>
+CC: Shriramana Sharma <samjnaa@gmail.com>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Why is the actual disk usage of btrfs considered unknowable?
+References: <CAH-HCWU9GEjvZLH=rwYev_O0S4_Cs9FJvRiJgBiOK8gdxqK5CQ@mail.gmail.com>    <44320137.fRRuR6EFMP@merkaba> <5484A83A.5090109@inwind.it>    <6554b2b132dd3f9803bcf8c10f11a156.squirrel@webmail.wanet.net>    <5484DC3C.7040409@inwind.it> <73b1fa42cc61f5a843206a8164952f74.squirrel@webmail.wanet.net>
+In-Reply-To: <73b1fa42cc61f5a843206a8164952f74.squirrel@webmail.wanet.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 -------- Original Message --------
-Subject: [PATCH 1/5] Avoid to consider lvm snapshots when scanning devices.
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年12月05日 02:39
-> LVM snapshots create a problem to the btrfs devices management.
-> BTRFS assumes that each device haw an unique 'device UUID'.
-> A LVM snapshot breaks this assumption.
+Subject: Re: Why is the actual disk usage of btrfs considered unknowable?
+From: <ashford@whisperpc.com>
+To: <kreijack@inwind.it>
+Date: 2014年12月08日 08:12
+> Goffredo,
 >
-> This patch skips LVM snapshots during the device scan phase.
-> If you need to consider a LVM snapshot you have to set the
-> environmental variable BTRFS_SKIP_LVM_SNAPSHOT to "no".
-IMHO, it is better only to skip LVM snapshot if and only if the snapshot 
-contains a btrfs with
-conflicting UUID.
+>> So in case you have a raid1 filesystem on two disks; each disk has 300GB
+>> free; which is the free space that you expected: 300GB or 600GB and why ?
+> You should see 300GB free.  That's what you'll see with RAID-1 with a
+> hardware RAID controller, and with MD RAID.  Why would you expect to see
+> anything else with BTRFS RAID?
+>
+> Peter Ashford
+Yeah, you pointed out the real problem here:
 
-Since LVM is such a flexible block level volume management, it is 
-possible that some one
-did a snapshot of a btrfs fs, and then reformat the original one to 
-other fs.
-In that case, the LVM snapshot skip seems overkilled.
+[DIFFERENT RESULT FROM DIFFERENT VIEW]
+See from *PURE ON-DISK* usage, it is still 600G, no matter what level of 
+RAID.
+See from *BLOCK LEVEL RAID1* usage, it is 300G. If fs(not btrfs) is 
+build on BLOCK LEVEL RAID1,
+then the *FILESYSTEM* usage will also be 300G
 
-Also, personally, I prefer there will be some option like -i to allow 
-user to choose which device is
-used when conflicting uuid is detected. This seems to be the best case 
-and user can have the full control
-on device scan. This also makes the environment variant not needed.
+[BTRFS DOES NOT BELONG TO ANY TYPE]
+But, btrfs is neither pure block level management(that should be MD or 
+HW RAID or LVM), nor a
+traditional filesystem!!
 
-LVM snapshot skip (only when conflicting) is better to be the fallback 
-behavior if -i is not given.
+So the root of the problem is, btrfs mixs the position of block level 
+management and filesystem level
+management, which makes everything hard to understand.
+You can't treat btrfs raid1 as a complete block level raid1, due to its 
+flexibility on metadata/data profile different.
+
+If vanilla df command shows filesystem level freespace, then btrfs won't 
+give a accurate on.
+
+[ONLY PREDICABLE CASE]
+For the 300Gx2 case for btrfs, you can only consider it 300G free space 
+only if you can ensure that
+there was/is and will be only RAID1 data/metadata storing on it.(also 
+need to ignore small space usage on CoW)
+
+[RELIABLE DATA IS ON-DISK USAGE]
+Only pure on-disk level usage is *a little* reliable. There is still 
+problem for unbalanced metadata/data chunk
+allocation problem(e.g, all space is allocated for data, no space for 
+metadata CoW write).
+
+[FEATURE SIMILAR CASE]
+The only case that I may see similar problem will be mirrored thin 
+lv(not implemented yet)
+and normal thin lv competing for a thin pool.
+
+Although not implemented, I think even implemented, admins may not 
+complain so much since LVM doesn't
+report free space, only used space on thin pool case.
 
 Thanks,
 Qu
+
 >
-> To check if a device is a LVM snapshot, it is checked the
-> 'udev' device property 'DM_UDEV_LOW_PRIORITY_FLAG' .
-> If it is set to 1, the device has to be skipped.
->
-> As conseguence, btrfs now depends by libudev.
->
-> Programmatically you can control this behavior with the functions:
-> - btrfs_scan_set_skip_lvm_snapshot(int new_value)
-> - int btrfs_scan_get_skip_lvm_snapshot( )
->
-> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-> ---
->   Makefile |   4 +--
->   utils.c  | 107 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->   utils.h  |   9 +++++-
->   3 files changed, 117 insertions(+), 3 deletions(-)
->
-> diff --git a/Makefile b/Makefile
-> index 4cae30c..9464361 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -26,7 +26,7 @@ TESTS = fsck-tests.sh convert-tests.sh
->   INSTALL = install
->   prefix ?= /usr/local
->   bindir = $(prefix)/bin
-> -lib_LIBS = -luuid -lblkid -lm -lz -llzo2 -L.
-> +lib_LIBS = -luuid -lblkid -lm -lz -ludev -llzo2 -L.
->   libdir ?= $(prefix)/lib
->   incdir = $(prefix)/include/btrfs
->   LIBS = $(lib_LIBS) $(libs_static)
-> @@ -99,7 +99,7 @@ lib_links = libbtrfs.so.0 libbtrfs.so
->   headers = $(libbtrfs_headers)
->   
->   # make C=1 to enable sparse
-> -check_defs := .cc-defines.h
-> +check_defs := .cc-defines.h
->   ifdef C
->   	#
->   	# We're trying to use sparse against glibc headers which go wild
-> diff --git a/utils.c b/utils.c
-> index 2a92416..9887f8b 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -29,6 +29,7 @@
->   #include <sys/types.h>
->   #include <sys/stat.h>
->   #include <uuid/uuid.h>
-> +#include <libudev.h>
->   #include <fcntl.h>
->   #include <unistd.h>
->   #include <mntent.h>
-> @@ -52,6 +53,13 @@
->   #define BLKDISCARD	_IO(0x12,119)
->   #endif
->   
-> +/*
-> + * This variable controls if the lvm snapshot have to be skipped or not.
-> + * Access this variable only via the btrfs_scan_[sg]et_skip_lvm_snapshot()
-> + * functions
-> + */
-> +static int __scan_device_skip_lvm_snapshot = -1;
-> +
->   static int btrfs_scan_done = 0;
->   
->   static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
-> @@ -1593,6 +1601,9 @@ int btrfs_scan_block_devices(int run_ioctl)
->   	char fullpath[110];
->   	int scans = 0;
->   	int special;
-> +	int skip_snapshot;
-> +
-> +	skip_snapshot = btrfs_scan_get_skip_lvm_snapshot();
->   
->   scan_again:
->   	proc_partitions = fopen("/proc/partitions","r");
-> @@ -1642,6 +1653,9 @@ scan_again:
->   			continue;
->   		}
->   
-> +		if (skip_snapshot && is_low_priority_device(fullpath))
-> +			continue;
-> +
->   		fd = open(fullpath, O_RDONLY);
->   		if (fd < 0) {
->   			if (errno != ENOMEDIUM)
-> @@ -2182,6 +2196,30 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
->   	return 0;
->   }
->   
-> +int btrfs_scan_get_skip_lvm_snapshot( )
-> +{
-> +	const char *value;
-> +
-> +	if (__scan_device_skip_lvm_snapshot != -1 )
-> +		return __scan_device_skip_lvm_snapshot;
-> +
-> +	value = getenv(BTRFS_SKIP_LVM_SNAPSHOT_ENV_NAME);
-> +	if (value && !strcasecmp(value, "NO"))
-> +		__scan_device_skip_lvm_snapshot = 0;
-> +	else  if (value && !strcasecmp(value, "YES"))
-> +		__scan_device_skip_lvm_snapshot = 1;
-> +	else
-> +		__scan_device_skip_lvm_snapshot =
-> +			BTRFS_SKIP_LVM_SNAPSHOT_DEFAULT;
-> +
-> +	return __scan_device_skip_lvm_snapshot;
-> +}
-> +
-> +void btrfs_scan_set_skip_lvm_snapshot(int new_value)
-> +{
-> +	__scan_device_skip_lvm_snapshot = !!new_value;
-> +}
-> +
->   int btrfs_scan_lblkid()
->   {
->   	int fd = -1;
-> @@ -2192,6 +2230,9 @@ int btrfs_scan_lblkid()
->   	blkid_dev dev = NULL;
->   	blkid_cache cache = NULL;
->   	char path[PATH_MAX];
-> +	int skip_snapshot;
-> +
-> +	skip_snapshot = btrfs_scan_get_skip_lvm_snapshot();
->   
->   	if (btrfs_scan_done)
->   		return 0;
-> @@ -2210,6 +2251,9 @@ int btrfs_scan_lblkid()
->   		/* if we are here its definitely a btrfs disk*/
->   		strncpy(path, blkid_dev_devname(dev), PATH_MAX);
->   
-> +		if (skip_snapshot && is_low_priority_device(path))
-> +			continue;
-> +
->   		fd = open(path, O_RDONLY);
->   		if (fd < 0) {
->   			printf("ERROR: could not open %s\n", path);
-> @@ -2450,3 +2494,66 @@ int find_next_key(struct btrfs_path *path, struct btrfs_key *key)
->   	}
->   	return 1;
->   }
-> +
-> +/*
-> + * This function return 1 if the device (path) is consdered "LOW_PRIORITY" by
-> + * LVM2 library. These device are typically the nsapshot.
-> + * This function return < 0 in case of error; 0 otherwise.
-> + */
-> +int is_low_priority_device(const char *path)
-> +{
-> +
-> +	struct udev *udev=NULL;
-> +	struct udev_device *dev;
-> +	struct udev_enumerate *enumerate=NULL;
-> +	struct udev_list_entry *devices;
-> +	struct udev_list_entry *node, *list;
-> +	int ret=-1;
-> +	const char *value, *syspath;
-> +	char *rpath=NULL;
-> +
-> +	rpath = realpath(path, NULL);
-> +	if (!rpath) {
-> +		fprintf(stderr, "ERROR: not enough memory\n");
-> +		ret=-2;
-> +		goto exit;
-> +	}
-> +
-> +	/* Create the udev object */
-> +	udev = udev_new();
-> +	if (!udev) {
-> +		fprintf(stderr, "ERROR: Can't create udev\n");
-> +		ret=-1;
-> +		goto exit;
-> +	}
-> +
-> +	enumerate = udev_enumerate_new(udev);
-> +	udev_enumerate_add_match_subsystem(enumerate, "block");
-> +	udev_enumerate_add_match_property(enumerate, "DEVNAME", rpath);
-> +	udev_enumerate_scan_devices(enumerate);
-> +
-> +	devices = udev_enumerate_get_list_entry(enumerate);
-> +	syspath = udev_list_entry_get_name(devices);
-> +
-> +	dev = udev_device_new_from_syspath(udev, syspath);
-> +
-> +	list = udev_device_get_properties_list_entry (dev);
-> +
-> +	ret = 0;
-> +	node = udev_list_entry_get_by_name(list, "DM_UDEV_LOW_PRIORITY_FLAG");
-> +	if (node) {
-> +		value = udev_list_entry_get_value(node);
-> +		if (value && !strcmp(value, "1"))
-> +			ret = 1;
-> +	}
-> +
-> +exit:
-> +	free(rpath);
-> +
-> +	/* Free the enumerator object */
-> +	udev_enumerate_unref(enumerate);
-> +
-> +	udev_unref(udev);
-> +
-> +	return ret;
-> +}
-> diff --git a/utils.h b/utils.h
-> index 289e86b..9855f09 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -128,7 +128,7 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
->   			   int verify);
->   int ask_user(char *question);
->   int lookup_ino_rootid(int fd, u64 *rootid);
-> -int btrfs_scan_lblkid(void);
-> +int btrfs_scan_lblkid();
->   int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
->   int find_mount_root(const char *path, char **mount_root);
->   int get_device_info(int fd, u64 devid,
-> @@ -161,4 +161,11 @@ static inline u64 btrfs_min_dev_size(u32 leafsize)
->   
->   int find_next_key(struct btrfs_path *path, struct btrfs_key *key);
->   
-> +#define BTRFS_SKIP_LVM_SNAPSHOT_DEFAULT 1
-> +#define BTRFS_SKIP_LVM_SNAPSHOT_ENV_NAME "BTRFS_SKIP_LVM_SNAPSHOT"
-> +
-> +int is_low_priority_device(const char *path);
-> +void btrfs_scan_set_skip_lvm_snapshot(int new_value);
-> +int btrfs_scan_get_skip_lvm_snapshot( );
-> +
->   #endif
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

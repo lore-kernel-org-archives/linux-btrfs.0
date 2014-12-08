@@ -1,56 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57604 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933393AbaLEBhW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Dec 2014 20:37:22 -0500
-Message-ID: <1417743334.3280.1.camel@localhost.localdomain>
-Subject: Re: btrfs fi show not accepting mount path as arg?
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Shriramana Sharma <samjnaa@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Fri, 5 Dec 2014 09:35:34 +0800
-In-Reply-To: <CAH-HCWUcMofyaE8pBXRM5LTHjWcabz+DKouVbauH=Oh9fv2g4g@mail.gmail.com>
-References: <CAH-HCWUcMofyaE8pBXRM5LTHjWcabz+DKouVbauH=Oh9fv2g4g@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:60732 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753896AbaLHDlw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 22:41:52 -0500
+Received: by mail-pa0-f52.google.com with SMTP id eu11so4385548pac.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 07 Dec 2014 19:41:52 -0800 (PST)
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        Joe Perches <joe@perches.com>,
+        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v8 3/3] btrfs: fix suspicious RCU in BTRFS_IOC_DEV_INFO
+Date: Sun,  7 Dec 2014 19:40:59 -0800
+Message-Id: <77dcc43b8e3dd20b1994b8e978008800e8dcf6b7.1418007402.git.osandov@osandov.com>
+In-Reply-To: <cover.1418007402.git.osandov@osandov.com>
+References: <cover.1418007402.git.osandov@osandov.com>
+In-Reply-To: <cover.1418007402.git.osandov@osandov.com>
+References: <cover.1418007402.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-12-04 at 19:20 +0530, Shriramana Sharma wrote:
-> Using SuSE Tumbleweed. Observe:
-> 
-> [samjnaa:~] sudo btrfs fi show
-> root's password:
-> Label: 'BRIHATII'  uuid: 57836428-576e-466b-8a28-7961712867ab
->         Total devices 1 FS bytes used 460.19GiB
->         devid    1 size 931.51GiB used 464.04GiB path /dev/sdb1
-> 
-> Btrfs v3.17+20141103
-> [samjnaa:~] sudo btrfs fi show /dev/sdb1
-> Label: 'BRIHATII'  uuid: 57836428-576e-466b-8a28-7961712867ab
->         Total devices 1 FS bytes used 460.16GiB
->         devid    1 size 931.51GiB used 464.04GiB path /dev/sdb1
-> 
-> Btrfs v3.17+20141103
-> [samjnaa:~] mount | grep btrfs
-> /dev/sdb1 on /run/media/samjnaa/BRIHATII type btrfs
-> (rw,nosuid,nodev,relatime,space_cache,uhelper=udisks2)
-> [samjnaa:~] sudo btrfs fi show /run/media/samjnaa/BRIHATII/
-> Btrfs v3.17+20141103
-> [samjnaa:~]
-> 
-> But the manpage of btrfs filesystem says that <path> is an acceptable
-> argument to show, by which I understand to mean the mounted path of
-> the filesystem (or a subvolume thereof?).
-> 
-> Some problem here?
-> 
+A naked read of the value of an RCU pointer isn't safe. Put the whole
+access in an RCU critical section, not just the pointer dereference.
 
-Hi Shriramana Sharma,
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+---
+ fs/btrfs/ioctl.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-I think this problem has already got a fix, see below:
-https://patchwork.kernel.org/patch/5391131/
-
-Thanks,
-Gui
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9ebc3cc..324be12 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2734,6 +2734,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
+ 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
+ 	int ret = 0;
+ 	char *s_uuid = NULL;
++	struct rcu_string *name;
+ 
+ 	di_args = memdup_user(arg, sizeof(*di_args));
+ 	if (IS_ERR(di_args))
+@@ -2754,17 +2755,16 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
+ 	di_args->bytes_used = btrfs_device_get_bytes_used(dev);
+ 	di_args->total_bytes = btrfs_device_get_total_bytes(dev);
+ 	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
+-	if (dev->name) {
+-		struct rcu_string *name;
+ 
+-		rcu_read_lock();
+-		name = rcu_dereference(dev->name);
++	rcu_read_lock();
++	name = rcu_dereference(dev->name);
++	if (name) {
+ 		strncpy(di_args->path, name->str, sizeof(di_args->path));
+-		rcu_read_unlock();
+ 		di_args->path[sizeof(di_args->path) - 1] = 0;
+ 	} else {
+ 		di_args->path[0] = '\0';
+ 	}
++	rcu_read_unlock();
+ 
+ out:
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+-- 
+2.1.3
 

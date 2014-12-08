@@ -1,86 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f172.google.com ([209.85.192.172]:35131 "EHLO
-	mail-pd0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752005AbaLHDll (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Dec 2014 22:41:41 -0500
-Received: by mail-pd0-f172.google.com with SMTP id y13so4353875pdi.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Dec 2014 19:41:41 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Joe Perches <joe@perches.com>,
-        "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v8 0/3] Introduce RCU string API
-Date: Sun,  7 Dec 2014 19:40:56 -0800
-Message-Id: <cover.1418007402.git.osandov@osandov.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:42973 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751140AbaLHOBg (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 8 Dec 2014 09:01:36 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: remove non-sense btrfs_error_discard_extent() function
+Date: Mon,  8 Dec 2014 14:01:12 +0000
+Message-Id: <1418047272-1908-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch series on top of v3.18 introduces the RCU string API and cleans up
-the wreckage of sparse warnings which follow from it (shown here from when the
-patch was briefly in the btrfs integration tree):
+It doesn't do anything special, it just calls btrfs_discard_extent(),
+so just remove it.
 
-On Thu, Nov 27, 2014 at 06:45:20AM +0800, kbuild test robot wrote:
-> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git integration
-> head:   c7a37618b60026121255c69e042d74ae5631470c
-> commit: 37aad79d90a0cbf82a5eda62dfe3af4241f5aca3 [38/39] Move BTRFS RCU string to common library
-> reproduce:
->   # apt-get install sparse
->   git checkout 37aad79d90a0cbf82a5eda62dfe3af4241f5aca3
->   make ARCH=x86_64 allmodconfig
->   make C=1 CF=-D__CHECK_ENDIAN__
->
->
-> sparse warnings: (new ones prefixed by >>)
->
-> >> fs/btrfs/check-integrity.c:848:25: sparse: incorrect type in argument 1 (different address spaces)
->    fs/btrfs/check-integrity.c:848:25:    expected struct rcu_string [noderef] <asn:4>*rcu_str
->    fs/btrfs/check-integrity.c:848:25:    got struct rcu_string *name
-[snip]
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.h            |  4 ++--
+ fs/btrfs/extent-tree.c      | 10 ++--------
+ fs/btrfs/free-space-cache.c |  4 ++--
+ 3 files changed, 6 insertions(+), 12 deletions(-)
 
-Version 8 combines the original patch with another patch series I posted to fix
-these warnings, which fixes the botched __rcu annotations that caused some of
-the warnings and refactors the existing uses of rcustring to get rid of the
-rest.
-
-It'd be nice to see this squeeze in the merge window.
-
-Thanks!
-
-v8: Get the __rcu annotations right, clean up RCU string-related sparse noise
-v7: Add arguments to kernel doc for printk wrappers, use ##__VA_ARGS
-v6: Add header dependencies to rcustring.h
-v5: Rebase against v3.18-rc3
-v4: Don't return anything from the printk wrappers on the assumption that
-printk will return void someday
-v3: Add __rcu annotation to relevant functions, add Paul's ack and Josh's
-review
-
-Omar Sandoval (3):
-  Move BTRFS RCU string to common library
-  btrfs: refactor btrfs_device->name updates
-  btrfs: fix suspicious RCU in BTRFS_IOC_DEV_INFO
-
- fs/btrfs/check-integrity.c |   6 +--
- fs/btrfs/dev-replace.c     |  19 ++++----
- fs/btrfs/disk-io.c         |   6 +--
- fs/btrfs/extent_io.c       |   4 +-
- fs/btrfs/ioctl.c           |  14 +++---
- fs/btrfs/raid56.c          |   2 +-
- fs/btrfs/rcu-string.h      |  56 ------------------------
- fs/btrfs/scrub.c           |  15 ++++---
- fs/btrfs/super.c           |   2 +-
- fs/btrfs/volumes.c         | 107 ++++++++++++++++++++++++++++++---------------
- fs/btrfs/volumes.h         |   2 +-
- include/linux/rcustring.h  |  97 ++++++++++++++++++++++++++++++++++++++++
- 12 files changed, 204 insertions(+), 126 deletions(-)
- delete mode 100644 fs/btrfs/rcu-string.h
- create mode 100644 include/linux/rcustring.h
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index c7e5f2a..399a4e0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3429,8 +3429,8 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
+ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ int btrfs_error_unpin_extent_range(struct btrfs_root *root,
+ 				   u64 start, u64 end);
+-int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+-			       u64 num_bytes, u64 *actual_bytes);
++int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
++			 u64 num_bytes, u64 *actual_bytes);
+ int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_root *root, u64 type);
+ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index fc74a9b..18b63acc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1891,8 +1891,8 @@ static int btrfs_issue_discard(struct block_device *bdev,
+ 	return blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_NOFS, 0);
+ }
+ 
+-static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+-				u64 num_bytes, u64 *actual_bytes)
++int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
++			 u64 num_bytes, u64 *actual_bytes)
+ {
+ 	int ret;
+ 	u64 discarded_bytes = 0;
+@@ -9710,12 +9710,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ 	return unpin_extent_range(root, start, end, false);
+ }
+ 
+-int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
+-			       u64 num_bytes, u64 *actual_bytes)
+-{
+-	return btrfs_discard_extent(root, bytenr, num_bytes, actual_bytes);
+-}
+-
+ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index edf32c5..d6c03f7 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2966,8 +2966,8 @@ static int do_trimming(struct btrfs_block_group_cache *block_group,
+ 	spin_unlock(&block_group->lock);
+ 	spin_unlock(&space_info->lock);
+ 
+-	ret = btrfs_error_discard_extent(fs_info->extent_root,
+-					 start, bytes, &trimmed);
++	ret = btrfs_discard_extent(fs_info->extent_root,
++				   start, bytes, &trimmed);
+ 	if (!ret)
+ 		*total_trimmed += trimmed;
+ 
 -- 
 2.1.3
 

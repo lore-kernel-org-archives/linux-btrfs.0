@@ -1,52 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i2.italiaonline.it ([212.48.25.194]:46686 "EHLO
+Received: from smtp-16-i2.italiaonline.it ([212.48.25.194]:44014 "EHLO
 	smtp-16.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752005AbaLISRs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 13:17:48 -0500
-Message-ID: <54873D14.8000208@inwind.it>
-Date: Tue, 09 Dec 2014 19:19:00 +0100
+	with ESMTP id S1751560AbaLISq2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 13:46:28 -0500
+Message-ID: <548743CE.1020403@inwind.it>
+Date: Tue, 09 Dec 2014 19:47:42 +0100
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/5] Avoid to consider lvm snapshots when scanning devices.
-References: <1417718382-6753-1-git-send-email-kreijack@inwind.it> <1417718382-6753-2-git-send-email-kreijack@inwind.it> <548506A3.3010409@cn.fujitsu.com> <5485BC81.5000906@gmail.com> <20141209102728.GA20595@twin.jikos.cz>
-In-Reply-To: <20141209102728.GA20595@twin.jikos.cz>
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+CC: lists@colorremedies.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
+References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com> <1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/09/2014 11:27 AM, David Sterba wrote:
->> > Today the lvm-snapshot and btrfs behave very poor: it is not
->> > predictable which device is pick (the original or the snapshot). 
->> > These patch *avoid* most problems skipping the snapshots, which
->> > to me seems a reasonable default.
->> > For the other case the user is still able to mount any disks
->> > [combination] passing them directly via command line (
->> > mount /dev/sdX -o device=/dev/sdY,device=/dev/sdz...  );
+Hi Dongsheng
+On 12/09/2014 12:20 PM, Dongsheng Yang wrote:
+> When function btrfs_statfs() calculate the tatol size of fs, it is calculating
+> the total size of disks and then dividing it by a factor. But in some usecase,
+> the result is not good to user.
+> 
+> Example:
+> 	# mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
+> 	# mount /dev/vdf1 /mnt
+> 	# dd if=/dev/zero of=/mnt/zero bs=1M count=1000
+> 	# df -h /mnt
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/vdf1       3.0G 1018M  1.3G  45% /mnt
+> 
+> 	# btrfs fi show /dev/vdf1
+> Label: none  uuid: f85d93dc-81f4-445d-91e5-6a5cd9563294
+> 	Total devices 2 FS bytes used 1001.53MiB
+> 	devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
+> 	devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
+> 
+> a. df -h should report Size as 2GiB rather than as 3GiB.
+> Because this is 2 device raid1, the limiting factor is devid 1 @2GiB.
 
-> Beware that passing 'device' does not mean that btrfs will use that
-> device to assemble the filesystem. It only says to scan the device the
-> same way any preceding 'btrfs dev scan' would do.
+I agree
 
-I thought a bit about your sentence, but I was unable to understand
-the difference. Could you describe a case where it is different ?
+> b. df -h should report Avail as 0.15GiB or less, rather than as 1.3GiB.
+> 2 - 1.85 = 0.15
 
-I have quite clear that "btrfs scan <dev>" and "mount -o device=<dev>"
-do the same thing: these fill a table with the devices information 
-grouped by fsid. Then the kernel uses this table as hint to pick 
-the devices for a filesystem. So except some strange case 
-(like device "hot" removed) this shouldn't make any difference... 
-Or not ?
+I cannot agree; the avail should be: 
+    1.85           (the capacity of the allocated chunk)
+   -1.018          (the file stored)
+   +(2-1.85=0.15)  (the residual capacity of the disks
+                    considering a raid1 fs)
+   ---------------
+=   0.97           
 
-The point is that when a btrfs scan is ran asynchronously,
-a snapshot "may" hide the origin volume. Where the word
-"may" means that it is not predictable. Passing the device solve only
-this point: it becomes predictable which device is used.
+> 
+> This patch drops the factor at all and calculate the size observable to
+> user without considering which raid level the data is in and what's the
+> size exactly in disk.
+> 
+> After this patch applied:
+> 	# mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
+> 	# mount /dev/vdf1 /mnt
+> 	# dd if=/dev/zero of=/mnt/zero bs=1M count=1000
+> 	# df -h /mnt
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/vdf1       2.0G 1018M  713M  59% /mnt
+
+I am confused: in this example you reported as Avail 713MB, when previous
+you stated that the right value should be 150MB...
+
+What happens when the filesystem is RAID5/RAID6 or Linear ?
 
 
- 
+[...]
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,86 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:42973 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751140AbaLHOBg (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 8 Dec 2014 09:01:36 -0500
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mout.kundenserver.de ([212.227.126.187]:56470 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755602AbaLIGFw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 01:05:52 -0500
+Message-ID: <5486913D.2010900@hiperscan.com>
+Date: Tue, 09 Dec 2014 07:05:49 +0100
+From: Florian Stuelpner <florian.stuelpner@hiperscan.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: remove non-sense btrfs_error_discard_extent() function
-Date: Mon,  8 Dec 2014 14:01:12 +0000
-Message-Id: <1418047272-1908-1-git-send-email-fdmanana@suse.com>
+CC: =?UTF-8?B?ZnJhbnppc2thIE7DpHBlbHQ=?=
+	<franziska.naepelt@hiperscan.com>
+Subject: cannot delete subvolumes
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It doesn't do anything special, it just calls btrfs_discard_extent(),
-so just remove it.
+Hi all,
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h            |  4 ++--
- fs/btrfs/extent-tree.c      | 10 ++--------
- fs/btrfs/free-space-cache.c |  4 ++--
- 3 files changed, 6 insertions(+), 12 deletions(-)
+Our specifications are:
+- Debian 7.7
+- kernel version: 3.17.4
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c7e5f2a..399a4e0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3429,8 +3429,8 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
- u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
- int btrfs_error_unpin_extent_range(struct btrfs_root *root,
- 				   u64 start, u64 end);
--int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
--			       u64 num_bytes, u64 *actual_bytes);
-+int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
-+			 u64 num_bytes, u64 *actual_bytes);
- int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans,
- 			    struct btrfs_root *root, u64 type);
- int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fc74a9b..18b63acc 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1891,8 +1891,8 @@ static int btrfs_issue_discard(struct block_device *bdev,
- 	return blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_NOFS, 0);
- }
- 
--static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
--				u64 num_bytes, u64 *actual_bytes)
-+int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
-+			 u64 num_bytes, u64 *actual_bytes)
- {
- 	int ret;
- 	u64 discarded_bytes = 0;
-@@ -9710,12 +9710,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- 	return unpin_extent_range(root, start, end, false);
- }
- 
--int btrfs_error_discard_extent(struct btrfs_root *root, u64 bytenr,
--			       u64 num_bytes, u64 *actual_bytes)
--{
--	return btrfs_discard_extent(root, bytenr, num_bytes, actual_bytes);
--}
--
- int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index edf32c5..d6c03f7 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2966,8 +2966,8 @@ static int do_trimming(struct btrfs_block_group_cache *block_group,
- 	spin_unlock(&block_group->lock);
- 	spin_unlock(&space_info->lock);
- 
--	ret = btrfs_error_discard_extent(fs_info->extent_root,
--					 start, bytes, &trimmed);
-+	ret = btrfs_discard_extent(fs_info->extent_root,
-+				   start, bytes, &trimmed);
- 	if (!ret)
- 		*total_trimmed += trimmed;
- 
--- 
-2.1.3
+Two weeks ago we started a btrfs balance. Some days later we stopped the 
+balance. The messages log show some errors (see below).
 
+While balancing we removed some snapshots, this operations failed with a 
+error messages.
+
+For example: ERROR: error accessing 
+'/mnt/btrfs/snapshots/home/2014-10-23--20-31-18-@daily'
+
+Now there are some subvolumes without a owner, last modified date etc. .
+
+Additionally the ls command returns an error:
+stuelpner@hsad-srv-03:/boot$ ls -l /mnt/btrfs/snapshots/home/
+ls: cannot access /mnt/btrfs/snapshots/home/2014-10-23--20-31-18-@daily: 
+Cannot allocate memory
+total 0
+drwxr-xr-x 1 root root 952 May 20 2014 2014-06-30--18-49-09-@monthly
+drwxr-xr-x 1 root root 952 May 20 2014 2014-07-01--02-52-01-@monthly
+drwxr-xr-x 1 root root 952 May 20 2014 2014-08-01--02-52-01-@monthly
+drwxr-xr-x 1 root root 990 Aug 28 07:00 2014-09-01--02-52-01-@monthly
+drwxr-xr-x 1 root root 990 Aug 28 07:00 2014-10-01--02-52-02-@monthly
+d????????? ? ? ? ? ? 2014-10-23--20-31-18-@daily
+drwxr-xr-x 1 root root 996 Oct 21 12:38 2014-11-01--02-52-01-@monthly
+
+This subvolumes cannot be access nor deleted:
+
+~# btrfs subvolume
+delete /mnt/btrfs/snapshots/transfer/2014-10-21--20-50-44-\@daily
+Transaction commit: none (default)
+ERROR: error accessing
+'/mnt/btrfs/snapshots/transfer/2014-10-21--20-50-44-@daily'
+
+Filesystem info:
+
+~# btrfs fi show
+Label: 'btrfs-data' uuid: 47a6ce34-6b63-4202-a7da-c1f6dbe48676
+Total devices 4 FS bytes used 2.22TiB
+devid 1 size 2.73TiB used 2.42TiB path /dev/sda
+devid 2 size 2.73TiB used 2.42TiB path /dev/sdb
+devid 3 size 2.73TiB used 186.00GiB path /dev/sdc
+devid 4 size 2.73TiB used 186.00GiB path /dev/sdd
+Label: 'spectral-data' uuid: aaaba9e0-7710-4295-88b1-c0ee9bd2eff8
+Total devices 2 FS bytes used 640.00KiB
+devid 1 size 238.47GiB used 2.03GiB path /dev/sdg
+devid 2 size 238.47GiB used 2.01GiB path /dev/sdh
+Btrfs v3.12
+
+root@hsad-srv-03:~# btrfs fi df /mnt/btrfs
+Data, RAID1: total=2.32TiB, used=2.06TiB
+Data, single: total=8.00MiB, used=0.00B
+System, RAID1: total=8.00MiB, used=400.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=287.00GiB, used=159.31GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+message.log:
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323328] btrfs D 
+ffff88083ed92dc0 0 7313 7296 0x00000000
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323335] ffff88068d816310 
+0000000000000082 ffff88083ae971d0 0000000000000086
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323340] 0000000000012dc0 
+0000000000012dc0 ffff88068d816310 ffff88058028ffd8
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323345] ffff88083ec12dc0 
+7fffffffffffffff 7fffffffffffffff 0000000000000002
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323351] Call Trace:
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323364] [] ? 
+console_conditional_schedule+0xf/0xf
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323372] [] ? 
+schedule_timeout+0x1c/0xf7
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323378] [] ? 
+__queue_work+0x1ef/0x23d
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323384] [] ? 
+__wait_for_common+0x120/0x158
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323390] [] ? 
+try_to_wake_up+0x1c7/0x1c7
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323441] [] ? 
+btrfs_async_run_delayed_refs+0xbd/0xda [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323475] [] ? 
+__btrfs_end_transaction+0x2b3/0x2d6 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323512] [] ? 
+relocate_block_group+0x2a1/0x4cd [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323548] [] ? 
+btrfs_relocate_block_group+0x14f/0x267 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323584] [] ? 
+btrfs_relocate_chunk.isra.58+0x58/0x5e2 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323609] [] ? 
+btrfs_item_key_to_cpu+0x12/0x30 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323645] [] ? 
+btrfs_get_token_64+0x76/0xc6 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323681] [] ? 
+release_extent_buffer+0x9d/0xa4 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323717] [] ? 
+btrfs_balance+0x9b0/0xb9d [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323752] [] ? 
+btrfs_ioctl_balance+0x21a/0x297 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323788] [] ? 
+btrfs_ioctl+0x1134/0x20e5 [btrfs]
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323794] [] ? 
+path_openat+0x233/0x4c5
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323801] [] ? 
+__do_page_fault+0x339/0x3df
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323807] [] ? vma_link+0x6b/0x8a
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323813] [] ? 
+do_vfs_ioctl+0x3ed/0x436
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323819] [] ? SyS_ioctl+0x49/0x77
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323824] [] ? 
+page_fault+0x22/0x30
+Nov 24 01:22:44 hsad-srv-03 kernel: [112256.323829] [] ? 
+system_call_fastpath+0x16/0x1b
+
+Do you have an idea? Can you help us please?
+
+Regards,
+Florian

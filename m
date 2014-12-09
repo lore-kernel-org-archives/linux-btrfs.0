@@ -1,53 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46885 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756529AbaLIMQL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Dec 2014 07:16:11 -0500
-Date: Tue, 9 Dec 2014 13:16:09 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Chris Mason <clm@fb.com>, dsterba@suse.cz,
-        Dimitri John Ledkov <xnox@debian.org>, cwillu <cwillu@cwillu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Zygo Blaxell <zblaxell@furryterror.org>
-Subject: Re: [RFC][PATCH v2] mount.btrfs helper
-Message-ID: <20141209121609.GD20595@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <547B5724.1060507@libero.it>
- <CANBHLUh9nXu4-wexFJimBvL-FtwPXQ7MeURi3COskJf-YJqGQA@mail.gmail.com>
- <CAE5mzvhOAi_Y2icLHOiUzG121ZALLZCTYhpjY8mkio3AyHrECA@mail.gmail.com>
- <CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com>
- <1417793566.21214.11@mail.thefacebook.com>
- <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com>
- <20141205164144.GK9754@suse.cz>
- <5481F657.8090307@inwind.it>
- <1417805015.4845.0@mail.thefacebook.com>
- <54820CD7.8000808@inwind.it>
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:38949 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756257AbaLIMQu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 07:16:50 -0500
+Received: by mail-wg0-f43.google.com with SMTP id l18so654903wgh.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 04:16:49 -0800 (PST)
+Received: from [192.168.0.29] (ppp-94-67-38-174.home.otenet.gr. [94.67.38.174])
+        by mx.google.com with ESMTPSA id fq1sm13596572wib.12.2014.12.09.04.16.46
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 09 Dec 2014 04:16:48 -0800 (PST)
+Message-ID: <5486E82A.6080301@gmail.com>
+Date: Tue, 09 Dec 2014 14:16:42 +0200
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54820CD7.8000808@inwind.it>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs scrub status misreports as "interrupted"
+References: <20141122131318.05609d5f@marcec.fritz.box>
+In-Reply-To: <20141122131318.05609d5f@marcec.fritz.box>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 05, 2014 at 08:51:51PM +0100, Goffredo Baroncelli wrote:
-> > From there if we really need a mount helper, it can either use a
-> > libbtrfs to hit the scan code or be a bash script.
->  
-> > Thanks for trying to smooth our or wrinkles in this area.  It's
-> > definitely worth working on, I just want to make sure we recreate as
-> > little infrastructure as possible ;)
-> 
-> This is an RFC because I am not sure about the "right" direction.
-> My first goal is more to start a "sane" discussion, than provide a 
-> solution.
-> 
-> But I have to point out that "btrfs device scan" usually is started
-> by udev, so no possibility to show [see] an error. More, btrfs dev scan is
-> started on a device "alone", from which is impossible to check
-> dev.uuid conflicts... [except if you accept to extend the analysis 
-> to all devices] [*]
+I've got the exact same problem, with a 4 drive RAID1. kernel 3.18-git 
+and btrfs tools-git, all built yesterday.
 
-Agreed with the way errors can be reported from udev hooks, the mount is
-IMO best time to report incomplete filesystems (aka "failed to read
-system error" in dmesg). Extending device scan will not help here
-AFAICS. 
+On 22/11/2014 2:13 μμ, Marc Joliet wrote:
+> Hi all,
+>
+> While I haven't gotten any "scrub already running" type errors any more, I do
+> get one strange case of state misreport.  When running scrub on /home (btrfs
+> RAID10), after 3 of 4 drives have completed, the 4th drive (sdb) will report as
+> interrupted, despite still running:
+>
+> # btrfs scrub status -d /home
+> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+> scrub device /dev/sda (id 1) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380 seconds
+> 	total bytes scrubbed: 252.86GiB with 0 errors
+> scrub device /dev/sdb (id 2) status
+> 	scrub started at Sat Nov 22 11:57:34 2014, interrupted after 3698 seconds, not running
+> 	total bytes scrubbed: 217.50GiB with 0 errors
+> scrub device /dev/sdc (id 3) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+> scrub device /dev/sdd (id 4) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+>
+> The funny thing is, the time will still update as the scrub keeps going:
+>
+> # btrfs scrub status -d /home
+> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+> scrub device /dev/sda (id 1) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380 seconds
+> 	total bytes scrubbed: 252.86GiB with 0 errors
+> scrub device /dev/sdb (id 2) status
+> 	scrub started at Sat Nov 22 11:57:34 2014, interrupted after 4136 seconds, not running
+> 								     ^^^^^^^^^^^^
+> 	total bytes scrubbed: 239.44GiB with 0 errors
+> scrub device /dev/sdc (id 3) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+> scrub device /dev/sdd (id 4) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+>
+> This has happened a few times, and when sdb finally finishes, the status is then
+> reported correctly as "finished":
+>
+> # btrfs scrub status -d /home
+> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+> scrub device /dev/sda (id 1) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380 seconds
+> 	total bytes scrubbed: 252.86GiB with 0 errors
+> scrub device /dev/sdb (id 2) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 4426 seconds
+> 	total bytes scrubbed: 252.88GiB with 0 errors
+> scrub device /dev/sdc (id 3) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+> scrub device /dev/sdd (id 4) history
+> 	scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994 seconds
+> 	total bytes scrubbed: 252.85GiB with 0 errors
+>
+> Kernel and btrfs-progs version:
+>
+> # uname -a
+> Linux marcec 3.16.7-gentoo #1 SMP PREEMPT Fri Oct 31 22:45:54 CET 2014 x86_64 AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD GNU/Linux
+>
+> # btrfs --version
+> Btrfs v3.17.1
+>
+> Should I open a report on bugzilla?
+>
+

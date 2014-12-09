@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-10v.sys.comcast.net ([96.114.154.169]:39727 "EHLO
-	resqmta-po-10v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754348AbaLIXNY (ORCPT
+Received: from resqmta-ch2-05v.sys.comcast.net ([69.252.207.37]:43220 "EHLO
+	resqmta-ch2-05v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753312AbaLIXUQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Dec 2014 18:13:24 -0500
-Message-ID: <54878210.8030807@pobox.com>
-Date: Tue, 09 Dec 2014 15:13:20 -0800
+	Tue, 9 Dec 2014 18:20:16 -0500
+Message-ID: <548783AE.6090600@pobox.com>
+Date: Tue, 09 Dec 2014 15:20:14 -0800
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
 To: Patrik Lundquist <patrik.lundquist@gmail.com>,
@@ -18,37 +18,15 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 12/09/2014 02:29 PM, Patrik Lundquist wrote:
-> Label: none  uuid: 770fe01d-6a45-42b9-912e-e8f8b413f6a4
->      Total devices 1 FS bytes used 1.35TiB
->      devid    1 size 2.73TiB used 1.36TiB path /dev/sdc1
->
->
 > Data, single: total=1.35TiB, used=1.35TiB
 > System, single: total=32.00MiB, used=112.00KiB
 > Metadata, single: total=3.00GiB, used=1.55GiB
 > GlobalReserve, single: total=512.00MiB, used=0.00B
 
-Are you trying to convert a filesystem on a single device/partition to 
-RAID 1?
+P.S. you should re-balance your System and Metadata as "DUP" for now. 
+Two copies of that stuff is better than one as right now you have no 
+real recovery path for that stuff. If you didn't make that change on 
+purpose it probably got down-revved from DUP automagically when you 
+tired to RAID it. e.g. block-by-block the dups were removed but then 
+there was no place to put the mirrored copy.
 
-I don't think thats legal. Whithout a second slice to distribute the 
-copies of the data onto there is no raiding to be done.
-
-Add the second device with btrfs device add, and _then_ use balance to 
-redistribute and copy the data to the second device.
-
-ASIDE: I, personally, think that a single device RAID1 should be legal. 
-I also think that it should be possible to tell the system that you want 
-N copies if you have N-or-more slices onto which they would spread. 
-These would match my expectations from mdadm and several hardware and 
-appliance RAID solutions. But my opinions in the matter do _not_ match 
-the BTRFS code base. RAID1 means exactly two devices (for any given 
-piece of information) [though I don't know whether it always has to be 
-the _same_ two devices for two different pieces of information.]
-
-So yea, if that is what you are trying to do, the inability to find a 
-second drive on which to allocate the peer-block(s) for an extent would 
-produce interesting errors. I cant say for sure that this is the exact 
-genesis of your issue, but I've read here in other threads a number of 
-comments that would translate as "trying to set RAID1 with on a 
-one-slice file system will be full of fail".

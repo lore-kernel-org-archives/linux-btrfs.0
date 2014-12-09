@@ -1,65 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:43754 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750823AbaLPJmr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 04:42:47 -0500
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 5F0973EE0C2
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:45 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 74149AC0497
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:44 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 1A73DE08005
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:44 +0900 (JST)
-Message-ID: <548FFE8E.5040507@jp.fujitsu.com>
-Date: Tue, 16 Dec 2014 18:42:38 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:59754 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751727AbaLII1g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 03:27:36 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB98RCQH013436
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Dec 2014 16:27:12 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v4 01/13] btrfs-progs: print root dir verbose error in fsck
+Date: Tue, 9 Dec 2014 16:27:20 +0800
+Message-ID: <1418113652-25088-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1418113652-25088-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1418113652-25088-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: Chris Murphy <lists@colorremedies.com>
-Subject: [PATCH] btrfs-progs: Add a brief explanation of btrfs property in
- man 8 btrfs
-Content-Type: text/plain; charset="ISO-2022-JP"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Before this patch, when btrfsck found an error in root dir, it will only
+output the following message "root %llu root dir %llu error" without any
+detailed error.
 
-As Chris reported at the following mail, although
-btrfs property has its own manpage, man 8 btrfs-property,
-there is no explanation about it in man 8 btrfs.
+Just add print_inode_error() to print out the whole error.
 
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40134.html
-
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Reported-by: Chris Murphy <lists@colorremedies.com>
-
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs.txt | 5 +++++
- 1 file changed, 5 insertions(+)
+Changelog:
+v2~v4:
+   No change.
+---
+ cmds-check.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/btrfs.txt b/Documentation/btrfs.txt
-index 3bdc6b4..2ed8483 100644
---- a/Documentation/btrfs.txt
-+++ b/Documentation/btrfs.txt
-@@ -85,6 +85,10 @@ COMMANDS
- 	Replace btrfs devices. +
- 	See `btrfs-replace`(8) for details.
- 
-+*property*::
-+	Get/set a property from/to a btrfs object. +
-+	See `btrfs-property`(8) for details.
-+
- EXIT STATUS
- -----------
- *btrfs* returns a zero exit status if it succeeds. Non zero is returned in
-@@ -113,3 +117,4 @@ SEE ALSO
- `btrfs-quota`(8),
- `btrfs-qgroup`(8),
- `btrfs-replace`(8),
-+`btrfs-property`(8),
+diff --git a/cmds-check.c b/cmds-check.c
+index 389674f..9fc1410 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1984,6 +1984,7 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			fprintf(stderr, "root %llu root dir %llu error\n",
+ 				(unsigned long long)root->root_key.objectid,
+ 				(unsigned long long)root_dirid);
++			print_inode_error(root, rec);
+ 			error++;
+ 		}
+ 	} else {
 -- 
-1.8.3.1
+2.1.3
 

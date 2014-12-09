@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:8765 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752480AbaLII1i (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 03:27:38 -0500
+	with ESMTP id S1752480AbaLII1m (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 03:27:42 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB98RFHW013453
-	for <linux-btrfs@vger.kernel.org>; Tue, 9 Dec 2014 16:27:15 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sB98RJVU013470
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Dec 2014 16:27:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v4 04/13] btrfs-progs: Add last_cache_extent() for extent-cache.
-Date: Tue, 9 Dec 2014 16:27:23 +0800
-Message-ID: <1418113652-25088-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 05/13] btrfs-progs: Record highest inode number before repair.
+Date: Tue, 9 Dec 2014 16:27:24 +0800
+Message-ID: <1418113652-25088-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1418113652-25088-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1418113652-25088-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,8 +18,23 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Allow direct search for the last cache extent.
-Provide the basis for finding the last ino in inode_cache.
+Record highest inode number before inode repair.
+
+This is especially important for corrupted leaf case.
+Under that case, if use btrfs_find_free_objectid, it may find a ino
+existing in corrupted leaf but dropped by btree_recover.
+If that happens, created dir will be referenced incorrectly since there
+may be inode_ref or dir_index/item refers to it.
+
+So we must record the highest inode number according to the inode_cache.
+Inode_cache is OK since when a inode_ref or dir_index/item is found even
+the referenced source is not found, it will be created.
+If we record the highest inode number of inode_cache, and use
+highest_inode + 1 as 'lost+found' dir, it will ensure the newly created
+dir not conflicting with any possible inode.
+
+This provides the basis for nlink or inode rebuild for repairing btrfs
+with leaf/node corruption.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
@@ -27,42 +42,35 @@ Changelog:
 v4:
    Newly introduced.
 ---
- extent-cache.c | 9 +++++++++
- extent-cache.h | 1 +
- 2 files changed, 10 insertions(+)
+ cmds-check.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/extent-cache.c b/extent-cache.c
-index 7656ab2..d80aead 100644
---- a/extent-cache.c
-+++ b/extent-cache.c
-@@ -230,6 +230,15 @@ struct cache_extent *first_cache_extent(struct cache_tree *tree)
- 	return rb_entry(node, struct cache_extent, rb_node);
- }
+diff --git a/cmds-check.c b/cmds-check.c
+index 9fc1410..1f35cc2 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1927,6 +1927,21 @@ static int check_inode_recs(struct btrfs_root *root,
+ 	}
  
-+struct cache_extent *last_cache_extent(struct cache_tree *tree)
-+{
-+	struct rb_node *node = rb_last(&tree->root);
+ 	/*
++	 * We need to record the highest inode number for later 'lost+found'
++	 * dir creation.
++	 * We must select a ino not used/refered by any existing inode, or
++	 * 'lost+found' ino may be a missing ino in a corrupted leaf,
++	 * this may cause 'lost+found' dir has wrong nlinks.
++	 */
++	cache = last_cache_extent(inode_cache);
++	if (cache) {
++		node = container_of(cache, struct ptr_node, cache);
++		rec = node->data;
++		if (rec->ino > root->highest_inode)
++			root->highest_inode = rec->ino;
++	}
 +
-+	if (!node)
-+		return NULL;
-+	return rb_entry(node, struct cache_extent, rb_node);
-+}
-+
- struct cache_extent *prev_cache_extent(struct cache_extent *pe)
- {
- 	struct rb_node *node = rb_prev(&pe->rb_node);
-diff --git a/extent-cache.h b/extent-cache.h
-index cba83d1..a9d07e1 100644
---- a/extent-cache.h
-+++ b/extent-cache.h
-@@ -41,6 +41,7 @@ struct cache_extent {
- void cache_tree_init(struct cache_tree *tree);
- 
- struct cache_extent *first_cache_extent(struct cache_tree *tree);
-+struct cache_extent *last_cache_extent(struct cache_tree *tree);
- struct cache_extent *prev_cache_extent(struct cache_extent *pe);
- struct cache_extent *next_cache_extent(struct cache_extent *pe);
- 
++	/*
+ 	 * We need to repair backrefs first because we could change some of the
+ 	 * errors in the inode recs.
+ 	 *
 -- 
 2.1.3
 

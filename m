@@ -1,18 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45514 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:45794 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756467AbaLIKfo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Dec 2014 05:35:44 -0500
-Date: Tue, 9 Dec 2014 11:35:43 +0100
+	id S1755723AbaLIKzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Dec 2014 05:55:04 -0500
+Date: Tue, 9 Dec 2014 11:55:04 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Dimitri John Ledkov <xnox@debian.org>
-Cc: Chris Mason <clm@fb.com>, cwillu <cwillu@cwillu.com>,
-        "kreijack@inwind.it" <kreijack@inwind.it>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>,
+To: Chris Mason <clm@fb.com>
+Cc: kreijack@inwind.it, dsterba@suse.cz, Dimitri John Ledkov <xnox@debian.org>,
+        cwillu <cwillu@cwillu.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
         Zygo Blaxell <zblaxell@furryterror.org>
 Subject: Re: [RFC][PATCH v2] mount.btrfs helper
-Message-ID: <20141209103543.GB20595@twin.jikos.cz>
+Message-ID: <20141209105504.GC20595@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <547B5724.1060507@libero.it>
  <CANBHLUh9nXu4-wexFJimBvL-FtwPXQ7MeURi3COskJf-YJqGQA@mail.gmail.com>
@@ -20,20 +18,32 @@ References: <547B5724.1060507@libero.it>
  <CANBHLUhHktgJRYR5JDjPmvq=299iDR3xmwoPTjFh5ey7DnFxZw@mail.gmail.com>
  <1417793566.21214.11@mail.thefacebook.com>
  <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com>
+ <20141205164144.GK9754@suse.cz>
+ <5481F657.8090307@inwind.it>
+ <1417805015.4845.0@mail.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CANBHLUgkY5YkFqe48H=vsS4w2uZr+nU0NBhy8o88A=vv3-nHkQ@mail.gmail.com>
+In-Reply-To: <1417805015.4845.0@mail.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 05, 2014 at 04:01:37PM +0000, Dimitri John Ledkov wrote:
-> The other suggestion I received is to ship a systemd unit that does
-> unconditional btrfs scan pre local filesystem target... =)
+On Fri, Dec 05, 2014 at 01:43:35PM -0500, Chris Mason wrote:
+> > I have the following reasons to support a mount.btrfs helper:
+> > 1) it is in a good point to check that everything is ok (see the 
+> > thread
+> > related LVM snapshot, due to a dev.uuid conflicts),
+> > 2) it is in a good point to issue a good error explanation (missing
+> > device....)
+> > 3) it may handle case like "degraded" mode, where the filesystem is 
+> > not
+> > fully functional but even as degraded have "some" functionals..
+> 
+> Ok, these three things are worth improving, but I'd like to take a 
+> slightly different direction.  Instead of recreating chunks of btrfs 
+> dev scan, lets extend btrfs dev scan to at the very least understand #1 
+> and #2.  As much as possible we want to be leveraging the data in udev 
+> instead of recreating that functionality.
 
-While this works (as any ohter user script/hook that preceeds local
-filesystem mount), I'd rather avoid adding more such workarounds to the
-user/admin side. It took some time before all distros added the device
-scanning into initrd.
-
-(You don't propose that approach, this is to discourage people from
-doing that as their distro default.)
+Udev provides add/delete/change events, the mount helper would
+additionally provide the 'mount' event (although the action wont' be
+entirely user-defined).

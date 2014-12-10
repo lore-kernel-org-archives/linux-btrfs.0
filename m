@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f46.google.com ([74.125.82.46]:37441 "EHLO
-	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751394AbaLJAGr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 19:06:47 -0500
-Received: by mail-wg0-f46.google.com with SMTP id x13so2267164wgg.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 16:06:46 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: andrew.j.wade@gmail.com
-In-Reply-To: <CAJCQCtR98rCHHmZ9zjB93znfwEEitGxbnrMzDqRn1wV0sxvi=w@mail.gmail.com>
-References: <m5imaf$s9b$1@ger.gmane.org>
-	<CAAuLxcZJ1VDTrvRtaaXgqUo91sBcBkLYUUTe-_CNLm1zMEZp7g@mail.gmail.com>
-	<CAJCQCtR98rCHHmZ9zjB93znfwEEitGxbnrMzDqRn1wV0sxvi=w@mail.gmail.com>
-Date: Tue, 9 Dec 2014 19:06:46 -0500
-Message-ID: <CAAuLxcYYGiJwGEh7yU4+dCfPt6jKP2VT=2K_c8bTwiAAWJhiDQ@mail.gmail.com>
-Subject: Re: Kernel lockup: "fs/btrfs/delayed-inoce.c:1410 btrfs_assert_delayed_root_empty"
-From: Andrew Wade <andrew.j.wade@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Bernardo Donadio <bcdonadio@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:53747 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751013AbaLJAKt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Dec 2014 19:10:49 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XyUrg-00023Z-JI
+	for linux-btrfs@vger.kernel.org; Wed, 10 Dec 2014 01:10:48 +0100
+Received: from md5i.com ([75.151.244.229])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 01:10:48 +0100
+Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 01:10:48 +0100
+To: linux-btrfs@vger.kernel.org
+From: Michael Welsh Duggan <mwd@md5i.com>
+Subject: Why do I have to remount to receive?
+Date: Tue, 09 Dec 2014 19:10:29 -0500
+Message-ID: <87k320mkju.fsf@maru2.md5i.com>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 7, 2014 at 2:20 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Sat, Dec 6, 2014 at 7:45 PM, Andrew Wade <andrew.j.wade@gmail.com> wrote:
->> ...
->
-> Typically a dev will want to see the result of sysrq+w to show details
-> on the blocked tasks. I suggest reproducing the conditions, then issue
-> sysrq+w, then recapture dmesg. And also you might look at your own
-> previous post in the archives and see if it formats legibly because
-> the result I've got in gmail (above) is wrapping poorly and makes it
-> hard to read. If you can't figure that out, then it's easier to just
-> file a bug at bugzilla.kernel.org, and attach the dmesg output as a
-> text file, then cite the bug URL in this thread.
->
-> https://www.kernel.org/doc/Documentation/sysrq.txt
->
+Version information:
 
-Thanks Chris.
+  # btrfs --version
+  Btrfs v3.17
+  # uname -a
+  Linux maru2 3.16.0-4-amd64 #1 SMP Debian 3.16.7-2 (2014-11-06) x86_64 GNU/Linux
 
-I found an exiting bug for my issue and attached a log with sysrq+w
+In the following system, /backup is a mounted subvolume.  The initial
+send/receive worked, but when trying to send an incremental I get the
+following warning:
 
-https://bugzilla.kernel.org/show_bug.cgi?id=82251
+  # btrfs send -p /snapshots/2014-12-09 /snapshots/test | btrfs receive -vvv /backup/snapshots/root/
+  At subvol /snapshots/test
+  At snapshot test
+  receiving snapshot test uuid=9c72c30a-04c0-6442-9a9a-7ee9c56014e2, ctransid=1030360 parent_uuid=4eb30116-2c1a-f94d-b964-98cd41262dfb, parent_ctransid=1030202
+  It seems that you have changed your default subvolume or you specify other subvolume to
+  mount btrfs, try to remount this btrfs filesystem with fs tree, and run btrfs receive again!
 
-thanks,
-Andrew
+I understand what it is saying, but I have to ask, why?  Why does it or
+should it need me to remount the root fs to do an incremental receive?
+
+-- 
+Michael Welsh Duggan
+(md5i@md5i.com)
+

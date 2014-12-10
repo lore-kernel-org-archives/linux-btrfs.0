@@ -1,58 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56144 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750780AbaLCC2c (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Dec 2014 21:28:32 -0500
-Message-ID: <547E757E.1000700@cn.fujitsu.com>
-Date: Wed, 3 Dec 2014 10:29:18 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v4 00/10] Implement device scrub/replace for RAID56
-References: <1417523971-15553-1-git-send-email-miaox@cn.fujitsu.com> <1417526902.21136.1@mail.thefacebook.com>
-In-Reply-To: <1417526902.21136.1@mail.thefacebook.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from e28smtp05.in.ibm.com ([122.248.162.5]:45373 "EHLO
+	e28smtp05.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755283AbaLJNOl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 08:14:41 -0500
+Received: from /spool/local
+	by e28smtp05.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 10 Dec 2014 18:44:38 +0530
+Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 3DC8E125805D
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:00 +0530 (IST)
+Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
+	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADFEbe6684944
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:14 +0530
+Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEa9R031860
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:36 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
+        chandan@mykolab.com
+Subject: [RFC PATCH V10 02/19] Btrfs: subpagesize-blocksize: Get rid of whole page writes.
+Date: Wed, 10 Dec 2014 18:44:04 +0530
+Message-Id: <1418217261-17273-3-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2 Dec 2014 08:28:22 -0500, Chris Mason wrote:
-> On Tue, Dec 2, 2014 at 7:39 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
->> This patchset implement the device scrub/replace function for RAID56, the
->> most implementation of the common data is similar to the other RAID type.
->> The differentia or difficulty is the parity process. The basic idea is reading
->> and check the data which has checksum out of the raid56 stripe lock, if the
->> data is right, then lock the raid56 stripe, read out the other data in the
->> same stripe, if no IO error happens, calculate the parity and check the
->> original one, if the original parity is right, the scrub parity passes.
->> or write out the new one. But if the common data(not parity) that we read out
->> is wrong, we will try to recover it, and then check and repair the parity.
->>
->> And in order to avoid making the code more and more complex, we copy some
->> code of common data process for the parity, the cleanup work is in my
->> TODO list.
->>
->> We have done some test, the patchset worked well. Of course, more tests
->> are welcome. If you are interesting to use it or test it, you can pull
->> the patchset from
->>
->>   https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
->>
->> Changelog v3 -> v4:
->> - Fix the problem that the scrub's raid bio was cached, which was reported
->>   by Chris.
->> - Remove the 10st patch, the deadlock that was described in that patch doesn't
->>   exist on the current kernel.
->> - Rebase the patchset to the top of integration branch
-> 
-> Thanks, I'll try this today.  I need to rebase in a new version of the RCU patches, can you please cook one on top of v3.18-rc6 instead?
+This commit brings back functions that set/clear EXTENT_WRITEBACK bits. These
+are required to reliably clear PG_writeback page flag.
 
-I have updated my raid56-scrub-replace branch, please re-pull it.
-  https://github.com/miaoxie/linux-btrfs.git raid56-scrub-replace
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/extent_io.c | 47 +++++++++++++++++++++++++++--------------------
+ fs/btrfs/inode.c     | 40 +++++++++++++++++++++++++++++++---------
+ 2 files changed, 58 insertions(+), 29 deletions(-)
 
-The v4 patchset in the mail list can be applied on v3.18-rc6 successfully, so
-I don't update it.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c98dfd8..57db008 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1300,6 +1300,20 @@ int clear_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+ 				cached_state, mask);
+ }
+ 
++static int set_extent_writeback(struct extent_io_tree *tree, u64 start, u64 end,
++				struct extent_state **cached_state, gfp_t mask)
++{
++	return set_extent_bit(tree, start, end, EXTENT_WRITEBACK, NULL,
++			cached_state, mask);
++}
++
++static int clear_extent_writeback(struct extent_io_tree *tree, u64 start, u64 end,
++				struct extent_state **cached_state, gfp_t mask)
++{
++	return clear_extent_bit(tree, start, end, EXTENT_WRITEBACK, 1, 0,
++				cached_state, mask);
++}
++
+ /*
+  * either insert or lock state struct between start and end use mask to tell
+  * us if waiting is desired.
+@@ -1406,6 +1420,7 @@ static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+ 		page_cache_release(page);
+ 		index++;
+ 	}
++	set_extent_writeback(tree, start, end, NULL, GFP_NOFS);
+ 	return 0;
+ }
+ 
+@@ -2403,31 +2418,23 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 
+ 	bio_for_each_segment_all(bvec, bio, i) {
+ 		struct page *page = bvec->bv_page;
++		struct inode *inode = page->mapping->host;
++		struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
++		u64 page_start, page_end;
+ 
+-		/* We always issue full-page reads, but if some block
+-		 * in a page fails to read, blk_update_request() will
+-		 * advance bv_offset and adjust bv_len to compensate.
+-		 * Print a warning for nonzero offsets, and an error
+-		 * if they don't add up to a full page.  */
+-		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE) {
+-			if (bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE)
+-				btrfs_err(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "partial page write in btrfs with offset %u and length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-			else
+-				btrfs_info(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "incomplete page write in btrfs with offset %u and "
+-				   "length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-		}
+-
+-		start = page_offset(page);
+-		end = start + bvec->bv_offset + bvec->bv_len - 1;
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
+ 
+ 		if (end_extent_writepage(page, err, start, end))
+ 			continue;
+ 
+-		end_page_writeback(page);
++		clear_extent_writeback(tree, start, end, NULL, GFP_ATOMIC);
++
++		page_start = page_offset(page);
++		page_end = page_offset(page) + PAGE_CACHE_SIZE - 1;
++		if (!test_range_bit(tree, page_start, page_end,
++					EXTENT_WRITEBACK, 0, NULL))
++			end_page_writeback(page);
+ 	}
+ 
+ 	bio_put(bio);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7309832..2ffb4df 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2823,22 +2823,44 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_ordered_extent *ordered_extent = NULL;
+ 	struct btrfs_workqueue *workers;
++	u64 ordered_start, ordered_end;
++	int done;
+ 
+ 	trace_btrfs_writepage_end_io_hook(page, start, end, uptodate);
+ 
+ 	ClearPagePrivate2(page);
+-	if (!btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
+-					    end - start + 1, uptodate))
+-		return 0;
++loop:
++	ordered_extent = btrfs_lookup_ordered_range(inode, start,
++						end - start + 1);
++	if (!ordered_extent)
++		goto out;
+ 
+-	btrfs_init_work(&ordered_extent->work, finish_ordered_fn, NULL, NULL);
++	ordered_start = max_t(u64, start, ordered_extent->file_offset);
++	ordered_end = min_t(u64, end,
++			ordered_extent->file_offset + ordered_extent->len - 1);
+ 
+-	if (btrfs_is_free_space_inode(inode))
+-		workers = root->fs_info->endio_freespace_worker;
+-	else
+-		workers = root->fs_info->endio_write_workers;
+-	btrfs_queue_work(workers, &ordered_extent->work);
++	done = btrfs_dec_test_ordered_pending(inode, &ordered_extent,
++					ordered_start,
++					ordered_end - ordered_start + 1,
++					uptodate);
++	if (done) {
++		btrfs_init_work(&ordered_extent->work, finish_ordered_fn, NULL, NULL);
++
++		if (btrfs_is_free_space_inode(inode))
++			workers = root->fs_info->endio_freespace_worker;
++		else
++			workers = root->fs_info->endio_write_workers;
+ 
++		btrfs_queue_work(workers, &ordered_extent->work);
++	}
++
++	btrfs_put_ordered_extent(ordered_extent);
++
++	start = ordered_end + 1;
++
++	if (start < end)
++		goto loop;
++out:
+ 	return 0;
+ }
+ 
+-- 
+2.1.0
 
-Thanks
-Miao

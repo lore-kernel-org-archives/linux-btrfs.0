@@ -1,103 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28622 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751780AbaLYBeO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 20:34:14 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBP1Xipk020155
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:33:44 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/5] New btrfsck test framework
-Date: Thu, 25 Dec 2014 09:32:10 +0800
-Message-ID: <1419471135-10878-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:41705 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753960AbaLJNlI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 08:41:08 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D00BEAC19
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 13:41:05 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: basic support for TREE_SEARCH_V2 ioctl
+Date: Wed, 10 Dec 2014 14:41:04 +0100
+Message-Id: <1418218864-11430-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset introduce the new btrfsck test framework.
-The main changes are:
-1) File layout change
-The new file layout is based on dir.
-Every corruption type has its own dir, and it can contain several
-different images for different cases, like bad root items type, it has
-the default case and the skinny metadata case.
+Add the interface and helper that checks if the v2 ioctl is supported.
 
-2) Image format
-The framework support 2 image format.
-One is the original btrfs-image dump.
-The other one is custom script.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ ioctl.h | 14 ++++++++++++++
+ utils.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ utils.h |  2 ++
+ 3 files changed, 56 insertions(+)
 
-Any other type will need a small script to extract the image and use the
-framework routine or other codes to check it.
-
-3) New test case for leaf-corruption recovery
-Added a new type dir for leaf-corruption, and add verification codes to
-check the recovered data.
-
-Minor changes include:
-1) fsck-test.sh can be called from anywhere
-Now fsck-test.sh can determine the btrfs-progs top dir according to its
-path, no need to be called from btrfs-progs dir.
-
-2) default value and auto-detect for environment variant
-Now fsck-test.sh can accept environment variants, no need to edit the
-script anymore.
-And if TEST_MNT is not set, it will use <btrfs-progs>/tests/mnt as
-default mount point.
-
-3) better prompt for needed environment variant/privilege
-When some case is not run due to missing environment variant or
-privilege, fsck-test.sh will prompt it.
-
-Qu Wenruo (5):
-  btrfs-progs: New btrfsck test infrastructure
-  btrfs-progs: Move btrfs-image dump to corresponding dir
-  btrfs-progs: Move bad root items test cases to its corresponding dir
-  btrfs-progs: Move leaf-corruption no extent data case and add    
-    verification script
-  btrfs-progs: Move extent tree rebuild test to its dir
-
- tests/common                                       |  49 +++++++++
- tests/fsck-tests.sh                                | 122 +++++++--------------
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.tar.xz}                           | Bin
- .../skinny_case.tar.xz}                            | Bin
- tests/fsck-tests/006-bad-root-items/test.sh        |  15 +++
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../default_case.img}                              | Bin
- .../no_data_extent.tar.xz}                         | Bin
- tests/fsck-tests/012-leaf-corruption/test.sh       | 119 ++++++++++++++++++++
- tests/fsck-tests/013-extent-tree-rebuild/test.sh   |  47 ++++++++
- 18 files changed, 272 insertions(+), 80 deletions(-)
- create mode 100644 tests/common
- mode change 100644 => 100755 tests/fsck-tests.sh
- rename tests/fsck-tests/{001-bad-file-extent-bytenr.img => 001-bad-file-extent-bytenr/default_case.img} (100%)
- rename tests/fsck-tests/{002-bad-transid.img => 002-bad-transid/default_case.img} (100%)
- rename tests/fsck-tests/{003-shift-offsets.img => 003-shift-offsets/default_case.img} (100%)
- rename tests/fsck-tests/{004-no-dir-index.img => 004-no-dir-index/default_case.img} (100%)
- rename tests/fsck-tests/{005-bad-item-offset.img => 005-bad-item-offset/default_case.img} (100%)
- rename tests/fsck-tests/{006-bad_root_items_fs.tar.xz => 006-bad-root-items/default_case.tar.xz} (100%)
- rename tests/fsck-tests/{007-bad_root_items_fs_skinny.tar.xz => 006-bad-root-items/skinny_case.tar.xz} (100%)
- create mode 100755 tests/fsck-tests/006-bad-root-items/test.sh
- rename tests/fsck-tests/{008-bad-offset-snapshots.img => 007-bad-offset-snapshots/default_case.img} (100%)
- rename tests/fsck-tests/{009-bad-dir-index-name.img => 008-bad-dir-index-name/default_case.img} (100%)
- rename tests/fsck-tests/{010-no-dir-item-or-index.img => 009-no-dir-item-or-index/default_case.img} (100%)
- rename tests/fsck-tests/{011-no-rootdir-inode-item.img => 010-no-rootdir-inode-item/default_case.img} (100%)
- rename tests/fsck-tests/{012-no-inode-item.img => 011-no-inode-item/default_case.img} (100%)
- rename tests/fsck-tests/{013-leaf-corruption-no-extent-data.tar.xz => 012-leaf-corruption/no_data_extent.tar.xz} (100%)
- create mode 100755 tests/fsck-tests/012-leaf-corruption/test.sh
- create mode 100755 tests/fsck-tests/013-extent-tree-rebuild/test.sh
-
+diff --git a/ioctl.h b/ioctl.h
+index 67c8de9808a7..2c2c7c1bc57e 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -279,6 +279,18 @@ struct btrfs_ioctl_search_args {
+ 	char buf[BTRFS_SEARCH_ARGS_BUFSIZE];
+ };
+ 
++/*
++ * Extended version of TREE_SEARCH ioctl that can return more than 4k of bytes.
++ * The allocated size of the buffer is set in buf_size.
++ */
++struct btrfs_ioctl_search_args_v2 {
++        struct btrfs_ioctl_search_key key; /* in/out - search parameters */
++        __u64 buf_size;			   /* in - size of buffer
++                                            * out - on EOVERFLOW: needed size
++                                            *       to store item */
++        __u64 buf[0];                      /* out - found items */
++};
++
+ #define BTRFS_INO_LOOKUP_PATH_MAX 4080
+ struct btrfs_ioctl_ino_lookup_args {
+ 	__u64 treeid;
+@@ -542,6 +554,8 @@ struct btrfs_ioctl_clone_range_args {
+ 				struct btrfs_ioctl_defrag_range_args)
+ #define BTRFS_IOC_TREE_SEARCH _IOWR(BTRFS_IOCTL_MAGIC, 17, \
+ 				   struct btrfs_ioctl_search_args)
++#define BTRFS_IOC_TREE_SEARCH_V2 _IOWR(BTRFS_IOCTL_MAGIC, 17, \
++				   struct btrfs_ioctl_search_args_v2)
+ #define BTRFS_IOC_INO_LOOKUP _IOWR(BTRFS_IOCTL_MAGIC, 18, \
+ 				   struct btrfs_ioctl_ino_lookup_args)
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
+diff --git a/utils.c b/utils.c
+index 2a9241619128..d3ec0d4ab467 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2450,3 +2450,43 @@ int find_next_key(struct btrfs_path *path, struct btrfs_key *key)
+ 	}
+ 	return 1;
+ }
++
++int btrfs_tree_search2_ioctl_supported(int fd)
++{
++	struct btrfs_ioctl_search_args_v2 *args2;
++	struct btrfs_ioctl_search_key *sk;
++	int args2_size = 1024;
++	char args2_buf[args2_size];
++	int ret;
++	static int v2_supported = -1;
++
++	if (v2_supported != -1)
++		return v2_supported;
++
++	args2 = (struct btrfs_ioctl_search_args_v2 *)args2_buf;
++	sk = &(args2->key);
++
++	/*
++	 * Search for the extent tree item in the root tree.
++	 */
++	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
++	sk->min_objectid = BTRFS_EXTENT_TREE_OBJECTID;
++	sk->max_objectid = BTRFS_EXTENT_TREE_OBJECTID;
++	sk->min_type = BTRFS_ROOT_ITEM_KEY;
++	sk->max_type = BTRFS_ROOT_ITEM_KEY;
++	sk->min_offset = 0;
++	sk->max_offset = (u64)-1;
++	sk->min_transid = 0;
++	sk->max_transid = (u64)-1;
++	sk->nr_items = 1;
++	args2->buf_size = args2_size - sizeof(struct btrfs_ioctl_search_args_v2);
++	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, args2);
++	if (ret == -EOPNOTSUPP)
++		v2_supported = 0;
++	else if (ret == 0)
++		v2_supported = 1;
++	else
++		return ret;
++
++	return v2_supported;
++}
+diff --git a/utils.h b/utils.h
+index 289e86b4b11e..eb917d695f18 100644
+--- a/utils.h
++++ b/utils.h
+@@ -161,4 +161,6 @@ static inline u64 btrfs_min_dev_size(u32 leafsize)
+ 
+ int find_next_key(struct btrfs_path *path, struct btrfs_key *key);
+ 
++int btrfs_tree_search2_ioctl_supported(int fd);
++
+ #endif
 -- 
-2.2.1
+2.1.3
 

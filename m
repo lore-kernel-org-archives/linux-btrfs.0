@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:38859 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754154AbaLJBqq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:46 -0500
-Received: by mail-pa0-f53.google.com with SMTP id kq14so1729273pab.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:45 -0800 (PST)
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:40935 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753661AbaLJBqm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:42 -0500
+Received: by mail-pa0-f45.google.com with SMTP id lf10so1134801pab.32
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:41 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
@@ -14,10 +14,10 @@ To: Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         linux-mm@kvack.org, linux-nfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH v3 5/7] btrfs: prevent ioctls from interfering with a swap file
-Date: Tue,  9 Dec 2014 17:45:46 -0800
-Message-Id: <a0ff3435124c2150effb6681d529d56032c711f8.1418173063.git.osandov@osandov.com>
+Cc: Omar Sandoval <osandov@osandov.com>, Mel Gorman <mgorman@suse.de>
+Subject: [RFC PATCH v3 3/7] swap: use direct I/O for SWP_FILE swap_readpage
+Date: Tue,  9 Dec 2014 17:45:44 -0800
+Message-Id: <9c1d4746d1e7e41114496be8912cb74e36d5df48.1418173063.git.osandov@osandov.com>
 In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
 References: <cover.1418173063.git.osandov@osandov.com>
 In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
@@ -25,139 +25,71 @@ References: <cover.1418173063.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are several ioctls which can work around constraints enforced by
-btrfs_swap_activate and lead to an unsafe situation. We cannot do any of
-the following on an active swap file in order to avoid creating
-compressed or shared extents:
+On Mon, Nov 17, 2014 at 07:48:17AM -0800, Christoph Hellwig wrote:
+> With the new iov_iter infrastructure that supprots direct I/O to kernel
+> pages please get rid of the ->readpage hack first.  I'm still utterly
+> disapoined that this crap ever got merged.
 
-- chattr -C or +c
-- snapshot create
-- defrag
-- clone
-- dedup
-
+Cc: Mel Gorman <mgorman@suse.de>
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/ctree.h   |  3 +++
- fs/btrfs/disk-io.c |  1 +
- fs/btrfs/ioctl.c   | 35 +++++++++++++++++++++++++++++++----
- 3 files changed, 35 insertions(+), 4 deletions(-)
+ mm/page_io.c | 32 ++++++++++++++++++++++++++++----
+ 1 file changed, 28 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index fe69edd..38979b9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1891,6 +1891,9 @@ struct btrfs_root {
- 	int send_in_progress;
- 	struct btrfs_subvolume_writers *subv_writers;
- 	atomic_t will_be_snapshoted;
-+
-+	/* Number of active swapfiles */
-+	atomic_t nr_swapfiles;
- };
+diff --git a/mm/page_io.c b/mm/page_io.c
+index 955db8b..10715e0 100644
+--- a/mm/page_io.c
++++ b/mm/page_io.c
+@@ -283,8 +283,7 @@ int __swap_writepage(struct page *page, struct writeback_control *wbc,
  
- struct btrfs_ioctl_defrag_range_args {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 1bf9f89..60094c4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1265,6 +1265,7 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
- 	atomic_set(&root->orphan_inodes, 0);
- 	atomic_set(&root->refs, 1);
- 	atomic_set(&root->will_be_snapshoted, 0);
-+	atomic_set(&root->nr_swapfiles, 0);
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
- 	root->last_log_commit = 0;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4399f0c..18fa95c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -291,9 +291,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		} else {
- 			ip->flags |= BTRFS_INODE_NODATACOW;
- 		}
--	} else {
-+	} else if (!IS_SWAPFILE(inode)) {
- 		/*
--		 * Revert back under same assuptions as above
-+		 * Revert back under same assumptions as above. swap_activate
-+		 * checks that we don't swapon a copy-on-write file, but we also
-+		 * make sure that it doesn't become copy-on-write here.
- 		 */
- 		if (S_ISREG(mode)) {
- 			if (inode->i_size == 0)
-@@ -316,7 +318,12 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
- 		if (ret && ret != -ENODATA)
- 			goto out_drop;
--	} else if (flags & FS_COMPR_FL) {
-+	} else if (flags & FS_COMPR_FL && !IS_SWAPFILE(inode)) {
-+		/*
-+		 * Like nodatacow, swap_activate checks that we don't swapon a
-+		 * compressed file, so we shouldn't let it become compressed.
-+		 */
-+
- 		const char *comp;
- 
- 		ip->flags |= BTRFS_INODE_COMPRESS;
-@@ -330,7 +337,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 				     comp, strlen(comp), 0);
- 		if (ret)
- 			goto out_drop;
--
- 	} else {
- 		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
- 		if (ret && ret != -ENODATA)
-@@ -647,6 +653,12 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		return -EINVAL;
- 
-+	if (atomic_read(&root->nr_swapfiles)) {
-+		btrfs_err(root->fs_info,
-+			  "cannot create snapshot with active swapfile");
-+		return -ETXTBSY;
-+	}
-+
- 	atomic_inc(&root->will_be_snapshoted);
- 	smp_mb__after_atomic();
- 	btrfs_wait_nocow_write(root);
-@@ -1292,6 +1304,12 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			compress_type = range->compress_type;
+ 		set_page_writeback(page);
+ 		unlock_page(page);
+-		ret = mapping->a_ops->direct_IO(ITER_BVEC | WRITE,
+-						&kiocb, &from,
++		ret = mapping->a_ops->direct_IO(WRITE, &kiocb, &from,
+ 						kiocb.ki_pos);
+ 		if (ret == PAGE_SIZE) {
+ 			count_vm_event(PSWPOUT);
+@@ -348,12 +347,37 @@ int swap_readpage(struct page *page)
  	}
  
-+	mutex_lock(&inode->i_mutex);
-+	ret = IS_SWAPFILE(inode) ? -ETXTBSY : 0;
-+	mutex_unlock(&inode->i_mutex);
-+	if (ret)
-+		return ret;
+ 	if (sis->flags & SWP_FILE) {
++		struct kiocb kiocb;
+ 		struct file *swap_file = sis->swap_file;
+ 		struct address_space *mapping = swap_file->f_mapping;
++		struct bio_vec bv = {
++			.bv_page = page,
++			.bv_len = PAGE_SIZE,
++			.bv_offset = 0,
++		};
++		struct iov_iter to = {
++			.type = ITER_BVEC | READ,
++			.count = PAGE_SIZE,
++			.iov_offset = 0,
++			.nr_segs = 1,
++		};
++		to.bvec = &bv;	/* older gcc versions are broken */
 +
- 	if (extent_thresh == 0)
- 		extent_thresh = 256 * 1024;
++		init_sync_kiocb(&kiocb, swap_file);
++		kiocb.ki_pos = page_file_offset(page);
++		kiocb.ki_nbytes = PAGE_SIZE;
  
-@@ -2927,6 +2945,11 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 
- 	btrfs_double_lock(src, loff, dst, dst_loff, len);
- 
-+	if (IS_SWAPFILE(src) || IS_SWAPFILE(dst)) {
-+		ret = -ETXTBSY;
-+		goto out_unlock;
-+	}
-+
- 	ret = extent_same_check_offsets(src, loff, len);
- 	if (ret)
- 		goto out_unlock;
-@@ -3644,6 +3667,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 		mutex_lock(&src->i_mutex);
+-		ret = mapping->a_ops->readpage(swap_file, page);
+-		if (!ret)
++		ret = mapping->a_ops->direct_IO(READ, &kiocb, &to,
++						kiocb.ki_pos);
++		if (ret == PAGE_SIZE) {
++			SetPageUptodate(page);
+ 			count_vm_event(PSWPIN);
++			ret = 0;
++		} else {
++			ClearPageUptodate(page);
++			SetPageError(page);
++		}
++		unlock_page(page);
+ 		return ret;
  	}
  
-+	ret = -ETXTBSY;
-+	if (IS_SWAPFILE(src) || IS_SWAPFILE(inode))
-+		goto out_unlock;
-+
- 	/* determine range to clone */
- 	ret = -EINVAL;
- 	if (off + len > src->i_size || off + len < off)
 -- 
 2.1.3
 

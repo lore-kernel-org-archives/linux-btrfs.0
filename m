@@ -1,63 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18-i2.italiaonline.it ([212.48.25.198]:50660 "EHLO
-	smtp-18.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933151AbaLJVCV (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33810 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750744AbaLJV5b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 16:02:21 -0500
-Message-ID: <5488B526.1070102@inwind.it>
-Date: Wed, 10 Dec 2014 22:03:34 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+	Wed, 10 Dec 2014 16:57:31 -0500
+Date: Wed, 10 Dec 2014 16:57:29 -0500
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Robert White <rwhite@pobox.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
+Message-ID: <20141210215729.GC22023@hungrycats.org>
+References: <547BCB43.5020505@cn.fujitsu.com>
+ <547BE8A5.7050900@pobox.com>
+ <547C0834.7090706@cn.fujitsu.com>
+ <547CAF2E.7070109@pobox.com>
+ <547D1339.10404@cn.fujitsu.com>
+ <547F61F6.7020707@pobox.com>
+ <548005B7.40503@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>
-CC: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com>	<54882634.4000809@pobox.com> <pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net> <5488AEBD.7030601@pobox.com>
-In-Reply-To: <5488AEBD.7030601@pobox.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="RASg3xLB4tUQ4RcS"
+In-Reply-To: <548005B7.40503@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/10/2014 09:36 PM, Robert White wrote:
-[...]
-> I tested it and sure enough, it's RAID1...
-> 
-> I also noticed that the default for data goes from single to RAID0 in
-> a two slice build.
-> 
-> I generally don't expect defaults to change in undocumented ways.
-> Particularly since that makes make-plus-add orthogonal to
-> make-as-multi.
-> 
-> Without other guidance I'd been assuming that
-> 
-> mkfs.btrfs d1 d2 d3 ... 
-> --vs-- 
-> mkfs.btrfs d1 
-> btrfs dev add d2 
-> btrfs dev add d3 ...
-> 
-> would net the same resultant system. I have only ever done the latter
-> until today.
-> 
-> Does/Will the defaults change when three, four, or more slices are
-> used to build the system?
-> 
-> I'll take a stab at updating the manual page.
 
-Why not printing from mkfs.btrfs the raid profiles used ?
+--RASg3xLB4tUQ4RcS
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Thu, Dec 04, 2014 at 02:56:55PM +0800, Qu Wenruo wrote:
+> The main memory usage in btrfsck is extent record, which
+> we can't free them until we read them all in and checked, so even we
+> mmap/unmap, it can only help with
+> the extent_buffer(which is already freed if not used according to refs).
+
+I'm thinking aloud here, but is it *really* necessary to read everything
+into memory?  Maybe a multiple-pass algorithm might be possible, e.g. one
+to find free space by eliminating any areas that are occupied by extents,
+then other passes to rebuild the metadata in the free space.  Or, one
+pass to verify the connectivity of references and collect dangling refs,
+then a second pass which fixes only the dangling refs.
+
+Usually sequential reads are significantly faster than swapping--even
+if swapping on solid-state media.  It could be that reading 260GB of
+metadata sequentially two or three times is still faster than thrashing
+through random lookups in 20GB of swap on a 4GB machine.
 
 
-> 
-> -- Rob.
-> 
-> 
-> -- To unsubscribe from this list: send the line "unsubscribe
-> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--RASg3xLB4tUQ4RcS
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+iEYEARECAAYFAlSIwckACgkQgfmLGlazG5xhEgCdHy3GERyCZdveyt6uTa/rbxYy
+J1kAoMAIovj3mP9VAlpep/FzJNCNwp5O
+=FY+m
+-----END PGP SIGNATURE-----
+
+--RASg3xLB4tUQ4RcS--

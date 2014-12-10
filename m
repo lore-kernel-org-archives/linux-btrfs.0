@@ -1,97 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f175.google.com ([209.85.192.175]:56377 "EHLO
-	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753671AbaLJBqb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:31 -0500
-Received: by mail-pd0-f175.google.com with SMTP id y10so1723634pdj.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:31 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
-To: Alexander Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Christoph Hellwig <hch@infradead.org>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, linux-nfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH v3 0/7] btrfs: implement swap file support
-Date: Tue,  9 Dec 2014 17:45:41 -0800
-Message-Id: <cover.1418173063.git.osandov@osandov.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:29300 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753722AbaLJCsi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 21:48:38 -0500
+Message-ID: <5487B523.10708@oracle.com>
+Date: Wed, 10 Dec 2014 10:51:15 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs scrub status misreports as "interrupted"
+References: <20141122131318.05609d5f@marcec.fritz.box> <5486E82A.6080301@gmail.com>
+In-Reply-To: <5486E82A.6080301@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, everyone,
 
-This patch series, based on v3.18, implements support for swap files on BTRFS.
-Patches 1, 3, and 4 are for the VFS folks, patch 2 is for NFS, and the rest is
-all BTRFS.
 
-The standard swap file implementation uses bmap() to get a list of physical
-blocks to do I/O on. This doesn't work for BTRFS, which moves disk blocks around
-as part of normal operation (COW, defragmentation, etc.).
+  Is there any relevant log in the dmegs ?
 
-Swap-over-NFS introduced an interface through which a filesystem can arbitrate
-swap I/O through address space operations:
 
-- swap_activate() is called by swapon() and informs the address space that the
-  given file is going to be used for swap, so it should take adequate measures
-  like reserving space on disk and pinning block lookup information in memory
-- swap_deactivate() is used to clean up on swapoff()
-- direct_IO() is used to page in and out (this no longer uses readpage as part
-  of this patch series)
-
-Patches 1-4 clean up the necessary infrastructure. There's more that can make
-this better (like resurrecting kernel AIO), but that can be done as a follow-up
-to the work here.
-
-Patches 5 and 6 lay the groundwork needed for using a swap file on BTRFS, and
-patch 7 implements the actual aops.
-
-Version 3 incorporates a bunch of David Sterba's feedback, both style and design
-issues. We now audit various ioctls to prevent them from interfering with swap
-file operation and handle extents which can't be nocow'd.
-
-After some discussion on the mailing list, I decided that for simplicity and
-reliability, it's best to simply disallow COW files and files with shared
-extents (like files with extents shared with a snapshot). From a user's
-perspective, this means that a snapshotted subvolume cannot be used for a swap
-file, but keeping the swap file in a separate subvolume that is never
-snapshotted seems entirely reasonable to me. An alternative suggestion was to
-allow swap files to be snapshotted and to do an implied COW on swap file
-activation, which I was ready to implement until I realized that we can't permit
-snapshotting a subvolume with an active swap file, so this creates a surprising
-inconsistency for users (in my opinion).
-
-As with before, this functionality is tenuously tested in a virtual machine with
-some artificial workloads, but it "works for me". I'm pretty happy with the
-results on my end, so please comment away.
-
-Thanks!
-
-Omar Sandoval (7):
-  direct-io: don't dirty ITER_BVEC pages on read
-  nfs: don't dirty ITER_BVEC pages read through direct I/O
-  swap: use direct I/O for SWP_FILE swap_readpage
-  vfs: update swap_{,de}activate documentation
-  btrfs: prevent ioctls from interfering with a swap file
-  btrfs: add EXTENT_FLAG_SWAPFILE
-  btrfs: enable swap file support
-
- Documentation/filesystems/Locking |   7 +-
- Documentation/filesystems/vfs.txt |   7 +-
- fs/btrfs/ctree.h                  |   3 +
- fs/btrfs/disk-io.c                |   1 +
- fs/btrfs/extent_io.c              |   1 +
- fs/btrfs/extent_map.h             |   1 +
- fs/btrfs/inode.c                  | 132 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.c                  |  35 ++++++++--
- fs/direct-io.c                    |   8 ++-
- fs/nfs/direct.c                   |   5 +-
- include/trace/events/btrfs.h      |   3 +-
- mm/page_io.c                      |  32 +++++++--
- 12 files changed, 216 insertions(+), 19 deletions(-)
-
--- 
-2.1.3
-
+On 09/12/2014 20:16, Konstantinos Skarlatos wrote:
+> I've got the exact same problem, with a 4 drive RAID1. kernel 3.18-git
+> and btrfs tools-git, all built yesterday.
+>
+> On 22/11/2014 2:13 μμ, Marc Joliet wrote:
+>> Hi all,
+>>
+>> While I haven't gotten any "scrub already running" type errors any
+>> more, I do
+>> get one strange case of state misreport.  When running scrub on /home
+>> (btrfs
+>> RAID10), after 3 of 4 drives have completed, the 4th drive (sdb) will
+>> report as
+>> interrupted, despite still running:
+>>
+>> # btrfs scrub status -d /home
+>> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+>> scrub device /dev/sda (id 1) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380
+>> seconds
+>>     total bytes scrubbed: 252.86GiB with 0 errors
+>> scrub device /dev/sdb (id 2) status
+>>     scrub started at Sat Nov 22 11:57:34 2014, interrupted after 3698
+>> seconds, not running
+>>     total bytes scrubbed: 217.50GiB with 0 errors
+>> scrub device /dev/sdc (id 3) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>> scrub device /dev/sdd (id 4) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>>
+>> The funny thing is, the time will still update as the scrub keeps going:
+>>
+>> # btrfs scrub status -d /home
+>> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+>> scrub device /dev/sda (id 1) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380
+>> seconds
+>>     total bytes scrubbed: 252.86GiB with 0 errors
+>> scrub device /dev/sdb (id 2) status
+>>     scrub started at Sat Nov 22 11:57:34 2014, interrupted after 4136
+>> seconds, not running
+>>                                      ^^^^^^^^^^^^
+>>     total bytes scrubbed: 239.44GiB with 0 errors
+>> scrub device /dev/sdc (id 3) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>> scrub device /dev/sdd (id 4) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>>
+>> This has happened a few times, and when sdb finally finishes, the
+>> status is then
+>> reported correctly as "finished":
+>>
+>> # btrfs scrub status -d /home
+>> scrub status for 472c9290-3ff2-4096-9c47-0612d3a52cef
+>> scrub device /dev/sda (id 1) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3380
+>> seconds
+>>     total bytes scrubbed: 252.86GiB with 0 errors
+>> scrub device /dev/sdb (id 2) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 4426
+>> seconds
+>>     total bytes scrubbed: 252.88GiB with 0 errors
+>> scrub device /dev/sdc (id 3) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 3013
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>> scrub device /dev/sdd (id 4) history
+>>     scrub started at Sat Nov 22 11:57:34 2014 and finished after 2994
+>> seconds
+>>     total bytes scrubbed: 252.85GiB with 0 errors
+>>
+>> Kernel and btrfs-progs version:
+>>
+>> # uname -a
+>> Linux marcec 3.16.7-gentoo #1 SMP PREEMPT Fri Oct 31 22:45:54 CET 2014
+>> x86_64 AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD
+>> GNU/Linux
+>>
+>> # btrfs --version
+>> Btrfs v3.17.1
+>>
+>> Should I open a report on bugzilla?
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

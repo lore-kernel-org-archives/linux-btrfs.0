@@ -1,48 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:44410 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932501AbaLJS4u (ORCPT
+Received: from smtp-18-i2.italiaonline.it ([212.48.25.198]:59930 "EHLO
+	smtp-18.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932527AbaLJTE3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 13:56:50 -0500
-Received: by mail-yh0-f45.google.com with SMTP id f10so1577645yha.32
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 10:56:50 -0800 (PST)
+	Wed, 10 Dec 2014 14:04:29 -0500
+Message-ID: <54889988.2080502@inwind.it>
+Date: Wed, 10 Dec 2014 20:05:44 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <pan$adbdd$de0c5a95$a95c46aa$74eda7e0@cox.net>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-	<20141122222606.GO8916@merlins.org>
-	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
-	<20141123000503.GQ32735@carfax.org.uk>
-	<20141123010742.GA16599@merlins.org>
-	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
-	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
-	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
-	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
-	<54878210.8030807@pobox.com>
-	<CAA7pwKPYwq73m4j-1-rf+-2owEvrDAaUJgxrGaY9uLm16Gs__Q@mail.gmail.com>
-	<548839EE.6080404@pobox.com>
-	<pan$adbdd$de0c5a95$a95c46aa$74eda7e0@cox.net>
-Date: Wed, 10 Dec 2014 19:56:50 +0100
-Message-ID: <CAA7pwKOSKV2Q2HY1DGJVoxbCyQN4kEsZK-Q1yhQHyFYvwCRiEQ@mail.gmail.com>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Dongsheng Yang <dongsheng081251@gmail.com>, Duncan <1i5t5.duncan@cox.net>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
+References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<548743CE.1020403@inwind.it>	<54879CFE.1090909@cn.fujitsu.com>	<54882634.4000809@pobox.com>	<pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net> <CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com>
+In-Reply-To: <CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10 December 2014 at 14:11, Duncan <1i5t5.duncan@cox.net> wrote:
->
-> From there... I've never used it but I /think/ btrfs inspect-internal
-> logical-resolve should let you map the 182109... address to a filename.
-> From there, moving that file out of the filesystem and back in should
-> eliminate that issue.
+On 12/10/2014 04:02 PM, Dongsheng Yang wrote:
+> On Wed, Dec 10, 2014 at 9:21 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Robert White posted on Wed, 10 Dec 2014 02:53:40 -0800 as excerpted:
+[...]
+>> And in the example, the mkfs was supplied with two devices, so there's no
+>> dup metadata remaining from a formerly single-device filesystem, either.
+>> (Tho there will be the small single-mode stubs, empty, remaining from the
+>> mkfs process, as no balance has been run to delete them yet, but those
+>> are much smaller and empty.)
+> 
+> Yes. One question not related here: how about delete them in the end of mkfs?
+> 
+> Thanx
 
-btrfs inspect-internal logical-resolve 1821099687936 /mnt gives me the
-filename and it's only a 54175 bytes file.
+A btrfs balance should remove them. If you don't want to balance a full
+filesystem, you can filter the chunk by usage (set a low usage).
+Recently it was discussed in a tread...
+
+BR
+Goffredo
 
 
-> Assuming no snapshots still contain the file, of course, and that the
-> ext* saved subvolume has already been deleted.
-
-Got no snapshots or subvolumes. Keeping it simple for now.
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,186 +1,366 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp05.in.ibm.com ([122.248.162.5]:45374 "EHLO
-	e28smtp05.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755339AbaLJNOm (ORCPT
+Received: from e28smtp09.in.ibm.com ([122.248.162.9]:51371 "EHLO
+	e28smtp09.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755443AbaLJNOl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:14:42 -0500
+	Wed, 10 Dec 2014 08:14:41 -0500
 Received: from /spool/local
-	by e28smtp05.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp09.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 10 Dec 2014 18:44:38 +0530
-Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 6EB7E1258054
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:00 +0530 (IST)
+	Wed, 10 Dec 2014 18:44:39 +0530
+Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id D4F7BE0053
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:12 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADFCSx53084362
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:13 +0530
+	by d28relay01.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADEVno65142784
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:31 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEYIU031720
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:35 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEZ69031782
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:36 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [RFC PATCH V10 00/19] Btrfs: Subpagesize-blocksize: Get rid of whole page I/O.
-Date: Wed, 10 Dec 2014 18:44:02 +0530
-Message-Id: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V10 01/19] Btrfs: subpagesize-blocksize: Get rid of whole page reads.
+Date: Wed, 10 Dec 2014 18:44:03 +0530
+Message-Id: <1418217261-17273-2-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset continues with the work posted earlier at
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg38862.html.
+Based on original patch from Aneesh Kumar K.V <aneesh.kumar@linux.vnet.ibm.com>
 
-Changes from V9:
-1. Earlier, In read_extent_buffer_pages(), we used to check for extent buffer
-   pages' PG_uptodate flag immediately after the page was unlocked by the
-   endio function. However, the PG_uptodate flag is set on the pages only
-   after the read operation on all pages complete successfully and the
-   verification of the extent buffer's contents is done. Fix this by checking
-   only for EXTENT_BUFFER_UPTODATE flag in read_extent_buffer_pages().
-2. Add the new EXTENT_READ_IO extent state bit to reliably unlock pages in
-   readpage's end bio function.
-3. Use (eb->start, seq) as search key for tree modification log.
-4. btrfs_submit_direct_hook: Prevent zero length bios from being submitted
-   when map_length < bio vector length.
-5. Enabled POSIX ACL support.   
+For the subpagesize-blocksize scenario, a page can contain multiple
+blocks. This patch handles this case.
 
-Changes from V8:
-1. In subpagesize-blocksize scenario, prevent writes to an extent
-   buffer when the corresponding page's PG_writeback flag is set. This
-   race condition was triggered when running xfstests' generic/083
-   test. With the new patch applied, I have run the complete xfstests
-   suite as well as run generic/083 multiple times on both 4k and 2k
-   block size setups. There were 2 non-related test failures that
-   occured rarely, but they were reproducible even when the patch was
-   not applied.
+This patch adds the new EXTENT_READ_IO extent state bit to reliably unlock
+pages in readpage's end bio function.
 
-Changes from V7:
-1. Fix a softlockup issue that occured because the page corresponding
-   to the delalloc region did not exist. This bug was introduced by
-   the code added in btrfs_invalidatepage and related functions in V7
-   version.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/extent_io.c | 182 ++++++++++++++++++++++++---------------------------
+ fs/btrfs/extent_io.h |   5 +-
+ 2 files changed, 89 insertions(+), 98 deletions(-)
 
-Changes from V6:
-1. Fix softlockup issue that occured during unmounting a 4k blocksized
-   filesystem instance.
-2. Track blocks of an ordered extent submitted for write I/O to avoid
-   I/O resubmission in certain scenarios.
-
-Changes from V5:
-1. Rebased patchset on top of current btrfs-next tree (i.e. commit
-   8d875f95da43c6a8f18f77869f2ef26e9594fecc). This involved using
-   "immutable biovecs".
-2. Deal with partially allocated ordered extents across a page.
-3. Explicitly track I/O status of blocks of an ordered extent.
-
-Changes from V4:
-1. V2's "Btrfs: subpagesize-blocksize: Get rid of whole page reads"
-   patch was incorrectly replaced with an older version when working
-   on V3 patches. Fix this.
-2. Fix btrfs_endio_direct_read() to compute checksums for all possible
-   blocks in a page.
-
-Changes from V3:
-1. Get "Hole punching" and "Extent preallocation" to work correctly in
-   subpagesize-blocksize scenario.
-2. Get btrfs_page_mkwrite() to reserve space in sectorsized units.
-
-Changes from V2:
-1. Get __extent_writepage() to write only the dirty blocks of a page.
-2. Fix "page private not zero on page" warning message which is printed
-   when running xfstests.
-
-Changes from V1:
-1. Remove usage of bio_vec->bv_{len,offset} in end_bio_extent_readpage()
-   and end_bio_extent_writepage().
-
-Xfstests' generic tests were run on an x86_64 machine with the patches
-applied for blocksizes 2k and 4k.
-
-For 2k blocksize, the following xfstests' generic tests failed:
-1. generic/068
-
-The following xfstests' generic tests failed for both 2k and 4k blocksize:
-1. generic/008 - FALLOC_FL_ZERO_RANGE is not supported by Btrfs.
-2. generic/091 - FALLOC_FL_ZERO_RANGE is not supported by Btrfs.
-3. generic/224
-   This looks mostly an issue caused by non-btrfs code as the test failed
-   for the exact same reason when run on an ext4 filesystem instance.
-4. generic/263 - FALLOC_FL_ZERO_RANGE is not supported by Btrfs.
-5. generic/274
-   This test very rarely results in a hung task.
-
-The following is a list of known TODO items which will be implemented in
-future revisions of this patchset:
-1. The xfstests suite was based off the corresponding git tree as available on
-   March 2014. Pull the latest from the xfstests git tree and execute the
-   tests.
-2. Rebase the patches on top of the current linux-btrfs/next branch.
-3. Get Xfstests' generic tests to successfully run on both 4k and 2k
-   blocksizes.
-4. Remove PAGE_CACHE_SIZE delalloc reservation in btrfs_writepage_fixup_worker().
-5. Create separate slab caches for 'extent buffer head' and 'extent buffer'.
-6. Add 'leak list' tracking for 'extent buffer' instances.
-7. Rename EXTENT_BUFFER_TREE_REF and EXTENT_BUFFER_IN_TREE to
-   EXTENT_BUFFER_HEAD_TREE_REF and EXTENT_BUFFER_HEAD_IN_TREE respectively.
-   
-Chandan Rajendra (17):
-  Btrfs: subpagesize-blocksize: Get rid of whole page reads.
-  Btrfs: subpagesize-blocksize: Get rid of whole page writes.
-  Btrfs: subpagesize-blocksize: __btrfs_buffered_write: Reserve/release
-    extents aligned to block size.
-  Btrfs: subpagesize-blocksize: Read tree blocks whose size is
-    <PAGE_CACHE_SIZE.
-  Btrfs: subpagesize-blocksize: Write only dirty extent buffers
-    belonging to a page
-  Btrfs: subpagesize-blocksize: Compute and look up csums based on
-    sectorsized blocks.
-  Btrfs: subpagesize-blocksize: __extent_writepage: Write only dirty
-    blocks of a page.
-  Btrfs: subpagesize-blocksize: fallocate: Work with sectorsized units.
-  Btrfs: subpagesize-blocksize: btrfs_page_mkwrite: Reserve space in
-    sectorsized units.
-  Btrfs: subpagesize-blocksize: Search for all ordered extents that
-    could span across a page.
-  Btrfs: subpagesize-blocksize: Deal with partial ordered extent
-    allocations.
-  Btrfs: subpagesize-blocksize: Explicitly Track I/O status of blocks of
-    an ordered extent.
-  Btrfs: subpagesize-blocksize: Revert commit
-    fc4adbff823f76577ece26dcb88bf6f8392dbd43.
-  Btrfs: subpagesize-blocksize: Track blocks of ordered extent submitted
-    for write I/O.
-  Btrfs: subpagesize-blocksize: Prevent writes to an extent buffer when
-    PG_writeback flag is set.
-  Btrfs: subpagesize-blocksize: Use (eb->start, seq) as search key for
-    tree modification log.
-  Btrfs: subpagesize-blocksize: btrfs_submit_direct_hook: Handle
-    map_length < bio vector length
-
-Chandra Seetharaman (2):
-  Btrfs: subpagesize-blocksize: Define extent_buffer_head.
-  Btrfs: subpagesize-blocksize: Allow mounting filesystems where
-    sectorsize != PAGE_SIZE
-
- fs/btrfs/backref.c           |    2 +-
- fs/btrfs/btrfs_inode.h       |    2 -
- fs/btrfs/ctree.c             |   56 +-
- fs/btrfs/ctree.h             |    8 +-
- fs/btrfs/disk-io.c           |  117 ++--
- fs/btrfs/disk-io.h           |    3 +
- fs/btrfs/extent-tree.c       |   18 +-
- fs/btrfs/extent_io.c         | 1274 +++++++++++++++++++++++++++++-------------
- fs/btrfs/extent_io.h         |   60 +-
- fs/btrfs/file-item.c         |   87 +--
- fs/btrfs/file.c              |   77 +--
- fs/btrfs/inode.c             |  603 ++++++++++++--------
- fs/btrfs/ordered-data.c      |   19 +
- fs/btrfs/ordered-data.h      |    8 +
- fs/btrfs/volumes.c           |    2 +-
- include/trace/events/btrfs.h |    2 +-
- 16 files changed, 1573 insertions(+), 765 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a389820..c98dfd8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1951,14 +1951,23 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+  * helper function to set a given page up to date if all the
+  * extents in the tree for that page are up to date
+  */
+-static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
++static void check_page_uptodate(struct extent_io_tree *tree, struct page *page,
++				struct extent_state *cached)
+ {
+ 	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+-	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, NULL))
++	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, cached))
+ 		SetPageUptodate(page);
+ }
+ 
++static int page_read_complete(struct extent_io_tree *tree, struct page *page)
++{
++	u64 start = page_offset(page);
++	u64 end = start + PAGE_CACHE_SIZE - 1;
++
++	return !test_range_bit(tree, start, end, EXTENT_READ_IO, 0, NULL);
++}
++
+ /*
+  * When IO fails, either with EIO or csum verification fails, we
+  * try other mirrors that might have a good copy of the data.  This
+@@ -2275,7 +2284,9 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 	 *	a) deliver good data to the caller
+ 	 *	b) correct the bad sectors on disk
+ 	 */
+-	if (failed_bio->bi_vcnt > 1) {
++	if ((failed_bio->bi_vcnt > 1)
++		|| (failed_bio->bi_io_vec->bv_len
++			> BTRFS_I(inode)->root->sectorsize)) {
+ 		/*
+ 		 * to fulfill b), we need to know the exact failing sectors, as
+ 		 * we don't want to rewrite any more than the failed ones. thus,
+@@ -2422,18 +2433,6 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 	bio_put(bio);
+ }
+ 
+-static void
+-endio_readpage_release_extent(struct extent_io_tree *tree, u64 start, u64 len,
+-			      int uptodate)
+-{
+-	struct extent_state *cached = NULL;
+-	u64 end = start + len - 1;
+-
+-	if (uptodate && tree->track_uptodate)
+-		set_extent_uptodate(tree, start, end, &cached, GFP_ATOMIC);
+-	unlock_extent_cached(tree, start, end, &cached, GFP_ATOMIC);
+-}
+-
+ /*
+  * after a readpage IO is done, we need to:
+  * clear the uptodate bits on error
+@@ -2450,14 +2449,15 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 	struct bio_vec *bvec;
+ 	int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
++	struct extent_state *cached = NULL;
+ 	struct extent_io_tree *tree;
++	unsigned long flags;
+ 	u64 offset = 0;
+ 	u64 start;
+ 	u64 end;
+-	u64 len;
+-	u64 extent_start = 0;
+-	u64 extent_len = 0;
++	int nr_sectors;
+ 	int mirror;
++	int unlock;
+ 	int ret;
+ 	int i;
+ 
+@@ -2467,54 +2467,31 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 	bio_for_each_segment_all(bvec, bio, i) {
+ 		struct page *page = bvec->bv_page;
+ 		struct inode *inode = page->mapping->host;
++		struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 		pr_debug("end_bio_extent_readpage: bi_sector=%llu, err=%d, "
+ 			 "mirror=%lu\n", (u64)bio->bi_iter.bi_sector, err,
+ 			 io_bio->mirror_num);
+ 		tree = &BTRFS_I(inode)->io_tree;
+ 
+-		/* We always issue full-page reads, but if some block
+-		 * in a page fails to read, blk_update_request() will
+-		 * advance bv_offset and adjust bv_len to compensate.
+-		 * Print a warning for nonzero offsets, and an error
+-		 * if they don't add up to a full page.  */
+-		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE) {
+-			if (bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE)
+-				btrfs_err(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "partial page read in btrfs with offset %u and length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-			else
+-				btrfs_info(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "incomplete page read in btrfs with offset %u and "
+-				   "length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-		}
+-
+-		start = page_offset(page);
+-		end = start + bvec->bv_offset + bvec->bv_len - 1;
+-		len = bvec->bv_len;
+-
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
++		nr_sectors = bvec->bv_len >> inode->i_sb->s_blocksize_bits;
+ 		mirror = io_bio->mirror_num;
+-		if (likely(uptodate && tree->ops &&
+-			   tree->ops->readpage_end_io_hook)) {
++
++next_block:
++		if (likely(uptodate)) {
+ 			ret = tree->ops->readpage_end_io_hook(io_bio, offset,
+-							      page, start, end,
+-							      mirror);
++							page, start,
++							start + root->sectorsize - 1,
++							mirror);
+ 			if (ret)
+ 				uptodate = 0;
+ 			else
+ 				clean_io_failure(start, page);
+ 		}
+ 
+-		if (likely(uptodate))
+-			goto readpage_ok;
+-
+-		if (tree->ops && tree->ops->readpage_io_failed_hook) {
+-			ret = tree->ops->readpage_io_failed_hook(page, mirror);
+-			if (!ret && !err &&
+-			    test_bit(BIO_UPTODATE, &bio->bi_flags))
+-				uptodate = 1;
+-		} else {
++		if (!uptodate) {
+ 			/*
+ 			 * The generic bio_readpage_error handles errors the
+ 			 * following way: If possible, new read requests are
+@@ -2525,60 +2502,64 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			 * can't handle the error it will return -EIO and we
+ 			 * remain responsible for that page.
+ 			 */
+-			ret = bio_readpage_error(bio, offset, page, start, end,
+-						 mirror);
++			ret = bio_readpage_error(bio, offset, page,
++						start, start + root->sectorsize - 1,
++						mirror);
+ 			if (ret == 0) {
+-				uptodate =
+-					test_bit(BIO_UPTODATE, &bio->bi_flags);
++				uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 				if (err)
+ 					uptodate = 0;
+-				continue;
++				offset += root->sectorsize;
++				if (--nr_sectors) {
++					start += root->sectorsize;
++					goto next_block;
++				} else {
++					continue;
++				}
+ 			}
+ 		}
+-readpage_ok:
+-		if (likely(uptodate)) {
+-			loff_t i_size = i_size_read(inode);
+-			pgoff_t end_index = i_size >> PAGE_CACHE_SHIFT;
+-			unsigned offset;
+-
+-			/* Zero out the end if this page straddles i_size */
+-			offset = i_size & (PAGE_CACHE_SIZE-1);
+-			if (page->index == end_index && offset)
+-				zero_user_segment(page, offset, PAGE_CACHE_SIZE);
+-			SetPageUptodate(page);
++
++		if (uptodate) {
++			set_extent_uptodate(tree, start,
++					start + root->sectorsize - 1,
++					&cached, GFP_ATOMIC);
++			check_page_uptodate(tree, page, cached);
+ 		} else {
+ 			ClearPageUptodate(page);
+ 			SetPageError(page);
+ 		}
+-		unlock_page(page);
+-		offset += len;
+-
+-		if (unlikely(!uptodate)) {
+-			if (extent_len) {
+-				endio_readpage_release_extent(tree,
+-							      extent_start,
+-							      extent_len, 1);
+-				extent_start = 0;
+-				extent_len = 0;
+-			}
+-			endio_readpage_release_extent(tree, start,
+-						      end - start + 1, 0);
+-		} else if (!extent_len) {
+-			extent_start = start;
+-			extent_len = end + 1 - start;
+-		} else if (extent_start + extent_len == start) {
+-			extent_len += end + 1 - start;
+-		} else {
+-			endio_readpage_release_extent(tree, extent_start,
+-						      extent_len, uptodate);
+-			extent_start = start;
+-			extent_len = end + 1 - start;
++
++		offset += root->sectorsize;
++
++		if (--nr_sectors) {
++			clear_extent_bit(tree, start, start + root->sectorsize - 1,
++				EXTENT_READ_IO, 0, 0, &cached, GFP_ATOMIC);
++			clear_extent_bit(tree, start, start + root->sectorsize - 1,
++					EXTENT_LOCKED, 1, 0, &cached, GFP_ATOMIC);
++			start += root->sectorsize;
++			goto next_block;
+ 		}
++
++		WARN_ON(!PagePrivate(page));
++
++		local_irq_save(flags);
++		bit_spin_lock(EXTENT_PAGE_UPTODATE_LOCK, &page->private);
++
++		clear_extent_bit(tree, start, start + root->sectorsize - 1,
++				EXTENT_READ_IO, 0, 0, &cached, GFP_ATOMIC);
++
++		unlock = page_read_complete(tree, page);
++
++		bit_spin_unlock(EXTENT_PAGE_UPTODATE_LOCK, &page->private);
++		local_irq_restore(flags);
++
++		clear_extent_bit(tree, start, start + root->sectorsize - 1,
++				EXTENT_LOCKED, 1, 0, &cached, GFP_ATOMIC);
++
++		if (unlock)
++			unlock_page(page);
+ 	}
+ 
+-	if (extent_len)
+-		endio_readpage_release_extent(tree, extent_start, extent_len,
+-					      uptodate);
+ 	if (io_bio->end_io)
+ 		io_bio->end_io(io_bio, err);
+ 	bio_put(bio);
+@@ -2799,6 +2780,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			 unsigned long *bio_flags, int rw)
+ {
+ 	struct inode *inode = page->mapping->host;
++	struct extent_state *cached = NULL;
+ 	u64 start = page_offset(page);
+ 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
+ 	u64 end;
+@@ -2918,7 +2900,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		/* the get_extent function already copied into the page */
+ 		if (test_range_bit(tree, cur, cur_end,
+ 				   EXTENT_UPTODATE, 1, NULL)) {
+-			check_page_uptodate(tree, page);
++			check_page_uptodate(tree, page, NULL);
+ 			if (!parent_locked)
+ 				unlock_extent(tree, cur, cur + iosize - 1);
+ 			cur = cur + iosize;
+@@ -2938,6 +2920,10 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		}
+ 
+ 		pnr -= page->index;
++
++		set_extent_bit(tree, cur, cur + iosize - 1, EXTENT_READ_IO,
++			NULL, &cached, GFP_NOFS);
++
+ 		ret = submit_extent_page(rw, tree, page,
+ 					 sector, disk_io_size, pg_offset,
+ 					 bdev, bio, pnr,
+@@ -2949,8 +2935,12 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			*bio_flags = this_bio_flag;
+ 		} else {
+ 			SetPageError(page);
++			clear_extent_bit(tree, cur, cur + iosize - 1,
++					EXTENT_READ_IO, 0, 0, &cached,
++					GFP_NOFS);
+ 			if (!parent_locked)
+-				unlock_extent(tree, cur, cur + iosize - 1);
++				unlock_extent_cached(tree, cur, cur + iosize - 1,
++						&cached, GFP_NOFS);
+ 		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index ccc264e..4d019c0 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -20,6 +20,7 @@
+ #define EXTENT_NEED_WAIT (1 << 13)
+ #define EXTENT_DAMAGED (1 << 14)
+ #define EXTENT_NORESERVE (1 << 15)
++#define EXTENT_READ_IO (1 << 16)
+ #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+ #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 
+@@ -56,8 +57,8 @@
+  * page->private values.  Every page that is controlled by the extent
+  * map has page->private set to one.
+  */
+-#define EXTENT_PAGE_PRIVATE 1
+-#define EXTENT_PAGE_PRIVATE_FIRST_PAGE 3
++#define EXTENT_PAGE_PRIVATE		(1 << 0)
++#define EXTENT_PAGE_UPTODATE_LOCK	(1 << 1)
+ 
+ struct extent_state;
+ struct btrfs_root;
 -- 
 2.1.0
 

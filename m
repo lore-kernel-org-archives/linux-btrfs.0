@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:47478 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754080AbaLJBqk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:40 -0500
-Received: by mail-pa0-f41.google.com with SMTP id rd3so1735644pab.28
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:39 -0800 (PST)
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:56377 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753671AbaLJBqb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:31 -0500
+Received: by mail-pd0-f175.google.com with SMTP id y10so1723634pdj.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:31 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
@@ -15,54 +15,83 @@ To: Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-mm@kvack.org, linux-nfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH v3 2/7] nfs: don't dirty ITER_BVEC pages read through direct I/O
-Date: Tue,  9 Dec 2014 17:45:43 -0800
-Message-Id: <55ee5dcf11066baf17b5d8aa485fdcd7be78dec0.1418173063.git.osandov@osandov.com>
-In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
-References: <cover.1418173063.git.osandov@osandov.com>
-In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
-References: <cover.1418173063.git.osandov@osandov.com>
+Subject: [RFC PATCH v3 0/7] btrfs: implement swap file support
+Date: Tue,  9 Dec 2014 17:45:41 -0800
+Message-Id: <cover.1418173063.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As with the generic blockdev code, kernel pages shouldn't be dirtied by
-the direct I/O path.
+Hi, everyone,
 
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/nfs/direct.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+This patch series, based on v3.18, implements support for swap files on BTRFS.
+Patches 1, 3, and 4 are for the VFS folks, patch 2 is for NFS, and the rest is
+all BTRFS.
 
-diff --git a/fs/nfs/direct.c b/fs/nfs/direct.c
-index 10bf072..a67fa2c 100644
---- a/fs/nfs/direct.c
-+++ b/fs/nfs/direct.c
-@@ -88,6 +88,7 @@ struct nfs_direct_req {
- 	struct pnfs_ds_commit_info ds_cinfo;	/* Storage for cinfo */
- 	struct work_struct	work;
- 	int			flags;
-+	int			should_dirty;	/* should we mark read pages dirty? */
- #define NFS_ODIRECT_DO_COMMIT		(1)	/* an unstable reply was received */
- #define NFS_ODIRECT_RESCHED_WRITES	(2)	/* write verification failed */
- 	struct nfs_writeverf	verf;		/* unstable write verifier */
-@@ -370,7 +371,8 @@ static void nfs_direct_read_completion(struct nfs_pgio_header *hdr)
- 		struct nfs_page *req = nfs_list_entry(hdr->pages.next);
- 		struct page *page = req->wb_page;
- 
--		if (!PageCompound(page) && bytes < hdr->good_bytes)
-+		if (!PageCompound(page) && bytes < hdr->good_bytes &&
-+		    dreq->should_dirty)
- 			set_page_dirty(page);
- 		bytes += req->wb_bytes;
- 		nfs_list_remove_request(req);
-@@ -542,6 +544,7 @@ ssize_t nfs_file_direct_read(struct kiocb *iocb, struct iov_iter *iter,
- 	dreq->inode = inode;
- 	dreq->bytes_left = count;
- 	dreq->ctx = get_nfs_open_context(nfs_file_open_context(iocb->ki_filp));
-+	dreq->should_dirty = !(iter->type & ITER_BVEC);
- 	l_ctx = nfs_get_lock_context(dreq->ctx);
- 	if (IS_ERR(l_ctx)) {
- 		result = PTR_ERR(l_ctx);
+The standard swap file implementation uses bmap() to get a list of physical
+blocks to do I/O on. This doesn't work for BTRFS, which moves disk blocks around
+as part of normal operation (COW, defragmentation, etc.).
+
+Swap-over-NFS introduced an interface through which a filesystem can arbitrate
+swap I/O through address space operations:
+
+- swap_activate() is called by swapon() and informs the address space that the
+  given file is going to be used for swap, so it should take adequate measures
+  like reserving space on disk and pinning block lookup information in memory
+- swap_deactivate() is used to clean up on swapoff()
+- direct_IO() is used to page in and out (this no longer uses readpage as part
+  of this patch series)
+
+Patches 1-4 clean up the necessary infrastructure. There's more that can make
+this better (like resurrecting kernel AIO), but that can be done as a follow-up
+to the work here.
+
+Patches 5 and 6 lay the groundwork needed for using a swap file on BTRFS, and
+patch 7 implements the actual aops.
+
+Version 3 incorporates a bunch of David Sterba's feedback, both style and design
+issues. We now audit various ioctls to prevent them from interfering with swap
+file operation and handle extents which can't be nocow'd.
+
+After some discussion on the mailing list, I decided that for simplicity and
+reliability, it's best to simply disallow COW files and files with shared
+extents (like files with extents shared with a snapshot). From a user's
+perspective, this means that a snapshotted subvolume cannot be used for a swap
+file, but keeping the swap file in a separate subvolume that is never
+snapshotted seems entirely reasonable to me. An alternative suggestion was to
+allow swap files to be snapshotted and to do an implied COW on swap file
+activation, which I was ready to implement until I realized that we can't permit
+snapshotting a subvolume with an active swap file, so this creates a surprising
+inconsistency for users (in my opinion).
+
+As with before, this functionality is tenuously tested in a virtual machine with
+some artificial workloads, but it "works for me". I'm pretty happy with the
+results on my end, so please comment away.
+
+Thanks!
+
+Omar Sandoval (7):
+  direct-io: don't dirty ITER_BVEC pages on read
+  nfs: don't dirty ITER_BVEC pages read through direct I/O
+  swap: use direct I/O for SWP_FILE swap_readpage
+  vfs: update swap_{,de}activate documentation
+  btrfs: prevent ioctls from interfering with a swap file
+  btrfs: add EXTENT_FLAG_SWAPFILE
+  btrfs: enable swap file support
+
+ Documentation/filesystems/Locking |   7 +-
+ Documentation/filesystems/vfs.txt |   7 +-
+ fs/btrfs/ctree.h                  |   3 +
+ fs/btrfs/disk-io.c                |   1 +
+ fs/btrfs/extent_io.c              |   1 +
+ fs/btrfs/extent_map.h             |   1 +
+ fs/btrfs/inode.c                  | 132 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c                  |  35 ++++++++--
+ fs/direct-io.c                    |   8 ++-
+ fs/nfs/direct.c                   |   5 +-
+ include/trace/events/btrfs.h      |   3 +-
+ mm/page_io.c                      |  32 +++++++--
+ 12 files changed, 216 insertions(+), 19 deletions(-)
+
 -- 
 2.1.3
 

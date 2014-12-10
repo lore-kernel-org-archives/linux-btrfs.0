@@ -1,102 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp03.in.ibm.com ([122.248.162.3]:55829 "EHLO
-	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756047AbaLJNO5 (ORCPT
+Received: from e28smtp06.in.ibm.com ([122.248.162.6]:45278 "EHLO
+	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756047AbaLJNPC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:14:57 -0500
+	Wed, 10 Dec 2014 08:15:02 -0500
 Received: from /spool/local
-	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 10 Dec 2014 18:44:55 +0530
-Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 49F18E0056
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:29 +0530 (IST)
+	Wed, 10 Dec 2014 18:45:00 +0530
+Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 83A271258044
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:20 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay02.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADF4kO46923978
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:04 +0530
+	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADFOqA54001816
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:24 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEp9Q000703
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:52 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEjkR032663
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:47 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [RFC PATCH V10 19/19] Btrfs: subpagesize-blocksize: btrfs_submit_direct_hook: Handle map_length < bio vector length
-Date: Wed, 10 Dec 2014 18:44:21 +0530
-Message-Id: <1418217261-17273-20-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V10 11/19] Btrfs: subpagesize-blocksize: btrfs_page_mkwrite: Reserve space in sectorsized units.
+Date: Wed, 10 Dec 2014 18:44:13 +0530
+Message-Id: <1418217261-17273-12-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario, map_length can be less than the length of a
-bio vector. Such a condition may cause btrfs_submit_direct_hook() to submit a
-zero length bio. Fix this.
+In subpagesize-blocksize scenario, if i_size occurs in a block which is not
+the last block in the page, then the space to be reserved should be calculated
+appropriately.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/inode.c | 23 ++++++++++++++++-------
- 1 file changed, 16 insertions(+), 7 deletions(-)
+ fs/btrfs/inode.c | 33 ++++++++++++++++++++++-----------
+ 1 file changed, 22 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b236417..0f59c6c 100644
+index 7ad7d0f..23ce9ff 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -7346,9 +7346,11 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 	u64 file_offset = dip->logical_offset;
- 	u64 submit_len = 0;
- 	u64 map_length;
--	int nr_pages = 0;
-+	u32 blocksize = root->sectorsize;
- 	int ret = 0;
- 	int async_submit = 0;
-+	int nr_sectors;
-+	int i;
+@@ -7812,26 +7812,23 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	loff_t size;
+ 	int ret;
+ 	int reserved = 0;
++	u64 delalloc_size;
+ 	u64 page_start;
+ 	u64 page_end;
  
- 	map_length = orig_bio->bi_iter.bi_size;
- 	ret = btrfs_map_block(root->fs_info, rw, start_sector << 9,
-@@ -7378,9 +7380,12 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 	atomic_inc(&dip->pending_bios);
- 
- 	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
--		if (unlikely(map_length < submit_len + bvec->bv_len ||
--		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
--				 bvec->bv_offset) < bvec->bv_len)) {
-+		nr_sectors = bvec->bv_len >> inode->i_sb->s_blocksize_bits;
-+		i = 0;
-+next_block:
-+		if (unlikely(map_length < submit_len + blocksize ||
-+		    bio_add_page(bio, bvec->bv_page, blocksize,
-+			    bvec->bv_offset + (i * blocksize)) < blocksize)) {
- 			/*
- 			 * inc the count before we submit the bio so
- 			 * we know the end IO handler won't happen before
-@@ -7401,7 +7406,6 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 			file_offset += submit_len;
- 
- 			submit_len = 0;
--			nr_pages = 0;
- 
- 			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
- 						  start_sector, GFP_NOFS);
-@@ -7418,9 +7422,14 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 				bio_put(bio);
- 				goto out_err;
- 			}
+ 	sb_start_pagefault(inode->i_sb);
+-	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
+-	if (!ret) {
+-		ret = file_update_time(vma->vm_file);
+-		reserved = 1;
+-	}
 +
-+			goto next_block;
- 		} else {
--			submit_len += bvec->bv_len;
--			nr_pages++;
-+			submit_len += blocksize;
-+			if (--nr_sectors) {
-+				i++;
-+				goto next_block;
-+			}
- 			bvec++;
- 		}
++	ret = file_update_time(vma->vm_file);
+ 	if (ret) {
+ 		if (ret == -ENOMEM)
+ 			ret = VM_FAULT_OOM;
+ 		else /* -ENOSPC, -EIO, etc */
+ 			ret = VM_FAULT_SIGBUS;
+-		if (reserved)
+-			goto out;
+-		goto out_noreserve;
++		goto out;
  	}
+ 
+ 	ret = VM_FAULT_NOPAGE; /* make the VM retry the fault */
++
+ again:
+ 	lock_page(page);
+ 	size = i_size_read(inode);
+@@ -7862,6 +7859,19 @@ again:
+ 		goto again;
+ 	}
+ 
++	if (page->index == ((size - 1) >> PAGE_CACHE_SHIFT))
++		delalloc_size = round_up(size - page_start, root->sectorsize);
++	else
++		delalloc_size = PAGE_CACHE_SIZE;
++
++	ret = btrfs_delalloc_reserve_space(inode, delalloc_size);
++	if (ret) {
++		/* -ENOSPC */
++		ret = VM_FAULT_SIGBUS;
++		goto out_unlock;
++	}
++	reserved = 1;
++
+ 	/*
+ 	 * XXX - page_mkwrite gets called every time the page is dirtied, even
+ 	 * if it was already dirty, so for space accounting reasons we need to
+@@ -7874,7 +7884,8 @@ again:
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+-	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
++	ret = btrfs_set_extent_delalloc(inode, page_start,
++					page_start + delalloc_size - 1,
+ 					&cached_state);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, page_start, page_end,
+@@ -7913,8 +7924,8 @@ out_unlock:
+ 	}
+ 	unlock_page(page);
+ out:
+-	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
+-out_noreserve:
++	if (reserved)
++		btrfs_delalloc_release_space(inode, delalloc_size);
+ 	sb_end_pagefault(inode->i_sb);
+ 	return ret;
+ }
 -- 
 2.1.0
 

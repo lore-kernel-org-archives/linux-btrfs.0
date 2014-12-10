@@ -1,49 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:59361 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932087AbaLJSi5 (ORCPT
+Received: from mail-yh0-f45.google.com ([209.85.213.45]:44410 "EHLO
+	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932501AbaLJS4u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 13:38:57 -0500
-Received: by mail-wi0-f172.google.com with SMTP id n3so12180495wiv.17
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 10:38:56 -0800 (PST)
-Message-ID: <5488938B.6030709@gmail.com>
-Date: Wed, 10 Dec 2014 19:40:11 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Wed, 10 Dec 2014 13:56:50 -0500
+Received: by mail-yh0-f45.google.com with SMTP id f10so1577645yha.32
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 10:56:50 -0800 (PST)
 MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2][BTRFS-PROGS] Don't use LVM snapshot device
-References: <1417718382-6753-1-git-send-email-kreijack@inwind.it> <5487FBAF.9090902@oracle.com>
-In-Reply-To: <5487FBAF.9090902@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$adbdd$de0c5a95$a95c46aa$74eda7e0@cox.net>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	<20141122222606.GO8916@merlins.org>
+	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+	<20141123000503.GQ32735@carfax.org.uk>
+	<20141123010742.GA16599@merlins.org>
+	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
+	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
+	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
+	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
+	<54878210.8030807@pobox.com>
+	<CAA7pwKPYwq73m4j-1-rf+-2owEvrDAaUJgxrGaY9uLm16Gs__Q@mail.gmail.com>
+	<548839EE.6080404@pobox.com>
+	<pan$adbdd$de0c5a95$a95c46aa$74eda7e0@cox.net>
+Date: Wed, 10 Dec 2014 19:56:50 +0100
+Message-ID: <CAA7pwKOSKV2Q2HY1DGJVoxbCyQN4kEsZK-Q1yhQHyFYvwCRiEQ@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/10/2014 08:52 AM, Anand Jain wrote:
-> 
-> 
->> This patch allows btrfs to skip LVM snapshot during the device scan
->> phase.
-> 
->  Its better to generalize the problem and fix it. The fix here is very
->  specific to LVM use case. This does not work in cases where device is
->  cloned using dd (device is unmounted).
+On 10 December 2014 at 14:11, Duncan <1i5t5.duncan@cox.net> wrote:
+>
+> From there... I've never used it but I /think/ btrfs inspect-internal
+> logical-resolve should let you map the 182109... address to a filename.
+> From there, moving that file out of the filesystem and back in should
+> eliminate that issue.
 
-See patch #5; this aborts btrfs[progs] when two devices have the same
-dev.uuid and fsid.
-
-Unfortunately this patch doesn't work with "btrfs dev scan"; this
-because each device is discovered/registered alone. See my patches about 
-mount.btrfs for an alternative approach.
-
-> As mentioned we need to depend on the device wwn as provided by the
-> device target driver.
-> 
-> Thanks, Anand
-> 
+btrfs inspect-internal logical-resolve 1821099687936 /mnt gives me the
+filename and it's only a 54175 bytes file.
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> Assuming no snapshots still contain the file, of course, and that the
+> ext* saved subvolume has already been deleted.
+
+Got no snapshots or subvolumes. Keeping it simple for now.

@@ -1,45 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18-i2.italiaonline.it ([212.48.25.198]:59930 "EHLO
-	smtp-18.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932527AbaLJTE3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 14:04:29 -0500
-Message-ID: <54889988.2080502@inwind.it>
-Date: Wed, 10 Dec 2014 20:05:44 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mout.gmx.net ([212.227.17.22]:63958 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932319AbaLJT3E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 14:29:04 -0500
+Received: from marcec.fritz.box ([93.181.44.4]) by mail.gmx.com (mrgmx101)
+ with ESMTPSA (Nemesis) id 0Man6U-1YEnMC0Jre-00KQsJ for
+ <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 20:29:02 +0100
+Date: Wed, 10 Dec 2014 20:28:48 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs scrub status misreports as "interrupted"
+Message-ID: <20141210202848.6395eb0b@marcec.fritz.box>
+In-Reply-To: <5487B523.10708@oracle.com>
+References: <20141122131318.05609d5f@marcec.fritz.box>
+	<5486E82A.6080301@gmail.com>
+	<5487B523.10708@oracle.com>
+Reply-To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-To: Dongsheng Yang <dongsheng081251@gmail.com>, Duncan <1i5t5.duncan@cox.net>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<548743CE.1020403@inwind.it>	<54879CFE.1090909@cn.fujitsu.com>	<54882634.4000809@pobox.com>	<pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net> <CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com>
-In-Reply-To: <CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/QMdvl3QYtN8=Al60I1iDgt+"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/10/2014 04:02 PM, Dongsheng Yang wrote:
-> On Wed, Dec 10, 2014 at 9:21 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Robert White posted on Wed, 10 Dec 2014 02:53:40 -0800 as excerpted:
-[...]
->> And in the example, the mkfs was supplied with two devices, so there's no
->> dup metadata remaining from a formerly single-device filesystem, either.
->> (Tho there will be the small single-mode stubs, empty, remaining from the
->> mkfs process, as no balance has been run to delete them yet, but those
->> are much smaller and empty.)
-> 
-> Yes. One question not related here: how about delete them in the end of mkfs?
-> 
-> Thanx
+--Sig_/QMdvl3QYtN8=Al60I1iDgt+
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-A btrfs balance should remove them. If you don't want to balance a full
-filesystem, you can filter the chunk by usage (set a low usage).
-Recently it was discussed in a tread...
+Am Wed, 10 Dec 2014 10:51:15 +0800
+schrieb Anand Jain <anand.jain@oracle.com>:
 
-BR
-Goffredo
+>   Is there any relevant log in the dmegs ?
 
+Not in my case; at least, nothing that made it into the syslog.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--Sig_/QMdvl3QYtN8=Al60I1iDgt+
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJUiJ78AAoJEL/Q5oYsiHj0Es4QALToYe+sxlHnA5MNei24jUS1
+orGjv1kQEsR4+NNo8zGhcB5N+6c8PGefeeSCxu5EIELycotVmrB47ZUJrpFlF4PW
+mcjRXb46oXmJ8MjSSLA+uKggdtOHprKJFM/jgiPAM69GqcKEW7RRfiUaFVzLndg8
+lQu89WoXIJWhkwVuktLw4E7lYUTMeLVuBQDFazi2G90xpuRBnAR6V4aNakDYR8AO
+89RmMAa61U3uLrV5hUcQa2bUY1FOYytxQy8GS7GU/MXMHgpphyCK0NPFE32gpR0A
+IJiGeLi8G2Ov8XQCuput5/ePYKzfxU25NRkwG+J+h9pJCQPZ+ZoKqRanJU/lp8Bt
+nGv1JLWLM5DxDYUf7ZBGINB54ZuaaWTmG1qeJVWdZxqSQMTNOuHWmvFNf6yZp1c2
+kgTuKIZWn4seO55vaT0/dymgr5wPUCF+30nVVqlzqi4oQTuAYh+/ZB2+TKHLHkwj
+Oxru1mZ6EYTl2NwwpX6KVasiKOEjbljMB6Ud8t1YFSJ0sbEIDUiKCjQRHt/nXl9B
+DwenpLcLVPa+YrEvLfT/opHI8VrYhxQxQF1Ejyofg+suD3HDk/wl0Xv+pvZQqb+2
+6yxCRGaIt1do2ilEb31nhehCWaBtmgcSgoxWjV573JXe9LLsLONXcuh7AdKLVf84
+Z0aQNakilJzZTTJ1aXu+
+=FgCQ
+-----END PGP SIGNATURE-----
+
+--Sig_/QMdvl3QYtN8=Al60I1iDgt+--

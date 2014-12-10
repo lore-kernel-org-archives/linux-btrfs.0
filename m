@@ -1,167 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp09.in.ibm.com ([122.248.162.9]:51478 "EHLO
-	e28smtp09.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755930AbaLJNOx (ORCPT
+Received: from e28smtp06.in.ibm.com ([122.248.162.6]:45234 "EHLO
+	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755973AbaLJNOz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:14:53 -0500
+	Wed, 10 Dec 2014 08:14:55 -0500
 Received: from /spool/local
-	by e28smtp09.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 10 Dec 2014 18:44:51 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id E27331258054
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:12 +0530 (IST)
+	Wed, 10 Dec 2014 18:44:53 +0530
+Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 8364E125804B
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:13 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADFRLu66912382
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:27 +0530
+	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADGwJw64422058
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:46:58 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEmfa000479
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:49 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEnh0000534
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:50 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [RFC PATCH V10 15/19] Btrfs: subpagesize-blocksize: Revert commit fc4adbff823f76577ece26dcb88bf6f8392dbd43.
-Date: Wed, 10 Dec 2014 18:44:17 +0530
-Message-Id: <1418217261-17273-16-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V10 16/19] Btrfs: subpagesize-blocksize: Track blocks of ordered extent submitted for write I/O.
+Date: Wed, 10 Dec 2014 18:44:18 +0530
+Message-Id: <1418217261-17273-17-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize, we have multiple blocks in a page. Checking for
-existence of a page in the page cache isn't a sufficient check, since we
-could be truncating a subset of the blocks mapped by the page.
+In the subpagesize-blocksize scenario, the following command (with 4k as the
+PAGE_SIZE and 2k as the block size) can cause false accounting of blocks of an
+ordered extent that is written to disk:
+
+$ xfs_io -f -c "pwrite 0 10240" \
+-c "sync_range 0 4096" \
+-c "sync_range 8192 2048" \
+-c "pwrite 10240 2048" \
+-c "sync_range 10240 2048" \
+/mnt/btrfs/file.bin
+
+To fix this, we would have to explicitly track the blocks of an ordered extent
+that have already been submitted for write I/O.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 --
- fs/btrfs/file.c        |  4 ++-
- fs/btrfs/inode.c       | 77 +++-----------------------------------------------
- 3 files changed, 7 insertions(+), 76 deletions(-)
+ fs/btrfs/extent_io.c    | 24 ++++++++++++++++++++++--
+ fs/btrfs/ordered-data.c |  4 +++-
+ fs/btrfs/ordered-data.h |  4 ++++
+ 3 files changed, 29 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 43527fd..50497bf 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -278,6 +278,4 @@ static inline void btrfs_inode_resume_unlocked_dio(struct inode *inode)
- 		  &BTRFS_I(inode)->runtime_flags);
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f9172aa..bc4dd46 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3227,6 +3227,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 	u64 extent_offset;
+ 	u64 extent_end;
+ 	u64 iosize;
++	u64 blk, nr_blks;
++	u64 blk_submitted;
+ 	sector_t sector;
+ 	struct extent_state *cached_state = NULL;
+ 	struct block_device *bdev;
+@@ -3293,11 +3295,26 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		iosize = min(extent_end - cur, end - cur + 1);
+ 		iosize = ALIGN(iosize, blocksize);
  
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
--
- #endif
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b1e0d27..3707515 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2314,7 +2314,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		if ((!ordered ||
- 		    (ordered->file_offset + ordered->len <= lockstart ||
- 		     ordered->file_offset > lockend)) &&
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
-+		     !test_range_bit(&BTRFS_I(inode)->io_tree, lockstart,
-+				     lockend, EXTENT_UPTODATE, 0,
-+				     cached_state)) {
- 			if (ordered)
- 				btrfs_put_ordered_extent(ordered);
- 			break;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e0dd338..b236417 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6832,76 +6832,6 @@ out:
- 	return ret;
- }
++		blk = extent_offset >> inode->i_sb->s_blocksize_bits;
++		nr_blks = iosize >> inode->i_sb->s_blocksize_bits;
++
++		blk_submitted = find_next_bit(ordered->blocks_submitted,
++					ordered->len >> inode->i_sb->s_blocksize_bits,
++					blk);
++		if (blk_submitted < blk + nr_blks) {
++			if (blk_submitted == blk) {
++				cur += blocksize;
++				btrfs_put_ordered_extent(ordered);
++				continue;
++			}
++			iosize = (blk_submitted - blk)
++				<< inode->i_sb->s_blocksize_bits;
++			nr_blks = iosize >> inode->i_sb->s_blocksize_bits;
++		}
++
+ 		sector = (ordered->start + extent_offset) >> 9;
+ 		bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
+ 		compressed = test_bit(BTRFS_ORDERED_COMPRESSED, &ordered->flags);
+-		btrfs_put_ordered_extent(ordered);
+-		ordered = NULL;
  
--bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
--{
--	struct radix_tree_root *root = &inode->i_mapping->page_tree;
--	int found = false;
--	void **pagep = NULL;
--	struct page *page = NULL;
--	int start_idx;
--	int end_idx;
--
--	start_idx = start >> PAGE_CACHE_SHIFT;
--
--	/*
--	 * end is the last byte in the last page.  end == start is legal
--	 */
--	end_idx = end >> PAGE_CACHE_SHIFT;
--
--	rcu_read_lock();
--
--	/* Most of the code in this while loop is lifted from
--	 * find_get_page.  It's been modified to begin searching from a
--	 * page and return just the first page found in that range.  If the
--	 * found idx is less than or equal to the end idx then we know that
--	 * a page exists.  If no pages are found or if those pages are
--	 * outside of the range then we're fine (yay!) */
--	while (page == NULL &&
--	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
--		page = radix_tree_deref_slot(pagep);
--		if (unlikely(!page))
--			break;
--
--		if (radix_tree_exception(page)) {
--			if (radix_tree_deref_retry(page)) {
--				page = NULL;
--				continue;
--			}
--			/*
--			 * Otherwise, shmem/tmpfs must be storing a swap entry
--			 * here as an exceptional entry: so return it without
--			 * attempting to raise page count.
--			 */
--			page = NULL;
--			break; /* TODO: Is this relevant for this use case? */
--		}
--
--		if (!page_cache_get_speculative(page)) {
--			page = NULL;
--			continue;
--		}
--
--		/*
--		 * Has the page moved?
--		 * This is part of the lockless pagecache protocol. See
--		 * include/linux/pagemap.h for details.
--		 */
--		if (unlikely(page != *pagep)) {
--			page_cache_release(page);
--			page = NULL;
--		}
--	}
--
--	if (page) {
--		if (page->index <= end_idx)
--			found = true;
--		page_cache_release(page);
--	}
--
--	rcu_read_unlock();
--	return found;
--}
--
- static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			      struct extent_state **cached_state, int writing)
- {
-@@ -6926,9 +6856,10 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 		 * invalidate needs to happen so that reads after a write do not
- 		 * get stale data.
- 		 */
--		if (!ordered &&
--		    (!writing ||
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)))
-+		if (!ordered && (!writing ||
-+		    !test_range_bit(&BTRFS_I(inode)->io_tree,
-+				    lockstart, lockend, EXTENT_UPTODATE, 0,
-+				    *cached_state)))
- 			break;
+ 		/*
+ 		 * compressed and inline extents are written through other
+@@ -3310,6 +3327,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+  			 */
+ 			nr++;
+ 			cur += iosize;
++			btrfs_put_ordered_extent(ordered);
+ 			continue;
+ 		}
  
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+@@ -3324,6 +3342,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		} else {
+ 			unsigned long max_nr = (i_size >> PAGE_CACHE_SHIFT) + 1;
+ 
++			bitmap_set(ordered->blocks_submitted, blk, nr_blks);
++			btrfs_put_ordered_extent(ordered);
+ 			set_range_writeback(tree, cur, cur + iosize - 1);
+ 			if (!PageWriteback(page)) {
+ 				btrfs_err(BTRFS_I(inode)->root->fs_info,
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 4d9832f..59b2544 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -199,13 +199,15 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	nr_longs = BITS_TO_LONGS(len >> inode->i_sb->s_blocksize_bits);
+ 	if (nr_longs == 1) {
+ 		entry->blocks_done = &entry->blocks_bitmap;
++		entry->blocks_submitted = &entry->blocks_submitted_bitmap;
+ 	} else {
+-		entry->blocks_done = kzalloc(nr_longs * sizeof(unsigned long),
++		entry->blocks_done = kzalloc(2 * nr_longs * sizeof(unsigned long),
+ 					GFP_NOFS);
+ 		if (!entry->blocks_done) {
+ 			kmem_cache_free(btrfs_ordered_extent_cache, entry);
+ 			return -ENOMEM;
+ 		}
++		entry->blocks_submitted = entry->blocks_done + nr_longs;
+ 	}
+ 
+ 	entry->file_offset = file_offset;
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 7de3b1e..851914c 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -139,6 +139,10 @@ struct btrfs_ordered_extent {
+ 	/* bitmap to track the blocks that have been written to disk */
+ 	unsigned long *blocks_done;
+ 	unsigned long blocks_bitmap;
++
++	/* bitmap to track the blocks that have been submitted for write i/o */
++	unsigned long *blocks_submitted;
++	unsigned long blocks_submitted_bitmap;
+ };
+ 
+ /*
 -- 
 2.1.0
 

@@ -1,27 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56256 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:43563 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754133AbaLDPzy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Dec 2014 10:55:54 -0500
-Date: Thu, 4 Dec 2014 16:55:53 +0100
+	id S1757826AbaLJPGu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 10:06:50 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 3A288AB09
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 15:06:49 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 0/3] Extent tree rebuilding with snapshots patches
-Message-ID: <20141204155553.GE9754@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1416970736-26623-1-git-send-email-wangshilong1991@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1416970736-26623-1-git-send-email-wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/3] Btrfs-progs: subvolume deletion commit mode update
+Date: Wed, 10 Dec 2014 16:06:48 +0100
+Message-Id: <cover.1418223710.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 26, 2014 at 10:58:49AM +0800, Wang Shilong wrote:
-> I did send these patches a long while ago, but due to some reasons,
-> they were not merged, these are important fixes for fsck, without
-> these patches, extent tree rebuilding did not work with snapshots.
+Minor change in the output of 'subvolume delete' command, the commit mode is
+printed inline with the subvolume and the global message is moved under the
+newly added 'verbose' option.
 
-I have the patches in my local git, but fsck fixes need special care
-(reviews or tests), so this was holding them back. I'll queue them for
-3.18.
+David Sterba (3):
+  btrfs-progs: let subvol delete print commit mode inline
+  btrfs-progs: subvol delete: add verbosity option
+  btrfs-progs: subvol delete: rename variable to match the option name
+
+ cmds-subvolume.c | 32 ++++++++++++++++++++------------
+ 1 file changed, 20 insertions(+), 12 deletions(-)
+
+-- 
+2.1.3
+

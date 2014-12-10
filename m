@@ -1,79 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34134 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751927AbaLJNVn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:21:43 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XyhD4-0005GY-K0
-	for linux-btrfs@vger.kernel.org; Wed, 10 Dec 2014 14:21:42 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:21:42 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:21:42 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-Date: Wed, 10 Dec 2014 13:21:22 +0000 (UTC)
-Message-ID: <pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net>
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>
-	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-	<548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com>
-	<54882634.4000809@pobox.com>
-Mime-Version: 1.0
+Received: from mail-yh0-f44.google.com ([209.85.213.44]:45422 "EHLO
+	mail-yh0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755957AbaLJNgZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 08:36:25 -0500
+Received: by mail-yh0-f44.google.com with SMTP id c41so1260195yho.17
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 05:36:25 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <548839EE.6080404@pobox.com>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	<20141122222606.GO8916@merlins.org>
+	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+	<20141123000503.GQ32735@carfax.org.uk>
+	<20141123010742.GA16599@merlins.org>
+	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
+	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
+	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
+	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
+	<54878210.8030807@pobox.com>
+	<CAA7pwKPYwq73m4j-1-rf+-2owEvrDAaUJgxrGaY9uLm16Gs__Q@mail.gmail.com>
+	<548839EE.6080404@pobox.com>
+Date: Wed, 10 Dec 2014 14:36:24 +0100
+Message-ID: <CAA7pwKMsHdbKLz77kFKYD7cymOwpWL42kqzOU8cb3LEyJ0PDSg@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: Robert White <rwhite@pobox.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Wed, 10 Dec 2014 02:53:40 -0800 as excerpted:
+On 10 December 2014 at 13:17, Robert White <rwhite@pobox.com> wrote:
+> On 12/09/2014 11:19 PM, Patrik Lundquist wrote:
+>>
+> BUT FIRST UNDERSTAND: you do _not_ need to balance a newly converted
+> filesystem. That is, the recommended balance (and recursive defrag) is _not_
+> a useability issue, its an efficiency issue.
 
-> On 12/09/2014 05:08 PM, Dongsheng Yang wrote:
->> On 12/10/2014 02:47 AM, Goffredo Baroncelli wrote:
->>> Hi Dongsheng On 12/09/2014 12:20 PM, Dongsheng Yang wrote:
->>>> When function btrfs_statfs() calculate the tatol size of fs, it is
->>>> calculating the total size of disks and then dividing it by a factor.
->>>> But in some usecase, the result is not good to user.
->>>>
->>>> Example:
->>>>     # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
->>>>     # mount /dev/vdf1 /mnt
->>>>     # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
->>>>     # df -h /mnt
->>>> Filesystem      Size  Used Avail Use% Mounted on
->>>> /dev/vdf1       3.0G 1018M  1.3G  45% /mnt
->>>>
->>>>     # btrfs fi show /dev/vdf1
->>>> Label: none  uuid: f85d93dc-81f4-445d-91e5-6a5cd9563294
->>>>     Total devices 2 FS bytes used 1001.53MiB
->>>>     devid    1 size 2.00GiB  used 1.85GiB path /dev/vdf1
->>>>     devid    2 size 4.00GiB  used 1.83GiB path /dev/vdf2
->>>>
->>>> a. df -h should report Size as 2GiB rather than as 3GiB.
->>>> Because this is 2 device raid1, the limiting factor is devid 1 @2GiB.
->>> I agree
-> 
-> NOPE.
-> 
-> The model you propose is too simple.
-> 
-> While the data portion of the file system is set to RAID1 the metadata
-> portion of the filesystem is still set to the default of DUP.
+But if I can't start with an efficient filesystem I'd rather start
+over now/soon. I intend to add four more old disks for a RAID1 and it
+will be problematic to start over later on (I'd have to buy new, large
+disks).
 
-Metadata defaults to DUP only on a single-device filesystem.  On a multi-
-device filesystem, metadata defaults to raid1.  (FWIW, for both, data 
-defaults to single.)
+I deleted the subvolume after being satisfied with the conversion,
+defragged recursively, and balanced. In that order.
 
-And in the example, the mkfs was supplied with two devices, so there's no 
-dup metadata remaining from a formerly single-device filesystem, either.  
-(Tho there will be the small single-mode stubs, empty, remaining from the 
-mkfs process, as no balance has been run to delete them yet, but those 
-are much smaller and empty.)
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Because you made a backup and everything yes?
 
+Shh!
+
+
+> So anyway. Your system isn't "bugged" or "broken" it's "full" but its a
+> fragmented fullness that has lots of free sectors but insufficent contiguous
+> free sectors, so it cannot satisfy the request.
+
+It's a half full 3TB disk. There _is_ space, somewhere. I can't speak
+for contiguous space though.
+
+
+>> I don't know how to interpret the space_info error. Why is only
+>> 4773171200 (4,4GiB) free?
+>> Can I inspect block group 1821099687936 to try to find out what makes
+>> it problematic?
+>>
+>> BTRFS info (device sdc1): relocating block group 1821099687936 flags 1
+>> BTRFS error (device sdc1): allocation failed flags 1, wanted 2013265920
+>> BTRFS: space_info 1 has 4773171200 free, is not full
+>> BTRFS: space_info total=1494648619008, used=1489775505408, pinned=0,
+>> reserved=99700736, may_use=2102390784, readonly=241664
+>
+>
+> So it was looking for a single chunk 2013265920 bytes long and it couldn't
+> find one because all the spaces were smaller and there was no room to make a
+> new suitable space.
+>
+> The problem is that it wanted 2013265920 bytes and while the system as a
+> whole had no way to satisfy that desire. It asked for something just shy of
+> two gigs as a single extent. That's a tough order on a full platter.
+>
+> Since your entire free size is 2102390784 that is an attempt to allocate
+> about 80% of your free space as one contiguous block. That's never going to
+> happen. 8-)
+
+What about "space_info 1 has 4773171200 free"? Besides the other 1,5TB
+free space.
+
+
+> I don't even know if 2GiB is normally a legal size for an extent. My
+> understanding is that data is allocated in 1G chunks, so I'd expect all
+> extents to be smaller than 1G.
+
+The 'summary' after the failed balances is always something like "98
+enospc errors" which now makes me suspect that I have 98 files with
+extents larger than 1GiB that the defrag didn't take care of.
+
+So if I can find out which files have >1GiB extents I can then copy
+them back and forth to solve the problem.
+
+Maybe running defrag more times can also solve it? Can I get a list of
+fragmented files?
+
+Suppose an old file with 2GiB extent isn't fragmented, will btrfs
+defrag still try to defrag it?
+
+
+> After a quick glance at the btrfs-convert, it looks like it might make some
+> pretty atypical extents if the underlying donor filesystem needed needed
+> them. It wouldn't have had a choice. So it's easily within the realm of
+> reason that you'd have some really fascinating data as a result of
+> converting a nearly full EXT4 file system of the Terabyte+ size.
+
+It was about half full at conversion.
+
+
+> This would
+> be quadruply true if you'd tweaked the block group ratios when you made the
+> original file system.
+
+Ext4 created with defaults, but I think it has been completely full at one time.
+
+
+> So since you have nice backups... you should probably drop the ext2_saved
+> subvolume and then get on with your life for good or ill.
+
+Done before defrag and balance attempts.
+
+
+> Think of the time and worry you'd have saved if you'd copied the thing in
+> the first place. 8-)
+
+But then I wouldn't learn as much. :-)
+
+
+>>> P.S. you should re-balance your System and Metadata as "DUP" for now. Two
+>>> copies of that stuff is better than one as right now you have no real
+>>> recovery path for that stuff. If you didn't make that change on purpose
+>>> it
+>>> probably got down-revved from DUP automagically when you tired to RAID
+>>> it.
+>>
+>>
+>> Good point. Maybe btrfs-convert should do that by default? I don't
+>> think it has ever been DUP.
+>
+> Eyup.
+
+And the metadata is now DUP. That's ~1.5GB extra metadata that was
+allocated just fine after the failed balance.

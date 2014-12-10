@@ -1,82 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33393 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:34134 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751927AbaLJNLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:11:18 -0500
+	id S1751927AbaLJNVn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 08:21:43 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xyh2v-0007y6-VY
-	for linux-btrfs@vger.kernel.org; Wed, 10 Dec 2014 14:11:14 +0100
+	id 1XyhD4-0005GY-K0
+	for linux-btrfs@vger.kernel.org; Wed, 10 Dec 2014 14:21:42 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:11:13 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:21:42 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:11:13 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 14:21:42 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-Date: Wed, 10 Dec 2014 13:11:03 +0000 (UTC)
-Message-ID: <pan$adbdd$de0c5a95$a95c46aa$74eda7e0@cox.net>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-	<20141122222606.GO8916@merlins.org>
-	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
-	<20141123000503.GQ32735@carfax.org.uk>
-	<20141123010742.GA16599@merlins.org>
-	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
-	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
-	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
-	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
-	<54878210.8030807@pobox.com>
-	<CAA7pwKPYwq73m4j-1-rf+-2owEvrDAaUJgxrGaY9uLm16Gs__Q@mail.gmail.com>
-	<548839EE.6080404@pobox.com>
+Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
+Date: Wed, 10 Dec 2014 13:21:22 +0000 (UTC)
+Message-ID: <pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net>
+References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>
+	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+	<548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com>
+	<54882634.4000809@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Wed, 10 Dec 2014 04:17:50 -0800 as excerpted:
+Robert White posted on Wed, 10 Dec 2014 02:53:40 -0800 as excerpted:
 
->> BTRFS info (device sdc1): relocating block group 1821099687936 flags 1
->> BTRFS error (device sdc1): allocation failed flags 1, wanted 2013265920
->> BTRFS: space_info 1 has 4773171200 free, is not full BTRFS: space_info
->> total=1494648619008, used=1489775505408, pinned=0, reserved=99700736,
->> may_use=2102390784, readonly=241664
+> On 12/09/2014 05:08 PM, Dongsheng Yang wrote:
+>> On 12/10/2014 02:47 AM, Goffredo Baroncelli wrote:
+>>> Hi Dongsheng On 12/09/2014 12:20 PM, Dongsheng Yang wrote:
+>>>> When function btrfs_statfs() calculate the tatol size of fs, it is
+>>>> calculating the total size of disks and then dividing it by a factor.
+>>>> But in some usecase, the result is not good to user.
+>>>>
+>>>> Example:
+>>>>     # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
+>>>>     # mount /dev/vdf1 /mnt
+>>>>     # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
+>>>>     # df -h /mnt
+>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>> /dev/vdf1       3.0G 1018M  1.3G  45% /mnt
+>>>>
+>>>>     # btrfs fi show /dev/vdf1
+>>>> Label: none  uuid: f85d93dc-81f4-445d-91e5-6a5cd9563294
+>>>>     Total devices 2 FS bytes used 1001.53MiB
+>>>>     devid    1 size 2.00GiB  used 1.85GiB path /dev/vdf1
+>>>>     devid    2 size 4.00GiB  used 1.83GiB path /dev/vdf2
+>>>>
+>>>> a. df -h should report Size as 2GiB rather than as 3GiB.
+>>>> Because this is 2 device raid1, the limiting factor is devid 1 @2GiB.
+>>> I agree
 > 
-> So it was looking for a single chunk 2013265920 bytes long and it
-> couldn't find one because all the spaces were smaller and there was no
-> room to make a new suitable space.
+> NOPE.
 > 
-> The problem is that it wanted 2013265920 bytes and while the system as a
-> whole had no way to satisfy that desire. It asked for something just shy
-> of two gigs as a single extent. That's a tough order on a full platter.
+> The model you propose is too simple.
 > 
-> Since your entire free size is 2102390784 that is an attempt to allocate
-> about 80% of your free space as one contiguous block. That's never going
-> to happen. 8-)
-> 
-> I don't even know if 2GiB is normally a legal size for an extent. My
-> understanding is that data is allocated in 1G chunks, so I'd expect all
-> extents to be smaller than 1G.
+> While the data portion of the file system is set to RAID1 the metadata
+> portion of the filesystem is still set to the default of DUP.
 
-On native btrfs, an extent must fit within the 1 GiB data chunk size, 
-with extents inherited from an ext* conversion being an obvious non-
-native exception.
+Metadata defaults to DUP only on a single-device filesystem.  On a multi-
+device filesystem, metadata defaults to raid1.  (FWIW, for both, data 
+defaults to single.)
 
-I hadn't looked at the actual output, but that confirms my earlier 
-suspicion, that after the ext* saved subvolume delete, the defrag somehow 
-missed at least one file > 1 GiB with a "super-extent" also > 1 GiB in 
-size.
-
->From there... I've never used it but I /think/ btrfs inspect-internal 
-logical-resolve should let you map the 182109... address to a filename.  
->From there, moving that file out of the filesystem and back in should 
-eliminate that issue.
-
-Assuming no snapshots still contain the file, of course, and that the 
-ext* saved subvolume has already been deleted.
+And in the example, the mkfs was supplied with two devices, so there's no 
+dup metadata remaining from a formerly single-device filesystem, either.  
+(Tho there will be the small single-mode stubs, empty, remaining from the 
+mkfs process, as no balance has been run to delete them yet, but those 
+are much smaller and empty.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f171.google.com ([209.85.192.171]:53665 "EHLO
-	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753720AbaLJBqo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:44 -0500
-Received: by mail-pd0-f171.google.com with SMTP id y13so1723687pdi.30
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:43 -0800 (PST)
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:47478 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754080AbaLJBqk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Dec 2014 20:46:40 -0500
+Received: by mail-pa0-f41.google.com with SMTP id rd3so1735644pab.28
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Dec 2014 17:46:39 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>,
         Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
@@ -15,9 +15,9 @@ To: Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-mm@kvack.org, linux-nfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH v3 4/7] vfs: update swap_{,de}activate documentation
-Date: Tue,  9 Dec 2014 17:45:45 -0800
-Message-Id: <5db0fd93b5de36b81625fc3f640caff2411ef996.1418173063.git.osandov@osandov.com>
+Subject: [RFC PATCH v3 2/7] nfs: don't dirty ITER_BVEC pages read through direct I/O
+Date: Tue,  9 Dec 2014 17:45:43 -0800
+Message-Id: <55ee5dcf11066baf17b5d8aa485fdcd7be78dec0.1418173063.git.osandov@osandov.com>
 In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
 References: <cover.1418173063.git.osandov@osandov.com>
 In-Reply-To: <cover.1418173063.git.osandov@osandov.com>
@@ -25,67 +25,44 @@ References: <cover.1418173063.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Parameters were added to swap_activate in the same patch series that
-introduced it without updating the documentation. Additionally, the
-documentation claims that non-existent address space operations
-swap_{in,out} are used for swap I/O, but it's (now) direct_IO.
+As with the generic blockdev code, kernel pages shouldn't be dirtied by
+the direct I/O path.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- Documentation/filesystems/Locking | 7 ++++---
- Documentation/filesystems/vfs.txt | 7 ++++---
- 2 files changed, 8 insertions(+), 6 deletions(-)
+ fs/nfs/direct.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
-index b30753c..e72b4c3 100644
---- a/Documentation/filesystems/Locking
-+++ b/Documentation/filesystems/Locking
-@@ -205,7 +205,8 @@ prototypes:
- 	int (*launder_page)(struct page *);
- 	int (*is_partially_uptodate)(struct page *, unsigned long, unsigned long);
- 	int (*error_remove_page)(struct address_space *, struct page *);
--	int (*swap_activate)(struct file *);
-+	int (*swap_activate)(struct swap_info_struct *, struct file *,
-+			     sector_t *);
- 	int (*swap_deactivate)(struct file *);
+diff --git a/fs/nfs/direct.c b/fs/nfs/direct.c
+index 10bf072..a67fa2c 100644
+--- a/fs/nfs/direct.c
++++ b/fs/nfs/direct.c
+@@ -88,6 +88,7 @@ struct nfs_direct_req {
+ 	struct pnfs_ds_commit_info ds_cinfo;	/* Storage for cinfo */
+ 	struct work_struct	work;
+ 	int			flags;
++	int			should_dirty;	/* should we mark read pages dirty? */
+ #define NFS_ODIRECT_DO_COMMIT		(1)	/* an unstable reply was received */
+ #define NFS_ODIRECT_RESCHED_WRITES	(2)	/* write verification failed */
+ 	struct nfs_writeverf	verf;		/* unstable write verifier */
+@@ -370,7 +371,8 @@ static void nfs_direct_read_completion(struct nfs_pgio_header *hdr)
+ 		struct nfs_page *req = nfs_list_entry(hdr->pages.next);
+ 		struct page *page = req->wb_page;
  
- locking rules:
-@@ -230,8 +231,8 @@ migratepage:		yes (both)
- launder_page:		yes
- is_partially_uptodate:	yes
- error_remove_page:	yes
--swap_activate:		no
--swap_deactivate:	no
-+swap_activate:					yes
-+swap_deactivate:				no
- 
- 	->write_begin(), ->write_end(), ->sync_page() and ->readpage()
- may be called from the request handler (/dev/loop).
-diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-index 20bf204..46ef103 100644
---- a/Documentation/filesystems/vfs.txt
-+++ b/Documentation/filesystems/vfs.txt
-@@ -600,8 +600,9 @@ struct address_space_operations {
- 					unsigned long);
- 	void (*is_dirty_writeback) (struct page *, bool *, bool *);
- 	int (*error_remove_page) (struct mapping *mapping, struct page *page);
--	int (*swap_activate)(struct file *);
--	int (*swap_deactivate)(struct file *);
-+	int (*swap_activate)(struct swap_info_struct *, struct file *,
-+			     sector_t *);
-+	void (*swap_deactivate)(struct file *);
- };
- 
-   writepage: called by the VM to write a dirty page to backing store.
-@@ -788,7 +789,7 @@ struct address_space_operations {
- 	memory. A return value of zero indicates success,
- 	in which case this file can be used to back swapspace. The
- 	swapspace operations will be proxied to this address space's
--	->swap_{out,in} methods.
-+	->direct_IO method for both reads and writes.
- 
-   swap_deactivate: Called during swapoff on files where swap_activate
- 	was successful.
+-		if (!PageCompound(page) && bytes < hdr->good_bytes)
++		if (!PageCompound(page) && bytes < hdr->good_bytes &&
++		    dreq->should_dirty)
+ 			set_page_dirty(page);
+ 		bytes += req->wb_bytes;
+ 		nfs_list_remove_request(req);
+@@ -542,6 +544,7 @@ ssize_t nfs_file_direct_read(struct kiocb *iocb, struct iov_iter *iter,
+ 	dreq->inode = inode;
+ 	dreq->bytes_left = count;
+ 	dreq->ctx = get_nfs_open_context(nfs_file_open_context(iocb->ki_filp));
++	dreq->should_dirty = !(iter->type & ITER_BVEC);
+ 	l_ctx = nfs_get_lock_context(dreq->ctx);
+ 	if (IS_ERR(l_ctx)) {
+ 		result = PTR_ERR(l_ctx);
 -- 
 2.1.3
 

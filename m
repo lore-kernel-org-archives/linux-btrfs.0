@@ -1,224 +1,264 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp02.in.ibm.com ([122.248.162.2]:39386 "EHLO
+Received: from e28smtp02.in.ibm.com ([122.248.162.2]:39376 "EHLO
 	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755804AbaLJNOx (ORCPT
+	with ESMTP id S1755443AbaLJNOw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 08:14:53 -0500
+	Wed, 10 Dec 2014 08:14:52 -0500
 Received: from /spool/local
 	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 10 Dec 2014 18:44:50 +0530
-Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 7B0D83940049
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:48 +0530 (IST)
+	Wed, 10 Dec 2014 18:44:49 +0530
+Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id B6347E003F
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:45:22 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADGuKT60620914
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:46:56 +0530
+	by d28relay02.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id sBADEvXF36241660
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:57 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADElFN000320
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:48 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id sBADEe5U032329
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Dec 2014 18:44:45 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [RFC PATCH V10 13/19] Btrfs: subpagesize-blocksize: Deal with partial ordered extent allocations.
-Date: Wed, 10 Dec 2014 18:44:15 +0530
-Message-Id: <1418217261-17273-14-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V10 08/19] Btrfs: subpagesize-blocksize: Compute and look up csums based on sectorsized blocks.
+Date: Wed, 10 Dec 2014 18:44:10 +0530
+Message-Id: <1418217261-17273-9-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1418217261-17273-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario, extent allocations for only some of the
-dirty blocks of a page can succeed, while allocation for rest of the blocks
-can fail. This patch allows I/O against such partially allocated ordered
-extents to be submitted.
+Checksums are applicable to sectorsize units. The current code uses
+bio->bv_len units to compute and look up checksums. This works on machines
+where sectorsize == PAGE_CACHE_SIZE. This patch makes the checksum
+computation and look up code to work with sectorsize units.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c | 24 +++++++++++++-----------
- fs/btrfs/extent_io.h |  1 +
- fs/btrfs/inode.c     | 39 +++++++++++++++++++++++++--------------
- 3 files changed, 39 insertions(+), 25 deletions(-)
+ fs/btrfs/file-item.c | 87 ++++++++++++++++++++++++++++++++--------------------
+ fs/btrfs/inode.c     | 53 +++++++++++++++++++++-----------
+ 2 files changed, 89 insertions(+), 51 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3f6bec2..51ab453 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1774,15 +1774,22 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 			if (page_ops & PAGE_SET_PRIVATE2)
- 				SetPagePrivate2(pages[i]);
- 
-+			if (page_ops & PAGE_SET_ERROR)
-+				SetPageError(pages[i]);
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 54c84da..000418a 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -172,6 +172,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 	u64 item_start_offset = 0;
+ 	u64 item_last_offset = 0;
+ 	u64 disk_bytenr;
++	u64 page_bytes_left;
+ 	u32 diff;
+ 	int nblocks;
+ 	int bio_index = 0;
+@@ -220,6 +221,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 	disk_bytenr = (u64)bio->bi_iter.bi_sector << 9;
+ 	if (dio)
+ 		offset = logical_offset;
 +
- 			if (pages[i] == locked_page) {
- 				page_cache_release(pages[i]);
- 				continue;
- 			}
--			if (page_ops & PAGE_CLEAR_DIRTY)
++	page_bytes_left = bvec->bv_len;
+ 	while (bio_index < bio->bi_vcnt) {
+ 		if (!dio)
+ 			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+@@ -243,7 +246,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 				if (BTRFS_I(inode)->root->root_key.objectid ==
+ 				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+ 					set_extent_bits(io_tree, offset,
+-						offset + bvec->bv_len - 1,
++						offset + root->sectorsize - 1,
+ 						EXTENT_NODATASUM, GFP_NOFS);
+ 				} else {
+ 					btrfs_info(BTRFS_I(inode)->root->fs_info,
+@@ -281,11 +284,17 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ found:
+ 		csum += count * csum_size;
+ 		nblocks -= count;
+-		bio_index += count;
 +
-+			if ((page_ops & PAGE_CLEAR_DIRTY)
-+				&& !PagePrivate2(pages[i]))
- 				clear_page_dirty_for_io(pages[i]);
--			if (page_ops & PAGE_SET_WRITEBACK)
-+			if ((page_ops & PAGE_SET_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				set_page_writeback(pages[i]);
--			if (page_ops & PAGE_END_WRITEBACK)
-+			if ((page_ops & PAGE_END_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				end_page_writeback(pages[i]);
- 			if (page_ops & PAGE_UNLOCK)
- 				unlock_page(pages[i]);
-@@ -2398,7 +2405,7 @@ int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 			uptodate = 0;
+ 		while (count--) {
+-			disk_bytenr += bvec->bv_len;
+-			offset += bvec->bv_len;
+-			bvec++;
++			disk_bytenr += root->sectorsize;
++			offset += root->sectorsize;
++			page_bytes_left -= root->sectorsize;
++			if (!page_bytes_left) {
++				bio_index++;
++				bvec++;
++				page_bytes_left = bvec->bv_len;
++			}
++
+ 		}
  	}
+ 	btrfs_free_path(path);
+@@ -442,6 +451,8 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+ 	struct bio_vec *bvec = bio->bi_io_vec;
+ 	int bio_index = 0;
+ 	int index;
++	int nr_sectors;
++	int i;
+ 	unsigned long total_bytes = 0;
+ 	unsigned long this_sum_bytes = 0;
+ 	u64 offset;
+@@ -469,41 +480,51 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+ 		if (!contig)
+ 			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
  
--	if (!uptodate) {
-+	if (!uptodate || PageError(page)) {
- 		ClearPageUptodate(page);
- 		SetPageError(page);
- 		ret = ret < 0 ? ret : -EIO;
-@@ -3149,7 +3156,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 					       nr_written);
- 		/* File system has been set read-only */
- 		if (ret) {
--			SetPageError(page);
- 			/* fill_delalloc should be return < 0 for error
- 			 * but just in case, we use > 0 here meaning the
- 			 * IO is started, so we don't want to return > 0
-@@ -3358,7 +3364,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	struct inode *inode = page->mapping->host;
- 	struct extent_page_data *epd = data;
- 	u64 start = page_offset(page);
--	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	int ret;
- 	int nr = 0;
- 	size_t pg_offset;
-@@ -3401,7 +3406,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
- 	if (ret == 1)
- 		goto done_unlocked;
--	if (ret)
-+	if (ret && !PagePrivate2(page))
- 		goto done;
+-		if (offset >= ordered->file_offset + ordered->len ||
+-		    offset < ordered->file_offset) {
+-			unsigned long bytes_left;
+-			sums->len = this_sum_bytes;
+-			this_sum_bytes = 0;
+-			btrfs_add_ordered_sum(inode, ordered, sums);
+-			btrfs_put_ordered_extent(ordered);
++		data = kmap_atomic(bvec->bv_page);
  
- 	ret = __extent_writepage_io(inode, page, wbc, epd,
-@@ -3415,10 +3420,7 @@ done:
- 		set_page_writeback(page);
- 		end_page_writeback(page);
- 	}
--	if (PageError(page)) {
--		ret = ret < 0 ? ret : -EIO;
--		end_extent_writepage(page, ret, start, page_end);
--	}
+-			bytes_left = bio->bi_iter.bi_size - total_bytes;
+ 
+-			sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
+-				       GFP_NOFS);
+-			BUG_ON(!sums); /* -ENOMEM */
+-			sums->len = bytes_left;
+-			ordered = btrfs_lookup_ordered_extent(inode, offset);
+-			BUG_ON(!ordered); /* Logic error */
+-			sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9) +
+-				       total_bytes;
+-			index = 0;
++		nr_sectors = (bvec->bv_len + root->sectorsize - 1)
++			>> root->fs_info->sb->s_blocksize_bits;
 +
- 	unlock_page(page);
- 	return ret;
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 39e14fc..264dfd4 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -52,6 +52,7 @@
- #define PAGE_SET_WRITEBACK	(1 << 2)
- #define PAGE_END_WRITEBACK	(1 << 3)
- #define PAGE_SET_PRIVATE2	(1 << 4)
-+#define PAGE_SET_ERROR		(1 << 5)
- 
- /*
-  * page->private values.  Every page that is controlled by the extent
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 91c5580..4ed78dd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -880,6 +880,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	struct btrfs_key ins;
- 	struct extent_map *em;
- 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct btrfs_ordered_extent *ordered;
-+	unsigned long page_ops, extent_ops;
- 	int ret = 0;
- 
- 	if (btrfs_is_free_space_inode(inode)) {
-@@ -924,8 +926,6 @@ static noinline int cow_file_range(struct inode *inode,
- 	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
- 
- 	while (disk_num_bytes > 0) {
--		unsigned long op;
--
- 		cur_alloc_size = disk_num_bytes;
- 		ret = btrfs_reserve_extent(root, cur_alloc_size,
- 					   root->sectorsize, 0, alloc_hint,
-@@ -971,14 +971,14 @@ static noinline int cow_file_range(struct inode *inode,
- 		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
- 					       ram_size, cur_alloc_size, 0);
- 		if (ret)
--			goto out_reserve;
-+			goto out_remove_extent_map;
- 
- 		if (root->root_key.objectid ==
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 			ret = btrfs_reloc_clone_csums(inode, start,
- 						      cur_alloc_size);
- 			if (ret)
--				goto out_reserve;
-+				goto out_remove_ordered_extent;
++
++		for (i = 0; i < nr_sectors; i++) {
++			if (offset >= ordered->file_offset + ordered->len ||
++				offset < ordered->file_offset) {
++				unsigned long bytes_left;
++				sums->len = this_sum_bytes;
++				this_sum_bytes = 0;
++				btrfs_add_ordered_sum(inode, ordered, sums);
++				btrfs_put_ordered_extent(ordered);
++
++				bytes_left = bio->bi_iter.bi_size - total_bytes;
++
++				sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
++					GFP_NOFS);
++				BUG_ON(!sums); /* -ENOMEM */
++				sums->len = bytes_left;
++				ordered = btrfs_lookup_ordered_extent(inode, offset);
++				BUG_ON(!ordered); /* Logic error */
++				sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9) +
++					total_bytes;
++				index = 0;
++			}
++
++			sums->sums[index] = ~(u32)0;
++			sums->sums[index]
++				= btrfs_csum_data(data + bvec->bv_offset + (i * root->sectorsize),
++						sums->sums[index],
++						root->sectorsize);
++			btrfs_csum_final(sums->sums[index],
++					(char *)(sums->sums + index));
++			index++;
++			offset += root->sectorsize;
++			this_sum_bytes += root->sectorsize;
++			total_bytes += root->sectorsize;
  		}
  
- 		if (disk_num_bytes < cur_alloc_size)
-@@ -991,13 +991,12 @@ static noinline int cow_file_range(struct inode *inode,
- 		 * Do set the Private2 bit so we know this page was properly
- 		 * setup for writepage
- 		 */
--		op = unlock ? PAGE_UNLOCK : 0;
--		op |= PAGE_SET_PRIVATE2;
--
-+		page_ops = unlock ? PAGE_UNLOCK : 0;
-+		page_ops |= PAGE_SET_PRIVATE2;
-+		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
- 		extent_clear_unlock_delalloc(inode, start,
--					     start + ram_size - 1, locked_page,
--					     EXTENT_LOCKED | EXTENT_DELALLOC,
--					     op);
-+					start + ram_size - 1, locked_page,
-+					extent_ops, page_ops);
- 		disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
-@@ -1006,14 +1005,26 @@ static noinline int cow_file_range(struct inode *inode,
- out:
- 	return ret;
+-		data = kmap_atomic(bvec->bv_page);
+-		sums->sums[index] = ~(u32)0;
+-		sums->sums[index] = btrfs_csum_data(data + bvec->bv_offset,
+-						    sums->sums[index],
+-						    bvec->bv_len);
+ 		kunmap_atomic(data);
+-		btrfs_csum_final(sums->sums[index],
+-				 (char *)(sums->sums + index));
  
-+out_remove_ordered_extent:
-+	ordered = btrfs_lookup_ordered_extent(inode, ins.objectid);
-+	BUG_ON(!ordered);
-+	btrfs_remove_ordered_extent(inode, ordered);
+ 		bio_index++;
+-		index++;
+-		total_bytes += bvec->bv_len;
+-		this_sum_bytes += bvec->bv_len;
+-		offset += bvec->bv_len;
+ 		bvec++;
+ 	}
+ 	this_sum_bytes = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2ffb4df..ae5d459 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7116,37 +7116,54 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct bio *dio_bio;
+ 	u32 *csums = (u32 *)dip->csum;
++	int index = 0;
++	int nr_sectors;
+ 	u64 start;
+-	int i;
++	int i, j;
 +
-+out_remove_extent_map:
-+	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
-+
- out_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
-+
- out_unlock:
-+	page_ops = unlock ? PAGE_UNLOCK : 0;
-+	page_ops |= PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK
-+		| PAGE_SET_ERROR;
-+	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
-+		| EXTENT_DEFRAG;
-+
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
--				     EXTENT_DELALLOC | EXTENT_DEFRAG,
--				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				extent_ops, page_ops);
- 	goto out;
- }
++	if (err || !(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
++		goto unlock;
  
+ 	start = dip->logical_offset;
+ 	bio_for_each_segment_all(bvec, bio, i) {
+-		if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
+-			struct page *page = bvec->bv_page;
+-			char *kaddr;
+-			u32 csum = ~(u32)0;
+-			unsigned long flags;
++		struct page *page = bvec->bv_page;
++		char *kaddr;
++		u32 csum;
++		unsigned long flags;
++
++		local_irq_save(flags);
++		kaddr = kmap_atomic(page);
++
++		nr_sectors = bvec->bv_len >> inode->i_sb->s_blocksize_bits;
+ 
+-			local_irq_save(flags);
+-			kaddr = kmap_atomic(page);
+-			csum = btrfs_csum_data(kaddr + bvec->bv_offset,
+-					       csum, bvec->bv_len);
++		for (j = 0; j < nr_sectors; j++) {
++			csum = ~(u32)0;
++			csum = btrfs_csum_data(kaddr + bvec->bv_offset
++					+ (root->sectorsize * j),
++					csum, root->sectorsize);
+ 			btrfs_csum_final(csum, (char *)&csum);
+-			kunmap_atomic(kaddr);
+-			local_irq_restore(flags);
+ 
+-			flush_dcache_page(bvec->bv_page);
+-			if (csum != csums[i]) {
+-				btrfs_err(root->fs_info, "csum failed ino %llu off %llu csum %u expected csum %u",
+-					  btrfs_ino(inode), start, csum,
+-					  csums[i]);
++			if (csum != csums[index]) {
++				btrfs_err(root->fs_info,
++					"csum failed ino %llu off %llu csum %u expected csum %u",
++					btrfs_ino(inode), start, csum,
++					csums[index]);
+ 				err = -EIO;
++				break;
+ 			}
++
++			start += root->sectorsize;
++			index++;
+ 		}
+ 
+-		start += bvec->bv_len;
++		kunmap_atomic(kaddr);
++		local_irq_restore(flags);
++		flush_dcache_page(bvec->bv_page);
++		if (err)
++			break;
+ 	}
+ 
++unlock:
+ 	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
+ 		      dip->logical_offset + dip->bytes - 1);
+ 	dio_bio = dip->dio_bio;
 -- 
 2.1.0
 

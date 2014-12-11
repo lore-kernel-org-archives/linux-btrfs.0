@@ -1,155 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f181.google.com ([209.85.160.181]:62476 "EHLO
-	mail-yk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932600AbaLKJzV (ORCPT
+Received: from resqmta-po-05v.sys.comcast.net ([96.114.154.164]:57697 "EHLO
+	resqmta-po-05v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751867AbaLKKSO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 04:55:21 -0500
-Received: by mail-yk0-f181.google.com with SMTP id 142so2023548ykq.40
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 01:55:20 -0800 (PST)
+	Thu, 11 Dec 2014 05:18:14 -0500
+Message-ID: <54896F65.20708@pobox.com>
+Date: Thu, 11 Dec 2014 02:18:13 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-In-Reply-To: <548958FE.7090607@pobox.com>
-References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
-	<20141122222606.GO8916@merlins.org>
-	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
-	<20141123000503.GQ32735@carfax.org.uk>
-	<20141123010742.GA16599@merlins.org>
-	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
-	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
-	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
-	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
-	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
-	<54878210.8030807@pobox.com>
-	<CAA7pwKPYwq73m4j-1-rf+-2owEvrDAaUJgxrGaY9uLm16Gs__Q@mail.gmail.com>
-	<548839EE.6080404@pobox.com>
-	<CAA7pwKMsHdbKLz77kFKYD7cymOwpWL42kqzOU8cb3LEyJ0PDSg@mail.gmail.com>
-	<548958FE.7090607@pobox.com>
-Date: Thu, 11 Dec 2014 10:55:20 +0100
-Message-ID: <CAA7pwKOMqTmSDDB_whOzKK3d092sumB_FN_LcRAVuc=wfKR9Cw@mail.gmail.com>
-Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Patrik Lundquist <patrik.lundquist@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: ENOSPC after conversion [Was: Fixing Btrfs Filesystem Full Problems
+ typo?]
+References: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>
+In-Reply-To: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 December 2014 at 09:42, Robert White <rwhite@pobox.com> wrote:
-> On 12/10/2014 05:36 AM, Patrik Lundquist wrote:
->>
->> On 10 December 2014 at 13:17, Robert White <rwhite@pobox.com> wrote:
->>>
->>> On 12/09/2014 11:19 PM, Patrik Lundquist wrote:
->>>>
->>>>
->>> BUT FIRST UNDERSTAND: you do _not_ need to balance a newly converted
->>> filesystem. That is, the recommended balance (and recursive defrag) is
->>> _not_
->>> a useability issue, its an efficiency issue.
->>
->>
->> But if I can't start with an efficient filesystem I'd rather start
->> over now/soon. I intend to add four more old disks for a RAID1 and it
->> will be problematic to start over later on (I'd have to buy new, large
->> disks).
+So far I don't see a "bug".
+
+On 12/11/2014 12:18 AM, Patrik Lundquist wrote:
+> I'll reboot the thread with a recap and my latest findings.
 >
+> * Half full 3TB disk converted from ext4 to Btrfs, after first
+> verifying it with fsck.
+> * Undo subvolume deleted after being happy with the conversion.
+> * Recursive defrag.
+> * Full balance, that ended with "98 enospc errors during balance."
+
+This is running out of space to allocate a disk extent. Not running out 
+of space to allocate a file.
+
+> In that order, nothing in between. No snapshots or other subvolumes.
+> Loads of real free space.
+
+Space for files is not space for extents.
+
+> Btrfs check reports a clean filesystem.
+
+So not a "bug", just out of raw space.
+
+> Btrfs balance -musage=100 -dusage=99 works, but not -dusage=100.
+
+Ibid.
+
+> Conversion of metadata (~1.55 GiB) to DUP worked fine.
+
+More evidence that things are fine.
+
+
+> A theory, based on the error messages, is that some of the converted
+> files, even after defrag, still have extents larger than 1GiB and
+> hence don't fit in a native Btrfs extent.
+
+You are conflating file extents with storage extents.
+
+Here is a clean example:
+
+Gust t # mkfs.btrfs -f /dev/loop0
+Btrfs v3.17.1
+See http://btrfs.wiki.kernel.org for more information.
+
+Performing full device TRIM (2.00GiB) ...
+Turning ON incompat feature 'extref': increased hardlink limit per file 
+to 65536
+fs created label (null) on /dev/loop0
+         nodesize 16384 leafsize 16384 sectorsize 4096 size 2.00GiB
+Gust t # mount /dev/loop0 /mnt/src
+Gust t # btrfs balance start /mnt/src
+Done, had to relocate 5 out of 5 chunks
+Gust t # btrfs fi df /mnt/src
+Data, single: total=208.00MiB, used=128.00KiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=104.00MiB, used=112.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+Gust t # dd if=/dev/urandom of=/mnt/src/scratch bs=1M count=40
+40+0 records in
+40+0 records out
+41943040 bytes (42 MB) copied, 3.91674 s, 10.7 MB/s
+Gust t # btrfs fi sync /mnt/src
+FSSync '/mnt/src'
+Gust t # btrfs fi df /mnt/src
+Data, single: total=208.00MiB, used=40.12MiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=104.00MiB, used=160.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+
+Notice this sequence...
+brand new clean and balanced file system
+Data, single: total=208.00MiB, used=128.00KiB
+
+Created a 40Meg non-compressable non-empty file
+Gust t # dd if=/dev/urandom of=/mnt/src/scratch bs=1M count=40
+
+Flushed the file system to update the metadata and then I have
+Data, single: total=208.00MiB, used=40.12MiB
+
+The 40Meg of random data bytes didn't change the total data extent(s) 
+allocated, it only changed the total amount of the allocated data 
+extents that is in use.
+
+> Running defrag several more times and balance again doesn't help.
+
+That sounds correct as defrag defrags files, it does not reallocate 
+extents.
+
+> An error looks like:
+> BTRFS info (device sdc1): relocating block group 1821099687936 flags 1
+> BTRFS error (device sdc1): allocation failed flags 1, wanted 2013265920
+> BTRFS: space_info 1 has 4773171200 free, is not full
+> BTRFS: space_info total=1494648619008, used=1489775505408, pinned=0,
+> reserved=99700736, may_use=2102390784, readonly=241664
+
+As explained in the other thread, the extent-tree.c extent allocator 
+could not find 2013265920 contiguous bytes in order to make a new extent 
+into which it would sort the old extent's file fragments.
+
+
+> The following script returned 46 filenames (looking up the block group
+> in the error):
+> grep -B 1 "BTRFS error" /var/log/syslog | grep relocating | cut -d ' ' -f 14 | \
+> while read block
+> do
+>      echo "Block group: $block"
+>      btrfs inspect-internal logical-resolve $block /mnt
+> done
 >
-> Nope, not an issue.
+> The files are ranging from 41KiB to 6.6GiB in size, which doesn't seem
+> to support the theory of too large extents.
+
+Sure it does, the 2013265920 _bytes_ of the extent in the error is 
+bigger than some files in the extent (see 41KiB less than 2-ish gigs) 
+but smaller than others files which reside only partly in the extent 
+(see 6.6GiB greater than 2-ish gigs).
+
+This is because data extents are not file specific, which is why there 
+was more than one file in that extent.
+
+
+> Moving the 46 files to another disk (no errors reported) and running
+> balance again resulted in "64 enospc errors during balance" - down
+> from 98 errors.
+
+So by moving and deleting all the files in that extent reduced it to 
+usage=0, and balance could then recover that space once it noticed it 
+was empty.
+
+There's a good chance that if you balanced again and again the number of 
+no space errors might decrease. With only one 2-ish gig empty slot 
+sliding around like one of those puzzles where you have to sort the 
+numbers from 1 to 15 by sliding them around in the 4x4=16 element grid.
+
+
+> Running the above script again gives this error for about half of the
+> block groups:
+> ioctl ret=-1, error: No such file or directory
 >
-> When you add the space and rebalance with the conversions by adding all
-> those other disks and such it will _completely_ _obliterate_ the current
-> balance.
+> I had no such errors the first time I looked up block groups.
 
-But if the issue is too large extents, why would they fit on any added
-btrfs space?
-
-
-> You are cleaning the house before the maid comes.
-
-Indeed, as a health check. And the patient is slightly ill.
+Because the first time the files were there and the second time they had 
+been moved to a different disk and therefore deleted. Leaving little 
+gaps with no file in them at all. Then the subsequent balance events may 
+have moved other files into those locations and whatnot.
 
 
-> If you are going to add four more volumes, if those volumes are big enough
-> just make a new filesystem on them then copy the files over.
+> What's the next step in zeroing in on the bug, before I start over?
+> And I will start over.
 
-As it looks now, I will, but I also think there's a bug which I'm
-trying to zero in on.
+The first step is admitting that you _don't_ have a problem.
 
+You are out of raw space in which to construct new extents. This is not 
+a "bug" this is a fact.
 
->> I deleted the subvolume after being satisfied with the conversion,
->> defragged recursively, and balanced. In that order.
->
-> Yea, but your file system is full and you are out of space so get on with
-> the adding space.
+You are _not_ out of space in which to create files. (or so I presume, 
+you still haven't posted the output of /bin/df or btrfs filesystem df).
 
-I don't think it is full. balance -musage=100 -dusage=99 completes
-with ~1.5TB free space. The remaining unbalanced data is using full or
-close to full blocks. Still can't speak for contiguous space though.
+You are confusing ext4 "file extents" with btrfs storage extents. A 
+btrfs storage extent is analogous to the non-inode portion of an ext4 
+"block group".
 
+EXT4 allocates fixed size block groups with a ratio of inode-space to 
+data-space.
 
-> (looking back through my mail spool) You haven't sent the output of /bin/df
-> or btrfs fi df yet, I'd like to see what those two commands say.
+BTRFS allocates data-space (for data) and metadata-space (for inodes, 
+the data for very small files, chcksums, and overhead that the system 
+may need because the whole file system wasn't pre-carved up 
+geographically like with EXT4.)
 
-I have posted these before, but not /bin/df (no access at the moment).
+Your next step is to either add storage in accordance with your plan of 
+adding four more volumes to make a RAID (as expressed elsewhere), or 
+make a clean filesystem and copy your files over.
 
-btrfs fi show
-Label: none  uuid: 770fe01d-6a45-42b9-912e-
-e8f8b413f6a4
-    Total devices 1 FS bytes used 1.35TiB
-    devid    1 size 2.73TiB used 1.36TiB path /dev/sdc1
-
-
-btrfs fi df /mnt
-Data, single: total=1.35TiB, used=1.35TiB
-System, single: total=32.00MiB, used=112.00KiB
-Metadata, single: total=3.00GiB, used=1.55GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+Both options are equal give or take things like any desire to use skinny 
+metadata, compression, or other advanced options that may only be 
+available at file or filesystem creation time.
 
 
-btrfs check /dev/sdc1
-Checking filesystem on /dev/sdc1
-UUID: 770fe01d-6a45-42b9-912e-e8f8b413f6a4
-found 825003219475 bytes used err is 0
-total csum bytes: 1452612464
-total tree bytes: 1669943296
-total fs tree bytes: 39600128
-total extent tree bytes: 52903936
-btree space waste bytes: 79921034
-file data blocks allocated: 1487627730944
- referenced 1487627730944
-
-
-
->>> This would
->>> be quadruply true if you'd tweaked the block group ratios when you made
->>> the original file system.
->>
->> Ext4 created with defaults, but I think it has been completely full at one
->> time.
->
-> Did you use e4defrag before you did the conversion or is this the result of
-> converting chaos most profound?
-
-Didn't use e4defrag.
-
-
-
->>> Think of the time and worry you'd have saved if you'd copied the thing in
->>> the first place. 8-)
->>
->> But then I wouldn't learn as much. :-)
->
-> Learning not to cut corners is a lesson... 8-)
-
-This is more of an experiment than cutting corners, but yeah.
-
-
-> TRUTH BE TOLD :: After two very "eventful" conversions not too long ago I
-> just don't do those any more. The total amount of time I "saved" by not
-> copying the files was in the negative numbers before I just copied the files
-> onto an external media and reformatted and restored.
-
-Conversion probably should be discouraged on the wiki then.
-
-
-> It's like a choose-your-own-adventure book! 8-)
-
-I like that! :-)

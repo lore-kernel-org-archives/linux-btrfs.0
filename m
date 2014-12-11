@@ -1,75 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35054 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35682 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933460AbaLKDxT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 22:53:19 -0500
+	id S933581AbaLKEDK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Dec 2014 23:03:10 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XyuoX-0007lr-2T
-	for linux-btrfs@vger.kernel.org; Thu, 11 Dec 2014 04:53:17 +0100
+	id 1Xyuy4-0005Wv-V7
+	for linux-btrfs@vger.kernel.org; Thu, 11 Dec 2014 05:03:08 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 04:53:17 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 05:03:08 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 04:53:17 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 05:03:08 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-Date: Thu, 11 Dec 2014 03:53:01 +0000 (UTC)
-Message-ID: <pan$cfb2$ba6f2e5a$22f18b38$e1aba3e7@cox.net>
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>
-	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-	<548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com>
-	<54882634.4000809@pobox.com>
-	<pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net>
-	<CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com>
+Subject: Re: Fixing Btrfs Filesystem Full Problems typo?
+Date: Thu, 11 Dec 2014 04:02:53 +0000 (UTC)
+Message-ID: <pan$c2faf$91d9e7fb$7394d41b$343000e@cox.net>
+References: <CAA7pwKNH-Cbd+_D+sCEJxxdervLC=_3_AzaywSE3mXi8MLydxw@mail.gmail.com>
+	<20141122222606.GO8916@merlins.org>
+	<CAA7pwKOSbdxaiN=_ERSQLnoPNBfO0cyzamuv=xsWtvpro-+JJg@mail.gmail.com>
+	<20141123000503.GQ32735@carfax.org.uk>
+	<20141123010742.GA16599@merlins.org>
+	<pan$5df6$ab571fd5$d428faeb$f4fcc034@cox.net>
+	<CAA7pwKOAvTNAprN+pebZ3Qow-U2SBjLP_XbVXcVKY4NeFS_qRQ@mail.gmail.com>
+	<pan$1cbab$ed4a0087$b6b58a81$490b38ad@cox.net>
+	<CAA7pwKNPV3PCLP3s_MzoMG2da6Rfsy9HM=b8o8u87QqDV5WB+w@mail.gmail.com>
+	<CAA7pwKOtOeCL-40EjqmEZ=NR=7Nfz_1Kzx2X4O105ndKGJMkrA@mail.gmail.com>
+	<54878A65.2080403@pobox.com> <54878D3E.8020809@pobox.com>
+	<pan$db978$7628430b$4f067ceb$13d468cb@cox.net>
+	<CAA7pwKNgZroCMa2A3vbF=aAuq9tVZSdeGc-WB1+Gcdt6_2AydQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dongsheng Yang posted on Wed, 10 Dec 2014 23:02:15 +0800 as excerpted:
+Patrik Lundquist posted on Wed, 10 Dec 2014 21:11:52 +0100 as excerpted:
 
->> And in the example, the mkfs was supplied with two devices, so there's
->> no dup metadata remaining from a formerly single-device filesystem,
->> either. (Tho there will be the small single-mode stubs, empty,
->> remaining from the mkfs process, as no balance has been run to delete
->> them yet, but those are much smaller and empty.)
-> 
-> Yes. One question not related here: how about delete them in the end of
-> mkfs?
+> Is btrfs-debug-tree -e useful in finding problematic files?
 
-GB covered the old, manual balance method.  Do a btrfs balance -dusage=0
--musage=0 (or whatever, someone posted his recipe doing the same thing 
-except with the single profiles instead of zero usage), and those stubs 
-should disappear, as they're empty so there's nothing to rewrite when the 
-balance does its thing and it simply removes them.
+Since you were replying directly to me, my answer...
 
-FWIW I actually have a mkfs helper script here that takes care of a bunch 
-of site-default options such as dual-device raid1 both data/metadata, 
-skinny-metadata, etc, and it actually prompts for a mountpoint (assuming 
-it's already setup in fstab) and will do an immediate mount and balance 
-usage=0 to eliminate the stubs if that mountpoint is filled in, again 
-assuming it appears in fstab as well.  Since I keep fully separate 
-filesystems to avoid putting all my data eggs in the same not-yet-fully-
-stable btrfs basket, and my backup system includes periodically blowing 
-away the backup and (after booting to the new backup) the working copy 
-with a fresh mkfs for a clean start, the mkfs helper script is useful, 
-and since I was already doing that, it was reasonably simple to extend it 
-to handle the mount and stub-killing balance immediately after the mkfs.
+ENOTENOUGHINFO
 
-
-But at least in theory, that old manual method shouldn't be necessary 
-with a current (IIRC 3.18 required) kernel, since btrfs should now 
-automatically detect empty chunks and automatically rebalance to remove 
-them as necessary.  However, I've been busy and haven't actually tried 
-3.18 yet, and thus obviously haven't done a mkfs and mount of a fresh 
-filesystem to see how long it actually takes to trigger and remove those 
-stubs, so for all I know it takes awhile to kick in, and if people are 
-bothered by the display of the stubs before it does, they can of course 
-still do it the old way.
+I don't know enough about it to honestly say, as I've never used it 
+myself and haven't seen anyone posting practical usage that I could make 
+note of in case I or someone else needed it later.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

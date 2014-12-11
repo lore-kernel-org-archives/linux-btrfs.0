@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:2241 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S934103AbaLKIeN (ORCPT
+	with ESMTP id S964989AbaLKIeL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 03:34:13 -0500
+	Thu, 11 Dec 2014 03:34:11 -0500
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <kreijack@inwind.it>, <1i5t5.duncan@cox.net>, <rwhite@pobox.com>,
         <lists@colorremedies.com>
 CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH v2 3/3] Btrfs: adapt df command to RAID5/6.
-Date: Thu, 11 Dec 2014 16:31:25 +0800
-Message-ID: <2247059f22029a1e1be9294a13747ea99a994038.1418203063.git.yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 2/3] Btrfs: raid56: simplify the parameter of nr_parity_stripes().
+Date: Thu, 11 Dec 2014 16:31:24 +0800
+Message-ID: <e6e28a35915d9bb147edb3b8767d27d10ab78ac3.1418203063.git.yangds.fnst@cn.fujitsu.com>
 In-Reply-To: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
 References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,83 +18,60 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we use btrfs with raid5/6, the output of df is unexpected as below.
-Example:
-        # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid5
-        # mount /dev/vdf1 /mnt
-        # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
-        # df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vdf1       4.2G  1.3G  2.9G  32% /mnt
-[root@atest-guest linux_btrfs]# btrfs fi show /mnt
-Label: none  uuid: f7fac7f2-3898-482e-9cf2-fbcd7fdd7084
-	Total devices 2 FS bytes used 1001.53MiB
-	devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
-	devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
-The @size should be 2G rather than 4.2G.
+We just need the type of a chunk to calculate the number of parity stripes,
+but we have to pass a structure of lookup_map to it. This will prevent some
+callers to use it where there is no a convenient lookup_map to be passed.
 
-This patch makes the btrfs_calc_avail_data_space() consider raid5/6,
-then we can get the correct result of it.
-
-Example:
-        # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid5
-        # mount /dev/vdf1 /mnt
-        # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
-        # df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vdf1       2.0G  1.3G  713M  66% /mnt
-[root@atest-guest linux_btrfs]# btrfs fi show /mnt
-Label: none  uuid: ea3a6e6e-fbe1-47aa-b4b5-bc37b98565d9
-	Total devices 2 FS bytes used 1001.53MiB
-	devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
-	devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
+This patch replace the parameter of struct map_lookup * with a profile type.
+Then we can use it more easily.
 
 Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/super.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+ fs/btrfs/raid56.h  | 8 ++++----
+ fs/btrfs/volumes.c | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 40f41a2..ffaf1f4 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -52,6 +52,7 @@
- #include "props.h"
- #include "xattr.h"
- #include "volumes.h"
-+#include "raid56.h"
- #include "export.h"
- #include "compression.h"
- #include "rcu-string.h"
-@@ -1668,6 +1669,14 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 		min_stripes = 4;
- 		num_stripes = 4;
- 		data_stripes = 2;
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
-+		min_stripes = 2;
-+		num_stripes = nr_devices;
-+		data_stripes = num_stripes - nr_parity_stripes(type);
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
-+		min_stripes = 3;
-+		num_stripes = nr_devices;
-+		data_stripes = num_stripes - nr_parity_stripes(type);
- 	}
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index ea5d73b..68ac9d3 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -19,11 +19,11 @@
  
- 	if (type & BTRFS_BLOCK_GROUP_DUP)
-@@ -1740,8 +1749,11 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	while (nr_devices >= min_stripes) {
- 		if (num_stripes > nr_devices) {
- 			num_stripes = nr_devices;
--			if (type & BTRFS_BLOCK_GROUP_RAID0)
--				data_stripes = num_stripes;
-+			/* Only RAID0, RAID5 and RAID6 will get here.
-+			 * And we can use the following calculation
-+			 * for all the three cases.
-+			 **/
-+			data_stripes = num_stripes - nr_parity_stripes(type);
- 		}
+ #ifndef __BTRFS_RAID56__
+ #define __BTRFS_RAID56__
+-static inline int nr_parity_stripes(struct map_lookup *map)
++static inline int nr_parity_stripes(u64 type)
+ {
+-	if (map->type & BTRFS_BLOCK_GROUP_RAID5)
++	if (type & BTRFS_BLOCK_GROUP_RAID5)
+ 		return 1;
+-	else if (map->type & BTRFS_BLOCK_GROUP_RAID6)
++	else if (type & BTRFS_BLOCK_GROUP_RAID6)
+ 		return 2;
+ 	else
+ 		return 0;
+@@ -31,7 +31,7 @@ static inline int nr_parity_stripes(struct map_lookup *map)
  
- 		if (devices_info[i].max_avail >= min_stripe_size) {
+ static inline int nr_data_stripes(struct map_lookup *map)
+ {
+-	return map->num_stripes - nr_parity_stripes(map);
++	return map->num_stripes - nr_parity_stripes(map->type);
+ }
+ #define RAID5_P_STRIPE ((u64)-2)
+ #define RAID6_Q_STRIPE ((u64)-1)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f61278f..aa3a907 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5174,7 +5174,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 
+ 			/* RAID[56] write or recovery. Return all stripes */
+ 			num_stripes = map->num_stripes;
+-			max_errors = nr_parity_stripes(map);
++			max_errors = nr_parity_stripes(map->type);
+ 
+ 			raid_map = kmalloc_array(num_stripes, sizeof(u64),
+ 					   GFP_NOFS);
 -- 
 1.8.4.2
 

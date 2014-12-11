@@ -1,60 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13710 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4607 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932535AbaLKIo7 convert rfc822-to-8bit (ORCPT
+	with ESMTP id S934214AbaLKJA3 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 03:44:59 -0500
-Message-ID: <54895988.3020504@cn.fujitsu.com>
-Date: Thu, 11 Dec 2014 16:44:56 +0800
+	Thu, 11 Dec 2014 04:00:29 -0500
+Message-ID: <54894EF2.4070808@cn.fujitsu.com>
+Date: Thu, 11 Dec 2014 15:59:46 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: <mwilck@arcor.de>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 12/18] btrfs restore: check progress of file restoration
-References: <1418244708-7087-1-git-send-email-mwilck@arcor.de> <1418244708-7087-13-git-send-email-mwilck@arcor.de>
-In-Reply-To: <1418244708-7087-13-git-send-email-mwilck@arcor.de>
+CC: David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 05/18] btrfs-progs: ctree.h: fix btrfs_inode_[amc]time
+References: <1418244708-7087-1-git-send-email-mwilck@arcor.de> <1418244708-7087-6-git-send-email-mwilck@arcor.de>
+In-Reply-To: <1418244708-7087-6-git-send-email-mwilck@arcor.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 -------- Original Message --------
-Subject: [PATCH 12/18] btrfs restore: check progress of file restoration
+Subject: [PATCH 05/18] btrfs-progs: ctree.h: fix btrfs_inode_[amc]time
 From: <mwilck@arcor.de>
 To: <linux-btrfs@vger.kernel.org>
 Date: 2014年12月11日 04:51
 > From: Martin Wilck <mwilck@arcor.de>
 >
-> extents should be ordered by file offset. Expect no overlaps,
-> and report holes.
->
-> Signed-off-by: Martin Wilck <mwilck@arcor.de>
-> ---
->   cmds-restore.c |    8 ++++++++
->   1 files changed, 8 insertions(+), 0 deletions(-)
->
-> diff --git a/cmds-restore.c b/cmds-restore.c
-> index 004c82e..80081b8 100644
-> --- a/cmds-restore.c
-> +++ b/cmds-restore.c
-> @@ -739,6 +739,14 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
->   			ret = -1;
->   			goto set_size;
->   		}
-> +		if (found_key.offset < next_pos) {
-> +			fprintf(stderr, "extent overlap, %llu < %llu\n",
-> +				found_key.offset, next_pos);
-> +			ret = -1;
-> +			goto set_size;
-Would it be better to continue recovery?
-Even overlap, later extents may still be OK. What about just skip to 
-next extent?
+> make btrfs_inode_[amc]time work like the other btrfs_inode_xxx
+> functions. The current definition appears broken to me; it never
+> returns valid pointer unless an extent buffer address is added.
+The original method returns the ptr in the way just like 
+btrfs_item_ptr(), which you should call
+read_extent_buffer() to read them into a struct of btrfs_timespec.
+That's the same in kernel codes.
+
+If just want to read the timespec, you could try 
+btrfs_stack_timespec_[n]spec() marco.
 
 Thanks,
 Qu
-> +		} else if (found_key.offset > next_pos)
-> +			fprintf(stderr, "hole at %llu (%llu bytes)\n",
-> +				next_pos, found_key.offset - next_pos);
+> Signed-off-by: Martin Wilck <mwilck@arcor.de>
+> ---
+>   ctree.h |   15 +++++++++------
+>   1 files changed, 9 insertions(+), 6 deletions(-)
+>
+> diff --git a/ctree.h b/ctree.h
+> index 89036de..1d5a5fc 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -1414,27 +1414,30 @@ BTRFS_SETGET_STACK_FUNCS(stack_inode_flags,
+>   			 struct btrfs_inode_item, flags, 64);
 >   
->   		bytes_written = 0ULL;
->   		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC)
+>   static inline struct btrfs_timespec *
+> -btrfs_inode_atime(struct btrfs_inode_item *inode_item)
+> +btrfs_inode_atime(struct extent_buffer *eb,
+> +		  struct btrfs_inode_item *inode_item)
+>   {
+>   	unsigned long ptr = (unsigned long)inode_item;
+>   	ptr += offsetof(struct btrfs_inode_item, atime);
+> -	return (struct btrfs_timespec *)ptr;
+> +	return (struct btrfs_timespec *)(ptr + eb->data);
+>   }
+>   
+>   static inline struct btrfs_timespec *
+> -btrfs_inode_mtime(struct btrfs_inode_item *inode_item)
+> +btrfs_inode_mtime(struct extent_buffer *eb,
+> +		  struct btrfs_inode_item *inode_item)
+>   {
+>   	unsigned long ptr = (unsigned long)inode_item;
+>   	ptr += offsetof(struct btrfs_inode_item, mtime);
+> -	return (struct btrfs_timespec *)ptr;
+> +	return (struct btrfs_timespec *)(ptr + eb->data);
+>   }
+>   
+>   static inline struct btrfs_timespec *
+> -btrfs_inode_ctime(struct btrfs_inode_item *inode_item)
+> +btrfs_inode_ctime(struct extent_buffer *eb,
+> +		  struct btrfs_inode_item *inode_item)
+>   {
+>   	unsigned long ptr = (unsigned long)inode_item;
+>   	ptr += offsetof(struct btrfs_inode_item, ctime);
+> -	return (struct btrfs_timespec *)ptr;
+> +	return (struct btrfs_timespec *)(ptr + eb->data);
+>   }
+>   
+>   static inline struct btrfs_timespec *
 

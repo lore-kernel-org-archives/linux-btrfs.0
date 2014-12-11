@@ -1,94 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-08v.sys.comcast.net ([96.114.154.167]:41742 "EHLO
-	resqmta-po-08v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751654AbaLKWAZ (ORCPT
+Received: from mail-yk0-f176.google.com ([209.85.160.176]:42678 "EHLO
+	mail-yk0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S967523AbaLKXBR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 17:00:25 -0500
-Message-ID: <548A13F7.30904@pobox.com>
-Date: Thu, 11 Dec 2014 14:00:23 -0800
-From: Robert White <rwhite@pobox.com>
+	Thu, 11 Dec 2014 18:01:17 -0500
+Received: by mail-yk0-f176.google.com with SMTP id q200so2630953ykb.35
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 15:01:16 -0800 (PST)
 MIME-Version: 1.0
-To: Patrik Lundquist <patrik.lundquist@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: A note on spotting "bugs" [Was: ENOSPC after conversion]
+In-Reply-To: <54896F65.20708@pobox.com>
 References: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>
-In-Reply-To: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	<54896F65.20708@pobox.com>
+Date: Fri, 12 Dec 2014 00:01:15 +0100
+Message-ID: <CAA7pwKNTS770TZ9ENxMMQA9-50tfrr2aRb5BWJRFheVy9NOWtQ@mail.gmail.com>
+Subject: Re: ENOSPC after conversion [Was: Fixing Btrfs Filesystem Full
+ Problems typo?]
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: Robert White <rwhite@pobox.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2014 12:18 AM, Patrik Lundquist wrote:
-> * Full balance, that ended with "98 enospc errors during balance."
+On 11 December 2014 at 11:18, Robert White <rwhite@pobox.com> wrote:
+> So far I don't see a "bug".
 
-Assuming that quote is an actual quote from the output of the balance...
+Fair enough, lets call it a huge problem with btrfs convert. I think
+it warrants a note in the wiki.
 
-We can strongly infer that this sort of occurrence is expected since 
-there is code to keep track of it and report the total times it happened.
 
-"Bugs" are unexpected things that cause failures and/or damage.
+> On 12/11/2014 12:18 AM, Patrik Lundquist wrote:
+>>
+>> Running defrag several more times and balance again doesn't help.
+>
+> That sounds correct as defrag defrags files, it does not reallocate extents.
 
-Expected but non-optimal things that print summaries of their 
-occurrences tend to be "expected unpleasantness that has been explored 
-by the programmer, causes no harm, and is not worth fixing", which is 
-different thing than a bug. It's a "No Useful Options".
+>From https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
 
-Cant Fix and Wont Fix events lie somewhere above that on the programmers 
-scale that goes from perfect execution to absolute train-wreck bug.
+"A notable caveat is that a balance can fail with "ENOSPC" if the
+defragment is skipped. This is usually due to large extents on ext
+being larger than the maximum size btrfs normally operates with (1
+GB). A defrag of all large files will avoid this:"
 
-Were I the programmer I might have written this as "98 extents skipped 
-due to space constraints (ENOSPC)".
+I interpreted it as breaking down large extents and reallocating them,
+thus avoiding my current situation.
 
-I won't be offering a patch to that effect, however, as there may be 
-other kinds of expected ENOSPC events contributing to that counter, so 
-re-writing the summary text could be making untrue statements.
 
-I've been have been chasing this with you because your statement that 
-"-dusage=99 works, but not -dusage=100". But the message above tells me 
-that your characterization as "not working" is somewhat overstating 
-things. It _worked_ with -dusage=100 in that it didn't abort, crash, 
-trash data, or hang. It just had to skip some elements due to well 
-understood (by the implementor) and fully reported conditions.
+> There's a good chance that if you balanced again and again the number of no
+> space errors might decrease. With only one 2-ish gig empty slot sliding
+> around like one of those puzzles where you have to sort the numbers from 1
+> to 15 by sliding them around in the 4x4=16 element grid.
 
-So lets explore what the system "could have done" instead of just 
-skipping those extents...
+I was never fond of those puzzles.
 
-It could have tried to break the extent into smaller pieces. But to do 
-that it would have to dissect the contents of the extent and go looking 
-for ways to repack them into two or more smaller extents. Those 
-candidate extents would have to be allocated based on guesses before the 
-attempt because other writers might steal the space if you don't 
-preallocate. This could involve repeated retries and result in taking 
-one big extent and exploding it into any number of tiny extents. 
-Performing this task could take unbounded time. In computer science it's 
-an NP-complete function of arbitrary complexity sometimes called "the 
-floppy problem" (a name that is impossible to google usefully, it seems, 
-because the word floppy is search poison 8-) ).
 
-The Floppy Problem :: so called because one of the original formulations 
-was "how many floppy disks do I need to optimally pack these files 
-without having to cut up the files themselves?" Indeed multi-floppy 
-"Zip" programs were invented to skip that whole painful mess so people 
-could just ship their software. 8-)
+> The first step is admitting that you _don't_ have a problem.
 
-If you start reading here 
-http://en.wikipedia.org/wiki/Cutting_stock_problem and work your way 
-back through the knapsack problem you'll get a glimpse how ugly this 
-sort of corner case can get.
+I've got 99 problems and balance is one of them (the other are block
+groups). :-)
 
-In our case the "roll" being "cut" is the donor extent and the possible 
-widths/sizes are the discernible gaps in the raw extent map and the 
-constraint is that we can't break cut any of the internally allocated 
-regions within the extent (we can only relocate them not break them up 
-because that could lead to needing to allocate more metadata space in 
-the extent tree which could invalidate our planned cuts etc till the end 
-of time.)
+Of course the filesystem is in a problematic state after the
+conversion, even if it's not a bug. ~1.5TB of free space and yet out
+of space and it can't be fixed with a balance. It might not be wrong
+per se but it's very problematic from a user perspective.
 
-So it is a problem that _can_ be solved programatically, but it's not a 
-problem that is worth the time to solve either in programmer hours or in 
-disk write hours.
+Anyway, this thread has turned up lots of good information.
 
-So yea... It's big, It's valid, and you've got no single place to copy 
-it to that is equally big, so it gets skipped.
 
-Not a bug.
+> You are _not_ out of space in which to create files. (or so I presume, you
+> still haven't posted the output of /bin/df or btrfs filesystem df).
 
+I'm not; creating new files works.
+
+$ df
+Filesystem      1K-blocks       Used  Available Use% Mounted on
+/dev/sdc1      2930265088 1402223656 1526389096  48% /mnt
+
+$ btrfs fi df /mnt
+Data, single: total=1.41TiB, used=1.30TiB
+System, DUP: total=32.00MiB, used=124.00KiB
+Metadata, DUP: total=2.50GiB, used=1.49GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+> Your next step is to either add storage in accordance with your plan of
+> adding four more volumes to make a RAID (as expressed elsewhere), or make a
+> clean filesystem and copy your files over.
+
+I've already decided to start over with a clean filesystem to get rid
+of the ext4 legacy. I'm only curious about how to solve the balance
+problem, and now I know how.

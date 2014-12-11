@@ -1,108 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48638 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750854AbaLKSZu (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:50086 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751381AbaLKTAH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 13:25:50 -0500
-Message-ID: <5489E1A4.30801@fb.com>
-Date: Thu, 11 Dec 2014 13:25:40 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Thu, 11 Dec 2014 14:00:07 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
+Date: Thu, 11 Dec 2014 20:00:04 +0100
+Message-ID: <3280153.UGqVGf8Kx1@merkaba>
+In-Reply-To: <547D09D8.1060103@cn.fujitsu.com>
+References: <547BCB43.5020505@cn.fujitsu.com> <547C64B4.2050802@gmail.com> <547D09D8.1060103@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <cyril.scetbon@free.fr>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Btrfs: qgroup: free reserved in exceeding quota.
-References: <BA68E495-8B7B-4F0F-A64B-0413B1480B9C@free.fr> <b5f44049f85f372a286a1c7e600d274dc03a2e25.1418124311.git.yangds.fnst@cn.fujitsu.com> <54871850.3020809@fb.com> <5487FFAD.9090601@cn.fujitsu.com>
-In-Reply-To: <5487FFAD.9090601@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/10/2014 03:09 AM, Dongsheng Yang wrote:
-> On 12/09/2014 11:42 PM, Josef Bacik wrote:
->> On 12/09/2014 06:27 AM, Dongsheng Yang wrote:
->>> When we exceed quota limit in writing, we will free
->>> some reserved extent when we need to drop but not free
->>> account in qgroup. It means, each time we exceed quota
->>> in writing, there will be some remain space in qg->reserved
->>> we can not use any more. If things go on like this, the
->>> all space will be ate up.
->>>
->>> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
->>> ---
->>>   fs/btrfs/extent-tree.c | 5 ++++-
->>>   1 file changed, 4 insertions(+), 1 deletion(-)
->>>
->>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>> index a84e00d..014b7f2 100644
->>> --- a/fs/btrfs/extent-tree.c
->>> +++ b/fs/btrfs/extent-tree.c
->>> @@ -5262,8 +5262,11 @@ out_fail:
->>>               to_free = 0;
->>>       }
->>>       spin_unlock(&BTRFS_I(inode)->lock);
->>> -    if (dropped)
->>> +    if (dropped) {
->>> +        if (root->fs_info->quota_enabled)
->>> +            btrfs_qgroup_free(root, dropped * root->nodesize);
->>
->> This needs to be num_bytes + dropped * root->nodesize.  Thanks,
->
-> Let me try to explain why it did not free num_bytes here.
->
-> In out_fail, we did not reserve num_bytes in qgroup successfully, then
-> we do not need
-> to free it in out_fail.
->
-> The problem this patch attempts to solve is that, when we run into
-> out_fail here,
-> we will drop a outstanding extent. That said, in out_fail here, the
-> extra reserved
-> nodesize for some extents should be freed.
->
-> Example:
->      1). BTRFS_I(inode)->reserved_extents: 2,
-> BTRFS_I(inode)->outstanding_extents: 1.
->            In this case, we go intobtrfs_delalloc_reserve_metadata().
-> outstanding_extents
->            will be increased at first. then
-> BTRFS_I(inode)->outstanding_extents is 2.
->            If we want to reserve space and failed. it will goto out_fail.
->      2). In out_failed: reserved_extents is 2, outstanding_extents is 2.
-> we will get a dropped of 1
->           from dropping_outstanding_extent(). And now,
-> reserved_extents:1, outstanding_extents:1.
->
-> In step 2, we just decrease the reserved_extents without freeing the
-> related nodesize in qgroup
-> at the same time. So it will cause the problem I described in changelog
-> which will eat the space.
->
-> Therefore, this patch here will free the nodesize related with the
-> dropped extents in step 2.
-> About the num_bytes, as we did not reserve it successfully, no need to
-> free it.
->
-> With my poor english, there must be something confusing in my
-> description. Please correct me
-> if anything is wrong or not-good-explained.
->
+Hi Qu,
 
-So none of this made sense, I went back and read the code just now and 
-this was the part I was missing
+Am Dienstag, 2. Dezember 2014, 08:37:44 schrieb Qu Wenruo:
+> -------- Original Message --------
+> Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
+> From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs
+> <linux-btrfs@vger.kernel.org>
+> Date: 2014年12月01日 20:53
+> 
+> > On 2014-11-30 20:58, Qu Wenruo wrote:
+> >> [snipped]
+> > 
+> > So, I think this does a good job of highlighting one of the bigger
+> > issues with btrfsck when it is compared to ext* and/or xfs. Despite
+> > this being a problem, I really don't think using a rdbms is the way to
+> > fix it, both for reasons outlined in other responses, and because fsck
+> > should be as fast as possible when nothing is wrong with the fs.
+> 
+> Although I am not stick to the crazy idea, I think it is still needed to
+> point out that,
+> even btrfsck is ran on a clean btrfs, it still needs to iterate all the
+> extents, metadata.
+> So it may not be as fast as you thought even with the current implement.
+> 
+> Anyway thanks for the feedback.
 
-if (unlikely(ret)) {
-         if (root->fs_info->quota_enabled)
-                 btrfs_qgroup_free(root, num_bytes +
-                                         nr_extents * root->nodesize);
-         goto out_fail;
-}
+As to my knowledge at some time xfs_repair struggled with memory issues as 
+well. And the developers of it made an attempt at reducing memory usage. I 
+think with e2fsck this has been an issue as well. So maybe might be an idea at 
+the approaches the devs of these two filesystem checking tools used to reduce 
+memory usage.
 
-All you needed to say was we already free up what we reserved, we're 
-just dropping anything we needed to free because of 
-drop_outstanding_extents ;).  You can add
-
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+On the other hand it may be that XFS and Ext4 is just too different to BTRFS to 
+adapt those approaches. But in the end they are all filesystems, so there may 
+be enough similarities to port over some ideas.
 
 Thanks,
-
-Josef
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

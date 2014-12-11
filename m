@@ -1,60 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43943 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964919AbaLKIQm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 03:16:42 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XyyvQ-0004gD-NF
-	for linux-btrfs@vger.kernel.org; Thu, 11 Dec 2014 09:16:40 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 09:16:40 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 09:16:40 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: out of space warning?
-Date: Thu, 11 Dec 2014 08:16:28 +0000 (UTC)
-Message-ID: <pan$6aed4$da742710$2d9d1dc2$995131a9@cox.net>
-References: <CAAe=sHXGpiZN5hKmzv1ynY8x=rH9tMvx86HZP2veLRpAFJN+wg@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-yh0-f44.google.com ([209.85.213.44]:36749 "EHLO
+	mail-yh0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964924AbaLKISH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Dec 2014 03:18:07 -0500
+Received: by mail-yh0-f44.google.com with SMTP id c41so2069007yho.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 00:18:06 -0800 (PST)
+MIME-Version: 1.0
+Date: Thu, 11 Dec 2014 09:18:06 +0100
+Message-ID: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>
+Subject: ENOSPC after conversion [Was: Fixing Btrfs Filesystem Full Problems typo?]
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-sys.syphus posted on Wed, 10 Dec 2014 16:54:07 -0600 as excerpted:
+I'll reboot the thread with a recap and my latest findings.
 
-> I would like to avoid running out of space. is there a way to know that
-> I am getting close? i'd like to make a script that runs as part of my
-> bash prompt and lets me know when i am getting close. i know there are
-> several ways you can run out of space and I'd like to avoid all of them.
+* Half full 3TB disk converted from ext4 to Btrfs, after first
+verifying it with fsck.
+* Undo subvolume deleted after being happy with the conversion.
+* Recursive defrag.
+* Full balance, that ended with "98 enospc errors during balance."
 
-With the concerns about your bash prompt registered...
+In that order, nothing in between. No snapshots or other subvolumes.
+Loads of real free space.
 
-btrfs filesystem show
+Btrfs check reports a clean filesystem.
 
-... is a good choice.
+Btrfs balance -musage=100 -dusage=99 works, but not -dusage=100.
 
-If you have multiple filesystems you can point show at a device/
-mountpoint/label/UUID to get the output for just the one.
+Conversion of metadata (~1.55 GiB) to DUP worked fine.
 
-You'll want to pay particular attention to the individual device lines.  
-Of course you can grep/sed/otherwise-process that down to a single line 
-if desired.
+A theory, based on the error messages, is that some of the converted
+files, even after defrag, still have extents larger than 1GiB and
+hence don't fit in a native Btrfs extent.
 
-If btrfs filesystem show says it's close to out of room, run btrfs 
-filesystem df for more info.  There's lots of information on the wiki and 
-in various threads here about interpreting the information these commands 
-output (it takes both commands to get a good picture, but show is good 
-for brief summary, provided you know to look at the device lines not the 
-overall total line), and what to do when necessary to return some balance 
-to the situation.
+Running defrag several more times and balance again doesn't help.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+An error looks like:
+BTRFS info (device sdc1): relocating block group 1821099687936 flags 1
+BTRFS error (device sdc1): allocation failed flags 1, wanted 2013265920
+BTRFS: space_info 1 has 4773171200 free, is not full
+BTRFS: space_info total=1494648619008, used=1489775505408, pinned=0,
+reserved=99700736, may_use=2102390784, readonly=241664
 
+
+The following script returned 46 filenames (looking up the block group
+in the error):
+grep -B 1 "BTRFS error" /var/log/syslog | grep relocating | cut -d ' ' -f 14 | \
+while read block
+do
+    echo "Block group: $block"
+    btrfs inspect-internal logical-resolve $block /mnt
+done
+
+The files are ranging from 41KiB to 6.6GiB in size, which doesn't seem
+to support the theory of too large extents.
+
+Moving the 46 files to another disk (no errors reported) and running
+balance again resulted in "64 enospc errors during balance" - down
+from 98 errors.
+
+Running the above script again gives this error for about half of the
+block groups:
+ioctl ret=-1, error: No such file or directory
+
+I had no such errors the first time I looked up block groups.
+
+What's the next step in zeroing in on the bug, before I start over?
+And I will start over.

@@ -1,67 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42960 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753905AbaLJOgY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 09:36:24 -0500
-Date: Wed, 10 Dec 2014 15:36:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: systemd.setenv and a mount.unit
-Message-ID: <20141210143622.GC27601@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <gbjvjb-oqp.ln1@venus.xundeenergie.ssh22.net>
- <546DBFCB.4090506@inwind.it>
- <546DC3EC.1020903@nurfuerspam.de>
- <546DCD20.6030602@inwind.it>
- <CAJCQCtT88Ji52W2za++eUiAXYq1O2hpTaHo_FZgrpNvdVEN=Gg@mail.gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:37086 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751654AbaLKScy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Dec 2014 13:32:54 -0500
+Message-ID: <5489E34D.8080601@fb.com>
+Date: Thu, 11 Dec 2014 13:32:45 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtT88Ji52W2za++eUiAXYq1O2hpTaHo_FZgrpNvdVEN=Gg@mail.gmail.com>
+To: Eryu Guan <eguan@redhat.com>, <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: add groups for btrfs tests
+References: <1416545687-19692-1-git-send-email-eguan@redhat.com>
+In-Reply-To: <1416545687-19692-1-git-send-email-eguan@redhat.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 20, 2014 at 11:39:19AM -0700, Chris Murphy wrote:
-> On Thu, Nov 20, 2014 at 4:14 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
-> 
-> > Supposing to have the following four subvolumes
-> >
-> > /root/
-> > /root/etc
-> > /root/usr
-> > /root/var
-> >
-> > When you need to snapshot, you should:
-> >
-> > # btrfs subvolume snapshot /root /backup-root-20141120
-> > # btrfs subvolume snapshot /root/etc /backup-root-20141120/etc
-> > # btrfs subvolume snapshot /root/usr /backup-root-20141120/usr
-> > # btrfs subvolume snapshot /root/var /backup-root-20141120/var
-> >
-> > So in order to remount an "old" filesystem, you need to make only
-> > 1 mount.
-> 
-> I like this layout better than either the openSUSE or Fedora layouts.
-> It's easier to mount and old filesystem, where on Fedora each
-> subvolume must be explicitly mounted. And it ensures old binaries
-> aren't in the current mount path – kinda like running in a chroot –
-> where on openSUSE the snapshots containing old binaries are in the
-> current mount path.
+On 11/20/2014 11:54 PM, Eryu Guan wrote:
+> Some new btrfs groups have been added in the btrfs stress patchset add
+> other tests to proper groups too.
+>
+> Signed-off-by: Eryu Guan <eguan@redhat.com>
 
-While the old binaries are in the current mount path, they're not
-generally accessible due to 0750 on the .snapshots directory.
+This is great, thanks Eryu,
 
-The 'single mountpoint for whole root' is not perfect in case there are
-files that are independent on the system files, like logs or some
-application data in wellknown paths.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-The other option is to have separate subvolumes for the selected paths
-and either mount them in fstab or do more work when the old filesystem
-has to be rolled back and transformed to the expected layout.
-
-Both have their pros and cons so this is a matter of user choice. Eg. if
-the logs are forwarded and not kept locally, no applications store data
-on root partition. Going to an older snapshot is trivial and without
-unexpected consequences.
-
-And of course the layouts are both ways convertible.

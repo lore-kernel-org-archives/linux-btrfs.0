@@ -1,44 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23836 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:15338 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932311AbaLKIZ6 (ORCPT
+	with ESMTP id S934056AbaLKI2M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 03:25:58 -0500
-Message-ID: <54895475.9070104@cn.fujitsu.com>
-Date: Thu, 11 Dec 2014 16:23:17 +0800
+	Thu, 11 Dec 2014 03:28:12 -0500
+Message-ID: <548954FB.4040603@cn.fujitsu.com>
+Date: Thu, 11 Dec 2014 16:25:31 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <kreijack@inwind.it>, Dongsheng Yang <dongsheng081251@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<548743CE.1020403@inwind.it>	<54879CFE.1090909@cn.fujitsu.com>	<54882634.4000809@pobox.com>	<pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net> <CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com> <54889988.2080502@inwind.it>
-In-Reply-To: <54889988.2080502@inwind.it>
+References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com>	<1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com>	<54882634.4000809@pobox.com>	<pan$5a1c1$2e13a998$8c1ffe18$ead381f2@cox.net>	<CA+qeAOo4NT5NEO97YJMq-asQVm4OZUdJECqqojTzjhmso_Jj4Q@mail.gmail.com> <pan$cfb2$ba6f2e5a$22f18b38$e1aba3e7@cox.net>
+In-Reply-To: <pan$cfb2$ba6f2e5a$22f18b38$e1aba3e7@cox.net>
 Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2014 03:05 AM, Goffredo Baroncelli wrote:
-> On 12/10/2014 04:02 PM, Dongsheng Yang wrote:
->> On Wed, Dec 10, 2014 at 9:21 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->>> Robert White posted on Wed, 10 Dec 2014 02:53:40 -0800 as excerpted:
-> [...]
->>> And in the example, the mkfs was supplied with two devices, so there's no
->>> dup metadata remaining from a formerly single-device filesystem, either.
->>> (Tho there will be the small single-mode stubs, empty, remaining from the
->>> mkfs process, as no balance has been run to delete them yet, but those
->>> are much smaller and empty.)
->> Yes. One question not related here: how about delete them in the end of mkfs?
->>
->> Thanx
-> A btrfs balance should remove them. If you don't want to balance a full
-> filesystem, you can filter the chunk by usage (set a low usage).
-> Recently it was discussed in a tread...
+On 12/11/2014 11:53 AM, Duncan wrote:
+> Dongsheng Yang posted on Wed, 10 Dec 2014 23:02:15 +0800 as excerpted:
+>
+>>> And in the example, the mkfs was supplied with two devices, so there's
+>>> no dup metadata remaining from a formerly single-device filesystem,
+>>> either. (Tho there will be the small single-mode stubs, empty,
+>>> remaining from the mkfs process, as no balance has been run to delete
+>>> them yet, but those are much smaller and empty.)
+>> Yes. One question not related here: how about delete them in the end of
+>> mkfs?
+> GB covered the old, manual balance method.  Do a btrfs balance -dusage=0
+> -musage=0 (or whatever, someone posted his recipe doing the same thing
+> except with the single profiles instead of zero usage), and those stubs
+> should disappear, as they're empty so there's nothing to rewrite when the
+> balance does its thing and it simply removes them.
+>
+> FWIW I actually have a mkfs helper script here that takes care of a bunch
+> of site-default options such as dual-device raid1 both data/metadata,
+> skinny-metadata, etc, and it actually prompts for a mountpoint (assuming
+> it's already setup in fstab) and will do an immediate mount and balance
+> usage=0 to eliminate the stubs if that mountpoint is filled in, again
+> assuming it appears in fstab as well.  Since I keep fully separate
+> filesystems to avoid putting all my data eggs in the same not-yet-fully-
+> stable btrfs basket, and my backup system includes periodically blowing
+> away the backup and (after booting to the new backup) the working copy
+> with a fresh mkfs for a clean start, the mkfs helper script is useful,
+> and since I was already doing that, it was reasonably simple to extend it
+> to handle the mount and stub-killing balance immediately after the mkfs.
+>
+>
+> But at least in theory, that old manual method shouldn't be necessary
+> with a current (IIRC 3.18 required) kernel, since btrfs should now
+> automatically detect empty chunks and automatically rebalance to remove
+> them as necessary.  However, I've been busy and haven't actually tried
+> 3.18 yet, and thus obviously haven't done a mkfs and mount of a fresh
+> filesystem to see how long it actually takes to trigger and remove those
+> stubs, so for all I know it takes awhile to kick in, and if people are
+> bothered by the display of the stubs before it does, they can of course
+> still do it the old way.
 
-Thanx Goffredo, it works well to me.
->
-> BR
-> Goffredo
->
+Thanx Duncan, I tried the old manual method. It works well to me. Will 
+try the new kernel later.
 >
 

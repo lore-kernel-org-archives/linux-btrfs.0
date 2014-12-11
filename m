@@ -1,80 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38787 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S933251AbaLKC1p (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48978 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933423AbaLKCqH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Dec 2014 21:27:45 -0500
-Date: Wed, 10 Dec 2014 21:27:43 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Robert White <rwhite@pobox.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with SQL?
-Message-ID: <20141211022742.GA25614@hungrycats.org>
-References: <547BCB43.5020505@cn.fujitsu.com>
- <547BE8A5.7050900@pobox.com>
- <547C0834.7090706@cn.fujitsu.com>
- <547CAF2E.7070109@pobox.com>
- <547D1339.10404@cn.fujitsu.com>
- <547F61F6.7020707@pobox.com>
- <548005B7.40503@cn.fujitsu.com>
- <20141210215729.GC22023@hungrycats.org>
- <5488FBE0.7060309@cn.fujitsu.com>
+	Wed, 10 Dec 2014 21:46:07 -0500
+Message-ID: <5489056C.3070109@cn.fujitsu.com>
+Date: Thu, 11 Dec 2014 10:46:04 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="0F1p//8PRICkK4MW"
-In-Reply-To: <5488FBE0.7060309@cn.fujitsu.com>
+To: Robert White <rwhite@pobox.com>, "sys.syphus" <syssyphus@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: out of space warning?
+References: <CAAe=sHXGpiZN5hKmzv1ynY8x=rH9tMvx86HZP2veLRpAFJN+wg@mail.gmail.com> <5488F370.2060604@pobox.com>
+In-Reply-To: <5488F370.2060604@pobox.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---0F1p//8PRICkK4MW
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+-------- Original Message --------
+Subject: Re: out of space warning?
+From: Robert White <rwhite@pobox.com>
+To: sys.syphus <syssyphus@gmail.com>, <linux-btrfs@vger.kernel.org>
+Date: 2014年12月11日 09:29
+> On 12/10/2014 02:54 PM, sys.syphus wrote:
+>> I would like to avoid running out of space. is there a way to know
+>> that I am getting close? i'd like to make a script that runs as part
+>> of my bash prompt and lets me know when i am getting close. i know
+>> there are several ways you can run out of space and I'd like to avoid
+>> all of them.
+>
+> Don't do that either. 8-)
+>
+> (1) you'll grow to hate it.
+>
+> (2) You know when you are doing things that take a lot of storage. You 
+> instinct for system fullness is already part of your brain-meat.
+>
+> (3) The system isn't going to explode if it runs out of disk space. 
+> (old UNIX systems used to halt with system errors because running out 
+> of space prevented pipelines from being created, but that's ancient 
+> history).
+>
+> (4) The only _real_ way to run out of space is to be a data hoarder, 
+> and no script in the world is going to help you if that's the case. Ha 
+> Ha....
+(5) Possible known/unknown kernel bug may cause strange ENOSPC during 
+balance/replace/scrub... :-)
+>
+> You don't check your car's gas tank every time you put your foot on 
+> the brake, you don't want to check your free space every time your 
+> system finishes every tiny command you type.
+>
+> Scripts like this are possible in bash, but consider that every "ls" 
+> or even just enter you type would be followed by a "df" and a "grep" 
+> or whatever in whatever window you are using at the time. etc.
+>
+> IF you think you are going to run out of space, and you are using 
+> _any_ kind of window system, then start a system manager display for a 
+> while until you get the feel for how not out of space you really are.
+>
+> Nothing gets ignored faster than a text element that essentially never 
+> changes, and once you get in the habbit of ignoring the text you won't 
+> notice when it actually has something to say.
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-On Thu, Dec 11, 2014 at 10:05:20AM +0800, Qu Wenruo wrote:
->=20
-> -------- Original Message --------
-> Subject: Re: Crazy idea of cleanup the inode_record btrfsck things with S=
-QL?
-> From: Zygo Blaxell <zblaxell@furryterror.org>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2014=E5=B9=B412=E6=9C=8811=E6=97=A5 05:57
-> >On Thu, Dec 04, 2014 at 02:56:55PM +0800, Qu Wenruo wrote:
-> >>The main memory usage in btrfsck is extent record, which
-> >>we can't free them until we read them all in and checked, so even we
-> >>mmap/unmap, it can only help with
-> >>the extent_buffer(which is already freed if not used according to refs).
-> >I'm thinking aloud here, but is it *really* necessary to read everything
-> >into memory?
-> Totally agreed to only read what we need.
-> But some backref and counts on refs can only be determined after a
-> full scan, especially for leaf/node corruption
-> case.
-
-It might be faster (and smaller) to pipe them out to sort (with gzip/lzma
-compression on temporary files) than to try to insert them in a tree.
-I have used that technique in some of my deduplicating programs.  It can
-cut the working set size by several orders of magnitude (trading it for
-an O(n log n) sort, which will mostly read and write sequentially).
-
-e.g. duplicate refs will all sort together, so when you are sequentially
-reading the sorted data and the current key value changes, you know you've
-seen everything that could be a duplicate, and can discard everything
-in RAM.
-
-
---0F1p//8PRICkK4MW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlSJAR4ACgkQgfmLGlazG5yo+QCfZC9XUSOMn1ljmnPcQWMgzgSN
-b4MAoOiM5IRN4VcXhMLdhDTjFCackWzl
-=hY2b
------END PGP SIGNATURE-----
-
---0F1p//8PRICkK4MW--

@@ -1,127 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22336 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932397AbaLKIbC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 03:31:02 -0500
-Message-ID: <548955A4.3010006@cn.fujitsu.com>
-Date: Thu, 11 Dec 2014 16:28:20 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <kreijack@inwind.it>, Robert White <rwhite@pobox.com>
-CC: <lists@colorremedies.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: get more accurate output in fd command.
-References: <B3CDA0F0-14F7-4539-B7FF-B2D2E5F7CAF2@colorremedies.com> <1418124037-8210-1-git-send-email-yangds.fnst@cn.fujitsu.com> <548743CE.1020403@inwind.it> <54879CFE.1090909@cn.fujitsu.com> <54882634.4000809@pobox.com> <5488901F.9090107@inwind.it>
-In-Reply-To: <5488901F.9090107@inwind.it>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:44687 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S934103AbaLKIeF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Dec 2014 03:34:05 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XyzCE-0006BM-5V
+	for linux-btrfs@vger.kernel.org; Thu, 11 Dec 2014 09:34:02 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 09:34:02 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Dec 2014 09:34:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Balance & scrub & defrag
+Date: Thu, 11 Dec 2014 08:33:51 +0000 (UTC)
+Message-ID: <pan$ba432$48f246af$15aa09a4$398e6f59@cox.net>
+References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2014 02:25 AM, Goffredo Baroncelli wrote:
-> On 12/10/2014 11:53 AM, Robert White wrote:
->> On 12/09/2014 05:08 PM, Dongsheng Yang wrote:
->>> On 12/10/2014 02:47 AM, Goffredo Baroncelli wrote:
->>>> Hi Dongsheng On 12/09/2014 12:20 PM, Dongsheng Yang wrote:
->>>>> When function btrfs_statfs() calculate the tatol size of fs, it
->>>>> is calculating the total size of disks and then dividing it by
->>>>> a factor. But in some usecase, the result is not good to user.
->>>>>
->>>>> Example: # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1 # mount
->>>>> /dev/vdf1 /mnt # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
->>>>> # df -h /mnt Filesystem      Size  Used Avail Use% Mounted on
->>>>> /dev/vdf1       3.0G 1018M  1.3G  45% /mnt
->>>>>
->>>>> # btrfs fi show /dev/vdf1 Label: none  uuid:
->>>>> f85d93dc-81f4-445d-91e5-6a5cd9563294 Total devices 2 FS bytes
->>>>> used 1001.53MiB devid    1 size 2.00GiB used 1.85GiB path
->>>>> /dev/vdf1 devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
->>>>>
->>>>> a. df -h should report Size as 2GiB rather than as 3GiB.
->>>>> Because this is 2 device raid1, the limiting factor is devid 1
->>>>> @2GiB.
->>>> I agree
->> NOPE.
->>
->> The model you propose is too simple.
->>
->> While the data portion of the file system is set to RAID1 the
->> metadata portion of the filesystem is still set to the default of
->> DUP. As such it is impossible to guess how much space is "free" since
->> it is unknown how the space will be used before hand.
->
-> Hi Robert,
->
-> sorry but you are talking about a different problem.
-> Yang is  trying to solve a problem where it is impossible to fill
-> all the disk space because some portion is not raid1 protected. So
-> it is incorrect to report all space/2 as free space.
->
-> Instead you are stating that *if* the metadata are stored as DUP (and
-> is not this case, because the metadata are raid1, see below), it is possible
-> to fill all the disk space.
->
-> This is a complex problem. The fact that BTRFS allows different
-> raid levels causes to be very difficult to evaluate the free space (
-> as space available directly to the user). There is no a simple answer.
->
-> I am still convinced that the best free space *estimation* is considering
-> the ratio disk-space-consumed/file-allocated constant, and evaluate
-> the free space as the
->
-> disk-space-unused*file-allocate/disk-space-consumed.
->
-> Of course there are pathological cases that make this
-> prediction fails completely. But I consider the best estimation
-> possible for the average users.
->
-> But again this is a different problem that the one raised by
-> Yang.
+sys.syphus posted on Wed, 10 Dec 2014 16:15:17 -0600 as excerpted:
 
-Thanx Goffredo, I have cooked a v2 for this problem. I will send it out 
-soon.
->
->
->
-> [...]
->
->> IF you wanted everything to be RAID-1 you should have instead done
->> # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1 -m raid1
->>
->> The mistake is yours, rest of you analysis is, therefore, completely
->> inapplicable. Please read all the documentation before making that
->> sort of filesystem. Your data will thank you later.
->>
->> DSCLAIMER: I have _not_ looked at the numbers you would get if you
->> used the corrected command.
-> Sorry, but you are wrong. Doing mkfs.btrfs -d raid1 /dev/loop[01] leads
-> to have both data and metadata  in raid1. IIRC if you have more than
-> one disks, the metadata switched to raid1 automatically.
->
-> $ sudo mkfs.btrfs -d raid1 /dev/loop[01]
-> Btrfs v3.17
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Performing full device TRIM (10.00GiB) ...
-> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-> Performing full device TRIM (30.00GiB) ...
-> adding device /dev/loop1 id 2
-> fs created label (null) on /dev/loop0
-> 	nodesize 16384 leafsize 16384 sectorsize 4096 size 40.00GiB
-> ghigo@venice:/tmp$ sudo mount /dev/loop0 t/
-> ghigo@venice:/tmp$ sudo dd if=/dev/zero of=t/fill bs=4M count=10
-> 10+0 records in
-> 10+0 records out
-> 41943040 bytes (42 MB) copied, 0.018853 s, 2.2 GB/s
-> ghigo@venice:/tmp$ sync
-> ghigo@venice:/tmp$ sudo btrfs fi df t/
-> Data, RAID1: total=1.00GiB, used=40.50MiB
-> Data, single: total=8.00MiB, used=0.00B
-> System, RAID1: total=8.00MiB, used=16.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, RAID1: total=1.00GiB, used=160.00KiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=16.00MiB, used=0.00B
->
-> [...]
->
+> I am working on a script that i can run daily that will do maintenance
+> on my btrfs mountpoints. is there any reason not to concurrently do all
+> of the above? possibly including discards as well.
+> 
+> 
+> also, is there anything existing currently that will do maintenance on
+> btrfs so i don't have to reinvent the wheel?
+> 
+> #!/bin/bash btrfs filesystem defragment -r -v /media/btrfs/  &
+> btrfs scrub start /media/btrfs/ &
+> btrfs balance start /media/btrfs/ &
+
+Btrfs has had concurrency issues in the past, tho there has been a recent 
+patch series aimed at fixing many of them.  Still, running more than one 
+of defrag/scrub/balance at once, particularly on spinning rust (as 
+opposed to SSD which is faster and doesn't have I/O bottlenecks to the 
+same degree) does put a lot of stress on the system and is thus more 
+likely to trigger bugs than running them one at a time.  If your goal is 
+to stress-test and find and report bugs, that's a reasonable start, 
+otherwise consider doing one at a time.
+
+There's also the memory issue.  These utilities can take quite a bit of 
+memory at times, particularly if you're running with lots of snapshots.
+
+Meanwhile, as others have said, doing these daily is overkill.  If you're 
+running multi-TB filesystems on spinning rust, it'll take several hours 
+for one of these anyway.  Maybe once a week for scrub, which won't 
+rewrite anything unless it finds errors.  Balance you don't need to run 
+routinely, only when adding/deleting devices or if your data/metadata 
+chunk balance (see btrfs fi df) gets out of balance.
+
+And for defrag, take a look at the autodefrag mount option.  Tho be aware 
+that it can interact badly with large (say half a gig or larger), 
+actively internal-write-pattern rewritten, files such as VM images and 
+databases.  With autodefrag on, you shouldn't have to worry about 
+fragmentation at all, unless of course you're using big VMs or the like, 
+but there's available solutions for that as well.  See the wiki and many 
+previous threads here for more.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,56 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f173.google.com ([209.85.216.173]:35789 "EHLO
-	mail-qc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932531AbaLLTYh (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42414 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752471AbaLLTaG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 14:24:37 -0500
+	Fri, 12 Dec 2014 14:30:06 -0500
+Date: Fri, 12 Dec 2014 22:30:00 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <clm@fb.com>, Miao Xie <miaox@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+Subject: [patch] Btrfs, scrub: uninitialized variable in
+ scrub_extent_for_parity()
+Message-ID: <20141212193000.GC22234@mwanda>
 MIME-Version: 1.0
-In-Reply-To: <20141212190731.GB23804@ret.masoncoding.com>
-References: <20141212190731.GB23804@ret.masoncoding.com>
-Date: Fri, 12 Dec 2014 11:24:36 -0800
-Message-ID: <CA+55aFzWDZ+3sAHHhZ_iourYAmh_3rfEk-u8H4d4b9=KcJb2gg@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs for 3.19-rc
-From: Linus Torvalds <torvalds@linux-foundation.org>
-To: Chris Mason <clm@fb.com>, Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 12, 2014 at 11:07 AM, Chris Mason <clm@fb.com> wrote:
->
-> From a feature point of view, most of the code here comes from Miao Xie
-> and others at Fujitsu to implement scrubbing and replacing devices on
-> raid56.  This has been in development for a while, and it's a big
-> improvement.
+The only way that "ret" is set is when we call scrub_pages_for_parity()
+so the skip to "if (ret) " test doesn't make sense and causes a static
+checker warning.
 
-So this has probably happened before, and I just haven't been looking,
-but I thought I'd mention it.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+---
+Static checker work.  Not tested.  There are some other valid looking
+warnings from the same file:
 
-There are merges from github for this feature, and those merges aren't
-signed, and don't have merge messages. Maybe you actually verified all
-of it other ways, but there's no sign of it. I generally push back on
-merging unsigned stuff from random hosting places (to the point where
-I just refuse to do it, although it's possible that some pass though
-just due to inattention), and I think that's just good practice in
-general. And merges that don't explain what the merge does are just
-bad merges (they are extra annoying when they are back-merges, but
-it's a problem even otherwise).
+fs/btrfs/scrub.c:2933 scrub_raid56_parity() warn: XXX passing uninitialized 'extent_physical'
+fs/btrfs/scrub.c:2933 scrub_raid56_parity() warn: XXX passing uninitialized 'extent_dev'
+fs/btrfs/scrub.c:2933 scrub_raid56_parity() warn: XXX passing uninitialized 'extent_mirror_num'
 
-Now, sometimes the "why did you merge" is obvious in just the merge
-itself (maybe the branch name is already sufficient to explain some
-trivial pull). But I thought I'd mention this as an area where the
-kernel development process can still improve. I strive to make sure
-that my merge commits have good messages (generally by asking
-submaintainers to explain things to me in email or in the signed tag),
-and I'm starting to try to encourage others to the same.
-
-Again, this is probably something you've done before without me ever
-mentioning/noticing it, and I really don't think the btrfs tree is at
-all alone in this, but I thought I'd mention it since I happened to
-react to it this time.
-
-Regardless - pulled,
-
-                      Linus
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f2bb13a..9e1569f 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2607,9 +2607,9 @@ static int scrub_extent_for_parity(struct scrub_parity *sparity,
+ 		ret = scrub_pages_for_parity(sparity, logical, l, physical, dev,
+ 					     flags, gen, mirror_num,
+ 					     have_csum ? csum : NULL);
+-skip:
+ 		if (ret)
+ 			return ret;
++skip:
+ 		len -= l;
+ 		logical += l;
+ 		physical += l;

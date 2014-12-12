@@ -1,241 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54025 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933666AbaLLQjO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 11:39:14 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2BF18AC19
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 16:39:13 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: kill btrfs_inode_*time helpers
-Date: Fri, 12 Dec 2014 17:39:12 +0100
-Message-Id: <1418402352-10032-1-git-send-email-dsterba@suse.cz>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:32238 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932399AbaLLTHj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 14:07:39 -0500
+Date: Fri, 12 Dec 2014 14:07:31 -0500
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        <linux-btrfs@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs for 3.19-rc
+Message-ID: <20141212190731.GB23804@ret.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-They just opencode taking address of the timespec member.
+Hi Linus,
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ctree.h         | 25 -------------------------
- fs/btrfs/delayed-inode.c | 28 ++++++++++++----------------
- fs/btrfs/inode.c         | 28 ++++++++++++----------------
- fs/btrfs/send.c          |  9 +++------
- fs/btrfs/tree-log.c      | 12 ++++++------
- 5 files changed, 33 insertions(+), 69 deletions(-)
+Please pull my for-linus branch:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7e607416755a..937a19e06793 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2464,31 +2464,6 @@ BTRFS_SETGET_STACK_FUNCS(stack_inode_gid, struct btrfs_inode_item, gid, 32);
- BTRFS_SETGET_STACK_FUNCS(stack_inode_mode, struct btrfs_inode_item, mode, 32);
- BTRFS_SETGET_STACK_FUNCS(stack_inode_rdev, struct btrfs_inode_item, rdev, 64);
- BTRFS_SETGET_STACK_FUNCS(stack_inode_flags, struct btrfs_inode_item, flags, 64);
--
--static inline struct btrfs_timespec *
--btrfs_inode_atime(struct btrfs_inode_item *inode_item)
--{
--	unsigned long ptr = (unsigned long)inode_item;
--	ptr += offsetof(struct btrfs_inode_item, atime);
--	return (struct btrfs_timespec *)ptr;
--}
--
--static inline struct btrfs_timespec *
--btrfs_inode_mtime(struct btrfs_inode_item *inode_item)
--{
--	unsigned long ptr = (unsigned long)inode_item;
--	ptr += offsetof(struct btrfs_inode_item, mtime);
--	return (struct btrfs_timespec *)ptr;
--}
--
--static inline struct btrfs_timespec *
--btrfs_inode_ctime(struct btrfs_inode_item *inode_item)
--{
--	unsigned long ptr = (unsigned long)inode_item;
--	ptr += offsetof(struct btrfs_inode_item, ctime);
--	return (struct btrfs_timespec *)ptr;
--}
--
- BTRFS_SETGET_FUNCS(timespec_sec, struct btrfs_timespec, sec, 64);
- BTRFS_SETGET_FUNCS(timespec_nsec, struct btrfs_timespec, nsec, 32);
- BTRFS_SETGET_STACK_FUNCS(stack_timespec_sec, struct btrfs_timespec, sec, 64);
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 054577bddaf2..00f7d08b04c7 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1755,19 +1755,19 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_inode_flags(inode_item, BTRFS_I(inode)->flags);
- 	btrfs_set_stack_inode_block_group(inode_item, 0);
- 
--	btrfs_set_stack_timespec_sec(btrfs_inode_atime(inode_item),
-+	btrfs_set_stack_timespec_sec(&inode_item->atime,
- 				     inode->i_atime.tv_sec);
--	btrfs_set_stack_timespec_nsec(btrfs_inode_atime(inode_item),
-+	btrfs_set_stack_timespec_nsec(&inode_item->atime,
- 				      inode->i_atime.tv_nsec);
- 
--	btrfs_set_stack_timespec_sec(btrfs_inode_mtime(inode_item),
-+	btrfs_set_stack_timespec_sec(&inode_item->mtime,
- 				     inode->i_mtime.tv_sec);
--	btrfs_set_stack_timespec_nsec(btrfs_inode_mtime(inode_item),
-+	btrfs_set_stack_timespec_nsec(&inode_item->mtime,
- 				      inode->i_mtime.tv_nsec);
- 
--	btrfs_set_stack_timespec_sec(btrfs_inode_ctime(inode_item),
-+	btrfs_set_stack_timespec_sec(&inode_item->ctime,
- 				     inode->i_ctime.tv_sec);
--	btrfs_set_stack_timespec_nsec(btrfs_inode_ctime(inode_item),
-+	btrfs_set_stack_timespec_nsec(&inode_item->ctime,
- 				      inode->i_ctime.tv_nsec);
- }
- 
-@@ -1775,7 +1775,6 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- {
- 	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_inode_item *inode_item;
--	struct btrfs_timespec *tspec;
- 
- 	delayed_node = btrfs_get_delayed_node(inode);
- 	if (!delayed_node)
-@@ -1802,17 +1801,14 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- 	*rdev = btrfs_stack_inode_rdev(inode_item);
- 	BTRFS_I(inode)->flags = btrfs_stack_inode_flags(inode_item);
- 
--	tspec = btrfs_inode_atime(inode_item);
--	inode->i_atime.tv_sec = btrfs_stack_timespec_sec(tspec);
--	inode->i_atime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
-+	inode->i_atime.tv_sec = btrfs_stack_timespec_sec(&inode_item->atime);
-+	inode->i_atime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->atime);
- 
--	tspec = btrfs_inode_mtime(inode_item);
--	inode->i_mtime.tv_sec = btrfs_stack_timespec_sec(tspec);
--	inode->i_mtime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
-+	inode->i_mtime.tv_sec = btrfs_stack_timespec_sec(&inode_item->mtime);
-+	inode->i_mtime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->mtime);
- 
--	tspec = btrfs_inode_ctime(inode_item);
--	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(tspec);
--	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
-+	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(&inode_item->ctime);
-+	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->ctime);
- 
- 	inode->i_generation = BTRFS_I(inode)->generation;
- 	BTRFS_I(inode)->index_cnt = (u64)-1;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e687bb0dc73a..31546ffff6c3 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3490,7 +3490,6 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
- 	struct btrfs_inode_item *inode_item;
--	struct btrfs_timespec *tspec;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_key location;
- 	unsigned long ptr;
-@@ -3527,17 +3526,14 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 	i_gid_write(inode, btrfs_inode_gid(leaf, inode_item));
- 	btrfs_i_size_write(inode, btrfs_inode_size(leaf, inode_item));
- 
--	tspec = btrfs_inode_atime(inode_item);
--	inode->i_atime.tv_sec = btrfs_timespec_sec(leaf, tspec);
--	inode->i_atime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
-+	inode->i_atime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->atime);
-+	inode->i_atime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->atime);
- 
--	tspec = btrfs_inode_mtime(inode_item);
--	inode->i_mtime.tv_sec = btrfs_timespec_sec(leaf, tspec);
--	inode->i_mtime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
-+	inode->i_mtime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->mtime);
-+	inode->i_mtime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->mtime);
- 
--	tspec = btrfs_inode_ctime(inode_item);
--	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, tspec);
--	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
-+	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->ctime);
-+	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->ctime);
- 
- 	inode_set_bytes(inode, btrfs_inode_nbytes(leaf, inode_item));
- 	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
-@@ -3658,19 +3654,19 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
- 	btrfs_set_token_inode_nlink(leaf, item, inode->i_nlink, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_atime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->atime,
- 				     inode->i_atime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_atime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->atime,
- 				      inode->i_atime.tv_nsec, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_mtime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->mtime,
- 				     inode->i_mtime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_mtime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->mtime,
- 				      inode->i_mtime.tv_nsec, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_ctime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->ctime,
- 				     inode->i_ctime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_ctime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->ctime,
- 				      inode->i_ctime.tv_nsec, &token);
- 
- 	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 804432dbc351..fe5857223515 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2471,12 +2471,9 @@ verbose_printk("btrfs: send_utimes %llu\n", ino);
- 	if (ret < 0)
- 		goto out;
- 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
--	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_ATIME, eb,
--			btrfs_inode_atime(ii));
--	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_MTIME, eb,
--			btrfs_inode_mtime(ii));
--	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_CTIME, eb,
--			btrfs_inode_ctime(ii));
-+	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_ATIME, eb, &ii->atime);
-+	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_MTIME, eb, &ii->mtime);
-+	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_CTIME, eb, &ii->ctime);
- 	/* TODO Add otime support when the otime patches get into upstream */
- 
- 	ret = send_cmd(sctx);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9a02da16f2be..b8401170342f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3244,19 +3244,19 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
- 	btrfs_set_token_inode_nlink(leaf, item, inode->i_nlink, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_atime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->atime,
- 				     inode->i_atime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_atime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->atime,
- 				      inode->i_atime.tv_nsec, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_mtime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->mtime,
- 				     inode->i_mtime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_mtime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->mtime,
- 				      inode->i_mtime.tv_nsec, &token);
- 
--	btrfs_set_token_timespec_sec(leaf, btrfs_inode_ctime(item),
-+	btrfs_set_token_timespec_sec(leaf, &item->ctime,
- 				     inode->i_ctime.tv_sec, &token);
--	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_ctime(item),
-+	btrfs_set_token_timespec_nsec(leaf, &item->ctime,
- 				      inode->i_ctime.tv_nsec, &token);
- 
- 	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
--- 
-1.8.4.5
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+>From a feature point of view, most of the code here comes from Miao Xie
+and others at Fujitsu to implement scrubbing and replacing devices on
+raid56.  This has been in development for a while, and it's a big
+improvement.
+
+Filipe and Josef have a great assortment of fixes, many of which solve
+problems corruptions either after a crash or in error conditions.  I
+still have a round two from Filipe for next week that solves corruptions
+with discard and block group removal.
+
+This was based on 3.18-rc5 but does have a merge with rc6 because I
+wanted to make sure testers had the use-after-free fix you pulled in
+from the networking tree.
+
+Filipe Manana (30) commits (+804/-272):
+    Btrfs: fix snapshot inconsistency after a file write followed by truncate (+60/-24)
+    Btrfs: make btrfs_abort_transaction consider existence of new block groups (+4/-3)
+    Btrfs: report error after failure inlining extent in compressed write path (+4/-0)
+    Btrfs: fix race between fs trimming and block group remove/allocation (+140/-21)
+    Btrfs: deal with convert_extent_bit errors to avoid fs corruption (+76/-18)
+    Btrfs: fix freeing used extents after removing empty block group (+10/-11)
+    Btrfs: collect only the necessary ordered extents on ranged fsync (+17/-5)
+    Btrfs: fix invalid block group rbtree access after bg is removed (+13/-0)
+    Btrfs: avoid returning -ENOMEM in convert_extent_bit() too early (+10/-1)
+    Btrfs: fix freeing used extent after removing empty block group (+11/-2)
+    Btrfs: fix race between writing free space cache and trimming (+71/-6)
+    Btrfs: correctly flush compressed data before/after direct IO (+24/-4)
+    Btrfs: make find_first_extent_bit be able to cache any state (+15/-4)
+    Btrfs: don't leak pages and memory on compressed write error (+19/-9)
+    Btrfs: set page and mapping error on compressed write failure (+8/-1)
+    Btrfs: process all async extents on compressed write failure (+1/-5)
+    Btrfs: ensure ordered extent errors aren't missed on fsync (+37/-0)
+    Btrfs: make inode.c:submit_compressed_extents() return void (+2/-5)
+    Btrfs: ensure send always works on roots without orphans (+49/-29)
+    Btrfs: fix unprotected deletion from pending_chunks list (+7/-1)
+    Btrfs: make inode.c:compress_file_range() return void (+2/-5)
+    Btrfs: fix memory leak after block remove + trimming (+6/-0)
+    Btrfs: avoid premature -ENOMEM in clear_extent_bit() (+7/-2)
+    Btrfs: don't ignore compressed bio write errors (+12/-6)
+    Btrfs: fix crash caused by block group removal (+28/-0)
+    Btrfs: don't ignore log btree writeback errors (+15/-6)
+    Btrfs: make xattr replace operations atomic (+102/-65)
+    Btrfs: add helper btrfs_fdatawrite_range (+34/-39)
+    Btrfs: fix hang on compressed write error (+14/-0)
+    Btrfs: fix fs mapping extent map leak (+6/-0)
+
+David Sterba (8) commits (+122/-44):
+    btrfs: switch inode_cache option handling to pending changes (+18/-15)
+    btrfs: fix wrong accounting of raid1 data profile in statfs (+1/-1)
+    btrfs: do commit in sync_fs if there are pending changes (+11/-3)
+    btrfs: move commit out of sysfs when changing features (+5/-8)
+    btrfs: move commit out of sysfs when changing label (+8/-13)
+    btrfs: add support for processing pending changes (+69/-0)
+    btrfs: fix typos in btrfs_check_super_valid (+4/-4)
+    btrfs: introduce pending action: commit (+6/-0)
+
+Miao Xie (7) commits (+1556/-150):
+    Btrfs, raid56: fix use-after-free problem in the final device replace procedure on raid56 (+45/-20)
+    Btrfs, scrub: repair the common data on RAID5/6 if it is corrupted (+235/-33)
+    Btrfs, replace: write raid56 parity into the replace target device (+24/-1)
+    Btrfs, replace: write dirty pages into the replace target device (+97/-43)
+    Btrfs, raid56: use a variant to record the operation type (+17/-14)
+    Btrfs, raid56: support parity scrub on raid56 (+1115/-20)
+    Btrfs, raid56: don't change bbio and raid_map (+23/-19)
+
+Josef Bacik (6) commits (+141/-63):
+    Btrfs: make sure logged extents complete in the current transaction V3 (+72/-6)
+    Btrfs: make sure we wait on logged extents when fsycning two subvols (+1/-1)
+    Btrfs: don't take the chunk_mutex/dev_list mutex in statfs V2 (+47/-25)
+    Btrfs: make get_caching_control unconditionally return the ctl (+4/-6)
+    Btrfs: move read only block groups onto their own list V2 (+17/-23)
+    Btrfs: do not move em to modified list when unpinning (+0/-2)
+
+Zhao Lei (3) commits (+2/-10):
+    Btrfs: remove unnecessary code of stripe_index assignment in __btrfs_map_block (+1/-3)
+    Btrfs: remove noused bbio_ret in __btrfs_map_block in condition (+1/-2)
+    Btrfs, replace: enable dev-replace for raid56 (+0/-5)
+
+Stefan Behrens (2) commits (+53/-93):
+    Btrfs: check-int: don't complain about balanced blocks (+42/-38)
+    Btrfs: check_int: use the known block location (+11/-55)
+
+Shilong Wang (2) commits (+19/-13):
+    Btrfs: fix allocationg memory failure for btrfsic_state structure (+11/-5)
+    Btrfs: fix incorrect compression ratio detection (+8/-8)
+
+Chris Mason (1) commits (+1/-0):
+    Btrfs: include vmalloc.h in check-integrity.c
+
+Gui Hecheng (1) commits (+60/-30):
+    btrfs: fix dead lock while running replace and defrag concurrently
+
+Eryu Guan (1) commits (+10/-3):
+    Btrfs: return failure if btrfs_dev_replace_finishing() failed
+
+Qu Wenruo (1) commits (+18/-9):
+    btrfs: Fix a lockdep warning when running xfstest.
+
+Total: (62) commits (+2786/-687)
+
+ fs/btrfs/check-integrity.c  | 163 ++++----
+ fs/btrfs/compression.c      |  18 +-
+ fs/btrfs/ctree.c            |   2 +-
+ fs/btrfs/ctree.h            |  85 ++++-
+ fs/btrfs/dev-replace.c      |  32 +-
+ fs/btrfs/dir-item.c         |  10 +-
+ fs/btrfs/disk-io.c          |  49 ++-
+ fs/btrfs/extent-tree.c      | 211 ++++++++---
+ fs/btrfs/extent_io.c        |  41 +-
+ fs/btrfs/extent_io.h        |   1 +
+ fs/btrfs/extent_map.c       |   2 -
+ fs/btrfs/file.c             |  51 ++-
+ fs/btrfs/free-space-cache.c | 117 +++++-
+ fs/btrfs/free-space-cache.h |   2 +
+ fs/btrfs/inode-map.c        |   4 +-
+ fs/btrfs/inode.c            | 152 ++++++--
+ fs/btrfs/ioctl.c            |  36 +-
+ fs/btrfs/ordered-data.c     |  49 ++-
+ fs/btrfs/ordered-data.h     |  12 +-
+ fs/btrfs/raid56.c           | 763 +++++++++++++++++++++++++++++++++----
+ fs/btrfs/raid56.h           |  16 +-
+ fs/btrfs/scrub.c            | 893 +++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/send.c             |  49 +++
+ fs/btrfs/super.c            |  94 +++--
+ fs/btrfs/sysfs.c            |  34 +-
+ fs/btrfs/transaction.c      | 166 ++++++--
+ fs/btrfs/transaction.h      |   6 +-
+ fs/btrfs/tree-log.c         |  50 ++-
+ fs/btrfs/volumes.c          |  90 +++--
+ fs/btrfs/volumes.h          |  32 +-
+ fs/btrfs/xattr.c            | 150 +++++---
+ include/uapi/linux/btrfs.h  |   1 +
+ 32 files changed, 2740 insertions(+), 641 deletions(-)

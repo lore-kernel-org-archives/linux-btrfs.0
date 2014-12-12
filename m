@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54876 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54878 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031039AbaLLRf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:35:57 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 38AFAABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:56 +0000 (UTC)
+	id S1031039AbaLLRgA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:36:00 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 78AECABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:59 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/9] btrfs: sink blocksize parameter to reada_tree_block_flagged
-Date: Fri, 12 Dec 2014 18:35:55 +0100
-Message-Id: <c0dcaa4d7b66b788b315c418bda3cca75c5938dc.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 4/9] btrfs: sink blocksize parameter to btrfs_init_new_buffer
+Date: Fri, 12 Dec 2014 18:35:58 +0100
+Message-Id: <fe864576de7fb940b5bd1f8ab8908a08a3416ca0.1418404754.git.dsterba@suse.cz>
 In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
 References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,59 +19,46 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c | 4 ++--
- fs/btrfs/disk-io.h | 2 +-
- fs/btrfs/reada.c   | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index be9d7c612489..8123b03b1f9d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1086,7 +1086,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
- 	free_extent_buffer(buf);
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c025751c20d7..50ebc74db508 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7215,11 +7215,11 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
  
--int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
- 			 int mirror_num, struct extent_buffer **eb)
+ static struct extent_buffer *
+ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		      u64 bytenr, u32 blocksize, int level)
++		      u64 bytenr, int level)
  {
- 	struct extent_buffer *buf = NULL;
-@@ -1094,7 +1094,7 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 	struct extent_io_tree *io_tree = &BTRFS_I(btree_inode)->io_tree;
- 	int ret;
+ 	struct extent_buffer *buf;
  
 -	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
 +	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
  	if (!buf)
- 		return 0;
+ 		return ERR_PTR(-ENOMEM);
+ 	btrfs_set_header_generation(buf, trans->transid);
+@@ -7338,7 +7338,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
  
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 9cf4359ace05..4d4ecdd9f4a2 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -47,7 +47,7 @@ struct btrfs_fs_devices;
- struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 				      u64 parent_transid);
- void readahead_tree_block(struct btrfs_root *root, u64 bytenr);
--int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
- 			 int mirror_num, struct extent_buffer **eb);
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
- 						   u64 bytenr, u32 blocksize);
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 5c3fde6571bb..4d3d4e5287c5 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -721,7 +721,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	if (btrfs_test_is_dummy_root(root)) {
+ 		buf = btrfs_init_new_buffer(trans, root, root->alloc_bytenr,
+-					    blocksize, level);
++					    level);
+ 		if (!IS_ERR(buf))
+ 			root->alloc_bytenr += blocksize;
+ 		return buf;
+@@ -7355,8 +7355,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 		return ERR_PTR(ret);
+ 	}
  
- 	atomic_inc(&dev->reada_in_flight);
- 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
--			fs_info->tree_root->nodesize, mirror_num, &eb);
-+			mirror_num, &eb);
- 	if (ret)
- 		__readahead_hook(fs_info->extent_root, NULL, logical, ret);
- 	else if (eb)
+-	buf = btrfs_init_new_buffer(trans, root, ins.objectid,
+-				    blocksize, level);
++	buf = btrfs_init_new_buffer(trans, root, ins.objectid, level);
+ 	BUG_ON(IS_ERR(buf)); /* -ENOMEM */
+ 
+ 	if (root_objectid == BTRFS_TREE_RELOC_OBJECTID) {
 -- 
 2.1.3
 

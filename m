@@ -1,155 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54879 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54880 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031039AbaLLRgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:36:04 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D45C6ABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:02 +0000 (UTC)
+	id S1031039AbaLLRgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:36:07 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2C88AABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:06 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 5/9] btrfs: sink blocksize parameter to btrfs_find_create_tree_block
-Date: Fri, 12 Dec 2014 18:36:02 +0100
-Message-Id: <a83fffb75d09cd3d44167b7fb9c1ab9e2269445f.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 6/9] btrfs: sink blocksize parameter to tree_block_processed
+Date: Fri, 12 Dec 2014 18:36:05 +0100
+Message-Id: <7476dfdaade5b373db4679555706546bd5b4bd6c.1418404754.git.dsterba@suse.cz>
 In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
 References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Finally it's clear that the requested blocksize is always equal to
-nodesize, with one exception, the superblock.
-
-Superblock has fixed size regardless of the metadata block size, but
-uses the same helpers to initialize sys array/chunk tree and to work
-with the chunk items. So it pretends to be an extent_buffer for a
-moment, btrfs_read_sys_array is full of special cases, we're adding one
-more.
-
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c     | 12 ++++++------
- fs/btrfs/disk-io.h     |  2 +-
- fs/btrfs/extent-tree.c |  4 ++--
- fs/btrfs/tree-log.c    |  2 +-
- fs/btrfs/volumes.c     |  9 +++++++--
- 5 files changed, 17 insertions(+), 12 deletions(-)
+ fs/btrfs/relocation.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8123b03b1f9d..548cb540e516 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1078,7 +1078,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
- 	struct extent_buffer *buf = NULL;
- 	struct inode *btree_inode = root->fs_info->btree_inode;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index cb5d4462ebb4..d83085381bcc 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2855,9 +2855,10 @@ static void update_processed_blocks(struct reloc_control *rc,
+ 	}
+ }
  
--	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
-+	buf = btrfs_find_create_tree_block(root, bytenr);
- 	if (!buf)
- 		return;
- 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
-@@ -1094,7 +1094,7 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
- 	struct extent_io_tree *io_tree = &BTRFS_I(btree_inode)->io_tree;
- 	int ret;
+-static int tree_block_processed(u64 bytenr, u32 blocksize,
+-				struct reloc_control *rc)
++static int tree_block_processed(u64 bytenr, struct reloc_control *rc)
+ {
++	u32 blocksize = rc->extent_root->nodesize;
++
+ 	if (test_range_bit(&rc->processed_blocks, bytenr,
+ 			   bytenr + blocksize - 1, EXTENT_DIRTY, 1, NULL))
+ 		return 1;
+@@ -3352,7 +3353,7 @@ static int __add_tree_block(struct reloc_control *rc,
+ 	bool skinny = btrfs_fs_incompat(rc->extent_root->fs_info,
+ 					SKINNY_METADATA);
  
--	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
-+	buf = btrfs_find_create_tree_block(root, bytenr);
- 	if (!buf)
+-	if (tree_block_processed(bytenr, blocksize, rc))
++	if (tree_block_processed(bytenr, rc))
  		return 0;
  
-@@ -1125,12 +1125,12 @@ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
- }
+ 	if (tree_search(blocks, bytenr))
+@@ -3610,7 +3611,7 @@ static int find_data_references(struct reloc_control *rc,
+ 		if (added)
+ 			goto next;
  
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
--						 u64 bytenr, u32 blocksize)
-+						 u64 bytenr)
- {
- 	if (btrfs_test_is_dummy_root(root))
- 		return alloc_test_extent_buffer(root->fs_info, bytenr,
--						blocksize);
--	return alloc_extent_buffer(root->fs_info, bytenr, blocksize);
-+						root->nodesize);
-+	return alloc_extent_buffer(root->fs_info, bytenr, root->nodesize);
- }
- 
- 
-@@ -1152,7 +1152,7 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 	struct extent_buffer *buf = NULL;
- 	int ret;
- 
--	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
-+	buf = btrfs_find_create_tree_block(root, bytenr);
- 	if (!buf)
- 		return NULL;
- 
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 4d4ecdd9f4a2..27d44c0fd236 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -50,7 +50,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr);
- int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
- 			 int mirror_num, struct extent_buffer **eb);
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
--						   u64 bytenr, u32 blocksize);
-+						   u64 bytenr);
- void clean_tree_block(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root, struct extent_buffer *buf);
- int open_ctree(struct super_block *sb,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 50ebc74db508..8ff31f81d870 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7219,7 +7219,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- {
- 	struct extent_buffer *buf;
- 
--	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
-+	buf = btrfs_find_create_tree_block(root, bytenr);
- 	if (!buf)
- 		return ERR_PTR(-ENOMEM);
- 	btrfs_set_header_generation(buf, trans->transid);
-@@ -7825,7 +7825,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 
- 	next = btrfs_find_tree_block(root, bytenr);
- 	if (!next) {
--		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
-+		next = btrfs_find_create_tree_block(root, bytenr);
- 		if (!next)
- 			return -ENOMEM;
- 		btrfs_set_buffer_lockdep_class(root->root_key.objectid, next,
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9a02da16f2be..4a42edc224a8 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2164,7 +2164,7 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 		parent = path->nodes[*level];
- 		root_owner = btrfs_header_owner(parent);
- 
--		next = btrfs_find_create_tree_block(root, bytenr, blocksize);
-+		next = btrfs_find_create_tree_block(root, bytenr);
- 		if (!next)
- 			return -ENOMEM;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0144790e296e..f0af9cd0814c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6247,8 +6247,13 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	u32 cur;
- 	struct btrfs_key key;
- 
--	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET,
--					  BTRFS_SUPER_INFO_SIZE);
-+	ASSERT(BTRFS_SUPER_INFO_SIZE <= root->nodesize);
-+	/*
-+	 * This will create extent buffer of nodesize, superblock size is
-+	 * fixed to BTRFS_SUPER_INFO_SIZE. If nodesize > sb size, this will
-+	 * overallocate but we can keep it as-is, only the first page is used.
-+	 */
-+	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET);
- 	if (!sb)
- 		return -ENOMEM;
- 	btrfs_set_buffer_uptodate(sb);
+-		if (!tree_block_processed(leaf->start, leaf->len, rc)) {
++		if (!tree_block_processed(leaf->start, rc)) {
+ 			block = kmalloc(sizeof(*block), GFP_NOFS);
+ 			if (!block) {
+ 				err = -ENOMEM;
 -- 
 2.1.3
 

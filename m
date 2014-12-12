@@ -1,172 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48108 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965570AbaLLKvZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 05:51:25 -0500
-Date: Fri, 12 Dec 2014 11:51:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Christoph Hellwig <hch@infradead.org>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, linux-nfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [RFC PATCH v3 7/7] btrfs: enable swap file support
-Message-ID: <20141212105122.GN27601@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1418173063.git.osandov@osandov.com>
- <0f9937165d8fc1b8b6332ac97e59593022e9fa5b.1418173063.git.osandov@osandov.com>
+Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:36304 "EHLO
+	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S966245AbaLLLQe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 06:16:34 -0500
+Message-ID: <548ACE73.3000000@pobox.com>
+Date: Fri, 12 Dec 2014 03:16:03 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0f9937165d8fc1b8b6332ac97e59593022e9fa5b.1418173063.git.osandov@osandov.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: mkfs.btrfs limits "odd" [and maybe a "failed" phantom device?]
+References: <5488C6CF.1080608@pobox.com> <20141212035651.GD22023@hungrycats.org> <548A84A2.4000501@pobox.com> <20141212090647.GA5574@yadt.co.uk>
+In-Reply-To: <20141212090647.GA5574@yadt.co.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 09, 2014 at 05:45:48PM -0800, Omar Sandoval wrote:
-> +static void __clear_swapfile_extents(struct inode *inode)
-> +{
-> +	u64 isize = inode->i_size;
-> +	struct extent_map *em;
-> +	u64 start, len;
-> +
-> +	start = 0;
-> +	while (start < isize) {
-> +		len = isize - start;
-> +		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
-> +		if (IS_ERR(em))
-> +			return;
+On 12/12/2014 01:06 AM, David Taylor wrote:
+> The above quote is discussing two device RAID5, you are discussing
+> three device RAID5.
 
-This could transiently fail if there's no memory to allocate the em, and
-would leak the following extents.
+Heresy! (yes, some humor is required here.)
 
-> +
-> +		clear_bit(EXTENT_FLAG_SWAPFILE, &em->flags);
-> +
-> +		start = extent_map_end(em);
-> +		free_extent_map(em);
-> +	}
-> +}
-> +
-> +static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
-> +			       sector_t *span)
-> +{
-> +	struct inode *inode = file_inode(file);
-> +	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-> +	int ret = 0;
-> +	u64 isize = inode->i_size;
-> +	struct extent_state *cached_state = NULL;
-> +	struct extent_map *em;
-> +	u64 start, len;
-> +
-> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS) {
-> +		/* Can't do direct I/O on a compressed file. */
-> +		btrfs_err(fs_info, "swapfile is compressed");
-> +		return -EINVAL;
-> +	}
-> +	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW)) {
-> +		/*
-> +		 * Going through the copy-on-write path while swapping pages
-> +		 * in/out and doing a bunch of allocations could stress the
-> +		 * memory management code that got us there in the first place,
-> +		 * and that's sure to be a bad time.
-> +		 */
-> +		btrfs_err(fs_info, "swapfile is copy-on-write");
-> +		return -EINVAL;
-> +	}
-> +
-> +	lock_extent_bits(io_tree, 0, isize - 1, 0, &cached_state);
-> +
-> +	/*
-> +	 * All of the extents must be allocated and support direct I/O. Inline
-> +	 * extents and compressed extents fall back to buffered I/O, so those
-> +	 * are no good. Additionally, all of the extents must be safe for nocow.
-> +	 */
-> +	atomic_inc(&BTRFS_I(inode)->root->nr_swapfiles);
-> +	start = 0;
-> +	while (start < isize) {
-> +		len = isize - start;
-> +		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
-> +		if (IS_ERR(em)) {
+There is no such thing as a "two device RAID5". That's what RAID1 is for.
 
-		IS_ERR_OR_NULL(em)
+Saying "The above quote is discussing a two device RAID5" is exactly 
+like saying "The above quote is discussing a two wheeled tricycle".
 
->From now on the em is valid and has to be free_extent_map()ed ...
+You might as well be talking about three-octet IP addresses. That is you 
+could make a network address out of three octets, but it wouldn't' be an 
+IP address. It would be something else with the wrong name attached.
 
-> +			ret = PTR_ERR(em);
-> +			goto out;
-> +		}
-> +
-> +		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags) ||
-> +		    em->block_start == EXTENT_MAP_HOLE) {
-> +			btrfs_err(fs_info, "swapfile has holes");
-> +			ret = -EINVAL;
+I challenge you... nay I _defy_ you... to find a single authority on 
+disk storage anywhere on this planet (except, apparently, this list and 
+its directly attached people and materials) that discusses, describes, 
+or acknowledges the existence of a "two device RAID5" while not 
+discussing a system with an arity of 3 degraded by the absence of one media.
 
-... and all the error branches would miss it.
+All these words have standardized definitions.
 
-> +			goto out;
-> +		}
-> +		if (em->block_start == EXTENT_MAP_INLINE) {
-> +			/*
-> +			 * It's unlikely we'll ever actually find ourselves
-> +			 * here, as a file small enough to fit inline won't be
-> +			 * big enough to store more than the swap header, but in
-> +			 * case something changes in the future, let's catch it
-> +			 * here rather than later.
-> +			 */
-> +			btrfs_err(fs_info, "swapfile is inline");
-> +			ret = -EINVAL;
+[That's not hyperbole. I searched for several hours and could not find 
+_any_ reference anywhere to construction of a RAID5 array using only two 
+devices that did not involve airity-3 and a dummy/missing/failed psudo 
+target. So if you can find any reference to doing this _anywhere_ 
+outside of BTRFS I'd like to see it. Genuinely.]
 
-here
+THAT SAID...
 
-> +			goto out;
-> +		}
-> +		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
-> +			btrfs_err(fs_info, "swapfile is compresed");
-> +			ret = -EINVAL;
+I really can find no reason the math wouldn't work using only two 
+drives. It would be a terrific waste of CPU cycles and storage space to 
+construct the stripe buffers and do the XORs instead of just copying the 
+data, but the math would work.
 
-here
+So, um, "well I'll be damned".
 
-> +			goto out;
-> +		}
-> +		ret = can_nocow_extent(inode, start, &len, NULL, NULL, NULL);
-> +		if (ret < 0) {
+Perhaps is just a tautological belief that someone here didn't buy into. 
+Like how people keep partitioning drives into little slices for things 
+because thats the preserved wisdom from early eighties.
 
-here
+I think constructing a non-degraded-mode two device thing and calling it 
+RAID5 will surprise virtually _everyone_ on the planet.
 
-> +			goto out;
-> +		} else if (ret == 1) {
-> +			ret = 0;
-> +		} else {
-> +			btrfs_err(fs_info, "swapfile has extent requiring COW (%llu-%llu)",
-> +				  start, start + len - 1);
-> +			ret = -EINVAL;
+In every other system. And I do mean _every_ other system, if I had two 
+media and I put them under RAID-5 I'd be required to specify the third 
+drive as some sort failed device (the block device equivalent of 
+/dev/null but that returns error results for all operations instead of 
+successes.) See the reserved keyword "missing" in the mdadm 
+documentation etc.
 
-here
+That is, If I put two 1TiB disks into a RAID-5 I'd expect to get a 2TiB 
+array with no actual redundancy. As in
 
-> +			goto out;
-> +		}
-> +
-> +		set_bit(EXTENT_FLAG_SWAPFILE, &em->flags);
-> +
-> +		start = extent_map_end(em);
-> +		free_extent_map(em);
-> +	}
-> +
-> +out:
-> +	if (ret) {
+mdadm --create md0 --level=r5 --raid-devices=3 /dev/sda missing /dev/sdc
 
-should be fixed by:
+the resulting array would be the same effective size as a stripe of the 
+two drives, but when the third was added later it would just slot in as 
+a replacement for the missing device and the airity-3 thing would 
+"reestablish" it's redundancy. (this is actually what mdadm does 
+internally with a normal build, it blesses the first N-1 drives into an 
+array with a missing member, and adds the Nth drive as a "spare" and 
+then the spare is immediately adopted as a replacement for the "missing" 
+drive.)
 
-		if (!IS_ERR_OR_NULL(em))
-			free_extent_map(em);
+The parity computation on a single value is just nutty waste of time 
+though. "Backing it out" when the array is degraded is double-nuts.
 
-> +		__clear_swapfile_extents(inode);
-> +		atomic_dec(&BTRFS_I(inode)->root->nr_swapfiles);
-> +	}
-> +	unlock_extent_cached(io_tree, 0, isize - 1, &cached_state, GFP_NOFS);
-> +	return ret;
-> +}
+Maybe everybody just decided it was too crazy to consider for the CPU 
+time penalty...?
+
+So yea, semantics... apparently...

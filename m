@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32-i2.italiaonline.it ([212.48.25.202]:56327 "EHLO
+Received: from smtp-32-i2.italiaonline.it ([212.48.25.202]:46401 "EHLO
 	smtp-32.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1031159AbaLLSAZ (ORCPT
+	with ESMTP id S934913AbaLLTZQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 13:00:25 -0500
-Message-ID: <548B2D34.9060509@inwind.it>
-Date: Fri, 12 Dec 2014 19:00:20 +0100
+	Fri, 12 Dec 2014 14:25:16 -0500
+Message-ID: <548B4117.1040007@inwind.it>
+Date: Fri, 12 Dec 2014 20:25:11 +0100
 From: Goffredo Baroncelli <kreijack@inwind.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, 1i5t5.duncan@cox.net,
-        rwhite@pobox.com, lists@colorremedies.com
-CC: linux-btrfs@vger.kernel.org
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+CC: 1i5t5.duncan@cox.net, rwhite@pobox.com, lists@colorremedies.com,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2 1/3] Btrfs: get more accurate output in df command.
 References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
 In-Reply-To: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
@@ -24,41 +24,37 @@ On 12/11/2014 09:31 AM, Dongsheng Yang wrote:
 > the total size of disks and then dividing it by a factor. But in some usecase,
 > the result is not good to user.
 
-I am checking it; to me it seems a good improvement. However
-I noticed that df now doesn't seem to report anymore the space consumed
-by the meta-data chunk; eg:
 
-# I have two disks of 5GB each
-$ sudo ~/mkfs.btrfs -f -m raid1 -d raid1 /dev/vgtest/disk /dev/vgtest/disk1
+I Yang; during my test I discovered an error:
 
-$ df -h /mnt/btrfs1/
-Filesystem               Size  Used Avail Use% Mounted on
-/dev/mapper/vgtest-disk  5.0G  1.1G  4.0G  21% /mnt/btrfs1
+$ sudo lvcreate -L +10G -n disk vgtest
+$ sudo /home/ghigo/mkfs.btrfs -f /dev/vgtest/disk
+Btrfs v3.17
+See http://btrfs.wiki.kernel.org for more information.
 
-$ sudo btrfs fi show
-Label: none  uuid: 884414c6-9374-40af-a5be-3949cdf6ad0b
-	Total devices 2 FS bytes used 640.00KB
-	devid    2 size 5.00GB used 2.01GB path /dev/dm-1
-	devid    1 size 5.00GB used 2.03GB path /dev/dm-0
-
-$ sudo ./btrfs fi df /mnt/btrfs1/
-Data, RAID1: total=1.00GiB, used=512.00KiB
-Data, single: total=8.00MiB, used=0.00B
-System, RAID1: total=8.00MiB, used=16.00KiB
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+fs created label (null) on /dev/vgtest/disk
+	nodesize 16384 leafsize 16384 sectorsize 4096 size 10.00GiB
+$ sudo mount /dev/vgtest/disk /mnt/btrfs1/
+$ df /mnt/btrfs1/
+Filesystem              1K-blocks    Used Available Use% Mounted on
+/dev/mapper/vgtest-disk   9428992 1069312   8359680  12% /mnt/btrfs1
+$ sudo ~/btrfs fi df /mnt/btrfs1/
+Data, single: total=8.00MiB, used=256.00KiB
+System, DUP: total=8.00MiB, used=16.00KiB
 System, single: total=4.00MiB, used=0.00B
-Metadata, RAID1: total=1.00GiB, used=112.00KiB
+Metadata, DUP: total=1.00GiB, used=112.00KiB
 Metadata, single: total=8.00MiB, used=0.00B
 GlobalReserve, single: total=16.00MiB, used=0.00B
 
-In this case the filesystem is empty (it was a new filesystem !). However a
-1G metadata chunk was already allocated. This is the reasons why the free 
-space is only 4Gb.
+What seems me strange is the 9428992KiB of total disk space as reported 
+by df. About 600MiB are missing !
 
-On my system the ratio metadata/data is 234MB/8.82GB = ~3%, so ignoring the
-metadata chunk from the free space may not be a big problem. 
+Without your patch, I got:
 
-
-
+$ df /mnt/btrfs1/
+Filesystem              1K-blocks  Used Available Use% Mounted on
+/dev/mapper/vgtest-disk  10485760 16896   8359680   1% /mnt/btrfs1
 
 
 > Example:
@@ -287,4 +283,3 @@ metadata chunk from the free space may not be a big problem.
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
 Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
-

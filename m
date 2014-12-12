@@ -1,74 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54881 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54888 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031081AbaLLRgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:36:10 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 5F436ABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:09 +0000 (UTC)
+	id S1031098AbaLLRgN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:36:13 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 92279ABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:12 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 7/9] btrfs: use GFP_NOFS in __alloc_extent_buffer directly
-Date: Fri, 12 Dec 2014 18:36:08 +0100
-Message-Id: <23d79d81b13431756fee428acde49c9b770da132.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 8/9] btrfs: unify extent buffer allocation api
+Date: Fri, 12 Dec 2014 18:36:12 +0100
+Message-Id: <7a6bb239c3adcab2801f8c52f3ecd0720116e2e9.1418404754.git.dsterba@suse.cz>
 In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
 References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Same mask from all callers.
+Make the extent buffer allocation interface consistent.  Cloned eb will
+set a valid fs_info.  For dummy eb, we can drop the length parameter and
+set it from fs_info.
+
+The built-in sanity checks may pass a NULL fs_info that's queried for
+nodesize, but we know it's 4096.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/extent_io.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.c                     |  5 ++---
+ fs/btrfs/extent_io.c                 | 23 ++++++++++++++++++-----
+ fs/btrfs/extent_io.h                 |  3 ++-
+ fs/btrfs/tests/extent-buffer-tests.c |  2 +-
+ fs/btrfs/tests/inode-tests.c         |  4 ++--
+ fs/btrfs/tests/qgroup-tests.c        | 21 ++++++++++-----------
+ 6 files changed, 35 insertions(+), 23 deletions(-)
 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 50eca331812c..276d4187cbf0 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1363,8 +1363,7 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 
+ 	if (tm->op == MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
+ 		BUG_ON(tm->slot != 0);
+-		eb_rewin = alloc_dummy_extent_buffer(eb->start,
+-						fs_info->tree_root->nodesize);
++		eb_rewin = alloc_dummy_extent_buffer(fs_info, eb->start);
+ 		if (!eb_rewin) {
+ 			btrfs_tree_read_unlock_blocking(eb);
+ 			free_extent_buffer(eb);
+@@ -1444,7 +1443,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 	} else if (old_root) {
+ 		btrfs_tree_read_unlock(eb_root);
+ 		free_extent_buffer(eb_root);
+-		eb = alloc_dummy_extent_buffer(logical, root->nodesize);
++		eb = alloc_dummy_extent_buffer(root->fs_info, logical);
+ 	} else {
+ 		btrfs_set_lock_blocking_rw(eb_root, BTRFS_READ_LOCK);
+ 		eb = btrfs_clone_extent_buffer(eb_root);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ebabd237153..619592d86c2a 100644
+index 619592d86c2a..dc424e32545a 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4598,11 +4598,11 @@ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
- 
- static struct extent_buffer *
- __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
--		      unsigned long len, gfp_t mask)
-+		      unsigned long len)
- {
- 	struct extent_buffer *eb = NULL;
- 
--	eb = kmem_cache_zalloc(extent_buffer_cache, mask);
-+	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS);
- 	if (eb == NULL)
- 		return NULL;
- 	eb->start = start;
 @@ -4643,7 +4643,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
  	struct extent_buffer *new;
  	unsigned long num_pages = num_extent_pages(src->start, src->len);
  
--	new = __alloc_extent_buffer(NULL, src->start, src->len, GFP_NOFS);
-+	new = __alloc_extent_buffer(NULL, src->start, src->len);
+-	new = __alloc_extent_buffer(NULL, src->start, src->len);
++	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
  	if (new == NULL)
  		return NULL;
  
-@@ -4672,7 +4672,7 @@ struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
- 	unsigned long num_pages = num_extent_pages(0, len);
+@@ -4666,13 +4666,26 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 	return new;
+ }
+ 
+-struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
++struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
++						u64 start)
+ {
+ 	struct extent_buffer *eb;
+-	unsigned long num_pages = num_extent_pages(0, len);
++	unsigned long len;
++	unsigned long num_pages;
  	unsigned long i;
  
--	eb = __alloc_extent_buffer(NULL, start, len, GFP_NOFS);
-+	eb = __alloc_extent_buffer(NULL, start, len);
- 	if (!eb)
- 		return NULL;
- 
-@@ -4824,7 +4824,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 	if (eb)
- 		return eb;
- 
--	eb = __alloc_extent_buffer(fs_info, start, len, GFP_NOFS);
+-	eb = __alloc_extent_buffer(NULL, start, len);
++	if (!fs_info) {
++		/*
++		 * Called only from tests that don't always have a fs_info
++		 * available, but we know that nodesize is 4096
++		 */
++		len = 4096;
++	} else {
++		len = fs_info->tree_root->nodesize;
++	}
++	num_pages = num_extent_pages(0, len);
++
 +	eb = __alloc_extent_buffer(fs_info, start, len);
  	if (!eb)
  		return NULL;
  
+@@ -4770,7 +4783,7 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	eb = find_extent_buffer(fs_info, start);
+ 	if (eb)
+ 		return eb;
+-	eb = alloc_dummy_extent_buffer(start, len);
++	eb = alloc_dummy_extent_buffer(fs_info, start);
+ 	if (!eb)
+ 		return NULL;
+ 	eb->fs_info = fs_info;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index ece9ce87edff..e6553e3d35c8 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -263,7 +263,8 @@ void set_page_extent_mapped(struct page *page);
+ 
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					  u64 start, unsigned long len);
+-struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len);
++struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
++		u64 start);
+ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
+ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					 u64 start);
+diff --git a/fs/btrfs/tests/extent-buffer-tests.c b/fs/btrfs/tests/extent-buffer-tests.c
+index cc286ce97d1e..f51963a8f929 100644
+--- a/fs/btrfs/tests/extent-buffer-tests.c
++++ b/fs/btrfs/tests/extent-buffer-tests.c
+@@ -53,7 +53,7 @@ static int test_btrfs_split_item(void)
+ 		return -ENOMEM;
+ 	}
+ 
+-	path->nodes[0] = eb = alloc_dummy_extent_buffer(0, 4096);
++	path->nodes[0] = eb = alloc_dummy_extent_buffer(NULL, 4096);
+ 	if (!eb) {
+ 		test_msg("Could not allocate dummy buffer\n");
+ 		ret = -ENOMEM;
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 3ae0f5b8bb80..a116b55ce788 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -255,7 +255,7 @@ static noinline int test_btrfs_get_extent(void)
+ 		goto out;
+ 	}
+ 
+-	root->node = alloc_dummy_extent_buffer(0, 4096);
++	root->node = alloc_dummy_extent_buffer(NULL, 4096);
+ 	if (!root->node) {
+ 		test_msg("Couldn't allocate dummy buffer\n");
+ 		goto out;
+@@ -843,7 +843,7 @@ static int test_hole_first(void)
+ 		goto out;
+ 	}
+ 
+-	root->node = alloc_dummy_extent_buffer(0, 4096);
++	root->node = alloc_dummy_extent_buffer(NULL, 4096);
+ 	if (!root->node) {
+ 		test_msg("Couldn't allocate dummy buffer\n");
+ 		goto out;
+diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
+index ec3dcb202357..7336b1c09cd8 100644
+--- a/fs/btrfs/tests/qgroup-tests.c
++++ b/fs/btrfs/tests/qgroup-tests.c
+@@ -404,6 +404,16 @@ int btrfs_test_qgroups(void)
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
++	/* We are using this root as our extent root */
++	root->fs_info->extent_root = root;
++
++	/*
++	 * Some of the paths we test assume we have a filled out fs_info, so we
++	 * just need to add the root in there so we don't panic.
++	 */
++	root->fs_info->tree_root = root;
++	root->fs_info->quota_root = root;
++	root->fs_info->quota_enabled = 1;
+ 
+ 	/*
+ 	 * Can't use bytenr 0, some things freak out
+@@ -448,17 +458,6 @@ int btrfs_test_qgroups(void)
+ 		goto out;
+ 	}
+ 
+-	/* We are using this root as our extent root */
+-	root->fs_info->extent_root = root;
+-
+-	/*
+-	 * Some of the paths we test assume we have a filled out fs_info, so we
+-	 * just need to addt he root in there so we don't panic.
+-	 */
+-	root->fs_info->tree_root = root;
+-	root->fs_info->quota_root = root;
+-	root->fs_info->quota_enabled = 1;
+-
+ 	test_msg("Running qgroup tests\n");
+ 	ret = test_no_shared_qgroup(root);
+ 	if (ret)
 -- 
 2.1.3
 

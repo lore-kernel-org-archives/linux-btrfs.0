@@ -1,62 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54880 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54881 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031039AbaLLRgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:36:07 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2C88AABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:06 +0000 (UTC)
+	id S1031081AbaLLRgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:36:10 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 5F436ABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:36:09 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 6/9] btrfs: sink blocksize parameter to tree_block_processed
-Date: Fri, 12 Dec 2014 18:36:05 +0100
-Message-Id: <7476dfdaade5b373db4679555706546bd5b4bd6c.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 7/9] btrfs: use GFP_NOFS in __alloc_extent_buffer directly
+Date: Fri, 12 Dec 2014 18:36:08 +0100
+Message-Id: <23d79d81b13431756fee428acde49c9b770da132.1418404754.git.dsterba@suse.cz>
 In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
 References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Same mask from all callers.
+
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/relocation.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index cb5d4462ebb4..d83085381bcc 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2855,9 +2855,10 @@ static void update_processed_blocks(struct reloc_control *rc,
- 	}
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ebabd237153..619592d86c2a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4598,11 +4598,11 @@ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
  
--static int tree_block_processed(u64 bytenr, u32 blocksize,
--				struct reloc_control *rc)
-+static int tree_block_processed(u64 bytenr, struct reloc_control *rc)
+ static struct extent_buffer *
+ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+-		      unsigned long len, gfp_t mask)
++		      unsigned long len)
  {
-+	u32 blocksize = rc->extent_root->nodesize;
-+
- 	if (test_range_bit(&rc->processed_blocks, bytenr,
- 			   bytenr + blocksize - 1, EXTENT_DIRTY, 1, NULL))
- 		return 1;
-@@ -3352,7 +3353,7 @@ static int __add_tree_block(struct reloc_control *rc,
- 	bool skinny = btrfs_fs_incompat(rc->extent_root->fs_info,
- 					SKINNY_METADATA);
+ 	struct extent_buffer *eb = NULL;
  
--	if (tree_block_processed(bytenr, blocksize, rc))
-+	if (tree_block_processed(bytenr, rc))
- 		return 0;
+-	eb = kmem_cache_zalloc(extent_buffer_cache, mask);
++	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS);
+ 	if (eb == NULL)
+ 		return NULL;
+ 	eb->start = start;
+@@ -4643,7 +4643,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 	struct extent_buffer *new;
+ 	unsigned long num_pages = num_extent_pages(src->start, src->len);
  
- 	if (tree_search(blocks, bytenr))
-@@ -3610,7 +3611,7 @@ static int find_data_references(struct reloc_control *rc,
- 		if (added)
- 			goto next;
+-	new = __alloc_extent_buffer(NULL, src->start, src->len, GFP_NOFS);
++	new = __alloc_extent_buffer(NULL, src->start, src->len);
+ 	if (new == NULL)
+ 		return NULL;
  
--		if (!tree_block_processed(leaf->start, leaf->len, rc)) {
-+		if (!tree_block_processed(leaf->start, rc)) {
- 			block = kmalloc(sizeof(*block), GFP_NOFS);
- 			if (!block) {
- 				err = -ENOMEM;
+@@ -4672,7 +4672,7 @@ struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
+ 	unsigned long num_pages = num_extent_pages(0, len);
+ 	unsigned long i;
+ 
+-	eb = __alloc_extent_buffer(NULL, start, len, GFP_NOFS);
++	eb = __alloc_extent_buffer(NULL, start, len);
+ 	if (!eb)
+ 		return NULL;
+ 
+@@ -4824,7 +4824,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (eb)
+ 		return eb;
+ 
+-	eb = __alloc_extent_buffer(fs_info, start, len, GFP_NOFS);
++	eb = __alloc_extent_buffer(fs_info, start, len);
+ 	if (!eb)
+ 		return NULL;
+ 
 -- 
 2.1.3
 

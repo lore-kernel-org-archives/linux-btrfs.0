@@ -1,31 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50888 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030330AbaLLNwN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 08:52:13 -0500
-Date: Fri, 12 Dec 2014 14:52:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 3.18-rc1
-Message-ID: <20141212135211.GQ27601@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:58656 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759859AbaLLPiL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 10:38:11 -0500
+Received: by mail-ig0-f173.google.com with SMTP id r2so1643301igi.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:38:10 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Date: Fri, 12 Dec 2014 09:38:10 -0600
+Message-ID: <CAAe=sHV8-8BK9xj2n0mhh_URoAYUNWg-y8QVFv-Efh7StRtYag@mail.gmail.com>
+Subject: btrfs fi df output "unknown"
+From: "sys.syphus" <syssyphus@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+why would there be "unknown" data below? i have 2 btrfs arrays and
+both have this going on. neither are active. any idea why and how to
+make it go away?
 
-the 3.18-rc1 has been tagged. There are changes that were pending for too long
-(the 'fi usage' and 'dev usage' commands) and I've pulled a lot of changes to
-fsck/recovery tools. There are missing pieces of documentation that will be
-added in the next round, the point is to release the code first and make it
-available for testing.
 
-The ETA for release is ~1 week if everything goes fine. I'm accepting namely
-bugfixes, tests and documentation updates, possibly small and unintrusive
-patches if reasonable or reviewed.  New rcs will be tagged when enough changes
-accumulate.
-
-I can upload the pre-release tarballs if desired.
+Btrfs v3.12
+btrfs fi df /media/btrfs
+Data, RAID1: total=314.00GiB, used=313.55GiB
+System, RAID1: total=32.00MiB, used=64.00KiB
+Metadata, RAID1: total=1.00GiB, used=422.45MiB
+unknown, single: total=144.00MiB, used=0.00

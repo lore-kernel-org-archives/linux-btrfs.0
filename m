@@ -1,73 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-06v.sys.comcast.net ([96.114.154.165]:44415 "EHLO
-	resqmta-po-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757750AbaLLBbP (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:35676 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751848AbaLLD4x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 20:31:15 -0500
-Message-ID: <548A4560.9010105@pobox.com>
-Date: Thu, 11 Dec 2014 17:31:12 -0800
-From: Robert White <rwhite@pobox.com>
+	Thu, 11 Dec 2014 22:56:53 -0500
+Date: Thu, 11 Dec 2014 22:56:51 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Robert White <rwhite@pobox.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: mkfs.btrfs limits "odd" [and maybe a "failed" phantom device?]
+Message-ID: <20141212035651.GD22023@hungrycats.org>
+References: <5488C6CF.1080608@pobox.com>
 MIME-Version: 1.0
-To: russell@coker.com.au
-CC: "sys.syphus" <syssyphus@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Balance & scrub & defrag
-References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com> <5488F0A8.7070503@pobox.com> <44336672.dmUL7ANCyf@russell.coker.com.au>
-In-Reply-To: <44336672.dmUL7ANCyf@russell.coker.com.au>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="pAwQNkOnpTn9IO2O"
+In-Reply-To: <5488C6CF.1080608@pobox.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2014 05:00 PM, Russell Coker wrote:
-> On Wed, 10 Dec 2014 17:17:28 Robert White wrote:
->> A _monthly_ scrub is maybe worth scheduling if you have a lot of churn
->> in your disk contents.
->
-> I do weekly scrubs.  I recently had 2 disks in a RAID-1 array develop read
-> errors within a month of each other.  The first scrub after replacing sdb
-> revealed an error on sdc!
 
-You need to buy better disks. 8-)
+--pAwQNkOnpTn9IO2O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I use SMART (smartmontools etc) and its tests to keep track of and warn 
-me of such issues. It's way more likely to catch incipient media 
-failures long before scrub would. It's also more likely to correct 
-situations before they become visible to userspace. Its also a way 
-better full-platter scan that involves less real time delay and won't 
-bog down a running system.
+On Wed, Dec 10, 2014 at 02:18:55PM -0800, Robert White wrote:
+> (3) why can I make a raid5 out of two devices? (I understand that we
+> are currently just making mirrors, but the standard requires three
+> devices in the geometry etc. So I would expect a two device RAID5 to
+> be considered degraded with all that entails. It just looks like its
+> asking for trouble to allow this once the support is finalized as
+> suddenly a working RAID5 thats really a mirror would become
+> something that can only be mounted with the degraded flag.)
 
-I reserve scrub for after maintenance and the occasional look-see.
+RAID5 with even parity and two devices should be exactly the same as
+RAID1 (i.e. disk1 ^ disk2 =3D=3D 0, therefore disk1 =3D=3D disk2, the strip=
+ing
+is irrelevant because there is no difference in disk contents so the
+disks are interchangeable), except with different behavior when more
+devices are added (RAID1 will mirror chunks on pairs of disks, RAID5
+should start writing new chunks with N stripes instead of two).
 
-But whatever works for you.
+> (4) Same question for raid6 but with three drives instead of the
+> mandated four.
 
->
-> The problem with running out of metadata space requires a need for an
-> occasional data balance.  If you set it to only balance chunks that are less
-> than 10% used then it doesn't take much time.
+RAID6 with three devices should behave more or less like three-way RAID1,
+except maybe the two parity disks might be different (I forget how the
+function used to calculate the two parity stripes works, and whether
+it can be defined such that F(disk1, disk2, disk3) =3D=3D disk1).
 
-In very recent kernels the empty extent remover will take up most of 
-this burden.
+> (5) If I can make a RAID5 or RAID6 device with one missing element,
+> why can't I make a RAID1 out of one drive, e.g. with one missing
+> element?
 
-A shallow balance is fast, but you are missing most of its potential 
-benefits at that point. I wash my clothes instead of just taking a lint 
-brush to them. Half measures, repeated, lead to more and more fractional 
-results.
+They're only missing if you believe the minimum number of RAID5 disks
+is not two and the minimum number of RAID6 disks is not three.
 
-Every time you sweep a 10% full extent into a another extent far, far 
-away you are perturbing your locality and probably shaving a little off 
-of probable peak performance. It's the equivalent of organizing your 
-sock drawer by just taking all the socks out of the dryer in a lump and 
-cramming them into the back of the drawer. That is you are moving the 
-most-changed items back to pack them against the least-changed ones. The 
-natural lay of the filesystem is to spread out and churn. Repeatedly 
-smashing it down is just going to wrinkle your data.
+> (6) If I make a RAID1 out of three devices are there three copies of
+> every extent or are there always two copies that are semi-randomly
+> spread across three devices? (ibid for more than three).
 
-If you are getting anywhere near running out of metadata extents on any 
-kind of regular basis then you need to reexamine your entire deal. Make 
-sure you are running a recent kernel with the reclaim update. Do a full 
-balance _once_ and then leave it alone. Maybe consider autodefrag if 
-your file load is compatible (not a lot of VMs and RDBMS extents).
+There are always two copies.  RAID1 on 3x1TBdisks gives you 1.5TB
+of mirrored storage.
 
-Of course if this is your pirate warez machine and you are regularly 
-passing torrents through it, then you just need more space and better 
-delete discipline.
+> ---
+>=20
+> It seems to me (very dangerous words in computer science, I know)
+> that we need a "failed" device designator so that a device can be in
+> the geometry (e.g. have a device ID) but not actually exist.
+> Reads/writes to the failed device would always be treated as error
+> returns.
+>=20
+> The failed device would be subject to replacement with "btrfs dev
+> replace", and could be the source of said replacement to drop a
+> problematic device out of an array.
+>=20
+> EXAMPLE:
+> Gust t # mkfs.btrfs -f /dev/loop0 failed -d raid1 -m raid1
+> Btrfs v3.17.1
+> See http://btrfs.wiki.kernel.org for more information.
+>=20
+> Performing full device TRIM (2.00GiB) ...
+> Turning ON incompat feature 'extref': increased hardlink limit per
+> file to 65536
+> Processing explicitly missing device
+> adding device (failed) id 2 (phantom device)
+>=20
+> mount /dev/loop0 /mountpoint
+>=20
+> btrfs replace start 2 /dev/loop1 /mountpoint
+>=20
+> (and so on)
+>=20
+> Being able to "replace" a faulty device with a phantom "failed"
+> device would nicely disambiguate the whole device add/remove versus
+> replace mistake.
 
+It is a little odd that an array of 3 disks with one missing looks
+like this:
+
+Label: none  uuid: dde7fa84-11ed-4281-8d90-3eb0d29b949b
+        Total devices 3 FS bytes used 256.00KiB
+        devid    1 size 4.00GiB used 847.12MiB path /dev/mapper/vgtester-d01
+        devid    2 size 4.00GiB used 827.12MiB path /dev/mapper/vgtester-d02
+        devid    3 size 4.00GiB used 0.00B path /dev/mapper/vgtester-d04
+
+In the above, "vgtest-d02" was a deleted LV and does not exist, but
+you'd never know that from the output of 'btrfs fi show'...
+
+> It would make the degraded status less mysterious.
+
+The 'degraded' status currently protects against some significant data
+corruption risks.  :-O
+
+> A filesystem with an explicitly failed element would also make the
+> future roll-out of full RAID5/6 less confusing.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--pAwQNkOnpTn9IO2O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlSKZ4MACgkQgfmLGlazG5yRdACfRcml1k2mJr+mcsy5TeHBhT+u
+jFEAn3XD1EK+bBUzBfE+cleCBI3hJcKM
+=+Ym2
+-----END PGP SIGNATURE-----
+
+--pAwQNkOnpTn9IO2O--

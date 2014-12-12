@@ -1,115 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33493 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1759112AbaLLAqw (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:41047 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757702AbaLLBAj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 19:46:52 -0500
-Message-ID: <548A3A5A.2070206@cn.fujitsu.com>
-Date: Fri, 12 Dec 2014 08:44:10 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+	Thu, 11 Dec 2014 20:00:39 -0500
+From: Russell Coker <russell@coker.com.au>
+To: Robert White <rwhite@pobox.com>
+Reply-To: russell@coker.com.au
+Cc: "sys.syphus" <syssyphus@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Balance & scrub & defrag
+Date: Fri, 12 Dec 2014 12:00:34 +1100
+Message-ID: <44336672.dmUL7ANCyf@russell.coker.com.au>
+In-Reply-To: <5488F0A8.7070503@pobox.com>
+References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com> <5488F0A8.7070503@pobox.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, <cyril.scetbon@free.fr>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Btrfs: qgroup: free reserved in exceeding quota.
-References: <BA68E495-8B7B-4F0F-A64B-0413B1480B9C@free.fr> <b5f44049f85f372a286a1c7e600d274dc03a2e25.1418124311.git.yangds.fnst@cn.fujitsu.com> <54871850.3020809@fb.com> <5487FFAD.9090601@cn.fujitsu.com> <5489E1A4.30801@fb.com>
-In-Reply-To: <5489E1A4.30801@fb.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/12/2014 02:25 AM, Josef Bacik wrote:
-> On 12/10/2014 03:09 AM, Dongsheng Yang wrote:
->> On 12/09/2014 11:42 PM, Josef Bacik wrote:
->>> On 12/09/2014 06:27 AM, Dongsheng Yang wrote:
->>>> When we exceed quota limit in writing, we will free
->>>> some reserved extent when we need to drop but not free
->>>> account in qgroup. It means, each time we exceed quota
->>>> in writing, there will be some remain space in qg->reserved
->>>> we can not use any more. If things go on like this, the
->>>> all space will be ate up.
->>>>
->>>> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
->>>> ---
->>>>   fs/btrfs/extent-tree.c | 5 ++++-
->>>>   1 file changed, 4 insertions(+), 1 deletion(-)
->>>>
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index a84e00d..014b7f2 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -5262,8 +5262,11 @@ out_fail:
->>>>               to_free = 0;
->>>>       }
->>>>       spin_unlock(&BTRFS_I(inode)->lock);
->>>> -    if (dropped)
->>>> +    if (dropped) {
->>>> +        if (root->fs_info->quota_enabled)
->>>> +            btrfs_qgroup_free(root, dropped * root->nodesize);
->>>
->>> This needs to be num_bytes + dropped * root->nodesize. Thanks,
->>
->> Let me try to explain why it did not free num_bytes here.
->>
->> In out_fail, we did not reserve num_bytes in qgroup successfully, then
->> we do not need
->> to free it in out_fail.
->>
->> The problem this patch attempts to solve is that, when we run into
->> out_fail here,
->> we will drop a outstanding extent. That said, in out_fail here, the
->> extra reserved
->> nodesize for some extents should be freed.
->>
->> Example:
->>      1). BTRFS_I(inode)->reserved_extents: 2,
->> BTRFS_I(inode)->outstanding_extents: 1.
->>            In this case, we go intobtrfs_delalloc_reserve_metadata().
->> outstanding_extents
->>            will be increased at first. then
->> BTRFS_I(inode)->outstanding_extents is 2.
->>            If we want to reserve space and failed. it will goto 
->> out_fail.
->>      2). In out_failed: reserved_extents is 2, outstanding_extents is 2.
->> we will get a dropped of 1
->>           from dropping_outstanding_extent(). And now,
->> reserved_extents:1, outstanding_extents:1.
->>
->> In step 2, we just decrease the reserved_extents without freeing the
->> related nodesize in qgroup
->> at the same time. So it will cause the problem I described in changelog
->> which will eat the space.
->>
->> Therefore, this patch here will free the nodesize related with the
->> dropped extents in step 2.
->> About the num_bytes, as we did not reserve it successfully, no need to
->> free it.
->>
->> With my poor english, there must be something confusing in my
->> description. Please correct me
->> if anything is wrong or not-good-explained.
->>
->
-> So none of this made sense, I went back and read the code just now and 
-> this was the part I was missing
->
-> if (unlikely(ret)) {
->         if (root->fs_info->quota_enabled)
->                 btrfs_qgroup_free(root, num_bytes +
->                                         nr_extents * root->nodesize);
->         goto out_fail;
-> }
->
-> All you needed to say was we already free up what we reserved, we're 
-> just dropping anything we needed to free because of 
-> drop_outstanding_extents ;).  You can add
->
-> Reviewed-by: Josef Bacik <jbacik@fb.com>
+On Wed, 10 Dec 2014 17:17:28 Robert White wrote:
+> A _monthly_ scrub is maybe worth scheduling if you have a lot of churn 
+> in your disk contents.
 
-Thanx Josef. :)
->
-> Thanks,
->
-> Josef
-> .
->
+I do weekly scrubs.  I recently had 2 disks in a RAID-1 array develop read 
+errors within a month of each other.  The first scrub after replacing sdb 
+revealed an error on sdc!
+
+> Defragging should be done after significant content additions/changes 
+> (like replacing a lot of files via package management) and limited to 
+> the directories most likely changed.
+
+I have never run defrag.  Currently all my BTRFS filesystems that have any 
+performance requirements are on SSD and I don't think that defragmenting a SSD 
+does much good.
+
+> Balancing is almost never necessary and can be anti-helpful if a 
+> experiences random updates in batches (because the nicely packed file 
+> may end up far, far away from the active data extent where its COW 
+> events are taking place.
+
+The problem with running out of metadata space requires a need for an 
+occasional data balance.  If you set it to only balance chunks that are less 
+than 10% used then it doesn't take much time.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

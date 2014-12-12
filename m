@@ -1,147 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58020 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:51714 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966556AbaLLMgF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 07:36:05 -0500
-Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCa5t7014202
+	id S967780AbaLLMgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 07:36:07 -0500
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCa7eU018532
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:36:05 -0500
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:36:07 -0500
 From: Karel Zak <kzak@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Karel Zak <kzak@redhat.com>
-Subject: [PATCH 04/10] btrfs-progs: use ./configure to generate version.h
-Date: Fri, 12 Dec 2014 13:35:18 +0100
-Message-Id: <1418387724-20188-5-git-send-email-kzak@redhat.com>
+Subject: [PATCH 05/10] btrfs-progs: check for build programs in ./configure
+Date: Fri, 12 Dec 2014 13:35:19 +0100
+Message-Id: <1418387724-20188-6-git-send-email-kzak@redhat.com>
 In-Reply-To: <1418387724-20188-1-git-send-email-kzak@redhat.com>
 References: <1418387724-20188-1-git-send-email-kzak@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The original homemade solution is unnecessary, autotools provides better
-infrastructure to generate files.
-
 Signed-off-by: Karel Zak <kzak@redhat.com>
 ---
- Makefile.in  |  4 ----
- configure.ac |  9 +++++++++
- version.h.in | 11 +++++++++++
- version.sh   | 30 +++---------------------------
- 4 files changed, 23 insertions(+), 31 deletions(-)
- create mode 100644 version.h.in
+ Makefile.in  | 12 ++++++------
+ configure.ac |  2 ++
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/Makefile.in b/Makefile.in
-index 0dd83ea..dad1685 100644
+index dad1685..17eea58 100644
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -154,10 +154,6 @@ test:
- #
- static: $(progs_static)
+@@ -1,9 +1,9 @@
+ # Export all variables to sub-makes by default
+ export
  
--version.h:
--	@echo "    [SH]     $@"
--	$(Q)bash version.sh
--
- $(libs_shared): $(libbtrfs_objects) $(lib_links) send.h
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) $(libbtrfs_objects) $(LDFLAGS) $(lib_LIBS) \
+-CC = gcc
+-LN = ln
+-AR = ar
++CC = @CC@
++LN_S = @LN_S@
++AR = @AR@
+ AM_CFLAGS = -include config.h -Wall \
+ 	    -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES \
+ 	    -fno-strict-aliasing -fPIC
+@@ -25,7 +25,7 @@ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       extent_io.h ioctl.h ctree.h btrfsck.h version.h
+ TESTS = fsck-tests.sh convert-tests.sh
+ 
+-INSTALL = install
++INSTALL = @INSTALL@
+ prefix ?= /usr/local
+ bindir = $(prefix)/bin
+ lib_LIBS = -luuid -lblkid -lm -lz -llzo2 -L.
+@@ -165,8 +165,8 @@ $(libs_static): $(libbtrfs_objects)
+ 
+ $(lib_links):
+ 	@echo "    [LN]     $@"
+-	$(Q)$(LN) -sf libbtrfs.so.0.1 libbtrfs.so.0
+-	$(Q)$(LN) -sf libbtrfs.so.0.1 libbtrfs.so
++	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so.0
++	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so
+ 
+ # keep intermediate files from the below implicit rules around
+ .PRECIOUS: $(addsuffix .o,$(progs))
 diff --git a/configure.ac b/configure.ac
-index 7a6c264..937d50f 100644
+index 937d50f..662d9ff 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -3,6 +3,10 @@ AC_INIT([btrfs-progs],
- 	[linux-btrfs@vger.kernel.org],,
- 	[http://btrfs.wiki.kernel.org])
+@@ -27,6 +27,8 @@ AC_C_BIGENDIAN
+ AC_SYS_LARGEFILE
  
-+dnl library version
-+LIBBTRFS_MAJOR=0
-+LIBBTRFS_MINOR=1
-+LIBBTRFS_PATCHLEVEL=1
+ AC_PROG_INSTALL
++AC_PROG_LN_S
++AC_PATH_PROG([AR], [ar])
  
- AC_PREREQ([2.60])
- 
-@@ -74,11 +78,16 @@ AC_SUBST([LZO2_LIBS_STATIC])
- AC_SUBST([LZO2_CFLAGS])
- 
- 
-+dnl library stuff
-+AC_SUBST([LIBBTRFS_MAJOR])
-+AC_SUBST([LIBBTRFS_MINOR])
-+AC_SUBST([LIBBTRFS_PATCHLEVEL])
- 
- AC_CONFIG_HEADERS([config.h])
- 
- AC_CONFIG_FILES([
- Makefile
-+version.h
- ])
- 
- AC_OUTPUT
-diff --git a/version.h.in b/version.h.in
-new file mode 100644
-index 0000000..012d265
---- /dev/null
-+++ b/version.h.in
-@@ -0,0 +1,11 @@
-+#ifndef __LIBBTRFS_VERSION_H__
-+#define __LIBBTRFS_VERSION_H__
-+
-+#define BTRFS_LIB_MAJOR		@LIBBTRFS_MAJOR@
-+#define BTRFS_LIB_MINOR		@LIBBTRFS_MINOR@
-+#define BTRFS_LIB_PATCHLEVEL	@LIBBTRFS_PATCHLEVEL@
-+
-+#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \
-+                            BTRFS_LIB_MINOR * 100 + \
-+                            BTRFS_LIB_PATCHLEVEL )
-+#endif
-diff --git a/version.sh b/version.sh
-index 456853c..42b47c4 100755
---- a/version.sh
-+++ b/version.sh
-@@ -9,9 +9,6 @@
- v="v3.17.3"
- 
- opt=$1
--lib_major=0
--lib_minor=1
--lib_patchlevel=1
- 
- which git &> /dev/null
- if [ $? == 0 -a -d .git ]; then
-@@ -32,30 +29,9 @@ fi
- if [ "$opt" = "--configure" ]; then
- 	# Omit the trailing newline, so that m4_esyscmd can use the result directly.
- 	echo "$v" | tr -d '\n'
--	exit 0
-+else
-+	echo "$v"
- fi
- 
--echo "/* NOTE: this file is autogenerated by version.sh, do not edit */" > .build-version.h
--echo "#ifndef __BUILD_VERSION" >> .build-version.h
--echo >> .build-version.h
--echo "#define __BUILD_VERSION" >> .build-version.h
--echo >> .build-version.h
--echo "#define BTRFS_LIB_MAJOR $lib_major" >> .build-version.h
--echo "#define BTRFS_LIB_MINOR $lib_minor" >> .build-version.h
--echo "#define BTRFS_LIB_PATCHLEVEL $lib_patchlevel" >> .build-version.h
--echo >> .build-version.h
--echo "#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \\" >> .build-version.h
--echo "                            BTRFS_LIB_MINOR * 100 + \\" >> .build-version.h
--echo "                            BTRFS_LIB_PATCHLEVEL )" >> .build-version.h
--echo >> .build-version.h
--echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
--echo "#endif" >> .build-version.h
-+exit 0
- 
--diff -q version.h .build-version.h >& /dev/null
--
--if [ $? == 0 ]; then
--    rm .build-version.h
--    exit 0
--fi
--
--mv .build-version.h version.h
+ AC_CHECK_FUNCS([openat], [],
+ 	[AC_MSG_ERROR([cannot find openat() function])])
 -- 
 1.9.3
 

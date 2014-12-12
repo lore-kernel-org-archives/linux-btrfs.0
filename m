@@ -1,49 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:41047 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757702AbaLLBAj (ORCPT
+Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:42413 "EHLO
+	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757750AbaLLBKS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Dec 2014 20:00:39 -0500
-From: Russell Coker <russell@coker.com.au>
-To: Robert White <rwhite@pobox.com>
-Reply-To: russell@coker.com.au
-Cc: "sys.syphus" <syssyphus@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Balance & scrub & defrag
-Date: Fri, 12 Dec 2014 12:00:34 +1100
-Message-ID: <44336672.dmUL7ANCyf@russell.coker.com.au>
-In-Reply-To: <5488F0A8.7070503@pobox.com>
-References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com> <5488F0A8.7070503@pobox.com>
+	Thu, 11 Dec 2014 20:10:18 -0500
+Message-ID: <548A4077.3060704@pobox.com>
+Date: Thu, 11 Dec 2014 17:10:15 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Patrik Lundquist <patrik.lundquist@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: ENOSPC after conversion [Was: Fixing Btrfs Filesystem Full Problems
+ typo?]
+References: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>	<54896F65.20708@pobox.com> <CAA7pwKNTS770TZ9ENxMMQA9-50tfrr2aRb5BWJRFheVy9NOWtQ@mail.gmail.com>
+In-Reply-To: <CAA7pwKNTS770TZ9ENxMMQA9-50tfrr2aRb5BWJRFheVy9NOWtQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 10 Dec 2014 17:17:28 Robert White wrote:
-> A _monthly_ scrub is maybe worth scheduling if you have a lot of churn 
-> in your disk contents.
+TL;DR version
 
-I do weekly scrubs.  I recently had 2 disks in a RAID-1 array develop read 
-errors within a month of each other.  The first scrub after replacing sdb 
-revealed an error on sdc!
+On 12/11/2014 03:01 PM, Patrik Lundquist wrote:
+> Of course the filesystem is in a problematic state after the
+> conversion, even if it's not a bug. ~1.5TB of free space and yet out
+> of space and it can't be fixed with a balance. It might not be wrong
+> per se but it's very problematic from a user perspective.
 
-> Defragging should be done after significant content additions/changes 
-> (like replacing a lot of files via package management) and limited to 
-> the directories most likely changed.
+The file system is not in a problematic state, you just don't understand 
+the state its in. It has ~1.5TB of space for files. Storing files is why 
+we have filesystems after all.
 
-I have never run defrag.  Currently all my BTRFS filesystems that have any 
-performance requirements are on SSD and I don't think that defragmenting a SSD 
-does much good.
+> $ df
+> Filesystem      1K-blocks       Used  Available Use% Mounted on
+> /dev/sdc1      2930265088 1402223656 1526389096  48% /mnt
 
-> Balancing is almost never necessary and can be anti-helpful if a 
-> experiences random updates in batches (because the nicely packed file 
-> may end up far, far away from the active data extent where its COW 
-> events are taking place.
+There it is, ~1.5TB of available space.
 
-The problem with running out of metadata space requires a need for an 
-occasional data balance.  If you set it to only balance chunks that are less 
-than 10% used then it doesn't take much time.
+That space is available for files. So no problem.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+So it's not "out of space" at all. Go ahead and make a couple thousand 
+files of various sizes, you'll see. Lots of space.
+
+Since it's not broken there is nothing for balance to "fix". The fact 
+that balance tells you it doesn't have enough space to juggle filesystem 
+bits HAS NOTHING TO DO with the file system's ability to store files.
+
+You might as well be complaining that your hard disk is unfixable 
+because you don't have enough space to add another partition.
+
+Apples and Polar Bears. The "out of space" is only a problem in your 
+head. At the same level of abstraction the EXT4 file system partition 
+was "out of space" before you started the conversion because all of the 
+partition was filled up with EXT4 structures.
+
+No matter how many times you try to turn this into a "bug" it's just 
+_not_ a bug. Rewording it doesn't change the facts. The _file_ _system_ 
+isn't "out of space" it's just filled its partition with BTRFS extents 
+enough to cause some extents to be skipped during balance.
+
+Nothing to see here, move along. 8-)
 

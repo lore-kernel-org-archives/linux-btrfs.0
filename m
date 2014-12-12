@@ -1,57 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45412 "EHLO plane.gmane.org"
+Received: from mail.virtall.com ([178.63.195.102]:47122 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754104AbaLLJSU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 04:18:20 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XzMMT-0001YC-Rj
-	for linux-btrfs@vger.kernel.org; Fri, 12 Dec 2014 10:18:09 +0100
-Received: from coffee.modeemi.fi ([130.230.72.140])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 10:18:09 +0100
-Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 10:18:09 +0100
-To: linux-btrfs@vger.kernel.org
-From: Erkki Seppala <flux-btrfs@inside.org>
+	id S934631AbaLLJtH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 04:49:07 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP id 1E42D3EA347
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 10:49:03 +0100 (CET)
+Received: from mailext.virtall.com ([127.0.0.1])
+	by localhost (web1.virtall.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id qXztiThjU9oR for <linux-btrfs@vger.kernel.org>;
+	Fri, 12 Dec 2014 10:49:02 +0100 (CET)
+Received: from admin.virtall.com (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 10:49:02 +0100 (CET)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 12 Dec 2014 10:49:02 +0100
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Balance & scrub & defrag
-Date: Fri, 12 Dec 2014 11:17:58 +0200
-Message-ID: <m49egs5b515.fsf@coffee.modeemi.fi>
-References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com>
-	<5488F0A8.7070503@pobox.com>
-	<44336672.dmUL7ANCyf@russell.coker.com.au>
-	<548A4560.9010105@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Message-ID: <d4031d3b7b5f8f75469d8e822a394caa@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White <rwhite@pobox.com> writes:
+> I use SMART (smartmontools etc) and its tests to keep track of and warn
+> me of such issues. It's way more likely to catch incipient media
+> failures long before scrub would. It's also more likely to correct
+> situations before they become visible to userspace. Its also a way
+> better full-platter scan that involves less real time delay and won't
+> bog down a running system.
 
-> You need to buy better disks. 8-)
+Don't put too much trust in SMART - sectors can rot unexpectedly even if 
+SMART is thinking everything is fine with the drive.
 
-Where can one buy these better disks with reasonable prices?-) Disks are
-best thought of as consumables.
+I had exactly this issue recently:
 
-> I use SMART (smartmontools etc) and its tests to keep track of and
-> warn me of such issues. It's way more likely to catch incipient media
-> failures long before scrub would.
+1) one of the drives in the server failed and was replaced
 
-That may be sort of true, but I think even SMART is helped by the fact
-that the media is read through from the beginning to the end*, so it can
-detect even the errors that don't bubble through the IO layer. And BTRFS
-can indeed note errors that the media doesn't - two checksums is better
-than one checksum, assuming they aren't exactly the same algorithm ;).
+2) "btrfs device delete missing" (which basically moves data from the 
+remaining drive to the new one) was failing with IO error
 
-Do you alternatively execute SMART self tests?
+3) according to SMART, the drive with IO error was fine (no reallocated 
+sectors, no warnings etc.)
 
-* scrub doesn't do this, it reads only through used data
+
+So, scrub to the rescue - it printed "broken" files, after removing them 
+manually, it was possible to finish "btrfs device delete missing".
+
+Probably it makes sense to run scrub occasionally (just like mdraid is 
+doing on most distributions).
+
 
 -- 
-  _____________________________________________________________________
-     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
-    / /_ / // // /\ \/ /                                            \  /
-   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
+Tomasz Chmielewski
+http://www.sslrack.com
 

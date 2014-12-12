@@ -1,362 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34249 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:58020 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S967773AbaLLMgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 07:36:04 -0500
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCa3IP022450
+	id S966556AbaLLMgF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 07:36:05 -0500
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCa5t7014202
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:36:04 -0500
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:36:05 -0500
 From: Karel Zak <kzak@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Karel Zak <kzak@redhat.com>
-Subject: [PATCH 03/10] btrfs-progs: use standard PACKAGE_* macros
-Date: Fri, 12 Dec 2014 13:35:17 +0100
-Message-Id: <1418387724-20188-4-git-send-email-kzak@redhat.com>
+Subject: [PATCH 04/10] btrfs-progs: use ./configure to generate version.h
+Date: Fri, 12 Dec 2014 13:35:18 +0100
+Message-Id: <1418387724-20188-5-git-send-email-kzak@redhat.com>
 In-Reply-To: <1418387724-20188-1-git-send-email-kzak@redhat.com>
 References: <1418387724-20188-1-git-send-email-kzak@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- use standard PACKAGE_{NAME,VERSION,STRING,URL,...} autoconf macros
-  rather than homemade BTRFS_BUILD_VERSION
-
-- don't #include version.h, now the file is necessary for library API only
-
-Note that "btrfs version" returns "btrfs-progs <version>" instead of
-the original confusing "btrfs <version>".
+The original homemade solution is unnecessary, autotools provides better
+infrastructure to generate files.
 
 Signed-off-by: Karel Zak <kzak@redhat.com>
 ---
- btrfs-calc-size.c     | 1 -
- btrfs-corrupt-block.c | 1 -
- btrfs-debug-tree.c    | 5 ++---
- btrfs-find-root.c     | 1 -
- btrfs-image.c         | 1 -
- btrfs-map-logical.c   | 1 -
- btrfs-select-super.c  | 3 +--
- btrfs-show-super.c    | 3 +--
- btrfs-zero-log.c      | 3 +--
- btrfs.c               | 3 +--
- btrfstune.c           | 1 -
- chunk-recover.c       | 1 -
- cmds-check.c          | 3 +--
- cmds-filesystem.c     | 5 ++---
- cmds-restore.c        | 1 -
- library-test.c        | 1 -
- mkfs.c                | 9 ++++-----
- 17 files changed, 13 insertions(+), 30 deletions(-)
+ Makefile.in  |  4 ----
+ configure.ac |  9 +++++++++
+ version.h.in | 11 +++++++++++
+ version.sh   | 30 +++---------------------------
+ 4 files changed, 23 insertions(+), 31 deletions(-)
+ create mode 100644 version.h.in
 
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-index 3ec8230..2be0d64 100644
---- a/btrfs-calc-size.c
-+++ b/btrfs-calc-size.c
-@@ -32,7 +32,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "volumes.h"
- #include "utils.h"
+diff --git a/Makefile.in b/Makefile.in
+index 0dd83ea..dad1685 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -154,10 +154,6 @@ test:
+ #
+ static: $(progs_static)
  
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index e993680..ba7358d 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -30,7 +30,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "utils.h"
+-version.h:
+-	@echo "    [SH]     $@"
+-	$(Q)bash version.sh
+-
+ $(libs_shared): $(libbtrfs_objects) $(lib_links) send.h
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) $(libbtrfs_objects) $(LDFLAGS) $(lib_LIBS) \
+diff --git a/configure.ac b/configure.ac
+index 7a6c264..937d50f 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -3,6 +3,10 @@ AC_INIT([btrfs-progs],
+ 	[linux-btrfs@vger.kernel.org],,
+ 	[http://btrfs.wiki.kernel.org])
  
- #define FIELD_BUF_LEN 80
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index e46500d..4468297 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -26,7 +26,6 @@
- #include "disk-io.h"
- #include "print-tree.h"
- #include "transaction.h"
--#include "version.h"
- #include "utils.h"
++dnl library version
++LIBBTRFS_MAJOR=0
++LIBBTRFS_MINOR=1
++LIBBTRFS_PATCHLEVEL=1
  
- static int print_usage(void)
-@@ -43,7 +42,7 @@ static int print_usage(void)
-                     " only\n");
- 	fprintf(stderr,
- 		"\t-t tree_id : print only the tree with the given id\n");
--	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "%s\n", PACKAGE_STRING);
- 	exit(1);
- }
+ AC_PREREQ([2.60])
  
-@@ -406,7 +405,7 @@ no_node:
- 	uuidbuf[BTRFS_UUID_UNPARSED_SIZE - 1] = '\0';
- 	uuid_unparse(info->super_copy->fsid, uuidbuf);
- 	printf("uuid %s\n", uuidbuf);
--	printf("%s\n", BTRFS_BUILD_VERSION);
-+	printf("%s\n", PACKAGE_STRING);
- close_root:
- 	return close_ctree(root);
- }
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index b24dddf..571c86a 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -30,7 +30,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "volumes.h"
- #include "utils.h"
- #include "crc32c.h"
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 1257966..74681ba 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -33,7 +33,6 @@
- #include "disk-io.h"
- #include "transaction.h"
- #include "utils.h"
--#include "version.h"
- #include "volumes.h"
- #include "extent_io.h"
+@@ -74,11 +78,16 @@ AC_SUBST([LZO2_LIBS_STATIC])
+ AC_SUBST([LZO2_CFLAGS])
  
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index c34484f..fc4a29b 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -30,7 +30,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "utils.h"
  
- /* we write the mirror info to stdout unless they are dumping the data
-diff --git a/btrfs-select-super.c b/btrfs-select-super.c
-index 54ac436..492d38d 100644
---- a/btrfs-select-super.c
-+++ b/btrfs-select-super.c
-@@ -29,13 +29,12 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "utils.h"
++dnl library stuff
++AC_SUBST([LIBBTRFS_MAJOR])
++AC_SUBST([LIBBTRFS_MINOR])
++AC_SUBST([LIBBTRFS_PATCHLEVEL])
  
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: btrfs-select-super -s number dev\n");
--	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "%s\n", PACKAGE_STRING);
- 	exit(1);
- }
+ AC_CONFIG_HEADERS([config.h])
  
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index 9702eb0..15b9e36 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -33,7 +33,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "utils.h"
- #include "crc32c.h"
+ AC_CONFIG_FILES([
+ Makefile
++version.h
+ ])
  
-@@ -51,7 +50,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t-a : print information of all superblocks\n");
- 	fprintf(stderr, "\t-i <super_mirror> : specify which mirror to print out\n");
- 	fprintf(stderr, "\t-F : attempt to dump superblocks with bad magic\n");
--	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "%s\n", PACKAGE_STRING);
- }
+ AC_OUTPUT
+diff --git a/version.h.in b/version.h.in
+new file mode 100644
+index 0000000..012d265
+--- /dev/null
++++ b/version.h.in
+@@ -0,0 +1,11 @@
++#ifndef __LIBBTRFS_VERSION_H__
++#define __LIBBTRFS_VERSION_H__
++
++#define BTRFS_LIB_MAJOR		@LIBBTRFS_MAJOR@
++#define BTRFS_LIB_MINOR		@LIBBTRFS_MINOR@
++#define BTRFS_LIB_PATCHLEVEL	@LIBBTRFS_PATCHLEVEL@
++
++#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \
++                            BTRFS_LIB_MINOR * 100 + \
++                            BTRFS_LIB_PATCHLEVEL )
++#endif
+diff --git a/version.sh b/version.sh
+index 456853c..42b47c4 100755
+--- a/version.sh
++++ b/version.sh
+@@ -9,9 +9,6 @@
+ v="v3.17.3"
  
- int main(int argc, char **argv)
-diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
-index 411fae3..0859fe2 100644
---- a/btrfs-zero-log.c
-+++ b/btrfs-zero-log.c
-@@ -29,14 +29,13 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "utils.h"
+ opt=$1
+-lib_major=0
+-lib_minor=1
+-lib_patchlevel=1
  
- static void print_usage(void) __attribute__((noreturn));
- static void print_usage(void)
- {
- 	fprintf(stderr, "usage: btrfs-zero-log dev\n");
--	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "%s\n", PACKAGE_STRING);
- 	exit(1);
- }
+ which git &> /dev/null
+ if [ $? == 0 -a -d .git ]; then
+@@ -32,30 +29,9 @@ fi
+ if [ "$opt" = "--configure" ]; then
+ 	# Omit the trailing newline, so that m4_esyscmd can use the result directly.
+ 	echo "$v" | tr -d '\n'
+-	exit 0
++else
++	echo "$v"
+ fi
  
-diff --git a/btrfs.c b/btrfs.c
-index 2451885..f0fa848 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -20,7 +20,6 @@
+-echo "/* NOTE: this file is autogenerated by version.sh, do not edit */" > .build-version.h
+-echo "#ifndef __BUILD_VERSION" >> .build-version.h
+-echo >> .build-version.h
+-echo "#define __BUILD_VERSION" >> .build-version.h
+-echo >> .build-version.h
+-echo "#define BTRFS_LIB_MAJOR $lib_major" >> .build-version.h
+-echo "#define BTRFS_LIB_MINOR $lib_minor" >> .build-version.h
+-echo "#define BTRFS_LIB_PATCHLEVEL $lib_patchlevel" >> .build-version.h
+-echo >> .build-version.h
+-echo "#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \\" >> .build-version.h
+-echo "                            BTRFS_LIB_MINOR * 100 + \\" >> .build-version.h
+-echo "                            BTRFS_LIB_PATCHLEVEL )" >> .build-version.h
+-echo >> .build-version.h
+-echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
+-echo "#endif" >> .build-version.h
++exit 0
  
- #include "crc32c.h"
- #include "commands.h"
--#include "version.h"
- #include "utils.h"
- 
- static const char * const btrfs_cmd_group_usage[] = {
-@@ -168,7 +167,7 @@ static const char * const cmd_version_usage[] = {
- 
- static int cmd_version(int argc, char **argv)
- {
--	printf("%s\n", BTRFS_BUILD_VERSION);
-+	printf("%s\n", PACKAGE_STRING);
- 	return 0;
- }
- 
-diff --git a/btrfstune.c b/btrfstune.c
-index 899a721..65513f6 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -30,7 +30,6 @@
- #include "disk-io.h"
- #include "transaction.h"
- #include "utils.h"
--#include "version.h"
- 
- static char *device;
- 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 688a7d7..c76b1b2 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -37,7 +37,6 @@
- #include "transaction.h"
- #include "crc32c.h"
- #include "utils.h"
--#include "version.h"
- #include "btrfsck.h"
- #include "commands.h"
- 
-diff --git a/cmds-check.c b/cmds-check.c
-index 0894cf0..87cb6e2 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -33,7 +33,6 @@
- #include "disk-io.h"
- #include "print-tree.h"
- #include "transaction.h"
--#include "version.h"
- #include "utils.h"
- #include "commands.h"
- #include "free-space-cache.h"
-@@ -7986,7 +7985,7 @@ out:
- 	printf("file data blocks allocated: %llu\n referenced %llu\n",
- 		(unsigned long long)data_bytes_allocated,
- 		(unsigned long long)data_bytes_referenced);
--	printf("%s\n", BTRFS_BUILD_VERSION);
-+	printf("%s\n", PACKAGE_STRING);
- 
- 	free_root_recs_tree(&root_cache);
- close_out:
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 253f105..85a3897 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -34,7 +34,6 @@
- #include "ioctl.h"
- #include "utils.h"
- #include "volumes.h"
--#include "version.h"
- #include "commands.h"
- #include "list_sort.h"
- #include "disk-io.h"
-@@ -989,7 +988,7 @@ devs_only:
- 		free_fs_devices(fs_devices);
- 	}
- out:
--	printf("%s\n", BTRFS_BUILD_VERSION);
-+	printf("%s\n", PACKAGE_STRING);
- 	free_seen_fsid();
- 	return ret;
- }
-@@ -1245,7 +1244,7 @@ static int cmd_defrag(int argc, char **argv)
- 		}
- 	}
- 	if (defrag_global_verbose)
--		printf("%s\n", BTRFS_BUILD_VERSION);
-+		printf("%s\n", PACKAGE_STRING);
- 	if (defrag_global_errors)
- 		fprintf(stderr, "total %d failures\n", defrag_global_errors);
- 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index a5c99e8..27df3d8 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -40,7 +40,6 @@
- #include "print-tree.h"
- #include "transaction.h"
- #include "list.h"
--#include "version.h"
- #include "volumes.h"
- #include "utils.h"
- #include "commands.h"
-diff --git a/library-test.c b/library-test.c
-index 142188a..d23f4a7 100644
---- a/library-test.c
-+++ b/library-test.c
-@@ -17,7 +17,6 @@
-  */
- 
- #include "kerncompat.h"
--#include "version.h"
- #include "send-stream.h"
- 
- /*
-diff --git a/mkfs.c b/mkfs.c
-index d5d03fc..dc87273 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -41,7 +41,6 @@
- #include "volumes.h"
- #include "transaction.h"
- #include "utils.h"
--#include "version.h"
- 
- static u64 index_cnt = 2;
- 
-@@ -289,14 +288,14 @@ static void print_usage(void)
- 	fprintf(stderr, "\t -O --features comma separated list of filesystem features\n");
- 	fprintf(stderr, "\t -U --uuid specify the filesystem UUID\n");
- 	fprintf(stderr, "\t -V --version print the mkfs.btrfs version and exit\n");
--	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "%s\n", PACKAGE_STRING);
- 	exit(1);
- }
- 
- static void print_version(void) __attribute__((noreturn));
- static void print_version(void)
- {
--	fprintf(stderr, "mkfs.btrfs, part of %s\n", BTRFS_BUILD_VERSION);
-+	fprintf(stderr, "mkfs.btrfs, part of %s\n", PACKAGE_STRING);
- 	exit(0);
- }
- 
-@@ -1488,8 +1487,8 @@ int main(int ac, char **av)
- 	}
- 
- 	/* if we are here that means all devs are good to btrfsify */
--	printf("%s\n", BTRFS_BUILD_VERSION);
--	printf("See http://btrfs.wiki.kernel.org for more information.\n\n");
-+	printf("%s\n", PACKAGE_STRING);
-+	printf("See %s for more information.\n\n", PACKAGE_URL);
- 
- 	dev_cnt--;
- 
+-diff -q version.h .build-version.h >& /dev/null
+-
+-if [ $? == 0 ]; then
+-    rm .build-version.h
+-    exit 0
+-fi
+-
+-mv .build-version.h version.h
 -- 
 1.9.3
 

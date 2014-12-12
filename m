@@ -1,63 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33412 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:52310 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754139AbaLVMr6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 07:47:58 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y32Oq-0000dL-Hk
-	for linux-btrfs@vger.kernel.org; Mon, 22 Dec 2014 13:47:48 +0100
-Received: from ip4da2a5ae.direct-adsl.nl ([77.162.165.174])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 13:47:48 +0100
-Received: from koen by ip4da2a5ae.direct-adsl.nl with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 13:47:48 +0100
+	id S966556AbaLLMfs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 07:35:48 -0500
+Received: from int-mx13.intmail.prod.int.phx2.redhat.com (int-mx13.intmail.prod.int.phx2.redhat.com [10.5.11.26])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCZlMh018278
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:35:47 -0500
+Received: from x2.net.home (ovpn-113-55.phx2.redhat.com [10.3.113.55])
+	by int-mx13.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCZk1k005917
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:35:47 -0500
+From: Karel Zak <kzak@redhat.com>
 To: linux-btrfs@vger.kernel.org
-From: Koen Kooi <koen@dominion.thruhere.net>
-Subject: Re: btrfs-prog: improve build-system by autoconf
-Date: Mon, 22 Dec 2014 13:47:38 +0100
-Message-ID: <m793ta$dsj$1@ger.gmane.org>
-References: <1418387724-20188-1-git-send-email-kzak@redhat.com> <20141217140726.GY27601@twin.jikos.cz> <20141218133111.GG19904@x2.net.home>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <20141218133111.GG19904@x2.net.home>
+Subject: btrfs-prog: improve build-system by autoconf
+Date: Fri, 12 Dec 2014 13:35:14 +0100
+Message-Id: <1418387724-20188-1-git-send-email-kzak@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+This is first step to make btrfs-progs build system more conventional
+for userspace users and developers. All is implemented by small incremental
+patches to keep things review-able.
 
-Karel Zak schreef op 18-12-14 14:31:
-> On Wed, Dec 17, 2014 at 03:07:26PM +0100, David Sterba wrote:
->> On Fri, Dec 12, 2014 at 01:35:14PM +0100, Karel Zak wrote:
->>> This is first step to make btrfs-progs build system more
->>> conventional for userspace users and developers. All is implemented
->>> by small incremental patches to keep things review-able.
->> 
->> Thanks. I went through the patches and haven't found major problems.
->> The changes are affecting build system and this will need a longer
->> period before all distros have a chance to adapt to that, so I'm
->> postponing it to 3.19.
-> 
-> Cool, I'll try to prepare next set of patches with automake.
-> 
-> BTW, I have good experience with build-system changes -- downstream 
-> distributions (maintainers) are usually pretty flexible :-)
+The Makefile targets and rules are no changed, things like V=1 (verbose), C=1
+(sparse) static builds, etc. still work as expected. All the changes are mostly
+about $LIBS, $CFLAGS and proper libraries (uuid, blkid, lzo2, ..) detection.
 
-Especially when switching from homegrown makefiles to autofoo!
+Note that there is also strange unused btrfs_convert_libs, btrfs_image_libs and
+btrfs_fragments_libs variables with things like "-lgd -lpng -ljpeg -lfreetype".
+I guess it's some legacy, right? I didn't touch these variables as I have no
+clue about sense of this stuff.
 
-regards,
 
-Koen
+[PATCH 01/10] btrfs-progs: add ./configure script
+[PATCH 02/10] btrfs-progs: use config.h
+[PATCH 03/10] btrfs-progs: use standard PACKAGE_* macros
+[PATCH 04/10] btrfs-progs: use ./configure to generate version.h
+[PATCH 05/10] btrfs-progs: check for build programs in ./configure
+[PATCH 06/10] btrfs-progs: use paths and $*_LIBS from ./configure
+[PATCH 07/10] btrfs-progs: cleanup compilation flags usage
+[PATCH 08/10] btrfs-progs: clean generated files, make version.h
+[PATCH 09/10] btrfs-progs: add --disable-backtrace
+[PATCH 10/10] btrfs-progs: add --disable-documentation
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.5 (Darwin)
-Comment: GPGTools - http://gpgtools.org
+The next possible step is automake, but I'd like merge ./configure stuff first.
 
-iD8DBQFUmBLqMkyGM64RGpERApjpAJ9Agir/DDJiFYUR8qPDcNmx7pnLnQCgoKsD
-1HuCreKom9ZYzZevIbqWz08=
-=g1VP
------END PGP SIGNATURE-----
+	Karel
+
 

@@ -1,104 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54872 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54876 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031007AbaLLRfx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:35:53 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 98E21ABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:52 +0000 (UTC)
+	id S1031039AbaLLRf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:35:57 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 38AFAABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:56 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/9] btrfs: remove blocksize from reada_extent
-Date: Fri, 12 Dec 2014 18:35:52 +0100
-Message-Id: <b6ae40ec76dc7589d9f77bd281515be3ad58c533.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 3/9] btrfs: sink blocksize parameter to reada_tree_block_flagged
+Date: Fri, 12 Dec 2014 18:35:55 +0100
+Message-Id: <c0dcaa4d7b66b788b315c418bda3cca75c5938dc.1418404754.git.dsterba@suse.cz>
 In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
 References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace with global nodesize instead.
-
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/reada.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+ fs/btrfs/disk-io.c | 4 ++--
+ fs/btrfs/disk-io.h | 2 +-
+ fs/btrfs/reada.c   | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index be9d7c612489..8123b03b1f9d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1086,7 +1086,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
+ 	free_extent_buffer(buf);
+ }
+ 
+-int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
+ 			 int mirror_num, struct extent_buffer **eb)
+ {
+ 	struct extent_buffer *buf = NULL;
+@@ -1094,7 +1094,7 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+ 	struct extent_io_tree *io_tree = &BTRFS_I(btree_inode)->io_tree;
+ 	int ret;
+ 
+-	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
++	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
+ 	if (!buf)
+ 		return 0;
+ 
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 9cf4359ace05..4d4ecdd9f4a2 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -47,7 +47,7 @@ struct btrfs_fs_devices;
+ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 				      u64 parent_transid);
+ void readahead_tree_block(struct btrfs_root *root, u64 bytenr);
+-int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
+ 			 int mirror_num, struct extent_buffer **eb);
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 						   u64 bytenr, u32 blocksize);
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index b63ae20618fb..5c3fde6571bb 100644
+index 5c3fde6571bb..4d3d4e5287c5 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -66,7 +66,6 @@ struct reada_extctl {
- struct reada_extent {
- 	u64			logical;
- 	struct btrfs_key	top;
--	u32			blocksize;
- 	int			err;
- 	struct list_head	extctl;
- 	int 			refcnt;
-@@ -349,7 +348,6 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 
- 	blocksize = root->nodesize;
- 	re->logical = logical;
--	re->blocksize = blocksize;
- 	re->top = *top;
- 	INIT_LIST_HEAD(&re->extctl);
- 	spin_lock_init(&re->lock);
-@@ -660,7 +658,6 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	int mirror_num = 0;
- 	struct extent_buffer *eb = NULL;
- 	u64 logical;
--	u32 blocksize;
- 	int ret;
- 	int i;
- 	int need_kick = 0;
-@@ -694,7 +691,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 		spin_unlock(&fs_info->reada_lock);
- 		return 0;
- 	}
--	dev->reada_next = re->logical + re->blocksize;
-+	dev->reada_next = re->logical + fs_info->tree_root->nodesize;
- 	re->refcnt++;
- 
- 	spin_unlock(&fs_info->reada_lock);
-@@ -709,7 +706,6 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 	logical = re->logical;
--	blocksize = re->blocksize;
- 
- 	spin_lock(&re->lock);
- 	if (re->scheduled_for == NULL) {
-@@ -724,8 +720,8 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 		return 0;
+@@ -721,7 +721,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
  
  	atomic_inc(&dev->reada_in_flight);
--	ret = reada_tree_block_flagged(fs_info->extent_root, logical, blocksize,
--			 mirror_num, &eb);
-+	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
-+			fs_info->tree_root->nodesize, mirror_num, &eb);
+ 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
+-			fs_info->tree_root->nodesize, mirror_num, &eb);
++			mirror_num, &eb);
  	if (ret)
  		__readahead_hook(fs_info->extent_root, NULL, logical, ret);
  	else if (eb)
-@@ -851,7 +847,7 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 				break;
- 			printk(KERN_DEBUG
- 				"  re: logical %llu size %u empty %d for %lld",
--				re->logical, re->blocksize,
-+				re->logical, fs_info->tree_root->nodesize,
- 				list_empty(&re->extctl), re->scheduled_for ?
- 				re->scheduled_for->devid : -1);
- 
-@@ -886,7 +882,8 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 		}
- 		printk(KERN_DEBUG
- 			"re: logical %llu size %u list empty %d for %lld",
--			re->logical, re->blocksize, list_empty(&re->extctl),
-+			re->logical, fs_info->tree_root->nodesize,
-+			list_empty(&re->extctl),
- 			re->scheduled_for ? re->scheduled_for->devid : -1);
- 		for (i = 0; i < re->nzones; ++i) {
- 			printk(KERN_CONT " zone %llu-%llu devs",
 -- 
 2.1.3
 

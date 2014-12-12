@@ -1,27 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47541 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50888 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934677AbaLLKLP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 05:11:15 -0500
-Date: Fri, 12 Dec 2014 11:11:13 +0100
+	id S1030330AbaLLNwN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 08:52:13 -0500
+Date: Fri, 12 Dec 2014 14:52:11 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Announcements for btrfs-progs?
-Message-ID: <20141212101113.GK27601@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 3.18-rc1
+Message-ID: <20141212135211.GQ27601@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <pan.2014.12.11.12.37.56@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <pan.2014.12.11.12.37.56@googlemail.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 11, 2014 at 12:37:56PM +0000, Holger Hoffstätte wrote:
-> I was wondering if you could please send out announcements for btrfs-progs
-> when you tag a release or -rc? There doesn't seem to be a good mechanism
-> to track releases and IMHO the more people are notified, the more
-> testing we can get, not to mention faster propagation into distros.
+Hi,
 
-Will do. Sorry for inconvenience.
+the 3.18-rc1 has been tagged. There are changes that were pending for too long
+(the 'fi usage' and 'dev usage' commands) and I've pulled a lot of changes to
+fsck/recovery tools. There are missing pieces of documentation that will be
+added in the next round, the point is to release the code first and make it
+available for testing.
+
+The ETA for release is ~1 week if everything goes fine. I'm accepting namely
+bugfixes, tests and documentation updates, possibly small and unintrusive
+patches if reasonable or reviewed.  New rcs will be tagged when enough changes
+accumulate.
+
+I can upload the pre-release tarballs if desired.

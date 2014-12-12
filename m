@@ -1,56 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54870 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54871 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932622AbaLLRfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 12:35:47 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2BD5BABC6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:46 +0000 (UTC)
+	id S1031007AbaLLRfu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 12:35:50 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 82B70ABC6
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 17:35:49 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PULL] [PATCH 0/9] Cleanup, remove superfluous blocksize parameter, part 2
-Date: Fri, 12 Dec 2014 18:35:45 +0100
-Message-Id: <cover.1418404754.git.dsterba@suse.cz>
+Subject: [PATCH 1/9] btrfs: sink blocksize parameter to readahead_tree_block
+Date: Fri, 12 Dec 2014 18:35:49 +0100
+Message-Id: <d3e46fea1b1e8ba97a8c9dd8f54b97d086cd25aa.1418404754.git.dsterba@suse.cz>
+In-Reply-To: <cover.1418404754.git.dsterba@suse.cz>
+References: <cover.1418404754.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here's the rest of the parameter removal, no warnings anymore and passed
-xfstests. There are a few more clenaups that were required to finish the goal.
+All callers pass nodesize.
 
-You can pull from
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ctree.c       | 8 +++-----
+ fs/btrfs/disk-io.c     | 4 ++--
+ fs/btrfs/disk-io.h     | 2 +-
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/relocation.c  | 3 +--
+ 5 files changed, 8 insertions(+), 11 deletions(-)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanup/blocksize-diet-part2
-
-Based on current next branch 9627aeee3e203e30679549e4962633698a6bf87f,
-top commit ce3e69847e3ec79a38421bfd3d6f554d5e481231
-
-David Sterba (9):
-  btrfs: sink blocksize parameter to readahead_tree_block
-  btrfs: remove blocksize from reada_extent
-  btrfs: sink blocksize parameter to reada_tree_block_flagged
-  btrfs: sink blocksize parameter to btrfs_init_new_buffer
-  btrfs: sink blocksize parameter to btrfs_find_create_tree_block
-  btrfs: sink blocksize parameter to tree_block_processed
-  btrfs: use GFP_NOFS in __alloc_extent_buffer directly
-  btrfs: unify extent buffer allocation api
-  btrfs: sink parameter len to alloc_extent_buffer
-
- fs/btrfs/ctree.c                     | 13 +++++--------
- fs/btrfs/disk-io.c                   | 17 ++++++++---------
- fs/btrfs/disk-io.h                   |  6 +++---
- fs/btrfs/extent-tree.c               | 13 ++++++-------
- fs/btrfs/extent_io.c                 | 34 ++++++++++++++++++++++++----------
- fs/btrfs/extent_io.h                 |  7 ++++---
- fs/btrfs/reada.c                     | 15 ++++++---------
- fs/btrfs/relocation.c                | 12 ++++++------
- fs/btrfs/tests/extent-buffer-tests.c |  2 +-
- fs/btrfs/tests/inode-tests.c         |  4 ++--
- fs/btrfs/tests/qgroup-tests.c        | 23 +++++++++++------------
- fs/btrfs/tree-log.c                  |  2 +-
- fs/btrfs/volumes.c                   |  9 +++++++--
- 13 files changed, 84 insertions(+), 73 deletions(-)
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 14a72ed14ef7..50eca331812c 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2282,7 +2282,7 @@ static void reada_for_search(struct btrfs_root *root,
+ 		if ((search <= target && target - search <= 65536) ||
+ 		    (search > target && search - target <= 65536)) {
+ 			gen = btrfs_node_ptr_generation(node, nr);
+-			readahead_tree_block(root, search, blocksize);
++			readahead_tree_block(root, search);
+ 			nread += blocksize;
+ 		}
+ 		nscan++;
+@@ -2301,7 +2301,6 @@ static noinline void reada_for_balance(struct btrfs_root *root,
+ 	u64 gen;
+ 	u64 block1 = 0;
+ 	u64 block2 = 0;
+-	int blocksize;
+ 
+ 	parent = path->nodes[level + 1];
+ 	if (!parent)
+@@ -2309,7 +2308,6 @@ static noinline void reada_for_balance(struct btrfs_root *root,
+ 
+ 	nritems = btrfs_header_nritems(parent);
+ 	slot = path->slots[level + 1];
+-	blocksize = root->nodesize;
+ 
+ 	if (slot > 0) {
+ 		block1 = btrfs_node_blockptr(parent, slot - 1);
+@@ -2334,9 +2332,9 @@ static noinline void reada_for_balance(struct btrfs_root *root,
+ 	}
+ 
+ 	if (block1)
+-		readahead_tree_block(root, block1, blocksize);
++		readahead_tree_block(root, block1);
+ 	if (block2)
+-		readahead_tree_block(root, block2, blocksize);
++		readahead_tree_block(root, block2);
+ }
+ 
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 30965120772b..be9d7c612489 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1073,12 +1073,12 @@ static const struct address_space_operations btree_aops = {
+ 	.set_page_dirty = btree_set_page_dirty,
+ };
+ 
+-void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize)
++void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
+ {
+ 	struct extent_buffer *buf = NULL;
+ 	struct inode *btree_inode = root->fs_info->btree_inode;
+ 
+-	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
++	buf = btrfs_find_create_tree_block(root, bytenr, root->nodesize);
+ 	if (!buf)
+ 		return;
+ 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 414651821fb3..9cf4359ace05 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -46,7 +46,7 @@ struct btrfs_fs_devices;
+ 
+ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 				      u64 parent_transid);
+-void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize);
++void readahead_tree_block(struct btrfs_root *root, u64 bytenr);
+ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+ 			 int mirror_num, struct extent_buffer **eb);
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 222d6aea4a8a..c025751c20d7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7485,7 +7485,7 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 				continue;
+ 		}
+ reada:
+-		readahead_tree_block(root, bytenr, blocksize);
++		readahead_tree_block(root, bytenr);
+ 		nread++;
+ 	}
+ 	wc->reada_slot = slot;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 74257d6436ad..cb5d4462ebb4 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2965,8 +2965,7 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 	while (rb_node) {
+ 		block = rb_entry(rb_node, struct tree_block, rb_node);
+ 		if (!block->key_ready)
+-			readahead_tree_block(rc->extent_root, block->bytenr,
+-					block->key.objectid);
++			readahead_tree_block(rc->extent_root, block->bytenr);
+ 		rb_node = rb_next(rb_node);
+ 	}
+ 
 -- 
 2.1.3
 

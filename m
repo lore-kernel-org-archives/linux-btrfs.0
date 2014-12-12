@@ -1,39 +1,241 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52440 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:54025 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1030331AbaLLQUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 11:20:02 -0500
-Message-ID: <548B15AF.1020306@redhat.com>
-Date: Fri, 12 Dec 2014 10:19:59 -0600
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: =?UTF-8?B?SG9sZ2VyIEhvZmZzdMOkdHRl?=
-	<holger.hoffstaette@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Announcements for btrfs-progs?
-References: <pan.2014.12.11.12.37.56@googlemail.com>
-In-Reply-To: <pan.2014.12.11.12.37.56@googlemail.com>
-Content-Type: text/plain; charset=utf-8
+	id S933666AbaLLQjO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 11:39:14 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2BF18AC19
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 16:39:13 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: kill btrfs_inode_*time helpers
+Date: Fri, 12 Dec 2014 17:39:12 +0100
+Message-Id: <1418402352-10032-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/14 6:37 AM, Holger Hoffstätte wrote:
-> 
-> David,
-> 
-> I was wondering if you could please send out announcements for btrfs-progs
-> when you tag a release or -rc? There doesn't seem to be a good mechanism
-> to track releases and IMHO the more people are notified, the more
-> testing we can get, not to mention faster propagation into distros.
+They just opencode taking address of the timespec member.
 
-Not that it matters for non-Fedora users, but FWIW Fedora has release monitoring
-scripts which notify me when a new tarball appears.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ctree.h         | 25 -------------------------
+ fs/btrfs/delayed-inode.c | 28 ++++++++++++----------------
+ fs/btrfs/inode.c         | 28 ++++++++++++----------------
+ fs/btrfs/send.c          |  9 +++------
+ fs/btrfs/tree-log.c      | 12 ++++++------
+ 5 files changed, 33 insertions(+), 69 deletions(-)
 
-So Fedora, at least, gets a prompt update even if there's no formal announcement
-(assuming I'm not behind the curve).  ;)
-
-Still, announcements would be great, esp. if they have a summary of what's contained
-in the update.
-
--Eric
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7e607416755a..937a19e06793 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2464,31 +2464,6 @@ BTRFS_SETGET_STACK_FUNCS(stack_inode_gid, struct btrfs_inode_item, gid, 32);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_mode, struct btrfs_inode_item, mode, 32);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_rdev, struct btrfs_inode_item, rdev, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_flags, struct btrfs_inode_item, flags, 64);
+-
+-static inline struct btrfs_timespec *
+-btrfs_inode_atime(struct btrfs_inode_item *inode_item)
+-{
+-	unsigned long ptr = (unsigned long)inode_item;
+-	ptr += offsetof(struct btrfs_inode_item, atime);
+-	return (struct btrfs_timespec *)ptr;
+-}
+-
+-static inline struct btrfs_timespec *
+-btrfs_inode_mtime(struct btrfs_inode_item *inode_item)
+-{
+-	unsigned long ptr = (unsigned long)inode_item;
+-	ptr += offsetof(struct btrfs_inode_item, mtime);
+-	return (struct btrfs_timespec *)ptr;
+-}
+-
+-static inline struct btrfs_timespec *
+-btrfs_inode_ctime(struct btrfs_inode_item *inode_item)
+-{
+-	unsigned long ptr = (unsigned long)inode_item;
+-	ptr += offsetof(struct btrfs_inode_item, ctime);
+-	return (struct btrfs_timespec *)ptr;
+-}
+-
+ BTRFS_SETGET_FUNCS(timespec_sec, struct btrfs_timespec, sec, 64);
+ BTRFS_SETGET_FUNCS(timespec_nsec, struct btrfs_timespec, nsec, 32);
+ BTRFS_SETGET_STACK_FUNCS(stack_timespec_sec, struct btrfs_timespec, sec, 64);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 054577bddaf2..00f7d08b04c7 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1755,19 +1755,19 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_inode_flags(inode_item, BTRFS_I(inode)->flags);
+ 	btrfs_set_stack_inode_block_group(inode_item, 0);
+ 
+-	btrfs_set_stack_timespec_sec(btrfs_inode_atime(inode_item),
++	btrfs_set_stack_timespec_sec(&inode_item->atime,
+ 				     inode->i_atime.tv_sec);
+-	btrfs_set_stack_timespec_nsec(btrfs_inode_atime(inode_item),
++	btrfs_set_stack_timespec_nsec(&inode_item->atime,
+ 				      inode->i_atime.tv_nsec);
+ 
+-	btrfs_set_stack_timespec_sec(btrfs_inode_mtime(inode_item),
++	btrfs_set_stack_timespec_sec(&inode_item->mtime,
+ 				     inode->i_mtime.tv_sec);
+-	btrfs_set_stack_timespec_nsec(btrfs_inode_mtime(inode_item),
++	btrfs_set_stack_timespec_nsec(&inode_item->mtime,
+ 				      inode->i_mtime.tv_nsec);
+ 
+-	btrfs_set_stack_timespec_sec(btrfs_inode_ctime(inode_item),
++	btrfs_set_stack_timespec_sec(&inode_item->ctime,
+ 				     inode->i_ctime.tv_sec);
+-	btrfs_set_stack_timespec_nsec(btrfs_inode_ctime(inode_item),
++	btrfs_set_stack_timespec_nsec(&inode_item->ctime,
+ 				      inode->i_ctime.tv_nsec);
+ }
+ 
+@@ -1775,7 +1775,6 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ {
+ 	struct btrfs_delayed_node *delayed_node;
+ 	struct btrfs_inode_item *inode_item;
+-	struct btrfs_timespec *tspec;
+ 
+ 	delayed_node = btrfs_get_delayed_node(inode);
+ 	if (!delayed_node)
+@@ -1802,17 +1801,14 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ 	*rdev = btrfs_stack_inode_rdev(inode_item);
+ 	BTRFS_I(inode)->flags = btrfs_stack_inode_flags(inode_item);
+ 
+-	tspec = btrfs_inode_atime(inode_item);
+-	inode->i_atime.tv_sec = btrfs_stack_timespec_sec(tspec);
+-	inode->i_atime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
++	inode->i_atime.tv_sec = btrfs_stack_timespec_sec(&inode_item->atime);
++	inode->i_atime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->atime);
+ 
+-	tspec = btrfs_inode_mtime(inode_item);
+-	inode->i_mtime.tv_sec = btrfs_stack_timespec_sec(tspec);
+-	inode->i_mtime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
++	inode->i_mtime.tv_sec = btrfs_stack_timespec_sec(&inode_item->mtime);
++	inode->i_mtime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->mtime);
+ 
+-	tspec = btrfs_inode_ctime(inode_item);
+-	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(tspec);
+-	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
++	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(&inode_item->ctime);
++	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->ctime);
+ 
+ 	inode->i_generation = BTRFS_I(inode)->generation;
+ 	BTRFS_I(inode)->index_cnt = (u64)-1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e687bb0dc73a..31546ffff6c3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3490,7 +3490,6 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_inode_item *inode_item;
+-	struct btrfs_timespec *tspec;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_key location;
+ 	unsigned long ptr;
+@@ -3527,17 +3526,14 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	i_gid_write(inode, btrfs_inode_gid(leaf, inode_item));
+ 	btrfs_i_size_write(inode, btrfs_inode_size(leaf, inode_item));
+ 
+-	tspec = btrfs_inode_atime(inode_item);
+-	inode->i_atime.tv_sec = btrfs_timespec_sec(leaf, tspec);
+-	inode->i_atime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
++	inode->i_atime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->atime);
++	inode->i_atime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->atime);
+ 
+-	tspec = btrfs_inode_mtime(inode_item);
+-	inode->i_mtime.tv_sec = btrfs_timespec_sec(leaf, tspec);
+-	inode->i_mtime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
++	inode->i_mtime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->mtime);
++	inode->i_mtime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->mtime);
+ 
+-	tspec = btrfs_inode_ctime(inode_item);
+-	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, tspec);
+-	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
++	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->ctime);
++	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->ctime);
+ 
+ 	inode_set_bytes(inode, btrfs_inode_nbytes(leaf, inode_item));
+ 	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
+@@ -3658,19 +3654,19 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
+ 	btrfs_set_token_inode_nlink(leaf, item, inode->i_nlink, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_atime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->atime,
+ 				     inode->i_atime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_atime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->atime,
+ 				      inode->i_atime.tv_nsec, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_mtime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->mtime,
+ 				     inode->i_mtime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_mtime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->mtime,
+ 				      inode->i_mtime.tv_nsec, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_ctime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->ctime,
+ 				     inode->i_ctime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_ctime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->ctime,
+ 				      inode->i_ctime.tv_nsec, &token);
+ 
+ 	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 804432dbc351..fe5857223515 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2471,12 +2471,9 @@ verbose_printk("btrfs: send_utimes %llu\n", ino);
+ 	if (ret < 0)
+ 		goto out;
+ 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+-	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_ATIME, eb,
+-			btrfs_inode_atime(ii));
+-	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_MTIME, eb,
+-			btrfs_inode_mtime(ii));
+-	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_CTIME, eb,
+-			btrfs_inode_ctime(ii));
++	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_ATIME, eb, &ii->atime);
++	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_MTIME, eb, &ii->mtime);
++	TLV_PUT_BTRFS_TIMESPEC(sctx, BTRFS_SEND_A_CTIME, eb, &ii->ctime);
+ 	/* TODO Add otime support when the otime patches get into upstream */
+ 
+ 	ret = send_cmd(sctx);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9a02da16f2be..b8401170342f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3244,19 +3244,19 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
+ 	btrfs_set_token_inode_nlink(leaf, item, inode->i_nlink, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_atime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->atime,
+ 				     inode->i_atime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_atime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->atime,
+ 				      inode->i_atime.tv_nsec, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_mtime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->mtime,
+ 				     inode->i_mtime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_mtime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->mtime,
+ 				      inode->i_mtime.tv_nsec, &token);
+ 
+-	btrfs_set_token_timespec_sec(leaf, btrfs_inode_ctime(item),
++	btrfs_set_token_timespec_sec(leaf, &item->ctime,
+ 				     inode->i_ctime.tv_sec, &token);
+-	btrfs_set_token_timespec_nsec(leaf, btrfs_inode_ctime(item),
++	btrfs_set_token_timespec_nsec(leaf, &item->ctime,
+ 				      inode->i_ctime.tv_nsec, &token);
+ 
+ 	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
+-- 
+1.8.4.5
 

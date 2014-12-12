@@ -1,125 +1,435 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16443 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754981AbaLLVBV (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21946 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754941AbaLLVCB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 16:01:21 -0500
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id sBCKvp5T022862
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 13:01:20 -0800
+	Fri, 12 Dec 2014 16:02:01 -0500
+Received: from pps.filterd (m0004003 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id sBCKxIp7020297
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 13:02:00 -0800
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1r84s4rtru-1
+	by mx0b-00082601.pphosted.com with ESMTP id 1r84hcrw36-1
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 13:01:20 -0800
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 13:02:00 -0800
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: separate out the extent root update
-Date: Fri, 12 Dec 2014 16:01:17 -0500
-Message-ID: <1418418077-1223-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH] Btrfs: track dirty block groups on their own list
+Date: Fri, 12 Dec 2014 16:01:56 -0500
+Message-ID: <1418418116-1412-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Depending on where the extent root shows up in the dirty list we could end up
-recowing the extent root a few times during commit.  This is inefficient, so
-instead only track the other COW only roots and update them all at once, and
-then do the extent root/block group update loop by itself to try and reduce the
-amount of churn we do at commit time.  Thanks,
+Currently any time we try to update the block groups on disk we will walk _all_
+block groups and check for the ->dirty flag to see if it is set.  This function
+can get called several times during a commit.  So if you have several terabytes
+of data you will be a very sad panda as we will loop through _all_ of the block
+groups several times, which makes the commit take a while which slows down the
+rest of the file system operations.
+
+This patch introduces a dirty list for the block groups that we get added to
+when we dirty the block group for the first time.  Then we simply update any
+block groups that have been dirtied since the last time we called
+btrfs_write_dirty_block_groups.  This allows us to clean up how we write the
+free space cache out so it is much cleaner.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/disk-io.c     |  1 -
- fs/btrfs/transaction.c | 34 +++++++++++++++++++---------------
- 2 files changed, 19 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h            |   5 +-
+ fs/btrfs/extent-tree.c      | 167 ++++++++++++++------------------------------
+ fs/btrfs/free-space-cache.c |   8 ++-
+ fs/btrfs/transaction.c      |  13 ++--
+ fs/btrfs/transaction.h      |   2 +
+ 5 files changed, 71 insertions(+), 124 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2409718..b69402a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2713,7 +2713,6 @@ retry_root_backup:
- 		ret = PTR_ERR(extent_root);
- 		goto recovery_tree_root;
- 	}
--	set_bit(BTRFS_ROOT_TRACK_DIRTY, &extent_root->state);
- 	fs_info->extent_root = extent_root;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 334a76e..ee8b8b8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1237,7 +1237,6 @@ enum btrfs_disk_cache_state {
+ 	BTRFS_DC_ERROR		= 1,
+ 	BTRFS_DC_CLEAR		= 2,
+ 	BTRFS_DC_SETUP		= 3,
+-	BTRFS_DC_NEED_WRITE	= 4,
+ };
  
- 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index dcaae36..1b84595 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -933,17 +933,16 @@ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
+ struct btrfs_caching_control {
+@@ -1275,7 +1274,6 @@ struct btrfs_block_group_cache {
+ 	unsigned long full_stripe_len;
+ 
+ 	unsigned int ro:1;
+-	unsigned int dirty:1;
+ 	unsigned int iref:1;
+ 
+ 	int disk_cache_state;
+@@ -1309,6 +1307,9 @@ struct btrfs_block_group_cache {
+ 
+ 	/* For read-only block groups */
+ 	struct list_head ro_list;
++
++	/* For dirty block groups */
++	struct list_head dirty_list;
+ };
+ 
+ /* delayed seq elem */
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 23b704e..4ddc838 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -74,8 +74,9 @@ enum {
+ 	RESERVE_ALLOC_NO_ACCOUNT = 2,
+ };
+ 
+-static int update_block_group(struct btrfs_root *root,
+-			      u64 bytenr, u64 num_bytes, int alloc);
++static int update_block_group(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root, u64 bytenr,
++			      u64 num_bytes, int alloc);
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				u64 bytenr, u64 num_bytes, u64 parent,
+@@ -3315,120 +3316,42 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root)
+ {
+ 	struct btrfs_block_group_cache *cache;
+-	int err = 0;
++	struct btrfs_transaction *cur_trans = trans->transaction;
++	int ret = 0;
+ 	struct btrfs_path *path;
+-	u64 last = 0;
++
++	if (list_empty(&cur_trans->dirty_bgs))
++		return 0;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-again:
+-	while (1) {
+-		cache = btrfs_lookup_first_block_group(root->fs_info, last);
+-		while (cache) {
+-			if (cache->disk_cache_state == BTRFS_DC_CLEAR)
+-				break;
+-			cache = next_block_group(root, cache);
+-		}
+-		if (!cache) {
+-			if (last == 0)
+-				break;
+-			last = 0;
+-			continue;
+-		}
+-		err = cache_save_setup(cache, trans, path);
+-		last = cache->key.objectid + cache->key.offset;
+-		btrfs_put_block_group(cache);
+-	}
+-
+-	while (1) {
+-		if (last == 0) {
+-			err = btrfs_run_delayed_refs(trans, root,
+-						     (unsigned long)-1);
+-			if (err) /* File system offline */
+-				goto out;
+-		}
+-
+-		cache = btrfs_lookup_first_block_group(root->fs_info, last);
+-		while (cache) {
+-			if (cache->disk_cache_state == BTRFS_DC_CLEAR) {
+-				btrfs_put_block_group(cache);
+-				goto again;
+-			}
+-
+-			if (cache->dirty)
+-				break;
+-			cache = next_block_group(root, cache);
+-		}
+-		if (!cache) {
+-			if (last == 0)
+-				break;
+-			last = 0;
+-			continue;
+-		}
+-
+-		if (cache->disk_cache_state == BTRFS_DC_SETUP)
+-			cache->disk_cache_state = BTRFS_DC_NEED_WRITE;
+-		cache->dirty = 0;
+-		last = cache->key.objectid + cache->key.offset;
+-
+-		err = write_one_cache_group(trans, root, path, cache);
+-		btrfs_put_block_group(cache);
+-		if (err) /* File system offline */
+-			goto out;
+-	}
+-
+-	while (1) {
+-		/*
+-		 * I don't think this is needed since we're just marking our
+-		 * preallocated extent as written, but just in case it can't
+-		 * hurt.
+-		 */
+-		if (last == 0) {
+-			err = btrfs_run_delayed_refs(trans, root,
+-						     (unsigned long)-1);
+-			if (err) /* File system offline */
+-				goto out;
+-		}
+-
+-		cache = btrfs_lookup_first_block_group(root->fs_info, last);
+-		while (cache) {
+-			/*
+-			 * Really this shouldn't happen, but it could if we
+-			 * couldn't write the entire preallocated extent and
+-			 * splitting the extent resulted in a new block.
+-			 */
+-			if (cache->dirty) {
+-				btrfs_put_block_group(cache);
+-				goto again;
+-			}
+-			if (cache->disk_cache_state == BTRFS_DC_NEED_WRITE)
+-				break;
+-			cache = next_block_group(root, cache);
+-		}
+-		if (!cache) {
+-			if (last == 0)
+-				break;
+-			last = 0;
+-			continue;
+-		}
+-
+-		err = btrfs_write_out_cache(root, trans, cache, path);
+-
+-		/*
+-		 * If we didn't have an error then the cache state is still
+-		 * NEED_WRITE, so we can set it to WRITTEN.
+-		 */
+-		if (!err && cache->disk_cache_state == BTRFS_DC_NEED_WRITE)
+-			cache->disk_cache_state = BTRFS_DC_WRITTEN;
+-		last = cache->key.objectid + cache->key.offset;
++	/*
++	 * We don't need the lock here since we are protected by the transaction
++	 * commit.  We want to do the cache_save_setup first and then run the
++	 * delayed refs to make sure we have the best chance at doing this all
++	 * in one shot.
++	 */
++	while (!list_empty(&cur_trans->dirty_bgs)) {
++		cache = list_first_entry(&cur_trans->dirty_bgs,
++					 struct btrfs_block_group_cache,
++					 dirty_list);
++		list_del_init(&cache->dirty_list);
++		if (cache->disk_cache_state == BTRFS_DC_CLEAR)
++			cache_save_setup(cache, trans, path);
++		if (!ret)
++			ret = btrfs_run_delayed_refs(trans, root,
++						     (unsigned long) -1);
++		if (!ret && cache->disk_cache_state == BTRFS_DC_SETUP)
++			btrfs_write_out_cache(root, trans, cache, path);
++		if (!ret)
++			ret = write_one_cache_group(trans, root, path, cache);
+ 		btrfs_put_block_group(cache);
+ 	}
+-out:
+ 
+ 	btrfs_free_path(path);
+-	return err;
++	return ret;
  }
  
- /*
-- * this is used to update the root pointer in the tree of tree roots.
-+ * Update the extent_root pointer in the tree of tree roots.
-  *
-- * But, in the case of the extent allocation tree, updating the root
-- * pointer may allocate blocks which may change the root of the extent
-- * allocation tree.
-+ * In the case of the extent allocation tree, updating the root pointer may
-+ * allocate blocks which may change the root of the extent allocation tree.
-  *
-  * So, this loops and repeats and makes sure the cowonly root didn't
-  * change while the root pointer was being updated in the metadata.
-  */
--static int update_cowonly_root(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root)
-+static int update_extent_root(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root)
+ int btrfs_extent_readonly(struct btrfs_root *root, u64 bytenr)
+@@ -5375,8 +5298,9 @@ void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes)
+ 	btrfs_free_reserved_data_space(inode, num_bytes);
+ }
+ 
+-static int update_block_group(struct btrfs_root *root,
+-			      u64 bytenr, u64 num_bytes, int alloc)
++static int update_block_group(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root, u64 bytenr,
++			      u64 num_bytes, int alloc)
  {
- 	int ret;
- 	u64 old_root_bytenr;
-@@ -986,6 +985,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
- 					 struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct list_head *next;
- 	struct extent_buffer *eb;
- 	int ret;
-@@ -1017,26 +1017,30 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+ 	struct btrfs_block_group_cache *cache = NULL;
+ 	struct btrfs_fs_info *info = root->fs_info;
+@@ -5414,6 +5338,14 @@ static int update_block_group(struct btrfs_root *root,
+ 		if (!alloc && cache->cached == BTRFS_CACHE_NO)
+ 			cache_block_group(cache, 1);
+ 
++		spin_lock(&trans->transaction->dirty_bgs_lock);
++		if (list_empty(&cache->dirty_list)) {
++			list_add_tail(&cache->dirty_list,
++				      &trans->transaction->dirty_bgs);
++			btrfs_get_block_group(cache);
++		}
++		spin_unlock(&trans->transaction->dirty_bgs_lock);
++
+ 		byte_in_group = bytenr - cache->key.objectid;
+ 		WARN_ON(byte_in_group > cache->key.offset);
+ 
+@@ -5424,7 +5356,6 @@ static int update_block_group(struct btrfs_root *root,
+ 		    cache->disk_cache_state < BTRFS_DC_CLEAR)
+ 			cache->disk_cache_state = BTRFS_DC_CLEAR;
+ 
+-		cache->dirty = 1;
+ 		old_val = btrfs_block_group_used(&cache->item);
+ 		num_bytes = min(total, cache->key.offset - byte_in_group);
+ 		if (alloc) {
+@@ -6106,7 +6037,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
+ 
+-		ret = update_block_group(root, bytenr, num_bytes, 0);
++		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
+ 		if (ret) {
+ 			btrfs_abort_transaction(trans, extent_root, ret);
+ 			goto out;
+@@ -7066,7 +6997,7 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
  	if (ret)
  		return ret;
  
--	/* run_qgroups might have added some more refs */
+-	ret = update_block_group(root, ins->objectid, ins->offset, 1);
++	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+ 		btrfs_err(fs_info, "update block group failed for %llu %llu",
+ 			ins->objectid, ins->offset);
+@@ -7155,7 +7086,8 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 			return ret;
+ 	}
+ 
+-	ret = update_block_group(root, ins->objectid, root->nodesize, 1);
++	ret = update_block_group(trans, root, ins->objectid, root->nodesize,
++				 1);
+ 	if (ret) { /* -ENOENT, logic error */
+ 		btrfs_err(fs_info, "update block group failed for %llu %llu",
+ 			ins->objectid, ins->offset);
+@@ -9007,6 +8939,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	INIT_LIST_HEAD(&cache->cluster_list);
+ 	INIT_LIST_HEAD(&cache->bg_list);
+ 	INIT_LIST_HEAD(&cache->ro_list);
++	INIT_LIST_HEAD(&cache->dirty_list);
+ 	btrfs_init_free_space_ctl(cache);
+ 
+ 	return cache;
+@@ -9069,9 +9002,8 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 			 * b) Setting 'dirty flag' makes sure that we flush
+ 			 *    the new space cache info onto disk.
+ 			 */
+-			cache->disk_cache_state = BTRFS_DC_CLEAR;
+ 			if (btrfs_test_opt(root, SPACE_CACHE))
+-				cache->dirty = 1;
++				cache->disk_cache_state = BTRFS_DC_CLEAR;
+ 		}
+ 
+ 		read_extent_buffer(leaf, &cache->item,
+@@ -9431,6 +9363,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	if (block_group->cached == BTRFS_CACHE_STARTED)
+ 		wait_block_group_cache_done(block_group);
+ 
++	spin_lock(&trans->transaction->dirty_bgs_lock);
++	if (!list_empty(&block_group->dirty_list)) {
++		list_del_init(&block_group->dirty_list);
++		btrfs_put_block_group(block_group);
++	}
++	spin_unlock(&trans->transaction->dirty_bgs_lock);
++
+ 	btrfs_remove_free_space_cache(block_group);
+ 
+ 	spin_lock(&block_group->space_info->lock);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 3384819..e85de8c 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1210,6 +1210,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+ 	struct inode *inode;
+ 	int ret = 0;
++	enum btrfs_disk_cache_state dcs = BTRFS_DC_WRITTEN;
+ 
+ 	root = root->fs_info->tree_root;
+ 
+@@ -1233,9 +1234,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	ret = __btrfs_write_out_cache(root, inode, ctl, block_group, trans,
+ 				      path, block_group->key.objectid);
+ 	if (ret) {
+-		spin_lock(&block_group->lock);
+-		block_group->disk_cache_state = BTRFS_DC_ERROR;
+-		spin_unlock(&block_group->lock);
++		dcs = BTRFS_DC_ERROR;
+ 		ret = 0;
+ #ifdef DEBUG
+ 		btrfs_err(root->fs_info,
+@@ -1244,6 +1243,9 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ #endif
+ 	}
+ 
++	spin_lock(&block_group->lock);
++	block_group->disk_cache_state = dcs;
++	spin_unlock(&block_group->lock);
+ 	iput(inode);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 1b84595..1856eb1 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -220,6 +220,8 @@ loop:
+ 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+ 	INIT_LIST_HEAD(&cur_trans->pending_chunks);
+ 	INIT_LIST_HEAD(&cur_trans->switch_commits);
++	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
++	spin_lock_init(&cur_trans->dirty_bgs_lock);
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+@@ -955,7 +957,8 @@ static int update_extent_root(struct btrfs_trans_handle *trans,
+ 	while (1) {
+ 		old_root_bytenr = btrfs_root_bytenr(&root->root_item);
+ 		if (old_root_bytenr == root->node->start &&
+-		    old_root_used == btrfs_root_used(&root->root_item))
++		    old_root_used == btrfs_root_used(&root->root_item) &&
++		    list_empty(&trans->transaction->dirty_bgs))
+ 			break;
+ 
+ 		btrfs_set_root_node(&root->root_item, root->node);
+@@ -969,6 +972,9 @@ static int update_extent_root(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_write_dirty_block_groups(trans, root);
+ 		if (ret)
+ 			return ret;
++		ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	return 0;
+@@ -990,10 +996,6 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *eb;
+ 	int ret;
+ 
 -	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
 -	if (ret)
 -		return ret;
 -
- 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
- 		next = fs_info->dirty_cowonly_roots.next;
- 		list_del_init(next);
- 		root = list_entry(next, struct btrfs_root, dirty_list);
+ 	eb = btrfs_lock_root_node(fs_info->tree_root);
+ 	ret = btrfs_cow_block(trans, fs_info->tree_root, eb, NULL,
+ 			      0, &eb);
+@@ -1894,6 +1896,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	switch_commit_roots(cur_trans, root->fs_info);
  
--		if (root != fs_info->extent_root)
--			list_add_tail(&root->dirty_list,
--				      &trans->transaction->switch_commits);
--		ret = update_cowonly_root(trans, root);
-+		list_add_tail(&root->dirty_list,
-+			      &trans->transaction->switch_commits);
-+		btrfs_set_root_node(&root->root_item, root->node);
-+		ret = btrfs_update_root(trans, tree_root, &root->root_key,
-+					&root->root_item);
- 		if (ret)
- 			return ret;
- 	}
+ 	assert_qgroups_uptodate(trans);
++	ASSERT(list_empty(&cur_trans->dirty_bgs));
+ 	update_super_roots(root);
  
-+	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
-+	if (ret)
-+		return ret;
-+
- 	list_add_tail(&fs_info->extent_root->dirty_list,
- 		      &trans->transaction->switch_commits);
-+	ret = update_extent_root(trans, fs_info->extent_root);
-+	if (ret)
-+		return ret;
-+
- 	btrfs_after_dev_replace_commit(fs_info);
- 
- 	return 0;
+ 	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index d8f40e1..2aa345e 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -57,6 +57,8 @@ struct btrfs_transaction {
+ 	struct list_head pending_snapshots;
+ 	struct list_head pending_chunks;
+ 	struct list_head switch_commits;
++	struct list_head dirty_bgs;
++	spinlock_t dirty_bgs_lock;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+ };
 -- 
 1.8.3.1
 

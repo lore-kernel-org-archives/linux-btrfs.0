@@ -1,84 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f174.google.com ([209.85.192.174]:45453 "EHLO
-	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751254AbaLLUPM (ORCPT
+Received: from resqmta-ch2-05v.sys.comcast.net ([69.252.207.37]:46844 "EHLO
+	resqmta-ch2-05v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750737AbaLLVg1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 15:15:12 -0500
-Received: by mail-pd0-f174.google.com with SMTP id fp1so7739086pdb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 12:15:12 -0800 (PST)
-Date: Fri, 12 Dec 2014 12:15:09 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-nfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [RFC PATCH v3 0/7] btrfs: implement swap file support
-Message-ID: <20141212201509.GB20971@mew>
-References: <cover.1418173063.git.osandov@osandov.com>
- <20141212103213.GL27601@twin.jikos.cz>
+	Fri, 12 Dec 2014 16:36:27 -0500
+Message-ID: <548B5FD6.5080306@pobox.com>
+Date: Fri, 12 Dec 2014 13:36:22 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141212103213.GL27601@twin.jikos.cz>
+To: Tomasz Chmielewski <tch@virtall.com>, Josef Bacik <jbacik@fb.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.18.0: kernel BUG at fs/btrfs/relocation.c:242!
+References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com> <542EE83D.8050701@fb.com> <999a300ed462a1e1388aee4d6f03a30e@admin.virtall.com> <438e043f73392614d1453892b7fe225c@admin.virtall.com> <0f30c49c7d208903ef84e31a928e4051@admin.virtall.com>
+In-Reply-To: <0f30c49c7d208903ef84e31a928e4051@admin.virtall.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 12, 2014 at 11:32:13AM +0100, David Sterba wrote:
-> On Tue, Dec 09, 2014 at 05:45:41PM -0800, Omar Sandoval wrote:
-> > After some discussion on the mailing list, I decided that for simplicity and
-> > reliability, it's best to simply disallow COW files and files with shared
-> > extents (like files with extents shared with a snapshot). From a user's
-> > perspective, this means that a snapshotted subvolume cannot be used for a swap
-> > file, but keeping the swap file in a separate subvolume that is never
-> > snapshotted seems entirely reasonable to me.
-> 
-> Well, there are enough special cases how to do things on btrfs and I'd
-> like to avoid introducing another one.
-> 
-> > An alternative suggestion was to
-> > allow swap files to be snapshotted and to do an implied COW on swap file
-> > activation, which I was ready to implement until I realized that we can't permit
-> > snapshotting a subvolume with an active swap file, so this creates a surprising
-> > inconsistency for users (in my opinion).
-> 
-> I still don't see why it's not possible to do the snapshot with an
-> active swapfile.
-> 
-Creating a snapshot of an active swapfile would create shared extents,
-so the next time we have to swap out a page, we'd have to do a COW,
-which we're already trying pretty hard to avoid. We could allow it, but
-it might lead to some unreliable behavior and unhappy emails to the
-mailing list. However, I do see your point about wanting to avoid
-special cases, so I'd like to get some more input from others on this as
-well.
+On 12/12/2014 06:37 AM, Tomasz Chmielewski wrote:
+> FYI, still seeing this with 3.18 (scrub passes fine on this filesystem).
+>
+> # time btrfs balance start /mnt/lxc2
+> Segmentation fault
+>
+> real    322m32.153s
+> user    0m0.000s
+> sys     16m0.930s
 
-> > As with before, this functionality is tenuously tested in a virtual machine with
-> > some artificial workloads, but it "works for me". I'm pretty happy with the
-> > results on my end, so please comment away.
-> 
-> The non-btrfs changes can go independently and do not have to wait until
-> we resolve the swap vs snapshot problem.
-> 
-> I did a simple test and it crashed instantly, lockep complains:
-> 
-> memory: 2G
-> swap file: 1G
-> kernel: 3.17 + v3
-> 
-[snip]
+> (...)
 
-That's my fault for not running with lockdep enabled. The problem here
-is that swap-over-NFS is the only caller of nfs_direct_IO, so
-nfs_direct_IO doesn't observe the normal direct_IO locking conventions
-and neither does swap_writepage. I'll have to shuffle around some code
-on the NFS side to fix that.
+> [20306.981773] BTRFS (device sdd1): parent transid verify failed on
+> 5568935395328 wanted 70315 found 102416
+> [20306.983962] BTRFS (device sdd1): parent transid verify failed on
+> 5568935395328 wanted 70315 found 102416
 
-It looks like the non-btrfs parts of this might get a bit bigger, so
-I'll look into getting that in separately.
+Uh... isn't fixing an invalid transaction id a job for btrfsck? I don't 
+see anything in linux/fs/btrfs/*.c that would fix this sort of semantic 
+error, like ever.
 
-Thanks!
--- 
-Omar
+I think that this is a case of thing_a points to thing_b and thing_b is 
+much newer (transaction 102416) than thing_a thinks it should be 
+(transaction 70315).
+
+In another thread [that was discussing SMART] you talked about replacing 
+a drive and then needing to do some patching-up of the result because of 
+drive failures. Is this the same filesystem where that happened? That 
+kind of work could leave you in this state if thing_a was one of the 
+damaged bits and the system had to go fall back to an earlier version.
+
+So I'd run a btrfsck from the very recent btrfs-tools package. If it 
+tells you to run it again with --repair, then do that.
+
+By my reading balance is simply refusing to touch an extent that doesn't 
+seem to make sense because it can't be sure it wouldn't undermine some 
+active data if it relocated the block.
+

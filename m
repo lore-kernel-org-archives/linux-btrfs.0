@@ -1,129 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38940 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S965106AbaLMFPK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Dec 2014 00:15:10 -0500
-Date: Sat, 13 Dec 2014 00:15:09 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Erkki Seppala <flux-btrfs@inside.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Balance & scrub & defrag
-Message-ID: <20141213051457.GF22023@hungrycats.org>
-References: <CAAe=sHWSR=G0+hJCbLCQfgBB_b9VQxu2Q8JETMuRgz79fcBUbg@mail.gmail.com>
- <5488F0A8.7070503@pobox.com>
- <44336672.dmUL7ANCyf@russell.coker.com.au>
- <548A4560.9010105@pobox.com>
- <m49egs5b515.fsf@coffee.modeemi.fi>
+Received: from mail.virtall.com ([178.63.195.102]:54378 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965934AbaLMIQl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Dec 2014 03:16:41 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="3O1VwFp74L81IIeR"
-In-Reply-To: <m49egs5b515.fsf@coffee.modeemi.fi>
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 13 Dec 2014 09:16:37 +0100
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Robert White <rwhite@pobox.com>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.18.0: kernel BUG at fs/btrfs/relocation.c:242!
+In-Reply-To: <548B7329.80208@pobox.com>
+References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
+ <542EE83D.8050701@fb.com>
+ <999a300ed462a1e1388aee4d6f03a30e@admin.virtall.com>
+ <438e043f73392614d1453892b7fe225c@admin.virtall.com>
+ <0f30c49c7d208903ef84e31a928e4051@admin.virtall.com>
+ <548B5FD6.5080306@pobox.com>
+ <ce7dba343916e4262a92071af863d014@admin.virtall.com>
+ <548B6D58.6080804@pobox.com>
+ <a3dfa2330fae3ef52d19f9f2a951e7b9@admin.virtall.com>
+ <548B7329.80208@pobox.com>
+Message-ID: <016ec9492d0340f8ac439ba4bcec03ad@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2014-12-12 23:58, Robert White wrote:
 
---3O1VwFp74L81IIeR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> I don't have the history to answer this definitively, but I don't
+> think you have a choice. Nothing else is going to touch that error.
+> 
+> I have not seen any "oh my god, btrfsck just ate my filesystem errors"
+> since I joined the list -- but I am a relative newcomer.
+> 
+> I know that you, of course, as a contentious and well-traveled system
+> administrator, already have a current backup since you are doing
+> storage maintenance... right? 8-)
 
-On Fri, Dec 12, 2014 at 11:17:58AM +0200, Erkki Seppala wrote:
-> That may be sort of true, but I think even SMART is helped by the fact
-> that the media is read through from the beginning to the end*, so it can
-> detect even the errors that don't bubble through the IO layer. And BTRFS
-> can indeed note errors that the media doesn't - two checksums is better
-> than one checksum, assuming they aren't exactly the same algorithm ;).
->=20
-> Do you alternatively execute SMART self tests?
->=20
-> * scrub doesn't do this, it reads only through used data
+Who needs backups with btrfs, right? :)
 
-I do both.  They operate at different layers of the storage stack, and have
-access to different information.  They also have different (and hopefully
-non-overlapping) bugs.
+So apparently btrfsck --repair fixed some issues, the fs is still 
+mountable and looks fine.
 
-scrub pros:
+Running balance again, but that will take many days there.
 
-	+ can compare data with the other copies in RAID1 or DUP mode
+# btrfsck --repair /dev/sdc1
+fixing root item for root 8681, current bytenr 5568935395328, current 
+gen 70315, current level 2, new bytenr 5569014104064, new gen 70316, new 
+level 2
+Fixed 1 roots.
+checking extents
+checking free space cache
+checking fs roots
+root 696 inode 2765103 errors 400, nbytes wrong
+root 696 inode 2831256 errors 400, nbytes wrong
+root 9466 inode 2831256 errors 400, nbytes wrong
+root 9505 inode 2831256 errors 400, nbytes wrong
+root 10139 inode 2831256 errors 400, nbytes wrong
+root 10525 inode 2831256 errors 400, nbytes wrong
+root 10561 inode 2831256 errors 400, nbytes wrong
+root 10633 inode 2765103 errors 400, nbytes wrong
+root 10633 inode 2831256 errors 400, nbytes wrong
+root 10650 inode 2765103 errors 400, nbytes wrong
+root 10650 inode 2831256 errors 400, nbytes wrong
+root 10680 inode 2765103 errors 400, nbytes wrong
+root 10680 inode 2831256 errors 400, nbytes wrong
+root 10681 inode 2765103 errors 400, nbytes wrong
+root 10681 inode 2831256 errors 400, nbytes wrong
+root 10701 inode 2765103 errors 400, nbytes wrong
+root 10701 inode 2831256 errors 400, nbytes wrong
+root 10718 inode 2765103 errors 400, nbytes wrong
+root 10718 inode 2831256 errors 400, nbytes wrong
+root 10735 inode 2765103 errors 400, nbytes wrong
+root 10735 inode 2831256 errors 400, nbytes wrong
+enabling repair mode
+Checking filesystem on /dev/sdc1
+UUID: 371af1dc-d88b-4dee-90ba-91fec2bee6c3
+cache and super generation don't match, space cache will be invalidated
+found 942113871627 bytes used err is 1
+total csum bytes: 2445349244
+total tree bytes: 28743073792
+total fs tree bytes: 22880043008
+total extent tree bytes: 2890547200
+btree space waste bytes: 5339534781
+file data blocks allocated: 2779865800704
+  referenced 3446026993664
+Btrfs v3.17.3
 
-	+ can fix bad data when good copies available
+real    76m27.845s
+user    19m1.470s
+sys     2m55.690s
 
-	+ slows down when other processes want to use the disk
 
-	+ can be suspended and resumed at will by software
+-- 
+Tomasz Chmielewski
+http://www.sslrack.com
 
-	+ error data is impervious to drive firmware bugs
-
-	+ straightforward error reports
-
-	+ only scans allocated data
-
-scrub cons:
-
-	- only scans allocated data
-
-	- btrfs filesystems only
-
-	- CPU and I/O burden
-
-	- error sources are not localized:  scrub errors could be software
-	bugs, bad RAM, bad CPU cooling, bad cabling, bad power supply,
-	or bad hard drive
-
-smart pros:
-
-	+ runs in the background
-
-	+ no CPU or I/O required, just read results from previous run
-	and launch new test daily
-
-	+ access to electrical and mechanical data from the drive
-	that are otherwise unavailable to the host
-
-	+ 100% surface scan (including bad sector count)
-
-	+ logs host I/O errors that OS might miss
-	(e.g. because they occur during BIOS booting)
-
-	+ works with any filesystems, partitions, swap, etc.
-
-	+ error sources are localized to the drive in test
-
-smart cons:
-
-	- buggy firmware does not detect or report error events when
-	significant failures occur
-
-	- buggy firmware does detect and report error events when
-	signficant failures do not occur
-
-	- buggy firmware will make host accesses painfully slow during
-	scan (WD Green is very bad for this)
-
-	- firmware does not implement useful subset of SMART command set
-
-	- SMART command set can be inaccessible through some SATA bridge
-	chips (especially USB)
-
-	- cannot fix anything, only report quantities of data already lost
-
-	- cannot reliably detect RAM or CPU failure (on host or drive)
-
-	- requires the drive to spin for 1-2 continuous hours during test
-
-	- interpreting the raw data is a black art
-
---3O1VwFp74L81IIeR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlSLy1EACgkQgfmLGlazG5xlEwCgiDAH+jOIb27r+hm4I6HTUm1E
-SP4An3cU1/ERj0Wxdja/qIJQj4J0QmVf
-=mTsa
------END PGP SIGNATURE-----
-
---3O1VwFp74L81IIeR--

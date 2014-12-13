@@ -1,109 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46253 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750761AbaLMDCD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 22:02:03 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Xzcy1-00060n-4f
-	for linux-btrfs@vger.kernel.org; Sat, 13 Dec 2014 04:02:01 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Dec 2014 04:02:01 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Dec 2014 04:02:01 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mkfs.btrfs limits "odd" [and maybe a "failed" phantom device?]
-Date: Sat, 13 Dec 2014 03:01:49 +0000 (UTC)
-Message-ID: <pan$136bc$614a75aa$d8f5773e$dbbfa28b@cox.net>
-References: <5488C6CF.1080608@pobox.com>
-	<20141212035651.GD22023@hungrycats.org> <548A84A2.4000501@pobox.com>
-	<20141212090647.GA5574@yadt.co.uk> <548ACE73.3000000@pobox.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from resqmta-ch2-03v.sys.comcast.net ([69.252.207.35]:47704 "EHLO
+	resqmta-ch2-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933210AbaLMDKj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Dec 2014 22:10:39 -0500
+Message-ID: <548BAE2C.6000508@pobox.com>
+Date: Fri, 12 Dec 2014 19:10:36 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: A note on spotting "bugs" [Was: ENOSPC after conversion]
+References: <CAA7pwKNhYxeQjfTyd4WQrsQ7MuapKgRfjwF3kHY+VWDnVk+cTA@mail.gmail.com>	<548A13F7.30904@pobox.com>	<CAA7pwKNKeuysdoS83m=z-Cn5ecWtGrQAfjNKwXjryRceHUV=3Q@mail.gmail.com>	<548AEDD6.1090904@pobox.com> <pan$93dc7$f46dda26$f7d33e3f$b328e05d@cox.net>
+In-Reply-To: <pan$93dc7$f46dda26$f7d33e3f$b328e05d@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Fri, 12 Dec 2014 03:16:03 -0800 as excerpted:
+On 12/12/2014 05:12 PM, Duncan wrote:
+> Robert White posted on Fri, 12 Dec 2014 05:29:58 -0800 as excerpted:
+>
+>> This still doesnt say _anything_ is wrong with your filesystem except
+>> that it doesn't have enough _raw_ space to create a 2-ish gig extent.
+>
+> What's wrong with the filesystem is that there shouldn't /be/ a need to
+> create a 2-ish gig extent.  All btrfs native structures are 1 GiB each or
+> smaller, and the completed-without-error btrfs fi defrag should have
+> eliminated any > 1 GiB structures remaining from the conversion from
+> ext*, such that btrfs balance only has to deal with <= 1 GiB structures.
+>
+> So that balance is having to deal with a 2-ish gig extent at all is
+> indicative of a bug.  Balance isn't prepared to have to allocate 2-ish
+> GiB extents in the first place as that's beyond it's design specs.
+>
 
-> Perhaps is just a tautological belief that someone here didn't buy into.
-> Like how people keep partitioning drives into little slices for things
-> because thats the preserved wisdom from early eighties.
+Looking at the error message and the code, I would strongly disagree.
 
-While I absolutely agree with your raid5 sentiments (which is exactly 
-what I suppose they might be; I'm getting a bit of an education in that 
-regard myself, here)...
+Balance has no hard-coded limit of 1-Gig.
 
-In the context of the 80s, or even the 90s, nothing about multi-gigabyte 
-could be considered "little"! =:^)
+The superblock has entries for the various sizes the filesystem uses.
 
-In fact, while it most assuredly dates me, it /still/ feels a bit odd 
-referring to the 1 GiB btrfs default threshold for mixed-bg-mode as 
-"small", given that I distinctly remember wondering how long it might 
-take me to fill my first 1 GB (not GiB, unfortunately) drive, tho by that 
-time I did have enough experience to know I'd eventually be dealing with 
-multi-gig as at the time I was dealing with multi-meg.
+Balance is _clearly_ asking for the chunk of that size and the system 
+configuraion is _clearly_ considering that size legal.
 
-More to the point, however...
+The structures are only limited by their 64bit unsigned integer 
+representation which is _way_ bigger than 2-ish gigs.
 
-Those partitions have saved my a** quite a few times over the years.  
-Among other things, partitioning allows me to keep my (8 GiB) rootfs an 
-entirely separate filesystem that's mounted read-only by default, which 
-has kept it undamaged and the tools on it still available to help recover 
-my other filesystems, when /var/log and /home were damaged due to a hard 
-shutdown recently.
+The actual code that controls the 1GiB extent allocation does a 
+(paraphrased) :: min(requested,system_minimum_for_this_purpose)
 
-And some years ago I had an AC failure here in Phoenix in the middle of 
-the summer, resulting in a physical head-crash and loss of the operating 
-partitions on my disk in use at the time, while the backup partitions on 
-the same device remained intact, such that after cooldown I actually 
-continued to use that disk for some time, mounting the damaged partitions 
-only to recover the most recent copies of what I could, updating the 
-backups which were now promoted to operational.
+Indeed, if it were a hard limit of 1GiB, then the message wouldn't even 
+bother to say how much was requested, it would just say "Could not 
+allocate data extent" because that extent would have both a minimum and 
+maxium of the same known value.
 
-Sure, technology such as LVM can do similar and is more flexible in some 
-ways, but unfortunately it requires userspace and thus an initr* in 
-ordered to handle a root on the same technology.  Otherwise, root must be 
-treated differently, and then you have partitioning again.
+Nowhere in or near the allocator does it do a test that I can find that 
+would force the number to be smaller. And if it did, that wouldn't be a 
+"ENOSPC" etc, it'd come back as a "too big" result such as ENOSUP.
 
-Additionally, LVM is yet another layer of software that can and does go 
-wrong and itself need fixed.  Partitioning is too, to some extent, but in 
-practice it has been pretty bullet-proof compared to technologies such as 
-LVM and btrfs-subvolumes.  LVM has some way to go before it's as robust 
-as partitioning, and of course btrfs with its subvolumes isn't really 
-even completely stable yet.  Further, btrfs doesn't well limit damage of 
-a subvolume to just that subvolume (that head-crash scenario would have 
-almost certainly been a total loss on btrfs subvolumes), the way 
-partitioning tends to do.  And LVM's very flexibility means it doesn't 
-normally have that sort of damage limitation either.  It certainly can, 
-but doing so severely reduces its flexibility, making going back to 
-regular partitions to avoid the complexity and additional points of 
-failure entirely a rather viable and often better choice.
+So your statement that this is "beyond its design specs" isn't supported 
+by the code. (That's why I looked it up the before I said "this is not a 
+bug").
 
-Meanwhile, technology such as EFI and GPT is breathing new life into 
-partitioning, making it more reliable (checksummed redundant partition 
-tables), more useful/flexible (killing the primary/secondary/logical 
-divisions and adding partition names/labels and a far larger typing 
-space), and creating yet more uses for partitioning in the first place, 
-due to separate reserved EFI and legacy-BIOS partition types.
+I went through the code until I accounted for _ever_ _word_ in the error 
+message.
 
-Tho of course these days those partition "slices" are often tens or 
-hundreds of gigs, and are now sometimes "teras"[1], bringing up my 
-initial point once again; that's NOT actually so small!
+I don't see any kind of bug.
 
-But to each his own, of course, and I definitely do agree with you on 
-raid5, the larger point.  FWIW, I still consider allowing a two-device 
-"raid5" or a three-device "raid6" a bug, particularly given that a single-
-device "raid1" is /not/ allowed, nor is a 3-device "raid10".
+And now that we know that btrfs-convert has to make larger-than-one-GiB 
+extents to encompass the block groups that are preexistent in EXT4, we 
+also know that the sliding-block puzzle its trying to solve doesn't have 
+nice round numbers of 1GiB and 256MiB, so the holes it leaves behind 
+when it does move something are not nice and square and evenly sized etc.
 
----
-[1] Hmm, K, megs, gigs, "ters", "teras", simply "T" to match K ???
+So yea, he's jammed up and needs more space. As his filesystem churns 
+all its new extents will be the 1GiB or 256MiB sized things and he'd 
+slowly, but perhaps asymptotically, approach a clean layout of customary 
+extent sizes.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+It's not broken, it's just not pretty.
+
+And _IF_ I had been saying it's "not a bug" and any of the actual code 
+contributors had disagreed, they'd have jumped in here and shut me down 
+(as they should in that case). e.g. If I was wrong about its non-bug 
+status we'd have heard by now.
+
 

@@ -1,61 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:40103 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750760AbaLMKYv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Dec 2014 05:24:51 -0500
-Message-ID: <548C133B.3020905@cn.fujitsu.com>
-Date: Sat, 13 Dec 2014 18:21:47 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Received: from mail.virtall.com ([178.63.195.102]:40535 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933299AbaLMNxY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Dec 2014 08:53:24 -0500
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 1/3] Btrfs: get more accurate output in df command.
-References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>	<548B2D34.9060509@inwind.it> <pan$15017$735d4dc1$40043b93$f0365d23@cox.net>
-In-Reply-To: <pan$15017$735d4dc1$40043b93$f0365d23@cox.net>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 13 Dec 2014 14:53:18 +0100
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Robert White <rwhite@pobox.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.18.0: kernel BUG at fs/btrfs/relocation.c:242!
+In-Reply-To: <548C0942.6020304@pobox.com>
+References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
+ <542EE83D.8050701@fb.com>
+ <999a300ed462a1e1388aee4d6f03a30e@admin.virtall.com>
+ <438e043f73392614d1453892b7fe225c@admin.virtall.com>
+ <0f30c49c7d208903ef84e31a928e4051@admin.virtall.com>
+ <548B5FD6.5080306@pobox.com>
+ <ce7dba343916e4262a92071af863d014@admin.virtall.com>
+ <548B6D58.6080804@pobox.com>
+ <a3dfa2330fae3ef52d19f9f2a951e7b9@admin.virtall.com>
+ <548B7329.80208@pobox.com>
+ <016ec9492d0340f8ac439ba4bcec03ad@admin.virtall.com>
+ <548C0942.6020304@pobox.com>
+Message-ID: <a54531e35f70cb4d15a606385d2b581e@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/13/2014 08:50 AM, Duncan wrote:
-> Goffredo Baroncelli posted on Fri, 12 Dec 2014 19:00:20 +0100 as
-> excerpted:
->
->> $ sudo ./btrfs fi df /mnt/btrfs1/
->> Data, RAID1: total=1.00GiB, used=512.00KiB
->> Data, single: total=8.00MiB, used=0.00B
->> System, RAID1: total=8.00MiB, used=16.00KiB
->> System, single: total=4.00MiB, used=0.00B
->> Metadata, RAID1: total=1.00GiB, used=112.00KiB
->> Metadata, single: total=8.00MiB, used=0.00B
->> GlobalReserve, single: total=16.00MiB, used=0.00B
->>
->> In this case the filesystem is empty (it was a new filesystem !).
->> However a 1G metadata chunk was already allocated. This is the reasons
->> why the free space is only 4Gb.
-> Trivial(?) correction.
->
-> Metadata chunks are quarter-gig, not 1 gig.  So that's 4 quarter-gig
-> metadata chunks allocated, not a (one/single) 1-gig metadata chunk.
+On 2014-12-13 10:39, Robert White wrote:
 
-Sorry but from my reading of the code, I have to say that in this case 
-it is 1G.
+> Might I ask why you are running balance? After a persistent error I'd
+> understand going straight to scrub, but balance is usually for
+> transformation or to redistribute things after atypical use.
 
-Maybe I should be wrong, I would say, yes, the chunk_size for btrfs which is
-smaller than 50G is 256M by default. But in mkfs, we alloc 1G for the first
-metadata chunk.
->
->> On my system the ratio metadata/data is 234MB/8.82GB = ~3%, so ignoring
->> the metadata chunk from the free space may not be a big problem.
-> Presumably your use-case is primarily reasonably large files; too large
-> for their data to be tucked directly into metadata instead of allocating
-> an extent from a data chunk.
->
-> That's not always going to be the case.  And given the multi-device
-> default allocation of raid1 metadata, single data, files small enough to
-> fit into metadata have a default size effect double their actual size!
-> (Tho it can be noted that given btrfs' 4 KiB standard block size, without
-> metadata packing there'd still be an outsized effect for files smaller
-> than half that, 2 KiB or under, but there it'd be in data chunks, not
-> metadata.)
->
+There were several reasons for running balance on this system:
+
+1) I was getting "no space left", even though there were hundreds of GBs 
+left. Not sure if this still applies to the current kernels (3.18 and 
+later) though, but it was certainly the problem in the past.
+
+2) The system was regularly freezing, I'd say once a week was a norm. 
+Sometimes I was getting btrfs traces logged in syslog.
+After a few freezes the fs was getting corrupted to different degree. At 
+some point, it was so bad that it was only possible to use it read only. 
+So I had to get the data off, reformat, copy back... It would start 
+crashing after a few weeks of usage.
+
+My usage case is quite simple:
+
+- skinny extents, extended inode refs
+- mount compress-force=zlib
+- rsync many remote data sources (-a -H --inplace --partial) + snapshot
+- around 500 snapshots in total, from 20 or so subvolumes
+
+Especially rsync's --inplace option combined with many snapshots and 
+large fragmentation was deadly for btrfs - I was seeing system freezes 
+right when rsyncing a highly fragmented, large file.
+
+Then, running balance on the "corrupted" filesystem was more an exercise 
+(if scrub passes fine, I would expect balance to pass as well). Some 
+BUGs it was causing was sometimes fixed in newer kernels, sometimes not 
+(btrfsck was not really usable a few months back).
+
+3) I had different luck with recovering btrfs after a failed drive (in 
+RAID-1). Sometimes it worked as expected, sometimes, the fs was getting 
+broken so much I had to rsync data off it and format from scratch (where 
+mdraid would kick the drive after getting write errors - it's not the 
+case with btrfs, and weird things can happen).
+Sometimes, running "btrfs device delete missing" (it's balance in 
+principle, I think) would take weeks, during which a second drive could 
+easily die.
+Again, running balance would be more exercise there, to see if the newer 
+kernel still crashes.
+
+
+> An entire generation of folks have grown used to defraging windows
+> boxes and all, but if you've already got an array that is going to
+> take "many days" to balance what benefit do you actually expect to
+> receive?
+
+For me - it's a good test to see if btrfs is finally getting stable 
+(some cases explained above).
+
+
+> Defrag -- used for "I think I'm getting a lot of unnecessary head seek
+> in this application, these files need to be brought into closer
+> order".
+
+Fragmentation was an issue for btrfs, at least a few kernels back (as 
+explained above, with rsync's --inplace).
+However, I'm not running autodefrag anywhere - not sure how it affects 
+snapshots.
+
+
+> Scrub -- used for defensive checking a-la checkdisk. "I suspect that
+> after that unexpected power outage something may be a little off", or
+> alternately "I think my disks are giving me bitrot, I better check".
+
+For me, it was passing fine, where balance was crashing the kernel.
+
+
+Again, my main rationale for running balance is to see if btrfs is 
+behaving stable. While I have systems with btrfs which are running fine 
+for months, I also have ones which will crash after 1-2 weeks (once the 
+system grows in size / complexity).
+
+So hopefully, btrfsck had fixed that fs - once it is running stable for 
+a week or two, I might be brave to re-enable btrfs quotas (was another 
+system freezer, at least a few kernels back).
+
+
+-- 
+Tomasz Chmielewski
+http://www.sslrack.com
 

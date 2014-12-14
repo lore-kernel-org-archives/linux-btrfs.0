@@ -1,37 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f171.google.com ([209.85.220.171]:59505 "EHLO
-	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750789AbaLNC7y (ORCPT
+Received: from resqmta-ch2-03v.sys.comcast.net ([69.252.207.35]:46076 "EHLO
+	resqmta-ch2-03v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750766AbaLNHiH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Dec 2014 21:59:54 -0500
-Received: by mail-vc0-f171.google.com with SMTP id hy4so4611189vcb.30
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Dec 2014 18:59:53 -0800 (PST)
+	Sun, 14 Dec 2014 02:38:07 -0500
+Message-ID: <548D3E59.4010005@pobox.com>
+Date: Sat, 13 Dec 2014 23:38:01 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-Date: Sun, 14 Dec 2014 06:29:53 +0330
-Message-ID: <CABvhJLiV4iPkin_XU-Ud3a0KiOLNv07m6whqZtNymDQd+1WHGw@mail.gmail.com>
-Subject: subvolume / folder compression flag
-From: Ali AlipourR <alipoor90@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Ali AlipourR <alipoor90@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: subvolume / folder compression flag
+References: <CABvhJLiV4iPkin_XU-Ud3a0KiOLNv07m6whqZtNymDQd+1WHGw@mail.gmail.com>
+In-Reply-To: <CABvhJLiV4iPkin_XU-Ud3a0KiOLNv07m6whqZtNymDQd+1WHGw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 12/13/2014 06:59 PM, Ali AlipourR wrote:
 
-1- Do setting compression flag per subvolume is implemented?
-(I did read on wiki that it is not implemented, but I can set it via
-"btrfs  property")
+> 2- ... and rsync files without compression flag ...
 
-2- If I set compression flag via "btrfs property" or "chattr" on a
-subvolume, and rsync files without compression flag from ext4 file
-system and preserve attributes by rsync -AX, do these files on that
-btrfs subvolume will be compressed?
-I mean do files will be compressed even if their compression flag
-wasn't set, and just their subvolume compression flag was set?
+The --compress flag for rsync has nothing to do with how the files are 
+stored on either end. It determines whether the data is compressed as it 
+passes from the source rsync to the destination rsync process over the 
+network or whatever.
 
-3- what if I do same as 2 but on normal folder instead of subvolume
-(chattr +c that folder), Do files within that folder will be
-compressed even if their compression flag wasn't set?
+I don't have any information about the rest of the question but the 
+rsync option doesn't change the data as read or written, just as 
+transmitted.
 
-Thanks,
-Ali
+The only difference between using compressed or not is:
+
+source --normal--> rsync --compressed--> rsync --normal--> dst
+source --normal--> rsync --not_compressed--> rsync --normal--> dst
+
+If the fielsystems at source or dst do transparent compression then that 
+will be done/undone transparently.
+
+

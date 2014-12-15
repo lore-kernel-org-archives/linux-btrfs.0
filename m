@@ -1,124 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43577 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48604 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750854AbaLQAtS convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1750713AbaLOD5A (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 19:49:18 -0500
-Message-ID: <5490D308.9010409@cn.fujitsu.com>
-Date: Wed, 17 Dec 2014 08:49:12 +0800
+	Sun, 14 Dec 2014 22:57:00 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBF3uWID001530
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2014 11:56:33 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt script fsck test case.
+Date: Mon, 15 Dec 2014 11:54:58 +0800
+Message-ID: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <fdmanana@gmail.com>
-CC: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt
- script fsck test case.
-References: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>	<CAL3q7H5TrEGT87by4Zgs_Gy-OagBBEQVdk0A54snC9334wRP1w@mail.gmail.com>	<20141215173558.GS27601@twin.jikos.cz>	<548F83B8.50901@cn.fujitsu.com> <CAL3q7H6oEQp1JC-Omm41LtHqLcZM85Gk1CF43gqxB6eR8HjQLw@mail.gmail.com>
-In-Reply-To: <CAL3q7H6oEQp1JC-Omm41LtHqLcZM85Gk1CF43gqxB6eR8HjQLw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Although btrfsck test case support pure image dump(tar.xz), it is still
+too large for some images, e.g, a small 64M image with about 3 levels
+(level 0~2) metadata will produce about 2.6M after xz zip, which is too
+large for a single binary commit.
 
--------- Original Message --------
-Subject: Re: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + 
-corrupt script fsck test case.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年12月16日 21:55
-> On Tue, Dec 16, 2014 at 12:58 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> -------- Original Message --------
->> Subject: Re: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt
->> script fsck test case.
->> From: David Sterba <dsterba@suse.cz>
->> To: Filipe David Manana <fdmanana@gmail.com>
->> Date: 2014年12月16日 01:35
->>> On Mon, Dec 15, 2014 at 09:36:51AM +0000, Filipe David Manana wrote:
->>>> So another thing I would like to see is doing a more comprehensive
->>>> verification that the repair code worked as expected. Currently we
->>>> only check that a readonly fsck, after running fsck --repair, returns
->>>> 0.
->>>>
->>>> For the improvements you've been doing, it's equally important to
->>>> verify that --repair recovered the inodes, links, etc to the
->>>> lost+found directory (or whatever is the directory's name).
->>>>
->>>> So perhaps adding a verify.sh script to the tarball for example?
->>> A verifier script would be good, but I'd rather not put it into the
->>> tarball. We might want to edit it, do cleanups etc, this would require
->>> to regenerate the image each time and the changes would be hard to
->>> review.
->>>
->>> We can use the base image name and add -verify.sh suffix instead, eg.
->>> 007-bad_root_items_fs_skinny.tar.xz and
->>> 007-bad_root_items_fs_skinny-verify.sh
->>>
->>>
->> I'd like to add verify script too, especially when it is put out of the
->> tarball.
->>
->> But to the leaf-corruption case, it seems a little overkilled for me.
->>
->> 1) The object of leaf-corrupt recover is not to salvage data.
->> Although most of the patches are trying its best to salvage as much data as
->> possible ,
->> from ino to file type or even later extent data, but in fact, the patchset's
->> main object is to make the metadata
->> of the btrfs consistent. The data recovery is just a optional addition.
->> (Original, it's designed to delete every inode whose metadata is lost in a
->> corrupted leaf)
->> So the second btrfsck's return value instead of the contents in lost+found
->> is the important.
->>
->> 2) The recovery is *lossy*, verify would better be called on *lossless*
->> recovery
->> Leaf-corruption is based on the btree recovery, which will introduce data
->> loss(at least a leaf),
->> so we can't ensure anything.
->> And in some case, repair_inode_backref() will even repair backref before
->> nlink repair,
->> which may introduce some randomness
->> (if a inode_item is not corrupted in a leaf, then a backref maybe repaired
->> without move it to lost+found dir)
->> So for *lossy* repair, I prefer not to add verify script.
->  From the moment we have code that accomplishes something, it doesn't
-> matter if it was part of a primary or secondary goal of a patch, nor
-> if it does full or partial recovery. If we have code that does
-> something (intentionally) we should always try to have tests for it -
-> if we don't care about what the code does exactly, then we probably
-> shouldn't have it in the first place.
-First please let me make it clear when you mention the verify script, 
-what it really means.
-Which case in the leaf-corruption recovery do you mean?
+However btrfs-image -c9 will works much finer, the above image with
+btrfs-image dump will only be less than 200K, which is quite reasonable.
 
-1) Generic script verifying everything or part of the inodes in original 
-image is recovered.
-If you mean this *GENERIC* one, that's impractical for leaf-corruption 
-recovery and any other
-lossy recovery.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/fsck-tests.sh | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
 
-2) Specific script only for this specific damaged image.
-This one is suitable for lossy recovery case but it may be restrict 
-verify script, it only tells
-what result it should be after recovery for the specific image. And it 
-may be only a reminder
-for new patches modifying the existing recovery codes.
-
-If you mean 1), IMHO it's not practical.
-If you mean 2), I am OK to implement the verify script but I doubt about 
-the necessarily.
-
-Thanks,
-Qu
-> Otherwise code will break more easily with future changes. Having
-> manual tests done on each release (or ideally after each btrfs-progs
-> or fsck at least) is error prone...
->
->> I generally agree to add verify script support, but only for lossless
->> recovery case.
->>
->> Thanks,
->> Qu
->
->
+diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
+index 8987d04..007e5b0 100644
+--- a/tests/fsck-tests.sh
++++ b/tests/fsck-tests.sh
+@@ -22,16 +22,38 @@ run_check()
+ 	"$@" >> $RESULT 2>&1 || _fail "failed: $@"
+ }
+ 
++# For complicated fsck repair case,
++# where even repairing is OK, it may still report problem before or after
++# reparing since the repair needs several loops to repair all the problems
++# but report checks it before all repair loops done
++run_check_no_fail()
++{
++	echo "############### $@" >> $RESULT 2>&1
++	"$@" >> $RESULT 2>&1
++}
++
+ rm -f $RESULT
+ 
+ # test rely on corrupting blocks tool
+ run_check make btrfs-corrupt-block
+ 
++# Supported test image formats:
++# 1) btrfs-image dump(.img files)
+ # Some broken filesystem images are kept as .img files, created by the tool
+-# btrfs-image, and others are kept as .tar.xz files that contain raw filesystem
++# btrfs-image
++#
++# 2) binary image dump only(only test.img in .tar.xz)
++# Some are kept as .tar.xz files that contain raw filesystem
+ # image (the backing file of a loop device, as a sparse file). The reason for
+ # keeping some as tarballs of raw images is that for these cases btrfs-image
+ # isn't able to preserve all the (bad) filesystem structure for some reason.
++# This provides great flexibility at the cost of large file size.
++#
++# 3) script generated dump(generate_image.sh + needed things in .tar.gz)
++# The image is generated by the generate_image.sh script alone the needed
++# files in the tarball, normally a quite small btrfs-image dump.
++# This one combines the advatange of relative small btrfs-image and the
++# flexibility to support corrupted image.
+ for i in $(find $here/tests/fsck-tests -name '*.img' -o -name '*.tar.xz' | sort)
+ do
+ 	echo "     [TEST]    $(basename $i)"
+@@ -39,16 +61,24 @@ do
+ 
+ 	extension=${i#*.}
+ 
++	if [ -f generate_image.sh ]; then
++		rm generate_image.sh
++	fi
++
+ 	if [ $extension == "img" ]; then
+ 		run_check $here/btrfs-image -r $i test.img
+ 	else
+ 		run_check tar xJf $i
+ 	fi
+ 
++	if [ -x generate_image.sh ]; then
++		./generate_image.sh
++	fi
++
+ 	$here/btrfsck test.img >> $RESULT 2>&1
+ 	[ $? -eq 0 ] && _fail "btrfsck should have detected corruption"
+ 
+-	run_check $here/btrfsck --repair test.img
++	run_check_no_fail $here/btrfsck --repair test.img
+ 	run_check $here/btrfsck test.img
+ done
+ 
+-- 
+2.1.3
 

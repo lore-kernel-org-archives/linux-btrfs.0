@@ -1,39 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56554 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750714AbaLOGJD convert rfc822-to-8bit (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:64322 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750836AbaLOJAb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Dec 2014 01:09:03 -0500
-Message-ID: <548E7AFE.5010001@cn.fujitsu.com>
-Date: Mon, 15 Dec 2014 14:09:02 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Mon, 15 Dec 2014 04:00:31 -0500
+Received: by mail-lb0-f170.google.com with SMTP id 10so8840622lbg.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2014 01:00:28 -0800 (PST)
 MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-CC: Filipe David Manana <fdmanana@gmail.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Mon, 15 Dec 2014 09:00:28 +0000
+Message-ID: <CAL3q7H4S6UDMwZb5oX0c=cpa4=ryDdJLwRE7me5aBBVY9ercvg@mail.gmail.com>
 Subject: Re: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt
  script fsck test case.
-References: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems the second patch, which about 225K including a btrfs-image 
-dump, can't pass the ml's size limit.
-
-To David:
-I created the pull request to your github repo:
-https://github.com/kdave/btrfs-progs/pull/3
-
-Thanks,
-Qu
-
--------- Original Message --------
-Subject: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt 
-script fsck test case.
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年12月15日 11:54
+On Mon, Dec 15, 2014 at 3:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 > Although btrfsck test case support pure image dump(tar.xz), it is still
 > too large for some images, e.g, a small 64M image with about 3 levels
 > (level 0~2) metadata will produce about 2.6M after xz zip, which is too
@@ -44,43 +32,62 @@ Date: 2014年12月15日 11:54
 >
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->   tests/fsck-tests.sh | 34 ++++++++++++++++++++++++++++++++--
->   1 file changed, 32 insertions(+), 2 deletions(-)
+>  tests/fsck-tests.sh | 34 ++++++++++++++++++++++++++++++++--
+>  1 file changed, 32 insertions(+), 2 deletions(-)
 >
 > diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
 > index 8987d04..007e5b0 100644
 > --- a/tests/fsck-tests.sh
 > +++ b/tests/fsck-tests.sh
 > @@ -22,16 +22,38 @@ run_check()
->   	"$@" >> $RESULT 2>&1 || _fail "failed: $@"
->   }
->   
+>         "$@" >> $RESULT 2>&1 || _fail "failed: $@"
+>  }
+>
 > +# For complicated fsck repair case,
 > +# where even repairing is OK, it may still report problem before or after
 > +# reparing since the repair needs several loops to repair all the problems
 > +# but report checks it before all repair loops done
 > +run_check_no_fail()
 > +{
-> +	echo "############### $@" >> $RESULT 2>&1
-> +	"$@" >> $RESULT 2>&1
+> +       echo "############### $@" >> $RESULT 2>&1
+> +       "$@" >> $RESULT 2>&1
 > +}
+
+I'm confused with this function, why it's needed and the respective comment.
+So I can interpret it as either:
+
+1) The several loops means fsck --repair does multiple passages
+internally to fix some issues?
+ If this is the case, we (user or script) only need to call fsck
+--repair once, which should exit with status 0 if it was able to fix
+all the issues, right? If so, then we should check that fsck --repair
+exits with status 0, removing the need for this new function.
+
+2) The several loops means a user or script must call fsck --repair
+multiple times to fix all the issues? If this is the case then you're
+only calling this function once, for a single fsck --repair, in the
+code below, which confuses me and it makes this new function redundant
+too.
+
+Thanks
+
 > +
->   rm -f $RESULT
->   
->   # test rely on corrupting blocks tool
->   run_check make btrfs-corrupt-block
->   
+>  rm -f $RESULT
+>
+>  # test rely on corrupting blocks tool
+>  run_check make btrfs-corrupt-block
+>
 > +# Supported test image formats:
 > +# 1) btrfs-image dump(.img files)
->   # Some broken filesystem images are kept as .img files, created by the tool
+>  # Some broken filesystem images are kept as .img files, created by the tool
 > -# btrfs-image, and others are kept as .tar.xz files that contain raw filesystem
 > +# btrfs-image
 > +#
 > +# 2) binary image dump only(only test.img in .tar.xz)
 > +# Some are kept as .tar.xz files that contain raw filesystem
->   # image (the backing file of a loop device, as a sparse file). The reason for
->   # keeping some as tarballs of raw images is that for these cases btrfs-image
->   # isn't able to preserve all the (bad) filesystem structure for some reason.
+>  # image (the backing file of a loop device, as a sparse file). The reason for
+>  # keeping some as tarballs of raw images is that for these cases btrfs-image
+>  # isn't able to preserve all the (bad) filesystem structure for some reason.
 > +# This provides great flexibility at the cost of large file size.
 > +#
 > +# 3) script generated dump(generate_image.sh + needed things in .tar.gz)
@@ -88,33 +95,48 @@ Date: 2014年12月15日 11:54
 > +# files in the tarball, normally a quite small btrfs-image dump.
 > +# This one combines the advatange of relative small btrfs-image and the
 > +# flexibility to support corrupted image.
->   for i in $(find $here/tests/fsck-tests -name '*.img' -o -name '*.tar.xz' | sort)
->   do
->   	echo "     [TEST]    $(basename $i)"
+>  for i in $(find $here/tests/fsck-tests -name '*.img' -o -name '*.tar.xz' | sort)
+>  do
+>         echo "     [TEST]    $(basename $i)"
 > @@ -39,16 +61,24 @@ do
->   
->   	extension=${i#*.}
->   
-> +	if [ -f generate_image.sh ]; then
-> +		rm generate_image.sh
-> +	fi
+>
+>         extension=${i#*.}
+>
+> +       if [ -f generate_image.sh ]; then
+> +               rm generate_image.sh
+> +       fi
 > +
->   	if [ $extension == "img" ]; then
->   		run_check $here/btrfs-image -r $i test.img
->   	else
->   		run_check tar xJf $i
->   	fi
->   
-> +	if [ -x generate_image.sh ]; then
-> +		./generate_image.sh
-> +	fi
+>         if [ $extension == "img" ]; then
+>                 run_check $here/btrfs-image -r $i test.img
+>         else
+>                 run_check tar xJf $i
+>         fi
+>
+> +       if [ -x generate_image.sh ]; then
+> +               ./generate_image.sh
+> +       fi
 > +
->   	$here/btrfsck test.img >> $RESULT 2>&1
->   	[ $? -eq 0 ] && _fail "btrfsck should have detected corruption"
->   
-> -	run_check $here/btrfsck --repair test.img
-> +	run_check_no_fail $here/btrfsck --repair test.img
->   	run_check $here/btrfsck test.img
->   done
->   
+>         $here/btrfsck test.img >> $RESULT 2>&1
+>         [ $? -eq 0 ] && _fail "btrfsck should have detected corruption"
+>
+> -       run_check $here/btrfsck --repair test.img
+> +       run_check_no_fail $here/btrfsck --repair test.img
+>         run_check $here/btrfsck test.img
+>  done
+>
+> --
+> 2.1.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f170.google.com ([209.85.217.170]:64322 "EHLO
-	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750836AbaLOJAb (ORCPT
+Received: from mail-la0-f53.google.com ([209.85.215.53]:53458 "EHLO
+	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751641AbaLOJgx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Dec 2014 04:00:31 -0500
-Received: by mail-lb0-f170.google.com with SMTP id 10so8840622lbg.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2014 01:00:28 -0800 (PST)
+	Mon, 15 Dec 2014 04:36:53 -0500
+Received: by mail-la0-f53.google.com with SMTP id gm9so8971308lab.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2014 01:36:51 -0800 (PST)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
 In-Reply-To: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1418615699-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Mon, 15 Dec 2014 09:00:28 +0000
-Message-ID: <CAL3q7H4S6UDMwZb5oX0c=cpa4=ryDdJLwRE7me5aBBVY9ercvg@mail.gmail.com>
+Date: Mon, 15 Dec 2014 09:36:51 +0000
+Message-ID: <CAL3q7H5TrEGT87by4Zgs_Gy-OagBBEQVdk0A54snC9334wRP1w@mail.gmail.com>
 Subject: Re: [PATCH 1/2] btrfs-progs: Add support for btrfs-image + corrupt
  script fsck test case.
 From: Filipe David Manana <fdmanana@gmail.com>
@@ -52,25 +52,6 @@ On Mon, Dec 15, 2014 at 3:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 > +       echo "############### $@" >> $RESULT 2>&1
 > +       "$@" >> $RESULT 2>&1
 > +}
-
-I'm confused with this function, why it's needed and the respective comment.
-So I can interpret it as either:
-
-1) The several loops means fsck --repair does multiple passages
-internally to fix some issues?
- If this is the case, we (user or script) only need to call fsck
---repair once, which should exit with status 0 if it was able to fix
-all the issues, right? If so, then we should check that fsck --repair
-exits with status 0, removing the need for this new function.
-
-2) The several loops means a user or script must call fsck --repair
-multiple times to fix all the issues? If this is the case then you're
-only calling this function once, for a single fsck --repair, in the
-code below, which confuses me and it makes this new function redundant
-too.
-
-Thanks
-
 > +
 >  rm -f $RESULT
 >
@@ -123,6 +104,20 @@ Thanks
 > +       run_check_no_fail $here/btrfsck --repair test.img
 >         run_check $here/btrfsck test.img
 >  done
+
+So another thing I would like to see is doing a more comprehensive
+verification that the repair code worked as expected. Currently we
+only check that a readonly fsck, after running fsck --repair, returns
+0.
+
+For the improvements you've been doing, it's equally important to
+verify that --repair recovered the inodes, links, etc to the
+lost+found directory (or whatever is the directory's name).
+
+So perhaps adding a verify.sh script to the tarball for example?
+
+Thanks
+
 >
 > --
 > 2.1.3

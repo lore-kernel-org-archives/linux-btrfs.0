@@ -1,92 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29330 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750863AbaLPJAJ (ORCPT
+Received: from mail-wg0-f49.google.com ([74.125.82.49]:38006 "EHLO
+	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750823AbaLPJwn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 04:00:09 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id sBG907k2000641
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 09:00:08 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBG9065A009201
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 09:00:07 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBG906JF005730
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 09:00:06 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix a warning of qgroup account on shared extents
-Date: Tue, 16 Dec 2014 16:59:58 +0800
-Message-Id: <1418720398-21847-1-git-send-email-bo.li.liu@oracle.com>
+	Tue, 16 Dec 2014 04:52:43 -0500
+Received: by mail-wg0-f49.google.com with SMTP id n12so16888440wgh.36
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 01:52:42 -0800 (PST)
+MIME-Version: 1.0
+From: Joe Doliner <jdoliner@pachyderm.io>
+Date: Tue, 16 Dec 2014 01:52:22 -0800
+Message-ID: <CAA2X+Rn0LgVEcovYLGvu_kjHBqc7qQgXgEAQ7mKs6MORmeop4A@mail.gmail.com>
+Subject: finding path of subvolume from uuid
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we don't record tree_mod_seq during adding delayed refs,
-we may get inaccurate results from backref walking, ie.
-btrfs_find_all_roots.
+Using `btrfs subvolume show path` I can get information about what a
+subvolume's parent is by uuid.
+I'd like to use that information to perform a find-new between the
+subvolume and its parent. To do that though I need the path of the
+parent and I'm not sure the best way to do find it.
 
-For shared extents made by ioctl 'clone', removing those extents
-can end up warnings of qgroup accounting.
+One way would be to grep a `btrfs subvolume list` which is probably
+fine but needlessly slow if there's a direct way to convert from uuid
+to path.
 
-Here is an example, file A and B shares the same extent, both are in "fs tree"
-1. remove A and B
-2. add delayed ref 'DROP A' and 'DROP B'
-3. run delayed ref 'DROP A'
-4. qgroup record 'DROP A'
-5. run delayed ref 'DROP B'
-6. qgroup record 'DROP B'
-7. qgroup account on'DROP A', it runs btrfs_find_all_roots() and
-   finds no reference on this extent, and in qgroup_account_deleted_refs()
-   'DROP B' has the same ref_root and is skipped then.
-8. "fs tree"'s reference number is (num - extent_len),
-    exclusive number is (num - extent_len)
-9. qgroup account on 'DROP B', it's the last ref on this extent, thus
-10."fs tree"'s reference number is (num - extent_len),
-    exclusive number is (num - extent_len)
+Also just subscribed to this list, nice to meet all of you I'm jdoliner.
 
-So "fs tree" 's numbers are wrong.
+Thanks in advance for the help.
 
-This adds an additional check in check_existing_ref() so that we can detect
-the above case and make it right.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/qgroup.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Likely irrelevant but here's system config:
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 48b60db..5eb279b 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1796,6 +1796,26 @@ static int check_existing_refs(struct btrfs_trans_handle *trans,
- 	ulist_free(roots);
- 	btrfs_put_tree_mod_seq(fs_info, &oper->elem);
- 
-+	if (ret == 0 && oper->type == BTRFS_QGROUP_OPER_SUB_SHARED) {
-+		struct btrfs_qgroup_operation *tmp;
-+		struct rb_node *n;
-+
-+		n = &oper->n;
-+		do {
-+			spin_lock(&fs_info->qgroup_op_lock);
-+			n = rb_next(n);
-+			spin_unlock(&fs_info->qgroup_op_lock);
-+			if (!n)
-+				return 0;
-+
-+			tmp = rb_entry(n, struct btrfs_qgroup_operation, n);
-+
-+			if (tmp->bytenr == oper->bytenr &&
-+			    tmp->ref_root == oper->ref_root)
-+				return 1;
-+		} while (tmp->bytenr == oper->bytenr);
-+	}
-+
- 	return ret;
- }
- 
--- 
-1.8.1.4
+Linux jd.c.celtic-guru-651.internal 3.17.2+ #2 SMP Thu Dec 4 18:08:02
+UTC 2014 x86_64 Intel(R) Xeon(R) CPU @ 2.60GHz GenuineIntel GNU/Linux
+Btrfs v3.14_pre20140414
+Label: 'ROOT'  uuid: 4c2a047c-c81f-4838-b281-0e562fe02afe
+        Total devices 1 FS bytes used 3.43GiB
+        devid    1 size 6.68GiB used 4.82GiB path /dev/sda9
 
+Label: none  uuid: 25db08a6-4771-48b6-bcae-999a65f49bf1
+        Total devices 1 FS bytes used 24.56GiB
+        devid    1 size 100.00GiB used 27.04GiB path /dev/sdb
+
+Label: none  uuid: dc6cd8a9-ff7e-4577-9098-3909061be47c
+        Total devices 1 FS bytes used 379.74MiB
+        devid    1 size 10.00GiB used 3.04GiB path /dev/loop0
+
+Btrfs v3.14_pre20140414
+Data, single: total=24.01GiB, used=23.70GiB
+System, DUP: total=8.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, DUP: total=1.50GiB, used=880.41MiB
+Metadata, single: total=8.00MiB, used=0.00
+unknown, single: total=304.00MiB, used=0.00

@@ -1,61 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:51023 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S967595AbaLLMgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Dec 2014 07:36:14 -0500
-Received: from int-mx13.intmail.prod.int.phx2.redhat.com (int-mx13.intmail.prod.int.phx2.redhat.com [10.5.11.26])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id sBCCaEXX018443
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Dec 2014 07:36:14 -0500
-From: Karel Zak <kzak@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Karel Zak <kzak@redhat.com>
-Subject: [PATCH 10/10] btrfs-progs: add --disable-documentation
-Date: Fri, 12 Dec 2014 13:35:24 +0100
-Message-Id: <1418387724-20188-11-git-send-email-kzak@redhat.com>
-In-Reply-To: <1418387724-20188-1-git-send-email-kzak@redhat.com>
-References: <1418387724-20188-1-git-send-email-kzak@redhat.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:43754 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750823AbaLPJmr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Dec 2014 04:42:47 -0500
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 5F0973EE0C2
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:45 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 74149AC0497
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:44 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 1A73DE08005
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 18:42:44 +0900 (JST)
+Message-ID: <548FFE8E.5040507@jp.fujitsu.com>
+Date: Tue, 16 Dec 2014 18:42:38 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: Chris Murphy <lists@colorremedies.com>
+Subject: [PATCH] btrfs-progs: Add a brief explanation of btrfs property in
+ man 8 btrfs
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Karel Zak <kzak@redhat.com>
----
- Makefile.in  | 1 +
- configure.ac | 9 +++++++++
- 2 files changed, 10 insertions(+)
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-diff --git a/Makefile.in b/Makefile.in
-index bdd7683..5889224 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -5,6 +5,7 @@ CC = @CC@
- LN_S = @LN_S@
- AR = @AR@
- INSTALL = @INSTALL@
-+DISABLE_DOCUMENTATION = @DISABLE_DOCUMENTATION@
+As Chris reported at the following mail, although
+btrfs property has its own manpage, man 8 btrfs-property,
+there is no explanation about it in man 8 btrfs.
+
+https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40134.html
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Reported-by: Chris Murphy <lists@colorremedies.com>
+
+---
+ Documentation/btrfs.txt | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Documentation/btrfs.txt b/Documentation/btrfs.txt
+index 3bdc6b4..2ed8483 100644
+--- a/Documentation/btrfs.txt
++++ b/Documentation/btrfs.txt
+@@ -85,6 +85,10 @@ COMMANDS
+ 	Replace btrfs devices. +
+ 	See `btrfs-replace`(8) for details.
  
- # Non-static compilation flags
- CFLAGS = @CFLAGS@ \
-diff --git a/configure.ac b/configure.ac
-index 290d022..79cb591 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -66,6 +66,15 @@ AS_IF([test "x$enable_backtrace" = xno], [
-   AC_DEFINE([BTRFS_DISABLE_BACKTRACE], [1], [disable backtrace stuff in kerncompat.h ])
- ])
- 
++*property*::
++	Get/set a property from/to a btrfs object. +
++	See `btrfs-property`(8) for details.
 +
-+AC_ARG_ENABLE([documentation],
-+	      AS_HELP_STRING([--disable-documentation], [do not build domumentation]),
-+  [], [enable_documentation=yes]
-+)
-+AS_IF([test "x$enable_documentation" = xyes], [DISABLE_DOCUMENTATION=0], [DISABLE_DOCUMENTATION=1])
-+AC_SUBST([DISABLE_DOCUMENTATION])
-+
-+
- dnl Define <NAME>_LIBS= and <NAME>_CFLAGS= by pkg-config
- dnl
- dnl The default PKG_CHECK_MODULES() action-if-not-found is end the
+ EXIT STATUS
+ -----------
+ *btrfs* returns a zero exit status if it succeeds. Non zero is returned in
+@@ -113,3 +117,4 @@ SEE ALSO
+ `btrfs-quota`(8),
+ `btrfs-qgroup`(8),
+ `btrfs-replace`(8),
++`btrfs-property`(8),
 -- 
-1.9.3
+1.8.3.1
 

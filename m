@@ -1,243 +1,400 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f174.google.com ([209.85.160.174]:57562 "EHLO
-	mail-yk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751113AbaLPNYk (ORCPT
+Received: from mail-yh0-f54.google.com ([209.85.213.54]:49265 "EHLO
+	mail-yh0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750916AbaLPNrg convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 08:24:40 -0500
-Received: by mail-yk0-f174.google.com with SMTP id 10so5875432ykt.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 05:24:39 -0800 (PST)
+	Tue, 16 Dec 2014 08:47:36 -0500
+Received: by mail-yh0-f54.google.com with SMTP id 29so6525310yhl.41
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 05:47:36 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <549017E8.7060107@cn.fujitsu.com>
+In-Reply-To: <548F1EA7.9050505@inwind.it>
 References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
 	<548B4117.1040007@inwind.it>
 	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>
-	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com>
-	<CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com>
-	<548E377D.6030804@cn.fujitsu.com>
-	<548E7A7A.90505@pobox.com>
-	<548E929B.2090203@pobox.com>
-	<548E9B38.9080202@cn.fujitsu.com>
-	<548EABBB.4060204@pobox.com>
-	<548FA762.2070504@pobox.com>
-	<549017E8.7060107@cn.fujitsu.com>
-Date: Tue, 16 Dec 2014 21:24:39 +0800
-Message-ID: <CA+qeAOoJ5w-Sqts4j+o56ko72RztGyXWTaWohY2GmAPDvjq+NA@mail.gmail.com>
-Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more accurate
- output in df command.]
+	<548F1EA7.9050505@inwind.it>
+Date: Tue, 16 Dec 2014 21:47:35 +0800
+Message-ID: <CA+qeAOoZdxyVAjE40ST2JX3GpkgZby+f+PhXoQewniwT9bEC+g@mail.gmail.com>
+Subject: Re: [PATCH v2 1/3] Btrfs: get more accurate output in df command.
 From: Dongsheng Yang <dongsheng081251@gmail.com>
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Cc: Robert White <rwhite@pobox.com>, Grzegorz Kowal <custos.mentis@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 16, 2014 at 7:30 PM, Dongsheng Yang
-<yangds.fnst@cn.fujitsu.com> wrote:
-> On 12/16/2014 11:30 AM, Robert White wrote:
->>
->> On 12/15/2014 01:36 AM, Robert White wrote:
+Hi Goffredo,
+
+On Tue, Dec 16, 2014 at 1:47 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
+> I Yang,
+>
+> On 12/14/2014 12:29 PM, Dongsheng Yang wrote:
+>> On Sat, Dec 13, 2014 at 3:25 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
+>>> On 12/11/2014 09:31 AM, Dongsheng Yang wrote:
+>>>> When function btrfs_statfs() calculate the tatol size of fs, it is calculating
+>>>> the total size of disks and then dividing it by a factor. But in some usecase,
+>>>> the result is not good to user.
 >>>
->>> So we don't just hand-wave over statfs(). We include the
->>> dev_item.bytes_excluded in the superblock and we decide once-and-for-all
->>> (with any geometry creation, or completed conversion) how many bytes
->>> just _can't_ be reached but only once we _know_ they cant be reached.
->>> And we memorialize that unreachable data in the superblocks.
 >>>
->>> Thereafter we report the raw numbers after subtracting anything we know
->>> cannot be reached.
+>>> I Yang; during my test I discovered an error:
 >>>
->>> All other "helpful" solutions are NP-complete and insoluble.
+>>> $ sudo lvcreate -L +10G -n disk vgtest
+>>> $ sudo /home/ghigo/mkfs.btrfs -f /dev/vgtest/disk
+>>> Btrfs v3.17
+>>> See http://btrfs.wiki.kernel.org for more information.
+>>>
+>>> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+>>> fs created label (null) on /dev/vgtest/disk
+>>>         nodesize 16384 leafsize 16384 sectorsize 4096 size 10.00GiB
+>>> $ sudo mount /dev/vgtest/disk /mnt/btrfs1/
+>>> $ df /mnt/btrfs1/
+>>> Filesystem              1K-blocks    Used Available Use% Mounted on
+>>> /dev/mapper/vgtest-disk   9428992 1069312   8359680  12% /mnt/btrfs1
+>>> $ sudo ~/btrfs fi df /mnt/btrfs1/
+>>> Data, single: total=8.00MiB, used=256.00KiB
+>>> System, DUP: total=8.00MiB, used=16.00KiB
+>>> System, single: total=4.00MiB, used=0.00B
+>>> Metadata, DUP: total=1.00GiB, used=112.00KiB
+>>> Metadata, single: total=8.00MiB, used=0.00B
+>>> GlobalReserve, single: total=16.00MiB, used=0.00B
+>>>
+>>> What seems me strange is the 9428992KiB of total disk space as reported
+>>> by df. About 600MiB are missing !
+>>>
+>>> Without your patch, I got:
+>>>
+>>> $ df /mnt/btrfs1/
+>>> Filesystem              1K-blocks  Used Available Use% Mounted on
+>>> /dev/mapper/vgtest-disk  10485760 16896   8359680   1% /mnt/btrfs1
+>>>
 >>
+>> Hi Goffredo, thanx for pointing this. Let me try to show the reason of it.
 >>
->> On multiple re-readings of my own words and running off to the POSIX
->> definitions _and_ kernel sources (which don't agree).
+>> In this case you provided here, the metadata is 1G in DUP. It means
+>> we spent 2G device space for it. But from the view point of user, they
+>> can only see 9G size for this fs. It's show as below:
+>>  1G
+>> -----|---------------- Filesystem space (9G)
+>> |     \
+>> |      \
+>> |       \
+>> |    2G  \
+>> -----|----|----------------- Device space (10G)
+>>     DUP   |
 >>
->> The practical bits first ::
->>
->> I would add a "-c | --compatable" option to btrfs fi df
->> that let it produce /bin/df format-compatable output that gave the "real"
->> numbers as defined near the end.
->>
->>
->> /dev/sda 1TiB
->> /dev/sdb 2TiB
->>
->>
->> mkfs.btrfs /dev/sd{a,b} -d raid1
->>
->> @size=3TiB @used=0TiB @available=2TiB
->>
->> The above would be ideal. But POSIX says "no". f_blocks is defined (only
->> in the comments) as "total data blocks in the filesystem" and /bin/df pivots
->> on that assumption, so the only usable option left is ::
->>
->> @size=2TiB @used=0TiB @available=2TiB
->>
->> After which @used would be the real, raw space consumed. If it takes 2GiB
->> or 4GiB to store 1GiB (q.v. RAID 1 and 10) then @used would go up by that 2
->> or 4 GiB.
+>> The main idea about the new btrfs_statfs() is hiding the detail in Device
+>> space and only show the information in the FS space level.
 >
+> I am not entirely convinced. On the basis of your statement, I would find a difference of 1G or 1G/2... but missing are 600MB...
+
+Ha, forgot to clarify this one. 9428992K is almost 9G actually.
+9G = (9 * 2^20)K = 9437184K.
+
+So, as I showed in the graphic, @size is 9G. :)
+
+> Grzegorz found a difference of 2.3GB (but on a bigger disk).
 >
-> Hi Robert, thanx for your proposal about this.
+> Looking at your patch set, it seems to me that the computation of the
+> "total disk space" is done differently than before.
 >
-> IMHO, output of df command shoud be more friendly to user.
-> Well, I think we have a disagreement on this point, let's take a look at
-> what the zfs is doing.
+> Before, the "total disk space" was
 >
-> /dev/sda7- 10G
-> /dev/sda8- 10G
-> # zpool create myzpool mirror /dev/sda7 /dev/sda8 -f
-> # df -h /myzpool/
-> Filesystem      Size  Used Avail Use% Mounted on
-> myzpool         9.8G   21K  9.8G   1% /myzpool
+>>>> -     buf->f_blocks = div_u64(btrfs_super_total_bytes(disk_super), factor);
+>>>> -     buf->f_blocks >>= bits;
 >
-> That said that df command should tell user the space info they can see.
-> It means the output is the information from the FS level rather than device
-> level or _storage_manager level.
-
-Addition:
-
-There are some other ways to get the space information in btrfs, btrfs
-fi df, btrfs fi show, btrfs-debug-tree.
-
-The df command we discussed here is on the top level which is directly
-facing the user. Let me try to show the difference in different level.
-
-1), TOP level, for a linux user: df command.
-For a linux user, he does not care about the detail how the data is
-stored in devices.
-They do not care even not know what's Single, what does DUP mean, and how
-a fs implement the RAID10. What they want to know is *what is the size
-of the filesystem
-I am using and how much space is still available to me*. That's what I
-said by "FS space level)
-
-2). Middle level, for a btrfs user: btrfs fi df/show.
-For a btrfs user, they know about the single, dup and RAIDX. When they
-want to know
-what's the raid level in each space info, they can use btrfs fi df to
-print the information
-they want.
-
-3). Device level. for debugging.
-Sometimes, you need to know how the each chunk is stored in device. Please
-use btrfs-debug-tree to show details you want as more as possible.
-
-After all, I would say, the information you want to show is *not*
-incorrect to me, but it's not the
-business of df command.
-
-Thanx
+> I read this as: "total disk space" is the sum of the disk size (corrected by a
+> factor depending by the profile).
 >
-> Thanx
-> Yang
+> Instead after your patches the "total disk space" is
+>
+>>>> +     buf->f_blocks = total_alloc + total_free_data;
+>
+> This means that if a disk is not fully mapped by chunks, there is a difference
+> between the "total disk space" and the value reported by df.
+>
+> May be that you are highlighting a bug elsewhere (not caused by your patch) ?
+>
+> BTW
+> I will continue my tests...
+
+Thank you very much. :)
+
+Yang
+>
+> BR
+> G.Baroncelli
 >
 >>
->> Given the not-displayed, not reported, excluded_by_geometry values (e.g.
->> @waste) the equation should always be ::
+>> Actually, the similar idea is adopted in btrfs fi df.
 >>
->> @size - @waste = @used + @available
+>> Example:
+>> # lvcreate -L +10G -n disk Group0
+>> # mkfs.btrfs -f /dev/Group0/disk
+>> # dd if=/dev/zero of=/mnt/data bs=1M count=10240
+>> dd: error writing ‘/mnt/data’: No space left on device
+>> 8163+0 records in
+>> 8162+0 records out
+>> 8558477312 bytes (8.6 GB) copied, 207.565 s, 41.2 MB/s
+>> # df /mnt
+>> Filesystem              1K-blocks    Used Available Use% Mounted on
+>> /dev/mapper/Group0-disk   9428992 8382896      2048 100% /mnt
+>> # btrfs fi df /mnt
+>> Data, single: total=7.97GiB, used=7.97GiB
+>> System, DUP: total=8.00MiB, used=16.00KiB
+>> System, single: total=4.00MiB, used=0.00B
+>> Metadata, DUP: total=1.00GiB, used=8.41MiB
+>> Metadata, single: total=8.00MiB, used=0.00B
+>> GlobalReserve, single: total=16.00MiB, used=0.00B
 >>
->> The fact that /bin/df doesn't display all four values is just tough, The
->> fact that it calculates one "for us" is really annoying, show-super would be
->> the place to go find the truth.
+>> Now, the all space is used and got a ENOSPC error.
+>> But from the output of btrfs fi df. We can only find almost 9G (data
+>> 8G + metadata 1G)
+>> is used. The difference is that it show the DUP here to make
+>> it more clear.
 >>
->> The @waste value is soft because while 1TiB of /dev/sdb that is not going
->> to be used isn't a _particular_ 1TiB. It could be low blocks or high blocks
->> or randomly distributed blocks that end up not having data.
+>> Wish this description is clear to you :).
 >>
->> So keeping with my thought that (ideally) @size should be the "safe dd
->> size" for doing a raw-block transcribe of the devices and filesystem, it is
->> most correct for @size to be real storage size. But sadly, posix didn't
->> define that value for that role, so we are forced to munge around.
->> (particularly since /bin/df calculates stuff "for us").
+>> If there is anything confusing or sounds incorrect to you, please point it out.
 >>
+>> Thanx
+>> Yang
 >>
->> Calculation of the @waste would have to happen in two phases. At
->> initiation phase of any convert @waste would be set to zero. At completion
->> of any _full_ convert, when we know that there are no leftover bits that
->> could lead to rampant mis-report, @waste would be calculated for each device
->> as a dev_item. Then the total would be stored as a global item.
+>>>
+>>>> Example:
+>>>>       # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
+>>>>       # mount /dev/vdf1 /mnt
+>>>>       # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
+>>>>       # df -h /mnt
+>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>> /dev/vdf1       3.0G 1018M  1.3G  45% /mnt
+>>>>       # btrfs fi show /dev/vdf1
+>>>> Label: none  uuid: f85d93dc-81f4-445d-91e5-6a5cd9563294
+>>>>       Total devices 2 FS bytes used 1001.53MiB
+>>>>       devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
+>>>>       devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
+>>>> a. df -h should report Size as 2GiB rather than as 3GiB.
+>>>> Because this is 2 device raid1, the limiting factor is devid 1 @2GiB.
+>>>>
+>>>> b. df -h should report Avail as 0.97GiB or less, rather than as 1.3GiB.
+>>>>     1.85           (the capacity of the allocated chunk)
+>>>>    -1.018          (the file stored)
+>>>>    +(2-1.85=0.15)  (the residual capacity of the disks
+>>>>                     considering a raid1 fs)
+>>>>    ---------------
+>>>> =   0.97
+>>>>
+>>>> This patch drops the factor at all and calculate the size observable to
+>>>> user without considering which raid level the data is in and what's the
+>>>> size exactly in disk.
+>>>> After this patch applied:
+>>>>       # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid1
+>>>>       # mount /dev/vdf1 /mnt
+>>>>       # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
+>>>>       # df -h /mnt
+>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>> /dev/vdf1       2.0G  1.3G  713M  66% /mnt
+>>>>       # df /mnt
+>>>> Filesystem     1K-blocks    Used Available Use% Mounted on
+>>>> /dev/vdf1        2097152 1359424    729536  66% /mnt
+>>>>       # btrfs fi show /dev/vdf1
+>>>> Label: none  uuid: e98c1321-645f-4457-b20d-4f41dc1cf2f4
+>>>>       Total devices 2 FS bytes used 1001.55MiB
+>>>>       devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
+>>>>       devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
+>>>> a). The @Size is 2G as we expected.
+>>>> b). @Available is 700M = 1.85G - 1.3G + (2G - 1.85G).
+>>>> c). @Used is changed to 1.3G rather than 1018M as above. Because
+>>>>     this patch do not treat the free space in metadata chunk
+>>>>     and system chunk as available to user. It's true, user can
+>>>>     not use these space to store data, then it should not be
+>>>>     thought as available. At the same time, it will make the
+>>>>     @Used + @Available == @Size as possible to user.
+>>>>
+>>>> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+>>>> ---
+>>>> Changelog:
+>>>>         v1 -> v2:
+>>>>                 a. account the total_bytes in medadata chunk and
+>>>>                    system chunk as used to user.
+>>>>                 b. set data_stripes to the correct value in RAID0.
+>>>>
+>>>>  fs/btrfs/extent-tree.c | 13 ++----------
+>>>>  fs/btrfs/super.c       | 56 ++++++++++++++++++++++----------------------------
+>>>>  2 files changed, 26 insertions(+), 43 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>> index a84e00d..9954d60 100644
+>>>> --- a/fs/btrfs/extent-tree.c
+>>>> +++ b/fs/btrfs/extent-tree.c
+>>>> @@ -8571,7 +8571,6 @@ static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
+>>>>  {
+>>>>       struct btrfs_block_group_cache *block_group;
+>>>>       u64 free_bytes = 0;
+>>>> -     int factor;
+>>>>
+>>>>       list_for_each_entry(block_group, groups_list, list) {
+>>>>               spin_lock(&block_group->lock);
+>>>> @@ -8581,16 +8580,8 @@ static u64 __btrfs_get_ro_block_group_free_space(struct list_head *groups_list)
+>>>>                       continue;
+>>>>               }
+>>>>
+>>>> -             if (block_group->flags & (BTRFS_BLOCK_GROUP_RAID1 |
+>>>> -                                       BTRFS_BLOCK_GROUP_RAID10 |
+>>>> -                                       BTRFS_BLOCK_GROUP_DUP))
+>>>> -                     factor = 2;
+>>>> -             else
+>>>> -                     factor = 1;
+>>>> -
+>>>> -             free_bytes += (block_group->key.offset -
+>>>> -                            btrfs_block_group_used(&block_group->item)) *
+>>>> -                            factor;
+>>>> +             free_bytes += block_group->key.offset -
+>>>> +                           btrfs_block_group_used(&block_group->item);
+>>>>
+>>>>               spin_unlock(&block_group->lock);
+>>>>       }
+>>>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>>>> index 54bd91e..40f41a2 100644
+>>>> --- a/fs/btrfs/super.c
+>>>> +++ b/fs/btrfs/super.c
+>>>> @@ -1641,6 +1641,8 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+>>>>       u64 used_space;
+>>>>       u64 min_stripe_size;
+>>>>       int min_stripes = 1, num_stripes = 1;
+>>>> +     /* How many stripes used to store data, without considering mirrors. */
+>>>> +     int data_stripes = 1;
+>>>>       int i = 0, nr_devices;
+>>>>       int ret;
+>>>>
+>>>> @@ -1657,12 +1659,15 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+>>>>       if (type & BTRFS_BLOCK_GROUP_RAID0) {
+>>>>               min_stripes = 2;
+>>>>               num_stripes = nr_devices;
+>>>> +             data_stripes = num_stripes;
+>>>>       } else if (type & BTRFS_BLOCK_GROUP_RAID1) {
+>>>>               min_stripes = 2;
+>>>>               num_stripes = 2;
+>>>> +             data_stripes = 1;
+>>>>       } else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+>>>>               min_stripes = 4;
+>>>>               num_stripes = 4;
+>>>> +             data_stripes = 2;
+>>>>       }
+>>>>
+>>>>       if (type & BTRFS_BLOCK_GROUP_DUP)
+>>>> @@ -1733,14 +1738,17 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+>>>>       i = nr_devices - 1;
+>>>>       avail_space = 0;
+>>>>       while (nr_devices >= min_stripes) {
+>>>> -             if (num_stripes > nr_devices)
+>>>> +             if (num_stripes > nr_devices) {
+>>>>                       num_stripes = nr_devices;
+>>>> +                     if (type & BTRFS_BLOCK_GROUP_RAID0)
+>>>> +                             data_stripes = num_stripes;
+>>>> +             }
+>>>>
+>>>>               if (devices_info[i].max_avail >= min_stripe_size) {
+>>>>                       int j;
+>>>>                       u64 alloc_size;
+>>>>
+>>>> -                     avail_space += devices_info[i].max_avail * num_stripes;
+>>>> +                     avail_space += devices_info[i].max_avail * data_stripes;
+>>>>                       alloc_size = devices_info[i].max_avail;
+>>>>                       for (j = i + 1 - num_stripes; j <= i; j++)
+>>>>                               devices_info[j].max_avail -= alloc_size;
+>>>> @@ -1772,15 +1780,13 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+>>>>  static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>>>>  {
+>>>>       struct btrfs_fs_info *fs_info = btrfs_sb(dentry->d_sb);
+>>>> -     struct btrfs_super_block *disk_super = fs_info->super_copy;
+>>>>       struct list_head *head = &fs_info->space_info;
+>>>>       struct btrfs_space_info *found;
+>>>>       u64 total_used = 0;
+>>>> +     u64 total_alloc = 0;
+>>>>       u64 total_free_data = 0;
+>>>>       int bits = dentry->d_sb->s_blocksize_bits;
+>>>>       __be32 *fsid = (__be32 *)fs_info->fsid;
+>>>> -     unsigned factor = 1;
+>>>> -     struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
+>>>>       int ret;
+>>>>
+>>>>       /*
+>>>> @@ -1792,38 +1798,20 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>>>>       rcu_read_lock();
+>>>>       list_for_each_entry_rcu(found, head, list) {
+>>>>               if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
+>>>> -                     int i;
+>>>> -
+>>>> -                     total_free_data += found->disk_total - found->disk_used;
+>>>> +                     total_free_data += found->total_bytes - found->bytes_used;
+>>>>                       total_free_data -=
+>>>>                               btrfs_account_ro_block_groups_free_space(found);
+>>>> -
+>>>> -                     for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
+>>>> -                             if (!list_empty(&found->block_groups[i])) {
+>>>> -                                     switch (i) {
+>>>> -                                     case BTRFS_RAID_DUP:
+>>>> -                                     case BTRFS_RAID_RAID1:
+>>>> -                                     case BTRFS_RAID_RAID10:
+>>>> -                                             factor = 2;
+>>>> -                                     }
+>>>> -                             }
+>>>> -                     }
+>>>> +                     total_used += found->bytes_used;
+>>>> +             } else {
+>>>> +                     /* For metadata and system, we treat the total_bytes as
+>>>> +                      * not available to file data. So show it as Used in df.
+>>>> +                      **/
+>>>> +                     total_used += found->total_bytes;
+>>>>               }
+>>>> -
+>>>> -             total_used += found->disk_used;
+>>>> +             total_alloc += found->total_bytes;
+>>>>       }
+>>>> -
+>>>>       rcu_read_unlock();
+>>>>
+>>>> -     buf->f_blocks = div_u64(btrfs_super_total_bytes(disk_super), factor);
+>>>> -     buf->f_blocks >>= bits;
+>>>> -     buf->f_bfree = buf->f_blocks - (div_u64(total_used, factor) >> bits);
+>>>> -
+>>>> -     /* Account global block reserve as used, it's in logical size already */
+>>>> -     spin_lock(&block_rsv->lock);
+>>>> -     buf->f_bfree -= block_rsv->size >> bits;
+>>>> -     spin_unlock(&block_rsv->lock);
+>>>> -
+>>>>       buf->f_bavail = total_free_data;
+>>>>       ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
+>>>>       if (ret) {
+>>>> @@ -1831,8 +1819,12 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>>>>               mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>>>>               return ret;
+>>>>       }
+>>>> -     buf->f_bavail += div_u64(total_free_data, factor);
+>>>> +     buf->f_bavail += total_free_data;
+>>>>       buf->f_bavail = buf->f_bavail >> bits;
+>>>> +     buf->f_blocks = total_alloc + total_free_data;
+>>>> +     buf->f_blocks >>= bits;
+>>>> +     buf->f_bfree = buf->f_blocks - (total_used >> bits);
+>>>> +
+>>>>       mutex_unlock(&fs_info->chunk_mutex);
+>>>>       mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>>>>
+>>>>
+>>>
+>>>
+>>> --
+>>> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+>>> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
->> btrfs tools would report all four items.
->>
->> statfs() would have to report (@size-@waste) and @available, but that's a
->> problem with limits to the assumptions made by statfs() designers two
->> decades ago.
->>
->> I don't know which numbers we keep on hand and which we derive so...
->>
->> @available, if calculated dynamically would be
->> sum(@size, -@waste, -@used).
->>
->> @used, if calculated dynamically, would be
->> sum(@size, -@waste, -@available).
->>
->> This would also keep all the determinations of @waste well defined and
->> relegated to specific, infrequently executed blocks of code.
->>
->> GIVEN ALSO ::
->>
->> The BTRFS dynamic internal layout allows for completely valid states that
->> are inconsistent with the current filesystem flags... Such as it is legal to
->> set the RAID1 mode for data but still having RAID0, RAID5, and any manner of
->> other extents present... there is no finite solution to every particular
->> layout that exists.
->>
->> This condition is even _mandatory_ in an evolving system. May persist if
->> conversion is interrupted and then the balance is aborted. And might be
->> purely legal if you supply a convert option and limit the number of blocks
->> to process in the same run.
->>
->> Each individual extent block is it's own master in terms of what "mode the
->> filesystem is actally in" when that extent is being accessed. This fact is
->> _unchangeable_.
->>
->>
->> STANDARDS REFERENCES and Issues...
->>
->> The actual standard from POSIX at The Open Group refers to f_blocks as
->> "Total number of blocks on file system in units of f_frsize".
->>
->> See ::
->> http://pubs.opengroup.org/onlinepubs/009695399/basedefs/sys/statvfs.h.html
->>
->> The linux kernel source and man pages say "total data blocks in
->> filesystem".
->>
->> I don't know where/when/why the "total blocks" got re-qualified as "total
->> data blocks" in the linux history, but it's probably incorrect on plain
->> reading.
->>
->> The df command itself suffers a similar problem as the POSIX standard
->> doesn't talk about "data blocks" etc.
->>
->> Problematically, of course, the statfs() call doesn't really allow for any
->> means to address slack/waste space and the reverse calculation for us
->> becomes impossible.
->>
->> This gets back to the "no right answer in BTRFS" issue.
->>
->> There is a lot of missing magic here. Back when INODES where just one
->> thing with one size statfs results were probably either-or and "Everybody
->> Knew" how to turn the inode count into a block count and history just rolled
->> on.
->>
->> I think the real answer would be to invent an expanded statfs() call that
->> returned the real numbers for @total_size, @system_overhead_used,
->> @waste_space, @unusable_space, etc -- that is to come up with a generic
->> model for a modern storage system -- and let real calculations take place.
->> But I don't have the "community chops" to start that ball rolling.
->>
->> CONCLUSIONS ::
->>
->> Given the inherent assumptions of statfs(), there is _no_ solution that
->> will be correct in all cases.
->> .
->>
+>
 >
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

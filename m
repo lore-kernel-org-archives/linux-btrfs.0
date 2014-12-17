@@ -1,67 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:45380 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751108AbaLQJOJ (ORCPT
+Received: from smtp-35-i2.italiaonline.it ([212.48.25.208]:43308 "EHLO
+	smtp-35.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750953AbaLQTNC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 04:14:09 -0500
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 776913EE190
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 18:14:07 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 7C4FEAC06F8
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 18:14:06 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 29800E08005
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 18:14:06 +0900 (JST)
-Message-ID: <54914953.7000508@jp.fujitsu.com>
-Date: Wed, 17 Dec 2014 18:13:55 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Wed, 17 Dec 2014 14:13:02 -0500
+Message-ID: <5491D618.8070205@libero.it>
+Date: Wed, 17 Dec 2014 20:14:32 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: cleanup unused run_most
-References: <1418804049-11323-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1418804049-11323-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Fwd: Re: [RFC][BTRFS-PROGS] Improve output of mkfs.btrfs command
+References: <5491D215.4060109@inwind.it>
+In-Reply-To: <5491D215.4060109@inwind.it>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/12/17 17:14), Liu Bo wrote:
-> "run_most" is not used anymore.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+I forgoto to put in CC the mailing list
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Thanks,
-Satoru
+-------- Forwarded Message --------
+Subject: Re: [RFC][BTRFS-PROGS] Improve output of mkfs.btrfs command
+Date: Wed, 17 Dec 2014 19:57:25 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
+To: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
 
-> ---
->   fs/btrfs/extent-tree.c | 5 +----
->   1 file changed, 1 insertion(+), 4 deletions(-)
+On 12/17/2014 04:08 PM, Holger Hoffstätte wrote:
+> On Mon, 15 Dec 2014 21:02:53 +0100, Goffredo Baroncelli wrote:
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 222d6ae..4f54c30 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2768,7 +2768,6 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->   	struct btrfs_delayed_ref_head *head;
->   	int ret;
->   	int run_all = count == (unsigned long)-1;
-> -	int run_most = 0;
->   
->   	/* We'll clean this up in btrfs_cleanup_transaction */
->   	if (trans->aborted)
-> @@ -2778,10 +2777,8 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->   		root = root->fs_info->tree_root;
->   
->   	delayed_refs = &trans->transaction->delayed_refs;
-> -	if (count == 0) {
-> +	if (count == 0)
->   		count = atomic_read(&delayed_refs->num_entries) * 2;
-> -		run_most = 1;
-> -	}
->   
->   again:
->   #ifdef SCRAMBLE_DELAYED_REFS
+>> enclosed a patches set to improve the output of mkfs.btrfs command.
 > 
+> This is very nice! I do have a comment about the device list:
+> 
+>> ..
+>>     UUID                                  ID    SIZE    PATH
+>>     ------------------------------------  --  --------- -----------
+>>     62121322-5666-4ecf-bc8e-c9b3d9f60db9   1   50.00GiB /dev/vdb
+>>     6158cb13-3ae8-42b6-8603-660f1e5c8a7a   2   50.00GiB /dev/vdc
+>>     b49516db-ddf5-4f54-8831-a4babc79e901   3   50.00GiB /dev/vdd
+>>     00b03d81-7d29-4894-8050-9dd205f97c41   4   50.00GiB /dev/vde
+>>     f119a2ec-5ef0-436c-805e-c1b0612b05ca   5   50.00GiB /dev/vdf
+>>     adee4f58-e094-4bd4-8c56-941527524f8d   6   50.00GiB /dev/vdg
+>>     a8299171-2024-4057-ba56-1f83bf6d7e2e   7   50.00GiB /dev/vdh
+>>     b694e275-e454-4dbd-beb0-e33c388cffa2   8    2.00GiB /dev/vdi
+>>     7cbe04b5-36cd-4ea7-be82-206d5487914e   9    2.00GiB /dev/vdj
+>>     7c320654-675e-456b-ac23-cfb148b8ea57  10    2.00GiB /dev/vdk
+>>
+>>   Total disks size:                           356.01GiB
+> 
+> I'm not sure how others feel about this, but the first column of UUIDs
+> contains almost no human-usable information (who remembers UUIDs?) but
+> takes up a huge chunk of the screen real estate. I'd suggest to reorder
+> the columns to be something like (ID, Size, Path, UUID). This puts more
+> relevant information in reading-order.
+
+UUIDs have a fixed size, SIZE is up to 10 chars, 
+ID length should be less equal than 3 (up to 999 devices !); only path
+has a variable length (think about LVM devices....). This is the reason to
+put path at the end. Is the same logic that put the filename on the right
+when doing ls -l...
+
+I would like more feedback about that. I am open to swap the fields, but the 
+"Total disks size" should be below the SIZE column"
+
+
+> 
+> I hope this isn't too much to ask :)
+> 
+> thanks
+> Holger
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
 

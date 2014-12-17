@@ -1,59 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:58393 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751318AbaLQUND (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:52004 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750953AbaLQUM6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 15:13:03 -0500
-Received: by mail-wi0-f174.google.com with SMTP id h11so17018186wiw.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:13:02 -0800 (PST)
+	Wed, 17 Dec 2014 15:12:58 -0500
+Received: by mail-wi0-f181.google.com with SMTP id r20so46300wiv.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:12:57 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 8/8] Add -v and -q switches in the mkfs.btrfs man page
-Date: Wed, 17 Dec 2014 21:14:12 +0100
-Message-Id: <1418847252-14184-9-git-send-email-kreijack@inwind.it>
+Subject: [PATCH 2/8] Move group_profile_str() in utils.c
+Date: Wed, 17 Dec 2014 21:14:06 +0100
+Message-Id: <1418847252-14184-3-git-send-email-kreijack@inwind.it>
 In-Reply-To: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
 References: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add -v and -q switches to the mkfs.btrfs man page. These information
-will be printed by a next patch in the summary.
+This is a preparation patch.
+Move the group_profile_str() function from cmds-filesystem.c to utils.c
+to be re-used from other modules (in this case from mkfs.c)
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- Documentation/mkfs.btrfs.txt | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ cmds-filesystem.c | 22 ----------------------
+ utils.c           | 22 ++++++++++++++++++++++
+ utils.h           |  2 ++
+ 3 files changed, 24 insertions(+), 22 deletions(-)
 
-diff --git a/Documentation/mkfs.btrfs.txt b/Documentation/mkfs.btrfs.txt
-index ba7e42b..67b546a 100644
---- a/Documentation/mkfs.btrfs.txt
-+++ b/Documentation/mkfs.btrfs.txt
-@@ -21,9 +21,11 @@ $$[-s|--sectorsize <sectorsize>]$$
- $$[-r|--rootdir <rootdir>]$$
- $$[-K|--nodiscard]$$
- $$[-O|--features <feature1>[,<feature2>...]]$$
-+$$[-q|--quiet]$$
- $$[-U|--uuid <UUID>]$$
- $$[-h]$$
- $$[-V|--version]$$
-+$$[-v|--verbose]$$
- $$<device> [<device>...]$$
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 253f105..d1afeba 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -157,28 +157,6 @@ static char *group_type_str(u64 flag)
+ 	}
+ }
  
- DESCRIPTION
-@@ -120,6 +122,12 @@ the system.
- -V|--version::
- Print the *mkfs.btrfs* version and exit.
- 
-+-v|--verbose::
-+Increase the verbosity of the command.
+-static char *group_profile_str(u64 flag)
+-{
+-	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+-	case 0:
+-		return "single";
+-	case BTRFS_BLOCK_GROUP_RAID0:
+-		return "RAID0";
+-	case BTRFS_BLOCK_GROUP_RAID1:
+-		return "RAID1";
+-	case BTRFS_BLOCK_GROUP_RAID5:
+-		return "RAID5";
+-	case BTRFS_BLOCK_GROUP_RAID6:
+-		return "RAID6";
+-	case BTRFS_BLOCK_GROUP_DUP:
+-		return "DUP";
+-	case BTRFS_BLOCK_GROUP_RAID10:
+-		return "RAID10";
+-	default:
+-		return "unknown";
+-	}
+-}
+-
+ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
+ {
+ 	u64 count = 0;
+diff --git a/utils.c b/utils.c
+index 2a92416..19049bb 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2450,3 +2450,25 @@ int find_next_key(struct btrfs_path *path, struct btrfs_key *key)
+ 	}
+ 	return 1;
+ }
 +
-+-q|--quiet::
-+Print only the errors.
-+
- -h::
- Print help.
++char *group_profile_str(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0:
++		return "single";
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return "RAID0";
++	case BTRFS_BLOCK_GROUP_RAID1:
++		return "RAID1";
++	case BTRFS_BLOCK_GROUP_RAID5:
++		return "RAID5";
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return "RAID6";
++	case BTRFS_BLOCK_GROUP_DUP:
++		return "DUP";
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return "RAID10";
++	default:
++		return "unknown";
++	}
++}
+diff --git a/utils.h b/utils.h
+index 289e86b..bb8a449 100644
+--- a/utils.h
++++ b/utils.h
+@@ -161,4 +161,6 @@ static inline u64 btrfs_min_dev_size(u32 leafsize)
  
+ int find_next_key(struct btrfs_path *path, struct btrfs_key *key);
+ 
++char *group_profile_str(u64 flag);
++
+ #endif
 -- 
 2.1.3
 

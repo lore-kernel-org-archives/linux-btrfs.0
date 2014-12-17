@@ -1,40 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f54.google.com ([74.125.82.54]:55465 "EHLO
-	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751263AbaLQUND (ORCPT
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:44723 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750953AbaLQUM4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 15:13:03 -0500
-Received: by mail-wg0-f54.google.com with SMTP id l2so21450459wgh.27
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:13:01 -0800 (PST)
+	Wed, 17 Dec 2014 15:12:56 -0500
+Received: by mail-wi0-f178.google.com with SMTP id em10so54876wid.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:12:55 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 7/8] Print the summary
-Date: Wed, 17 Dec 2014 21:14:11 +0100
-Message-Id: <1418847252-14184-8-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
-References: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
+Subject: [PATCH V2][BTRFS-PROGS] Improve output of mkfs.btrfs command
+Date: Wed, 17 Dec 2014 21:14:04 +0100
+Message-Id: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch prints the summary of the filesystem after the creation.
-The main fileds printed are:
-- devices list with their uuid, devid, path and size
-- raid profile (dup,single,raid0...)
-- leafsize/nodesize/sectorsize
-- filesystem features (raid56, extref, mixed-bg)
-- chunk size and type
 
-If the '-v' switched is passed, the output is more verbose; if the '-q'
-switched is passed, only the errors are printed.
+Hi All,
 
+enclosed a patches set to improve the output of mkfs.btrfs command.
 
-Below an example:
+Currently I find the output of mkfs.btrfs command quite confusing:
 
-#mkfs.btrfs -L btrfs-test -f -M -m raid5 -d raid5 /dev/vd[b-k]"
+  -- cut -- cut --
+# mkfs.btrfs -f -M -d raid5 -m raid5 /dev/vd[b-k] 
+
+Btrfs v3.17
+See http://btrfs.wiki.kernel.org for more information.
+
+Turning ON incompat feature 'mixed-bg': mixed data and metadata block groups
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+Turning ON incompat feature 'raid56': raid56 extended format
+Created a data/metadata chunk of size 8388608
+adding device /dev/vdc id 2
+adding device /dev/vdd id 3
+adding device /dev/vde id 4
+adding device /dev/vdf id 5
+adding device /dev/vdg id 6
+adding device /dev/vdh id 7
+adding device /dev/vdi id 8
+adding device /dev/vdj id 9
+adding device /dev/vdk id 10
+fs created label (null) on /dev/vdb
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 356.01GiB
+  -- cut -- cut --
+
+After my patches the output becomes:
+  -- cut -- cut --
+
+# mkfs.btrfs -L btrfs-test -f -M -m raid5 -d raid5 /dev/vd[b-k]"
 BTRFS filesystem summary:
   Label:		btrfs-test
-  UUID:			14ae8a88-98ac-4f22-8441-79f76ec622f7
+  UUID:			4409e381-f066-4e7b-af74-b6525fefa08b
 
   Node size:		4096
   Leaf size:		4096
@@ -50,190 +66,49 @@ BTRFS filesystem summary:
   Number of devices:	10
     UUID                                  ID    SIZE    PATH
     ------------------------------------  --  --------- -----------
-    df1c7f50-1980-4da2-8bc9-7ee6ffb0b554   1   50.00GiB /dev/vdb
-    32c808a0-cd7b-4497-a2c0-1d77a9854af9   2   50.00GiB /dev/vdc
-    3159782e-d108-40bc-9e15-090ecac160b4   3   50.00GiB /dev/vdd
-    db7eaf0c-beb8-4093-a9d0-b9c25c146305   4   50.00GiB /dev/vde
-    c367ca04-1f71-49c0-a331-11fc0b87e9fc   5   50.00GiB /dev/vdf
-    e9b73c86-4058-4b3a-90ac-18741a276e70   6   50.00GiB /dev/vdg
-    c4298b7a-ad41-4690-bf10-bf748b319413   7   50.00GiB /dev/vdh
-    1cf048c8-af8a-4225-b09a-5d12e9b217fa   8    2.00GiB /dev/vdi
-    7e157869-768a-4725-bad5-82e6bd05fd17   9    2.00GiB /dev/vdj
-    2c9431ac-c7f0-45a5-8529-cef8cf6e4033  10    2.00GiB /dev/vdk
+    907a3722-5d3e-4ee8-9cf1-e0e31c5edea7   1   50.00GiB /dev/vdb
+    2517a387-e060-46d1-9be7-9535802333c7   2   50.00GiB /dev/vdc
+    763dbe5e-8b16-4330-8730-8b60e245056b   3   50.00GiB /dev/vdd
+    180abbc2-4426-4f9c-a711-7735e19536d4   4   50.00GiB /dev/vde
+    666799fd-0413-42ce-bac4-a96e3e855ea2   5   50.00GiB /dev/vdf
+    a6af3e09-8469-4e57-9fa0-9d82e6c8faf1   6   50.00GiB /dev/vdg
+    e2b8a73e-2e37-4eb8-a8cb-71721a96b358   7   50.00GiB /dev/vdh
+    3fa65e67-88f6-48cc-9292-9336220e19a8   8    2.00GiB /dev/vdi
+    5a238ef4-e143-4b84-b698-347a1ceb7aa7   9    2.00GiB /dev/vdj
+    9794c5b4-8a9e-40d0-9774-b672034ef22b  10    2.00GiB /dev/vdk
 
   Total devices size:                         356.01GiB
 
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- mkfs.c | 99 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 87 insertions(+), 12 deletions(-)
+  -- cut -- cut --
+Each information is in its own row. The devices are listed with more
+information (disk uuid, id, size of each devices...)
+Nodesize, Leafsize, Sectorsize are separated by the filesystem size.
 
-diff --git a/mkfs.c b/mkfs.c
-index 2d7b2ca..30a79df 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1251,6 +1251,21 @@ static void process_fs_features(u64 flags)
- 	}
- }
- 
-+static void print_fs_features(u64 flags)
-+{
-+	int i;
-+	int first = 1;
-+
-+	for (i = 0; i < ARRAY_SIZE(mkfs_features); i++) {
-+		if (flags & mkfs_features[i].flag) {
-+			if (!first)
-+				printf(", %s",mkfs_features[i].name);
-+			else
-+				printf("%s",mkfs_features[i].name);
-+			first=0;
-+		}
-+	}
-+}
- 
- /*
-  * Return NULL if all features were parsed fine, otherwise return the name of
-@@ -1271,13 +1286,43 @@ static char* parse_fs_features(char *namelist, u64 *flags)
- 	return NULL;
- }
- 
-+static void list_all_devices(struct btrfs_root *root)
-+{
-+	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_device *device;
-+	int number_of_devices = 0;
-+	u64 total_block_count = 0;
-+
-+	fs_devices = root->fs_info->fs_devices;
-+
-+	list_for_each_entry(device, &fs_devices->devices, dev_list)
-+		number_of_devices++;
-+
-+	printf("  Number of devices:\t%d\n", number_of_devices);
-+	printf("    UUID                                  ID    SIZE    PATH\n");
-+	printf("    ------------------------------------  --  --------- -----------\n");
-+	list_for_each_entry_reverse(device, &fs_devices->devices, dev_list) {
-+		char dev_uuid[BTRFS_UUID_UNPARSED_SIZE];
-+
-+		uuid_unparse(device->uuid, dev_uuid);
-+		printf("    %s %3llu %10s %s\n",
-+			dev_uuid, device->devid,
-+			pretty_size(device->total_bytes),
-+			device->name);
-+		total_block_count += device->total_bytes;
-+	}
-+
-+	printf("\n");
-+	printf("  Total devices size:                        %10s\n",
-+		pretty_size(total_block_count));
-+}
-+
- int main(int ac, char **av)
- {
- 	char *file;
- 	struct btrfs_root *root;
- 	struct btrfs_trans_handle *trans;
- 	char *label = NULL;
--	char *first_file;
- 	u64 block_count = 0;
- 	u64 dev_block_count = 0;
- 	u64 blocks[7];
-@@ -1532,9 +1577,11 @@ int main(int ac, char **av)
- 		exit(1);
- 	}
- 
--	/* if we are here that means all devs are good to btrfsify */
--	printf("%s\n", BTRFS_BUILD_VERSION);
--	printf("See http://btrfs.wiki.kernel.org for more information.\n\n");
-+	if (verbose) {
-+		/* if we are here that means all devs are good to btrfsify */
-+		printf("%s\n", BTRFS_BUILD_VERSION);
-+		printf("See http://btrfs.wiki.kernel.org for more information.\n\n");
-+	}
- 
- 	dev_cnt--;
- 
-@@ -1550,7 +1597,6 @@ int main(int ac, char **av)
- 				strerror(errno));
- 			exit(1);
- 		}
--		first_file = file;
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
- 					   block_count, &mixed, discard);
- 		if (ret) {
-@@ -1568,7 +1614,6 @@ int main(int ac, char **av)
- 			exit(1);
- 		}
- 
--		first_file = file;
- 		source_dir_size = size_sourcedir(source_dir, sectorsize,
- 					     &num_of_meta_chunks, &size_of_data);
- 		if(block_count < source_dir_size)
-@@ -1606,7 +1651,8 @@ int main(int ac, char **av)
- 		features |= BTRFS_FEATURE_INCOMPAT_RAID56;
- 	}
- 
--	process_fs_features(features);
-+	if (verbose)
-+		process_fs_features(features);
- 
- 	ret = make_btrfs(fd, file, label, fs_uuid, blocks, dev_block_count,
- 			 nodesize, leafsize,
-@@ -1687,11 +1733,6 @@ raid_groups:
- 	ret = create_data_reloc_tree(trans, root);
- 	BUG_ON(ret);
- 
--	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
--	    "sectorsize %u size %s\n",
--	    label, first_file, nodesize, leafsize, sectorsize,
--	    pretty_size(btrfs_super_total_bytes(root->fs_info->super_copy)));
--
- 	btrfs_commit_transaction(trans, root);
- 
- 	if (source_dir_set) {
-@@ -1706,6 +1747,40 @@ raid_groups:
- 		BUG_ON(ret);
- 	}
- 
-+	if (!quiet) {
-+		printf("BTRFS filesystem summary:\n");
-+		printf("  Label:\t\t%s\n", label);
-+		printf("  UUID:\t\t\t%s\n", fs_uuid);
-+		printf("\n");
-+
-+		printf("  Node size:\t\t%u\n", nodesize);
-+		printf("  Leaf size:\t\t%u\n", leafsize);
-+		printf("  Sector size:\t\t%u\n", sectorsize);
-+		printf("  Initial chunks:\n");
-+		if (allocation.data)
-+			printf("    Data:\t\t%s\n",
-+				pretty_size(allocation.data));
-+		if (allocation.metadata)
-+			printf("    Metadata:\t\t%s\n",
-+				pretty_size(allocation.metadata));
-+		if (allocation.mixed)
-+			printf("    Data+Metadata:\t%s\n",
-+				pretty_size(allocation.mixed));
-+		printf("    System:\t\t%s\n",
-+			pretty_size(allocation.system));
-+		printf("  Metadata profile:\t%s\n",
-+			group_profile_str(metadata_profile));
-+		printf("  Data profile:\t\t%s\n",
-+			group_profile_str(data_profile));
-+		printf("  Mixed mode:\t\t%s\n", mixed ? "YES" : "NO");
-+		printf("  SSD detected:\t\t%s\n", ssd ? "YES" : "NO");
-+		printf("  Incompat features:\t");
-+		print_fs_features(features);
-+		printf("\n");
-+
-+		list_all_devices(root);
-+	}
-+
- 	ret = close_ctree(root);
- 	BUG_ON(ret);
- 	free(label);
+The metadata/data profile are displayed (before this information was missed).
+Also the size of the data/metadata/system chunk are displayed.
+
+
+These changes are also available via github
+	https://github.com/kreijack/btrfs-progs
+branch
+	mkfs-verbose
+
+Changelog:
+v1: first issue (as RFC)
+v2: replaced "disks" with "devices" (suggested by Duncan)
+    replaced "Feature" with "Incompat features" (suggested by Satoru)
+    updated the comment of the documentation patch (suggested by Duncan)
+    removed a duplicate "-q" in the documentation patch (suggested by Duncan)
+    split the patch #6 in #6 and #7 to simplify the reading and review
+
+BR
+G.Baroncelli
+
 -- 
-2.1.3
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

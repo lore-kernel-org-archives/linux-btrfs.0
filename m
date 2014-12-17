@@ -1,28 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47851 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:51244 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750953AbaLQOcM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 09:32:12 -0500
-Date: Wed, 17 Dec 2014 15:32:11 +0100
+	id S1751117AbaLQQt0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 11:49:26 -0500
+Date: Wed, 17 Dec 2014 17:49:24 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH] BUG: use metadata_profile instead of data_profile
-Message-ID: <20141217143210.GA27601@twin.jikos.cz>
+To: Merlijn Wajer <merlijn@wizzup.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] btrfs-progs: Support for musl libc (and perhaps also
+ uclibc)
+Message-ID: <20141217164924.GB27601@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1418472351-5113-1-git-send-email-kreijack@inwind.it>
- <1418472351-5113-2-git-send-email-kreijack@inwind.it>
+References: <548C4E9D.2080309@wizzup.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1418472351-5113-2-git-send-email-kreijack@inwind.it>
+In-Reply-To: <548C4E9D.2080309@wizzup.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 13, 2014 at 01:05:51PM +0100, Goffredo Baroncelli wrote:
-> The function test_num_disk_vs_raid() show an error message if
-> the raid profile is incompatible with the number of devices.
-> 
-> Unfortunately when the error is related to data profile,
-> the message print the metadata profile.
+On Sat, Dec 13, 2014 at 03:35:09PM +0100, Merlijn Wajer wrote:
+[snip]
 
-Already fixed by 373110d84f3a1c5bdd305d2e6dcaeb98b5e6dbe7.
+> Attached are the two patches generated with git format-patch. I am aware
+> that this may not be required format for submitting patches -- but
+> please give me some time to get used to the etiquette. :-)
+
+Thanks, there are minor things that I won't bother to point out to
+occasional contributors and fix them myself. The only formal requirement
+is the Signed-off-by tag, you can find the description eg. here
+
+http://lxr.free-electrons.com/source/Documentation/SubmittingPatches#L358
+
+> Please let me know if musl-libc (or any other libc) is a supported
+> platform, and if so, if and how I can improve on said patches.
+
+I'm not aware of non-glibc users, but I don't see any problem to add
+support for more libc implementations. However, I won't regularly verify
+that it builds so it might break.
+
+Seems that only standardized library calls are used in btrfs-progs so
+any kind of support is probably going to be satisfied by #ifdefs.
+
+Your patches are simple so I'll try to schedule them to some 3.18.x
+update.

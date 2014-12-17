@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22054 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:27209 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752042AbaLQINl (ORCPT
+	with ESMTP id S1751915AbaLQIY2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 03:13:41 -0500
-Date: Wed, 17 Dec 2014 16:13:29 +0800
+	Wed, 17 Dec 2014 03:24:28 -0500
+Date: Wed, 17 Dec 2014 16:24:13 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Eryu Guan <eguan@redhat.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] xfstests: btrfs: add test case for qgroup account on
  shared extents
-Message-ID: <20141217081328.GA13331@localhost.localdomain>
+Message-ID: <20141217082412.GB13331@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1418723004-30543-1-git-send-email-bo.li.liu@oracle.com>
  <1418788268-30145-1-git-send-email-bo.li.liu@oracle.com>
@@ -30,12 +30,6 @@ On Wed, Dec 17, 2014 at 01:25:31PM +0800, Eryu Guan wrote:
 > 
 > The commit is in kernel since May 13, but I still saw warnings on
 > 3.18+ kernel and test fails too. Is this expected?
-
-Yes, I just sent the fix,
-
-Btrfs: fix a warning of qgroup account on shared extents
-https://patchwork.kernel.org/patch/5499981/
-
 > 
 > > 
 > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
@@ -116,6 +110,14 @@ https://patchwork.kernel.org/patch/5499981/
 > Usually this can be done by _scratch_mkfs_sized, but it doesn't accept
 > additional mkfs options, given that usually scratch dev is bigger than
 > 1G, so I think using _scratch_mkfs is fine here.
+
+As we need to get a stable result for "017.out", "--nodesize 4096" is
+necessary while "-b 1g" is not.
+
+Thanks,
+
+-liubo
+
 > 
 > > +run_check _scratch_mount
 > > +
@@ -139,19 +141,11 @@ https://patchwork.kernel.org/patch/5499981/
 > It'd be better to add some comments to explain the test steps, the
 > kernel commit is big and it's not obvious to me why these magic
 > steps could trigger kernel warning :)
-
-Well, I'll add the fix link that could explain a bit.
-
 > 
 > Anyway,
 > 
 > Reviewed-by: Eryu Guan <eguan@redhat.com>
 > 
-
-Thanks!
-
--liubo
-
 > Thanks,
 > Eryu
 > > +

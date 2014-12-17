@@ -1,97 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 189-19-234-109.dsl.telesp.net.br ([189.19.234.109]:42508 "EHLO
-	anthem.async.com.br" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750932AbaLQB0b (ORCPT
+Received: from detritus.pyropus.ca ([64.5.53.58]:41819 "HELO
+	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1751234AbaLQCo7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 20:26:31 -0500
-Received: from anthem.async.com.br (kiko@localhost [127.0.0.1])
-	by anthem.async.com.br (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id sBH1FcfZ001655
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 23:15:38 -0200
-Received: (from kiko@localhost)
-	by anthem.async.com.br (8.14.4/8.14.4/Submit) id sBH1Fb2p001654
-	for linux-btrfs@vger.kernel.org; Tue, 16 Dec 2014 23:15:37 -0200
-Date: Tue, 16 Dec 2014 23:15:37 -0200
-From: Christian Robottom Reis <kiko@async.com.br>
-To: linux-btrfs@vger.kernel.org
-Subject: Quota limit question
-Message-ID: <20141217011537.GA1114@anthem.async.com.br>
+	Tue, 16 Dec 2014 21:44:59 -0500
+Date: Tue, 16 Dec 2014 20:42:28 -0600
+From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
+To: btrfs list <linux-btrfs@vger.kernel.org>
+Subject: Oddly slow read performance with near-full largish FS
+Message-ID: <20141217024228.GA5544@pyropus.ca>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello there,
+Hi,
 
-    I'm trying out btrfs on a machine we use to host a number of
-containers. After a misbehaved process filled the partition allocated to
-the containers, I decided to experiment with quotas to isolate the
-containers from each other. But I've now run into an oddity with one of
-the containers, which reports being out of space:
+I've been running btrfs for various filesystems for a few years now, and have
+recently run into problems with a large filesystem becoming *really* slow for
+basic reading.  None of the debugging/testing suggestions I've come across in
+the wiki or in the mailing list archives seems to have helped.
 
-    # btrfs qgroup limit 2000m 0/261 . && touch x
-    touch: cannot touch ‘x’: Disk quota exceeded
+Background: this particular filesystem holds backups for various other
+machines on the network, a mix of rdiff-backup data (so lots of small files)
+and rsync copies of larger files (everything from ~5MB data files to ~60GB VM
+HD images).  There's roughly 16TB of data in this filesystem (the filesystem
+is ~17TB).  The btrfs filesystem is a simple single volume, no snapshots,
+multiple devices, or anything like that.  It's an LVM logical volume on top of
+dmcrypt on top of an mdadm RAID set (8 disks in RAID 6).
 
-The strange thing is that it doesn't seem to be actually out of space:
+The performance:  trying to copy the data off this filesystem to another
+(non-btrfs) filesystem with rsync or just cp was taking aaaages - I found one
+suggestion that it could be because updating the atimes required a COW of the
+metadata in btrfs, so I mounted the filesystem noatime, but this doesn't
+appear to have made any difference.  The speeds I'm seeing (with iotop)
+fluctuate a lot.  They spend most of the time in the range of 1-3 MB/s, with
+large periods of time where no IO seems to happen at all, and occasional short
+spikes to ~25-30 MB/s.  System load seems to sit around 10-12 (with only 2
+processes reported as running, everything else sleeping) while this happens.
+The server is doing nothing other than this copy at the time.  The only
+processes using any noticable CPU are rsync (source and destination processes,
+around 3% CPU each, plus an md0:raid6 process around 2-3%), and a handful of
+"kworker" processes, perhaps one per CPU (there are 8 physical cores in the
+server, plus hyperthreading).
 
-    # btrfs qgroup show -p -r -e /var | grep 261
-    0/261    1111810048  391114752   2097152000  0          ---   
+Other filesystems on the same physical disks have no trouble exceeding 100MB/s
+reads.  The machine is not swapping (16GB RAM, ~8GB swap with 0 swap used).
 
-which pretty-printed is 1.04G rfer and 0.36G excl (perhaps the qgroup
-show command could take an option to display in other units?)
+Is there something obvious I'm missing here?  Is there a reason I can only
+average ~3MB/s reads from a btrfs filesystem?
 
-I can only get it to allow me to start using it again if I go over 5808M:
+kernel is x86_64 linux-stable 3.17.6.  btrfs-progs is v3.17.3-3-g8cb0438.
+Output of the various info commands is:
 
-    # btrfs qgroup limit 5807m 0/261 . && rm -f x && touch x
-    rm: cannot remove ‘x’: Disk quota exceeded
-    # btrfs qgroup limit 5808m 0/261 . && rm -f x && touch x
-    #
+  $ sudo btrfs fi df /media/backup/
+  Data, single: total=16.24TiB, used=15.73TiB
+  System, DUP: total=8.00MiB, used=1.75MiB
+  System, single: total=4.00MiB, used=0.00
+  Metadata, DUP: total=35.50GiB, used=34.05GiB
+  Metadata, single: total=8.00MiB, used=0.00
+  unknown, single: total=512.00MiB, used=0.00
 
-Why specifically 5808 I'm not sure, but I binary searched until I got to
-that number. Does anyone have a clue as to why that might be happening,
-and perhaps what I'm missing?
+  $ btrfs --version
+  Btrfs v3.17.3-3-g8cb0438
 
-For completeness, some details on the filesystem and system:
+  $ sudo btrfs fi show
 
-    # btrfs fi show /var
-    Label: var  uuid: 815b3280-e90f-483a-b244-1d2dfe9b6e67
-            Total devices 2 FS bytes used 31.48GiB
-            devid    1 size 80.00GiB used 55.91GiB path /dev/sda3
-            devid    2 size 80.00GiB used 55.91GiB path /dev/sdb3
+  Label: 'backup'  uuid: c18dfd04-d931-4269-b999-e94df3b1918c
+    Total devices 1 FS bytes used 15.76TiB
+    devid    1 size 16.37TiB used 16.31TiB path /dev/mapper/vg-backup
 
-    root@riff:/var/lib/lxc/async-local-machine-2/rootfs# btrfs fi df /var
-    Data, RAID1: total=53.88GiB, used=30.45GiB
-    System, RAID1: total=32.00MiB, used=16.00KiB
-    Metadata, RAID1: total=2.00GiB, used=1.03GiB
+Thanks in advance for any suggestions.
 
-    # btrfs qgroup show -p -r -e /var
-    qgroupid rfer        excl        max_rfer    max_excl   parent  
-    -------- ----        ----        --------    --------   ------  
-    0/5      1486852096  1252569088  0           0          ---     
-    0/259    727175168   104947712   0           5368709120 ---     
-    0/261    1111810048  391114752   2097152000  0          ---   
-    0/265    1255923712  442871808   0           5368709120 ---     
-    0/271    831856640   333189120   0           5368709120 ---     
-    0/274    498761728   22827008    0           5368709120 ---     
-    0/283    7666098176  6691426304  10737418240 0          ---     
-    0/288    1118441472  348901376   0           5368709120 ---     
-    0/289    11134029824 10498187264 16106127360 0          ---     
-    0/290    1412505600  694210560   10737418240 0          ---     
-    0/292    1131053056  333373440   0           5368709120 ---     
-    0/293    1258176512  401141760   0           5368709120 ---     
-    0/306    1430532096  656773120   0           5368709120 ---     
-    0/318    9309212672  8509857792  10737418240 0          ---     
-    0/320    860209152   837406720   0           5368709120 ---     
-    0/323    1167962112  469741568   0           5368709120 ---     
-
-    # btrfs --version
-    Btrfs v3.12
-
-    # uname -a
-    Linux riff 3.13.0-43-generic #72-Ubuntu SMP Mon Dec 8 19:35:06 UTC 2014
-    x86_64 x86_64 x86_64 GNU/Linux
-
-Thanks,
+Charles
 -- 
-Christian Robottom Reis | [+55 16] 3376 0125   | http://async.com.br/~kiko
-Async Open Source       | [+55 16] 9 9112 6430 | http://launchpad.net/~kiko
+-----------------------------------------------------------------------
+Charles Cazabon
+GPL'ed software available at:               http://pyropus.ca/software/
+-----------------------------------------------------------------------

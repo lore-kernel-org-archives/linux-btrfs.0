@@ -1,86 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:52831 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751105AbaLQC4v (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 21:56:51 -0500
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 4FD233EE194
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 11:56:50 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 51BF1AC0299
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 11:56:49 +0900 (JST)
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id EF997E08002
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 11:56:48 +0900 (JST)
-Message-ID: <5490F0DB.5020309@jp.fujitsu.com>
-Date: Wed, 17 Dec 2014 11:56:27 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: Joe Doliner <jdoliner@pachyderm.io>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: finding path of subvolume from uuid
-References: <CAA2X+Rn0LgVEcovYLGvu_kjHBqc7qQgXgEAQ7mKs6MORmeop4A@mail.gmail.com>
-In-Reply-To: <CAA2X+Rn0LgVEcovYLGvu_kjHBqc7qQgXgEAQ7mKs6MORmeop4A@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:53099 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751385AbaLQLPs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 06:15:48 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y1CYy-0003Jq-B3
+	for linux-btrfs@vger.kernel.org; Wed, 17 Dec 2014 12:14:40 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:14:35 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:14:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Quota limit question
+Date: Wed, 17 Dec 2014 11:13:28 +0000 (UTC)
+Message-ID: <pan$d0df9$15eccc0$adce85d2$8664a8de@cox.net>
+References: <20141217011537.GA1114@anthem.async.com.br>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Christian Robottom Reis posted on Tue, 16 Dec 2014 23:15:37 -0200 as
+excerpted:
 
-(2014/12/16 18:52), Joe Doliner wrote:
-> Using `btrfs subvolume show path` I can get information about what a
-> subvolume's parent is by uuid.
-> I'd like to use that information to perform a find-new between the
-> subvolume and its parent. To do that though I need the path of the
-> parent and I'm not sure the best way to do find it.
+>     # btrfs qgroup limit 2000m 0/261 . && touch x
+>     touch: cannot touch ‘x’: Disk quota exceeded
+> 
+> The strange thing is that it doesn't seem to be actually out of space:
+> 
+>     # btrfs qgroup show -p -r -e /var | grep 261
+>     0/261    1111810048  391114752   2097152000  0          ---
 
-I couldn't understand what the meaning of "a find new between
-the subvolume and its parent." Could you explain it more clearly?
+>     # btrfs --version Btrfs v3.12
+> 
+>     # uname -a
+>     Linux riff 3.13.0-43-generic #72-Ubuntu SMP
+>     Mon Dec 8 19:35:06 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
 
->
-> One way would be to grep a `btrfs subvolume list` which is probably
-> fine but needlessly slow if there's a direct way to convert from uuid
-> to path.
->
-> Also just subscribed to this list, nice to meet all of you I'm jdoliner.
+Does the problem still exist with a current 3.18 series kernel and 3.17 
+series btrfs userspace?  The quota code in the versions you appear to be 
+running had some (rather severe, quotes could go negative at times!) 
+known bugs and was rewritten recently.  I don't use quotas here and don't 
+know for sure whether the quota rewrite made it into kernel 3.17, but 
+current 3.18 should have it, and current userspace is I believe 3.17.3, 
+so you should consider upgrading it as well.
 
-Nice to meet you too :-D
+More in general, consider your use-case.  While btrfs is no longer the 
+experimental filesystem it once was (tho the warnings weren't removed 
+until after the old 3.12/3.13 you're running, AFAIK), it's still 
+maturing, and running year-old code still means running code with bugs 
+that are known and have been fixed for a year.  There's a place for being 
+conservative and running old and known stable code, but btrfs is still 
+young and maturing and doesn't match that use-case very well.  Either you 
+need stable and mature and an equally stable and mature filesystem is a 
+better fit, at least for a couple more years, or you want newer 
+technology/code and running year-old stuff is behind the curve.  Either 
+way, running year-old btrfs code, both kernel and userspace, doesn't make 
+a lot of sense.  Perhaps in a couple years it will, after btrfs is more 
+mature and stable and year-old code doesn't mean year-stale bugs, but not 
+currently.
 
-Thanks,
-Satoru
-
->
-> Thanks in advance for the help.
->
->
-> Likely irrelevant but here's system config:
->
-> Linux jd.c.celtic-guru-651.internal 3.17.2+ #2 SMP Thu Dec 4 18:08:02
-> UTC 2014 x86_64 Intel(R) Xeon(R) CPU @ 2.60GHz GenuineIntel GNU/Linux
-> Btrfs v3.14_pre20140414
-> Label: 'ROOT'  uuid: 4c2a047c-c81f-4838-b281-0e562fe02afe
->          Total devices 1 FS bytes used 3.43GiB
->          devid    1 size 6.68GiB used 4.82GiB path /dev/sda9
->
-> Label: none  uuid: 25db08a6-4771-48b6-bcae-999a65f49bf1
->          Total devices 1 FS bytes used 24.56GiB
->          devid    1 size 100.00GiB used 27.04GiB path /dev/sdb
->
-> Label: none  uuid: dc6cd8a9-ff7e-4577-9098-3909061be47c
->          Total devices 1 FS bytes used 379.74MiB
->          devid    1 size 10.00GiB used 3.04GiB path /dev/loop0
->
-> Btrfs v3.14_pre20140414
-> Data, single: total=24.01GiB, used=23.70GiB
-> System, DUP: total=8.00MiB, used=16.00KiB
-> System, single: total=4.00MiB, used=0.00
-> Metadata, DUP: total=1.50GiB, used=880.41MiB
-> Metadata, single: total=8.00MiB, used=0.00
-> unknown, single: total=304.00MiB, used=0.00
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

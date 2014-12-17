@@ -1,99 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45406 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:47777 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751047AbaLPVke (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 16:40:34 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y0zr5-00081B-Qr
-	for linux-btrfs@vger.kernel.org; Tue, 16 Dec 2014 22:40:31 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 22:40:31 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 22:40:31 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH 6/7] Print the summary
-Date: Tue, 16 Dec 2014 21:40:20 +0000 (UTC)
-Message-ID: <pan$19bf5$401c56ea$62691b03$1c476b4d@cox.net>
+	id S1751163AbaLQO3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 09:29:14 -0500
+Date: Wed, 17 Dec 2014 15:29:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goffredo Baroncelli <kreijack@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC][BTRFS-PROGS] Improve output of mkfs.btrfs command
+Message-ID: <20141217142912.GZ27601@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
-	<1418673780-22000-7-git-send-email-kreijack@inwind.it>
-	<pan$20861$ccededbf$bdcf87a3$8bcef8ae@cox.net>
-	<548FAB3A.7060009@pobox.com> <20141216090540.GK1442@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Tue, 16 Dec 2014 09:05:40 +0000 as excerpted:
+On Mon, Dec 15, 2014 at 09:02:53PM +0100, Goffredo Baroncelli wrote:
+> enclosed a patches set to improve the output of mkfs.btrfs command.
+>
+> Currently I find the output of mkfs.btrfs command quite confusing:
 
-> On Mon, Dec 15, 2014 at 07:47:06PM -0800, Robert White wrote:
->> On 12/15/2014 05:58 PM, Duncan wrote:
->> >* Please s/disk/device/, here and possibly elsewhere.  I know I'm not
->> >the only one who is trying to make the switch in my own usage, as it
->> >looks a bit foolish (and/or marks the user as an old fogey who's
->> >likely to start lecturing about how a GiB isn't "small", as I'm known
->> >to do at times! =:^) already, as it's only going to be more so over
->> >time.
->> 
->> I am actually not fond of "disk" nor "device" as both carry potentially
->> false information.
->> 
->> I prefer "slice", not that I am totally happy with that word either.
->> But by the time you get through loopback devices, memory map devices,
->> the "device files" that represent parts of "partitioned" devices,
->> logical "volumes", and god only knows what future "thingies" we will
->> end up dealing with... I like the terms that remove false hints.
+Thanks. I've marked the wiki://Project_ideas item as claimed.
+
+> After my patches the output becomes:
 > 
-> All this agreed, but "slice" will be largely viewed as a neologism
-> by anyone who hasn't used (IIRC) BSD or Solaris. On the other hand, for
-> all their other flaws, "device" is much better than "disk" here, as you
-> could he talking about a partition, a flash memory card (which many
-> people don't view as "disks"), or a network block device. You could
-> refer to a "block device" to clarify, because that's really what we're
-> talking about here, but it could get a bit cumbersome.
+> # mkfs.btrfs -f -d raid5 -m raid5 /dev/vd[b-k] 
+> BTRFS filesystem summary:
+>   Label:		btrfs-test
+>   UUID:			1073cb19-b675-423d-9aba-caad7f1508a8
+> 
+>   Node size:		16384
+>   Leaf size:		16384
+>   Sector size:		4096
+>   Initial chunks:
+>     Data:		9.01GiB
+>     Metadata:		3.61GiB
+>     System:		18.06MiB
+>   Metadata profile:	RAID5
+>   Data profile:		RAID5
+>   Mixed mode:		NO
+>   SSD detected:		NO
+>   Features:		extref, raid56
+>   Number of devices:	10
+>     UUID                                  ID    SIZE    PATH
+>     ------------------------------------  --  --------- -----------
+>     62121322-5666-4ecf-bc8e-c9b3d9f60db9   1   50.00GiB /dev/vdb
+>     6158cb13-3ae8-42b6-8603-660f1e5c8a7a   2   50.00GiB /dev/vdc
+>     b49516db-ddf5-4f54-8831-a4babc79e901   3   50.00GiB /dev/vdd
+>     00b03d81-7d29-4894-8050-9dd205f97c41   4   50.00GiB /dev/vde
+>     f119a2ec-5ef0-436c-805e-c1b0612b05ca   5   50.00GiB /dev/vdf
+>     adee4f58-e094-4bd4-8c56-941527524f8d   6   50.00GiB /dev/vdg
+>     a8299171-2024-4057-ba56-1f83bf6d7e2e   7   50.00GiB /dev/vdh
+>     b694e275-e454-4dbd-beb0-e33c388cffa2   8    2.00GiB /dev/vdi
+>     7cbe04b5-36cd-4ea7-be82-206d5487914e   9    2.00GiB /dev/vdj
+>     7c320654-675e-456b-ac23-cfb148b8ea57  10    2.00GiB /dev/vdk
+> 
+>   Total disks size:                           356.01GiB
 
-Agreed.  I've only seen "slice" in the bsd context and don't even know 
-how the word is used, only that it's something from BSD land that I've 
-seen in the context of partitions.
-
-Device seems much more natural at least on Linux, and if btrfs is 
-eventually used elsewhere where concepts and/or terminology is different, 
-that'll be something they'll deal with in the btrfs context much as I'd 
-expect to have to deal with a number of context-specific terms and 
-meanings were I to run zfs on Linux[1].
-
->> In linux we (currently, and for the foreseeable future) use the device
->> files and so conflate "device" with all the above.
->> 
->> But if the code base and format were to spread to another platform...
->> 
->> And besides, using device carries its own lingual hazzards.
-
-That "device" is such a flexible term at least on Linux, where devices 
-can be and often are nested and/or virtual as well as physical, is 
-actually its big advantage here, IMO.  And FWIW, the only difference I 
-saw between slice and device in your example is exactly as discussed, 
-they seemed to be used in almost exactly the same way, only "device" is a 
-term native to linux, while slice sounds like we're trying to borrow bsd 
-terminology and make them fit on linux, for no good reason given that 
-"device" is a linux-native term that appears to work just as well in the 
-context in which it is used.
-
----
-[1] Zfs on linux: Not an option here for licensing reasons and because it 
-appears Oracle has absolutely no interest in clearing up the problem, but 
-that's certainly the most comparable thing to btrfs at this point, with 
-the biggest technical difference being its relative maturity, tho from 
-what I have read there's a big practical difference in hardware 
-requirements (much higher memory requirements and ECC RAM very strongly 
-recommended) as well.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+The output looks good to me, I'll get back to this patchset after 3.18
+is released, so there's enough time to gather feedback.

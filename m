@@ -1,72 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53099 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751385AbaLQLPs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 06:15:48 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y1CYy-0003Jq-B3
-	for linux-btrfs@vger.kernel.org; Wed, 17 Dec 2014 12:14:40 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:14:35 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:14:35 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Quota limit question
-Date: Wed, 17 Dec 2014 11:13:28 +0000 (UTC)
-Message-ID: <pan$d0df9$15eccc0$adce85d2$8664a8de@cox.net>
-References: <20141217011537.GA1114@anthem.async.com.br>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:22454 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750999AbaLQLlT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 06:41:19 -0500
+Message-ID: <54916B39.5080409@cn.fujitsu.com>
+Date: Wed, 17 Dec 2014 19:38:33 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Robert White <rwhite@pobox.com>, Grzegorz Kowal <custos.mentis@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more accurate
+ output in df command.]
+References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>	<548B4117.1040007@inwind.it>	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com> <CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com> <548E377D.6030804@cn.fujitsu.com> <548E7A7A.90505@pobox.com> <548E929B.2090203@pobox.com> <548E9B38.9080202@cn.fujitsu.com> <548EABBB.4060204@pobox.com> <548FA762.2070504@pobox.com> <549017E8.7060107@cn.fujitsu.com> <54908D8A.8040101@pobox.com>
+In-Reply-To: <54908D8A.8040101@pobox.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christian Robottom Reis posted on Tue, 16 Dec 2014 23:15:37 -0200 as
-excerpted:
+On 12/17/2014 03:52 AM, Robert White wrote:
+> On 12/16/2014 03:30 AM, Dongsheng Yang wrote:
+>>
+>> Hi Robert, thanx for your proposal about this.
+>>
+>> IMHO, output of df command shoud be more friendly to user.
+>> Well, I think we have a disagreement on this point, let's take a look at
+>> what the zfs is doing.
+>>
+>> /dev/sda7- 10G
+>> /dev/sda8- 10G
+>> # zpool create myzpool mirror /dev/sda7 /dev/sda8 -f
+>> # df -h /myzpool/
+>> Filesystem      Size  Used Avail Use% Mounted on
+>> myzpool         9.8G   21K  9.8G   1% /myzpool
+>>
+>> That said that df command should tell user the space info they can see.
+>> It means the output is the information from the FS level rather than
+>> device level or _storage_manager level.
+>
+> That's great for ZFS, but ZFS isn't BTRFS. ZFS can't get caught 
+> halfway between existing modailties and sit there forever. ZFS doesn't 
+> restructure itself. So the simple answer you want isn't _possible_ 
+> outside very simple cases.
+>
+> So again, you've displayed a _simple_ case as if it covers or 
+> addresses all the complex cases.
+>
+> (I don't have the storage to actually do the exercise) But what do you 
+> propose the correct answer is for the following case:
+>
+>
+> /dev/sda - 7.5G
+> /dev/sdb - 7.5G
+>
+> mkfs.btrfs /dev/sd{a,b} -d raid0
+> mount /dev/sda /mnt
+> dd if=/dev/urandom of=/mnt/consumed bs=1G count=7
+> btrfsck balance start -dconvert=raid1 -dlimit=1 /mnt
+> (wait)
+> /bin/df
+>
+>
+> The filesystem is now in a superposition where all future blocks are 
+> going to be written as raid1, one 2G stripe has been converted into 
+> two two-gig stripes that have been mirrored, and six gig is still RAID0.
+>
 
->     # btrfs qgroup limit 2000m 0/261 . && touch x
->     touch: cannot touch ‘x’: Disk quota exceeded
-> 
-> The strange thing is that it doesn't seem to be actually out of space:
-> 
->     # btrfs qgroup show -p -r -e /var | grep 261
->     0/261    1111810048  391114752   2097152000  0          ---
+Similar with your mail about inline file case, I think this is another 
+thing.
 
->     # btrfs --version Btrfs v3.12
-> 
->     # uname -a
->     Linux riff 3.13.0-43-generic #72-Ubuntu SMP
->     Mon Dec 8 19:35:06 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+I really appreciate your persistence and so much analyse in semasiology.
+I think I will never convince you at this point even with thousands mails
+to express myself. What about implementing your proposal here and sending
+a patchset at least with RFC. Then it can be more clear to us and we can 
+make
+the choice more easily. :)
 
-Does the problem still exist with a current 3.18 series kernel and 3.17 
-series btrfs userspace?  The quota code in the versions you appear to be 
-running had some (rather severe, quotes could go negative at times!) 
-known bugs and was rewritten recently.  I don't use quotas here and don't 
-know for sure whether the quota rewrite made it into kernel 3.17, but 
-current 3.18 should have it, and current userspace is I believe 3.17.3, 
-so you should consider upgrading it as well.
+Again, below is all points from my side:
 
-More in general, consider your use-case.  While btrfs is no longer the 
-experimental filesystem it once was (tho the warnings weren't removed 
-until after the old 3.12/3.13 you're running, AFAIK), it's still 
-maturing, and running year-old code still means running code with bugs 
-that are known and have been fixed for a year.  There's a place for being 
-conservative and running old and known stable code, but btrfs is still 
-young and maturing and doesn't match that use-case very well.  Either you 
-need stable and mature and an equally stable and mature filesystem is a 
-better fit, at least for a couple more years, or you want newer 
-technology/code and running year-old stuff is behind the curve.  Either 
-way, running year-old btrfs code, both kernel and userspace, doesn't make 
-a lot of sense.  Perhaps in a couple years it will, after btrfs is more 
-mature and stable and year-old code doesn't mean year-stale bugs, but not 
-currently.
+The df command we discussed here is on the top level which is directly
+facing the user.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1), For a linux user, he does not care about the detail how the data is
+stored in devices. They do not care even not know what's Single, what
+does DUP mean, and how a fs implement the RAID10. What they want to
+know is *what is the size of the filesystem I am using and how much
+space is still available to me*. That's what I said by "FS space level"
+
+2). For a btrfs user, they know about the single, dup and RAIDX. When they
+want to know what's the raid level in each space info, they can use btrfs
+fi df to print the information they want.
+
+3). Device level. for debugging.
+Sometimes, you need to know how the each chunk is stored in device. Please
+use btrfs-debug-tree to show details you want as more as possible.
+
+4). df in ZFS is showing the FS space information.
+
+5). For the elder btrfs_statfs(), We have discussed about df command
+and chosen to hide the detail information to user.
+And only show the FS space information to user. Current btrfs_statfs() 
+is working like
+this.
+
+6). IIUC, you are saying that:
+      a). BTRFS is not ZFS, df in zfs is not referenced to us.
+      b). Current btrfs_statfs() is woring in a wrong way, we
+            need to reimplement it from another new view point.
+
+I am not sure your proposal here is not better. As I said above,
+I am pleased to see a demo of it. If it works better, I am really
+very happy to agree with you in this argument.
+
+My patch could be objected, but the problem in current btrfs_statfs()
+should be fixed by some ways. If you submit a better solution, I am pleased
+to see btrfs becoming better. :)
+
+Thanx
+Yang
+> In your proposal we now have
+> @size=7G
+> @used=??? (clearly 7G, at the least, is consumed)
+> @filesize[consumed]=7G
+>
+> @available is really messed up since there is now _probably_ 1G of one 
+> of the original raid0 extents with free space and so available, almost 
+> all of the single RAID1 metadata block, Room for three more metadata 
+> stripes, and room for one more RAID1 extent.
+>
+> so @available=2-ish gigs.
+>
+> But since statfs() pivots on @size and @available /bin/df is going to 
+> report @used as 3-ish gigs even though we've got an uncompressed and 
+> uncompressable @7G file.
+>
+> NOW waht if we went the _other_ way?
+>
+> /dev/sda - 7.5G
+> /dev/sdb - 7.5G
+>
+> mkfs.btrfs /dev/sd{a,b} -d raid1
+> mount /dev/sda /mnt
+> dd if=/dev/urandom of=/mnt/consumed bs=1G count=7
+> btrfsck balance start -dconvert=raid0 -dlimit=1 /mnt
+> (wait)
+> /bin/df
+>
+> filesystem is _full_ when the convert starts.
+>
+> @size=14Gig
+> @used=7G
+> @actual_available=0
+> @reported_available=??? (at least 2x1G extents are up for grabs so 
+> minimum 2G)
+> @reported_used=???
+> @calculated_used=???
+>
+> We are either back to reporting available space when non-trivial 
+> allocation will report ENOSPC (if I did the math right etc).
+>
+> Now do partial conversions to other formats and repeat the exercise.
+> Now add or remove storage here-or-there.
+>
+> The "working set" and the "current model" are not _required_ to be in 
+> harmony at any given time, so trying to analyze the working set based 
+> on the current model is NP-complete.
+>
+> In every modality we find that at some point we _can_ either report 0 
+> available and still have room, or we report non-zero available and the 
+> user's going to get an ENOSPC.
+>
+>
+> So fine, _IF_ btrfs disallowed conversion and fixed its overhead -- 
+> that is if it stopped bing btrfs -- we could safely report cooked 
+> numbers.
+>
+> But at that point, why BTRFS at all?
+>
+> As for being easier on the user, that just depends on which lie each 
+> user wants. People are smart enough to use a fair approximation, and 
+> the only fair approximation we have available are at the storage 
+> management level -- which is halfway between the raw blocks and the 
+> cooked file-system numbers.
+>
+> A BTRFS filesystem just _isn't_ fully cooked until the last data 
+> extent is allocated, and because of COW that's over-cooked as well.
+>
+>
+> .
+>
 

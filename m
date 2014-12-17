@@ -1,93 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:38109 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751113AbaLQUM5 (ORCPT
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:47359 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751057AbaLQUM7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 15:12:57 -0500
-Received: by mail-wi0-f177.google.com with SMTP id l15so18582wiw.16
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:12:56 -0800 (PST)
+	Wed, 17 Dec 2014 15:12:59 -0500
+Received: by mail-wg0-f43.google.com with SMTP id l18so21220007wgh.30
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 12:12:58 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/8] Add -v -q switches to mkfs.btrfs.
-Date: Wed, 17 Dec 2014 21:14:05 +0100
-Message-Id: <1418847252-14184-2-git-send-email-kreijack@inwind.it>
+Subject: [PATCH 3/8] Add verbose option to btrfs_add_to_fsid()
+Date: Wed, 17 Dec 2014 21:14:07 +0100
+Message-Id: <1418847252-14184-4-git-send-email-kreijack@inwind.it>
 In-Reply-To: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
 References: <1418847252-14184-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add -v -q switches to mkfs.btrfs, to control the verbosity of mkfs.btrfs.
+Add verbose option to btrfs_add_to_fsid() in order to avoid to print
+the information to console when not needed.
+The same information is print in the summary of the mkfs.btrfs command.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- mkfs.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+ mkfs.c  | 3 ++-
+ utils.c | 7 ++++---
+ utils.h | 2 +-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/mkfs.c b/mkfs.c
-index e10e62d..a5f19cc 100644
+index a5f19cc..042d12e 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -288,8 +288,10 @@ static void print_usage(void)
- 	fprintf(stderr, "\t -r --rootdir the source directory\n");
- 	fprintf(stderr, "\t -K --nodiscard do not perform whole device TRIM\n");
- 	fprintf(stderr, "\t -O --features comma separated list of filesystem features\n");
-+	fprintf(stderr, "\t -q --quiet enable quiet mode\n");
- 	fprintf(stderr, "\t -U --uuid specify the filesystem UUID\n");
- 	fprintf(stderr, "\t -V --version print the mkfs.btrfs version and exit\n");
-+	fprintf(stderr, "\t -v --verbose enable verbose mode\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
- }
-@@ -351,6 +353,8 @@ static struct option long_options[] = {
- 	{ "version", 0, NULL, 'V' },
- 	{ "rootdir", 1, NULL, 'r' },
- 	{ "nodiscard", 0, NULL, 'K' },
-+	{ "verbose", 0, NULL, 'v' },
-+	{ "quiet", 0, NULL, 'q' },
- 	{ "features", 1, NULL, 'O' },
- 	{ "uuid", required_argument, NULL, 'U' },
- 	{ NULL, 0, NULL, 0}
-@@ -998,7 +1002,7 @@ out:
-  * This ignores symlinks with unreadable targets and subdirs that can't
-  * be read.  It's a best-effort to give a rough estimate of the size of
-  * a subdir.  It doesn't guarantee that prepopulating btrfs from this
-- * tree won't still run out of space. 
-+ * tree won't still run out of space.
-  *
-  * The rounding up to 4096 is questionable.  Previous code used du -B 4096.
-  */
-@@ -1266,6 +1270,8 @@ int main(int ac, char **av)
- 	int discard = 1;
- 	int ssd = 0;
- 	int force_overwrite = 0;
-+	int verbose = 0;
-+	int quiet = 0;
+@@ -1638,7 +1638,8 @@ int main(int ac, char **av)
+ 		mixed = old_mixed;
  
- 	char *source_dir = NULL;
- 	int source_dir_set = 0;
-@@ -1280,7 +1286,7 @@ int main(int ac, char **av)
+ 		ret = btrfs_add_to_fsid(trans, root, fd, file, dev_block_count,
+-					sectorsize, sectorsize, sectorsize);
++					sectorsize, sectorsize, sectorsize,
++					verbose);
+ 		BUG_ON(ret);
+ 		btrfs_register_one_device(file);
+ 	}
+diff --git a/utils.c b/utils.c
+index 19049bb..dcb4f74 100644
+--- a/utils.c
++++ b/utils.c
+@@ -610,7 +610,7 @@ static int zero_dev_clamped(int fd, off_t start, ssize_t len, u64 dev_size)
+ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int fd, char *path,
+ 		      u64 block_count, u32 io_width, u32 io_align,
+-		      u32 sectorsize)
++		      u32 sectorsize, int verbose)
+ {
+ 	struct btrfs_super_block *disk_super;
+ 	struct btrfs_super_block *super = root->fs_info->super_copy;
+@@ -659,8 +659,9 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
  
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:U:VMK",
-+		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:U:VMKqv",
- 				long_options, &option_index);
- 		if (c < 0)
- 			break;
-@@ -1355,6 +1361,12 @@ int main(int ac, char **av)
- 			case 'K':
- 				discard = 0;
- 				break;
-+			case 'v':
-+				verbose = 1;
-+				break;
-+			case 'q':
-+				quiet = 1;
-+				break;
- 			default:
- 				print_usage();
- 		}
+ 	memcpy(disk_super, super, sizeof(*disk_super));
+ 
+-	printf("adding device %s id %llu\n", path,
+-	       (unsigned long long)device->devid);
++	if (verbose)
++		printf("adding device %s id %llu\n", path,
++		       (unsigned long long)device->devid);
+ 
+ 	btrfs_set_super_bytenr(disk_super, BTRFS_SUPER_INFO_OFFSET);
+ 	btrfs_set_stack_device_id(dev_item, device->devid);
+diff --git a/utils.h b/utils.h
+index bb8a449..9218199 100644
+--- a/utils.h
++++ b/utils.h
+@@ -79,7 +79,7 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int fd, char *path,
+ 		      u64 block_count, u32 io_width, u32 io_align,
+-		      u32 sectorsize);
++		      u32 sectorsize, int verbose);
+ int btrfs_scan_for_fsid(int run_ioctls);
+ int btrfs_register_one_device(const char *fname);
+ int btrfs_register_all_devices(void);
 -- 
 2.1.3
 

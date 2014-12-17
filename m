@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35561 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:36874 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751121AbaLQDpL (ORCPT
+	with ESMTP id S1751066AbaLQDvS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 22:45:11 -0500
+	Tue, 16 Dec 2014 22:51:18 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] xfstests: btrfs: add test case for qgroup account on shared extents
-Date: Wed, 17 Dec 2014 11:45:01 +0800
-Message-Id: <1418787901-25166-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] xfstests: btrfs: add test case for qgroup account on shared extents
+Date: Wed, 17 Dec 2014 11:51:08 +0800
+Message-Id: <1418788268-30145-1-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1418723004-30543-1-git-send-email-bo.li.liu@oracle.com>
 References: <1418723004-30543-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,6 +22,10 @@ It can produce qgroup related warnings.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: - use new seq number 017 instead 080
+    - use 'cloner' to get shared extents
+    - use XFS_IO_PROG instead
+
  tests/btrfs/017     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/017.out |  3 +++
  tests/btrfs/group   |  1 +

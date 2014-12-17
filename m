@@ -1,49 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47777 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:48624 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751163AbaLQO3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 09:29:14 -0500
-Date: Wed, 17 Dec 2014 15:29:12 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+	id S1751092AbaLQPJB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 10:09:01 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y1GDf-0001Fq-Uf
+	for linux-btrfs@vger.kernel.org; Wed, 17 Dec 2014 16:08:55 +0100
+Received: from p4ff585d0.dip0.t-ipconnect.de ([79.245.133.208])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 16:08:50 +0100
+Received: from holger.hoffstaette by p4ff585d0.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 16:08:50 +0100
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
 Subject: Re: [RFC][BTRFS-PROGS] Improve output of mkfs.btrfs command
-Message-ID: <20141217142912.GZ27601@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Date: Wed, 17 Dec 2014 15:08:38 +0000 (UTC)
+Message-ID: <pan.2014.12.17.15.08.38@googlemail.com>
 References: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 15, 2014 at 09:02:53PM +0100, Goffredo Baroncelli wrote:
+On Mon, 15 Dec 2014 21:02:53 +0100, Goffredo Baroncelli wrote:
+
 > enclosed a patches set to improve the output of mkfs.btrfs command.
->
-> Currently I find the output of mkfs.btrfs command quite confusing:
 
-Thanks. I've marked the wiki://Project_ideas item as claimed.
+This is very nice! I do have a comment about the device list:
 
-> After my patches the output becomes:
-> 
-> # mkfs.btrfs -f -d raid5 -m raid5 /dev/vd[b-k] 
-> BTRFS filesystem summary:
->   Label:		btrfs-test
->   UUID:			1073cb19-b675-423d-9aba-caad7f1508a8
-> 
->   Node size:		16384
->   Leaf size:		16384
->   Sector size:		4096
->   Initial chunks:
->     Data:		9.01GiB
->     Metadata:		3.61GiB
->     System:		18.06MiB
->   Metadata profile:	RAID5
->   Data profile:		RAID5
->   Mixed mode:		NO
->   SSD detected:		NO
->   Features:		extref, raid56
->   Number of devices:	10
+> ..
 >     UUID                                  ID    SIZE    PATH
 >     ------------------------------------  --  --------- -----------
 >     62121322-5666-4ecf-bc8e-c9b3d9f60db9   1   50.00GiB /dev/vdb
@@ -59,5 +48,14 @@ Thanks. I've marked the wiki://Project_ideas item as claimed.
 > 
 >   Total disks size:                           356.01GiB
 
-The output looks good to me, I'll get back to this patchset after 3.18
-is released, so there's enough time to gather feedback.
+I'm not sure how others feel about this, but the first column of UUIDs
+contains almost no human-usable information (who remembers UUIDs?) but
+takes up a huge chunk of the screen real estate. I'd suggest to reorder
+the columns to be something like (ID, Size, Path, UUID). This puts more
+relevant information in reading-order.
+
+I hope this isn't too much to ask :)
+
+thanks
+Holger
+

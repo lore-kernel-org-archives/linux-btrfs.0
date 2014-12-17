@@ -1,48 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:56521 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966591AbaLMMEc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Dec 2014 07:04:32 -0500
-Received: by mail-wg0-f49.google.com with SMTP id n12so11095913wgh.36
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Dec 2014 04:04:30 -0800 (PST)
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH] BUG: use metadata_profile instead of data_profile
-Date: Sat, 13 Dec 2014 13:05:51 +0100
-Message-Id: <1418472351-5113-2-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1418472351-5113-1-git-send-email-kreijack@inwind.it>
+Received: from cantor2.suse.de ([195.135.220.15]:47851 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750953AbaLQOcM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Dec 2014 09:32:12 -0500
+Date: Wed, 17 Dec 2014 15:32:11 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goffredo Baroncelli <kreijack@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH] BUG: use metadata_profile instead of data_profile
+Message-ID: <20141217143210.GA27601@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1418472351-5113-1-git-send-email-kreijack@inwind.it>
+ <1418472351-5113-2-git-send-email-kreijack@inwind.it>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1418472351-5113-2-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function test_num_disk_vs_raid() show an error message if
-the raid profile is incompatible with the number of devices.
+On Sat, Dec 13, 2014 at 01:05:51PM +0100, Goffredo Baroncelli wrote:
+> The function test_num_disk_vs_raid() show an error message if
+> the raid profile is incompatible with the number of devices.
+> 
+> Unfortunately when the error is related to data profile,
+> the message print the metadata profile.
 
-Unfortunately when the error is related to data profile,
-the message print the metadata profile.
-
-This patch correct the bug.
-
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- utils.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/utils.c b/utils.c
-index fc69e9b..e1b56ac 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2116,7 +2116,7 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
- 	if (data_profile & ~allowed) {
- 		snprintf(estr, sz, "unable to create FS with data "
- 			"profile %llu (have %llu devices)\n",
--			metadata_profile, dev_cnt);
-+			data_profile, dev_cnt);
- 		return 1;
- 	}
- 
--- 
-2.1.3
-
+Already fixed by 373110d84f3a1c5bdd305d2e6dcaeb98b5e6dbe7.

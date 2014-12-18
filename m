@@ -1,120 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:42840 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750720AbaLRHjs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Dec 2014 02:39:48 -0500
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 81F203EE188
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:47 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 80576AC0655
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:46 +0900 (JST)
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 252721DB804B
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:46 +0900 (JST)
-Message-ID: <549284AE.9020201@jp.fujitsu.com>
-Date: Thu, 18 Dec 2014 16:39:26 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: naota <naota@elisp.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] Fix wrong memory free on check_is_root
-Content-Type: text/plain; charset="iso-2022-jp"
+Received: from cantor2.suse.de ([195.135.220.15]:40352 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751737AbaLRO1p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Dec 2014 09:27:45 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 3BE91AD08
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 14:27:44 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/6] btrfs-progs: fi usage, change option for tabular output to T
+Date: Thu, 18 Dec 2014 15:27:44 +0100
+Message-Id: <8e27f8ee91efdffcee80ad81db4d19e4d560a57e.1418912740.git.dsterba@suse.cz>
+In-Reply-To: <cover.1418912740.git.dsterba@suse.cz>
+References: <cover.1418912740.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+We're going to use -t for tera- units prefix, same as 'fi df' does.
 
-When "/" is Btrfs, "btrfs property <subcommand> /" regards it
-as non-root by mistake.
-
-check_is_root() regards @object as a file system root if
-the following two conditions are satisfied.
-
- a) Both @object and its parent directory are Btrfs object
-    (file system root, subvolume, inode, and device
-    used for Btrfs).
- b) fsid of the above mentioned two objects are different.
-
-It doesn't work if @object is "/" because, in this case,
-fsid of "/" and its parent (it's also "/"), are the same.
-
-* Test environment
-
-Two Btrfs file system (not subvolume) "/" and "/home/sat/mnt".
-
-* How to reproduce
-
-Submit "btrfs prop get" against the above mentioned file systems.
-
-* Test Result
-
-** Actual result (without my patch)
-
-==========================
-# btrfs prop get /home/sat/mnt/
-ro=false
-label=                 # label is displayed because it's a file system root
-# btrfs prop get /
-ro=false               # label is not displayed even if it's a file system root
-==========================
-** Expected result (with my patch)
-
-==========================
-# ./btrfs-new prop get btrfs-auto-test/
-# ./btrfs-new prop get /home/sat/mnt/
-ro=false
-label=
-# ./btrfs-new prop get /             
-ro=false
-label=foo            # label is displayed
-===========================
-
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Reported-by: Naohiro Aota <naota@elisp.net>
-
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-changelog
-v2: Return a correct error code when realpath() fails.
-    Thank you Gui Hecheng for pointing my mistake out.
-    https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40204.html
----
- cmds-property.c | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ cmds-fi-disk_usage.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-property.c b/cmds-property.c
-index a764293..6501338 100644
---- a/cmds-property.c
-+++ b/cmds-property.c
-@@ -124,7 +124,18 @@ static int check_is_root(const char *object)
- 	int ret;
- 	u8 fsid[BTRFS_FSID_SIZE];
- 	u8 fsid2[BTRFS_FSID_SIZE];
--	char *tmp;
-+	char *tmp = NULL;
-+	char *rp;
-+
-+	rp = realpath(object, NULL);
-+	if (!rp) {
-+		ret = -errno;
-+		goto out;
-+	}
-+	if (!strcmp(rp, "/")) {
-+		ret = 0;
-+		goto out;
-+	}
+diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
+index 6a33b5d1da51..77ab8b4c1604 100644
+--- a/cmds-fi-disk_usage.c
++++ b/cmds-fi-disk_usage.c
+@@ -848,7 +848,7 @@ const char * const cmd_filesystem_usage_usage[] = {
+ 	"Show in which disk the chunks are allocated.",
+ 	"",
+ 	"-b\tSet byte as unit",
+-	"-t\tShow data in tabular format",
++	"-T\tShow data in tabular format",
+ 	NULL
+ };
  
- 	tmp = malloc(strlen(object) + 5);
- 	if (!tmp) {
-@@ -165,6 +176,7 @@ static int check_is_root(const char *object)
+@@ -861,7 +861,7 @@ int cmd_filesystem_usage(int argc, char **argv)
  
- out:
- 	free(tmp);
-+	free(rp);
- 	return ret;
- }
+ 	optind = 1;
+ 	while (1) {
+-		int c = getopt(argc, argv, "bt");
++		int c = getopt(argc, argv, "bT");
  
+ 		if (c < 0)
+ 			break;
+@@ -870,7 +870,7 @@ int cmd_filesystem_usage(int argc, char **argv)
+ 		case 'b':
+ 			mode = UNITS_RAW;
+ 			break;
+-		case 't':
++		case 'T':
+ 			tabular = 1;
+ 			break;
+ 		default:
 -- 
-1.9.3
+2.1.3
 

@@ -1,58 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43856 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751510AbaLRDeo (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:42840 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750720AbaLRHjs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 22:34:44 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3YDgB001488
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:34:13 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: remove uneccessary subvol name check for subvol deletion
-Date: Thu, 18 Dec 2014 11:32:35 +0800
-Message-ID: <1418873555-4530-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	Thu, 18 Dec 2014 02:39:48 -0500
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 81F203EE188
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:47 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 80576AC0655
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:46 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 252721DB804B
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 16:39:46 +0900 (JST)
+Message-ID: <549284AE.9020201@jp.fujitsu.com>
+Date: Thu, 18 Dec 2014 16:39:26 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: naota <naota@elisp.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] Fix wrong memory free on check_is_root
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we want to delete a subvol, we first check to see whether it is
-a subvolume or not. After the check, we are sure that it is a valid
-subvol, don't have to check its name.
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+When "/" is Btrfs, "btrfs property <subcommand> /" regards it
+as non-root by mistake.
+
+check_is_root() regards @object as a file system root if
+the following two conditions are satisfied.
+
+ a) Both @object and its parent directory are Btrfs object
+    (file system root, subvolume, inode, and device
+    used for Btrfs).
+ b) fsid of the above mentioned two objects are different.
+
+It doesn't work if @object is "/" because, in this case,
+fsid of "/" and its parent (it's also "/"), are the same.
+
+* Test environment
+
+Two Btrfs file system (not subvolume) "/" and "/home/sat/mnt".
+
+* How to reproduce
+
+Submit "btrfs prop get" against the above mentioned file systems.
+
+* Test Result
+
+** Actual result (without my patch)
+
+==========================
+# btrfs prop get /home/sat/mnt/
+ro=false
+label=                 # label is displayed because it's a file system root
+# btrfs prop get /
+ro=false               # label is not displayed even if it's a file system root
+==========================
+** Expected result (with my patch)
+
+==========================
+# ./btrfs-new prop get btrfs-auto-test/
+# ./btrfs-new prop get /home/sat/mnt/
+ro=false
+label=
+# ./btrfs-new prop get /             
+ro=false
+label=foo            # label is displayed
+===========================
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Reported-by: Naohiro Aota <naota@elisp.net>
+
 ---
- cmds-subvolume.c | 15 ---------------
- 1 file changed, 15 deletions(-)
+changelog
+v2: Return a correct error code when realpath() fails.
+    Thank you Gui Hecheng for pointing my mistake out.
+    https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40204.html
+---
+ cmds-property.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 53eec46..a35e2ad 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -281,21 +281,6 @@ again:
- 	vname = basename(dupvname);
- 	free(cpath);
+diff --git a/cmds-property.c b/cmds-property.c
+index a764293..6501338 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -124,7 +124,18 @@ static int check_is_root(const char *object)
+ 	int ret;
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	u8 fsid2[BTRFS_FSID_SIZE];
+-	char *tmp;
++	char *tmp = NULL;
++	char *rp;
++
++	rp = realpath(object, NULL);
++	if (!rp) {
++		ret = -errno;
++		goto out;
++	}
++	if (!strcmp(rp, "/")) {
++		ret = 0;
++		goto out;
++	}
  
--	if (!test_issubvolname(vname)) {
--		fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
--			vname);
--		ret = 1;
--		goto out;
--	}
--
--	len = strlen(vname);
--	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
--		fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
--			vname);
--		ret = 1;
--		goto out;
--	}
--
- 	fd = open_file_or_dir(dname, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access '%s'\n", dname);
+ 	tmp = malloc(strlen(object) + 5);
+ 	if (!tmp) {
+@@ -165,6 +176,7 @@ static int check_is_root(const char *object)
+ 
+ out:
+ 	free(tmp);
++	free(rp);
+ 	return ret;
+ }
+ 
 -- 
-1.8.1.4
+1.9.3
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54475 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63005 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751307AbaLRDkH (ORCPT
+	with ESMTP id S1751615AbaLRDkJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 22:40:07 -0500
+	Wed, 17 Dec 2014 22:40:09 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dc9c002163
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:38 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3ddGN002168
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:39 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/5] btrfs-progs: Record and report every file extent hole.
-Date: Thu, 18 Dec 2014 11:37:58 +0800
-Message-ID: <1418873880-7916-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 4/5] btrfs-progs: Add repair and report function for orphan file exntent.
+Date: Thu, 18 Dec 2014 11:37:59 +0800
+Message-ID: <1418873880-7916-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,343 +19,290 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Record every file extent discontinuous hole in inode_record using a
-rb_tree member.
+In some fs tree leaf/node corruption case, file extents may be lost, but
+in extent tree, its record may still exists.
 
-Before the patch, btrfsck will only record the first file extent hole by
-using first_extent_gap, that's good for detecting error, but not
-suitable for fixing it.
+This provide the possiblity for such orphan file extents to be
+recovered even we can't recover its compression and other info, we can
+still insert it as a normal non-compression file extent.
 
-This patch provides the ability to record every file extent hole and
-report it.
+This patch provides the repair and report function for such orphan file
+extent.
+Even after such repair, user may still need to try to decompress its
+data if user knows that is a compressed extent.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 244 +++++++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 231 insertions(+), 13 deletions(-)
+ cmds-check.c | 150 +++++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 119 insertions(+), 31 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 059c53a..51b416b 100644
+index 51b416b..1e9bc56 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -167,6 +167,202 @@ struct root_item_record {
- #define REF_ERR_DUP_ROOT_REF		(1 << 11)
- #define REF_ERR_DUP_ROOT_BACKREF	(1 << 12)
- 
-+struct file_extent_hole {
-+	struct rb_node node;
-+	u64 start;
-+	u64 len;
-+};
-+
-+/* Compatible function to allow reuse of old codes */
-+static u64 first_extent_gap(struct rb_root *holes)
-+{
-+	struct file_extent_hole *hole;
-+
-+	if (RB_EMPTY_ROOT(holes))
-+		return (u64)-1;
-+
-+	hole = rb_entry(rb_first(holes), struct file_extent_hole, node);
-+	return hole->start;
-+}
-+
-+int compare_hole(struct rb_node *node1, struct rb_node *node2)
-+{
-+	struct file_extent_hole *hole1;
-+	struct file_extent_hole *hole2;
-+
-+	hole1 = rb_entry(node1, struct file_extent_hole, node);
-+	hole2 = rb_entry(node2, struct file_extent_hole, node);
-+
-+	if (hole1->start > hole2->start)
-+		return -1;
-+	if (hole1->start < hole2->start)
-+		return 1;
-+	/* Now hole1->start == hole2->start */
-+	if (hole1->len >= hole2->len)
-+		/*
-+		 * Hole 1 will be merge center
-+		 * Same hole will be merged later
-+		 */
-+		return -1;
-+	/* Hole 2 will be merge center */
-+	return 1;
-+}
-+
-+/*
-+ * Add a hole to the record
-+ *
-+ * This will do hole merge for copy_file_extent_holes(),
-+ * which will ensure there won't be continuous holes.
-+ */
-+static int add_file_extent_hole(struct rb_root *holes,
-+				u64 start, u64 len)
-+{
-+	struct file_extent_hole *hole;
-+	struct file_extent_hole *prev = NULL;
-+	struct file_extent_hole *next = NULL;
-+
-+	hole = malloc(sizeof(*hole));
-+	if (!hole)
-+		return -ENOMEM;
-+	hole->start = start;
-+	hole->len = len;
-+	/* Since compare will not return 0, no -EEXIST will happen */
-+	rb_insert(holes, &hole->node, compare_hole);
-+
-+	/* simple merge with previous hole */
-+	if (rb_prev(&hole->node))
-+		prev = rb_entry(rb_prev(&hole->node), struct file_extent_hole,
-+				node);
-+	if (prev && prev->start + prev->len >= hole->start) {
-+		hole->len = hole->start + hole->len - prev->start;
-+		hole->start = prev->start;
-+		rb_erase(&prev->node, holes);
-+		free(prev);
-+		prev = NULL;
-+	}
-+
-+	/* iterate merge with next holes */
-+	while (1) {
-+		if (!rb_next(&hole->node))
-+			break;
-+		next = rb_entry(rb_next(&hole->node), struct file_extent_hole,
-+					node);
-+		if (hole->start + hole->len >= next->start) {
-+			if (hole->start + hole->len <= next->start + next->len)
-+				hole->len = next->start + next->len -
-+					    hole->start;
-+			rb_erase(&next->node, holes);
-+			free(next);
-+			next = NULL;
-+		} else
-+			break;
-+	}
-+	return 0;
-+}
-+
-+static int compare_hole_range(struct rb_node *node, void *data)
-+{
-+	struct file_extent_hole *hole;
-+	u64 start;
-+
-+	hole = (struct file_extent_hole *)data;
-+	start = hole->start;
-+
-+	hole = rb_entry(node, struct file_extent_hole, node);
-+	if (start < hole->start)
-+		return -1;
-+	if (start >= hole->start && start < hole->start + hole->len)
-+		return 0;
-+	return 1;
-+}
-+
-+/*
-+ * Delete a hole in the record
-+ *
-+ * This will do the hole split and is much restrict than add.
-+ */
-+static int del_file_extent_hole(struct rb_root *holes,
-+				u64 start, u64 len)
-+{
-+	struct file_extent_hole *hole;
-+	struct file_extent_hole tmp;
-+	struct file_extent_hole prev;
-+	struct file_extent_hole next;
-+	struct rb_node *node;
-+	int have_prev = 0;
-+	int have_next = 0;
-+	int ret = 0;
-+
-+	tmp.start = start;
-+	tmp.len = len;
-+	node = rb_search(holes, &tmp, compare_hole_range, NULL);
-+	if (!node)
-+		return -EEXIST;
-+	hole = rb_entry(node, struct file_extent_hole, node);
-+	if (start + len > hole->start + hole->len)
-+		return -EEXIST;
-+
-+	/*
-+	 * Now there will be no overflap, delete the hole and re-add the
-+	 * split(s) if they exists.
-+	 */
-+	if (start > hole->start) {
-+		prev.start = hole->start;
-+		prev.len = start - hole->start;
-+		have_prev = 1;
-+	}
-+	if (hole->start + hole->len > start + len) {
-+		next.start = start + len;
-+		next.len = hole->start + hole->len - start - len;
-+		have_next = 1;
-+	}
-+	rb_erase(node, holes);
-+	free(hole);
-+	if (have_prev) {
-+		ret = add_file_extent_hole(holes, prev.start, prev.len);
-+		if (ret < 0)
-+			return ret;
-+	}
-+	if (have_next) {
-+		ret = add_file_extent_hole(holes, next.start, next.len);
-+		if (ret < 0)
-+			return ret;
-+	}
-+	return 0;
-+}
-+
-+static int copy_file_extent_holes(struct rb_root *dst,
-+				  struct rb_root *src)
-+{
-+	struct file_extent_hole *hole;
-+	struct rb_node *node;
-+	int ret = 0;
-+
-+	node = rb_first(src);
-+	while (node) {
-+		hole = rb_entry(node, struct file_extent_hole, node);
-+		ret = add_file_extent_hole(dst, hole->start, hole->len);
-+		if (ret)
-+			break;
-+		node = rb_next(node);
-+	}
-+	return ret;
-+}
-+
-+static void free_file_extent_holes(struct rb_root *holes)
-+{
-+	struct rb_node *node;
-+	struct file_extent_hole *hole;
-+
-+	node = rb_first(holes);
-+	while (node) {
-+		hole = rb_entry(node, struct file_extent_hole, node);
-+		rb_erase(node, holes);
-+		free(hole);
-+		node = rb_first(holes);
-+	}
-+}
-+
- struct inode_record {
- 	struct list_head backrefs;
- 	unsigned int checked:1;
-@@ -189,7 +385,7 @@ struct inode_record {
- 	u64 found_size;
+@@ -86,7 +86,8 @@ struct data_backref {
+ /*
+  * Much like data_backref, just removed the undetermined members
+  * and change it to use list_head.
+- * Stored in the root->orphan_data_extents list
++ * During extent scan, it is stored in root->orphan_data_extent.
++ * During fs tree scan, it is then moved to inode_rec->orphan_data_extents.
+  */
+ struct orphan_data_extent {
+ 	struct list_head list;
+@@ -386,6 +387,7 @@ struct inode_record {
  	u64 extent_start;
  	u64 extent_end;
--	u64 first_extent_gap;
-+	struct rb_root holes;
+ 	struct rb_root holes;
++	struct list_head orphan_extents;
  
  	u32 refs;
  };
-@@ -374,6 +570,20 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
- 	if (errors & I_ERR_LINK_COUNT_WRONG)
- 		fprintf(stderr, ", link count wrong");
- 	fprintf(stderr, "\n");
-+	/* Print the holes if needed */
-+	if (errors & I_ERR_FILE_EXTENT_DISCOUNT) {
-+		struct file_extent_hole *hole;
-+		struct rb_node *node;
-+
-+		node = rb_first(&rec->holes);
-+		fprintf(stderr, "Found file extent holes:\n");
-+		while (node) {
-+			hole = rb_entry(node, struct file_extent_hole, node);
-+			fprintf(stderr, "\tstart: %llu, len:%llu\n",
-+				hole->start, hole->len);
-+			node = rb_next(node);
-+		}
-+	}
+@@ -404,6 +406,7 @@ struct inode_record {
+ #define I_ERR_ODD_CSUM_ITEM		(1 << 11)
+ #define I_ERR_SOME_CSUM_MISSING		(1 << 12)
+ #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
++#define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
+ 
+ struct root_backref {
+ 	struct list_head list;
+@@ -525,6 +528,22 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 	return rec;
  }
  
- static void print_ref_error(int errors)
-@@ -428,9 +638,9 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
- 		rec = calloc(1, sizeof(*rec));
- 		rec->ino = ino;
++static void print_orphan_data_extents(struct list_head *orphan_extents,
++				      u64 objectid)
++{
++	struct orphan_data_extent *orphan;
++
++	if (list_empty(orphan_extents))
++		return;
++	printf("The following data extent is lost in tree %llu:\n",
++	       objectid);
++	list_for_each_entry(orphan, orphan_extents, list) {
++		printf("\tinode: %llu, offset:%llu, disk_bytenr: %llu, disk_len: %llu\n",
++		       orphan->objectid, orphan->offset, orphan->disk_bytenr,
++		       orphan->disk_len);
++	}
++}
++
+ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ {
+ 	u64 root_objectid = root->root_key.objectid;
+@@ -569,7 +588,13 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ 		fprintf(stderr, ", some csum missing");
+ 	if (errors & I_ERR_LINK_COUNT_WRONG)
+ 		fprintf(stderr, ", link count wrong");
++	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
++		fprintf(stderr, ", orphan file extent");
+ 	fprintf(stderr, "\n");
++	/* Print the orphan extents if needed */
++	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
++		print_orphan_data_extents(&rec->orphan_extents, root->objectid);
++
+ 	/* Print the holes if needed */
+ 	if (errors & I_ERR_FILE_EXTENT_DISCOUNT) {
+ 		struct file_extent_hole *hole;
+@@ -640,6 +665,7 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
  		rec->extent_start = (u64)-1;
--		rec->first_extent_gap = (u64)-1;
  		rec->refs = 1;
  		INIT_LIST_HEAD(&rec->backrefs);
-+		rec->holes = RB_ROOT;
++		INIT_LIST_HEAD(&rec->orphan_extents);
+ 		rec->holes = RB_ROOT;
  
  		node = malloc(sizeof(*node));
- 		node->cache.start = ino;
-@@ -459,6 +669,7 @@ static void free_inode_rec(struct inode_record *rec)
+@@ -656,6 +682,18 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 	return rec;
+ }
+ 
++static void free_orphan_data_extents(struct list_head *orphan_extents)
++{
++	struct orphan_data_extent *orphan;
++
++	while (!list_empty(orphan_extents)) {
++		orphan = list_entry(orphan_extents->next,
++				    struct orphan_data_extent, list);
++		list_del(&orphan->list);
++		free(orphan);
++	}
++}
++
+ static void free_inode_rec(struct inode_record *rec)
+ {
+ 	struct inode_backref *backref;
+@@ -669,6 +707,7 @@ static void free_inode_rec(struct inode_record *rec)
  		list_del(&backref->list);
  		free(backref);
  	}
-+	free_file_extent_holes(&rec->holes);
++	free_orphan_data_extents(&rec->orphan_extents);
+ 	free_file_extent_holes(&rec->holes);
  	free(rec);
  }
+@@ -2484,6 +2523,67 @@ out:
+ 	return ret;
+ }
  
-@@ -506,11 +717,9 @@ static void maybe_free_inode_rec(struct cache_tree *inode_cache,
- 			rec->errors |= I_ERR_ODD_DIR_ITEM;
- 		if (rec->found_size != rec->nbytes)
- 			rec->errors |= I_ERR_FILE_NBYTES_WRONG;
--		if (rec->extent_start == (u64)-1 || rec->extent_start > 0)
--			rec->first_extent_gap = 0;
- 		if (rec->nlink > 0 && !no_holes &&
- 		    (rec->extent_end < rec->isize ||
--		     rec->first_extent_gap < rec->isize))
-+		     first_extent_gap(&rec->holes) < rec->isize))
- 			rec->errors |= I_ERR_FILE_EXTENT_DISCOUNT;
- 	}
- 
-@@ -659,6 +868,7 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
- {
- 	struct inode_backref *backref;
- 	u32 dir_count = 0;
++static int repair_inode_orphan_extent(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      struct btrfs_path *path,
++				      struct inode_record *rec)
++{
++	struct orphan_data_extent *orphan;
++	struct orphan_data_extent *tmp;
 +	int ret = 0;
- 
- 	dst->merging = 1;
- 	list_for_each_entry(backref, &src->backrefs, list) {
-@@ -691,8 +901,11 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
- 		dst->found_csum_item = 1;
- 	if (src->some_csum_missing)
- 		dst->some_csum_missing = 1;
--	if (dst->first_extent_gap > src->first_extent_gap)
--		dst->first_extent_gap = src->first_extent_gap;
-+	if (first_extent_gap(&dst->holes) > first_extent_gap(&src->holes)) {
-+		ret = copy_file_extent_holes(&dst->holes, &src->holes);
++
++	list_for_each_entry_safe(orphan, tmp, &rec->orphan_extents, list) {
++		/*
++		 * Check for conflicting file extents
++		 *
++		 * Here we don't know whether the extents is compressed or not,
++		 * so we can only assume it not compressed nor data offset,
++		 * and use its disk_len as extent length.
++		 */
++		ret = btrfs_get_extent(NULL, root, path, orphan->objectid,
++				       orphan->offset, orphan->disk_len, 0);
++		btrfs_release_path(path);
 +		if (ret < 0)
-+			return ret;
-+	}
- 
- 	BUG_ON(src->found_link < dir_count);
- 	dst->found_link += src->found_link - dir_count;
-@@ -704,9 +917,11 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
- 		} else {
- 			if (dst->extent_end > src->extent_start)
- 				dst->errors |= I_ERR_FILE_EXTENT_OVERLAP;
--			else if (dst->extent_end < src->extent_start &&
--				 dst->extent_end < dst->first_extent_gap)
--				dst->first_extent_gap = dst->extent_end;
-+			else if (dst->extent_end < src->extent_start) {
-+				ret = add_file_extent_hole(&dst->holes,
-+					dst->extent_end,
-+					src->extent_start - dst->extent_end);
-+			}
- 			if (dst->extent_end < src->extent_end)
- 				dst->extent_end = src->extent_end;
- 		}
-@@ -1231,9 +1446,12 @@ static int process_file_extent(struct btrfs_root *root,
- 
- 	if (rec->extent_end > key->offset)
- 		rec->errors |= I_ERR_FILE_EXTENT_OVERLAP;
--	else if (rec->extent_end < key->offset &&
--		 rec->extent_end < rec->first_extent_gap)
--		rec->first_extent_gap = rec->extent_end;
-+	else if (rec->extent_end < key->offset) {
-+		ret = add_file_extent_hole(&rec->holes, rec->extent_end,
-+					   key->offset - rec->extent_end);
++			goto out;
++		if (!ret) {
++			fprintf(stderr,
++				"orphan extent (%llu, %llu) conflicts, delete the orphan\n",
++				orphan->disk_bytenr, orphan->disk_len);
++			ret = btrfs_free_extent(trans,
++					root->fs_info->extent_root,
++					orphan->disk_bytenr, orphan->disk_len,
++					0, root->objectid, orphan->objectid,
++					orphan->offset);
++			if (ret < 0)
++				goto out;
++		}
++		ret = btrfs_insert_file_extent(trans, root, orphan->objectid,
++				orphan->offset, orphan->disk_bytenr,
++				orphan->disk_len, orphan->disk_len);
 +		if (ret < 0)
-+			return ret;
++			goto out;
++
++		/* Update file size info */
++		rec->found_size += orphan->disk_len;
++		if (rec->found_size == rec->nbytes)
++			rec->errors &= ~I_ERR_FILE_NBYTES_WRONG;
++
++		/* Update the file extent hole info too */
++		ret = del_file_extent_hole(&rec->holes, orphan->offset,
++					   orphan->disk_len);
++		if (ret < 0)
++			goto out;
++		if (RB_EMPTY_ROOT(&rec->holes))
++			rec->errors &= ~I_ERR_FILE_EXTENT_DISCOUNT;
++
++		list_del(&orphan->list);
++		free(orphan);
 +	}
++	rec->errors &= ~I_ERR_FILE_EXTENT_ORPHAN;
++out:
++	return ret;
++}
++
+ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+ {
+ 	struct btrfs_trans_handle *trans;
+@@ -2493,7 +2593,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+ 	if (!(rec->errors & (I_ERR_DIR_ISIZE_WRONG |
+ 			     I_ERR_NO_ORPHAN_ITEM |
+ 			     I_ERR_LINK_COUNT_WRONG |
+-			     I_ERR_NO_INODE_ITEM)))
++			     I_ERR_NO_INODE_ITEM |
++			     I_ERR_FILE_EXTENT_ORPHAN)))
+ 		return rec->errors;
  
- 	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
- 	extent_type = btrfs_file_extent_type(eb, fi);
+ 	path = btrfs_alloc_path();
+@@ -2515,6 +2616,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+ 
+ 	if (rec->errors & I_ERR_NO_INODE_ITEM)
+ 		ret = repair_inode_no_item(trans, root, path, rec);
++	if (!ret && rec->errors & I_ERR_FILE_EXTENT_ORPHAN)
++		ret = repair_inode_orphan_extent(trans, root, path, rec);
+ 	if (!ret && rec->errors & I_ERR_DIR_ISIZE_WRONG)
+ 		ret = repair_inode_isize(trans, root, path, rec);
+ 	if (!ret && rec->errors & I_ERR_NO_ORPHAN_ITEM)
+@@ -3126,34 +3229,6 @@ out:
+ 	return ret;
+ }
+ 
+-static void print_orphan_data_extents(struct list_head *orphan_extents,
+-				      u64 objectid)
+-{
+-	struct orphan_data_extent *orphan;
+-
+-	if (list_empty(orphan_extents))
+-		return;
+-	printf("The following data extent is lost in tree %llu:\n",
+-	       objectid);
+-	list_for_each_entry(orphan, orphan_extents, list) {
+-		printf("\tinode: %llu, offset:%llu, disk_bytenr: %llu, disk_len: %llu\n",
+-		       orphan->objectid, orphan->offset, orphan->disk_bytenr,
+-		       orphan->disk_len);
+-	}
+-}
+-
+-static void free_orphan_data_extents(struct list_head *orphan_extents)
+-{
+-	struct orphan_data_extent *orphan;
+-
+-	while (!list_empty(orphan_extents)) {
+-		orphan = list_entry(orphan_extents->next,
+-				    struct orphan_data_extent, list);
+-		list_del(&orphan->list);
+-		free(orphan);
+-	}
+-}
+-
+ static int check_fs_root(struct btrfs_root *root,
+ 			 struct cache_tree *root_cache,
+ 			 struct walk_control *wc)
+@@ -3167,6 +3242,8 @@ static int check_fs_root(struct btrfs_root *root,
+ 	struct root_record *rec;
+ 	struct btrfs_root_item *root_item = &root->root_item;
+ 	struct cache_tree corrupt_blocks;
++	struct orphan_data_extent *orphan;
++	struct orphan_data_extent *tmp;
+ 	enum btrfs_tree_block_status status;
+ 
+ 	/*
+@@ -3177,6 +3254,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 	 */
+ 	cache_tree_init(&corrupt_blocks);
+ 	root->fs_info->corrupt_blocks = &corrupt_blocks;
++
+ 	if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID) {
+ 		rec = get_root_rec(root_cache, root->root_key.objectid);
+ 		if (btrfs_root_refs(root_item) > 0)
+@@ -3188,6 +3266,17 @@ static int check_fs_root(struct btrfs_root *root,
+ 	cache_tree_init(&root_node.root_cache);
+ 	cache_tree_init(&root_node.inode_cache);
+ 
++	/* Move the orphan extent record to corresponding inode_record */
++	list_for_each_entry_safe(orphan, tmp,
++				 &root->orphan_data_extents, list) {
++		struct inode_record *inode;
++
++		inode = get_inode_rec(&root_node.inode_cache, orphan->objectid,
++				      1);
++		inode->errors |= I_ERR_FILE_EXTENT_ORPHAN;
++		list_move(&orphan->list, &inode->orphan_extents);
++	}
++
+ 	level = btrfs_header_level(root->node);
+ 	memset(wc->nodes, 0, sizeof(wc->nodes));
+ 	wc->nodes[level] = &root_node;
+@@ -3285,7 +3374,6 @@ skip_walking:
+ 
+ 	free_corrupt_blocks_tree(&corrupt_blocks);
+ 	root->fs_info->corrupt_blocks = NULL;
+-	print_orphan_data_extents(&root->orphan_data_extents, root->objectid);
+ 	free_orphan_data_extents(&root->orphan_data_extents);
+ 	return ret;
+ }
 -- 
 2.1.3
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63005 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:54475 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751452AbaLRDkF (ORCPT
+	with ESMTP id S1751307AbaLRDkH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 22:40:05 -0500
+	Wed, 17 Dec 2014 22:40:07 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dbaM002160
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:37 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dc9c002163
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:38 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/5] btrfs-progs: Add btrfs_get_extent() and btrfs_punch_hole().
-Date: Thu, 18 Dec 2014 11:37:57 +0800
-Message-ID: <1418873880-7916-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 3/5] btrfs-progs: Record and report every file extent hole.
+Date: Thu, 18 Dec 2014 11:37:58 +0800
+Message-ID: <1418873880-7916-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,227 +19,343 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add btrfs_get_extent() adn btrfs_punch_hole() for btrfs-progs.
+Record every file extent discontinuous hole in inode_record using a
+rb_tree member.
 
-Btrfs_get_extent() will act much like kernel one, return the first
-extent that covers the given range.
-The difference will be that progs btrfs_get_extent() can't handle
-no-holes feature, which means caller should handle it carefully.
+Before the patch, btrfsck will only record the first file extent hole by
+using first_extent_gap, that's good for detecting error, but not
+suitable for fixing it.
 
-Btrfs_punch_hole() will punch a hole in given range of given inode,
-however it differs from kernel one since it won't zero any page or drop
-any extents if there is any extent in the hole range.
-
-These functions are mainly used for later I_ERR_FILE_EXTENT_DISCOUNT
-repair function.
+This patch provides the ability to record every file extent hole and
+report it.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Makefile |   2 +-
- ctree.h  |   9 ++++
- file.c   | 162 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 172 insertions(+), 1 deletion(-)
- create mode 100644 file.c
+ cmds-check.c | 244 +++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 231 insertions(+), 13 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 04d2c37..388afee 100644
---- a/Makefile
-+++ b/Makefile
-@@ -11,7 +11,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
- 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
- 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
--	  inode.o
-+	  inode.o file.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-diff --git a/ctree.h b/ctree.h
-index 0963fc0..5dbc767 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2468,4 +2468,13 @@ int btrfs_add_orphan_item(struct btrfs_trans_handle *trans,
- 			  u64 ino);
- int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		char *name, int namelen, u64 parent_ino, u64 *ino, int mode);
+diff --git a/cmds-check.c b/cmds-check.c
+index 059c53a..51b416b 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -167,6 +167,202 @@ struct root_item_record {
+ #define REF_ERR_DUP_ROOT_REF		(1 << 11)
+ #define REF_ERR_DUP_ROOT_BACKREF	(1 << 12)
+ 
++struct file_extent_hole {
++	struct rb_node node;
++	u64 start;
++	u64 len;
++};
 +
-+/* file.c */
-+int btrfs_get_extent(struct btrfs_trans_handle *trans,
-+		     struct btrfs_root *root,
-+		     struct btrfs_path *path,
-+		     u64 ino, u64 offset, u64 len, int ins_len);
-+int btrfs_punch_hole(struct btrfs_trans_handle *trans,
-+		     struct btrfs_root *root,
-+		     u64 ino, u64 offset, u64 len);
- #endif
-diff --git a/file.c b/file.c
-new file mode 100644
-index 0000000..0e9253e
---- /dev/null
-+++ b/file.c
-@@ -0,0 +1,162 @@
-+/*
-+ * Copyright (C) 2014 Fujitsu.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include <sys/stat.h>
-+#include "ctree.h"
-+#include "transaction.h"
-+#include "kerncompat.h"
-+
-+/*
-+ * Get the first file extent that covers (part of) the given range
-+ * Unlike kernel using extent_map to handle hole even no-hole is enabled,
-+ * progs don't have such infrastructure, so caller should do extra care
-+ * for no-hole.
-+ *
-+ * return 0 for found, and path points to the file extent.
-+ * return >0 for not found, and path points to the insert position.
-+ * return <0 for error.
-+ */
-+int btrfs_get_extent(struct btrfs_trans_handle *trans,
-+		     struct btrfs_root *root,
-+		     struct btrfs_path *path,
-+		     u64 ino, u64 offset, u64 len, int ins_len)
++/* Compatible function to allow reuse of old codes */
++static u64 first_extent_gap(struct rb_root *holes)
 +{
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_file_extent_item *fi_item;
-+	u64 end = 0;
-+	int ret = 0;
-+	int not_found = 1;
++	struct file_extent_hole *hole;
 +
-+	key.objectid = ino;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	key.offset = offset;
++	if (RB_EMPTY_ROOT(holes))
++		return (u64)-1;
 +
-+	ret = btrfs_search_slot(trans, root, &key, path, ins_len,
-+				ins_len ? 1 : 0);
-+	if (ret <= 0)
-+		goto out;
-+	if (ret > 0) {
-+		/* Check preivous file extent */
-+		ret = btrfs_previous_item(root, path, ino,
-+					  BTRFS_EXTENT_DATA_KEY);
-+		if (ret < 0)
-+			goto out;
-+		if (ret > 0)
-+			goto check_next;
-+	}
-+	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-+	if (found_key.objectid != ino ||
-+	    found_key.type != BTRFS_EXTENT_DATA_KEY)
-+		goto check_next;
++	hole = rb_entry(rb_first(holes), struct file_extent_hole, node);
++	return hole->start;
++}
 +
-+	fi_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				 struct btrfs_file_extent_item);
-+	end = found_key.offset +
-+	      btrfs_file_extent_ram_bytes(path->nodes[0], fi_item);
-+	/*
-+	 * existing file extent
-+	 * |--------|	  |----|
-+	 *      |-------|
-+	 *      offset + len
-+	 * OR
-+	 * |---------------|
-+	 *	|-------|
-+	 */
-+	if (end > offset) {
-+		not_found = 0;
-+		goto out;
-+	}
-+check_next:
-+	ret = btrfs_next_item(root, path);
-+	if (ret)
-+		goto out;
++int compare_hole(struct rb_node *node1, struct rb_node *node2)
++{
++	struct file_extent_hole *hole1;
++	struct file_extent_hole *hole2;
 +
-+	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-+	if (found_key.objectid != ino ||
-+	    found_key.type != BTRFS_EXTENT_DATA_KEY) {
-+		ret = 1;
-+		goto out;
-+	}
-+	if (found_key.offset < offset + len)
++	hole1 = rb_entry(node1, struct file_extent_hole, node);
++	hole2 = rb_entry(node2, struct file_extent_hole, node);
++
++	if (hole1->start > hole2->start)
++		return -1;
++	if (hole1->start < hole2->start)
++		return 1;
++	/* Now hole1->start == hole2->start */
++	if (hole1->len >= hole2->len)
 +		/*
-+		 * existing file extent
-+		 * |---|	|------|
-+		 *	|-------|
-+		 *	offset + len
++		 * Hole 1 will be merge center
++		 * Same hole will be merged later
 +		 */
-+		not_found = 0;
-+	else
-+		/*
-+		 * existing file extent
-+		 * |----|		|----|
-+		 *		|----|
-+		 *		offset + len
-+		 */
-+		not_found = 1;
-+
-+	/*
-+	 * To keep the search hehavior consistent with search_slot(),
-+	 * we need to go back to the prev leaf's nritem slot if
-+	 * we are at the first slot of the leaf.
-+	 */
-+	if (path->slots[0] == 0) {
-+		ret = btrfs_prev_leaf(root, path);
-+		/* Not possible */
-+		if (ret)
-+			goto out;
-+		path->slots[0] = btrfs_header_nritems(path->nodes[0]);
-+	}
-+
-+out:
-+	if (ret == 0)
-+		ret = not_found;
-+	return ret;
++		return -1;
++	/* Hole 2 will be merge center */
++	return 1;
 +}
 +
 +/*
-+ * Punch hole ranged [offset,len) for the file given by ino and root.
++ * Add a hole to the record
 + *
-+ * Unlink kernel punch_hole, which will not zero/free existing extent,
-+ * instead it will return -EEXIST if there is any extents in the hole
-+ * range.
++ * This will do hole merge for copy_file_extent_holes(),
++ * which will ensure there won't be continuous holes.
 + */
-+int btrfs_punch_hole(struct btrfs_trans_handle *trans,
-+		     struct btrfs_root *root,
-+		     u64 ino, u64 offset, u64 len)
++static int add_file_extent_hole(struct rb_root *holes,
++				u64 start, u64 len)
 +{
-+	struct btrfs_path *path;
-+	int ret = 0;
++	struct file_extent_hole *hole;
++	struct file_extent_hole *prev = NULL;
++	struct file_extent_hole *next = NULL;
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
++	hole = malloc(sizeof(*hole));
++	if (!hole)
 +		return -ENOMEM;
++	hole->start = start;
++	hole->len = len;
++	/* Since compare will not return 0, no -EEXIST will happen */
++	rb_insert(holes, &hole->node, compare_hole);
 +
-+	ret = btrfs_get_extent(NULL, root, path, ino, offset, len, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret == 0) {
-+		ret = -EEXIST;
-+		goto out;
++	/* simple merge with previous hole */
++	if (rb_prev(&hole->node))
++		prev = rb_entry(rb_prev(&hole->node), struct file_extent_hole,
++				node);
++	if (prev && prev->start + prev->len >= hole->start) {
++		hole->len = hole->start + hole->len - prev->start;
++		hole->start = prev->start;
++		rb_erase(&prev->node, holes);
++		free(prev);
++		prev = NULL;
 +	}
 +
-+	ret = btrfs_insert_file_extent(trans, root, ino, offset, 0, 0, len);
-+out:
-+	btrfs_free_path(path);
++	/* iterate merge with next holes */
++	while (1) {
++		if (!rb_next(&hole->node))
++			break;
++		next = rb_entry(rb_next(&hole->node), struct file_extent_hole,
++					node);
++		if (hole->start + hole->len >= next->start) {
++			if (hole->start + hole->len <= next->start + next->len)
++				hole->len = next->start + next->len -
++					    hole->start;
++			rb_erase(&next->node, holes);
++			free(next);
++			next = NULL;
++		} else
++			break;
++	}
++	return 0;
++}
++
++static int compare_hole_range(struct rb_node *node, void *data)
++{
++	struct file_extent_hole *hole;
++	u64 start;
++
++	hole = (struct file_extent_hole *)data;
++	start = hole->start;
++
++	hole = rb_entry(node, struct file_extent_hole, node);
++	if (start < hole->start)
++		return -1;
++	if (start >= hole->start && start < hole->start + hole->len)
++		return 0;
++	return 1;
++}
++
++/*
++ * Delete a hole in the record
++ *
++ * This will do the hole split and is much restrict than add.
++ */
++static int del_file_extent_hole(struct rb_root *holes,
++				u64 start, u64 len)
++{
++	struct file_extent_hole *hole;
++	struct file_extent_hole tmp;
++	struct file_extent_hole prev;
++	struct file_extent_hole next;
++	struct rb_node *node;
++	int have_prev = 0;
++	int have_next = 0;
++	int ret = 0;
++
++	tmp.start = start;
++	tmp.len = len;
++	node = rb_search(holes, &tmp, compare_hole_range, NULL);
++	if (!node)
++		return -EEXIST;
++	hole = rb_entry(node, struct file_extent_hole, node);
++	if (start + len > hole->start + hole->len)
++		return -EEXIST;
++
++	/*
++	 * Now there will be no overflap, delete the hole and re-add the
++	 * split(s) if they exists.
++	 */
++	if (start > hole->start) {
++		prev.start = hole->start;
++		prev.len = start - hole->start;
++		have_prev = 1;
++	}
++	if (hole->start + hole->len > start + len) {
++		next.start = start + len;
++		next.len = hole->start + hole->len - start - len;
++		have_next = 1;
++	}
++	rb_erase(node, holes);
++	free(hole);
++	if (have_prev) {
++		ret = add_file_extent_hole(holes, prev.start, prev.len);
++		if (ret < 0)
++			return ret;
++	}
++	if (have_next) {
++		ret = add_file_extent_hole(holes, next.start, next.len);
++		if (ret < 0)
++			return ret;
++	}
++	return 0;
++}
++
++static int copy_file_extent_holes(struct rb_root *dst,
++				  struct rb_root *src)
++{
++	struct file_extent_hole *hole;
++	struct rb_node *node;
++	int ret = 0;
++
++	node = rb_first(src);
++	while (node) {
++		hole = rb_entry(node, struct file_extent_hole, node);
++		ret = add_file_extent_hole(dst, hole->start, hole->len);
++		if (ret)
++			break;
++		node = rb_next(node);
++	}
 +	return ret;
 +}
++
++static void free_file_extent_holes(struct rb_root *holes)
++{
++	struct rb_node *node;
++	struct file_extent_hole *hole;
++
++	node = rb_first(holes);
++	while (node) {
++		hole = rb_entry(node, struct file_extent_hole, node);
++		rb_erase(node, holes);
++		free(hole);
++		node = rb_first(holes);
++	}
++}
++
+ struct inode_record {
+ 	struct list_head backrefs;
+ 	unsigned int checked:1;
+@@ -189,7 +385,7 @@ struct inode_record {
+ 	u64 found_size;
+ 	u64 extent_start;
+ 	u64 extent_end;
+-	u64 first_extent_gap;
++	struct rb_root holes;
+ 
+ 	u32 refs;
+ };
+@@ -374,6 +570,20 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ 	if (errors & I_ERR_LINK_COUNT_WRONG)
+ 		fprintf(stderr, ", link count wrong");
+ 	fprintf(stderr, "\n");
++	/* Print the holes if needed */
++	if (errors & I_ERR_FILE_EXTENT_DISCOUNT) {
++		struct file_extent_hole *hole;
++		struct rb_node *node;
++
++		node = rb_first(&rec->holes);
++		fprintf(stderr, "Found file extent holes:\n");
++		while (node) {
++			hole = rb_entry(node, struct file_extent_hole, node);
++			fprintf(stderr, "\tstart: %llu, len:%llu\n",
++				hole->start, hole->len);
++			node = rb_next(node);
++		}
++	}
+ }
+ 
+ static void print_ref_error(int errors)
+@@ -428,9 +638,9 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 		rec = calloc(1, sizeof(*rec));
+ 		rec->ino = ino;
+ 		rec->extent_start = (u64)-1;
+-		rec->first_extent_gap = (u64)-1;
+ 		rec->refs = 1;
+ 		INIT_LIST_HEAD(&rec->backrefs);
++		rec->holes = RB_ROOT;
+ 
+ 		node = malloc(sizeof(*node));
+ 		node->cache.start = ino;
+@@ -459,6 +669,7 @@ static void free_inode_rec(struct inode_record *rec)
+ 		list_del(&backref->list);
+ 		free(backref);
+ 	}
++	free_file_extent_holes(&rec->holes);
+ 	free(rec);
+ }
+ 
+@@ -506,11 +717,9 @@ static void maybe_free_inode_rec(struct cache_tree *inode_cache,
+ 			rec->errors |= I_ERR_ODD_DIR_ITEM;
+ 		if (rec->found_size != rec->nbytes)
+ 			rec->errors |= I_ERR_FILE_NBYTES_WRONG;
+-		if (rec->extent_start == (u64)-1 || rec->extent_start > 0)
+-			rec->first_extent_gap = 0;
+ 		if (rec->nlink > 0 && !no_holes &&
+ 		    (rec->extent_end < rec->isize ||
+-		     rec->first_extent_gap < rec->isize))
++		     first_extent_gap(&rec->holes) < rec->isize))
+ 			rec->errors |= I_ERR_FILE_EXTENT_DISCOUNT;
+ 	}
+ 
+@@ -659,6 +868,7 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
+ {
+ 	struct inode_backref *backref;
+ 	u32 dir_count = 0;
++	int ret = 0;
+ 
+ 	dst->merging = 1;
+ 	list_for_each_entry(backref, &src->backrefs, list) {
+@@ -691,8 +901,11 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
+ 		dst->found_csum_item = 1;
+ 	if (src->some_csum_missing)
+ 		dst->some_csum_missing = 1;
+-	if (dst->first_extent_gap > src->first_extent_gap)
+-		dst->first_extent_gap = src->first_extent_gap;
++	if (first_extent_gap(&dst->holes) > first_extent_gap(&src->holes)) {
++		ret = copy_file_extent_holes(&dst->holes, &src->holes);
++		if (ret < 0)
++			return ret;
++	}
+ 
+ 	BUG_ON(src->found_link < dir_count);
+ 	dst->found_link += src->found_link - dir_count;
+@@ -704,9 +917,11 @@ static int merge_inode_recs(struct inode_record *src, struct inode_record *dst,
+ 		} else {
+ 			if (dst->extent_end > src->extent_start)
+ 				dst->errors |= I_ERR_FILE_EXTENT_OVERLAP;
+-			else if (dst->extent_end < src->extent_start &&
+-				 dst->extent_end < dst->first_extent_gap)
+-				dst->first_extent_gap = dst->extent_end;
++			else if (dst->extent_end < src->extent_start) {
++				ret = add_file_extent_hole(&dst->holes,
++					dst->extent_end,
++					src->extent_start - dst->extent_end);
++			}
+ 			if (dst->extent_end < src->extent_end)
+ 				dst->extent_end = src->extent_end;
+ 		}
+@@ -1231,9 +1446,12 @@ static int process_file_extent(struct btrfs_root *root,
+ 
+ 	if (rec->extent_end > key->offset)
+ 		rec->errors |= I_ERR_FILE_EXTENT_OVERLAP;
+-	else if (rec->extent_end < key->offset &&
+-		 rec->extent_end < rec->first_extent_gap)
+-		rec->first_extent_gap = rec->extent_end;
++	else if (rec->extent_end < key->offset) {
++		ret = add_file_extent_hole(&rec->holes, rec->extent_end,
++					   key->offset - rec->extent_end);
++		if (ret < 0)
++			return ret;
++	}
+ 
+ 	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
+ 	extent_type = btrfs_file_extent_type(eb, fi);
 -- 
 2.1.3
 

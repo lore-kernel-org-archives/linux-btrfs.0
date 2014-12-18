@@ -1,63 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:65129 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750882AbaLOUCz (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:35459 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751323AbaLRGnC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Dec 2014 15:02:55 -0500
-Received: by mail-wi0-f180.google.com with SMTP id n3so10298588wiv.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Dec 2014 12:02:54 -0800 (PST)
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 7/7] Add -v and -o switches
-Date: Mon, 15 Dec 2014 21:03:00 +0100
-Message-Id: <1418673780-22000-8-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
-References: <1418673780-22000-1-git-send-email-kreijack@inwind.it>
+	Thu, 18 Dec 2014 01:43:02 -0500
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D866E3EE0AE
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 15:43:00 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id D553BAC07FF
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 15:42:59 +0900 (JST)
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id D54BCE08002
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 15:42:58 +0900 (JST)
+Message-ID: <54927765.6060207@jp.fujitsu.com>
+Date: Thu, 18 Dec 2014 15:42:45 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: naota <naota@elisp.net>
+Subject: [PATCH 2/2] btrfs-progs: fix the file system root is regarded as
+ non-root
+References: <54926FB4.6050604@jp.fujitsu.com>
+In-Reply-To: <54926FB4.6050604@jp.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add -v and -o switches to the mkfs.btrfs man page.
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+When "/" is Btrfs, "btrfs property <subcommand> /" regards it
+as non-root by mistake.
+
+check_is_root() regards @object as a file system root if
+the following two conditions are satisfied.
+
+ a) Both @object and its parent directory are Btrfs object
+    (file system root, subvolume, inode, and device
+    used for Btrfs).
+ b) fsid of the above mentioned two objects are different.
+
+It doesn't work if @object is "/" because, in this case,
+fsid of "/" and its parent (it's also "/"), are the same.
+
+* Test environment
+
+Two Btrfs file system (not subvolume) "/" and "/home/sat/mnt".
+
+* How to reproduce
+
+Submit "btrfs prop get" against the above mentioned file systems.
+
+* Test Result
+
+** Actual result (without my patch)
+
+==========================
+# btrfs prop get /home/sat/mnt/
+ro=false
+label=                 # label is displayed because it's a file system root
+# btrfs prop get /
+ro=false               # label is not displayed even if it's a file system root
+==========================
+** Expected result (with my patch)
+
+==========================
+# ./btrfs-new prop get btrfs-auto-test/
+# ./btrfs-new prop get /home/sat/mnt/
+ro=false
+label=
+# ./btrfs-new prop get /             
+ro=false
+label=foo            # label is displayed
+===========================
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Reported-by: Naohiro Aota <naota@elisp.net>
+
 ---
- Documentation/mkfs.btrfs.txt | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ cmds-property.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/mkfs.btrfs.txt b/Documentation/mkfs.btrfs.txt
-index ba7e42b..8ecb1a6 100644
---- a/Documentation/mkfs.btrfs.txt
-+++ b/Documentation/mkfs.btrfs.txt
-@@ -17,13 +17,16 @@ $$[-l|--leafsize <leafsize>]$$
- $$[-L|--label <label>]$$
- $$[-m|--metadata <metadata profile>]$$
- $$[-M|--mixed]$$
-+$$[-q|--quiet]$$
- $$[-s|--sectorsize <sectorsize>]$$
- $$[-r|--rootdir <rootdir>]$$
- $$[-K|--nodiscard]$$
- $$[-O|--features <feature1>[,<feature2>...]]$$
-+$$[-q|--quiet]$$
- $$[-U|--uuid <UUID>]$$
- $$[-h]$$
- $$[-V|--version]$$
-+$$[-v|--verbose]$$
- $$<device> [<device>...]$$
- 
- DESCRIPTION
-@@ -120,6 +123,12 @@ the system.
- -V|--version::
- Print the *mkfs.btrfs* version and exit.
- 
-+-v|--verbose::
-+Increase the verbosity of the command.
+diff --git a/cmds-property.c b/cmds-property.c
+index a4bc127..640af99 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -125,11 +125,22 @@ static int check_is_root(const char *object)
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	u8 fsid2[BTRFS_FSID_SIZE];
+ 	char *tmp;
++	char *rp;
 +
-+-q|--quiet::
-+Print only the errors.
-+
- -h::
- Print help.
++	rp = realpath(object, NULL);
++	if (!rp) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	if (!strcmp(rp, "/")) {
++		ret = 0;
++		goto free_rp_out;
++	}
  
+ 	tmp = malloc(strlen(object) + 5);
+ 	if (!tmp) {
+ 		ret = -ENOMEM;
+-		goto out;
++		goto free_rp_out;
+ 	}
+ 	strcpy(tmp, object);
+ 	if (tmp[strlen(tmp) - 1] != '/')
+@@ -165,6 +176,8 @@ static int check_is_root(const char *object)
+ 
+ free_tmp_out:
+ 	free(tmp);
++free_rp_out:
++	free(rp);
+ out:
+ 	return ret;
+ }
 -- 
-2.1.3
+1.9.3
 

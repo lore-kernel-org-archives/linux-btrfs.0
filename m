@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54475 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63005 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751363AbaLRDkF (ORCPT
+	with ESMTP id S1751452AbaLRDkF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 17 Dec 2014 22:40:05 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dbg3002156
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBI3dbaM002160
 	for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 11:39:37 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/5] btrfs-progs: Record orphan data extent ref to corresponding root.
-Date: Thu, 18 Dec 2014 11:37:56 +0800
-Message-ID: <1418873880-7916-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/5] btrfs-progs: Add btrfs_get_extent() and btrfs_punch_hole().
+Date: Thu, 18 Dec 2014 11:37:57 +0800
+Message-ID: <1418873880-7916-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1418873880-7916-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,262 +19,227 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this patch, when a extent's data ref points to a invalid key in
-fs tree, this happens if a leaf/node of fs tree is corrupted, btrfsck
-can't do any repair and just exit.
+Add btrfs_get_extent() adn btrfs_punch_hole() for btrfs-progs.
 
-In fact, such problem can be handled in fs tree repair routines, rebuild
-the inode item(if missing) and add back the extent data (with some
-assumption).
+Btrfs_get_extent() will act much like kernel one, return the first
+extent that covers the given range.
+The difference will be that progs btrfs_get_extent() can't handle
+no-holes feature, which means caller should handle it carefully.
 
-So this patch records such data extent refs for later fs tree recovery
-routine.
+Btrfs_punch_hole() will punch a hole in given range of given inode,
+however it differs from kernel one since it won't zero any page or drop
+any extents if there is any extent in the hole range.
 
-TODO:
-    Restore orphan data extent refs into btrfs_root is not the best
-    method. It's best to directly restore it into inode_record, however
-    current extent tree and fs tree can't cooperate together, so use
-    btrfs_root as a temporary storage until inode_cache is built.
+These functions are mainly used for later I_ERR_FILE_EXTENT_DISCOUNT
+repair function.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 126 +++++++++++++++++++++++++++++++++++++++++++++++++++++++----
- ctree.h      |  10 +++++
- disk-io.c    |   1 +
- 3 files changed, 129 insertions(+), 8 deletions(-)
+ Makefile |   2 +-
+ ctree.h  |   9 ++++
+ file.c   | 162 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 172 insertions(+), 1 deletion(-)
+ create mode 100644 file.c
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 6eea36c..059c53a 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -83,6 +83,20 @@ struct data_backref {
- 	u32 found_ref;
- };
- 
-+/*
-+ * Much like data_backref, just removed the undetermined members
-+ * and change it to use list_head.
-+ * Stored in the root->orphan_data_extents list
-+ */
-+struct orphan_data_extent {
-+	struct list_head list;
-+	u64 root;
-+	u64 objectid;
-+	u64 offset;
-+	u64 disk_bytenr;
-+	u64 disk_len;
-+};
-+
- struct tree_backref {
- 	struct extent_backref node;
- 	union {
-@@ -2894,6 +2908,34 @@ out:
- 	return ret;
- }
- 
-+static void print_orphan_data_extents(struct list_head *orphan_extents,
-+				      u64 objectid)
-+{
-+	struct orphan_data_extent *orphan;
-+
-+	if (list_empty(orphan_extents))
-+		return;
-+	printf("The following data extent is lost in tree %llu:\n",
-+	       objectid);
-+	list_for_each_entry(orphan, orphan_extents, list) {
-+		printf("\tinode: %llu, offset:%llu, disk_bytenr: %llu, disk_len: %llu\n",
-+		       orphan->objectid, orphan->offset, orphan->disk_bytenr,
-+		       orphan->disk_len);
-+	}
-+}
-+
-+static void free_orphan_data_extents(struct list_head *orphan_extents)
-+{
-+	struct orphan_data_extent *orphan;
-+
-+	while (!list_empty(orphan_extents)) {
-+		orphan = list_entry(orphan_extents->next,
-+				    struct orphan_data_extent, list);
-+		list_del(&orphan->list);
-+		free(orphan);
-+	}
-+}
-+
- static int check_fs_root(struct btrfs_root *root,
- 			 struct cache_tree *root_cache,
- 			 struct walk_control *wc)
-@@ -3025,6 +3067,8 @@ skip_walking:
- 
- 	free_corrupt_blocks_tree(&corrupt_blocks);
- 	root->fs_info->corrupt_blocks = NULL;
-+	print_orphan_data_extents(&root->orphan_data_extents, root->objectid);
-+	free_orphan_data_extents(&root->orphan_data_extents);
- 	return ret;
- }
- 
-@@ -6537,6 +6581,59 @@ static int find_possible_backrefs(struct btrfs_trans_handle *trans,
- }
- 
- /*
-+ * Record orphan data ref into corresponding root.
-+ *
-+ * Return 0 if the extent item contains data ref and recorded.
-+ * Return 1 if the extent item contains no data ref
-+ * (Only shared data ref or metadata and we can't use it)
-+ * Return <0 if something goes wrong.
-+ */
-+static int record_orphan_data_extents(struct btrfs_fs_info *fs_info,
-+				      struct extent_record *rec)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_root *dest_root;
-+	struct extent_backref *back;
-+	struct data_backref *dback;
-+	struct orphan_data_extent *orphan;
-+	int found_data_ref = 0;
-+
-+	if (rec->metadata)
-+		return 1;
-+	list_for_each_entry(back, &rec->backrefs, list) {
-+		if (back->full_backref || !back->is_data ||
-+		    !back->found_extent_tree)
-+			continue;
-+		dback = (struct data_backref *)back;
-+		if (dback->found_ref)
-+			continue;
-+		key.objectid = dback->root;
-+		key.type = BTRFS_ROOT_ITEM_KEY;
-+		key.offset = (u64)-1;
-+
-+		dest_root = btrfs_read_fs_root(fs_info, &key);
-+
-+		/* For non-exist root we just skip it */
-+		if (IS_ERR(dest_root) || !dest_root)
-+			continue;
-+		orphan = malloc(sizeof(*orphan));
-+		if (!orphan)
-+			return -ENOMEM;
-+		INIT_LIST_HEAD(&orphan->list);
-+		orphan->root = dback->root;
-+		orphan->objectid = dback->owner;
-+		orphan->offset = dback->offset;
-+		orphan->disk_bytenr = rec->cache.start;
-+		orphan->disk_len = rec->cache.size;
-+		list_add(&dest_root->orphan_data_extents, &orphan->list);
-+		found_data_ref = 1;
-+	}
-+	if (!found_data_ref)
-+		return 1;
-+	return 0;
-+}
-+
-+/*
-  * when an incorrect extent item is found, this will delete
-  * all of the existing entries for it and recreate them
-  * based on what the tree scan found.
-@@ -6753,6 +6850,7 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
- 	int ret = 0;
- 	int fixed = 0;
- 	int had_dups = 0;
-+	int recorded = 0;
- 
- 	if (repair) {
- 		/*
-@@ -6816,6 +6914,7 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
- 
- 	while(1) {
- 		fixed = 0;
-+		recorded = 0;
- 		cache = search_cache_extent(extent_cache, 0);
- 		if (!cache)
- 			break;
-@@ -6833,12 +6932,24 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
- 			fprintf(stderr, "extent item %llu, found %llu\n",
- 				(unsigned long long)rec->extent_item_refs,
- 				(unsigned long long)rec->refs);
--			if (!fixed && repair) {
--				ret = fixup_extent_refs(trans, root->fs_info,
-+			ret = record_orphan_data_extents(root->fs_info, rec);
-+			if (ret < 0)
-+				goto repair_abort;
-+			if (ret == 0) {
-+				recorded = 1;
-+			} else {
-+				/*
-+				 * we can't use the extent to repair file
-+				 * extent, let the fallback method handle it.
-+				 */
-+				if (!fixed && repair) {
-+					ret = fixup_extent_refs(trans,
-+							root->fs_info,
- 							extent_cache, rec);
--				if (ret)
--					goto repair_abort;
--				fixed = 1;
-+					if (ret)
-+						goto repair_abort;
-+					fixed = 1;
-+				}
- 			}
- 			err = 1;
- 
-@@ -6848,21 +6959,20 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
- 				(unsigned long long)rec->start,
- 				(unsigned long long)rec->nr);
- 
--			if (!fixed && repair) {
-+			if (!fixed && !recorded && repair) {
- 				ret = fixup_extent_refs(trans, root->fs_info,
- 							extent_cache, rec);
- 				if (ret)
- 					goto repair_abort;
- 				fixed = 1;
- 			}
--
- 			err = 1;
- 		}
- 		if (!rec->owner_ref_checked) {
- 			fprintf(stderr, "owner ref check failed [%llu %llu]\n",
- 				(unsigned long long)rec->start,
- 				(unsigned long long)rec->nr);
--			if (!fixed && repair) {
-+			if (!fixed && !recorded && repair) {
- 				ret = fixup_extent_refs(trans, root->fs_info,
- 							extent_cache, rec);
- 				if (ret)
+diff --git a/Makefile b/Makefile
+index 04d2c37..388afee 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,7 +11,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
+ 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+-	  inode.o
++	  inode.o file.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
 diff --git a/ctree.h b/ctree.h
-index 7861940..0963fc0 100644
+index 0963fc0..5dbc767 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -1039,6 +1039,16 @@ struct btrfs_root {
- 	u64 highest_inode;
- 	u64 last_inode_alloc;
- 
-+	/*
-+	 * Record orphan data extent ref
-+	 *
-+	 * TODO: Don't restore things in btrfs_root.
-+	 * Directly record it into inode_record, which needs a lot of
-+	 * infrastructure change to allow cooperation between extent
-+	 * and fs tree scan.
-+	 */
-+	struct list_head orphan_data_extents;
+@@ -2468,4 +2468,13 @@ int btrfs_add_orphan_item(struct btrfs_trans_handle *trans,
+ 			  u64 ino);
+ int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		char *name, int namelen, u64 parent_ino, u64 *ino, int mode);
 +
- 	/* the dirty list is only used by non-reference counted roots */
- 	struct list_head dirty_list;
- 	struct rb_node rb_node;
-diff --git a/disk-io.c b/disk-io.c
-index 03edf8e..91daea5 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -377,6 +377,7 @@ int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	root->last_inode_alloc = 0;
- 
- 	INIT_LIST_HEAD(&root->dirty_list);
-+	INIT_LIST_HEAD(&root->orphan_data_extents);
- 	memset(&root->root_key, 0, sizeof(root->root_key));
- 	memset(&root->root_item, 0, sizeof(root->root_item));
- 	root->root_key.objectid = objectid;
++/* file.c */
++int btrfs_get_extent(struct btrfs_trans_handle *trans,
++		     struct btrfs_root *root,
++		     struct btrfs_path *path,
++		     u64 ino, u64 offset, u64 len, int ins_len);
++int btrfs_punch_hole(struct btrfs_trans_handle *trans,
++		     struct btrfs_root *root,
++		     u64 ino, u64 offset, u64 len);
+ #endif
+diff --git a/file.c b/file.c
+new file mode 100644
+index 0000000..0e9253e
+--- /dev/null
++++ b/file.c
+@@ -0,0 +1,162 @@
++/*
++ * Copyright (C) 2014 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <sys/stat.h>
++#include "ctree.h"
++#include "transaction.h"
++#include "kerncompat.h"
++
++/*
++ * Get the first file extent that covers (part of) the given range
++ * Unlike kernel using extent_map to handle hole even no-hole is enabled,
++ * progs don't have such infrastructure, so caller should do extra care
++ * for no-hole.
++ *
++ * return 0 for found, and path points to the file extent.
++ * return >0 for not found, and path points to the insert position.
++ * return <0 for error.
++ */
++int btrfs_get_extent(struct btrfs_trans_handle *trans,
++		     struct btrfs_root *root,
++		     struct btrfs_path *path,
++		     u64 ino, u64 offset, u64 len, int ins_len)
++{
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_file_extent_item *fi_item;
++	u64 end = 0;
++	int ret = 0;
++	int not_found = 1;
++
++	key.objectid = ino;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	key.offset = offset;
++
++	ret = btrfs_search_slot(trans, root, &key, path, ins_len,
++				ins_len ? 1 : 0);
++	if (ret <= 0)
++		goto out;
++	if (ret > 0) {
++		/* Check preivous file extent */
++		ret = btrfs_previous_item(root, path, ino,
++					  BTRFS_EXTENT_DATA_KEY);
++		if (ret < 0)
++			goto out;
++		if (ret > 0)
++			goto check_next;
++	}
++	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
++	if (found_key.objectid != ino ||
++	    found_key.type != BTRFS_EXTENT_DATA_KEY)
++		goto check_next;
++
++	fi_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				 struct btrfs_file_extent_item);
++	end = found_key.offset +
++	      btrfs_file_extent_ram_bytes(path->nodes[0], fi_item);
++	/*
++	 * existing file extent
++	 * |--------|	  |----|
++	 *      |-------|
++	 *      offset + len
++	 * OR
++	 * |---------------|
++	 *	|-------|
++	 */
++	if (end > offset) {
++		not_found = 0;
++		goto out;
++	}
++check_next:
++	ret = btrfs_next_item(root, path);
++	if (ret)
++		goto out;
++
++	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
++	if (found_key.objectid != ino ||
++	    found_key.type != BTRFS_EXTENT_DATA_KEY) {
++		ret = 1;
++		goto out;
++	}
++	if (found_key.offset < offset + len)
++		/*
++		 * existing file extent
++		 * |---|	|------|
++		 *	|-------|
++		 *	offset + len
++		 */
++		not_found = 0;
++	else
++		/*
++		 * existing file extent
++		 * |----|		|----|
++		 *		|----|
++		 *		offset + len
++		 */
++		not_found = 1;
++
++	/*
++	 * To keep the search hehavior consistent with search_slot(),
++	 * we need to go back to the prev leaf's nritem slot if
++	 * we are at the first slot of the leaf.
++	 */
++	if (path->slots[0] == 0) {
++		ret = btrfs_prev_leaf(root, path);
++		/* Not possible */
++		if (ret)
++			goto out;
++		path->slots[0] = btrfs_header_nritems(path->nodes[0]);
++	}
++
++out:
++	if (ret == 0)
++		ret = not_found;
++	return ret;
++}
++
++/*
++ * Punch hole ranged [offset,len) for the file given by ino and root.
++ *
++ * Unlink kernel punch_hole, which will not zero/free existing extent,
++ * instead it will return -EEXIST if there is any extents in the hole
++ * range.
++ */
++int btrfs_punch_hole(struct btrfs_trans_handle *trans,
++		     struct btrfs_root *root,
++		     u64 ino, u64 offset, u64 len)
++{
++	struct btrfs_path *path;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_get_extent(NULL, root, path, ino, offset, len, 0);
++	if (ret < 0)
++		goto out;
++	if (ret == 0) {
++		ret = -EEXIST;
++		goto out;
++	}
++
++	ret = btrfs_insert_file_extent(trans, root, ino, offset, 0, 0, len);
++out:
++	btrfs_free_path(path);
++	return ret;
++}
 -- 
 2.1.3
 

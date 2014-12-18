@@ -1,75 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44839 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752180AbaLRICY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Dec 2014 03:02:24 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y1W2O-0006PP-HX
-	for linux-btrfs@vger.kernel.org; Thu, 18 Dec 2014 09:02:20 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 09:02:20 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 09:02:20 +0100
+Received: from mail-la0-f41.google.com ([209.85.215.41]:46338 "EHLO
+	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751062AbaLRO77 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Dec 2014 09:59:59 -0500
+Received: by mail-la0-f41.google.com with SMTP id hv19so1153063lab.28
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Dec 2014 06:59:58 -0800 (PST)
+MIME-Version: 1.0
+Date: Thu, 18 Dec 2014 22:59:57 +0800
+Message-ID: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
+Subject: btrfs is using 25% more disk than it should
+From: Daniele Testa <daniele.testa@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more
- accurate output in df command.]
-Date: Thu, 18 Dec 2014 08:02:09 +0000 (UTC)
-Message-ID: <pan$f1f89$5f6c1478$209cc54c$73adc535@cox.net>
-References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>
-	<548B4117.1040007@inwind.it>
-	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>
-	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com>
-	<CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com>
-	<548E377D.6030804@cn.fujitsu.com> <548E7A7A.90505@pobox.com>
-	<548E929B.2090203@pobox.com> <548E9B38.9080202@cn.fujitsu.com>
-	<548EABBB.4060204@pobox.com> <548FA762.2070504@pobox.com>
-	<549017E8.7060107@cn.fujitsu.com> <54908D8A.8040101@pobox.com>
-	<54916B39.5080409@cn.fujitsu.com> <549252FF.10400@pobox.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Robert White posted on Wed, 17 Dec 2014 20:07:27 -0800 as excerpted:
+Hey,
 
->  We have room for 1 more metadata extent on each
-> drive, but if we allocate two more metadat extents on each drive we will
-> burn up 1.25 GiB by reducing it to 0.75GiB.
+I am hoping you guys can shed some light on my issue. I know that it's
+a common question that people see differences in the "disk used" when
+running different calculations, but I still think that my issue is
+weird.
 
-FWIW, at least the last chunk assignment can be smaller than normal.  I 
-believe I've seen it happen both here and on posted reports.  The 0.75 
-GiB could thus be allocated as data if needed.
+root@s4 / # mount
+/dev/md3 on /opt/drives/ssd type btrfs
+(rw,noatime,compress=zlib,discard,nospace_cache)
 
-I'm not actually sure how the allocator works with the last few GiB.  
-Some developer comments have hinted that it starts carving smaller chunks 
-before it actually has to, and I could imagine it dropping data chunks to 
-a half gig, then a quarter gig, than 128 MiB, then 64 MiB... as space 
-gets tight, and metadata chunks similarly but of course from a quarter 
-gig down.  That I'm not sure about.  But I'm quite sure it will actually 
-use the last little bit (provided it can properly fill its raid policy 
-when doing so), as I'm quite sure I've seen it do it.
+root@s4 / # btrfs filesystem df /opt/drives/ssd
+Data: total=407.97GB, used=404.08GB
+System, DUP: total=8.00MB, used=52.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=1.25GB, used=672.21MB
+Metadata: total=8.00MB, used=0.00
 
-I know for sure it does that in mixed-mode, as I have a 256 MiB mixed-
-mode dup /boot (and a backup /boot of the same size on the other device, 
-so I can select the one that's booted from the BIOS), and they tend to be 
-fully chunk-allocated.   Note that even with mixed-mode, which defaults 
-to metadata-sized-chunks, thus 256 MiB, on a 256 MiB device, by the time 
-overhead, system, and reserve chunks are allocated, there's definitely 
-NOT 256 MiB left for a data/metadata-mixed chunk, so if it couldn't 
-allocate smaller bits it couldn't allocate even ONE chunk, let alone a 
-pair (dup mode).
+root@s4 /opt/drives/ssd # ls -alhs
+total 302G
+4.0K drwxr-xr-x 1 root         root           42 Dec 18 14:34 .
+4.0K drwxr-xr-x 4 libvirt-qemu libvirt-qemu 4.0K Dec 18 14:31 ..
+302G -rw-r--r-- 1 libvirt-qemu libvirt-qemu 315G Dec 18 14:49 disk_208.img
+   0 drwxr-xr-x 1 libvirt-qemu libvirt-qemu    0 Dec 18 10:08 snapshots
 
-And I think I've seen it happen on my larger (not mixed) filesystems of 
-several GiB as well, tho I don't actually tend to fill them up quite so 
-routinely, so it's more difficult to say for sure.
+root@s4 /opt/drives/ssd # du -h
+0       ./snapshots
+302G    .
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+As seen above, I have a 410GB SSD mounted at "/opt/drives/ssd". On
+that partition, I have one single starse file, taking 302GB of space
+(max 315GB). The snapshots directory is completely empty.
 
+However, for some weird reason, btrfs seems to think it takes 404GB.
+The big file is a disk that I use in a virtual server and when I write
+stuff inside that virtual server, the disk-usage of the btrfs
+partition on the host keeps increasing even if the sparse-file is
+constant at 302GB. I even have 100GB of "free" disk-space inside that
+virtual disk-file. Writing 1GB inside the virtual disk-file seems to
+increase the usage about 4-5GB on the "outside".
+
+Does anyone have a clue on what is going on? How can the difference
+and behaviour be like this when I just have one single file? Is it
+also normal to have 672MB of metadata for a single file?
+
+Regards,
+Daniele

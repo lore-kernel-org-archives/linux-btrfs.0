@@ -1,37 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:31854 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751211AbaLPUQl (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:38323 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751078AbaLRAx3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Dec 2014 15:16:41 -0500
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id sBGKGYCb006107
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 12:16:41 -0800
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1radkthsc5-11
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Dec 2014 12:16:40 -0800
-Message-ID: <54909321.3050000@fb.com>
-Date: Tue, 16 Dec 2014 15:16:33 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 17 Dec 2014 19:53:29 -0500
+Message-ID: <54922623.50602@oracle.com>
+Date: Thu, 18 Dec 2014 08:56:03 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: separate out the extent root update
-References: <1418418077-1223-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1418418077-1223-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+To: Florian Uekermann <florian@uekermann.me>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Device only missing if unmounted
+References: <708100218.650154.1418123709778.JavaMail.open-xchange@omgreatgod.store> <5487B3FB.4070109@oracle.com> <932711394.78334.1418480696257.JavaMail.open-xchange@patina.store>
+In-Reply-To: <932711394.78334.1418480696257.JavaMail.open-xchange@patina.store>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/12/2014 04:01 PM, Josef Bacik wrote:
-> Depending on where the extent root shows up in the dirty list we could end up
-> recowing the extent root a few times during commit.  This is inefficient, so
-> instead only track the other COW only roots and update them all at once, and
-> then do the extent root/block group update loop by itself to try and reduce the
-> amount of churn we do at commit time.  Thanks,
+
+> I checked this for all three devices and num_devices is 4 for all of them.
+> The full output is below.
+
+  so now if you mount and run 'btrfs fi show <mnt>' that should tell
+  device missing, which then 'btrfs device missing <mnt>' should be
+  successful theoretically.
+
+>> It may fail if you are mounting more than one subvol during boot and if
+>> you don't have this patch.
+>>
+>> commit 0f23ae74f589304bf33233f85737f4fd368549eb
+>> Author: Chris Mason <clm@fb.com>
+>> Date: Thu Sep 18 07:49:05 2014 -0700
+>>
+>> Revert "Btrfs: device_list_add() should not update list when mounted"
+>>
+>> This reverts commit b96de000bc8bc9688b3a2abea4332bd57648a49f.
 >
+> I am running 3.18-rc5+ from linus tree. If I am not mistaken,
+>   that commit is his tree in since 3.17-rc6.
 
-Killing this one as well.  Thanks,
-
-Josef
+  Ah yes. sorry i just missed that point.
 

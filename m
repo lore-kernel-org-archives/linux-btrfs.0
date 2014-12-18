@@ -1,97 +1,209 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f173.google.com ([209.85.223.173]:55188 "EHLO
-	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751216AbaLQSqq (ORCPT
+Received: from nala.villavu.com ([188.165.243.101]:51572 "EHLO
+	nala.villavu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751696AbaLRKaj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Dec 2014 13:46:46 -0500
-Received: by mail-ie0-f173.google.com with SMTP id y20so15555211ier.32
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Dec 2014 10:46:45 -0800 (PST)
-Message-ID: <5491CF92.10702@gmail.com>
-Date: Wed, 17 Dec 2014 13:46:42 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Thu, 18 Dec 2014 05:30:39 -0500
+Message-ID: <5492AC94.8050104@wizzup.org>
+Date: Thu, 18 Dec 2014 11:29:40 +0100
+From: Merlijn Wajer <merlijn@wizzup.org>
 MIME-Version: 1.0
-To: dsterba@suse.cz, Merlijn Wajer <merlijn@wizzup.org>,
-        linux-btrfs@vger.kernel.org
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [RFC] btrfs-progs: Support for musl libc (and perhaps also uclibc)
 References: <548C4E9D.2080309@wizzup.org> <20141217164924.GB27601@twin.jikos.cz>
 In-Reply-To: <20141217164924.GB27601@twin.jikos.cz>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms010205060801030801020201"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="QiCbPW2jRPgFJDxhhSJWV6HcUHtChLxFj"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--QiCbPW2jRPgFJDxhhSJWV6HcUHtChLxFj
+Content-Type: multipart/mixed;
+ boundary="------------080407060801000301050308"
 
---------------ms010205060801030801020201
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+This is a multi-part message in MIME format.
+--------------080407060801000301050308
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-12-17 11:49, David Sterba wrote:
+Hi,
+
+On 17/12/14 17:49, David Sterba wrote:
 > On Sat, Dec 13, 2014 at 03:35:09PM +0100, Merlijn Wajer wrote:
 > [snip]
+>=20
+>> Attached are the two patches generated with git format-patch. I am awa=
+re
+>> that this may not be required format for submitting patches -- but
+>> please give me some time to get used to the etiquette. :-)
+>=20
+> Thanks, there are minor things that I won't bother to point out to
+> occasional contributors and fix them myself. The only formal requiremen=
+t
+> is the Signed-off-by tag, you can find the description eg. here
+>=20
+> http://lxr.free-electrons.com/source/Documentation/SubmittingPatches#L3=
+58
+
+Alright, cool. I've rebased my two patches and used --signoff when
+amending the commit. Please find the new patches attached.
+
+
 >> Please let me know if musl-libc (or any other libc) is a supported
 >> platform, and if so, if and how I can improve on said patches.
->
+>=20
 > I'm not aware of non-glibc users, but I don't see any problem to add
 > support for more libc implementations. However, I won't regularly verif=
 y
 > that it builds so it might break.
-I know that buildroot has support for building btrfs-progs with uClibc,=20
-I don't know if they have any special patches for it though.  Although I =
 
-haven't tried it myself, I think it is also possible to use buildroot=20
-with musl.
+That is fine; at this point there are not a lot of people using an
+alternative libc, so this is common practice. I'll be here with a new
+round of patches if it breaks in a future release; it shouldn't really
+break too often. :)
 
 
---------------ms010205060801030801020201
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+> Seems that only standardized library calls are used in btrfs-progs so
+> any kind of support is probably going to be satisfied by #ifdefs.
+> Your patches are simple so I'll try to schedule them to some 3.18.x
+> update.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjE3MTg0NjQy
-WjAjBgkqhkiG9w0BCQQxFgQULeGwhFNnT+iWOqLXADWbPoMFB+gwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAu6sQRKDEG3nwM1iFgX5BS3RfXj8j
-8yk0gKSX/OoCBAC9Ng68jv19avP9T0aDyfpuZeFn+GXZSqvIkn2H4QS7HKSCzBGd9Ksxh335
-o8vBBy/DiPv3LyLGTkGKzOaocdTcm3SXeF9aCfL7hjFDxx5VBIwnFHlP4Jtb/+XjrS2s2lsp
-+iePiqjrpymJ9KiFRt7+5ifMw8s1kNm96kJhPaTrel5oflIDXAuVeV43B6UO9UJCtuDwao3/
-SiMMyr/tZ96ZnerBekshIxQmGeI3KaOcVsWh8WqFf34vXifD+lUgar+DqfkAhvuzrjwWKLic
-Xx3f+GuW7lKtIcnXo3Ac2Zzz4wAAAAAAAA==
---------------ms010205060801030801020201--
+That would be great; thank you.
+
+Regards,
+Merlijn
+
+--------------080407060801000301050308
+Content-Type: text/x-patch;
+ name="0001-Include-headers-required-for-musl-libc.patch"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="0001-Include-headers-required-for-musl-libc.patch"
+
+=46rom 0109fd7ce62eee8b16aa5bdf78f3de54011e00f3 Mon Sep 17 00:00:00 2001
+From: Merlijn Wajer <merlijn@wizzup.org>
+Date: Sat, 13 Dec 2014 15:07:25 +0100
+Subject: [PATCH 1/2] Include headers required for musl-libc.
+
+This fixes various compilation errors where PATH_MAX and XATTR_SIZE_MAX
+were missing. To my knowledge, this should have no bad side effects.
+
+Signed-off-by: Merlijn Wajer <merlijn@wizzup.org>
+---
+ btrfs-convert.c | 1 +
+ help.c          | 1 +
+ mkfs.c          | 2 ++
+ 3 files changed, 4 insertions(+)
+
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 02c5e94..7b69a13 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -31,6 +31,7 @@
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <uuid/uuid.h>
++#include <linux/limits.h>
+=20
+ #include "ctree.h"
+ #include "disk-io.h"
+diff --git a/help.c b/help.c
+index fab942b..56aaf9c 100644
+--- a/help.c
++++ b/help.c
+@@ -17,6 +17,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <limits.h>
+=20
+ #include "commands.h"
+ #include "utils.h"
+diff --git a/mkfs.c b/mkfs.c
+index e10e62d..6343831 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -35,6 +35,8 @@
+ #include <uuid/uuid.h>
+ #include <ctype.h>
+ #include <sys/xattr.h>
++#include <limits.h>
++#include <linux/limits.h>
+ #include <blkid/blkid.h>
+ #include <ftw.h>
+ #include "ctree.h"
+--=20
+2.0.4
+
+
+--------------080407060801000301050308
+Content-Type: text/x-patch;
+ name="0002-Disable-backtrace-and-define-__always_inline.patch"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename*0="0002-Disable-backtrace-and-define-__always_inline.patch"
+
+=46rom 5ae5cfa3af473625ef5b31daf5f229f12be753d2 Mon Sep 17 00:00:00 2001
+From: Merlijn Wajer <merlijn@wizzup.org>
+Date: Sat, 13 Dec 2014 15:08:43 +0100
+Subject: [PATCH 2/2] Disable backtrace and define __always_inline
+
+Disable backtrace and define __always_inline when glibc is not used as
+libc. This, together with some header changes allows btrfs-progs to
+compile with musl-libc.
+
+Signed-off-by: Merlijn Wajer <merlijn@wizzup.org>
+---
+ kerncompat.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/kerncompat.h b/kerncompat.h
+index 8afadc8..05823a7 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -29,6 +29,12 @@
+ #include <stddef.h>
+ #include <linux/types.h>
+ #include <stdint.h>
++
++#ifndef __glibc__
++#define BTRFS_DISABLE_BACKTRACE
++#define __always_inline __inline __attribute__ ((__always_inline__))
++#endif
++
+ #ifndef BTRFS_DISABLE_BACKTRACE
+ #include <execinfo.h>
+ #endif
+--=20
+2.0.4
+
+
+--------------080407060801000301050308--
+
+--QiCbPW2jRPgFJDxhhSJWV6HcUHtChLxFj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iQIcBAEBAgAGBQJUkqyXAAoJEHmTPmZXIL57yBYQAIdC/L0TwxFQxUTgAy4hw0Kh
+xg2k03zCDhL2/2kYRA1lVaSr3yDfgGIXWiGnRYtcsIjMaszklm3hYUBr6g1WUoQz
+NmdQz5InHIs51hymYaqFEubQlQxNUnkyKa4WBmdj7tH1NfXGWZRsGku4nfpPPzfJ
+jTDzYWXpCUlFGrkgsupR20VuqVj1u/TqGgKHakEUrg9ZGQnOdhvCvveY9bXylmW8
+JYwFNUrmK7OdSAhSa9wNPSdO2+a26ITCwycAPZSACjxLblSkjlG95rMC6ismcDxh
+zVxTcFbpvOYOjrT283DKWhaBX7RavuJ68dKREZkdiTN5+JooJckN1LKnLaNW6r/O
+xjoXdJQwL4wcJk/A4o34XdxLlPYeclszZDcqsLz54gkPpRiYwTKV98FD2AV05U8+
+eUnKSnmg+pOAwI7sNObqRyvDW+preW4VuNThOXDlicDs/pEGL5kZYORiKnfG9yen
++Vmbyuz0JPSiOXrnATTbelBxW5RiNlphDid6OsiazEKaKv92TigsWvWxAywwuboj
+4ZD7tyEmDkScCzy9DCmfOyAbtDRYLEzfqQBdOJtNUHGs1d624MAXPWbyXprC9N7b
+4PAbgCPDxhBQvcUgRG7VsbtOj6bImcqyIhpkpcnX3sufnyYPxJcQy7mgNCQLNd3A
+bggSXZiV3fwEu3KAMRCa
+=A7G3
+-----END PGP SIGNATURE-----
+
+--QiCbPW2jRPgFJDxhhSJWV6HcUHtChLxFj--

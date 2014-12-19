@@ -1,56 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f41.google.com ([209.85.192.41]:37756 "EHLO
-	mail-qg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751165AbaLSUfi (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:52513 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751165AbaLSVKu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 15:35:38 -0500
-Received: by mail-qg0-f41.google.com with SMTP id j5so1195173qga.14
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 12:35:37 -0800 (PST)
-Message-ID: <54948C06.6040408@ubuntu.com>
-Date: Fri, 19 Dec 2014 15:35:18 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Fri, 19 Dec 2014 16:10:50 -0500
+Message-ID: <54949454.9020601@fb.com>
+Date: Fri, 19 Dec 2014 16:10:44 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Daniele Testa <daniele.testa@gmail.com>
-CC: linux-btrfs@vger.kernel.org
+To: Daniele Testa <daniele.testa@gmail.com>, <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs is using 25% more disk than it should
-References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>	<54947432.5010107@ubuntu.com> <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com>
-In-Reply-To: <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
+In-Reply-To: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 12/18/2014 09:59 AM, Daniele Testa wrote:
+> Hey,
+>
+> I am hoping you guys can shed some light on my issue. I know that it's
+> a common question that people see differences in the "disk used" when
+> running different calculations, but I still think that my issue is
+> weird.
+>
+> root@s4 / # mount
+> /dev/md3 on /opt/drives/ssd type btrfs
+> (rw,noatime,compress=zlib,discard,nospace_cache)
+>
+> root@s4 / # btrfs filesystem df /opt/drives/ssd
+> Data: total=407.97GB, used=404.08GB
+> System, DUP: total=8.00MB, used=52.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=1.25GB, used=672.21MB
+> Metadata: total=8.00MB, used=0.00
+>
+> root@s4 /opt/drives/ssd # ls -alhs
+> total 302G
+> 4.0K drwxr-xr-x 1 root         root           42 Dec 18 14:34 .
+> 4.0K drwxr-xr-x 4 libvirt-qemu libvirt-qemu 4.0K Dec 18 14:31 ..
+> 302G -rw-r--r-- 1 libvirt-qemu libvirt-qemu 315G Dec 18 14:49 disk_208.img
+>     0 drwxr-xr-x 1 libvirt-qemu libvirt-qemu    0 Dec 18 10:08 snapshots
+>
+> root@s4 /opt/drives/ssd # du -h
+> 0       ./snapshots
+> 302G    .
+>
+> As seen above, I have a 410GB SSD mounted at "/opt/drives/ssd". On
+> that partition, I have one single starse file, taking 302GB of space
+> (max 315GB). The snapshots directory is completely empty.
+>
+> However, for some weird reason, btrfs seems to think it takes 404GB.
+> The big file is a disk that I use in a virtual server and when I write
+> stuff inside that virtual server, the disk-usage of the btrfs
+> partition on the host keeps increasing even if the sparse-file is
+> constant at 302GB. I even have 100GB of "free" disk-space inside that
+> virtual disk-file. Writing 1GB inside the virtual disk-file seems to
+> increase the usage about 4-5GB on the "outside".
+>
+> Does anyone have a clue on what is going on? How can the difference
+> and behaviour be like this when I just have one single file? Is it
+> also normal to have 672MB of metadata for a single file?
+>
 
-On 12/19/2014 2:59 PM, Daniele Testa wrote:
-> No, I don't have any snapshots or subvolumes. Only that single
-> file.
-> 
-> The file has both checksums and datacow on it. I will do "chattr
-> +C" on the parent dir and re-create the file to make sure all files
-> are marked as "nodatacow".
-> 
-> Should I also turn off checksums with the mount-flags if this 
-> filesystem only contain big VM-files? Or is it not needed if I put
-> +C on the parent dir?
+Hello and welcome to the wonderful world of btrfs, where COW can really 
+suck hard without being super clear why!  It's 4pm on a Friday right 
+before I'm gone for 2 weeks so I'm a bit happy and drunk so I'm going to 
+use pretty pictures.  You have this case to start with
 
-If you don't want the overhead of those checksums, then yea.  Also I
-would question why you are using btrfs to hold only big vm files in
-the first place.  You would be better off using lvm thinp volumes
-instead of files, though personally I prefer to just use regular lvm
-volumes and manually allocate enough space.  It avoids the
-fragmentation you get from thin provisioning ( or qcow2 ) at the cost
-of a bit of overallocated space and the need to do some manual
-resizing to add more if and when it is needed.
+file offset 0                                               offset 302g
+[-------------------------prealloced 302g extent----------------------]
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
+(man it's impressive I got all that lined up right)
 
-iQEcBAEBAgAGBQJUlIwGAAoJENRVrw2cjl5RlGEH/1OYz07C/OjGBASA9IHTCVMV
-NkYHnO3/s2+SOsafQj4ej/RifgX9aG43b8Y6z9XAdosG/X+8z7xRjW9Nic0H5beK
-JZRpwP+02Dw02A3/RSPjGqJBeAmS8yi9yTlunnPaCau+m1kPYL4M/vFM8/hqrGeU
-Jy+jbffX+XtOedBWptxnDVIyXpYskgVyH8AmQ9d3TGrv52jw/QY1BxkuoVG60hBU
-Fk4Q8ed43C9zjCVihmkDOeER6Ygr1roDb1/gFLoeCk4FwVLO9Kusft2Qi2oXyHy1
-iTkoVJan8NRzXBhrPtZexxQdewHSw9Z4wyHxlal3b/xIbRf6/DRwPRHfgG5djvM=
-=AqC/
------END PGP SIGNATURE-----
+On disk you have 2 things.  First your file which has file extents which 
+says
+
+inode 256, file offset 0, size 302g, offset0, disk bytenr 123, disklen 302g
+
+and then in the extent tree, who keeps track of actual allocated space 
+has this
+
+extent bytenr 123, len 302g, refs 1
+
+Now say you boot up your virt image and it writes 1 4k block to offset 
+0.  Now you have this
+
+[4k][--------------------302g-4k--------------------------------------]
+
+And for your inode you now have this
+
+inode 256, file offset 0, size 4k, offset 0, diskebytenr (123+302g), 
+disklen 4k
+inode 256, file offset 4k, size 302g-4k, offset 4k, diskbytenr 123, 
+disklen 302g
+
+and in your extent tree you have
+
+extent bytenr 123, len 302g, refs 1
+extent bytenr whatever, len 4k, refs 1
+
+See that?  Your file is still the same size, it is still 302g.  If you 
+cp'ed it right now it would copy 302g of information.  But what you have 
+actually allocated on disk?  Well that's now 302g + 4k.  Now lets say 
+your virt thing decides to write to the middle, lets say at offset 12k, 
+now you have this
+
+inode 256, file offset 0, size 4k, offset 0, diskebytenr (123+302g), 
+disklen 4k
+inode 256, file offset 4k, size 3k, offset 4k, diskbytenr 123, disklen 302g
+inode 256, file offset 12k, size 4k, offset 0, diskebytenr whatever, 
+disklen 4k
+inode 256, file offset 16k, size 302g - 16k, offset 16k, diskbytenr 123, 
+disklen 302g
+
+and in the extent tree you have this
+
+extent bytenr 123, len 302g, refs 2
+extent bytenr whatever, len 4k, refs 1
+extent bytenr notimportant, len 4k, refs 1
+
+See that refs 2 change?  We split the original extent, so we have 2 file 
+extents pointing to the same physical extents, so we bumped the ref 
+count.  This will happen over and over again until we have completely 
+overwritten the original extent, at which point your space usage will go 
+back down to ~302g.
+
+We split big extents with cow, so unless you've got lots of space to 
+spare or are going to use nodatacow you should probably not pre-allocate 
+virt images.  Thanks,
+
+Josef

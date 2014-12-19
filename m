@@ -1,103 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44742 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44744 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751142AbaLSRim (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 12:38:42 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 9EECAAC18
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 17:38:41 +0000 (UTC)
+	id S1751142AbaLSRiq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Dec 2014 12:38:46 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D05F3AC18
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 17:38:44 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/4] btrfs: update message levels during failed mount
-Date: Fri, 19 Dec 2014 18:38:41 +0100
-Message-Id: <af55b94b0ef3d05c40155a9fda1729546b91fbfb.1419010347.git.dsterba@suse.cz>
+Subject: [PATCH 3/4] btrfs: update message levels after checksum errors
+Date: Fri, 19 Dec 2014 18:38:44 +0100
+Message-Id: <6a9c3d503399cd57821509de23a6eb7bc15feb5e.1419010347.git.dsterba@suse.cz>
 In-Reply-To: <cover.1419010347.git.dsterba@suse.cz>
 References: <cover.1419010347.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All error conditions from open_ctree shall be ERR. Warning would
-suggest that something's wrong and we can continue.
+The errors are worth noting and might get missed with INFO level.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ fs/btrfs/disk-io.c | 2 +-
+ fs/btrfs/inode.c   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8beb74ffb075..3b694192a4a9 100644
+index 3b694192a4a9..6e986a34f9a1 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2523,7 +2523,7 @@ int open_ctree(struct super_block *sb,
- 	 */
- 	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
- 	    (sectorsize != nodesize)) {
--		printk(KERN_WARNING "BTRFS: unequal leaf/node/sector sizes "
-+		printk(KERN_ERR "BTRFS: unequal leaf/node/sector sizes "
- 				"are not allowed for mixed block groups on %s\n",
- 				sb->s_id);
- 		goto fail_alloc;
-@@ -2631,12 +2631,12 @@ int open_ctree(struct super_block *sb,
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
+@@ -318,7 +318,7 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			memcpy(&found, result, csum_size);
  
- 	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
--		printk(KERN_INFO "BTRFS: valid FS not found on %s\n", sb->s_id);
-+		printk(KERN_ERR "BTRFS: valid FS not found on %s\n", sb->s_id);
- 		goto fail_sb_buffer;
- 	}
- 
- 	if (sectorsize != PAGE_SIZE) {
--		printk(KERN_WARNING "BTRFS: Incompatible sector size(%lu) "
-+		printk(KERN_ERR "BTRFS: incompatible sector size (%lu) "
- 		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
- 		goto fail_sb_buffer;
- 	}
-@@ -2645,7 +2645,7 @@ int open_ctree(struct super_block *sb,
- 	ret = btrfs_read_sys_array(tree_root);
- 	mutex_unlock(&fs_info->chunk_mutex);
- 	if (ret) {
--		printk(KERN_WARNING "BTRFS: failed to read the system "
-+		printk(KERN_ERR "BTRFS: failed to read the system "
- 		       "array on %s\n", sb->s_id);
- 		goto fail_sb_buffer;
- 	}
-@@ -2660,7 +2660,7 @@ int open_ctree(struct super_block *sb,
- 					   generation);
- 	if (!chunk_root->node ||
- 	    !test_bit(EXTENT_BUFFER_UPTODATE, &chunk_root->node->bflags)) {
--		printk(KERN_WARNING "BTRFS: failed to read chunk root on %s\n",
-+		printk(KERN_ERR "BTRFS: failed to read chunk root on %s\n",
- 		       sb->s_id);
- 		goto fail_tree_roots;
- 	}
-@@ -2672,7 +2672,7 @@ int open_ctree(struct super_block *sb,
- 
- 	ret = btrfs_read_chunk_tree(chunk_root);
- 	if (ret) {
--		printk(KERN_WARNING "BTRFS: failed to read chunk tree on %s\n",
-+		printk(KERN_ERR "BTRFS: failed to read chunk tree on %s\n",
- 		       sb->s_id);
- 		goto fail_tree_roots;
- 	}
-@@ -2684,7 +2684,7 @@ int open_ctree(struct super_block *sb,
- 	btrfs_close_extra_devices(fs_info, fs_devices, 0);
- 
- 	if (!fs_devices->latest_bdev) {
--		printk(KERN_CRIT "BTRFS: failed to read devices on %s\n",
-+		printk(KERN_ERR "BTRFS: failed to read devices on %s\n",
- 		       sb->s_id);
- 		goto fail_tree_roots;
- 	}
-@@ -2768,7 +2768,7 @@ retry_root_backup:
- 
- 	ret = btrfs_recover_balance(fs_info);
- 	if (ret) {
--		printk(KERN_WARNING "BTRFS: failed to recover balance\n");
-+		printk(KERN_ERR "BTRFS: failed to recover balance\n");
- 		goto fail_block_groups;
- 	}
- 
+ 			read_extent_buffer(buf, &val, 0, csum_size);
+-			printk_ratelimited(KERN_INFO
++			printk_ratelimited(KERN_WARNING
+ 				"BTRFS: %s checksum verify failed on %llu wanted %X found %X "
+ 				"level %d\n",
+ 				root->fs_info->sb->s_id, buf->start,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ff6d98d8dc20..a91d9ff3293b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2945,7 +2945,7 @@ static int __readpage_endio_check(struct inode *inode,
+ 	return 0;
+ zeroit:
+ 	if (__ratelimit(&_rs))
+-		btrfs_info(BTRFS_I(inode)->root->fs_info,
++		btrfs_warn(BTRFS_I(inode)->root->fs_info,
+ 			   "csum failed ino %llu off %llu csum %u expected csum %u",
+ 			   btrfs_ino(inode), start, csum, csum_expected);
+ 	memset(kaddr + pgoff, 1, len);
 -- 
 2.1.3
 

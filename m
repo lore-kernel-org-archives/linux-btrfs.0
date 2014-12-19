@@ -1,111 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:55355 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751003AbaLSFcL (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:10372 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751370AbaLSGPQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 00:32:11 -0500
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 7F9293EE0BB
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 14:32:09 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 79B3CAC07E7
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 14:32:08 +0900 (JST)
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 25FAAE08001
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 14:32:08 +0900 (JST)
-Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
-	by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id 5395B584396
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 14:32:07 +0900 (JST)
-Message-ID: <5493B84A.6080100@jp.fujitsu.com>
-Date: Fri, 19 Dec 2014 14:31:54 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Fri, 19 Dec 2014 01:15:16 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBJ6EmcH027637
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 14:14:48 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/5] btrfs-progs: Makefile: Move linker only option to LDFLAGS
+Date: Fri, 19 Dec 2014 14:13:08 +0800
+Message-ID: <1418969592-21278-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1418969592-21278-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1418969592-21278-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: cleanup: avoid to use literal for getopt val
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Move the linker only option -rdynamic to LDFLAGS.
+This resolve lots of the following warning if using clang as CC:
+clang: warning: argument unused during compilation: '-rdynamic'
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-Tested with dev/integration-20141218 + this patch
----
- cmds-fi-disk_usage.c | 8 ++++----
- cmds-filesystem.c    | 8 ++++----
- utils.h              | 3 +++
- 3 files changed, 11 insertions(+), 8 deletions(-)
+ Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
-index d81f011..5e8e39b 100644
---- a/cmds-fi-disk_usage.c
-+++ b/cmds-fi-disk_usage.c
-@@ -877,8 +877,8 @@ int cmd_filesystem_usage(int argc, char **argv)
- 			{ "mbytes", no_argument, NULL, 'm'},
- 			{ "gbytes", no_argument, NULL, 'g'},
- 			{ "tbytes", no_argument, NULL, 't'},
--			{ "si", no_argument, NULL, 256},
--			{ "iec", no_argument, NULL, 257},
-+			{ "si", no_argument, NULL, GETOPT_VAL_SI},
-+			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
- 		};
- 		int c = getopt_long(argc, argv, "bhHkmgtT", long_options,
- 				&long_index);
-@@ -907,10 +907,10 @@ int cmd_filesystem_usage(int argc, char **argv)
- 		case 'H':
- 			unit_mode = UNITS_HUMAN_DECIMAL;
- 			break;
--		case 256:
-+		case GETOPT_VAL_SI:
- 			units_set_mode(&unit_mode, UNITS_DECIMAL);
- 			break;
--		case 257:
-+		case GETOPT_VAL_IEC:
- 			units_set_mode(&unit_mode, UNITS_BINARY);
- 			break;
- 		case 'T':
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 7eaccb9..8f037dd 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -216,8 +216,8 @@ static int cmd_filesystem_df(int argc, char **argv)
- 			{ "mbytes", no_argument, NULL, 'm'},
- 			{ "gbytes", no_argument, NULL, 'g'},
- 			{ "tbytes", no_argument, NULL, 't'},
--			{ "si", no_argument, NULL, 256},
--			{ "iec", no_argument, NULL, 257},
-+			{ "si", no_argument, NULL, GETOPT_VAL_SI},
-+			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
- 		};
- 		int c = getopt_long(argc, argv, "bhHkmgt", long_options,
- 					&long_index);
-@@ -245,10 +245,10 @@ static int cmd_filesystem_df(int argc, char **argv)
- 		case 'H':
- 			unit_mode = UNITS_HUMAN_DECIMAL;
- 			break;
--		case 256:
-+		case GETOPT_VAL_SI:
- 			units_set_mode(&unit_mode, UNITS_DECIMAL);
- 			break;
--		case 257:
-+		case GETOPT_VAL_IEC:
- 			units_set_mode(&unit_mode, UNITS_BINARY);
- 			break;
- 		default:
-diff --git a/utils.h b/utils.h
-index 0464c2d..34fd5e4 100644
---- a/utils.h
-+++ b/utils.h
-@@ -40,6 +40,9 @@
- 
- #define ARGV0_BUF_SIZE	PATH_MAX
- 
-+#define GETOPT_VAL_SI	256
-+#define GETOPT_VAL_IEC	257
-+
- int check_argc_exact(int nargs, int expected);
- int check_argc_min(int nargs, int expected);
- int check_argc_max(int nargs, int expected);
+diff --git a/Makefile b/Makefile
+index e1b0a88..be0f48b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,8 @@ CC = gcc
+ LN = ln
+ AR = ar
+ AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fno-strict-aliasing -fPIC
+-CFLAGS = -g -O1 -fno-strict-aliasing -rdynamic
++CFLAGS = -g -O1 -fno-strict-aliasing
++LDFLAGS = -rdynamic
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
 -- 
-1.8.3.1
+2.1.3
 

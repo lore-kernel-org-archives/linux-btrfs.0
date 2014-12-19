@@ -1,113 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from detritus.pyropus.ca ([64.5.53.58]:42085 "HELO
-	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1751156AbaLSQyh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 11:54:37 -0500
-Date: Fri, 19 Dec 2014 10:58:49 -0600
-From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:49590 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751533AbaLSRdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Dec 2014 12:33:15 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y21QQ-0002ZV-4b
+	for linux-btrfs@vger.kernel.org; Fri, 19 Dec 2014 18:33:14 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 18:33:14 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 18:33:14 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Oddly slow read performance with near-full largish FS
-Message-ID: <20141219165849.GA15104@pyropus.ca>
+Date: Fri, 19 Dec 2014 17:33:02 +0000 (UTC)
+Message-ID: <pan$97927$88ff6377$b9b2d72e$d33f9ad1@cox.net>
 References: <20141217024228.GA5544@pyropus.ca>
- <5493E8B0.1080107@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5493E8B0.1080107@jp.fujitsu.com>
+	<5493E8B0.1080107@jp.fujitsu.com> <20141219165849.GA15104@pyropus.ca>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com> wrote:
-> 
-> Let me ask some questions.
+Charles Cazabon posted on Fri, 19 Dec 2014 10:58:49 -0600 as excerpted:
 
-Sure - thanks for taking an interest.
+> This configuration is one I've been using for many years.  It's only
+> recently that I've noticed it being particularly slow with btrfs -- I
+> don't know if that's because the filesystem has filled up past some
+> critical point, or due to something else entirely.  That's why I'm
+> trying to figure this out.
 
-> On 2014/12/17 11:42, Charles Cazabon wrote:
-> > There's roughly 16TB of data in this filesystem (the filesystem is ~17TB).
-> > The btrfs filesystem is a simple single volume, no snapshots, multiple
-> > devices, or anything like that.  It's an LVM logical volume on top of
-> > dmcrypt on top of an mdadm RAID set (8 disks in RAID 6).
-> 
-> Q1. You mean your Btrfs file system exists on the top of
->     the following deep layers?
-> 
-> +---------------+
-> |Btrfs(single)  |
-> +---------------+
-> |LVM(non RAID?) |
-> +---------------+
-> |dmcrypt        |
-> +---------------+
-> |mdadm RAID set |
-> +---------------+
+Not recommending at this point, just saying these are options...
 
-Yes, precisely.  mdadm is used to make a large RAID6 device, which is
-encrypted with LUKS, on top of which is layered LVM (for ease of management),
-and the btrfs filesystem sits on that.
+Btrfs raid56 mode should, I believe, be pretty close to done with the 
+latest patches.  That would be 3.19, however, which isn't out yet of 
+course.
 
-> Q2. If Q1 is true, is it possible to reduce that layers as follows?
-> 
-> +-----------+
-> |Btrfs(*1)  |
-> +-----------+
-> |dmcrypt    |
-> +-----------+
+There's also raid10, if you have enough devices or little enough data to 
+do it.  That's much more mature than raid56 mode and should be about as 
+mature and stable as btrfs in single-device mode, which is what you are 
+using now.  But it'll require more devices than a raid56 would...
 
-I don't see how I could do that - I simply have far too much data for a single
-disk (not to mention I don't want to risk loss of data from a single disk
-failing).  This filesystem has 16.x TB of data in it at present.
-
-> It's because there are too many layers and these have
-> the same/similar features and heavy layered file system
-> tends to cause more trouble than thinner layered ones
-> regardless of file system type.
-
-This configuration is one I've been using for many years.  It's only recently
-that I've noticed it being particularly slow with btrfs -- I don't know if
-that's because the filesystem has filled up past some critical point, or due
-to something else entirely.  That's why I'm trying to figure this out.
-
-> *1) Currently I don't recommend you to use RAID56 of Btrfs.
->     So, if RAID6 is mandatory, mdadm RAID6 is also necessary.
-
-Yes, exactly.  That's why I use mdadm.
-
-> > The speeds I'm seeing (with iotop) fluctuate a lot.  They spend most of
-> > the time in the range of 1-3 MB/s, with large periods of time where no IO
-> > seems to happen at all, and occasional short spikes to ~25-30 MB/s.
-> > System load seems to sit around 10-12 (with only 2 processes reported as
-> > running, everything else sleeping) while this happens.
-[...]
-> > Other filesystems on the same physical disks have no trouble exceeding
-> > 100MB/s reads.  The machine is not swapping (16GB RAM, ~8GB swap with 0
-> > swap used).
-> 
-> Q3. They are also consist of the following layers?
-
-Yes, exactly the same configuration.  The fact that I don't see any speed
-problems with other filesystems (even in the same LVM volume group) leads me
-in the direction of suspecting something to do with btrfs.
-
-> Q4. Are other filesystems also near-full?
-
-No, not particularly.  Now, the btrfs volume in question isn't exactly close
-to full - there's more than 500 GB free.  It's just *relatively* full.
-
-> Q5. Is there any error/warning message about
->     Btrfs/LVM/dmcrypt/mdadm/hardwares?
-
-No, no errors or warnings in logs related to the disks, LVM, or btrfs.  I have
-historically, with previous kernels, gotten the "task blocked for more than
-120 seconds" warnings fairly often, but I haven't seen those lately.
-
-Is there any other info I can collect on this that would help?
-
-Thanks,
-
-Charles
 -- 
------------------------------------------------------------------------
-Charles Cazabon
-GPL'ed software available at:               http://pyropus.ca/software/
------------------------------------------------------------------------
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

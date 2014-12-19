@@ -1,59 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:51784 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752650AbaLSWGR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 17:06:17 -0500
-Message-ID: <5494A152.7030203@fb.com>
-Date: Fri, 19 Dec 2014 17:06:10 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from mail.virtall.com ([178.63.195.102]:60016 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751462AbaLSXSV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Dec 2014 18:18:21 -0500
 MIME-Version: 1.0
-To: Phillip Susi <psusi@ubuntu.com>, Daniele Testa <daniele.testa@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs is using 25% more disk than it should
-References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>	<54947432.5010107@ubuntu.com> <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com> <5494955C.3020603@fb.com> <54949E60.7010201@ubuntu.com>
-In-Reply-To: <54949E60.7010201@ubuntu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 20 Dec 2014 00:18:17 +0100
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.18.0: kernel BUG at fs/btrfs/relocation.c:242!
+In-Reply-To: <54949CEA.7020905@fb.com>
+References: <e4a8d9ba015981b895919256a2223950@admin.virtall.com>
+ <542EE83D.8050701@fb.com>
+ <999a300ed462a1e1388aee4d6f03a30e@admin.virtall.com>
+ <438e043f73392614d1453892b7fe225c@admin.virtall.com>
+ <0f30c49c7d208903ef84e31a928e4051@admin.virtall.com>
+ <54949CEA.7020905@fb.com>
+Message-ID: <b6f6a562e6b67a3bc28b02237a2878d5@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/19/2014 04:53 PM, Phillip Susi wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 12/19/2014 4:15 PM, Josef Bacik wrote:
->> Please God don't turn off of checksums.  Checksums are tracked in
->> metadata anyway, they won't show up in the data accounting.  Our
->> csums are 8 bytes per block, so basic math says you are going to
->> max out at 604 megabytes for that big of a file.
->
-> Yes, and it is exactly that metadata space he is complaining about.
-> So if you don't want to use up all of that space ( and have no use for
-> the checksums ), then you turn them off.
->
->> Please people try to only take advice from people who know what
->> they are talking about.  So unless it's from somebody who has
->> commits in btrfs/btrfs-progs take their feedback with a grain of
->> salt.  Thanks,
->
-> Well that is rather arrogant and rude.  For that matter, I *do* have
-> commits in btrfs-progs.
->
+On 2014-12-19 22:47, Josef Bacik wrote:
+> On 12/12/2014 09:37 AM, Tomasz Chmielewski wrote:
+>> FYI, still seeing this with 3.18 (scrub passes fine on this 
+>> filesystem).
+>> 
+>> # time btrfs balance start /mnt/lxc2
+>> Segmentation fault
+>> 
+> 
+> Ok now I remember why I haven't fix this yet, the images you gave me
+> restore but then they don't mount because the extent tree is corrupted
+> for some reason.  Could you re-image this fs and send it to me and I
+> promise to spend all of my time on the problem until its fixed.
 
-root@destiny ~/btrfs-progs# git log --oneline --author="Phillip Susi"
-c65345d btrfs-progs: document --rootdir mkfs switch
-f6b6e93 btrfs-progs: removed extraneous whitespace from mkfs man page
+(un)fortunately one filesystem stopped crashing on balance with some 
+kernel update, and the other one I had crashing on balance was fixed 
+with btrfs - so I'm not able to reproduce anymore / produce an image 
+which is crashing.
 
-Sorry I should have qualified that statement better.
-
-So unless it's from somebody who has had commits to meaningful portions 
-of btrfs/btrfs-progs take their feedback with a grain of salt.
-
-There are too many people on this list who give random horribly wrong 
-advice to users that can result in data loss or corruption.  Now I'll 
-admit I read her question wrong so what you said wasn't incorrect, I'm 
-sorry for that.  I've seen a lot of people responding to questions 
-recently that I don't recognize that have been completely full of crap, 
-I just assumed you were in that camp as well.  Thanks,
-
-Josef
+-- 
+Tomasz Chmielewski
+http://www.sslrack.com

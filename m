@@ -1,52 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49590 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751533AbaLSRdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 12:33:15 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y21QQ-0002ZV-4b
-	for linux-btrfs@vger.kernel.org; Fri, 19 Dec 2014 18:33:14 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 18:33:14 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 18:33:14 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Oddly slow read performance with near-full largish FS
-Date: Fri, 19 Dec 2014 17:33:02 +0000 (UTC)
-Message-ID: <pan$97927$88ff6377$b9b2d72e$d33f9ad1@cox.net>
-References: <20141217024228.GA5544@pyropus.ca>
-	<5493E8B0.1080107@jp.fujitsu.com> <20141219165849.GA15104@pyropus.ca>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-qg0-f50.google.com ([209.85.192.50]:37612 "EHLO
+	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751176AbaLSSx5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Dec 2014 13:53:57 -0500
+Received: by mail-qg0-f50.google.com with SMTP id z60so1077726qgd.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 10:53:56 -0800 (PST)
+Message-ID: <54947432.5010107@ubuntu.com>
+Date: Fri, 19 Dec 2014 13:53:38 -0500
+From: Phillip Susi <psusi@ubuntu.com>
+MIME-Version: 1.0
+To: Daniele Testa <daniele.testa@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs is using 25% more disk than it should
+References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
+In-Reply-To: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Charles Cazabon posted on Fri, 19 Dec 2014 10:58:49 -0600 as excerpted:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> This configuration is one I've been using for many years.  It's only
-> recently that I've noticed it being particularly slow with btrfs -- I
-> don't know if that's because the filesystem has filled up past some
-> critical point, or due to something else entirely.  That's why I'm
-> trying to figure this out.
+On 12/18/2014 9:59 AM, Daniele Testa wrote:
+> As seen above, I have a 410GB SSD mounted at "/opt/drives/ssd". On 
+> that partition, I have one single starse file, taking 302GB of
+> space (max 315GB). The snapshots directory is completely empty.
 
-Not recommending at this point, just saying these are options...
+So you don't have any snapshots or other subvolumes?
 
-Btrfs raid56 mode should, I believe, be pretty close to done with the 
-latest patches.  That would be 3.19, however, which isn't out yet of 
-course.
+> However, for some weird reason, btrfs seems to think it takes
+> 404GB. The big file is a disk that I use in a virtual server and
+> when I write stuff inside that virtual server, the disk-usage of
+> the btrfs partition on the host keeps increasing even if the
+> sparse-file is constant at 302GB. I even have 100GB of "free"
+> disk-space inside that virtual disk-file. Writing 1GB inside the
+> virtual disk-file seems to increase the usage about 4-5GB on the
+> "outside".
 
-There's also raid10, if you have enough devices or little enough data to 
-do it.  That's much more mature than raid56 mode and should be about as 
-mature and stable as btrfs in single-device mode, which is what you are 
-using now.  But it'll require more devices than a raid56 would...
+Did you flag the file as nodatacow?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Does anyone have a clue on what is going on? How can the
+> difference and behaviour be like this when I just have one single
+> file? Is it also normal to have 672MB of metadata for a single
+> file?
 
+You probably have the data checksums enabled and that isn't
+unreasonable for checksums on 302g of data.
+
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+
+iQEcBAEBAgAGBQJUlHQyAAoJENRVrw2cjl5RZWEIAKfdDzlNVrD/IYDZ5wzIeg5P
+DR5H8anGGc2QPTAD76vEX/XA7/j1Kg+PbQRHGdz6Iq2+Vq4CGno/yIi46oVVVYaL
+H4XvuH7GvPJyzHJ+XCMHjPGLrSCBxgIm1XSluNXmFNCwqi/FONk8TUhWsw7JchaZ
+yCVe/82YI+MLZhmJdudt48MeNFzW6LYi58dQo/JfYnTGnpZAFutdgBM7vLmnqLY2
+WVLQUNHZsHBa7solttCuRtc4h8ku9FBObfKKYNPAEn1YWfx7bihWgPeBMH/blsza
+yhpMq96OMhIfn2SmIZMSwGh2ys+AxQQfymYR69fyGYTIajHmJEhJUzltuQD9Yg8=
+=Z9/S
+-----END PGP SIGNATURE-----

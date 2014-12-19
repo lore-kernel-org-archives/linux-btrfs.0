@@ -1,44 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:47787 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:44095 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751396AbaLSQ7E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 11:59:04 -0500
-Message-ID: <54945953.1060107@redhat.com>
-Date: Fri, 19 Dec 2014 10:58:59 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1751416AbaLSRDY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Dec 2014 12:03:24 -0500
+Date: Fri, 19 Dec 2014 18:03:22 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] btrfs-progs: check result of first_cache_extent
+Message-ID: <20141219170321.GK27601@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1419005022.git.dsterba@suse.cz>
+ <813550c84636f7d570c541c22eee60b11346b4f3.1419005022.git.dsterba@suse.cz>
+ <549458C9.2040603@redhat.com>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 6/6] btrfs-progs: let btrfs_free_path accept NULL
-References: <cover.1419005022.git.dsterba@suse.cz> <b0dc8fd2b3473c0daddde7e2bc59cd13e1963907.1419005022.git.dsterba@suse.cz>
-In-Reply-To: <b0dc8fd2b3473c0daddde7e2bc59cd13e1963907.1419005022.git.dsterba@suse.cz>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <549458C9.2040603@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/19/14 10:06 AM, David Sterba wrote:
-> Same in kernel and matches semantics of free().
+On Fri, Dec 19, 2014 at 10:56:41AM -0600, Eric Sandeen wrote:
+> On 12/19/14 10:06 AM, David Sterba wrote:
+> > If the tree's empty, we'll get NULL and dereference it.
 > 
-> Resolves-Coverity-CID: 1054881
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
-
-> ---
->  ctree.c | 2 ++
->  1 file changed, 2 insertions(+)
+> Hm, but this is under an explicit check for not empty:
 > 
-> diff --git a/ctree.c b/ctree.c
-> index bd6cb125b2a2..589efa3db17e 100644
-> --- a/ctree.c
-> +++ b/ctree.c
-> @@ -48,6 +48,8 @@ struct btrfs_path *btrfs_alloc_path(void)
->  
->  void btrfs_free_path(struct btrfs_path *p)
->  {
-> +	if (!p)
-> +		return;
->  	btrfs_release_path(p);
->  	kfree(p);
->  }
+>         while (!cache_tree_empty(roots_info_cache)) {
 > 
+> sooo?  Maybe it's just defensive?  Nothing really wrong
+> with being defensive, I suppose, so:
 
+Well, mostly to shut up the warning with a minimal change. It could be
+rewritten to
+
+	while ((entry = ...)) { ... }
+
+as in other places.

@@ -1,74 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f49.google.com ([209.85.215.49]:44158 "EHLO
-	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751165AbaLST7o (ORCPT
+Received: from mail-qg0-f41.google.com ([209.85.192.41]:37756 "EHLO
+	mail-qg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751165AbaLSUfi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 14:59:44 -0500
-Received: by mail-la0-f49.google.com with SMTP id hs14so1404597lab.22
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 11:59:42 -0800 (PST)
+	Fri, 19 Dec 2014 15:35:38 -0500
+Received: by mail-qg0-f41.google.com with SMTP id j5so1195173qga.14
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 12:35:37 -0800 (PST)
+Message-ID: <54948C06.6040408@ubuntu.com>
+Date: Fri, 19 Dec 2014 15:35:18 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-In-Reply-To: <54947432.5010107@ubuntu.com>
-References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
-	<54947432.5010107@ubuntu.com>
-Date: Sat, 20 Dec 2014 03:59:42 +0800
-Message-ID: <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com>
+To: Daniele Testa <daniele.testa@gmail.com>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs is using 25% more disk than it should
-From: Daniele Testa <daniele.testa@gmail.com>
-To: Phillip Susi <psusi@ubuntu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>	<54947432.5010107@ubuntu.com> <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com>
+In-Reply-To: <CAN6BF2JoMki_KmpmVYVM-_ECqCg_w-qo9_6P=MiZbabMQyVN_g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No, I don't have any snapshots or subvolumes. Only that single file.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-The file has both checksums and datacow on it. I will do "chattr +C"
-on the parent dir and re-create the file to make sure all files are
-marked as "nodatacow".
+On 12/19/2014 2:59 PM, Daniele Testa wrote:
+> No, I don't have any snapshots or subvolumes. Only that single
+> file.
+> 
+> The file has both checksums and datacow on it. I will do "chattr
+> +C" on the parent dir and re-create the file to make sure all files
+> are marked as "nodatacow".
+> 
+> Should I also turn off checksums with the mount-flags if this 
+> filesystem only contain big VM-files? Or is it not needed if I put
+> +C on the parent dir?
 
-Should I also turn off checksums with the mount-flags if this
-filesystem only contain big VM-files? Or is it not needed if I put +C
-on the parent dir?
+If you don't want the overhead of those checksums, then yea.  Also I
+would question why you are using btrfs to hold only big vm files in
+the first place.  You would be better off using lvm thinp volumes
+instead of files, though personally I prefer to just use regular lvm
+volumes and manually allocate enough space.  It avoids the
+fragmentation you get from thin provisioning ( or qcow2 ) at the cost
+of a bit of overallocated space and the need to do some manual
+resizing to add more if and when it is needed.
 
-2014-12-20 2:53 GMT+08:00 Phillip Susi <psusi@ubuntu.com>:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 12/18/2014 9:59 AM, Daniele Testa wrote:
->> As seen above, I have a 410GB SSD mounted at "/opt/drives/ssd". On
->> that partition, I have one single starse file, taking 302GB of
->> space (max 315GB). The snapshots directory is completely empty.
->
-> So you don't have any snapshots or other subvolumes?
->
->> However, for some weird reason, btrfs seems to think it takes
->> 404GB. The big file is a disk that I use in a virtual server and
->> when I write stuff inside that virtual server, the disk-usage of
->> the btrfs partition on the host keeps increasing even if the
->> sparse-file is constant at 302GB. I even have 100GB of "free"
->> disk-space inside that virtual disk-file. Writing 1GB inside the
->> virtual disk-file seems to increase the usage about 4-5GB on the
->> "outside".
->
-> Did you flag the file as nodatacow?
->
->> Does anyone have a clue on what is going on? How can the
->> difference and behaviour be like this when I just have one single
->> file? Is it also normal to have 672MB of metadata for a single
->> file?
->
-> You probably have the data checksums enabled and that isn't
-> unreasonable for checksums on 302g of data.
->
->
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v2.0.17 (MingW32)
->
-> iQEcBAEBAgAGBQJUlHQyAAoJENRVrw2cjl5RZWEIAKfdDzlNVrD/IYDZ5wzIeg5P
-> DR5H8anGGc2QPTAD76vEX/XA7/j1Kg+PbQRHGdz6Iq2+Vq4CGno/yIi46oVVVYaL
-> H4XvuH7GvPJyzHJ+XCMHjPGLrSCBxgIm1XSluNXmFNCwqi/FONk8TUhWsw7JchaZ
-> yCVe/82YI+MLZhmJdudt48MeNFzW6LYi58dQo/JfYnTGnpZAFutdgBM7vLmnqLY2
-> WVLQUNHZsHBa7solttCuRtc4h8ku9FBObfKKYNPAEn1YWfx7bihWgPeBMH/blsza
-> yhpMq96OMhIfn2SmIZMSwGh2ys+AxQQfymYR69fyGYTIajHmJEhJUzltuQD9Yg8=
-> =Z9/S
-> -----END PGP SIGNATURE-----
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+
+iQEcBAEBAgAGBQJUlIwGAAoJENRVrw2cjl5RlGEH/1OYz07C/OjGBASA9IHTCVMV
+NkYHnO3/s2+SOsafQj4ej/RifgX9aG43b8Y6z9XAdosG/X+8z7xRjW9Nic0H5beK
+JZRpwP+02Dw02A3/RSPjGqJBeAmS8yi9yTlunnPaCau+m1kPYL4M/vFM8/hqrGeU
+Jy+jbffX+XtOedBWptxnDVIyXpYskgVyH8AmQ9d3TGrv52jw/QY1BxkuoVG60hBU
+Fk4Q8ed43C9zjCVihmkDOeER6Ygr1roDb1/gFLoeCk4FwVLO9Kusft2Qi2oXyHy1
+iTkoVJan8NRzXBhrPtZexxQdewHSw9Z4wyHxlal3b/xIbRf6/DRwPRHfgG5djvM=
+=AqC/
+-----END PGP SIGNATURE-----

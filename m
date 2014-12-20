@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51764 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751005AbaLTG7R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Dec 2014 01:59:17 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y2E0R-00085A-Tc
-	for linux-btrfs@vger.kernel.org; Sat, 20 Dec 2014 07:59:16 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Dec 2014 07:59:15 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Dec 2014 07:59:15 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs is using 25% more disk than it should
-Date: Sat, 20 Dec 2014 06:59:04 +0000 (UTC)
-Message-ID: <pan$56e18$b73ac93d$efecf399$5e01c563@cox.net>
-References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>
-	<54949454.9020601@fb.com> <549495D4.9030800@fb.com>
-	<20141220055242.GB436@hungrycats.org>
-	<CAN6BF2LhUcrmRrfhJP1scrTLsCyZ2pWNp-_5MQ5spQViPfJc7g@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-yh0-f42.google.com ([209.85.213.42]:62152 "EHLO
+	mail-yh0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752747AbaLTIio (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 20 Dec 2014 03:38:44 -0500
+Received: by mail-yh0-f42.google.com with SMTP id v1so1070977yhn.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Dec 2014 00:38:43 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>
+References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>
+Date: Sat, 20 Dec 2014 01:38:43 -0700
+Message-ID: <CAJCQCtQV3tQZ0WpTt0k3geKUfDJ23EDskyxDCTqkx0FFrSWCsA@mail.gmail.com>
+Subject: Re: Can BTRFS handle XATTRs larger than 4K?
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Daniele Testa posted on Sat, 20 Dec 2014 14:18:31 +0800 as excerpted:
+On Fri, Dec 19, 2014 at 7:07 PM, Richard Sharpe
+<realrichardsharpe@gmail.com> wrote:
+> Hi folks,
+>
+> I need a Linux file system that supports XATTRs up to 64K.
+>
+> Can BTRFS support that or is XFS the only Linux file system with such support?
 
-> Anyways, would disabling CoW (by putting +C on the parent dir) prevent
-> the performance issues and 2*filesize issue?
+I'm feeling too lazy to actually go look for evidence of this; but I
+made a file system a while ago with 64KB node/leafsize and ran into a
+bug I reported for send/receive. I'm pretty sure this was related to
+xattr being limited to nodesize, and I'm also pretty sure it got
+fixed. But I'm not sure whether the problem was on the send or receive
+side, and I'm not sure when.
 
-It should, provided you don't then start snapshotting the file (which I 
-don't believe you intend to do but just in case...).
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

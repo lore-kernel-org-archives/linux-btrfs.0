@@ -1,59 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55140 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752163AbaLTLCa (ORCPT
+Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:52733 "EHLO
+	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751880AbaLTLX1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Dec 2014 06:02:30 -0500
-Message-ID: <54955740.5070405@fb.com>
-Date: Sat, 20 Dec 2014 06:02:24 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Sat, 20 Dec 2014 06:23:27 -0500
+Message-ID: <54955C2B.7010706@pobox.com>
+Date: Sat, 20 Dec 2014 03:23:23 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Daniele Testa <daniele.testa@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-CC: <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <jbacik@fb.com>, Daniele Testa <daniele.testa@gmail.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: btrfs is using 25% more disk than it should
-References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com>	<54949454.9020601@fb.com>	<549495D4.9030800@fb.com>	<20141220055242.GB436@hungrycats.org> <CAN6BF2LhUcrmRrfhJP1scrTLsCyZ2pWNp-_5MQ5spQViPfJc7g@mail.gmail.com>
-In-Reply-To: <CAN6BF2LhUcrmRrfhJP1scrTLsCyZ2pWNp-_5MQ5spQViPfJc7g@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+References: <CAN6BF2Luf3ERd+ShLyUavzM3bLmy9dT918Zg17xL9T42DNVtVQ@mail.gmail.com> <54949454.9020601@fb.com> <549495D4.9030800@fb.com>
+In-Reply-To: <549495D4.9030800@fb.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/20/2014 01:18 AM, Daniele Testa wrote:
-> But I read somewhere that compression should be turned off on mounts
-> that just store large VM-images. Is that wrong?
->
+On 12/19/2014 01:17 PM, Josef Bacik wrote:
+> tl;dr: Cow means you can in the worst case end up using 2 * filesize -
+> blocksize of data on disk and the file will appear to be filesize.  Thanks,
 
-It doesn't really matter frankly.  Usually virt images are preallocated 
-with fallocate which means compression doesn't happen as writes into 
-fallocated areas aren't compressed, but you aren't doing that so you 
-would be getting some compression.
+Doesn't the worst case more like N^log(N) (when N is file in blocksize) 
+in the pernicious case?
 
-> Btw, I am not pre-allocation space for the images. I use sparse files with:
->
-> dd if=/dev/zero of=drive.img bs=1 count=1 seek=300G
->
-> It creates the file in a few ms.
-> Is it better to use "fallocate" with btrfs?
->
+Staggered block overwrites can "peer down" through gaps to create more 
+than two layers of retention. The only real requirement is that each 
+layer get smaller than the one before it so as to leave some of each of 
+it's predecessor visible.
 
-It depends.  If you are going to use nodatacow for your virt images then 
-I would definitely suggest using fallocate since you'll get a nice 
-contiguous chunk of data for your virt images.
+So if I make a file size N blocks, then overwrite it with N-1 blocks, 
+then overwrite it again with N-2 blocks (etc). I can easily create a 
+deep slop of obscured data.
 
-> If I use sparse files, it adds a benefit when I want to copy/move the
-> image-file to another server.
-> Like if the 300GB sparse file just has 10GB of data in it, I only need
-> to copy 10GB when moving it to another server.
-> Would the same be true with "fallocate"?
->
+[-----------------]
+[----------------]
+[---------------]
+[--------------]
+[-------------]
+[------------]
+[-----------]
+[----------]
+[---------]
+(etc...)
 
-No, but send/receive would only copy 10GB, but the resulting file would 
-be sparse.
 
-> Anyways, would disabling CoW (by putting +C on the parent dir) prevent
-> the performance issues and 2*filesize issue?
->
+Or would I have to bracket the front and back
 
-Yes.  Thanks,
+----------
+  --------
+   ------
 
-Josef
+Or could I bracket the sides
+
+---------
+---- ----
+---   ---
+--     --
+-       -
+
+There's got to be pahological patterns like this that can end up with a 
+heck of a lot of "hidden" data.

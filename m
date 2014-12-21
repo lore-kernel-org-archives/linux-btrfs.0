@@ -1,113 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40374 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752243AbaLUWRG (ORCPT
+Received: from detritus.pyropus.ca ([64.5.53.58]:52613 "HELO
+	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1752368AbaLUWtD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 17:17:06 -0500
-Date: Sun, 21 Dec 2014 22:17:00 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Robert White <rwhite@pobox.com>
-Cc: constantine <costas.magnuse@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Uncorrectable errors on RAID-1?
-Message-ID: <20141221221700.GC25267@carfax.org.uk>
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
- <54974226.2080300@pobox.com>
+	Sun, 21 Dec 2014 17:49:03 -0500
+Date: Sun, 21 Dec 2014 16:53:15 -0600
+From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
+To: btrfs list <linux-btrfs@vger.kernel.org>
+Subject: Re: Oddly slow read performance with near-full largish FS
+Message-ID: <20141221225315.GA19479@pyropus.ca>
+References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com>
+ <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Y5rl02BVI9TCfPar"
-In-Reply-To: <54974226.2080300@pobox.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54973C65.6070709@pobox.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi, Robert,
 
---Y5rl02BVI9TCfPar
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+My performance issues with btrfs are more-or-less resolved now -- the
+performance under btrfs still seems quite variable compared to other
+filesystems -- my rsync speed is now varying between 40MB and ~90MB/s, with
+occasional intervals where it drops further, down into the 10-20MB/s range.
+Still no disk errors or SMART warnings that would indicate that problem is at
+the hardware level.
 
-On Sun, Dec 21, 2014 at 01:56:54PM -0800, Robert White wrote:
-> On 12/21/2014 11:34 AM, constantine wrote:
-> >Some months ago I had 6 uncorrectable errors. I deleted the files that
-> >contained them and then after scrubbing I had 0 uncorrectable errors.
-> >After some weeks I encountered new uncorrectable errors.
-> >
-> >Question 1:
-> >Why do I have uncorrectable errors on a RAID-1 filesystem in the first place?
-> 
-> These are disk/platter/hardware errors. They happen for one of two
-> reasons. (most likely) There is a flaw, new or existing, on the
-> platter itself and data just cannot live in that spot. (least
-> likely) You suffered an environmental hazard (hard jolt) while a
-> sector was being written and the drive is just choking on the
-> digital wreckage.
-> 
-> 
-> >Question 2:
-> >How do I properly correct them? (Again by deleting their files? :( )
-> 
-> You have to _force_ the system to write the sector. If the disk can
-> correct the sector (not a hardware flaw) the problem goes away
-> forever. If it can't the drive will re-map the sector with a spare
-> sector and it will seem to go away forever.
+> Do make sure you are regularly running the long "offline" test.
 
-   Note that one of the drives already has reallocated sectors, so
-it's on its way to failing, and you should start saving up your
-pennies for a new one now, even if it hasn't gone properly boom
-yet. However, that doesn't explain on its own why you're getting
-unrecoverable errors -- the FS should be able to deal with that.
+Ok, I'll do that.
 
-[snip]
+> Otherwise SMART is just going to tell you the disk just died when it dies.
 
-> The good news is that since you are using RAID1 and checksums you
-> shouldn't need to delete any files. Just coerce the write and then
-> btrfs scrub your filesystem and the checksum/rewrite thing should
-> recover the degraded copy from the good copy in the mirror.
+Ya, I'm aware of how limited/useful the SMART diagnostics are.  I'm also
+paranoid enough to be using RAID 6...
 
-   If btrfs detects a checksum error, it will try to fix it by reading
-the other copy and then writing good data to the broken copy
-again. You don't have to force a write to the FS in order to make it
-fix broken data this way. A scrub will do this check-and-repair on all
-content of the filesystem.
+> The thing with "movablecore=" will not lead to an "out of memory"
+> condition or not, its a question of cache and buffer evictions.
 
-   If the FS is reporting uncorrectable errors, then it's tried both
-copies and both fail their checksums. This is basically not fixable
-without removing the files and replacing them with copies from your
-backup. It's not obvious why you've got correlated errors on two
-devices, though, and I'm not sure how to work it out.
+I'm fairly certain memory isn't the issue here.  For what it's worth:
 
-   I'd suggest running the full SMART tests on the disks, and running
-a scrub on the FS, and checking your logs for SATA errors and similar
-problems.
+%Cpu(s):  2.1 us, 19.4 sy,  0.0 ni, 78.0 id,  0.2 wa,  0.3 hi,  0.0 si,  0.0 st
+KiB Mem:  16469880 total, 16301252 used,   168628 free,      720 buffers
+KiB Swap:  7811068 total,        0 used,  7811068 free, 15146580 cached
 
-   Hugo.
+Swappiness I've left at the default of 60, but I'm not seeing swapping going
+on regardless.
 
-[snip]
+> > Is this remaining difference (25 vs 100+ MB/s) simply due to btrfs not being
+> > tuned for performance yet
 
+I found the cause of this.  Stupidly enough, there was a bwlimit set up in a
+shell alias for rsync.
+
+So btrfs is not nearly as slow as I was seeing.  It's still slower than
+reading from an ext4 or XFS filesystem on these disks, but the absolute level
+of read speed seems reasonable enough given that btrfs has not been under
+heavy performance tuning to date.  My only remaining concern would be the
+variability I still see in the read speed.
+
+Charles
 -- 
-Hugo Mills             | I must be musical: I've got *loads* of CDs
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |                                     Fran, Black Books
-
---Y5rl02BVI9TCfPar
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUl0bcAAoJEFheFHXiqx3kw0oQAIKMkizjTpc6kZR0SCM5806m
-E9hI6rRD5rzI7nt27D+bXw2pbE2Gm7QqYIcL+2KZnyt0bJa/XpLzwB1gS2UtRnYu
-u8r9YlyBvyUU9ONIK4uJlJ5JfhrEm2CiXogri9bk7Gm9E/WNZiAJybgKOCmWCWtQ
-4BcVadXIbG0/mw12g/nqfYqfjO4hozdvNYTr9e6Z9OD2A9JZjoeLvsBGa8PdCUXv
-kZk60dGM4dTQaoemXCBv+zAIiCT+5QUhAMB+Myi9+r3BXPnyWPIitplN9Khsr1lQ
-2lJ+W+OLNDH20nM9HINnJJfFb0Sl64Q3FuRIBKnxXl+qBoD3mnpyl1hFrPrmSvdh
-xJGPii/P2dSCoThD75GornepOj15MUvoHRK9axW7qghvxlXIwzD5hxn5xFLd5sQp
-JpSFWi0mMHlqINM1422oXc+atm2Oj2UHVmUzap/HD4RbT2dCPDts5oGhaqs3sp6j
-99zsUIpkKkkK/69N4auEyPOUiJ7btEfVuqyqc+jkykA/zADpowsfGfpqHhF6xFJM
-50rU9xtZzYDQtHeZspDsnhVUOU4mTPqjkQbnUU+8sDyr6JkNyEgiKITuh7GREwDu
-W5dO5LdpK+JMuEvH2squpC0jV9cEHORl57A+I8cW/GepbEH+ZdgN5eUlXlQxC7Wn
-DOiIYFhIFNZssyzgb1TU
-=ZEjx
------END PGP SIGNATURE-----
-
---Y5rl02BVI9TCfPar--
+-----------------------------------------------------------------------
+Charles Cazabon
+GPL'ed software available at:               http://pyropus.ca/software/
+-----------------------------------------------------------------------

@@ -1,450 +1,368 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37894 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754013AbaLVJGW (ORCPT
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:60930 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754672AbaLVLty (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 04:06:22 -0500
-Date: Mon, 22 Dec 2014 17:06:10 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: track dirty block groups on their own list V2
-Message-ID: <20141222090609.GA12483@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1419014495-11815-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1419014495-11815-1-git-send-email-jbacik@fb.com>
+	Mon, 22 Dec 2014 06:49:54 -0500
+Received: by mail-wi0-f170.google.com with SMTP id bs8so10254324wib.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 03:49:53 -0800 (PST)
+From: Dongsu Park <dongsu.park@profitbricks.com>
+To: linux-kernel@vger.kernel.org
+Cc: Jens Axboe <axboe@kernel.dk>, Kent Overstreet <kmo@daterainc.com>,
+        Ming Lin <mlin@minggr.net>, Dongsu Park <dongsu.park@profitbricks.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH 06/17] btrfs: make use of immutable biovecs
+Date: Mon, 22 Dec 2014 12:48:33 +0100
+Message-Id: <83a9ee8a309f8e08490c5dd715a608ea054f5c33.1419241597.git.dongsu.park@profitbricks.com>
+In-Reply-To: <e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profitbricks.com>
+References: <cover.1419241597.git.dongsu.park@profitbricks.com>
+ <d26a9a0fc9a7d1529c115785ee5935d5750782bd.1419241597.git.dongsu.park@profitbricks.com>
+ <f67d71b4a375ab504c2fc02e94a9d2a651686cab.1419241597.git.dongsu.park@profitbricks.com>
+ <fe96db02d805ca6191dd605d03dac0d04c926fc1.1419241597.git.dongsu.park@profitbricks.com>
+ <bb0051ceb5805896089ded26c0f7f06758b25105.1419241597.git.dongsu.park@profitbricks.com>
+ <e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profitbricks.com>
+In-Reply-To: <cover.1419241597.git.dongsu.park@profitbricks.com>
+References: <cover.1419241597.git.dongsu.park@profitbricks.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 19, 2014 at 01:41:35PM -0500, Josef Bacik wrote:
-> Currently any time we try to update the block groups on disk we will walk _all_
-> block groups and check for the ->dirty flag to see if it is set.  This function
-> can get called several times during a commit.  So if you have several terabytes
-> of data you will be a very sad panda as we will loop through _all_ of the block
-> groups several times, which makes the commit take a while which slows down the
-> rest of the file system operations.
-> 
-> This patch introduces a dirty list for the block groups that we get added to
-> when we dirty the block group for the first time.  Then we simply update any
-> block groups that have been dirtied since the last time we called
-> btrfs_write_dirty_block_groups.  This allows us to clean up how we write the
-> free space cache out so it is much cleaner.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
-> V1->V2: Don't unconditionally take the dirty bg list lock in update_block_group,
-> only do it if our dirty_bg list is empty.
-> 
->  fs/btrfs/ctree.h            |   5 +-
->  fs/btrfs/extent-tree.c      | 169 ++++++++++++++------------------------------
->  fs/btrfs/free-space-cache.c |   8 ++-
->  fs/btrfs/transaction.c      |  14 ++--
->  fs/btrfs/transaction.h      |   2 +
->  5 files changed, 74 insertions(+), 124 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index b62315b..e5bc509 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1237,7 +1237,6 @@ enum btrfs_disk_cache_state {
->  	BTRFS_DC_ERROR		= 1,
->  	BTRFS_DC_CLEAR		= 2,
->  	BTRFS_DC_SETUP		= 3,
-> -	BTRFS_DC_NEED_WRITE	= 4,
->  };
->  
->  struct btrfs_caching_control {
-> @@ -1275,7 +1274,6 @@ struct btrfs_block_group_cache {
->  	unsigned long full_stripe_len;
->  
->  	unsigned int ro:1;
-> -	unsigned int dirty:1;
->  	unsigned int iref:1;
->  
->  	int disk_cache_state;
-> @@ -1309,6 +1307,9 @@ struct btrfs_block_group_cache {
->  
->  	/* For read-only block groups */
->  	struct list_head ro_list;
-> +
-> +	/* For dirty block groups */
-> +	struct list_head dirty_list;
->  };
->  
->  /* delayed seq elem */
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 74eb29d..71a9752 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -74,8 +74,9 @@ enum {
->  	RESERVE_ALLOC_NO_ACCOUNT = 2,
->  };
->  
-> -static int update_block_group(struct btrfs_root *root,
-> -			      u64 bytenr, u64 num_bytes, int alloc);
-> +static int update_block_group(struct btrfs_trans_handle *trans,
-> +			      struct btrfs_root *root, u64 bytenr,
-> +			      u64 num_bytes, int alloc);
->  static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
->  				struct btrfs_root *root,
->  				u64 bytenr, u64 num_bytes, u64 parent,
-> @@ -3315,120 +3316,42 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
->  				   struct btrfs_root *root)
->  {
->  	struct btrfs_block_group_cache *cache;
-> -	int err = 0;
-> +	struct btrfs_transaction *cur_trans = trans->transaction;
-> +	int ret = 0;
->  	struct btrfs_path *path;
-> -	u64 last = 0;
-> +
-> +	if (list_empty(&cur_trans->dirty_bgs))
-> +		return 0;
->  
->  	path = btrfs_alloc_path();
->  	if (!path)
->  		return -ENOMEM;
->  
-> -again:
-> -	while (1) {
-> -		cache = btrfs_lookup_first_block_group(root->fs_info, last);
-> -		while (cache) {
-> -			if (cache->disk_cache_state == BTRFS_DC_CLEAR)
-> -				break;
-> -			cache = next_block_group(root, cache);
-> -		}
-> -		if (!cache) {
-> -			if (last == 0)
-> -				break;
-> -			last = 0;
-> -			continue;
-> -		}
-> -		err = cache_save_setup(cache, trans, path);
-> -		last = cache->key.objectid + cache->key.offset;
-> -		btrfs_put_block_group(cache);
-> -	}
-> -
-> -	while (1) {
-> -		if (last == 0) {
-> -			err = btrfs_run_delayed_refs(trans, root,
-> -						     (unsigned long)-1);
-> -			if (err) /* File system offline */
-> -				goto out;
-> -		}
-> -
-> -		cache = btrfs_lookup_first_block_group(root->fs_info, last);
-> -		while (cache) {
-> -			if (cache->disk_cache_state == BTRFS_DC_CLEAR) {
-> -				btrfs_put_block_group(cache);
-> -				goto again;
-> -			}
-> -
-> -			if (cache->dirty)
-> -				break;
-> -			cache = next_block_group(root, cache);
-> -		}
-> -		if (!cache) {
-> -			if (last == 0)
-> -				break;
-> -			last = 0;
-> -			continue;
-> -		}
-> -
-> -		if (cache->disk_cache_state == BTRFS_DC_SETUP)
-> -			cache->disk_cache_state = BTRFS_DC_NEED_WRITE;
-> -		cache->dirty = 0;
-> -		last = cache->key.objectid + cache->key.offset;
-> -
-> -		err = write_one_cache_group(trans, root, path, cache);
-> -		btrfs_put_block_group(cache);
-> -		if (err) /* File system offline */
-> -			goto out;
-> -	}
-> -
-> -	while (1) {
-> -		/*
-> -		 * I don't think this is needed since we're just marking our
-> -		 * preallocated extent as written, but just in case it can't
-> -		 * hurt.
-> -		 */
-> -		if (last == 0) {
-> -			err = btrfs_run_delayed_refs(trans, root,
-> -						     (unsigned long)-1);
-> -			if (err) /* File system offline */
-> -				goto out;
-> -		}
-> -
-> -		cache = btrfs_lookup_first_block_group(root->fs_info, last);
-> -		while (cache) {
-> -			/*
-> -			 * Really this shouldn't happen, but it could if we
-> -			 * couldn't write the entire preallocated extent and
-> -			 * splitting the extent resulted in a new block.
-> -			 */
-> -			if (cache->dirty) {
-> -				btrfs_put_block_group(cache);
-> -				goto again;
-> -			}
-> -			if (cache->disk_cache_state == BTRFS_DC_NEED_WRITE)
-> -				break;
-> -			cache = next_block_group(root, cache);
-> -		}
-> -		if (!cache) {
-> -			if (last == 0)
-> -				break;
-> -			last = 0;
-> -			continue;
-> -		}
-> -
-> -		err = btrfs_write_out_cache(root, trans, cache, path);
-> -
-> -		/*
-> -		 * If we didn't have an error then the cache state is still
-> -		 * NEED_WRITE, so we can set it to WRITTEN.
-> -		 */
-> -		if (!err && cache->disk_cache_state == BTRFS_DC_NEED_WRITE)
-> -			cache->disk_cache_state = BTRFS_DC_WRITTEN;
-> -		last = cache->key.objectid + cache->key.offset;
-> +	/*
-> +	 * We don't need the lock here since we are protected by the transaction
-> +	 * commit.  We want to do the cache_save_setup first and then run the
-> +	 * delayed refs to make sure we have the best chance at doing this all
-> +	 * in one shot.
-> +	 */
-> +	while (!list_empty(&cur_trans->dirty_bgs)) {
-> +		cache = list_first_entry(&cur_trans->dirty_bgs,
-> +					 struct btrfs_block_group_cache,
-> +					 dirty_list);
-> +		list_del_init(&cache->dirty_list);
-> +		if (cache->disk_cache_state == BTRFS_DC_CLEAR)
-> +			cache_save_setup(cache, trans, path);
-> +		if (!ret)
-> +			ret = btrfs_run_delayed_refs(trans, root,
-> +						     (unsigned long) -1);
-> +		if (!ret && cache->disk_cache_state == BTRFS_DC_SETUP)
-> +			btrfs_write_out_cache(root, trans, cache, path);
-> +		if (!ret)
-> +			ret = write_one_cache_group(trans, root, path, cache);
->  		btrfs_put_block_group(cache);
->  	}
-> -out:
->  
->  	btrfs_free_path(path);
-> -	return err;
-> +	return ret;
->  }
->  
->  int btrfs_extent_readonly(struct btrfs_root *root, u64 bytenr)
-> @@ -5375,8 +5298,9 @@ void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes)
->  	btrfs_free_reserved_data_space(inode, num_bytes);
->  }
->  
-> -static int update_block_group(struct btrfs_root *root,
-> -			      u64 bytenr, u64 num_bytes, int alloc)
-> +static int update_block_group(struct btrfs_trans_handle *trans,
-> +			      struct btrfs_root *root, u64 bytenr,
-> +			      u64 num_bytes, int alloc)
->  {
->  	struct btrfs_block_group_cache *cache = NULL;
->  	struct btrfs_fs_info *info = root->fs_info;
-> @@ -5414,6 +5338,16 @@ static int update_block_group(struct btrfs_root *root,
->  		if (!alloc && cache->cached == BTRFS_CACHE_NO)
->  			cache_block_group(cache, 1);
->  
-> +		if (list_empty(&cache->dirty_list)) {
-> +			spin_lock(&trans->transaction->dirty_bgs_lock);
-> +			if (list_empty(&cache->dirty_list)) {
-> +				list_add_tail(&cache->dirty_list,
-> +					      &trans->transaction->dirty_bgs);
-> +				btrfs_get_block_group(cache);
-> +			}
-> +			spin_unlock(&trans->transaction->dirty_bgs_lock);
-> +		}
-> +
->  		byte_in_group = bytenr - cache->key.objectid;
->  		WARN_ON(byte_in_group > cache->key.offset);
->  
-> @@ -5424,7 +5358,6 @@ static int update_block_group(struct btrfs_root *root,
->  		    cache->disk_cache_state < BTRFS_DC_CLEAR)
->  			cache->disk_cache_state = BTRFS_DC_CLEAR;
->  
-> -		cache->dirty = 1;
->  		old_val = btrfs_block_group_used(&cache->item);
->  		num_bytes = min(total, cache->key.offset - byte_in_group);
->  		if (alloc) {
-> @@ -6102,7 +6035,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
->  			}
->  		}
->  
-> -		ret = update_block_group(root, bytenr, num_bytes, 0);
-> +		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
->  		if (ret) {
->  			btrfs_abort_transaction(trans, extent_root, ret);
->  			goto out;
-> @@ -7062,7 +6995,7 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
->  	if (ret)
->  		return ret;
->  
-> -	ret = update_block_group(root, ins->objectid, ins->offset, 1);
-> +	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
->  	if (ret) { /* -ENOENT, logic error */
->  		btrfs_err(fs_info, "update block group failed for %llu %llu",
->  			ins->objectid, ins->offset);
-> @@ -7151,7 +7084,8 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
->  			return ret;
->  	}
->  
-> -	ret = update_block_group(root, ins->objectid, root->nodesize, 1);
-> +	ret = update_block_group(trans, root, ins->objectid, root->nodesize,
-> +				 1);
->  	if (ret) { /* -ENOENT, logic error */
->  		btrfs_err(fs_info, "update block group failed for %llu %llu",
->  			ins->objectid, ins->offset);
-> @@ -9003,6 +8937,7 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
->  	INIT_LIST_HEAD(&cache->cluster_list);
->  	INIT_LIST_HEAD(&cache->bg_list);
->  	INIT_LIST_HEAD(&cache->ro_list);
-> +	INIT_LIST_HEAD(&cache->dirty_list);
->  	btrfs_init_free_space_ctl(cache);
->  
->  	return cache;
-> @@ -9065,9 +9000,8 @@ int btrfs_read_block_groups(struct btrfs_root *root)
->  			 * b) Setting 'dirty flag' makes sure that we flush
->  			 *    the new space cache info onto disk.
->  			 */
-> -			cache->disk_cache_state = BTRFS_DC_CLEAR;
->  			if (btrfs_test_opt(root, SPACE_CACHE))
-> -				cache->dirty = 1;
-> +				cache->disk_cache_state = BTRFS_DC_CLEAR;
->  		}
->  
->  		read_extent_buffer(leaf, &cache->item,
-> @@ -9427,6 +9361,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->  	if (block_group->cached == BTRFS_CACHE_STARTED)
->  		wait_block_group_cache_done(block_group);
->  
-> +	spin_lock(&trans->transaction->dirty_bgs_lock);
-> +	if (!list_empty(&block_group->dirty_list)) {
-> +		list_del_init(&block_group->dirty_list);
-> +		btrfs_put_block_group(block_group);
-> +	}
-> +	spin_unlock(&trans->transaction->dirty_bgs_lock);
-> +
->  	btrfs_remove_free_space_cache(block_group);
->  
->  	spin_lock(&block_group->space_info->lock);
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 3384819..e85de8c 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -1210,6 +1210,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
->  	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
->  	struct inode *inode;
->  	int ret = 0;
-> +	enum btrfs_disk_cache_state dcs = BTRFS_DC_WRITTEN;
->  
->  	root = root->fs_info->tree_root;
->  
-> @@ -1233,9 +1234,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
->  	ret = __btrfs_write_out_cache(root, inode, ctl, block_group, trans,
->  				      path, block_group->key.objectid);
->  	if (ret) {
-> -		spin_lock(&block_group->lock);
-> -		block_group->disk_cache_state = BTRFS_DC_ERROR;
-> -		spin_unlock(&block_group->lock);
-> +		dcs = BTRFS_DC_ERROR;
->  		ret = 0;
->  #ifdef DEBUG
->  		btrfs_err(root->fs_info,
-> @@ -1244,6 +1243,9 @@ int btrfs_write_out_cache(struct btrfs_root *root,
->  #endif
->  	}
->  
-> +	spin_lock(&block_group->lock);
-> +	block_group->disk_cache_state = dcs;
-> +	spin_unlock(&block_group->lock);
->  	iput(inode);
->  	return ret;
->  }
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 6b1ac53..4b3f999 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -220,6 +220,8 @@ loop:
->  	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
->  	INIT_LIST_HEAD(&cur_trans->pending_chunks);
->  	INIT_LIST_HEAD(&cur_trans->switch_commits);
-> +	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
-> +	spin_lock_init(&cur_trans->dirty_bgs_lock);
->  	list_add_tail(&cur_trans->list, &fs_info->trans_list);
->  	extent_io_tree_init(&cur_trans->dirty_pages,
->  			     fs_info->btree_inode->i_mapping);
-> @@ -957,7 +959,9 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
->  	while (1) {
->  		old_root_bytenr = btrfs_root_bytenr(&root->root_item);
->  		if (old_root_bytenr == root->node->start &&
-> -		    old_root_used == btrfs_root_used(&root->root_item))
-> +		    old_root_used == btrfs_root_used(&root->root_item) &&
-> +		    (!extent_root ||
-> +		     list_empty(&trans->transaction->dirty_bgs)))
->  			break;
->  
->  		btrfs_set_root_node(&root->root_item, root->node);
-> @@ -976,6 +980,9 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
->  		ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
->  		if (ret)
->  			return ret;
-> +		ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
-> +		if (ret)
-> +			return ret;
+From: Kent Overstreet <kmo@daterainc.com>
 
-Does the second btrfs_run_delayed_refs() mean to update extent_tree's delayed refs produced by the first one?
+Make use of the new API for immutable biovecs, instead of iterating
+bi_io_vec[] manually just like done in the old era. That means, e.g.
+calling bio_for_each_segment() by passing bvec and iter literally,
+using bio_advance_iter() for looking up the next range of biovec.
 
-Thanks,
+This is going to be important for future block layer refactoring, and
+using the standard primitives makes the code easier to audit.
 
--liubo
+Signed-off-by: Kent Overstreet <kmo@daterainc.com>
+[dpark: apply this conversion also in check-integrity.c, and add more
+ descrption in commit message]
+Signed-off-by: Dongsu Park <dongsu.park@profitbricks.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/check-integrity.c | 22 ++++++++++-------
+ fs/btrfs/extent_io.c       | 12 ++++++---
+ fs/btrfs/file-item.c       | 61 +++++++++++++++++-----------------------------
+ fs/btrfs/inode.c           | 22 ++++++-----------
+ 4 files changed, 53 insertions(+), 64 deletions(-)
 
->  	}
->  
->  	return 0;
-> @@ -996,10 +1003,6 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
->  	struct extent_buffer *eb;
->  	int ret;
->  
-> -	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
-> -	if (ret)
-> -		return ret;
-> -
->  	eb = btrfs_lock_root_node(fs_info->tree_root);
->  	ret = btrfs_cow_block(trans, fs_info->tree_root, eb, NULL,
->  			      0, &eb);
-> @@ -1897,6 +1900,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	switch_commit_roots(cur_trans, root->fs_info);
->  
->  	assert_qgroups_uptodate(trans);
-> +	ASSERT(list_empty(&cur_trans->dirty_bgs));
->  	update_super_roots(root);
->  
->  	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index d8f40e1..2aa345e 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -57,6 +57,8 @@ struct btrfs_transaction {
->  	struct list_head pending_snapshots;
->  	struct list_head pending_chunks;
->  	struct list_head switch_commits;
-> +	struct list_head dirty_bgs;
-> +	spinlock_t dirty_bgs_lock;
->  	struct btrfs_delayed_ref_root delayed_refs;
->  	int aborted;
->  };
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index d897ef8..74ce4a2 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2963,6 +2963,9 @@ int btrfsic_submit_bh(int rw, struct buffer_head *bh)
+ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ {
+ 	struct btrfsic_dev_state *dev_state;
++	struct bio_vec bvec = { 0 };
++	struct bvec_iter iter = bio->bi_iter;
++	struct page *page;
+ 
+ 	if (!btrfsic_is_initialized)
+ 		return;
+@@ -2979,7 +2982,7 @@ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ 		int bio_is_patched;
+ 		char **mapped_datav;
+ 
+-		dev_bytenr = 512 * bio->bi_iter.bi_sector;
++		dev_bytenr = 512 * iter.bi_sector;
+ 		bio_is_patched = 0;
+ 		if (dev_state->state->print_mask &
+ 		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
+@@ -2987,7 +2990,7 @@ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ 			       "submit_bio(rw=0x%x, bi_vcnt=%u,"
+ 			       " bi_sector=%llu (bytenr %llu), bi_bdev=%p)\n",
+ 			       rw, bio->bi_vcnt,
+-			       (unsigned long long)bio->bi_iter.bi_sector,
++			       (unsigned long long)iter.bi_sector,
+ 			       dev_bytenr, bio->bi_bdev);
+ 
+ 		mapped_datav = kmalloc(sizeof(*mapped_datav) * bio->bi_vcnt,
+@@ -2995,13 +2998,14 @@ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ 		if (!mapped_datav)
+ 			goto leave;
+ 		cur_bytenr = dev_bytenr;
+-		for (i = 0; i < bio->bi_vcnt; i++) {
+-			BUG_ON(bio->bi_io_vec[i].bv_len != PAGE_CACHE_SIZE);
+-			mapped_datav[i] = kmap(bio->bi_io_vec[i].bv_page);
++
++		bio_for_each_segment(bvec, bio, iter) {
++			BUG_ON(bvec.bv_len != PAGE_CACHE_SIZE);
++			mapped_datav[i] = kmap(bvec.bv_page);
+ 			if (!mapped_datav[i]) {
+ 				while (i > 0) {
+ 					i--;
+-					kunmap(bio->bi_io_vec[i].bv_page);
++					kunmap(bvec.bv_page);
+ 				}
+ 				kfree(mapped_datav);
+ 				goto leave;
+@@ -3011,8 +3015,8 @@ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ 				printk(KERN_INFO
+ 				       "#%u: bytenr=%llu, len=%u, offset=%u\n",
+ 				       i, cur_bytenr, bio->bi_io_vec[i].bv_len,
+-				       bio->bi_io_vec[i].bv_offset);
+-			cur_bytenr += bio->bi_io_vec[i].bv_len;
++				       bvec.bv_offset);
++			cur_bytenr += bvec.bv_len;
+ 		}
+ 		btrfsic_process_written_block(dev_state, dev_bytenr,
+ 					      mapped_datav, bio->bi_vcnt,
+@@ -3020,7 +3024,7 @@ static void __btrfsic_submit_bio(int rw, struct bio *bio)
+ 					      NULL, rw);
+ 		while (i > 0) {
+ 			i--;
+-			kunmap(bio->bi_io_vec[i].bv_page);
++			kunmap(bvec.bv_page);
+ 		}
+ 		kfree(mapped_datav);
+ 	} else if (NULL != dev_state && (rw & REQ_FLUSH)) {
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ebabd2..038b242 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2749,12 +2749,18 @@ static int __must_check submit_one_bio(int rw, struct bio *bio,
+ 				       int mirror_num, unsigned long bio_flags)
+ {
+ 	int ret = 0;
+-	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+-	struct page *page = bvec->bv_page;
++	struct bio_vec bvec = { 0 };
++	struct bvec_iter iter;
++	struct page *page;
+ 	struct extent_io_tree *tree = bio->bi_private;
+ 	u64 start;
+ 
+-	start = page_offset(page) + bvec->bv_offset;
++	bio_for_each_segment(bvec, bio, iter)
++		if (bio_iter_last(bvec, iter))
++			break;
++
++	page = bvec.bv_page;
++	start = page_offset(page) + bvec.bv_offset;
+ 
+ 	bio->bi_private = NULL;
+ 
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 84a2d18..7816cb8 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -162,7 +162,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 				   struct inode *inode, struct bio *bio,
+ 				   u64 logical_offset, u32 *dst, int dio)
+ {
+-	struct bio_vec *bvec = bio->bi_io_vec;
++	struct bvec_iter iter = bio->bi_iter;
+ 	struct btrfs_io_bio *btrfs_bio = btrfs_io_bio(bio);
+ 	struct btrfs_csum_item *item = NULL;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+@@ -171,10 +171,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 	u64 offset = 0;
+ 	u64 item_start_offset = 0;
+ 	u64 item_last_offset = 0;
+-	u64 disk_bytenr;
+ 	u32 diff;
+ 	int nblocks;
+-	int bio_index = 0;
+ 	int count;
+ 	u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+ 
+@@ -204,8 +202,6 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 	if (bio->bi_iter.bi_size > PAGE_CACHE_SIZE * 8)
+ 		path->reada = 2;
+ 
+-	WARN_ON(bio->bi_vcnt <= 0);
+-
+ 	/*
+ 	 * the free space stuff is only read when it hasn't been
+ 	 * updated in the current transaction.  So, we can safely
+@@ -217,12 +213,13 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 		path->skip_locking = 1;
+ 	}
+ 
+-	disk_bytenr = (u64)bio->bi_iter.bi_sector << 9;
+ 	if (dio)
+ 		offset = logical_offset;
+-	while (bio_index < bio->bi_vcnt) {
++	while (iter.bi_size) {
++		u64 disk_bytenr = (u64)iter.bi_sector << 9;
++		struct bio_vec bvec = bio_iter_iovec(bio, iter);
+ 		if (!dio)
+-			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
++			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+ 		count = btrfs_find_ordered_sum(inode, offset, disk_bytenr,
+ 					       (u32 *)csum, nblocks);
+ 		if (count)
+@@ -243,7 +240,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ 				if (BTRFS_I(inode)->root->root_key.objectid ==
+ 				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+ 					set_extent_bits(io_tree, offset,
+-						offset + bvec->bv_len - 1,
++						offset + bvec.bv_len - 1,
+ 						EXTENT_NODATASUM, GFP_NOFS);
+ 				} else {
+ 					btrfs_info(BTRFS_I(inode)->root->fs_info,
+@@ -281,12 +278,9 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+ found:
+ 		csum += count * csum_size;
+ 		nblocks -= count;
+-		bio_index += count;
+-		while (count--) {
+-			disk_bytenr += bvec->bv_len;
+-			offset += bvec->bv_len;
+-			bvec++;
+-		}
++		bio_advance_iter(bio, &iter,
++				 count << inode->i_sb->s_blocksize_bits);
++		offset += count << inode->i_sb->s_blocksize_bits;
+ 	}
+ 	btrfs_free_path(path);
+ 	return 0;
+@@ -429,14 +423,12 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+ 	struct btrfs_ordered_sum *sums;
+ 	struct btrfs_ordered_extent *ordered;
+ 	char *data;
+-	struct bio_vec *bvec = bio->bi_io_vec;
+-	int bio_index = 0;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	int index;
+-	unsigned long total_bytes = 0;
+ 	unsigned long this_sum_bytes = 0;
+ 	u64 offset;
+ 
+-	WARN_ON(bio->bi_vcnt <= 0);
+ 	sums = kzalloc(btrfs_ordered_sum_size(root, bio->bi_iter.bi_size),
+ 		       GFP_NOFS);
+ 	if (!sums)
+@@ -448,53 +440,46 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+ 	if (contig)
+ 		offset = file_start;
+ 	else
+-		offset = page_offset(bvec->bv_page) + bvec->bv_offset;
++		offset = page_offset(bio_page(bio)) + bio_offset(bio);
+ 
+ 	ordered = btrfs_lookup_ordered_extent(inode, offset);
+ 	BUG_ON(!ordered); /* Logic error */
+ 	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
+ 	index = 0;
+ 
+-	while (bio_index < bio->bi_vcnt) {
++	bio_for_each_segment(bvec, bio, iter) {
+ 		if (!contig)
+-			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
++			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+ 
+ 		if (offset >= ordered->file_offset + ordered->len ||
+ 		    offset < ordered->file_offset) {
+-			unsigned long bytes_left;
+ 			sums->len = this_sum_bytes;
+ 			this_sum_bytes = 0;
+ 			btrfs_add_ordered_sum(inode, ordered, sums);
+ 			btrfs_put_ordered_extent(ordered);
+ 
+-			bytes_left = bio->bi_iter.bi_size - total_bytes;
+-
+-			sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
+-				       GFP_NOFS);
++			sums = kzalloc(btrfs_ordered_sum_size(root,
++				       iter.bi_size), GFP_NOFS);
+ 			BUG_ON(!sums); /* -ENOMEM */
+-			sums->len = bytes_left;
++			sums->len = iter.bi_size;
+ 			ordered = btrfs_lookup_ordered_extent(inode, offset);
+ 			BUG_ON(!ordered); /* Logic error */
+-			sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9) +
+-				       total_bytes;
++			sums->bytenr = ((u64)iter.bi_sector) << 9;
+ 			index = 0;
+ 		}
+ 
+-		data = kmap_atomic(bvec->bv_page);
++		data = kmap_atomic(bvec.bv_page);
+ 		sums->sums[index] = ~(u32)0;
+-		sums->sums[index] = btrfs_csum_data(data + bvec->bv_offset,
++		sums->sums[index] = btrfs_csum_data(data + bvec.bv_offset,
+ 						    sums->sums[index],
+-						    bvec->bv_len);
++						    bvec.bv_len);
+ 		kunmap_atomic(data);
+ 		btrfs_csum_final(sums->sums[index],
+ 				 (char *)(sums->sums + index));
+ 
+-		bio_index++;
+ 		index++;
+-		total_bytes += bvec->bv_len;
+-		this_sum_bytes += bvec->bv_len;
+-		offset += bvec->bv_len;
+-		bvec++;
++		offset += bvec.bv_len;
++		this_sum_bytes += bvec.bv_len;
+ 	}
+ 	this_sum_bytes = 0;
+ 	btrfs_add_ordered_sum(inode, ordered, sums);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e687bb0..9c513d8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7784,12 +7784,11 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct bio *bio;
+ 	struct bio *orig_bio = dip->orig_bio;
+-	struct bio_vec *bvec = orig_bio->bi_io_vec;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	u64 start_sector = orig_bio->bi_iter.bi_sector;
+ 	u64 file_offset = dip->logical_offset;
+-	u64 submit_len = 0;
+ 	u64 map_length;
+-	int nr_pages = 0;
+ 	int ret;
+ 	int async_submit = 0;
+ 
+@@ -7821,10 +7820,12 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	btrfs_io_bio(bio)->logical = file_offset;
+ 	atomic_inc(&dip->pending_bios);
+ 
+-	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
+-		if (map_length < submit_len + bvec->bv_len ||
+-		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len) {
++	bio_for_each_segment(bvec, orig_bio, iter) {
++		if (map_length < bio->bi_iter.bi_size + bvec.bv_len ||
++		    bio_add_page(bio, bvec.bv_page, bvec.bv_len,
++				 bvec.bv_offset) < bvec.bv_len) {
++			unsigned submit_len = bio->bi_iter.bi_size;
++
+ 			/*
+ 			 * inc the count before we submit the bio so
+ 			 * we know the end IO handler won't happen before
+@@ -7844,9 +7845,6 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 			start_sector += submit_len >> 9;
+ 			file_offset += submit_len;
+ 
+-			submit_len = 0;
+-			nr_pages = 0;
+-
+ 			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
+ 						  start_sector, GFP_NOFS);
+ 			if (!bio)
+@@ -7863,10 +7861,6 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 				bio_put(bio);
+ 				goto out_err;
+ 			}
+-		} else {
+-			submit_len += bvec->bv_len;
+-			nr_pages++;
+-			bvec++;
+ 		}
+ 	}
+ 
+-- 
+2.1.0
+

@@ -1,42 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40616 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750977AbaL2Qu6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 11:50:58 -0500
-Date: Mon, 29 Dec 2014 17:50:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Capitalize elements in enum for improve readability.
-Message-ID: <20141229165055.GM6490@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5497F2EE.1010906@jp.fujitsu.com>
- <5497F487.20109@jp.fujitsu.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:40536 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754051AbaLVKjS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Dec 2014 05:39:18 -0500
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D324D3EE0B6
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:17 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id D1DE1AC0601
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:16 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 863FBE08002
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:16 +0900 (JST)
+Received: from G01JPEXCHKW13.g01.fujitsu.local (G01JPEXCHKW13.g01.fujitsu.local [10.0.194.52])
+	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id A89BA3288B5
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:15 +0900 (JST)
+Message-ID: <5497F4CD.4010301@jp.fujitsu.com>
+Date: Mon, 22 Dec 2014 19:39:09 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5497F487.20109@jp.fujitsu.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] Remove unnecessary placeholder in btrfs_err_code
+References: <5497F2EE.1010906@jp.fujitsu.com>
+In-Reply-To: <5497F2EE.1010906@jp.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 22, 2014 at 07:37:59PM +0900, Satoru Takeuchi wrote:
-> --- a/send-utils.h
-> +++ b/send-utils.h
-> @@ -37,10 +37,10 @@ extern "C" {
->  #define BTRFS_COMPAT_SEND_NO_UUID_TREE 1
->  
->  enum subvol_search_type {
-> -	subvol_search_by_root_id,
-> -	subvol_search_by_uuid,
-> -	subvol_search_by_received_uuid,
-> -	subvol_search_by_path,
-> +	SUBVOL_SEARCH_BY_ROOT_ID,
-> +	SUBVOL_SEARCH_BY_UUID,
-> +	SUBVOL_SEARCH_BY_RECEIVED_UUID,
-> +	SUBVOL_SEARCH_BY_PATH,
+Sorry, I forgot to add Signed-off-by line.
 
-send-utils.h is part of public API, so this would have to be changed in
-a backward compatible way, but the current library API is underdesigned
-so I don't think this patch will help.
+---
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Getting the library right is on the todo list but it will take some time
-and some reorganization of sources will have to take place before that.
+"notused" is not necessary. Set 1 to the first entry is enough.
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+---
+ ioctl.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/ioctl.h b/ioctl.h
+index 2c2c7c1..c377b96 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -474,8 +474,7 @@ struct btrfs_ioctl_qgroup_create_args {
+ 
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+-	notused,
+-	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
++	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
+ 	BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
+ 	BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
+ 	BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
+-- 1.8.3.1 -- To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body of a message to majordomo@vger.kernel.org More majordomo info at http://vger.kernel.org/majordomo-info.html 
+

@@ -1,107 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f177.google.com ([209.85.223.177]:39477 "EHLO
-	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754702AbaLVUdn (ORCPT
+Received: from mail-ie0-f176.google.com ([209.85.223.176]:35376 "EHLO
+	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754888AbaLVUoT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 15:33:43 -0500
-Received: by mail-ie0-f177.google.com with SMTP id rd18so4953720iec.36
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:33:42 -0800 (PST)
-Message-ID: <54988021.8010408@gmail.com>
-Date: Mon, 22 Dec 2014 15:33:37 -0500
+	Mon, 22 Dec 2014 15:44:19 -0500
+Received: by mail-ie0-f176.google.com with SMTP id tr6so5049537ieb.35
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:44:19 -0800 (PST)
+Message-ID: <5498829E.3060608@gmail.com>
+Date: Mon, 22 Dec 2014 15:44:14 -0500
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Richard Sharpe <realrichardsharpe@gmail.com>
-CC: linux-btrfs@vger.kernel.org
+To: Richard Sharpe <realrichardsharpe@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Can BTRFS handle XATTRs larger than 4K?
-References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>	<54982A79.1090102@gmail.com>	<CACyXjPwiRXaV9ASetZa_cYD2R9TxQLfQP0x7aLknWuRXdtZ2Og@mail.gmail.com>	<54985E4C.40003@gmail.com> <CACyXjPwstBv92VL_Q5w=NqNfAO-WUU1-7vf30Rt7NjwKeTQfeA@mail.gmail.com>
-In-Reply-To: <CACyXjPwstBv92VL_Q5w=NqNfAO-WUU1-7vf30Rt7NjwKeTQfeA@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030402010701000802010905"
+References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>	<54982A79.1090102@gmail.com>	<CACyXjPwiRXaV9ASetZa_cYD2R9TxQLfQP0x7aLknWuRXdtZ2Og@mail.gmail.com>	<54985E4C.40003@gmail.com>	<CAJCQCtRyiGU65cGWW=QCoGeqmUFi=GY5YraqadLaOpjHUGSh8g@mail.gmail.com> <CACyXjPxj1f_iHjLW3vc6vtiPrzbrWZsD=ApmkAp9OZX23ff8bA@mail.gmail.com>
+In-Reply-To: <CACyXjPxj1f_iHjLW3vc6vtiPrzbrWZsD=ApmkAp9OZX23ff8bA@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms000102010903060203010504"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms030402010701000802010905
+--------------ms000102010903060203010504
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-12-22 15:04, Richard Sharpe wrote:
-> On Mon, Dec 22, 2014 at 10:09 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2014-12-22 12:27, Richard Sharpe wrote:
->>>
->>> On Mon, Dec 22, 2014 at 6:28 AM, Austin S Hemmelgarn
->>> <ahferroin7@gmail.com> wrote:
->>>>
->>>> On 2014-12-19 21:07, Richard Sharpe wrote:
->>>>>
->>>>>
->>>>> Hi folks,
->>>>>
->>>>> I need a Linux file system that supports XATTRs up to 64K.
->>>>>
->>>>> Can BTRFS support that or is XFS the only Linux file system with su=
-ch
->>>>> support?
->>>>>
->>>> At the moment, BTRFS is limited to xattrs that fit inline in the met=
-adata
->>>> nodes (so ~3900 bytes for a 4k leafsize).
->>>>
->>>> XFS, however, isn't the only Linux filesystem that supports xattrs t=
-hat
->>>> size.  Assuming that you are using a recent kernel, you can also use=
- such
->>>> xattrs on at least:
->>>>    * XFS
->>>>    * JFS
->>>>    * ext4
->>>>    * reiserfs (I think, not 100% certain about this one though)
->>>>    * OCFS2 (even though it is technically a cluster fs, it can be ru=
-n
->>>> single
->>>> node without the clustering)
->>>>    * ZFS (IIRC, ZFS supports unlimited xattr size)
->>>>    * NTFS (no limit on xattr size, though you should use NTFS-3G ins=
-tead
->>>> of
->>>> the in-kernel driver)
->>>>    * SquashFS (read-only)
->>>>    * HFS+ (Also no limit on xattr size)
->>>> Of these, I'd personally suggest using XFS unless you need to be abl=
-e to
->>>> shrink the filesystem, in which case I'd suggest ext4.
->>>
->>>
->>> Thanks for the info. I hadn't realized that ext4 had lifted the
->>> restriction.
->>>
->> Yeah, it would be nice if there was more clarity in the documentation.=
-
+On 2014-12-22 15:06, Richard Sharpe wrote:
+> On Mon, Dec 22, 2014 at 10:43 AM, Chris Murphy <lists@colorremedies.com=
+> wrote:
+>> On Mon, Dec 22, 2014 at 11:09 AM, Austin S Hemmelgarn
+>> <ahferroin7@gmail.com> wrote:
 >>
->> Personally, I'd love to see unlimited length xattr's like NTFS and HFS=
-+ do,
->> as that would greatly improve interoperability (both Windows and OS X =
-use
->> xattrs, although they call them 'alternative data streams' and 'forks'=
+>>> Personally, I'd love to see unlimited length xattr's like NTFS and HF=
+S+ do,
+>>> as that would greatly improve interoperability (both Windows and OS X=
+ use
+>>> xattrs, although they call them 'alternative data streams' and 'forks=
+'
+>>> respectively), and provide a higher likelihood that xattrs would star=
+t
+>>> getting used more.
+>>
+>> This is two years old, but it looks like NFS will not support xattr.
+>> http://comments.gmane.org/gmane.linux.nfs/53259
+>>
+>> It looks like SMB does support xattr (and sometimes requires it) but I=
 
->> respectively), and provide a higher likelihood that xattrs would start=
+>> have no idea to what degree, including the host/client preservation on=
 
->> getting used more.
+>> different filesystems. [1] It would still be helpful for cp and rsync
+>> to be able to preserve xattr, however Apple has moved to a new on-disk=
+
+>> format that makes the future of reading OS X volumes on Linux an open
+>> question. [2]
 >
-> Well, there is a big difference in the semantics of Alternate Data
-> Streams (ADSs) and XATTRs.
+> Those are the old OS 2 XATTRs, better known as EAs, and NTFS says that
+> you can support EAs or you can have Reparse Points, but not both
+> (basically, they re-used the EA Length field as the reparse tag).
+> Also, Windows (of any flavor) does not make it easy to access EAs.
 >
-> For example, you can seek on an ADS and read at any offset. You cannot
-> do that on an XATTR (at least, not with the semantics provided by the
-> UNIX interface.)
->
-I'm not trying to say the semantics are identical, just that the=20
-functionality is pretty similar.  A better way to put it would be that=20
-xattrs are an extremely limited form of ADS/Forks.
+But OS/2 style XATTRS are not the same as NTFS Alternative Data Streams, =
+
+which technically (because of Windows backward compatibility interfaces) =
+
+don't need a huge amount of support from SMB.  They were originally=20
+added to support SFM in NT3.1, so that windows could store resource=20
+forks.  The two primary uses on windows today are the file history=20
+interface in Win8/8.1 and the 'zone_identifier' saved with downloads by=20
+most modern browsers.  They're actually pretty easy to get to, you just=20
+append the ADS name to the end of the filename with a : separating them, =
+
+and you can access it like a regular file (which is part of why : isn't=20
+a legal character in a windows filename).  Most people don't know about=20
+them because they don't get listed in windows explorer, even with hidden =
+
+files and protected OS file visible.  The actual on-disk format for them =
+
+is actually kind of interesting, the file data itself (what in the Apple =
+
+world is called the Data Fork) is actually stored as an unnamed ADS=20
+associated with the filename.
 
 
---------------ms030402010701000802010905
+--------------ms000102010903060203010504
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -138,8 +120,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIyMjAzMzM3
-WjAjBgkqhkiG9w0BCQQxFgQUMz1MKtjFugSxtoaDRwaO0Qmg8AgwbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIyMjA0NDE0
+WjAjBgkqhkiG9w0BCQQxFgQUctZVJ6wyR5FBvel0NfrCUgkLOtwwbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -147,10 +129,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEA0hVrMGtbvwI7mMpVgQB/ryGrrvuI
-3XuTZ1uqFTCSVoHt1QLa7vSu+Qbx7jUWBIQPpQG8kyVyH5ElE8/R01isF/zYqm7vbyl3AhHX
-tGjyC4jra5bhmvHL2c4vnKXJQI7RHVXIOaXjnb3ocCmJMyBO5R3Mp6P0XBOc/xfPv/wzbhcP
-7lBkz/YjXwZODucF85hRTxTnv0gCqlhlfo/SpBdYxNi6IopRyMwnVXx1BaXuuagpd12vZzzs
-r55mYt9kDEtifesI4yYCy7EICOGj5aeMybBIyK7eFcNMRH8DascOQ8dNY2TBce21BKo+WaD2
-VC//Sfjt+/bVP7UGkv6inXMVRAAAAAAAAA==
---------------ms030402010701000802010905--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAKYeEOVLx6aUOYBWzqV9NzRM2pJ3x
+WaNTOTgBnnFeZHiQz/UrXw0b5An17yjJZMP8XZsKtK3q+23voX9l+V/pmRNRYBckyZRWO1o9
+dVORejvrMZUGhwHR2Xp2QpBs+Fde85rCQZc+G0xLririO0QwAYhMPsJqxQHq99aJrWiZniyl
+T/+Px4Jx3CAxYKuBqtUMqoFOzeowBxufA3hwJEf9Hi/V/Idi5nX41KcDoO9jQ/TEBiHoH3yK
+x3SN57T9FpoL1lERF5OSwjf5t/dAXdhWboPqe+Pqww7ZHD8oY4zvhvaFEz+vqzr6s3Ddps0C
+HAiF03ogdDQjyl66P2H90VsGtQAAAAAAAA==
+--------------ms000102010903060203010504--

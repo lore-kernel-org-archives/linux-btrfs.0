@@ -1,77 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:52448 "EHLO
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:45742 "EHLO
 	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753763AbaLVDJg (ORCPT
+	with ESMTP id S1753602AbaLVDUk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 22:09:36 -0500
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 7DDBD3EE194
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:35 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 8D292AC0498
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:34 +0900 (JST)
+	Sun, 21 Dec 2014 22:20:40 -0500
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 6B95C3EE188
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:39 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 7F640AC03F3
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:38 +0900 (JST)
 Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 387D61DB804E
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:34 +0900 (JST)
-Message-ID: <54978B65.8050807@jp.fujitsu.com>
-Date: Mon, 22 Dec 2014 12:09:25 +0900
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 2D5EBE08002
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:38 +0900 (JST)
+Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
+	by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 3140246E5D3
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:37 +0900 (JST)
+Message-ID: <54978DFE.6010507@jp.fujitsu.com>
+Date: Mon, 22 Dec 2014 12:20:30 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-CC: <fdmanana@gmail.com>
-Subject: Re: [PATCH] btrfs-progs: Don't increase error count if the inode
- can be repaired.
-References: <1419216816-13171-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1419216816-13171-1-git-send-email-quwenruo@cn.fujitsu.com>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: Documentation: add T/P/E description for
+ resize cmd
+References: <1419213702-3945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1419213702-3945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/12/22 11:53, Qu Wenruo wrote:
-> The original check_inode_recs() will return -1 if found any error in a
-> inode_record. This is OK for original design since there is almost
-> nothing can repair at that time.
+On 2014/12/22 11:01, Gui Hecheng wrote:
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>   Documentation/btrfs-filesystem.txt | 4 ++--
+>   1 file changed, 2 insertions(+), 2 deletions(-)
 > 
-> However more and more error from nlink mismatch to missing inode item
-> can be repaired in try_repair_inode(), check_inode_recs() should not
-> increase the error count if the inode can be repair.
-> 
-> With this patch, repair function for leaf-corruption will not return
-> error if all corruption inode can be recovered.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+> index a8f2972..f2bd50d 100644
+> --- a/Documentation/btrfs-filesystem.txt
+> +++ b/Documentation/btrfs-filesystem.txt
+> @@ -102,8 +102,8 @@ If the prefix + or - is present the size is increased or decreased
+>   by the quantity <size>.
+>   If no units are specified, the unit of the <size> parameter defaults to
+>   bytes. Optionally, the size parameter may be suffixed by one of the following
+> -units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
+> -respectively.
+> +units designators: \'K\'(KiB), \'M\'(MiB), \'G\'(GiB), \'T\'(TiB), \'P\'(PiB),
+> +\'E\'(EiB).
+
+Just a minor point. s/\'E\'(EiB)/or \'E\'(EiB)/ is better.
 
 Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
 Thanks,
 Satoru
 
-> ---
->   cmds-check.c | 5 +++--
->   1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 3e7a4eb..aa47984 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -2302,7 +2302,7 @@ static int check_inode_recs(struct btrfs_root *root,
->   	struct inode_record *rec;
->   	struct inode_backref *backref;
->   	int stage = 0;
-> -	int ret;
-> +	int ret = 0;
->   	int err = 0;
->   	u64 error = 0;
->   	u64 root_dirid = btrfs_root_dirid(&root->root_item);
-> @@ -2452,7 +2452,8 @@ static int check_inode_recs(struct btrfs_root *root,
->   			ret = 0;
->   		}
->   
-> -		error++;
-> +		if (!(repair && ret == 0))
-> +			error++;
->   		print_inode_error(root, rec);
->   		list_for_each_entry(backref, &rec->backrefs, list) {
->   			if (!backref->found_dir_item)
+>   +
+>   If \'max' is passed, the filesystem will occupy all available space on the
+>   device devid.
 > 
 

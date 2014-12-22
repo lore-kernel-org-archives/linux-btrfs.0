@@ -1,67 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from detritus.pyropus.ca ([64.5.53.58]:52613 "HELO
-	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752368AbaLUWtD (ORCPT
+Received: from mail-yh0-f52.google.com ([209.85.213.52]:46679 "EHLO
+	mail-yh0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753213AbaLVAZs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 17:49:03 -0500
-Date: Sun, 21 Dec 2014 16:53:15 -0600
-From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
-To: btrfs list <linux-btrfs@vger.kernel.org>
-Subject: Re: Oddly slow read performance with near-full largish FS
-Message-ID: <20141221225315.GA19479@pyropus.ca>
-References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com>
- <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com>
+	Sun, 21 Dec 2014 19:25:48 -0500
+Received: by mail-yh0-f52.google.com with SMTP id z6so1852283yhz.25
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Dec 2014 16:25:47 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54973C65.6070709@pobox.com>
+In-Reply-To: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
+References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
+Date: Sun, 21 Dec 2014 17:25:47 -0700
+Message-ID: <CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
+Subject: Re: Uncorrectable errors on RAID-1?
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Robert,
+On Sun, Dec 21, 2014 at 12:34 PM, constantine <costas.magnuse@gmail.com> wrote:
+> Some months ago I had 6 uncorrectable errors. I deleted the files that
+> contained them and then after scrubbing I had 0 uncorrectable errors.
+> After some weeks I encountered new uncorrectable errors.
+>
+> Question 1:
+> Why do I have uncorrectable errors on a RAID-1 filesystem in the first place?
+>
+> Question 2:
+> How do I properly correct them? (Again by deleting their files? :( )
+>
+> Question 3:
+> How do I prevent this from happening?
 
-My performance issues with btrfs are more-or-less resolved now -- the
-performance under btrfs still seems quite variable compared to other
-filesystems -- my rsync speed is now varying between 40MB and ~90MB/s, with
-occasional intervals where it drops further, down into the 10-20MB/s range.
-Still no disk errors or SMART warnings that would indicate that problem is at
-the hardware level.
+There are multiple kinds of uncorrectable errors so it depends on the
+exact error. If Btrfs is reporting uncorrectable errors, then that
+suggests both copies are bad.
 
-> Do make sure you are regularly running the long "offline" test.
+Whether md, LVM, or Btrfs raid, make sure the value for
 
-Ok, I'll do that.
+cat /sys/block/sdX/device/timeout
 
-> Otherwise SMART is just going to tell you the disk just died when it dies.
+is larger than the value reported by
 
-Ya, I'm aware of how limited/useful the SMART diagnostics are.  I'm also
-paranoid enough to be using RAID 6...
+smartctl -l scterc /dev/sdX
 
-> The thing with "movablecore=" will not lead to an "out of memory"
-> condition or not, its a question of cache and buffer evictions.
+Not that units for the first command are seconds, the units for the
+second command are demiseconds. For the kernel to automatically fix
+bad sectors by overwriting them, the drive needs to explicitly report
+read errors. If the SCSI command timer value is shorter than the
+drive's error recovery, the SATA link might get reset before the drive
+reports the read error and then uncorrected errors will persist
+instead of being automatically fixed.
 
-I'm fairly certain memory isn't the issue here.  For what it's worth:
-
-%Cpu(s):  2.1 us, 19.4 sy,  0.0 ni, 78.0 id,  0.2 wa,  0.3 hi,  0.0 si,  0.0 st
-KiB Mem:  16469880 total, 16301252 used,   168628 free,      720 buffers
-KiB Swap:  7811068 total,        0 used,  7811068 free, 15146580 cached
-
-Swappiness I've left at the default of 60, but I'm not seeing swapping going
-on regardless.
-
-> > Is this remaining difference (25 vs 100+ MB/s) simply due to btrfs not being
-> > tuned for performance yet
-
-I found the cause of this.  Stupidly enough, there was a bwlimit set up in a
-shell alias for rsync.
-
-So btrfs is not nearly as slow as I was seeing.  It's still slower than
-reading from an ext4 or XFS filesystem on these disks, but the absolute level
-of read speed seems reasonable enough given that btrfs has not been under
-heavy performance tuning to date.  My only remaining concern would be the
-variability I still see in the read speed.
-
-Charles
 -- 
------------------------------------------------------------------------
-Charles Cazabon
-GPL'ed software available at:               http://pyropus.ca/software/
------------------------------------------------------------------------
+Chris Murphy

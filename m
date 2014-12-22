@@ -1,82 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9030 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:57397 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751668AbaLYHZ5 (ORCPT
+	with ESMTP id S1753692AbaLVCDr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Dec 2014 02:25:57 -0500
+	Sun, 21 Dec 2014 21:03:47 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBP7PSTU007613
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 15:25:28 +0800
-Message-ID: <1419492235.1717.2.camel@localhost.localdomain>
-Subject: Re: [PATCH 2/2] btrfs-progs: refine btrfs-debug-tree error prompt
- when a mount point given
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBM23IgY004467
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 10:03:18 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Thu, 25 Dec 2014 15:23:55 +0800
-In-Reply-To: <549BB36C.6030606@jp.fujitsu.com>
-References: <1419470195-2889-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1419470195-2889-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <549BB36C.6030606@jp.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Documentation: add T/P/E description for resize cmd
+Date: Mon, 22 Dec 2014 10:01:42 +0800
+Message-ID: <1419213702-3945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-12-25 at 15:49 +0900, Satoru Takeuchi wrote:
-> On 2014/12/25 10:16, Gui Hecheng wrote:
-> > Now, if exec:
-> > 	# btrfs-debug-tree <mount_point>
-> > it echos:
-> > 	: Superblock bytenr is larger than device size
-> > 
-> > But it is quite misleading, because it is a valid btrfs.
-> > In this case, we should tell the developer to provide a block device.
-> > 
-> > After apply:
-> > 	: '<mount_point>' is not a block device
-> > 	: 'usage: btrfs-debug-tree [options] device
-> > 
-> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> > ---
-> >   btrfs-debug-tree.c | 6 ++++++
-> >   1 file changed, 6 insertions(+)
-> > 
-> > diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-> > index e46500d..7f079a9 100644
-> > --- a/btrfs-debug-tree.c
-> > +++ b/btrfs-debug-tree.c
-> > @@ -179,6 +179,12 @@ int main(int ac, char **av)
-> >   	if (check_argc_exact(ac, 1))
-> >   		print_usage();
-> >   
-> > +	ret = check_arg_type(av[optind]);
-> > +	if (ret != BTRFS_ARG_BLKDEV) {
-> > +		fprintf(stderr, "'%s' is not a block device\n", av[optind]);
-> 
-> fprintf(stderr, "ERROR: '%s' is ...)" is better since
-> other error messages in btrfs-progs have this convention.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ Documentation/btrfs-filesystem.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Yes, it is good to make it clear about the "ERROR", but since there is
-no "ERROR" word throughout the source file, I think I would make all
-error prompts to start with the "ERROR" word globally in the progs in
-another patch.
-
-Thanks,
-Gui
-
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> 
-> Thanks,
-> Satoru
-> 
-> > +		print_usage();
-> > +	}
-> > +
-> >   	info = open_ctree_fs_info(av[optind], 0, 0, OPEN_CTREE_PARTIAL);
-> >   	if (!info) {
-> >   		fprintf(stderr, "unable to open %s\n", av[optind]);
-> > 
-> 
-
+diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+index a8f2972..f2bd50d 100644
+--- a/Documentation/btrfs-filesystem.txt
++++ b/Documentation/btrfs-filesystem.txt
+@@ -102,8 +102,8 @@ If the prefix + or - is present the size is increased or decreased
+ by the quantity <size>.
+ If no units are specified, the unit of the <size> parameter defaults to
+ bytes. Optionally, the size parameter may be suffixed by one of the following
+-units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
+-respectively.
++units designators: \'K\'(KiB), \'M\'(MiB), \'G\'(GiB), \'T\'(TiB), \'P\'(PiB),
++\'E\'(EiB).
+ +
+ If \'max' is passed, the filesystem will occupy all available space on the
+ device devid.
+-- 
+1.8.1.4
 

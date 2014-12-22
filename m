@@ -1,108 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:52618 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753976AbaLVOQk (ORCPT
+Received: from mail-ie0-f169.google.com ([209.85.223.169]:51678 "EHLO
+	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754832AbaLVO2O (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 09:16:40 -0500
-Received: by mail-ig0-f179.google.com with SMTP id r2so4013351igi.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 06:16:39 -0800 (PST)
-Received: from [191.9.212.191] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by mx.google.com with ESMTPSA id n2sm4910756igp.16.2014.12.22.06.16.37
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 22 Dec 2014 06:16:38 -0800 (PST)
-Message-ID: <549827C3.6060009@gmail.com>
-Date: Mon, 22 Dec 2014 09:16:35 -0500
+	Mon, 22 Dec 2014 09:28:14 -0500
+Received: by mail-ie0-f169.google.com with SMTP id y20so4388296ier.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 06:28:14 -0800 (PST)
+Message-ID: <54982A79.1090102@gmail.com>
+Date: Mon, 22 Dec 2014 09:28:09 -0500
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: btrfs list <linux-btrfs@vger.kernel.org>
-Subject: Re: Oddly slow read performance with near-full largish FS
-References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com> <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com> <20141221225315.GA19479@pyropus.ca>
-In-Reply-To: <20141221225315.GA19479@pyropus.ca>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms010400070205020001000201"
+To: Richard Sharpe <realrichardsharpe@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Can BTRFS handle XATTRs larger than 4K?
+References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>
+In-Reply-To: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms000206090408080003040904"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms010400070205020001000201
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms000206090408080003040904
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2014-12-21 17:53, Charles Cazabon wrote:
-> Hi, Robert,
+On 2014-12-19 21:07, Richard Sharpe wrote:
+> Hi folks,
 >
-> My performance issues with btrfs are more-or-less resolved now -- the
-> performance under btrfs still seems quite variable compared to other
-> filesystems -- my rsync speed is now varying between 40MB and ~90MB/s, =
-with
-> occasional intervals where it drops further, down into the 10-20MB/s ra=
-nge.
-> Still no disk errors or SMART warnings that would indicate that problem=
- is at
-> the hardware level.
+> I need a Linux file system that supports XATTRs up to 64K.
 >
->> Do make sure you are regularly running the long "offline" test.
+> Can BTRFS support that or is XFS the only Linux file system with such s=
+upport?
 >
-> Ok, I'll do that.
->
->> Otherwise SMART is just going to tell you the disk just died when it d=
-ies.
->
-> Ya, I'm aware of how limited/useful the SMART diagnostics are.  I'm als=
-o
-> paranoid enough to be using RAID 6...
->
->> The thing with "movablecore=3D" will not lead to an "out of memory"
->> condition or not, its a question of cache and buffer evictions.
->
-> I'm fairly certain memory isn't the issue here.  For what it's worth:
->
-> %Cpu(s):  2.1 us, 19.4 sy,  0.0 ni, 78.0 id,  0.2 wa,  0.3 hi,  0.0 si,=
-  0.0 st
-> KiB Mem:  16469880 total, 16301252 used,   168628 free,      720 buffer=
-s
-> KiB Swap:  7811068 total,        0 used,  7811068 free, 15146580 cached=
+At the moment, BTRFS is limited to xattrs that fit inline in the=20
+metadata nodes (so ~3900 bytes for a 4k leafsize).
 
->
-> Swappiness I've left at the default of 60, but I'm not seeing swapping =
-going
-> on regardless.
->
->>> Is this remaining difference (25 vs 100+ MB/s) simply due to btrfs no=
-t being
->>> tuned for performance yet
->
-> I found the cause of this.  Stupidly enough, there was a bwlimit set up=
- in a
-> shell alias for rsync.
->
-> So btrfs is not nearly as slow as I was seeing.  It's still slower than=
+XFS, however, isn't the only Linux filesystem that supports xattrs that=20
+size.  Assuming that you are using a recent kernel, you can also use=20
+such xattrs on at least:
+  * XFS
+  * JFS
+  * ext4
+  * reiserfs (I think, not 100% certain about this one though)
+  * OCFS2 (even though it is technically a cluster fs, it can be run=20
+single node without the clustering)
+  * ZFS (IIRC, ZFS supports unlimited xattr size)
+  * NTFS (no limit on xattr size, though you should use NTFS-3G instead=20
+of the in-kernel driver)
+  * SquashFS (read-only)
+  * HFS+ (Also no limit on xattr size)
+Of these, I'd personally suggest using XFS unless you need to be able to =
 
-> reading from an ext4 or XFS filesystem on these disks, but the absolute=
- level
-> of read speed seems reasonable enough given that btrfs has not been und=
-er
-> heavy performance tuning to date.  My only remaining concern would be t=
-he
-> variability I still see in the read speed.
-This actually sounds kind of like the issues I have sometimes on my=20
-laptop using btrfs on an SSD, I've mostly resolved them by tuning IO=20
-scheduler parameters, as the default IO scheduler (the supposedly=20
-Completely Fair Queue, which was obviously named by a mathematician who=20
-had never actually run the algorithm) has some pretty brain-dead default =
-
-settings.  The other thing I would suggest looking into regarding the=20
-variability is tuning the kernel's write-caching settings, with the=20
-defaults you're caching ~1.6G worth of writes before it forces=20
-write-back, which is a ridiculous amount;  I've that the highest value=20
-that is actually usable is about 256M, and that's only if you are doing=20
-mostly bursty IO and not the throughput focused stuff that rsync does,=20
-I'd say try setting /proc/sys/vm/dirty_background_bytes to 67108864=20
-(64M) and see if that helps things some.
+shrink the filesystem, in which case I'd suggest ext4.
 
 
---------------ms010400070205020001000201
+--------------ms000206090408080003040904
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -139,8 +91,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIyMTQxNjM1
-WjAjBgkqhkiG9w0BCQQxFgQULGyx+0pHJkA7hhzuB0C/uYCrcpEwbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIyMTQyODA5
+WjAjBgkqhkiG9w0BCQQxFgQUxVBmDLCIymk4SmTTiAN++IHPh5MwbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -148,10 +100,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAfnIE6K3GYWBrNuZhK4Z74l8p3mCy
-Wxqg1muYFaOIU37dRaKL86MadsH/tZbZXmsQLxNu12tlcY8AhkozjR1JszoER5zeUbt00ijM
-CMEbwpIcsC+pm4Y9guOqib97bHpnWIkjB4hA0ZeUwYTCbj6+ylzrQf999BU+a7sWYCsyPJNI
-6uUnwnErw26aJbcAQPsaC3FPkfwHX9sIkvu24IPyIItIn9vCgxyv19Xpe2hmmh9miYgXHDkD
-rpy416vQyngfBgLPwknP6klncaCrSj7fUly0LljEzb/T3bb8Q9QrpnoyDPIW1OjQeJgfT2OO
-J+TeCIFE7LufGNkNs4WCRPuWwAAAAAAAAA==
---------------ms010400070205020001000201--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAQwt++Y9I9yCACtlcJ7zXaHVj+/d1
+6j+IIul4o6V5KtdF4XIugRy7wOMz+HQrBhPFc76saQ0OvAEy1fHZaj9MCQW7hT4uQ95RmJxm
+MnnuX1OBeSvKd4LxS0tUDdEcEtH+SYx6rLeQqqBYLUFBmcGm15TeVnTdjrFXTWOJSfLWDi8g
+hc3FRuOpwi09QeRPJF194ridpFs0S+8lRvc9h5ag8zjgZwXTIViD9xI2p0dUI8oLQPIauhk5
+lKYk96r7n42fBOzzDLZW3UyZzqdJZ7jDcLkxVUxzcdzgQqqCsRZGpveaoUnZGiE3a80O+2bm
+UCLOuQLr2HZoRrsyMzAPBfHbbwAAAAAAAA==
+--------------ms000206090408080003040904--

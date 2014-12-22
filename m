@@ -1,140 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-11v.sys.comcast.net ([69.252.207.43]:36548 "EHLO
-	resqmta-ch2-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753380AbaLVAip (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:47491 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753647AbaLVCNu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 19:38:45 -0500
-Message-ID: <54976811.2060507@pobox.com>
-Date: Sun, 21 Dec 2014 16:38:41 -0800
-From: Robert White <rwhite@pobox.com>
+	Sun, 21 Dec 2014 21:13:50 -0500
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 7640D3EE0B6
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 11:13:48 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 7E6C4AC0421
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 11:13:47 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 31312E08005
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 11:13:47 +0900 (JST)
+Message-ID: <54977E50.7000109@jp.fujitsu.com>
+Date: Mon, 22 Dec 2014 11:13:36 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: btrfs list <linux-btrfs@vger.kernel.org>
+To: Robert White <rwhite@pobox.com>, btrfs list <linux-btrfs@vger.kernel.org>
 Subject: Re: Oddly slow read performance with near-full largish FS
-References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com> <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com> <20141221225315.GA19479@pyropus.ca>
-In-Reply-To: <20141221225315.GA19479@pyropus.ca>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com> <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com>
+In-Reply-To: <54973C65.6070709@pobox.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/21/2014 02:53 PM, Charles Cazabon wrote:
-> Hi, Robert,
+Hi,
+
+On 2014/12/22 6:32, Robert White wrote:
+> On 12/21/2014 08:32 AM, Charles Cazabon wrote:
+>> Hi, Robert,
+>>
+>> Thanks for the response.  Many of the things you mentioned I have tried, but
+>> for completeness:
+>>
+>>> Have you taken SMART (smartmotools etc) to these disks
+>> There are no errors or warnings from SMART for the disks.
 >
-> My performance issues with btrfs are more-or-less resolved now -- the
-> performance under btrfs still seems quite variable compared to other
-> filesystems -- my rsync speed is now varying between 40MB and ~90MB/s, with
-> occasional intervals where it drops further, down into the 10-20MB/s range.
-> Still no disk errors or SMART warnings that would indicate that problem is at
-> the hardware level.
 >
->> Do make sure you are regularly running the long "offline" test.
+> Do make sure you are regularly running the long "offline" test. [offline is a bad name, what it really should be called is the long idle-interval test. sigh] about once a week. Otherwise SMART is just going to tell you the disk just died when it dies.
 >
-> Ok, I'll do that.
+> I'm not saying this is relevant to the current circumstance. But since you didn't mention a testing schedule I figured it bared a mention
 >
->> Otherwise SMART is just going to tell you the disk just died when it dies.
+>>> Have you tried segregating some of your system memory for to make
+>>> sure that you aren't actually having application performance issues?
+>>
+>> The system isn't running out of memory; as I say, about the only userspace
+>> processes running are ssh, my shell, and rsync.
 >
-> Ya, I'm aware of how limited/useful the SMART diagnostics are.  I'm also
-> paranoid enough to be using RAID 6...
+> The thing with "movablecore=" will not lead to an "out of memory" condition or not, its a question of cache and buffer evictions.
 >
->> The thing with "movablecore=" will not lead to an "out of memory"
->> condition or not, its a question of cache and buffer evictions.
+> I figured that you'd have said something about actual out of memory errors.
 >
-> I'm fairly certain memory isn't the issue here.  For what it's worth:
+> But here's the thing.
 >
-> %Cpu(s):  2.1 us, 19.4 sy,  0.0 ni, 78.0 id,  0.2 wa,  0.3 hi,  0.0 si,  0.0 st
-> KiB Mem:  16469880 total, 16301252 used,   168628 free,      720 buffers
-> KiB Swap:  7811068 total,        0 used,  7811068 free, 15146580 cached
+> Once storage pressure gets "high enough" the system will start forgetting things intermittently to make room for other things. One of the things it will "forget" is pages of code from running programs. The other thing it can "forget" is dirent (directory entries) relevant to ongoing activity.
 >
-> Swappiness I've left at the default of 60, but I'm not seeing swapping going
-> on regardless.
+> The real killer can involve "swappiness" (e.g. /proc/sys/vm/swapiness :: the tendency of the system to drop pages of program code, do not adjust this till you understand it fully) and overall page fault rates on the system. You'll start geting evictions long before you start using _any_ swap file space.
+>
+> So if your effective throughput is low, the first thing to really look at is if your page fault rates are rising.  Variations of sar, ps, and top may be able to tell you about the current system and/or per-process page fault rates. You'll have to compare your distro's tool set to the procedures you can find online.
+>
+> It's a little pernicious because it's a silent performance drain. There are no system messages to tell you "uh, hey dude, I'm doing a lot of reclaims lately and even going back to disk for pages of this program you really like". You just have to know how to look in that area.
+>
+>>
+>> However, your first suggestion caused me to slap myself:
+>>
+>>> Have you tried increasing the number of stripe buffers for the
+>>> filesystem?
+>>
+>> This I had totally forgotten.  When I bump up the stripe cache size, it
+>> *seems* (so far, at least) to eliminate the slowest performance I'm seeing -
+>> specifically, the periods I've been seeing where no I/O at all seems to
+>> happen, plus the long runs of 1-3MB/s.  The copy is now staying pretty much in
+>> the 22-27MB/s range.
+>>
+>> That's not as fast as the hardware is capable of - as I say, with other
+>> filesystems on the same hardware, I can easily see 100+MB/s - but it's much
+>> better than it was.
+>>
+>> Is this remaining difference (25 vs 100+ MB/s) simply due to btrfs not being
+>> tuned for performance yet, or is there something else I'm probably
+>> overlooking?
+>
+>
+> I find BTRFS can be a little slow on my laptop, but I blame memory pressure evicting important structures somewhat system wide. Which is part of why I did the moveablecore= parametric tuning. I don't think there is anything that will pack the locality of the various trees, so you can end up needing bits of things from all over your disk in order to sequentially resolve a large directory and compute the running checksums for rsync (etc.).
+>
+> Simple rule of thumb, if "wait for I/O time" has started to rise you've got some odd memory pressure that's sending you to idle land. It's not hard-and-fast as a rule, but since you've said that your CPU load (wich I'm taking to be the  user+system time) is staying low you are likely waiting for something.
 
-Swappiness has nothing to do with swapping.
+Capturing "echo t >/proc/magic-sysrq" on waiting for I/O may help you.
+It shows us where kernel actually be waiting for.
 
-You have very little free memory.
+In addition, to confirm whether this problem is caused only by
+Btrfs or not, the following way can be used.
 
-Here is how a linux system runs a program. When exec() is called the 
-current process memory is wiped (dropped, forgotten, whatever) [except 
-for a few things like the open file discriptor table]. Then the 
-executable is opened and mmap() is called to map the text portions of 
-that executable into memory. This does not involve any particular 
-reading of that file. The dynamic linker also selectively mmap()s the 
-needed libraries. So you end up with something that looks like this:
+  1. preparing the extra storage,
+  2. copy Btrfs's data into int by dd if=<LVM volume> of=<extra storage>
+  3. Use it and confirm whether this problem still happen or not
 
-[+.....................]
+However, since the size of your Btrfs is quite large, I guess you
+can't do it. If you have such extra storage, you've already
+embed it to Btrfs.
 
-Most of the program is not actually in memory. (the "." parts), and some 
-minimum part is in memory (the "+" part).
+Thanks,
+Satoru
 
-As you use the program more of it will work its way into memory.
-
-[+++.....+.+....++....]
-
-swappiness controls the likelihood that memory pressure will cause parts 
-that have been read in to be "forgotten" based on the idea that it can 
-be read again later if needed.
-
-[+++.....+.+....++....]
-[+.......+......+.....]
-
-This is called "demand paging", and because linux uses ELF (extensible 
-link format) and all programs run in a uniform memory map, program text 
-_never_ needs to be written to swap space. Windows DLL/EXE has to 
-"relocate" the code, e.g. re-write it to make it runable. So on windows 
-code text has to be paged to swap.
-
-So what is "swapping" and swap space for?
-
-Well next to the code is the data.
-
-[+++.....+.+....++....] {.............}
-
-As it gets written to, it cannot just be forgotten because the program 
-needs that data or it wouldn't have written it.
-
-[+++.....+.+....++....] {..******.*...}
-
-So if the system needs to reclaim the memory used by that kind of data 
-it sends it to the swap space.
-
-[+++.....+.+....++....] {..******.*...}
-                       ^^^^ swapping vvvv
-[+++.....+.+....++....] {..**...*.*...}
-
-
-Swappiness is how you tel the system that you want to keep the code 
-("+") in memory in favor of the data ("*").
-
-But _long_ before you start having to actually write the data to disk in 
-the swap space, the operating system will start casually forgetting the 
-code. Most of both of these things, while "freshly forgotten" can be 
-"reclaimed" from the disk/page cache.
-
-So when you show me that free memory listing what I see is someone who 
-is bumping against their "minimum desired free memory" limit (e.g. about 
-1% free ram) and so has a system where it's _possible_ that a good bit 
-of stuff is getting dumped out of the active page tables and into the 
-disk/page cache where it could start bogging down the system in large 
-numbers of short reclaim delays and potentially non-trivial amounts of 
-demand paging.
-
-So not "out of memory" but not ideal. Real measurements of page fault 
-activity and wait for io time needs to be done to determine if more 
-action needs to be taken.
-
-Compare that to my laptop where I've deliberately made sure that memory 
-is always available for fast transient use.
-
-Gust ~ # free
-               total        used        free      shared  buff/cache 
-available
-Mem:        7915804     2820368     2419300       47472     2676136 
-4790892
-Swap:       8778748      311688     8467060
-
-
-In this configuration when I run bursty stuff I've set aside two gig 
-that sits around "Free" into which the dynamic load can find ample 
-space. (I am not recommending that for you necessarily, were I present 
-I'd do some experimenting). But that dynamic space is where the rsync 
-would be doing its work and so be less likely to stall. (Etc).
-
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

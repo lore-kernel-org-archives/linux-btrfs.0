@@ -1,50 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f42.google.com ([209.85.213.42]:41468 "EHLO
-	mail-yh0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755058AbaLVQFl (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:47943 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755089AbaLVR1Z convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 11:05:41 -0500
-Received: by mail-yh0-f42.google.com with SMTP id v1so2414290yhn.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 08:05:39 -0800 (PST)
+	Mon, 22 Dec 2014 12:27:25 -0500
+Received: by mail-pa0-f48.google.com with SMTP id rd3so6261400pab.35
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 09:27:24 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CANcfdL1f6evRNutMKpt_1qjBjvHTsx-i6Dgb5uEEjX2+hR0B-A@mail.gmail.com>
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
-	<CAJCQCtQYhaDEic5bwd+PEcEfwOqLwAe8cT8VPZ9je+JLRP1GPw@mail.gmail.com>
-	<CANcfdL1f6evRNutMKpt_1qjBjvHTsx-i6Dgb5uEEjX2+hR0B-A@mail.gmail.com>
-Date: Mon, 22 Dec 2014 09:05:39 -0700
-Message-ID: <CAJCQCtSC2i4-SZuxRaQR6rTCngxudyOLUEM_Au9yNtk1Lw9U5Q@mail.gmail.com>
-Subject: Re: Uncorrectable errors on RAID-1?
-From: Chris Murphy <lists@colorremedies.com>
-To: constantine <costas.magnuse@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <54982A79.1090102@gmail.com>
+References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>
+	<54982A79.1090102@gmail.com>
+Date: Mon, 22 Dec 2014 09:27:24 -0800
+Message-ID: <CACyXjPwiRXaV9ASetZa_cYD2R9TxQLfQP0x7aLknWuRXdtZ2Og@mail.gmail.com>
+Subject: Re: Can BTRFS handle XATTRs larger than 4K?
+From: Richard Sharpe <realrichardsharpe@gmail.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 22, 2014 at 7:28 AM, constantine <costas.magnuse@gmail.com> wrote:
-> On Mon, Dec 22, 2014 at 12:24 AM, Chris Murphy <lists@colorremedies.com> wrote:
->> smartctl -l scterc /dev/sdX
+On Mon, Dec 22, 2014 at 6:28 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2014-12-19 21:07, Richard Sharpe wrote:
+>>
+>> Hi folks,
+>>
+>> I need a Linux file system that supports XATTRs up to 64K.
+>>
+>> Can BTRFS support that or is XFS the only Linux file system with such
+>> support?
+>>
+> At the moment, BTRFS is limited to xattrs that fit inline in the metadata
+> nodes (so ~3900 bytes for a 4k leafsize).
 >
-> That's really good to know. My drives are desktop and this feature is
-> not supported; hence, I get "SCT Error Recovery Control command not
-> supported".
->
-> I'll definitely go for enterprise/raid class drives that support this
-> command in the future; they somehow seem more transparent (if I may
-> say) in maintaining them.
+> XFS, however, isn't the only Linux filesystem that supports xattrs that
+> size.  Assuming that you are using a recent kernel, you can also use such
+> xattrs on at least:
+>  * XFS
+>  * JFS
+>  * ext4
+>  * reiserfs (I think, not 100% certain about this one though)
+>  * OCFS2 (even though it is technically a cluster fs, it can be run single
+> node without the clustering)
+>  * ZFS (IIRC, ZFS supports unlimited xattr size)
+>  * NTFS (no limit on xattr size, though you should use NTFS-3G instead of
+> the in-kernel driver)
+>  * SquashFS (read-only)
+>  * HFS+ (Also no limit on xattr size)
+> Of these, I'd personally suggest using XFS unless you need to be able to
+> shrink the filesystem, in which case I'd suggest ext4.
 
-Not knowing anything else, I'd say the kernel command timer should be
-set to 121 in your case, for each drive. If you find evidence it can
-be shorter, go with that. Bad sectors will fast fast, which is what
-you want since you have mirrored data. Marginal sectors might take a
-while for the firmware to either recover, or fail.
-
-It's possible to mitigate long recoveries with a periodic balance, say
-once every six months. This rewrites all data, and all sectors ought
-to have a decently strong signal. Any sector with a persistent write
-problem is removed from use automatically by drive firmware, but this
-tends to require a write operation to trigger.
+Thanks for the info. I hadn't realized that ext4 had lifted the restriction.
 
 -- 
-Chris Murphy
+Regards,
+Richard Sharpe
+(何以解憂？唯有杜康。--曹操)

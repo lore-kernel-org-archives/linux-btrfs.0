@@ -1,42 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:58224 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753483AbaLUX2M (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:52448 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753763AbaLVDJg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 18:28:12 -0500
+	Sun, 21 Dec 2014 22:09:36 -0500
 Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D32963EE0B6
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 08:28:09 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id E9A3DAC0493
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 08:28:08 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 9B386E08002
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 08:28:08 +0900 (JST)
-Message-ID: <54975706.2040606@jp.fujitsu.com>
-Date: Mon, 22 Dec 2014 08:25:58 +0900
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 7DDBD3EE194
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:35 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 8D292AC0498
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:34 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 387D61DB804E
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:09:34 +0900 (JST)
+Message-ID: <54978B65.8050807@jp.fujitsu.com>
+Date: Mon, 22 Dec 2014 12:09:25 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/6] btrfs-progs: fi usage, update manpage
-References: <cover.1418912740.git.dsterba@suse.cz> <488c53a0e5e255f9504cfc2a029e7c1c72994f66.1418912740.git.dsterba@suse.cz> <5493B1F8.2070106@jp.fujitsu.com> <5493F65B.5080603@jp.fujitsu.com> <20141219133659.GG27601@suse.cz>
-In-Reply-To: <20141219133659.GG27601@suse.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+CC: <fdmanana@gmail.com>
+Subject: Re: [PATCH] btrfs-progs: Don't increase error count if the inode
+ can be repaired.
+References: <1419216816-13171-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1419216816-13171-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/12/19 22:36, David Sterba wrote:
-> On Fri, Dec 19, 2014 at 06:56:43PM +0900, Satoru Takeuchi wrote:
->> +There are some options to set unit. See the description of *df* subcommand
->> +from '-b' option to '-t' option.
->
-> The unit options exist only for very few subcommands so I found it more
-> convenient to list all of them near to the command itself rather than
-> pointing somewhere else.
->
+On 2014/12/22 11:53, Qu Wenruo wrote:
+> The original check_inode_recs() will return -1 if found any error in a
+> inode_record. This is OK for original design since there is almost
+> nothing can repair at that time.
+> 
+> However more and more error from nlink mismatch to missing inode item
+> can be repaired in try_repair_inode(), check_inode_recs() should not
+> increase the error count if the inode can be repair.
+> 
+> With this patch, repair function for leaf-corruption will not return
+> error if all corruption inode can be recovered.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-OK, got it.
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
 Thanks,
 Satoru
+
+> ---
+>   cmds-check.c | 5 +++--
+>   1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 3e7a4eb..aa47984 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -2302,7 +2302,7 @@ static int check_inode_recs(struct btrfs_root *root,
+>   	struct inode_record *rec;
+>   	struct inode_backref *backref;
+>   	int stage = 0;
+> -	int ret;
+> +	int ret = 0;
+>   	int err = 0;
+>   	u64 error = 0;
+>   	u64 root_dirid = btrfs_root_dirid(&root->root_item);
+> @@ -2452,7 +2452,8 @@ static int check_inode_recs(struct btrfs_root *root,
+>   			ret = 0;
+>   		}
+>   
+> -		error++;
+> +		if (!(repair && ret == 0))
+> +			error++;
+>   		print_inode_error(root, rec);
+>   		list_for_each_entry(backref, &rec->backrefs, list) {
+>   			if (!backref->found_dir_item)
+> 
 

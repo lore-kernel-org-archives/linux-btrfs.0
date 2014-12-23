@@ -1,70 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48422 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753681AbaLWMel (ORCPT
+Received: from mail-ie0-f173.google.com ([209.85.223.173]:61948 "EHLO
+	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753993AbaLWMhj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 07:34:41 -0500
-Message-ID: <549960B9.20300@cn.fujitsu.com>
-Date: Tue, 23 Dec 2014 20:31:53 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+	Tue, 23 Dec 2014 07:37:39 -0500
+Received: by mail-ie0-f173.google.com with SMTP id y20so5888489ier.18
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 04:37:38 -0800 (PST)
+Message-ID: <5499620D.8090909@gmail.com>
+Date: Tue, 23 Dec 2014 07:37:33 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>, Grzegorz Kowal <custos.mentis@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more accurate
- output in df command.]
-References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>	<548B4117.1040007@inwind.it>	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com> <CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com> <548E377D.6030804@cn.fujitsu.com> <548E7A7A.90505@pobox.com> <548E929B.2090203@pobox.com> <548E9B38.9080202@cn.fujitsu.com> <548EABBB.4060204@pobox.com> <548FA762.2070504@pobox.com> <549017E8.7060107@cn.fujitsu.com> <54908D8A.8040101@pobox.com> <54916B39.5080409@cn.fujitsu.com> <549252FF.10400@pobox.com>
-In-Reply-To: <549252FF.10400@pobox.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: Robert White <rwhite@pobox.com>,
+        Richard Sharpe <realrichardsharpe@gmail.com>
+CC: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Can BTRFS handle XATTRs larger than 4K?
+References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>	<54982A79.1090102@gmail.com>	<CACyXjPwiRXaV9ASetZa_cYD2R9TxQLfQP0x7aLknWuRXdtZ2Og@mail.gmail.com>	<54985E4C.40003@gmail.com>	<CAJCQCtRyiGU65cGWW=QCoGeqmUFi=GY5YraqadLaOpjHUGSh8g@mail.gmail.com>	<CACyXjPxj1f_iHjLW3vc6vtiPrzbrWZsD=ApmkAp9OZX23ff8bA@mail.gmail.com>	<5498829E.3060608@gmail.com>	<5498A0BD.3000300@pobox.com> <CACyXjPyVNGQLc6g4jGnDo=FM20qoyAfsk96zrkQfCYrjhOvMFg@mail.gmail.com> <5498B26C.5010908@pobox.com>
+In-Reply-To: <5498B26C.5010908@pobox.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080202000807080805060108"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/18/2014 12:07 PM, Robert White wrote:
-> I don't disagree with the _ideal_ of your patch. I just think that 
-> it's impossible to implement it without lying to the user or making 
-> things just as bad in a different way. I would _like_ you to be right. 
-> But my thing is finding and quantifying failure cases and the entire 
-> question is full of fail.
+This is a cryptographically signed message in MIME format.
+
+--------------ms080202000807080805060108
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+
+On 2014-12-22 19:08, Robert White wrote:
+> On 12/22/2014 02:55 PM, Richard Sharpe wrote:
+>> On Mon, Dec 22, 2014 at 2:52 PM, Robert White <rwhite@pobox.com> wrote=
+:
+>>> So skipping the full ADS, what's the current demand/payoff for large
+>>> XATTR space?
+>>
+>> Windows Security Descriptors (sometimes incorrectly called ACLs)
+>> stored by Samba.
 >
-...
+> Ah.
 >
-> See you keep giving me these examples where the history of the 
-> filesystem is uniform. It was made a certain way and stayed that way. 
-> But in real life this sort of thing is going to happen and your patch 
-> simply report's a _different_ _wrong_ number. A _friendlier_ wrong 
-> number, I'll grant you that, but still wrong.
+> I know that Linux ACLs are fairly small per entry, I take it Windows'
+> can be much bigger?
 >
+> Having just gone off an read a lot about the many ADS possible in
+> windows, they've sort of treated ever file as if it were the name of a
+> phantom directory limited depth... That is you seem to be able to creat=
+e
+> any name as a stream name but you can't create any pathname as same.
+>
+> The system-level API -- that is the complete retooling of SYS_open et a=
+l
+> -- and the requsite departure from POSIX -- seems unlikely.
+>
+> On the antipode, it seems like being able to put an inode reference key=
 
-Hi Robert, sorry for the late. (It's busy to deal with some other work.)
-
-Yes, you are providing some examples here to show that in some cases the
-numbers from df is not helpful to understand the real space state in 
-disk. But
-I'm afraid we can not blame df reporting a wrong number. You could say
-"Hey df, you are stupid, we can store the small file in metadata to exceed
-your @size.". But he just reports the information from what he is seeing 
-from FS level honestly.
-He is reporting what he can see, and do not care about the other things 
-out of
-his business.
-
-The all special cases you provided in this thread, actually lead to one 
-result that
-"Btrfs is special, df command will report an improper in some case.". It 
-means
-we need some other methods to tell user about the space info. And yes, 
-we had. It's
-btrfs fi df.
-
-You are trying to make df showing information as more as possible, even 
-change
-the behaviour of df in btrfs to show the numbers of different meaning 
-with what it
-is in other filesystems. And my answer is keeping df command doing what 
-he want,
-and solve the problems in our private "df" , btrfs fi df.
-
-Thanx
-Yang
-> . xaE
+> type (e.g. a name,inode pair as one of the metadata entries) could
+> relieve the space constraint for a limited number of entires. The
+> contents of that inode's data region would become the value of the
+> single attribute.
+>
+> Does that relieve Security Descriptor burden? Is each descriptor a
+> separate attribute or are all the descriptors held in one attribute as =
+a
+> list-of?
+>
+> Going full "phantom directory" to match Windows just seems like we get
+> into the business of replacing whole kernel tidbits a la the
+> inner-system effect.
 >
 
+Personally, I'm thinking something more like the OS X Forks API than the =
+
+Windows ADS API.  Forks are actually the original reason that windows=20
+added ADS to NTFS, and their API is much cleaner than the windows one.=20
+The standard there is that forks are accessible as=20
+'<filename>/..namedfork/<forkname>'  ..namedfork doesn't get listed by=20
+ls -a, but you can explicitly list '<filename>/..namedfork/' to get a=20
+list of forks other than the data fork.  Such an API needs almost zero=20
+modification to existing programs (just enough to get tar and friends to =
+
+check if there are any named forks for each file).
+
+The significant advantages I see to having forks are:
+  1. Windows Security Descriptors
+  2. Macintosh Resource Forks
+  3. BeOS (and others) style associated metadata (ie, associated file=20
+icons/thumbnails, per-file program associations, in other words, the=20
+same sort of stuff that OSX uses resource forks for)
+  4. Better flexibility for stuff like IMA and EVM
+
+
+
+--------------ms080202000807080805060108
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIzMTIzNzMz
+WjAjBgkqhkiG9w0BCQQxFgQUQD7OSHRXfr5ylGKyubQRvBCLLFswbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAGU5asjFIN+bIdtMA8EaUmng0oVSI
+v8Ne2SLVwmGqB/IwrLnYzbJHCDivFIqd56uttL8Wvh4b+5+bWX9HYJFjBbZcDURQspnsU/f2
+QJLzhmips+HslVb+qXXi/ieMGSLbjFAMwW1W0BJqcyIV2q8Xw2uOoIRQibJSSESaGvOLVDBm
+8FTZ76v6R7z1d4se+I7p5zSUglQmoSQ/16Z/UEa0+1haa6+4/9Fa6aQCK8FUsC5wYjQ6fsX7
+OLKr+UlXrJZwevXdrNB+/yAk77+g8Rfr4/boCa8P1YsRhfeHA9z5txRuxRVp1W7a0YX+oRaD
+I1rvWU5xX92qtVwOzSknSJW/4AAAAAAAAA==
+--------------ms080202000807080805060108--

@@ -1,48 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45229 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750983AbaLWOo1 (ORCPT
+Received: from mail-yk0-f175.google.com ([209.85.160.175]:53827 "EHLO
+	mail-yk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751542AbaLWVq5 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 09:44:27 -0500
-Date: Tue, 23 Dec 2014 09:44:13 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: [RFC PATCH 05/17] btrfs: remove bio splitting and
- merge_bvec_fn() calls
-To: Dongsu Park <dongsu.park@profitbricks.com>
-CC: <linux-kernel@vger.kernel.org>, Jens Axboe <axboe@kernel.dk>,
-        Kent Overstreet <kmo@daterainc.com>, Ming Lin <mlin@minggr.net>,
-        Dongsu Park <dongsu.park@profitbricks.com>,
-        Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-Message-ID: <1419345853.13012.10@mail.thefacebook.com>
-In-Reply-To: <e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profit
-	bricks.com>
-References: <cover.1419241597.git.dongsu.park@profitbricks.com>
-	<e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profitbricks.com>
+	Tue, 23 Dec 2014 16:46:57 -0500
+Received: by mail-yk0-f175.google.com with SMTP id 200so3437295ykr.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 13:46:56 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Date: Tue, 23 Dec 2014 14:46:56 -0700
+Message-ID: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
+Subject: 3.19rc1, extent_io.c:2193:13: warning: cast to pointer from integer
+ of different size
+From: Chris Murphy <chris@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 22, 2014 at 6:48 AM, Dongsu Park 
-<dongsu.park@profitbricks.com> wrote:
-> From: Kent Overstreet <kmo@daterainc.com>
-> 
-> Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
-> device limits as well as calling ->merge_bvec_fn() etc. That is not
-> necessary any more, because generic_make_request() is now able to
-> handle arbitrarily sized bios. So clean up unnecessary code paths.
-> 
-> Signed-off-by: Kent Overstreet <kmo@daterainc.com>
-> [dpark: add more description in commit message]
-> Signed-off-by: Dongsu Park <dongsu.park@profitbricks.com>
-> Cc: Chris Mason <clm@fb.com>
-> Cc: Josef Bacik <jbacik@fb.com>
-> Cc: linux-btrfs@vger.kernel.org
-> ---
+I get this when building on i686:
 
-Looks good, I'll test it here too.  Thanks!
-
-Signed-off-by: Chris Mason <clm@fb.com>
+  CC [M]  fs/btrfs/extent_io.o
+fs/btrfs/extent_io.c: In function ‘btrfs_free_io_failure_record’:
+fs/btrfs/extent_io.c:2193:13: warning: cast to pointer from integer of
+different size [-Wint-to-pointer-cast]
+   failrec = (struct io_failure_record *)state->private;
 
 
+.config contains the following
+CONFIG_BTRFS_FS=m
+CONFIG_BTRFS_FS_POSIX_ACL=y
+# CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
+# CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set
+CONFIG_BTRFS_DEBUG=y
+CONFIG_BTRFS_ASSERT=y
 
+-- 
+Chris Murphy

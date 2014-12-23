@@ -1,505 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:43286 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754797AbaLWQtM (ORCPT
+Received: from 189-19-234-109.dsl.telesp.net.br ([189.19.234.109]:42409 "EHLO
+	anthem.async.com.br" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751520AbaLWUgH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 11:49:12 -0500
-Received: by mail-wi0-f176.google.com with SMTP id ex7so11440110wid.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 08:49:10 -0800 (PST)
+	Tue, 23 Dec 2014 15:36:07 -0500
+Received: from localhost.localdomain (gasolinux.internal [192.168.99.14])
+	by anthem.async.com.br (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id sBNKa2mw012367
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 18:36:02 -0200
+Date: Tue, 23 Dec 2014 18:36:02 -0200
+From: Christian Robottom Reis <kiko@async.com.br>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Quota limit question
+Message-ID: <20141223203601.GB30477@async.com.br>
+References: <20141217011537.GA1114@anthem.async.com.br>
 MIME-Version: 1.0
-In-Reply-To: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Tue, 23 Dec 2014 18:49:06 +0200
-Message-ID: <CAOcd+r3PxsecRaHOe1RLbxEhWubdy2dzUmE65BDkvmcgb7_9tw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during chunk
- recovery if possible
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20141217011537.GA1114@anthem.async.com.br>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+On Tue, Dec 16, 2014 at 11:15:37PM -0200, Christian Robottom Reis wrote:
+>     # btrfs qgroup limit 2000m 0/261 . && touch x
+>     touch: cannot touch ‘x’: Disk quota exceeded
+> 
+> The strange thing is that it doesn't seem to be actually out of space:
+> 
+>     # btrfs qgroup show -p -r -e /var | grep 261
+>     0/261    1111810048  391114752   2097152000  0          ---   
 
-On Thu, Oct 30, 2014 at 4:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Before the patch, chunk will be considered bad if the corresponding
-> block group is missing, even the only uncertain data is the 'used'
-> member of the block group.
->
-> This patch will try to recalculate the 'used' value of the block group
-> and rebuild it.
-> So even only chunk item and dev extent item is found, the chunk can be
-> recovered.
-> Although if extent tree is damanged and needed extent item can't be
-> read, the block group's 'used' value will be the block group length, to
-> prevent any later write/block reserve damaging the block group.
-> In that case, we will prompt user and recommend them to use
-> '--init-extent-tree' to rebuild extent tree if possible.
->
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  btrfsck.h       |   3 +-
->  chunk-recover.c | 242 +++++++++++++++++++++++++++++++++++++++++++++++++-------
->  cmds-check.c    |  29 ++++---
->  3 files changed, 234 insertions(+), 40 deletions(-)
->
-> diff --git a/btrfsck.h b/btrfsck.h
-> index 356c767..7a50648 100644
-> --- a/btrfsck.h
-> +++ b/btrfsck.h
-> @@ -179,5 +179,6 @@ btrfs_new_device_extent_record(struct extent_buffer *leaf,
->  int check_chunks(struct cache_tree *chunk_cache,
->                  struct block_group_tree *block_group_cache,
->                  struct device_extent_tree *dev_extent_cache,
-> -                struct list_head *good, struct list_head *bad, int silent);
-> +                struct list_head *good, struct list_head *bad,
-> +                struct list_head *rebuild, int silent);
->  #endif
-> diff --git a/chunk-recover.c b/chunk-recover.c
-> index 6f43066..dbf98b5 100644
-> --- a/chunk-recover.c
-> +++ b/chunk-recover.c
-> @@ -61,6 +61,7 @@ struct recover_control {
->
->         struct list_head good_chunks;
->         struct list_head bad_chunks;
-> +       struct list_head rebuild_chunks;
->         struct list_head unrepaired_chunks;
->         pthread_mutex_t rc_lock;
->  };
-> @@ -203,6 +204,7 @@ static void init_recover_control(struct recover_control *rc, int verbose,
->
->         INIT_LIST_HEAD(&rc->good_chunks);
->         INIT_LIST_HEAD(&rc->bad_chunks);
-> +       INIT_LIST_HEAD(&rc->rebuild_chunks);
->         INIT_LIST_HEAD(&rc->unrepaired_chunks);
->
->         rc->verbose = verbose;
-> @@ -529,22 +531,32 @@ static void print_check_result(struct recover_control *rc)
->                 return;
->
->         printf("CHECK RESULT:\n");
-> -       printf("Healthy Chunks:\n");
-> +       printf("Recoverable Chunks:\n");
->         list_for_each_entry(chunk, &rc->good_chunks, list) {
->                 print_chunk_info(chunk, "  ");
->                 good++;
->                 total++;
->         }
-> -       printf("Bad Chunks:\n");
-> +       list_for_each_entry(chunk, &rc->rebuild_chunks, list) {
-> +               print_chunk_info(chunk, "  ");
-> +               good++;
-> +               total++;
-> +       }
-> +       list_for_each_entry(chunk, &rc->unrepaired_chunks, list) {
-> +               print_chunk_info(chunk, "  ");
-> +               good++;
-> +               total++;
-> +       }
-> +       printf("Unrecoverable Chunks:\n");
->         list_for_each_entry(chunk, &rc->bad_chunks, list) {
->                 print_chunk_info(chunk, "  ");
->                 bad++;
->                 total++;
->         }
->         printf("\n");
-> -       printf("Total Chunks:\t%d\n", total);
-> -       printf("  Heathy:\t%d\n", good);
-> -       printf("  Bad:\t%d\n", bad);
-> +       printf("Total Chunks:\t\t%d\n", total);
-> +       printf("  Recoverable:\t\t%d\n", good);
-> +       printf("  Unrecoverable:\t%d\n", bad);
->
->         printf("\n");
->         printf("Orphan Block Groups:\n");
-> @@ -555,6 +567,7 @@ static void print_check_result(struct recover_control *rc)
->         printf("Orphan Device Extents:\n");
->         list_for_each_entry(devext, &rc->devext.no_chunk_orphans, chunk_list)
->                 print_device_extent_info(devext, "  ");
-> +       printf("\n");
->  }
->
->  static int check_chunk_by_metadata(struct recover_control *rc,
-> @@ -938,6 +951,11 @@ static int build_device_maps_by_chunk_records(struct recover_control *rc,
->                 if (ret)
->                         return ret;
->         }
-> +       list_for_each_entry(chunk, &rc->rebuild_chunks, list) {
-> +               ret = build_device_map_by_chunk_record(root, chunk);
-> +               if (ret)
-> +                       return ret;
-> +       }
->         return ret;
->  }
->
-> @@ -1168,12 +1186,31 @@ static int __rebuild_device_items(struct btrfs_trans_handle *trans,
->         return ret;
->  }
->
-> +static int __insert_chunk_item(struct btrfs_trans_handle *trans,
-> +                               struct chunk_record *chunk_rec,
-> +                               struct btrfs_root *chunk_root)
-> +{
-> +       struct btrfs_key key;
-> +       struct btrfs_chunk *chunk = NULL;
-> +       int ret = 0;
-> +
-> +       chunk = create_chunk_item(chunk_rec);
-> +       if (!chunk)
-> +               return -ENOMEM;
-> +       key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-> +       key.type = BTRFS_CHUNK_ITEM_KEY;
-> +       key.offset = chunk_rec->offset;
-> +
-> +       ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
-> +                               btrfs_chunk_item_size(chunk->num_stripes));
-> +       free(chunk);
-> +       return ret;
-> +}
-> +
->  static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
->                                  struct recover_control *rc,
->                                  struct btrfs_root *root)
->  {
-> -       struct btrfs_key key;
-> -       struct btrfs_chunk *chunk = NULL;
->         struct btrfs_root *chunk_root;
->         struct chunk_record *chunk_rec;
->         int ret;
-> @@ -1181,17 +1218,12 @@ static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
->         chunk_root = root->fs_info->chunk_root;
->
->         list_for_each_entry(chunk_rec, &rc->good_chunks, list) {
-> -               chunk = create_chunk_item(chunk_rec);
-> -               if (!chunk)
-> -                       return -ENOMEM;
-> -
-> -               key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-> -               key.type = BTRFS_CHUNK_ITEM_KEY;
-> -               key.offset = chunk_rec->offset;
-> -
-> -               ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
-> -                               btrfs_chunk_item_size(chunk->num_stripes));
-> -               free(chunk);
-> +               ret = __insert_chunk_item(trans, chunk_rec, chunk_root);
-> +               if (ret)
-> +                       return ret;
-> +       }
-> +       list_for_each_entry(chunk_rec, &rc->rebuild_chunks, list) {
-> +               ret = __insert_chunk_item(trans, chunk_rec, chunk_root);
->                 if (ret)
->                         return ret;
->         }
-> @@ -1255,6 +1287,131 @@ static int rebuild_sys_array(struct recover_control *rc,
->
->  }
->
-> +static int calculate_bg_used(struct btrfs_root *extent_root,
-> +                            struct chunk_record *chunk_rec,
-> +                            struct btrfs_path *path,
-> +                            u64 *used)
-> +{
-> +       struct extent_buffer *node;
-> +       struct btrfs_key found_key;
-> +       int slot;
-> +       int ret = 0;
-> +       u64 used_ret = 0;
-> +
-> +       while (1) {
-> +               node = path->nodes[0];
-> +               slot = path->slots[0];
-> +               btrfs_item_key_to_cpu(node, &found_key, slot);
-> +               if (found_key.objectid >= chunk_rec->offset + chunk_rec->length)
-> +                       break;
-> +               if (found_key.type != BTRFS_METADATA_ITEM_KEY &&
-> +                   found_key.type != BTRFS_EXTENT_DATA_KEY)
-> +                       goto next;
-> +               if (found_key.type == BTRFS_METADATA_ITEM_KEY)
-> +                       used_ret += extent_root->nodesize;
-> +               else
-> +                       used_ret += found_key.offset;
-> +next:
-> +               if (slot + 1 < btrfs_header_nritems(node))
-> +                       slot++;
-> +               else {
-> +                       ret = btrfs_next_leaf(extent_root, path);
-> +                       if (ret > 0) {
-> +                               ret = 0;
-> +                               break;
-> +                       }
-> +                       if (ret < 0)
-> +                               break;
-> +               }
-> +       }
-> +       if (!ret)
-> +               *used = used_ret;
-> +       return ret;
-> +}
-> +
-> +static int __insert_block_group(struct btrfs_trans_handle *trans,
-> +                               struct chunk_record *chunk_rec,
-> +                               struct btrfs_root *extent_root,
-> +                               u64 used)
-> +{
-> +       struct btrfs_block_group_item bg_item;
-> +       struct btrfs_key key;
-> +       int ret = 0;
-> +
-> +       btrfs_set_block_group_used(&bg_item, used);
-> +       btrfs_set_block_group_chunk_objectid(&bg_item, used);
-This looks like a bug. Instead of "used", I think it should be
-"BTRFS_FIRST_CHUNK_TREE_OBJECTID".
+Replying to myself as I had not yet been subscribed in time to receive a
+reply; I just upgraded to 3.18.1 and am seeing the same issue on the
+same subvolume (and on no others).
 
-> +       btrfs_set_block_group_flags(&bg_item, chunk_rec->type_flags);
-> +       key.objectid = chunk_rec->offset;
-> +       key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-> +       key.offset = chunk_rec->length;
-> +
-> +       ret = btrfs_insert_item(trans, extent_root, &key, &bg_item,
-> +                               sizeof(bg_item));
-> +       return ret;
-> +}
-> +
-> +/*
-> + * Search through the extent tree to rebuild the 'used' member of the block
-> + * group.
-> + * However, since block group and extent item shares the extent tree,
-> + * the extent item may also missing.
-> + * In that case, we fill the 'used' with the length of the block group to
-> + * ensure no write into the block group.
-> + * Btrfsck will hate it but we will inform user to call '--init-extent-tree'
-> + * if possible, or just salvage as much data as possible from the fs.
-> + */
-> +static int rebuild_block_group(struct btrfs_trans_handle *trans,
-> +                              struct recover_control *rc,
-> +                              struct btrfs_root *root)
-> +{
-> +       struct chunk_record *chunk_rec;
-> +       struct btrfs_key search_key;
-> +       struct btrfs_path *path;
-> +       u64 used = 0;
-> +       int ret = 0;
-> +
-> +       if (list_empty(&rc->rebuild_chunks))
-> +               return 0;
-> +
-> +       path = btrfs_alloc_path();
-> +       if (!path)
-> +               return -ENOMEM;
-> +       list_for_each_entry(chunk_rec, &rc->rebuild_chunks, list) {
-> +               search_key.objectid = chunk_rec->offset;
-> +               search_key.type = BTRFS_EXTENT_ITEM_KEY;
-> +               search_key.offset = 0;
-> +               ret = btrfs_search_slot(NULL, root->fs_info->extent_root,
-> +                                       &search_key, path, 0, 0);
-> +               if (ret < 0)
-> +                       goto out;
-> +               ret = calculate_bg_used(root->fs_info->extent_root,
-> +                                       chunk_rec, path, &used);
-> +               /*
-> +                * Extent tree is damaged, better to rebuild the whole extent
-> +                * tree. Currently, change the used to chunk's len to prevent
-> +                * write/block reserve happening in that block group.
-> +                */
-> +               if (ret < 0) {
-> +                       fprintf(stderr,
-> +                               "Fail to search extent tree for block group: [%llu,%llu]\n",
-> +                               chunk_rec->offset,
-> +                               chunk_rec->offset + chunk_rec->length);
-> +                       fprintf(stderr,
-> +                               "Mark the block group full to prevent block rsv problems\n");
-> +                       used = chunk_rec->length;
-> +               }
-> +               btrfs_release_path(path);
-> +               ret = __insert_block_group(trans, chunk_rec,
-> +                                          root->fs_info->extent_root,
-> +                                          used);
-> +               if (ret < 0)
-> +                       goto out;
-> +       }
-> +out:
-> +       btrfs_free_path(path);
-> +       return ret;
-> +}
-> +
->  static struct btrfs_root *
->  open_ctree_with_broken_chunk(struct recover_control *rc)
->  {
-> @@ -2063,6 +2220,7 @@ static int btrfs_recover_chunks(struct recover_control *rc)
->                 ret = insert_cache_extent(&rc->chunk, &chunk->cache);
->                 BUG_ON(ret);
->
-> +               list_del_init(&bg->list);
->                 if (!nstripes) {
->                         list_add_tail(&chunk->list, &rc->bad_chunks);
->                         continue;
-> @@ -2093,6 +2251,33 @@ static int btrfs_recover_chunks(struct recover_control *rc)
->         return 0;
->  }
->
-> +static inline int is_chunk_overlap(struct chunk_record *chunk1,
-> +                                  struct chunk_record *chunk2)
-> +{
-> +       if (chunk1->offset >= chunk2->offset + chunk2->length ||
-> +           chunk1->offset + chunk1->length <= chunk2->offset)
-> +               return 0;
-> +       return 1;
-> +}
-> +
-> +/* Move invalid(overlap with good chunks) rebuild chunks to bad chunk list */
-> +static void validate_rebuild_chunks(struct recover_control *rc)
-> +{
-> +       struct chunk_record *good;
-> +       struct chunk_record *rebuild;
-> +       struct chunk_record *tmp;
-> +
-> +       list_for_each_entry_safe(rebuild, tmp, &rc->rebuild_chunks, list) {
-> +               list_for_each_entry(good, &rc->good_chunks, list) {
-> +                       if (is_chunk_overlap(rebuild, good)) {
-> +                               list_move_tail(&rebuild->list,
-> +                                              &rc->bad_chunks);
-> +                               break;
-> +                       }
-> +               }
-> +       }
-> +}
-> +
->  /*
->   * Return 0 when succesful, < 0 on error and > 0 if aborted by user
->   */
-> @@ -2127,8 +2312,7 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
->         print_scan_result(&rc);
->
->         ret = check_chunks(&rc.chunk, &rc.bg, &rc.devext, &rc.good_chunks,
-> -                          &rc.bad_chunks, 1);
-> -       print_check_result(&rc);
-> +                          &rc.bad_chunks, &rc.rebuild_chunks, 1);
->         if (ret) {
->                 if (!list_empty(&rc.bg.block_groups) ||
->                     !list_empty(&rc.devext.no_chunk_orphans)) {
-> @@ -2136,17 +2320,13 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
->                         if (ret)
->                                 goto fail_rc;
->                 }
-> -               /*
-> -                * If the chunk is healthy, its block group item and device
-> -                * extent item should be written on the disks. So, it is very
-> -                * likely that the bad chunk is a old one that has been
-> -                * droppped from the fs. Don't deal with them now, we will
-> -                * check it after the fs is opened.
-> -                */
->         } else {
-> -               fprintf(stderr, "Check chunks successfully with no orphans\n");
-> +               print_check_result(&rc);
-> +               printf("Check chunks successfully with no orphans\n");
->                 goto fail_rc;
->         }
-> +       validate_rebuild_chunks(&rc);
-> +       print_check_result(&rc);
->
->         root = open_ctree_with_broken_chunk(&rc);
->         if (IS_ERR(root)) {
-> @@ -2185,6 +2365,12 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
->         ret = rebuild_sys_array(&rc, root);
->         BUG_ON(ret);
->
-> +       ret = rebuild_block_group(trans, &rc, root);
-> +       if (ret) {
-> +               printf("Fail to rebuild block groups.\n");
-> +               printf("Recommend to run 'btrfs check --init-extent-tree <dev>' after recovery\n");
-> +       }
-> +
->         btrfs_commit_transaction(trans, root);
->  fail_close_ctree:
->         close_ctree(root);
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 2a5f823..2795ccf 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -6133,6 +6133,13 @@ u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
->         return stripe_size;
->  }
->
-> +/*
-> + * Check the chunk with its block group/dev list ref:
-> + * Return 0 if all refs seems valid.
-> + * Return 1 if part of refs seems valid, need later check for rebuild ref
-> + * like missing block group and needs to search extent tree to rebuild them.
-> + * Return -1 if essential refs are missing and unable to rebuild.
-> + */
->  static int check_chunk_refs(struct chunk_record *chunk_rec,
->                             struct block_group_tree *block_group_cache,
->                             struct device_extent_tree *dev_extent_cache,
-> @@ -6188,7 +6195,7 @@ static int check_chunk_refs(struct chunk_record *chunk_rec,
->                                 chunk_rec->length,
->                                 chunk_rec->offset,
->                                 chunk_rec->type_flags);
-> -               ret = -1;
-> +               ret = 1;
->         }
->
->         length = calc_stripe_length(chunk_rec->type_flags, chunk_rec->length,
-> @@ -6241,7 +6248,8 @@ static int check_chunk_refs(struct chunk_record *chunk_rec,
->  int check_chunks(struct cache_tree *chunk_cache,
->                  struct block_group_tree *block_group_cache,
->                  struct device_extent_tree *dev_extent_cache,
-> -                struct list_head *good, struct list_head *bad, int silent)
-> +                struct list_head *good, struct list_head *bad,
-> +                struct list_head *rebuild, int silent)
->  {
->         struct cache_extent *chunk_item;
->         struct chunk_record *chunk_rec;
-> @@ -6256,15 +6264,14 @@ int check_chunks(struct cache_tree *chunk_cache,
->                                          cache);
->                 err = check_chunk_refs(chunk_rec, block_group_cache,
->                                        dev_extent_cache, silent);
-> -               if (err) {
-> +               if (err)
->                         ret = err;
-> -                       if (bad)
-> -                               list_add_tail(&chunk_rec->list, bad);
-> -               } else {
-> -                       if (good)
-> -                               list_add_tail(&chunk_rec->list, good);
-> -               }
-> -
-> +               if (err == 0 && good)
-> +                       list_add_tail(&chunk_rec->list, good);
-> +               if (err > 0 && rebuild)
-> +                       list_add_tail(&chunk_rec->list, rebuild);
-> +               if (err < 0 && bad)
-> +                       list_add_tail(&chunk_rec->list, bad);
->                 chunk_item = next_cache_extent(chunk_item);
->         }
->
-> @@ -6548,7 +6555,7 @@ again:
->         }
->
->         err = check_chunks(&chunk_cache, &block_group_cache,
-> -                          &dev_extent_cache, NULL, NULL, 0);
-> +                          &dev_extent_cache, NULL, NULL, NULL, 0);
->         if (err && !ret)
->                 ret = err;
->
-> --
-> 2.1.2
+    root@riff:/etc# uname -a
+    Linux riff 3.18.1-031801-generic #201412170637 SMP Wed Dec 17 11:38:50
+    UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
 
-Couple of questions:
-# In remove_chunk_extent_item, should we also consider "rebuild"
-chunks now? It can happen that a "rebuild" chunks is a SYSTEM chunk.
-Should we try to handle it as well?
-# Same question for "rebuild_sys_array". Should we also consider
-"rebuild" chunks?
+It's quite odd that this specific subvolume acts up, given that there
+are quite a few others that are closer to the quota:
 
-Thanks,
-Alex.
+    subvol                  group        total       unshared
+    -------------------------------------------------------------
+    (unknown)               0/5      1.37G / none  1.16G /   none
+    lxc-template1/rootfs    0/259    0.68G / none  0.10G /  2.00G
+    machine-2/rootfs        0/261    1.07G / none  0.40G /  2.00G
+    machine-3/rootfs        0/265    1.17G / none  0.41G /  2.00G
+    lxc-template2/rootfs    0/271    0.77G / none  0.31G /  2.00G
+    lxc-template3/rootfs    0/274    0.46G / none  0.02G /  2.00G
+    machine-4/rootfs        0/283    7.12G / none  6.21G / 10.00G
+    machine-5/rootfs        0/288    1.05G / none  0.34G /  2.00G
+    machine-6/rootfs        0/289   11.33G / none 10.74G / 15.00G
+    machine-7/rootfs        0/290    1.30G / none  0.68G /  2.00G
+    machine-8/rootfs        0/292    1.00G / none  0.33G /  2.00G
+    machine-9/rootfs        0/293    1.17G / none  0.38G /  2.00G
+    machine-10/rootfs       0/306    1.34G / none  0.62G /  2.00G
+    machine-11/rootfs       0/318    9.49G / none  8.75G / 15.00G
+    lxc-template4/rootfs    0/320    0.79G / none  0.78G /  2.00G
+    machine-14/rootfs       0/323    1.10G / none  0.45G /  2.00G
 
+The LWN article suggests that btrfs is quite conservative with quotas,
+but shouldn't 265, 290, 306, 320 and 323 all be out of quota as well? Or
+is there a lot else that goes into the calculation beyond the numbers
+reported by btrfs qgroup show?
 
-
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+What could I do to help investigate further?
+-- 
+Christian Robottom Reis | [+55 16] 3376 0125   | http://async.com.br/~kiko
+CEO, Async Open Source  | [+55 16] 9 9112 6430 | http://launchpad.net/~kiko

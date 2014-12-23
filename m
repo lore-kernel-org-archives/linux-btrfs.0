@@ -1,125 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:33996 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755836AbaLWKIV convert rfc822-to-8bit (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48422 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753681AbaLWMel (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 05:08:21 -0500
-Received: by mail-wi0-f181.google.com with SMTP id r20so10306972wiv.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 02:08:20 -0800 (PST)
+	Tue, 23 Dec 2014 07:34:41 -0500
+Message-ID: <549960B9.20300@cn.fujitsu.com>
+Date: Tue, 23 Dec 2014 20:31:53 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <5498FD52.6050807@cn.fujitsu.com>
-References: <CAOcd+r2_CkP7wiU3OETxhdVtkTpZYiz0GxSx7BDEsFU6H+0_RQ@mail.gmail.com>
-	<5498FD52.6050807@cn.fujitsu.com>
-Date: Tue, 23 Dec 2014 12:08:20 +0200
-Message-ID: <CAOcd+r3bsi=6Yf8ru4XgzQc4GmrOyVUMLBK=+8LxgYKeuN2EKA@mail.gmail.com>
-Subject: Re: How btrfs-find-root knows that the block is actually a root?
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org >> linux-btrfs"
-	<linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Robert White <rwhite@pobox.com>, Grzegorz Kowal <custos.mentis@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more accurate
+ output in df command.]
+References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>	<548B4117.1040007@inwind.it>	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com> <CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com> <548E377D.6030804@cn.fujitsu.com> <548E7A7A.90505@pobox.com> <548E929B.2090203@pobox.com> <548E9B38.9080202@cn.fujitsu.com> <548EABBB.4060204@pobox.com> <548FA762.2070504@pobox.com> <549017E8.7060107@cn.fujitsu.com> <54908D8A.8040101@pobox.com> <54916B39.5080409@cn.fujitsu.com> <549252FF.10400@pobox.com>
+In-Reply-To: <549252FF.10400@pobox.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+On 12/18/2014 12:07 PM, Robert White wrote:
+> I don't disagree with the _ideal_ of your patch. I just think that 
+> it's impossible to implement it without lying to the user or making 
+> things just as bad in a different way. I would _like_ you to be right. 
+> But my thing is finding and quantifying failure cases and the entire 
+> question is full of fail.
+>
+...
+>
+> See you keep giving me these examples where the history of the 
+> filesystem is uniform. It was made a certain way and stayed that way. 
+> But in real life this sort of thing is going to happen and your patch 
+> simply report's a _different_ _wrong_ number. A _friendlier_ wrong 
+> number, I'll grant you that, but still wrong.
+>
 
-On Tue, Dec 23, 2014 at 7:27 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
-> -------- Original Message --------
-> Subject: How btrfs-find-root knows that the block is actually a root?
-> From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-> To: linux-btrfs <linux-btrfs@vger.kernel.org>
-> Date: 2014年12月22日 22:57
->>
->> Greetings,
->>
->> I am looking at the code of search_iobuf() in
->> btrfs-find-root.c.(3.17.3)  I see that we probe nodesize blocks one by
->> one, and for each block we check:
->> - its owner is what we are looking for
->> - its header->bytenr is what we are looking at currently
->> - its level is not too small
->> - it has valid checksum
->> - it has the desired generation
->>
->> If all those conditions are true, we declare this block as a root and
->> end the program.
->>
->> How do we actually know that it's a root and not a leaf or an
->> intermediate node? What if we are searching for a root of the root
->> tree, which has one node and two leafs (all have the same highest
->> transid), and one of the leafs has "logical" lower than the actual
->> root, i.e., it comes first in our scan. Then we will declare this leaf
->> as a root, won't we? Or somehow the root always has the lowest
->> "logical"?
->
-> You can refer to this patch:
-> https://patchwork.kernel.org/patch/5285521/
-I see that this has not been applied to any of David's branches. Do
-you have a repo to look at this code in its entirety?
+Hi Robert, sorry for the late. (It's busy to deal with some other work.)
 
->
-> Your questions are mostly right.
-> The best method should be search through all the metadata, and only the
-> highest level header for
-> a given generation may be the root for that generation.
->
-> But that method still has some problems.
-> 1) Overwritten old node/leaf
-> As btrfs metadata cow happens, old node/leaf may be overwritten and become
-> incompletely,
-> so above method won't always work as expected.
->
-> 2) Corrupted fs
-> That will makes everything not work as expected.
-> But sadly, when someone needs to use btrfs-find-root, there is a high
-> possibility the fs is already corrupted.
->
-> 3) Slow speed
-> It needs to scan over all the sectors of metadata chunks, it may var from
-> megabytese to tegabytes,
-> which makes the complete scan impractical.
-> So current find-root uses a trade-off, if find a header at the position
-> superblock points to, and generation
-> matches, then just consider it as the desired root and exit.
-I think this is a bit optimistic. What if the root tree has several
-leaves having the same generation as the root? Then we might declare a
-leaf as a root and exit. But further recovery based on that output
-will get us into trouble.
+Yes, you are providing some examples here to show that in some cases the
+numbers from df is not helpful to understand the real space state in 
+disk. But
+I'm afraid we can not blame df reporting a wrong number. You could say
+"Hey df, you are stupid, we can store the small file in metadata to exceed
+your @size.". But he just reports the information from what he is seeing 
+from FS level honestly.
+He is reporting what he can see, and do not care about the other things 
+out of
+his business.
 
->
->>
->> Also, I am confused by this line:
->> level = h_level;
->> This means that if we encounter a block that "seems good", we will
->> skip all other blocks that have lower level. Is this intended?
->
-> This is intended, for case user already know the root's level, so it will
-> skip any header whose level is below it.
-But this line is performed before the generation check. Let's say that
-user did not specify any level (so search_level==0). Then assume we
-encounter a block, which has lower generation than what we need, but
-higher level. At this point, we do
-level = h_level;
-and we will skip any blocks lower than this level from now on. What if
-the root tree got shirnked (due to subvolume deletion, for example),
-and the "good" root has lower level? We will skip it then, and will
-not find the root.
+The all special cases you provided in this thread, actually lead to one 
+result that
+"Btrfs is special, df command will report an improper in some case.". It 
+means
+we need some other methods to tell user about the space info. And yes, 
+we had. It's
+btrfs fi df.
 
-Thanks for your comments,
-Alex.
+You are trying to make df showing information as more as possible, even 
+change
+the behaviour of df in btrfs to show the numbers of different meaning 
+with what it
+is in other filesystems. And my answer is keeping df command doing what 
+he want,
+and solve the problems in our private "df" , btrfs fi df.
 
+Thanx
+Yang
+> . xaE
+>
 
->
-> Thanks,
-> Qu
->>
->>
->> Thanks,
->> Alex.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->

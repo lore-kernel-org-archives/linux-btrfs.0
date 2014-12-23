@@ -1,146 +1,505 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f173.google.com ([209.85.223.173]:61948 "EHLO
-	mail-ie0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753993AbaLWMhj (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:43286 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754797AbaLWQtM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 07:37:39 -0500
-Received: by mail-ie0-f173.google.com with SMTP id y20so5888489ier.18
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 04:37:38 -0800 (PST)
-Message-ID: <5499620D.8090909@gmail.com>
-Date: Tue, 23 Dec 2014 07:37:33 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Tue, 23 Dec 2014 11:49:12 -0500
+Received: by mail-wi0-f176.google.com with SMTP id ex7so11440110wid.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 08:49:10 -0800 (PST)
 MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>,
-        Richard Sharpe <realrichardsharpe@gmail.com>
-CC: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Can BTRFS handle XATTRs larger than 4K?
-References: <CACyXjPwb-G3BkW6i7X5K3q5w4Fm8GhYt198KKzX3kqpioUKgxA@mail.gmail.com>	<54982A79.1090102@gmail.com>	<CACyXjPwiRXaV9ASetZa_cYD2R9TxQLfQP0x7aLknWuRXdtZ2Og@mail.gmail.com>	<54985E4C.40003@gmail.com>	<CAJCQCtRyiGU65cGWW=QCoGeqmUFi=GY5YraqadLaOpjHUGSh8g@mail.gmail.com>	<CACyXjPxj1f_iHjLW3vc6vtiPrzbrWZsD=ApmkAp9OZX23ff8bA@mail.gmail.com>	<5498829E.3060608@gmail.com>	<5498A0BD.3000300@pobox.com> <CACyXjPyVNGQLc6g4jGnDo=FM20qoyAfsk96zrkQfCYrjhOvMFg@mail.gmail.com> <5498B26C.5010908@pobox.com>
-In-Reply-To: <5498B26C.5010908@pobox.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080202000807080805060108"
+In-Reply-To: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Tue, 23 Dec 2014 18:49:06 +0200
+Message-ID: <CAOcd+r3PxsecRaHOe1RLbxEhWubdy2dzUmE65BDkvmcgb7_9tw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during chunk
+ recovery if possible
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hi Qu,
 
---------------ms080202000807080805060108
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2014-12-22 19:08, Robert White wrote:
-> On 12/22/2014 02:55 PM, Richard Sharpe wrote:
->> On Mon, Dec 22, 2014 at 2:52 PM, Robert White <rwhite@pobox.com> wrote=
-:
->>> So skipping the full ADS, what's the current demand/payoff for large
->>> XATTR space?
->>
->> Windows Security Descriptors (sometimes incorrectly called ACLs)
->> stored by Samba.
+On Thu, Oct 30, 2014 at 4:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Before the patch, chunk will be considered bad if the corresponding
+> block group is missing, even the only uncertain data is the 'used'
+> member of the block group.
 >
-> Ah.
+> This patch will try to recalculate the 'used' value of the block group
+> and rebuild it.
+> So even only chunk item and dev extent item is found, the chunk can be
+> recovered.
+> Although if extent tree is damanged and needed extent item can't be
+> read, the block group's 'used' value will be the block group length, to
+> prevent any later write/block reserve damaging the block group.
+> In that case, we will prompt user and recommend them to use
+> '--init-extent-tree' to rebuild extent tree if possible.
 >
-> I know that Linux ACLs are fairly small per entry, I take it Windows'
-> can be much bigger?
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  btrfsck.h       |   3 +-
+>  chunk-recover.c | 242 +++++++++++++++++++++++++++++++++++++++++++++++++-------
+>  cmds-check.c    |  29 ++++---
+>  3 files changed, 234 insertions(+), 40 deletions(-)
 >
-> Having just gone off an read a lot about the many ADS possible in
-> windows, they've sort of treated ever file as if it were the name of a
-> phantom directory limited depth... That is you seem to be able to creat=
-e
-> any name as a stream name but you can't create any pathname as same.
+> diff --git a/btrfsck.h b/btrfsck.h
+> index 356c767..7a50648 100644
+> --- a/btrfsck.h
+> +++ b/btrfsck.h
+> @@ -179,5 +179,6 @@ btrfs_new_device_extent_record(struct extent_buffer *leaf,
+>  int check_chunks(struct cache_tree *chunk_cache,
+>                  struct block_group_tree *block_group_cache,
+>                  struct device_extent_tree *dev_extent_cache,
+> -                struct list_head *good, struct list_head *bad, int silent);
+> +                struct list_head *good, struct list_head *bad,
+> +                struct list_head *rebuild, int silent);
+>  #endif
+> diff --git a/chunk-recover.c b/chunk-recover.c
+> index 6f43066..dbf98b5 100644
+> --- a/chunk-recover.c
+> +++ b/chunk-recover.c
+> @@ -61,6 +61,7 @@ struct recover_control {
 >
-> The system-level API -- that is the complete retooling of SYS_open et a=
-l
-> -- and the requsite departure from POSIX -- seems unlikely.
+>         struct list_head good_chunks;
+>         struct list_head bad_chunks;
+> +       struct list_head rebuild_chunks;
+>         struct list_head unrepaired_chunks;
+>         pthread_mutex_t rc_lock;
+>  };
+> @@ -203,6 +204,7 @@ static void init_recover_control(struct recover_control *rc, int verbose,
 >
-> On the antipode, it seems like being able to put an inode reference key=
-
-> type (e.g. a name,inode pair as one of the metadata entries) could
-> relieve the space constraint for a limited number of entires. The
-> contents of that inode's data region would become the value of the
-> single attribute.
+>         INIT_LIST_HEAD(&rc->good_chunks);
+>         INIT_LIST_HEAD(&rc->bad_chunks);
+> +       INIT_LIST_HEAD(&rc->rebuild_chunks);
+>         INIT_LIST_HEAD(&rc->unrepaired_chunks);
 >
-> Does that relieve Security Descriptor burden? Is each descriptor a
-> separate attribute or are all the descriptors held in one attribute as =
-a
-> list-of?
+>         rc->verbose = verbose;
+> @@ -529,22 +531,32 @@ static void print_check_result(struct recover_control *rc)
+>                 return;
 >
-> Going full "phantom directory" to match Windows just seems like we get
-> into the business of replacing whole kernel tidbits a la the
-> inner-system effect.
+>         printf("CHECK RESULT:\n");
+> -       printf("Healthy Chunks:\n");
+> +       printf("Recoverable Chunks:\n");
+>         list_for_each_entry(chunk, &rc->good_chunks, list) {
+>                 print_chunk_info(chunk, "  ");
+>                 good++;
+>                 total++;
+>         }
+> -       printf("Bad Chunks:\n");
+> +       list_for_each_entry(chunk, &rc->rebuild_chunks, list) {
+> +               print_chunk_info(chunk, "  ");
+> +               good++;
+> +               total++;
+> +       }
+> +       list_for_each_entry(chunk, &rc->unrepaired_chunks, list) {
+> +               print_chunk_info(chunk, "  ");
+> +               good++;
+> +               total++;
+> +       }
+> +       printf("Unrecoverable Chunks:\n");
+>         list_for_each_entry(chunk, &rc->bad_chunks, list) {
+>                 print_chunk_info(chunk, "  ");
+>                 bad++;
+>                 total++;
+>         }
+>         printf("\n");
+> -       printf("Total Chunks:\t%d\n", total);
+> -       printf("  Heathy:\t%d\n", good);
+> -       printf("  Bad:\t%d\n", bad);
+> +       printf("Total Chunks:\t\t%d\n", total);
+> +       printf("  Recoverable:\t\t%d\n", good);
+> +       printf("  Unrecoverable:\t%d\n", bad);
 >
+>         printf("\n");
+>         printf("Orphan Block Groups:\n");
+> @@ -555,6 +567,7 @@ static void print_check_result(struct recover_control *rc)
+>         printf("Orphan Device Extents:\n");
+>         list_for_each_entry(devext, &rc->devext.no_chunk_orphans, chunk_list)
+>                 print_device_extent_info(devext, "  ");
+> +       printf("\n");
+>  }
+>
+>  static int check_chunk_by_metadata(struct recover_control *rc,
+> @@ -938,6 +951,11 @@ static int build_device_maps_by_chunk_records(struct recover_control *rc,
+>                 if (ret)
+>                         return ret;
+>         }
+> +       list_for_each_entry(chunk, &rc->rebuild_chunks, list) {
+> +               ret = build_device_map_by_chunk_record(root, chunk);
+> +               if (ret)
+> +                       return ret;
+> +       }
+>         return ret;
+>  }
+>
+> @@ -1168,12 +1186,31 @@ static int __rebuild_device_items(struct btrfs_trans_handle *trans,
+>         return ret;
+>  }
+>
+> +static int __insert_chunk_item(struct btrfs_trans_handle *trans,
+> +                               struct chunk_record *chunk_rec,
+> +                               struct btrfs_root *chunk_root)
+> +{
+> +       struct btrfs_key key;
+> +       struct btrfs_chunk *chunk = NULL;
+> +       int ret = 0;
+> +
+> +       chunk = create_chunk_item(chunk_rec);
+> +       if (!chunk)
+> +               return -ENOMEM;
+> +       key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +       key.type = BTRFS_CHUNK_ITEM_KEY;
+> +       key.offset = chunk_rec->offset;
+> +
+> +       ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+> +                               btrfs_chunk_item_size(chunk->num_stripes));
+> +       free(chunk);
+> +       return ret;
+> +}
+> +
+>  static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
+>                                  struct recover_control *rc,
+>                                  struct btrfs_root *root)
+>  {
+> -       struct btrfs_key key;
+> -       struct btrfs_chunk *chunk = NULL;
+>         struct btrfs_root *chunk_root;
+>         struct chunk_record *chunk_rec;
+>         int ret;
+> @@ -1181,17 +1218,12 @@ static int __rebuild_chunk_items(struct btrfs_trans_handle *trans,
+>         chunk_root = root->fs_info->chunk_root;
+>
+>         list_for_each_entry(chunk_rec, &rc->good_chunks, list) {
+> -               chunk = create_chunk_item(chunk_rec);
+> -               if (!chunk)
+> -                       return -ENOMEM;
+> -
+> -               key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> -               key.type = BTRFS_CHUNK_ITEM_KEY;
+> -               key.offset = chunk_rec->offset;
+> -
+> -               ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+> -                               btrfs_chunk_item_size(chunk->num_stripes));
+> -               free(chunk);
+> +               ret = __insert_chunk_item(trans, chunk_rec, chunk_root);
+> +               if (ret)
+> +                       return ret;
+> +       }
+> +       list_for_each_entry(chunk_rec, &rc->rebuild_chunks, list) {
+> +               ret = __insert_chunk_item(trans, chunk_rec, chunk_root);
+>                 if (ret)
+>                         return ret;
+>         }
+> @@ -1255,6 +1287,131 @@ static int rebuild_sys_array(struct recover_control *rc,
+>
+>  }
+>
+> +static int calculate_bg_used(struct btrfs_root *extent_root,
+> +                            struct chunk_record *chunk_rec,
+> +                            struct btrfs_path *path,
+> +                            u64 *used)
+> +{
+> +       struct extent_buffer *node;
+> +       struct btrfs_key found_key;
+> +       int slot;
+> +       int ret = 0;
+> +       u64 used_ret = 0;
+> +
+> +       while (1) {
+> +               node = path->nodes[0];
+> +               slot = path->slots[0];
+> +               btrfs_item_key_to_cpu(node, &found_key, slot);
+> +               if (found_key.objectid >= chunk_rec->offset + chunk_rec->length)
+> +                       break;
+> +               if (found_key.type != BTRFS_METADATA_ITEM_KEY &&
+> +                   found_key.type != BTRFS_EXTENT_DATA_KEY)
+> +                       goto next;
+> +               if (found_key.type == BTRFS_METADATA_ITEM_KEY)
+> +                       used_ret += extent_root->nodesize;
+> +               else
+> +                       used_ret += found_key.offset;
+> +next:
+> +               if (slot + 1 < btrfs_header_nritems(node))
+> +                       slot++;
+> +               else {
+> +                       ret = btrfs_next_leaf(extent_root, path);
+> +                       if (ret > 0) {
+> +                               ret = 0;
+> +                               break;
+> +                       }
+> +                       if (ret < 0)
+> +                               break;
+> +               }
+> +       }
+> +       if (!ret)
+> +               *used = used_ret;
+> +       return ret;
+> +}
+> +
+> +static int __insert_block_group(struct btrfs_trans_handle *trans,
+> +                               struct chunk_record *chunk_rec,
+> +                               struct btrfs_root *extent_root,
+> +                               u64 used)
+> +{
+> +       struct btrfs_block_group_item bg_item;
+> +       struct btrfs_key key;
+> +       int ret = 0;
+> +
+> +       btrfs_set_block_group_used(&bg_item, used);
+> +       btrfs_set_block_group_chunk_objectid(&bg_item, used);
+This looks like a bug. Instead of "used", I think it should be
+"BTRFS_FIRST_CHUNK_TREE_OBJECTID".
 
-Personally, I'm thinking something more like the OS X Forks API than the =
+> +       btrfs_set_block_group_flags(&bg_item, chunk_rec->type_flags);
+> +       key.objectid = chunk_rec->offset;
+> +       key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+> +       key.offset = chunk_rec->length;
+> +
+> +       ret = btrfs_insert_item(trans, extent_root, &key, &bg_item,
+> +                               sizeof(bg_item));
+> +       return ret;
+> +}
+> +
+> +/*
+> + * Search through the extent tree to rebuild the 'used' member of the block
+> + * group.
+> + * However, since block group and extent item shares the extent tree,
+> + * the extent item may also missing.
+> + * In that case, we fill the 'used' with the length of the block group to
+> + * ensure no write into the block group.
+> + * Btrfsck will hate it but we will inform user to call '--init-extent-tree'
+> + * if possible, or just salvage as much data as possible from the fs.
+> + */
+> +static int rebuild_block_group(struct btrfs_trans_handle *trans,
+> +                              struct recover_control *rc,
+> +                              struct btrfs_root *root)
+> +{
+> +       struct chunk_record *chunk_rec;
+> +       struct btrfs_key search_key;
+> +       struct btrfs_path *path;
+> +       u64 used = 0;
+> +       int ret = 0;
+> +
+> +       if (list_empty(&rc->rebuild_chunks))
+> +               return 0;
+> +
+> +       path = btrfs_alloc_path();
+> +       if (!path)
+> +               return -ENOMEM;
+> +       list_for_each_entry(chunk_rec, &rc->rebuild_chunks, list) {
+> +               search_key.objectid = chunk_rec->offset;
+> +               search_key.type = BTRFS_EXTENT_ITEM_KEY;
+> +               search_key.offset = 0;
+> +               ret = btrfs_search_slot(NULL, root->fs_info->extent_root,
+> +                                       &search_key, path, 0, 0);
+> +               if (ret < 0)
+> +                       goto out;
+> +               ret = calculate_bg_used(root->fs_info->extent_root,
+> +                                       chunk_rec, path, &used);
+> +               /*
+> +                * Extent tree is damaged, better to rebuild the whole extent
+> +                * tree. Currently, change the used to chunk's len to prevent
+> +                * write/block reserve happening in that block group.
+> +                */
+> +               if (ret < 0) {
+> +                       fprintf(stderr,
+> +                               "Fail to search extent tree for block group: [%llu,%llu]\n",
+> +                               chunk_rec->offset,
+> +                               chunk_rec->offset + chunk_rec->length);
+> +                       fprintf(stderr,
+> +                               "Mark the block group full to prevent block rsv problems\n");
+> +                       used = chunk_rec->length;
+> +               }
+> +               btrfs_release_path(path);
+> +               ret = __insert_block_group(trans, chunk_rec,
+> +                                          root->fs_info->extent_root,
+> +                                          used);
+> +               if (ret < 0)
+> +                       goto out;
+> +       }
+> +out:
+> +       btrfs_free_path(path);
+> +       return ret;
+> +}
+> +
+>  static struct btrfs_root *
+>  open_ctree_with_broken_chunk(struct recover_control *rc)
+>  {
+> @@ -2063,6 +2220,7 @@ static int btrfs_recover_chunks(struct recover_control *rc)
+>                 ret = insert_cache_extent(&rc->chunk, &chunk->cache);
+>                 BUG_ON(ret);
+>
+> +               list_del_init(&bg->list);
+>                 if (!nstripes) {
+>                         list_add_tail(&chunk->list, &rc->bad_chunks);
+>                         continue;
+> @@ -2093,6 +2251,33 @@ static int btrfs_recover_chunks(struct recover_control *rc)
+>         return 0;
+>  }
+>
+> +static inline int is_chunk_overlap(struct chunk_record *chunk1,
+> +                                  struct chunk_record *chunk2)
+> +{
+> +       if (chunk1->offset >= chunk2->offset + chunk2->length ||
+> +           chunk1->offset + chunk1->length <= chunk2->offset)
+> +               return 0;
+> +       return 1;
+> +}
+> +
+> +/* Move invalid(overlap with good chunks) rebuild chunks to bad chunk list */
+> +static void validate_rebuild_chunks(struct recover_control *rc)
+> +{
+> +       struct chunk_record *good;
+> +       struct chunk_record *rebuild;
+> +       struct chunk_record *tmp;
+> +
+> +       list_for_each_entry_safe(rebuild, tmp, &rc->rebuild_chunks, list) {
+> +               list_for_each_entry(good, &rc->good_chunks, list) {
+> +                       if (is_chunk_overlap(rebuild, good)) {
+> +                               list_move_tail(&rebuild->list,
+> +                                              &rc->bad_chunks);
+> +                               break;
+> +                       }
+> +               }
+> +       }
+> +}
+> +
+>  /*
+>   * Return 0 when succesful, < 0 on error and > 0 if aborted by user
+>   */
+> @@ -2127,8 +2312,7 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
+>         print_scan_result(&rc);
+>
+>         ret = check_chunks(&rc.chunk, &rc.bg, &rc.devext, &rc.good_chunks,
+> -                          &rc.bad_chunks, 1);
+> -       print_check_result(&rc);
+> +                          &rc.bad_chunks, &rc.rebuild_chunks, 1);
+>         if (ret) {
+>                 if (!list_empty(&rc.bg.block_groups) ||
+>                     !list_empty(&rc.devext.no_chunk_orphans)) {
+> @@ -2136,17 +2320,13 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
+>                         if (ret)
+>                                 goto fail_rc;
+>                 }
+> -               /*
+> -                * If the chunk is healthy, its block group item and device
+> -                * extent item should be written on the disks. So, it is very
+> -                * likely that the bad chunk is a old one that has been
+> -                * droppped from the fs. Don't deal with them now, we will
+> -                * check it after the fs is opened.
+> -                */
+>         } else {
+> -               fprintf(stderr, "Check chunks successfully with no orphans\n");
+> +               print_check_result(&rc);
+> +               printf("Check chunks successfully with no orphans\n");
+>                 goto fail_rc;
+>         }
+> +       validate_rebuild_chunks(&rc);
+> +       print_check_result(&rc);
+>
+>         root = open_ctree_with_broken_chunk(&rc);
+>         if (IS_ERR(root)) {
+> @@ -2185,6 +2365,12 @@ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
+>         ret = rebuild_sys_array(&rc, root);
+>         BUG_ON(ret);
+>
+> +       ret = rebuild_block_group(trans, &rc, root);
+> +       if (ret) {
+> +               printf("Fail to rebuild block groups.\n");
+> +               printf("Recommend to run 'btrfs check --init-extent-tree <dev>' after recovery\n");
+> +       }
+> +
+>         btrfs_commit_transaction(trans, root);
+>  fail_close_ctree:
+>         close_ctree(root);
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 2a5f823..2795ccf 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -6133,6 +6133,13 @@ u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
+>         return stripe_size;
+>  }
+>
+> +/*
+> + * Check the chunk with its block group/dev list ref:
+> + * Return 0 if all refs seems valid.
+> + * Return 1 if part of refs seems valid, need later check for rebuild ref
+> + * like missing block group and needs to search extent tree to rebuild them.
+> + * Return -1 if essential refs are missing and unable to rebuild.
+> + */
+>  static int check_chunk_refs(struct chunk_record *chunk_rec,
+>                             struct block_group_tree *block_group_cache,
+>                             struct device_extent_tree *dev_extent_cache,
+> @@ -6188,7 +6195,7 @@ static int check_chunk_refs(struct chunk_record *chunk_rec,
+>                                 chunk_rec->length,
+>                                 chunk_rec->offset,
+>                                 chunk_rec->type_flags);
+> -               ret = -1;
+> +               ret = 1;
+>         }
+>
+>         length = calc_stripe_length(chunk_rec->type_flags, chunk_rec->length,
+> @@ -6241,7 +6248,8 @@ static int check_chunk_refs(struct chunk_record *chunk_rec,
+>  int check_chunks(struct cache_tree *chunk_cache,
+>                  struct block_group_tree *block_group_cache,
+>                  struct device_extent_tree *dev_extent_cache,
+> -                struct list_head *good, struct list_head *bad, int silent)
+> +                struct list_head *good, struct list_head *bad,
+> +                struct list_head *rebuild, int silent)
+>  {
+>         struct cache_extent *chunk_item;
+>         struct chunk_record *chunk_rec;
+> @@ -6256,15 +6264,14 @@ int check_chunks(struct cache_tree *chunk_cache,
+>                                          cache);
+>                 err = check_chunk_refs(chunk_rec, block_group_cache,
+>                                        dev_extent_cache, silent);
+> -               if (err) {
+> +               if (err)
+>                         ret = err;
+> -                       if (bad)
+> -                               list_add_tail(&chunk_rec->list, bad);
+> -               } else {
+> -                       if (good)
+> -                               list_add_tail(&chunk_rec->list, good);
+> -               }
+> -
+> +               if (err == 0 && good)
+> +                       list_add_tail(&chunk_rec->list, good);
+> +               if (err > 0 && rebuild)
+> +                       list_add_tail(&chunk_rec->list, rebuild);
+> +               if (err < 0 && bad)
+> +                       list_add_tail(&chunk_rec->list, bad);
+>                 chunk_item = next_cache_extent(chunk_item);
+>         }
+>
+> @@ -6548,7 +6555,7 @@ again:
+>         }
+>
+>         err = check_chunks(&chunk_cache, &block_group_cache,
+> -                          &dev_extent_cache, NULL, NULL, 0);
+> +                          &dev_extent_cache, NULL, NULL, NULL, 0);
+>         if (err && !ret)
+>                 ret = err;
+>
+> --
+> 2.1.2
 
-Windows ADS API.  Forks are actually the original reason that windows=20
-added ADS to NTFS, and their API is much cleaner than the windows one.=20
-The standard there is that forks are accessible as=20
-'<filename>/..namedfork/<forkname>'  ..namedfork doesn't get listed by=20
-ls -a, but you can explicitly list '<filename>/..namedfork/' to get a=20
-list of forks other than the data fork.  Such an API needs almost zero=20
-modification to existing programs (just enough to get tar and friends to =
+Couple of questions:
+# In remove_chunk_extent_item, should we also consider "rebuild"
+chunks now? It can happen that a "rebuild" chunks is a SYSTEM chunk.
+Should we try to handle it as well?
+# Same question for "rebuild_sys_array". Should we also consider
+"rebuild" chunks?
 
-check if there are any named forks for each file).
-
-The significant advantages I see to having forks are:
-  1. Windows Security Descriptors
-  2. Macintosh Resource Forks
-  3. BeOS (and others) style associated metadata (ie, associated file=20
-icons/thumbnails, per-file program associations, in other words, the=20
-same sort of stuff that OSX uses resource forks for)
-  4. Better flexibility for stuff like IMA and EVM
+Thanks,
+Alex.
 
 
 
---------------ms080202000807080805060108
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMjIzMTIzNzMz
-WjAjBgkqhkiG9w0BCQQxFgQUQD7OSHRXfr5ylGKyubQRvBCLLFswbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAGU5asjFIN+bIdtMA8EaUmng0oVSI
-v8Ne2SLVwmGqB/IwrLnYzbJHCDivFIqd56uttL8Wvh4b+5+bWX9HYJFjBbZcDURQspnsU/f2
-QJLzhmips+HslVb+qXXi/ieMGSLbjFAMwW1W0BJqcyIV2q8Xw2uOoIRQibJSSESaGvOLVDBm
-8FTZ76v6R7z1d4se+I7p5zSUglQmoSQ/16Z/UEa0+1haa6+4/9Fa6aQCK8FUsC5wYjQ6fsX7
-OLKr+UlXrJZwevXdrNB+/yAk77+g8Rfr4/boCa8P1YsRhfeHA9z5txRuxRVp1W7a0YX+oRaD
-I1rvWU5xX92qtVwOzSknSJW/4AAAAAAAAA==
---------------ms080202000807080805060108--
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

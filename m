@@ -1,153 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46844 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751694AbaLWHXX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 02:23:23 -0500
-Date: Tue, 23 Dec 2014 15:23:10 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Xing Gu <gux.fnst@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, david@fromorbit.com,
-        slyfox@gentoo.org, quwenruo@cn.fujitsu.com
-Subject: Re: [PATCH v2] btrfs: add regression test for remount with
- thread_pool resized
-Message-ID: <20141223072310.GL11929@dhcp-13-216.nay.redhat.com>
-References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
- <1419313262-3664-1-git-send-email-gux.fnst@cn.fujitsu.com>
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:33996 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755836AbaLWKIV convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Dec 2014 05:08:21 -0500
+Received: by mail-wi0-f181.google.com with SMTP id r20so10306972wiv.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 02:08:20 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1419313262-3664-1-git-send-email-gux.fnst@cn.fujitsu.com>
+In-Reply-To: <5498FD52.6050807@cn.fujitsu.com>
+References: <CAOcd+r2_CkP7wiU3OETxhdVtkTpZYiz0GxSx7BDEsFU6H+0_RQ@mail.gmail.com>
+	<5498FD52.6050807@cn.fujitsu.com>
+Date: Tue, 23 Dec 2014 12:08:20 +0200
+Message-ID: <CAOcd+r3bsi=6Yf8ru4XgzQc4GmrOyVUMLBK=+8LxgYKeuN2EKA@mail.gmail.com>
+Subject: Re: How btrfs-find-root knows that the block is actually a root?
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org >> linux-btrfs"
+	<linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 23, 2014 at 01:41:02PM +0800, Xing Gu wrote:
-> Regression test for a btrfs issue of resizing 'thread_pool'
-> when remount the fs.
-> 
-> Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
-> ---
->  tests/btrfs/017     | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/017.out |  1 +
->  tests/btrfs/group   |  1 +
->  3 files changed, 66 insertions(+)
->  create mode 100755 tests/btrfs/017
->  create mode 100644 tests/btrfs/017.out
-> 
-> diff --git a/tests/btrfs/017 b/tests/btrfs/017
-> new file mode 100755
-> index 0000000..81f5af6
-> --- /dev/null
-> +++ b/tests/btrfs/017
-> @@ -0,0 +1,64 @@
-> +#!/bin/bash
-> +# FS QA Test No. btrfs/017
-> +#
-> +# Regression test for a btrfs issue of resizing 'thread_pool' when
-> +# remount the fs.
-> +# This was fixed in the following linux kernel patch:
-> +#     800ee22 btrfs: fix crash in remount(thread_pool=) case
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +
-> +_cleanup()
-> +{
-> +    rm -f $tmp.*
-> +}
-> +
-> +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +_scratch_mkfs > /dev/null
-> +
-> +dmesg -c > /dev/null
-> +nr_null=`dmesg | grep -c "kernel NULL pointer dereference"`
+Hi Qu,
 
-dmesg -c cleared dmesg buffer and nr_null is zero, I think this is
-duplicated work, either dmesg -c or check nr_null before remount.
+On Tue, Dec 23, 2014 at 7:27 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+> -------- Original Message --------
+> Subject: How btrfs-find-root knows that the block is actually a root?
+> From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+> To: linux-btrfs <linux-btrfs@vger.kernel.org>
+> Date: 2014年12月22日 22:57
+>>
+>> Greetings,
+>>
+>> I am looking at the code of search_iobuf() in
+>> btrfs-find-root.c.(3.17.3)  I see that we probe nodesize blocks one by
+>> one, and for each block we check:
+>> - its owner is what we are looking for
+>> - its header->bytenr is what we are looking at currently
+>> - its level is not too small
+>> - it has valid checksum
+>> - it has the desired generation
+>>
+>> If all those conditions are true, we declare this block as a root and
+>> end the program.
+>>
+>> How do we actually know that it's a root and not a leaf or an
+>> intermediate node? What if we are searching for a root of the root
+>> tree, which has one node and two leafs (all have the same highest
+>> transid), and one of the leafs has "logical" lower than the actual
+>> root, i.e., it comes first in our scan. Then we will declare this leaf
+>> as a root, won't we? Or somehow the root always has the lowest
+>> "logical"?
+>
+> You can refer to this patch:
+> https://patchwork.kernel.org/patch/5285521/
+I see that this has not been applied to any of David's branches. Do
+you have a repo to look at this code in its entirety?
 
-Actually I'm thinking about checking dmesg log in check after each test,
-which could detect kernel BUG, WARNING and NULL pointer dereference etc.
-so test doesn't need to check dmesg itself. I'll send it out for review
-soon.
+>
+> Your questions are mostly right.
+> The best method should be search through all the metadata, and only the
+> highest level header for
+> a given generation may be the root for that generation.
+>
+> But that method still has some problems.
+> 1) Overwritten old node/leaf
+> As btrfs metadata cow happens, old node/leaf may be overwritten and become
+> incompletely,
+> so above method won't always work as expected.
+>
+> 2) Corrupted fs
+> That will makes everything not work as expected.
+> But sadly, when someone needs to use btrfs-find-root, there is a high
+> possibility the fs is already corrupted.
+>
+> 3) Slow speed
+> It needs to scan over all the sectors of metadata chunks, it may var from
+> megabytese to tegabytes,
+> which makes the complete scan impractical.
+> So current find-root uses a trade-off, if find a header at the position
+> superblock points to, and generation
+> matches, then just consider it as the desired root and exit.
+I think this is a bit optimistic. What if the root tree has several
+leaves having the same generation as the root? Then we might declare a
+leaf as a root and exit. But further recovery based on that output
+will get us into trouble.
 
-> +_scratch_mount "-o thread_pool=6"
-> +_scratch_mount "-o remount,thread_pool=10"
-> +new_null=`dmesg | grep -c "kernel NULL pointer dereference"`
-> +if [ $new_null -ne $nr_null ]; then
-> +	_fatal "kernel bug detected, check dmesg for more infomation."
+>
+>>
+>> Also, I am confused by this line:
+>> level = h_level;
+>> This means that if we encounter a block that "seems good", we will
+>> skip all other blocks that have lower level. Is this intended?
+>
+> This is intended, for case user already know the root's level, so it will
+> skip any header whose level is below it.
+But this line is performed before the generation check. Let's say that
+user did not specify any level (so search_level==0). Then assume we
+encounter a block, which has lower generation than what we need, but
+higher level. At this point, we do
+level = h_level;
+and we will skip any blocks lower than this level from now on. What if
+the root tree got shirnked (due to subvolume deletion, for example),
+and the "good" root has lower level? We will skip it then, and will
+not find the root.
 
-_fail is better than _fatal, and don't forget to remove $seqres.full before
-test if you use _fail, cause it dumps errors to $seqres.full
+Thanks for your comments,
+Alex.
 
-But simply echo the error message could fail the test too, I'm fine with
-either way..
 
-> +fi
-> +
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/017.out b/tests/btrfs/017.out
-> new file mode 100644
-> index 0000000..90c4b69
-> --- /dev/null
-> +++ b/tests/btrfs/017.out
-> @@ -0,0 +1 @@
-> +QA output created by 017
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index abb2fe4..cd553a3 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -19,6 +19,7 @@
->  014 auto balance
->  015 auto quick snapshot
->  016 auto quick send
-> +017 auto quick
-
-There's a remount group now, you can add it to remount group too.
-
-Others look good to me.
-
-Thanks,
-Eryu
->  018 auto quick subvol
->  019 auto quick send
->  020 auto quick replace
-> -- 
-> 1.9.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> Thanks,
+> Qu
+>>
+>>
+>> Thanks,
+>> Alex.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>

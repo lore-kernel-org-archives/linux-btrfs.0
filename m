@@ -1,37 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:40762 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752744AbaLWMJK (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45229 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750983AbaLWOo1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 07:09:10 -0500
-Received: by mail-wi0-f171.google.com with SMTP id bs8so10646605wib.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 04:09:08 -0800 (PST)
-Date: Tue, 23 Dec 2014 13:09:03 +0100
-From: Dongsu Park <dongsu.park@profitbricks.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+	Tue, 23 Dec 2014 09:44:27 -0500
+Date: Tue, 23 Dec 2014 09:44:13 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [RFC PATCH 05/17] btrfs: remove bio splitting and
+ merge_bvec_fn() calls
+To: Dongsu Park <dongsu.park@profitbricks.com>
+CC: <linux-kernel@vger.kernel.org>, Jens Axboe <axboe@kernel.dk>,
         Kent Overstreet <kmo@daterainc.com>, Ming Lin <mlin@minggr.net>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 06/17] btrfs: make use of immutable biovecs
-Message-ID: <20141223120903.GD15080@gmail.com>
+        Dongsu Park <dongsu.park@profitbricks.com>,
+        Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
+Message-ID: <1419345853.13012.10@mail.thefacebook.com>
+In-Reply-To: <e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profit
+	bricks.com>
 References: <cover.1419241597.git.dongsu.park@profitbricks.com>
- <83a9ee8a309f8e08490c5dd715a608ea054f5c33.1419241597.git.dongsu.park@profitbricks.com>
- <20141223103513.GA27600@infradead.org>
+	<e4b7b017eaa81784889ebb2a4e6a7d4366adf13a.1419241597.git.dongsu.park@profitbricks.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20141223103513.GA27600@infradead.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23.12.2014 02:35, Christoph Hellwig wrote:
-> This seems like it could be applied without the rest of the series,
-> right?  Might be worth to get it into the btrfs tree ASAP?
+On Mon, Dec 22, 2014 at 6:48 AM, Dongsu Park 
+<dongsu.park@profitbricks.com> wrote:
+> From: Kent Overstreet <kmo@daterainc.com>
+> 
+> Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
+> device limits as well as calling ->merge_bvec_fn() etc. That is not
+> necessary any more, because generic_make_request() is now able to
+> handle arbitrarily sized bios. So clean up unnecessary code paths.
+> 
+> Signed-off-by: Kent Overstreet <kmo@daterainc.com>
+> [dpark: add more description in commit message]
+> Signed-off-by: Dongsu Park <dongsu.park@profitbricks.com>
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <jbacik@fb.com>
+> Cc: linux-btrfs@vger.kernel.org
+> ---
 
-Ah, you're right.
-While patch #5 must be in this series, patch #6 does not necessarily
-have to be included. This conversion should belong to the multipage
-bvecs series. So I'll skip #6 in the next round.
+Looks good, I'll test it here too.  Thanks!
 
-Thanks,
-Dongsu
+Signed-off-by: Chris Mason <clm@fb.com>
+
+
+

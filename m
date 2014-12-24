@@ -1,76 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1487 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:54299 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750718AbaLXBJb convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1750740AbaLXBzS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 20:09:31 -0500
-Message-ID: <549A1244.2000309@cn.fujitsu.com>
-Date: Wed, 24 Dec 2014 09:09:24 +0800
+	Tue, 23 Dec 2014 20:55:18 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBO1snKS023062
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 09:54:49 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs: Make the chunk size limit on on-disk/logical more clean.
+Date: Wed, 24 Dec 2014 09:55:13 +0800
+Message-ID: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during chunk
- recovery if possible
-References: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com> <CAOcd+r3PxsecRaHOe1RLbxEhWubdy2dzUmE65BDkvmcgb7_9tw@mail.gmail.com>
-In-Reply-To: <CAOcd+r3PxsecRaHOe1RLbxEhWubdy2dzUmE65BDkvmcgb7_9tw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Original __btrfs_alloc_chunk() use max_chunk_size to limit chunk size,
+however it mixed the on-disk space with logical space.
+When comes to 10% of writable space, max_chunk_size is used with on-disk
+size, but it is also used as logical space size limit, so it is very
+confusing and causing inconsistence in different profile.
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during 
-chunk recovery if possible
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年12月24日 00:49
-> Hi Qu,
->
-> On Thu, Oct 30, 2014 at 4:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> [snipped]
->> +
->> +static int __insert_block_group(struct btrfs_trans_handle *trans,
->> +                               struct chunk_record *chunk_rec,
->> +                               struct btrfs_root *extent_root,
->> +                               u64 used)
->> +{
->> +       struct btrfs_block_group_item bg_item;
->> +       struct btrfs_key key;
->> +       int ret = 0;
->> +
->> +       btrfs_set_block_group_used(&bg_item, used);
->> +       btrfs_set_block_group_chunk_objectid(&bg_item, used);
-> This looks like a bug. Instead of "used", I think it should be
-> "BTRFS_FIRST_CHUNK_TREE_OBJECTID".
-Oh, my mistake, BTRFS_FIRST_CHUNK_TREE_OBJECTID is right.
-Thanks for pointing out this.
->
->> [snipped]
->> --
->> 2.1.2
-> Couple of questions:
-> # In remove_chunk_extent_item, should we also consider "rebuild"
-> chunks now? It can happen that a "rebuild" chunks is a SYSTEM chunk.
-> Should we try to handle it as well?
-Not quite sure about the meaning of "rebuild" here.
-The chunk-recovery has the rebuild_chunk_tree() function to rebuild the 
-whole chunk tree with
-the good/repaired chunks we found.
-> # Same question for "rebuild_sys_array". Should we also consider
-> "rebuild" chunks?
-The chunk-recovery has rebuild_sys_array() to handle SYSTEM chunk too.
+For example:
+on M single, D single 5G btrfs single device,
+data chunk is limited to 512M due to 10% limit.
 
-Thanks,
-Qu
->
-> Thanks,
-> Alex.
->
->
->
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+on M RAID1, D RAID1 10Gx2 btrfs 2 devices,
+data chunk is limited to 2G due to 10% limit is mixed with on-disk
+space, causing the logical chunk space to 1G, twice than single device.
+
+This patch will make the logical and on-disk space limit independent and
+clear and solve the above inconsistence.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+changelog:
+v2:
+   Newly introduced.
+---
+ fs/btrfs/volumes.c | 40 ++++++++++++++++++++++++++--------------
+ 1 file changed, 26 insertions(+), 14 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0144790..8e74b34 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4235,10 +4235,12 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int ncopies;		/* how many copies to data has */
+ 	int ret;
+ 	u64 max_stripe_size;
+-	u64 max_chunk_size;
++	u64 max_logical_size;	/* Up limit on chunk's logical size */
++	u64 max_physical_size;	/* Up limit on a chunk's on-disk size */
+ 	u64 stripe_size;
+ 	u64 num_bytes;
+ 	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
++	int need_bump = 0;
+ 	int ndevs;
+ 	int i;
+ 	int j;
+@@ -4260,7 +4262,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 
+ 	if (type & BTRFS_BLOCK_GROUP_DATA) {
+ 		max_stripe_size = 1024 * 1024 * 1024;
+-		max_chunk_size = 10 * max_stripe_size;
++		max_logical_size = 10 * max_stripe_size;
+ 		if (!devs_max)
+ 			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
+ 	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
+@@ -4269,12 +4271,12 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			max_stripe_size = 1024 * 1024 * 1024;
+ 		else
+ 			max_stripe_size = 256 * 1024 * 1024;
+-		max_chunk_size = max_stripe_size;
++		max_logical_size = max_stripe_size;
+ 		if (!devs_max)
+ 			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
+ 	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		max_stripe_size = 32 * 1024 * 1024;
+-		max_chunk_size = 2 * max_stripe_size;
++		max_logical_size = 2 * max_stripe_size;
+ 		if (!devs_max)
+ 			devs_max = BTRFS_MAX_DEVS_SYS_CHUNK;
+ 	} else {
+@@ -4284,8 +4286,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	/* we don't want a chunk larger than 10% of writeable space */
+-	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
+-			     max_chunk_size);
++	max_physical_size = div_factor(fs_devices->total_rw_bytes, 1);
+ 
+ 	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
+ 			       GFP_NOFS);
+@@ -4391,15 +4392,21 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		data_stripes = num_stripes - 2;
+ 	}
+ 
+-	/*
+-	 * Use the number of data stripes to figure out how big this chunk
+-	 * is really going to be in terms of logical address space,
+-	 * and compare that answer with the max chunk size
+-	 */
+-	if (stripe_size * data_stripes > max_chunk_size) {
+-		u64 mask = (1ULL << 24) - 1;
+-		stripe_size = max_chunk_size;
++	/* Restrict on-disk chunk size */
++	if (stripe_size * num_stripes > max_physical_size) {
++		stripe_size = max_physical_size;
++		do_div(stripe_size, num_stripes);
++		need_bump = 1;
++	}
++	/* restrict logical chunk size  */
++	if (stripe_size * data_stripes > max_logical_size) {
++		stripe_size = max_logical_size;
+ 		do_div(stripe_size, data_stripes);
++		need_bump = 1;
++	}
++
++	if (need_bump) {
++		u64 mask = (1ULL << 24) - 1;
+ 
+ 		/* bump the answer up to a 16MB boundary */
+ 		stripe_size = (stripe_size + mask) & ~mask;
+@@ -4411,6 +4418,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			stripe_size = devices_info[ndevs-1].max_avail;
+ 	}
+ 
++	/*
++	 * Special handle for DUP, since stripe_size is the largest free extent
++	 * we found, DUP can only use half of it. Other profile's dev_stripes
++	 * is always 1.
++	 */
+ 	do_div(stripe_size, dev_stripes);
+ 
+ 	/* align to BTRFS_STRIPE_LEN */
+-- 
+2.2.1
 

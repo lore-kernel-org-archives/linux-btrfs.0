@@ -1,172 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34319 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751602AbaLXLig (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 06:38:36 -0500
-Date: Wed, 24 Dec 2014 19:38:25 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Xing Gu <gux.fnst@cn.fujitsu.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, slyfox@gentoo.org,
-        quwenruo@cn.fujitsu.com
-Subject: Re: [PATCH v2] btrfs: add regression test for remount with
- thread_pool resized
-Message-ID: <20141224113825.GA11929@dhcp-13-216.nay.redhat.com>
-References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
- <1419313262-3664-1-git-send-email-gux.fnst@cn.fujitsu.com>
- <20141223072310.GL11929@dhcp-13-216.nay.redhat.com>
- <20141223205607.GH4521@dastard>
+Received: from userp1040.oracle.com ([156.151.31.81]:32548 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750997AbaLXPcI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Dec 2014 10:32:08 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id sBOFW6Do006692
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:07 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBOFW5TQ007498
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:06 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBOFW5ZO020290
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:05 GMT
+Message-ID: <549ADD17.60705@oracle.com>
+Date: Wed, 24 Dec 2014 23:34:47 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20141223205607.GH4521@dastard>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: systemtap script to controlled induce of media error
+Content-Type: multipart/mixed;
+ boundary="------------020600090000080000000205"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 24, 2014 at 07:56:07AM +1100, Dave Chinner wrote:
-> On Tue, Dec 23, 2014 at 03:23:10PM +0800, Eryu Guan wrote:
-> > On Tue, Dec 23, 2014 at 01:41:02PM +0800, Xing Gu wrote:
-> > > Regression test for a btrfs issue of resizing 'thread_pool'
-> > > when remount the fs.
-> > > 
-> > > Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
-> > > ---
-> > >  tests/btrfs/017     | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++
-> > >  tests/btrfs/017.out |  1 +
-> > >  tests/btrfs/group   |  1 +
-> > >  3 files changed, 66 insertions(+)
-> > >  create mode 100755 tests/btrfs/017
-> > >  create mode 100644 tests/btrfs/017.out
-> > > 
-> > > diff --git a/tests/btrfs/017 b/tests/btrfs/017
-> > > new file mode 100755
-> > > index 0000000..81f5af6
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/017
-> > > @@ -0,0 +1,64 @@
-> > > +#!/bin/bash
-> > > +# FS QA Test No. btrfs/017
-> > > +#
-> > > +# Regression test for a btrfs issue of resizing 'thread_pool' when
-> > > +# remount the fs.
-> > > +# This was fixed in the following linux kernel patch:
-> > > +#     800ee22 btrfs: fix crash in remount(thread_pool=) case
-> > > +#
-> > > +#-----------------------------------------------------------------------
-> > > +# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-> > > +#
-> > > +# This program is free software; you can redistribute it and/or
-> > > +# modify it under the terms of the GNU General Public License as
-> > > +# published by the Free Software Foundation.
-> > > +#
-> > > +# This program is distributed in the hope that it would be useful,
-> > > +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> > > +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> > > +# GNU General Public License for more details.
-> > > +#
-> > > +# You should have received a copy of the GNU General Public License
-> > > +# along with this program; if not, write the Free Software Foundation,
-> > > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> > > +#
-> > > +#-----------------------------------------------------------------------
-> > > +#
-> > > +
-> > > +seq=`basename $0`
-> > > +seqres=$RESULT_DIR/$seq
-> > > +echo "QA output created by $seq"
-> > > +
-> > > +here=`pwd`
-> > > +tmp=/tmp/$$
-> > > +status=1	# failure is the default!
-> > > +
-> > > +_cleanup()
-> > > +{
-> > > +    rm -f $tmp.*
-> > > +}
-> > > +
-> > > +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> > > +
-> > > +# get standard environment, filters and checks
-> > > +. ./common/rc
-> > > +. ./common/filter
-> > > +
-> > > +# real QA test starts here
-> > > +_supported_fs btrfs
-> > > +_supported_os Linux
-> > > +_require_scratch
-> > > +
-> > > +_scratch_mkfs > /dev/null
-> > > +
-> > > +dmesg -c > /dev/null
-> > > +nr_null=`dmesg | grep -c "kernel NULL pointer dereference"`
-> > 
-> > dmesg -c cleared dmesg buffer and nr_null is zero, I think this is
-> > duplicated work, either dmesg -c or check nr_null before remount.
-> 
-> Please don't clear the dmesg buffer - it means that people can't
-> review the kernel error messages across the entire test run for
-> errors unless they are capturing that information elsewhere.
-> 
-> And yes, I don't use syslog for capturing dmesg output on my test
-> boxes because that leads to root filesystem ENOSPC whenever I'm
-> dumping a lot of debug to the console....
-> 
-> > Actually I'm thinking about checking dmesg log in check after each test,
-> > which could detect kernel BUG, WARNING and NULL pointer dereference etc.
-> > so test doesn't need to check dmesg itself. I'll send it out for review
-> > soon.
-> 
-> Some tests actually generate errors/warnings on purpose. IOWs, the
-> presence of messages in dmesg is not always indicative of an
-> error....
+This is a multi-part message in MIME format.
+--------------020600090000080000000205
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Yes, not all tests should be checked, something like
-_require_scratch_nocheck may help here, and add that function call to all
-tests that generate errors/warnings on purpose.
 
-I'll think about it more, to see how to avoid clearing dmesg buffer also
-avoid dumping all the dmesg log to some file, if all the checking dmesg
-log thing is reasonable.
 
-Thanks,
-Eryu
-> 
-> > > +_scratch_mount "-o remount,thread_pool=10"
-> > > +new_null=`dmesg | grep -c "kernel NULL pointer dereference"`
-> > > +if [ $new_null -ne $nr_null ]; then
-> > > +	_fatal "kernel bug detected, check dmesg for more infomation."
-> > 
-> > _fail is better than _fatal, and don't forget to remove $seqres.full before
-> > test if you use _fail, cause it dumps errors to $seqres.full
-> > 
-> > But simply echo the error message could fail the test too, I'm fine with
-> > either way..
-> 
-> Echo the error message, set status=1 and exit.
-> 
-> Oh, wait, that's what _fail does. ;)
-> 
-> > > +exit
-> > > diff --git a/tests/btrfs/017.out b/tests/btrfs/017.out
-> > > new file mode 100644
-> > > index 0000000..90c4b69
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/017.out
-> > > @@ -0,0 +1 @@
-> > > +QA output created by 017
-> 
-> Empty output with no indication that it should be empty is bad form
-> as well. The test should echo something to indicate that an empty
-> output file is expected. "Silence is golden" is the usual string
-> used to indicate that the golden output expects no output from the
-> test.
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  A simple script which would fake media error back the upper
+  level.
+
+  First read write files and list block numbers being read/written,
+  and then specify block number on which media error has to be created.
+  IO will fake fail, btrfs can be tested for these error conditions.
+  You won't be able to test for data consistency.
+
+  Works on any SCSI device no need of LVM or any IO special kernel
+  module.
+
+  attached script is still a rough cut.
+
+Thanks, Anand
+
+--------------020600090000080000000205
+Content-Type: text/plain; charset=windows-1252;
+ name="induce-media-err.stap"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="induce-media-err.stap"
+
+IyEgL3Vzci9iaW4vZW52IHN0YXAKCmdsb2JhbCBpbmplY3QKZ2xvYmFsIGRldl9ibG9jawpn
+bG9iYWwgZGV2X2RldmljZQpnbG9iYWwgZmFpbF9yZWFkID0gMAoKI2dsb2JhbCBkZXZfZGV2
+aWNlMSA9ICJzZGUiCiNnbG9iYWwgZGV2X2RldmljZTI9ICJzZGQiCiNnbG9iYWwgZGV2X2Rl
+dmljZTEgPSAic2RnIgojZ2xvYmFsIGRldl9kZXZpY2UyPSAic2RmIgojZ2xvYmFsIGRldl9k
+ZXZpY2UxID0gInNkYiIKI2dsb2JhbCBkZXZfZGV2aWNlMj0gInNkYyIKCgpwcm9iZSBiZWdp
+bgp7CglpbmplY3QgPSAkMQoJZGV2X2Jsb2NrID0gJDIKCWRldl9kZXZpY2UgPSBAMwoJI3By
+aW50ZigiQkVHSU46ICVkICVseCAlcyAlcyAlc1xuIiwgaW5qZWN0LCBkZXZfYmxvY2ssIGRl
+dl9kZXZpY2UsIGRldl9kZXZpY2UxLCBkZXZfZGV2aWNlMik7CglwcmludGYoIkJFR0lOOiAl
+ZCAlbHggJXNcbiIsIGluamVjdCwgZGV2X2Jsb2NrLCBkZXZfZGV2aWNlKTsKfQoKcHJvYmUg
+a2VybmVsLmZ1bmN0aW9uKCJzZF9wcmVwX2ZuIikgISwKCW1vZHVsZSgiKiIpLmZ1bmN0aW9u
+KCJzZF9wcmVwX2ZuIikKewoJaWYgKCRycS0+cnFfZGlzay0+ZGlza19uYW1lICE9IE5VTEwp
+CiAgICAgICAgCWRldmljZSA9IGtlcm5lbF9zdHJpbmcoJHJxLT5ycV9kaXNrLT5kaXNrX25h
+bWUpCgllbHNlCgkJZGV2aWNlID0gIm5vbmUiCgoJI2lmIChkZXZpY2UgPT0gZGV2X2Rldmlj
+ZTEgfHwgZGV2aWNlID09IGRldl9kZXZpY2UyKSB7CglpZiAoZGV2aWNlID09IGRldl9kZXZp
+Y2UpIHsKICAgICAgICAJaWYoJHJxLT5jbWRfZmxhZ3MgJiAxKQoJCQlyZWFkX29yX3dyaXRl
+ID0gInciCiAgICAgICAgCWVsc2UKCQkJcmVhZF9vcl93cml0ZSA9ICJyIgoKICAgICAgICAJ
+cHJpbnRmKCIlcyAlcyAlbHhcbiIsIGRldmljZSwgcmVhZF9vcl93cml0ZSwgJHJxLT5fX3Nl
+Y3RvcikKCgkJI2lmIChpbmplY3QgJiYgKGRldl9kZXZpY2UxID09IGRldmljZSB8fCBkZXZf
+ZGV2aWNlMiA9PSBkZXZpY2UpICYmIGRldl9ibG9jayA9PSAkcnEtPl9fc2VjdG9yKSB7CgkJ
+aWYgKGluamVjdCAmJiBkZXZfZGV2aWNlID09IGRldmljZSAmJiBkZXZfYmxvY2sgPT0gJHJx
+LT5fX3NlY3RvcikgewoJCQlpZiAocmVhZF9vcl93cml0ZSA9PSAiciIpIHsKCQkJCWZhaWxf
+cmVhZCA9IDEKCQkJCXByaW50ZigiVHJpZ2dlciBlbmFibGVkLi4gIik7CgkJCX0gZWxzZSBp
+ZiAocmVhZF9vcl93cml0ZSA9PSAidyIgJiYgZmFpbF9yZWFkKSB7CgkJCQlmYWlsX3JlYWQg
+PSAwCgkJCQlwcmludGYoIkZpeCB3cml0ZSBhcHBlYXJlZC4gVHJpZ2dlciBkaXNhYmxlZFxu
+Iik7CgkJCX0KCQl9Cgl9Cn0KCnByb2JlIG1vZHVsZSgiKiIpLmZ1bmN0aW9uKCJzY3NpX2Rl
+Y2lkZV9kaXNwb3NpdGlvbkBkcml2ZXJzL3Njc2kvc2NzaV9lcnJvci5jIikgISwKCWtlcm5l
+bC5mdW5jdGlvbigic2NzaV9kZWNpZGVfZGlzcG9zaXRpb25AZHJpdmVycy9zY3NpL3Njc2lf
+ZXJyb3IuYyIpCnsKCWlmICgkc2NtZC0+cmVxdWVzdC0+cnFfZGlzay0+ZGlza19uYW1lICE9
+IE5VTEwpCgkJZGV2aWNlID0ga2VybmVsX3N0cmluZygkc2NtZC0+cmVxdWVzdC0+cnFfZGlz
+ay0+ZGlza19uYW1lKQoJZWxzZQoJCWRldmljZSA9ICJub25lIgoKICAgICAgICBpZigkc2Nt
+ZC0+cmVxdWVzdC0+Y21kX2ZsYWdzICYgMSkKCQlyZWFkX29yX3dyaXRlID0gInciCiAgICAg
+ICAgZWxzZQoJCXJlYWRfb3Jfd3JpdGUgPSAiciIKCglibG9jayA9ICRzY21kLT5yZXF1ZXN0
+LT5fX3NlY3RvcgoKCSNpZiAoKGRldmljZSA9PSBkZXZfZGV2aWNlMSB8fCBkZXZpY2UgPT0g
+ZGV2X2RldmljZTIpICYmIGZhaWxfcmVhZCAmJiBibG9jayA9PSBkZXZfYmxvY2sgJiYgcmVh
+ZF9vcl93cml0ZSA9PSAiciIpCglpZiAoZGV2aWNlID09IGRldl9kZXZpY2UgJiYgZmFpbF9y
+ZWFkICYmIGJsb2NrID09IGRldl9ibG9jayAmJiByZWFkX29yX3dyaXRlID09ICJyIikKCXsK
+CQlwcmludGYoIkZhaWxpbmcgdGhlIENEQiAuLiAiKQoJCXByaW50ZigiJXMgJXMgJWx4XG4i
+LCBkZXZpY2UsIHJlYWRfb3Jfd3JpdGUsIGJsb2NrKQoJCS8qIGNyZWF0ZSBmYWtlIHN0YXR1
+cyBhbmQgc2Vuc2UgZGF0YSAqLwoJCSRzY21kLT5yZXN1bHQgPSAweDAyCgkJJHNjbWQtPnNl
+bnNlX2J1ZmZlclswXSA9IDB4NzAKCQkkc2NtZC0+c2Vuc2VfYnVmZmVyWzJdID0gMHgwMwoJ
+CSRzY21kLT5zZW5zZV9idWZmZXJbN10gPSAweDEzCgkJJHNjbWQtPnNlbnNlX2J1ZmZlclsx
+Ml0gPSAweDExCgkJJHNjbWQtPnNlbnNlX2J1ZmZlclsxM10gPSAweDA0Cgl9Cn0KCnByb2Jl
+IGVuZAp7CglkZWxldGUgaW5qZWN0CglkZWxldGUgZGV2X2Jsb2NrCglkZWxldGUgZGV2X2Rl
+dmljZQp9Cg==
+--------------020600090000080000000205--

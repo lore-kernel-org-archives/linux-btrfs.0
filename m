@@ -1,59 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f170.google.com ([209.85.160.170]:59746 "EHLO
-	mail-yk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751078AbaLWWXP (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:60900 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751297AbaLXAlw convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 17:23:15 -0500
-Received: by mail-yk0-f170.google.com with SMTP id q200so3482259ykb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 14:23:14 -0800 (PST)
+	Tue, 23 Dec 2014 19:41:52 -0500
+Message-ID: <549A0BCD.9080208@cn.fujitsu.com>
+Date: Wed, 24 Dec 2014 08:41:49 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
-	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
-	<20141223211605.GC436@hungrycats.org>
-	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
-Date: Tue, 23 Dec 2014 15:23:13 -0700
-Message-ID: <CAJCQCtQebXga2NEEgMgCc9Oxx4OD86_L59b1qZ1BE8Kr=WEpRw@mail.gmail.com>
-Subject: Re: Uncorrectable errors on RAID-1?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: "linux-btrfs@vger.kernel.org >> linux-btrfs"
+	<linux-btrfs@vger.kernel.org>
+Subject: Re: How btrfs-find-root knows that the block is actually a root?
+References: <CAOcd+r2_CkP7wiU3OETxhdVtkTpZYiz0GxSx7BDEsFU6H+0_RQ@mail.gmail.com>	<5498FD52.6050807@cn.fujitsu.com> <CAOcd+r3bsi=6Yf8ru4XgzQc4GmrOyVUMLBK=+8LxgYKeuN2EKA@mail.gmail.com>
+In-Reply-To: <CAOcd+r3bsi=6Yf8ru4XgzQc4GmrOyVUMLBK=+8LxgYKeuN2EKA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The other thing to note, is that the scsi command timer timeout is a
-maximum. So at 30 seconds if a command to the drive hasn't completed,
-then consider the drive hung up and do a link reset. And whatever
-error recovery is in the drive, is also a maximum. If the sector is
-really immediately bad, the drive will produce a read error
-immediately. The case where you get these long recoveries where the
-drive keeps retrying beyond the 30 second scsi command timer value, is
-when the drive firmware ECC thinks it can recover (or reconstruct) the
-data instead of producing a read error.
 
-A gotcha with changing the scsi command timer to a much larger value
-is that it possibly gives the drive enough time to recover the data,
-report it back to the kernel, and then everything goes on normally.
-The "slow sector" doesn't get fixed. Even a scrub wouldn't fix that
-unless the drive reported wrongly recovered data and Btrfs checksums
-catch it.
+-------- Original Message --------
+Subject: Re: How btrfs-find-root knows that the block is actually a root?
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年12月23日 18:08
+> Hi Qu,
+>
+> On Tue, Dec 23, 2014 at 7:27 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> -------- Original Message --------
+>> Subject: How btrfs-find-root knows that the block is actually a root?
+>> From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+>> To: linux-btrfs <linux-btrfs@vger.kernel.org>
+>> Date: 2014年12月22日 22:57
+>>> Greetings,
+>>>
+>>> I am looking at the code of search_iobuf() in
+>>> btrfs-find-root.c.(3.17.3)  I see that we probe nodesize blocks one by
+>>> one, and for each block we check:
+>>> - its owner is what we are looking for
+>>> - its header->bytenr is what we are looking at currently
+>>> - its level is not too small
+>>> - it has valid checksum
+>>> - it has the desired generation
+>>>
+>>> If all those conditions are true, we declare this block as a root and
+>>> end the program.
+>>>
+>>> How do we actually know that it's a root and not a leaf or an
+>>> intermediate node? What if we are searching for a root of the root
+>>> tree, which has one node and two leafs (all have the same highest
+>>> transid), and one of the leafs has "logical" lower than the actual
+>>> root, i.e., it comes first in our scan. Then we will declare this leaf
+>>> as a root, won't we? Or somehow the root always has the lowest
+>>> "logical"?
+>> You can refer to this patch:
+>> https://patchwork.kernel.org/patch/5285521/
+> I see that this has not been applied to any of David's branches. Do
+> you have a repo to look at this code in its entirety?
+Saddly, no personal repo...
+>
+>> Your questions are mostly right.
+>> The best method should be search through all the metadata, and only the
+>> highest level header for
+>> a given generation may be the root for that generation.
+>>
+>> But that method still has some problems.
+>> 1) Overwritten old node/leaf
+>> As btrfs metadata cow happens, old node/leaf may be overwritten and become
+>> incompletely,
+>> so above method won't always work as expected.
+>>
+>> 2) Corrupted fs
+>> That will makes everything not work as expected.
+>> But sadly, when someone needs to use btrfs-find-root, there is a high
+>> possibility the fs is already corrupted.
+>>
+>> 3) Slow speed
+>> It needs to scan over all the sectors of metadata chunks, it may var from
+>> megabytese to tegabytes,
+>> which makes the complete scan impractical.
+>> So current find-root uses a trade-off, if find a header at the position
+>> superblock points to, and generation
+>> matches, then just consider it as the desired root and exit.
+> I think this is a bit optimistic. What if the root tree has several
+> leaves having the same generation as the root? Then we might declare a
+> leaf as a root and exit. But further recovery based on that output
+> will get us into trouble.
+That's right, but if btrfs-find-root takes several hours each time to do 
+full scan, most user will be crazy...
+Especially when it is executed on a clean btrfs.
 
-So what you want to do with a drive that has, or is suspected of
-having such slow sectors, is to balance it. Rewrite everything. That
-should cause the drive firmware to map out those sectors if they
-result in persistent write errors.
+>
+>>> Also, I am confused by this line:
+>>> level = h_level;
+>>> This means that if we encounter a block that "seems good", we will
+>>> skip all other blocks that have lower level. Is this intended?
+>> This is intended, for case user already know the root's level, so it will
+>> skip any header whose level is below it.
+> But this line is performed before the generation check. Let's say that
+> user did not specify any level (so search_level==0). Then assume we
+> encounter a block, which has lower generation than what we need, but
+> higher level. At this point, we do
+> level = h_level;
+> and we will skip any blocks lower than this level from now on. What if
+> the root tree got shirnked (due to subvolume deletion, for example),
+> and the "good" root has lower level? We will skip it then, and will
+> not find the root.
+>
+> Thanks for your comments,
+> Alex.
+Oh, I misunderstand your meaning, you're completely right, the original 
+codes will skip any level
+lower than current found.
+That's deadly for root with higher generation but with lower level, as 
+you mentioned, item delete.
 
-What ought to happen is the data from slow sectors, once recovered,
-should get written to a reserve sector and the old sector removed from
-use (remapping, i.e. the LBA is the same but the physical sector is
-different) but every drive firmware handles this differently. I
-definitely have had drives where this doesn't happen automatically.
-Also, I've had drives that when ATA Secure Erased, did not test for
-persistent write errors and therefore bad sectors weren't removed from
-use, they'd remain persistently bad when doing smartctl -t long tests.
-In those cases, using badblocks -w fixed the problem but of course
-that's destructive.
+So the best method would be only skip leaf/node whose level is lower 
+than current found highest
+level *among the same generation*.
+Oh, that's what I do in my patch. :-)
 
+Thanks,
+Qu
+>
+>
+>> Thanks,
+>> Qu
+>>>
+>>> Thanks,
+>>> Alex.
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 
--- 
-Chris Murphy

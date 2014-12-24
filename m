@@ -1,110 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34271 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750891AbaLXBzT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 20:55:19 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBO1so8O023066
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 09:54:50 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 2/2] btrfs: Enhance btrfs chunk allocation algorithm to reduce ENOSPC caused by unbalanced data/metadata allocation.
-Date: Wed, 24 Dec 2014 09:55:14 +0800
-Message-ID: <1419386114-21703-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:53058 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750909AbaLXDwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Dec 2014 22:52:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y3d0F-00063d-Ez
+	for linux-btrfs@vger.kernel.org; Wed, 24 Dec 2014 04:52:51 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 04:52:51 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 04:52:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Quota limit question
+Date: Wed, 24 Dec 2014 03:52:41 +0000 (UTC)
+Message-ID: <pan$2d7ff$776cb5c$1da18373$20ae4371@cox.net>
+References: <20141217011537.GA1114@anthem.async.com.br>
+	<20141223203601.GB30477@async.com.br>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btrfs allocate a chunk, it will try to alloc up to 1G for data and
-256M for metadata, or 10% of all the writeable space if there is enough
-space for the stripe on device.
+Christian Robottom Reis posted on Tue, 23 Dec 2014 18:36:02 -0200 as
+excerpted:
 
-However, when we run out of space, this allocation may cause unbalanced
-chunk allocation.
-For example, there are only 1G unallocated space, and request for
-allocate DATA chunk is sent, and all the space will be allocated as data
-chunk, making later metadata chunk alloc request unable to handle, which
-will cause ENOSPC.
-This is the one of the common complains from end users about why ENOSPC
-happens but there is still available space.
+> On Tue, Dec 16, 2014 at 11:15:37PM -0200, Christian Robottom Reis wrote:
+>>     # btrfs qgroup limit 2000m 0/261 . && touch x touch: cannot touch
+>>     ‘x’: Disk quota exceeded
+>> 
+>> The strange thing is that it doesn't seem to be actually out of space:
+>> 
+>>     # btrfs qgroup show -p -r -e /var | grep 261
+>>     0/261    1111810048  391114752   2097152000  0          ---
+> 
+> Replying to myself as I had not yet been subscribed in time to receive a
+> reply; I just upgraded to 3.18.1 and am seeing the same issue on the
+> same subvolume (and on no others).
 
-This patch will try not to alloc chunk which is more than half of the
-unallocated space, making the last space more balanced at a small cost
-of more fragmented chunk at the last 1G.
+Looking at the thread here on gmane.org (list2news and list2web gateway), 
+it appears my reply was the only reply in any case, and it was general as 
+I don't run quotas myself.
 
-Some easy example:
-Preallocate 17.5G on a 20G empty btrfs fs:
-[Before]
- # btrfs fi show /mnt/test
-Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
-	Total devices 1 FS bytes used 17.50GiB
-	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
-All space is allocated. No space for later metadata allocation.
+Basically I suggested upgrading, as the quota code as some rather huge 
+bugs in it (quotas could go seriously negative!) with the old versions 
+you were running.  But you've upgraded at least the kernel now (userspace 
+you didn't say).
 
-[After]
- # btrfs fi show /mnt/test
-Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
-	Total devices 1 FS bytes used 17.50GiB
-	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
-About 230M is still available for later metadata allocation.
+Here's a link to the thread on the gmane web interface for completeness, 
+but the above about covers my reply, as I said the only one until your 
+thread bump and my reply here, so there's not much new there unless 
+someone posts further followups to this thread...
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-Changelog:
-v2:
-   Remove false dead zone judgement since it won't happen
----
- fs/btrfs/volumes.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8e74b34..20b3eea 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4237,6 +4237,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	u64 max_stripe_size;
- 	u64 max_logical_size;	/* Up limit on chunk's logical size */
- 	u64 max_physical_size;	/* Up limit on a chunk's on-disk size */
-+	u64 total_physical_avail = 0;
- 	u64 stripe_size;
- 	u64 num_bytes;
- 	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
-@@ -4349,6 +4350,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		devices_info[ndevs].max_avail = max_avail;
- 		devices_info[ndevs].total_avail = total_avail;
- 		devices_info[ndevs].dev = device;
-+		total_physical_avail += total_avail;
- 		++ndevs;
- 	}
- 
-@@ -4398,6 +4400,23 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		do_div(stripe_size, num_stripes);
- 		need_bump = 1;
- 	}
-+
-+	/*
-+	 * Don't alloc chunk whose physical size is larger than half
-+	 * of the rest physical space.
-+	 * This will reduce the possibility of ENOSPC when comes to
-+	 * last unallocated space
-+	 *
-+	 * For the last 16~32M (e.g. 20M), it will first alloc 16M
-+	 * (bumped to 16M) and the next time will be the rest size
-+	 * (bumped to 16M and reduced to 4M).
-+	 * So no dead zone.
-+	 */
-+	if (stripe_size * num_stripes > total_physical_avail / 2) {
-+		stripe_size = total_physical_avail / 2;
-+		need_bump = 1;
-+
-+	}
- 	/* restrict logical chunk size  */
- 	if (stripe_size * data_stripes > max_logical_size) {
- 		stripe_size = max_logical_size;
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/41491
+
+
 -- 
-2.2.1
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

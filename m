@@ -1,38 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f175.google.com ([209.85.160.175]:53827 "EHLO
-	mail-yk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751542AbaLWVq5 convert rfc822-to-8bit (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:40346 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750740AbaLXFwO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 16:46:57 -0500
-Received: by mail-yk0-f175.google.com with SMTP id 200so3437295ykr.34
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 13:46:56 -0800 (PST)
+	Wed, 24 Dec 2014 00:52:14 -0500
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 080CC3EE188
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:13 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 0C1E0AC06CA
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:12 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 6FD34E08001
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:11 +0900 (JST)
+Received: from g01jpexchkw37.g01.fujitsu.local (unknown [10.0.193.4])
+	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id BA669BD646B
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:10 +0900 (JST)
+Message-ID: <549A5484.9000202@jp.fujitsu.com>
+Date: Wed, 24 Dec 2014 14:52:04 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Date: Tue, 23 Dec 2014 14:46:56 -0700
-Message-ID: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
-Subject: 3.19rc1, extent_io.c:2193:13: warning: cast to pointer from integer
- of different size
-From: Chris Murphy <chris@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: Remove unnecessary placeholder in btrfs_err_code
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I get this when building on i686:
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-  CC [M]  fs/btrfs/extent_io.o
-fs/btrfs/extent_io.c: In function ‘btrfs_free_io_failure_record’:
-fs/btrfs/extent_io.c:2193:13: warning: cast to pointer from integer of
-different size [-Wint-to-pointer-cast]
-   failrec = (struct io_failure_record *)state->private;
+"notused" is not necessary. Set 1 to the first entry is enough.
 
+Signed-off-by: Takeuchi Satoru <takeuchi_satoru@jp.fujitsu.com
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+I once submit the similar patch to btrfs-progs.
+Then Gui Hecheng tell me fixing original code in kernel
+is better.
 
-.config contains the following
-CONFIG_BTRFS_FS=m
-CONFIG_BTRFS_FS_POSIX_ACL=y
-# CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
-# CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set
-CONFIG_BTRFS_DEBUG=y
-CONFIG_BTRFS_ASSERT=y
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/41679
+---
+ include/uapi/linux/btrfs.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 611e1c5..b6dec05 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -495,8 +495,7 @@ struct btrfs_ioctl_send_args {
+ 
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+-	notused,
+-	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
++	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
+ 	BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
+ 	BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
+ 	BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
 -- 
-Chris Murphy
+1.8.3.1
+

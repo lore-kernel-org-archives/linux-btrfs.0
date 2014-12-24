@@ -1,62 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:45742 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753602AbaLVDUk (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:39290 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750724AbaLXBa5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Dec 2014 22:20:40 -0500
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 6B95C3EE188
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:39 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 7F640AC03F3
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:38 +0900 (JST)
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 2D5EBE08002
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:38 +0900 (JST)
-Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
-	by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 3140246E5D3
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 12:20:37 +0900 (JST)
-Message-ID: <54978DFE.6010507@jp.fujitsu.com>
-Date: Mon, 22 Dec 2014 12:20:30 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Tue, 23 Dec 2014 20:30:57 -0500
+Message-ID: <1419384536.20397.3.camel@localhost.localdomain>
+Subject: Re: [PATCH] btrfs-progs: Fix btrfs fi show by uuid and label
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: Justin Maggard <jmaggard10@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Wed, 24 Dec 2014 09:28:56 +0800
+In-Reply-To: <1419363292-12271-1-git-send-email-jmaggard10@gmail.com>
+References: <1419363292-12271-1-git-send-email-jmaggard10@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Documentation: add T/P/E description for
- resize cmd
-References: <1419213702-3945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1419213702-3945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/12/22 11:01, Gui Hecheng wrote:
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+On Tue, 2014-12-23 at 11:34 -0800, Justin Maggard wrote:
+> Commit 8be2fff (btrfs-progs: apply realpath for btrfs fi
+> show when mount point is given) changed the behavior of
+> btrfs fi show to return an error if the call to realpath()
+> failed.  This broke the ability to specify a filesystem by
+> uuid or label.
+
+Oh, that's my fault, thanks for correcting this.
+
+> So let's not consider a failed call to realpath() as an
+> error.  If the user really specified a bad device, just
+> return nothing like we did before.
 > ---
->   Documentation/btrfs-filesystem.txt | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
+>  cmds-filesystem.c |    9 ++-------
+>  1 file changed, 2 insertions(+), 7 deletions(-)
 > 
-> diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-> index a8f2972..f2bd50d 100644
-> --- a/Documentation/btrfs-filesystem.txt
-> +++ b/Documentation/btrfs-filesystem.txt
-> @@ -102,8 +102,8 @@ If the prefix + or - is present the size is increased or decreased
->   by the quantity <size>.
->   If no units are specified, the unit of the <size> parameter defaults to
->   bytes. Optionally, the size parameter may be suffixed by one of the following
-> -units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
-> -respectively.
-> +units designators: \'K\'(KiB), \'M\'(MiB), \'G\'(GiB), \'T\'(TiB), \'P\'(PiB),
-> +\'E\'(EiB).
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 8f037dd..a654e6f 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -901,13 +901,8 @@ static int cmd_show(int argc, char **argv)
+>  		 *     realpath do  /mnt/btrfs/  => /mnt/btrfs
+>  		 *     which shall be recognized by btrfs_scan_kernel()
+>  		 */
+> -		if (!realpath(search, path)) {
+> -			fprintf(stderr, "ERROR: Could not show %s: %s\n",
+> -					search, strerror(errno));
+> -			return 1;
+> -		}
+> -
+> -		search = path;
+> +		if (realpath(search, path))
+> +			search = path;
 
-Just a minor point. s/\'E\'(EiB)/or \'E\'(EiB)/ is better.
+This looks nice and stay consistent with the behavior before my faulty
+commit.
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Reviewed-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 
 Thanks,
-Satoru
+Gui
 
->   +
->   If \'max' is passed, the filesystem will occupy all available space on the
->   device devid.
-> 
+>  		/*
+>  		 * Needs special handling if input arg is block dev And if
+
 

@@ -1,62 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:40346 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750740AbaLXFwO (ORCPT
+Received: from mail-pd0-f180.google.com ([209.85.192.180]:51457 "EHLO
+	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751063AbaLXGru (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 00:52:14 -0500
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 080CC3EE188
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:13 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 0C1E0AC06CA
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:12 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 6FD34E08001
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:11 +0900 (JST)
-Received: from g01jpexchkw37.g01.fujitsu.local (unknown [10.0.193.4])
-	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id BA669BD646B
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 14:52:10 +0900 (JST)
-Message-ID: <549A5484.9000202@jp.fujitsu.com>
-Date: Wed, 24 Dec 2014 14:52:04 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: Remove unnecessary placeholder in btrfs_err_code
-Content-Type: text/plain; charset="iso-2022-jp"
+	Wed, 24 Dec 2014 01:47:50 -0500
+Received: by mail-pd0-f180.google.com with SMTP id w10so9386291pde.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 22:47:49 -0800 (PST)
+Received: from localhost.localdomain.localdomain ([36.62.181.87])
+        by mx.google.com with ESMTPSA id w8sm21741816pbt.71.2014.12.23.22.47.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 23 Dec 2014 22:47:49 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: call inode_dec_link_count() on mkdir error path
+Date: Wed, 24 Dec 2014 14:45:30 +0800
+Message-Id: <1419403530-15617-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+From: Wang Shilong <wangshilong1991@gmail.com>
 
-"notused" is not necessary. Set 1 to the first entry is enough.
+In btrfs_mkdir(), if it fails to create dir, we should
+clean up existed items, setting inode's link properly
+to make sure it could be cleaned up properly.
 
-Signed-off-by: Takeuchi Satoru <takeuchi_satoru@jp.fujitsu.com
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
 ---
-I once submit the similar patch to btrfs-progs.
-Then Gui Hecheng tell me fixing original code in kernel
-is better.
+ fs/btrfs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/41679
----
- include/uapi/linux/btrfs.h | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 611e1c5..b6dec05 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -495,8 +495,7 @@ struct btrfs_ioctl_send_args {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8de2335..8a036ed 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6255,8 +6255,10 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
  
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
--	notused,
--	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
- 	BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
- 	BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
- 	BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
+ out_fail:
+ 	btrfs_end_transaction(trans, root);
+-	if (drop_on_err)
++	if (drop_on_err) {
++		inode_dec_link_count(inode);
+ 		iput(inode);
++	}
+ 	btrfs_balance_delayed_items(root);
+ 	btrfs_btree_balance_dirty(root);
+ 	return err;
 -- 
 1.8.3.1
 

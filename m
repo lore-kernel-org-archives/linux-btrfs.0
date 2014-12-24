@@ -1,51 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f180.google.com ([209.85.192.180]:51457 "EHLO
-	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751063AbaLXGru (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:43911 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751399AbaLXPmT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 01:47:50 -0500
-Received: by mail-pd0-f180.google.com with SMTP id w10so9386291pde.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 22:47:49 -0800 (PST)
-Received: from localhost.localdomain.localdomain ([36.62.181.87])
-        by mx.google.com with ESMTPSA id w8sm21741816pbt.71.2014.12.23.22.47.48
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 23 Dec 2014 22:47:49 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: call inode_dec_link_count() on mkdir error path
-Date: Wed, 24 Dec 2014 14:45:30 +0800
-Message-Id: <1419403530-15617-1-git-send-email-wangshilong1991@gmail.com>
+	Wed, 24 Dec 2014 10:42:19 -0500
+Message-ID: <549ADF7D.2030505@oracle.com>
+Date: Wed, 24 Dec 2014 23:45:01 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: Florian Uekermann <florian@uekermann.me>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Device only missing if unmounted
+References: <708100218.650154.1418123709778.JavaMail.open-xchange@omgreatgod.store> <5487B3FB.4070109@oracle.com> <932711394.78334.1418480696257.JavaMail.open-xchange@patina.store> <54922623.50602@oracle.com> <1184043001.122994.1419096721838.JavaMail.open-xchange@ptangptang.store>
+In-Reply-To: <1184043001.122994.1419096721838.JavaMail.open-xchange@ptangptang.store>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangshilong1991@gmail.com>
 
-In btrfs_mkdir(), if it fails to create dir, we should
-clean up existed items, setting inode's link properly
-to make sure it could be cleaned up properly.
+Very strange, user space reads num_device as 4 but kernel
+reads it as 3 (total_device), thus a device missing when
+mounted.
+Not sure what kind of hardware at your end, Can cache be
+issue ? could you drop cache and check for me.
+  echo 3 > /proc/sys/vm/drop_cache
 
-Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
----
- fs/btrfs/inode.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+Thanks, Anand
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8de2335..8a036ed 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6255,8 +6255,10 @@ static int btrfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
- 
- out_fail:
- 	btrfs_end_transaction(trans, root);
--	if (drop_on_err)
-+	if (drop_on_err) {
-+		inode_dec_link_count(inode);
- 		iput(inode);
-+	}
- 	btrfs_balance_delayed_items(root);
- 	btrfs_btree_balance_dirty(root);
- 	return err;
--- 
-1.8.3.1
-
+On 21/12/2014 01:32, Florian Uekermann wrote:
+>
+>  > > I checked this for all three devices and num_devices is 4 for all
+> of them.
+>  > > The full output is below.
+>  >
+>  > so now if you mount and run 'btrfs fi show <mnt>' that should tell
+>  > device missing, which then 'btrfs device missing <mnt>' should be
+>  > successful theoretically.
+>
+> No it doesn't. It says:
+> root@oot:/home/shared# btrfs device delete missing /srv/storage/
+> ERROR: error removing the device 'missing' - no missing devices found to
+> remove
+> and btrfs fi show /srv/storage doesn't report a missing device either
+> (after mount).
+> This behavior is the reason why I wrote here in the first place. It
+> seems like a bug to me.
+> Could the btrfs command line utility be the problem here (I am using the
+> version the upcoming debian 8 ships)?
+> Best regards,
+> Florian

@@ -1,127 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:50380 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751071AbaLXJro (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 04:47:44 -0500
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 3520E3EE188
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 18:47:43 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 4A907AC02B6
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 18:47:42 +0900 (JST)
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id E73931DB8042
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 18:47:41 +0900 (JST)
-Message-ID: <549A8B9B.5000005@jp.fujitsu.com>
-Date: Wed, 24 Dec 2014 18:47:07 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:34319 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751602AbaLXLig (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Dec 2014 06:38:36 -0500
+Date: Wed, 24 Dec 2014 19:38:25 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Xing Gu <gux.fnst@cn.fujitsu.com>, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, slyfox@gentoo.org,
+        quwenruo@cn.fujitsu.com
+Subject: Re: [PATCH v2] btrfs: add regression test for remount with
+ thread_pool resized
+Message-ID: <20141224113825.GA11929@dhcp-13-216.nay.redhat.com>
+References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+ <1419313262-3664-1-git-send-email-gux.fnst@cn.fujitsu.com>
+ <20141223072310.GL11929@dhcp-13-216.nay.redhat.com>
+ <20141223205607.GH4521@dastard>
 MIME-Version: 1.0
-To: <russell@coker.com.au>, <linux-btrfs@vger.kernel.org>
-CC: <janecek@ucw.cz>
-Subject: Re: Debian/Jessie 3.16.7-ckt2-1 kernel error
-References: <201412241202.59568.russell@coker.com.au>
-In-Reply-To: <201412241202.59568.russell@coker.com.au>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141223205607.GH4521@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Russel and all,
+On Wed, Dec 24, 2014 at 07:56:07AM +1100, Dave Chinner wrote:
+> On Tue, Dec 23, 2014 at 03:23:10PM +0800, Eryu Guan wrote:
+> > On Tue, Dec 23, 2014 at 01:41:02PM +0800, Xing Gu wrote:
+> > > Regression test for a btrfs issue of resizing 'thread_pool'
+> > > when remount the fs.
+> > > 
+> > > Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+> > > ---
+> > >  tests/btrfs/017     | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+> > >  tests/btrfs/017.out |  1 +
+> > >  tests/btrfs/group   |  1 +
+> > >  3 files changed, 66 insertions(+)
+> > >  create mode 100755 tests/btrfs/017
+> > >  create mode 100644 tests/btrfs/017.out
+> > > 
+> > > diff --git a/tests/btrfs/017 b/tests/btrfs/017
+> > > new file mode 100755
+> > > index 0000000..81f5af6
+> > > --- /dev/null
+> > > +++ b/tests/btrfs/017
+> > > @@ -0,0 +1,64 @@
+> > > +#!/bin/bash
+> > > +# FS QA Test No. btrfs/017
+> > > +#
+> > > +# Regression test for a btrfs issue of resizing 'thread_pool' when
+> > > +# remount the fs.
+> > > +# This was fixed in the following linux kernel patch:
+> > > +#     800ee22 btrfs: fix crash in remount(thread_pool=) case
+> > > +#
+> > > +#-----------------------------------------------------------------------
+> > > +# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
+> > > +#
+> > > +# This program is free software; you can redistribute it and/or
+> > > +# modify it under the terms of the GNU General Public License as
+> > > +# published by the Free Software Foundation.
+> > > +#
+> > > +# This program is distributed in the hope that it would be useful,
+> > > +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> > > +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> > > +# GNU General Public License for more details.
+> > > +#
+> > > +# You should have received a copy of the GNU General Public License
+> > > +# along with this program; if not, write the Free Software Foundation,
+> > > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> > > +#
+> > > +#-----------------------------------------------------------------------
+> > > +#
+> > > +
+> > > +seq=`basename $0`
+> > > +seqres=$RESULT_DIR/$seq
+> > > +echo "QA output created by $seq"
+> > > +
+> > > +here=`pwd`
+> > > +tmp=/tmp/$$
+> > > +status=1	# failure is the default!
+> > > +
+> > > +_cleanup()
+> > > +{
+> > > +    rm -f $tmp.*
+> > > +}
+> > > +
+> > > +trap "_cleanup ; exit \$status" 0 1 2 3 15
+> > > +
+> > > +# get standard environment, filters and checks
+> > > +. ./common/rc
+> > > +. ./common/filter
+> > > +
+> > > +# real QA test starts here
+> > > +_supported_fs btrfs
+> > > +_supported_os Linux
+> > > +_require_scratch
+> > > +
+> > > +_scratch_mkfs > /dev/null
+> > > +
+> > > +dmesg -c > /dev/null
+> > > +nr_null=`dmesg | grep -c "kernel NULL pointer dereference"`
+> > 
+> > dmesg -c cleared dmesg buffer and nr_null is zero, I think this is
+> > duplicated work, either dmesg -c or check nr_null before remount.
+> 
+> Please don't clear the dmesg buffer - it means that people can't
+> review the kernel error messages across the entire test run for
+> errors unless they are capturing that information elsewhere.
+> 
+> And yes, I don't use syslog for capturing dmesg output on my test
+> boxes because that leads to root filesystem ENOSPC whenever I'm
+> dumping a lot of debug to the console....
+> 
+> > Actually I'm thinking about checking dmesg log in check after each test,
+> > which could detect kernel BUG, WARNING and NULL pointer dereference etc.
+> > so test doesn't need to check dmesg itself. I'll send it out for review
+> > soon.
+> 
+> Some tests actually generate errors/warnings on purpose. IOWs, the
+> presence of messages in dmesg is not always indicative of an
+> error....
 
-On 2014/12/24 10:02, Russell Coker wrote:
-> I've attached the kernel message log that I get after booting kernel 3.16.7
-> from Debian/Unstable.  This is the kernel branch that will go into
-> Debian/Jessie so it's important to get it fixed.
->
-> Below has the start of the errors, the attached file has everything from boot.
-> I've got similar issues on another system, would it help if I collect the logs
-> from multiple systems?
->
-> [    6.618809] Btrfs loaded
-> [    6.670878] BTRFS: device fsid a2d7cbbc-23be-4d97-b2bb-de99b0c58c7d devid 1
-> t
-> ransid 548614 /dev/mapper/root-crypt
-> [    6.706907] BTRFS info (device dm-0): disk space caching is enabled
-> [    6.798762] BTRFS: detected SSD devices, enabling SSD mode
-> [    6.881272] ------------[ cut here ]------------
-> [    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-
-> ckt2
-> /fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
->
+Yes, not all tests should be checked, something like
+_require_scratch_nocheck may help here, and add that function call to all
+tests that generate errors/warnings on purpose.
 
-This problem is once reported by Petr and would not be fixed yet.
-In addition, there is no Btrfs related error/warning messages.
-
-Here are my questions.
-
-1. Is your system "btrfs scrub" clean?
-2. Is this message shown every boot time?
-3. Is this message shown only in boot?
-4. When this message is started to be shown?
-5. Do you have any trouble, change your operation or configuration
-    just before the answer of Q4 ?
-
-*** The result of my brief analysis (a bit long). ***
-
-Your kernel traces are as follows > for developers
-
-====
-[    6.881272] ------------[ cut here ]------------
-[    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-ckt2/fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
-[    6.881453] Modules linked in: btrfs xor raid6_pq sha256_ssse3 sha256_generic ecb cbc algif_skcipher af_alg hid_generic usbhid hid dm_crypt dm_mod sd_mod crc_t10dif crct10dif_generic sg sr_mod crct10dif_common cdrom crc32c_intel r8169 mii ehci_pci ata_generic ehci_hcd ata_piix libata e1000e usbcore ptp scsi_mod usb_common pps_core
-[    6.883373] CPU: 3 PID: 198 Comm: exe Not tainted 3.16.0-4-amd64 #1 Debian 3.16.7-ckt2-1
-[    6.883455] Hardware name:                  /DH55HC, BIOS TCIBX10H.86A.0036.2010.0525.1620 05/25/2010
-[    6.884169]  0000000000000009 ffffffff81507263 0000000000000000 ffffffff81065847
-[    6.884449]  ffff8802366ba980 ffff8800b67fb000 ffff8802366bbe10 0000000000000000
-[    6.884723]  0000000000000000 ffffffffa022727a cc9e8800b750eec8 006c000000000029
-[    6.885057] Call Trace:
-[    6.885127]  [<ffffffff81507263>] ? dump_stack+0x41/0x51
-[    6.885199]  [<ffffffff81065847>] ? warn_slowpath_common+0x77/0x90
-[    6.885277]  [<ffffffffa022727a>] ? btrfs_commit_transaction+0x38a/0x9c0 [btrfs]
-[    6.885369]  [<ffffffffa026668a>] ? btrfs_recover_log_trees+0x38a/0x440 [btrfs]
-[    6.885460]  [<ffffffffa021de50>] ? free_root_pointers+0x60/0x60 [btrfs]
-[    6.885538]  [<ffffffffa0263e20>] ? replay_one_extent+0x6c0/0x6c0 [btrfs]
-[    6.885613]  [<ffffffffa02249af>] ? open_ctree+0x176f/0x1f20 [btrfs]
-[    6.885688]  [<ffffffffa01fb93f>] ? btrfs_mount+0x61f/0x8b0 [btrfs]
-[    6.885758]  [<ffffffff81237547>] ? selinux_sb_copy_data+0x157/0x220
-[    6.885831]  [<ffffffff811a9534>] ? mount_fs+0x34/0x1a0
-[    6.885902]  [<ffffffff811c2d72>] ? vfs_kern_mount+0x62/0x110
-[    6.885970]  [<ffffffff811c55ca>] ? do_mount+0x23a/0xac0
-[    6.886041]  [<ffffffff811c52b6>] ? copy_mount_options+0xb6/0x150
-[    6.886109]  [<ffffffff811c6141>] ? SyS_mount+0x81/0xc0
-[    6.886180]  [<ffffffff8150d32d>] ? system_call_fast_compare_end+0x10/0x15
-[    6.886252] ---[ end trace 9b7dbfb04527c9ee ]---
-====
-
-Your system hits the same following WARN_ON() many times at the boot time.
-
-fs/btrfs/delayed-inode.c:
-===============================================================================
-void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
-{
-         struct btrfs_delayed_root *delayed_root;
-         delayed_root = btrfs_get_delayed_root(root);
-         WARN_ON(btrfs_first_delayed_node(delayed_root));
-}
-===============================================================================
-
-There is no other Btrfs related error/warning message.
-
-It seems the same/similar problem of what Petr (CC'ed) reported.
-
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39721
-
-The WARN_ON() is the same and his system also hit this problem
-at the boot time.
-
-Although I briefly look at the fix for this problem by
-"git log --grep=btrfs_commit_transaction v3.16... fs/btrfs",
-I couldn't find it (Of course, I would be wrong). In addition,
-Petr hit this problem with 3.18-rc1. So I suspect this problem
-is not fixed yet.
-
-I don't know why it happens now. Any idea? >developers.
+I'll think about it more, to see how to avoid clearing dmesg buffer also
+avoid dumping all the dmesg log to some file, if all the checking dmesg
+log thing is reasonable.
 
 Thanks,
-Satoru
-
+Eryu
+> 
+> > > +_scratch_mount "-o remount,thread_pool=10"
+> > > +new_null=`dmesg | grep -c "kernel NULL pointer dereference"`
+> > > +if [ $new_null -ne $nr_null ]; then
+> > > +	_fatal "kernel bug detected, check dmesg for more infomation."
+> > 
+> > _fail is better than _fatal, and don't forget to remove $seqres.full before
+> > test if you use _fail, cause it dumps errors to $seqres.full
+> > 
+> > But simply echo the error message could fail the test too, I'm fine with
+> > either way..
+> 
+> Echo the error message, set status=1 and exit.
+> 
+> Oh, wait, that's what _fail does. ;)
+> 
+> > > +exit
+> > > diff --git a/tests/btrfs/017.out b/tests/btrfs/017.out
+> > > new file mode 100644
+> > > index 0000000..90c4b69
+> > > --- /dev/null
+> > > +++ b/tests/btrfs/017.out
+> > > @@ -0,0 +1 @@
+> > > +QA output created by 017
+> 
+> Empty output with no indication that it should be empty is bad form
+> as well. The test should echo something to indicate that an empty
+> output file is expected. "Silence is golden" is the usual string
+> used to indicate that the golden output expects no output from the
+> test.
+> 
+> Cheers,
+> 
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

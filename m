@@ -1,67 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53058 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750909AbaLXDwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 22:52:54 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y3d0F-00063d-Ez
-	for linux-btrfs@vger.kernel.org; Wed, 24 Dec 2014 04:52:51 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 04:52:51 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 04:52:51 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Quota limit question
-Date: Wed, 24 Dec 2014 03:52:41 +0000 (UTC)
-Message-ID: <pan$2d7ff$776cb5c$1da18373$20ae4371@cox.net>
-References: <20141217011537.GA1114@anthem.async.com.br>
-	<20141223203601.GB30477@async.com.br>
-Mime-Version: 1.0
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:44627 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751320AbaLXItZ convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Dec 2014 03:49:25 -0500
+Received: by mail-wi0-f178.google.com with SMTP id em10so12968624wid.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 00:49:23 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <549A1244.2000309@cn.fujitsu.com>
+References: <1414637643-12271-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<CAOcd+r3PxsecRaHOe1RLbxEhWubdy2dzUmE65BDkvmcgb7_9tw@mail.gmail.com>
+	<549A1244.2000309@cn.fujitsu.com>
+Date: Wed, 24 Dec 2014 10:49:23 +0200
+Message-ID: <CAOcd+r0tYszrTBgx0mTHMQRO7oi-zXfX4bCpv8rUTDcpAi4Meg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during chunk
+ recovery if possible
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christian Robottom Reis posted on Tue, 23 Dec 2014 18:36:02 -0200 as
-excerpted:
+Hi Qu,
 
-> On Tue, Dec 16, 2014 at 11:15:37PM -0200, Christian Robottom Reis wrote:
->>     # btrfs qgroup limit 2000m 0/261 . && touch x touch: cannot touch
->>     ‘x’: Disk quota exceeded
->> 
->> The strange thing is that it doesn't seem to be actually out of space:
->> 
->>     # btrfs qgroup show -p -r -e /var | grep 261
->>     0/261    1111810048  391114752   2097152000  0          ---
-> 
-> Replying to myself as I had not yet been subscribed in time to receive a
-> reply; I just upgraded to 3.18.1 and am seeing the same issue on the
-> same subvolume (and on no others).
+On Wed, Dec 24, 2014 at 3:09 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+> -------- Original Message --------
+> Subject: Re: [PATCH] btrfs-progs: rebuild missing block group during chunk
+> recovery if possible
+> From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Date: 2014年12月24日 00:49
+>>
+>> Hi Qu,
+>>
+>> On Thu, Oct 30, 2014 at 4:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>> [snipped]
+>>> +
+>>> +static int __insert_block_group(struct btrfs_trans_handle *trans,
+>>> +                               struct chunk_record *chunk_rec,
+>>> +                               struct btrfs_root *extent_root,
+>>> +                               u64 used)
+>>> +{
+>>> +       struct btrfs_block_group_item bg_item;
+>>> +       struct btrfs_key key;
+>>> +       int ret = 0;
+>>> +
+>>> +       btrfs_set_block_group_used(&bg_item, used);
+>>> +       btrfs_set_block_group_chunk_objectid(&bg_item, used);
+>>
+>> This looks like a bug. Instead of "used", I think it should be
+>> "BTRFS_FIRST_CHUNK_TREE_OBJECTID".
+>
+> Oh, my mistake, BTRFS_FIRST_CHUNK_TREE_OBJECTID is right.
+> Thanks for pointing out this.
+>>
+>>
+>>> [snipped]
+>>> --
+>>> 2.1.2
+>>
+>> Couple of questions:
+>> # In remove_chunk_extent_item, should we also consider "rebuild"
+>> chunks now? It can happen that a "rebuild" chunks is a SYSTEM chunk.
+>> Should we try to handle it as well?
+>
+> Not quite sure about the meaning of "rebuild" here.
+> The chunk-recovery has the rebuild_chunk_tree() function to rebuild the
+> whole chunk tree with
+> the good/repaired chunks we found.
+>>
+>> # Same question for "rebuild_sys_array". Should we also consider
+>> "rebuild" chunks?
+>
+> The chunk-recovery has rebuild_sys_array() to handle SYSTEM chunk too.
+>
+I meant that with this patch you have added "rebuild_chunks" list:
+    struct list_head good_chunks;
+    struct list_head bad_chunks;
+    struct list_head rebuild_chunks; <--- you added this
+    struct list_head unrepaired_chunks;
 
-Looking at the thread here on gmane.org (list2news and list2web gateway), 
-it appears my reply was the only reply in any case, and it was general as 
-I don't run quotas myself.
 
-Basically I suggested upgrading, as the quota code as some rather huge 
-bugs in it (quotas could go seriously negative!) with the old versions 
-you were running.  But you've upgraded at least the kernel now (userspace 
-you didn't say).
+These are chunks that have no block-group record, but we are confident
+that we can rebuild the block-group records for these chunks by
+scanning all EXTENT_ITEMs in the block-group range and calculating the
+"used" value for the block-group. If we fail, we just set
+used==block-group size. My question is: should we now consider those
+"rebuild_chunks" same as "good_chunks"? I.e., should we also consider
+those chunks in the following functions:
+- remove_chunk_extent_item: probably no, because we need the
+EXTENT_ITEMs to recalculate the "used" value
+- rebuild_sys_array: if it happens that a "rebuild_chunk" is also a
+SYSTEM chunk, should we add it to the sys_chunk_array too? (In
+addition to good_chunks).
 
-Here's a link to the thread on the gmane web interface for completeness, 
-but the above about covers my reply, as I said the only one until your 
-thread bump and my reply here, so there's not much new there unless 
-someone posts further followups to this thread...
+Thanks,
+Alex.
 
 
-http://comments.gmane.org/gmane.comp.file-systems.btrfs/41491
-
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> Thanks,
+> Qu
+>
+>>
+>> Thanks,
+>> Alex.
+>>
+>>
+>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>

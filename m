@@ -1,142 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54299 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34271 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750740AbaLXBzS (ORCPT
+	with ESMTP id S1750891AbaLXBzT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 20:55:18 -0500
+	Tue, 23 Dec 2014 20:55:19 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBO1snKS023062
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 09:54:49 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBO1so8O023066
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 09:54:50 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] btrfs: Make the chunk size limit on on-disk/logical more clean.
-Date: Wed, 24 Dec 2014 09:55:13 +0800
-Message-ID: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 2/2] btrfs: Enhance btrfs chunk allocation algorithm to reduce ENOSPC caused by unbalanced data/metadata allocation.
+Date: Wed, 24 Dec 2014 09:55:14 +0800
+Message-ID: <1419386114-21703-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Original __btrfs_alloc_chunk() use max_chunk_size to limit chunk size,
-however it mixed the on-disk space with logical space.
-When comes to 10% of writable space, max_chunk_size is used with on-disk
-size, but it is also used as logical space size limit, so it is very
-confusing and causing inconsistence in different profile.
+When btrfs allocate a chunk, it will try to alloc up to 1G for data and
+256M for metadata, or 10% of all the writeable space if there is enough
+space for the stripe on device.
 
-For example:
-on M single, D single 5G btrfs single device,
-data chunk is limited to 512M due to 10% limit.
+However, when we run out of space, this allocation may cause unbalanced
+chunk allocation.
+For example, there are only 1G unallocated space, and request for
+allocate DATA chunk is sent, and all the space will be allocated as data
+chunk, making later metadata chunk alloc request unable to handle, which
+will cause ENOSPC.
+This is the one of the common complains from end users about why ENOSPC
+happens but there is still available space.
 
-on M RAID1, D RAID1 10Gx2 btrfs 2 devices,
-data chunk is limited to 2G due to 10% limit is mixed with on-disk
-space, causing the logical chunk space to 1G, twice than single device.
+This patch will try not to alloc chunk which is more than half of the
+unallocated space, making the last space more balanced at a small cost
+of more fragmented chunk at the last 1G.
 
-This patch will make the logical and on-disk space limit independent and
-clear and solve the above inconsistence.
+Some easy example:
+Preallocate 17.5G on a 20G empty btrfs fs:
+[Before]
+ # btrfs fi show /mnt/test
+Label: none  uuid: da8741b1-5d47-4245-9e94-bfccea34e91e
+	Total devices 1 FS bytes used 17.50GiB
+	devid    1 size 20.00GiB used 20.00GiB path /dev/sdb
+All space is allocated. No space for later metadata allocation.
+
+[After]
+ # btrfs fi show /mnt/test
+Label: none  uuid: e6935aeb-a232-4140-84f9-80aab1f23d56
+	Total devices 1 FS bytes used 17.50GiB
+	devid    1 size 20.00GiB used 19.77GiB path /dev/sdb
+About 230M is still available for later metadata allocation.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-changelog:
+Changelog:
 v2:
-   Newly introduced.
+   Remove false dead zone judgement since it won't happen
 ---
- fs/btrfs/volumes.c | 40 ++++++++++++++++++++++++++--------------
- 1 file changed, 26 insertions(+), 14 deletions(-)
+ fs/btrfs/volumes.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0144790..8e74b34 100644
+index 8e74b34..20b3eea 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4235,10 +4235,12 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	int ncopies;		/* how many copies to data has */
- 	int ret;
+@@ -4237,6 +4237,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	u64 max_stripe_size;
--	u64 max_chunk_size;
-+	u64 max_logical_size;	/* Up limit on chunk's logical size */
-+	u64 max_physical_size;	/* Up limit on a chunk's on-disk size */
+ 	u64 max_logical_size;	/* Up limit on chunk's logical size */
+ 	u64 max_physical_size;	/* Up limit on a chunk's on-disk size */
++	u64 total_physical_avail = 0;
  	u64 stripe_size;
  	u64 num_bytes;
  	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
-+	int need_bump = 0;
- 	int ndevs;
- 	int i;
- 	int j;
-@@ -4260,7 +4262,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 
- 	if (type & BTRFS_BLOCK_GROUP_DATA) {
- 		max_stripe_size = 1024 * 1024 * 1024;
--		max_chunk_size = 10 * max_stripe_size;
-+		max_logical_size = 10 * max_stripe_size;
- 		if (!devs_max)
- 			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
- 	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
-@@ -4269,12 +4271,12 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			max_stripe_size = 1024 * 1024 * 1024;
- 		else
- 			max_stripe_size = 256 * 1024 * 1024;
--		max_chunk_size = max_stripe_size;
-+		max_logical_size = max_stripe_size;
- 		if (!devs_max)
- 			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
- 	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
- 		max_stripe_size = 32 * 1024 * 1024;
--		max_chunk_size = 2 * max_stripe_size;
-+		max_logical_size = 2 * max_stripe_size;
- 		if (!devs_max)
- 			devs_max = BTRFS_MAX_DEVS_SYS_CHUNK;
- 	} else {
-@@ -4284,8 +4286,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+@@ -4349,6 +4350,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		devices_info[ndevs].max_avail = max_avail;
+ 		devices_info[ndevs].total_avail = total_avail;
+ 		devices_info[ndevs].dev = device;
++		total_physical_avail += total_avail;
+ 		++ndevs;
  	}
  
- 	/* we don't want a chunk larger than 10% of writeable space */
--	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
--			     max_chunk_size);
-+	max_physical_size = div_factor(fs_devices->total_rw_bytes, 1);
- 
- 	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
- 			       GFP_NOFS);
-@@ -4391,15 +4392,21 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		data_stripes = num_stripes - 2;
+@@ -4398,6 +4400,23 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		do_div(stripe_size, num_stripes);
+ 		need_bump = 1;
  	}
- 
--	/*
--	 * Use the number of data stripes to figure out how big this chunk
--	 * is really going to be in terms of logical address space,
--	 * and compare that answer with the max chunk size
--	 */
--	if (stripe_size * data_stripes > max_chunk_size) {
--		u64 mask = (1ULL << 24) - 1;
--		stripe_size = max_chunk_size;
-+	/* Restrict on-disk chunk size */
-+	if (stripe_size * num_stripes > max_physical_size) {
-+		stripe_size = max_physical_size;
-+		do_div(stripe_size, num_stripes);
-+		need_bump = 1;
-+	}
-+	/* restrict logical chunk size  */
-+	if (stripe_size * data_stripes > max_logical_size) {
-+		stripe_size = max_logical_size;
- 		do_div(stripe_size, data_stripes);
-+		need_bump = 1;
-+	}
 +
-+	if (need_bump) {
-+		u64 mask = (1ULL << 24) - 1;
- 
- 		/* bump the answer up to a 16MB boundary */
- 		stripe_size = (stripe_size + mask) & ~mask;
-@@ -4411,6 +4418,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			stripe_size = devices_info[ndevs-1].max_avail;
- 	}
- 
 +	/*
-+	 * Special handle for DUP, since stripe_size is the largest free extent
-+	 * we found, DUP can only use half of it. Other profile's dev_stripes
-+	 * is always 1.
++	 * Don't alloc chunk whose physical size is larger than half
++	 * of the rest physical space.
++	 * This will reduce the possibility of ENOSPC when comes to
++	 * last unallocated space
++	 *
++	 * For the last 16~32M (e.g. 20M), it will first alloc 16M
++	 * (bumped to 16M) and the next time will be the rest size
++	 * (bumped to 16M and reduced to 4M).
++	 * So no dead zone.
 +	 */
- 	do_div(stripe_size, dev_stripes);
- 
- 	/* align to BTRFS_STRIPE_LEN */
++	if (stripe_size * num_stripes > total_physical_avail / 2) {
++		stripe_size = total_physical_avail / 2;
++		need_bump = 1;
++
++	}
+ 	/* restrict logical chunk size  */
+ 	if (stripe_size * data_stripes > max_logical_size) {
+ 		stripe_size = max_logical_size;
 -- 
 2.2.1
 

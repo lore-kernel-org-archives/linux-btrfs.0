@@ -1,53 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:50544 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750725AbaLWThD (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:39101 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750740AbaLXHLo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Dec 2014 14:37:03 -0500
-Received: by mail-pa0-f43.google.com with SMTP id kx10so8533358pab.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Dec 2014 11:37:03 -0800 (PST)
-From: Justin Maggard <jmaggard10@gmail.com>
+	Wed, 24 Dec 2014 02:11:44 -0500
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id D86AC3EE16B
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:42 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id DCFAEAC03F7
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 7F3F6E08004
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
+Received: from WIN-R1VKH1IH438.jp.fujitsu.com (unknown [10.124.102.85])
+	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 53B6318A
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
+Message-Id: <201412240710.AA00005@WIN-R1VKH1IH438.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Wed, 24 Dec 2014 16:10:52 +0900
 To: linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard10@gmail.com>
-Subject: [PATCH] btrfs-progs: Fix btrfs fi show by uuid and label
-Date: Tue, 23 Dec 2014 11:34:52 -0800
-Message-Id: <1419363292-12271-1-git-send-email-jmaggard10@gmail.com>
+Subject: [PATCH] btrfs-progs: doc: fix incorrect format of 'l' option in mkfs.btrfs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 8be2fff (btrfs-progs: apply realpath for btrfs fi
-show when mount point is given) changed the behavior of
-btrfs fi show to return an error if the call to realpath()
-failed.  This broke the ability to specify a filesystem by
-uuid or label.
+The format of 'l' option in mkfs.btrfs.txt is wrong.
+And, when the head of the character string is 65536, the following warning
+is displayed.
 
-So let's not consider a failed call to realpath() as an
-error.  If the user really specified a bad device, just
-return nothing like we did before.
+    $ make
+    Making all in Documentation
+        [ASCII]  mkfs.btrfs.xml
+    asciidoc: WARNING: mkfs.btrfs.xml.tmp1: line 67: list item index: expected 1 got 65536
+        [XMLTO]  mkfs.btrfs.8
+        [GZ]     mkfs.btrfs.8.gz
+    rm mkfs.btrfs.8 mkfs.btrfs.xml
+
+So, fix it.
+
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- cmds-filesystem.c |    9 ++-------
- 1 file changed, 2 insertions(+), 7 deletions(-)
+ Documentation/mkfs.btrfs.txt | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 8f037dd..a654e6f 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -901,13 +901,8 @@ static int cmd_show(int argc, char **argv)
- 		 *     realpath do  /mnt/btrfs/  => /mnt/btrfs
- 		 *     which shall be recognized by btrfs_scan_kernel()
- 		 */
--		if (!realpath(search, path)) {
--			fprintf(stderr, "ERROR: Could not show %s: %s\n",
--					search, strerror(errno));
--			return 1;
--		}
--
--		search = path;
-+		if (realpath(search, path))
-+			search = path;
+diff --git a/Documentation/mkfs.btrfs.txt b/Documentation/mkfs.btrfs.txt
+index ba7e42b..01b615d 100644
+--- a/Documentation/mkfs.btrfs.txt
++++ b/Documentation/mkfs.btrfs.txt
+@@ -59,19 +59,18 @@ By default, mkfs.btrfs will not write to the device if it suspects that
+ there is a filesystem or partition table on the device already.
  
- 		/*
- 		 * Needs special handling if input arg is block dev And if
+ -n|--nodesize <size>
+-+
++
+ -l|--leafsize <size>::
+ Specify the nodesize, the tree block size in which btrfs stores
+ data. The default value is 16KB (16384) or the page size, whichever is
+-bigger. Must be a multiple of the sectorsize, but not larger than
+-65536. Leafsize always equals nodesize and the options are aliases.
++bigger. Must be a multiple of the sectorsize, but not larger than 65536.
++Leafsize always equals nodesize and the options are aliases.
+ 
+ -L|--label <name>::
+ Specify a label for the filesystem.
+ +
+ NOTE: <name> should be less than 256 characters.
+ 
+-
+ -m|--metadata <profile>::
+ Specify how metadata must be spanned across the devices specified. Valid
+ values are 'raid0', 'raid1', 'raid5', 'raid6', 'raid10', 'single' or 'dup'.
 -- 
-1.7.10.4
+2.1.0
 

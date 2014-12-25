@@ -1,77 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:39101 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750740AbaLXHLo (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:36424 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751590AbaLYBS6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 02:11:44 -0500
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id D86AC3EE16B
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:42 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id DCFAEAC03F7
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 7F3F6E08004
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
-Received: from WIN-R1VKH1IH438.jp.fujitsu.com (unknown [10.124.102.85])
-	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 53B6318A
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 16:11:41 +0900 (JST)
-Message-Id: <201412240710.AA00005@WIN-R1VKH1IH438.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 24 Dec 2014 16:10:52 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: doc: fix incorrect format of 'l' option in mkfs.btrfs
+	Wed, 24 Dec 2014 20:18:58 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBP1IRPc019401
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:18:27 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: move check_arg_type() to util.c
+Date: Thu, 25 Dec 2014 09:16:34 +0800
+Message-ID: <1419470195-2889-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The format of 'l' option in mkfs.btrfs.txt is wrong.
-And, when the head of the character string is 65536, the following warning
-is displayed.
+The check_arg_type() function does quite generic thing,
+move it to utils.c.
 
-    $ make
-    Making all in Documentation
-        [ASCII]  mkfs.btrfs.xml
-    asciidoc: WARNING: mkfs.btrfs.xml.tmp1: line 67: list item index: expected 1 got 65536
-        [XMLTO]  mkfs.btrfs.8
-        [GZ]     mkfs.btrfs.8.gz
-    rm mkfs.btrfs.8 mkfs.btrfs.xml
-
-So, fix it.
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- Documentation/mkfs.btrfs.txt | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ cmds-filesystem.c | 32 --------------------------------
+ utils.c           | 32 ++++++++++++++++++++++++++++++++
+ utils.h           |  1 +
+ 3 files changed, 33 insertions(+), 32 deletions(-)
 
-diff --git a/Documentation/mkfs.btrfs.txt b/Documentation/mkfs.btrfs.txt
-index ba7e42b..01b615d 100644
---- a/Documentation/mkfs.btrfs.txt
-+++ b/Documentation/mkfs.btrfs.txt
-@@ -59,19 +59,18 @@ By default, mkfs.btrfs will not write to the device if it suspects that
- there is a filesystem or partition table on the device already.
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 253f105..4d7a797 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -537,38 +537,6 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 	return 0;
+ }
  
- -n|--nodesize <size>
--+
-+
- -l|--leafsize <size>::
- Specify the nodesize, the tree block size in which btrfs stores
- data. The default value is 16KB (16384) or the page size, whichever is
--bigger. Must be a multiple of the sectorsize, but not larger than
--65536. Leafsize always equals nodesize and the options are aliases.
-+bigger. Must be a multiple of the sectorsize, but not larger than 65536.
-+Leafsize always equals nodesize and the options are aliases.
- 
- -L|--label <name>::
- Specify a label for the filesystem.
- +
- NOTE: <name> should be less than 256 characters.
- 
+-/* This function checks if the given input parameter is
+- * an uuid or a path
+- * return -1: some error in the given input
+- * return 0: unknow input
+- * return 1: given input is uuid
+- * return 2: given input is path
+- */
+-static int check_arg_type(char *input)
+-{
+-	uuid_t	out;
+-	char path[PATH_MAX];
 -
- -m|--metadata <profile>::
- Specify how metadata must be spanned across the devices specified. Valid
- values are 'raid0', 'raid1', 'raid5', 'raid6', 'raid10', 'single' or 'dup'.
+-	if (!input)
+-		return -EINVAL;
+-
+-	if (realpath(input, path)) {
+-		if (is_block_device(path) == 1)
+-			return BTRFS_ARG_BLKDEV;
+-
+-		if (is_mount_point(path) == 1)
+-			return BTRFS_ARG_MNTPOINT;
+-
+-		return BTRFS_ARG_UNKNOWN;
+-	}
+-
+-	if (strlen(input) == (BTRFS_UUID_UNPARSED_SIZE - 1) &&
+-		!uuid_parse(input, out))
+-		return BTRFS_ARG_UUID;
+-
+-	return BTRFS_ARG_UNKNOWN;
+-}
+-
+ static int btrfs_scan_kernel(void *search)
+ {
+ 	int ret = 0, fd;
+diff --git a/utils.c b/utils.c
+index 2a92416..80f85e9 100644
+--- a/utils.c
++++ b/utils.c
+@@ -852,6 +852,38 @@ int is_mount_point(const char *path)
+ 	return ret;
+ }
+ 
++/* This function checks if the given input parameter is
++ * an uuid or a path
++ * return -1: some error in the given input
++ * return 0: unknow input
++ * return 1: given input is uuid
++ * return 2: given input is path
++ */
++int check_arg_type(const char *input)
++{
++	uuid_t	out;
++	char path[PATH_MAX];
++
++	if (!input)
++		return -EINVAL;
++
++	if (realpath(input, path)) {
++		if (is_block_device(path) == 1)
++			return BTRFS_ARG_BLKDEV;
++
++		if (is_mount_point(path) == 1)
++			return BTRFS_ARG_MNTPOINT;
++
++		return BTRFS_ARG_UNKNOWN;
++	}
++
++	if (strlen(input) == (BTRFS_UUID_UNPARSED_SIZE - 1) &&
++		!uuid_parse(input, out))
++		return BTRFS_ARG_UUID;
++
++	return BTRFS_ARG_UNKNOWN;
++}
++
+ /*
+  * Find the mount point for a mounted device.
+  * On success, returns 0 with mountpoint in *mp.
+diff --git a/utils.h b/utils.h
+index 289e86b..8d67720 100644
+--- a/utils.h
++++ b/utils.h
+@@ -115,6 +115,7 @@ int set_label(const char *btrfs_dev, const char *label);
+ char *__strncpy__null(char *dest, const char *src, size_t n);
+ int is_block_device(const char *file);
+ int is_mount_point(const char *file);
++int check_arg_type(const char *input);
+ int open_path_or_dev_mnt(const char *path, DIR **dirstream);
+ u64 btrfs_device_size(int fd, struct stat *st);
+ /* Helper to always get proper size of the destination string */
 -- 
-2.1.0
+1.8.1.4
 

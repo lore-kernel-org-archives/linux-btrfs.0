@@ -1,102 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32548 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750997AbaLXPcI (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:41037 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751512AbaLYAmQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 10:32:08 -0500
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id sBOFW6Do006692
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:07 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBOFW5TQ007498
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:06 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBOFW5ZO020290
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Dec 2014 15:32:05 GMT
-Message-ID: <549ADD17.60705@oracle.com>
-Date: Wed, 24 Dec 2014 23:34:47 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 24 Dec 2014 19:42:16 -0500
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 1007C3EE1C1
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:15 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 17080AC031C
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:14 +0900 (JST)
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id B1A87E08006
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:13 +0900 (JST)
+Message-ID: <549B5D4C.1070804@jp.fujitsu.com>
+Date: Thu, 25 Dec 2014 09:41:48 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: systemtap script to controlled induce of media error
-Content-Type: multipart/mixed;
- boundary="------------020600090000080000000205"
+To: <russell@coker.com.au>, <linux-btrfs@vger.kernel.org>
+CC: <janecek@ucw.cz>, Timofey Titovets <nefelim4ag@gmail.com>
+Subject: Re: Debian/Jessie 3.16.7-ckt2-1 kernel error
+References: <201412241202.59568.russell@coker.com.au> <549A8B9B.5000005@jp.fujitsu.com>
+In-Reply-To: <549A8B9B.5000005@jp.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------020600090000080000000205
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Hi Russel, Petr and all
+
+# Add Timofey to the Cc list.
+
+> On 2014/12/24 10:02, Russell Coker wrote:
+>> I've attached the kernel message log that I get after booting kernel 3.16.7
+>> from Debian/Unstable.  This is the kernel branch that will go into
+>> Debian/Jessie so it's important to get it fixed.
+>>
+>> Below has the start of the errors, the attached file has everything from boot.
+>> I've got similar issues on another system, would it help if I collect the logs
+>> from multiple systems?
+>>
+>> [    6.618809] Btrfs loaded
+>> [    6.670878] BTRFS: device fsid a2d7cbbc-23be-4d97-b2bb-de99b0c58c7d devid 1
+>> t
+>> ransid 548614 /dev/mapper/root-crypt
+>> [    6.706907] BTRFS info (device dm-0): disk space caching is enabled
+>> [    6.798762] BTRFS: detected SSD devices, enabling SSD mode
+>> [    6.881272] ------------[ cut here ]------------
+>> [    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-
+>> ckt2
+>> /fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
+>>
+>
+> This problem is once reported by Petr and would not be fixed yet.
+> In addition, there is no Btrfs related error/warning messages.
+>
+> Here are my questions.
+>
+> 1. Is your system "btrfs scrub" clean?
+> 2. Is this message shown every boot time?
+> 3. Is this message shown only in boot?
+> 4. When this message is started to be shown?
+> 5. Do you have any trouble, change your operation or configuration
+>     just before the answer of Q4 ?
+
+Additional questions.
+Q5. Could you give me your kernel configuration?
+     At least, could you tell me whether your kernel
+     enabled CONFIG_PREEMPT or not?
+
+     The first reporter, Timofey, used preemptive kernel.
 
 
+     > [$] uname -a
+     > Linux beplan 3.18.0-rc1-next-20141023-ARCH-dirty #1 SMP PREEMPT Sat
+     > Oct 25 22:19:01 FET 2014 x86_64 GNU/Linux
 
-  A simple script which would fake media error back the upper
-  level.
+     # Please fix me if I'm wrong > Timofey.
 
-  First read write files and list block numbers being read/written,
-  and then specify block number on which media error has to be created.
-  IO will fake fail, btrfs can be tested for these error conditions.
-  You won't be able to test for data consistency.
+     I've never got this problem and I've not used preemptive kernel.
+     This config may be correspond to this problem.
 
-  Works on any SCSI device no need of LVM or any IO special kernel
-  module.
+Q6. If the answer of Q1 is correct, please give me the
+     file system image which can be captured by the following command.
 
-  attached script is still a rough cut.
+     # btrfs-image <device contains Btrfs> <dest>
 
-Thanks, Anand
+* The Additional result of my analyze # for developers.
 
---------------020600090000080000000205
-Content-Type: text/plain; charset=windows-1252;
- name="induce-media-err.stap"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="induce-media-err.stap"
+The first warning message is displayed at boot time
+and it's happen in replay_one_extent(). The following
+warning messages are displayed once a 30 secs. It means
+these happen probably with every periodic transaction
+commit. So I suspect your Btrfs file system has
+something wrong.
 
-IyEgL3Vzci9iaW4vZW52IHN0YXAKCmdsb2JhbCBpbmplY3QKZ2xvYmFsIGRldl9ibG9jawpn
-bG9iYWwgZGV2X2RldmljZQpnbG9iYWwgZmFpbF9yZWFkID0gMAoKI2dsb2JhbCBkZXZfZGV2
-aWNlMSA9ICJzZGUiCiNnbG9iYWwgZGV2X2RldmljZTI9ICJzZGQiCiNnbG9iYWwgZGV2X2Rl
-dmljZTEgPSAic2RnIgojZ2xvYmFsIGRldl9kZXZpY2UyPSAic2RmIgojZ2xvYmFsIGRldl9k
-ZXZpY2UxID0gInNkYiIKI2dsb2JhbCBkZXZfZGV2aWNlMj0gInNkYyIKCgpwcm9iZSBiZWdp
-bgp7CglpbmplY3QgPSAkMQoJZGV2X2Jsb2NrID0gJDIKCWRldl9kZXZpY2UgPSBAMwoJI3By
-aW50ZigiQkVHSU46ICVkICVseCAlcyAlcyAlc1xuIiwgaW5qZWN0LCBkZXZfYmxvY2ssIGRl
-dl9kZXZpY2UsIGRldl9kZXZpY2UxLCBkZXZfZGV2aWNlMik7CglwcmludGYoIkJFR0lOOiAl
-ZCAlbHggJXNcbiIsIGluamVjdCwgZGV2X2Jsb2NrLCBkZXZfZGV2aWNlKTsKfQoKcHJvYmUg
-a2VybmVsLmZ1bmN0aW9uKCJzZF9wcmVwX2ZuIikgISwKCW1vZHVsZSgiKiIpLmZ1bmN0aW9u
-KCJzZF9wcmVwX2ZuIikKewoJaWYgKCRycS0+cnFfZGlzay0+ZGlza19uYW1lICE9IE5VTEwp
-CiAgICAgICAgCWRldmljZSA9IGtlcm5lbF9zdHJpbmcoJHJxLT5ycV9kaXNrLT5kaXNrX25h
-bWUpCgllbHNlCgkJZGV2aWNlID0gIm5vbmUiCgoJI2lmIChkZXZpY2UgPT0gZGV2X2Rldmlj
-ZTEgfHwgZGV2aWNlID09IGRldl9kZXZpY2UyKSB7CglpZiAoZGV2aWNlID09IGRldl9kZXZp
-Y2UpIHsKICAgICAgICAJaWYoJHJxLT5jbWRfZmxhZ3MgJiAxKQoJCQlyZWFkX29yX3dyaXRl
-ID0gInciCiAgICAgICAgCWVsc2UKCQkJcmVhZF9vcl93cml0ZSA9ICJyIgoKICAgICAgICAJ
-cHJpbnRmKCIlcyAlcyAlbHhcbiIsIGRldmljZSwgcmVhZF9vcl93cml0ZSwgJHJxLT5fX3Nl
-Y3RvcikKCgkJI2lmIChpbmplY3QgJiYgKGRldl9kZXZpY2UxID09IGRldmljZSB8fCBkZXZf
-ZGV2aWNlMiA9PSBkZXZpY2UpICYmIGRldl9ibG9jayA9PSAkcnEtPl9fc2VjdG9yKSB7CgkJ
-aWYgKGluamVjdCAmJiBkZXZfZGV2aWNlID09IGRldmljZSAmJiBkZXZfYmxvY2sgPT0gJHJx
-LT5fX3NlY3RvcikgewoJCQlpZiAocmVhZF9vcl93cml0ZSA9PSAiciIpIHsKCQkJCWZhaWxf
-cmVhZCA9IDEKCQkJCXByaW50ZigiVHJpZ2dlciBlbmFibGVkLi4gIik7CgkJCX0gZWxzZSBp
-ZiAocmVhZF9vcl93cml0ZSA9PSAidyIgJiYgZmFpbF9yZWFkKSB7CgkJCQlmYWlsX3JlYWQg
-PSAwCgkJCQlwcmludGYoIkZpeCB3cml0ZSBhcHBlYXJlZC4gVHJpZ2dlciBkaXNhYmxlZFxu
-Iik7CgkJCX0KCQl9Cgl9Cn0KCnByb2JlIG1vZHVsZSgiKiIpLmZ1bmN0aW9uKCJzY3NpX2Rl
-Y2lkZV9kaXNwb3NpdGlvbkBkcml2ZXJzL3Njc2kvc2NzaV9lcnJvci5jIikgISwKCWtlcm5l
-bC5mdW5jdGlvbigic2NzaV9kZWNpZGVfZGlzcG9zaXRpb25AZHJpdmVycy9zY3NpL3Njc2lf
-ZXJyb3IuYyIpCnsKCWlmICgkc2NtZC0+cmVxdWVzdC0+cnFfZGlzay0+ZGlza19uYW1lICE9
-IE5VTEwpCgkJZGV2aWNlID0ga2VybmVsX3N0cmluZygkc2NtZC0+cmVxdWVzdC0+cnFfZGlz
-ay0+ZGlza19uYW1lKQoJZWxzZQoJCWRldmljZSA9ICJub25lIgoKICAgICAgICBpZigkc2Nt
-ZC0+cmVxdWVzdC0+Y21kX2ZsYWdzICYgMSkKCQlyZWFkX29yX3dyaXRlID0gInciCiAgICAg
-ICAgZWxzZQoJCXJlYWRfb3Jfd3JpdGUgPSAiciIKCglibG9jayA9ICRzY21kLT5yZXF1ZXN0
-LT5fX3NlY3RvcgoKCSNpZiAoKGRldmljZSA9PSBkZXZfZGV2aWNlMSB8fCBkZXZpY2UgPT0g
-ZGV2X2RldmljZTIpICYmIGZhaWxfcmVhZCAmJiBibG9jayA9PSBkZXZfYmxvY2sgJiYgcmVh
-ZF9vcl93cml0ZSA9PSAiciIpCglpZiAoZGV2aWNlID09IGRldl9kZXZpY2UgJiYgZmFpbF9y
-ZWFkICYmIGJsb2NrID09IGRldl9ibG9jayAmJiByZWFkX29yX3dyaXRlID09ICJyIikKCXsK
-CQlwcmludGYoIkZhaWxpbmcgdGhlIENEQiAuLiAiKQoJCXByaW50ZigiJXMgJXMgJWx4XG4i
-LCBkZXZpY2UsIHJlYWRfb3Jfd3JpdGUsIGJsb2NrKQoJCS8qIGNyZWF0ZSBmYWtlIHN0YXR1
-cyBhbmQgc2Vuc2UgZGF0YSAqLwoJCSRzY21kLT5yZXN1bHQgPSAweDAyCgkJJHNjbWQtPnNl
-bnNlX2J1ZmZlclswXSA9IDB4NzAKCQkkc2NtZC0+c2Vuc2VfYnVmZmVyWzJdID0gMHgwMwoJ
-CSRzY21kLT5zZW5zZV9idWZmZXJbN10gPSAweDEzCgkJJHNjbWQtPnNlbnNlX2J1ZmZlclsx
-Ml0gPSAweDExCgkJJHNjbWQtPnNlbnNlX2J1ZmZlclsxM10gPSAweDA0Cgl9Cn0KCnByb2Jl
-IGVuZAp7CglkZWxldGUgaW5qZWN0CglkZWxldGUgZGV2X2Jsb2NrCglkZWxldGUgZGV2X2Rl
-dmljZQp9Cg==
---------------020600090000080000000205--
+Thanks,
+Satoru
+
+>
+> *** The result of my brief analysis (a bit long). ***
+>
+> Your kernel traces are as follows > for developers
+>
+> ====
+> [    6.881272] ------------[ cut here ]------------
+> [    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-ckt2/fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
+> [    6.881453] Modules linked in: btrfs xor raid6_pq sha256_ssse3 sha256_generic ecb cbc algif_skcipher af_alg hid_generic usbhid hid dm_crypt dm_mod sd_mod crc_t10dif crct10dif_generic sg sr_mod crct10dif_common cdrom crc32c_intel r8169 mii ehci_pci ata_generic ehci_hcd ata_piix libata e1000e usbcore ptp scsi_mod usb_common pps_core
+> [    6.883373] CPU: 3 PID: 198 Comm: exe Not tainted 3.16.0-4-amd64 #1 Debian 3.16.7-ckt2-1
+> [    6.883455] Hardware name:                  /DH55HC, BIOS TCIBX10H.86A.0036.2010.0525.1620 05/25/2010
+> [    6.884169]  0000000000000009 ffffffff81507263 0000000000000000 ffffffff81065847
+> [    6.884449]  ffff8802366ba980 ffff8800b67fb000 ffff8802366bbe10 0000000000000000
+> [    6.884723]  0000000000000000 ffffffffa022727a cc9e8800b750eec8 006c000000000029
+> [    6.885057] Call Trace:
+> [    6.885127]  [<ffffffff81507263>] ? dump_stack+0x41/0x51
+> [    6.885199]  [<ffffffff81065847>] ? warn_slowpath_common+0x77/0x90
+> [    6.885277]  [<ffffffffa022727a>] ? btrfs_commit_transaction+0x38a/0x9c0 [btrfs]
+> [    6.885369]  [<ffffffffa026668a>] ? btrfs_recover_log_trees+0x38a/0x440 [btrfs]
+> [    6.885460]  [<ffffffffa021de50>] ? free_root_pointers+0x60/0x60 [btrfs]
+> [    6.885538]  [<ffffffffa0263e20>] ? replay_one_extent+0x6c0/0x6c0 [btrfs]
+> [    6.885613]  [<ffffffffa02249af>] ? open_ctree+0x176f/0x1f20 [btrfs]
+> [    6.885688]  [<ffffffffa01fb93f>] ? btrfs_mount+0x61f/0x8b0 [btrfs]
+> [    6.885758]  [<ffffffff81237547>] ? selinux_sb_copy_data+0x157/0x220
+> [    6.885831]  [<ffffffff811a9534>] ? mount_fs+0x34/0x1a0
+> [    6.885902]  [<ffffffff811c2d72>] ? vfs_kern_mount+0x62/0x110
+> [    6.885970]  [<ffffffff811c55ca>] ? do_mount+0x23a/0xac0
+> [    6.886041]  [<ffffffff811c52b6>] ? copy_mount_options+0xb6/0x150
+> [    6.886109]  [<ffffffff811c6141>] ? SyS_mount+0x81/0xc0
+> [    6.886180]  [<ffffffff8150d32d>] ? system_call_fast_compare_end+0x10/0x15
+> [    6.886252] ---[ end trace 9b7dbfb04527c9ee ]---
+> ====
+>
+> Your system hits the same following WARN_ON() many times at the boot time.
+>
+> fs/btrfs/delayed-inode.c:
+> ===============================================================================
+> void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
+> {
+>          struct btrfs_delayed_root *delayed_root;
+>          delayed_root = btrfs_get_delayed_root(root);
+>          WARN_ON(btrfs_first_delayed_node(delayed_root));
+> }
+> ===============================================================================
+>
+> There is no other Btrfs related error/warning message.
+>
+> It seems the same/similar problem of what Petr (CC'ed) reported.
+>
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39721
+>
+> The WARN_ON() is the same and his system also hit this problem
+> at the boot time.
+>
+> Although I briefly look at the fix for this problem by
+> "git log --grep=btrfs_commit_transaction v3.16... fs/btrfs",
+> I couldn't find it (Of course, I would be wrong). In addition,
+> Petr hit this problem with 3.18-rc1. So I suspect this problem
+> is not fixed yet.
+>
+> I don't know why it happens now. Any idea? >developers.
+>
+> Thanks,
+> Satoru
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

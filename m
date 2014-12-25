@@ -1,136 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63172 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751590AbaLYCEd (ORCPT
+Received: from detritus.pyropus.ca ([64.5.53.58]:52859 "HELO
+	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1751637AbaLYDJ4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 21:04:33 -0500
-From: Xing Gu <gux.fnst@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>, <eguan@redhat.com>,
-        <quwenruo@cn.fujitsu.com>, Xing Gu <gux.fnst@cn.fujitsu.com>
-Subject: [PATCH v3] btrfs: add regression test for remount with thread_pool resized
-Date: Thu, 25 Dec 2014 10:00:57 +0800
-Message-ID: <1419472857-31867-1-git-send-email-gux.fnst@cn.fujitsu.com>
-In-Reply-To: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
-References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+	Wed, 24 Dec 2014 22:09:56 -0500
+Date: Wed, 24 Dec 2014 21:14:13 -0600
+From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
+To: btrfs list <linux-btrfs@vger.kernel.org>
+Subject: Re: Oddly slow read performance with near-full largish FS
+Message-ID: <20141225031413.GA5864@pyropus.ca>
+References: <20141217024228.GA5544@pyropus.ca> <54955624.5040808@pobox.com>
+ <20141221163207.GA18988@pyropus.ca> <54973C65.6070709@pobox.com>
+ <20141221225315.GA19479@pyropus.ca> <54976811.2060507@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54976811.2060507@pobox.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for a btrfs issue of resizing 'thread_pool' when
-remount the fs.
+Robert White <rwhite@pobox.com> wrote:
+> 
+> You have very little free memory.
 
-This regression was introduced by the following linux kernel commit:
-    btrfs: Added btrfs_workqueue_struct implemented ordered
-    execution based on kernel workqueue
-    08a9ff3264181986d1d692a4e6fce3669700c9f8
-And it was fixed by the following linux kernel commit:
-    btrfs: fix crash in remount(thread_pool=) case
-    800ee2247f483b6d05ed47ef3bbc90b56451746c
+I think you're mistaken.  Every diagnostic I've looked at says the opposite.
+>From 30 seconds ago on the same machine, after unmounting the big btrfs
+filesystem (and with a larger xfs one mounted), /proc/meminfo says almost the
+entirety of the machine's 16GB is free:
 
-Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
----
- tests/btrfs/082     | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/082.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 73 insertions(+)
- create mode 100755 tests/btrfs/082
- create mode 100644 tests/btrfs/082.out
+  MemTotal:       16469880 kB
+  MemFree:        16005392 kB
+  MemAvailable:   15974244 kB
+  Buffers:              84 kB
+  [...]
 
-diff --git a/tests/btrfs/082 b/tests/btrfs/082
-new file mode 100755
-index 0000000..987ffae
---- /dev/null
-+++ b/tests/btrfs/082
-@@ -0,0 +1,70 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/082
-+#
-+# Regression test for a btrfs issue of resizing 'thread_pool' when
-+# remount the fs.
-+#
-+# This regression was introduced by the following linux kernel commit:
-+#     btrfs: Added btrfs_workqueue_struct implemented ordered
-+#     execution based on kernel workqueue
-+#     08a9ff3264181986d1d692a4e6fce3669700c9f8
-+# And it was fixed by the following linux kernel commit:
-+#     btrfs: fix crash in remount(thread_pool=) case
-+#     800ee2247f483b6d05ed47ef3bbc90b56451746c
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null
-+
-+nr_null=`dmesg | grep -c "kernel NULL pointer dereference"`
-+_scratch_mount "-o thread_pool=6"
-+_scratch_mount "-o remount,thread_pool=10"
-+new_null=`dmesg | grep -c "kernel NULL pointer dereference"`
-+if [ $new_null -ne $nr_null ]; then
-+	_fail "kernel bug detected, check dmesg for more infomation."
-+fi
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
-new file mode 100644
-index 0000000..2977f14
---- /dev/null
-+++ b/tests/btrfs/082.out
-@@ -0,0 +1,2 @@
-+QA output created by 082
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e29999b..fd2fa76 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -84,3 +84,4 @@
- 079 auto rw metadata
- 080 auto snapshot
- 081 auto quick clone
-+082 auto quick remount
+> This is called "demand paging",
+
+Yes, I'm aware of how this works.
+
+Charles
 -- 
-1.9.3
-
+-----------------------------------------------------------------------
+Charles Cazabon
+GPL'ed software available at:               http://pyropus.ca/software/
+-----------------------------------------------------------------------

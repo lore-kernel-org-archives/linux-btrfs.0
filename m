@@ -1,169 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:41037 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751512AbaLYAmQ (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:63172 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751590AbaLYCEd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Dec 2014 19:42:16 -0500
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 1007C3EE1C1
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:15 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 17080AC031C
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:14 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id B1A87E08006
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 09:42:13 +0900 (JST)
-Message-ID: <549B5D4C.1070804@jp.fujitsu.com>
-Date: Thu, 25 Dec 2014 09:41:48 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Wed, 24 Dec 2014 21:04:33 -0500
+From: Xing Gu <gux.fnst@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>, <eguan@redhat.com>,
+        <quwenruo@cn.fujitsu.com>, Xing Gu <gux.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs: add regression test for remount with thread_pool resized
+Date: Thu, 25 Dec 2014 10:00:57 +0800
+Message-ID: <1419472857-31867-1-git-send-email-gux.fnst@cn.fujitsu.com>
+In-Reply-To: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+References: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <russell@coker.com.au>, <linux-btrfs@vger.kernel.org>
-CC: <janecek@ucw.cz>, Timofey Titovets <nefelim4ag@gmail.com>
-Subject: Re: Debian/Jessie 3.16.7-ckt2-1 kernel error
-References: <201412241202.59568.russell@coker.com.au> <549A8B9B.5000005@jp.fujitsu.com>
-In-Reply-To: <549A8B9B.5000005@jp.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Russel, Petr and all
+Regression test for a btrfs issue of resizing 'thread_pool' when
+remount the fs.
 
-# Add Timofey to the Cc list.
+This regression was introduced by the following linux kernel commit:
+    btrfs: Added btrfs_workqueue_struct implemented ordered
+    execution based on kernel workqueue
+    08a9ff3264181986d1d692a4e6fce3669700c9f8
+And it was fixed by the following linux kernel commit:
+    btrfs: fix crash in remount(thread_pool=) case
+    800ee2247f483b6d05ed47ef3bbc90b56451746c
 
-> On 2014/12/24 10:02, Russell Coker wrote:
->> I've attached the kernel message log that I get after booting kernel 3.16.7
->> from Debian/Unstable.  This is the kernel branch that will go into
->> Debian/Jessie so it's important to get it fixed.
->>
->> Below has the start of the errors, the attached file has everything from boot.
->> I've got similar issues on another system, would it help if I collect the logs
->> from multiple systems?
->>
->> [    6.618809] Btrfs loaded
->> [    6.670878] BTRFS: device fsid a2d7cbbc-23be-4d97-b2bb-de99b0c58c7d devid 1
->> t
->> ransid 548614 /dev/mapper/root-crypt
->> [    6.706907] BTRFS info (device dm-0): disk space caching is enabled
->> [    6.798762] BTRFS: detected SSD devices, enabling SSD mode
->> [    6.881272] ------------[ cut here ]------------
->> [    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-
->> ckt2
->> /fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
->>
->
-> This problem is once reported by Petr and would not be fixed yet.
-> In addition, there is no Btrfs related error/warning messages.
->
-> Here are my questions.
->
-> 1. Is your system "btrfs scrub" clean?
-> 2. Is this message shown every boot time?
-> 3. Is this message shown only in boot?
-> 4. When this message is started to be shown?
-> 5. Do you have any trouble, change your operation or configuration
->     just before the answer of Q4 ?
+Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+---
+ tests/btrfs/082     | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/082.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 73 insertions(+)
+ create mode 100755 tests/btrfs/082
+ create mode 100644 tests/btrfs/082.out
 
-Additional questions.
-Q5. Could you give me your kernel configuration?
-     At least, could you tell me whether your kernel
-     enabled CONFIG_PREEMPT or not?
-
-     The first reporter, Timofey, used preemptive kernel.
-
-
-     > [$] uname -a
-     > Linux beplan 3.18.0-rc1-next-20141023-ARCH-dirty #1 SMP PREEMPT Sat
-     > Oct 25 22:19:01 FET 2014 x86_64 GNU/Linux
-
-     # Please fix me if I'm wrong > Timofey.
-
-     I've never got this problem and I've not used preemptive kernel.
-     This config may be correspond to this problem.
-
-Q6. If the answer of Q1 is correct, please give me the
-     file system image which can be captured by the following command.
-
-     # btrfs-image <device contains Btrfs> <dest>
-
-* The Additional result of my analyze # for developers.
-
-The first warning message is displayed at boot time
-and it's happen in replay_one_extent(). The following
-warning messages are displayed once a 30 secs. It means
-these happen probably with every periodic transaction
-commit. So I suspect your Btrfs file system has
-something wrong.
-
-Thanks,
-Satoru
-
->
-> *** The result of my brief analysis (a bit long). ***
->
-> Your kernel traces are as follows > for developers
->
-> ====
-> [    6.881272] ------------[ cut here ]------------
-> [    6.881358] WARNING: CPU: 3 PID: 198 at /build/linux-CMiYW9/linux-3.16.7-ckt2/fs/btrfs/delayed-inode.c:1410 btrfs_commit_transaction+0x38a/0x9c0 [btrfs]()
-> [    6.881453] Modules linked in: btrfs xor raid6_pq sha256_ssse3 sha256_generic ecb cbc algif_skcipher af_alg hid_generic usbhid hid dm_crypt dm_mod sd_mod crc_t10dif crct10dif_generic sg sr_mod crct10dif_common cdrom crc32c_intel r8169 mii ehci_pci ata_generic ehci_hcd ata_piix libata e1000e usbcore ptp scsi_mod usb_common pps_core
-> [    6.883373] CPU: 3 PID: 198 Comm: exe Not tainted 3.16.0-4-amd64 #1 Debian 3.16.7-ckt2-1
-> [    6.883455] Hardware name:                  /DH55HC, BIOS TCIBX10H.86A.0036.2010.0525.1620 05/25/2010
-> [    6.884169]  0000000000000009 ffffffff81507263 0000000000000000 ffffffff81065847
-> [    6.884449]  ffff8802366ba980 ffff8800b67fb000 ffff8802366bbe10 0000000000000000
-> [    6.884723]  0000000000000000 ffffffffa022727a cc9e8800b750eec8 006c000000000029
-> [    6.885057] Call Trace:
-> [    6.885127]  [<ffffffff81507263>] ? dump_stack+0x41/0x51
-> [    6.885199]  [<ffffffff81065847>] ? warn_slowpath_common+0x77/0x90
-> [    6.885277]  [<ffffffffa022727a>] ? btrfs_commit_transaction+0x38a/0x9c0 [btrfs]
-> [    6.885369]  [<ffffffffa026668a>] ? btrfs_recover_log_trees+0x38a/0x440 [btrfs]
-> [    6.885460]  [<ffffffffa021de50>] ? free_root_pointers+0x60/0x60 [btrfs]
-> [    6.885538]  [<ffffffffa0263e20>] ? replay_one_extent+0x6c0/0x6c0 [btrfs]
-> [    6.885613]  [<ffffffffa02249af>] ? open_ctree+0x176f/0x1f20 [btrfs]
-> [    6.885688]  [<ffffffffa01fb93f>] ? btrfs_mount+0x61f/0x8b0 [btrfs]
-> [    6.885758]  [<ffffffff81237547>] ? selinux_sb_copy_data+0x157/0x220
-> [    6.885831]  [<ffffffff811a9534>] ? mount_fs+0x34/0x1a0
-> [    6.885902]  [<ffffffff811c2d72>] ? vfs_kern_mount+0x62/0x110
-> [    6.885970]  [<ffffffff811c55ca>] ? do_mount+0x23a/0xac0
-> [    6.886041]  [<ffffffff811c52b6>] ? copy_mount_options+0xb6/0x150
-> [    6.886109]  [<ffffffff811c6141>] ? SyS_mount+0x81/0xc0
-> [    6.886180]  [<ffffffff8150d32d>] ? system_call_fast_compare_end+0x10/0x15
-> [    6.886252] ---[ end trace 9b7dbfb04527c9ee ]---
-> ====
->
-> Your system hits the same following WARN_ON() many times at the boot time.
->
-> fs/btrfs/delayed-inode.c:
-> ===============================================================================
-> void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
-> {
->          struct btrfs_delayed_root *delayed_root;
->          delayed_root = btrfs_get_delayed_root(root);
->          WARN_ON(btrfs_first_delayed_node(delayed_root));
-> }
-> ===============================================================================
->
-> There is no other Btrfs related error/warning message.
->
-> It seems the same/similar problem of what Petr (CC'ed) reported.
->
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39721
->
-> The WARN_ON() is the same and his system also hit this problem
-> at the boot time.
->
-> Although I briefly look at the fix for this problem by
-> "git log --grep=btrfs_commit_transaction v3.16... fs/btrfs",
-> I couldn't find it (Of course, I would be wrong). In addition,
-> Petr hit this problem with 3.18-rc1. So I suspect this problem
-> is not fixed yet.
->
-> I don't know why it happens now. Any idea? >developers.
->
-> Thanks,
-> Satoru
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/tests/btrfs/082 b/tests/btrfs/082
+new file mode 100755
+index 0000000..987ffae
+--- /dev/null
++++ b/tests/btrfs/082
+@@ -0,0 +1,70 @@
++#!/bin/bash
++# FS QA Test No. btrfs/082
++#
++# Regression test for a btrfs issue of resizing 'thread_pool' when
++# remount the fs.
++#
++# This regression was introduced by the following linux kernel commit:
++#     btrfs: Added btrfs_workqueue_struct implemented ordered
++#     execution based on kernel workqueue
++#     08a9ff3264181986d1d692a4e6fce3669700c9f8
++# And it was fixed by the following linux kernel commit:
++#     btrfs: fix crash in remount(thread_pool=) case
++#     800ee2247f483b6d05ed47ef3bbc90b56451746c
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null
++
++nr_null=`dmesg | grep -c "kernel NULL pointer dereference"`
++_scratch_mount "-o thread_pool=6"
++_scratch_mount "-o remount,thread_pool=10"
++new_null=`dmesg | grep -c "kernel NULL pointer dereference"`
++if [ $new_null -ne $nr_null ]; then
++	_fail "kernel bug detected, check dmesg for more infomation."
++fi
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
+new file mode 100644
+index 0000000..2977f14
+--- /dev/null
++++ b/tests/btrfs/082.out
+@@ -0,0 +1,2 @@
++QA output created by 082
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e29999b..fd2fa76 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -84,3 +84,4 @@
+ 079 auto rw metadata
+ 080 auto snapshot
+ 081 auto quick clone
++082 auto quick remount
+-- 
+1.9.3
 

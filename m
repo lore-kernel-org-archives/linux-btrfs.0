@@ -1,503 +1,310 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23278 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751118AbaLZHDB (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:56922 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751066AbaLZNhj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Dec 2014 02:03:01 -0500
-Message-ID: <549D0778.10809@cn.fujitsu.com>
-Date: Fri, 26 Dec 2014 15:00:08 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+	Fri, 26 Dec 2014 08:37:39 -0500
+Received: from merkaba.localnet (ppp-88-217-104-169.dynamic.mnet-online.de [88.217.104.169])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 5473DC5
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Dec 2014 14:36:53 +0100 (CET)
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: BTRFS free space handling still needs more work: Hangs again
+Date: Fri, 26 Dec 2014 14:37:36 +0100
+Message-ID: <3738341.y7uRQFcLJH@merkaba>
 MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-CC: <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 2/2] Btrfs: qgroup: Introduce a may_use to account
- space_info->bytes_may_use.
-References: <548A3A5A.2070206@cn.fujitsu.com> <1418373875-2921-1-git-send-email-yangds.fnst@cn.fujitsu.com> <1418373875-2921-2-git-send-email-yangds.fnst@cn.fujitsu.com> <549CBAB1.3070909@cn.fujitsu.com> <549CF56A.2050400@jp.fujitsu.com> <549D0507.2060007@cn.fujitsu.com>
-In-Reply-To: <549D0507.2060007@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/26/2014 02:49 PM, Dongsheng Yang wrote:
-> On 12/26/2014 01:43 PM, Satoru Takeuchi wrote:
->> Hi Yang,
->>
->> On 2014/12/26 10:32, Dongsheng Yang wrote:
->>> Hi Satoru,
->>>
->>> I saw your mail of "[BUG] "Quota Ignored On write" problem still 
->>> exist with 3.16-rc5 
->>> <http://news.gmane.org/find-root.php?message_id=53C8DEB0.1060404%40jp.fujitsu.com>" 
->>> in gmane.
->>> I guess this patch will fix the problem you mentioned.
->>> Could you help to give a try?
->>
->> Although it reached disk quota before writing whole 1.5GB,
->> the copied size was only about 700 MB. In this case,
->> expected behavior is to reach disk quota just after
->> writing 1 GB.
->
-> Hi Satoru,
-> Thanx for your testing a lot. But stranger 
+Hello!
 
-Typo, "strange". :)
-> I tried it in 3.19-rc1 and 3.18, both works well
-> writing 1GB. Could you give me some more information about your 
-> testing machine?
-> And could you execute "sync && btrfs qgroup show -pecr $MNT" after 
-> writing?
->
-> *3.19-rc1 with my 2/2 patch applied.
+First: Have a merry christmas and enjoy a quiet time in these days.
 
-I also tried with the two patches applied, and got the same result.
+Second: At a time you feel like it, here is a little rant, but also a bug
+report:
 
-Thanx
-> =======================================================================
-> [root@atest-guest linux_btrfs]# uname -a
-> Linux atest-guest 3.19.0-rc1+ #66 SMP Fri Dec 26 10:38:12 EST 2014 
-> x86_64 x86_64 x86_64 GNU/Linux
-> [root@atest-guest linux_btrfs]# sh quota.sh
-> umount: /mnt: not mounted
-> Btrfs v3.17-1-gbef9fd4
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Turning ON incompat feature 'extref': increased hardlink limit per 
-> file to 65536
-> fs created label (null) on /dev/vdb
->     nodesize 16384 leafsize 16384 sectorsize 4096 size 50.00GiB
-> Create subvolume '/mnt/quota_test'
-> dd: error writing \u2018/mnt/quota_test/test\u2019: Disk quota exceeded
-> 999842+0 records in
-> 999841+0 records out
-> 1023837184 bytes (1.0 GB) copied, 8.06996 s, 127 MB/s
-> [PASS] quota works correctly
-> [root@atest-guest linux_btrfs]# sync
-> [root@atest-guest linux_btrfs]# df -h /mnt/
-> Filesystem      Size  Used Avail Use% Mounted on
-> /dev/vdb         50G  996M   49G   2% /mnt
-> [root@atest-guest linux_btrfs]# btrfs qgroup show -pecr /mnt/
-> qgroupid rfer       excl       max_rfer   max_excl parent  child
-> -------- ----       ----       --------   -------- ------  -----
-> 0/5      16384      16384      0          0        ---     ---
-> 0/256    1023868928 1023868928 1024000000 0        ---     ---
-> =============================================================
->>
->> * 3.19-rc1 without your two v2 patches
->>
->> =============================================================================== 
->>
->> + mkfs.btrfs -f /dev/vdb
->> Btrfs v3.17
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> Turning ON incompat feature 'extref': increased hardlink limit per 
->> file to 65536
->> fs created label (null) on /dev/vdb
->>         nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
->> + mount /dev/vdb /root/btrfs-auto-test/
->> + ret=0
->> + btrfs quota enable /root/btrfs-auto-test/
->> + btrfs subvolume create /root/btrfs-auto-test//sub
->> Create subvolume '/root/btrfs-auto-test/sub'
->> + btrfs qgroup limit 1G /root/btrfs-auto-test//sub
->> + dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 
->> count=1500000
->> 1500000+0 records in
->> 1500000+0 records out
->> 1536000000 bytes (1.5 GB) copied, 25.6601 s, 59.9 MB/s
->> =============================================================================== 
->>
->>
->> * 3.19-rc1 with your two v2 patches
->>
->> =============================================================================== 
->>
->> + mkfs.btrfs -f /dev/vdb
->> Btrfs v3.17
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> Turning ON incompat feature 'extref': increased hardlink limit per 
->> file to 65536
->> fs created label (null) on /dev/vdb
->>         nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
->> + mount /dev/vdb /root/btrfs-auto-test/
->> + ret=0
->> + btrfs quota enable /root/btrfs-auto-test/
->> + btrfs subvolume create /root/btrfs-auto-test//sub
->> Create subvolume '/root/btrfs-auto-test/sub'
->> + btrfs qgroup limit 1G /root/btrfs-auto-test//sub
->> + dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 
->> count=1500000
->> dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
->> 681353+0 records in
->> 681352+0 records out
->> 697704448 bytes (698 MB) copied, 8.15563 s, 85.5 MB/s
->> =============================================================================== 
->>
->>
->> Thanks,
->> Satoru
->>
->>>
->>> Thanx
->>> Yang
->>>
->>> On 12/12/2014 04:44 PM, Dongsheng Yang wrote:
->>>> Currently, for pre_alloc or delay_alloc, the bytes will be accounted
->>>> in space_info by the three guys.
->>>> space_info->bytes_may_use --- space_info->reserved --- 
->>>> space_info->used.
->>>> But on the other hand, in qgroup, there are only two counters to 
->>>> account the
->>>> bytes, qgroup->reserved and qgroup->excl. And qg->reserved accounts
->>>> bytes in space_info->bytes_may_use and qg->excl accounts bytes in
->>>> space_info->used. So the bytes in space_info->reserved is not 
->>>> accounted
->>>> in qgroup. If so, there is a window we can exceed the quota limit when
->>>> bytes is in space_info->reserved.
->>>>
->>>> Example:
->>>>     # btrfs quota enable /mnt
->>>>     # btrfs qgroup limit -e 10M /mnt
->>>>     # for((i=0;i<20;i++));do fallocate -l 1M /mnt/data$i; done
->>>>     # sync
->>>>     # btrfs qgroup show -pcre /mnt
->>>> qgroupid rfer     excl     max_rfer max_excl parent  child
->>>> -------- ----     ----     -------- -------- ------  -----
->>>> 0/5      20987904 20987904 0        10485760 ---     ---
->>>>
->>>> qg->excl is 20987904 larger than max_excl 10485760.
->>>>
->>>> This patch introduce a new counter named may_use to qgroup, then
->>>> there are three counters in qgroup to account bytes in space_info
->>>> as below.
->>>> space_info->bytes_may_use --- space_info->reserved --- 
->>>> space_info->used.
->>>> qgroup->may_use           --- qgroup->reserved     --- qgroup->excl
->>>>
->>>> With this patch applied:
->>>>     # btrfs quota enable /mnt
->>>>     # btrfs qgroup limit -e 10M /mnt
->>>>     # for((i=0;i<20;i++));do fallocate -l 1M /mnt/data$i; done
->>>> fallocate: /mnt/data9: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data10: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data11: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data12: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data13: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data14: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data15: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data16: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data17: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data18: fallocate failed: Disk quota exceeded
->>>> fallocate: /mnt/data19: fallocate failed: Disk quota exceeded
->>>>     # sync
->>>>     # btrfs qgroup show -pcre /mnt
->>>> qgroupid rfer    excl    max_rfer max_excl parent  child
->>>> -------- ----    ----    -------- -------- ------  -----
->>>> 0/5      9453568 9453568 0        10485760 ---     ---
->>>>
->>>> Reported-by: Cyril SCETBON<cyril.scetbon@free.fr>
->>>> Signed-off-by: Dongsheng Yang<yangds.fnst@cn.fujitsu.com>
->>>> ---
->>>> Changelog:
->>>>     v1 -> v2:
->>>>         Remove the redundant check for fs_info->quota_enabled.
->>>>
->>>>   fs/btrfs/extent-tree.c | 20 ++++++++++++++-
->>>>   fs/btrfs/inode.c       | 18 ++++++++++++-
->>>>   fs/btrfs/qgroup.c      | 68 
->>>> +++++++++++++++++++++++++++++++++++++++++++++++---
->>>>   fs/btrfs/qgroup.h      |  4 +++
->>>>   4 files changed, 104 insertions(+), 6 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index 014b7f2..f4ad737 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -5500,8 +5500,12 @@ static int pin_down_extent(struct btrfs_root 
->>>> *root,
->>>>
->>>>       set_extent_dirty(root->fs_info->pinned_extents, bytenr,
->>>>                bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
->>>> -    if (reserved)
->>>> +    if (reserved) {
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           num_bytes, -1);
->>>>           trace_btrfs_reserved_extent_free(root, bytenr, num_bytes);
->>>> +    }
->>>>       return 0;
->>>>   }
->>>>
->>>> @@ -6230,6 +6234,9 @@ void btrfs_free_tree_block(struct 
->>>> btrfs_trans_handle *trans,
->>>>           btrfs_update_reserved_bytes(cache, buf->len, 
->>>> RESERVE_FREE, 0);
->>>>           trace_btrfs_reserved_extent_free(root, buf->start, 
->>>> buf->len);
->>>>           pin = 0;
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           buf->len, -1);
->>>>       }
->>>>   out:
->>>>       if (pin)
->>>> @@ -6964,7 +6971,11 @@ static int 
->>>> __btrfs_free_reserved_extent(struct btrfs_root *root,
->>>>       else {
->>>>           btrfs_add_free_space(cache, start, len);
->>>>           btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, 
->>>> delalloc);
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           len, -1);
->>>>       }
->>>> +
->>>>       btrfs_put_block_group(cache);
->>>>
->>>>       trace_btrfs_reserved_extent_free(root, start, len);
->>>> @@ -7200,6 +7211,9 @@ int btrfs_alloc_logged_file_extent(struct 
->>>> btrfs_trans_handle *trans,
->>>>       BUG_ON(ret); /* logic error */
->>>>       ret = alloc_reserved_file_extent(trans, root, 0, root_objectid,
->>>>                        0, owner, offset, ins, 1);
->>>> +    btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                       root->root_key.objectid,
->>>> +                       ins->offset, 1);
->>>>       btrfs_put_block_group(block_group);
->>>>       return ret;
->>>>   }
->>>> @@ -7346,6 +7360,10 @@ struct extent_buffer 
->>>> *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->>>>           return ERR_PTR(ret);
->>>>       }
->>>>
->>>> +    btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                       root_objectid,
->>>> +                       ins.offset, 1);
->>>> +
->>>>       buf = btrfs_init_new_buffer(trans, root, ins.objectid,
->>>>                       blocksize, level);
->>>>       BUG_ON(IS_ERR(buf)); /* -ENOMEM */
->>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>>> index d23362f..0c824f3 100644
->>>> --- a/fs/btrfs/inode.c
->>>> +++ b/fs/btrfs/inode.c
->>>> @@ -59,6 +59,7 @@
->>>>   #include "backref.h"
->>>>   #include "hash.h"
->>>>   #include "props.h"
->>>> +#include "qgroup.h"
->>>>
->>>>   struct btrfs_iget_args {
->>>>       struct btrfs_key *location;
->>>> @@ -739,7 +740,9 @@ retry:
->>>>               }
->>>>               goto out_free;
->>>>           }
->>>> -
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           ins.offset, 1);
->>>>           /*
->>>>            * here we're doing allocation and writeback of the
->>>>            * compressed pages
->>>> @@ -951,6 +954,10 @@ static noinline int cow_file_range(struct 
->>>> inode *inode,
->>>>           if (ret < 0)
->>>>               goto out_unlock;
->>>>
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           ins.offset, 1);
->>>> +
->>>>           em = alloc_extent_map();
->>>>           if (!em) {
->>>>               ret = -ENOMEM;
->>>> @@ -6745,6 +6752,10 @@ static struct extent_map 
->>>> *btrfs_new_extent_direct(struct inode *inode,
->>>>           return ERR_PTR(ret);
->>>>       }
->>>>
->>>> +    btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                       root->root_key.objectid,
->>>> +                       ins.offset, 1);
->>>> +
->>>>       return em;
->>>>   }
->>>>
->>>> @@ -9266,6 +9277,11 @@ static int 
->>>> __btrfs_prealloc_file_range(struct inode *inode, int mode,
->>>>                   btrfs_end_transaction(trans, root);
->>>>               break;
->>>>           }
->>>> +
->>>> + btrfs_qgroup_update_reserved_bytes(root->fs_info,
->>>> +                           root->root_key.objectid,
->>>> +                           ins.offset, 1);
->>>> +
->>>>           btrfs_drop_extent_cache(inode, cur_offset,
->>>>                       cur_offset + ins.offset -1, 0);
->>>>
->>>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->>>> index 48b60db..d147082 100644
->>>> --- a/fs/btrfs/qgroup.c
->>>> +++ b/fs/btrfs/qgroup.c
->>>> @@ -72,6 +72,7 @@ struct btrfs_qgroup {
->>>>       /*
->>>>        * reservation tracking
->>>>        */
->>>> +    u64 may_use;
->>>>       u64 reserved;
->>>>
->>>>       /*
->>>> @@ -1414,6 +1415,8 @@ static int qgroup_excl_accounting(struct 
->>>> btrfs_fs_info *fs_info,
->>>>       WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
->>>>       qgroup->excl += sign * oper->num_bytes;
->>>>       qgroup->excl_cmpr += sign * oper->num_bytes;
->>>> +    if (sign > 0)
->>>> +        qgroup->reserved -= oper->num_bytes;
->>>>
->>>>       qgroup_dirty(fs_info, qgroup);
->>>>
->>>> @@ -1434,6 +1437,8 @@ static int qgroup_excl_accounting(struct 
->>>> btrfs_fs_info *fs_info,
->>>>           qgroup->excl += sign * oper->num_bytes;
->>>>           if (sign < 0)
->>>>               WARN_ON(qgroup->excl < oper->num_bytes);
->>>> +        if (sign > 0)
->>>> +            qgroup->reserved -= oper->num_bytes;
->>>>           qgroup->excl_cmpr += sign * oper->num_bytes;
->>>>           qgroup_dirty(fs_info, qgroup);
->>>>
->>>> @@ -2359,6 +2364,61 @@ out:
->>>>       return ret;
->>>>   }
->>>>
->>>> +int btrfs_qgroup_update_reserved_bytes(struct btrfs_fs_info *fs_info,
->>>> +                        u64 ref_root,
->>>> +                        u64 num_bytes,
->>>> +                        int sign)
->>>> +{
->>>> +    struct btrfs_root *quota_root;
->>>> +    struct btrfs_qgroup *qgroup;
->>>> +    int ret = 0;
->>>> +    struct ulist_node *unode;
->>>> +    struct ulist_iterator uiter;
->>>> +
->>>> +    if (!is_fstree(ref_root) || !fs_info->quota_enabled)
->>>> +        return 0;
->>>> +
->>>> +    if (num_bytes == 0)
->>>> +        return 0;
->>>> +
->>>> +    spin_lock(&fs_info->qgroup_lock);
->>>> +    quota_root = fs_info->quota_root;
->>>> +    if (!quota_root)
->>>> +        goto out;
->>>> +
->>>> +    qgroup = find_qgroup_rb(fs_info, ref_root);
->>>> +    if (!qgroup)
->>>> +        goto out;
->>>> +
->>>> +    ulist_reinit(fs_info->qgroup_ulist);
->>>> +    ret = ulist_add(fs_info->qgroup_ulist, qgroup->qgroupid,
->>>> +            (uintptr_t)qgroup, GFP_ATOMIC);
->>>> +    if (ret < 0)
->>>> +        goto out;
->>>> +
->>>> +    ULIST_ITER_INIT(&uiter);
->>>> +    while ((unode = ulist_next(fs_info->qgroup_ulist, &uiter))) {
->>>> +        struct btrfs_qgroup *qg;
->>>> +        struct btrfs_qgroup_list *glist;
->>>> +
->>>> +        qg = u64_to_ptr(unode->aux);
->>>> +
->>>> +        qg->reserved += sign * num_bytes;
->>>> +
->>>> +        list_for_each_entry(glist, &qg->groups, next_group) {
->>>> +            ret = ulist_add(fs_info->qgroup_ulist,
->>>> +                    glist->group->qgroupid,
->>>> +                    (uintptr_t)glist->group, GFP_ATOMIC);
->>>> +            if (ret < 0)
->>>> +                goto out;
->>>> +        }
->>>> +    }
->>>> +
->>>> +out:
->>>> +    spin_unlock(&fs_info->qgroup_lock);
->>>> +    return ret;
->>>> +}
->>>> +
->>>>   /*
->>>>    * reserve some space for a qgroup and all its parents. The 
->>>> reservation takes
->>>>    * place with start_transaction or dealloc_reserve, similar to 
->>>> ENOSPC
->>>> @@ -2407,14 +2467,14 @@ int btrfs_qgroup_reserve(struct btrfs_root 
->>>> *root, u64 num_bytes)
->>>>           qg = u64_to_ptr(unode->aux);
->>>>
->>>>           if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
->>>> -            qg->reserved + (s64)qg->rfer + num_bytes >
->>>> +            qg->reserved + qg->may_use + (s64)qg->rfer + num_bytes >
->>>>               qg->max_rfer) {
->>>>               ret = -EDQUOT;
->>>>               goto out;
->>>>           }
->>>>
->>>>           if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
->>>> -            qg->reserved + (s64)qg->excl + num_bytes >
->>>> +            qg->reserved + qg->may_use + (s64)qg->excl + num_bytes >
->>>>               qg->max_excl) {
->>>>               ret = -EDQUOT;
->>>>               goto out;
->>>> @@ -2438,7 +2498,7 @@ int btrfs_qgroup_reserve(struct btrfs_root 
->>>> *root, u64 num_bytes)
->>>>
->>>>           qg = u64_to_ptr(unode->aux);
->>>>
->>>> -        qg->reserved += num_bytes;
->>>> +        qg->may_use += num_bytes;
->>>>       }
->>>>
->>>>   out:
->>>> @@ -2484,7 +2544,7 @@ void btrfs_qgroup_free(struct btrfs_root 
->>>> *root, u64 num_bytes)
->>>>
->>>>           qg = u64_to_ptr(unode->aux);
->>>>
->>>> -        qg->reserved -= num_bytes;
->>>> +        qg->may_use -= num_bytes;
->>>>
->>>>           list_for_each_entry(glist, &qg->groups, next_group) {
->>>>               ret = ulist_add(fs_info->qgroup_ulist,
->>>> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
->>>> index 18cc68c..31de88e 100644
->>>> --- a/fs/btrfs/qgroup.h
->>>> +++ b/fs/btrfs/qgroup.h
->>>> @@ -95,6 +95,10 @@ int btrfs_run_qgroups(struct btrfs_trans_handle 
->>>> *trans,
->>>>   int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
->>>>                struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
->>>>                struct btrfs_qgroup_inherit *inherit);
->>>> +int btrfs_qgroup_update_reserved_bytes(struct btrfs_fs_info *fs_info,
->>>> +                       u64 ref_root,
->>>> +                       u64 num_bytes,
->>>> +                       int sign);
->>>>   int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
->>>>   void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
->>>>
->>>
->>
->> .
->>
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
->
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I have this on 3.18 kernel on Debian Sid with BTRFS Dual SSD RAID with
+space_cache, skinny meta data extents ‚Äì are these a problem? ‚Äì and
+compress=lzo:
+
+merkaba:~> btrfs fi sh /home
+Label: 'home'  uuid: b96c4f72-0523-45ac-a401-f7be73dd624a
+        Total devices 2 FS bytes used 144.41GiB
+        devid    1 size 160.00GiB used 160.00GiB path /dev/mapper/msata-home
+        devid    2 size 160.00GiB used 160.00GiB path /dev/mapper/sata-home
+
+Btrfs v3.17
+merkaba:~> btrfs fi df /home
+Data, RAID1: total=154.97GiB, used=141.12GiB
+System, RAID1: total=32.00MiB, used=48.00KiB
+Metadata, RAID1: total=5.00GiB, used=3.29GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+And I had hangs with BTRFS again. This time as I wanted to install tax
+return software in Virtualbox¬¥d Windows XP VM (which I use once a year
+cause I know no tax return software for Linux which would be suitable for
+Germany and I frankly don¬¥t care about the end of security cause all
+surfing and other network access I will do from the Linux box and I only
+run the VM behind a firewall).
+
+
+And thus I try the balance dance again:
+
+merkaba:~> btrfs balance start -dusage=5 -musage=5 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -dusage=5 -musage=5 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -dusage=5 /home          
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=10 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=20 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=30 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=40 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=50 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=60 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=70 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -dusage=70 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -dusage=70 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -dusage=65 /home
+Done, had to relocate 0 out of 164 chunks
+merkaba:~> btrfs balance start -dusage=67 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -musage=10 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+merkaba:~#1> btrfs balance start -musage=05 /home
+ERROR: error during balancing '/home' - No space left on device
+There may be more info in syslog - try dmesg | tail
+
+
+Okay, not really, ey?
+
+
+
+But
+
+merkaba:~> btrfs balance start /home
+
+works.
+
+So I am rebalancing everything basically, without need I bet, so causing
+more churn to SSDs than is needed.
+
+
+Otherwise alternative would be to make BTRFS larger I bet.
+
+
+Well this is still not what I would consider stable. So I will still
+recommend: If you want to use BTRFS on a server and estimate 25 GiB of
+usage, make drive at least 50GiB big or even 100GiB to be on the safe
+side. Like I recommended for SLES 11 SP 2/3 BTRFS deployments ‚Äì but
+hey, there say meanwhile "don¬¥t" as in "just don¬¥t use it at all and use SLES
+12 instead, cause BTRFS with 3.0 kernel with a ton of snapper snapshots
+is really not asking for anything even near to production or enterprise
+reliability" (if you need proof, I think I still have a snapshot of a SLES
+11 SP3 VM that broke over night due to me having installed an LDAP server
+for preparing some training slides). Even 3.12 kernel seems daring regarding
+BTRFS, unless SUSE actively backports fixes.
+
+
+In kernel log the failed attempts look like this:
+
+[  209.783437] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  210.116416] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  210.455479] BTRFS info (device dm-3): 1 enospc errors during balance
+[  212.915690] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  213.291634] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  213.654145] BTRFS info (device dm-3): 1 enospc errors during balance
+[  219.219584] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  219.531864] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  222.721234] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  223.084007] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  226.418100] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  226.730118] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  230.218590] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  230.559232] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  233.979952] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  234.320569] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  237.672101] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  237.961171] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  241.262757] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  241.594655] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  244.783861] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  245.095942] BTRFS info (device dm-3): relocating block group 501238202368 flags 17
+[  245.418042] BTRFS info (device dm-3): relocating block group 500198014976 flags 17
+[  245.544153] BTRFS info (device dm-3): relocating block group 496997761024 flags 17
+[  245.644254] BTRFS info (device dm-3): relocating block group 495924019200 flags 17
+[  246.281001] BTRFS info (device dm-3): relocating block group 488407826432 flags 17
+[  246.449939] BTRFS info (device dm-3): relocating block group 431499509760 flags 17
+[  246.561724] BTRFS info (device dm-3): relocating block group 411804106752 flags 17
+[  246.723997] BTRFS info (device dm-3): relocating block group 409656623104 flags 17
+[  251.770469] BTRFS info (device dm-3): 7 enospc errors during balance
+
+
+
+
+My expection for a *stable* and *production quality* filesystem would be:
+
+I never ever get hangs with one kworker running on 100% of one Sandybridge
+core *for minutes* in a production filesystem and thats about it.
+
+Especially for a filesystem that claims to still have a good amount of free
+space:
+
+merkaba:~> LANG=C df -hT /home
+Filesystem             Type   Size  Used Avail Use% Mounted on
+/dev/mapper/msata-home btrfs  160G  146G   25G  86% /home
+
+(yeah, these don¬¥t add up, I account this to compression, but hey, who knows)
+
+
+In kernel log I have things like this, but some earlier time and these I have
+not yet perceived as hangs:
+
+Dec 23 23:33:26 merkaba kernel: [23040.621678] ------------[ cut here ]------------
+Dec 23 23:33:26 merkaba kernel: [23040.621792] WARNING: CPU: 3 PID: 308 at fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empt
+y+0x2d/0x2f [btrfs]()
+Dec 23 23:33:26 merkaba kernel: [23040.621796] Modules linked in: mmc_block ufs qnx4 hfsplus hfs minix ntfs msdos jfs xfs libcrc32c snd
+_usb_audio snd_usbmidi_lib snd_rawmidi snd_seq_device hid_generic hid_pl ff_memless usbhid hid nls_utf8 nls_cp437 vfat fat uas usb_stor
+age bnep bluetooth binfmt_misc cpufreq_userspace cpufreq_stats pci_stub cpufreq_powersave vboxpci(O) cpufreq_conservative vboxnetadp(O)
+ vboxnetflt(O) vboxdrv(O) ext4 crc16 mbcache jbd2 intel_rapl x86_pkg_temp_thermal intel_powerclamp kvm_intel kvm crct10dif_pclmul crc32
+_pclmul ghash_clmulni_intel snd_hda_codec_hdmi iwldvm aesni_intel snd_hda_codec_conexant mac80211 aes_x86_64 snd_hda_codec_generic lrw 
+gf128mul glue_helper ablk_helper cryptd psmouse snd_hda_intel serio_raw iwlwifi pcspkr lpc_ich snd_hda_controller i2c_i801 mfd_core snd
+_hda_codec snd_hwdep cfg80211 snd_pcm snd_timer shpchp thinkpad_acpi nvram snd soundcore rfkill battery ac tpm_tis tpm processor evdev 
+joydev sbs sbshc coretemp hdaps(O) tp_smapi(O) thinkpad_ec(O) loop firewire_sbp2 fuse ecryptfs autofs4 md_mod btrfs xor raid6_pq microc
+ode dm_mirror dm_region_hash dm_log dm_mod sg sr_mod sd_mod cdrom crc32c_intel ahci firewire_ohci libahci sata_sil24 e1000e libata ptp 
+sdhci_pci ehci_pci sdhci firewire_core ehci_hcd crc_itu_t pps_core mmc_core scsi_mod usbcore usb_common thermal
+Dec 23 23:33:26 merkaba kernel: [23040.621978] CPU: 3 PID: 308 Comm: btrfs-transacti Tainted: G        W  O   3.18.0-tp520 #14
+Dec 23 23:33:26 merkaba kernel: [23040.621982] Hardware name: LENOVO 42433WG/42433WG, BIOS 8AET63WW (1.43 ) 05/08/2013
+Dec 23 23:33:26 merkaba kernel: [23040.621985]  0000000000000009 ffff8804044c7d88 ffffffff814a516e 0000000080000000
+Dec 23 23:33:26 merkaba kernel: [23040.621992]  0000000000000000 ffff8804044c7dc8 ffffffff8103f83e ffff8804044c7db8
+Dec 23 23:33:26 merkaba kernel: [23040.621999]  ffffffffc04bd5a1 ffff880037590800 ffff8800a599c320 0000000000000000
+Dec 23 23:33:26 merkaba kernel: [23040.622006] Call Trace:
+Dec 23 23:33:26 merkaba kernel: [23040.622026]  [<ffffffff814a516e>] dump_stack+0x4f/0x7c
+Dec 23 23:33:26 merkaba kernel: [23040.622034]  [<ffffffff8103f83e>] warn_slowpath_common+0x7c/0x96
+Dec 23 23:33:26 merkaba kernel: [23040.622104]  [<ffffffffc04bd5a1>] ? btrfs_assert_delayed_root_empty+0x2d/0x2f [btrfs]
+Dec 23 23:33:26 merkaba kernel: [23040.622111]  [<ffffffff8103f8ec>] warn_slowpath_null+0x15/0x17
+Dec 23 23:33:26 merkaba kernel: [23040.622164]  [<ffffffffc04bd5a1>] btrfs_assert_delayed_root_empty+0x2d/0x2f [btrfs]
+Dec 23 23:33:26 merkaba kernel: [23040.622211]  [<ffffffffc047a830>] btrfs_commit_transaction+0x394/0x8bc [btrfs]
+Dec 23 23:33:26 merkaba kernel: [23040.622254]  [<ffffffffc0476dd5>] transaction_kthread+0xf9/0x1af [btrfs]
+Dec 23 23:33:26 merkaba kernel: [23040.622295]  [<ffffffffc0476cdc>] ? btrfs_cleanup_transaction+0x43a/0x43a [btrfs]
+Dec 23 23:33:26 merkaba kernel: [23040.622305]  [<ffffffff8105697c>] kthread+0xb2/0xba
+Dec 23 23:33:26 merkaba kernel: [23040.622312]  [<ffffffff814a0000>] ? dcbnl_newmsg+0x14/0xa8
+Dec 23 23:33:26 merkaba kernel: [23040.622317]  [<ffffffff810568ca>] ? __kthread_parkme+0x62/0x62
+Dec 23 23:33:26 merkaba kernel: [23040.622324]  [<ffffffff814a9f6c>] ret_from_fork+0x7c/0xb0
+Dec 23 23:33:26 merkaba kernel: [23040.622329]  [<ffffffff810568ca>] ? __kthread_parkme+0x62/0x62
+Dec 23 23:33:26 merkaba kernel: [23040.622334] ---[ end trace 90db5b1c7067cf1d ]---
+Dec 23 23:33:56 merkaba kernel: [23070.671999] ------------[ cut here ]------------
+
+
+Dec 23 23:33:56 merkaba kernel: [23070.671999] ------------[ cut here ]------------
+Dec 23 23:33:56 merkaba kernel: [23070.672064] WARNING: CPU: 3 PID: 308 at fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empt
+y+0x2d/0x2f [btrfs]()
+Dec 23 23:33:56 merkaba kernel: [23070.672067] Modules linked in: mmc_block ufs qnx4 hfsplus hfs minix ntfs msdos jfs xfs libcrc32c snd_usb_audio snd_usbmidi_lib snd_rawmidi snd_seq_device hid_generic hid_pl ff_memless usbhid hid nls_utf8 nls_cp437 vfat fat uas usb_storage bnep bluetooth binfmt_misc cpufreq_userspace cpufreq_stats pci_stub cpufreq_powersave vboxpci(O) cpufreq_conservative vboxnetadp(O) vboxnetflt(O) vboxdrv(O) ext4 crc16 mbcache jbd2 intel_rapl x86_pkg_temp_thermal intel_powerclamp kvm_intel kvm crct10dif_pclmul crc32_pclmul ghash_clmulni_intel snd_hda_codec_hdmi iwldvm aesni_intel snd_hda_codec_conexant mac80211 aes_x86_64 snd_hda_codec_generic lrw gf128mul glue_helper ablk_helper cryptd psmouse snd_hda_intel serio_raw iwlwifi pcspkr lpc_ich snd_hda_controller i2c_i801 mfd_core snd_hda_codec snd_hwdep cfg80211 snd_pcm snd_timer shpchp thinkpad_acpi nvram snd soundcore rfkill battery ac tpm_tis tpm processor evdev joydev sbs sbshc coretemp hdaps(O) tp_smapi(O) thinkpad_ec(O) loop firewire_sbp2 fuse ecryptfs autofs4 md_mod btrfs xor raid6_pq microcode dm_mirror dm_region_hash dm_log dm_mod sg sr_mod sd_mod cdrom crc32c_intel ahci firewire_ohci libahci sata_sil24 e1000e libata ptp sdhci_pci ehci_pci sdhci firewire_core ehci_hcd crc_itu_t pps_core mmc_core scsi_mod usbcore usb_common thermal
+Dec 23 23:33:56 merkaba kernel: [23070.672193] CPU: 3 PID: 308 Comm: btrfs-transacti Tainted: G        W  O   3.18.0-tp520 #14
+Dec 23 23:33:56 merkaba kernel: [23070.672196] Hardware name: LENOVO 42433WG/42433WG, BIOS 8AET63WW (1.43 ) 05/08/2013
+Dec 23 23:33:56 merkaba kernel: [23070.672200]  0000000000000009 ffff8804044c7d88 ffffffff814a516e 0000000080000000
+Dec 23 23:33:56 merkaba kernel: [23070.672205]  0000000000000000 ffff8804044c7dc8 ffffffff8103f83e ffff8804044c7db8
+Dec 23 23:33:56 merkaba kernel: [23070.672209]  ffffffffc04bd5a1 ffff880037590800 ffff8802cd6e50a0 0000000000000000
+Dec 23 23:33:56 merkaba kernel: [23070.672214] Call Trace:
+Dec 23 23:33:56 merkaba kernel: [23070.672222]  [<ffffffff814a516e>] dump_stack+0x4f/0x7c
+Dec 23 23:33:56 merkaba kernel: [23070.672229]  [<ffffffff8103f83e>] warn_slowpath_common+0x7c/0x96
+Dec 23 23:33:56 merkaba kernel: [23070.672264]  [<ffffffffc04bd5a1>] ? btrfs_assert_delayed_root_empty+0x2d/0x2f [btrfs]
+Dec 23 23:33:56 merkaba kernel: [23070.672270]  [<ffffffff8103f8ec>] warn_slowpath_null+0x15/0x17
+Dec 23 23:33:56 merkaba kernel: [23070.672301]  [<ffffffffc04bd5a1>] btrfs_assert_delayed_root_empty+0x2d/0x2f [btrfs]
+Dec 23 23:33:56 merkaba kernel: [23070.672330]  [<ffffffffc047a830>] btrfs_commit_transaction+0x394/0x8bc [btrfs]
+Dec 23 23:33:56 merkaba kernel: [23070.672357]  [<ffffffffc0476dd5>] transaction_kthread+0xf9/0x1af [btrfs]
+Dec 23 23:33:56 merkaba kernel: [23070.672383]  [<ffffffffc0476cdc>] ? btrfs_cleanup_transaction+0x43a/0x43a [btrfs]
+Dec 23 23:33:56 merkaba kernel: [23070.672389]  [<ffffffff8105697c>] kthread+0xb2/0xba
+Dec 23 23:33:56 merkaba kernel: [23070.672395]  [<ffffffff814a0000>] ? dcbnl_newmsg+0x14/0xa8
+Dec 23 23:33:56 merkaba kernel: [23070.672399]  [<ffffffff810568ca>] ? __kthread_parkme+0x62/0x62
+Dec 23 23:33:56 merkaba kernel: [23070.672405]  [<ffffffff814a9f6c>] ret_from_fork+0x7c/0xb0
+Dec 23 23:33:56 merkaba kernel: [23070.672409]  [<ffffffff810568ca>] ? __kthread_parkme+0x62/0x62
+Dec 23 23:33:56 merkaba kernel: [23070.672412] ---[ end trace 90db5b1c7067cf1e ]---
+Dec 23 23:34:26 merkaba kernel: [23100.709530] ------------[ cut here ]------------
+
+
+The recent hangings today are not in the log, I was upset enough to
+forcefully switch of the machine. Tax returns are not my all time favorite,
+but tax returns with hanging filesystems is no fun at all.
+
+
+I will upgrade to 3.19 with 3.19-rc2.
+
+Lets see what this balance will do.
+
+It currently is here:
+
+merkaba:~> btrfs balance status /home
+Balance on '/home' is running
+32 out of about 164 chunks balanced (53 considered),  80% left
+
+merkaba:~> btrfs fi df /home
+Data, RAID1: total=154.97GiB, used=142.10GiB
+System, RAID1: total=32.00MiB, used=48.00KiB
+Metadata, RAID1: total=5.00GiB, used=3.33GiB
+GlobalReserve, single: total=512.00MiB, used=254.31MiB
+
+
+So for once, we are told not to balance needlessly, but then in order for
+stable operation I need to balance nonetheless?
+
+Well lets see how it will improve things. Last time it did. Considerably.
+BTRFS only had these hang problems with 3.15 and 3.16 if trees allocated
+all remaining space. So I expect it to downsize these trees are to there is
+some device space being freed to allocatable again.
+
+Next I will also defrag the Windows VM image just as an additional safety
+net.
+
+
+Okay, doing something else now as the BTRFS will sort things out hopefully.
+
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

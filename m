@@ -1,65 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:33282 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751283AbaLYJWB (ORCPT
+Received: from mailout2.ltindia.com ([203.199.60.171]:57475 "EHLO
+	mailout2.ltindia.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751002AbaLZPgz convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Dec 2014 04:22:01 -0500
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 47DCD3EE16B
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 18:22:00 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 5A11EAC073F
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 18:21:59 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 0E976E08002
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Dec 2014 18:21:59 +0900 (JST)
-Message-ID: <549BD725.8040603@jp.fujitsu.com>
-Date: Thu, 25 Dec 2014 18:21:41 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Fri, 26 Dec 2014 10:36:55 -0500
+From: Ankur Tank <Ankur.Tank@LntTechservices.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfs doesn't format eMMC if previous filesystem is ext4
+Date: Fri, 26 Dec 2014 15:24:59 +0000
+Message-ID: <CFB3B8F56DDE9F45B45EBDEBED372A6644232D@POCITMSEXMB05.LntUniverse.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-CC: Chris Murphy <chris@colorremedies.com>
-Subject: [PATCH] btrfs: suppress a build warning on building 32bit kernel
-References: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
-In-Reply-To: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Hi,
 
-Suppress the following warning displayed on building 32bit (i686) kernel.
+I wanted to test btrfs on the eMMC of beaglebone black based custom board.
+Precondition: eMMC is formatted with ext4 filesystem
+Use case:
+        Format eMMC with mkfs.btrfs  -L  <label>  <dev>
+Result:
+        Mkfs.btrfs denies formatting eMMC because its existing filesystem
 
-===============================================================================
-...
-   CC [M]  fs/btrfs/extent_io.o
-fs/btrfs/extent_io.c: In function ‘btrfs_free_io_failure_record’:
-fs/btrfs/extent_io.c:2193:13: warning: cast to pointer from integer of
-different size [-Wint-to-pointer-cast]
-    failrec = (struct io_failure_record *)state->private;
-...
-===============================================================================
+# mkfs.btrfs -L "1storage" /dev/mmcblk0p2
+/dev/mmcblk0p2 appears to contain an existing filesystem (ext4).
+Error: Use the -f option to force overwrite.
 
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Reported-by: Chris Murphy <chris@colorremedies.com>
+If I add "-f" its possible to format the eMMC.
 
----
-  fs/btrfs/extent_io.c | 2 +-
-  1 file changed, 1 insertion(+), 1 deletion(-)
+# mkfs.btrfs -f -L "1storage" /dev/mmcblk0p2
+Detected a SSD, turning off metadata duplication.  Mkfs with -m dup if you want to force metadata duplication.
+Btrfs v3.17
+See http://btrfs.wiki.kernel.org for more information.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ebabd2..790dbae 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2190,7 +2190,7 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
-  
-  		next = next_state(state);
-  
--		failrec = (struct io_failure_record *)state->private;
-+		failrec = (struct io_failure_record *)(unsigned long)state->private;
-  		free_extent_state(state);
-  		kfree(failrec);
-  
--- 
-1.8.3.1
+Performing full device TRIM (1.72GiB) ...
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+[273917.692896] btrfs: device label 1storage devid 1 transid 3 /dev/mmcblk0p2
+fs created label 1storage on /dev/mmcblk0p2
+        nodesize 16384 leafsize 16384 sectorsize 4096 size 1.72GiB
 
+I had downloaded debian package from following link
+https://packages.debian.org/sid/armhf/btrfs-tools/download
+
+Is it a bug ? or I am missing something ?
+
+Thank you,
+
+Regards,
+Ankur
+L&T Technology Services Ltd
+
+www.LntTechservices.com<http://www.lnttechservices.com/>
+
+This Email may contain confidential or privileged information for the intended recipient (s). If you are not the intended recipient, please do not use or disseminate the information, notify the sender and delete it from your system.

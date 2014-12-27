@@ -1,183 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-06v.sys.comcast.net ([69.252.207.38]:38521 "EHLO
-	resqmta-ch2-06v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751094AbaL0POf (ORCPT
+Received: from atrey.karlin.mff.cuni.cz ([195.113.26.193]:45046 "EHLO
+	atrey.karlin.mff.cuni.cz" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750795AbaL0PgX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Dec 2014 10:14:35 -0500
-Message-ID: <549ECCD8.6090307@pobox.com>
-Date: Sat, 27 Dec 2014 07:14:32 -0800
-From: Robert White <rwhite@pobox.com>
+	Sat, 27 Dec 2014 10:36:23 -0500
+Date: Sat, 27 Dec 2014 16:36:21 +0100
+From: Petr Janecek <janecek@ucw.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: russell@coker.com.au, linux-btrfs@vger.kernel.org,
+        Timofey Titovets <nefelim4ag@gmail.com>
+Subject: Re: Debian/Jessie 3.16.7-ckt2-1 kernel error
+Message-ID: <20141227153621.GB19957@atrey.karlin.mff.cuni.cz>
+References: <201412241202.59568.russell@coker.com.au>
+ <549A8B9B.5000005@jp.fujitsu.com>
+ <549B5D4C.1070804@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS free space handling still needs more work: Hangs again
-References: <3738341.y7uRQFcLJH@merkaba> <549EBB90.5070406@pobox.com> <1779212.Cg9zjTft4U@merkaba> <34633403.WlleJmkifE@merkaba>
-In-Reply-To: <34633403.WlleJmkifE@merkaba>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <549B5D4C.1070804@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/27/2014 06:21 AM, Martin Steigerwald wrote:
-> Am Samstag, 27. Dezember 2014, 15:14:05 schrieb Martin Steigerwald:
->> Am Samstag, 27. Dezember 2014, 06:00:48 schrieb Robert White:
->>> On 12/27/2014 05:16 AM, Martin Steigerwald wrote:
->>>> It can easily be reproduced without even using Virtualbox, just by a
->>>> nice
->>>> simple fio job.
->>>
->>> TL;DR: If you want a worst-case example of consuming a BTRFS filesystem
->>> with one single file...
->>>
->>> #!/bin/bash
->>> # not tested, so correct any syntax errors
->>> typeset -i counter
->>> for ((counter=250;counter>0;counter--)); do
->>>
->>>    dd if=/dev/urandom of=/some/file bs=4k count=$counter
->>>
->>> done
->>> exit
->>>
->>>
->>> Each pass over /some/file is 4k shorter than the previous one, but none
->>> of the extents can be deallocated. File will be 1MiB in size and usage
->>> will be something like 125.5MiB (if I've done the math correctly).
->>> larger values of counter will result in exponentially larger amounts of
->>> waste.
->>
->> Robert, I experienced this hang issues even before the defragmenting case.
->> It happened while just installed a 400 MiB tax returns application to it
->> (that is no joke, it is that big).
->>
->> It happens while just using the VM.
->>
->> Yes, I recommend not to use BTRFS for any VM image or any larger database on
->> rotating storage for exactly that COW semantics.
->>
->> But on SSD?
->>
->> Its busy looping a CPU core and while the flash is basically idling.
->>
->> I refuse to believe that this is by design.
->>
->> I do think there is a *bug*.
->>
->> Either acknowledge it and try to fix it, or say its by design *without even
->> looking at it closely enough to be sure that it is not a bug* and limit your
->> own possibilities by it.
->>
->> I´d rather see it treated as a bug for now.
->>
->> Come on, 254 IOPS on a filesystem with still 17 GiB of free space while
->> randomly writing to a 4 GiB file.
->>
->> People do these kind of things. Ditch that defrag Windows XP VM case, I had
->> performance issue even before by just installing things to it. Databases,
->> VMs, emulators. And heck even while just *creating* the file with fio as I
->> shown.
->
-> Add to these use cases things like this:
->
-> martin@merkaba:~/.local/share/akonadi/db_data/akonadi> ls -lSh | head -5
-> insgesamt 2,2G
-> -rw-rw---- 1 martin martin 1,7G Dez 27 15:17 parttable.ibd
-> -rw-rw---- 1 martin martin 488M Dez 27 15:17 pimitemtable.ibd
-> -rw-rw---- 1 martin martin  23M Dez 27 15:17 pimitemflagrelation.ibd
-> -rw-rw---- 1 martin martin 240K Dez 27 15:17 collectiontable.ibd
->
->
-> Or this:
->
-> martin@merkaba:~/.local/share/baloo> du -sch * | sort -rh
-> 9,2G    insgesamt
-> 8,0G    email
-> 1,2G    file
-> 51M     emailContacts
-> 408K    contacts
-> 76K     notes
-> 16K     calendars
->
-> martin@merkaba:~/.local/share/baloo> ls -lSh email | head -5
-> insgesamt 8,0G
-> -rw-r--r-- 1 martin martin 4,0G Dez 27 15:16 postlist.DB
-> -rw-r--r-- 1 martin martin 3,9G Dez 27 15:16 termlist.DB
-> -rw-r--r-- 1 martin martin 143M Dez 27 15:16 record.DB
-> -rw-r--r-- 1 martin martin  63K Dez 27 15:16 postlist.baseA
+Hello Satoru and all,
 
-/usr/bin/du and /usr/bin/df and /bin/ls are all _useless_ for showing 
-the amount of filespace used by a file in BTRFS.
+  that Oct. report was the only time I've experienced the error, so I
+don't have much to add. I can try to answer your questions:
 
-Look at a nice paste of the previously described "worst case" allocation.
+> >Here are my questions.
+> >
+> >1. Is your system "btrfs scrub" clean?
 
-Gust rwhite # btrfs fi df /
-Data, single: total=344.00GiB, used=340.41GiB
-System, DUP: total=32.00MiB, used=80.00KiB
-Metadata, DUP: total=8.00GiB, used=4.84GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+  yes,
 
-Gust rwhite # for ((counter=250;counter>0;counter--)); do dd 
-if=/dev/urandom of=some_file conv=notrunc,fsync bs=4k count=$counter 
- >/dev/null 2>&1; done
+> >2. Is this message shown every boot time?
 
-Gust rwhite # btrfs fi df /
-Data, single: total=344.00GiB, used=340.48GiB
-System, DUP: total=32.00MiB, used=80.00KiB
-Metadata, DUP: total=8.00GiB, used=4.84GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+  no, I have seen them only during one boot
 
-Gust rwhite # du some_file
-1000    some_file
+> >3. Is this message shown only in boot?
 
-Gust rwhite # ls -lh some_file
--rw-rw-r--+ 1 root root 1000K Dec 27 07:00 some_file
+  As in my Oct. email
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/39721
+I've seen a similar one after creating a subvolume on a new fs.
+But it was during the same boot.
 
-Gust rwhite # rm some_file
-Gust rwhite # btrfs fi df /
-Data, single: total=344.00GiB, used=340.41GiB
-System, DUP: total=32.00MiB, used=80.00KiB
-Metadata, DUP: total=8.00GiB, used=4.84GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+> >4. When this message is started to be shown?
+> >5. Do you have any trouble, change your operation or configuration
+> >    just before the answer of Q4 ?
 
-Notice that "some_file" shows 1000 blocks in du, and 1000k bytes in ls.
+  a disk was added to the fs and balance has been run. The balance
+crashed, as in https://bugzilla.kernel.org/show_bug.cgi?id=64961
+(probably unrelated).  After reboot, I've seen the messages.
+ 
+> Additional questions.
+> Q5. Could you give me your kernel configuration?
+>     At least, could you tell me whether your kernel
+>     enabled CONFIG_PREEMPT or not?
 
-But notice that data used jumps from 340.41GiB to 340.48GiB when the 
-file is created, then drops back down to 340.41GiB when it's deleted.
+  CONFIG_PREEMPT_VOLUNTARY=y
+ 
+> Q6. If the answer of Q1 is correct, please give me the
+>     file system image which can be captured by the following command.
 
-Now I have compression turned on so the amount of growth/shrinkage 
-changes between each run, but it's _Way_ more than 1Meg, that's like 
-70MiB (give or take significant rounding in the third place after the 
-decimal). So I wrote this file in a way that leads to it taking up 
-_seventy_ _times_ it's base size in actual allocated storage. Real files 
-do not perform this terribly, but they can get pretty ugly in some cases.
+  Sorry, the fs's are long gone. I continued to run similar workloads on
+that test box, but these errors never appeared again.
 
-You _really_ need to learn how the system works and what its best and 
-worst cases look like before you start shouting "bug!"
 
-You are using the wrong numbers (e.g. "df") for available space and you 
-don't know how to estimate what your tools _should_ do for the 
-conditions observed.
+Regards,
 
-But yes, if you open a file and scribble all over it when your disk is 
-full to within the same order of magnitude as the size of the file you 
-are scribbling on, you will get into a condition where the _application_ 
-will aggressively retry the IO. Particularly if that application is a 
-"test program" or a virtual machine doing asynchronous IO.
-
-That's what those sorts of systems do when they crash against a limit in 
-the underlying system.
-
-So yea... out of space plus agressive writer equals spinning CPU
-
-Before you can assign blame you need to strace your application to see 
-what call its making over and over again to see if its just being stupid.
-
-> These will not be as bad as the fio test case, but still these files are
-> written into. They are updated in place.
->
-> And thats running on every Plasma desktop by default. And on GNOME desktops
-> there is similar stuff.
->
-> I haven´t seen this spike out a kworker yet tough, so maybe the workload is
-> light enough not to trigger it that easily.
->
-
+Petr

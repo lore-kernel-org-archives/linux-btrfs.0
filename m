@@ -1,69 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:52563 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:37581 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750748AbaL0OGa convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1751081AbaL0OOH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Dec 2014 09:06:30 -0500
+	Sat, 27 Dec 2014 09:14:07 -0500
 From: Martin Steigerwald <Martin@lichtvoll.de>
 To: Robert White <rwhite@pobox.com>
 Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS free space handling still needs more work: Hangs again
-Date: Sat, 27 Dec 2014 15:06:28 +0100
-Message-ID: <2655489.fNrZQCiWVG@merkaba>
-In-Reply-To: <549EB8FC.9040101@pobox.com>
-References: <3738341.y7uRQFcLJH@merkaba> <9534911.qSQhRgc3Jg@merkaba> <549EB8FC.9040101@pobox.com>
+Date: Sat, 27 Dec 2014 15:14:05 +0100
+Message-ID: <1779212.Cg9zjTft4U@merkaba>
+In-Reply-To: <549EBB90.5070406@pobox.com>
+References: <3738341.y7uRQFcLJH@merkaba> <9534911.qSQhRgc3Jg@merkaba> <549EBB90.5070406@pobox.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 27. Dezember 2014, 05:49:48 schrieb Robert White:
-> > Anyway, I got it reproduced. And am about to write a lengthy mail about.
+Am Samstag, 27. Dezember 2014, 06:00:48 schrieb Robert White:
+> On 12/27/2014 05:16 AM, Martin Steigerwald wrote:
+> > It can easily be reproduced without even using Virtualbox, just by a nice
+> > simple fio job.
 > 
-> Have fun with that lengthy email, but the devs already know about the 
-> data waste profile of the system. They just don't have a good solution yet.
+> TL;DR: If you want a worst-case example of consuming a BTRFS filesystem
+> with one single file...
 > 
-> Practical use cases involving _not_ defragging and _not_ packing files, 
-> or disabling COW and using raw image formats for VM disk storage are, 
-> meanwhile, also well understood.
+> #!/bin/bash
+> # not tested, so correct any syntax errors
+> typeset -i counter
+> for ((counter=250;counter>0;counter--)); do
+>   dd if=/dev/urandom of=/some/file bs=4k count=$counter
+> done
+> exit
+> 
+> 
+> Each pass over /some/file is 4k shorter than the previous one, but none
+> of the extents can be deallocated. File will be 1MiB in size and usage
+> will be something like 125.5MiB (if I've done the math correctly).
+> larger values of counter will result in exponentially larger amounts of
+> waste.
 
-Okay, then how about a database?
+Robert, I experienced this hang issues even before the defragmenting case. It 
+happened while just installed a 400 MiB tax returns application to it (that is 
+no joke, it is that big).
 
-BTRFS is not usable for these kind of workloads then.
+It happens while just using the VM.
 
-And thats about it.
+Yes, I recommend not to use BTRFS for any VM image or any larger database on 
+rotating storage for exactly that COW semantics.
 
-Not even on SSD.
+But on SSD?
 
-Yet, what I have shown in my lengthy mail is pathological.
+Its busy looping a CPU core and while the flash is basically idling.
 
-Its even abysmal.
+I refuse to believe that this is by design.
 
-And yet it only happens when BTRFS is forced to pack things into *existing* 
-chunks. It does not happen when BTRFS can still reserve new chunks and write 
-to them.
+I do think there is a *bug*.
 
-And this makes all the talk that you should not need to rebalance obsolete 
-when in practice you need to to get decent performance. To get out of your 
-SSDs what your SSDs can provide instead of waiting for BTRFS to finish being 
-busy with itself.
+Either acknowledge it and try to fix it, or say its by design *without even 
+looking at it closely enough to be sure that it is not a bug* and limit your 
+own possibilities by it.
 
-Still, I have only yet reproduced it on this /home filesystem. If that is also 
-reproducable on a freshly created filesystem after some runs of the fio job I 
-provided I´d say that there is a performance bug in BTRFS. And thats it.
+I�d rather see it treated as a bug for now.
 
-No talking about technicalities my turn this performance bug observation away. 
-Heck 254 IOPS from a Dual SSD RAID 1? Are you even kidding me?
+Come on, 254 IOPS on a filesystem with still 17 GiB of free space while 
+randomly writing to a 4 GiB file.
 
-I refuse to believe that this is built into the design, no matter how much you 
-outline its limitations.
+People do these kind of things. Ditch that defrag Windows XP VM case, I had 
+performance issue even before by just installing things to it. Databases, VMs, 
+emulators. And heck even while just *creating* the file with fio as I shown.
 
-And if it is?
-
-Well… then maybe BTRFS won´t save us. Unless you give it a ton of extra free 
-space. Unless you do as I recommend and if you use 25 GB you make it 100 GB 
-big so it will always find enough space to waste.
-
+Ciao,
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

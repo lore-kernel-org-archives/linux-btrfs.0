@@ -1,84 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-11v.sys.comcast.net ([69.252.207.43]:43739 "EHLO
-	resqmta-ch2-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750779AbaL0BKl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Dec 2014 20:10:41 -0500
-Message-ID: <549E070E.8030509@pobox.com>
-Date: Fri, 26 Dec 2014 17:10:38 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>,
-        Grzegorz Kowal <custos.mentis@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Standards Problems [Was: [PATCH v2 1/3] Btrfs: get more accurate
- output in df command.]
-References: <36be817396956bffe981a69ea0b8796c44153fa5.1418203063.git.yangds.fnst@cn.fujitsu.com>	<548B4117.1040007@inwind.it>	<CA+qeAOokzptsxMKJaQwtVSFe5UxYuZnx5E22iMjRqM4AsuN8bA@mail.gmail.com>	<CABmMA7tw9BDsBXGHLO4vjcO4gaYmZPb_BQV8w22griqFvCJpPA@mail.gmail.com> <CABmMA7vtHzUYAhnEfpnx3Fx93SJyx=Qqoaz-PyQcivo=51jKsA@mail.gmail.com> <548E377D.6030804@cn.fujitsu.com> <548E7A7A.90505@pobox.com> <548E929B.2090203@pobox.com> <548E9B38.9080202@cn.fujitsu.com> <548EABBB.4060204@pobox.com> <548FA762.2070504@pobox.com> <549017E8.7060107@cn.fujitsu.com> <54908D8A.8040101@pobox.com> <54916B39.5080409@cn.fujitsu.com> <549252FF.10400@pobox.com> <549960B9.20300@cn.fujitsu.com>
-In-Reply-To: <549960B9.20300@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:42293 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751293AbaL0Ddy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Dec 2014 22:33:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y4i8V-0001Wa-7X
+	for linux-btrfs@vger.kernel.org; Sat, 27 Dec 2014 04:33:51 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 04:33:51 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 04:33:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS free space handling still needs more work: Hangs again
+Date: Sat, 27 Dec 2014 03:33:39 +0000 (UTC)
+Message-ID: <pan$3ccf$2dcccc1c$e1a118c$5c6b699b@cox.net>
+References: <3738341.y7uRQFcLJH@merkaba> <3207071.8ytD2jQS28@merkaba>
+	<1790464.sXlqaAlXiG@merkaba>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/23/2014 04:31 AM, Dongsheng Yang wrote:
-> On 12/18/2014 12:07 PM, Robert White wrote:
->> I don't disagree with the _ideal_ of your patch. I just think that
->> it's impossible to implement it without lying to the user or making
->> things just as bad in a different way. I would _like_ you to be right.
->> But my thing is finding and quantifying failure cases and the entire
->> question is full of fail.
->>
-> ...
->>
->> See you keep giving me these examples where the history of the
->> filesystem is uniform. It was made a certain way and stayed that way.
->> But in real life this sort of thing is going to happen and your patch
->> simply report's a _different_ _wrong_ number. A _friendlier_ wrong
->> number, I'll grant you that, but still wrong.
->>
->
-> Hi Robert, sorry for the late. (It's busy to deal with some other work.)
->
-> Yes, you are providing some examples here to show that in some cases the
-> numbers from df is not helpful to understand the real space state in
-> disk. But
-> I'm afraid we can not blame df reporting a wrong number. You could say
-> "Hey df, you are stupid, we can store the small file in metadata to exceed
-> your @size.". But he just reports the information from what he is seeing
-> from FS level honestly.
-> He is reporting what he can see, and do not care about the other things
-> out of
-> his business.
->
-> The all special cases you provided in this thread, actually lead to one
-> result that
-> "Btrfs is special, df command will report an improper in some case.". It
-> means
-> we need some other methods to tell user about the space info. And yes,
-> we had. It's
-> btrfs fi df.
->
-> You are trying to make df showing information as more as possible, even
-> change
-> the behaviour of df in btrfs to show the numbers of different meaning
-> with what it
-> is in other filesystems. And my answer is keeping df command doing what
-> he want,
-> and solve the problems in our private "df" , btrfs fi df.
->
-> Thanx
-> Yang
->> . xaE
->>
->
->
+Martin Steigerwald posted on Fri, 26 Dec 2014 15:41:23 +0100 as excerpted:
 
-Fine. but you still haven't told me/us what you thing df (really 
-fsstat() ) should report in those cases.
+> Am Freitag, 26. Dezember 2014, 15:20:42 schrieben Sie:
+>> And I wonder about:
+>> > Martin 'Helios' Steigerwald - http://www.Lichtvoll.de GPG: 03B0 0D6C
+>> > 0040 0710 4AFA  B82F 991B EAAC A599
+>> >
+>> >
+>> > 
+>> 
+> 84C7N�����r��y����b�X��ǧv�^�)޺{.n�+����{�n�߲)����w*jg��������ݢj/
+���z�ޖ��2
+>> 
+>> > �ޙ����&�)ߡ�a�����G���h��j:+v���w��٥
+>> 
+>> These random chars are not supposed to be there: I better run scrub
+>> straight  after this balance.
+> 
+> Okay, thats not me I think. scrub didn´t report any errors and when I
+> look in kmail send folder I don´t see these random chars as well, so it
+> seems some server on the wire added the garbage.
 
-Go back to that email. Grab some of those cases. Then tell me what your 
-patch will report and why it makes more sense than what is reported now.
+FWIW...
 
-For code to be correct it _must_ be correct for the "special" cases. You 
-don't get to just ignore the special cases.
+They didn't show up here on gmane's list2nntp service (message viewed 
+with pan), either.  There were a few strange characters -- your dashes(?) 
+on either side of the "are these a problem?" showed up as the squares 
+containing four digits (0080, 0093) that appear when a font doesn't 
+contain the appropriate character it's being asked to display, and there 
+were a few others, but that's a common charset/font l10n issue, not the 
+apparent line noise binary corruption shown above.
 
-So what are your specific answers to those cases?
+So I'd guess it was either the transmission to your mail service, at the 
+mail service, or the transmission between them and your mail client, that 
+corrupted.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

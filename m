@@ -1,123 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-02v.sys.comcast.net ([96.114.154.161]:50679 "EHLO
-	resqmta-po-02v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751321AbaL0MIj (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:43855 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750748AbaL0NQv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Dec 2014 07:08:39 -0500
-Message-ID: <549EA145.8000203@pobox.com>
-Date: Sat, 27 Dec 2014 04:08:37 -0800
-From: Robert White <rwhite@pobox.com>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
+	Sat, 27 Dec 2014 08:16:51 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Robert White <rwhite@pobox.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS free space handling still needs more work: Hangs again
-References: <3738341.y7uRQFcLJH@merkaba> <4232026.31LFOYpm2s@merkaba> <20141227093043.GJ25267@carfax.org.uk> <2790499.1m3QJ8oJFe@merkaba>
-In-Reply-To: <2790499.1m3QJ8oJFe@merkaba>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Sat, 27 Dec 2014 14:16:44 +0100
+Message-ID: <9534911.qSQhRgc3Jg@merkaba>
+In-Reply-To: <549E9D98.7010102@pobox.com>
+References: <3738341.y7uRQFcLJH@merkaba> <3538352.CI4nobbHtu@merkaba> <549E9D98.7010102@pobox.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/27/2014 03:11 AM, Martin Steigerwald wrote:
-> Am Samstag, 27. Dezember 2014, 09:30:43 schrieb Hugo Mills:
->>>
->>>
->>> I only see the lockups of BTRFS is the trees *occupy* all space on the
->>> device.
->>     No, "the trees" occupy 3.29 GiB of your 5 GiB of mirrored metadata
->> space. What's more, balance does *not* balance the metadata trees. The
->> remaining space -- 154.97 GiB -- is unstructured storage for file
->> data, and you have some 13 GiB of that available for use.
->>
->>     Now, since you're seeing lockups when the space on your disks is
->> all allocated I'd say that's a bug. However, you're the *only* person
->> who's reported this as a regular occurrence. Does this happen with all
->> filesystems you have, or just this one?
->
-> Okay, just about terms.
+Am Samstag, 27. Dezember 2014, 03:52:56 schrieb Robert White:
+> > My theory from watching the Windows XP defragmentation case is this:
+> > 
+> > - For writing into the file BTRFS needs to actually allocate and use free
+> > space in the current tree allocation, or, as we seem to misunderstood
+> > from the words we use, it needs to fit data in
+> > 
+> > Data, RAID1: total=144.98GiB, used=140.94GiB
+> > 
+> > between 144,98 GiB and 140,94 GiB given that total space of this tree, or
+> > if its not a tree, but the chunks in that the tree manages, in these
+> > chunks can *not* be extended anymore.
+> 
+> If your file was actually COW (and you have _not_ been taking snapshots) 
+> then there is no extenting to be had. But if you are using snapper 
+> (which I believe you mentioned previously) then the snapshots cause a 
+> write boundary and a layer of copying. Frequently taking snapshots of a 
+> COW file is self defeating. If you are going to take snapshots then you 
+> might as well turn copy on write back on and, for the love of pete, stop 
+> defragging things.
 
-Terms are _really_ important if you want to file and discuss bugs.
+I don´t use any snapshots on the filesystems. None, zero, zilch, nada.
 
-> What I call trees is this:
->
-> merkaba:~> btrfs fi df /
-> Data, RAID1: total=27.99GiB, used=17.21GiB
-> System, RAID1: total=8.00MiB, used=16.00KiB
-> Metadata, RAID1: total=2.00GiB, used=596.12MiB
-> GlobalReserve, single: total=208.00MiB, used=0.00B
->
-> For me each one of "Data", "System", "Metadata" and "GlobalReserve" is what I
-> call a "tree".
->
-> How would you call it?
+And as I understand it copy on write means: It has to write the new write 
+requests to somewhere else. For this it needs to allocate space. Either 
+withing existing chunks or in a newly allocated one.
 
-Those are "extents" I think. All of the "Trees" are in the metadata. One 
-of the trees is the "extent tree". That extent tree is what contains the 
-list of which regions of the disk are data, or metadata, or 
-system-metadata (like the superblocks), or the global reserve.
+So for COW when writing to a file it will always need to allocate new space 
+(although it can forget about the old space afterwards unless there isn´t a 
+snapshot holding it)
 
-Those extents are then filled with the type of information described.
+Anyway, I got it reproduced. And am about to write a lengthy mail about.
 
-But all the "trees" are in the metadata extents.
+It can easily be reproduced without even using Virtualbox, just by a nice 
+simple fio job.
 
->
-> I always thought that BTRFS uses a tree structure not only for metadata, but
-> also for data. But I bet strictly spoken thats only to *manage* the chunks it
-> allocates and what I see above is the actual chunk usage.
->
-> I.e. to get terms straight, how would you call it? I think my understanding of
-> how BTRFS handles space allocation is quite correct, but I may use a term
-> incorrectly.
->
-> I read
->
->> Data, RAID1: total=27.99GiB, used=17.21GiB
->
-> as:
->
-> I reserved 27,99 GiB for data chunks and used 17,21 GiB in these data chunks
-> so far. So I have about 10,5 GiB free in these data chunks at the moment and
-> all is good.
->
-> What it doesn´t tell me at all is how the allocated space is distributed onto
-> these chunks. I may be that some chunks are completely empty or not. It may be
-> that each chunk has some space allocated to it but in total there is that
-> amount of free space yet. I.e. it doesn´t tell me anything about the free
-> space fragmentation inside the chunks.
->
-> Yet I still hold my theory that in the case of heavily writing to a COW´d file
-> BTRFS seems to prefer to reserve new empty chunks on this /home filesystem of
-> my laptop instead of trying to find free space in existing only partially empty
-> chunks. And the lockup only happens when it tries to do the latter. And no, I
-> think it shouldn´t lockup then. I also think its a bug. I never said
-> differently.
-
-Partly correct. The system (as I understand it) will try to fill old 
-chunks before allocating to new ones. It also perfers the most empty 
-chunk first. But if you fallocate large extents they can have trouble 
-finding a home. So lets say you have a systemic process that keeps 
-making .51GiB files then it will tend to allocate a new 1GiB data extent 
-each time (presuming you used default values) because each successive 
-.51GiB region cannot fit in any existing data extent.
-
-Excessive snapshotting can also contribute to this effect, but only 
-because it freezes the history.
-
-There are some other odd-out cases.
-
-> And yes, I only ever had this on my /home so far. Not on / which is also RAID
-> 1 and has all device space reserved for quite some time, not on /daten which
-> only holds large files and is single instead of RAID. Also not on the server,
-> but the server FS has lots of unallocated device space still, or on the 2 TiB
-> eSATA backup HD, also I do get the impression that BTRFS started to get slower
-> there as well at least the rsync based backup script takes quite long
-> meanwhile and I see rsync reading from backup BTRFS and in this case almost
-> fully ultilizing the disk for longer times. But unlike my /home the backup
-> disk has some timely widely distributed snaphots (about 2 week to 1 months
-> intervalls, and about last half year).
->
-> Neither /home nor / on the SSD have snapshots at the moment. So this is
-> happening without snapshots.
->
-> Ciao,
->
-
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

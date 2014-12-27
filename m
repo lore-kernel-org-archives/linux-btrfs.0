@@ -1,97 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42897 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:44047 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751305AbaL0E01 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Dec 2014 23:26:27 -0500
+	id S1750715AbaL0Fyl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 27 Dec 2014 00:54:41 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y4ixM-0000J1-Bo
-	for linux-btrfs@vger.kernel.org; Sat, 27 Dec 2014 05:26:24 +0100
+	id 1Y4kKk-0003i0-OX
+	for linux-btrfs@vger.kernel.org; Sat, 27 Dec 2014 06:54:38 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 05:26:24 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 06:54:38 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 05:26:24 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Dec 2014 06:54:38 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: BTRFS free space handling still needs more work: Hangs again
-Date: Sat, 27 Dec 2014 04:26:10 +0000 (UTC)
-Message-ID: <pan$248af$ca4818d4$b1ce7df3$527f91c1@cox.net>
-References: <3738341.y7uRQFcLJH@merkaba> <6794875.ElpGA7E3Vr@merkaba>
+Date: Sat, 27 Dec 2014 05:54:27 +0000 (UTC)
+Message-ID: <pan$18609$1b7eaac8$6b7c69d$a9794a34@cox.net>
+References: <3738341.y7uRQFcLJH@merkaba> <549DE5C6.2000606@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Steigerwald posted on Fri, 26 Dec 2014 16:59:09 +0100 as excerpted:
+Robert White posted on Fri, 26 Dec 2014 14:48:38 -0800 as excerpted:
 
-> Dec 26 16:17:57 merkaba kernel: [ 8102.029438] mce:
-> [Hardware Error]: Machine check events logged
-> Dec 26 16:20:27 merkaba kernel: [ 8252.054015] mce:
-> [Hardware Error]: Machine check events logged
+> ITEM: An SSD plus a good fast controller and default system virtual
+> memory and disk scheduler activities can completely bog a system down.
+> You can get into a mode where the system begins doing synchronous writes
+> of vast expanses of dirty cache. The SSD is so fast that there is
+> effectively zero "wait for IO time" and the IO subsystem is effectively
+> locked or just plain busy.
+> 
+> Look at /proc/sys/vm/dirty_background_ratio which is probably set to 10%
+> of system ram.
+> 
+> You may need/want to change this number to something closer to 4. That's
+> not a hard suggestion. Some reading and analysis will be needed to find
+> the best possible tuning for an advanced system.
 
-Have you checked these MCEs?  What are they?
+FWIW, I can second at least this part, myself.  Half of the base problem 
+is that memory speeds have increased far faster than storage speeds.  
+SSDs do help with that, but the problem remains.  The other half of the 
+problem is the comparatively huge memory capacity systems have today, 
+with the result being that the default percentages of system RAM that 
+were allowed to be dirty before kicking in background and then foreground 
+flushing, reasonable back when they were introduced, simply aren't 
+reasonable any longer, PARTICULARLY on spinning rust, but even on SSD.
 
-MCEs are hardware errors.  These are *NOT* kernel errors, tho of course 
-they may /trigger/ kernel errors.  The reported event codes can be looked 
-up and translated into English. 
+vm.dirty_ratio is the percentage of RAM allowed to dirty before the 
+system kicks into high-priority write-flush mode.  
+vm.dirty_background_ratio is likewise, but where the system starts even 
+worrying about it at all, doing work in the background.
 
-Since shortly after the first one until a bit before the second one here, 
-you had hardware thermal throttling, the CPUs, on-chip cache, and 
-possibly the memory, was working pretty hard.
+Now take my 16 GiB RAM system as an example.
 
-FWIW, I had an AMD machine that would MCE with memory related errors some 
-time (about a decade) ago.  I had ECC RAM, but it was cheap and 
-apparently not quite up to the speeds it was actually rated for.  MemTest 
-check out the memory fine, but under high stress especially, it would 
-sometimes have bus/transit related corruption, which would sometimes (not 
-always) trigger those MCEs.
+The default background setting is 5%, foreground/high-priority, 10%.  
+With 16 gigs RAM, that 10% is 1.6 GiB of dirty pages to flush.  A 
+spinning rust drive might do 100 MiB/sec throughput contiguous, but a 
+real-world number is more like 30-50 MiB/sec.
 
-Eventually a BIOS update gave me the ability to turn down the memory 
-timings, and turning them down just one notch made everything rock-stable 
--- I was even able to decrease some of the wait-states to get a bit of 
-the memory speed back.  It just so happened that it was borderline stable 
-at the rated clock, and turning the memory clock down just one notch was 
-all it took.  Later, I upgraded the RAM (the bad RAM was two half-gig 
-sticks, back when they were $100+ a piece, I upgraded to four 2-gig 
-sticks), and the new RAM didn't have the problem at all -- the bad RAM 
-sticks simply weren't /quite/ stable at the rated speed, that was it.
+At 100 MiB/sec, that 1.6 GiB will take 16+ seconds, during which nothing 
+else can be doing I/O.  So let's just divide the speed by 3 and call it 
+33.3 MiB/sec.  Now we're looking at being blocked for nearly 50 seconds 
+to flush all those dirty blocks.  And the system doesn't even START 
+worrying about it, at even LOW priority, until it has about 25 seconds 
+worth of full-usage flushing built-up!
 
-I run gentoo so of course do a lot of building from sources, and 
-interestingly enough, the thing that turned out to detect the corruption 
-the most often was bzip2 compression checksums -- I'd get errors on 
-sources decompress previous to the build, rather more often than actual 
-build failures altho those would happen occasionally as well, while 
-redoing it would work fine -- checksums passed, and I never had a build 
-that actually finished fail to run due to a bad build.
+Not only that, but that's *ALSO* 1.6 GiB worth of dirty data that isn't 
+yet written to storage, that would lost in the event of a crash!
 
-Now here's the thing.  Of course a decade ago was well before I was 
-running btrfs (FWIW I was running reiserfs at the time, and it seemed 
-pretty resilient given the bad RAM I had), so it was the bzip2 checksums 
-it failed on.
+Of course there's a timer expiry as well.  vm.dirty_writeback_centiseconds 
+(that's background) defaults to 499 (5 seconds), 
+vm.dirty_expire_centiseconds defaults to 2999 (30 seconds).
 
-But guess what btrfs uses for file integrity, checksums.  If your MCEs 
-are either like my memory-related MCEs were, or are similar CPU-cache or 
-CPU related but still something that would affect checksumming, btrfs may 
-well be fighting bad checksums due to the same issues, and that would of 
-course throw all sorts of wrenches into things.  Another thing I've seen 
-reported as triggering MCEs is bad power (in that case it was an either 
-underpowered or going bad UPS, once it was out of the picture, the MCEs 
-and problems stopped).
+So the first thing to notice is that it's going to take more time to 
+write the dirty data we're allowing to stack up, than the expiry time!  
+At least to me, that makes absolutely NO sense!  At minimum, we need to 
+reduce cached writes allowed to stack up to something that can actually 
+be done before they expire, time-wise.  Either that, or trying to depend 
+on that 30-second expiry to make sure our dirty data is flushed in 
+something at least /close/ to that isn't going to work so well!
 
-Now I think you're having other btrfs issues as well, some of which are 
-likely legit bugs.  However, your MCEs certainly aren't helping things, 
-and I'd definitely recommend checking up on them to see what's actually 
-happening to your hardware.  It may well be that without whatever 
-hardware issues are triggering those MCEs, you may end up with less btrfs 
-problems as well.
+So assuming we think the 30-seconds is logical, the /minimum/ we need to 
+do is reduce the size cap by half, to 5% high-priority/foreground (which 
+was as we saw about 25 seconds worth), say 2% lower-priority/background.
 
-Or maybe not, but it's something to look into, because right now, 
-regardless of whether they're making things worse physically, they're at 
-minimum obscuring a troubleshooting picture that would be clearer without 
-them.
+But that's STILL about 800 MiB before it kicks to high priority mode at 
+risk in case of a crash, and I still considered that a bit more than I 
+wanted.
+
+So what I ended up with here (set for spinning rust before I had SSD), 
+was:
+
+vm.dirty_background_ratio = 1
+
+(low priority flush, that's still ~160 MiB or about 5 seconds worth of 
+activity at lower 30s MiB/sec)
+
+vm.dirty_ratio = 3
+
+(high priority flush, roughly half a GiB, about 15 seconds of activity)
+
+vm.dirty_writeback_centiseconds=1000
+
+(10 seconds, background flush timeout, note that the corresponding size 
+cap is ~5 seconds worth so about 50% duty cycle, a bit high for 
+background priority, but...)
+
+(I left vm.dirty_expire_centiseconds at the default, 2999 or 30 seconds, 
+since I found that an acceptable amount of work to lose in the case of a 
+crash.  Again, the corresponding size cap is ~15 seconds worth, so ~50 
+duty cycle.  This is very reasonable for high priority, as if data is 
+coming in faster than that, it'll trigger high priority flushing "billed" 
+to the processes actually dirtying the memory in the first place, thus 
+forcing them to slow down and wait for their IO, in turn allowing other 
+(CPU-bound) processes to run.)
+
+And while 15-second interactivity latency during disk thrashing isn't 
+cake, it's at least tolerable, while 50-second latency is HORRIBLE.
+
+Meanwhile, with vm.dirty_background_ratio already set to 1 and without 
+knowing whether it can take a decimal such as 0.5 (I could look I suppose 
+but I don't really have to), that's the lowest I can go there unless I 
+set it to zero.  HOWEVER, if I wanted to go lower, I could set the actual 
+size version, vm.dirty_background_bytes, instead.  If I needed to go 
+below ~160 MiB, that's what I'd do.  Of course there's a corresponding 
+vm.dirty_bytes setting as well.
+
+
+As I said I originally set those up for spinning rust.  Now my main 
+system is SSD, tho I still have secondary backups and media on spinning 
+rust.  But I've seen no reason to change them upward to allow for the 
+faster SSDs, particularly since were I to do so, I'd be risking that much 
+more data loss in the event of a crash, and I find that risk balance 
+about right, just where it is.
+
+And I've been quite happy with btrfs performance on the ssds (the 
+spinning rust is still reiserfs).  Tho of course I do run multiple 
+smaller independent btrfs instead of the huge all-the-data-eggs-in-a-
+single-basket mode most people seem to run.  My biggest btrfs is actually 
+only 24 GiB (on each of two devices but in raid1 mode both data/metadata, 
+so 24 GiB to work with too), but between working copy and primary backup, 
+I have nearly a dozen btrfs filesystems.  But I don't tend to run into 
+the scaling issues others see, and being able to do full filesystem 
+maintenance (scrub/balance/backup/restore-from-backup/etc) in seconds to 
+minutes per filesystem is nice! =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

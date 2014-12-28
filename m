@@ -1,84 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.231]:49139 "EHLO
-	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751425AbaL1DOA (ORCPT
+Received: from resqmta-ch2-12v.sys.comcast.net ([69.252.207.44]:49614 "EHLO
+	resqmta-ch2-12v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751433AbaL1EDQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Dec 2014 22:14:00 -0500
-Message-ID: <549F7539.4050801@ubuntu.com>
-Date: Sat, 27 Dec 2014 22:12:57 -0500
-From: Phillip Susi <psusi@ubuntu.com>
+	Sat, 27 Dec 2014 23:03:16 -0500
+Message-ID: <549F80FD.4050804@pobox.com>
+Date: Sat, 27 Dec 2014 20:03:09 -0800
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-CC: Zygo Blaxell <zblaxell@furryterror.org>
-Subject: Re: Uncorrectable errors on RAID-1?
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>	<20141223211605.GC436@hungrycats.org> <CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
-In-Reply-To: <CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+To: Bardur Arantsson <spam@scientician.net>, linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS free space handling still needs more work: Hangs again
+References: <3738341.y7uRQFcLJH@merkaba> <34633403.WlleJmkifE@merkaba> <549ECCD8.6090307@pobox.com> <1694920.QVWA5EcL6C@merkaba> <549F4E0A.9090700@pobox.com> <m7nkoo$15b$1@ger.gmane.org>
+In-Reply-To: <m7nkoo$15b$1@ger.gmane.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA512
+On 12/27/2014 05:01 PM, Bardur Arantsson wrote:
+> On 2014-12-28 01:25, Robert White wrote:
+>> On 12/27/2014 08:01 AM, Martin Steigerwald wrote:
+>>>>  From how you write I get the impression that you think everyone else
+>>> beside you is just silly and dumb. Please stop this assumption. I may not
+>>> always get terms right, and I may make a mistake as with the wrong df
+>>> figure. But I also highly dislike to feel treated like someone who
+>>> doesn´t
+>>> know a thing.
+>>
+>> Nope. I'm a systems theorist and I demand/require variable isolation.
+>>
+>> Not a question of "silly" or "dumb" but a question of "speaking with
+>> sufficient precision and clarity".
+>>
+>> For instance you speak of "having an impression" and then decide I've
+>> made an assumption.
+>>
+>> I define my position. Explain my terms. Give my examples.
+>>
+>> I also risk being utterly wrong because sometimes being completely wrong
+>> gets others to cut away misconceptions and assumptions.
+>>
+>> It annoys some people, but it gets results.
+>
+> Can you please stop this bullshit posturing nonsense? It accomlishes
+> nothing -- if you're right your other posts will stand for themselves
+> and show that you are indeed "the shit" when it comes to these matters,
+> but this post (so far, didn't read further) accomplishes nothing other
+> than (possibly) convincing everyone that you're a pompous/self-important
+> ass.
 
-On 12/23/2014 05:09 PM, Chris Murphy wrote:
-> The timer in /sys is a kernel command timer, it's not a device
-> timer even though it's pointed at a block device. You need to
-> change that from 30 to something higher to get the behavior you
-> want. It doesn't really make sense to say, timeout in 30 seconds,
-> but instead of reporting a timeout, report it as a read error.
-> They're completely different things.
+Really? "accomplishes nothing"?
 
-The idea is not to give the drive a ridiculous amount of time to
-recover without timing out, but for the timeout to be handled properly.
+24 hours ago:
 
-> There are all sorts of errors listed in libata so for all of them
-> to get dumped into a read error doesn't make sense. A lot of those
-> errors don't report back a sector, and the key part of the read
-> error is what sector(s) have the problem so that they can be fixed.
-> Without that information, the ability to fix it is lost. And it's
-> the drive that needs to report this.
+the complaining party was talking about
 
-It is not lost.  The information is simply fuzzed from an exact
-individual sector to a range of sectors in the timed out request.  In
-an ideal world the drive would give up in a reasonable time and report
-the failure, but if it doesn't, then we should deal with that in a
-better way than hanging all IO for an unacceptably long time.
+- Windows XP
+- Tax software
+- Virtual box
+- vdi files
+- defragging
+- balancing
+- "data trees"
+- system hanging
 
-> Oven doesn't work, so lets spray gasoline on it and light it and
-> the kitchen on fire so that we can cook this damn pizza! That's
-> what I just read. Sorry. It doesn't seem like a good idea to me to
-> map all errors as read errors.
+And the responding party was saying
 
-How do you conclude that?  In the face of a timeout your choices are
-between kicking the whole drive out of the array immediately, or
-attempting to repair it by recovering the affected sector(s) and
-rewriting them.  Unless that recovery attempt could cause more harm
-than degrading the array, then where is the "throwing gasoline on it"
-part?  This is simply a case of the device not providing a specific
-error that says whether it can be recovered or not, so let's attempt
-the recovery and see if it works instead of assuming that it won't and
-possibly causing data loss that could be avoided.
+"you are the only person reporting this as a regular occurrence" with 
+the implication that the report was a duplicate or at least might not 
+get much immediate attention.
 
-> Any decent server SATA drive should support SCT ERC. The
-> inexpensive WDC Red drives for NAS's all have it and by default are
-> a reasonable 70 deciseconds last time I checked.
+Now:
 
-And yet it isn't supported on the cheaper but otherwise identical
-greens, or the higher performing blues.  We should not be helping
-vendors charge a premium for zero cost firmware features that are
-"required" for raid use when they really aren't ( even if they are
-nice to have ).
+The complaining party has verified the minimum, repeatable case of 
+simple file allocation on a very fragmented system and the responding 
+party and several others have understood and supported the bug.
 
+That's not "accomplishing nothing", thats called engaging in diagnostics 
+instead of dismissing a complaint, and sticking out the diagnostic 
+process until everyone is on the same page.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+I never dismissed Martin. I never disbelieved him. I went through his 
+elements one at a time with examples of what I was taking away from him 
+and why they didn't match expectations and experimental evidence. We 
+adjusted our positions and communications.
 
-iQEcBAEBCgAGBQJUn3U5AAoJENRVrw2cjl5RFIQIAJAr86Y5s8RWuL8/We/AlM5Q
-JUuZGGaE1IGmMROdUAEzmj78L8lI2U3D95sERDKmd3aJosfpi1SVOExQZebSIqch
-hhkLGC0FecxE5VC/67E2wwmfbropSk0mlA5Fbgx8mYf60iUHWcFUkc01kER3JGnd
-xMI2jV0UpqVD/gY/a5O7Z7bPeHICQcIyXCN7MAbTMBrDWsYhDACQpij+aNXu5+ke
-rCNV5c/VkYFQZ9aaMb6Mxmi9KOkCVv2+kBOsxwqPxlO5s9vKORDhxMp8XeJQEvhU
-X2GAgS8r8gSGVdPutekXR1vB+TwhdMxftBWL9jcI1y05Y0z3GcOX+/90S9mrSaU=
-=2tIU
------END PGP SIGNATURE-----
+So you can call it "bullshit posturing nonsense" but I see "taking less 
+than a day to get to the bottom of a bug report that might not have 
+gotten significant attention."

@@ -1,116 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-02v.sys.comcast.net ([96.114.154.161]:43112 "EHLO
-	resqmta-po-02v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751205AbaL1AGQ (ORCPT
+Received: from resqmta-po-07v.sys.comcast.net ([96.114.154.166]:39696 "EHLO
+	resqmta-po-07v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751276AbaL1AZr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Dec 2014 19:06:16 -0500
-Message-ID: <549F4975.7060009@pobox.com>
-Date: Sat, 27 Dec 2014 16:06:13 -0800
+	Sat, 27 Dec 2014 19:25:47 -0500
+Message-ID: <549F4E0A.9090700@pobox.com>
+Date: Sat, 27 Dec 2014 16:25:46 -0800
 From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Martin Steigerwald <Martin@lichtvoll.de>,
-        linux-btrfs@vger.kernel.org
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS free space handling still needs more work: Hangs again
-References: <3738341.y7uRQFcLJH@merkaba> <4232026.31LFOYpm2s@merkaba> <20141227093043.GJ25267@carfax.org.uk> <2235526.D1sZ4Blnlh@merkaba> <549EC829.8080808@pobox.com> <20141227162642.GK25267@carfax.org.uk>
-In-Reply-To: <20141227162642.GK25267@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+References: <3738341.y7uRQFcLJH@merkaba> <34633403.WlleJmkifE@merkaba> <549ECCD8.6090307@pobox.com> <1694920.QVWA5EcL6C@merkaba>
+In-Reply-To: <1694920.QVWA5EcL6C@merkaba>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Semi off-topic questions...
+On 12/27/2014 08:01 AM, Martin Steigerwald wrote:
+>>From how you write I get the impression that you think everyone else
+> beside you is just silly and dumb. Please stop this assumption. I may not
+> always get terms right, and I may make a mistake as with the wrong df
+> figure. But I also highly dislike to feel treated like someone who doesn´t
+> know a thing.
 
-On 12/27/2014 08:26 AM, Hugo Mills wrote:
->     This is... badly mistaken, at best. The problem of where to write a
-> file into a set of free extents is definitely *not* an NP-hard
-> problem. It's a P problem, with an O(n log n) solution, where n is the
-> number of free extents in the free space cache. The simple approach:
-> fill the first hole with as many bytes as you can, then move on to the
-> next hole. More complex: order the free extents by size first. Both of
-> these are O(n log n) algorithms, given an efficient general-purpose
-> index of free space.
+Nope. I'm a systems theorist and I demand/require variable isolation.
 
-Which algorithm is actually in use?
+Not a question of "silly" or "dumb" but a question of "speaking with 
+sufficient precision and clarity".
 
-Is any attempt made to keep subsequent allocations in the same data extent?
+For instance you speak of "having an impression" and then decide I've 
+made an assumption.
 
-All of "best fit", "first fit", and "first encountered" allocation have 
-terrible distribution graphs over time.
+I define my position. Explain my terms. Give my examples.
 
-Without a knod to locality, discontiguous allocation will have 
-staggeringly bad after-effects in terms of read-ahead.
+I also risk being utterly wrong because sometimes being completely wrong 
+gets others to cut away misconceptions and assumptions.
 
->
->     The problem of placing file data isn't a bin-packing problem; it's
-> not like allocating RAM (where each allocation must be contiguous).
-> The items being placed may be split as much as you like, although
-> minimising the amount of splitting is a goal.
+It annoys some people, but it gets results. You've been going around on 
+this topic for how long? and just today Hugo "got" that your problem is 
+becoming CPU bound (long process) instead of a hard lockup. We've 
+stopped talking about "trees" and started talking about free space 
+management. We've stopped talking about 17G of free space and gotten 
+down to the 5 or so, plus you've gotten angry at me, tried to prove me 
+an idiot, and so produced test cases and data that is absolutely clear 
+including steps to reproduce.
 
-How is compression and re-compression handled? If a linear extent is 
-compressed to find its on-disk size in bytes, and then there isn't an 
-extent large enough to fit it, it has to be cut, then recompressed, then 
-searched again right?
+In real life I work on mission critical systems that can get people 
+killed when they fail. So I have developed the reflex of tenacity in 
+getting everyone using the same words, talking about the same concepts, 
+giving concrete examples, and generally bringing the discussion to a 
+very precise head.
 
-How does the system look for the right cut? How iterative can this get? 
-Does it always try cutting in half? Does it shave single bytes off the 
-end? Does it add one byte at a time till it reaches the size of the 
-extent its looking at?
+Example: I had two parties in conflict about a system. One party said 
+that every time they did "an orderly shutdown" the device would hang in 
+a way that took days to recover from. The other party would examine the 
+device and say "could not reproduce". Turns out that the two parties 
+were doing entirely different (but both correct) sequences for "orderly 
+shutdown". They'd been having that conflict for more than a year. But 
+since they both _knew_ what an "orderly shutdown" was, they _never_ 
+analyzed what they were saying. (turns out one procedure left a chip in 
+a state that it wouldn't restart until a capacitor discharged, and the 
+other procedure did not.)
 
-Can you get down to a point where you are placing data in five or ten 
-byte chunks somehow? (e.g. what's the smallest chunk you can place? 
-clearly if I open a multi-megabyte file and update a single word or byte 
-it's not going to land in metadata from my reading of the code.) One 
-could easily end up with a couple million free extents of just a few 
-bytes each, particularly if largest-first allocation is used.
+So yea, when people make statements that "everybody understands" and 
+those statements don't agree. I start slicing concepts off one at a time...
 
-The degenerate cases here do come straight from the various packing 
-problems. You may not be executing any of those packing algorithms but 
-once you ignore enough of those issues in the easy cases your free space 
-will be a fine pink mist suspended in space. (both an explosion analogy 
-and a reference to pink noise 8-) ).
+It's not about "dumb" or "silly" it's about exact and accurate 
+descriptions that have been stripped of assumptions and tribal knowledge.
 
->     I suspect that the performance problems that Martin is seeing may
-> indeed be related to free space fragmentation, in that finding and
-> creating all of those tiny extents for a huge file is causing
-> problems. I believe that btrfs isn't alone in this, but it may well be
-> showing the problem to a far greater degree than other FSes. I don't
-> have figures to compare, I'm afraid.
+And I don't care if I come off looking like "the bad guy" because I 
+don't believe in "the bad guy" at all when it comes to making things 
+more clear and getting out of a communications deadlock. My only goal is 
+"less broken".
 
->
->> I also don't know what kind of tool you are using, but it might be
->> repeatedly trying and failing to fallocate the file as a single
->> extent or something equally dumb.
->
->     Userspace doesn't as far as I know, get to make that decision. I've
-> just read the fallocate(2) man page, and it says nothing at all about
-> the contiguity of the extent(s) storage allocated by the call.
-
-Yep, my bad. But as soon as I saw that "fio" was starting two threads, 
-one doing random read/write and another doing sequential read/write, 
-both on the same file, it set off my "not just creating a file" mindset. 
-Given the delayed write into/through the cache normally done by casual 
-file io, It seemed likely that fio would be doing something more 
-aggressive (like using O_DIRECT or repeated fdatasync() which could get 
-very tit-for-tat).
-
-Compare that to a VM in which the guest operating system "knows" it has, 
-and has used, its "disk space" internally, and the subsequent async 
-activity of the monitor to push that activity out to real storage which 
-is usually quite pathological... well you can get into some super 
-pernicious behavior over write ordering and infinite retries.
-
-So I was wrong about fallocate per-se, applications can be incredibly 
-dumb. For instance a VM might think its _inconceivable_ to get an ENOSPC 
-while rewriting data it's just read from a file it "knows" has no holes etc.
-
-Given how lots of code doesn't even check the results of many function 
-calls... how many times have you seen code that doesn't look at the 
-return value of fwrite() or printf()? Or one that, if it does something 
-like if (bytes_written < size) retry_remainder(); So sure I was 
-imagining an fallocate() in a loop or something equally dumb. 8-)
-
->
->     Hugo.
->
-> [snip]
->
-
+So occasionally annoying... but look... progress!

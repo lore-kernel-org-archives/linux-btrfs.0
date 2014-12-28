@@ -1,89 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:33138 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750740AbaLZUFw (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:42381 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751752AbaL1T0i convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Dec 2014 15:05:52 -0500
-Date: Fri, 26 Dec 2014 15:05:45 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Ankur Tank <Ankur.Tank@LntTechservices.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs doesn't format eMMC if previous filesystem is ext4
-Message-ID: <20141226200529.GA11406@hungrycats.org>
-References: <CFB3B8F56DDE9F45B45EBDEBED372A6644232D@POCITMSEXMB05.LntUniverse.com>
+	Sun, 28 Dec 2014 14:26:38 -0500
+Date: Sun, 28 Dec 2014 11:26:14 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: 3.16.3: fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty
+Message-ID: <20141228192614.GO17254@merlins.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="jI8keyz6grp/JLjh"
-In-Reply-To: <CFB3B8F56DDE9F45B45EBDEBED372A6644232D@POCITMSEXMB05.LntUniverse.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Not sure if it's useful to anyone, but there you go. This happened after a forced
+power cycle:
 
---jI8keyz6grp/JLjh
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+BTRFS info (device dm-1): disk space caching is enabled
+------------[ cut here ]------------
+WARNING: CPU: 2 PID: 778 at fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty+0x32/0x34()
+Modules linked in: aes_x86_64 lm85 hwmon_vid dm_snapshot dm_bufio iptable_nat ip_tables nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_conntrack_ftp ipt_MASQUERADE nf_nat x_tables nf_conntrack sg st snd_pcm_oss snd_mixer_oss fuse snd_hda_codec_realtek snd_hda_codec_generic microcode snd_cmipci gameport snd_hda_intel kvm_intel snd_hda_controller kvm snd_hda_codec snd_opl3_lib eeepc_wmi snd_mpu401_uart snd_seq_midi snd_seq_midi_event snd_seq asus_wmi battery snd_rawmidi snd_hwdep sparse_keymap rfkill snd_pcm snd_seq_device tpm_infineon snd_timer tpm_tis rc_ati_x10 asix coretemp tpm i2c_i801 snd processor wmi pl2303 kl5kusb105 libphy ati_remote parport_pc rc_core xhci_hcd intel_rapl keyspan ftdi_sio evdev usbnet soundcore pcspkr parport lpc_ich intel_powerclamp ezusb usbserial x86_pkg_temp_thermal xts gf128mul dm_crypt dm_mod raid456 async_raid6_recov async_pq async_xor async_memcpy async_tx e1000e ptp pps_core crc32c_intel crc32_pclmul sata_sil24 thermal crct10dif_pclmul ehci_pci ehci_hcd ghash_clmulni_intel r8169 cryptd fan mii usbcore usb_common sata_mv
+CPU: 2 PID: 778 Comm: btrfs-transacti Tainted: G        W     3.16.7-amd64-i915-volpreempt-20141114 #1
+Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3806 08/20/2012
+ 0000000000000000 ffff8802117abdc8 ffffffff816295db 0000000000000000
+ ffff8802117abe00 ffffffff81051e2d ffffffff8127038d ffff880211534000
+ ffff880212639980 0000000000000000 ffff8802137eaf00 ffff8802117abe10
+Call Trace:
+ [<ffffffff816295db>] dump_stack+0x45/0x56
+ [<ffffffff81051e2d>] warn_slowpath_common+0x7f/0x98
+ [<ffffffff8127038d>] ? btrfs_assert_delayed_root_empty+0x32/0x34
+ [<ffffffff81051ef4>] warn_slowpath_null+0x1a/0x1c
+ [<ffffffff8127038d>] btrfs_assert_delayed_root_empty+0x32/0x34
+ [<ffffffff8122db95>] btrfs_commit_transaction+0x37f/0x867
+ [<ffffffff8122a2f1>] transaction_kthread+0xec/0x19f
+ [<ffffffff8122a205>] ? btrfs_cleanup_transaction+0x3f3/0x3f3
+ [<ffffffff8106cd8f>] kthread+0xae/0xb6
+ [<ffffffff8106cce1>] ? __kthread_parkme+0x61/0x61
+ [<ffffffff8163007c>] ret_from_fork+0x7c/0xb0
+ [<ffffffff8106cce1>] ? __kthread_parkme+0x61/0x61
+---[ end trace 32de13ca415f14fa ]---
 
-On Fri, Dec 26, 2014 at 03:24:59PM +0000, Ankur Tank wrote:
-> I wanted to test btrfs on the eMMC of beaglebone black based custom board.
-> Precondition: eMMC is formatted with ext4 filesystem
-> Use case:
->         Format eMMC with mkfs.btrfs  -L  <label>  <dev>
-> Result:
->         Mkfs.btrfs denies formatting eMMC because its existing filesystem
->=20
-> # mkfs.btrfs -L "1storage" /dev/mmcblk0p2
-> /dev/mmcblk0p2 appears to contain an existing filesystem (ext4).
-> Error: Use the -f option to force overwrite.
->=20
-> If I add "-f" its possible to format the eMMC.
+I'm now getting this on interval as kernel spam.
 
-It seems to be a feature.  mkfs.btrfs will test the device with libblkid
-to see if there is a filesystem present to prevent administrator mistakes.
-If libblkid can identify and device, it will prevent format without -f.
+It doesn't say which of my 4 btrfs volumes this is linked to, which
+doesn't make life easier.
 
-If you're doing an automated script, you need the -f.  libblkid isn't
-particularly reliable and can false-positive on random data (e.g. the
-HFS module can detect a filesystem that is not there).  If you're doing
-tests that involve reformatting the filesystem in a loop, you need the -f.
+Any idea what I should do from here?
 
-> # mkfs.btrfs -f -L "1storage" /dev/mmcblk0p2
-> Detected a SSD, turning off metadata duplication.  Mkfs with -m dup if yo=
-u want to force metadata duplication.
-> Btrfs v3.17
-> See http://btrfs.wiki.kernel.org for more information.
->=20
-> Performing full device TRIM (1.72GiB) ...
-> Turning ON incompat feature 'extref': increased hardlink limit per file t=
-o 65536
-> [273917.692896] btrfs: device label 1storage devid 1 transid 3 /dev/mmcbl=
-k0p2
-> fs created label 1storage on /dev/mmcblk0p2
->         nodesize 16384 leafsize 16384 sectorsize 4096 size 1.72GiB
->=20
-> I had downloaded debian package from following link
-> https://packages.debian.org/sid/armhf/btrfs-tools/download
->=20
-> Is it a bug ? or I am missing something ?
+Will btrfs scrub, even if it takes about 24H to run for me, tell me
+which FS is affected and if so do I run btrfs repair?
 
-If your device is small or solid-state, btrfs will change the default
-options (mixed-metadata, no duplicate metadata).
-
-"extref" is a feature that enables large numbers of hardlinks to a
-single file.  You can leave it enabled-it's unlikely your devices
-will ever see a kernel old enough that it's not compatible.
-
-
---jI8keyz6grp/JLjh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlSdv4YACgkQgfmLGlazG5yW2wCcDGuJNIGuuNqLG3l5qyEyFyDF
-HpcAn0FKbysrVSd5Ggxk2jKdA58uFGxo
-=dqg4
------END PGP SIGNATURE-----
-
---jI8keyz6grp/JLjh--
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

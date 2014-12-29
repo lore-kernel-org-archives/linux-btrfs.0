@@ -1,86 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:60355 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751291AbaL2NZK convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 08:25:10 -0500
-Received: from merkaba.localnet (host-188-174-199-225.customer.m-online.net [188.174.199.225])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id AD3E3206
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Dec 2014 14:24:18 +0100 (CET)
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: fstrim not working on one of three BTRFS filesystems
-Date: Mon, 29 Dec 2014 14:23:38 +0100
-Message-ID: <2085969.4UDoZBNBiV@merkaba>
-In-Reply-To: <3979684.puYLD8DjTq@merkaba>
-References: <3979684.puYLD8DjTq@merkaba>
+Received: from cantor2.suse.de ([195.135.220.15]:38655 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751551AbaL2O4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Dec 2014 09:56:20 -0500
+Date: Mon, 29 Dec 2014 15:56:19 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] btrfs: Enhance btrfs chunk allocation algorithm
+ to reduce ENOSPC caused by unbalanced data/metadata allocation.
+Message-ID: <20141229145619.GG6490@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1419386114-21703-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1419386114-21703-2-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 28. Dezember 2014, 17:58:17 schrieb Martin Steigerwald:
-> Hi!
+On Wed, Dec 24, 2014 at 09:55:14AM +0800, Qu Wenruo wrote:
+> When btrfs allocate a chunk, it will try to alloc up to 1G for data and
+> 256M for metadata, or 10% of all the writeable space if there is enough
+> space for the stripe on device.
 > 
-> After my recent tests with my /home filesystem and the up and downsizing of
-> it I get:
+> However, when we run out of space, this allocation may cause unbalanced
+> chunk allocation.
+> For example, there are only 1G unallocated space, and request for
+> allocate DATA chunk is sent, and all the space will be allocated as data
+> chunk, making later metadata chunk alloc request unable to handle, which
+> will cause ENOSPC.
+
+The question is why the metadata is full although there's 1G free, as
+the metadata chunks are being preallocated according to the metadata
+ratio.
+
+> This is the one of the common complains from end users about why ENOSPC
+> happens but there is still available space.
 > 
-> 
-> merkaba:~> LANG=C fstrim -v /home
-> /home: 0 B (0 bytes) trimmed
-> merkaba:~> LANG=C fstrim -v /    
-> /: 24.5 GiB (26257555456 bytes) trimmed
-> merkaba:~> LANG=C fstrim -v /daten
-> /daten: 2.8 GiB (3016101888 bytes) trimmed
-> 
-> 
-> The fstrim on /home returns immediately. It does not even seem to trim
-> anything. What could be the cause for that?
+> This patch will try not to alloc chunk which is more than half of the
+> unallocated space, making the last space more balanced at a small cost
+> of more fragmented chunk at the last 1G.
 
-I have a 3.19-rc2 with a patch and a working fstrim now:
+I'm really worried about the small chunks and the fragmentation on that
+level wrt balancing. The small chunks will be relolcated to bigger free
+chunks (eg. 256mb) and make it unusable for further rebalancing of the
+256mb chunks. Newly allocated chunks will have to be reduced in size to
+fit in the remaining place and will cause further fragmentation of the
+chunk space.
 
-merkaba:~> btrfs scrub status /home
-scrub status for […]
-        scrub started at Mon Dec 29 13:48:17 2014 and finished after 568 seconds
-        total bytes scrubbed: 272.73GiB with 0 errors
+The drawbacks of small chunks are obvious:
 
-merkaba:~> fstrim -v /home
-/home: 18,5 GiB (19873382400 Bytes) getrimmt
+* more chunks mean more processing
+* smaller chance of getting big contiguous space for extents, leading to
+  file fragmentation that cannot be much improved fixed by
+  defragmentation
 
-merkaba:~> btrfs scrub status /home
-scrub status for […]
-        scrub started at Mon Dec 29 14:02:58 2014 and finished after 576 seconds
-        total bytes scrubbed: 272.82GiB with 0 errors
+IMO the chunk allocation should be more predictable and should give some
+clue how the layout happens, otherwise this will become another dark
+corner that would make debugging harder and can negatively and
+unpreditactably affect performance after some time.
 
-merkaba:~> btrfs fi df /home
-Data, RAID1: total=139.93GiB, used=133.19GiB
-System, RAID1: total=32.00MiB, used=48.00KiB
-Metadata, RAID1: total=4.99GiB, used=3.24GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-merkaba:~> LANG=C df -hT /home
-Filesystem             Type   Size  Used Avail Use% Mounted on
-/dev/mapper/msata-home btrfs  170G  137G   32G  82% /home
-
-
-
-I wonder about the trimmed size tough:
-
-139,93 - 133,19 = 6,74
-
-4,99 - 3,24 = 1,74
-
-( 6,74 + 1,74 ) * 2 =  16,96 GiB
-
-
-It is more than whats free inside the chunks but less than the total unused
-space. Well it may have been up to what has been allocated as chunks
-as I had more chunks allocated in it.
-
-
-I leave it to the patch author to come up with it on the mailing list :)
-
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+The problems you're trying to address are real, no doubt here, but I'd
+rather try to address them in a different way.

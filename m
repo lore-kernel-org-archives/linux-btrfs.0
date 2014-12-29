@@ -1,101 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:35521 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751560AbaL2VuL (ORCPT
+Received: from mail-yh0-f51.google.com ([209.85.213.51]:40747 "EHLO
+	mail-yh0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751722AbaL2Vxb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 16:50:11 -0500
-Date: Mon, 29 Dec 2014 21:50:08 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "sys.syphus" <syssyphus@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: I need to P. are we almost there yet?
-Message-ID: <20141229215008.GB26040@carfax.org.uk>
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>
- <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>
- <20141229190400.GA26040@carfax.org.uk>
- <CAAe=sHUYJVX5=Xi-r5HOMSLnPJV55z-FOmWWkZSj7yH2_YD1CA@mail.gmail.com>
+	Mon, 29 Dec 2014 16:53:31 -0500
+Received: by mail-yh0-f51.google.com with SMTP id a41so6920010yho.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Dec 2014 13:53:30 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="1UWUbFP1cBYEclgG"
-In-Reply-To: <CAAe=sHUYJVX5=Xi-r5HOMSLnPJV55z-FOmWWkZSj7yH2_YD1CA@mail.gmail.com>
+In-Reply-To: <549F7539.4050801@ubuntu.com>
+References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
+	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
+	<20141223211605.GC436@hungrycats.org>
+	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
+	<549F7539.4050801@ubuntu.com>
+Date: Mon, 29 Dec 2014 14:53:30 -0700
+Message-ID: <CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
+Subject: Re: Uncorrectable errors on RAID-1?
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Dec 27, 2014 at 8:12 PM, Phillip Susi <psusi@ubuntu.com> wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA512
+>
+> On 12/23/2014 05:09 PM, Chris Murphy wrote:
+>> The timer in /sys is a kernel command timer, it's not a device
+>> timer even though it's pointed at a block device. You need to
+>> change that from 30 to something higher to get the behavior you
+>> want. It doesn't really make sense to say, timeout in 30 seconds,
+>> but instead of reporting a timeout, report it as a read error.
+>> They're completely different things.
+>
+> The idea is not to give the drive a ridiculous amount of time to
+> recover without timing out, but for the timeout to be handled properly.
 
---1UWUbFP1cBYEclgG
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Get drives supporting configurable or faster recoveries. There's no
+way around this.
 
-On Mon, Dec 29, 2014 at 02:25:14PM -0600, sys.syphus wrote:
-> so am I to read that as if btrfs redundancy isn't really functional?
-> if i yank a member of my raid 1 out in live "prod" is it going to take
-> a dump on my data?
+>
+>> There are all sorts of errors listed in libata so for all of them
+>> to get dumped into a read error doesn't make sense. A lot of those
+>> errors don't report back a sector, and the key part of the read
+>> error is what sector(s) have the problem so that they can be fixed.
+>> Without that information, the ability to fix it is lost. And it's
+>> the drive that needs to report this.
+>
+> It is not lost.  The information is simply fuzzed from an exact
+> individual sector to a range of sectors in the timed out request.  In
+> an ideal world the drive would give up in a reasonable time and report
+> the failure, but if it doesn't, then we should deal with that in a
+> better way than hanging all IO for an unacceptably long time.
 
-   Eh? Where did that conclusion some from? I said nothing at all
-about RAID-1, only RAID-10.
+This is a broken record topic honestly. The drives under discussion
+aren't ever meant to be used in raid, they're desktop drives, they're
+designed with long recoveries because it's reasonable to try to
+recover the data even in the face of delays rather than not recover at
+all. Whether there are also some design flaws in here I can't say
+because I'm not a hardware designer or developer but they are very
+clearly targeted at certain use cases and not others, not least of
+which is their error recovery time but also their vibration tolerance
+when multiple drives are in close proximity to each other.
 
-   So, to clarify:
+If you don't like long recoveries, don't buy drives with long
+recoveries. Simple.
 
-   In the general case, you can safely lose one device from a btrfs
-RAID-10. Also in the general case, losing a second device will break
-the filesystem (with very high probability).
 
-   In the case I gave below, with an even number of equal sized
-devices, the second device to be lost *may* allow the data to be
-recovered with sufficient effort, but the FS in general will probably
-not be mountable with two missing devices.
+>
+>> Oven doesn't work, so lets spray gasoline on it and light it and
+>> the kitchen on fire so that we can cook this damn pizza! That's
+>> what I just read. Sorry. It doesn't seem like a good idea to me to
+>> map all errors as read errors.
+>
+> How do you conclude that?  In the face of a timeout your choices are
+> between kicking the whole drive out of the array immediately, or
+> attempting to repair it by recovering the affected sector(s) and
+> rewriting them.  Unless that recovery attempt could cause more harm
+> than degrading the array, then where is the "throwing gasoline on it"
+> part?  This is simply a case of the device not providing a specific
+> error that says whether it can be recovered or not, so let's attempt
+> the recovery and see if it works instead of assuming that it won't and
+> possibly causing data loss that could be avoided.
 
-   So, btrfs RAID-10 offers the same *guarantees* as traditional
-RAID-10. It's generally less effective with the probabilities of the
-failure modes beyond the guarantee.
+The device will absolutely provide a specific error so long as its
+link isn't reset prematurely, which happens to be the linux default
+behavior when combined with drives that have long error recovery
+times. Hence the recommendation is to increase the linux command timer
+value. That is the solution right now. If you want a different
+behavior someone has to write the code to do it because it doesn't
+exist yet, and so far there seems to be zero interest in actually
+doing that work, just some interest in hand waiving that it ought to
+exist, maybe.
 
-   Hugo.
 
-> On Mon, Dec 29, 2014 at 1:04 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > On Mon, Dec 29, 2014 at 01:00:05PM -0600, sys.syphus wrote:
-> >> oh, and sorry to bump myself. but is raid10 *ever* more redundant in
-> >> btrfs-speak than raid1? I currently use raid1 but i know in mdadm
-> >> speak raid10 means you can lose 2 drives assuming they aren't the
-> >> "wrong ones", is it safe to say with btrfs / raid 10 you can only lose
-> >> one no matter what?
-> >
-> >    I think that with an even number of identical-sized devices, you
-> > get the same "guarantees" (well, behaviour) as you would with
-> > traditional RAID-10.
-> >
-> >    I may be wrong about that -- do test before relying on it. The FS
-> > probably won't like losing two devices, though, even if the remaining
-> > data is actually enough to reconstruct the FS.
-> >
-> >    Hugo.
-> >
+
+>
+>> Any decent server SATA drive should support SCT ERC. The
+>> inexpensive WDC Red drives for NAS's all have it and by default are
+>> a reasonable 70 deciseconds last time I checked.
+>
+> And yet it isn't supported on the cheaper but otherwise identical
+> greens, or the higher performing blues.  We should not be helping
+> vendors charge a premium for zero cost firmware features that are
+> "required" for raid use when they really aren't ( even if they are
+> nice to have ).
+
+The manufacturer says they differ in vibration characteristics, 24x7
+usage expectation, and warranty among the top relevant features. The
+Red has a 3 year warranty, the Green is a 1 year warranty. That alone
+easily accounts for the $15 difference, although that's perhaps
+somewhat subjective. I don't actually know the wholesale prices, they
+could be the same if the purchasing terms are identical.
+
+Western Digital Red NAS Hard Drive WD30EFRX 3TB IntelliPower 64MB
+Cache SATA 6.0Gb/s 3.5" NAS Hard Drive
+$114 on Newegg.com
+
+Western Digital WD Green WD30EZRX 3TB IntelliPower 64MB Cache SATA
+6.0Gb/s 3.5" Internal Hard Drive Bare Drive - OEM
+$99 on Newegg.com
+
+And none of the manufacturers actually says these features are
+required for raid use. What they say is, they reserve the right to
+deny warranty claims if you're using a drive in a manner inconsistent
+with their intended usage which is rather easily found information.
 
 -- 
-Hugo Mills             | emacs: Eighty Megabytes And Constantly Swapping.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |
-
---1UWUbFP1cBYEclgG
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUocyQAAoJEFheFHXiqx3k0e4P/ifd/uGiK43YQuZ5NTl+wUr4
-GOl15PmUjz/RiHoNkUZRiQ1tjBZ55u347+20GZi+GTR1vef01Y10IRB9jzVu1wAm
-Z8cnBsodQ3PC6YfkqORzx86cfYucFCbrT1M3W+qnZWBrNUEgfO/uvys7uJCBF/e1
-hRDiivSTcGM+f0uoYax1TXGbkbEWcwKcz93Hzk0bSTzaCvVWVYv5JxeZmEOqQkrj
-dO5T3vTglIMZZzFxnxtH0ly7hCVgm3nOwPoW3vHALlYodp6rp/xZY+x6sqRl2Gmy
-vnp+zLxWpqzgsakyvfV4AltIPjRUkGm/vgAbJSnx/5RLBlwm6vyduvmCalBngYZc
-9MT6Bb+Hx8nrvRfdK0FS+afvxvj4DZoGU7Lo7fz4VxmMCx9KNNFXe/b+Mtbv7dX/
-UPSKxXsJoMDcHYF24BYOj6l8UfW/L/i6iav5sHF/wAWQq25wnDinvuOUTotBPFiR
-MdreGNtaW8mwc6kV+F/j6Va8eOkxrOyN80PYwCqnNHV7YLlbbUDW4Hp4T0i3jK9W
-uzxH0y7uHBG0F6tdM5mfhKmS5xb6M8Zth2RzLc4oUXnr5ia2cVYEzQLKqlJrqYnt
-nCfY46mU2FPgCdt1hmGCNmpysyGbb05cXksoF/QtJ5Dp589uFllzoXwxsmCoTe3w
-pX3gN/4utLDWew2m5Ezr
-=HpWS
------END PGP SIGNATURE-----
-
---1UWUbFP1cBYEclgG--
+Chris Murphy

@@ -1,49 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40123 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40439 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751749AbaL2QHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 11:07:14 -0500
-Date: Mon, 29 Dec 2014 17:07:12 +0100
+	id S1751534AbaL2Q3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Dec 2014 11:29:53 -0500
+Date: Mon, 29 Dec 2014 17:29:51 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, takeuchi_satoru@jp.fujitsu.com
-Subject: Re: [PATCH v2] btrfs-progs: Documentation: add T/P/E description for
- resize cmd
-Message-ID: <20141229160712.GK6490@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs-progs: refine btrfs-debug-tree error prompt
+ when a mount point given
+Message-ID: <20141229162951.GL6490@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <54978DFE.6010507@jp.fujitsu.com>
- <1419232973-4623-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1419470195-2889-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+ <1419470195-2889-2-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1419232973-4623-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1419470195-2889-2-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 22, 2014 at 03:22:53PM +0800, Gui Hecheng wrote:
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> ---
-> changelog
-> 	v1->v2: s/\'E\'(EiB)/or \'E\'(EiB)/ as suggested by Satoru, thanks.
-> ---
->  Documentation/btrfs-filesystem.txt | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+On Thu, Dec 25, 2014 at 09:16:35AM +0800, Gui Hecheng wrote:
+> Now, if exec:
+> 	# btrfs-debug-tree <mount_point>
+> it echos:
+> 	: Superblock bytenr is larger than device size
 > 
-> diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-> index a8f2972..138ba6c 100644
-> --- a/Documentation/btrfs-filesystem.txt
-> +++ b/Documentation/btrfs-filesystem.txt
-> @@ -102,8 +102,8 @@ If the prefix + or - is present the size is increased or decreased
->  by the quantity <size>.
->  If no units are specified, the unit of the <size> parameter defaults to
->  bytes. Optionally, the size parameter may be suffixed by one of the following
-> -units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
-> -respectively.
-> +units designators: \'K\'(KiB), \'M\'(MiB), \'G\'(GiB), \'T\'(TiB), \'P\'(PiB)
-> +or \'E\'(EiB).
+> But it is quite misleading, because it is a valid btrfs.
+> In this case, we should tell the developer to provide a block device.
+> 
+> After apply:
+> 	: '<mount_point>' is not a block device
+> 	: 'usage: btrfs-debug-tree [options] device
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  btrfs-debug-tree.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
+> index e46500d..7f079a9 100644
+> --- a/btrfs-debug-tree.c
+> +++ b/btrfs-debug-tree.c
+> @@ -179,6 +179,12 @@ int main(int ac, char **av)
+>  	if (check_argc_exact(ac, 1))
+>  		print_usage();
+>  
+> +	ret = check_arg_type(av[optind]);
+> +	if (ret != BTRFS_ARG_BLKDEV) {
+> +		fprintf(stderr, "'%s' is not a block device\n", av[optind]);
+> +		print_usage();
 
-I find this a bit confusing as this would suggest that eg.
+The current widespread pattern is to print_usage() after most errors in
+commandline arguments but I find it quite annoying. The help is always
+available under --help for each command. As the bugfix is good I'm going
+to apply it and replace it with exit().
 
-  $ btrfs fi resize -1GiB
-
-is valid.
+We can start removing misues of print_usage() from the codebase in the
+next dev cycle.

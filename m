@@ -1,575 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48988 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751967AbaL3IsN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Dec 2014 03:48:13 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id sBU8mCpN027745
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 08:48:13 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBU8mCow005147
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 08:48:12 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id sBU8mBZX005142
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 08:48:11 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:51873 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750977AbaL3Qel (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Dec 2014 11:34:41 -0500
+Date: Tue, 30 Dec 2014 17:34:39 +0100
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: use list instead of rbtree for free_space cluster
-Date: Tue, 30 Dec 2014 16:48:02 +0800
-Message-Id: <1419929282-6594-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com
+Subject: Btrfs progs release 3.18
+Message-ID: <20141230163439.GP6490@suse.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Our free_space cluster currently only uses rb_next to find a proper
-free_space entry by interating rbtree, there is no search involved,
-so it's more efficient to iterate a list rather than a rbtree.
+Hi,
 
-This is a straightforward change that converts rbtree to list.
+let me announce the release of btrfs-progs version 3.18. There are
+updates to UI and several enhancements of check/repair. About 100
+commits from 14 contributors, thank you all!
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ctree.h            |   3 +-
- fs/btrfs/free-space-cache.c | 187 +++++++++++++++++++++++---------------------
- fs/btrfs/free-space-cache.h |   1 +
- 3 files changed, 99 insertions(+), 92 deletions(-)
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index be47b10..7e539a9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1209,7 +1209,8 @@ struct btrfs_block_rsv {
- struct btrfs_free_cluster {
- 	spinlock_t lock;
- 	spinlock_t refill_lock;
--	struct rb_root root;
-+
-+	struct list_head free_space;
- 
- 	/* largest extent in this cluster */
- 	u64 max_size;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 448cf6f..ad0d845 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -43,6 +43,26 @@ static int link_free_space(struct btrfs_free_space_ctl *ctl,
- static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
- 			      struct btrfs_free_space *info);
- 
-+static struct btrfs_free_space *alloc_free_space_cache(gfp_t mask)
-+{
-+	struct btrfs_free_space *e;
-+
-+	e = kmem_cache_zalloc(btrfs_free_space_cachep,
-+			      GFP_NOFS);
-+	if (!e)
-+		return NULL;
-+
-+	RB_CLEAR_NODE(&e->offset_index);
-+	INIT_LIST_HEAD(&e->cluster_list);
-+	return e;
-+}
-+
-+static void reclaim_free_space_cache(struct btrfs_free_space *info)
-+{
-+	WARN_ON_ONCE(!list_empty(&info->cluster_list));
-+	kmem_cache_free(btrfs_free_space_cachep, info);
-+}
-+
- static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
- 					       struct btrfs_path *path,
- 					       u64 offset)
-@@ -630,7 +650,7 @@ again:
- 			unlink_free_space(ctl, prev);
- 			unlink_free_space(ctl, e);
- 			prev->bytes += e->bytes;
--			kmem_cache_free(btrfs_free_space_cachep, e);
-+			reclaim_free_space_cache(e);
- 			link_free_space(ctl, prev);
- 			prev = NULL;
- 			spin_unlock(&ctl->tree_lock);
-@@ -725,19 +745,18 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		goto free_cache;
- 
- 	while (num_entries) {
--		e = kmem_cache_zalloc(btrfs_free_space_cachep,
--				      GFP_NOFS);
-+		e = alloc_free_space_cache(GFP_NOFS);
- 		if (!e)
- 			goto free_cache;
- 
- 		ret = io_ctl_read_entry(&io_ctl, e, &type);
- 		if (ret) {
--			kmem_cache_free(btrfs_free_space_cachep, e);
-+			reclaim_free_space_cache(e);
- 			goto free_cache;
- 		}
- 
- 		if (!e->bytes) {
--			kmem_cache_free(btrfs_free_space_cachep, e);
-+			reclaim_free_space_cache(e);
- 			goto free_cache;
- 		}
- 
-@@ -748,7 +767,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			if (ret) {
- 				btrfs_err(root->fs_info,
- 					"Duplicate entries in free space cache, dumping");
--				kmem_cache_free(btrfs_free_space_cachep, e);
-+				reclaim_free_space_cache(e);
- 				goto free_cache;
- 			}
- 		} else {
-@@ -756,8 +775,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			num_bitmaps--;
- 			e->bitmap = kzalloc(PAGE_CACHE_SIZE, GFP_NOFS);
- 			if (!e->bitmap) {
--				kmem_cache_free(
--					btrfs_free_space_cachep, e);
-+				reclaim_free_space_cache(e);
- 				goto free_cache;
- 			}
- 			spin_lock(&ctl->tree_lock);
-@@ -768,7 +786,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			if (ret) {
- 				btrfs_err(root->fs_info,
- 					"Duplicate entries in free space cache, dumping");
--				kmem_cache_free(btrfs_free_space_cachep, e);
-+				reclaim_free_space_cache(e);
- 				goto free_cache;
- 			}
- 			list_add_tail(&e->list, &bitmaps);
-@@ -897,9 +915,22 @@ int write_cache_extent_entries(struct io_ctl *io_ctl,
- 				     block_group_list);
- 	}
- 
--	if (!node && cluster) {
--		node = rb_first(&cluster->root);
--		cluster = NULL;
-+	if (cluster) {
-+		struct btrfs_free_space *e;
-+
-+		list_for_each_entry(e, &cluster->free_space, cluster_list) {
-+			*entries += 1;
-+
-+			ret = io_ctl_add_entry(io_ctl, e->offset, e->bytes,
-+					       e->bitmap);
-+			if (ret)
-+				goto fail;
-+
-+			if (e->bitmap) {
-+				list_add_tail(&e->list, bitmap_list);
-+				*bitmaps += 1;
-+			}
-+		}
- 	}
- 
- 	/* Write out the extent entries */
-@@ -919,10 +950,6 @@ int write_cache_extent_entries(struct io_ctl *io_ctl,
- 			*bitmaps += 1;
- 		}
- 		node = rb_next(node);
--		if (!node && cluster) {
--			node = rb_first(&cluster->root);
--			cluster = NULL;
--		}
- 	}
- 
- 	/*
-@@ -1488,6 +1515,7 @@ __unlink_free_space(struct btrfs_free_space_ctl *ctl,
- 		    struct btrfs_free_space *info)
- {
- 	rb_erase(&info->offset_index, &ctl->free_space_offset);
-+	RB_CLEAR_NODE(&info->offset_index);
- 	ctl->free_extents--;
- }
- 
-@@ -1726,7 +1754,7 @@ static void free_bitmap(struct btrfs_free_space_ctl *ctl,
- {
- 	unlink_free_space(ctl, bitmap_info);
- 	kfree(bitmap_info->bitmap);
--	kmem_cache_free(btrfs_free_space_cachep, bitmap_info);
-+	reclaim_free_space_cache(bitmap_info);
- 	ctl->total_bitmaps--;
- 	ctl->op->recalc_thresholds(ctl);
- }
-@@ -1893,20 +1921,19 @@ again:
- 	 */
- 	if (block_group && !list_empty(&block_group->cluster_list)) {
- 		struct btrfs_free_cluster *cluster;
--		struct rb_node *node;
- 		struct btrfs_free_space *entry;
- 
- 		cluster = list_entry(block_group->cluster_list.next,
- 				     struct btrfs_free_cluster,
- 				     block_group_list);
- 		spin_lock(&cluster->lock);
--		node = rb_first(&cluster->root);
--		if (!node) {
-+		if (list_empty(&cluster->free_space)) {
- 			spin_unlock(&cluster->lock);
- 			goto no_cluster_bitmap;
- 		}
- 
--		entry = rb_entry(node, struct btrfs_free_space, offset_index);
-+		entry = list_first_entry(&cluster->free_space,
-+					 struct btrfs_free_space, cluster_list);
- 		if (!entry->bitmap) {
- 			spin_unlock(&cluster->lock);
- 			goto no_cluster_bitmap;
-@@ -1955,8 +1982,7 @@ new_bitmap:
- 
- 		/* no pre-allocated info, allocate a new one */
- 		if (!info) {
--			info = kmem_cache_zalloc(btrfs_free_space_cachep,
--						 GFP_NOFS);
-+			info = alloc_free_space_cache(GFP_NOFS);
- 			if (!info) {
- 				spin_lock(&ctl->tree_lock);
- 				ret = -ENOMEM;
-@@ -1978,7 +2004,7 @@ out:
- 	if (info) {
- 		if (info->bitmap)
- 			kfree(info->bitmap);
--		kmem_cache_free(btrfs_free_space_cachep, info);
-+		reclaim_free_space_cache(info);
- 	}
- 
- 	return ret;
-@@ -2011,7 +2037,7 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
- 		else
- 			__unlink_free_space(ctl, right_info);
- 		info->bytes += right_info->bytes;
--		kmem_cache_free(btrfs_free_space_cachep, right_info);
-+		reclaim_free_space_cache(right_info);
- 		merged = true;
- 	}
- 
-@@ -2023,7 +2049,7 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
- 			__unlink_free_space(ctl, left_info);
- 		info->offset = left_info->offset;
- 		info->bytes += left_info->bytes;
--		kmem_cache_free(btrfs_free_space_cachep, left_info);
-+		reclaim_free_space_cache(left_info);
- 		merged = true;
- 	}
- 
-@@ -2158,13 +2184,12 @@ int __btrfs_add_free_space(struct btrfs_free_space_ctl *ctl,
- 	struct btrfs_free_space *info;
- 	int ret = 0;
- 
--	info = kmem_cache_zalloc(btrfs_free_space_cachep, GFP_NOFS);
-+	info = alloc_free_space_cache(GFP_NOFS);
- 	if (!info)
- 		return -ENOMEM;
- 
- 	info->offset = offset;
- 	info->bytes = bytes;
--	RB_CLEAR_NODE(&info->offset_index);
- 
- 	spin_lock(&ctl->tree_lock);
- 
-@@ -2194,7 +2219,7 @@ link:
- 
- 	ret = link_free_space(ctl, info);
- 	if (ret)
--		kmem_cache_free(btrfs_free_space_cachep, info);
-+		reclaim_free_space_cache(info);
- out:
- 	spin_unlock(&ctl->tree_lock);
- 
-@@ -2252,7 +2277,7 @@ again:
- 				ret = link_free_space(ctl, info);
- 				WARN_ON(ret);
- 			} else {
--				kmem_cache_free(btrfs_free_space_cachep, info);
-+				reclaim_free_space_cache(info);
- 			}
- 
- 			offset += to_free;
-@@ -2352,8 +2377,7 @@ __btrfs_return_cluster_to_free_space(
- 			     struct btrfs_free_cluster *cluster)
- {
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
--	struct btrfs_free_space *entry;
--	struct rb_node *node;
-+	struct btrfs_free_space *entry, *tmp;
- 
- 	spin_lock(&cluster->lock);
- 	if (cluster->block_group != block_group)
-@@ -2363,14 +2387,11 @@ __btrfs_return_cluster_to_free_space(
- 	cluster->window_start = 0;
- 	list_del_init(&cluster->block_group_list);
- 
--	node = rb_first(&cluster->root);
--	while (node) {
-+	list_for_each_entry_safe(entry, tmp,
-+				 &cluster->free_space, cluster_list) {
- 		bool bitmap;
- 
--		entry = rb_entry(node, struct btrfs_free_space, offset_index);
--		node = rb_next(&entry->offset_index);
--		rb_erase(&entry->offset_index, &cluster->root);
--		RB_CLEAR_NODE(&entry->offset_index);
-+		list_del_init(&entry->cluster_list);
- 
- 		bitmap = (entry->bitmap != NULL);
- 		if (!bitmap) {
-@@ -2380,7 +2401,6 @@ __btrfs_return_cluster_to_free_space(
- 		tree_insert_offset(&ctl->free_space_offset,
- 				   entry->offset, &entry->offset_index, bitmap);
- 	}
--	cluster->root = RB_ROOT;
- 
- out:
- 	spin_unlock(&cluster->lock);
-@@ -2398,7 +2418,7 @@ static void __btrfs_remove_free_space_cache_locked(
- 		info = rb_entry(node, struct btrfs_free_space, offset_index);
- 		if (!info->bitmap) {
- 			unlink_free_space(ctl, info);
--			kmem_cache_free(btrfs_free_space_cachep, info);
-+			reclaim_free_space_cache(info);
- 		} else {
- 			free_bitmap(ctl, info);
- 		}
-@@ -2474,7 +2494,7 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group_cache *block_group,
- 
- 		entry->bytes -= bytes + align_gap_len;
- 		if (!entry->bytes)
--			kmem_cache_free(btrfs_free_space_cachep, entry);
-+			reclaim_free_space_cache(entry);
- 		else
- 			link_free_space(ctl, entry);
- 	}
-@@ -2567,8 +2587,7 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
- 			     u64 min_start, u64 *max_extent_size)
- {
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
--	struct btrfs_free_space *entry = NULL;
--	struct rb_node *node;
-+	struct btrfs_free_space *entry = NULL, *tmp;
- 	u64 ret = 0;
- 
- 	spin_lock(&cluster->lock);
-@@ -2578,38 +2597,23 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
- 	if (cluster->block_group != block_group)
- 		goto out;
- 
--	node = rb_first(&cluster->root);
--	if (!node)
--		goto out;
--
--	entry = rb_entry(node, struct btrfs_free_space, offset_index);
--	while (1) {
-+	list_for_each_entry_safe(entry, tmp,
-+				 &cluster->free_space, cluster_list) {
- 		if (entry->bytes < bytes && entry->bytes > *max_extent_size)
- 			*max_extent_size = entry->bytes;
- 
- 		if (entry->bytes < bytes ||
--		    (!entry->bitmap && entry->offset < min_start)) {
--			node = rb_next(&entry->offset_index);
--			if (!node)
--				break;
--			entry = rb_entry(node, struct btrfs_free_space,
--					 offset_index);
-+		    (!entry->bitmap && entry->offset < min_start))
- 			continue;
--		}
- 
- 		if (entry->bitmap) {
- 			ret = btrfs_alloc_from_bitmap(block_group,
- 						      cluster, entry, bytes,
- 						      cluster->window_start,
- 						      max_extent_size);
--			if (ret == 0) {
--				node = rb_next(&entry->offset_index);
--				if (!node)
--					break;
--				entry = rb_entry(node, struct btrfs_free_space,
--						 offset_index);
-+			if (ret == 0)
- 				continue;
--			}
-+
- 			cluster->window_start += bytes;
- 		} else {
- 			ret = entry->offset;
-@@ -2619,7 +2623,7 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group_cache *block_group,
- 		}
- 
- 		if (entry->bytes == 0)
--			rb_erase(&entry->offset_index, &cluster->root);
-+			list_del_init(&entry->cluster_list);
- 		break;
- 	}
- out:
-@@ -2638,7 +2642,7 @@ out:
- 			ctl->total_bitmaps--;
- 			ctl->op->recalc_thresholds(ctl);
- 		}
--		kmem_cache_free(btrfs_free_space_cachep, entry);
-+		reclaim_free_space_cache(entry);
- 	}
- 
- 	spin_unlock(&ctl->tree_lock);
-@@ -2660,7 +2664,6 @@ static int btrfs_bitmap_cluster(struct btrfs_block_group_cache *block_group,
- 	unsigned long found_bits;
- 	unsigned long start = 0;
- 	unsigned long total_found = 0;
--	int ret;
- 
- 	i = offset_to_bit(entry->offset, ctl->unit,
- 			  max_t(u64, offset, entry->offset));
-@@ -2699,9 +2702,10 @@ again:
- 
- 	cluster->window_start = start * ctl->unit + entry->offset;
- 	rb_erase(&entry->offset_index, &ctl->free_space_offset);
--	ret = tree_insert_offset(&cluster->root, entry->offset,
--				 &entry->offset_index, 1);
--	ASSERT(!ret); /* -EEXIST; Logic error */
-+	RB_CLEAR_NODE(&entry->offset_index);
-+
-+	WARN_ON_ONCE(!list_empty(&entry->cluster_list));
-+	list_add_tail(&entry->cluster_list, &cluster->free_space);
- 
- 	trace_btrfs_setup_cluster(block_group, cluster,
- 				  total_found * ctl->unit, 1);
-@@ -2749,6 +2753,8 @@ setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
- 	max_extent = entry->bytes;
- 	first = entry;
- 	last = entry;
-+	WARN_ON_ONCE(!list_empty(&entry->cluster_list));
-+	list_add_tail(&entry->cluster_list, &cluster->free_space);
- 
- 	for (node = rb_next(&entry->offset_index); node;
- 	     node = rb_next(&entry->offset_index)) {
-@@ -2767,33 +2773,32 @@ setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
- 		window_free += entry->bytes;
- 		if (entry->bytes > max_extent)
- 			max_extent = entry->bytes;
-+
-+		WARN_ON_ONCE(!list_empty(&entry->cluster_list));
-+		list_add_tail(&entry->cluster_list, &cluster->free_space);
- 	}
- 
--	if (window_free < bytes || max_extent < cont1_bytes)
-+	if (window_free < bytes || max_extent < cont1_bytes) {
-+		struct btrfs_free_space *tmp;
-+
-+		list_for_each_entry_safe(entry, tmp,
-+					 &cluster->free_space, cluster_list)
-+			list_del_init(&entry->cluster_list);
- 		return -ENOSPC;
-+	}
- 
- 	cluster->window_start = first->offset;
- 
--	node = &first->offset_index;
--
- 	/*
- 	 * now we've found our entries, pull them out of the free space
- 	 * cache and put them into the cluster rbtree
- 	 */
--	do {
--		int ret;
--
--		entry = rb_entry(node, struct btrfs_free_space, offset_index);
--		node = rb_next(&entry->offset_index);
--		if (entry->bitmap || entry->bytes < min_bytes)
--			continue;
--
-+	list_for_each_entry(entry, &cluster->free_space, cluster_list) {
-+		WARN_ON_ONCE(entry->bitmap || entry->bytes < min_bytes);
- 		rb_erase(&entry->offset_index, &ctl->free_space_offset);
--		ret = tree_insert_offset(&cluster->root, entry->offset,
--					 &entry->offset_index, 0);
-+		RB_CLEAR_NODE(&entry->offset_index);
- 		total_size += entry->bytes;
--		ASSERT(!ret); /* -EEXIST; Logic error */
--	} while (node && entry != last);
-+	}
- 
- 	cluster->max_size = max_extent;
- 	trace_btrfs_setup_cluster(block_group, cluster, total_size, 0);
-@@ -2938,9 +2943,9 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
- {
- 	spin_lock_init(&cluster->lock);
- 	spin_lock_init(&cluster->refill_lock);
--	cluster->root = RB_ROOT;
- 	cluster->max_size = 0;
- 	INIT_LIST_HEAD(&cluster->block_group_list);
-+	INIT_LIST_HEAD(&cluster->free_space);
- 	cluster->block_group = NULL;
- }
- 
-@@ -3049,7 +3054,7 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 		}
- 
- 		unlink_free_space(ctl, entry);
--		kmem_cache_free(btrfs_free_space_cachep, entry);
-+		reclaim_free_space_cache(entry);
- 
- 		spin_unlock(&ctl->tree_lock);
- 		trim_entry.start = extent_start;
-@@ -3241,7 +3246,7 @@ u64 btrfs_find_ino_for_alloc(struct btrfs_root *fs_root)
- 		entry->offset++;
- 		entry->bytes--;
- 		if (!entry->bytes)
--			kmem_cache_free(btrfs_free_space_cachep, entry);
-+			reclaim_free_space_cache(entry);
- 		else
- 			link_free_space(ctl, entry);
- 	} else {
-@@ -3380,7 +3385,7 @@ int test_add_free_space_entry(struct btrfs_block_group_cache *cache,
- 
- again:
- 	if (!info) {
--		info = kmem_cache_zalloc(btrfs_free_space_cachep, GFP_NOFS);
-+		info = alloc_free_space_cache(GFP_NOFS);
- 		if (!info)
- 			return -ENOMEM;
- 	}
-@@ -3392,14 +3397,14 @@ again:
- 		ret = link_free_space(ctl, info);
- 		spin_unlock(&ctl->tree_lock);
- 		if (ret)
--			kmem_cache_free(btrfs_free_space_cachep, info);
-+			reclaim_free_space_cache(info);
- 		return ret;
- 	}
- 
- 	if (!map) {
- 		map = kzalloc(PAGE_CACHE_SIZE, GFP_NOFS);
- 		if (!map) {
--			kmem_cache_free(btrfs_free_space_cachep, info);
-+			reclaim_free_space_cache(info);
- 			return -ENOMEM;
- 		}
- 	}
-@@ -3424,7 +3429,7 @@ again:
- 		goto again;
- 
- 	if (info)
--		kmem_cache_free(btrfs_free_space_cachep, info);
-+		reclaim_free_space_cache(info);
- 	if (map)
- 		kfree(map);
- 	return 0;
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 88b2238..dce9195 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -25,6 +25,7 @@ struct btrfs_free_space {
- 	u64 bytes;
- 	unsigned long *bitmap;
- 	struct list_head list;
-+	struct list_head cluster_list;
- };
- 
- struct btrfs_free_space_ctl {
--- 
-1.8.1.4
 
+Major user-visible changes:
+
+* mkfs - skinny-metadata feature is now on by default, first introduced
+  in kernel 3.10
+
+New subcommands:
+
+* filesystem usage - give an overview of fs usage in a way that's more
+  comprehensible than existing 'fi df'
+  * on kernels < 3.18: requires root due to restricted ioctl FS_INFO
+  * raid 5/6 numbers may be missing due to restricte ioctl (TREE_SEARCH)
+  * that's used to calculate the numbers
+* device usage - more detailed information about per-device allocations
+  * same restrictions as for 'fi usage'
+
+New features, options:
+
+* check
+  * option to set a different tree root byte number
+  * ability to link lost files to lost+found, caused by a recent
+    kernel bug
+  * repair of severely corrupted fs (use with care):
+    * recover from corrupted b-tree
+    * ability to rebuild inode items from other items
+    * improved rebuilding of extent tree with snapshots
+* convert
+  * option to show progress
+* subvol create - print the commit mode inline, print the global mode
+  only if --verbose
+
+Other updates:
+
+* musl-libc build support
+* bugfixes for coverity reports
+* new test images, testing framework
+* documentation

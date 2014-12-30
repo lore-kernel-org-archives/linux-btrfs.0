@@ -1,72 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lb1.pop2.wanet.net ([65.244.248.2]:49971 "EHLO
-	serv004.pop2.wanet.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751321AbaL3AUT (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:36351 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751203AbaL3Akq convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 19:20:19 -0500
-Message-ID: <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>
-In-Reply-To: <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>
-    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>
-    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>
-Date: Mon, 29 Dec 2014 16:20:15 -0800
-Subject: Re: I need to P. are we almost there yet?
-From: ashford@whisperpc.com
-To: "Chris Murphy" <lists@colorremedies.com>
-Cc: "sys.syphus" <syssyphus@gmail.com>,
-        "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+	Mon, 29 Dec 2014 19:40:46 -0500
+Message-ID: <54A1F48A.1080906@cn.fujitsu.com>
+Date: Tue, 30 Dec 2014 08:40:42 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 2/2] btrfs: Enhance btrfs chunk allocation algorithm
+ to reduce ENOSPC caused by unbalanced data/metadata allocation.
+References: <1419386114-21703-1-git-send-email-quwenruo@cn.fujitsu.com> <1419386114-21703-2-git-send-email-quwenruo@cn.fujitsu.com> <20141229145619.GG6490@twin.jikos.cz>
+In-Reply-To: <20141229145619.GG6490@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On Mon, Dec 29, 2014 at 12:00 PM, sys.syphus <syssyphus@gmail.com> wrote:
->> oh, and sorry to bump myself. but is raid10 *ever* more redundant in
->> btrfs-speak than raid1? I currently use raid1 but i know in mdadm
->> speak raid10 means you can lose 2 drives assuming they aren't the
->> "wrong ones", is it safe to say with btrfs / raid 10 you can only lose
->> one no matter what?
+
+-------- Original Message --------
+Subject: Re: [PATCH v2 2/2] btrfs: Enhance btrfs chunk allocation 
+algorithm to reduce ENOSPC caused by unbalanced data/metadata allocation.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年12月29日 22:56
+> On Wed, Dec 24, 2014 at 09:55:14AM +0800, Qu Wenruo wrote:
+>> When btrfs allocate a chunk, it will try to alloc up to 1G for data and
+>> 256M for metadata, or 10% of all the writeable space if there is enough
+>> space for the stripe on device.
+>>
+>> However, when we run out of space, this allocation may cause unbalanced
+>> chunk allocation.
+>> For example, there are only 1G unallocated space, and request for
+>> allocate DATA chunk is sent, and all the space will be allocated as data
+>> chunk, making later metadata chunk alloc request unable to handle, which
+>> will cause ENOSPC.
+> The question is why the metadata is full although there's 1G free, as
+> the metadata chunks are being preallocated according to the metadata
+> ratio.
+This can still happen after the data chunk is allocated but later only 
+heavy metadata workload.
 >
-> It's only for sure one in any case even with conventional raid10. It
-> just depends on which 2 you lose that depends whether your data has
-> dodged a bullet. Obviously you can't lose a drive and its mirror,
-> ever, or the array collapses.
+>> This is the one of the common complains from end users about why ENOSPC
+>> happens but there is still available space.
+>>
+>> This patch will try not to alloc chunk which is more than half of the
+>> unallocated space, making the last space more balanced at a small cost
+>> of more fragmented chunk at the last 1G.
+> I'm really worried about the small chunks and the fragmentation on that
+> level wrt balancing. The small chunks will be relolcated to bigger free
+> chunks (eg. 256mb) and make it unusable for further rebalancing of the
+> 256mb chunks. Newly allocated chunks will have to be reduced in size to
+> fit in the remaining place and will cause further fragmentation of the
+> chunk space.
+>
+> The drawbacks of small chunks are obvious:
+>
+> * more chunks mean more processing
+> * smaller chance of getting big contiguous space for extents, leading to
+>    file fragmentation that cannot be much improved fixed by
+>    defragmentation
+You're right, such half-half method will mess up with relocate, that's I 
+forgot.
+>
+> IMO the chunk allocation should be more predictable and should give some
+> clue how the layout happens, otherwise this will become another dark
+> corner that would make debugging harder and can negatively and
+> unpreditactably affect performance after some time.
+Some other methods also come to me, like predict the data:metadata ratio 
+using current or recent
+allocated data:metadata ratio, but it seems not help for the last 1GB case.
 
-Just some background data on traditional RAID, and the chances of survival
-with a 2-drive failure.
+Or when it comes to the last 1GB, allocate it as mixed(data+metadata) ?
+It seems needs new incompat flags and some tweaks on relocate.
 
-In traditional RAID-10, the chances of surviving a 2-drive failure is 66%
-on a 4-drive array, and approaches 100% as the number of drives in the
-array increase.
-
-In traditional RAID-0+1 (used to be common in low-end fake-RAID cards),
-the chances of surviving a 2-drive failure is 33% on a 4-drive array, and
-approaches 50% as the number of drives in the array increase.
-
-In traditional RAID-1E, the chances of surviving a 2-drive failure is 66%
-on a 4-drive array, and approaches 100% as the number of drives in the
-array increase.  This is the same as for RAID-10.  RAID-1E allows an odd
-number of disks to be actively used in the array. 
-https://en.wikipedia.org/wiki/File:RAID_1E.png
-
-I'm wondering which of the above the BTRFS implementation most closely
-resembles.
-
-> So if you want the same amount of raid6 testing by time it would be
-> however many years that's been from the time 3.19 is released.
-
-I don't believe that's correct.  Over those several years, quite a few
-tests for corner cases have been developed.  I expect that those tests are
-used for regression testing of each release to ensure that old bugs aren't
-inadvertently reintroduced.  Furthermore, I expect that a large number of
-those corner case tests can be easily modified to test RAID-5 and RAID-6. 
-In reality, I expect the stability (i.e. similar to RAID-10 currently) of
-RAID-5/6 code in BTRFS will be achieved rather quickly (only a year or
-two).
-
-I expect that the difficult part will be to optimize the performance of
-BTRFS.  Hopefully those tests (and others, yet to be developed) will be
-able to keep it stable while the code is optimized for performance.
-
-Peter Ashford
+Thanks,
+Qu
+>
+> The problems you're trying to address are real, no doubt here, but I'd
+> rather try to address them in a different way.
 

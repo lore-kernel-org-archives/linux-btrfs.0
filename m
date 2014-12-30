@@ -1,86 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f50.google.com ([209.85.216.50]:58216 "EHLO
-	mail-qa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751321AbaL3UqQ (ORCPT
+Received: from mail-qg0-f51.google.com ([209.85.192.51]:60226 "EHLO
+	mail-qg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751459AbaL3VoO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Dec 2014 15:46:16 -0500
-Received: by mail-qa0-f50.google.com with SMTP id dc16so10403453qab.23
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 12:46:15 -0800 (PST)
-Message-ID: <54A30F19.5050801@ubuntu.com>
-Date: Tue, 30 Dec 2014 15:46:17 -0500
+	Tue, 30 Dec 2014 16:44:14 -0500
+Received: by mail-qg0-f51.google.com with SMTP id i50so10653832qgf.38
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 13:44:13 -0800 (PST)
+Message-ID: <54A31CAE.4020606@ubuntu.com>
+Date: Tue, 30 Dec 2014 16:44:14 -0500
 From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
+To: ashford@whisperpc.com, Chris Murphy <lists@colorremedies.com>
+CC: "sys.syphus" <syssyphus@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Uncorrectable errors on RAID-1?
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>	<20141223211605.GC436@hungrycats.org>	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>	<549F7539.4050801@ubuntu.com> <CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
-In-Reply-To: <CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Subject: Re: I need to P. are we almost there yet?
+References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com> <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>
+In-Reply-To: <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 12/29/2014 4:53 PM, Chris Murphy wrote:
-> Get drives supporting configurable or faster recoveries. There's
-> no way around this.
+On 12/29/2014 7:20 PM, ashford@whisperpc.com wrote:
+> Just some background data on traditional RAID, and the chances of
+> survival with a 2-drive failure.
+> 
+> In traditional RAID-10, the chances of surviving a 2-drive failure
+> is 66% on a 4-drive array, and approaches 100% as the number of
+> drives in the array increase.
+> 
+> In traditional RAID-0+1 (used to be common in low-end fake-RAID
+> cards), the chances of surviving a 2-drive failure is 33% on a
+> 4-drive array, and approaches 50% as the number of drives in the
+> array increase.
 
-Practically available right now?  Sure.  In theory, no.
+In terms of data layout, there is really no difference between raid-10
+( or raid1+0 ) and raid0+1, aside from the designation you assign to
+each drive.  With a dumb implementation of 0+1, any single drive
+failure offlines the entire stripe, discarding the remaining good
+disks in it, thus giving the probability you describe as the only
+possible remaining failure(s) that do not result in the mirror also
+failing is a drive in the same stripe as the original.  This however,
+is only a deficiency of the implementation, not the data layout, as
+all of the data on the first failed drive could be recovered from a
+drive in the second stripe, so long as the second drive that failed
+was any drive other than the one holding the duplicate data of the first.
 
-> This is a broken record topic honestly. The drives under
-> discussion aren't ever meant to be used in raid, they're desktop
-> drives, they're designed with long recoveries because it's
-> reasonable to try to
+This is partly why I agree with linux mdadm that raid10 is *not*
+simply raid1+0; the latter is just a naive, degenerate implementation
+of the former.
 
-The intention to use the drives in a raid is entirely at the
-discretion of the user, not the manufacturer.  The only reason we are
-even having this conversation is because the manufacturer has added a
-misfeature that makes them sub-optimal for use in a raid.
+> In traditional RAID-1E, the chances of surviving a 2-drive failure
+> is 66% on a 4-drive array, and approaches 100% as the number of
+> drives in the array increase.  This is the same as for RAID-10.
+> RAID-1E allows an odd number of disks to be actively used in the
+> array.
 
-> recover the data even in the face of delays rather than not recover
-> at all. Whether there are also some design flaws in here I can't
-> say because I'm not a hardware designer or developer but they are
-> very clearly targeted at certain use cases and not others, not
-> least of which is their error recovery time but also their
-> vibration tolerance when multiple drives are in close proximity to
-> each other.
+What some vendors have called "1E" is simply raid10 in the default
+"near" layout to mdadm.  I prefer the higher performance "offset"
+layout myself.
 
-Drives have no business whatsoever retrying for so long; every version
-of DOS or Windows ever released has been able to report an IO error
-and give the *user* the option of retrying it in the hopes that it
-will work that time, because drives used to be sane and not keep
-retrying a positively ridiculous number of times.
+> I'm wondering which of the above the BTRFS implementation most
+> closely resembles.
 
-> If you don't like long recoveries, don't buy drives with long 
-> recoveries. Simple.
-
-Better to fix the software to deal with it sensibly instead of
-encouraging manufacturers to engage in hamstringing their lower priced
-products to coax more money out of their customers.
-
-> The device will absolutely provide a specific error so long as its 
-> link isn't reset prematurely, which happens to be the linux
-> default behavior when combined with drives that have long error
-> recovery times. Hence the recommendation is to increase the linux
-> command timer value. That is the solution right now. If you want a
-> different behavior someone has to write the code to do it because
-> it doesn't exist yet, and so far there seems to be zero interest in
-> actually doing that work, just some interest in hand waiving that
-> it ought to exist, maybe.
-
-If this is your way of saying "patches welcome" then it probably would
-have been better just to say that.
+Unfortunately, btrfs just uses the naive raid1+0, so no 2 or 3 disk
+raid10 arrays, and no higher performing offset layout.
 
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (MingW32)
 
-iQEcBAEBAgAGBQJUow8ZAAoJENRVrw2cjl5Rr9UH+wd3yJ1ZnoaxDG3JPCBq9MJb
-Tb6nhjHovRDREeus4UWLESp9kYUyy5OfKmahARhM6AbaBXWYeleoD9SEtMahFXfn
-/2Kn9yRBqZCBDloVQGNOUaSZyfhTRRl31cGABbbynRo6IDkLEfMQQPWgvz9ttch7
-3aPciHhehs1CeseNuiiUPk6HIMb8lJLvgW5J1O5FwgXZ6Wyi9OZdoPL+prnFh2bP
-5E2rGblYUHIUiLkOKFOOsEs8q2H9RICFJIBsz8KoPzjCDtdNETBF5mvx8bIUJpg0
-Q7cQOo7IRxpFUL/7gnBtWgRIw3lvRY+SY2G+2YwaMiqdeuYcLCr853ONDYg0NCc=
-=AYGW
+iQEcBAEBAgAGBQJUoxyuAAoJENRVrw2cjl5R72oH/1nypXV72Bk4PBeaGAwH7559
+lL6JH80216lbhv8hHopIeXKe7uqPGFAE5F1ArChIi08HA+CqKr5cfPNzJPlobyFj
+KNLzeXi+wnJO2mbvWnnJak83GVmvpBnYvS+22RCweDELCb3pulybleJnN4yVSL25
+WpVfUGnAg5lQJdX2l6THeClWX6V47NKqD6iXbt9+jyADCK2yk/5+TVbS8tixFUtj
+PBxe+XGNrkTREnPAAFy6BgwO2vCD92F6+mm/lHJ0fg7gOm41UE09gzabsCGQ9LFA
+kk99c9WAnJdkTqUJVw49MEwmmhs/2gluKWTeaHONpBePoFIpQEjHI89TqBsKhY4=
+=+oed
 -----END PGP SIGNATURE-----

@@ -1,63 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18679 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751203AbaL3BZs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Dec 2014 20:25:48 -0500
-Message-ID: <1419902599.6318.1.camel@localhost.localdomain>
-Subject: Re: [PATCH v2] btrfs-progs: Documentation: add T/P/E description
- for resize cmd
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, <takeuchi_satoru@jp.fujitsu.com>
-Date: Tue, 30 Dec 2014 09:23:19 +0800
-In-Reply-To: <20141229160712.GK6490@twin.jikos.cz>
-References: <54978DFE.6010507@jp.fujitsu.com>
-	 <1419232973-4623-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20141229160712.GK6490@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+Received: from cantor2.suse.de ([195.135.220.15]:50396 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751374AbaL3O5g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Dec 2014 09:57:36 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0C65FABFC
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Dec 2014 14:57:34 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/5] Btrfs progs, coverity fixes for 3.18-rc3
+Date: Tue, 30 Dec 2014 15:57:34 +0100
+Message-Id: <cover.1419951036.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-12-29 at 17:07 +0100, David Sterba wrote:
-> On Mon, Dec 22, 2014 at 03:22:53PM +0800, Gui Hecheng wrote:
-> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> > Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> > ---
-> > changelog
-> > 	v1->v2: s/\'E\'(EiB)/or \'E\'(EiB)/ as suggested by Satoru, thanks.
-> > ---
-> >  Documentation/btrfs-filesystem.txt | 4 ++--
-> >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-> > index a8f2972..138ba6c 100644
-> > --- a/Documentation/btrfs-filesystem.txt
-> > +++ b/Documentation/btrfs-filesystem.txt
-> > @@ -102,8 +102,8 @@ If the prefix + or - is present the size is increased or decreased
-> >  by the quantity <size>.
-> >  If no units are specified, the unit of the <size> parameter defaults to
-> >  bytes. Optionally, the size parameter may be suffixed by one of the following
-> > -units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
-> > -respectively.
-> > +units designators: \'K\'(KiB), \'M\'(MiB), \'G\'(GiB), \'T\'(TiB), \'P\'(PiB)
-> > +or \'E\'(EiB).
-> 
-> I find this a bit confusing as this would suggest that eg.
-> 
->   $ btrfs fi resize -1GiB
-> 
-> is valid.
+Several issues reported by coverity, minor resource leaks and two bugfixes.
 
-Oh, you're right, thanks for pointing it out, then I'll just follow the
-old way and send a new one.
+David Sterba (5):
+  btrfs-progs: check, fix path leak in error branch
+  btrfs-progs: fi show, don't leak canonical path
+  btrfs-progs: check, missing parens around compound block in
+    find_normal_file_extent
+  btrfs-progs: fix overflow check in btrfs_insert_inode_ref
+  btrfs-progs: fix minor leak of dev_info in btrfs_scan_kernel
 
--Gui
+ cmds-check.c      | 8 +++++---
+ cmds-filesystem.c | 6 ++++--
+ inode-item.c      | 2 +-
+ 3 files changed, 10 insertions(+), 6 deletions(-)
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+-- 
+2.1.3
 

@@ -1,43 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43121 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751842AbaLSQGn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Dec 2014 11:06:43 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 147E3AC19
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Dec 2014 16:06:42 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 6/6] btrfs-progs: let btrfs_free_path accept NULL
-Date: Fri, 19 Dec 2014 17:06:41 +0100
-Message-Id: <b0dc8fd2b3473c0daddde7e2bc59cd13e1963907.1419005022.git.dsterba@suse.cz>
-In-Reply-To: <cover.1419005022.git.dsterba@suse.cz>
-References: <cover.1419005022.git.dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:35163 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751203AbaL3Byc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Dec 2014 20:54:32 -0500
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>, <takeuchi_satoru@jp.fujitsu.com>,
+        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs-progs: Documentation: add T/P/E description for resize cmd
+Date: Tue, 30 Dec 2014 09:52:17 +0800
+Message-ID: <1419904337-9945-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <20141229160712.GK6490@twin.jikos.cz>
+References: <20141229160712.GK6490@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Same in kernel and matches semantics of free().
-
-Resolves-Coverity-CID: 1054881
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- ctree.c | 2 ++
- 1 file changed, 2 insertions(+)
+changelog
+	v1->v2:
+		s/\'E\'(EiB)/or \'E\'(EiB)/ as suggested by Satoru, thanks.
+	v2->v3:
+		replace confusing format 'K'(KiB) etc. Thanks, David.
+---
+ Documentation/btrfs-filesystem.txt | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/ctree.c b/ctree.c
-index bd6cb125b2a2..589efa3db17e 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -48,6 +48,8 @@ struct btrfs_path *btrfs_alloc_path(void)
- 
- void btrfs_free_path(struct btrfs_path *p)
- {
-+	if (!p)
-+		return;
- 	btrfs_release_path(p);
- 	kfree(p);
- }
+diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+index a8f2972..96c4420 100644
+--- a/Documentation/btrfs-filesystem.txt
++++ b/Documentation/btrfs-filesystem.txt
+@@ -102,8 +102,9 @@ If the prefix + or - is present the size is increased or decreased
+ by the quantity <size>.
+ If no units are specified, the unit of the <size> parameter defaults to
+ bytes. Optionally, the size parameter may be suffixed by one of the following
+-units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
+-respectively.
++units designators: \'K\', \'M\', \'G\', \'T\', \'P\', or \'E\', which represent
++KiB, MiB, GiB, TiB, PiB, or EiB, respectively.
++
+ +
+ If \'max' is passed, the filesystem will occupy all available space on the
+ device devid.
 -- 
-2.1.3
+1.8.1.4
 

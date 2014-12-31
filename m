@@ -1,59 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:40536 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754051AbaLVKjS (ORCPT
+Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.225]:31219 "EHLO
+	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751554AbaLaXi6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Dec 2014 05:39:18 -0500
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D324D3EE0B6
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:17 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id D1DE1AC0601
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:16 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 863FBE08002
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:16 +0900 (JST)
-Received: from G01JPEXCHKW13.g01.fujitsu.local (G01JPEXCHKW13.g01.fujitsu.local [10.0.194.52])
-	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id A89BA3288B5
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Dec 2014 19:39:15 +0900 (JST)
-Message-ID: <5497F4CD.4010301@jp.fujitsu.com>
-Date: Mon, 22 Dec 2014 19:39:09 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Wed, 31 Dec 2014 18:38:58 -0500
+Message-ID: <54A48910.60701@ubuntu.com>
+Date: Wed, 31 Dec 2014 18:38:56 -0500
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Remove unnecessary placeholder in btrfs_err_code
-References: <5497F2EE.1010906@jp.fujitsu.com>
-In-Reply-To: <5497F2EE.1010906@jp.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
+To: ashford@whisperpc.com
+CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        "sys.syphus" <syssyphus@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: I need to P. are we almost there yet?
+References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+In-Reply-To: <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, I forgot to add Signed-off-by line.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
 
----
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+On 12/31/2014 12:27 PM, ashford@whisperpc.com wrote:
+> I see this as a CRITICAL design flaw.  The reason for calling it
+> CRITICAL is that System Administrators have been trained for >20
+> years that RAID-10 can usually handle a dual-disk failure, but the
+> BTRFS implementation has effectively ZERO chance of doing so.
 
-"notused" is not necessary. Set 1 to the first entry is enough.
+Sure, but you never *count* on that second failure since it is a (
+relatively even ) probability game.
 
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> In order to remove this potentially catestrophic confusion, BTRFS
+> should either call their "RAID-10" implementation something else,
+> or they should adhere to the long-established definition of
+> RAID-10.
 
----
- ioctl.h | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Personally I'd prefer it follow the way mdadm does it, which is much
+better than what the rest of the industry calls raid-10, which is to
+say, simply a naive raid-0 on top of raid-1.  I'm very happy with my 3
+disk offset layout raid-10 which gets the sequential read throughput
+of a 3 disk raid-0, while still being able to handle a single drive
+failure.
 
-diff --git a/ioctl.h b/ioctl.h
-index 2c2c7c1..c377b96 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -474,8 +474,7 @@ struct btrfs_ioctl_qgroup_create_args {
- 
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
--	notused,
--	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
- 	BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
- 	BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
- 	BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
--- 1.8.3.1 -- To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body of a message to majordomo@vger.kernel.org More majordomo info at http://vger.kernel.org/majordomo-info.html 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
+iQEcBAEBCgAGBQJUpIkQAAoJENRVrw2cjl5R/wAIAKNU0NfEFGXLQK0lB1kZMJQt
+WrBjKih8xG2WIYAqYCHoNTWJtmCZOCHtltt+OsUb8Pa8u075ALtEQBRNminLLuqV
+LjREOyOzvzaDfNSEhptdBZ4YazqFt6UChWtu7RWhMtb7u61pmqMJatDhxLe+2CF9
+YQE3qgLfP+PAMIGO/xN5m+hYba4hbF/MoqQ/XN7Z1VWvT9FNR7Dn8frflpmI2Cyh
+iAravNS78hUjbxTtNz1qVXLosDVsjyZpz9UY9occNJ/vlF/GMd5q2c8xXkDTczGB
+O9B55OXGzfmzPZzlNJ2MyBLgwQx/huPH8RiyuuIdy3AVubc/pXuAZQqaydf/lQg=
+=qwW+
+-----END PGP SIGNATURE-----

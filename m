@@ -1,61 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41800 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751374AbaLaBxr (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:26879 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751026AbaLaSab (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Dec 2014 20:53:47 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id sBV1rFrS027888
-	for <linux-btrfs@vger.kernel.org>; Wed, 31 Dec 2014 09:53:15 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: cleanup init for list in free-space-cache
-Date: Wed, 31 Dec 2014 09:51:35 +0800
-Message-ID: <1419990695-2062-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	Wed, 31 Dec 2014 13:30:31 -0500
+Date: Wed, 31 Dec 2014 13:30:13 -0500
+From: Chris Mason <clm@fb.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: Roman Mamedov <rm@romanrm.net>, Marc MERLIN <marc@merlins.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't delay inode ref updates during log replay
+Message-ID: <20141231183013.GA3637@ret.masoncoding.com>
+References: <20141228192614.GO17254@merlins.org>
+ <20141229010047.7f9b6d43@natsu>
+ <54A1FAB2.2050805@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <54A1FAB2.2050805@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-o removed an unecessary INIT_LIST_HEAD after LIST_HEAD
+Commit 1d52c78afbb (Btrfs: try not to ENOSPC on log replay) added a
+check to skip delayed inode updates during log replay because it
+confuses the enospc code.  But the delayed processing will end up
+skipping delayed refs from log replay because the inode itself wasn't
+put through the delayed code.
 
-o merge a declare & INIT_LIST_HEAD pair into one LIST_HEAD
+This can end up triggering a warning at commit time:
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+WARNING: CPU: 2 PID: 778 at fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty+0x32/0x34()
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d6c03f7..8d346d3 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -651,15 +651,13 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 	struct io_ctl io_ctl;
- 	struct btrfs_key key;
- 	struct btrfs_free_space *e, *n;
--	struct list_head bitmaps;
-+	LIST_HEAD(bitmaps);
- 	u64 num_entries;
- 	u64 num_bitmaps;
- 	u64 generation;
- 	u8 type;
- 	int ret = 0;
+Which is repeated for each commit because we never process the delayed ref.
+
+The fix used here is to change btrfs_delayed_delete_inode_ref to return
+an error if we're current in log replay.  The caller will do the ref
+deletion immediately and everything will work properly.
+
+This bug can cause lost files, whick fsck will find.  --repair on
+btrfs-progs 3.18 will fix them
+
+Signed-off-by: Chris Mason <clm@fb.com>
+cc: stable@vger.kernel.org # v3.18 and any stable series that picked 1d52c78afbbf80b58299e076a159617d6b42fe3c
+
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 054577b..de4e70f 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1857,6 +1857,14 @@ int btrfs_delayed_delete_inode_ref(struct inode *inode)
+ {
+ 	struct btrfs_delayed_node *delayed_node;
  
--	INIT_LIST_HEAD(&bitmaps);
--
- 	/* Nothing in the space cache, goodbye */
- 	if (!i_size_read(inode))
- 		return 0;
-@@ -2903,7 +2901,6 @@ int btrfs_find_space_cluster(struct btrfs_root *root,
- 	trace_btrfs_find_cluster(block_group, offset, bytes, empty_size,
- 				 min_bytes);
- 
--	INIT_LIST_HEAD(&bitmaps);
- 	ret = setup_cluster_no_bitmap(block_group, cluster, &bitmaps, offset,
- 				      bytes + empty_size,
- 				      cont1_bytes, min_bytes);
--- 
-1.8.1.4
-
++	/*
++	 * we don't do delayed inode updates during log recovery because it
++	 * leads to enospc problems.  This means we also can't do
++	 * delayed inode refs
++	 */
++	if (BTRFS_I(inode)->root->fs_info->log_root_recovering)
++		return -EAGAIN;
++
+ 	delayed_node = btrfs_get_or_create_delayed_node(inode);
+ 	if (IS_ERR(delayed_node))
+ 		return PTR_ERR(delayed_node);

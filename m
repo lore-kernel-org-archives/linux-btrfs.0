@@ -1,57 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cdptpa-outbound-snat.email.rr.com ([107.14.166.225]:31219 "EHLO
-	cdptpa-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751554AbaLaXi6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Dec 2014 18:38:58 -0500
-Message-ID: <54A48910.60701@ubuntu.com>
-Date: Wed, 31 Dec 2014 18:38:56 -0500
-From: Phillip Susi <psusi@ubuntu.com>
-MIME-Version: 1.0
-To: ashford@whisperpc.com
-CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        "sys.syphus" <syssyphus@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from csamuel.org ([74.50.50.137]:45213 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751208AbbAAB0W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 31 Dec 2014 20:26:22 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 7AA17406B8
+	for <linux-btrfs@vger.kernel.org>; Thu,  1 Jan 2015 12:26:21 +1100 (AEDT)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 15620-04 for <linux-btrfs@vger.kernel.org>;
+ Thu,  1 Jan 2015 12:26:21 +1100 (AEDT)
+Received: from quad.localnet (2001-44b8-41dd-d500-4435-4821-17f6-29f5.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:4435:4821:17f6:29f5])
+	by csamuel.org (Postfix) with ESMTPSA id 15FC64036F
+	for <linux-btrfs@vger.kernel.org>; Thu,  1 Jan 2015 12:26:21 +1100 (AEDT)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: I need to P. are we almost there yet?
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+Date: Thu, 01 Jan 2015 12:26:25 +1100
+Message-ID: <2740386.L6W23cCsJO@quad>
 In-Reply-To: <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
-Content-Type: text/plain; charset=windows-1252
+References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com> <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA512
+On Wed, 31 Dec 2014 09:27:14 AM ashford@whisperpc.com wrote:
 
-On 12/31/2014 12:27 PM, ashford@whisperpc.com wrote:
-> I see this as a CRITICAL design flaw.  The reason for calling it
-> CRITICAL is that System Administrators have been trained for >20
-> years that RAID-10 can usually handle a dual-disk failure, but the
-> BTRFS implementation has effectively ZERO chance of doing so.
+> I see this as a CRITICAL design flaw.  The reason for calling it CRITICAL
+> is that System Administrators have been trained for >20 years that RAID-10
+> can usually handle a dual-disk failure, but the BTRFS implementation has
+> effectively ZERO chance of doing so.
 
-Sure, but you never *count* on that second failure since it is a (
-relatively even ) probability game.
+I suspect this is a knock-on effect of the fact that (unless this has changed 
+recently & IIRC) RAID-1 with btrfs will only mirrors data over two drives, no 
+matter how many you add to an array.
 
-> In order to remove this potentially catestrophic confusion, BTRFS
-> should either call their "RAID-10" implementation something else,
-> or they should adhere to the long-established definition of
-> RAID-10.
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-Personally I'd prefer it follow the way mdadm does it, which is much
-better than what the rest of the industry calls raid-10, which is to
-say, simply a naive raid-0 on top of raid-1.  I'm very happy with my 3
-disk offset layout raid-10 which gets the sequential read throughput
-of a 3 disk raid-0, while still being able to handle a single drive
-failure.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQEcBAEBCgAGBQJUpIkQAAoJENRVrw2cjl5R/wAIAKNU0NfEFGXLQK0lB1kZMJQt
-WrBjKih8xG2WIYAqYCHoNTWJtmCZOCHtltt+OsUb8Pa8u075ALtEQBRNminLLuqV
-LjREOyOzvzaDfNSEhptdBZ4YazqFt6UChWtu7RWhMtb7u61pmqMJatDhxLe+2CF9
-YQE3qgLfP+PAMIGO/xN5m+hYba4hbF/MoqQ/XN7Z1VWvT9FNR7Dn8frflpmI2Cyh
-iAravNS78hUjbxTtNz1qVXLosDVsjyZpz9UY9occNJ/vlF/GMd5q2c8xXkDTczGB
-O9B55OXGzfmzPZzlNJ2MyBLgwQx/huPH8RiyuuIdy3AVubc/pXuAZQqaydf/lQg=
-=qwW+
------END PGP SIGNATURE-----

@@ -1,85 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60314 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751487AbbABAoQ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jan 2015 19:44:16 -0500
-Message-ID: <54A5E9DD.5040100@cn.fujitsu.com>
-Date: Fri, 2 Jan 2015 08:44:13 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, Chris Mason <clm@fb.com>,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: don't delay inode ref updates during log replay
-References: <20141228192614.GO17254@merlins.org> <20141229010047.7f9b6d43@natsu> <54A1FAB2.2050805@cn.fujitsu.com> <20141231183013.GA3637@ret.masoncoding.com> <20150101225847.GJ17254@merlins.org>
-In-Reply-To: <20150101225847.GJ17254@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:33820 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750775AbbABKWe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 2 Jan 2015 05:22:34 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y6zNE-0004zz-Kf
+	for linux-btrfs@vger.kernel.org; Fri, 02 Jan 2015 11:22:28 +0100
+Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 11:22:28 +0100
+Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 11:22:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Lutz Vieweg <lvml@5t9.de>
+Subject: Re: [PATCH 2/2] E2fsprogs: add compress and cow support in chattr,
+ lsattr
+Date: Fri, 02 Jan 2015 11:22:10 +0100
+Message-ID: <54A67152.4030404@5t9.de>
+References: <4DA2A15C.1050501@cn.fujitsu.com> <4DA692C8.2080400@cn.fujitsu.com> <4DABEA3A.4070008@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <4DABEA3A.4070008@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Great! The root cause of missing file is fixed!
+On 04/18/2011 09:37 AM, liubo wrote:
+> Modify command 'chattr' and 'lsattr' to support compress and cow.
+> - use 'C' to indicate NOCOW attribute.
 
-Thanks a lot!
-Qu
--------- Original Message --------
-Subject: Re: [PATCH] Btrfs: don't delay inode ref updates during log replay
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>, Roman 
-Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: 2015年01月02日 06:58
-> Chris, you rule, I applied this to 3.16.7 and my problem went away.
+It's kind of confusing for new users that when one sets
+ > chattr +C someexistingfile
+on btrfs, a subsequent
+ > lsattr someexistingfile
+will show the C flag as "not set". It takes some
+reading to realize that btrfs cannot change the non-COW
+flag on files bigger than 0 bytes.
+
+Maybe "chattr +C" could print a warning if a file
+to change attributes for is > 0 bytes long?
+
+Regards,
+
+Lutz Vieweg
+
+
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>   lib/e2p/pf.c         |    1 +
+>   lib/ext2fs/ext2_fs.h |    1 +
+>   misc/chattr.1.in     |   15 +++++++++++----
+>   misc/chattr.c        |   15 ++++++++++++++-
+>   4 files changed, 27 insertions(+), 5 deletions(-)
 >
-> Tested-By: Marc MERLIN <marc@merlins.org>
+> diff --git a/lib/e2p/pf.c b/lib/e2p/pf.c
+> index cc50896..c9385dd 100644
+> --- a/lib/e2p/pf.c
+> +++ b/lib/e2p/pf.c
+> @@ -48,6 +48,7 @@ static struct flags_name flags_array[] = {
+>   	{ FS_TOPDIR_FL, "T", "Top_of_Directory_Hierarchies" },
+>   	{ EXT4_EXTENTS_FL, "e", "Extents" },
+>   	{ EXT4_HUGE_FILE_FL, "h", "Huge_file" },
+> +	{ FS_NOCOW_FL, "C", "NOCOW" },
+>   	{ 0, NULL, NULL }
+>   };
 >
-> Happy new year! :)
+> diff --git a/lib/ext2fs/ext2_fs.h b/lib/ext2fs/ext2_fs.h
+> index 858c103..776be92 100644
+> --- a/lib/ext2fs/ext2_fs.h
+> +++ b/lib/ext2fs/ext2_fs.h
+> @@ -276,6 +276,7 @@ struct ext2_dx_countlimit {
+>   #define EXT4_EXTENTS_FL 		0x00080000 /* Inode uses extents */
+>   #define EXT4_EA_INODE_FL	        0x00200000 /* Inode used for large EA */
+>   #define EXT4_EOFBLOCKS_FL		0x00400000 /* Blocks allocated beyond EOF */
+> +#define FS_NOCOW_FL			0x00800000 /* Do not cow file */
+>   #define EXT4_SNAPFILE_FL		0x01000000  /* Inode is a snapshot */
+>   #define EXT4_SNAPFILE_DELETED_FL	0x04000000  /* Snapshot is being deleted */
+>   #define EXT4_SNAPFILE_SHRUNK_FL		0x08000000  /* Snapshot shrink has completed */
+> diff --git a/misc/chattr.1.in b/misc/chattr.1.in
+> index 92f6d70..434eb04 100644
+> --- a/misc/chattr.1.in
+> +++ b/misc/chattr.1.in
+> @@ -19,17 +19,18 @@ chattr \- change file attributes on a Linux file system
+>   .B chattr
+>   changes the file attributes on a Linux file system.
+>   .PP
+> -The format of a symbolic mode is +-=[acdeijstuADST].
+> +The format of a symbolic mode is +-=[acdeijstuACDST].
+>   .PP
+>   The operator `+' causes the selected attributes to be added to the
+>   existing attributes of the files; `-' causes them to be removed; and
+>   `=' causes them to be the only attributes that the files have.
+>   .PP
+> -The letters `acdeijstuADST' select the new attributes for the files:
+> +The letters `acdeijstuACDST' select the new attributes for the files:
+>   append only (a), compressed (c), no dump (d), extent format (e), immutable (i),
+>   data journalling (j), secure deletion (s), no tail-merging (t),
+> -undeletable (u), no atime updates (A), synchronous directory updates (D),
+> -synchronous updates (S), and top of directory hierarchy (T).
+> +undeletable (u), no atime updates (A), no copy on write (C),
+> +synchronous directory updates (D), synchronous updates (S),
+> +and top of directory hierarchy (T).
+>   .PP
+>   The following attributes are read-only, and may be listed by
+>   .BR lsattr (1)
+> @@ -64,6 +65,10 @@ this file compresses data before storing them on the disk.  Note: please
+>   make sure to read the bugs and limitations section at the end of this
+>   document.
+>   .PP
+> +A file with the `C' attribute set is marked without COW (copy on write).  Note:
+> +please make sure to read the bugs and limitations section at the end of this
+> +document.
+> +.PP
+>   When a directory with the `D' attribute set is modified,
+>   the changes are written synchronously on the disk; this is equivalent to
+>   the `dirsync' mount option applied to a subset of the files.
+> @@ -161,6 +166,8 @@ The `c', 's',  and `u' attributes are not honored
+>   by the ext2 and ext3 filesystems as implemented in the current mainline
+>   Linux kernels.    These attributes may be implemented
+>   in future versions of the ext2 and ext3 filesystems.
+> +The `C' attribute is only used in btrfs filesystem in the current mainline
+> +Linux kernels.
+>   .PP
+>   The `j' option is only useful if the filesystem is mounted as ext3.
+>   .PP
+> diff --git a/misc/chattr.c b/misc/chattr.c
+> index 78e3736..8c8231e 100644
+> --- a/misc/chattr.c
+> +++ b/misc/chattr.c
+> @@ -82,7 +82,7 @@ static unsigned long sf;
+>   static void usage(void)
+>   {
+>   	fprintf(stderr,
+> -		_("Usage: %s [-RVf] [-+=AacDdeijsSu] [-v version] files...\n"),
+> +		_("Usage: %s [-RVf] [-+=AacDdeijsSuC] [-v version] files...\n"),
+>   		program_name);
+>   	exit(1);
+>   }
+> @@ -106,6 +106,7 @@ static const struct flags_char flags_array[] = {
+>   	{ FS_UNRM_FL, 'u' },
+>   	{ FS_NOTAIL_FL, 't' },
+>   	{ FS_TOPDIR_FL, 'T' },
+> +	{ FS_NOCOW_FL, 'C' },
+>   	{ 0, 0 }
+>   };
 >
-> Marc
+> @@ -159,6 +160,12 @@ static int decode_arg (int * i, int argc, char ** argv)
+>   			}
+>   			if ((fl = get_flag(*p)) == 0)
+>   				usage();
+> +
+> +			if (fl == FS_COMPR_FL) {
+> +				af |= FS_NOCOMPR_FL;
+> +				add = 1;
+> +			}
+> +
+>   			rf |= fl;
+>   			rem = 1;
+>   		}
+> @@ -168,6 +175,12 @@ static int decode_arg (int * i, int argc, char ** argv)
+>   		for (p = &argv[*i][1]; *p; p++) {
+>   			if ((fl = get_flag(*p)) == 0)
+>   				usage();
+> +
+> +			if (fl == FS_COMPR_FL) {
+> +				rf |= FS_NOCOMPR_FL;
+> +				rem = 1;
+> +			}
+> +
+>   			af |= fl;
+>   		}
+>   		break;
 >
-> On Wed, Dec 31, 2014 at 01:30:13PM -0500, Chris Mason wrote:
->> Commit 1d52c78afbb (Btrfs: try not to ENOSPC on log replay) added a
->> check to skip delayed inode updates during log replay because it
->> confuses the enospc code.  But the delayed processing will end up
->> skipping delayed refs from log replay because the inode itself wasn't
->> put through the delayed code.
->>
->> This can end up triggering a warning at commit time:
->>
->> WARNING: CPU: 2 PID: 778 at fs/btrfs/delayed-inode.c:1410 btrfs_assert_delayed_root_empty+0x32/0x34()
->>
->> Which is repeated for each commit because we never process the delayed ref.
->>
->> The fix used here is to change btrfs_delayed_delete_inode_ref to return
->> an error if we're current in log replay.  The caller will do the ref
->> deletion immediately and everything will work properly.
->>
->> This bug can cause lost files, whick fsck will find.  --repair on
->> btrfs-progs 3.18 will fix them
->>
->> Signed-off-by: Chris Mason <clm@fb.com>
->> cc: stable@vger.kernel.org # v3.18 and any stable series that picked 1d52c78afbbf80b58299e076a159617d6b42fe3c
->>
->> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
->> index 054577b..de4e70f 100644
->> --- a/fs/btrfs/delayed-inode.c
->> +++ b/fs/btrfs/delayed-inode.c
->> @@ -1857,6 +1857,14 @@ int btrfs_delayed_delete_inode_ref(struct inode *inode)
->>   {
->>   	struct btrfs_delayed_node *delayed_node;
->>   
->> +	/*
->> +	 * we don't do delayed inode updates during log recovery because it
->> +	 * leads to enospc problems.  This means we also can't do
->> +	 * delayed inode refs
->> +	 */
->> +	if (BTRFS_I(inode)->root->fs_info->log_root_recovering)
->> +		return -EAGAIN;
->> +
->>   	delayed_node = btrfs_get_or_create_delayed_node(inode);
->>   	if (IS_ERR(delayed_node))
->>   		return PTR_ERR(delayed_node);
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
 

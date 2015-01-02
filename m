@@ -1,95 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51991 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751522AbbABDrb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Jan 2015 22:47:31 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y6tCy-0004NT-LQ
-	for linux-btrfs@vger.kernel.org; Fri, 02 Jan 2015 04:47:28 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 04:47:28 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 04:47:28 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-ie0-f172.google.com ([209.85.223.172]:47427 "EHLO
+	mail-ie0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750783AbbABNm6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 08:42:58 -0500
+Received: by mail-ie0-f172.google.com with SMTP id tr6so16771619ieb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 05:42:57 -0800 (PST)
+Message-ID: <54A6A05D.6000200@gmail.com>
+Date: Fri, 02 Jan 2015 08:42:53 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: ashford@whisperpc.com, Phillip Susi <psusi@ubuntu.com>
+CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        "sys.syphus" <syssyphus@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: I need to P. are we almost there yet?
-Date: Fri, 2 Jan 2015 03:47:12 +0000 (UTC)
-Message-ID: <pan$8f373$6f6405c7$92ea23ac$7a5fdcf1@cox.net>
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>
-	<54A3633C.3040609@ubuntu.com>
-	<1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
-	<2740386.L6W23cCsJO@quad> <m849ng$lcg$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+In-Reply-To: <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090909060005080709030506"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roger Binns posted on Thu, 01 Jan 2015 12:12:31 -0800 as excerpted:
+This is a cryptographically signed message in MIME format.
 
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> On 12/31/2014 05:26 PM, Chris Samuel wrote:
->> I suspect this is a knock-on effect of the fact that (unless this has
->> changed recently & IIRC) RAID-1 with btrfs will only mirrors data over
->> two drives, no matter how many you add to an array.
+--------------ms090909060005080709030506
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-It hasn't changed yet, but now that raid56 support is basically complete 
-(with 3.19, other than bugs of course, it'll be another kernel cycle or 
-two before I'd rely on it), that's next up on the raid-features roadmap. 
-=:^)
+On 2014-12-31 12:27, ashford@whisperpc.com wrote:
+> Phillip
+>
+>> I had a similar question a year or two ago (
+>> specifically about raid10  ) so I both experimented and read the code
+>> myself to find out.  I was disappointed to find that it won't do
+>> raid10 on 3 disks since the chunk metadata describes raid10 as a
+>> stripe layered on top of a mirror.
+>>
+>> Jose's point was also a good one though; one chunk may decide to
+>> mirror disks A and B, so a failure of A and C it could recover from,
+>> but a different chunk could choose to mirror on disks A and C, so that=
 
-I know as that's my most hotly anticipated roadmapped btrfs feature yet 
-to hit, and I've been waiting for it, patiently only because I didn't 
-have much choice, for a couple years now.
+>> chunk would be lost if A and C fail.  It would probably be nice if the=
 
-> I wish btrfs wouldn't use the old school micro-managing storage
-> terminology (or only as aliases) and instead let you set the goals. What
-> people really mean is that they want their data to survive the failure
-> of N drives - exactly how that is done doesn't matter.  It would also be
-> nice to be settable as an xattr on files and directories.
+>> chunk allocator tried to be more deterministic about that.
+>
+> I see this as a CRITICAL design flaw.  The reason for calling it CRITIC=
+AL
+> is that System Administrators have been trained for >20 years that RAID=
+-10
+> can usually handle a dual-disk failure, but the BTRFS implementation ha=
+s
+> effectively ZERO chance of doing so.
+No, some rather simple math will tell you that a 4 disk BTRFS filesystem =
 
-Actually, a more flexible terminology has been discussed, and /might/ 
-actually be introduced either along with or prior to the multi-way-
-mirroring feature (depending on how long the latter takes to develop, I'd 
-guess).  The suggested terminology would basically treat number of data 
-strips, mirrors, parity, hot-spares, etc, each on its own separate axis, 
-with parity levels ultimately extended well beyond 2 (aka raid6) as well 
--- I think to something like a dozen or 16.
+in raid10 mode has exactly a 50% chance of surviving a dual disk=20
+failure, and that as the number of disks goes up, the chance of survival =
 
-Obviously if it's introduced before N-way-mirroring, N-way-parity, etc, 
-it would only support the current feature set for now, and would just be 
-a different way of configuring mkfs as well as displaying the current 
-layouts in btrfs filesystem df and usage.
+will asymptotically approach 100% (but never reach it).
+This is the case for _every_ RAID-10 implementation that I have ever=20
+seen, including hardware raid controllers; the only real difference is=20
+in the stripe length (usually 512 bytes * half the number of disks for=20
+hardware raid, 4k * half the number of disks for software raid, and the=20
+filesystem block size (default is 16k in current versions) * half the=20
+number of disks for BTRFS).
 
-Hugo's the guy who has proposed that, and has been doing the preliminary 
-patch development.
 
-Meanwhile, ultimately the ability to configure all this at least by 
-subvolume is planned, and once it's actually possible to set it on less 
-than a full filesystem basis, setting it by individual xattr has been 
-discussed as well.  I think the latter depends on the sorts of issues 
-they run into in actual implementation.
 
-Finally, btrfs is already taking the xattr/property route with this sort 
-of attribute.  The basic infrastructure for that went in a couple kernel 
-cycles ago, and can be seen and worked with using the btrfs property 
-command.  So the basic property/xattr infrastructure is already there, 
-and the ability to configure redundancy per subvolume already built into 
-the original btrfs design and roadmapped altho it's not yet implemented, 
-which means it's actually quite likely to eventually be configurable by 
-file via xattr/properties as well -- emphasis on /eventually/, as these 
-features /do/ tend to take rather longer to actually develop and 
-stabilize than originally predicted.  The raid56 code is a good example, 
-as it was originally slated for kernel cycle 3.6 or so, IIRC, but it took 
-it over two years to cook and we're finally getting it in 3.19!
+--------------ms090909060005080709030506
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTAyMTM0MjUz
+WjAjBgkqhkiG9w0BCQQxFgQUwY+kR5DNss0pQrr+4fP3r8czymEwbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAGBYEwV7FCG6JQjBWWbZLBJ6MuAdZ
+bVXKyjmLiYkIqpnL42FGjrPCotMfm0DNwwon8TaR6enR/y5qxvId2h0ZUMtL4VU9J/Wfu7nr
+xrRjKNpBaydnj+xHU+RumGS7rg5tzpoOlt6mkHyiuD5f1rYb8nmpvKUPzGxbCtAe2+bv2HNl
+vOTRCNdHPkUUk55PnLRlyxf+ns9h8tV5KMkjLllIOTf20EtbDrf4TxCNyjj3oGvoZExs8WST
+gWI84yRcHPjIy/h6xz2evQOeJsqj4Ys+UJEJ8R0vtqilr9xPZwIDHI3QFITU9YqcVRUGfC7o
+DXSai3OaHv9YSiojuYOsYm1BiwAAAAAAAA==
+--------------ms090909060005080709030506--

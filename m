@@ -1,52 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39395 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751808AbbAAUMs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Jan 2015 15:12:48 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y6m6w-0004cT-CH
-	for linux-btrfs@vger.kernel.org; Thu, 01 Jan 2015 21:12:46 +0100
-Received: from cruzio-216-173-135-181.static.cruzio.com ([216.173.135.181])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jan 2015 21:12:46 +0100
-Received: from rogerb by cruzio-216-173-135-181.static.cruzio.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jan 2015 21:12:46 +0100
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
-Subject: Re: I need to P. are we almost there yet?
-Date: Thu, 01 Jan 2015 12:12:31 -0800
-Message-ID: <m849ng$lcg$1@ger.gmane.org>
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com> <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net> <2740386.L6W23cCsJO@quad>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-In-Reply-To: <2740386.L6W23cCsJO@quad>
+Received: from cn.fujitsu.com ([59.151.112.132]:5025 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751507AbbABBWh convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jan 2015 20:22:37 -0500
+Message-ID: <54A5F2DB.9040009@cn.fujitsu.com>
+Date: Fri, 2 Jan 2015 09:22:35 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>
+Subject: Re: How to handle remove media
+References: <54A351C9.7070504@cn.fujitsu.com> <1433170.itgjFWUuZD@merkaba>
+In-Reply-To: <1433170.itgjFWUuZD@merkaba>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 12/31/2014 05:26 PM, Chris Samuel wrote:
-> I suspect this is a knock-on effect of the fact that (unless this
-> has changed recently & IIRC) RAID-1 with btrfs will only mirrors
-> data over two drives, no matter how many you add to an array.
+-------- Original Message --------
+Subject: How to handle remove media (was: Re: What about not warn on 
+some abort_transaction() case whose reason is known?)
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年12月31日 18:24
+> I am cc´ing this to fsdevel as I think how to handle a disconnected usb device
+> may be of broader interest. Well free to drop Cc again in case you see it as
+> only BTRFS specific issue.
+>
+> Am Mittwoch, 31. Dezember 2014, 09:30:49 schrieb Qu Wenruo:
+>> Hi all,
+> Hi Qu,
+>
+>> While surfing the Redhat BZ, a lot(at least 5 I found in one month)
+>> users report "bugs" in btrfs about
+>> kernel warning in btrfs_abort_transaction().
+>> And most of them (about 3 or more) are caused by disconnected usb device.
+>>
+>> So I'm considering not to warn on some cases if we know its reason, like
+>> the above device disconnected
+>> case, but still warn on other cases.
+>> This should reduce many unneeded bug report for the usb disconnected case.
+>>
+>> Any advice is welcomed.
+> How about warning, but also mentioned the *reason*?
+>
+> Disconnecting an USB device without unmounting is still not so nice and a
+> warning, well, any unwritten data has been lost then already, so, but still. I
+> know with esata disks you have a grace time, if you replug it quickly enough
+> while libata driver is still retrying it will continue the write.
+Unneeded kernel warning always leads to duplicated BZ, but on the other 
+hand, it's true that is a problem
+and need to warn user.
+So warning with reason seems good enough.
 
-I wish btrfs wouldn't use the old school micro-managing storage
-terminology (or only as aliases) and instead let you set the goals.
-What people really mean is that they want their data to survive the
-failure of N drives - exactly how that is done doesn't matter.  It
-would also be nice to be settable as an xattr on files and directories.
+>
+>
+> I for a long time thought about a feature request for the Linux kernel to
+> handle removable media in the very sane way AmigaOS does. I never did so in
+> all the years, but heck, why not today?
+>
+> If you remove it while writing, you get a nice dialog saying
+>
+> "You MUST insert volume xyz again"
+>
+> You do it, and it continues writing. Now how cute is that? Its the best way to
+> handle this kind of situation for the user in my point of view. (On the other
+> hand, if you didn´t, and it was a floppy disk with original Amiga filesystem,
+> the disk was broke, so the "MUST" was no joke).
+>
+> I remember that this has been topic of a summer of code project for NetBSD,
+> but I don´t know what came out of it.
+>
+> I know the difficulties with this. The kernel will need to pile up I/O to the
+> device and at some point halt processes to prevent memory exhaustion.And then
+> you need to route the request to reinsert the medium to the user, to the
+> desktop. And what do you do on a server? Where do you ask then? On the command
+> line? And if so, how do to that in a non annoying way? Maybe that is just
+> something to opt in for a desktop system.
+Other than the method to inform users, more difficulties lie in the 
+half-written handle things, filesystems may need
+to keep all the page caches even after some of them is written to disk, 
+to ensure they can be re-queued to handle
+disk remove.
 
-Roger
+This may need to a huge change to almost every fs to implement a full 
+rollback(at least full rollback to previous version)
+transaction mechanism(good news is, btrfs may be less impacted), and the 
+problem you already mentioned, extra
+memory usage.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+But the idea is still great, I really hope to see it.
 
-iEYEARECAAYFAlSlqi8ACgkQmOOfHg372QTtrACeKT9OfzEtJyucEDNfeisfAw9z
-Ao8AoIEevlY7MEyBHFBqyCCE1LJXGDw9
-=zUJs
------END PGP SIGNATURE-----
+Thanks,
+Qu
+>
+> So this would be quite some work, but I always thought: How AmigaOS handles
+> this is the *only* sane way to do it for any media that you cannot prevent
+> accidental removal on a hardware level – at least for the desktop case. At
+> least from a users point of view. Just discarding data on that accident is
+> just plain unfriendly to the user and an invitation for data loss (if the user
+> chose to move files instead of copying them).
+>
+> And I found it that for some users I can tell them to safely remove the USB
+> stick before unplugging it again and again, but they still won´t do it, it
+> just doesn´t sink in. Meanwhile I usually say: Wait 30 seconds after last
+> write and then unplug and then hope for the best.
+>
+> I still think AmigaOS goes beyond all the other operation systems I know with
+> this feature. But well, I am not exactly sure how MS-DOS or Windows handle
+> this. I vaguely remember some retry prompt from MS-DOS, but it may have been
+> for another case.
+>
+>
+> But well, so yes, a warning in the log may just be completely useless, cause
+> its too late then, for the data that was about to be safed. And if there is no
+> data to be saved anymore, a warning does not make any sense either, cause
+> there isn´t a problem. Yet, an aborted transaction means there was data to be
+> saved, so.
+>
+> So or so, this may be something to handle on the block or VFS layer anyway?
+>
+> Ciao,
 

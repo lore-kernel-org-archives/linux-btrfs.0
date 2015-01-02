@@ -1,174 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49200 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:44969 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751226AbbABRXN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Jan 2015 12:23:13 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id C8235ABB4
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Jan 2015 17:23:11 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+	id S1752207AbbABXzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 2 Jan 2015 18:55:10 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y7C3g-0000A7-4d
+	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 00:55:08 +0100
+Received: from cruzio-216-173-135-181.static.cruzio.com ([216.173.135.181])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Jan 2015 00:55:08 +0100
+Received: from rogerb by cruzio-216-173-135-181.static.cruzio.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Jan 2015 00:55:08 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: constify structs with op functions or static definitions
-Date: Fri,  2 Jan 2015 18:23:10 +0100
-Message-Id: <1420219390-1980-1-git-send-email-dsterba@suse.cz>
+From: Roger Binns <rogerb@rogerbinns.com>
+Subject: scrub wedged (both running and not running at the same time)
+Date: Fri, 02 Jan 2015 15:54:55 -0800
+Message-ID: <m87b4g$v19$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are some op tables that can be easily made const, similarly the
-sysfs feature and raid tables. This is motivated by PaX CONSTIFY plugin.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/compression.c | 2 +-
- fs/btrfs/compression.h | 4 ++--
- fs/btrfs/disk-io.c     | 4 ++--
- fs/btrfs/extent_io.h   | 2 +-
- fs/btrfs/lzo.c         | 2 +-
- fs/btrfs/props.c       | 2 ++
- fs/btrfs/sysfs.c       | 2 +-
- fs/btrfs/transaction.c | 2 +-
- fs/btrfs/volumes.c     | 2 +-
- fs/btrfs/zlib.c        | 2 +-
- 10 files changed, 13 insertions(+), 11 deletions(-)
+I can't start a scrub because it is running, and can't cancel it
+because it isn't running!  How do I get out of this state?  OS is
+Ubuntu 14.10.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index e9df8862012c..e7a94f8cdfd7 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -750,7 +750,7 @@ static int comp_num_workspace[BTRFS_COMPRESS_TYPES];
- static atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES];
- static wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES];
- 
--static struct btrfs_compress_op *btrfs_compress_op[] = {
-+static const struct btrfs_compress_op * const btrfs_compress_op[] = {
- 	&btrfs_zlib_compress,
- 	&btrfs_lzo_compress,
- };
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index d181f70caae0..13a4dc0436c9 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -77,7 +77,7 @@ struct btrfs_compress_op {
- 			  size_t srclen, size_t destlen);
- };
- 
--extern struct btrfs_compress_op btrfs_zlib_compress;
--extern struct btrfs_compress_op btrfs_lzo_compress;
-+extern const struct btrfs_compress_op btrfs_zlib_compress;
-+extern const struct btrfs_compress_op btrfs_lzo_compress;
- 
- #endif
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8c63419a7f70..4641abccae1f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,7 +54,7 @@
- #include <asm/cpufeature.h>
- #endif
- 
--static struct extent_io_ops btree_extent_io_ops;
-+static const struct extent_io_ops btree_extent_io_ops;
- static void end_workqueue_fn(struct btrfs_work *work);
- static void free_fs_root(struct btrfs_root *root);
- static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
-@@ -4239,7 +4239,7 @@ static int btrfs_cleanup_transaction(struct btrfs_root *root)
- 	return 0;
- }
- 
--static struct extent_io_ops btree_extent_io_ops = {
-+static const struct extent_io_ops btree_extent_io_ops = {
- 	.readpage_end_io_hook = btree_readpage_end_io_hook,
- 	.readpage_io_failed_hook = btree_io_failed_hook,
- 	.submit_bio_hook = btree_submit_bio_hook,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ece9ce87edff..89488ca73f5a 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -97,7 +97,7 @@ struct extent_io_tree {
- 	u64 dirty_bytes;
- 	int track_uptodate;
- 	spinlock_t lock;
--	struct extent_io_ops *ops;
-+	const struct extent_io_ops *ops;
- };
- 
- struct extent_state {
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index 617553cdb7d3..a2f051347731 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -434,7 +434,7 @@ out:
- 	return ret;
- }
- 
--struct btrfs_compress_op btrfs_lzo_compress = {
-+const struct btrfs_compress_op btrfs_lzo_compress = {
- 	.alloc_workspace	= lzo_alloc_workspace,
- 	.free_workspace		= lzo_free_workspace,
- 	.compress_pages		= lzo_compress_pages,
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 129b1dd28527..dca137b04095 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -425,3 +425,5 @@ static const char *prop_compression_extract(struct inode *inode)
- 
- 	return NULL;
- }
-+
-+
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 92db3f648df4..577ba5fb1948 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -459,7 +459,7 @@ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
- static char btrfs_unknown_feature_names[3][NUM_FEATURE_BITS][13];
- static struct btrfs_feature_attr btrfs_feature_attrs[3][NUM_FEATURE_BITS];
- 
--static u64 supported_feature_masks[3] = {
-+static const u64 supported_feature_masks[3] = {
- 	[FEAT_COMPAT]    = BTRFS_FEATURE_COMPAT_SUPP,
- 	[FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SUPP,
- 	[FEAT_INCOMPAT]  = BTRFS_FEATURE_INCOMPAT_SUPP,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a605d4e2f2bc..5d68f310a3fb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -35,7 +35,7 @@
- 
- #define BTRFS_ROOT_TRANS_TAG 0
- 
--static unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
-+static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
- 	[TRANS_STATE_RUNNING]		= 0U,
- 	[TRANS_STATE_BLOCKED]		= (__TRANS_USERSPACE |
- 					   __TRANS_START),
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 50c5a8762aed..5873fe9ba7b1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4129,7 +4129,7 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- 	return 0;
- }
- 
--static struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
-+static const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 	[BTRFS_RAID_RAID10] = {
- 		.sub_stripes	= 2,
- 		.dev_stripes	= 1,
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index fb22fd8d8fb8..82990b8f872b 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -403,7 +403,7 @@ next:
- 	return ret;
- }
- 
--struct btrfs_compress_op btrfs_zlib_compress = {
-+const struct btrfs_compress_op btrfs_zlib_compress = {
- 	.alloc_workspace	= zlib_alloc_workspace,
- 	.free_workspace		= zlib_free_workspace,
- 	.compress_pages		= zlib_compress_pages,
--- 
-1.8.4.5
+$ uname -r
+3.16.0-28-generic
+
+# btrfs scrub start .
+ERROR: scrub is already running.
+To cancel use 'btrfs scrub cancel .'.
+To see the status use 'btrfs scrub status [-d] .'.
+# btrfs scrub cancel .
+ERROR: scrub cancel failed on .: not running
+# btrfs scrub status .
+scrub status for b02cc605-dd78-40bc-98a5-8f5543d83b66
+	scrub started at Mon Nov 17 20:27:17 2014, running for 64491 seconds
+	total bytes scrubbed: 3.43GiB with 1 errors
+	error details: read=1
+	corrected errors: 1, uncorrectable errors: 0, unverified errors: 0
+
+Even a reboot doesn't make this go away.
+
+Roger
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlSnL88ACgkQmOOfHg372QTpogCgvOpEAjIQI5dq+QPtRPty1gB/
+3q0An0llPrQkIeDprwiH4pRBzuZdWdRg
+=NXGR
+-----END PGP SIGNATURE-----
 

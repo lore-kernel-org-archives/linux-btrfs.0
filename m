@@ -1,121 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f172.google.com ([209.85.223.172]:47427 "EHLO
-	mail-ie0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750783AbbABNm6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 08:42:58 -0500
-Received: by mail-ie0-f172.google.com with SMTP id tr6so16771619ieb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 05:42:57 -0800 (PST)
-Message-ID: <54A6A05D.6000200@gmail.com>
-Date: Fri, 02 Jan 2015 08:42:53 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from mail.plaintext.sk ([85.248.156.6]:41926 "EHLO
+	shiva.plaintext.sk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750727AbbABOrw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 09:47:52 -0500
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by shiva.plaintext.sk (Postfix) with ESMTP id 957D426F7D
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Jan 2015 15:42:30 +0100 (CET)
+Received: from shiva.plaintext.sk ([127.0.0.1])
+	by localhost (shiva.plaintext.sk [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 36WwEVzNFFSV for <linux-btrfs@vger.kernel.org>;
+	Fri,  2 Jan 2015 15:42:29 +0100 (CET)
+Received: from shiva.plaintext.sk (shiva.plaintext.sk [85.248.156.6])
+	by shiva.plaintext.sk (Postfix) with ESMTP id 7EA0426F6F
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Jan 2015 15:42:29 +0100 (CET)
+Date: Fri, 2 Jan 2015 15:42:29 +0100 (GMT+01:00)
+From: luvar@plaintext.sk
+To: linux-btrfs@vger.kernel.org
+Message-ID: <1256750348.24201420209749292.JavaMail.root@shiva>
+In-Reply-To: <1377898232.24181420209516734.JavaMail.root@shiva>
+Subject: possible bug in balance
 MIME-Version: 1.0
-To: ashford@whisperpc.com, Phillip Susi <psusi@ubuntu.com>
-CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        "sys.syphus" <syssyphus@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: I need to P. are we almost there yet?
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
-In-Reply-To: <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090909060005080709030506"
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hi,
+I have today added one device and I have converted metadata to raid1. Than I wanted to convert to raid1 also some data (with balance filter) and try if there is some speedup when reading files (starting programs)... I have issued this command:
 
---------------ms090909060005080709030506
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2014-12-31 12:27, ashford@whisperpc.com wrote:
-> Phillip
->
->> I had a similar question a year or two ago (
->> specifically about raid10  ) so I both experimented and read the code
->> myself to find out.  I was disappointed to find that it won't do
->> raid10 on 3 disks since the chunk metadata describes raid10 as a
->> stripe layered on top of a mirror.
->>
->> Jose's point was also a good one though; one chunk may decide to
->> mirror disks A and B, so a failure of A and C it could recover from,
->> but a different chunk could choose to mirror on disks A and C, so that=
-
->> chunk would be lost if A and C fail.  It would probably be nice if the=
-
->> chunk allocator tried to be more deterministic about that.
->
-> I see this as a CRITICAL design flaw.  The reason for calling it CRITIC=
-AL
-> is that System Administrators have been trained for >20 years that RAID=
--10
-> can usually handle a dual-disk failure, but the BTRFS implementation ha=
-s
-> effectively ZERO chance of doing so.
-No, some rather simple math will tell you that a 4 disk BTRFS filesystem =
-
-in raid10 mode has exactly a 50% chance of surviving a dual disk=20
-failure, and that as the number of disks goes up, the chance of survival =
-
-will asymptotically approach 100% (but never reach it).
-This is the case for _every_ RAID-10 implementation that I have ever=20
-seen, including hardware raid controllers; the only real difference is=20
-in the stripe length (usually 512 bytes * half the number of disks for=20
-hardware raid, 4k * half the number of disks for software raid, and the=20
-filesystem block size (default is 16k in current versions) * half the=20
-number of disks for BTRFS).
+luvar@blackdawn:~$ sudo time btrfs balance start -dconvert=raid1 -dusage=20 /home/luvar/programs/
+[sudo] password for luvar: 
+ERROR: error during balancing '/home/luvar/programs/' - Input/output error
+There may be more info in syslog - try dmesg | tail
+Command exited with non-zero status 19
+0.00user 0.08system 0:08.29elapsed 1%CPU (0avgtext+0avgdata 768maxresident)k
+14696inputs+6584outputs (2major+253minor)pagefaults 0swaps
 
 
+Part of df command:
+luvar@blackdawn:~$ df -h
+Filesystem                   Size  Used Avail Use% Mounted on
+/dev/sdb2                    458G  177G   59G  75% /
+/dev/sdb2                    458G  177G   59G  75% /home
+/dev/sdb1                    226M   96M  114M  46% /boot
+/dev/sdb2                    458G  177G   59G  75% /home/luvar/eclipseWorkspaceAndroid
+/dev/sdb2                    458G  177G   59G  75% /home/luvar/eclipseWorkspaceErlang
+/dev/sdb2                    458G  177G   59G  75% /home/luvar/programs
 
---------------ms090909060005080709030506
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+root@blackdawn:/home/luvar# dmesg|tail -n 50
+[ 8107.693414] attempt to access beyond end of device
+[ 8107.693425] sdb2: rw=32, want=480102272, limit=473956352
+[ 8107.711854] attempt to access beyond end of device
+[ 8107.711863] sdb2: rw=1041, want=480102272, limit=473956352
+[ 8107.771103] attempt to access beyond end of device
+[ 8107.771114] sdb2: rw=32, want=482410504, limit=473956352
+[ 8107.784037] attempt to access beyond end of device
+[ 8107.784045] sdb2: rw=1041, want=482410504, limit=473956352
+[ 8107.804923] attempt to access beyond end of device
+[ 8107.804933] sdb2: rw=32, want=478657496, limit=473956352
+[ 8107.817134] attempt to access beyond end of device
+[ 8107.817142] sdb2: rw=1041, want=478657496, limit=473956352
+[ 8107.835377] attempt to access beyond end of device
+[ 8107.835384] sdb2: rw=32, want=480795752, limit=473956352
+[ 8107.842977] attempt to access beyond end of device
+[ 8107.842985] sdb2: rw=1041, want=480795752, limit=473956352
+[ 8107.887768] attempt to access beyond end of device
+[ 8107.887778] sdb2: rw=32, want=478931480, limit=473956352
+[ 8107.898939] attempt to access beyond end of device
+[ 8107.898946] sdb2: rw=1041, want=478931480, limit=473956352
+[ 8107.958691] attempt to access beyond end of device
+[ 8107.958699] sdb2: rw=32, want=479426840, limit=473956352
+[ 8107.966368] attempt to access beyond end of device
+[ 8107.966375] sdb2: rw=1041, want=479426840, limit=473956352
+[ 8116.097908] attempt to access beyond end of device
+[ 8116.097919] sdb2: rw=32, want=478334096, limit=473956352
+[ 8116.097923] btrfs_dev_stat_print_on_error: 12 callbacks suppressed
+[ 8116.097926] btrfs: bdev /dev/sdb2 errs: wr 638625, rd 65863, flush 0, corrupt 0, gen 0
+[ 8116.133108] attempt to access beyond end of device
+[ 8116.133118] sdb2: rw=1041, want=478334096, limit=473956352
+[ 8116.133124] btrfs: bdev /dev/sdb2 errs: wr 638626, rd 65863, flush 0, corrupt 0, gen 0
+[ 8125.065061] attempt to access beyond end of device
+[ 8125.065073] sdb2: rw=32, want=481418928, limit=473956352
+[ 8125.065077] btrfs: bdev /dev/sdb2 errs: wr 638626, rd 65864, flush 0, corrupt 0, gen 0
+[ 8125.084522] attempt to access beyond end of device
+[ 8125.084533] sdb2: rw=1041, want=481418928, limit=473956352
+[ 8125.084539] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65864, flush 0, corrupt 0, gen 0
+[ 8131.848768] btrfs: relocating block group 472710643712 flags 1
+[ 8133.866427] attempt to access beyond end of device
+[ 8133.866436] sdb2: rw=0, want=476739152, limit=473956352
+[ 8133.866441] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65865, flush 0, corrupt 0, gen 0
+[ 8133.866516] attempt to access beyond end of device
+[ 8133.866520] sdb2: rw=0, want=476739152, limit=473956352
+[ 8133.866523] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65866, flush 0, corrupt 0, gen 0
+[ 8159.272179] attempt to access beyond end of device
+[ 8159.272191] sdb2: rw=32, want=480110048, limit=473956352
+[ 8159.272196] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65867, flush 0, corrupt 0, gen 0
+[ 8159.300427] attempt to access beyond end of device
+[ 8159.300434] sdb2: rw=1041, want=480110048, limit=473956352
+[ 8159.300440] btrfs: bdev /dev/sdb2 errs: wr 638628, rd 65867, flush 0, corrupt 0, gen 0
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTAyMTM0MjUz
-WjAjBgkqhkiG9w0BCQQxFgQUwY+kR5DNss0pQrr+4fP3r8czymEwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAGBYEwV7FCG6JQjBWWbZLBJ6MuAdZ
-bVXKyjmLiYkIqpnL42FGjrPCotMfm0DNwwon8TaR6enR/y5qxvId2h0ZUMtL4VU9J/Wfu7nr
-xrRjKNpBaydnj+xHU+RumGS7rg5tzpoOlt6mkHyiuD5f1rYb8nmpvKUPzGxbCtAe2+bv2HNl
-vOTRCNdHPkUUk55PnLRlyxf+ns9h8tV5KMkjLllIOTf20EtbDrf4TxCNyjj3oGvoZExs8WST
-gWI84yRcHPjIy/h6xz2evQOeJsqj4Ys+UJEJ8R0vtqilr9xPZwIDHI3QFITU9YqcVRUGfC7o
-DXSai3OaHv9YSiojuYOsYm1BiwAAAAAAAA==
---------------ms090909060005080709030506--
+root@blackdawn:/home/luvar# uname -a
+Linux blackdawn 3.13.0-30-generic #55-Ubuntu SMP Fri Jul 4 21:40:53 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+root@blackdawn:/home/luvar# btrfs v
+Btrfs v0.20-rc1-189-g704a08c
+
+
+Am I doing something forbidden (I have not see any structure where raid type is stored per file/subvolume item), or I just hit some problem? What should I try?
+
+PS: After all I will convert all data to raid1, but I want to play first :-)

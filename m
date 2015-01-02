@@ -1,110 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.plaintext.sk ([85.248.156.6]:41926 "EHLO
-	shiva.plaintext.sk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750727AbbABOrw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 09:47:52 -0500
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by shiva.plaintext.sk (Postfix) with ESMTP id 957D426F7D
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Jan 2015 15:42:30 +0100 (CET)
-Received: from shiva.plaintext.sk ([127.0.0.1])
-	by localhost (shiva.plaintext.sk [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 36WwEVzNFFSV for <linux-btrfs@vger.kernel.org>;
-	Fri,  2 Jan 2015 15:42:29 +0100 (CET)
-Received: from shiva.plaintext.sk (shiva.plaintext.sk [85.248.156.6])
-	by shiva.plaintext.sk (Postfix) with ESMTP id 7EA0426F6F
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Jan 2015 15:42:29 +0100 (CET)
-Date: Fri, 2 Jan 2015 15:42:29 +0100 (GMT+01:00)
-From: luvar@plaintext.sk
-To: linux-btrfs@vger.kernel.org
-Message-ID: <1256750348.24201420209749292.JavaMail.root@shiva>
-In-Reply-To: <1377898232.24181420209516734.JavaMail.root@shiva>
-Subject: possible bug in balance
+Received: from fw11a-andra.wadns.net ([41.185.62.155]:40016 "EHLO
+	fw11a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752029AbbABRqK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 12:46:10 -0500
+Message-ID: <54A6D951.9080706@swiftspirit.co.za>
+Date: Fri, 02 Jan 2015 19:45:53 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>, ashford@whisperpc.com,
+        Phillip Susi <psusi@ubuntu.com>
+CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        "sys.syphus" <syssyphus@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: I need to P. are we almost there yet?
+References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net> <54A6A05D.6000200@gmail.com>
+In-Reply-To: <54A6A05D.6000200@gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-I have today added one device and I have converted metadata to raid1. Than I wanted to convert to raid1 also some data (with balance filter) and try if there is some speedup when reading files (starting programs)... I have issued this command:
+On 2015/01/02 15:42, Austin S Hemmelgarn wrote:
+> On 2014-12-31 12:27, ashford@whisperpc.com wrote:
+>> I see this as a CRITICAL design flaw.  The reason for calling it 
+>> CRITICAL
+>> is that System Administrators have been trained for >20 years that 
+>> RAID-10
+>> can usually handle a dual-disk failure, but the BTRFS implementation has
+>> effectively ZERO chance of doing so.
+> No, some rather simple math
+That's the problem. The math isn't as simple as you'd expect:
 
-luvar@blackdawn:~$ sudo time btrfs balance start -dconvert=raid1 -dusage=20 /home/luvar/programs/
-[sudo] password for luvar: 
-ERROR: error during balancing '/home/luvar/programs/' - Input/output error
-There may be more info in syslog - try dmesg | tail
-Command exited with non-zero status 19
-0.00user 0.08system 0:08.29elapsed 1%CPU (0avgtext+0avgdata 768maxresident)k
-14696inputs+6584outputs (2major+253minor)pagefaults 0swaps
+The example below is probably a pathological case - but here goes. Let's 
+say in this 4-disk example that chunks are striped as d1,d2,d1,d2 where 
+d1 is the first bit of data and d2 is the second:
+Chunk 1 might be striped across disks A,B,C,D d1,d2,d1,d2
+Chunk 2 might be striped across disks B,C,A,D d3,d4,d3,d4
+Chunk 3 might be striped across disks D,A,C,B d5,d6,d5,d6
+Chunk 4 might be striped across disks A,C,B,D d7,d8,d7,d8
+Chunk 5 might be striped across disks A,C,D,B d9,d10,d9,d10
 
+Lose any two disks and you have a 50% chance on *each* chunk to have 
+lost that chunk. With traditional RAID10 you have a 50% chance of losing 
+the array entirely. With btrfs, the more data you have stored, the 
+chances get closer to 100% of losing *some* data in a 2-disk failure.
 
-Part of df command:
-luvar@blackdawn:~$ df -h
-Filesystem                   Size  Used Avail Use% Mounted on
-/dev/sdb2                    458G  177G   59G  75% /
-/dev/sdb2                    458G  177G   59G  75% /home
-/dev/sdb1                    226M   96M  114M  46% /boot
-/dev/sdb2                    458G  177G   59G  75% /home/luvar/eclipseWorkspaceAndroid
-/dev/sdb2                    458G  177G   59G  75% /home/luvar/eclipseWorkspaceErlang
-/dev/sdb2                    458G  177G   59G  75% /home/luvar/programs
+In the above example, losing A and B means you lose d3, d6, and d7 
+(which ends up being 60% of all chunks).
+Losing A and C means you lose d1 (20% of all chunks).
+Losing A and D means you lose d9 (20% of all chunks).
+Losing B and C means you lose d10 (20% of all chunks).
+Losing B and D means you lose d2 (20% of all chunks).
+Losing C and D means you lose d4,d5, AND d8 (60% of all chunks)
 
-root@blackdawn:/home/luvar# dmesg|tail -n 50
-[ 8107.693414] attempt to access beyond end of device
-[ 8107.693425] sdb2: rw=32, want=480102272, limit=473956352
-[ 8107.711854] attempt to access beyond end of device
-[ 8107.711863] sdb2: rw=1041, want=480102272, limit=473956352
-[ 8107.771103] attempt to access beyond end of device
-[ 8107.771114] sdb2: rw=32, want=482410504, limit=473956352
-[ 8107.784037] attempt to access beyond end of device
-[ 8107.784045] sdb2: rw=1041, want=482410504, limit=473956352
-[ 8107.804923] attempt to access beyond end of device
-[ 8107.804933] sdb2: rw=32, want=478657496, limit=473956352
-[ 8107.817134] attempt to access beyond end of device
-[ 8107.817142] sdb2: rw=1041, want=478657496, limit=473956352
-[ 8107.835377] attempt to access beyond end of device
-[ 8107.835384] sdb2: rw=32, want=480795752, limit=473956352
-[ 8107.842977] attempt to access beyond end of device
-[ 8107.842985] sdb2: rw=1041, want=480795752, limit=473956352
-[ 8107.887768] attempt to access beyond end of device
-[ 8107.887778] sdb2: rw=32, want=478931480, limit=473956352
-[ 8107.898939] attempt to access beyond end of device
-[ 8107.898946] sdb2: rw=1041, want=478931480, limit=473956352
-[ 8107.958691] attempt to access beyond end of device
-[ 8107.958699] sdb2: rw=32, want=479426840, limit=473956352
-[ 8107.966368] attempt to access beyond end of device
-[ 8107.966375] sdb2: rw=1041, want=479426840, limit=473956352
-[ 8116.097908] attempt to access beyond end of device
-[ 8116.097919] sdb2: rw=32, want=478334096, limit=473956352
-[ 8116.097923] btrfs_dev_stat_print_on_error: 12 callbacks suppressed
-[ 8116.097926] btrfs: bdev /dev/sdb2 errs: wr 638625, rd 65863, flush 0, corrupt 0, gen 0
-[ 8116.133108] attempt to access beyond end of device
-[ 8116.133118] sdb2: rw=1041, want=478334096, limit=473956352
-[ 8116.133124] btrfs: bdev /dev/sdb2 errs: wr 638626, rd 65863, flush 0, corrupt 0, gen 0
-[ 8125.065061] attempt to access beyond end of device
-[ 8125.065073] sdb2: rw=32, want=481418928, limit=473956352
-[ 8125.065077] btrfs: bdev /dev/sdb2 errs: wr 638626, rd 65864, flush 0, corrupt 0, gen 0
-[ 8125.084522] attempt to access beyond end of device
-[ 8125.084533] sdb2: rw=1041, want=481418928, limit=473956352
-[ 8125.084539] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65864, flush 0, corrupt 0, gen 0
-[ 8131.848768] btrfs: relocating block group 472710643712 flags 1
-[ 8133.866427] attempt to access beyond end of device
-[ 8133.866436] sdb2: rw=0, want=476739152, limit=473956352
-[ 8133.866441] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65865, flush 0, corrupt 0, gen 0
-[ 8133.866516] attempt to access beyond end of device
-[ 8133.866520] sdb2: rw=0, want=476739152, limit=473956352
-[ 8133.866523] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65866, flush 0, corrupt 0, gen 0
-[ 8159.272179] attempt to access beyond end of device
-[ 8159.272191] sdb2: rw=32, want=480110048, limit=473956352
-[ 8159.272196] btrfs: bdev /dev/sdb2 errs: wr 638627, rd 65867, flush 0, corrupt 0, gen 0
-[ 8159.300427] attempt to access beyond end of device
-[ 8159.300434] sdb2: rw=1041, want=480110048, limit=473956352
-[ 8159.300440] btrfs: bdev /dev/sdb2 errs: wr 638628, rd 65867, flush 0, corrupt 0, gen 0
+The above skewed example has an average of 40% of all chunks failed. As 
+you add more data and randomise the allocation, this will approach 50% - 
+BUT, the chances of losing *some* data is already clearly shown to be 
+very close to 100%.
 
-root@blackdawn:/home/luvar# uname -a
-Linux blackdawn 3.13.0-30-generic #55-Ubuntu SMP Fri Jul 4 21:40:53 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 
-root@blackdawn:/home/luvar# btrfs v
-Btrfs v0.20-rc1-189-g704a08c
-
-
-Am I doing something forbidden (I have not see any structure where raid type is stored per file/subvolume item), or I just hit some problem? What should I try?
-
-PS: After all I will convert all data to raid1, but I want to play first :-)

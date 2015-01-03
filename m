@@ -1,138 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f169.google.com ([209.85.223.169]:32892 "EHLO
-	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750736AbbABTlO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Jan 2015 14:41:14 -0500
-Received: by mail-ie0-f169.google.com with SMTP id y20so17140481ier.14
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 11:41:14 -0800 (PST)
-Message-ID: <54A6F456.6090701@gmail.com>
-Date: Fri, 02 Jan 2015 14:41:10 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from mail-yh0-f48.google.com ([209.85.213.48]:36616 "EHLO
+	mail-yh0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750778AbbACFbP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jan 2015 00:31:15 -0500
+Received: by mail-yh0-f48.google.com with SMTP id i57so9221843yha.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Jan 2015 21:31:14 -0800 (PST)
 MIME-Version: 1.0
-To: Brendan Hide <brendan@swiftspirit.co.za>, ashford@whisperpc.com,
-        Phillip Susi <psusi@ubuntu.com>
-CC: Jose Manuel Perez Bethencourt <jmperezbeth@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        "sys.syphus" <syssyphus@gmail.com>,
+In-Reply-To: <54A36A7C.1000005@ubuntu.com>
+References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
+	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
+	<20141223211605.GC436@hungrycats.org>
+	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
+	<549F7539.4050801@ubuntu.com>
+	<CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
+	<54A30F19.5050801@ubuntu.com>
+	<CAJCQCtSyu7dvp9SoF4u6QV9hF3jAQLtpYv8-6MOHSoP_NQyQ7A@mail.gmail.com>
+	<54A36A7C.1000005@ubuntu.com>
+Date: Fri, 2 Jan 2015 22:31:13 -0700
+Message-ID: <CAJCQCtR5qZmD2RgfQMSUe9BLtUtimTyf-itBM1Y+9hiRftfwgg@mail.gmail.com>
+Subject: Re: Uncorrectable errors on RAID-1?
+From: Chris Murphy <lists@colorremedies.com>
+To: Phillip Susi <psusi@ubuntu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: I need to P. are we almost there yet?
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>    <CAAe=sHUez9eNCSck5do7sBK=6nV1v9ZNNdqDVfnud1j5s1kJzQ@mail.gmail.com>    <CAJCQCtR=Hinq_w6ELXFT-Ema-5THoz5EpuXkCOU_fE1gv--+qQ@mail.gmail.com>    <7e0d08fddb1e0060f756690f6c82c350.squirrel@webmail.wanet.net>    <54A31CAE.4020606@ubuntu.com>    <40b56c60ddd4801295a92c4b11d5c08e.squirrel@webmail.wanet.net>    <54A3633C.3040609@ubuntu.com> <1da0cf9a75a357c960af323aa56c7530.squirrel@webmail.wanet.net> <54A6A05D.6000200@gmail.com> <54A6D951.9080706@swiftspirit.co.za>
-In-Reply-To: <54A6D951.9080706@swiftspirit.co.za>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030807070603030002030107"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Tue, Dec 30, 2014 at 8:16 PM, Phillip Susi <psusi@ubuntu.com> wrote:
+> Just because I want a raid doesn't mean I need it to operate reliably
+> 24x7.  For that matter, it has long been established that power
+> cycling drives puts more wear and tear on them and as a general rule,
+> leaving them on 24x7 results in them lasting longer.
 
---------------ms030807070603030002030107
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+It's not a made to order hard drive industry. Maybe one day you'll be
+able to 3D print your own with its own specs.
 
-On 2015-01-02 12:45, Brendan Hide wrote:
-> On 2015/01/02 15:42, Austin S Hemmelgarn wrote:
->> On 2014-12-31 12:27, ashford@whisperpc.com wrote:
->>> I see this as a CRITICAL design flaw.  The reason for calling it
->>> CRITICAL
->>> is that System Administrators have been trained for >20 years that
->>> RAID-10
->>> can usually handle a dual-disk failure, but the BTRFS implementation =
-has
->>> effectively ZERO chance of doing so.
->> No, some rather simple math
-> That's the problem. The math isn't as simple as you'd expect:
 >
-> The example below is probably a pathological case - but here goes. Let'=
-s
-> say in this 4-disk example that chunks are striped as d1,d2,d1,d2 where=
-
-> d1 is the first bit of data and d2 is the second:
-> Chunk 1 might be striped across disks A,B,C,D d1,d2,d1,d2
-> Chunk 2 might be striped across disks B,C,A,D d3,d4,d3,d4
-> Chunk 3 might be striped across disks D,A,C,B d5,d6,d5,d6
-> Chunk 4 might be striped across disks A,C,B,D d7,d8,d7,d8
-> Chunk 5 might be striped across disks A,C,D,B d9,d10,d9,d10
+>> And of course you completely ignored, and deleted, my point about
+>> the difference in warranties.
 >
-> Lose any two disks and you have a 50% chance on *each* chunk to have
-> lost that chunk. With traditional RAID10 you have a 50% chance of losin=
-g
-> the array entirely. With btrfs, the more data you have stored, the
-> chances get closer to 100% of losing *some* data in a 2-disk failure.
+> Because I don't care?
+
+Sticking fingers in your ears doesn't change the fact there's a
+measurable difference in support requirements.
+
+
+> It's nice and all that they warranty the more
+> expensive drive more, and it may possibly even mean that they are
+> actually more reliable ( but not likely ), but that doesn't mean that
+> the system should have an unnecessarily terrible response to the
+> behavior of the cheaper drives.  Is it worth recommending the more
+> expensive drives?  Sure... but the system should also handle the
+> cheaper drives with grace.
+
+This is architecture astronaut territory.
+
+The system only has a terrible response for two reasons: 1. The user
+spec'd the wrong hardware for the use case; 2. The distro isn't
+automatically leveraging existing ways to mitigate that user mistake
+by changing either SCT ERC on the drives, or the SCSI command timer
+for each block device.
+
+Now, even though that solution *might* mean long recoveries on
+occasion, it's still better than link reset behavior which is what we
+have today because it causes the underlying problem to be fixed by
+md/dm/Btrfs once the read error is reported. But no distro has
+implemented this $500 man hour solution. Instead you're suggesting a
+$500,000 fix that will take hundreds of man hours and end user testing
+to find all the edge cases. It's like, seriously, WTF?
+
+
+>> Does the SATA specification require configurable SCT ERC? Does it
+>> require even supporting SCT ERC? I think your argument is flawed
+>> by mis-distributing the economic burden while simultaneously
+>> denying one even exists or that these companies should just eat the
+>> cost differential if it does. In any case the argument is asinine.
 >
-> In the above example, losing A and B means you lose d3, d6, and d7
-> (which ends up being 60% of all chunks).
-> Losing A and C means you lose d1 (20% of all chunks).OK
-> Losing A and D means you lose d9 (20% of all chunks).
-> Losing B and C means you lose d10 (20% of all chunks).
-> Losing B and D means you lose d2 (20% of all chunks).
-> Losing C and D means you lose d4,d5, AND d8 (60% of all chunks)
+> There didn't used to be any such thing; drives simply did not *ever*
+> go into absurdly long internal retries so there was no need.  The fact
+> that they do these days I consider a misfeature, and one that *can* be
+> worked around in software, which is the point here.
+
+Ok well I think that's hubris unless you're a hard drive engineer.
+You're referring to how drives behaved over a decade ago, when bad
+sectors were persistent rather than remapped, and we had to scan the
+drive at format time to build a map so the bad ones wouldn't be used
+by the filesystem.
+
+
+>> When the encoded data signal weakens, they effectively becomes
+>> fuzzy bits. Each read produces different results. Obviously this is
+>> a very rare condition or there'd be widespread panic. However, it's
+>> common and expected enough that the drive manufacturers are all, to
+>> very little varying degree, dealing with this problem in a similar
+>> way, which is multiple reads.
 >
-> The above skewed example has an average of 40% of all chunks failed. As=
+> Sure, but the noise introduced by the read ( as opposed to the noise
+> in the actual signal on the platter ) isn't that large, and so
+> retrying 10,000 times isn't going to give any better results than
+> retrying say, 100 times, and if the user really desires that many
+> retries, they have always been able to do so in the software level
+> rather than depending on the drive to try that much.  There is no
+> reason for the drives to have increased their internal retries that
+> much, and then deliberately withed the essentially zero cost ability
+> to limit those internal retries, other than to drive customers to pay
+> for the more expensive models.
 
-> you add more data and randomise the allocation, this will approach 50% =
--
-> BUT, the chances of losing *some* data is already clearly shown to be
-> very close to 100%.
->
-OK, I forgot about the randomization effect that the chunk allocation=20
-and freeing has.  We really should slap a *BIG* warning label on that=20
-(and ideally find some better way to do it so it's more reliable).
+http://www.seagate.com/files/www-content/support-content/documentation/product-manuals/en-us/Enterprise/Savvio/Savvio%2015K.3/100629381e.pdf
 
-As an aside, I've found that a BTRFS raid1 set on top of 2 LVM/MD RAID0=20
-sets is actually faster than using a BTRFS raid10 set with the same=20
-number of disks (how much faster is workload dependent), and provides=20
-better guarantees than a BTRFS raid10 set.
+That's a high end SAS drive. It's default is to retry up to 20 times,
+which takes ~1.4 seconds, per sector. But also note how it says
+lowering the default increases the unrecoverable error rate. That
+makes sense. So even if the probability is low that retrying up to 120
+seconds could work, statistically it affects the unrecoverable error
+rate positively to increase the default.
 
+If I'm going to be a conspiracy theorist, I'd say the recoveries are
+getting longer by default in order to keep the specifications
+reporting sane unrecoverable error rates.
 
---------------ms030807070603030002030107
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+Maybe you'd prefer seeing these big, cheap, "green" drives have
+shorter ERC times, with a commensurate reality check with their
+unrecoverable error rate, which right now is already two orders
+magnitude higher than enterprise SAS drives. So what if this means
+that rate is 3 or 4 orders magnitude higher?
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTAyMTk0MTEw
-WjAjBgkqhkiG9w0BCQQxFgQU57TLzwS4+cKUcBOv/kZHqWYXJNMwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAI+9bNX+fmAWIDXwv5zSbq2Ezv1U3
-f3TJyOgSFEim+ldEEQZhKFokJCIK+vJiT8shdPUxO5DLYBIlqhvwb+Bic4sBLFTb8qxRF8PZ
-wWImY01mXzv2zAg9kczGpdkOek5EP6t4t3RrJ1oxAyjJ20+I8yrSbgvyYGUrJ+Sus+6NlJKn
-pHK+kic+iDTA5dFxr6khNc0jdw1QeyMQRO9+FV8zoEMZeZy07uUH9k8VWFD3pwWQbgEXSgZk
-PcUCe/Xr/5gf9alF87u4IfSocW6zNuDD0/uG+x+mpGQ9kerAghIo8Eiivzvz7l/Go1PLbRzX
-kWwbKBPHBWMuCI637hOQkVc7zwAAAAAAAA==
---------------ms030807070603030002030107--
+Now I'm just going to wait for you to suggest that sucks donkey tail
+and how the manufacturer's should produce drives with the same UER as
+drives 10 years ago *and* with the same error recovery times, and
+charge no additional money.
+
+OK good luck with that!
+
+-- 
+Chris Murphy

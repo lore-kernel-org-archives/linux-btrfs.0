@@ -1,130 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f179.google.com ([209.85.160.179]:43327 "EHLO
-	mail-yk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751087AbbAEHly (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 02:41:54 -0500
-Received: by mail-yk0-f179.google.com with SMTP id 19so10138881ykq.38
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 23:41:53 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <54AA10B3.3010900@ubuntu.com>
-References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
-	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
-	<20141223211605.GC436@hungrycats.org>
-	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
-	<549F7539.4050801@ubuntu.com>
-	<CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
-	<54A30F19.5050801@ubuntu.com>
-	<CAJCQCtSyu7dvp9SoF4u6QV9hF3jAQLtpYv8-6MOHSoP_NQyQ7A@mail.gmail.com>
-	<54A36A7C.1000005@ubuntu.com>
-	<CAJCQCtR5qZmD2RgfQMSUe9BLtUtimTyf-itBM1Y+9hiRftfwgg@mail.gmail.com>
-	<54AA10B3.3010900@ubuntu.com>
-Date: Mon, 5 Jan 2015 00:41:53 -0700
-Message-ID: <CAJCQCtRdnu_n3u2Tr5Ofo=+UPTyEFBYeWmpat6ioD+vtpFAYCw@mail.gmail.com>
-Subject: Re: Uncorrectable errors on RAID-1?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:16632 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751087AbbAEHyr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 02:54:47 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, dsterba@suse.cz
+Subject: [PATCH] btrfs: mount should fail for devices with fsid that don't match
+Date: Sun,  4 Jan 2015 00:01:05 +0800
+Message-Id: <1420300865-5847-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 4, 2015 at 9:18 PM, Phillip Susi <psusi@ubuntu.com> wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA512
->
-> On 01/03/2015 12:31 AM, Chris Murphy wrote:
+(For commenting, not for integration yet).
 
->> This is architecture astronaut territory.
->>
->> The system only has a terrible response for two reasons: 1. The
->> user spec'd the wrong hardware for the use case; 2. The distro
->> isn't automatically leveraging existing ways to mitigate that user
->> mistake by changing either SCT ERC on the drives, or the SCSI
->> command timer for each block device.
->
-> No, it has terrible response because the kernel either waits an
-> unreasonable time or fails the drive and kicks it out of the array
-> instead of trying to repair it.
+We don't check if all devices that passed through the
+mount -o device option are indeed belongs to the same fsid.
+For which following mount which should fail is successful as of now.
 
-It's a default that works for more use cases than not. The kernel
-isn't dynamically self-configuring, and it isn't even the kernel's job
-to take the first step which is to enable and correctly set SCT ERC on
-each drive.
+mkfs.btrfs -f /dev/sda
+mkfs.btrfs -f /dev/sdb
 
-I think assuming a large pile of causes for a drive freezing on a
-command be treated as read errors (after the link reset) is a bad
-idea. But since it's your idea, and I'm not a kernel developer, you
-should propose it on linux-raid@ instead of arguing with me.
+mount -o device=/dev/sda /dev/sdb /btrfs
 
+The fix is bit more complicated than to -
+check if not seeding and if fsid don't match then fail the mount.
+Since we should also fail the mount when the seed device of some
+other sprout is provided.
 
-> Blaming the user for not buying
-> better hardware is not an appropriate response for the kernel failing
-> so badly to handle commonly available hardware that doesn't behave in
-> the most ideal way.
+creating seed sprout dependency before the mount event and check
+against it during mount is what required, which I have been
+trying to avoid for a long time.
+(This will also solve the long broken ioctl BTRFS_IOC_DEVICES_READY
+for seed-sprout devices).
 
-"Hi, I'm a good and knowledgeable sysadmin. I buy hardware that's
-explicitly stated in the company's marketing data sheet as being
-incompatible with my use case. This is someone else's fault."
+Any objections / comments ?
 
-Sounds like buck passing.
+Thanks
 
->> Now, even though that solution *might* mean long recoveries on
->> occasion, it's still better than link reset behavior which is what
->> we have today because it causes the underlying problem to be fixed
->> by md/dm/Btrfs once the read error is reported. But no distro has
->> implemented this $500 man hour solution. Instead you're suggesting
->> a $500,000 fix that will take hundreds of man hours and end user
->> testing to find all the edge cases. It's like, seriously, WTF?
->
-> Seriously?  Treating a timeout the same way you treat an unrecoverable
-> media error is no herculean task.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/super.c   | 20 ++++++++++++++++++++
+ fs/btrfs/volumes.c |  5 ++++-
+ 2 files changed, 24 insertions(+), 1 deletion(-)
 
-So you keep saying.
-
-But best practices is already known and tested, and can be done with a
-startup script. Yet no distro does this for the user, even though its
-much much simpler than what you're proposing, and actually fixes both
-sources of the problem.
-
-That it is in your opinion an imperfect fix is not relevant. It's
-still better behavior than what we have today, and yet still no distro
-does this, thereby tacitly preferring status quo. And if the current
-behavior is simply good enough no one has taken action to implement
-automatically the known best practice work around of the day, why
-should kernel developers gives two shits about this idea? Sounds like
-more buck passing.
-
-
-
->> http://www.seagate.com/files/www-content/support-content/documentation/product-manuals/en-us/Enterprise/Savvio/Savvio%2015K.3/100629381e.pdf
->>
->>  That's a high end SAS drive. It's default is to retry up to 20
->> times, which takes ~1.4 seconds, per sector. But also note how it
->> says
->
-> 20 retries on a 15,000 rpm drive only takes 80 milliseconds, not 1.4
-> seconds.  15,000 rpm / 60 seconds per minute = 250 rotations/retries
-> per second.
-
-The PDF contains a table saying 20 retries takes 1.4 seconds. I didn't
-compute this number myself, it's in the bloody manufacturer's own
-documentation. Obviously the ECC is doing things that take more than
-one revolution of the spindle.
-
->
->> Maybe you'd prefer seeing these big, cheap, "green" drives have
->> shorter ERC times, with a commensurate reality check with their
->> unrecoverable error rate, which right now is already two orders
->> magnitude higher than enterprise SAS drives. So what if this means
->> that rate is 3 or 4 orders magnitude higher?
->
-> 20 retries vs. 200 retries does not reduce the URE rate by orders of
-> magnitude; more like 1% *maybe*.  200 vs 2000 makes no measurable
-> difference at all.
-
-I see, well I guess you prefer believing in fraud and conspiracy
-theories, by multiple companies, to screw users over, while they admit
-the incompatibility of the intended use case on their data sheets.
-
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 17786d7..90d2414 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -773,6 +773,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 	char *device_name, *opts, *orig, *p;
+ 	char *num = NULL;
+ 	int error = 0;
++	struct btrfs_fs_devices *tmp_fs_devices;
+ 
+ 	if (!options)
+ 		return 0;
+@@ -826,8 +827,17 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 				error = -ENOMEM;
+ 				goto out;
+ 			}
++			tmp_fs_devices = *fs_devices;
+ 			error = btrfs_scan_one_device(device_name,
+ 					flags, holder, fs_devices);
++
++			if (!error && tmp_fs_devices && !tmp_fs_devices->seeding &&
++				!(*fs_devices)->seeding && tmp_fs_devices != (*fs_devices)) {
++				printk(KERN_ERR \
++					"BTRFS: fsid in the provided devices does not match\n");
++				error = -EINVAL;
++			}
++
+ 			kfree(device_name);
+ 			if (error)
+ 				goto out;
+@@ -1293,6 +1303,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	char *subvol_name = NULL;
+ 	u64 subvol_objectid = 0;
+ 	int error = 0;
++	struct btrfs_fs_devices *tmp_fs_devices = NULL;
+ 
+ 	if (!(flags & MS_RDONLY))
+ 		mode |= FMODE_WRITE;
+@@ -1318,7 +1329,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 			return ERR_PTR(error);
+ 	}
+ 
++	tmp_fs_devices = fs_devices;
+ 	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
++	if (!error && tmp_fs_devices && !tmp_fs_devices->seeding &&
++		!fs_devices->seeding && tmp_fs_devices != fs_devices)
++	{
++		printk(KERN_ERR \
++			"BTRFS: mount: fsid in the provided devices does not match\n");
++		error = -EINVAL;
++	}
++
+ 	if (error)
+ 		goto error_sec_opts;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fd05382..3bac663 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -564,8 +564,11 @@ static noinline int device_list_add(const char *path,
+ 	 * it back. We need it to pick the disk with largest generation
+ 	 * (as above).
+ 	 */
+-	if (!fs_devices->opened)
++	if (!fs_devices->opened) {
+ 		device->generation = found_transid;
++		if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
++			fs_devices->seeding = 1;
++	}
+ 
+ 	*fs_devices_ret = fs_devices;
+ 
 -- 
-Chris Murphy
+2.0.0.153.g79dcccc
+

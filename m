@@ -1,110 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:48392 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751768AbbADDyJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Jan 2015 22:54:09 -0500
-Date: Sun, 4 Jan 2015 03:54:06 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: I need to P. are we almost there yet?
-Message-ID: <20150104035406.GC32182@carfax.org.uk>
-References: <CAAe=sHWT9G9PNYUh8yxG0dS7xCjy0Fhv03GATvkQHq64kM0oBA@mail.gmail.com>
- <54A7D3D1.10508@shiftmail.org>
- <pan$872b8$2e173aaa$59613c61$c4e30dfd@cox.net>
- <CAAe=sHXzrAoFr9wPUk49F5kV6knpWM7PtdxfNWBRXvpU0b+PgQ@mail.gmail.com>
- <pan$1d2cd$b8c74fee$d1b247b8$e5de75c@cox.net>
+Received: from cheri.shyou.org ([74.208.174.96]:45444 "EHLO cheri.shyou.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752039AbbADDyK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 3 Jan 2015 22:54:10 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by cheri.shyou.org (Postfix) with ESMTP id 2106C1303D1
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Jan 2015 22:48:26 -0500 (EST)
+Received: from cheri.shyou.org ([127.0.0.1])
+	by localhost (cheri.shyou.org [127.0.0.1]) (amavisd-new, port 10026)
+	with LMTP id It_NJTWp-PHq for <linux-btrfs@vger.kernel.org>;
+	Sat,  3 Jan 2015 22:48:17 -0500 (EST)
+Date: Sat, 3 Jan 2015 22:48:17 -0500 (EST)
+From: Danielle Church <dchurch@cheri.shyou.org>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: fix compress=zlib when stream end crosses page
+ boundary
+Message-ID: <alpine.LNX.2.00.1501032236270.30995@cheri.shyou.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="v9Ux+11Zm5mwPlX6"
-In-Reply-To: <pan$1d2cd$b8c74fee$d1b247b8$e5de75c@cox.net>
+Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In zlib_compress_pages(), if the last looped call to zlib_deflate ends 
+between 1 and 5 bytes short of a page boundary, the final call with 
+Z_FINISH is unable to write the final 6 bytes of the zlib stream and bails 
+out.  This causes compress_file_range() in inode.c to distrust the 
+compressor and flag ths inode nocompress, with the end result that the 
+rest of a potentially highly-compressible file is stored in expanded form.
 
---v9Ux+11Zm5mwPlX6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+You can demonstrate this with the following script, setting MOUNTPOINT to 
+an otherwise-unused btrfs mount with compress=zlib:
 
-On Sun, Jan 04, 2015 at 03:22:53AM +0000, Duncan wrote:
-> sys.syphus posted on Sat, 03 Jan 2015 12:55:27 -0600 as excerpted:
-> 
-> >> But btrfs raid56 mode should be complete with kernel 3.19 and
-> >> presumably btrfs-progs 3.19 tho I'd give it a kernel or two to mature
-> >> to be sure. N-way-mirroring (my particular hotly awaited feature) is
-> >> next up, but given the time raid56 took, I don't think anybody's
-> >> predicting when it'll be actually in-tree and ready for use.
-> >>
-> >>
-> > is that the feature where you say i want x copies of this file and y
-> > copies of this other file? e.g. raid at the file level, with the ability
-> > to adjust redundancy by file?
-> 
-> Per-file isn't available yet, tho at least per-subvolume is roadmapped, 
-> and now that we have the properties framework working via xattr for files 
-> as well, at least in theory, there is AFAIK no reason to limit it to per-
-> subvolume, as per-file should be about as easy once the code that 
-> currently limits it to per-filesystem is rewritten.
+MOUNTPOINT=/mnt
+sync; df $MOUNTPOINT
+{ head -c 6630 /usr/src/linux/Documentation/BUG-HUNTING;
+   cat /dev/zero; } | head -c 1310720 > $MOUNTPOINT/test
+sync; df $MOUNTPOINT
+rm -f $MOUNTPOINT/test
 
-   "roadmapped" --> "fond wish".
+The selection of 6630 bytes from BUG-HUNTING plus nulls provides for a 
+first 128KiB chunk that compresses to just over 4 KiB, and the other nine 
+chunks compress easily within a single page each, so this should compress 
+to 11 pages or 44 KiB; instead it uses significantly more, depending on 
+how many threads were able to compress chunks before nocompress was set.
 
-   Also, per-file is a bit bloody awkward to get working. Having sat
-and thought about it hard for a while, I'm not convinced that it would
-actually be worth the implementation effort.
+The following patch fixes this by moving the Z_FINISH calls to inside the 
+page read/write loop, allowing it to call as many times as needed.
 
-   Certainly, nobody should be thinking about having (say) a different
-RAID config for every file -- that way lies madness. I would expect,
-at most, "small integers" (<=3) of different profiles for data in any
-given filesystem, with the majority of data being of one particular
-profile. Anything trying to get more spohisticated than that is likely
-asking for intractable space-allocation problems. Think, "requiring
-regular full-balance operations".
+Signed-off-by: Danielle Church <dchurch@cheri.shyou.org>
+---
+  fs/btrfs/zlib.c | 26 +++++++++++++++++---------
+  1 file changed, 17 insertions(+), 9 deletions(-)
 
-   The behaviour of the chunk allocator in the presence of merely two
-allocation profiles (data/metadata) is awkward enough. Introducing
-more of them is something that will require a separate research
-programme to understand fully.
+diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+index fb22fd8..1dc0455 100644
+--- a/fs/btrfs/zlib.c
++++ b/fs/btrfs/zlib.c
+@@ -89,6 +89,7 @@ static int zlib_compress_pages(struct list_head *ws,
+  	struct page *in_page = NULL;
+  	struct page *out_page = NULL;
+  	unsigned long bytes_left;
++	int deflate_flush = Z_SYNC_FLUSH;
 
-   I will probably have an opportunity to discuss the basics of
-multiple allocations schemes with someone more qualified than I am on
-Tuesday, but I doubt that we'll reach any firm conclusion for many
-months at best (if ever). The formal maths involved gets quite nasty,
-quite quickly.
+  	*out_pages = 0;
+  	*total_out = 0;
+@@ -120,8 +121,12 @@ static int zlib_compress_pages(struct list_head *ws,
+  	workspace->strm.avail_out = PAGE_CACHE_SIZE;
+  	workspace->strm.avail_in = min(len, PAGE_CACHE_SIZE);
 
-   Hugo.
+-	while (workspace->strm.total_in < len) {
+-		ret = zlib_deflate(&workspace->strm, Z_SYNC_FLUSH);
++	while (deflate_flush != Z_FINISH || ret != Z_STREAM_END) {
++		ret = zlib_deflate(&workspace->strm, deflate_flush);
++		/* we're all done, including the stream end */
++		if (ret == Z_STREAM_END && deflate_flush == Z_FINISH)
++			break;
++
+  		if (ret != Z_OK) {
+  			printk(KERN_DEBUG "BTRFS: deflate in loop returned %d\n",
+  			       ret);
+@@ -159,9 +164,12 @@ static int zlib_compress_pages(struct list_head *ws,
+  			workspace->strm.avail_out = PAGE_CACHE_SIZE;
+  			workspace->strm.next_out = cpage_out;
+  		}
+-		/* we're all done */
+-		if (workspace->strm.total_in >= len)
+-			break;
++		/* we're all done with input data; keep looping until stream end is written */
++		if (workspace->strm.total_in >= len) {
++			deflate_flush = Z_FINISH;
++			workspace->strm.avail_in = 0;
++			continue;
++		}
 
-> But actually fully working per-filesystem raid56 is enough for a lot of 
-> people, and actually working per-filesystem N-way-mirroring is what I'm 
-> after, since I already setup multiple filesystems in ordered to keep my 
-> data eggs from all being in the same filesystem basket.
-> 
+  		/* we've read in a full page, get a new one */
+  		if (workspace->strm.avail_in == 0) {
+@@ -181,11 +189,11 @@ static int zlib_compress_pages(struct list_head *ws,
+  			workspace->strm.next_in = data_in;
+  		}
+  	}
+-	workspace->strm.avail_in = 0;
+-	ret = zlib_deflate(&workspace->strm, Z_FINISH);
+-	zlib_deflateEnd(&workspace->strm);
++	ret = zlib_deflateEnd(&workspace->strm);
 
+-	if (ret != Z_STREAM_END) {
++	if (ret != Z_OK) {
++		printk(KERN_DEBUG "BTRFS: deflateEnd returned %d\n",
++		       ret);
+  		ret = -EIO;
+  		goto out;
+  	}
 -- 
-Hugo Mills             | If it's December 1941 in Casablanca, what time is it
-hugo@... carfax.org.uk | in New York?
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |                               Rick Blaine, Casablanca
+2.2.1
 
---v9Ux+11Zm5mwPlX6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUqLleAAoJEFheFHXiqx3kSjUP+wdCDi6V1VySQEdk3sDVT6rJ
-WoOM/CZpJYMt8wSaIlXPSQNeRBmfRzueG7rMHwIl+5JE3swe3dcXZi9mNU4sOF0q
-NOl1NUaBY4d2HmvZTX65Msq6kd7HF0ifIkR+VhYoZPTd/qDU7LvfQvfbuN9VoTFi
-Bc2fjKKpw25ZaV0+h8t9gaxQM5U6A4WwLGFI/NqKE5CQvE9DPdxwRjMtj/Ut7Sqg
-IShviHhJL/q+srIYytfAx7AVS+9ZA/P7dHOOr6zF1ApVs7uV2qd/BjWQaAyCJ+/S
-lx3yoceeU44WaAavafg4uG16sxR7NS9icLBW5FSc+OcqGQ4WThbOi1iWmFidtfRW
-U+b4VsnV1UsCu7tdIljTW7FOS7DVMYOxUqPcpgNJv1DPua5gw3TrMrrjKQV4g6xi
-O/uLLb5+QTOjYwjbvZT/2kAvdNGcSengsNjXZT7sPtREVwtws+VIiHEqEXbcZdBF
-afdXFQuGD0cvASdPDReFefkuc7Vjci7E1idFbsD4HpaJ5UHe3WdVKs01DGL95jZ8
-IdCFlHLEAIv0h2IWR8x2Xvtj8gYY/ocoAxXTZbtJxmXKAICWtCBlv165qItxhVt2
-/u4SAqyO9hVbjMoR+bR9ecVoObKGs4tXM/bnPQqEqO7AGBluvX9Z52uTsoVO5v6T
-VjxFNHLAbvXHY0dVadV4
-=MbHX
------END PGP SIGNATURE-----
-
---v9Ux+11Zm5mwPlX6--

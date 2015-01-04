@@ -1,116 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cheri.shyou.org ([74.208.174.96]:45444 "EHLO cheri.shyou.org"
+Received: from cheri.shyou.org ([74.208.174.96]:45454 "EHLO cheri.shyou.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752039AbbADDyK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Jan 2015 22:54:10 -0500
+	id S1751768AbbADD7K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 3 Jan 2015 22:59:10 -0500
 Received: from localhost (localhost [127.0.0.1])
-	by cheri.shyou.org (Postfix) with ESMTP id 2106C1303D1
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Jan 2015 22:48:26 -0500 (EST)
+	by cheri.shyou.org (Postfix) with ESMTP id EB3191303E0
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Jan 2015 22:49:29 -0500 (EST)
 Received: from cheri.shyou.org ([127.0.0.1])
 	by localhost (cheri.shyou.org [127.0.0.1]) (amavisd-new, port 10026)
-	with LMTP id It_NJTWp-PHq for <linux-btrfs@vger.kernel.org>;
-	Sat,  3 Jan 2015 22:48:17 -0500 (EST)
-Date: Sat, 3 Jan 2015 22:48:17 -0500 (EST)
+	with LMTP id OEMHMh0KzmW4 for <linux-btrfs@vger.kernel.org>;
+	Sat,  3 Jan 2015 22:49:27 -0500 (EST)
+Date: Sat, 3 Jan 2015 22:49:27 -0500 (EST)
 From: Danielle Church <dchurch@cheri.shyou.org>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix compress=zlib when stream end crosses page
- boundary
-Message-ID: <alpine.LNX.2.00.1501032236270.30995@cheri.shyou.org>
+Subject: [PATCH 2/2] btrfs: do not flush zlib buffer after every input page
+In-Reply-To: <alpine.LNX.2.00.1501032236270.30995@cheri.shyou.org>
+Message-ID: <alpine.LNX.2.00.1501032237360.30995@cheri.shyou.org>
+References: <alpine.LNX.2.00.1501032236270.30995@cheri.shyou.org>
 MIME-Version: 1.0
 Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In zlib_compress_pages(), if the last looped call to zlib_deflate ends 
-between 1 and 5 bytes short of a page boundary, the final call with 
-Z_FINISH is unable to write the final 6 bytes of the zlib stream and bails 
-out.  This causes compress_file_range() in inode.c to distrust the 
-compressor and flag ths inode nocompress, with the end result that the 
-rest of a potentially highly-compressible file is stored in expanded form.
+Moving the Z_FINISH into the loop also means we don't have to force a 
+flush after every input page to guarantee that there won't be more than 4 
+KiB to write at the end.  This patch lets zlib decide when to flush 
+buffer, which offers a very moderate space savings (on my system, my 400MB 
+test logfile goes from an 11.9% compression ratio to 11.2%, which is 
+nothing to write home about) and might offer a similarly-slight 
+performance boost.
 
-You can demonstrate this with the following script, setting MOUNTPOINT to 
-an otherwise-unused btrfs mount with compress=zlib:
-
-MOUNTPOINT=/mnt
-sync; df $MOUNTPOINT
-{ head -c 6630 /usr/src/linux/Documentation/BUG-HUNTING;
-   cat /dev/zero; } | head -c 1310720 > $MOUNTPOINT/test
-sync; df $MOUNTPOINT
-rm -f $MOUNTPOINT/test
-
-The selection of 6630 bytes from BUG-HUNTING plus nulls provides for a 
-first 128KiB chunk that compresses to just over 4 KiB, and the other nine 
-chunks compress easily within a single page each, so this should compress 
-to 11 pages or 44 KiB; instead it uses significantly more, depending on 
-how many threads were able to compress chunks before nocompress was set.
-
-The following patch fixes this by moving the Z_FINISH calls to inside the 
-page read/write loop, allowing it to call as many times as needed.
+Since the end result is still a valid zlib stream, it is completely 
+backwards-compatible with the existing method.
 
 Signed-off-by: Danielle Church <dchurch@cheri.shyou.org>
 ---
-  fs/btrfs/zlib.c | 26 +++++++++++++++++---------
-  1 file changed, 17 insertions(+), 9 deletions(-)
+  fs/btrfs/zlib.c | 2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index fb22fd8..1dc0455 100644
+index 1dc0455..df7d957 100644
 --- a/fs/btrfs/zlib.c
 +++ b/fs/btrfs/zlib.c
-@@ -89,6 +89,7 @@ static int zlib_compress_pages(struct list_head *ws,
+@@ -89,7 +89,7 @@ static int zlib_compress_pages(struct list_head *ws,
   	struct page *in_page = NULL;
   	struct page *out_page = NULL;
   	unsigned long bytes_left;
-+	int deflate_flush = Z_SYNC_FLUSH;
+-	int deflate_flush = Z_SYNC_FLUSH;
++	int deflate_flush = Z_NO_FLUSH;
 
   	*out_pages = 0;
   	*total_out = 0;
-@@ -120,8 +121,12 @@ static int zlib_compress_pages(struct list_head *ws,
-  	workspace->strm.avail_out = PAGE_CACHE_SIZE;
-  	workspace->strm.avail_in = min(len, PAGE_CACHE_SIZE);
-
--	while (workspace->strm.total_in < len) {
--		ret = zlib_deflate(&workspace->strm, Z_SYNC_FLUSH);
-+	while (deflate_flush != Z_FINISH || ret != Z_STREAM_END) {
-+		ret = zlib_deflate(&workspace->strm, deflate_flush);
-+		/* we're all done, including the stream end */
-+		if (ret == Z_STREAM_END && deflate_flush == Z_FINISH)
-+			break;
-+
-  		if (ret != Z_OK) {
-  			printk(KERN_DEBUG "BTRFS: deflate in loop returned %d\n",
-  			       ret);
-@@ -159,9 +164,12 @@ static int zlib_compress_pages(struct list_head *ws,
-  			workspace->strm.avail_out = PAGE_CACHE_SIZE;
-  			workspace->strm.next_out = cpage_out;
-  		}
--		/* we're all done */
--		if (workspace->strm.total_in >= len)
--			break;
-+		/* we're all done with input data; keep looping until stream end is written */
-+		if (workspace->strm.total_in >= len) {
-+			deflate_flush = Z_FINISH;
-+			workspace->strm.avail_in = 0;
-+			continue;
-+		}
-
-  		/* we've read in a full page, get a new one */
-  		if (workspace->strm.avail_in == 0) {
-@@ -181,11 +189,11 @@ static int zlib_compress_pages(struct list_head *ws,
-  			workspace->strm.next_in = data_in;
-  		}
-  	}
--	workspace->strm.avail_in = 0;
--	ret = zlib_deflate(&workspace->strm, Z_FINISH);
--	zlib_deflateEnd(&workspace->strm);
-+	ret = zlib_deflateEnd(&workspace->strm);
-
--	if (ret != Z_STREAM_END) {
-+	if (ret != Z_OK) {
-+		printk(KERN_DEBUG "BTRFS: deflateEnd returned %d\n",
-+		       ret);
-  		ret = -EIO;
-  		goto out;
-  	}
 -- 
 2.2.1
-

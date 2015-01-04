@@ -1,53 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:59912 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750905AbbADIpm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jan 2015 03:45:42 -0500
-Received: by mail-yh0-f45.google.com with SMTP id f10so9761657yha.4
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 00:45:41 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <fab96edbc48bf3f26781ab76dda6f182@pl1.haspere.com>
-References: <fab96edbc48bf3f26781ab76dda6f182@pl1.haspere.com>
-Date: Sun, 4 Jan 2015 01:45:41 -0700
-Message-ID: <CAJCQCtRYW_S8CDZQH_95RGtsTBHN3gftd9WgsScA7_oCpFYgOg@mail.gmail.com>
-Subject: Re: ignoring bad blocks
-From: Chris Murphy <lists@colorremedies.com>
+Received: from magic.merlins.org ([209.81.13.136]:34172 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752599AbbADPSq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jan 2015 10:18:46 -0500
+Date: Sun, 4 Jan 2015 07:18:43 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Subject: Re: ignoring bad blocks
+Message-ID: <20150104151843.GX17254@merlins.org>
+References: <fab96edbc48bf3f26781ab76dda6f182@pl1.haspere.com>
+ <CAJCQCtRYW_S8CDZQH_95RGtsTBHN3gftd9WgsScA7_oCpFYgOg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtRYW_S8CDZQH_95RGtsTBHN3gftd9WgsScA7_oCpFYgOg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 3, 2015 at 10:40 PM, Dyweni - BTRFS <Y4BwxfPC4k5h@dyweni.com> wrote:
-> Hi All,
->
-> Can BTRFS ignore bad blocks as they are discovered?
->
-> I want to try BTRFS on some older drives, but they all have a few bad
-> blocks.
+On Sun, Jan 04, 2015 at 01:45:41AM -0700, Chris Murphy wrote:
+> On Sat, Jan 3, 2015 at 10:40 PM, Dyweni - BTRFS <Y4BwxfPC4k5h@dyweni.com> wrote:
+> > Hi All,
+> >
+> > Can BTRFS ignore bad blocks as they are discovered?
+> >
+> > I want to try BTRFS on some older drives, but they all have a few bad
+> > blocks.
+> 
+> Not currently, and I don't see it in the project ideas list. Right now
+> on Btrfs you will just get write errors, but I'm uncertain if it just
+> tries a new sector and continues on (indirectly not use the bad sector
+> but also not keeping track of it either)? The unreliable disk features
+> are still project ideas.
 
-Not currently, and I don't see it in the project ideas list. Right now
-on Btrfs you will just get write errors, but I'm uncertain if it just
-tries a new sector and continues on (indirectly not use the bad sector
-but also not keeping track of it either)? The unreliable disk features
-are still project ideas.
+badblocks are a thing of the past, as you hinted drives automatically
+remap badblocks so that the filesystem doesn't have to deal with them.
 
-If the drives no longer have reserve sectors, then technically they're
-toast. That's indicated by write failure in dmesg. Two work arounds:
-use ext4 with mkfs.ext4 -c which builds a bad blocks list and then
-won't use those sectors; mdadm 3.1+ has an option to build a bad
-blocks list also but I don't know if raid0 or linear/concat are
-supported:
-http://thread.gmane.org/gmane.linux.raid/34883
+If you have a questionable drive, you can indeed simply dd 0's over it
+before you use it with btrfs.
 
-If you haven't tried it, badblocks -wvs will (destructively) write
-over the entire block device, and the drive firmware should detect
-persistent write failures automatically and remap the LBA to a reserve
-sector, removing the bad sector from use. This is transparent to
-everything outside the drive. Once reserve sectors are depleted then
-the drive will report write failure.
-
-
-
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,88 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47700 "EHLO plane.gmane.org"
+Received: from pl1.haspere.com ([209.177.156.123]:54560 "EHLO pl1.haspere.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750905AbbADKjZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 4 Jan 2015 05:39:25 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y7iag-0005iY-Q4
-	for linux-btrfs@vger.kernel.org; Sun, 04 Jan 2015 11:39:22 +0100
-Received: from battery.modeemi.fi ([130.230.72.137])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 11:39:22 +0100
-Received: from flux-btrfs by battery.modeemi.fi with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 11:39:22 +0100
+	id S1752586AbbADOuF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Jan 2015 09:50:05 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sun, 04 Jan 2015 08:50:04 -0600
+From: Dyweni - BTRFS <Y4BwxfPC4k5h@dyweni.com>
 To: linux-btrfs@vger.kernel.org
-From: Erkki Seppala <flux-btrfs@inside.org>
-Subject: Re: possible bug in balance
-Date: 04 Jan 2015 12:39:09 +0200
-Message-ID: <m49h9w696eq.fsf@battery.modeemi.fi>
-References: <1377898232.24181420209516734.JavaMail.root@shiva> <1256750348.24201420209749292.JavaMail.root@shiva>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: BTRFS: Transaction aborted (error -5)
+Reply-To: Y4BwxfPC4k5h@dyweni.com
+Message-ID: <4ac53d9eeb92abf031b2b68c1b130215@pl1.haspere.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-luvar@plaintext.sk writes:
+Hi All,
 
-Hello,
+Just wondering of a few things:
 
-> luvar@blackdawn:~$ sudo time btrfs balance start -dconvert=raid1 -dusage=20 /home/luvar/programs/
+1. Has anyone seen a problem like this before (see below)?  This occurs 
+when mounting the file system.  It mounts, but goes straight to 
+read-only mode.
+2. I've scanned the device (/dev/sdd) using 'badblocks -s v', which 
+reports no bad blocks found.
+3. What can be done to recover from this?  (I'm planning to upgrade to 
+3.18 before trying recovery/repairs)
 
-> Am I doing something forbidden (I have not see any structure where
-> raid type is stored per file/subvolume item), or I just hit some
-> problem? What should I try?
+Thanks,
+Dyweni
 
-btrfs doesn't yet support per-subvolume RAID1 levels. I'm not sure how
-it should behave with your command line. It probably tries to
-rebalance the whole filesystem.
 
-> Than I wanted to convert to raid1 also some data (with balance
-> filter) and try if there is some speedup when reading files
-> (starting programs)...
 
-Though I can already tell that no, there won't be a speedup, as btrfs
-scheduler chooses the device to access by using the process id as a
-seed. Therefore a single thread is never able to use 100% RAID1 input
-capability. Perhaps in future there will be more sophisticated
-schedulers. You may try to use MD raid1 for extra speed, but you would
-lose the automatic error recovery of btrfs (but you would still notice
-if data gets corrupted).
+[32079.815291] BTRFS info (device sdd1): disk space caching is enabled
+[32082.419524] BTRFS: sdd1 checksum verify failed on 588447744 wanted 
+F90C810B found 6E0D3115 level 0
+[32114.418433] BTRFS: sdd1 checksum verify failed on 588447744 wanted 
+F90C810B found 6E0D3115 level 0
+[32125.951446] BTRFS: sdd1 checksum verify failed on 588447744 wanted 
+F90C810B found 6E0D3115 level 0
+[32125.959497] BTRFS: sdd1 checksum verify failed on 588447744 wanted 
+F90C810B found 24492BB3 level 0
+[32125.959505] ------------[ cut here ]------------
+[32125.959517] WARNING: CPU: 0 PID: 2601 at fs/btrfs/super.c:259 
+__btrfs_abort_transaction+0x43/0x110()
+[32125.959518] BTRFS: Transaction aborted (error -5)
+[32125.959519] Modules linked in: iscsi_trgt(O)
+[32125.959527] CPU: 0 PID: 2601 Comm: btrfs-cleaner Tainted: G           
+O  3.16.5-gentoo-20150103-0758 #1
+[32125.959528] Hardware name:    /MS-6570, BIOS 6.00 PG 11/07/2003
+[32125.959530]  ec009e68 ec009e68 ec009e28 c14d581f ec009e58 c10333d0 
+c15bcea0 ec009e84
+[32125.959533]  00000a29 c15c9417 00000103 c11c8723 c11c8723 fffffffb 
+f1c5d400 c14fd856
+[32125.959537]  ec009e70 c103341e 00000009 ec009e68 c15bcea0 ec009e84 
+ec009e9c c11c8723
+[32125.959541] Call Trace:
+[32125.959548]  [<c14d581f>] dump_stack+0x16/0x18
+[32125.959553]  [<c10333d0>] warn_slowpath_common+0x70/0x90
+[32125.959556]  [<c11c8723>] ? __btrfs_abort_transaction+0x43/0x110
+[32125.959559]  [<c11c8723>] ? __btrfs_abort_transaction+0x43/0x110
+[32125.959562]  [<c103341e>] warn_slowpath_fmt+0x2e/0x30
+[32125.959565]  [<c11c8723>] __btrfs_abort_transaction+0x43/0x110
+[32125.959571]  [<c11e2cc4>] btrfs_run_delayed_refs.part.74+0xd4/0x1d0
+[32125.959574]  [<c11e2dcf>] btrfs_run_delayed_refs+0xf/0x20
+[32125.959578]  [<c11f1854>] btrfs_should_end_transaction+0x34/0x50
+[32125.959581]  [<c11e1461>] btrfs_drop_snapshot+0x1d1/0x6a0
+[32125.959585]  [<c104fbfb>] ? default_wake_function+0xb/0x10
+[32125.959590]  [<c105497f>] ? __wake_up_common+0x3f/0x70
+[32125.959593]  [<c11f3222>] btrfs_clean_one_deleted_snapshot+0x62/0x90
+[32125.959595]  [<c11ead3e>] cleaner_kthread+0xce/0x100
+[32125.959597]  [<c11eac70>] ? btrfs_destroy_pinned_extent+0x120/0x120
+[32125.959603]  [<c1048cf5>] kthread+0x95/0xb0
+[32125.959606]  [<c14da0c0>] ret_from_kernel_thread+0x20/0x30
+[32125.959609]  [<c1048c60>] ? kthread_worker_fn+0xb0/0xb0
+[32125.959611] ---[ end trace 1e2cdbbae61fcdc1 ]---
+[32125.959614] BTRFS: error (device sdd1) in 
+btrfs_run_delayed_refs:2806: errno=-5 IO failure
+[32125.959616] BTRFS info (device sdd1): forced readonly
 
-> [ 8159.300427] attempt to access beyond end of device
-> [ 8159.300434] sdb2: rw=1041, want=480110048, limit=473956352
-> [ 8159.300440] btrfs: bdev /dev/sdb2 errs: wr 638628, rd 65867, flush 0, corrupt 0, gen 0
 
-I have noticed that 'attempt to access beyond end of device' typically
-indicates (with other file systems, I haven't seen that with btrfs)
-that the partition table and the filesystem size don't
-match. Typically such a situation could occur when one modifies
-partition table after creating the file system, though I'm sure there
-are other ways to get into such a situation. You may find the
-filesystem size with btrfs filesystem show and partition sizes with
-cat /proc/partitions (multiply by block size = 1024 bytes).
-
-Should the partition sizes and filesystem sizes match, I would be
-quite certain this would indeed be a btrfs bug. But,
-
-> root@blackdawn:/home/luvar# uname -a
-> Linux blackdawn 3.13.0-30-generic #55-Ubuntu SMP Fri Jul 4 21:40:53 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-> root@blackdawn:/home/luvar# btrfs v
-> Btrfs v0.20-rc1-189-g704a08c
-
-should this turn out to be a bug, I'm certain trying a more recent
-kernel version is a terrific idea :). 3.18.x or 3.17.y where y>2 (I
-think those were the two versions that were bad in 3.17
-series..). They won't have support for raid1'n a subvolume either,
-though, as far as I know.
-
-Remember backups :).
-
--- 
-  _____________________________________________________________________
-     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
-    / /_ / // // /\ \/ /                                            \  /
-   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
 

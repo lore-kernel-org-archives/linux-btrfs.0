@@ -1,117 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout0.freenet.de ([195.4.92.90]:35495 "EHLO mout0.freenet.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751017AbbACPr6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Jan 2015 10:47:58 -0500
-Received: from [195.4.92.142] (helo=mjail2.freenet.de)
-	by mout0.freenet.de with esmtpa (ID lutz.euler@freenet.de) (port 25) (Exim 4.82 #2)
-	id 1Y7QjA-0001Ph-IJ
-	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 16:34:56 +0100
-Received: from localhost ([::1]:52208 helo=mjail2.freenet.de)
-	by mjail2.freenet.de with esmtpa (ID lutz.euler@freenet.de) (Exim 4.82 #2)
-	id 1Y7QjA-0008Hk-D0
-	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 16:34:56 +0100
-Received: from mx0.freenet.de ([195.4.92.10]:38696)
-	by mjail2.freenet.de with esmtpa (ID lutz.euler@freenet.de) (Exim 4.82 #2)
-	id 1Y7QfE-0006id-NV
-	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 16:30:52 +0100
-Received: from p548f9fdd.dip0.t-ipconnect.de ([84.143.159.221]:48322 helo=lutz)
-	by mx0.freenet.de with esmtpsa (ID lutz.euler@freenet.de) (TLSv1:AES256-SHA:256) (port 587) (Exim 4.82 #2)
-	id 1Y7QfE-0005WW-K6
-	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 16:30:52 +0100
-Received: from lutz by lutz with local (Exim 4.74)
-	(envelope-from <lutz.euler@freenet.de>)
-	id 1Y7QfD-0001lu-Fx
-	for linux-btrfs@vger.kernel.org; Sat, 03 Jan 2015 16:30:51 +0100
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:36335 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752990AbbAEQ7t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 11:59:49 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Lutz Euler <lutz.euler@freenet.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2] Btrfs: really fix trim 0 bytes after a device delete
+Date: Mon, 05 Jan 2015 17:59:43 +0100
+Message-ID: <4883936.ZkQeZXYBc4@merkaba>
+In-Reply-To: <21672.2859.468940.450115@localhost.localdomain>
+References: <20644.2272.57892.435731@localhost.localdomain> <20644.2675.653732.24816@localhost.localdomain> <21672.2859.468940.450115@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <21672.2859.468940.450115@localhost.localdomain>
-Date: Sat, 3 Jan 2015 16:30:51 +0100
-From: lutz.euler@freenet.de (Lutz Euler)
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH V2] Btrfs: really fix trim 0 bytes after a device delete
-In-Reply-To: <20644.2675.653732.24816@localhost.localdomain>
-References: <20644.2272.57892.435731@localhost.localdomain>
-	<20644.2675.653732.24816@localhost.localdomain>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 2cac13e41bf5b99ffc426bd28dfd2248df1dfa67, "fix trim 0 bytes after
-a device delete", said:
-  A user reported a bug of btrfs's trim, that is we will trim 0 bytes
-  after a device delete.
-The commit didn't attack the root of the problem so did not fix the bug
-except for a special case.
+Happy new year!
 
-For block discard, btrfs_trim_fs directly compares the range passed in
-against the filesystem's objectids. The former is bounded by the sum of
-the sizes of the devices of the filesystem, the latter is a completely
-unrelated set of intervals of 64-bit integers. The bug reported occurred
-as the smallest objectid was larger than the sum of the device sizes.
-The above mentioned commit only fixed the case where the smallest
-objectid is nonzero and the largest objectid less than the sum of the
-device sizes, but it still trims too little if the largest objectid is
-larger than that, and nothing in the reported situation.
+Am Samstag, 3. Januar 2015, 16:30:51 schrieb Lutz Euler:
+> Commit 2cac13e41bf5b99ffc426bd28dfd2248df1dfa67, "fix trim 0 bytes after
+> a device delete", said:
+>   A user reported a bug of btrfs's trim, that is we will trim 0 bytes
+>   after a device delete.
+> The commit didn't attack the root of the problem so did not fix the bug
+> except for a special case.
+> 
+> For block discard, btrfs_trim_fs directly compares the range passed in
+> against the filesystem's objectids. The former is bounded by the sum of
+> the sizes of the devices of the filesystem, the latter is a completely
+> unrelated set of intervals of 64-bit integers. The bug reported occurred
+> as the smallest objectid was larger than the sum of the device sizes.
+> The above mentioned commit only fixed the case where the smallest
+> objectid is nonzero and the largest objectid less than the sum of the
+> device sizes, but it still trims too little if the largest objectid is
+> larger than that, and nothing in the reported situation.
+> 
+> The current mapping between the given range and the objectids is thus
+> clearly broken, so, to fix the bug and as a first step towards a
+> complete solution, simply ignore the range parameter's start and length
+> fields and always trim the whole filesystem. (While this makes it
+> impossible to trim a filesystem only partly, due to the broken mapping
+> this often didn't work anyway.)
+> 
+> V2:
+> - Rebased onto 3.9. (still applies to and works with 3.19-rc2)
+> - Take range->minlen into account.
+> 
+> Reported-by: Lutz Euler <lutz.euler@freenet.de>
+> Signed-off-by: Lutz Euler <lutz.euler@freenet.de>
 
-The current mapping between the given range and the objectids is thus
-clearly broken, so, to fix the bug and as a first step towards a
-complete solution, simply ignore the range parameter's start and length
-fields and always trim the whole filesystem. (While this makes it
-impossible to trim a filesystem only partly, due to the broken mapping
-this often didn't work anyway.)
+Is that the patch you send me for testing?
 
-V2:
-- Rebased onto 3.9. (still applies to and works with 3.19-rc2)
-- Take range->minlen into account.
+If so, feel free to add:
 
-Reported-by: Lutz Euler <lutz.euler@freenet.de>
-Signed-off-by: Lutz Euler <lutz.euler@freenet.de>
----
- fs/btrfs/extent-tree.c |   25 +++++++++++--------------
- 1 files changed, 11 insertions(+), 14 deletions(-)
+Reported-and-tested-by: Martin Steigerwald <martin@lichtvoll.de>
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cfb3cf7..81006c1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8824,26 +8824,23 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
- 	u64 start;
- 	u64 end;
- 	u64 trimmed = 0;
--	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	int ret = 0;
- 
- 	/*
--	 * try to trim all FS space, our block group may start from non-zero.
-+	 * The range passed in is a subinterval of the interval from 0
-+	 * to the sum of the sizes of the devices of the filesystem.
-+	 * The objectid's used in the filesystem can span any set of
-+	 * subintervals of the interval from 0 to (u64)-1. As there is
-+	 * neither a simple nor an agreed upon mapping between these
-+	 * two ranges we ignore the range parameter's start and len
-+	 * fields and always trim the whole filesystem (that is, only
-+	 * the free space in allocated chunks).
- 	 */
--	if (range->len == total_bytes)
--		cache = btrfs_lookup_first_block_group(fs_info, range->start);
--	else
--		cache = btrfs_lookup_block_group(fs_info, range->start);
-+	cache = btrfs_lookup_first_block_group(fs_info, 0);
- 
- 	while (cache) {
--		if (cache->key.objectid >= (range->start + range->len)) {
--			btrfs_put_block_group(cache);
--			break;
--		}
--
--		start = max(range->start, cache->key.objectid);
--		end = min(range->start + range->len,
--				cache->key.objectid + cache->key.offset);
-+		start = cache->key.objectid;
-+		end = cache->key.objectid + cache->key.offset;
- 
- 		if (end - start >= range->minlen) {
- 			if (!block_group_cache_done(cache)) {
+If not I can retest with this one.
+
+Thanks,
+Martin
+
+> ---
+>  fs/btrfs/extent-tree.c |   25 +++++++++++--------------
+>  1 files changed, 11 insertions(+), 14 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index cfb3cf7..81006c1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8824,26 +8824,23 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+>  	u64 start;
+>  	u64 end;
+>  	u64 trimmed = 0;
+> -	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+>  	int ret = 0;
+>  
+>  	/*
+> -	 * try to trim all FS space, our block group may start from non-zero.
+> +	 * The range passed in is a subinterval of the interval from 0
+> +	 * to the sum of the sizes of the devices of the filesystem.
+> +	 * The objectid's used in the filesystem can span any set of
+> +	 * subintervals of the interval from 0 to (u64)-1. As there is
+> +	 * neither a simple nor an agreed upon mapping between these
+> +	 * two ranges we ignore the range parameter's start and len
+> +	 * fields and always trim the whole filesystem (that is, only
+> +	 * the free space in allocated chunks).
+>  	 */
+> -	if (range->len == total_bytes)
+> -		cache = btrfs_lookup_first_block_group(fs_info, range->start);
+> -	else
+> -		cache = btrfs_lookup_block_group(fs_info, range->start);
+> +	cache = btrfs_lookup_first_block_group(fs_info, 0);
+>  
+>  	while (cache) {
+> -		if (cache->key.objectid >= (range->start + range->len)) {
+> -			btrfs_put_block_group(cache);
+> -			break;
+> -		}
+> -
+> -		start = max(range->start, cache->key.objectid);
+> -		end = min(range->start + range->len,
+> -				cache->key.objectid + cache->key.offset);
+> +		start = cache->key.objectid;
+> +		end = cache->key.objectid + cache->key.offset;
+>  
+>  		if (end - start >= range->minlen) {
+>  			if (!block_group_cache_done(cache)) {
+> 
+
 -- 
-1.7.4.1
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

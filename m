@@ -1,106 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f172.google.com ([209.85.223.172]:58923 "EHLO
-	mail-ie0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753376AbbAEMIe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 07:08:34 -0500
-Received: by mail-ie0-f172.google.com with SMTP id tr6so19441565ieb.31
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jan 2015 04:08:33 -0800 (PST)
-Message-ID: <54AA7EB8.2000100@gmail.com>
-Date: Mon, 05 Jan 2015 07:08:24 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Lennart Poettering <lennart@poettering.net>,
-        Harald Hoyer <harald@redhat.com>
-CC: linux-btrfs@vger.kernel.org, Kay Sievers <kay@vrfy.org>
-Subject: Re: Extend BTRFS_IOC_DEVICES_READY for degraded RAID
-References: <54AA5D86.1000503@redhat.com> <20150105113147.GA18350@gardel-login>
-In-Reply-To: <20150105113147.GA18350@gardel-login>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080402030408070501080802"
+Received: from mail-pd0-f174.google.com ([209.85.192.174]:57892 "EHLO
+	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753152AbbAEQBm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 11:01:42 -0500
+From: Naohiro Aota <naota@elisp.net>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Naohiro Aota <naota@elisp.net>
+Subject: [PATCH] btrfs: clear bio reference after submit_one_bio()
+Date: Tue,  6 Jan 2015 01:01:03 +0900
+Message-Id: <1420473663-9315-1-git-send-email-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+After submit_one_bio(), `bio' can go away. However submit_extent_page()
+leave `bio' referable if submit_one_bio() failed (e.g. -ENOMEM on OOM).
+It will cause invalid paging request when submit_extent_page() is called
+next time.
 
---------------ms080402030408070501080802
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+I reproduced ENOMEM case with the following script (need
+CONFIG_FAIL_PAGE_ALLOC, and CONFIG_FAULT_INJECTION_DEBUG_FS).
 
-On 2015-01-05 06:31, Lennart Poettering wrote:
-> On Mon, 05.01.15 10:46, Harald Hoyer (harald@redhat.com) wrote:
->
->> We have BTRFS_IOC_DEVICES_READY to report, if all devices are present,=
- so that
->> a udev rule can report ID_BTRFS_READY and SYSTEMD_READY.
->>
->> I think we need a third state here for a degraded RAID, which can be m=
-ounted,
->> but should only after a certain timeout/kernel command line params.
->>
->> We also have to rethink how to handle the udev DB update for the chang=
-e of the
->> state. incomplete -> degraded -> complete
->
-> I am not convinced that automatically booting degraded arrays would be
-> a good idea. Instead, requiring one manual step before booting a
-> degraded array sounds OK to me.
->
-> Lennart
->
-I can think of half a dozen use cases where it is better to=20
-automatically mount degraded and send a notification that this happened=20
-than to refuse to mount without manual intervention.
+  #!/bin/bash
 
+  dmesgout=dmesg.txt
+  start=100000
+  end=300000
+  step=1000
 
---------------ms080402030408070501080802
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+  # btrfs options
+  device=/dev/vdb1
+  directory=/mnt/btrfs
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
-BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
-MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
-BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
-Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
-a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
-WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
-Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
-HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
-Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
-AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
-b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
-Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
-Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
-OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
-cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
-jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
-Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
-O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
-70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
-OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
-pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
-WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
-ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
-Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
-MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTA1MTIwODI0
-WjAjBgkqhkiG9w0BCQQxFgQUCetJ/cZfmrxNC0L1he6OaHOQjRMwbAYJKoZIhvcNAQkPMV8w
-XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
-gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
-MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
-Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
-ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
-BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
-AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEA0wyXwFfPJKVb4JiClRavUp6TpsPX
-qwnEFz36j3hnZ3wo5gpmvkbwJvz1/RSofy1zGr/d1OtlNHb6iFU1VX81NqLX/3HKO69xCCus
-HqtsJdw1TsdtNSg/rSNAWfyG3j1ZY/C1qlJ+jnt+orh+vbWlUbaUqvYS3uiJk9ihKJ65Zb0W
-JtmMR9RbX39Va2KAanjCBDfvmtiJZjrsvTW+gQqR55+/gH3s5pZ1gAeLk1V+dEHLXs1iqBXm
-vEqjtTnkMEIceTR0/U9sTyKW/phqhwS/Zq0WOtFY2g5rfFgIUolj60A2B4uOqM0dhmL7xXcg
-6txQIaECozSFH4HeiUKbfeBWRAAAAAAAAA==
---------------ms080402030408070501080802--
+  # fault-injection options
+  percent=100
+  times=3
+
+  mkdir -p $directory || exit 1
+  mount -o compress $device $directory || exit 1
+
+  rm -f $directory/file || exit 1
+  dd if=/dev/zero of=$directory/file bs=1M count=512 || exit 1
+
+  for interval in `seq $start $step $end`; do
+          dmesg -C
+          echo 1 > /proc/sys/vm/drop_caches
+          sync
+          export FAILCMD_TYPE=fail_page_alloc
+          ./failcmd.sh -p $percent -t $times -i $interval \
+                  --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
+                  -- \
+                  cat $directory/file > /dev/null
+          dmesg > ${dmesgout}
+          if grep -q BUG: ${dmesgout}; then
+                  cat ${dmesgout}
+                  exit 1
+          fi
+  done
+
+  umount $directory
+  exit 0
+
+Signed-off-by: Naohiro Aota <naota@elisp.net>
+---
+ fs/btrfs/extent_io.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ebabd2..4421161 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2816,8 +2816,10 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+ 			ret = submit_one_bio(rw, bio, mirror_num,
+ 					     prev_bio_flags);
+-			if (ret < 0)
++			if (ret < 0) {
++				*bio_ret = NULL;
+ 				return ret;
++			}
+ 			bio = NULL;
+ 		} else {
+ 			return 0;
+-- 
+2.2.1
+

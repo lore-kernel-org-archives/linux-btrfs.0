@@ -1,148 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22780 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751125AbbAEGT4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 01:19:56 -0500
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <takeuchi_satoru@jp.fujitsu.com>, <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 3/3] Btrfs: qgroup, Account data space in more proper timings.
-Date: Mon, 5 Jan 2015 14:16:44 +0800
-Message-ID: <1420438604-4846-4-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <549CF56A.2050400@jp.fujitsu.com>
- <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Received: from mail-yk0-f179.google.com ([209.85.160.179]:43327 "EHLO
+	mail-yk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751087AbbAEHly (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 02:41:54 -0500
+Received: by mail-yk0-f179.google.com with SMTP id 19so10138881ykq.38
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 23:41:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <54AA10B3.3010900@ubuntu.com>
+References: <CANcfdL39NWs=go4LVY8vuqp7bqkKuoop2arzpJoEX7TY4wSGYw@mail.gmail.com>
+	<CAJCQCtQ-DkJh5tg1gWuv6EW=enm66jx16jrtXhXiPvhauRnJ9w@mail.gmail.com>
+	<20141223211605.GC436@hungrycats.org>
+	<CAJCQCtTK2OinQZakArtX4BD=JAz6UJr=dhc2xUbcqJJL1v6Kkw@mail.gmail.com>
+	<549F7539.4050801@ubuntu.com>
+	<CAJCQCtQOxfoeE9xRLpqohHK8WXW63x1gsOgJQEc8TtbRp67RoA@mail.gmail.com>
+	<54A30F19.5050801@ubuntu.com>
+	<CAJCQCtSyu7dvp9SoF4u6QV9hF3jAQLtpYv8-6MOHSoP_NQyQ7A@mail.gmail.com>
+	<54A36A7C.1000005@ubuntu.com>
+	<CAJCQCtR5qZmD2RgfQMSUe9BLtUtimTyf-itBM1Y+9hiRftfwgg@mail.gmail.com>
+	<54AA10B3.3010900@ubuntu.com>
+Date: Mon, 5 Jan 2015 00:41:53 -0700
+Message-ID: <CAJCQCtRdnu_n3u2Tr5Ofo=+UPTyEFBYeWmpat6ioD+vtpFAYCw@mail.gmail.com>
+Subject: Re: Uncorrectable errors on RAID-1?
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currenly, in data writing, ->reserved is accounted in
-fill_delalloc(), but ->may_use is released in clear_bit_hook()
-which is called by btrfs_finish_ordered_io(). That's too late,
-that said, between fill_delalloc() and btrfs_finish_ordered_io(),
-the data is doublely accounted by qgroup. It will cause some
-unexpected -EDQUOT.
+On Sun, Jan 4, 2015 at 9:18 PM, Phillip Susi <psusi@ubuntu.com> wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA512
+>
+> On 01/03/2015 12:31 AM, Chris Murphy wrote:
 
-Example:
-	# btrfs quota enable /root/btrfs-auto-test/
-	# btrfs subvolume create /root/btrfs-auto-test//sub
-	Create subvolume '/root/btrfs-auto-test/sub'
-	# btrfs qgroup limit 1G /root/btrfs-auto-test//sub
-	dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
-	dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
-	681353+0 records in
-	681352+0 records out
-	697704448 bytes (698 MB) copied, 8.15563 s, 85.5 MB/s
-It's (698 MB) when we got an -EDQUOT, but we limit it by 1G.
+>> This is architecture astronaut territory.
+>>
+>> The system only has a terrible response for two reasons: 1. The
+>> user spec'd the wrong hardware for the use case; 2. The distro
+>> isn't automatically leveraging existing ways to mitigate that user
+>> mistake by changing either SCT ERC on the drives, or the SCSI
+>> command timer for each block device.
+>
+> No, it has terrible response because the kernel either waits an
+> unreasonable time or fails the drive and kicks it out of the array
+> instead of trying to repair it.
 
-This patch move the btrfs_qgroup_reserve/free() for data from
-btrfs_delalloc_reserve/release_metadata() to btrfs_check_data_free_space()
-and btrfs_free_reserved_data_space(). Then the accounter in qgroup
-will be updated at the same time with the accounter in space_info updated.
-In this way, the unexpected -EDQUOT will be killed.
+It's a default that works for more use cases than not. The kernel
+isn't dynamically self-configuring, and it isn't even the kernel's job
+to take the first step which is to enable and correctly set SCT ERC on
+each drive.
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 16 +++++++++-------
- fs/btrfs/file.c        |  9 ---------
- 2 files changed, 9 insertions(+), 16 deletions(-)
+I think assuming a large pile of causes for a drive freezing on a
+command be treated as read errors (after the link reset) is a bad
+idea. But since it's your idea, and I'm not a kernel developer, you
+should propose it on linux-raid@ instead of arguing with me.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d1a7ce0..67c2e28 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3774,12 +3774,16 @@ commit_trans:
- 					      data_sinfo->flags, bytes, 1);
- 		return -ENOSPC;
- 	}
-+	ret = btrfs_qgroup_reserve(root, bytes);
-+	if (ret)
-+		goto out;
- 	data_sinfo->bytes_may_use += bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 1);
-+out:
- 	spin_unlock(&data_sinfo->lock);
- 
--	return 0;
-+	return ret;
- }
- 
- /*
-@@ -3796,6 +3800,7 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
- 	data_sinfo = root->fs_info->data_sinfo;
- 	spin_lock(&data_sinfo->lock);
- 	WARN_ON(data_sinfo->bytes_may_use < bytes);
-+	btrfs_qgroup_free(root, bytes);
- 	data_sinfo->bytes_may_use -= bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 0);
-@@ -5191,8 +5196,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
- 	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, num_bytes +
--					   nr_extents * root->nodesize);
-+		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
- 		if (ret)
- 			goto out_fail;
- 	}
-@@ -5200,8 +5204,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (unlikely(ret)) {
- 		if (root->fs_info->quota_enabled)
--			btrfs_qgroup_free(root, num_bytes +
--						nr_extents * root->nodesize);
-+			btrfs_qgroup_free(root, nr_extents * root->nodesize);
- 		goto out_fail;
- 	}
- 
-@@ -5319,8 +5322,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 	trace_btrfs_space_reservation(root->fs_info, "delalloc",
- 				      btrfs_ino(inode), to_free, 0);
- 	if (root->fs_info->quota_enabled) {
--		btrfs_qgroup_free(root, num_bytes +
--					dropped * root->nodesize);
-+		btrfs_qgroup_free(root, dropped * root->nodesize);
- 	}
- 
- 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e409025..0ab1333 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2527,7 +2527,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- {
- 	struct inode *inode = file_inode(file);
- 	struct extent_state *cached_state = NULL;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 cur_offset;
- 	u64 last_byte;
- 	u64 alloc_start;
-@@ -2555,11 +2554,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
- 	if (ret)
- 		return ret;
--	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, alloc_end - alloc_start);
--		if (ret)
--			goto out_reserve_fail;
--	}
- 
- 	mutex_lock(&inode->i_mutex);
- 	ret = inode_newsize_ok(inode, alloc_end);
-@@ -2677,9 +2671,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 			     &cached_state, GFP_NOFS);
- out:
- 	mutex_unlock(&inode->i_mutex);
--	if (root->fs_info->quota_enabled)
--		btrfs_qgroup_free(root, alloc_end - alloc_start);
--out_reserve_fail:
- 	/* Let go of our reservation. */
- 	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
- 	return ret;
+
+> Blaming the user for not buying
+> better hardware is not an appropriate response for the kernel failing
+> so badly to handle commonly available hardware that doesn't behave in
+> the most ideal way.
+
+"Hi, I'm a good and knowledgeable sysadmin. I buy hardware that's
+explicitly stated in the company's marketing data sheet as being
+incompatible with my use case. This is someone else's fault."
+
+Sounds like buck passing.
+
+>> Now, even though that solution *might* mean long recoveries on
+>> occasion, it's still better than link reset behavior which is what
+>> we have today because it causes the underlying problem to be fixed
+>> by md/dm/Btrfs once the read error is reported. But no distro has
+>> implemented this $500 man hour solution. Instead you're suggesting
+>> a $500,000 fix that will take hundreds of man hours and end user
+>> testing to find all the edge cases. It's like, seriously, WTF?
+>
+> Seriously?  Treating a timeout the same way you treat an unrecoverable
+> media error is no herculean task.
+
+So you keep saying.
+
+But best practices is already known and tested, and can be done with a
+startup script. Yet no distro does this for the user, even though its
+much much simpler than what you're proposing, and actually fixes both
+sources of the problem.
+
+That it is in your opinion an imperfect fix is not relevant. It's
+still better behavior than what we have today, and yet still no distro
+does this, thereby tacitly preferring status quo. And if the current
+behavior is simply good enough no one has taken action to implement
+automatically the known best practice work around of the day, why
+should kernel developers gives two shits about this idea? Sounds like
+more buck passing.
+
+
+
+>> http://www.seagate.com/files/www-content/support-content/documentation/product-manuals/en-us/Enterprise/Savvio/Savvio%2015K.3/100629381e.pdf
+>>
+>>  That's a high end SAS drive. It's default is to retry up to 20
+>> times, which takes ~1.4 seconds, per sector. But also note how it
+>> says
+>
+> 20 retries on a 15,000 rpm drive only takes 80 milliseconds, not 1.4
+> seconds.  15,000 rpm / 60 seconds per minute = 250 rotations/retries
+> per second.
+
+The PDF contains a table saying 20 retries takes 1.4 seconds. I didn't
+compute this number myself, it's in the bloody manufacturer's own
+documentation. Obviously the ECC is doing things that take more than
+one revolution of the spindle.
+
+>
+>> Maybe you'd prefer seeing these big, cheap, "green" drives have
+>> shorter ERC times, with a commensurate reality check with their
+>> unrecoverable error rate, which right now is already two orders
+>> magnitude higher than enterprise SAS drives. So what if this means
+>> that rate is 3 or 4 orders magnitude higher?
+>
+> 20 retries vs. 200 retries does not reduce the URE rate by orders of
+> magnitude; more like 1% *maybe*.  200 vs 2000 makes no measurable
+> difference at all.
+
+I see, well I guess you prefer believing in fraud and conspiracy
+theories, by multiple companies, to screw users over, while they admit
+the incompatibility of the intended use case on their data sheets.
+
+
 -- 
-1.8.4.2
-
+Chris Murphy

@@ -1,99 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24557 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:20455 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751511AbbAEKKH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 05:10:07 -0500
+	with ESMTP id S1753153AbbAELWE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 06:22:04 -0500
+Message-ID: <54AA732B.7010301@cn.fujitsu.com>
+Date: Mon, 5 Jan 2015 19:19:07 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <zblaxell@furryterror.org>, <rwhite@pobox.com>, <clm@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH v2 3/3] Btrfs: adapt df command to RAID5/6.
-Date: Mon, 5 Jan 2015 18:07:05 +0800
-Message-ID: <1420452425-7874-3-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1420452425-7874-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <54AA5FB0.5020102@cn.fujitsu.com>
- <1420452425-7874-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: <linux-btrfs@vger.kernel.org>
+CC: Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] btrfs: get the accurate value of used_bytes in btrfs_get_block_group_info().
+References: <1414413499-28826-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1414413499-28826-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we use btrfs with raid5/6, the output of df is unexpected as below.
-Example:
-        # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid5
-        # mount /dev/vdf1 /mnt
-        # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
-        # df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vdf1       4.2G  1.3G  2.9G  32% /mnt
-[root@atest-guest linux_btrfs]# btrfs fi show /mnt
-Label: none  uuid: f7fac7f2-3898-482e-9cf2-fbcd7fdd7084
-	Total devices 2 FS bytes used 1001.53MiB
-	devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
-	devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
-The @size should be 2G rather than 4.2G.
+Ping.....
 
-This patch makes the btrfs_calc_avail_data_space() consider raid5/6,
-then we can get the correct result of it.
+IOCTL of BTRFS_IOC_SPACE_INFO currently does not report
+the data used but not synced to user.  Then btrfs fi df will
+give user a wrong numbers before sync. This patch solve
+this problem.
 
-Example:
-        # mkfs.btrfs -f /dev/vdf1 /dev/vdf2 -d raid5
-        # mount /dev/vdf1 /mnt
-        # dd if=/dev/zero of=/mnt/zero bs=1M count=1000
-        # df -h /mnt
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vdf1       2.0G  1.3G  713M  66% /mnt
-[root@atest-guest linux_btrfs]# btrfs fi show /mnt
-Label: none  uuid: ea3a6e6e-fbe1-47aa-b4b5-bc37b98565d9
-	Total devices 2 FS bytes used 1001.53MiB
-	devid    1 size 2.00GiB used 1.85GiB path /dev/vdf1
-	devid    2 size 4.00GiB used 1.83GiB path /dev/vdf2
-
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
- fs/btrfs/super.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1f0f080..4a190de 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -52,6 +52,7 @@
- #include "props.h"
- #include "xattr.h"
- #include "volumes.h"
-+#include "raid56.h"
- #include "export.h"
- #include "compression.h"
- #include "rcu-string.h"
-@@ -1688,6 +1689,14 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 		min_stripes = 4;
- 		num_stripes = 4;
- 		data_stripes = 2;
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
-+		min_stripes = 2;
-+		num_stripes = nr_devices;
-+		data_stripes = num_stripes - nr_parity_stripes(type);
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
-+		min_stripes = 3;
-+		num_stripes = nr_devices;
-+		data_stripes = num_stripes - nr_parity_stripes(type);
- 	}
- 
- 	if (type & BTRFS_BLOCK_GROUP_DUP)
-@@ -1777,8 +1786,11 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	while (nr_devices >= min_stripes) {
- 		if (num_stripes > nr_devices) {
- 			num_stripes = nr_devices;
--			if (type & BTRFS_BLOCK_GROUP_RAID0)
--				data_stripes = num_stripes;
-+			/* Only RAID0, RAID5 and RAID6 will get here.
-+			 * And we can use the following calculation
-+			 * for all the three cases.
-+			 **/
-+			data_stripes = num_stripes - nr_parity_stripes(type);
- 		}
- 
- 		if (devices_info[i].max_avail >= min_stripe_size) {
--- 
-1.8.4.2
+On 10/27/2014 08:38 PM, Dongsheng Yang wrote:
+> Reproducer:
+> 	# mkfs.btrfs -f -b 20G /dev/sdb
+> 	# mount /dev/sdb /mnt/test
+> 	# fallocate  -l 17G /mnt/test/largefile
+> 	# btrfs fi df /mnt/test
+> 	Data, single: total=17.49GiB, used=6.00GiB <- only 6G, but actually it should be 17G.
+> 	System, DUP: total=8.00MiB, used=16.00KiB
+> 	System, single: total=4.00MiB, used=0.00B
+> 	Metadata, DUP: total=1.00GiB, used=112.00KiB
+> 	Metadata, single: total=8.00MiB, used=0.00B
+> 	GlobalReserve, single: total=16.00MiB, used=0.00B
+> 	# sync
+> 	# btrfs fi df /mnt/test
+> 	Data, single: total=17.49GiB, used=17.00GiB <- After sync, it is expected.
+> 	System, DUP: total=8.00MiB, used=16.00KiB
+> 	System, single: total=4.00MiB, used=0.00B
+> 	Metadata, DUP: total=1.00GiB, used=112.00KiB
+> 	Metadata, single: total=8.00MiB, used=0.00B
+> 	GlobalReserve, single: total=16.00MiB, used=0.00B
+>
+> The value of 6.00GiB is actually calculated in btrfs_get_block_group_info()
+> by adding the @block_group->item->used for each group together. In this way,
+> it did not consider the bytes in cache.
+>
+> This patch adds the value of @pinned, @reserved and @bytes_super in
+> struct btrfs_block_group_cache to make sure we can get the accurate @used_bytes.
+>
+> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+> ---
+>   fs/btrfs/ioctl.c | 4 ++++
+>   1 file changed, 4 insertions(+)
+>
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 33c80f5..bc2aaeb 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3892,6 +3892,10 @@ void btrfs_get_block_group_info(struct list_head *groups_list,
+>   		space->total_bytes += block_group->key.offset;
+>   		space->used_bytes +=
+>   			btrfs_block_group_used(&block_group->item);
+> +		/* Add bytes-info in cache */
+> +		space->used_bytes += block_group->pinned;
+> +		space->used_bytes += block_group->reserved;
+> +		space->used_bytes += block_group->bytes_super;
+>   	}
+>   }
+>   
 

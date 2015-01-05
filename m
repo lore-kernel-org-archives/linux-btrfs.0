@@ -1,48 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f49.google.com ([209.85.213.49]:59722 "EHLO
-	mail-yh0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752854AbbADUqb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jan 2015 15:46:31 -0500
-Received: by mail-yh0-f49.google.com with SMTP id f10so10029549yha.22
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jan 2015 12:46:30 -0800 (PST)
+Received: from gardel.0pointer.net ([85.214.157.71]:46287 "EHLO
+	gardel.0pointer.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751222AbbAERPP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 12:15:15 -0500
+Received: from gardel-login.0pointer.net (gardel.0pointer.net [IPv6:2a01:238:43ed:c300:10c3:bcf3:3266:da74])
+	by gardel.0pointer.net (Postfix) with ESMTP id C2EC3E80F5C
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Jan 2015 18:15:13 +0100 (CET)
+Date: Mon, 5 Jan 2015 18:15:12 +0100
+From: Lennart Poettering <lennart@poettering.net>
+To: linux-btrfs@vger.kernel.org
+Subject: BTRFS_IOC_TREE_SEARCH ioctl
+Message-ID: <20150105171512.GA19126@gardel-login>
 MIME-Version: 1.0
-In-Reply-To: <20150104151843.GX17254@merlins.org>
-References: <fab96edbc48bf3f26781ab76dda6f182@pl1.haspere.com>
-	<CAJCQCtRYW_S8CDZQH_95RGtsTBHN3gftd9WgsScA7_oCpFYgOg@mail.gmail.com>
-	<20150104151843.GX17254@merlins.org>
-Date: Sun, 4 Jan 2015 13:46:30 -0700
-Message-ID: <CAJCQCtS14LePOXYdqLysGyYTJhVW1oofqym-32fYKFKdM6Yytg@mail.gmail.com>
-Subject: Re: ignoring bad blocks
-From: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 4, 2015 at 8:18 AM, Marc MERLIN <marc@merlins.org> wrote:
+Heya,
 
-> badblocks are a thing of the past, as you hinted drives automatically
-> remap badblocks so that the filesystem doesn't have to deal with them.
->
-> If you have a questionable drive, you can indeed simply dd 0's over it
-> before you use it with btrfs.
+I recently added some btrfs magic to systemd's machinectl/nspawn
+tool. More specifically it can now show the disk usage of a container
+that is stored in a btrfs subvolume. For that I made use of the btrfs
+quota logic. To read the current disk usage of a subvolume I took
+inspiration from btrfs-progs, most specifically the
+BTRFS_IOC_TREE_SEARCH ioctl(). Unfortunately, documentation for the
+ioctl seems to to be lacking, but there are some things about it I
+fail to grok:
 
-I suggest badblocks because the default works on both 512 or 4096 byte
-physical sector drives.
+What precisely are the semantics of the ioctl, regarding the search
+key min/max values (the fields of "struct btrfs_ioctl_search_key")? I
+kinda assumed that setting them would result in in only objects to be
+returned that are within the min/max ranges. However, that appears not
+to be the case. At least the min_offset/max_offset setting appears to
+be ignored?
 
-On AF 512e drives, dd default block size of 512 bytes will fail if a
-bad sector is encountered. What happens (to at least one model of
-drive since I've had this happen to me) is the 512 byte write to a bad
-4096 byte sector gets interpreted by the drive as a Read Write Modify.
-So do use dd you need to also use bs= setting it to a multiple of
-4096. Of course most people using dd for zeroing set bs= to a decently
-high value because it makes the process go much faster than the
-default block size of 512 bytes.
+The code I hacked up is this one:
 
-I just used strace on badblocks and by default issues 64KiB writes
-(the block size is 1024 bytes with a count of 64, which looks like it
-gets aggregated).
+http://cgit.freedesktop.org/systemd/systemd/tree/src/shared/btrfs-util.c#n427
 
--- 
-Chris Murphy
+I try to read the BTRFS_QGROUP_STATUS_KEY and BTRFS_QGROUP_LIMIT_KEY
+objects for the subvolume I care about. Hence I initialize .min_type
+and .max_type to the two types (in the right order), and then
+.min_offset and .max_offset to subvolume id. However, the search ioctl
+will still give me entries back with offsets != the subvolume id...
+
+Is this intended behaviour of the search ioctl? If so, what's the
+rationale?
+
+My code currently invokes the search ioctl in a loop to work around
+the fact that .min_offset/.max_offset don't work as I wish they
+did... I wish I could get rid of this loop and filtering out of the
+entries I get back that aren't in th range I specified...
+
+Lennart

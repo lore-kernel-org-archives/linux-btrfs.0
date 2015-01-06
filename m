@@ -1,89 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:52663 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:37004 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751338AbbAFUTF (ORCPT
+	by vger.kernel.org with ESMTP id S1750995AbbAFUUt (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 6 Jan 2015 15:19:05 -0500
+	Tue, 6 Jan 2015 15:20:49 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: lookup for block group only if needed when freeing a tree block
-Date: Tue,  6 Jan 2015 20:18:45 +0000
-Message-Id: <1420575525-390-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix directory inconsistency after fsync log replay
+Date: Tue,  6 Jan 2015 20:20:41 +0000
+Message-Id: <1420575641-9762-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Very often our extent buffer's header generation doesn't match the current
-transaction's id or it is also referenced by other trees (snapshots), so
-we don't need the corresponding block group cache object. Therefore only
-search for it if we are going to use it, so we avoid an unnecessary search
-in the block groups rbtree (and acquiring and releasing its spinlock).
+If we have an inode (file) with a link count greater than 1, remove
+one of its hard links and, fsync the inode, power fail/crash and
+then replay the fsync log on the next mount, we end up getting the
+parent directory's metadata inconsistent - its i_size still reflects
+the deleted hard link. This prevents the directory from ever being
+deletable, as its i_size can never decrease to BTRFS_EMPTY_DIR_SIZE
+even if all of its children inodes are deleted.
 
-Freeing a tree block is performed when COWing or deleting a node/leaf,
-which implies we are holding the node/leaf's parent node lock, therefore
-reducing the amount of time spent when freeing a tree block helps reducing
-the amount of time we are holding the parent node's lock.
+This is easy to reproduce with the following excerpt from a test case
+for xfstests that I just made (and it passes with xfs and ext4):
 
-For example, for a run of xfstests/generic/083, the block group cache
-object was needed only 682 times for a total of 226691 calls to free
-a tree block.
+    mkdir $SCRATCH_MNT/testdir
+    echo "hello world" > $SCRATCH_MNT/testdir/foo
+    ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/bar
+
+    # Make sure all metadata and data are durably persisted.
+    sync
+
+    # Now remove one of the hard links and fsync the inode.
+    rm -f $SCRATCH_MNT/testdir/bar
+    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foo
+
+    # Simulate a crash/power loss. This makes sure the next mount
+    # will see an fsync log and will replay that log.
+
+    _load_flakey_table $FLAKEY_DROP_WRITES
+    _unmount_flakey
+
+    _load_flakey_table $FLAKEY_ALLOW_WRITES
+    _mount_flakey
+
+    # Remove the last hard link of the file and attempt to remove its parent
+    # directory - this failed in btrfs because the fsync log and replay code
+    # didn't decrement the parent directory's i_size - this made the btrfs
+    # rmdir implementation always fail with -ENOTEMPTY.
+    #
+    # The parent directory's metadata inconsistency was also detected by btrfs'
+    # fsck tool, which is run automatically by the fstests framework when the
+    # test finishes.
+    rm -f $SCRATCH_MNT/testdir/foo
+    rmdir $SCRATCH_MNT/testdir
+
+To fix this just make sure that on unlink, if the inode's link count is
+greater than 1 and its parent inode is not yet in the fsync log, we end
+up logging the parent inode.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-log.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a80b971..5a45253 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6205,7 +6205,6 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 			   struct extent_buffer *buf,
- 			   u64 parent, int last_ref)
- {
--	struct btrfs_block_group_cache *cache = NULL;
- 	int pin = 1;
- 	int ret;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9a02da1..1d65a46 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4272,6 +4272,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	struct dentry *old_parent = NULL;
+ 	int ret = 0;
+ 	u64 last_committed = root->fs_info->last_trans_committed;
++	const struct dentry * const first_parent = parent;
++	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
++				 last_committed);
  
-@@ -6221,17 +6220,20 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 	if (!last_ref)
- 		return;
+ 	sb = inode->i_sb;
  
--	cache = btrfs_lookup_block_group(root->fs_info, buf->start);
--
- 	if (btrfs_header_generation(buf) == trans->transid) {
-+		struct btrfs_block_group_cache *cache;
-+
- 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
- 			ret = check_ref_cleanup(trans, root, buf->start);
- 			if (!ret)
- 				goto out;
- 		}
- 
-+		cache = btrfs_lookup_block_group(root->fs_info, buf->start);
-+
- 		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
- 			pin_down_extent(root, cache, buf->start, buf->len, 1);
-+			btrfs_put_block_group(cache);
- 			goto out;
- 		}
- 
-@@ -6239,6 +6241,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 
- 		btrfs_add_free_space(cache, buf->start, buf->len);
- 		btrfs_update_reserved_bytes(cache, buf->len, RESERVE_FREE, 0);
-+		btrfs_put_block_group(cache);
- 		trace_btrfs_reserved_extent_free(root, buf->start, buf->len);
- 		pin = 0;
+@@ -4327,7 +4330,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		goto end_trans;
  	}
-@@ -6253,7 +6256,6 @@ out:
- 	 * anymore.
- 	 */
- 	clear_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags);
--	btrfs_put_block_group(cache);
- }
  
- /* Can return -ENOMEM */
+-	inode_only = LOG_INODE_EXISTS;
+ 	while (1) {
+ 		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
+ 			break;
+@@ -4336,8 +4338,22 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		if (root != BTRFS_I(inode)->root)
+ 			break;
+ 
++		/*
++		 * On unlink we must make sure our immediate parent directory
++		 * inode is fully logged. This is to prevent leaving dangling
++		 * directory index entries and a wrong directory inode's i_size.
++		 * Not doing so can result in a directory being impossible to
++		 * delete after log replay (rmdir will always fail with error
++		 * -ENOTEMPTY).
++		 */
++		if (did_unlink && parent == first_parent)
++			inode_only = LOG_INODE_ALL;
++		else
++			inode_only = LOG_INODE_EXISTS;
++
+ 		if (BTRFS_I(inode)->generation >
+-		    root->fs_info->last_trans_committed) {
++		    root->fs_info->last_trans_committed ||
++		    inode_only == LOG_INODE_ALL) {
+ 			ret = btrfs_log_inode(trans, root, inode, inode_only,
+ 					      0, LLONG_MAX, ctx);
+ 			if (ret)
 -- 
 2.1.3
 

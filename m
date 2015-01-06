@@ -1,47 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36131 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753344AbbAFM5t (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 07:57:49 -0500
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: qgroup: move WARN_ON() to the correct location.
-Date: Tue, 6 Jan 2015 20:54:42 +0800
-Message-ID: <1420548882-12106-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:40290 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753432AbbAFOIB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Jan 2015 09:08:01 -0500
+Date: Tue, 6 Jan 2015 15:07:59 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <chris@colorremedies.com>
+Subject: Re: [PATCH] btrfs: suppress a build warning on building 32bit kernel
+Message-ID: <20150106140759.GA24104@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
+ <549BD725.8040603@jp.fujitsu.com>
+ <20141229150903.GH6490@twin.jikos.cz>
+ <54AA4551.9010900@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54AA4551.9010900@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In function qgroup_excl_accounting(), we need to WARN when
-qg->excl is less than what we want to free, same to child
-and parents. But currently, for parent qgroup, the WARN_ON()
-is located after freeing qg->excl. It will WARN out even we
-free it normally.
+On Mon, Jan 05, 2015 at 05:03:29PM +0900, Satoru Takeuchi wrote:
+> >> -		failrec = (struct io_failure_record *)state->private;
+> >> +		failrec = (struct io_failure_record *)(unsigned long)state->private;
+> >
+> > We're always using the 'private' data to store a pointer to
+> > 'struct io_failure_record *', please change the defintion in
+> > 'struct extent_state' instead of the typecasting.
+> 
+> Current definition is as follow.
+> 
+> ===============================================================================
+> struct extent_state {
+> ...
+>          /* for use by the FS */
+>          u64 private;
+> };
+> ===============================================================================
+> 
+> It it OK to changing "u64 private" to "struct io_failure_record *failrec"
+> and change "{set,get}_state_private()" to "{set,get}_state_failrec()?
+> Or is it better to keep the name "private" as is and just change its type
+> to "unsigned long" or "(void *)"?
 
-This patch move this WARN_ON() before freeing qg->excl.
-
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
- fs/btrfs/qgroup.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 48b60db..97159a8 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1431,9 +1431,8 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 		qgroup = u64_to_ptr(unode->aux);
- 		qgroup->rfer += sign * oper->num_bytes;
- 		qgroup->rfer_cmpr += sign * oper->num_bytes;
-+		WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
- 		qgroup->excl += sign * oper->num_bytes;
--		if (sign < 0)
--			WARN_ON(qgroup->excl < oper->num_bytes);
- 		qgroup->excl_cmpr += sign * oper->num_bytes;
- 		qgroup_dirty(fs_info, qgroup);
- 
--- 
-1.8.4.2
-
+I've looked at the implied changes that set/get functions renaming would
+need, also to keep the code sane. It does not seem to be small enough to
+fold in this patch so please go on with adding the typecasts. The code
+could use some cleanups but bugfixes first.

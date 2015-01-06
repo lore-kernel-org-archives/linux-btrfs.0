@@ -1,61 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:32822 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751087AbbAEIVI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 03:21:08 -0500
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 163E33EE0BB
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Jan 2015 17:21:07 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 2C8D4AC03B0
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Jan 2015 17:21:06 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id CC0A2E08005
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Jan 2015 17:21:05 +0900 (JST)
-Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
-	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id ED26E32849E
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Jan 2015 17:21:04 +0900 (JST)
-Message-ID: <54AA4953.3080703@jp.fujitsu.com>
-Date: Mon, 5 Jan 2015 17:20:35 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:59302 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753264AbbAFBOo convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 20:14:44 -0500
+Message-ID: <54AB36FE.60508@cn.fujitsu.com>
+Date: Tue, 6 Jan 2015 09:14:38 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Fix a extent buffer leak in count_csum_range().
-References: <1420444575-23259-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1420444575-23259-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
+To: Peter Wu <peter@lekensteyn.nl>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Documentation: fix broken conversion
+References: <1420467009-11738-1-git-send-email-peter@lekensteyn.nl>
+In-Reply-To: <1420467009-11738-1-git-send-email-peter@lekensteyn.nl>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015/01/05 16:56, Qu Wenruo wrote:
-> The commit f495a2ac6611 ("btrfs-progs: fsck: remove unfriendly BUG_ON()
-> for searching tree failure") is causing tons of extent buffer leak if some
-> csum mismatches in btrfsck.
-> 
-> This is caused by a misplaced btrfs_release_path(), fix it.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
+-------- Original Message --------
+Subject: [PATCH] Documentation: fix broken conversion
+From: Peter Wu <peter@lekensteyn.nl>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2015年01月05日 22:10
+> Fixes various formatting issues:
+>
+> Fixes quoting issues in various manpages. Before/After excerpts for
+> mkfs.btrfs(8), btrfs-qgroup(8):
+>
+>      mkfs.btrfs [-A|--alloc-start '<alloc-start>']
+>      mkfs.btrfs [-A|--alloc-start <alloc-start>]
+>      id 0/<subvolume id>''
+>      id 0/<subvolume id>
+>      If multiple '<attr>'s is given, use comma to separate.
+>      If multiple <attr>s is given, use comma to separate.
+>
+> The one that is most apparent is the removal of text in
+> btrfs-subvolume(8) and others. Before/After:
+>
+>      list [options] [-G <value>] [-C <value>] [--sort=rootid,gen,ogen,path] <path>
+>      list [options] [-G [+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path] <path>
+>      create [-i <qgroupid>] <name>
+>      create [-i <qgroupid>] [<dest>]<name>
+Nice catch!
+>
+> This happens because `<foo>` was replaced by `'<foo>'` in the sed
+> expression, which is then treated as a constrained quote. As a result,
+> the `[...]` before the string gets interpreted as "quoted text
+> attributes".
+>
+> In this patch, the sed expression is dropped and asciidoc is configured
+> to recognize `<...>` as a unconstrained quoted string (such that
+> `<attr>s` is correctly emphasized) and to avoid adding quotes in
+> contexts where it is not needed.
+>
+> A remaining problem is that some texts (the one between brackets) do not
+> add the emphasis for `<...>`.
+IMHO, current implement in this patch is already good enough, although 
+it is still not perfect,
+but much much better than previous one and such missing of emphasize is 
+acceptable.
+> While this could be solved by replacing
+> `[` and `]` with `&#91;` and `&#93;` using sed, it introduces formatting
+> problems in btrfs-zero-log(8) because the context is ignored.
+>
+> Signed-off-by: Peter Wu <peter@lekensteyn.nl>
 > ---
->   cmds-check.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/cmds-check.c b/cmds-check.c
-> index d2d218a..5b644cf 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -1186,9 +1186,9 @@ static int count_csum_range(struct btrfs_root *root, u64 start,
->   		path.slots[0]++;
->   	}
->   out:
-> +	btrfs_release_path(&path);
->   	if (ret < 0)
->   		return ret;
-> -	btrfs_release_path(&path);
->   	return 0;
->   }
+>   Documentation/Makefile      | 8 +++-----
+>   Documentation/asciidoc.conf | 6 ++++++
+>   2 files changed, 9 insertions(+), 5 deletions(-)
+>
+> diff --git a/Documentation/Makefile b/Documentation/Makefile
+> index ef4f1bd..72ab77b 100644
+> --- a/Documentation/Makefile
+> +++ b/Documentation/Makefile
+> @@ -113,10 +113,8 @@ clean:
+>   	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
 >   
-> 
+>   %.xml : %.txt asciidoc.conf
+> -	$(QUIET_ASCIIDOC)$(RM) $@.tmp[12] $@ && \
+> -	sed -e "s/\(<[^>]\+>\)/'\1'/g" < $< > $@.tmp1 && \
+> +	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
+>   	$(ASCIIDOC) -b docbook -d manpage -f asciidoc.conf \
+>   		$(ASCIIDOC_EXTRA) -abtrfs_version=$(BTRFS_VERSION) \
+> -		-o $@.tmp2 $@.tmp1 && \
+> -	mv $@.tmp2 $@ && \
+> -	rm -f -- $@.tmp1
+> +		-o $@+ $< && \
+> +	mv $@+ $@
+> diff --git a/Documentation/asciidoc.conf b/Documentation/asciidoc.conf
+> index 313f185..1ea7459 100644
+> --- a/Documentation/asciidoc.conf
+> +++ b/Documentation/asciidoc.conf
+> @@ -10,6 +10,12 @@
+>   [macros]
+>   (?su)[\\]?(?P<name>linkbtrfs):(?P<target>\S*?)\[(?P<attrlist>.*?)\]=
+>   
+> +[tags]
+> +bracket-emphasis={1?[{1}]}<emphasis>&lt;|&gt;</emphasis>
+> +
+> +[quotes]
+> +&lt;|&gt;=#bracket-emphasis
+> +
+This method is more elegant than the original sed method.
+
+Thanks a lot.
+Qu
+>   [attributes]
+>   asterisk=&#42;
+>   plus=&#43;
 

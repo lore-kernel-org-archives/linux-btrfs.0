@@ -1,56 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38923 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755052AbbAFMWE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Jan 2015 07:22:04 -0500
-Date: Tue, 6 Jan 2015 13:22:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Jiri Kosina <jkosina@suse.cz>
-Cc: Rickard Strandqvist <rickard_strandqvist@spectrumdigital.se>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: reada: Remove unused function
-Message-ID: <20150106122201.GH6114@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1420333197-6245-1-git-send-email-rickard_strandqvist@spectrumdigital.se>
- <20150105133356.GF6114@twin.jikos.cz>
- <alpine.LRH.2.00.1501061141250.20601@twin.jikos.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:36131 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753344AbbAFM5t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 07:57:49 -0500
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+To: <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: qgroup: move WARN_ON() to the correct location.
+Date: Tue, 6 Jan 2015 20:54:42 +0800
+Message-ID: <1420548882-12106-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <alpine.LRH.2.00.1501061141250.20601@twin.jikos.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 06, 2015 at 11:42:07AM +0100, Jiri Kosina wrote:
-> On Mon, 5 Jan 2015, David Sterba wrote:
-> 
-> > > Remove the function btrfs_reada_detach() that is not used anywhere.
-> > > 
-> > > This was partially found by using a static code analysis program called cppcheck.
-> > > 
-> > > Signed-off-by: Rickard Strandqvist <rickard_strandqvist@spectrumdigital.se>
-> > 
-> > No please, this function is part of public readahead API and similar
-> > patch has been NACKed several times.
-> 
-> BTW how is this any kind of API for anybody, given it's not exported to 
-> modules?
+In function qgroup_excl_accounting(), we need to WARN when
+qg->excl is less than what we want to free, same to child
+and parents. But currently, for parent qgroup, the WARN_ON()
+is located after freeing qg->excl. It will WARN out even we
+free it normally.
 
-Scratch 'public' from the sentence, that was misleading. The API is internal to
-btrfs.  The readahead can work in synchronous and asynchronous modes, this
-function is API to the async mode.
+This patch move this WARN_ON() before freeing qg->excl.
 
-Documented at reada.c:
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- 34 /*
- 35  * This is the implementation for the generic read ahead framework.
- 36  *
- 37  * To trigger a readahead, btrfs_reada_add must be called. It will start
- 38  * a read ahead for the given range [start, end) on tree root. The returned
- 39  * handle can either be used to wait on the readahead to finish
- 40  * (btrfs_reada_wait), or to send it to the background (btrfs_reada_detach).
- 41  *
-...
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 48b60db..97159a8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1431,9 +1431,8 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		qgroup = u64_to_ptr(unode->aux);
+ 		qgroup->rfer += sign * oper->num_bytes;
+ 		qgroup->rfer_cmpr += sign * oper->num_bytes;
++		WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
+ 		qgroup->excl += sign * oper->num_bytes;
+-		if (sign < 0)
+-			WARN_ON(qgroup->excl < oper->num_bytes);
+ 		qgroup->excl_cmpr += sign * oper->num_bytes;
+ 		qgroup_dirty(fs_info, qgroup);
+ 
+-- 
+1.8.4.2
 
-I've experimented with it for readdir speedups, but I haven't finished that due
-to other problems.

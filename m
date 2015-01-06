@@ -1,165 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:43274 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756673AbbAFUD2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Jan 2015 15:03:28 -0500
-Date: Tue, 6 Jan 2015 15:03:23 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Robert White <rwhite@pobox.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS free space handling still needs more work: Hangs again (no
- complete lockups, "just" tasks stuck for some time)
-Message-ID: <20150106200322.GA12706@hungrycats.org>
-References: <3738341.y7uRQFcLJH@merkaba>
- <2138510.KXMt4iLDat@merkaba>
- <20141229020705.GA17679@hungrycats.org>
- <2191338.tRc7Jxvh05@merkaba>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:39748 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751994AbbAFWsc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 17:48:32 -0500
+Message-ID: <54AC65C2.8000801@jp.fujitsu.com>
+Date: Wed, 7 Jan 2015 07:46:26 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="tKW2IUtsqtDRztdT"
-In-Reply-To: <2191338.tRc7Jxvh05@merkaba>
+To: Naohiro Aota <naota@elisp.net>, <linux-btrfs@vger.kernel.org>
+CC: <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: clear bio reference after submit_one_bio()
+References: <1420473663-9315-1-git-send-email-naota@elisp.net>
+In-Reply-To: <1420473663-9315-1-git-send-email-naota@elisp.net>
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Naota,
 
---tKW2IUtsqtDRztdT
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On 2015/01/06 1:01, Naohiro Aota wrote:
+> After submit_one_bio(), `bio' can go away. However submit_extent_page()
+> leave `bio' referable if submit_one_bio() failed (e.g. -ENOMEM on OOM).
+> It will cause invalid paging request when submit_extent_page() is called
+> next time.
+> 
+> I reproduced ENOMEM case with the following script (need
+> CONFIG_FAIL_PAGE_ALLOC, and CONFIG_FAULT_INJECTION_DEBUG_FS).
 
-On Mon, Dec 29, 2014 at 10:32:00AM +0100, Martin Steigerwald wrote:
-> Am Sonntag, 28. Dezember 2014, 21:07:05 schrieb Zygo Blaxell:
-> > On Sat, Dec 27, 2014 at 08:23:59PM +0100, Martin Steigerwald wrote:
-> > > My simple test case didn=B4t trigger it, and I so not have another tw=
-ice 160
-> > > GiB available on this SSDs available to try with a copy of my home
-> > > filesystem. Then I could safely test without bringing the desktop ses=
-sion to
-> > > an halt. Maybe someone has an idea on how to "enhance" my test case in
-> > > order to reliably trigger the issue.
-> > >=20
-> > > It may be challenging tough. My /home is quite a filesystem. It has a=
- maildir
-> > > with at least one million of files (yeah, I am performance testing KM=
-ail and
-> > > Akonadi as well to the limit!), and it has git repos and this one VM =
-image,
-> > > and the desktop search and the Akonadi database. In other words: It h=
-as
-> > > been hit nicely with various mostly random I think workloads over the=
- last
-> > > about six months. I bet its not that easy to simulate that. Maybe som=
-e runs
-> > > of compilebench to age the filesystem before the fio test?
-> > >=20
-> > > That said, BTRFS performs a lot better. The complete lockups without =
-any
-> > > CPU usage of 3.15 and 3.16 have gone for sure. Thats wonderful. But t=
-here
-> > > is this kworker issue now. I noticed it that gravely just while tryin=
-g to
-> > > complete this tax returns stuff with the Windows XP VM. Otherwise it =
-may
-> > > have happened, I have seen some backtraces in kern.log, but it didn=
-=B4t last
-> > > for minutes. So this indeed is of less severity than the full lockups=
- with
-> > > 3.15 and 3.16.
-> > >=20
-> > > Zygo, was is the characteristics of your filesystem. Do you use
-> > > compress=3Dlzo and skinny metadata as well? How are the chunks alloca=
-ted?
-> > > What kind of data you have on it?
-> >=20
-> > compress-force (default zlib), no skinny-metadata.  Chunks are d=3Dsing=
-le,
-> > m=3Ddup.  Data is a mix of various desktop applications, most active
-> > file sizes from a few hundred K to a few MB, maybe 300k-400k files.
-> > No database or VM workloads.  Filesystem is 100GB and is usually between
-> > 98 and 99% full (about 1-2GB free).
-> >=20
-> > I have another filesystem which has similar problems when it's 99.99%
-> > full (it's 13TB, so 0.01% is 1.3GB).  That filesystem is RAID1 with
-> > skinny-metadata and no-holes.
-> >=20
-> > On various filesystems I have the above CPU-burning problem, a bunch of
-> > irreproducible random crashes, and a hang with a kernel stack that goes
-> > through SyS_unlinkat and btrfs_evict_inode.
->=20
-> Zygo, thanks. That desktop filesystem sounds a bit similar to my usecase,
-> with the interesting difference that you have no databases or VMs on it.
->=20
-> That said, I use the Windows XP rarely, but using it was what made the is=
-sue
-> so visible for me. Is your desktop filesystem on SSD?
+I confirmed that this problem reproduce with 3.19-rc3 and
+not reproduce with 3.19-rc3 with your patch.
 
-No, but I recently stumbled across the same symptoms on an 8GB SD card
-on kernel 3.12.24 (raspberry pi).  When the filesystem hit over ~97%
-full, all accesses were blocked for several minutes.  I was able to
-work around it by adjusting the threshold on a garbage collector daemon
-(i.e. deleting a lot of expendable files) to keep usage below 90%.
-I didn't try to balance the filesystem, and didn't seem to need to.
+Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-ext3 has a related problem when it's nearly full:  it will try to search
-gigabytes of block allocation bitmaps searching for a free block, which
-can result in a single 'mkdir' call spending 45 minutes reading a large
-slow 99.5% full filesystem.
+Thank you for reporting this problem with the reproducer
+and fixing it too.
 
-I'd expect a btrfs filesystem that was nearly full to have a small tree
-of cached free space extents and be able to search it quickly even if
-the result is negative (i.e. there's no free space).  It seems to be
-doing something else... :-P
+  NOTE:
+  I used v3.19-rc3's tools/testing/fault-injection/failcmd.sh
+  for the following "./failcmd.sh".
 
-> Do you have the chance to extend one of the affected filesystems to check
-> my theory that this does not happen as long as BTRFS can still allocate n=
-ew
-> data chunks? If its right, your FS should be fluent again as long as you =
-see
-> more than 1 GiB free
->=20
-> Label: none  uuid: 53bdf47c-4298-45bc-a30f-8a310c274069
->         Total devices 2 FS bytes used 512.00KiB
->         devid    1 size 10.00GiB used 6.53GiB path /dev/mapper/sata-btrfs=
-raid1
->         devid    2 size 10.00GiB used 6.53GiB path /dev/mapper/msata-btrf=
-sraid1
->=20
-> between "size" and "used" in btrfs fi sh. I suggest going with at least 2=
--3
-> GiB, as BTRFS may allocate just one chunk so quickly that you do not have
-> the chance to recognize the difference.
+  >            ./failcmd.sh -p $percent -t $times -i $interval \
+  >                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
+  >                    -- \
+  >                    cat $directory/file > /dev/null
 
-So far I've found that problems start when space drops below 1GB free
-(although it can go as low as 400MB) and problems stop when space gets
-above 1GB free, even without resizing or balancing the filesystem.
-I've adjusted free space monitoring thresholds accordingly for now,
-and it seems to be keeping things working so far.
+* 3.19-rc1 + your patch
 
-> Well, and if thats works for you, we are back to my recommendation:
->=20
-> More so than with other filesystems give BTRFS plenty of free space to
-> operate with. At best as much, that you always have a mininum of 2-3 GiB
-> unused device space for chunk reservation left. One could even do some
-> Nagios/Icinga monitoring plugin for that :)
->=20
-> --=20
-> Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-> GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+===============================================================================
+# ./run
+512+0 records in
+512+0 records out
+# 
+===============================================================================
 
+* 3.19-rc3
 
+===============================================================================
+# ./run
+512+0 records in
+512+0 records out
+[  188.433726] run (776): drop_caches: 1
+[  188.682372] FAULT_INJECTION: forcing a failure.
+name fail_page_alloc, interval 100, probability 111000, space 0, times 3
+[  188.689986] CPU: 0 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
+[  188.693834] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+[  188.698466]  0000000000000064 ffff88007b343618 ffffffff816e5563 ffff88007fc0fc78
+[  188.702730]  ffffffff81c655c0 ffff88007b343638 ffffffff813851b5 0000000000000010
+[  188.707043]  0000000000000002 ffff88007b343768 ffffffff81188126 ffff88007b3435a8
+[  188.711283] Call Trace:
+[  188.712620]  [<ffffffff816e5563>] dump_stack+0x45/0x57
+[  188.715330]  [<ffffffff813851b5>] should_fail+0x135/0x140
+[  188.718218]  [<ffffffff81188126>] __alloc_pages_nodemask+0xd6/0xb30
+[  188.721567]  [<ffffffff81339075>] ? blk_rq_map_sg+0x35/0x170
+[  188.724558]  [<ffffffffa0010705>] ? virtio_queue_rq+0x145/0x2b0 [virtio_blk]
+[  188.728191]  [<ffffffffa01bd00f>] ? btrfs_submit_compressed_read+0xcf/0x4d0 [btrfs]
+[  188.732079]  [<ffffffff811d99fb>] ? kmem_cache_alloc+0x1cb/0x230
+[  188.735153]  [<ffffffff81181265>] ? mempool_alloc_slab+0x15/0x20
+[  188.738188]  [<ffffffff811cee1a>] alloc_pages_current+0x9a/0x120
+[  188.741153]  [<ffffffffa01bd0e9>] btrfs_submit_compressed_read+0x1a9/0x4d0 [btrfs]
+[  188.744835]  [<ffffffffa0178621>] btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
+[  188.748225]  [<ffffffffa018b7b3>] ? lookup_extent_mapping+0x13/0x20 [btrfs]
+[  188.751547]  [<ffffffffa0179c08>] ? btrfs_get_extent+0x98/0xad0 [btrfs]
+[  188.754656]  [<ffffffffa01901d7>] submit_one_bio+0x67/0xa0 [btrfs]
+[  188.757554]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
+[  188.760981]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
+[  188.763920]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
+[  188.767382]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.770671]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
+[  188.774366]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
+[  188.778031]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.781241]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
+[  188.784322]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.789014]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
+[  188.792028]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
+[  188.795078]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
+[  188.797702]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
+[  188.800718]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
+[  188.803650]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
+[  188.806480]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
+[  188.808832]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
+[  188.811068]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
+[  188.813298]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
+[  188.815486]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
+[  188.818293]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
+[  188.821005] BUG: unable to handle kernel paging request at 000000010000000c
+[  188.821984] IP: [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+[  188.821984] PGD 7bad3067 PUD 0 
+[  188.821984] Oops: 0000 [#1] SMP 
+[  188.821984] Modules linked in: ip6table_filter ip6_tables ebtable_nat ebtables bnep bluetooth rfkill btrfs xor raid6_pq microcode 8139too serio_raw virtio_balloon 8139cp mii nfsd auth_rpcgss nfs_acl lockd grace sunrpc virtio_blk ata_generic pata_acpi
+[  188.821984] CPU: 1 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
+[  188.821984] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+[  188.821984] task: ffff880037665220 ti: ffff88007b340000 task.ti: ffff88007b340000
+[  188.821984] RIP: 0010:[<ffffffffa01901b3>]  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+[  188.821984] RSP: 0018:ffff88007b3438c8  EFLAGS: 00010202
+[  188.821984] RAX: 0000000000000000 RBX: ffff88007c282ba8 RCX: 0000000000010001
+[  188.821984] RDX: 0000000000000000 RSI: 00000000fffffff4 RDI: 0000000000000000
+[  188.821984] RBP: ffff88007b3438d8 R08: ffffea0001e33100 R09: 00000000000027df
+[  188.821984] R10: ffff88007fd1c000 R11: 0000000000dbb000 R12: ffff88007b343b40
+[  188.821984] R13: ffff88007c282ba8 R14: 0000000000006dd8 R15: ffff880071584f80
+[  188.821984] FS:  00007fdf777c5740(0000) GS:ffff88007fd00000(0000) knlGS:0000000000000000
+[  188.821984] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  188.821984] CR2: 000000010000000c CR3: 000000007bf59000 CR4: 00000000000006e0
+[  188.821984] Stack:
+[  188.821984]  0000000000001000 ffff88007b343b40 ffff88007b343938 ffffffffa0193f27
+[  188.821984]  ffff88007b343938 0000000000000001 0000000000000000 ffffea0001e33180
+[  188.821984]  00000000027e0000 0000000000001000 ffff88007cc24680 ffff88007b343b50
+[  188.821984] Call Trace:
+[  188.821984]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
+[  188.821984]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
+[  188.821984]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
+[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.821984]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
+[  188.821984]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
+[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.821984]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
+[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+[  188.821984]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
+[  188.821984]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
+[  188.821984]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
+[  188.821984]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
+[  188.821984]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
+[  188.821984]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
+[  188.821984]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
+[  188.821984]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
+[  188.821984]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
+[  188.821984]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
+[  188.821984]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
+[  188.821984]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
+[  188.821984] Code: c1 e0 04 48 8d 44 06 f0 48 8b 73 50 4c 8b 00 8b 40 0c 4d 8b 48 10 48 c7 43 50 00 00 00 00 f0 ff 43 74 48 8b 76 20 48 85 f6 74 4d <4c> 8b 56 18 4d 85 d2 74 44 4d 8b 58 08 49 c1 e1 0c 49 89 c8 89 
+[  188.821984] RIP  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+[  188.821984]  RSP <ffff88007b3438c8>
+[  188.821984] CR2: 000000010000000c
+[  188.953169] ---[ end trace 498f24be78e8baad ]---
+# 
+===============================================================================
 
---tKW2IUtsqtDRztdT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Thanks,
+Satoru
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+> 
+>    #!/bin/bash
+> 
+>    dmesgout=dmesg.txt
+>    start=100000
+>    end=300000
+>    step=1000
+> 
+>    # btrfs options
+>    device=/dev/vdb1
+>    directory=/mnt/btrfs
+> 
+>    # fault-injection options
+>    percent=100
+>    times=3
+> 
+>    mkdir -p $directory || exit 1
+>    mount -o compress $device $directory || exit 1
+> 
+>    rm -f $directory/file || exit 1
+>    dd if=/dev/zero of=$directory/file bs=1M count=512 || exit 1
+> 
+>    for interval in `seq $start $step $end`; do
+>            dmesg -C
+>            echo 1 > /proc/sys/vm/drop_caches
+>            sync
+>            export FAILCMD_TYPE=fail_page_alloc
+>            ./failcmd.sh -p $percent -t $times -i $interval \
+>                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
+>                    -- \
+>                    cat $directory/file > /dev/null
+>            dmesg > ${dmesgout}
+>            if grep -q BUG: ${dmesgout}; then
+>                    cat ${dmesgout}
+>                    exit 1
+>            fi
+>    done
+> 
+>    umount $directory
+>    exit 0
+> 
+> Signed-off-by: Naohiro Aota <naota@elisp.net>
+> ---
+>   fs/btrfs/extent_io.c | 4 +++-
+>   1 file changed, 3 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 4ebabd2..4421161 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2816,8 +2816,10 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+>   		    bio_add_page(bio, page, page_size, offset) < page_size) {
+>   			ret = submit_one_bio(rw, bio, mirror_num,
+>   					     prev_bio_flags);
+> -			if (ret < 0)
+> +			if (ret < 0) {
+> +				*bio_ret = NULL;
+>   				return ret;
+> +			}
+>   			bio = NULL;
+>   		} else {
+>   			return 0;
+> 
 
-iEYEARECAAYFAlSsP4kACgkQgfmLGlazG5whJgCfUJFKTaHZIG8dN5YmYA47yhO7
-C9QAoMylelsy+oQM8tT59IEGrsUes51H
-=BuVw
------END PGP SIGNATURE-----
-
---tKW2IUtsqtDRztdT--

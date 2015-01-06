@@ -1,80 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63690 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752933AbbAFEnr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 23:43:47 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t064h9Zg028732
-	for <linux-btrfs@vger.kernel.org>; Tue, 6 Jan 2015 12:43:09 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Fix a buffer overflow causing segfault in fstests/btrfs/069
-Date: Tue, 6 Jan 2015 12:41:40 +0800
-Message-ID: <1420519300-30402-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:37905 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756548AbbAFUVe (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 6 Jan 2015 15:21:34 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: add generic test for fsync after unlink
+Date: Tue,  6 Jan 2015 20:21:20 +0000
+Message-Id: <1420575680-9809-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since BTRFS_IOC_FS_INFO will return num of devices without counting
-devid 0 and di_arg is allocated according to it, so when replacing is
-running, there is num_devices + 1(0~num_devices) items to be written
-into di_args arrary, which causes buffer overflow with the following
-segfault.
+This test is motivated by an fsync issue discovered in btrfs.
+The issue was that after fsyncing an inode that got its link count
+decremented, and the new link count is greater than zero, after the
+fsync log replay the inode's parent directory metadata became
+inconsistent - it had a wrong i_size which prevented the directory
+from ever being removed (rmdir always failed with -ENOTEMPTY, even
+if the directory had no more child inodes).
 
-*** Error in `/usr/local/bin/btrfs': free(): invalid next size (normal):
-0x0000000001a95090 ***
-======= Backtrace: =========
-/lib64/libc.so.6[0x36c9475d9f]
-/lib64/libc.so.6[0x36c947d098]
-/usr/local/bin/btrfs[0x41342e]
-/usr/local/bin/btrfs[0x4135bd]
-/usr/local/bin/btrfs(handle_command_group+0x5d)[0x40990f]
-/usr/local/bin/btrfs(cmd_scrub+0x15)[0x4135d7]
-/usr/local/bin/btrfs(main+0x15d)[0x409a71]
-/lib64/libc.so.6(__libc_start_main+0xf5)[0x36c9421d65]
-/usr/local/bin/btrfs[0x409629]
-======= Memory map: ========
-00400000-0047a000 r-xp 00000000 08:08 4866225
-/share/local/bin/btrfs
-00679000-0067c000 r--p 00079000 08:08 4866225
-/share/local/bin/btrfs
-0067c000-0067e000 rw-p 0007c000 08:08 4866225
-/share/local/bin/btrfs
-0067e000-00682000 rw-p 00000000 00:00 0
-01a85000-01aa6000 rw-p 00000000 00:00 0
-[heap]
-3337a00000-3337a04000 r-xp 00000000 08:02 538227
-/usr/lib64/libuuid.so.1.3.0
-3337a04000-3337c03000 ---p 00004000 08:02 538227
-/usr/lib64/libuuid.so.1.3.0
-...
+The btrfs issue was fixed by the following linux kernel patch:
 
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+    Btrfs: fix directory inconsistency after fsync log replay
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- utils.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ tests/generic/039     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/039.out |   2 +
+ tests/generic/group   |   1 +
+ 3 files changed, 105 insertions(+)
+ create mode 100755 tests/generic/039
+ create mode 100644 tests/generic/039.out
 
-diff --git a/utils.c b/utils.c
-index af0a8fe..56cadd1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2008,7 +2008,12 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 	if (!fi_args->num_devices)
- 		goto out;
- 
--	di_args = *di_ret = malloc((fi_args->num_devices) * sizeof(*di_args));
-+	/*
-+	 * Since fi_args doesn't include the dev being replaced,
-+	 * we need to plus 1 for devid 0 in case.
-+	 */
-+	di_args = *di_ret = malloc((fi_args->num_devices + 1) *
-+				   sizeof(*di_args));
- 	if (!di_args) {
- 		ret = -errno;
- 		goto out;
+diff --git a/tests/generic/039 b/tests/generic/039
+new file mode 100755
+index 0000000..85646f9
+--- /dev/null
++++ b/tests/generic/039
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# FS QA Test No. 039
++#
++# This test is motivated by an fsync issue discovered in btrfs.
++# The issue was that after fsyncing an inode that got its link count
++# decremented, and the new link count is greater than zero, after the
++# fsync log replay the inode's parent directory metadata became
++# inconsistent - it had a wrong i_size which prevented the directory
++# from ever being removed (rmdir always failed with -ENOTEMPTY, even
++# if the directory had no more child inodes).
++#
++# The btrfs issue was fixed by the following linux kernel patch:
++#
++#    Btrfs: fix directory inconsistency after fsync log replay
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++status=1	# failure is the default!
++
++_cleanup()
++{
++	_cleanup_flakey
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_need_to_be_root
++_require_scratch
++_require_dm_flakey
++
++rm -f $seqres.full
++
++_scratch_mkfs >> $seqres.full 2>&1
++
++_init_flakey
++_mount_flakey
++
++# Create a test file with 2 hard links.
++mkdir -p $SCRATCH_MNT/a/b
++echo "hello world" > $SCRATCH_MNT/a/b/foo
++ln $SCRATCH_MNT/a/b/foo $SCRATCH_MNT/a/b/bar
++
++# Make sure all metadata and data are durably persisted.
++sync
++
++# Now remove one of the hard links and fsync the inode.
++rm -f $SCRATCH_MNT/a/b/bar
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/b/foo
++
++# Simulate a crash/power loss. This makes sure the next mount
++# will see an fsync log and will replay that log.
++
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++# Remove the last hard link of the file and attempt to remove its parent
++# directory - this failed in btrfs because the fsync log and replay code
++# didn't decrement the parent directory's i_size - this made the btrfs
++# rmdir implementation always fail with -ENOTEMPTY.
++#
++# The parent directory's metadata inconsistency was also detected by btrfs'
++# fsck tool, which is run automatically by the fstests framework when the
++# test finishes.
++rm -f $SCRATCH_MNT/a/b/foo
++rmdir $SCRATCH_MNT/a/b
++rmdir $SCRATCH_MNT/a
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/generic/039.out b/tests/generic/039.out
+new file mode 100644
+index 0000000..d4e7ef6
+--- /dev/null
++++ b/tests/generic/039.out
+@@ -0,0 +1,2 @@
++QA output created by 039
++Silence is golden
+diff --git a/tests/generic/group b/tests/generic/group
+index 1e89848..6af5a1a 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -41,6 +41,7 @@
+ 036 auto aio rw stress
+ 037 metadata auto quick
+ 038 auto stress
++039 metadata auto quick
+ 053 acl repair auto quick
+ 062 attr udf auto quick
+ 068 other auto freeze dangerous stress
 -- 
-2.2.1
+2.1.3
 

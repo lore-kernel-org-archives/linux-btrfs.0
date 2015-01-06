@@ -1,50 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40290 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753432AbbAFOIB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Jan 2015 09:08:01 -0500
-Date: Tue, 6 Jan 2015 15:07:59 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <chris@colorremedies.com>
-Subject: Re: [PATCH] btrfs: suppress a build warning on building 32bit kernel
-Message-ID: <20150106140759.GA24104@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJCQCtQWS9j0g44c5VKp0Cv=PRC=GAJwpspF5eeRk0siibGXKg@mail.gmail.com>
- <549BD725.8040603@jp.fujitsu.com>
- <20141229150903.GH6490@twin.jikos.cz>
- <54AA4551.9010900@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54AA4551.9010900@jp.fujitsu.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:52663 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751338AbbAFUTF (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 6 Jan 2015 15:19:05 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: lookup for block group only if needed when freeing a tree block
+Date: Tue,  6 Jan 2015 20:18:45 +0000
+Message-Id: <1420575525-390-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 05, 2015 at 05:03:29PM +0900, Satoru Takeuchi wrote:
-> >> -		failrec = (struct io_failure_record *)state->private;
-> >> +		failrec = (struct io_failure_record *)(unsigned long)state->private;
-> >
-> > We're always using the 'private' data to store a pointer to
-> > 'struct io_failure_record *', please change the defintion in
-> > 'struct extent_state' instead of the typecasting.
-> 
-> Current definition is as follow.
-> 
-> ===============================================================================
-> struct extent_state {
-> ...
->          /* for use by the FS */
->          u64 private;
-> };
-> ===============================================================================
-> 
-> It it OK to changing "u64 private" to "struct io_failure_record *failrec"
-> and change "{set,get}_state_private()" to "{set,get}_state_failrec()?
-> Or is it better to keep the name "private" as is and just change its type
-> to "unsigned long" or "(void *)"?
+Very often our extent buffer's header generation doesn't match the current
+transaction's id or it is also referenced by other trees (snapshots), so
+we don't need the corresponding block group cache object. Therefore only
+search for it if we are going to use it, so we avoid an unnecessary search
+in the block groups rbtree (and acquiring and releasing its spinlock).
 
-I've looked at the implied changes that set/get functions renaming would
-need, also to keep the code sane. It does not seem to be small enough to
-fold in this patch so please go on with adding the typecasts. The code
-could use some cleanups but bugfixes first.
+Freeing a tree block is performed when COWing or deleting a node/leaf,
+which implies we are holding the node/leaf's parent node lock, therefore
+reducing the amount of time spent when freeing a tree block helps reducing
+the amount of time we are holding the parent node's lock.
+
+For example, for a run of xfstests/generic/083, the block group cache
+object was needed only 682 times for a total of 226691 calls to free
+a tree block.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a80b971..5a45253 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6205,7 +6205,6 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   struct extent_buffer *buf,
+ 			   u64 parent, int last_ref)
+ {
+-	struct btrfs_block_group_cache *cache = NULL;
+ 	int pin = 1;
+ 	int ret;
+ 
+@@ -6221,17 +6220,20 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 	if (!last_ref)
+ 		return;
+ 
+-	cache = btrfs_lookup_block_group(root->fs_info, buf->start);
+-
+ 	if (btrfs_header_generation(buf) == trans->transid) {
++		struct btrfs_block_group_cache *cache;
++
+ 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
+ 			ret = check_ref_cleanup(trans, root, buf->start);
+ 			if (!ret)
+ 				goto out;
+ 		}
+ 
++		cache = btrfs_lookup_block_group(root->fs_info, buf->start);
++
+ 		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
+ 			pin_down_extent(root, cache, buf->start, buf->len, 1);
++			btrfs_put_block_group(cache);
+ 			goto out;
+ 		}
+ 
+@@ -6239,6 +6241,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 		btrfs_add_free_space(cache, buf->start, buf->len);
+ 		btrfs_update_reserved_bytes(cache, buf->len, RESERVE_FREE, 0);
++		btrfs_put_block_group(cache);
+ 		trace_btrfs_reserved_extent_free(root, buf->start, buf->len);
+ 		pin = 0;
+ 	}
+@@ -6253,7 +6256,6 @@ out:
+ 	 * anymore.
+ 	 */
+ 	clear_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags);
+-	btrfs_put_block_group(cache);
+ }
+ 
+ /* Can return -ENOMEM */
+-- 
+2.1.3
+

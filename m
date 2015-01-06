@@ -1,97 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22744 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752838AbbAEEeu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jan 2015 23:34:50 -0500
-Message-ID: <54AA15B0.2090807@oracle.com>
-Date: Mon, 05 Jan 2015 12:40:16 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:63690 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752933AbbAFEnr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jan 2015 23:43:47 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t064h9Zg028732
+	for <linux-btrfs@vger.kernel.org>; Tue, 6 Jan 2015 12:43:09 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Fix a buffer overflow causing segfault in fstests/btrfs/069
+Date: Tue, 6 Jan 2015 12:41:40 +0800
+Message-ID: <1420519300-30402-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Eryu Guan <eguan@redhat.com>
-CC: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, fdmanana@gmail.com
-Subject: Re: [PATCH v2] xfstests: btrfs: fix up 001.out
-References: <1420055304-4633-1-git-send-email-anand.jain@oracle.com> <1420203869-26085-1-git-send-email-anand.jain@oracle.com> <20150105032520.GI16685@dhcp-13-216.nay.redhat.com>
-In-Reply-To: <20150105032520.GI16685@dhcp-13-216.nay.redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since BTRFS_IOC_FS_INFO will return num of devices without counting
+devid 0 and di_arg is allocated according to it, so when replacing is
+running, there is num_devices + 1(0~num_devices) items to be written
+into di_args arrary, which causes buffer overflow with the following
+segfault.
 
+*** Error in `/usr/local/bin/btrfs': free(): invalid next size (normal):
+0x0000000001a95090 ***
+======= Backtrace: =========
+/lib64/libc.so.6[0x36c9475d9f]
+/lib64/libc.so.6[0x36c947d098]
+/usr/local/bin/btrfs[0x41342e]
+/usr/local/bin/btrfs[0x4135bd]
+/usr/local/bin/btrfs(handle_command_group+0x5d)[0x40990f]
+/usr/local/bin/btrfs(cmd_scrub+0x15)[0x4135d7]
+/usr/local/bin/btrfs(main+0x15d)[0x409a71]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x36c9421d65]
+/usr/local/bin/btrfs[0x409629]
+======= Memory map: ========
+00400000-0047a000 r-xp 00000000 08:08 4866225
+/share/local/bin/btrfs
+00679000-0067c000 r--p 00079000 08:08 4866225
+/share/local/bin/btrfs
+0067c000-0067e000 rw-p 0007c000 08:08 4866225
+/share/local/bin/btrfs
+0067e000-00682000 rw-p 00000000 00:00 0
+01a85000-01aa6000 rw-p 00000000 00:00 0
+[heap]
+3337a00000-3337a04000 r-xp 00000000 08:02 538227
+/usr/lib64/libuuid.so.1.3.0
+3337a04000-3337c03000 ---p 00004000 08:02 538227
+/usr/lib64/libuuid.so.1.3.0
+...
 
-On 01/05/2015 11:25 AM, Eryu Guan wrote:
-> On Fri, Jan 02, 2015 at 09:04:29PM +0800, Anand Jain wrote:
->> The subvol delete output has changed with btrfs-progs
->
-> Better to point out that since which btrfs-progs version the output
-> changed.
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ utils.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-  The fix here is output string change neutral, so it does not matter.
+diff --git a/utils.c b/utils.c
+index af0a8fe..56cadd1 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2008,7 +2008,12 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	if (!fi_args->num_devices)
+ 		goto out;
+ 
+-	di_args = *di_ret = malloc((fi_args->num_devices) * sizeof(*di_args));
++	/*
++	 * Since fi_args doesn't include the dev being replaced,
++	 * we need to plus 1 for devid 0 in case.
++	 */
++	di_args = *di_ret = malloc((fi_args->num_devices + 1) *
++				   sizeof(*di_args));
+ 	if (!di_args) {
+ 		ret = -errno;
+ 		goto out;
+-- 
+2.2.1
 
->>      -Delete subvolume 'SCRATCH_MNT/snap'
->>      +Delete subvolume (no-commit): 'SCRATCH_MNT/snap'
->>
->> so fix 001 failing.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>
->> v2: Thanks Filipe for mentioning now we have _run_btrfs_util_prog. and
->>      commit update
->
-> I think a better way to fix this is to update the
-> _filter_btrfs_subvol_delete filter
->
-> Right now the filter does delete message about transaction commit:
->
-> 	sed -e "/Transaction commit: none (default)/d"
->
-> Just adding another -e to sed to delete the "(no-commit):" part is fine.
-
-  in this case checking for the output string was fundamentally wrong 
-for a long.
-
-Thanks, Anand
-
-> Thanks,
-> Eryu
->> ---
->>   tests/btrfs/001     | 2 +-
->>   tests/btrfs/001.out | 1 -
->>   2 files changed, 1 insertion(+), 2 deletions(-)
->>
->> diff --git a/tests/btrfs/001 b/tests/btrfs/001
->> index 8258d06..a7747c8 100755
->> --- a/tests/btrfs/001
->> +++ b/tests/btrfs/001
->> @@ -99,7 +99,7 @@ echo "Listing subvolumes"
->>   $BTRFS_UTIL_PROG subvolume list $SCRATCH_MNT | awk '{ print $NF }'
->>
->>   # Delete the snapshot
->> -$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/snap | _filter_btrfs_subvol_delete
->> +_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
->>   echo "List root dir"
->>   ls $SCRATCH_MNT
->>   _scratch_remount
->> diff --git a/tests/btrfs/001.out b/tests/btrfs/001.out
->> index c782bde..43e8c56 100644
->> --- a/tests/btrfs/001.out
->> +++ b/tests/btrfs/001.out
->> @@ -33,7 +33,6 @@ subvol
->>   Listing subvolumes
->>   snap
->>   subvol
->> -Delete subvolume 'SCRATCH_MNT/snap'
->>   List root dir
->>   subvol
->>   List root dir
->> --
->> 2.0.0.153.g79dcccc
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

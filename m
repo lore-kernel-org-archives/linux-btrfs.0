@@ -1,115 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:37004 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750995AbbAFUUt (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 6 Jan 2015 15:20:49 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix directory inconsistency after fsync log replay
-Date: Tue,  6 Jan 2015 20:20:41 +0000
-Message-Id: <1420575641-9762-1-git-send-email-fdmanana@suse.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:47897 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754299AbbAGBxM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 20:53:12 -0500
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 693303EE0BD
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 10:53:10 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 6DEB9AC017F
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 10:53:09 +0900 (JST)
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 087E2E08007
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 10:53:09 +0900 (JST)
+Message-ID: <54AC916D.4080307@jp.fujitsu.com>
+Date: Wed, 7 Jan 2015 10:52:45 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: qgroup: move WARN_ON() to the correct location.
+References: <1420548882-12106-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1420548882-12106-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we have an inode (file) with a link count greater than 1, remove
-one of its hard links and, fsync the inode, power fail/crash and
-then replay the fsync log on the next mount, we end up getting the
-parent directory's metadata inconsistent - its i_size still reflects
-the deleted hard link. This prevents the directory from ever being
-deletable, as its i_size can never decrease to BTRFS_EMPTY_DIR_SIZE
-even if all of its children inodes are deleted.
+On 2015/01/06 21:54, Dongsheng Yang wrote:
+> In function qgroup_excl_accounting(), we need to WARN when
+> qg->excl is less than what we want to free, same to child
+> and parents. But currently, for parent qgroup, the WARN_ON()
+> is located after freeing qg->excl. It will WARN out even we
+> free it normally.
+> 
+> This patch move this WARN_ON() before freeing qg->excl.
+> 
+> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 
-This is easy to reproduce with the following excerpt from a test case
-for xfstests that I just made (and it passes with xfs and ext4):
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-    mkdir $SCRATCH_MNT/testdir
-    echo "hello world" > $SCRATCH_MNT/testdir/foo
-    ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/bar
-
-    # Make sure all metadata and data are durably persisted.
-    sync
-
-    # Now remove one of the hard links and fsync the inode.
-    rm -f $SCRATCH_MNT/testdir/bar
-    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foo
-
-    # Simulate a crash/power loss. This makes sure the next mount
-    # will see an fsync log and will replay that log.
-
-    _load_flakey_table $FLAKEY_DROP_WRITES
-    _unmount_flakey
-
-    _load_flakey_table $FLAKEY_ALLOW_WRITES
-    _mount_flakey
-
-    # Remove the last hard link of the file and attempt to remove its parent
-    # directory - this failed in btrfs because the fsync log and replay code
-    # didn't decrement the parent directory's i_size - this made the btrfs
-    # rmdir implementation always fail with -ENOTEMPTY.
-    #
-    # The parent directory's metadata inconsistency was also detected by btrfs'
-    # fsck tool, which is run automatically by the fstests framework when the
-    # test finishes.
-    rm -f $SCRATCH_MNT/testdir/foo
-    rmdir $SCRATCH_MNT/testdir
-
-To fix this just make sure that on unlink, if the inode's link count is
-greater than 1 and its parent inode is not yet in the fsync log, we end
-up logging the parent inode.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9a02da1..1d65a46 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4272,6 +4272,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	struct dentry *old_parent = NULL;
- 	int ret = 0;
- 	u64 last_committed = root->fs_info->last_trans_committed;
-+	const struct dentry * const first_parent = parent;
-+	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
-+				 last_committed);
- 
- 	sb = inode->i_sb;
- 
-@@ -4327,7 +4330,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		goto end_trans;
- 	}
- 
--	inode_only = LOG_INODE_EXISTS;
- 	while (1) {
- 		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
- 			break;
-@@ -4336,8 +4338,22 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		if (root != BTRFS_I(inode)->root)
- 			break;
- 
-+		/*
-+		 * On unlink we must make sure our immediate parent directory
-+		 * inode is fully logged. This is to prevent leaving dangling
-+		 * directory index entries and a wrong directory inode's i_size.
-+		 * Not doing so can result in a directory being impossible to
-+		 * delete after log replay (rmdir will always fail with error
-+		 * -ENOTEMPTY).
-+		 */
-+		if (did_unlink && parent == first_parent)
-+			inode_only = LOG_INODE_ALL;
-+		else
-+			inode_only = LOG_INODE_EXISTS;
-+
- 		if (BTRFS_I(inode)->generation >
--		    root->fs_info->last_trans_committed) {
-+		    root->fs_info->last_trans_committed ||
-+		    inode_only == LOG_INODE_ALL) {
- 			ret = btrfs_log_inode(trans, root, inode, inode_only,
- 					      0, LLONG_MAX, ctx);
- 			if (ret)
--- 
-2.1.3
+> ---
+>   fs/btrfs/qgroup.c | 3 +--
+>   1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 48b60db..97159a8 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1431,9 +1431,8 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+>   		qgroup = u64_to_ptr(unode->aux);
+>   		qgroup->rfer += sign * oper->num_bytes;
+>   		qgroup->rfer_cmpr += sign * oper->num_bytes;
+> +		WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
+>   		qgroup->excl += sign * oper->num_bytes;
+> -		if (sign < 0)
+> -			WARN_ON(qgroup->excl < oper->num_bytes);
+>   		qgroup->excl_cmpr += sign * oper->num_bytes;
+>   		qgroup_dirty(fs_info, qgroup);
+>   
+> 
 

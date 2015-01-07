@@ -1,149 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:61000 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751761AbbAGAuG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 19:50:06 -0500
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 6A9E13EE0C1
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:04 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 591A3AC03D4
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:03 +0900 (JST)
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id DEBD1E08008
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:02 +0900 (JST)
-Message-ID: <54AC82AC.5060100@jp.fujitsu.com>
-Date: Wed, 7 Jan 2015 09:49:48 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from mail-la0-f48.google.com ([209.85.215.48]:63081 "EHLO
+	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754480AbbAGELJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 23:11:09 -0500
+Received: by mail-la0-f48.google.com with SMTP id gf13so1301535lab.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jan 2015 20:11:08 -0800 (PST)
 MIME-Version: 1.0
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 0/3] Btrfs: Enhancment for qgroup.
-References: <549CF56A.2050400@jp.fujitsu.com> <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
+In-Reply-To: <54AA7CAD.7060201@gmail.com>
+References: <CALJXSJqF-7KfDJS27ZdYpQWZcr8XOHoFA1LjKJFfXJA2Unnz1w@mail.gmail.com>
+	<54AA7CAD.7060201@gmail.com>
+Date: Tue, 6 Jan 2015 23:11:08 -0500
+Message-ID: <CALJXSJpTkppvXAGb1nb5x3VFZ7CW-W9zmb3acvM=_+7SL06ixw@mail.gmail.com>
+Subject: Re: Data recovery after RBD I/O error
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, ceph-users@lists.ceph.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Yang,
+On Mon, Jan 5, 2015 at 6:59 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> Secondly, I would highly recommend not using ANY non-cluster-aware FS on top
+> of a clustered block device like RBD
 
-On 2015/01/05 15:16, Dongsheng Yang wrote:
-> Hi Josef and others,
-> 
-> This patch set is about enhancing qgroup.
-> 
-> [1/3]: fix a bug about qgroup leak when we exceed quota limit,
-> 	It is reviewd by Josef.
-> [2/3]: introduce a new accounter in qgroup to close a window where
-> 	user will exceed the limit by qgroup. It "looks good" to Josef.
-> [3/3]: a new patch to fix a bug reported by Satoru.
 
-I tested your the patchset v3. Although it's far better
-than the patchset v2, there is still one problem in this patchset.
-When I wrote 1.5GiB to a subvolume with 1.0 GiB limit,
-1.0GiB - 139 block (in this case, 1KiB/block) was written.
-
-I consider user should be able to write just 1.0GiB in this case.
-
-* Test result
-
-===============================================================================
-+ mkfs.btrfs -f /dev/vdb
-Btrfs v3.17
-See http://btrfs.wiki.kernel.org for more information.
-
-Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-fs created label (null) on /dev/vdb
-        nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
-+ mount /dev/vdb /root/btrfs-auto-test/
-+ ret=0
-+ btrfs quota enable /root/btrfs-auto-test/
-+ btrfs subvolume create /root/btrfs-auto-test//sub
-Create subvolume '/root/btrfs-auto-test/sub'
-+ btrfs qgroup limit 1G /root/btrfs-auto-test//sub
-+ dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
-dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
-1048438+0 records in                    # Tried to write 1GiB - 138 KiB
-1048437+0 records out                   # Succeeded to write 1GiB - 139 KiB
-1073599488 bytes (1.1 GB) copied, 19.0247 s, 56.4 MB/s
-===============================================================================
-
-* note
-
-I tried to run the reproducer five times and the result is
-a bit different for each time.
-
-=========================
-#	Written
--------------------------
-1	1GiB - 139 KiB
-2	1GiB - 139 KiB
-3	1GiB - 145 KiB
-4	1GiB - 135 KiB
-5	1GiB - 135 KiB
-==========================
-
-So I consider it's a problem comes from timing.
-
-If I changed the block size from 1KiB to 1 MiB,
-the difference in bytes got larger.
-
-============================
-#	Written
-----------------------------
-1	1GiB - 1 MiB
-2	1GiB - 1 MiB
-3	1GiB - 1 MiB
-4	1GiB - 1 MiB
-5	1GiB - 1 MiB
-============================
-
-Thanks,
-Satoru
-
-> 
-> BTW, I have some other plan about qgroup in my TODO list:
-> 
-> Kernel:
-> a). adjust the accounters in parent qgroup when we move
-> the child qgroup.
-> 	Currently, when we move a qgroup, the parent qgroup
-> will not updated at the same time. This will cause some wrong
-> numbers in qgroup.
-> 
-> b). add a ioctl to show the qgroup info.
-> 	Command "btrfs qgroup show" is showing the qgroup info
-> read from qgroup tree. But there is some information in memory
-> which is not synced into device. Then it will show some outdate
-> number.
-> 
-> c). limit and account size in 3 modes, data, metadata and both.
-> 	qgroup is accounting the size both of data and metadata
-> togather, but to a user, the data size is the most useful to them.
-> 
-> d). remove a subvolume related qgroup when subvolume is deleted and
-> there is no other reference to it.
-> 
-> user-tool:
-> a). Add the unit of B/K/M/G to btrfs qgroup show.
-> b). get the information via ioctl rather than reading it from
-> btree. Will keep the old way as a fallback for compatiblity.
-> 
-> Any comment and sugguestion is welcome. :)
-> 
-> Yang
-> 
-> Dongsheng Yang (3):
->    Btrfs: qgroup: free reserved in exceeding quota.
->    Btrfs: qgroup: Introduce a may_use to account
->      space_info->bytes_may_use.
->    Btrfs: qgroup, Account data space in more proper timings.
-> 
->   fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++-------
->   fs/btrfs/file.c        |  9 -------
->   fs/btrfs/inode.c       | 18 ++++++++++++-
->   fs/btrfs/qgroup.c      | 68 +++++++++++++++++++++++++++++++++++++++++++++++---
->   fs/btrfs/qgroup.h      |  4 +++
->   5 files changed, 117 insertions(+), 23 deletions(-)
-> 
-
+For my use-case, this is just a single server using the RBD device. No
+clustering involved on the BTRFS side of thing. However, it was really
+useful to take snapshots (just like LVM) before modifying the
+filesystem in any way.

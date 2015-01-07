@@ -1,97 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lekensteyn.nl ([178.21.112.251]:52995 "EHLO lekensteyn.nl"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753236AbbAEOKP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Jan 2015 09:10:15 -0500
-Received: by lekensteyn.nl with esmtpsa (TLS1.2:RSA_AES_128_CBC_SHA256:128)
-	(Exim 4.80)
-	(envelope-from <peter@lekensteyn.nl>)
-	id 1Y88MH-0006Y6-5u
-	for linux-btrfs@vger.kernel.org; Mon, 05 Jan 2015 15:10:13 +0100
-From: Peter Wu <peter@lekensteyn.nl>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Documentation: fix broken conversion
-Date: Mon,  5 Jan 2015 15:10:09 +0100
-Message-Id: <1420467009-11738-1-git-send-email-peter@lekensteyn.nl>
+Received: from cn.fujitsu.com ([59.151.112.132]:19375 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752677AbbAGJXo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 04:23:44 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t079NBx2029323
+	for <linux-btrfs@vger.kernel.org>; Wed, 7 Jan 2015 17:23:11 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Fix a copy-n-paste bug in btrfs_read_fs_root().
+Date: Wed, 7 Jan 2015 17:23:43 +0800
+Message-ID: <1420622623-25668-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fixes various formatting issues:
-
-Fixes quoting issues in various manpages. Before/After excerpts for
-mkfs.btrfs(8), btrfs-qgroup(8):
-
-    mkfs.btrfs [-A|--alloc-start '<alloc-start>']
-    mkfs.btrfs [-A|--alloc-start <alloc-start>]
-    id 0/<subvolume id>''
-    id 0/<subvolume id>
-    If multiple '<attr>'s is given, use comma to separate.
-    If multiple <attr>s is given, use comma to separate.
-
-The one that is most apparent is the removal of text in
-btrfs-subvolume(8) and others. Before/After:
-
-    list [options] [-G <value>] [-C <value>] [--sort=rootid,gen,ogen,path] <path>
-    list [options] [-G [+|-]<value>] [-C [+|-]<value>] [--sort=rootid,gen,ogen,path] <path>
-    create [-i <qgroupid>] <name>
-    create [-i <qgroupid>] [<dest>]<name>
-
-This happens because `<foo>` was replaced by `'<foo>'` in the sed
-expression, which is then treated as a constrained quote. As a result,
-the `[...]` before the string gets interpreted as "quoted text
-attributes".
-
-In this patch, the sed expression is dropped and asciidoc is configured
-to recognize `<...>` as a unconstrained quoted string (such that
-`<attr>s` is correctly emphasized) and to avoid adding quotes in
-contexts where it is not needed.
-
-A remaining problem is that some texts (the one between brackets) do not
-add the emphasis for `<...>`. While this could be solved by replacing
-`[` and `]` with `&#91;` and `&#93;` using sed, it introduces formatting
-problems in btrfs-zero-log(8) because the context is ignored.
-
-Signed-off-by: Peter Wu <peter@lekensteyn.nl>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile      | 8 +++-----
- Documentation/asciidoc.conf | 6 ++++++
- 2 files changed, 9 insertions(+), 5 deletions(-)
+ disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/Makefile b/Documentation/Makefile
-index ef4f1bd..72ab77b 100644
---- a/Documentation/Makefile
-+++ b/Documentation/Makefile
-@@ -113,10 +113,8 @@ clean:
- 	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
+diff --git a/disk-io.c b/disk-io.c
+index 2bf8586..b853f66 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -693,7 +693,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
+ 	if (location->objectid == BTRFS_CSUM_TREE_OBJECTID)
+ 		return fs_info->csum_root;
+ 	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
+-		return fs_info->csum_root;
++		return fs_info->quota_root;
  
- %.xml : %.txt asciidoc.conf
--	$(QUIET_ASCIIDOC)$(RM) $@.tmp[12] $@ && \
--	sed -e "s/\(<[^>]\+>\)/'\1'/g" < $< > $@.tmp1 && \
-+	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
- 	$(ASCIIDOC) -b docbook -d manpage -f asciidoc.conf \
- 		$(ASCIIDOC_EXTRA) -abtrfs_version=$(BTRFS_VERSION) \
--		-o $@.tmp2 $@.tmp1 && \
--	mv $@.tmp2 $@ && \
--	rm -f -- $@.tmp1
-+		-o $@+ $< && \
-+	mv $@+ $@
-diff --git a/Documentation/asciidoc.conf b/Documentation/asciidoc.conf
-index 313f185..1ea7459 100644
---- a/Documentation/asciidoc.conf
-+++ b/Documentation/asciidoc.conf
-@@ -10,6 +10,12 @@
- [macros]
- (?su)[\\]?(?P<name>linkbtrfs):(?P<target>\S*?)\[(?P<attrlist>.*?)\]=
- 
-+[tags]
-+bracket-emphasis={1?[{1}]}<emphasis>&lt;|&gt;</emphasis>
-+
-+[quotes]
-+&lt;|&gt;=#bracket-emphasis
-+
- [attributes]
- asterisk=&#42;
- plus=&#43;
+ 	BUG_ON(location->objectid == BTRFS_TREE_RELOC_OBJECTID ||
+ 	       location->offset != (u64)-1);
 -- 
 2.2.1
 

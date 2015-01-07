@@ -1,180 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22281 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753592AbbAGJo2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 04:44:28 -0500
-Message-ID: <54ACFF48.4000201@cn.fujitsu.com>
-Date: Wed, 7 Jan 2015 17:41:28 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:57604 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751867AbbAGMiU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 07:38:20 -0500
+Received: by mail-ig0-f180.google.com with SMTP id h15so1208982igd.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Jan 2015 04:38:19 -0800 (PST)
+Message-ID: <54AD28B4.2000802@gmail.com>
+Date: Wed, 07 Jan 2015 07:38:12 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-CC: Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] btrfs: get the accurate value of used_bytes in btrfs_get_block_group_info().
-References: <1414413499-28826-1-git-send-email-yangds.fnst@cn.fujitsu.com> <54AA732B.7010301@cn.fujitsu.com> <54ACEDEC.7090904@jp.fujitsu.com> <54ACFAF2.2010700@cn.fujitsu.com>
-In-Reply-To: <54ACFAF2.2010700@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, ceph-users@lists.ceph.com
+Subject: Re: Data recovery after RBD I/O error
+References: <CALJXSJqF-7KfDJS27ZdYpQWZcr8XOHoFA1LjKJFfXJA2Unnz1w@mail.gmail.com>	<54AA7CAD.7060201@gmail.com> <CALJXSJpTkppvXAGb1nb5x3VFZ7CW-W9zmb3acvM=_+7SL06ixw@mail.gmail.com>
+In-Reply-To: <CALJXSJpTkppvXAGb1nb5x3VFZ7CW-W9zmb3acvM=_+7SL06ixw@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090307010402050107090600"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/07/2015 05:22 PM, Qu Wenruo wrote:
-> Hi Satoru-san
->> Hi Dongsheng,
->>
->> On 2015/01/05 20:19, Dongsheng Yang wrote:
->>
->>> Ping.....
->>>
->>> IOCTL of BTRFS_IOC_SPACE_INFO currently does not report
->>> the data used but not synced to user.  Then btrfs fi df will
->>> give user a wrong numbers before sync. This patch solve
->>> this problem.
->>>
->>> On 10/27/2014 08:38 PM, Dongsheng Yang wrote:
->>>> Reproducer:
->>>>     # mkfs.btrfs -f -b 20G /dev/sdb
->>>>     # mount /dev/sdb /mnt/test
->>>>     # fallocate  -l 17G /mnt/test/largefile
->>>>     # btrfs fi df /mnt/test
->>>>     Data, single: total=17.49GiB, used=6.00GiB <- only 6G, but 
->>>> actually it should be 17G.
->>>>     System, DUP: total=8.00MiB, used=16.00KiB
->>>>     System, single: total=4.00MiB, used=0.00B
->>>>     Metadata, DUP: total=1.00GiB, used=112.00KiB
->>>>     Metadata, single: total=8.00MiB, used=0.00B
->>>>     GlobalReserve, single: total=16.00MiB, used=0.00B
->>
->> I tried to reproduce your problem with 3.19-rc1.
->> However, this problem doesn't happen. Could you
->> also try to reproduce with the upstream kernel?
-> I can still reproduce it in 3.18, but it seems to be fixed in 3.19-rc1 
-> already by other patch,
-> so this patch is no longer needed.
+This is a cryptographically signed message in MIME format.
 
-Oops, my fault. I forgot to test it with upstream. :(
+--------------ms090307010402050107090600
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-Satoru and Qu, thanx a lot.
-
-Yang
+On 2015-01-06 23:11, J=C3=A9r=C3=B4me Poulin wrote:
+> On Mon, Jan 5, 2015 at 6:59 AM, Austin S Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>> Secondly, I would highly recommend not using ANY non-cluster-aware FS =
+on top
+>> of a clustered block device like RBD
 >
-> Thanks,
-> Qu
->>
->> * Detail
->>
->> test script (named "yang-test.sh" here):
->> =============================================================================== 
->>
->> #!/bin/bash -x
->>
->> PART1=/dev/vdb
->> MNT_PNT=./mnt
->> mkfs.btrfs -f -b 20G ${PART1}
->> mount ${PART1} ${MNT_PNT}
->> fallocate -l 17G ${MNT_PNT}/largefile
->> btrfs fi df ${MNT_PNT}
->> sync
->> btrfs fi df ${MNT_PNT}
->> umount ${MNT_PNT}
->> =============================================================================== 
->>
->>
->> Result:
->> =============================================================================== 
->>
->> # ./yang-test.sh
->> + PART1=/dev/vdb
->> + MNT_PNT=./mnt
->> + mkfs.btrfs -f -b 20G /dev/vdb
->> Btrfs v3.17
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> Turning ON incompat feature 'extref': increased hardlink limit per 
->> file to 65536
->> fs created label (null) on /dev/vdb
->>         nodesize 16384 leafsize 16384 sectorsize 4096 size 20.00GiB
->> + mount /dev/vdb ./mnt
->> + fallocate -l 17G ./mnt/largefile
->> + btrfs fi df ./mnt
->> Data, single: total=17.01GiB, used=17.00GiB   # Used 17GiB properly
->> System, DUP: total=8.00MiB, used=16.00KiB
->> System, single: total=4.00MiB, used=0.00B
->> Metadata, DUP: total=1.00GiB, used=112.00KiB
->> Metadata, single: total=8.00MiB, used=0.00B
->> GlobalReserve, single: total=16.00MiB, used=0.00B
->> + sync
->> + btrfs fi df ./mnt
->> Data, single: total=17.01GiB, used=17.00GiB    # (of course) used 
->> 17GiB too
->> System, DUP: total=8.00MiB, used=16.00KiB
->> System, single: total=4.00MiB, used=0.00B
->> Metadata, DUP: total=1.00GiB, used=112.00KiB
->> Metadata, single: total=8.00MiB, used=0.00B
->> GlobalReserve, single: total=16.00MiB, used=0.00B
->> + umount ./mnt
->> =============================================================================== 
->>
->>
->> Although I ran this test five times, the results are the same.
->>
->> Thanks,
->> Satoru
->>
->>>>     # sync
->>>>     # btrfs fi df /mnt/test
->>>>     Data, single: total=17.49GiB, used=17.00GiB <- After sync, it 
->>>> is expected.
->>>>     System, DUP: total=8.00MiB, used=16.00KiB
->>>>     System, single: total=4.00MiB, used=0.00B
->>>>     Metadata, DUP: total=1.00GiB, used=112.00KiB
->>>>     Metadata, single: total=8.00MiB, used=0.00B
->>>>     GlobalReserve, single: total=16.00MiB, used=0.00B
->>>>
->>>> The value of 6.00GiB is actually calculated in 
->>>> btrfs_get_block_group_info()
->>>> by adding the @block_group->item->used for each group together. In 
->>>> this way,
->>>> it did not consider the bytes in cache.
->>>>
->>>> This patch adds the value of @pinned, @reserved and @bytes_super in
->>>> struct btrfs_block_group_cache to make sure we can get the accurate 
->>>> @used_bytes.
->>>>
->>>> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
->>>> ---
->>>>   fs/btrfs/ioctl.c | 4 ++++
->>>>   1 file changed, 4 insertions(+)
->>>>
->>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>>> index 33c80f5..bc2aaeb 100644
->>>> --- a/fs/btrfs/ioctl.c
->>>> +++ b/fs/btrfs/ioctl.c
->>>> @@ -3892,6 +3892,10 @@ void btrfs_get_block_group_info(struct 
->>>> list_head *groups_list,
->>>>           space->total_bytes += block_group->key.offset;
->>>>           space->used_bytes +=
->>>> btrfs_block_group_used(&block_group->item);
->>>> +        /* Add bytes-info in cache */
->>>> +        space->used_bytes += block_group->pinned;
->>>> +        space->used_bytes += block_group->reserved;
->>>> +        space->used_bytes += block_group->bytes_super;
->>>>       }
->>>>   }
->>>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe 
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at http://vger.kernel.org/majordomo-info.html
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
 >
-> .
->
+> For my use-case, this is just a single server using the RBD device. No
+> clustering involved on the BTRFS side of thing.
+My only point is that there isn't anything in BTRFS to handle it=20
+accidentally being multiply mounted.  Ext* for example aren't clustered, =
 
+but do have an optional feature to prevent multiple mounting.
+> However, it was really useful to take snapshots (just like LVM) before =
+modifying the
+> filesystem in any way.
+>
+Have you tried Ceph's built in snapshot support?  I don't remember how=20
+to use it, but I do know it is there (at least, it is in the most recent =
+
+versions), and it is a bit more like LVM's snapshots than BTRFS is.
+
+
+--------------ms090307010402050107090600
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTA3MTIzODEy
+WjAjBgkqhkiG9w0BCQQxFgQU3CRuH/aQuKxNWFoDnsHRpz/txwAwbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAxBlBJd031ghWFx8Sh/Nwn/GKlaMs
+Dv1I29nEQFHasQrytJ/M26VzI0v4/IQqmuNd5832RV5tI6McYqbNaav28zB+TUDgapps2Dkz
+Gc+AxdLTp2tUdSLfxDy3PYI+mq4sODrIIMytvRxGjBcdO23YSllb0y7sukKpatD/QY3ggT+h
+J2EyWyxkkpw/cp3OBqcsr7yfV1EweoxwO4RAen9XVzj/8Suz7SZH7Sv+exDmwjUeaGcCVjPL
+JedQfyvwAJM/kmiqgLvuKnoLHIPOZI7uHjF4cPZWHe31vYG0bVoJohfyr6W9MXf70+8XtPSA
+nNKWlTKhTYXHqcCDWn92MKJ8kQAAAAAAAA==
+--------------ms090307010402050107090600--

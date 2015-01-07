@@ -1,43 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32-i2.italiaonline.it ([212.48.25.202]:36502 "EHLO
-	smtp-32.italiaonline.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754214AbbAGVDB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 16:03:01 -0500
-Message-ID: <54AD9F85.1010608@inwind.it>
-Date: Wed, 07 Jan 2015 22:05:09 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, Lennart Poettering <lennart@poettering.net>,
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34100 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752978AbbAGVlh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Jan 2015 16:41:37 -0500
+Date: Wed, 7 Jan 2015 16:41:36 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Robert White <rwhite@pobox.com>,
         linux-btrfs@vger.kernel.org
-Subject: Re: price to pay for nocow file bit?
-References: <20150107174315.GA21865@gardel-login> <54AD929E.608@fb.com>
-In-Reply-To: <54AD929E.608@fb.com>
-Content-Type: text/plain; charset=windows-1252
+Subject: Re: BTRFS free space handling still needs more work: Hangs again (no
+ complete lockups, "just" tasks stuck for some time)
+Message-ID: <20150107214136.GD11632@hungrycats.org>
+References: <3738341.y7uRQFcLJH@merkaba>
+ <2191338.tRc7Jxvh05@merkaba>
+ <20150106200322.GA12706@hungrycats.org>
+ <1499386.KVI6lPzt8j@merkaba>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="17pEHd4RhPHOinZp"
+In-Reply-To: <1499386.KVI6lPzt8j@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> 
->> I am trying to understand the pros and cons of turning this bit
->> on, before I can make this change. So far I see one big pro, but I
->> wonder if there's any major con I should think about?
->> 
-> 
-> Nope there's no real con other than you don't get csums, but that
-> doesn't really matter for you.  Thanks,
 
-In a btrfs-raid setup, in case of a corrupted sector, is BTRFS able to 
-rebuild the sector ?
-I suppose no; if so this has to be add to the cons I think.
+--17pEHd4RhPHOinZp
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
->From my tests [1][2] I was unable to get bigger difference between doing a defrag 
-and setting chattr -C the log directory. Did you get other results, if so I am 
-interested to know more.
+On Wed, Jan 07, 2015 at 08:08:50PM +0100, Martin Steigerwald wrote:
+> Am Dienstag, 6. Januar 2015, 15:03:23 schrieb Zygo Blaxell:
+> > ext3 has a related problem when it's nearly full:  it will try to search
+> > gigabytes of block allocation bitmaps searching for a free block, which
+> > can result in a single 'mkdir' call spending 45 minutes reading a large
+> > slow 99.5% full filesystem.
+>=20
+> Ok, thats for bitmap access. Ext4 uses extens.=20
 
-BR
-G.Baroncelli
+=2E..and the problem doesn't happen to the same degree on ext4 as it did
+on ext3.
+
+> > So far I've found that problems start when space drops below 1GB free
+> > (although it can go as low as 400MB) and problems stop when space gets
+> > above 1GB free, even without resizing or balancing the filesystem.
+> > I've adjusted free space monitoring thresholds accordingly for now,
+> > and it seems to be keeping things working so far.
+>=20
+> Just to see whether we are on the same terms: You talk about space that B=
+TRFS=20
+> has not yet reserved for chunks, i.e. the difference between size and use=
+d in=20
+> btrfs fi sh, right?
+
+The number I look at for this issue is statvfs() f_bavail (i.e. the
+"Available" column of /bin/df).
+
+Before the empty-chunk-deallocation code, most of my filesystems would
+quickly reach a steady state where all space is allocated to chunks,
+and they stay that way unless I have to downsize them.
+
+Now there is free (non-chunk) space on most of my filesystems.  I'll try
+monitoring btrfs fi df and btrfs fi show under the failing conditions
+and see if there are interesting correlations.
 
 
+--17pEHd4RhPHOinZp
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-[1] http://kreijack.blogspot.it/2014/06/btrfs-and-systemd-journal.html
-[2] http://lists.freedesktop.org/archives/systemd-devel/2014-June/020141.html
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlStqBAACgkQgfmLGlazG5yYMQCg46gSTXtsH1dm1YhrSUAUeWQH
+G7oAoJMq3UCyw77900VwRsFlrBNs9QeN
+=BUtQ
+-----END PGP SIGNATURE-----
+
+--17pEHd4RhPHOinZp--

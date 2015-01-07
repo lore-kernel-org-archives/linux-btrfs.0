@@ -1,224 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:39748 "EHLO
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:61000 "EHLO
 	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751994AbbAFWsc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 17:48:32 -0500
-Message-ID: <54AC65C2.8000801@jp.fujitsu.com>
-Date: Wed, 7 Jan 2015 07:46:26 +0900
+	with ESMTP id S1751761AbbAGAuG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 19:50:06 -0500
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 6A9E13EE0C1
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:04 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 591A3AC03D4
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:03 +0900 (JST)
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id DEBD1E08008
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Jan 2015 09:50:02 +0900 (JST)
+Message-ID: <54AC82AC.5060100@jp.fujitsu.com>
+Date: Wed, 7 Jan 2015 09:49:48 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Naohiro Aota <naota@elisp.net>, <linux-btrfs@vger.kernel.org>
-CC: <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: clear bio reference after submit_one_bio()
-References: <1420473663-9315-1-git-send-email-naota@elisp.net>
-In-Reply-To: <1420473663-9315-1-git-send-email-naota@elisp.net>
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 0/3] Btrfs: Enhancment for qgroup.
+References: <549CF56A.2050400@jp.fujitsu.com> <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Naota,
+Hi Yang,
 
-On 2015/01/06 1:01, Naohiro Aota wrote:
-> After submit_one_bio(), `bio' can go away. However submit_extent_page()
-> leave `bio' referable if submit_one_bio() failed (e.g. -ENOMEM on OOM).
-> It will cause invalid paging request when submit_extent_page() is called
-> next time.
+On 2015/01/05 15:16, Dongsheng Yang wrote:
+> Hi Josef and others,
 > 
-> I reproduced ENOMEM case with the following script (need
-> CONFIG_FAIL_PAGE_ALLOC, and CONFIG_FAULT_INJECTION_DEBUG_FS).
+> This patch set is about enhancing qgroup.
+> 
+> [1/3]: fix a bug about qgroup leak when we exceed quota limit,
+> 	It is reviewd by Josef.
+> [2/3]: introduce a new accounter in qgroup to close a window where
+> 	user will exceed the limit by qgroup. It "looks good" to Josef.
+> [3/3]: a new patch to fix a bug reported by Satoru.
 
-I confirmed that this problem reproduce with 3.19-rc3 and
-not reproduce with 3.19-rc3 with your patch.
+I tested your the patchset v3. Although it's far better
+than the patchset v2, there is still one problem in this patchset.
+When I wrote 1.5GiB to a subvolume with 1.0 GiB limit,
+1.0GiB - 139 block (in this case, 1KiB/block) was written.
 
-Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+I consider user should be able to write just 1.0GiB in this case.
 
-Thank you for reporting this problem with the reproducer
-and fixing it too.
-
-  NOTE:
-  I used v3.19-rc3's tools/testing/fault-injection/failcmd.sh
-  for the following "./failcmd.sh".
-
-  >            ./failcmd.sh -p $percent -t $times -i $interval \
-  >                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
-  >                    -- \
-  >                    cat $directory/file > /dev/null
-
-* 3.19-rc1 + your patch
+* Test result
 
 ===============================================================================
-# ./run
-512+0 records in
-512+0 records out
-# 
++ mkfs.btrfs -f /dev/vdb
+Btrfs v3.17
+See http://btrfs.wiki.kernel.org for more information.
+
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+fs created label (null) on /dev/vdb
+        nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
++ mount /dev/vdb /root/btrfs-auto-test/
++ ret=0
++ btrfs quota enable /root/btrfs-auto-test/
++ btrfs subvolume create /root/btrfs-auto-test//sub
+Create subvolume '/root/btrfs-auto-test/sub'
++ btrfs qgroup limit 1G /root/btrfs-auto-test//sub
++ dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
+dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
+1048438+0 records in                    # Tried to write 1GiB - 138 KiB
+1048437+0 records out                   # Succeeded to write 1GiB - 139 KiB
+1073599488 bytes (1.1 GB) copied, 19.0247 s, 56.4 MB/s
 ===============================================================================
 
-* 3.19-rc3
+* note
 
-===============================================================================
-# ./run
-512+0 records in
-512+0 records out
-[  188.433726] run (776): drop_caches: 1
-[  188.682372] FAULT_INJECTION: forcing a failure.
-name fail_page_alloc, interval 100, probability 111000, space 0, times 3
-[  188.689986] CPU: 0 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
-[  188.693834] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-[  188.698466]  0000000000000064 ffff88007b343618 ffffffff816e5563 ffff88007fc0fc78
-[  188.702730]  ffffffff81c655c0 ffff88007b343638 ffffffff813851b5 0000000000000010
-[  188.707043]  0000000000000002 ffff88007b343768 ffffffff81188126 ffff88007b3435a8
-[  188.711283] Call Trace:
-[  188.712620]  [<ffffffff816e5563>] dump_stack+0x45/0x57
-[  188.715330]  [<ffffffff813851b5>] should_fail+0x135/0x140
-[  188.718218]  [<ffffffff81188126>] __alloc_pages_nodemask+0xd6/0xb30
-[  188.721567]  [<ffffffff81339075>] ? blk_rq_map_sg+0x35/0x170
-[  188.724558]  [<ffffffffa0010705>] ? virtio_queue_rq+0x145/0x2b0 [virtio_blk]
-[  188.728191]  [<ffffffffa01bd00f>] ? btrfs_submit_compressed_read+0xcf/0x4d0 [btrfs]
-[  188.732079]  [<ffffffff811d99fb>] ? kmem_cache_alloc+0x1cb/0x230
-[  188.735153]  [<ffffffff81181265>] ? mempool_alloc_slab+0x15/0x20
-[  188.738188]  [<ffffffff811cee1a>] alloc_pages_current+0x9a/0x120
-[  188.741153]  [<ffffffffa01bd0e9>] btrfs_submit_compressed_read+0x1a9/0x4d0 [btrfs]
-[  188.744835]  [<ffffffffa0178621>] btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
-[  188.748225]  [<ffffffffa018b7b3>] ? lookup_extent_mapping+0x13/0x20 [btrfs]
-[  188.751547]  [<ffffffffa0179c08>] ? btrfs_get_extent+0x98/0xad0 [btrfs]
-[  188.754656]  [<ffffffffa01901d7>] submit_one_bio+0x67/0xa0 [btrfs]
-[  188.757554]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
-[  188.760981]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
-[  188.763920]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
-[  188.767382]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.770671]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
-[  188.774366]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
-[  188.778031]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.781241]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
-[  188.784322]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.789014]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
-[  188.792028]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
-[  188.795078]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
-[  188.797702]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
-[  188.800718]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
-[  188.803650]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
-[  188.806480]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
-[  188.808832]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
-[  188.811068]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
-[  188.813298]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
-[  188.815486]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
-[  188.818293]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
-[  188.821005] BUG: unable to handle kernel paging request at 000000010000000c
-[  188.821984] IP: [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
-[  188.821984] PGD 7bad3067 PUD 0 
-[  188.821984] Oops: 0000 [#1] SMP 
-[  188.821984] Modules linked in: ip6table_filter ip6_tables ebtable_nat ebtables bnep bluetooth rfkill btrfs xor raid6_pq microcode 8139too serio_raw virtio_balloon 8139cp mii nfsd auth_rpcgss nfs_acl lockd grace sunrpc virtio_blk ata_generic pata_acpi
-[  188.821984] CPU: 1 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
-[  188.821984] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-[  188.821984] task: ffff880037665220 ti: ffff88007b340000 task.ti: ffff88007b340000
-[  188.821984] RIP: 0010:[<ffffffffa01901b3>]  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
-[  188.821984] RSP: 0018:ffff88007b3438c8  EFLAGS: 00010202
-[  188.821984] RAX: 0000000000000000 RBX: ffff88007c282ba8 RCX: 0000000000010001
-[  188.821984] RDX: 0000000000000000 RSI: 00000000fffffff4 RDI: 0000000000000000
-[  188.821984] RBP: ffff88007b3438d8 R08: ffffea0001e33100 R09: 00000000000027df
-[  188.821984] R10: ffff88007fd1c000 R11: 0000000000dbb000 R12: ffff88007b343b40
-[  188.821984] R13: ffff88007c282ba8 R14: 0000000000006dd8 R15: ffff880071584f80
-[  188.821984] FS:  00007fdf777c5740(0000) GS:ffff88007fd00000(0000) knlGS:0000000000000000
-[  188.821984] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[  188.821984] CR2: 000000010000000c CR3: 000000007bf59000 CR4: 00000000000006e0
-[  188.821984] Stack:
-[  188.821984]  0000000000001000 ffff88007b343b40 ffff88007b343938 ffffffffa0193f27
-[  188.821984]  ffff88007b343938 0000000000000001 0000000000000000 ffffea0001e33180
-[  188.821984]  00000000027e0000 0000000000001000 ffff88007cc24680 ffff88007b343b50
-[  188.821984] Call Trace:
-[  188.821984]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
-[  188.821984]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
-[  188.821984]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
-[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.821984]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
-[  188.821984]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
-[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.821984]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
-[  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
-[  188.821984]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
-[  188.821984]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
-[  188.821984]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
-[  188.821984]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
-[  188.821984]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
-[  188.821984]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
-[  188.821984]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
-[  188.821984]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
-[  188.821984]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
-[  188.821984]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
-[  188.821984]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
-[  188.821984]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
-[  188.821984] Code: c1 e0 04 48 8d 44 06 f0 48 8b 73 50 4c 8b 00 8b 40 0c 4d 8b 48 10 48 c7 43 50 00 00 00 00 f0 ff 43 74 48 8b 76 20 48 85 f6 74 4d <4c> 8b 56 18 4d 85 d2 74 44 4d 8b 58 08 49 c1 e1 0c 49 89 c8 89 
-[  188.821984] RIP  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
-[  188.821984]  RSP <ffff88007b3438c8>
-[  188.821984] CR2: 000000010000000c
-[  188.953169] ---[ end trace 498f24be78e8baad ]---
-# 
-===============================================================================
+I tried to run the reproducer five times and the result is
+a bit different for each time.
+
+=========================
+#	Written
+-------------------------
+1	1GiB - 139 KiB
+2	1GiB - 139 KiB
+3	1GiB - 145 KiB
+4	1GiB - 135 KiB
+5	1GiB - 135 KiB
+==========================
+
+So I consider it's a problem comes from timing.
+
+If I changed the block size from 1KiB to 1 MiB,
+the difference in bytes got larger.
+
+============================
+#	Written
+----------------------------
+1	1GiB - 1 MiB
+2	1GiB - 1 MiB
+3	1GiB - 1 MiB
+4	1GiB - 1 MiB
+5	1GiB - 1 MiB
+============================
 
 Thanks,
 Satoru
 
 > 
->    #!/bin/bash
+> BTW, I have some other plan about qgroup in my TODO list:
 > 
->    dmesgout=dmesg.txt
->    start=100000
->    end=300000
->    step=1000
+> Kernel:
+> a). adjust the accounters in parent qgroup when we move
+> the child qgroup.
+> 	Currently, when we move a qgroup, the parent qgroup
+> will not updated at the same time. This will cause some wrong
+> numbers in qgroup.
 > 
->    # btrfs options
->    device=/dev/vdb1
->    directory=/mnt/btrfs
+> b). add a ioctl to show the qgroup info.
+> 	Command "btrfs qgroup show" is showing the qgroup info
+> read from qgroup tree. But there is some information in memory
+> which is not synced into device. Then it will show some outdate
+> number.
 > 
->    # fault-injection options
->    percent=100
->    times=3
+> c). limit and account size in 3 modes, data, metadata and both.
+> 	qgroup is accounting the size both of data and metadata
+> togather, but to a user, the data size is the most useful to them.
 > 
->    mkdir -p $directory || exit 1
->    mount -o compress $device $directory || exit 1
+> d). remove a subvolume related qgroup when subvolume is deleted and
+> there is no other reference to it.
 > 
->    rm -f $directory/file || exit 1
->    dd if=/dev/zero of=$directory/file bs=1M count=512 || exit 1
+> user-tool:
+> a). Add the unit of B/K/M/G to btrfs qgroup show.
+> b). get the information via ioctl rather than reading it from
+> btree. Will keep the old way as a fallback for compatiblity.
 > 
->    for interval in `seq $start $step $end`; do
->            dmesg -C
->            echo 1 > /proc/sys/vm/drop_caches
->            sync
->            export FAILCMD_TYPE=fail_page_alloc
->            ./failcmd.sh -p $percent -t $times -i $interval \
->                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
->                    -- \
->                    cat $directory/file > /dev/null
->            dmesg > ${dmesgout}
->            if grep -q BUG: ${dmesgout}; then
->                    cat ${dmesgout}
->                    exit 1
->            fi
->    done
+> Any comment and sugguestion is welcome. :)
 > 
->    umount $directory
->    exit 0
+> Yang
 > 
-> Signed-off-by: Naohiro Aota <naota@elisp.net>
-> ---
->   fs/btrfs/extent_io.c | 4 +++-
->   1 file changed, 3 insertions(+), 1 deletion(-)
+> Dongsheng Yang (3):
+>    Btrfs: qgroup: free reserved in exceeding quota.
+>    Btrfs: qgroup: Introduce a may_use to account
+>      space_info->bytes_may_use.
+>    Btrfs: qgroup, Account data space in more proper timings.
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 4ebabd2..4421161 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2816,8 +2816,10 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
->   		    bio_add_page(bio, page, page_size, offset) < page_size) {
->   			ret = submit_one_bio(rw, bio, mirror_num,
->   					     prev_bio_flags);
-> -			if (ret < 0)
-> +			if (ret < 0) {
-> +				*bio_ret = NULL;
->   				return ret;
-> +			}
->   			bio = NULL;
->   		} else {
->   			return 0;
+>   fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++-------
+>   fs/btrfs/file.c        |  9 -------
+>   fs/btrfs/inode.c       | 18 ++++++++++++-
+>   fs/btrfs/qgroup.c      | 68 +++++++++++++++++++++++++++++++++++++++++++++++---
+>   fs/btrfs/qgroup.h      |  4 +++
+>   5 files changed, 117 insertions(+), 23 deletions(-)
 > 
 

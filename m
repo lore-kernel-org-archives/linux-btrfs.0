@@ -1,160 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7164 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752849AbbAHD4N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 22:56:13 -0500
-Message-ID: <54ADFF29.3050206@cn.fujitsu.com>
-Date: Thu, 8 Jan 2015 11:53:13 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 0/3] Btrfs: Enhancment for qgroup.
-References: <549CF56A.2050400@jp.fujitsu.com> <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com> <54AC82AC.5060100@jp.fujitsu.com>
-In-Reply-To: <54AC82AC.5060100@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Received: from plane.gmane.org ([80.91.229.3]:53485 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750707AbbAHFqZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Jan 2015 00:46:25 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y95vC-0004Zu-B9
+	for linux-btrfs@vger.kernel.org; Thu, 08 Jan 2015 06:46:14 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 06:46:14 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 06:46:14 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS free space handling still needs more work: Hangs again
+ (no complete lockups, "just" tasks stuck for some time)
+Date: Thu, 8 Jan 2015 05:45:56 +0000 (UTC)
+Message-ID: <pan$75d3b$ee534480$97e113aa$a8796b2d@cox.net>
+References: <3738341.y7uRQFcLJH@merkaba> <2191338.tRc7Jxvh05@merkaba>
+	<20150106200322.GA12706@hungrycats.org> <1499386.KVI6lPzt8j@merkaba>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/07/2015 08:49 AM, Satoru Takeuchi wrote:
-> Hi Yang,
->
-> On 2015/01/05 15:16, Dongsheng Yang wrote:
->> Hi Josef and others,
->>
->> This patch set is about enhancing qgroup.
->>
->> [1/3]: fix a bug about qgroup leak when we exceed quota limit,
->> 	It is reviewd by Josef.
->> [2/3]: introduce a new accounter in qgroup to close a window where
->> 	user will exceed the limit by qgroup. It "looks good" to Josef.
->> [3/3]: a new patch to fix a bug reported by Satoru.
-> I tested your the patchset v3. Although it's far better
-> than the patchset v2, there is still one problem in this patchset.
-> When I wrote 1.5GiB to a subvolume with 1.0 GiB limit,
-> 1.0GiB - 139 block (in this case, 1KiB/block) was written.
->
-> I consider user should be able to write just 1.0GiB in this case.
+Martin Steigerwald posted on Wed, 07 Jan 2015 20:08:50 +0100 as excerpted:
 
-Hi Satoru,
+> No BTRFS developers commented yet on this, neither in this thread nor in
+> the bug report at kernel.org I made.
 
-Yes, Currently, user can not write 1.0GiB in this case. Because qgroup
-is accounting data and metadata togather. And I have posted an idea
-in this thread that split it into three modes, data, metadata and both.
+Just a quick general note on this point...
 
-TODO issues:
-c). limit and account size in 3 modes, data, metadata and both.
-	qgroup is accounting the size both of data and metadata
-togather, but to users, the data size is the most useful to them.
+There has in the past (and I believe referenced on the wiki) been dev 
+comment to the effect that on the list they tend to find particular 
+reports/threads and work on them until they find and either fix the issue 
+or (when not urgent) decide it must wait for something else, first.  
+During the time they're busy pursuing such a report, they don't read 
+others on the list very closely, and such list-only bug reports may thus 
+get dropped on the floor and never worked on.
 
+The recommendation, then, is to report it to the list, and if not picked 
+up right away and you plan on being around in a few weeks/months when 
+they potentially get to it, file a bug on it, so it doesn't get dropped 
+on the floor.
 
-But, you mentioned that the result is different in each time.
-Hmmm.... there must be something wrong in it. I need some more
-investigation to answer this question.
+With the bugzilla.kernel.org report you've followed the recommendation, 
+but the implication is that you won't necessarily get any comment right 
+away, only later, when they're not immediately busy looking at some other 
+bug.  So lack of b.k.o comment in the immediate term doesn't mean they're 
+ignoring the bug or don't value it; it just means they're hot on the 
+trail of something else ATM and it might take some time to get that 
+"first comment" engagement.
 
-Thanx a lot for your test!
-Yang
->
-> * Test result
->
-> ===============================================================================
-> + mkfs.btrfs -f /dev/vdb
-> Btrfs v3.17
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-> fs created label (null) on /dev/vdb
->         nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
-> + mount /dev/vdb /root/btrfs-auto-test/
-> + ret=0
-> + btrfs quota enable /root/btrfs-auto-test/
-> + btrfs subvolume create /root/btrfs-auto-test//sub
-> Create subvolume '/root/btrfs-auto-test/sub'
-> + btrfs qgroup limit 1G /root/btrfs-auto-test//sub
-> + dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
-> dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
-> 1048438+0 records in                    # Tried to write 1GiB - 138 KiB
-> 1048437+0 records out                   # Succeeded to write 1GiB - 139 KiB
-> 1073599488 bytes (1.1 GB) copied, 19.0247 s, 56.4 MB/s
-> ===============================================================================
->
-> * note
->
-> I tried to run the reproducer five times and the result is
-> a bit different for each time.
->
-> =========================
-> #	Written
-> -------------------------
-> 1	1GiB - 139 KiB
-> 2	1GiB - 139 KiB
-> 3	1GiB - 145 KiB
-> 4	1GiB - 135 KiB
-> 5	1GiB - 135 KiB
-> ==========================
->
-> So I consider it's a problem comes from timing.
->
-> If I changed the block size from 1KiB to 1 MiB,
-> the difference in bytes got larger.
->
-> ============================
-> #	Written
-> ----------------------------
-> 1	1GiB - 1 MiB
-> 2	1GiB - 1 MiB
-> 3	1GiB - 1 MiB
-> 4	1GiB - 1 MiB
-> 5	1GiB - 1 MiB
-> ============================
->
-> Thanks,
-> Satoru
->
->> BTW, I have some other plan about qgroup in my TODO list:
->>
->> Kernel:
->> a). adjust the accounters in parent qgroup when we move
->> the child qgroup.
->> 	Currently, when we move a qgroup, the parent qgroup
->> will not updated at the same time. This will cause some wrong
->> numbers in qgroup.
->>
->> b). add a ioctl to show the qgroup info.
->> 	Command "btrfs qgroup show" is showing the qgroup info
->> read from qgroup tree. But there is some information in memory
->> which is not synced into device. Then it will show some outdate
->> number.
->>
->> c). limit and account size in 3 modes, data, metadata and both.
->> 	qgroup is accounting the size both of data and metadata
->> togather, but to a user, the data size is the most useful to them.
->>
->> d). remove a subvolume related qgroup when subvolume is deleted and
->> there is no other reference to it.
->>
->> user-tool:
->> a). Add the unit of B/K/M/G to btrfs qgroup show.
->> b). get the information via ioctl rather than reading it from
->> btree. Will keep the old way as a fallback for compatiblity.
->>
->> Any comment and sugguestion is welcome. :)
->>
->> Yang
->>
->> Dongsheng Yang (3):
->>    Btrfs: qgroup: free reserved in exceeding quota.
->>    Btrfs: qgroup: Introduce a may_use to account
->>      space_info->bytes_may_use.
->>    Btrfs: qgroup, Account data space in more proper timings.
->>
->>   fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++-------
->>   fs/btrfs/file.c        |  9 -------
->>   fs/btrfs/inode.c       | 18 ++++++++++++-
->>   fs/btrfs/qgroup.c      | 68 +++++++++++++++++++++++++++++++++++++++++++++++---
->>   fs/btrfs/qgroup.h      |  4 +++
->>   5 files changed, 117 insertions(+), 23 deletions(-)
->>
-> .
->
+But the recommendation is to file the bugzilla report precisely so it 
+does /not/ get lost, and you've done that, so... you've done your part 
+there and now comes the enforced patience bit of waiting for that 
+engagement.
+
+But if it takes a bit, I would keep the bug updated every kernel release 
+or so, with a comment updating status.
+
+(Meanwhile, I've seen no indication of such issues here.  Most of my 
+btrfs are 8-24 GiB each, all SSD, mostly dual-device btrfs raid1 both 
+data/metadata.  Maybe I don't run those full enough, however.  I do have 
+three mixed-bg mode sub-GiB btrfs, however, with one of them, a 256 MiB 
+single-device dup-mode btrfs, used as /boot, that tends to run reasonably 
+full, but I've not seen a problem like that there, either.  But my use-
+case probably simply doesn't hit the problem.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

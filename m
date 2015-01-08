@@ -1,67 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58661 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753344AbbAHIjA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Jan 2015 03:39:00 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y98bS-0005gT-Os
-	for linux-btrfs@vger.kernel.org; Thu, 08 Jan 2015 09:38:02 +0100
-Received: from ip4da2a5ae.direct-adsl.nl ([77.162.165.174])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 09:38:02 +0100
-Received: from koen by ip4da2a5ae.direct-adsl.nl with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 09:38:02 +0100
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:53655 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752756AbbAHKSm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jan 2015 05:18:42 -0500
+Received: from merkaba.localnet (ppp-88-217-110-99.dynamic.mnet-online.de [88.217.110.99])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 94DFA62C
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Jan 2015 11:17:29 +0100 (CET)
+From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-From: Koen Kooi <koen@dominion.thruhere.net>
-Subject: Re: price to pay for nocow file bit?
-Date: Thu, 08 Jan 2015 09:35:33 +0100
-Message-ID: <m8lfgl$c5p$1@ger.gmane.org>
-References: <20150107174315.GA21865@gardel-login>	<54AD929E.608@fb.com> <CAJCQCtQGrPSJhxvbivJ4Sx0rqposm72rcC0K-C5SCCRADR_QNg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtQGrPSJhxvbivJ4Sx0rqposm72rcC0K-C5SCCRADR_QNg@mail.gmail.com>
+Subject: Re: BTRFS free space handling still needs more work: Hangs again (no complete lockups, "just" tasks stuck for some time)
+Date: Thu, 08 Jan 2015 11:18:40 +0100
+Message-ID: <27859486.yaddXGu9UI@merkaba>
+In-Reply-To: <pan$75d3b$ee534480$97e113aa$a8796b2d@cox.net>
+References: <3738341.y7uRQFcLJH@merkaba> <1499386.KVI6lPzt8j@merkaba> <pan$75d3b$ee534480$97e113aa$a8796b2d@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-Chris Murphy schreef op 08-01-15 om 09:24:
-> On Wed, Jan 7, 2015 at 1:10 PM, Josef Bacik <jbacik@fb.com> wrote:
->> On 01/07/2015 12:43 PM, Lennart Poettering wrote:
->>> 
->>> Heya!
->>> 
->>> Currently, systemd-journald's disk access patterns (appending to the 
->>> end of files, then updating a few pointers in the front) result in 
->>> awfully fragmented journal files on btrfs, which has a pretty 
->>> negative effect on performance when accessing them.
->>> 
->> 
->> I've been wondering if mount -o autodefrag would deal with this problem
->> but I haven't had the chance to look into it.
+Am Donnerstag, 8. Januar 2015, 05:45:56 schrieben Sie:
+> Martin Steigerwald posted on Wed, 07 Jan 2015 20:08:50 +0100 as excerpted:
+> > No BTRFS developers commented yet on this, neither in this thread nor in
+> > the bug report at kernel.org I made.
 > 
-> I've been using autodefrag and haven't run into journal corruptions that
-> I can attribute to btrfs since the last one was fixed over a year ago.
-> Chris Mason has suggested preference to use of autodefrag for this use
-> case rather than xattr +C. But I don't know the time frame for autodefrag
-> by default, it's come up a couple times but it's not the default yet.
+> Just a quick general note on this point...
+> 
+> There has in the past (and I believe referenced on the wiki) been dev 
+> comment to the effect that on the list they tend to find particular 
+> reports/threads and work on them until they find and either fix the issue 
+> or (when not urgent) decide it must wait for something else, first.  
+> During the time they're busy pursuing such a report, they don't read 
+> others on the list very closely, and such list-only bug reports may thus 
+> get dropped on the floor and never worked on.
+> 
+> The recommendation, then, is to report it to the list, and if not picked 
+> up right away and you plan on being around in a few weeks/months when 
+> they potentially get to it, file a bug on it, so it doesn't get dropped 
+> on the floor.
 
-Same here, no issues with using autodefrag and journals.
+Duncan, I *did* file a bug.
 
-regards,
+[Bug 90401] New: btrfs kworker thread uses up 100% of a Sandybridge core for 
+minutes on random write into big file
 
-Koen
+https://bugzilla.kernel.org/show_bug.cgi?id=90401
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.5 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-
-iD8DBQFUrkFVMkyGM64RGpERAgGKAJ9pmXA4STYx6sUJP5HBALcUCkfMqwCeNhzR
-8v4u6bvhtFZYxYbGDiHghps=
-=4MPU
------END PGP SIGNATURE-----
-
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

@@ -1,174 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:56662 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751328AbbAHA1S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Jan 2015 19:27:18 -0500
+Received: from cn.fujitsu.com ([59.151.112.132]:42319 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752382AbbAHCpH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 21:45:07 -0500
+Message-ID: <1420684972.22546.2.camel@localhost.localdomain>
+Subject: Re: [PATCH] btrfs: introduce shrinker for rb_tree that keeps valid
+ btrfs_devices
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <clm@fb.com>
+Date: Thu, 8 Jan 2015 10:42:52 +0800
+In-Reply-To: <1418197191-4960-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1417405154-6170-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <1418197191-4960-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Thu, 08 Jan 2015 09:27:14 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at /home/apw/COD/linux/fs/btrfs/inode.c:3123!
-In-Reply-To: <54ACD917.2050905@jp.fujitsu.com>
-References: <c1ba36ab05ed307b268eb5cad622d0fc@admin.virtall.com>
- <54ACD917.2050905@jp.fujitsu.com>
-Message-ID: <d8c5133bda536809bb60fadadc9d74e6@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-01-07 15:58, Satoru Takeuchi wrote:
+[ping]
 
->> Create subvolume './subvolume'
->> # dd if=/dev/urandom of=bigfile.img bs=64k
+On Wed, 2014-12-10 at 15:39 +0800, Gui Hecheng wrote:
+> The following patch:
+> 	btrfs: remove empty fs_devices to prevent memory runout
 > 
-> Does it really this command? I consider it will fill up
-> whole /dev/vdb.
-
-It normally would fill the fs if left for long, but I've pressed ctrl+c 
-after about 6 GB.
-
-
-> And is it not subvolume/bigfile.img
-> but bigfile.img?
-
-If I recall correctly, it was not inside the subvolume.
-
-
-(...)
-
->> 3127377920 bytes (3.1 GB) copied, 194.641 s, 16.1 MB/s
+> introduces @valid_dev_root aiming at recording @btrfs_device objects that
+> have corresponding block devices with btrfs.
+> But if a block device is broken or unplugged, no one tells the
+> @valid_dev_root to cleanup the "dead" objects.
 > 
-> If bigfile.img is just under /mnt/test, I can't understand
-> why this command succeeded to write more 3 GiB.
-
-The previous command wrote 6 GB, this one wrote 3.1 GB - there was still 
-plenty of free space.
-
-
-(...)
-
->> # dd if=/dev/urandom of=bigfile3.img bs=64k
->> ^C3617580+0 records in
->> 3617579+0 records out
->> 237081657344 bytes (237 GB) copied, 14796 s, 16.0 MB/s
+> To recycle the memory occuppied by those "dead"s, we could rely on
+> the shrinker. The shrinker's scan function will traverse the
+> @valid_dev_root and trys to open the devices one by one, if it fails
+> or encounters a non-btrfs it will remove the "dead" @btrfs_device.
 > 
-> It's too.
+> A special case to deal with is that a block device is unplugged and
+> replugged, then it appears with a new @bdev->bd_dev as devnum.
+> In this case, we should remove the older since we should have a new
+> one for that block device already.
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/super.c   | 10 ++++++++
+>  fs/btrfs/volumes.c | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  fs/btrfs/volumes.h |  4 +++
+>  3 files changed, 87 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index ee09a56..29069af 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1987,6 +1987,12 @@ static struct miscdevice btrfs_misc = {
+>  	.fops		= &btrfs_ctl_fops
+>  };
+>  
+> +static struct shrinker btrfs_valid_dev_shrinker = {
+> +	.scan_objects = btrfs_valid_dev_scan,
+> +	.count_objects = btrfs_valid_dev_count,
+> +	.seeks = DEFAULT_SEEKS,
+> +};
+> +
+>  MODULE_ALIAS_MISCDEV(BTRFS_MINOR);
+>  MODULE_ALIAS("devname:btrfs-control");
+>  
+> @@ -2100,6 +2106,8 @@ static int __init init_btrfs_fs(void)
+>  
+>  	btrfs_init_lockdep();
+>  
+> +	register_shrinker(&btrfs_valid_dev_shrinker);
+> +
+>  	btrfs_print_info();
+>  
+>  	err = btrfs_run_sanity_tests();
+> @@ -2113,6 +2121,7 @@ static int __init init_btrfs_fs(void)
+>  	return 0;
+>  
+>  unregister_ioctl:
+> +	unregister_shrinker(&btrfs_valid_dev_shrinker);
+>  	btrfs_interface_exit();
+>  free_end_io_wq:
+>  	btrfs_end_io_wq_exit();
+> @@ -2153,6 +2162,7 @@ static void __exit exit_btrfs_fs(void)
+>  	btrfs_interface_exit();
+>  	btrfs_end_io_wq_exit();
+>  	unregister_filesystem(&btrfs_fs_type);
+> +	unregister_shrinker(&btrfs_valid_dev_shrinker);
+>  	btrfs_exit_sysfs();
+>  	btrfs_cleanup_valid_dev_root();
+>  	btrfs_cleanup_fs_uuids();
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 7093cce..62f37b1 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -54,6 +54,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
+>  DEFINE_MUTEX(uuid_mutex);
+>  static LIST_HEAD(fs_uuids);
+>  static struct rb_root valid_dev_root = RB_ROOT;
+> +static atomic_long_t unopened_dev_count = ATOMIC_LONG_INIT(0);
+>  
+>  static struct btrfs_device *insert_valid_device(struct btrfs_device *new_dev)
+>  {
+> @@ -130,6 +131,8 @@ static void free_invalid_device(struct btrfs_device *invalid_dev)
+>  {
+>  	struct btrfs_fs_devices *old_fs;
+>  
+> +	atomic_long_dec(&unopened_dev_count);
+> +
+>  	old_fs = invalid_dev->fs_devices;
+>  	mutex_lock(&old_fs->device_list_mutex);
+>  	list_del(&invalid_dev->dev_list);
+> @@ -615,6 +618,7 @@ static noinline int device_list_add(const char *path,
+>  		list_add_rcu(&device->dev_list, &fs_devices->devices);
+>  		fs_devices->num_devices++;
+>  		mutex_unlock(&fs_devices->device_list_mutex);
+> +		atomic_long_inc(&unopened_dev_count);
+>  
+>  		ret = 1;
+>  		device->fs_devices = fs_devices;
+> @@ -788,6 +792,7 @@ again:
+>  			blkdev_put(device->bdev, device->mode);
+>  			device->bdev = NULL;
+>  			fs_devices->open_devices--;
+> +			atomic_long_inc(&unopened_dev_count);
+>  		}
+>  		if (device->writeable) {
+>  			list_del_init(&device->dev_alloc_list);
+> @@ -850,8 +855,10 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>  		struct btrfs_device *new_device;
+>  		struct rcu_string *name;
+>  
+> -		if (device->bdev)
+> +		if (device->bdev) {
+>  			fs_devices->open_devices--;
+> +			atomic_long_inc(&unopened_dev_count);
+> +		}
+>  
+>  		if (device->writeable &&
+>  		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+> @@ -981,6 +988,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>  			fs_devices->rotating = 1;
+>  
+>  		fs_devices->open_devices++;
+> +		atomic_long_dec(&unopened_dev_count);
+>  		if (device->writeable &&
+>  		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+>  			fs_devices->rw_devices++;
+> @@ -6828,3 +6836,67 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+>  	}
+>  	unlock_chunks(root);
+>  }
+> +
+> +static unsigned long shrink_valid_dev_root(void)
+> +{
+> +	struct rb_node *n;
+> +	struct btrfs_device *device;
+> +	struct block_device *bdev;
+> +	struct buffer_head *bh;
+> +	unsigned long freed = 0;
+> +	unsigned long possible_deads;
+> +	int ret = 0;
+> +	dev_t cur_devnum;
+> +
+> +	mutex_lock(&uuid_mutex);
+> +
+> +	possible_deads = atomic_long_read(&unopened_dev_count);
+> +	if (!possible_deads)
+> +		goto out;
+> +
+> +	for (n = rb_first(&valid_dev_root); n ; n = rb_next(n)) {
+> +		device = rb_entry(n, struct btrfs_device, rb_node);
+> +
+> +		if (device->bdev)
+> +			continue;
+> +		if (!device->name)
+> +			continue;
+> +
+> +		ret = btrfs_get_bdev_and_sb(device->name->str, FMODE_READ,
+> +						NULL, 0, &bdev, &bh);
+> +		/* can't open as btrfs, not valid, drop it */
+> +		if (ret)
+> +			goto shrink;
+> +
+> +		cur_devnum = bdev->bd_dev;
+> +
+> +		brelse(bh);
+> +		blkdev_put(bdev, FMODE_READ);
+> +
+> +		if (device->devnum == cur_devnum)
+> +			continue;
+> +		/* bdev->bd_dev changed, not valid, drop it */
+> +
+> +shrink:
+> +		rb_erase(n, &valid_dev_root);
+> +		free_invalid_device(device);
+> +
+> +		freed++;
+> +	}
+> +
+> +out:
+> +	mutex_unlock(&uuid_mutex);
+> +	return freed;
+> +}
+> +
+> +unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
+> +				   struct shrink_control *sc)
+> +{
+> +	return shrink_valid_dev_root();
+> +}
+> +
+> +unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
+> +				    struct shrink_control *sc)
+> +{
+> +	return atomic_long_read(&unopened_dev_count);
+> +}
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 7b57cc6..cad974a 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -424,6 +424,10 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
+>  					const u8 *uuid);
+>  int btrfs_rm_device(struct btrfs_root *root, char *device_path);
+>  void btrfs_cleanup_valid_dev_root(void);
+> +unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
+> +				   struct shrink_control *sc);
+> +unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
+> +				    struct shrink_control *sc);
+>  void btrfs_cleanup_fs_uuids(void);
+>  int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
+>  int btrfs_grow_device(struct btrfs_trans_handle *trans,
 
-This one was also left running for long, followed by ctrl+c (note the ^C 
-in my pasted output).
-We didn't fill the fs 100% in any of these cases.
-
-
->> # df -h
->> Filesystem      Size  Used Avail Use% Mounted on
->> (...)
->> /dev/vdb        256G  230G   25G  91% /mnt/test
->> 
->> 
->> # btrfs qgroup show /mnt/test
->> qgroupid rfer         excl
->> -------- ----         ----
->> 0/5      16384        16384
->> 0/257    245960245248 245960245248
->> 
->> # ls -l
->> total 240451584
->> -rw-r--r-- 1 root root   3127377920 Dec 19 20:06 bigfile2.img
->> -rw-r--r-- 1 root root 237081657344 Dec 20 00:15 bigfile3.img
->> -rw-r--r-- 1 root root   6013386752 Dec 19 20:02 bigfile.img
->> 
->> # rm bigfile3.img
->> 
->> # sync
->> 
->> # dmesg
->> (...)
->> [   95.055420] BTRFS: device fsid 97f98279-21e7-4822-89be-3aed9dc05f2c 
->> devid 1 transid 3 /dev/vdb
->> [  118.446509] BTRFS info (device vdb): disk space caching is enabled
->> [  118.446518] BTRFS: flagging fs with big metadata feature
->> [  118.452176] BTRFS: creating UUID tree
->> [  575.189412] BTRFS info (device vdb): qgroup scan completed
->> [15948.234826] ------------[ cut here ]------------
->> [15948.234883] kernel BUG at 
->> /home/apw/COD/linux/fs/btrfs/inode.c:3123!
->> [15948.234906] invalid opcode: 0000 [#1] SMP
->> [15948.234925] Modules linked in: nf_log_ipv6 ip6t_REJECT 
->> nf_reject_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter 
->> ip6_tables nf_log_ipv4 nf_log_common xt_LOG ipt_REJECT nf_reject_ipv4 
->> xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack 
->> iptable_filter ip_tables x_tables dm_crypt btrfs xor crct10dif_pclmul 
->> crc32_pclmul ghash_clmulni_intel aesni_intel ppdev aes_x86_64 lrw 
->> raid6_pq gf128mul glue_helper ablk_helper cryptd serio_raw mac_hid 
->> pvpanic 8250_fintek parport_pc i2c_piix4 lp parport psmouse qxl ttm 
->> floppy drm_kms_helper drm
->> [15948.235172] CPU: 0 PID: 3274 Comm: btrfs-cleaner Not tainted 
->> 3.18.1-031801-generic #201412170637
->> [15948.235193] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), 
->> BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 
->> 04/01/2014
->> [15948.235222] task: ffff880036708a00 ti: ffff88007b97c000 task.ti: 
->> ffff88007b97c000
->> [15948.235240] RIP: 0010:[<ffffffffc0458ec9>]  [<ffffffffc0458ec9>] 
->> btrfs_orphan_add+0x1a9/0x1c0 [btrfs]
->> [15948.235305] RSP: 0018:ffff88007b97fc98  EFLAGS: 00010286
->> [15948.235318] RAX: 00000000ffffffe4 RBX: ffff88007b80a800 RCX: 
->> 0000000000000000
->> [15948.235333] RDX: 000000000000219e RSI: 0000000000040000 RDI: 
->> ffff880079418138
->> [15948.235349] RBP: ffff88007b97fcd8 R08: ffff88007fc1cae0 R09: 
->> ffff88007ad272d0
->> [15948.235366] R10: 0000000000000000 R11: 0000000000000010 R12: 
->> ffff88007a2d9500
->> [15948.235381] R13: ffff8800027d60e0 R14: ffff88007b80ac58 R15: 
->> 0000000000000001
->> [15948.235401] FS:  0000000000000000(0000) GS:ffff88007fc00000(0000) 
->> knlGS:0000000000000000
->> [15948.235418] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> [15948.235432] CR2: 00007f0489ff0000 CR3: 000000007a5e0000 CR4: 
->> 00000000001407f0
->> [15948.235464] Stack:
->> [15948.235473]  ffff88007b97fcd8 ffffffffc0497acf ffff88007b809800 
->> ffff88003c207400
->> [15948.235498]  ffff88007b809800 ffff88007ad272d0 ffff88007a2d9500 
->> 0000000000000001
->> [15948.235521]  ffff88007b97fd58 ffffffffc04412e0 ffff880079418000 
->> 00000004c0427fea
->> [15948.235551] Call Trace:
->> [15948.235601]  [<ffffffffc0497acf>] ? 
->> lookup_free_space_inode+0x4f/0x100 [btrfs]
->> [15948.235642]  [<ffffffffc04412e0>] 
->> btrfs_remove_block_group+0x140/0x490 [btrfs]
->> [15948.235693]  [<ffffffffc047bde5>] btrfs_remove_chunk+0x245/0x380 
->> [btrfs]
->> [15948.235731]  [<ffffffffc0441866>] 
->> btrfs_delete_unused_bgs+0x236/0x270 [btrfs]
->> [15948.235771]  [<ffffffffc044ad6c>] cleaner_kthread+0x12c/0x190 
->> [btrfs]
->> [15948.235806]  [<ffffffffc044ac40>] ? 
->> btrfs_destroy_all_delalloc_inodes+0x120/0x120 [btrfs]
->> [15948.235844]  [<ffffffff81093a09>] kthread+0xc9/0xe0
->> [15948.235872]  [<ffffffff81093940>] ? flush_kthread_worker+0x90/0x90
->> [15948.235900]  [<ffffffff817b36bc>] ret_from_fork+0x7c/0xb0
->> [15948.235919]  [<ffffffff81093940>] ? flush_kthread_worker+0x90/0x90
->> [15948.235933] Code: e8 7d a1 fc ff 8b 45 c8 e9 6d ff ff ff 0f 1f 44 
->> 00 00 f0 41 80 65 80 fd 4c 89 ef 89 45 c8 e8 cf 20 fe ff 8b 45 c8 e9 
->> 48 ff ff ff <0f> 0b 4c 89 f7 45 31 f6 e8 8a a2 35 c1 e9 f9 fe ff ff 0f 
->> 1f 44
->> [15948.236017] RIP  [<ffffffffc0458ec9>] btrfs_orphan_add+0x1a9/0x1c0 
->> [btrfs]
->> [15948.236017]  RSP <ffff88007b97fc98>
->> [15948.761942] ---[ end trace 0ccd21c265dce56b ]---
->> 
->> # ls
->> bigfile2.img  bigfile.img
->> 
->> # touch 1
->> (...never returned...)
->> 
-
-Tomasz Chmielewski
-http://www.sslrack.com
 

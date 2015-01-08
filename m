@@ -1,232 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42319 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:7164 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752382AbbAHCpH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 21:45:07 -0500
-Message-ID: <1420684972.22546.2.camel@localhost.localdomain>
-Subject: Re: [PATCH] btrfs: introduce shrinker for rb_tree that keeps valid
- btrfs_devices
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <clm@fb.com>
-Date: Thu, 8 Jan 2015 10:42:52 +0800
-In-Reply-To: <1418197191-4960-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1417405154-6170-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1418197191-4960-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
+	with ESMTP id S1752849AbbAHD4N (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jan 2015 22:56:13 -0500
+Message-ID: <54ADFF29.3050206@cn.fujitsu.com>
+Date: Thu, 8 Jan 2015 11:53:13 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 0/3] Btrfs: Enhancment for qgroup.
+References: <549CF56A.2050400@jp.fujitsu.com> <1420438604-4846-1-git-send-email-yangds.fnst@cn.fujitsu.com> <54AC82AC.5060100@jp.fujitsu.com>
+In-Reply-To: <54AC82AC.5060100@jp.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ping]
+On 01/07/2015 08:49 AM, Satoru Takeuchi wrote:
+> Hi Yang,
+>
+> On 2015/01/05 15:16, Dongsheng Yang wrote:
+>> Hi Josef and others,
+>>
+>> This patch set is about enhancing qgroup.
+>>
+>> [1/3]: fix a bug about qgroup leak when we exceed quota limit,
+>> 	It is reviewd by Josef.
+>> [2/3]: introduce a new accounter in qgroup to close a window where
+>> 	user will exceed the limit by qgroup. It "looks good" to Josef.
+>> [3/3]: a new patch to fix a bug reported by Satoru.
+> I tested your the patchset v3. Although it's far better
+> than the patchset v2, there is still one problem in this patchset.
+> When I wrote 1.5GiB to a subvolume with 1.0 GiB limit,
+> 1.0GiB - 139 block (in this case, 1KiB/block) was written.
+>
+> I consider user should be able to write just 1.0GiB in this case.
 
-On Wed, 2014-12-10 at 15:39 +0800, Gui Hecheng wrote:
-> The following patch:
-> 	btrfs: remove empty fs_devices to prevent memory runout
-> 
-> introduces @valid_dev_root aiming at recording @btrfs_device objects that
-> have corresponding block devices with btrfs.
-> But if a block device is broken or unplugged, no one tells the
-> @valid_dev_root to cleanup the "dead" objects.
-> 
-> To recycle the memory occuppied by those "dead"s, we could rely on
-> the shrinker. The shrinker's scan function will traverse the
-> @valid_dev_root and trys to open the devices one by one, if it fails
-> or encounters a non-btrfs it will remove the "dead" @btrfs_device.
-> 
-> A special case to deal with is that a block device is unplugged and
-> replugged, then it appears with a new @bdev->bd_dev as devnum.
-> In this case, we should remove the older since we should have a new
-> one for that block device already.
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/super.c   | 10 ++++++++
->  fs/btrfs/volumes.c | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.h |  4 +++
->  3 files changed, 87 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index ee09a56..29069af 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1987,6 +1987,12 @@ static struct miscdevice btrfs_misc = {
->  	.fops		= &btrfs_ctl_fops
->  };
->  
-> +static struct shrinker btrfs_valid_dev_shrinker = {
-> +	.scan_objects = btrfs_valid_dev_scan,
-> +	.count_objects = btrfs_valid_dev_count,
-> +	.seeks = DEFAULT_SEEKS,
-> +};
-> +
->  MODULE_ALIAS_MISCDEV(BTRFS_MINOR);
->  MODULE_ALIAS("devname:btrfs-control");
->  
-> @@ -2100,6 +2106,8 @@ static int __init init_btrfs_fs(void)
->  
->  	btrfs_init_lockdep();
->  
-> +	register_shrinker(&btrfs_valid_dev_shrinker);
-> +
->  	btrfs_print_info();
->  
->  	err = btrfs_run_sanity_tests();
-> @@ -2113,6 +2121,7 @@ static int __init init_btrfs_fs(void)
->  	return 0;
->  
->  unregister_ioctl:
-> +	unregister_shrinker(&btrfs_valid_dev_shrinker);
->  	btrfs_interface_exit();
->  free_end_io_wq:
->  	btrfs_end_io_wq_exit();
-> @@ -2153,6 +2162,7 @@ static void __exit exit_btrfs_fs(void)
->  	btrfs_interface_exit();
->  	btrfs_end_io_wq_exit();
->  	unregister_filesystem(&btrfs_fs_type);
-> +	unregister_shrinker(&btrfs_valid_dev_shrinker);
->  	btrfs_exit_sysfs();
->  	btrfs_cleanup_valid_dev_root();
->  	btrfs_cleanup_fs_uuids();
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 7093cce..62f37b1 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -54,6 +54,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
->  DEFINE_MUTEX(uuid_mutex);
->  static LIST_HEAD(fs_uuids);
->  static struct rb_root valid_dev_root = RB_ROOT;
-> +static atomic_long_t unopened_dev_count = ATOMIC_LONG_INIT(0);
->  
->  static struct btrfs_device *insert_valid_device(struct btrfs_device *new_dev)
->  {
-> @@ -130,6 +131,8 @@ static void free_invalid_device(struct btrfs_device *invalid_dev)
->  {
->  	struct btrfs_fs_devices *old_fs;
->  
-> +	atomic_long_dec(&unopened_dev_count);
-> +
->  	old_fs = invalid_dev->fs_devices;
->  	mutex_lock(&old_fs->device_list_mutex);
->  	list_del(&invalid_dev->dev_list);
-> @@ -615,6 +618,7 @@ static noinline int device_list_add(const char *path,
->  		list_add_rcu(&device->dev_list, &fs_devices->devices);
->  		fs_devices->num_devices++;
->  		mutex_unlock(&fs_devices->device_list_mutex);
-> +		atomic_long_inc(&unopened_dev_count);
->  
->  		ret = 1;
->  		device->fs_devices = fs_devices;
-> @@ -788,6 +792,7 @@ again:
->  			blkdev_put(device->bdev, device->mode);
->  			device->bdev = NULL;
->  			fs_devices->open_devices--;
-> +			atomic_long_inc(&unopened_dev_count);
->  		}
->  		if (device->writeable) {
->  			list_del_init(&device->dev_alloc_list);
-> @@ -850,8 +855,10 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
->  		struct btrfs_device *new_device;
->  		struct rcu_string *name;
->  
-> -		if (device->bdev)
-> +		if (device->bdev) {
->  			fs_devices->open_devices--;
-> +			atomic_long_inc(&unopened_dev_count);
-> +		}
->  
->  		if (device->writeable &&
->  		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-> @@ -981,6 +988,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
->  			fs_devices->rotating = 1;
->  
->  		fs_devices->open_devices++;
-> +		atomic_long_dec(&unopened_dev_count);
->  		if (device->writeable &&
->  		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
->  			fs_devices->rw_devices++;
-> @@ -6828,3 +6836,67 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
->  	}
->  	unlock_chunks(root);
->  }
-> +
-> +static unsigned long shrink_valid_dev_root(void)
-> +{
-> +	struct rb_node *n;
-> +	struct btrfs_device *device;
-> +	struct block_device *bdev;
-> +	struct buffer_head *bh;
-> +	unsigned long freed = 0;
-> +	unsigned long possible_deads;
-> +	int ret = 0;
-> +	dev_t cur_devnum;
-> +
-> +	mutex_lock(&uuid_mutex);
-> +
-> +	possible_deads = atomic_long_read(&unopened_dev_count);
-> +	if (!possible_deads)
-> +		goto out;
-> +
-> +	for (n = rb_first(&valid_dev_root); n ; n = rb_next(n)) {
-> +		device = rb_entry(n, struct btrfs_device, rb_node);
-> +
-> +		if (device->bdev)
-> +			continue;
-> +		if (!device->name)
-> +			continue;
-> +
-> +		ret = btrfs_get_bdev_and_sb(device->name->str, FMODE_READ,
-> +						NULL, 0, &bdev, &bh);
-> +		/* can't open as btrfs, not valid, drop it */
-> +		if (ret)
-> +			goto shrink;
-> +
-> +		cur_devnum = bdev->bd_dev;
-> +
-> +		brelse(bh);
-> +		blkdev_put(bdev, FMODE_READ);
-> +
-> +		if (device->devnum == cur_devnum)
-> +			continue;
-> +		/* bdev->bd_dev changed, not valid, drop it */
-> +
-> +shrink:
-> +		rb_erase(n, &valid_dev_root);
-> +		free_invalid_device(device);
-> +
-> +		freed++;
-> +	}
-> +
-> +out:
-> +	mutex_unlock(&uuid_mutex);
-> +	return freed;
-> +}
-> +
-> +unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
-> +				   struct shrink_control *sc)
-> +{
-> +	return shrink_valid_dev_root();
-> +}
-> +
-> +unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
-> +				    struct shrink_control *sc)
-> +{
-> +	return atomic_long_read(&unopened_dev_count);
-> +}
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 7b57cc6..cad974a 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -424,6 +424,10 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
->  					const u8 *uuid);
->  int btrfs_rm_device(struct btrfs_root *root, char *device_path);
->  void btrfs_cleanup_valid_dev_root(void);
-> +unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
-> +				   struct shrink_control *sc);
-> +unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
-> +				    struct shrink_control *sc);
->  void btrfs_cleanup_fs_uuids(void);
->  int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
->  int btrfs_grow_device(struct btrfs_trans_handle *trans,
+Hi Satoru,
 
+Yes, Currently, user can not write 1.0GiB in this case. Because qgroup
+is accounting data and metadata togather. And I have posted an idea
+in this thread that split it into three modes, data, metadata and both.
+
+TODO issues:
+c). limit and account size in 3 modes, data, metadata and both.
+	qgroup is accounting the size both of data and metadata
+togather, but to users, the data size is the most useful to them.
+
+
+But, you mentioned that the result is different in each time.
+Hmmm.... there must be something wrong in it. I need some more
+investigation to answer this question.
+
+Thanx a lot for your test!
+Yang
+>
+> * Test result
+>
+> ===============================================================================
+> + mkfs.btrfs -f /dev/vdb
+> Btrfs v3.17
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+> fs created label (null) on /dev/vdb
+>         nodesize 16384 leafsize 16384 sectorsize 4096 size 30.00GiB
+> + mount /dev/vdb /root/btrfs-auto-test/
+> + ret=0
+> + btrfs quota enable /root/btrfs-auto-test/
+> + btrfs subvolume create /root/btrfs-auto-test//sub
+> Create subvolume '/root/btrfs-auto-test/sub'
+> + btrfs qgroup limit 1G /root/btrfs-auto-test//sub
+> + dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
+> dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
+> 1048438+0 records in                    # Tried to write 1GiB - 138 KiB
+> 1048437+0 records out                   # Succeeded to write 1GiB - 139 KiB
+> 1073599488 bytes (1.1 GB) copied, 19.0247 s, 56.4 MB/s
+> ===============================================================================
+>
+> * note
+>
+> I tried to run the reproducer five times and the result is
+> a bit different for each time.
+>
+> =========================
+> #	Written
+> -------------------------
+> 1	1GiB - 139 KiB
+> 2	1GiB - 139 KiB
+> 3	1GiB - 145 KiB
+> 4	1GiB - 135 KiB
+> 5	1GiB - 135 KiB
+> ==========================
+>
+> So I consider it's a problem comes from timing.
+>
+> If I changed the block size from 1KiB to 1 MiB,
+> the difference in bytes got larger.
+>
+> ============================
+> #	Written
+> ----------------------------
+> 1	1GiB - 1 MiB
+> 2	1GiB - 1 MiB
+> 3	1GiB - 1 MiB
+> 4	1GiB - 1 MiB
+> 5	1GiB - 1 MiB
+> ============================
+>
+> Thanks,
+> Satoru
+>
+>> BTW, I have some other plan about qgroup in my TODO list:
+>>
+>> Kernel:
+>> a). adjust the accounters in parent qgroup when we move
+>> the child qgroup.
+>> 	Currently, when we move a qgroup, the parent qgroup
+>> will not updated at the same time. This will cause some wrong
+>> numbers in qgroup.
+>>
+>> b). add a ioctl to show the qgroup info.
+>> 	Command "btrfs qgroup show" is showing the qgroup info
+>> read from qgroup tree. But there is some information in memory
+>> which is not synced into device. Then it will show some outdate
+>> number.
+>>
+>> c). limit and account size in 3 modes, data, metadata and both.
+>> 	qgroup is accounting the size both of data and metadata
+>> togather, but to a user, the data size is the most useful to them.
+>>
+>> d). remove a subvolume related qgroup when subvolume is deleted and
+>> there is no other reference to it.
+>>
+>> user-tool:
+>> a). Add the unit of B/K/M/G to btrfs qgroup show.
+>> b). get the information via ioctl rather than reading it from
+>> btree. Will keep the old way as a fallback for compatiblity.
+>>
+>> Any comment and sugguestion is welcome. :)
+>>
+>> Yang
+>>
+>> Dongsheng Yang (3):
+>>    Btrfs: qgroup: free reserved in exceeding quota.
+>>    Btrfs: qgroup: Introduce a may_use to account
+>>      space_info->bytes_may_use.
+>>    Btrfs: qgroup, Account data space in more proper timings.
+>>
+>>   fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++-------
+>>   fs/btrfs/file.c        |  9 -------
+>>   fs/btrfs/inode.c       | 18 ++++++++++++-
+>>   fs/btrfs/qgroup.c      | 68 +++++++++++++++++++++++++++++++++++++++++++++++---
+>>   fs/btrfs/qgroup.h      |  4 +++
+>>   5 files changed, 117 insertions(+), 23 deletions(-)
+>>
+> .
+>
 

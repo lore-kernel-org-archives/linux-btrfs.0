@@ -1,84 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54518 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751491AbbAHGcS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Jan 2015 01:32:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Y96dT-0006uJ-An
-	for linux-btrfs@vger.kernel.org; Thu, 08 Jan 2015 07:31:59 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 07:31:59 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 07:31:59 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-yh0-f50.google.com ([209.85.213.50]:49068 "EHLO
+	mail-yh0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753966AbbAHIYy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jan 2015 03:24:54 -0500
+Received: by mail-yh0-f50.google.com with SMTP id b6so588085yha.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Jan 2015 00:24:53 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <54AD929E.608@fb.com>
+References: <20150107174315.GA21865@gardel-login>
+	<54AD929E.608@fb.com>
+Date: Thu, 8 Jan 2015 01:24:53 -0700
+Message-ID: <CAJCQCtQGrPSJhxvbivJ4Sx0rqposm72rcC0K-C5SCCRADR_QNg@mail.gmail.com>
 Subject: Re: price to pay for nocow file bit?
-Date: Thu, 8 Jan 2015 06:30:59 +0000 (UTC)
-Message-ID: <pan$2625$dcbfe450$9a65d855$d7e62f1e@cox.net>
-References: <20150107174315.GA21865@gardel-login> <54AD929E.608@fb.com>
-Mime-Version: 1.0
+From: Chris Murphy <lists@colorremedies.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Lennart Poettering <lennart@poettering.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik posted on Wed, 07 Jan 2015 15:10:06 -0500 as excerpted:
-
->> Does this have any effect on functionality? As I understood snapshots
->> still work fine for files marked like that, and so do reflinks. Any
->> drawback functionality-wise? Apparently file compression support is
->> lost if the bit is set? (which I can live with too, journal files are
->> internally compressed anyway)
+On Wed, Jan 7, 2015 at 1:10 PM, Josef Bacik <jbacik@fb.com> wrote:
+> On 01/07/2015 12:43 PM, Lennart Poettering wrote:
 >>
+>> Heya!
 >>
-> Yeah no compression, no checksums.  If you do reflink then you'll COW
-> once and then the new COW will be nocow so it'll be fine.  Same goes for
-> snapshots.  So you'll likely incur some fragmentation but less than
-> before, but I'd measure to just make sure if it's that big of a deal.
-> 
->> What about performance? Do any operations get substantially slower by
->> setting this bit? For example, what happens if I take a snapshot of
->> files with this bit set and then modify the file, does this result in a
->> full (and hence slow) copy of the file on that occasion?
+>> Currently, systemd-journald's disk access patterns (appending to the
+>> end of files, then updating a few pointers in the front) result in
+>> awfully fragmented journal files on btrfs, which has a pretty
+>> negative effect on performance when accessing them.
 >>
->>
-> Performance is the same.
+>
+> I've been wondering if mount -o autodefrag would deal with this problem but
+> I haven't had the chance to look into it.
 
-The otherwise nocow on-snapshot "cow1" is per-block (4096-byte AFAIK), so 
-some fragmentation, but slower.
+I've been using autodefrag and haven't run into journal corruptions
+that I can attribute to btrfs since the last one was fixed over a year
+ago. Chris Mason has suggested preference to use of autodefrag for
+this use case rather than xattr +C. But I don't know the time frame
+for autodefrag by default, it's come up a couple times but it's not
+the default yet.
 
-The "perfect storm" situation is people doing automated per-minute 
-snapshots or similar (some people go to extremes with snapper or the 
-like...), in which case setting nocow often doesn't help a whole lot, 
-depending on how active the file-writing is, of course.
+I've found autodefrag journals are less than 200 fragments, and
+average between 50-150 fragments. Without it, this spirals into
+thousands quite quickly. Searches don't seem slower when journal files
+are made of a few extents vs ~ 100, but beyond several hundred let
+alone several thousand it becomes noticeable.
 
-But for something like append-plus-pointer-update-pattern log files with 
-something like per-day snapshotting, nocow should at least in theory help 
-quite a bit, since the write-frequency and thus the prevented cows should 
-be MUCH higher than the daily snapshot and thus the forced-block-cow1s.
+A somewhat minor negative of +C: In case of RAID 1 or higher and
+silent data corruption, there will be no Btrfs detection due to lack
+of checksum and therefore no correction. In the case a drive reports a
+read error then it's corrected, same as with md or lvm raid1+.
 
--
-
-FWIW, I'm systemd on btrfs here, but I use syslog-ng for my non-volatile 
-logs and have Storage=volatile in journald.conf, using journald only for 
-current-session, where unit status including last-10-messages makes 
-troubleshooting /so/ much easier. =:^)  Once past current-session, text 
-logs are more useful to me, which is where syslog-ng comes in.  Each to 
-its strength, and keeping the journals from wearing the SSDs[1] is a very 
-nice bonus. =:^)
-
----
-[1] I can and do filter what syslog-ng writes, but couldn't find a way to 
-filter journald's writes, only  queries/reads.  That alone saves writes 
-for repeated noise I'm filtering out with syslog before it's ever 
-written, that journald would still be writing if I let it write non-
-volatile.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

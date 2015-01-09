@@ -1,90 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57340 "EHLO mout.gmx.net"
+Received: from cantor2.suse.de ([195.135.220.15]:37976 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752060AbbAIPNr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Jan 2015 10:13:47 -0500
-Received: from [192.168.178.40] ([94.219.210.74]) by mail.gmx.com (mrgmx001)
- with ESMTPSA (Nemesis) id 0MaaOf-1YOfIW3BoP-00K7Cq for
- <linux-btrfs@vger.kernel.org>; Fri, 09 Jan 2015 16:13:45 +0100
-Message-ID: <1420816425.4982.7.camel@AMD>
-Subject: btrfs scrub and kernel parent transid
-From: Lars Callenbach <lars.callenbach@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Date: Fri, 09 Jan 2015 16:13:45 +0100
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	id S932771AbbAIPlF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Jan 2015 10:41:05 -0500
+Date: Fri, 9 Jan 2015 16:41:03 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Lennart Poettering <lennart@poettering.net>, linux-btrfs@vger.kernel.org
+Subject: Re: price to pay for nocow file bit?
+Message-ID: <20150109154103.GA3685@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20150107174315.GA21865@gardel-login>
+ <20150108155610.GA12859@hungrycats.org>
+ <20150108165321.GA23339@gardel-login>
+ <20150108183620.GA12857@hungrycats.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150108183620.GA12857@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, Jan 08, 2015 at 01:36:21PM -0500, Zygo Blaxell wrote:
+> Hmmm...it seems the handwaving about tail-packing that I was previously
+> ignoring is important after all.
+> 
+> A few quick tests with filefrag show that btrfs isn't doing full
+> tail-packing, only small file allocation (i.e. files smaller than 4096
+> bytes get stored inline, and nothing else does, not even sparse files
+> with a single 1-byte extent at offset != 0).  Thus the inline storage
+> avoids fragmentation only to the minimum extent possible.
 
-in kernel logs I get an error message of the type 'parent transid verify
-failed' but 'btrfs scrub ...' does not show any errors/inconsistencies.
-Do I have to worry about these kernel error messages?
+That's right, btrfs does not do the reiserfs-style tail packing, and
+IMHO will never do that. This brings a lot of code complexity than it's
+worth in the end.
 
-Best regards,
-   Lars
+> Short appends to the end of the file effectively become modifications
+> of the last block of the file.  That triggers CoW on the append, and if
+> we're doing lots of tiny writes the file becomes extremely fragmented
+> (exactly the worst case of one fragment per block).  A mix of big and
+> small appends seems to use fallocated space for those writes that cover
+> complete blocks, which is arguably worse than not fallocating at all.
+> 
+> So fallocate will not help until btrfs learns to do tail-packing, or
+> some other way to avoid this problem.
+> 
+> > > This would work on ext4, xfs, and others, and provide the same benefit
+> > > (or even better) without filesystem-specific code.  journald would
+> > > preallocate a contiguous chunk past the end of the file for appends,
+> > > and
+> > 
+> > That's precisely what we do. But journald's write pattern is not
+> > purely appending to files, it's "append something to the end, then
+> > link it up in the beginning". And for the "append" part we are
+> > fine with fallocate(). It's the "link up" part that completely fucks
+> > up fragmentation so far.
+> 
+> Wrong theory but same result.  The writes at the beginning just keep
+> replacing a single extent over and over, which has a worst-case effect
+> of adding a single fragment to the beginning of a file that would not
+> otherwise be fragmented.  The appends are causing fragmentation all
+> by themselves.  :-P
 
-~ # uname -a
-Linux 3.17.8-MYVERSION #1 SMP PREEMPT Thu Jan 8 23:29:09 CET 2015
-x86_64 x86_64 x86_64 GNU/Linux
-~ #   btrfs --version
-Btrfs v3.18+20141230
-~ #   btrfs fi show
-Label: none  uuid: 1436cbe7-2bb2-418a-8426-8c3267e0b207
-	Total devices 2 FS bytes used 156.14GiB
-	devid    1 size 200.00GiB used 79.02GiB path /dev/sdc1
-	devid    2 size 200.00GiB used 80.00GiB path /dev/sdb1
-
-Btrfs v3.18+20141230
-~ #   btrfs fi df /
-Data, single: total=155.01GiB, used=153.17GiB
-System, single: total=4.00MiB, used=24.00KiB
-Metadata, single: total=4.01GiB, used=2.97GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-~ # dmesg | less
-[    2.632199] Btrfs loaded
-[    2.775988] BTRFS: device fsid 1436cbe7-2bb2-418a-8426-8c3267e0b207
-devid 1 transid 35348 /dev/sdc1
-[    2.776216] BTRFS: device fsid 1436cbe7-2bb2-418a-8426-8c3267e0b207
-devid 2 transid 35348 /dev/sdb1
-[    2.893536] BTRFS info (device sdb1): use ssd allocation scheme
-[    2.893576] BTRFS info (device sdb1): disk space caching is enabled
-[    2.966782] BTRFS info (device sdb1): disk space caching is enabled
-[    3.301071] BTRFS info (device sdb1): disk space caching is enabled
-[    3.405363] parent transid verify failed on 1514311680 wanted 21004
-found 35043
-[    3.406370] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    3.407234] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    3.409509] parent transid verify failed on 1514311680 wanted 21004
-found 35043
-[    3.410150] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    3.429175] parent transid verify failed on 1514311680 wanted 21004
-found 35043
-[    8.855751] verify_parent_transid: 210 callbacks suppressed
-[    8.855758] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.879863] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.881082] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.910707] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.943407] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.948028] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    8.996504] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    9.038146] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    9.047055] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-[    9.055749] parent transid verify failed on 17290989568 wanted 21054
-found 32893
-
-
+OTOH, the appending write and the header rewrite happen at roughly same
+time so the actual block allocations may end up close to each other as
+well. But yes, one cannot rely on that.

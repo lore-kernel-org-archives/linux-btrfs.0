@@ -1,104 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga02-in.huawei.com ([119.145.14.65]:15565 "EHLO
-	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753061AbbAICvn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jan 2015 21:51:43 -0500
-Message-ID: <54AF41E9.2000609@huawei.com>
-Date: Fri, 9 Jan 2015 10:50:17 +0800
-From: Miao Xie <miaoxie@huawei.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:59551 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753805AbbAIIiL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jan 2015 03:38:11 -0500
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 4C0533EE1E5
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2015 17:38:09 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 3E5EEAC086D
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2015 17:38:08 +0900 (JST)
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id E5923E08006
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2015 17:38:07 +0900 (JST)
+Received: from WIN-R1VKH1IH438.jp.fujitsu.com (unknown [10.124.102.85])
+	by m3051.s.css.fujitsu.com (Postfix) with SMTP id B8341D5
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Jan 2015 17:38:07 +0900 (JST)
+Message-Id: <201501090837.AA00007@WIN-R1VKH1IH438.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Fri, 09 Jan 2015 17:37:52 +0900
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix typo of variable in scrub_stripe
 MIME-Version: 1.0
-To: Shaohua Li <shli@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <Kernel-team@fb.com>
-Subject: Re: [PATCH] btrfs: delete chunk allocation attemp when setting block
- group ro
-References: <ad987515563f59adfc028f23693d4a151a333846.1420752193.git.shli@fb.com> <54AF2885.40708@huawei.com> <20150109020650.GA3565386@devbig257.prn2.facebook.com>
-In-Reply-To: <20150109020650.GA3565386@devbig257.prn2.facebook.com>
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 08 Jan 2015 18:06:50 -0800, Shaohua Li wrote:
-> On Fri, Jan 09, 2015 at 09:01:57AM +0800, Miao Xie wrote:
->> On Thu, 08 Jan 2015 13:23:13 -0800, Shaohua Li wrote:
->>> Below test will fail currently:
->>>   mkfs.ext4 -F /dev/sda
->>>   btrfs-convert /dev/sda
->>>   mount /dev/sda /mnt
->>>   btrfs device add -f /dev/sdb /mnt
->>>   btrfs balance start -v -dconvert=raid1 -mconvert=raid1 /mnt
->>>
->>> The reason is there are some block groups with usage 0, but the whole
->>> disk hasn't free space to allocate new chunk, so we even can't set such
->>> block group readonly. This patch deletes the chunk allocation when
->>> setting block group ro. For META, we already have reserve. But for
->>> SYSTEM, we don't have, so the check_system_chunk is still required.
->>>
->>> Signed-off-by: Shaohua Li <shli@fb.com>
->>> ---
->>>  fs/btrfs/extent-tree.c | 31 +++++++------------------------
->>>  1 file changed, 7 insertions(+), 24 deletions(-)
->>>
->>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>> index a80b971..430101b6 100644
->>> --- a/fs/btrfs/extent-tree.c
->>> +++ b/fs/btrfs/extent-tree.c
->>> @@ -8493,22 +8493,8 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
->>>  {
->>>  	struct btrfs_space_info *sinfo = cache->space_info;
->>>  	u64 num_bytes;
->>> -	u64 min_allocable_bytes;
->>>  	int ret = -ENOSPC;
->>>  
->>> -
->>> -	/*
->>> -	 * We need some metadata space and system metadata space for
->>> -	 * allocating chunks in some corner cases until we force to set
->>> -	 * it to be readonly.
->>> -	 */
->>> -	if ((sinfo->flags &
->>> -	     (BTRFS_BLOCK_GROUP_SYSTEM | BTRFS_BLOCK_GROUP_METADATA)) &&
->>> -	    !force)
->>> -		min_allocable_bytes = 1 * 1024 * 1024;
->>> -	else
->>> -		min_allocable_bytes = 0;
->>> -
->>>  	spin_lock(&sinfo->lock);
->>>  	spin_lock(&cache->lock);
->>>  
-[SNIP]
->>>  	ret = set_block_group_ro(cache, 0);
->>>  	if (!ret)
->>>  		goto out;
->>> @@ -8566,6 +8544,11 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
->>>  		goto out;
->>>  	ret = set_block_group_ro(cache, 0);
->>>  out:
->>> +	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
->>> +		alloc_flags = update_block_group_flags(root, cache->flags);
->>> +		check_system_chunk(trans, root, alloc_flags);
->>
->> Please consider the case that the following patch fixed
->>   199c36eaa95077a47ae1bc55532fc0fbeb80cc95
->>
->> If there is no free device space, check_system_chunk can not allocate
->> new system metadata chunk, so when we run final step of the chunk
->> allocation to update the device item and insert the new chunk item, we
->> would fail.
-> 
-> So the relocation will always fail in this case. The check just makes
-> the failure earlier, right? We don't have the BUG_ON in
-> do_chunk_alloc() currently.
+The address that should be freed is not 'ppath' but 'path'.
 
-The final step of the chunk allocation is a delayed operation, we must make sure
-it can be done successfully, or we would abort the transaction, make the
-filesystem readonly and lose the data that is written into the filesystem before
-we do balance, it would make the users unconfortable.
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com> 
+---
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-With this patch, we will set the block group successfully at the first time we
-invoke set_block_group_ro(). But if the block group that will be set to RO is
-the only system metadata block group in the filesystem, and there is no device
-space to allocate a new one, that is we have no space to deal with the pending
-final step of chunk allocation, so the problem I said above will happen.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f2bb13a..403fbdb 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3053,7 +3053,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 
+ 	ppath = btrfs_alloc_path();
+ 	if (!ppath) {
+-		btrfs_free_path(ppath);
++		btrfs_free_path(path);
+ 		return -ENOMEM;
+ 	}
+ 
+-- 
+2.2.1
 
-Thanks
-Miao

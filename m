@@ -1,108 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:41989 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754989AbbAIQPB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Jan 2015 11:15:01 -0500
-Date: Fri, 9 Jan 2015 11:14:59 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: dsterba@suse.cz, Lennart Poettering <lennart@poettering.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: price to pay for nocow file bit?
-Message-ID: <20150109161457.GB12857@hungrycats.org>
-References: <20150107174315.GA21865@gardel-login>
- <20150108155610.GA12859@hungrycats.org>
- <20150108165321.GA23339@gardel-login>
- <20150108183620.GA12857@hungrycats.org>
- <20150109154103.GA3685@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="St7VIuEGZ6dlpu13"
-In-Reply-To: <20150109154103.GA3685@twin.jikos.cz>
+Received: from plane.gmane.org ([80.91.229.3]:55109 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752261AbbAIWnX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Jan 2015 17:43:23 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Y9iH3-00040q-GW
+	for linux-btrfs@vger.kernel.org; Fri, 09 Jan 2015 23:43:21 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jan 2015 23:43:21 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Jan 2015 23:43:21 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Segfault in "btrfs balance start" due to kernel page allocation
+ failure
+Date: Fri, 9 Jan 2015 22:43:11 +0000 (UTC)
+Message-ID: <pan$91b96$595041e4$b1777a9d$1c82bf25@cox.net>
+References: <m8odfs$rv2$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Remy Blank posted on Fri, 09 Jan 2015 12:19:23 +0100 as excerpted:
 
---St7VIuEGZ6dlpu13
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> I have a btrfs filesystem that shows the following errors. This happens
+> either when writing to the FS or when snapshotting, I'm not sure (this
+> FS holds my backup, and I write to it with rsync and snapshot
+> afterward).
+> 
+> Jan  8 13:54:33 twin kernel: BTRFS error (device dm-2):
+> error inheriting props for ino 3828 (root 317): -28
+> Jan  8 13:54:38 twin kernel: BTRFS error (device dm-2):
+> error inheriting props for ino 17939 (root 317): -28
 
-On Fri, Jan 09, 2015 at 04:41:03PM +0100, David Sterba wrote:
-> On Thu, Jan 08, 2015 at 01:36:21PM -0500, Zygo Blaxell wrote:
-> > Hmmm...it seems the handwaving about tail-packing that I was previously
-> > ignoring is important after all.
-> >=20
-> > A few quick tests with filefrag show that btrfs isn't doing full
-> > tail-packing, only small file allocation (i.e. files smaller than 4096
-> > bytes get stored inline, and nothing else does, not even sparse files
-> > with a single 1-byte extent at offset !=3D 0).  Thus the inline storage
-> > avoids fragmentation only to the minimum extent possible.
->=20
-> That's right, btrfs does not do the reiserfs-style tail packing, and
-> IMHO will never do that. This brings a lot of code complexity than it's
-> worth in the end.
+Just another user here, posting only to say I don't recall seeing a props 
+inheritance error like that posted before.  Could be a new and 
+interesting bug.
 
-If the file has been fallocated past EOF, it may make sense to do the
-extra work of maintaining a tail fragment in metadata until it's bigger
-than a block, and therefore large enough to write to the fallocated
-extent.  At least in that case the application has explicitly asked
-the filesystem for more optimization than in the general append case.
-Otherwise, what are fallocations past EOF for?
+Also, when you post errors, please post kernel and btrfs-progs versions.  
+I see from the trace that your kernel version is 3.17.7 so you're 
+reasonably current there, but of course that doesn't give the userspace 
+version.
 
-If the application appends 4K blocks all the time everything is fine,
-but that requirement might not work for journald, and doesn't work for
-rsyslog, mboxes, and many other long-running small-write use cases
-that append in non-block-sized units.
+And finally just a practical note.  Over time I've noticed that rsync 
+seems to be involved in quite a few posted bugs, most of which have of 
+course been fixed by now.  Rsync apparently stresses btrfs in ways few 
+other tasks do, thus triggering more than its share of bugs that most 
+other things don't tend to tickle.  I'm a gentooer myself, with (among 
+other things) the main package tree rsynced to btrfs, and have seemed to 
+escape these issues, but (1) all my btrfs are on SSD and thus likely 
+escape some of the race conditions that trigger on spinning rust, and (2) 
+I'm a strong believer in not putting all my data eggs in the same 
+filesystem basket so I partition heavily, and all my partitions are 
+relatively small (biggest btrfs 24 GiB, actually the gentoo tree, 
+sources, and binpkgs partition).  Additionally, I prefer backups to 
+identically sized partitions over snapshots (which are nice but if the 
+filesystem has problems it takes all the snapshots with it), and thus 
+don't tend to use the btrfs snapshots feature.  I suspect that has 
+something to do with my relative scarcity of triggered btrfs issues, here.
 
-On the other hand...it could be easier to handle such cases with a special
-case of autodefrag--one that focuses on appends, so it can be enabled
-by default earlier than the other problematic autodefrag use cases.
-It may even be faster to defragment in small batches (coalescing a few
-hundred blocks at a time near the end of file) than to do tail-packing
-on every append, especially if metadata blocks have much more overhead
-than data blocks (e.g. dup metadata with single data on spinning rust).
-The fallocate would be wasted in this case, but the number of fragments
-in the final file would be reasonably sane.
+So just be aware that rsync /does/ seem to stress btrfs more than most 
+tasks, and try to plan/behave accordingly, perhaps avoiding rsync when 
+possible, or keeping additional backups in case, and/or choosing 
+something other than btrfs for at least one level of backups, etc.  (FWIW 
+my non-btrfs level of backups here is reiserfs, the filesystem I used for 
+years previously, which at least since the introduction of data=ordered 
+back around kernel 2.6.16 or so, has done very well for me even thru 
+hardware issues, etc.  Others on the list recommend xfs, but few seem 
+particularly impressed with ext*, for whatever it's worth.  That last 
+could simply be a biased sample, tho, as people involved in btrfs are I 
+suspect less likely to be content with the traditional ext* status quo 
+than the average Linuxer, but whatever the reason, cause or bias, ext* 
+seems to get short shrift on this list.)
 
-> > > > This would work on ext4, xfs, and others, and provide the same bene=
-fit
-> > > > (or even better) without filesystem-specific code.  journald would
-> > > > preallocate a contiguous chunk past the end of the file for appends,
-> > > > and
-> > >=20
-> > > That's precisely what we do. But journald's write pattern is not
-> > > purely appending to files, it's "append something to the end, then
-> > > link it up in the beginning". And for the "append" part we are
-> > > fine with fallocate(). It's the "link up" part that completely fucks
-> > > up fragmentation so far.
-> >=20
-> > Wrong theory but same result.  The writes at the beginning just keep
-> > replacing a single extent over and over, which has a worst-case effect
-> > of adding a single fragment to the beginning of a file that would not
-> > otherwise be fragmented.  The appends are causing fragmentation all
-> > by themselves.  :-P
->=20
-> OTOH, the appending write and the header rewrite happen at roughly same
-> time so the actual block allocations may end up close to each other as
-> well. But yes, one cannot rely on that.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-The header rewrite is close to the last append, but that's not really
-useful.  There will be one header near one appending write, but there are
-also thousands of other appending writes separated in time and space on
-the disk, even after fallocate preallocated contiguous space for the file.
-
-
---St7VIuEGZ6dlpu13
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlSv/oEACgkQgfmLGlazG5xqgACdH0hkfDo4CC/PgHppIgoxJ+k0
-GXAAn1X5Rmpvrk1vslTomwF+M7iSqSHZ
-=mH8t
------END PGP SIGNATURE-----
-
---St7VIuEGZ6dlpu13--

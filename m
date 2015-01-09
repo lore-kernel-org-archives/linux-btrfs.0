@@ -1,72 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13785 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754741AbbAIIM4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Jan 2015 03:12:56 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t098CL52030005
-	for <linux-btrfs@vger.kernel.org>; Fri, 9 Jan 2015 16:12:22 +0800
-From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs:btrfstune:fix multiple options error
-Date: Fri, 9 Jan 2015 16:11:42 +0800
-Message-ID: <1420791102-9948-2-git-send-email-fancn.fnst@cn.fujitsu.com>
-In-Reply-To: <1420791102-9948-1-git-send-email-fancn.fnst@cn.fujitsu.com>
-References: <1420791102-9948-1-git-send-email-fancn.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from smtp.dragon.cz ([213.168.176.4]:49730 "EHLO smtp.dragon.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751792AbbAIVdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Jan 2015 16:33:32 -0500
+Received: from i3.doma (fw501.dragon.cz [213.168.176.131])
+	by smtp.dragon.cz (8.13.8/8.13.8) with ESMTP id t09LRLGY019168
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Jan 2015 22:27:22 +0100
+From: Martin Volf <martin.volf.42@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Remove redundant short description from cmd_snapshot_usage
+Date: Fri,  9 Jan 2015 22:27:21 +0100
+Message-Id: <1420838841-20944-1-git-send-email-martin.volf.42@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-when we use multiple options, error return status will be override by the
-last option status.
-example: btrfstune -S 1 -r /dev/loop0
-when -S option fails and -r option succeeds, return value is 0, rather than
-1, where 1 is the right return status.
+cmd_snapshot_usage in cmds-subvolume.c contains the short description
+twice. Remove the first one.
 
-Reported-by: Chen Hanxiao <chenhanxiao@cn.fujitsu.com>
-Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Signed-off-by: Martin Volf <martin.volf.42@gmail.com>
 ---
- btrfstune.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/btrfstune.c b/btrfstune.c
-index 9a9e855..499a71d 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
- {
- 	struct btrfs_root *root;
- 	int success = 0;
-+	int total = 0;
- 	int extrefs_flag = 0;
- 	int seeding_flag = 0;
- 	u64 seeding_value = 0;
-@@ -199,19 +200,22 @@ int main(int argc, char *argv[])
- 			ignore_enabled_seeding);
- 		if (!ret)
- 			success++;
-+		total++;
- 	}
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 15d4b97..9618cae 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -565,7 +565,6 @@ out:
+ }
  
- 	if (extrefs_flag) {
- 		enable_extrefs_flag(root);
- 		success++;
-+		total++;
- 	}
- 
- 	if (skinny_flag) {
- 		enable_skinny_metadata(root);
- 		success++;
-+		total++;
- 	}
- 
--	if (success > 0) {
-+	if (success == total) {
- 		ret = 0;
- 	} else {
- 		root->fs_info->readonly = 1;
--- 
-1.9.1
-
+ static const char * const cmd_snapshot_usage[] = {
+-	"btrfs subvolume snapshot [-r] <source> <dest>|[<dest>/]<name>",
+ 	"btrfs subvolume snapshot [-r] [-i <qgroupid>] <source> <dest>|[<dest>/]<name>",
+ 	"Create a snapshot of the subvolume",
+ 	"Create a writable/readonly snapshot of the subvolume <source> with",

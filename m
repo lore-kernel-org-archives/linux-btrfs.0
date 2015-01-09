@@ -1,75 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38431 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756509AbbAIPxB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Jan 2015 10:53:01 -0500
-Date: Fri, 9 Jan 2015 16:52:59 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Lennart Poettering <lennart@poettering.net>
-Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41989 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754989AbbAIQPB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Jan 2015 11:15:01 -0500
+Date: Fri, 9 Jan 2015 11:14:59 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: dsterba@suse.cz, Lennart Poettering <lennart@poettering.net>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: price to pay for nocow file bit?
-Message-ID: <20150109155259.GB3685@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20150109161457.GB12857@hungrycats.org>
 References: <20150107174315.GA21865@gardel-login>
- <54AD929E.608@fb.com>
- <20150108133036.GA23096@gardel-login>
+ <20150108155610.GA12859@hungrycats.org>
+ <20150108165321.GA23339@gardel-login>
+ <20150108183620.GA12857@hungrycats.org>
+ <20150109154103.GA3685@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150108133036.GA23096@gardel-login>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="St7VIuEGZ6dlpu13"
+In-Reply-To: <20150109154103.GA3685@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 08, 2015 at 02:30:36PM +0100, Lennart Poettering wrote:
-> On Wed, 07.01.15 15:10, Josef Bacik (jbacik@fb.com) wrote:
-> > On 01/07/2015 12:43 PM, Lennart Poettering wrote:
-> > >Currently, systemd-journald's disk access patterns (appending to the
-> > >end of files, then updating a few pointers in the front) result in
-> > >awfully fragmented journal files on btrfs, which has a pretty
-> > >negative effect on performance when accessing them.
-> > 
-> > I've been wondering if mount -o autodefrag would deal with this problem but
-> > I haven't had the chance to look into it.
-> 
-> Hmm, I am kinda interested in a solution that I can just implement in
-> systemd/journald now and that will then just make things work for
-> people suffering by the problem. I mean, I can hardly make systemd
-> patch the mount options of btrfs just because I place a journal file
-> on some fs...
-> 
-> Is "autodefrag" supposed to become a default one day?
 
-Maybe. The option brings a performance hit because reading a block
-that's out of sequential order with it's neighbors will also require to
-read the neighbors. Then the group (like 8 blocks) will be written
-sequentially to a new location.
+--St7VIuEGZ6dlpu13
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It's an increased read latency in the fragmented case and more stress to
-the block allocator. Practically it's not that bad for general use, eg.
-a root partition, but now it's still users' decision whether to use it
-or not.
+On Fri, Jan 09, 2015 at 04:41:03PM +0100, David Sterba wrote:
+> On Thu, Jan 08, 2015 at 01:36:21PM -0500, Zygo Blaxell wrote:
+> > Hmmm...it seems the handwaving about tail-packing that I was previously
+> > ignoring is important after all.
+> >=20
+> > A few quick tests with filefrag show that btrfs isn't doing full
+> > tail-packing, only small file allocation (i.e. files smaller than 4096
+> > bytes get stored inline, and nothing else does, not even sparse files
+> > with a single 1-byte extent at offset !=3D 0).  Thus the inline storage
+> > avoids fragmentation only to the minimum extent possible.
+>=20
+> That's right, btrfs does not do the reiserfs-style tail packing, and
+> IMHO will never do that. This brings a lot of code complexity than it's
+> worth in the end.
 
-> Anyway, given the pros and cons I have now changed journald to set the
-> nocow bit on newly created journal files. When files are rotated (and
-> we hence know we will never ever write again to them) the bit is tried
-> to be unset again, and a defrag ioctl will be invoked right
-> after. btrfs currently silently ignores that we unset the bit, and
-> leaves it set, but I figure i should try to unset it anyway, in case
-> it learns that one day. After all, after rotating the files there's no
-> reason to treat the files special anymore...
-> 
-> I'll keep an eye on this, and see if I still get user complaints about
-> it. Should autodefrag become default eventually we can get rid of this
-> code in journald again.
-> 
-> One question regarding the btrfs defrag ioctl: playing around with it
-> it appears to be asynchronous, the defrag request is simply queued and
-> the ioctl returns immediately. Which is great for my usecase. However
-> I was wondering if it always was async like this? I googled a bit, and
-> found reports that defrag might take a while, but I am not sure if
-> those reports were about the ioctl taking so long, or the effect of
-> defrag actually hitting the disk... 
+If the file has been fallocated past EOF, it may make sense to do the
+extra work of maintaining a tail fragment in metadata until it's bigger
+than a block, and therefore large enough to write to the fallocated
+extent.  At least in that case the application has explicitly asked
+the filesystem for more optimization than in the general append case.
+Otherwise, what are fallocations past EOF for?
 
-Defrag can be both sync and async, that's what the option -f is for.
-Schedule file blocks for write and flush it, then go to the next file.
-This avoids the hit in the async mode when tons of data can get
-redirtied at once.
+If the application appends 4K blocks all the time everything is fine,
+but that requirement might not work for journald, and doesn't work for
+rsyslog, mboxes, and many other long-running small-write use cases
+that append in non-block-sized units.
+
+On the other hand...it could be easier to handle such cases with a special
+case of autodefrag--one that focuses on appends, so it can be enabled
+by default earlier than the other problematic autodefrag use cases.
+It may even be faster to defragment in small batches (coalescing a few
+hundred blocks at a time near the end of file) than to do tail-packing
+on every append, especially if metadata blocks have much more overhead
+than data blocks (e.g. dup metadata with single data on spinning rust).
+The fallocate would be wasted in this case, but the number of fragments
+in the final file would be reasonably sane.
+
+> > > > This would work on ext4, xfs, and others, and provide the same bene=
+fit
+> > > > (or even better) without filesystem-specific code.  journald would
+> > > > preallocate a contiguous chunk past the end of the file for appends,
+> > > > and
+> > >=20
+> > > That's precisely what we do. But journald's write pattern is not
+> > > purely appending to files, it's "append something to the end, then
+> > > link it up in the beginning". And for the "append" part we are
+> > > fine with fallocate(). It's the "link up" part that completely fucks
+> > > up fragmentation so far.
+> >=20
+> > Wrong theory but same result.  The writes at the beginning just keep
+> > replacing a single extent over and over, which has a worst-case effect
+> > of adding a single fragment to the beginning of a file that would not
+> > otherwise be fragmented.  The appends are causing fragmentation all
+> > by themselves.  :-P
+>=20
+> OTOH, the appending write and the header rewrite happen at roughly same
+> time so the actual block allocations may end up close to each other as
+> well. But yes, one cannot rely on that.
+
+The header rewrite is close to the last append, but that's not really
+useful.  There will be one header near one appending write, but there are
+also thousands of other appending writes separated in time and space on
+the disk, even after fallocate preallocated contiguous space for the file.
+
+
+--St7VIuEGZ6dlpu13
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlSv/oEACgkQgfmLGlazG5xqgACdH0hkfDo4CC/PgHppIgoxJ+k0
+GXAAn1X5Rmpvrk1vslTomwF+M7iSqSHZ
+=mH8t
+-----END PGP SIGNATURE-----
+
+--St7VIuEGZ6dlpu13--

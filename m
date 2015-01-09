@@ -1,66 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37976 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38431 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932771AbbAIPlF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Jan 2015 10:41:05 -0500
-Date: Fri, 9 Jan 2015 16:41:03 +0100
+	id S1756509AbbAIPxB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Jan 2015 10:53:01 -0500
+Date: Fri, 9 Jan 2015 16:52:59 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Lennart Poettering <lennart@poettering.net>, linux-btrfs@vger.kernel.org
+To: Lennart Poettering <lennart@poettering.net>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
 Subject: Re: price to pay for nocow file bit?
-Message-ID: <20150109154103.GA3685@twin.jikos.cz>
+Message-ID: <20150109155259.GB3685@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20150107174315.GA21865@gardel-login>
- <20150108155610.GA12859@hungrycats.org>
- <20150108165321.GA23339@gardel-login>
- <20150108183620.GA12857@hungrycats.org>
+ <54AD929E.608@fb.com>
+ <20150108133036.GA23096@gardel-login>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150108183620.GA12857@hungrycats.org>
+In-Reply-To: <20150108133036.GA23096@gardel-login>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 08, 2015 at 01:36:21PM -0500, Zygo Blaxell wrote:
-> Hmmm...it seems the handwaving about tail-packing that I was previously
-> ignoring is important after all.
-> 
-> A few quick tests with filefrag show that btrfs isn't doing full
-> tail-packing, only small file allocation (i.e. files smaller than 4096
-> bytes get stored inline, and nothing else does, not even sparse files
-> with a single 1-byte extent at offset != 0).  Thus the inline storage
-> avoids fragmentation only to the minimum extent possible.
-
-That's right, btrfs does not do the reiserfs-style tail packing, and
-IMHO will never do that. This brings a lot of code complexity than it's
-worth in the end.
-
-> Short appends to the end of the file effectively become modifications
-> of the last block of the file.  That triggers CoW on the append, and if
-> we're doing lots of tiny writes the file becomes extremely fragmented
-> (exactly the worst case of one fragment per block).  A mix of big and
-> small appends seems to use fallocated space for those writes that cover
-> complete blocks, which is arguably worse than not fallocating at all.
-> 
-> So fallocate will not help until btrfs learns to do tail-packing, or
-> some other way to avoid this problem.
-> 
-> > > This would work on ext4, xfs, and others, and provide the same benefit
-> > > (or even better) without filesystem-specific code.  journald would
-> > > preallocate a contiguous chunk past the end of the file for appends,
-> > > and
+On Thu, Jan 08, 2015 at 02:30:36PM +0100, Lennart Poettering wrote:
+> On Wed, 07.01.15 15:10, Josef Bacik (jbacik@fb.com) wrote:
+> > On 01/07/2015 12:43 PM, Lennart Poettering wrote:
+> > >Currently, systemd-journald's disk access patterns (appending to the
+> > >end of files, then updating a few pointers in the front) result in
+> > >awfully fragmented journal files on btrfs, which has a pretty
+> > >negative effect on performance when accessing them.
 > > 
-> > That's precisely what we do. But journald's write pattern is not
-> > purely appending to files, it's "append something to the end, then
-> > link it up in the beginning". And for the "append" part we are
-> > fine with fallocate(). It's the "link up" part that completely fucks
-> > up fragmentation so far.
+> > I've been wondering if mount -o autodefrag would deal with this problem but
+> > I haven't had the chance to look into it.
 > 
-> Wrong theory but same result.  The writes at the beginning just keep
-> replacing a single extent over and over, which has a worst-case effect
-> of adding a single fragment to the beginning of a file that would not
-> otherwise be fragmented.  The appends are causing fragmentation all
-> by themselves.  :-P
+> Hmm, I am kinda interested in a solution that I can just implement in
+> systemd/journald now and that will then just make things work for
+> people suffering by the problem. I mean, I can hardly make systemd
+> patch the mount options of btrfs just because I place a journal file
+> on some fs...
+> 
+> Is "autodefrag" supposed to become a default one day?
 
-OTOH, the appending write and the header rewrite happen at roughly same
-time so the actual block allocations may end up close to each other as
-well. But yes, one cannot rely on that.
+Maybe. The option brings a performance hit because reading a block
+that's out of sequential order with it's neighbors will also require to
+read the neighbors. Then the group (like 8 blocks) will be written
+sequentially to a new location.
+
+It's an increased read latency in the fragmented case and more stress to
+the block allocator. Practically it's not that bad for general use, eg.
+a root partition, but now it's still users' decision whether to use it
+or not.
+
+> Anyway, given the pros and cons I have now changed journald to set the
+> nocow bit on newly created journal files. When files are rotated (and
+> we hence know we will never ever write again to them) the bit is tried
+> to be unset again, and a defrag ioctl will be invoked right
+> after. btrfs currently silently ignores that we unset the bit, and
+> leaves it set, but I figure i should try to unset it anyway, in case
+> it learns that one day. After all, after rotating the files there's no
+> reason to treat the files special anymore...
+> 
+> I'll keep an eye on this, and see if I still get user complaints about
+> it. Should autodefrag become default eventually we can get rid of this
+> code in journald again.
+> 
+> One question regarding the btrfs defrag ioctl: playing around with it
+> it appears to be asynchronous, the defrag request is simply queued and
+> the ioctl returns immediately. Which is great for my usecase. However
+> I was wondering if it always was async like this? I googled a bit, and
+> found reports that defrag might take a while, but I am not sure if
+> those reports were about the ioctl taking so long, or the effect of
+> defrag actually hitting the disk... 
+
+Defrag can be both sync and async, that's what the option -f is for.
+Schedule file blocks for write and flush it, then go to the next file.
+This avoids the hit in the async mode when tons of data can get
+redirtied at once.

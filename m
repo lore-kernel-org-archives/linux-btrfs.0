@@ -1,65 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:57216 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:50996 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751085AbbAJKvE (ORCPT
+	with ESMTP id S1751141AbbAJMAZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Jan 2015 05:51:04 -0500
+	Sat, 10 Jan 2015 07:00:25 -0500
 Received: from merkaba.localnet (host-188-174-199-142.customer.m-online.net [188.174.199.142])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id B505A195
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Jan 2015 11:49:47 +0100 (CET)
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 661769A
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Jan 2015 12:59:08 +0100 (CET)
 From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Autodefrag option with more delay?
-Date: Sat, 10 Jan 2015 11:51:02 +0100
-Message-ID: <1939485.9eHmoT5uad@merkaba>
-In-Reply-To: <24952376.hEFToVtt8e@merkaba>
-References: <24952376.hEFToVtt8e@merkaba>
+Subject: Re: price to pay for nocow file bit?
+Date: Sat, 10 Jan 2015 13:00:23 +0100
+Message-ID: <10396011.VnMcUEBNIZ@merkaba>
+In-Reply-To: <pan$2625$dcbfe450$9a65d855$d7e62f1e@cox.net>
+References: <20150107174315.GA21865@gardel-login> <54AD929E.608@fb.com> <pan$2625$dcbfe450$9a65d855$d7e62f1e@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 10. Januar 2015, 11:41:57 schrieb Martin Steigerwald:
-> Hi!
-> 
-> On answering to the nocow file bit thread I wondered about the way
-> autodefrag works. As I saw quite some time ago with a VM image on a 2,5
-> inch external eSATA harddisk it kicks in quite quickly and seems to cause a
-> *lot* of additional writes.
-> 
-> I wonder about this case:
-> 
-> merkaba:/home/martin/.local/share/akonadi/db_data/akonadi> filefrag
-> parttable.ibd
-> parttable.ibd: 8039 extents found
-> 
-> Akonadi stores metadata about parts, like mails, contacts and so on in
-> there. Now the most regular workload for this with a mail setup like here
-> is:
-> 
-> Add new data.
-> 
-> It may not change much of the data after all the filtering of the mail to
-> their mailfolders have done. Similarily with VM images after installation,
-> much of the image may not be touched anymore then.
-> 
-> I wonder how autodefrag would perform when it would take the *write hotness*
-> of data into account. I.e. only kick in after data has cooled down a bit.
-> That could help for any cases where applications only modify recently
-> written data and leave older cold data alone. And I bet there may be quite
-> some applications doing that. Including, but not limited to journald.
+Am Donnerstag, 8. Januar 2015, 06:30:59 schrieb Duncan:
+> FWIW, I'm systemd on btrfs here, but I use syslog-ng for my non-volatile 
+> logs and have Storage=volatile in journald.conf, using journald only for 
+> current-session, where unit status including last-10-messages makes 
+> troubleshooting /so/ much easier. =:^)  Once past current-session, text 
+> logs are more useful to me, which is where syslog-ng comes in.  Each to 
+> its strength, and keeping the journals from wearing the SSDs[1] is a very 
+> nice bonus. =:^)
 
-Okay, nope. Not journald, as, as far as I understand it it would never leave 
-the beginning of the file alone when it still writes to it. As MySQL would, I 
-think, just write into certain parts of the database file, i.e. there where it 
-would add the new records, as AFAIK MySQL stores the index seperate from the 
-tables if you use innodb_file_per_table.
+Nice, I try this as well.
 
-I have seen fluentd tail plugin using a position file to track the position in 
-text based logfiles. It uses an external file as to not modify the logfile of the 
-application or syslog daemon. But actually writing the position pointers into 
-an external files IMHO makes a huge lot of sense for a copy on write filesystems 
-like BTRFS.
+Cause while journalctl provides some nice stuff to query the logs, even by field 
+or time and what not, frankly on my laptop, I don´t care.
+
+I have seen this setting before, but I thought, well, logs would be good to 
+keep. But for the SSD based laptop I will try volatile storage now. I will see 
+whether I missed a longer history, but I reduced it before anyway to a 14 day 
+maximum retention time already, cause systemd used 1,1 GiB of my root 
+partition for logs while rsyslog + logrotate used much less[1]. And I have yet 
+not seen the immediate benefit for me here on this laptop to justify using up 
+that much resources just for logging. So for me its a useless waste of 
+resources currently. (This may be different on a server or anywhere where 
+logfiles matter more, but then, when I consider some of our server VMs with 
+just 4 to 5 GiB VMDK file, journald on Debian in default settings could easily 
+fill the remaining space on some of them. Which I would consider a regression.)
+
+[1] systemd: journal is quite big compared to rsyslog output
+https://bugs.debian.org/773538
 
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de

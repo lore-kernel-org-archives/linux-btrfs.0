@@ -1,66 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f181.google.com ([209.85.223.181]:56490 "EHLO
-	mail-ie0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751850AbbALQcm (ORCPT
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:63436 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751576AbbALQnp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Jan 2015 11:32:42 -0500
-Received: by mail-ie0-f181.google.com with SMTP id rl12so26062015iec.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 08:32:41 -0800 (PST)
-Message-ID: <54B3F720.4070805@gmail.com>
-Date: Mon, 12 Jan 2015 11:32:32 -0500
+	Mon, 12 Jan 2015 11:43:45 -0500
+Received: by mail-ig0-f175.google.com with SMTP id h15so12331179igd.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 08:43:45 -0800 (PST)
+Message-ID: <54B3F9BA.3060503@gmail.com>
+Date: Mon, 12 Jan 2015 11:43:38 -0500
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Patrik Lundquist <patrik.lundquist@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "P. Remek" <p.remek1@googlemail.com>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs performance - ssd array
-References: <CABdHLQ4P4=rNCHpAuL7azGMA4xTgoHqyFNZ25sw4X2bsHQWwcg@mail.gmail.com>	<54B3E03E.80606@gmail.com> <CAA7pwKN0-EtPA7Z+2AKSSzOqBOpUGETFFxm-U0umQcAzOkNxYA@mail.gmail.com>
-In-Reply-To: <CAA7pwKN0-EtPA7Z+2AKSSzOqBOpUGETFFxm-U0umQcAzOkNxYA@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090100020605020805070300"
+References: <CABdHLQ4P4=rNCHpAuL7azGMA4xTgoHqyFNZ25sw4X2bsHQWwcg@mail.gmail.com>	<54B3E03E.80606@gmail.com> <CABdHLQ6b_PpaMK7n+NhU5qV9UvtanqJcpn8y1vpM84h9RGSXDQ@mail.gmail.com>
+In-Reply-To: <CABdHLQ6b_PpaMK7n+NhU5qV9UvtanqJcpn8y1vpM84h9RGSXDQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030707090005080103050105"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090100020605020805070300
+--------------ms030707090005080103050105
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-01-12 10:11, Patrik Lundquist wrote:
-> On 12 January 2015 at 15:54, Austin S Hemmelgarn <ahferroin7@gmail.com>=
- wrote:
->>
+On 2015-01-12 10:35, P. Remek wrote:
 >> Another thing to consider is that the kernel's default I/O scheduler a=
 nd the default parameters for that I/O scheduler are almost always subopt=
 imal for SSD's, and this tends to show far more with BTRFS than anything =
-else.  Personally I've found that using the CFQ I/O scheduler with the fo=
-llowing parameters works best for a majority of SSD's:
+else.  Personally >I've found that using the CFQ I/O scheduler with the f=
+ollowing parameters works best for a majority of SSD's:
 >> 1. slice_idle=3D0
 >> 2. back_seek_penalty=3D1
 >> 3. back_seek_max set equal to the size in sectors of the device
 >> 4. nr_requests and quantum set to the hardware command queue depth
->>
->> You can easily set these persistently for a given device with a udev r=
-ule like this:
->>    KERNEL=3D=3D'sda', SUBSYSTEM=3D=3D'block', ACTION=3D=3D'add', ATTR{=
-queue/scheduler}=3D'cfq', ATTR{queue/iosched/back_seek_penalty}=3D'1', AT=
-TR{queue/iosched/back_seek_max}=3D'<device_size>', ATTR{queue/iosched/qua=
-ntum}=3D'128', ATTR{queue/iosched/slice_idle}=3D'0', ATTR{queue/nr_reques=
-ts}=3D'128'
->>
->> Make sure to replace '128' in the rule with whatever the command queue=
- depth is for the device in question (It's usually 128 or 256, occasional=
-ly more), and <device_size> with the size of the device in kibibytes.
->>
 >
-> So is it "size in sectors of the device" or "size of the device in
-> kibibytes" for back_seek_max? :-)
+> I will give these suggestions a try but I don't expect any big gain.
+> Notice that the difference between EXT4 and BTRFS random write is
+> massive - its 200 000 IOPs vs. 15 000 IOPs and the device and kernel
+> parameters are exactly the same (it is same machine) for both test
+> scenarios. It suggests that something is taking down write performance
+> in the Btrfs implementation.
 >
-size in kibibytes, sorry about the confusion, I forgot to correct every=20
-instance of saying it was size in sectors after I reread the documentatio=
-n.
+> Notice also that we did some performance tuning ( queue scheduling set
+> to noop, irq affinity distribution and pinning to specific numa nodes
+> and cores etc.)
+>
+The stuff about the I/O scheduler is more general advice for dealing=20
+with SSD's than anything BTRFS specific.  I've found though that on SATA =
+
+(I don't have anywhere near the kind of budget needed for SAS disks, and =
+
+even less so for SAS SSD's) connected SSD's at least, using the no-op=20
+I/O scheduler get's better small burst performance, but it causes=20
+horrible latency spikes whenever trying to do something that requires=20
+bulk throughput with random writes (rsync being an excellent example of=20
+this).
+
+Something else I thought of after my initial reply, due to the COW=20
+nature of BTRFS, you will generally get better performance of metadata=20
+operations with shallower directory structures (largely because mtime=20
+updates propagate up the directory tree to the root of the filesystem).
 
 
---------------ms090100020605020805070300
+--------------ms030707090005080103050105
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -97,8 +101,8 @@ WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
 ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
 Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
 MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
-GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTEyMTYzMjMy
-WjAjBgkqhkiG9w0BCQQxFgQU83dwhh+/ONcJmlkzzZ+WO+JjRH8wbAYJKoZIhvcNAQkPMV8w
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwMTEyMTY0MzM4
+WjAjBgkqhkiG9w0BCQQxFgQU+KeNppOk2J75/3XBPnhrgy3vxWwwbAYJKoZIhvcNAQkPMV8w
 XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
 gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
 MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
@@ -106,10 +110,10 @@ Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
 ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
 BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
 AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
-YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAgJr8uxZLKdCfbfyxNb35KTl1GLF2
-PCVZNDzenCQdx4dWxZ+L3lZu8VZwLf5XEIiVbMouM4L3bGDDyVDMq7dPqAaLwLsJW5mqn3a2
-OQwxISi86UHgimJsIdawT+J2j+cd+XVSwq1STUf9SbrVySqsAxtfy80B03EDJ0ZoysDeQjmo
-0Lq916jvx8HLlMDrdb0jsQbY6plcrwdt1yJbZsEYN37RdaSNyBx9sfCdx8irrWFcwYR2jg5i
-3CWNQ72X3DsmILmpsOUPDGorLb9BdSaeZJm2LMzPqBMqVXJOgoo+WIVH2P+mZ1xrie9748Nj
-PRq4q8P4DEv8QdtjB7a9ig97GQAAAAAAAA==
---------------ms090100020605020805070300--
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAnYhkhKoxHzCXKRxa24yVTT/b8Lma
+sL/L3lB5Baw4/ihWkzAoaXbuuW89BweUqTPQwEtiHaBEAm2li61Zthb44HEIg/vPUH6g+H2Z
+NOyIxVfenVch3MtxCbMqHmhFmSAKLb9wTE6gno+hLlopPDFOmSOHc94ZxQJQpl4Q37Etya83
+Qlev72uf+XX5xIpe2RJQ2YqoPhELQBd/jKsy9Fsp/kU9vNCJPGG+r3heeHEFw39mXUwcPsWo
+ZTTDZ6k0J2kpIj0qEYPbGEF6Pkn9CpmVXwTZXnSRWHWjmCJLY9OO6jbfOz2y+kDV8xrqrtPp
+gmsuA2BX0RuW3qbkfaw4AYFPLwAAAAAAAA==
+--------------ms030707090005080103050105--

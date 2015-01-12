@@ -1,59 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22339 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750846AbbALCca (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Jan 2015 21:32:30 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0C2Vrp4025963
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 10:31:53 +0800
-Message-ID: <54B3323E.3090100@cn.fujitsu.com>
-Date: Mon, 12 Jan 2015 10:32:30 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: What about storing more crc32 in the unused csum size for metadata?
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:42895 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750844AbbALEwh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Jan 2015 23:52:37 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YAWzS-0008Hk-5K
+	for linux-btrfs@vger.kernel.org; Mon, 12 Jan 2015 05:52:34 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 05:52:34 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 05:52:34 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: What about storing more crc32 in the unused csum size for
+ metadata?
+Date: Mon, 12 Jan 2015 04:52:22 +0000 (UTC)
+Message-ID: <pan$8d162$d4e83036$79c5caa1$f18c808@cox.net>
+References: <54B3323E.3090100@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Old layout]
-Btrfs csum size for tree block is 32 bytes, and currently, only the
-first 4 bytes(sector 0) is used, storing the crc32 for the whole
-leaf/node.
+Qu Wenruo posted on Mon, 12 Jan 2015 10:32:30 +0800 as excerpted:
 
-Takes 4K as example for leafsize.
-Sectors:
-|---0---|---1---|---2---|---3---|---4---|---5---|---6---|---7---|
-Sector 0: Csum of the leaf/node (32 ~ 4K)
-Sector 1~7: Not used
+> [New layout]
+> Take leafsize as 4K for example.
+> 
+> Sectors:
+> |---0---|---1---|---2---|---3---|---4---|---5---|---6---|---7---|
+> Sector 0: Csum of the leaf/node (32~4K)(not changed)
+> Sector 1: Csum of the first eighths of the leaf/node (32~512)
+> Sector 2: Csum of the second eighths of the leaf/node (512~1024)
+> ....
+> Sector 7: Csum of the last eighths of the leaf/node (3584 ~ 4096)
 
-So, what about restoring more crc32 in other sectors in the following
-backward-compatible way?
+OK, I've been up too long and should be sleeping, and it may be that's 
+affecting my logic, but AFAICT either you're missing something obvious, 
+or I am.
 
-[New layout]
-Take leafsize as 4K for example.
+There are eight eights, and eight "sectors", but the first one is already 
+used, thus leaving seven available.  You have the first eighth (ending at 
+byte 512*1) in sector one (zero-based so the second sector), the second 
+(ending at byte 512*2=1024) in sector two... the last (eighth) eighth 
+(ending at byte 512*8=4096) in sector seven.
 
-Sectors:
-|---0---|---1---|---2---|---3---|---4---|---5---|---6---|---7---|
-Sector 0: Csum of the leaf/node (32~4K)(not changed)
-Sector 1: Csum of the first eighths of the leaf/node (32~512)
-Sector 2: Csum of the second eighths of the leaf/node (512~1024)
-....
-Sector 7: Csum of the last eighths of the leaf/node (3584 ~ 4096)
+Of eighths 3-7 in that ..., which eighth do you skip csumming, or is one 
+of them a full quarter instead of an eighth?
 
-And due to the fact
-crc(sector 0 ~ sector 7) = crc(crc(sector 0), crc(sector 1), ...)
+Of course if we could make them sevenths...  But making it four quarters 
+instead of 7/8 is perhaps more reasonable, with the remaining three 
+sectors remaining unused, and if only one fails csum we still save 75% of 
+the leaf/node, instead of none of it, currently.
 
-We won't waste too much CPU time, and since we keep the behavior of
-sector 0, so it is completely backward compatible.
+But maybe it makes complete sense as-is and I should be sleeping instead 
+of trying to make sense of what is clearly not making sense to me at this 
+point...
 
-[Advantage]
-The advantage usage of the new layout is more accuracy in scrub and
-btrfsck.
-For scrub, even all duplication is broken, there is still chance for
-scrub to rebuild the block if corruptions occurs in different sector.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-And for btrfsck --repair, if node is corrupted, we don't need to drop
-all the nodes/leaves belong to the nodes, but only drops nodes/leaves
-belong to the sector.

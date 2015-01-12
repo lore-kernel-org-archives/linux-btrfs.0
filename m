@@ -1,59 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39328 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753041AbbALNgj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Jan 2015 08:36:39 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YAfAb-00019T-Ib
-	for linux-btrfs@vger.kernel.org; Mon, 12 Jan 2015 14:36:37 +0100
-Received: from p4ff58349.dip0.t-ipconnect.de ([79.245.131.73])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 14:36:37 +0100
-Received: from holger.hoffstaette by p4ff58349.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 14:36:37 +0100
+Received: from aserp1040.oracle.com ([141.146.126.69]:19340 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751412AbbALQIY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Jan 2015 11:08:24 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t0CG8MaI013667
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 16:08:23 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id t0CG8LRO025378
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 16:08:22 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id t0CG8LA4022129
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 16:08:21 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Stuck balance, 3.18.0
-Date: Mon, 12 Jan 2015 13:36:27 +0000 (UTC)
-Message-ID: <pan.2015.01.12.13.36.27@googlemail.com>
-References: <20150112112158.GM32182@carfax.org.uk>
-	<20150112122710.GO32182@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 1/1] Btrfs: fix unused members in struct btrfs_root
+Date: Tue, 13 Jan 2015 00:08:07 +0800
+Message-Id: <1421078887-29970-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 12 Jan 2015 12:27:12 +0000, Hugo Mills wrote:
+There isn't any real use of following members of struct btrfs_root
+so delete them.
 
-> On Mon, Jan 12, 2015 at 11:21:58AM +0000, Hugo Mills wrote:
->>    I've just added a new disk to my main storage filesystem. Running
->> the obligatory balance to spread the data out, it's managed about 14%
->> of the job, and then has gone into some kind of tight loop. No chunks
->> have been found or balanced in the last 2 hours, and one kworker thread
->> is pegged at 100%. There were no unusual or unexpected messages in the
->> logs. Balance cancel has been waiting for the last 10 minutes without
->> effect (as would be expected with the other symptoms).
-> 
->    OK, an hour after I executed the cancel, and three hours after it
-> apparently jammed up, the cancel completed. I have restarted the balance
-> from the point it left off, and I'll see if it does something similar
-> again.
+struct kobject root_kobj;
+struct completion kobj_unregister;
+struct mutex objectid_mutex;
 
-I've looked through the patches I use since 3.18.0 and nothing too 
-obvious stood out (to me), except for several patches from Filipe for 
-fixes that revolve around the chunk reaper, which sound like they might 
-result in confused threads. Also moving to 3.18.2 probably won't hurt, 
-it's not like there are no bugs in the kernel itself -  I recently 
-managed to find a really wrong corner case in NFS that has gone unnoticed 
-since 3.16.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/ctree.h     | 4 ----
+ fs/btrfs/disk-io.c   | 3 ---
+ fs/btrfs/inode-map.c | 2 --
+ 3 files changed, 9 deletions(-)
 
-Finally: instead of balancing everything at once maybe try a piecemeal 
-approach with the limit filter? Wrap it in a script, spread out the work 
-of balancing 3-5 chunks a time..
-
--h
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7e60741..afcd199 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1793,10 +1793,6 @@ struct btrfs_root {
+ 	struct btrfs_fs_info *fs_info;
+ 	struct extent_io_tree dirty_log_pages;
+ 
+-	struct kobject root_kobj;
+-	struct completion kobj_unregister;
+-	struct mutex objectid_mutex;
+-
+ 	spinlock_t accounting_lock;
+ 	struct btrfs_block_rsv *block_rsv;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8c63419..76c6e67 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1249,7 +1249,6 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
+ 	spin_lock_init(&root->accounting_lock);
+ 	spin_lock_init(&root->log_extents_lock[0]);
+ 	spin_lock_init(&root->log_extents_lock[1]);
+-	mutex_init(&root->objectid_mutex);
+ 	mutex_init(&root->log_mutex);
+ 	mutex_init(&root->ordered_extent_mutex);
+ 	mutex_init(&root->delalloc_mutex);
+@@ -1275,12 +1274,10 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
+ 	memset(&root->root_key, 0, sizeof(root->root_key));
+ 	memset(&root->root_item, 0, sizeof(root->root_item));
+ 	memset(&root->defrag_progress, 0, sizeof(root->defrag_progress));
+-	memset(&root->root_kobj, 0, sizeof(root->root_kobj));
+ 	if (fs_info)
+ 		root->defrag_trans_start = fs_info->generation;
+ 	else
+ 		root->defrag_trans_start = 0;
+-	init_completion(&root->kobj_unregister);
+ 	root->root_key.objectid = objectid;
+ 	root->anon_dev = 0;
+ 
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 74faea3..fc120d9 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -546,7 +546,6 @@ error:
+ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
+ {
+ 	int ret;
+-	mutex_lock(&root->objectid_mutex);
+ 
+ 	if (unlikely(root->highest_objectid < BTRFS_FIRST_FREE_OBJECTID)) {
+ 		ret = btrfs_find_highest_objectid(root,
+@@ -563,6 +562,5 @@ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
+ 	*objectid = ++root->highest_objectid;
+ 	ret = 0;
+ out:
+-	mutex_unlock(&root->objectid_mutex);
+ 	return ret;
+ }
+-- 
+2.1.0
 

@@ -1,113 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:58207 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754808AbbAJVF5 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:22339 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750846AbbALCca (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Jan 2015 16:05:57 -0500
-Received: by mail-pd0-f169.google.com with SMTP id z10so23695062pdj.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Jan 2015 13:05:57 -0800 (PST)
-Date: Sat, 10 Jan 2015 13:05:52 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, Josh Triplett <josh@joshtriplett.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        Lai Jiangshan <laijs@cn.fujitsu.com>, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND v8 0/3] Introduce RCU string API
-Message-ID: <20150110210552.GA1544@mew>
-References: <cover.1420834567.git.osandov@osandov.com>
- <20150110195647.GA8063@linux.vnet.ibm.com>
+	Sun, 11 Jan 2015 21:32:30 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0C2Vrp4025963
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 10:31:53 +0800
+Message-ID: <54B3323E.3090100@cn.fujitsu.com>
+Date: Mon, 12 Jan 2015 10:32:30 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150110195647.GA8063@linux.vnet.ibm.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: What about storing more crc32 in the unused csum size for metadata?
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 10, 2015 at 11:56:48AM -0800, Paul E. McKenney wrote:
-> On Fri, Jan 09, 2015 at 12:35:57PM -0800, Omar Sandoval wrote:
-> > Hi, everyone,
-> > 
-> > Now that the merge window and the holidays are over, I've rebased this on
-> > v3.19-rc3 for the next merge window.
-> 
-> Wasn't btrfs going to take this one?
-> 
-> If I am supposed to take it, please split out the RCU infrastructure
-> portion so that I can push it separately.
-> 
-> 							Thanx, Paul
-> 
-> > This patch series introduces the RCU string API and cleans up the wreckage of
-> > sparse warnings which follow from it (shown here from when the patch was
-> > briefly in the btrfs integration tree):
-> > 
-> > On Thu, Nov 27, 2014 at 06:45:20AM +0800, kbuild test robot wrote:
-> > > tree:   git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git integration
-> > > head:   c7a37618b60026121255c69e042d74ae5631470c
-> > > commit: 37aad79d90a0cbf82a5eda62dfe3af4241f5aca3 [38/39] Move BTRFS RCU string to common library
-> > > reproduce:
-> > >   # apt-get install sparse
-> > >   git checkout 37aad79d90a0cbf82a5eda62dfe3af4241f5aca3
-> > >   make ARCH=x86_64 allmodconfig
-> > >   make C=1 CF=-D__CHECK_ENDIAN__
-> > >
-> > >
-> > > sparse warnings: (new ones prefixed by >>)
-> > >
-> > > >> fs/btrfs/check-integrity.c:848:25: sparse: incorrect type in argument 1 (different address spaces)
-> > >    fs/btrfs/check-integrity.c:848:25:    expected struct rcu_string [noderef] <asn:4>*rcu_str
-> > >    fs/btrfs/check-integrity.c:848:25:    got struct rcu_string *name
-> > [snip]
-> > 
-> > Version 8 combines the original patch with another patch series I posted to fix
-> > these warnings, which fixes the botched __rcu annotations that caused some of
-> > the warnings and refactors the existing uses of rcustring to get rid of the
-> > rest. There's also a patch to fix an RCU misuse.
-> > 
-> > Thanks!
-> > 
-> > v8: Get the __rcu annotations right, clean up RCU string-related sparse noise
-> > v7: Add arguments to kernel doc for printk wrappers, use ##__VA_ARGS
-> > v6: Add header dependencies to rcustring.h
-> > v5: Rebase against v3.18-rc3
-> > v4: Don't return anything from the printk wrappers on the assumption that
-> > printk will return void someday
-> > v3: Add __rcu annotation to relevant functions, add Paul's ack and Josh's
-> > review
-> > 
-> > Omar Sandoval (3):
-> >   Move BTRFS RCU string to common library
-> >   btrfs: refactor btrfs_device->name updates
-> >   btrfs: fix suspicious RCU in BTRFS_IOC_DEV_INFO
-> > 
-> >  fs/btrfs/check-integrity.c |   6 +--
-> >  fs/btrfs/dev-replace.c     |  19 ++++----
-> >  fs/btrfs/disk-io.c         |   6 +--
-> >  fs/btrfs/extent_io.c       |   4 +-
-> >  fs/btrfs/ioctl.c           |  14 +++---
-> >  fs/btrfs/raid56.c          |   2 +-
-> >  fs/btrfs/rcu-string.h      |  56 ------------------------
-> >  fs/btrfs/scrub.c           |  15 ++++---
-> >  fs/btrfs/super.c           |   2 +-
-> >  fs/btrfs/volumes.c         | 107 ++++++++++++++++++++++++++++++---------------
-> >  fs/btrfs/volumes.h         |   2 +-
-> >  include/linux/rcustring.h  |  97 ++++++++++++++++++++++++++++++++++++++++
-> >  12 files changed, 204 insertions(+), 126 deletions(-)
-> >  delete mode 100644 fs/btrfs/rcu-string.h
-> >  create mode 100644 include/linux/rcustring.h
-> > 
-> > -- 
-> > 2.2.1
-> > 
-> 
+[Old layout]
+Btrfs csum size for tree block is 32 bytes, and currently, only the
+first 4 bytes(sector 0) is used, storing the crc32 for the whole
+leaf/node.
 
-Hi, Paul,
+Takes 4K as example for leafsize.
+Sectors:
+|---0---|---1---|---2---|---3---|---4---|---5---|---6---|---7---|
+Sector 0: Csum of the leaf/node (32 ~ 4K)
+Sector 1~7: Not used
 
-I believe Chris is still going to take this one, just wanted to keep you
-and the RCU reviewers in the loop.
+So, what about restoring more crc32 in other sectors in the following
+backward-compatible way?
 
-Thanks!
--- 
-Omar
+[New layout]
+Take leafsize as 4K for example.
+
+Sectors:
+|---0---|---1---|---2---|---3---|---4---|---5---|---6---|---7---|
+Sector 0: Csum of the leaf/node (32~4K)(not changed)
+Sector 1: Csum of the first eighths of the leaf/node (32~512)
+Sector 2: Csum of the second eighths of the leaf/node (512~1024)
+....
+Sector 7: Csum of the last eighths of the leaf/node (3584 ~ 4096)
+
+And due to the fact
+crc(sector 0 ~ sector 7) = crc(crc(sector 0), crc(sector 1), ...)
+
+We won't waste too much CPU time, and since we keep the behavior of
+sector 0, so it is completely backward compatible.
+
+[Advantage]
+The advantage usage of the new layout is more accuracy in scrub and
+btrfsck.
+For scrub, even all duplication is broken, there is still chance for
+scrub to rebuild the block if corruptions occurs in different sector.
+
+And for btrfsck --repair, if node is corrupted, we don't need to drop
+all the nodes/leaves belong to the nodes, but only drops nodes/leaves
+belong to the sector.

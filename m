@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33948 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:19414 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752504AbbAMMgL (ORCPT
+	with ESMTP id S1752452AbbAMMgN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 07:36:11 -0500
+	Tue, 13 Jan 2015 07:36:13 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 14/15] Btrfs: Include map_type in raid_bio
-Date: Tue, 13 Jan 2015 20:34:47 +0800
-Message-ID: <1421152488-30548-15-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 15/15] Btrfs: Introduce BTRFS_BLOCK_GROUP_RAID56_MASK to check raid56 simply
+Date: Tue, 13 Jan 2015 20:34:48 +0800
+Message-ID: <1421152488-30548-16-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,149 +19,203 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Corrent code use many kinds of "clever" way to determine operation
-target's raid type, as:
-  raid_map != NULL
-  or
-  raid_map[MAX_NR] == RAID[56]_Q_STRIPE
-
-To make code easy to maintenance, this patch put raid type into
-bbio, and we can always get raid type from bbio with a "stupid"
-way.
+So we can check raid56 with:
+ (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+instead of long:
+ (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/raid56.c  | 10 +++++-----
- fs/btrfs/scrub.c   | 28 +++++++++++++++-------------
- fs/btrfs/volumes.c |  1 +
- fs/btrfs/volumes.h |  1 +
- 4 files changed, 22 insertions(+), 18 deletions(-)
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/inode.c   |  3 +--
+ fs/btrfs/scrub.c   | 17 ++++++-----------
+ fs/btrfs/volumes.c | 24 +++++++++---------------
+ 4 files changed, 19 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index b1dadf7..5d13ac7 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -994,10 +994,12 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
- 	rbio->bio_pages = p + sizeof(struct page *) * num_pages;
- 	rbio->dbitmap = p + sizeof(struct page *) * num_pages * 2;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7e60741..f6caf77 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1020,6 +1020,9 @@ enum btrfs_raid_types {
+ 					 BTRFS_BLOCK_GROUP_RAID6 |   \
+ 					 BTRFS_BLOCK_GROUP_DUP |     \
+ 					 BTRFS_BLOCK_GROUP_RAID10)
++#define BTRFS_BLOCK_GROUP_RAID56_MASK	(BTRFS_BLOCK_GROUP_RAID5 |   \
++					 BTRFS_BLOCK_GROUP_RAID6)
++
+ /*
+  * We need a bit for restriper to be able to tell when chunks of type
+  * SINGLE are available.  This "extended" profile format is used in
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8a036ed..54295a6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7808,8 +7808,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	}
  
--	if (bbio->raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
-+	if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID5)
-+		nr_data = real_stripes - 1;
-+	else if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID6)
- 		nr_data = real_stripes - 2;
+ 	/* async crcs make it difficult to collect full stripe writes. */
+-	if (btrfs_get_alloc_profile(root, 1) &
+-	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
++	if (btrfs_get_alloc_profile(root, 1) & BTRFS_BLOCK_GROUP_RAID56_MASK)
+ 		async_submit = 0;
  	else
--		nr_data = real_stripes - 1;
-+		BUG();
- 
- 	rbio->nr_data = nr_data;
- 	return rbio;
-@@ -1850,9 +1852,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 		}
- 
- 		/* all raid6 handling here */
--		if (rbio->bbio->raid_map[rbio->real_stripes - 1] ==
--		    RAID6_Q_STRIPE) {
--
-+		if (rbio->bbio->map_type & BTRFS_BLOCK_GROUP_RAID6) {
- 			/*
- 			 * single failure, rebuild from parity raid5
- 			 * style
+ 		async_submit = 1;
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ce86807..68033d2 100644
+index 68033d2..d34b971 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1276,19 +1276,16 @@ out:
- 
- static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio)
- {
--	if (bbio->raid_map) {
--		int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
--
--		if (bbio->raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
--			return 3;
--		else
--			return 2;
--	} else {
-+	if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID5)
-+		return 2;
-+	else if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID6)
-+		return 3;
-+	else
- 		return (int)bbio->num_stripes;
--	}
- }
- 
--static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
-+static inline void scrub_stripe_index_and_offset(u64 logical, u64 map_type,
-+						 u64 *raid_map,
- 						 u64 mapped_length,
- 						 int nstripes, int mirror,
- 						 int *stripe_index,
-@@ -1296,7 +1293,7 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
+@@ -1293,7 +1293,7 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 map_type,
  {
  	int i;
  
--	if (raid_map) {
-+	if (map_type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
+-	if (map_type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++	if (map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
  		/* RAID5/6 */
  		for (i = 0; i < nstripes; i++) {
  			if (raid_map[i] == RAID6_Q_STRIPE ||
-@@ -1370,6 +1367,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
- 
- 		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
-+
- 		for (mirror_index = 0; mirror_index < nmirrors;
- 		     mirror_index++) {
- 			struct scrub_block *sblock;
-@@ -1390,7 +1388,9 @@ leave_nomem:
- 			sblock->pagev[page_index] = page;
- 			page->logical = logical;
- 
--			scrub_stripe_index_and_offset(logical, bbio->raid_map,
-+			scrub_stripe_index_and_offset(logical,
-+						      bbio->map_type,
-+						      bbio->raid_map,
- 						      mapped_length,
- 						      bbio->num_stripes -
- 						      bbio->num_tgtdevs,
-@@ -1439,7 +1439,9 @@ static void scrub_bio_wait_endio(struct bio *bio, int error)
- 
+@@ -1440,8 +1440,7 @@ static void scrub_bio_wait_endio(struct bio *bio, int error)
  static inline int scrub_is_page_on_raid56(struct scrub_page *page)
  {
--	return page->recover && page->recover->bbio->raid_map;
-+	return page->recover &&
-+	       (page->recover->bbio->map_type & (BTRFS_BLOCK_GROUP_RAID5 |
-+	       BTRFS_BLOCK_GROUP_RAID6));
+ 	return page->recover &&
+-	       (page->recover->bbio->map_type & (BTRFS_BLOCK_GROUP_RAID5 |
+-	       BTRFS_BLOCK_GROUP_RAID6));
++	       (page->recover->bbio->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK);
  }
  
  static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
+@@ -3014,8 +3013,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
+ 		increment = map->stripe_len;
+ 		mirror_num = num % map->num_stripes + 1;
+-	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-				BTRFS_BLOCK_GROUP_RAID6)) {
++	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 		get_raid56_logic_offset(physical, num, map, &offset, NULL);
+ 		increment = map->stripe_len * nr_data_stripes(map);
+ 		mirror_num = 1;
+@@ -3049,8 +3047,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	 */
+ 	logical = base + offset;
+ 	physical_end = physical + nstripes * map->stripe_len;
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-			 BTRFS_BLOCK_GROUP_RAID6)) {
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 		get_raid56_logic_offset(physical_end, num,
+ 					map, &logic_end, NULL);
+ 		logic_end += base;
+@@ -3096,8 +3093,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	ret = 0;
+ 	while (physical < physical_end) {
+ 		/* for raid56, we skip parity stripe */
+-		if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-				BTRFS_BLOCK_GROUP_RAID6)) {
++		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 			ret = get_raid56_logic_offset(physical, num,
+ 					map, &logical, &stripe_logical);
+ 			logical += base;
+@@ -3255,8 +3251,7 @@ again:
+ 			scrub_free_csums(sctx);
+ 			if (extent_logical + extent_len <
+ 			    key.objectid + bytes) {
+-				if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-					BTRFS_BLOCK_GROUP_RAID6)) {
++				if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 					/*
+ 					 * loop until we find next data stripe
+ 					 * or we have finished all stripes.
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8671400..1b0de3a 100644
+index 1b0de3a..02a7b66 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5453,6 +5453,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 	}
+@@ -4196,7 +4196,7 @@ static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
  
- 	*bbio_ret = bbio;
-+	bbio->map_type = map->type;
- 	bbio->num_stripes = num_stripes;
- 	bbio->max_errors = max_errors;
- 	bbio->mirror_num = mirror_num;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index db195f0..b3921ad 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -298,6 +298,7 @@ struct btrfs_bio {
- 	atomic_t ref_count;
- 	atomic_t stripes_pending;
- 	struct btrfs_fs_info *fs_info;
-+	u64 map_type; /* get from map_lookup->type */
- 	bio_end_io_t *end_io;
- 	struct bio *orig_bio;
- 	unsigned long flags;
+ static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
+ {
+-	if (!(type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)))
++	if (!(type & BTRFS_BLOCK_GROUP_RAID56_MASK))
+ 		return;
+ 
+ 	btrfs_set_fs_incompat(info, RAID56);
+@@ -4803,10 +4803,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+ 
+ 	BUG_ON(em->start > logical || em->start + em->len < logical);
+ 	map = (struct map_lookup *)em->bdev;
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-			 BTRFS_BLOCK_GROUP_RAID6)) {
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+ 		len = map->stripe_len * nr_data_stripes(map);
+-	}
+ 	free_extent_map(em);
+ 	return len;
+ }
+@@ -4826,8 +4824,7 @@ int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
+ 
+ 	BUG_ON(em->start > logical || em->start + em->len < logical);
+ 	map = (struct map_lookup *)em->bdev;
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-			 BTRFS_BLOCK_GROUP_RAID6))
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+ 		ret = 1;
+ 	free_extent_map(em);
+ 	return ret;
+@@ -4998,7 +4995,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	stripe_offset = offset - stripe_offset;
+ 
+ 	/* if we're here for raid56, we need to know the stripe aligned start */
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 		unsigned long full_stripe_len = stripe_len * nr_data_stripes(map);
+ 		raid56_full_stripe_start = offset;
+ 
+@@ -5011,8 +5008,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 
+ 	if (rw & REQ_DISCARD) {
+ 		/* we don't discard raid56 yet */
+-		if (map->type &
+-		    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 			ret = -EOPNOTSUPP;
+ 			goto out;
+ 		}
+@@ -5022,7 +5018,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		/* For writes to RAID[56], allow a full stripeset across all disks.
+ 		   For other RAID types and for RAID[56] reads, just allow a single
+ 		   stripe (on a single disk). */
+-		if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
++		if ((map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) &&
+ 		    (rw & REQ_WRITE)) {
+ 			max_len = stripe_len * nr_data_stripes(map) -
+ 				(offset - raid56_full_stripe_start);
+@@ -5188,8 +5184,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 			mirror_num = stripe_index - old_stripe_index + 1;
+ 		}
+ 
+-	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-				BTRFS_BLOCK_GROUP_RAID6)) {
++	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 		if (need_raid_map &&
+ 		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
+ 		     mirror_num > 1)) {
+@@ -5253,7 +5248,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		bbio->tgtdev_map = (int *)(bbio->stripes + num_alloc_stripes);
+ 
+ 	/* build raid_map */
+-	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK &&
+ 	    need_raid_map && ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
+ 	    mirror_num > 1)) {
+ 		u64 tmp;
+@@ -5534,8 +5529,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		do_div(length, map->num_stripes / map->sub_stripes);
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
+ 		do_div(length, map->num_stripes);
+-	else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
+-			      BTRFS_BLOCK_GROUP_RAID6)) {
++	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 		do_div(length, nr_data_stripes(map));
+ 		rmap_len = map->stripe_len * nr_data_stripes(map);
+ 	}
 -- 
 1.8.5.1
 

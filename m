@@ -1,90 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:44956 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753363AbbA1Dqn (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:15899 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751938AbbAMCEw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Jan 2015 22:46:43 -0500
-Date: Tue, 27 Jan 2015 22:46:38 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Stef Bon <stefbon@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Get the diff from a file in two snapshots.
-Message-ID: <20150128034636.GA13452@hungrycats.org>
-References: <CANXojczR_jeVU0XNQGzatmDaaCv7CdWanis8NiSe2F75cuz_9g@mail.gmail.com>
- <CAJCQCtRyv+m0kxBL6LW=xZv=sUzf2to4R6xPsxy6CkihHmrV0A@mail.gmail.com>
- <CANXojcxps7KPRC2dbfU7hFvUDzkK2CmT4EroDrO6HO56h7j3cg@mail.gmail.com>
+	Mon, 12 Jan 2015 21:04:52 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0D24FGP025904
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Jan 2015 10:04:15 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/4] Better btrfsck tree corruption report and automatic csum tree rebuild.
+Date: Tue, 13 Jan 2015 10:04:43 +0800
+Message-ID: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Dxnq1zWXvFF0Q93v"
-In-Reply-To: <CANXojcxps7KPRC2dbfU7hFvUDzkK2CmT4EroDrO6HO56h7j3cg@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Although btrfsck can rebuild the csum tree, but has the following
+problems for end users or sysadmins who is not familiar with btrfs.
+1) No brief info on which tree is corrupted.
+   In fact, after extent and chunk tree check, we iterate all the
+   extents and should have a brief view about which tree is corrupted.
+   We can info user the fact to give them a clear view about what to do
+   next
 
---Dxnq1zWXvFF0Q93v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+2) No automatically csum tree rebuild.
+   If btrfsck can rebuild csum tree when needed and possible, why not
+   rebuild it?
 
-On Tue, Jan 27, 2015 at 12:43:52AM +0100, Stef Bon wrote:
-> 2015-01-26 22:14 GMT+01:00 Chris Murphy <lists@colorremedies.com>:
-> >> is there a way to get the difference between these two files by making
-> >> use of btrfs?
-> >
-> > Snapper has this functionality built into it. I'm not sure if it uses
-> > diff or something else. But the Snapper GUI in yast2 on opensuse will
-> > let you see what files have changed between snapshots, click on the
-> > file and it shows a color coded diff.
->=20
-> Hi Chris,
->=20
-> I think (I'm not sure) it's using a high level tool like diff/rdiff.
->=20
-> I will contact the developers of snapper anyway, since my project is
-> simular to theirs.
->=20
-> But what I'm asking is is there a lowlevel tool to give you a list of
-> blocks where two versions
-> of one file differ. I'm asking since btrfs keeps track of the blocks
-> where files differ, and where they
-> are the same.
->=20
-> So a lowlevel call to the btrfs filesystem.
+This patchset handles this 2 problems:
+Patch 1 will handle problem 1) and patch 2~3) to handle problem 2).
+Now csum tree will be automatically rebuilt if and only if csum tree is
+broken but all other tree is OK.
 
-You could try the FIEMAP ioctl, which is not btrfs-specific.  The same
-ioctl also works on e.g. ext4; however, since ext4 can't share blocks
-between files and btrfs can, it's much more interesting on btrfs.  ;)
+Qu Wenruo (4):
+  btrfs-progs: Report corrupted trees after check_chunks_and_extents()
+  btrfs-progs: Continue repair even some extent reference can't be    
+    repaired and report result to user.
+  btrfs-progs: Automatically rebuild csum/extent tree if no other tree
+    has     corrupted/missing extent.
+  btrfs-progs: Remove all csum extents for init_csum
 
-FIEMAP will give you a list of physical block ranges (btrfs logical
-extent addresses).  Run it on both files and analyse the results.
-Any blocks with the same physical addresses are trivially identical,
-since they refer to the same physical storage.  If your system is full of
-huge lightly modified files (e.g. VM images or large databases) that can
-save you an awful lot of I/O because you'd only have to compare blocks
-=66rom a pair of files if they had different physical addresses.
+ cmds-check.c  | 172 +++++++++++++++++++++++++++++++++++++++++++++++++++-------
+ ctree.h       |   4 ++
+ extent-tree.c | 108 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 263 insertions(+), 21 deletions(-)
 
-You can also look up blocks by logical address (see btrfs-tools 'inspect
-logical-resolve') and find out what files they belong to.  This gives
-you a "which files are similar to this one" sort of query, especially
-after you've run dedup over the files in question.
+-- 
+2.2.1
 
-> Stef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---Dxnq1zWXvFF0Q93v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlTIW5wACgkQgfmLGlazG5xYVQCgiQA+EYnur7G5vWbFPt33nEgo
-WgAAn01BTZB5ljBpB5MZemtO6tbQ9c07
-=7eQD
------END PGP SIGNATURE-----
-
---Dxnq1zWXvFF0Q93v--

@@ -1,48 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.187]:56169 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752086AbbAMOJI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 09:09:08 -0500
-From: Arnd Bergmann <arnd@arndb.de>
-To: Chris Mason <clm@fb.com>
-Cc: Miao Xie <miaox@cn.fujitsu.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] Btrfs: avoid build warning on 32-bit
-Date: Tue, 13 Jan 2015 15:09:03 +0100
-Message-ID: <4264141.3m7C7LgF5c@wuerfel>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from victor.provo.novell.com ([137.65.250.26]:54708 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752352AbbAMQ1u (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 13 Jan 2015 11:27:50 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix fsync when extend references are added to an inode
+Date: Tue, 13 Jan 2015 16:27:34 +0000
+Message-Id: <1421166454-8674-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A recent change introduced a type cast from a private 64-bit
-value to a pointer, which works fine on 64-bit architectures,
-but not on 32-bit ones, where it produces a harmless compiler
-warning:
+If we added an extended reference to an inode and fsync'ed it, the log
+replay code would make our inode have an incorrect link count, which
+was lower then the expected/correct count.
+This resulted in stale directory index entries after deleting some of
+the hard links, and any access to the dangling directory entries resulted
+in -ESTALE errors because the entries pointed to inode items that don't
+exist anymore.
 
-fs/btrfs/extent_io.c: In function 'btrfs_free_io_failure_record':
-fs/btrfs/extent_io.c:2193:13: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+This is easy to reproduce with the test case I made for xfstests, and
+the bulk of that test is:
 
-This adds an intermediate cast to 'unsigned long', which tells
-the compiler to ignore the type mismatch.
+    _scratch_mkfs "-O extref" >> $seqres.full 2>&1
+    _init_flakey
+    _mount_flakey
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Fixes: f612496bca664 ("Btrfs: cleanup the read failure record after write
-			or when the inode is freeing")
+    # Create a test file with 3001 hard links. This number is large enough to
+    # make btrfs start using extrefs at some point even if the fs has the maximum
+    # possible leaf/node size (64Kb).
+    echo "hello world" > $SCRATCH_MNT/foo
+    for i in `seq 1 3000`; do
+        ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
+    done
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ebabd237153..790dbae3343c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2190,7 +2190,7 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
+    # Make sure all metadata and data are durably persisted.
+    sync
+
+    # Add one more link to the inode that ends up being a btrfs extref and fsync
+    # the inode.
+    ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
+    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+
+    # Simulate a crash/power loss. This makes sure the next mount
+    # will see an fsync log and will replay that log.
+
+    _load_flakey_table $FLAKEY_DROP_WRITES
+    _unmount_flakey
+
+    _load_flakey_table $FLAKEY_ALLOW_WRITES
+    _mount_flakey
+
+    # Now after the fsync log replay btrfs left our inode with a wrong link count N,
+    # which was smaller than the correct link count M (N < M).
+    # So after removing N hard links, the remaining M - N directory entries were
+    # still visible to user space but it was impossible to do anything with them
+    # because they pointed to an inode that didn't exist anymore. This resulted in
+    # stale file handle errors (-ESTALE) when accessing those dentries for example.
+    #
+    # So remove all hard links except the first one and then attempt to read the
+    # file, to verify we don't get an -ESTALE error when accessing the inodel
+    #
+    # The btrfs fsck tool also detected the incorrect inode link count and it
+    # reported an error message like the following:
+    #
+    # root 5 inode 257 errors 2001, no inode item, link count wrong
+    #   unresolved ref dir 256 index 2978 namelen 13 name foo_link_2976 filetype 1 errors 4, no inode ref
+    #
+    # The fstests framework automatically calls fsck after a test is run, so we
+    # don't need to call fsck explicitly here.
+
+    rm -f $SCRATCH_MNT/foo_link_*
+    cat $SCRATCH_MNT/foo
+
+    status=0
+    exit
+
+So make sure an fsync always flushes the delayed inode item, so that the
+fsync log contains it (needed in order to trigger the link count fixup
+code) and fix the extref counting function, which always return -ENOENT
+to its caller (and made it assume there were always 0 extrefs).
+
+This issue has been present since the introduction of the extrefs feature
+(2012).
+
+A test case for xfstests follows soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 24 ++++++++++++++++--------
+ 1 file changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1d65a46..ecf462a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1287,6 +1287,7 @@ static int count_inode_extrefs(struct btrfs_root *root,
+ 		leaf = path->nodes[0];
+ 		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+ 		ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
++		cur_offset = 0;
  
- 		next = next_state(state);
+ 		while (cur_offset < item_size) {
+ 			extref = (struct btrfs_inode_extref *) (ptr + cur_offset);
+@@ -1302,7 +1303,7 @@ static int count_inode_extrefs(struct btrfs_root *root,
+ 	}
+ 	btrfs_release_path(path);
  
--		failrec = (struct io_failure_record *)state->private;
-+		failrec = (struct io_failure_record *)(unsigned long)state->private;
- 		free_extent_state(state);
- 		kfree(failrec);
+-	if (ret < 0)
++	if (ret < 0 && ret != -ENOENT)
+ 		return ret;
+ 	return nlink;
+ }
+@@ -3965,15 +3966,22 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 		max_key.type = (u8)-1;
+ 	max_key.offset = (u64)-1;
  
+-	/* Only run delayed items if we are a dir or a new file */
++	/*
++	 * Only run delayed items if we are a dir or a new file.
++	 * Otherwise commit the delayed inode only, which is needed in
++	 * order for the log replay code to mark inodes for link count
++	 * fixup (create temporary BTRFS_TREE_LOG_FIXUP_OBJECTID items).
++	 */
+ 	if (S_ISDIR(inode->i_mode) ||
+-	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed) {
++	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed)
+ 		ret = btrfs_commit_inode_delayed_items(trans, inode);
+-		if (ret) {
+-			btrfs_free_path(path);
+-			btrfs_free_path(dst_path);
+-			return ret;
+-		}
++	else
++		ret = btrfs_commit_inode_delayed_inode(inode);
++
++	if (ret) {
++		btrfs_free_path(path);
++		btrfs_free_path(dst_path);
++		return ret;
+ 	}
+ 
+ 	mutex_lock(&BTRFS_I(inode)->log_mutex);
+-- 
+2.1.3
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42603 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33948 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752452AbbAMMgJ (ORCPT
+	with ESMTP id S1752504AbbAMMgL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 07:36:09 -0500
+	Tue, 13 Jan 2015 07:36:11 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 10/15] Btrfs: Avoid trustless page-level-repair in dev-replace
-Date: Tue, 13 Jan 2015 20:34:43 +0800
-Message-ID: <1421152488-30548-11-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 14/15] Btrfs: Include map_type in raid_bio
+Date: Tue, 13 Jan 2015 20:34:47 +0800
+Message-ID: <1421152488-30548-15-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,43 +19,149 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Current code of page level repair for dev-replace can only support
-io-error, we can't use it in checksum-fail case.
+Corrent code use many kinds of "clever" way to determine operation
+target's raid type, as:
+  raid_map != NULL
+  or
+  raid_map[MAX_NR] == RAID[56]_Q_STRIPE
 
-We can skip this kind of repair in dev-replace just as we in scrub.
+To make code easy to maintenance, this patch put raid type into
+bbio, and we can always get raid type from bbio with a "stupid"
+way.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/raid56.c  | 10 +++++-----
+ fs/btrfs/scrub.c   | 28 +++++++++++++++-------------
+ fs/btrfs/volumes.c |  1 +
+ fs/btrfs/volumes.h |  1 +
+ 4 files changed, 22 insertions(+), 18 deletions(-)
 
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index b1dadf7..5d13ac7 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -994,10 +994,12 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_root *root,
+ 	rbio->bio_pages = p + sizeof(struct page *) * num_pages;
+ 	rbio->dbitmap = p + sizeof(struct page *) * num_pages * 2;
+ 
+-	if (bbio->raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
++	if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID5)
++		nr_data = real_stripes - 1;
++	else if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID6)
+ 		nr_data = real_stripes - 2;
+ 	else
+-		nr_data = real_stripes - 1;
++		BUG();
+ 
+ 	rbio->nr_data = nr_data;
+ 	return rbio;
+@@ -1850,9 +1852,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 		}
+ 
+ 		/* all raid6 handling here */
+-		if (rbio->bbio->raid_map[rbio->real_stripes - 1] ==
+-		    RAID6_Q_STRIPE) {
+-
++		if (rbio->bbio->map_type & BTRFS_BLOCK_GROUP_RAID6) {
+ 			/*
+ 			 * single failure, rebuild from parity raid5
+ 			 * style
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 22779dd..8d6c29a 100644
+index ce86807..68033d2 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1099,6 +1099,10 @@ nodatasum_case:
- 		}
+@@ -1276,19 +1276,16 @@ out:
+ 
+ static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio)
+ {
+-	if (bbio->raid_map) {
+-		int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
+-
+-		if (bbio->raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
+-			return 3;
+-		else
+-			return 2;
+-	} else {
++	if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID5)
++		return 2;
++	else if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID6)
++		return 3;
++	else
+ 		return (int)bbio->num_stripes;
+-	}
+ }
+ 
+-static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
++static inline void scrub_stripe_index_and_offset(u64 logical, u64 map_type,
++						 u64 *raid_map,
+ 						 u64 mapped_length,
+ 						 int nstripes, int mirror,
+ 						 int *stripe_index,
+@@ -1296,7 +1293,7 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
+ {
+ 	int i;
+ 
+-	if (raid_map) {
++	if (map_type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
+ 		/* RAID5/6 */
+ 		for (i = 0; i < nstripes; i++) {
+ 			if (raid_map[i] == RAID6_Q_STRIPE ||
+@@ -1370,6 +1367,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
+ 
+ 		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
++
+ 		for (mirror_index = 0; mirror_index < nmirrors;
+ 		     mirror_index++) {
+ 			struct scrub_block *sblock;
+@@ -1390,7 +1388,9 @@ leave_nomem:
+ 			sblock->pagev[page_index] = page;
+ 			page->logical = logical;
+ 
+-			scrub_stripe_index_and_offset(logical, bbio->raid_map,
++			scrub_stripe_index_and_offset(logical,
++						      bbio->map_type,
++						      bbio->raid_map,
+ 						      mapped_length,
+ 						      bbio->num_stripes -
+ 						      bbio->num_tgtdevs,
+@@ -1439,7 +1439,9 @@ static void scrub_bio_wait_endio(struct bio *bio, int error)
+ 
+ static inline int scrub_is_page_on_raid56(struct scrub_page *page)
+ {
+-	return page->recover && page->recover->bbio->raid_map;
++	return page->recover &&
++	       (page->recover->bbio->map_type & (BTRFS_BLOCK_GROUP_RAID5 |
++	       BTRFS_BLOCK_GROUP_RAID6));
+ }
+ 
+ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8671400..1b0de3a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5453,6 +5453,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
  	}
  
-+	/* can only fix I/O errors from here on */
-+	if (sblock_bad->no_io_error_seen)
-+		goto did_not_correct_error;
-+
- 	/*
- 	 * for dev_replace, pick good pages and write to the target device.
- 	 */
-@@ -1181,10 +1185,6 @@ nodatasum_case:
- 	 * area are unreadable.
- 	 */
- 
--	/* can only fix I/O errors from here on */
--	if (sblock_bad->no_io_error_seen)
--		goto did_not_correct_error;
--
- 	success = 1;
- 	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
- 		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
+ 	*bbio_ret = bbio;
++	bbio->map_type = map->type;
+ 	bbio->num_stripes = num_stripes;
+ 	bbio->max_errors = max_errors;
+ 	bbio->mirror_num = mirror_num;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index db195f0..b3921ad 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -298,6 +298,7 @@ struct btrfs_bio {
+ 	atomic_t ref_count;
+ 	atomic_t stripes_pending;
+ 	struct btrfs_fs_info *fs_info;
++	u64 map_type; /* get from map_lookup->type */
+ 	bio_end_io_t *end_io;
+ 	struct bio *orig_bio;
+ 	unsigned long flags;
 -- 
 1.8.5.1
 

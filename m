@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33948 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42603 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751618AbbAMMgD (ORCPT
+	with ESMTP id S1752452AbbAMMgJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 07:36:03 -0500
+	Tue, 13 Jan 2015 07:36:09 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 02/15] Btrfs: sort raid_map before adding tgtdev stripes
-Date: Tue, 13 Jan 2015 20:34:35 +0800
-Message-ID: <1421152488-30548-3-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 10/15] Btrfs: Avoid trustless page-level-repair in dev-replace
+Date: Tue, 13 Jan 2015 20:34:43 +0800
+Message-ID: <1421152488-30548-11-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,79 +19,43 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It can avoid complex calculation of real stripes in sort,
-moreover, we can clean up code of sorting tgtdev_map because it
-will be in order initially.
+Current code of page level repair for dev-replace can only support
+io-error, we can't use it in checksum-fail case.
+
+We can skip this kind of repair in dev-replace just as we in scrub.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ fs/btrfs/scrub.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0144790..db779ca 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4876,18 +4876,17 @@ static inline int parity_smaller(u64 a, u64 b)
- }
- 
- /* Bubble-sort the stripe set to put the parity/syndrome stripes last */
--static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
-+static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map,
-+				int num_stripes)
- {
- 	struct btrfs_bio_stripe s;
--	int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
- 	int i;
- 	u64 l;
- 	int again = 1;
--	int m;
- 
- 	while (again) {
- 		again = 0;
--		for (i = 0; i < real_stripes - 1; i++) {
-+		for (i = 0; i < num_stripes - 1; i++) {
- 			if (parity_smaller(raid_map[i], raid_map[i+1])) {
- 				s = bbio->stripes[i];
- 				l = raid_map[i];
-@@ -4896,13 +4895,6 @@ static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
- 				bbio->stripes[i+1] = s;
- 				raid_map[i+1] = l;
- 
--				if (bbio->tgtdev_map) {
--					m = bbio->tgtdev_map[i];
--					bbio->tgtdev_map[i] =
--							bbio->tgtdev_map[i + 1];
--					bbio->tgtdev_map[i + 1] = m;
--				}
--
- 				again = 1;
- 			}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 22779dd..8d6c29a 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1099,6 +1099,10 @@ nodatasum_case:
  		}
-@@ -5340,6 +5332,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS))
- 		max_errors = btrfs_chunk_max_errors(map);
- 
-+	if (raid_map)
-+		sort_parity_stripes(bbio, raid_map, num_stripes);
-+
- 	tgtdev_indexes = 0;
- 	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)) &&
- 	    dev_replace->tgtdev != NULL) {
-@@ -5443,10 +5438,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
- 		bbio->mirror_num = map->num_stripes + 1;
  	}
--	if (raid_map) {
--		sort_parity_stripes(bbio, raid_map);
+ 
++	/* can only fix I/O errors from here on */
++	if (sblock_bad->no_io_error_seen)
++		goto did_not_correct_error;
 +
-+	if (raid_map_ret)
- 		*raid_map_ret = raid_map;
--	}
- out:
- 	if (dev_replace_is_ongoing)
- 		btrfs_dev_replace_unlock(dev_replace);
+ 	/*
+ 	 * for dev_replace, pick good pages and write to the target device.
+ 	 */
+@@ -1181,10 +1185,6 @@ nodatasum_case:
+ 	 * area are unreadable.
+ 	 */
+ 
+-	/* can only fix I/O errors from here on */
+-	if (sblock_bad->no_io_error_seen)
+-		goto did_not_correct_error;
+-
+ 	success = 1;
+ 	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
+ 		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
 -- 
 1.8.5.1
 

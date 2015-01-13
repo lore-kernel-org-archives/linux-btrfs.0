@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:42603 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752497AbbAMMgL (ORCPT
+	with ESMTP id S1752363AbbAMMgH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 07:36:11 -0500
+	Tue, 13 Jan 2015 07:36:07 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 13/15] Btrfs: Simplify scrub_setup_recheck_block()'s argument
-Date: Tue, 13 Jan 2015 20:34:46 +0800
-Message-ID: <1421152488-30548-14-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 07/15] Btrfs: Cleanup btrfs_bio_counter_inc_blocked()
+Date: Tue, 13 Jan 2015 20:34:40 +0800
+Message-ID: <1421152488-30548-8-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,93 +19,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-scrub_setup_recheck_block() have many arguments but most of them
-can be get from one of them, we can remove them to make code clean.
-Some other cleanup for that function also included in this patch.
+1: Remove no-need DEFINE_WAIT(wait)
+2: Add likely() for BTRFS_FS_STATE_DEV_REPLACING condition
+3: Use while loop instead of goto
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 25 +++++++++----------------
- 1 file changed, 9 insertions(+), 16 deletions(-)
+ fs/btrfs/dev-replace.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 000fa59..ce86807 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -235,10 +235,7 @@ static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
- static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
- static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx);
- static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
--static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
--				     struct btrfs_fs_info *fs_info,
--				     struct scrub_block *original_sblock,
--				     u64 length, u64 logical,
-+static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 				     struct scrub_block *sblocks_for_recheck);
- static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 				struct scrub_block *sblock, int is_metadata,
-@@ -952,8 +949,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	}
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index ca6a3a3..92109b7 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -932,15 +932,15 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
  
- 	/* setup the context, map the logical blocks and alloc the pages */
--	ret = scrub_setup_recheck_block(sctx, fs_info, sblock_to_check, length,
--					logical, sblocks_for_recheck);
-+	ret = scrub_setup_recheck_block(sblock_to_check, sblocks_for_recheck);
- 	if (ret) {
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.read_errors++;
-@@ -1321,19 +1317,20 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
- 	}
- }
- 
--static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
--				     struct btrfs_fs_info *fs_info,
--				     struct scrub_block *original_sblock,
--				     u64 length, u64 logical,
-+static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 				     struct scrub_block *sblocks_for_recheck)
+ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
  {
-+	struct scrub_ctx *sctx = original_sblock->sctx;
-+	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
-+	u64 length = original_sblock->page_count * PAGE_SIZE;
-+	u64 logical = original_sblock->pagev[0]->logical;
- 	struct scrub_recover *recover;
- 	struct btrfs_bio *bbio;
- 	u64 sublen;
- 	u64 mapped_length;
- 	u64 stripe_offset;
- 	int stripe_index;
--	int page_index;
-+	int page_index = 0;
- 	int mirror_index;
- 	int nmirrors;
- 	int ret;
-@@ -1344,7 +1341,6 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 	 * the recheck procedure
- 	 */
- 
--	page_index = 0;
- 	while (length > 0) {
- 		sublen = min_t(u64, length, PAGE_SIZE);
- 		mapped_length = sublen;
-@@ -1373,15 +1369,12 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 
- 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
- 
--		nmirrors = scrub_nr_raid_mirrors(bbio);
-+		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
- 		for (mirror_index = 0; mirror_index < nmirrors;
- 		     mirror_index++) {
- 			struct scrub_block *sblock;
- 			struct scrub_page *page;
- 
--			if (mirror_index >= BTRFS_MAX_MIRRORS)
--				break;
+-	DEFINE_WAIT(wait);
+-again:
+-	percpu_counter_inc(&fs_info->bio_counter);
+-	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
++	while (1) {
++		percpu_counter_inc(&fs_info->bio_counter);
++		if (likely(!test_bit(BTRFS_FS_STATE_DEV_REPLACING,
++				     &fs_info->fs_state)))
++			break;
++
+ 		btrfs_bio_counter_dec(fs_info);
+ 		wait_event(fs_info->replace_wait,
+ 			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
+ 				     &fs_info->fs_state));
+-		goto again;
+ 	}
 -
- 			sblock = sblocks_for_recheck + mirror_index;
- 			sblock->sctx = sctx;
- 			page = kzalloc(sizeof(*page), GFP_NOFS);
+ }
 -- 
 1.8.5.1
 

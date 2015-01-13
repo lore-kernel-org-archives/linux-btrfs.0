@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19414 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33948 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751510AbbAMMgD (ORCPT
+	with ESMTP id S1751618AbbAMMgD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 13 Jan 2015 07:36:03 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 01/15] Btrfs: fix a out-of-bound access of raid_map
-Date: Tue, 13 Jan 2015 20:34:34 +0800
-Message-ID: <1421152488-30548-2-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 02/15] Btrfs: sort raid_map before adding tgtdev stripes
+Date: Tue, 13 Jan 2015 20:34:35 +0800
+Message-ID: <1421152488-30548-3-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421152488-30548-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,42 +19,79 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-We add the number of stripes on target devices into bbio->num_stripes
-if we are under device replacement, and we just sort the raid_map of
-those stripes that not on the target devices, so if when we need
-real raid_map, we need skip the stripes on the target devices.
+It can avoid complex calculation of real stripes in sort,
+moreover, we can clean up code of sorting tgtdev_map because it
+will be in order initially.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 9e1569f..9d19065 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1291,7 +1291,9 @@ out:
- static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio, u64 *raid_map)
- {
- 	if (raid_map) {
--		if (raid_map[bbio->num_stripes - 1] == RAID6_Q_STRIPE)
-+		int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
-+
-+		if (raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
- 			return 3;
- 		else
- 			return 2;
-@@ -1412,7 +1414,8 @@ leave_nomem:
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0144790..db779ca 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4876,18 +4876,17 @@ static inline int parity_smaller(u64 a, u64 b)
+ }
  
- 			scrub_stripe_index_and_offset(logical, raid_map,
- 						      mapped_length,
--						      bbio->num_stripes,
-+						      bbio->num_stripes -
-+						      bbio->num_tgtdevs,
- 						      mirror_index,
- 						      &stripe_index,
- 						      &stripe_offset);
+ /* Bubble-sort the stripe set to put the parity/syndrome stripes last */
+-static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
++static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map,
++				int num_stripes)
+ {
+ 	struct btrfs_bio_stripe s;
+-	int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
+ 	int i;
+ 	u64 l;
+ 	int again = 1;
+-	int m;
+ 
+ 	while (again) {
+ 		again = 0;
+-		for (i = 0; i < real_stripes - 1; i++) {
++		for (i = 0; i < num_stripes - 1; i++) {
+ 			if (parity_smaller(raid_map[i], raid_map[i+1])) {
+ 				s = bbio->stripes[i];
+ 				l = raid_map[i];
+@@ -4896,13 +4895,6 @@ static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
+ 				bbio->stripes[i+1] = s;
+ 				raid_map[i+1] = l;
+ 
+-				if (bbio->tgtdev_map) {
+-					m = bbio->tgtdev_map[i];
+-					bbio->tgtdev_map[i] =
+-							bbio->tgtdev_map[i + 1];
+-					bbio->tgtdev_map[i + 1] = m;
+-				}
+-
+ 				again = 1;
+ 			}
+ 		}
+@@ -5340,6 +5332,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS))
+ 		max_errors = btrfs_chunk_max_errors(map);
+ 
++	if (raid_map)
++		sort_parity_stripes(bbio, raid_map, num_stripes);
++
+ 	tgtdev_indexes = 0;
+ 	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)) &&
+ 	    dev_replace->tgtdev != NULL) {
+@@ -5443,10 +5438,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
+ 		bbio->mirror_num = map->num_stripes + 1;
+ 	}
+-	if (raid_map) {
+-		sort_parity_stripes(bbio, raid_map);
++
++	if (raid_map_ret)
+ 		*raid_map_ret = raid_map;
+-	}
+ out:
+ 	if (dev_replace_is_ongoing)
+ 		btrfs_dev_replace_unlock(dev_replace);
 -- 
 1.8.5.1
 

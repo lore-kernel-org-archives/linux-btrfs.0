@@ -1,149 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:54708 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:45706 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752352AbbAMQ1u (ORCPT
+	by vger.kernel.org with ESMTP id S1753357AbbAMQ2U (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 13 Jan 2015 11:27:50 -0500
+	Tue, 13 Jan 2015 11:28:20 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix fsync when extend references are added to an inode
-Date: Tue, 13 Jan 2015 16:27:34 +0000
-Message-Id: <1421166454-8674-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
+Date: Tue, 13 Jan 2015 16:27:48 +0000
+Message-Id: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we added an extended reference to an inode and fsync'ed it, the log
-replay code would make our inode have an incorrect link count, which
-was lower then the expected/correct count.
-This resulted in stale directory index entries after deleting some of
-the hard links, and any access to the dangling directory entries resulted
-in -ESTALE errors because the entries pointed to inode items that don't
-exist anymore.
+If we have an inode with a large number of hard links, some of which may
+be extrefs, turn a regular ref into an extref, fsync the inode and then
+replay the fsync log (after a crash/reboot), we can endup with an fsync
+log that makes the replay code always fail with -EOVERFLOW when processing
+the inode's references.
 
-This is easy to reproduce with the test case I made for xfstests, and
-the bulk of that test is:
+This is easy to reproduce with the test case I made for xfstests. Its steps
+are the following:
 
-    _scratch_mkfs "-O extref" >> $seqres.full 2>&1
-    _init_flakey
-    _mount_flakey
+   _scratch_mkfs "-O extref" >> $seqres.full 2>&1
+   _init_flakey
+   _mount_flakey
 
-    # Create a test file with 3001 hard links. This number is large enough to
-    # make btrfs start using extrefs at some point even if the fs has the maximum
-    # possible leaf/node size (64Kb).
-    echo "hello world" > $SCRATCH_MNT/foo
-    for i in `seq 1 3000`; do
-        ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
-    done
+   # Create a test file with 3001 hard links. This number is large enough to
+   # make btrfs start using extrefs at some point even if the fs has the maximum
+   # possible leaf/node size (64Kb).
+   echo "hello world" > $SCRATCH_MNT/foo
+   for i in `seq 1 3000`; do
+       ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
+   done
 
-    # Make sure all metadata and data are durably persisted.
-    sync
+   # Make sure all metadata and data are durably persisted.
+   sync
 
-    # Add one more link to the inode that ends up being a btrfs extref and fsync
-    # the inode.
-    ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
-    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+   # Now remove one link, add a new one with a new name, add another new one with
+   # the same name as the one we just removed and fsync the inode.
+   rm -f $SCRATCH_MNT/foo_link_0001
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_0001
+   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 
-    # Simulate a crash/power loss. This makes sure the next mount
-    # will see an fsync log and will replay that log.
+   # Simulate a crash/power loss. This makes sure the next mount
+   # will see an fsync log and will replay that log.
 
-    _load_flakey_table $FLAKEY_DROP_WRITES
-    _unmount_flakey
+   _load_flakey_table $FLAKEY_DROP_WRITES
+   _unmount_flakey
 
-    _load_flakey_table $FLAKEY_ALLOW_WRITES
-    _mount_flakey
+   _load_flakey_table $FLAKEY_ALLOW_WRITES
+   _mount_flakey
 
-    # Now after the fsync log replay btrfs left our inode with a wrong link count N,
-    # which was smaller than the correct link count M (N < M).
-    # So after removing N hard links, the remaining M - N directory entries were
-    # still visible to user space but it was impossible to do anything with them
-    # because they pointed to an inode that didn't exist anymore. This resulted in
-    # stale file handle errors (-ESTALE) when accessing those dentries for example.
-    #
-    # So remove all hard links except the first one and then attempt to read the
-    # file, to verify we don't get an -ESTALE error when accessing the inodel
-    #
-    # The btrfs fsck tool also detected the incorrect inode link count and it
-    # reported an error message like the following:
-    #
-    # root 5 inode 257 errors 2001, no inode item, link count wrong
-    #   unresolved ref dir 256 index 2978 namelen 13 name foo_link_2976 filetype 1 errors 4, no inode ref
-    #
-    # The fstests framework automatically calls fsck after a test is run, so we
-    # don't need to call fsck explicitly here.
-
-    rm -f $SCRATCH_MNT/foo_link_*
-    cat $SCRATCH_MNT/foo
-
-    status=0
-    exit
-
-So make sure an fsync always flushes the delayed inode item, so that the
-fsync log contains it (needed in order to trigger the link count fixup
-code) and fix the extref counting function, which always return -ENOENT
-to its caller (and made it assume there were always 0 extrefs).
+So on overflow error when overwriting a reference item (regular or extend
+reference item), delete the old and replace it with the one in the fsync
+log.
 
 This issue has been present since the introduction of the extrefs feature
 (2012).
 
-A test case for xfstests follows soon.
+A test case for xfstests follows soon. This test only passes if the previous
+patch titled "Btrfs: fix fsync when extend references are added to an inode"
+is applied too.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
+ fs/btrfs/tree-log.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1d65a46..ecf462a 100644
+index ecf462a..a1ce105 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -1287,6 +1287,7 @@ static int count_inode_extrefs(struct btrfs_root *root,
- 		leaf = path->nodes[0];
- 		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
- 		ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
-+		cur_offset = 0;
+@@ -1245,6 +1245,28 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
  
- 		while (cur_offset < item_size) {
- 			extref = (struct btrfs_inode_extref *) (ptr + cur_offset);
-@@ -1302,7 +1303,7 @@ static int count_inode_extrefs(struct btrfs_root *root,
- 	}
+ 	/* finally write the back reference in the inode */
+ 	ret = overwrite_item(trans, root, path, eb, slot, key);
++	if (ret == -EOVERFLOW) {
++		/*
++		 * This means we have a reference item in the fs/subvol tree
++		 * that groups multiple references, some of which were added
++		 * by the above loop, some are current and some are obsolete
++		 * and are going to be deleted by a future stage of the fsync
++		 * log replay code. So just delete the item and copy the
++		 * one from the log tree into the fs/subvol tree - this is
++		 * safe and later if a link count in the inode is incorrect,
++		 * it will be corrected by our log replay code.
++		 */
++		ret = btrfs_search_slot(trans, root, key, path, -1, 1);
++		if (WARN_ON(ret == 1))
++			ret = -EIO;
++		if (ret < 0)
++			goto out;
++		ret = btrfs_del_item(trans, root, path);
++		if (ret)
++			goto out;
++		btrfs_release_path(path);
++		ret = overwrite_item(trans, root, path, eb, slot, key);
++	}
+ out:
  	btrfs_release_path(path);
- 
--	if (ret < 0)
-+	if (ret < 0 && ret != -ENOENT)
- 		return ret;
- 	return nlink;
- }
-@@ -3965,15 +3966,22 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		max_key.type = (u8)-1;
- 	max_key.offset = (u64)-1;
- 
--	/* Only run delayed items if we are a dir or a new file */
-+	/*
-+	 * Only run delayed items if we are a dir or a new file.
-+	 * Otherwise commit the delayed inode only, which is needed in
-+	 * order for the log replay code to mark inodes for link count
-+	 * fixup (create temporary BTRFS_TREE_LOG_FIXUP_OBJECTID items).
-+	 */
- 	if (S_ISDIR(inode->i_mode) ||
--	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed) {
-+	    BTRFS_I(inode)->generation > root->fs_info->last_trans_committed)
- 		ret = btrfs_commit_inode_delayed_items(trans, inode);
--		if (ret) {
--			btrfs_free_path(path);
--			btrfs_free_path(dst_path);
--			return ret;
--		}
-+	else
-+		ret = btrfs_commit_inode_delayed_inode(inode);
-+
-+	if (ret) {
-+		btrfs_free_path(path);
-+		btrfs_free_path(dst_path);
-+		return ret;
- 	}
- 
- 	mutex_lock(&BTRFS_I(inode)->log_mutex);
+ 	kfree(name);
 -- 
 2.1.3
 

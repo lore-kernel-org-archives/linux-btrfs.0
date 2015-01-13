@@ -1,34 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dragon.cz ([213.168.176.4]:49730 "EHLO smtp.dragon.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751792AbbAIVdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Jan 2015 16:33:32 -0500
-Received: from i3.doma (fw501.dragon.cz [213.168.176.131])
-	by smtp.dragon.cz (8.13.8/8.13.8) with ESMTP id t09LRLGY019168
-	for <linux-btrfs@vger.kernel.org>; Fri, 9 Jan 2015 22:27:22 +0100
-From: Martin Volf <martin.volf.42@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Remove redundant short description from cmd_snapshot_usage
-Date: Fri,  9 Jan 2015 22:27:21 +0100
-Message-Id: <1420838841-20944-1-git-send-email-martin.volf.42@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:20323 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750989AbbAMDyN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Jan 2015 22:54:13 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0D3rZH1001338
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Jan 2015 11:53:35 +0800
+From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: add missing options to qgroup limit
+Date: Tue, 13 Jan 2015 11:53:16 +0800
+Message-ID: <1421121196-13857-1-git-send-email-fancn.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cmd_snapshot_usage in cmds-subvolume.c contains the short description
-twice. Remove the first one.
+btrfs qgroup limit has two options -c and -e,. They were forgotten to add
+to manpage.
 
-Signed-off-by: Martin Volf <martin.volf.42@gmail.com>
+Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
 ---
+ Documentation/btrfs-qgroup.txt | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 15d4b97..9618cae 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -565,7 +565,6 @@ out:
- }
+diff --git a/Documentation/btrfs-qgroup.txt b/Documentation/btrfs-qgroup.txt
+index 8ce1c27..7e370bd 100644
+--- a/Documentation/btrfs-qgroup.txt
++++ b/Documentation/btrfs-qgroup.txt
+@@ -58,6 +58,15 @@ identified by <path>.
+ +
+ If <qgroupid> is not given, qgroup of the subvolume identified by <path>
+ is used if possible.
+++
++`Options`
+++
++-c::::
++limit amount of data after compression. This is the default, it is currently not
++possible to turn off this option.
+++
++-e::::
++limit space exclusively assigned to this qgroup.
  
- static const char * const cmd_snapshot_usage[] = {
--	"btrfs subvolume snapshot [-r] <source> <dest>|[<dest>/]<name>",
- 	"btrfs subvolume snapshot [-r] [-i <qgroupid>] <source> <dest>|[<dest>/]<name>",
- 	"Create a snapshot of the subvolume",
- 	"Create a writable/readonly snapshot of the subvolume <source> with",
+ *remove* <src> <dst> <path>::
+ Remove the relationship between child qgroup <src> and parent qgroup <dst> in
+-- 
+1.9.1
+

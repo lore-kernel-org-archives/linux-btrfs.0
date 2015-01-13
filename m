@@ -1,65 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:57010 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:47363 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751156AbbAJK4s (ORCPT
+	by vger.kernel.org with ESMTP id S1751726AbbAMQbU (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 10 Jan 2015 05:56:48 -0500
+	Tue, 13 Jan 2015 11:31:20 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: add generic test for fsync after unlink
-Date: Sat, 10 Jan 2015 10:56:08 +0000
-Message-Id: <1420887368-13825-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1420575680-9809-1-git-send-email-fdmanana@suse.com>
-References: <1420575680-9809-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 1/2] fstests: add generic test for fsync on inode with many hard links
+Date: Tue, 13 Jan 2015 16:31:03 +0000
+Message-Id: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This test is motivated by an fsync issue discovered in btrfs.
-The issue was that after fsyncing an inode that got its link count
-decremented, and the new link count is greater than zero, after the
-fsync log replay the inode's parent directory metadata became
-inconsistent - it had a wrong i_size and dangling index entries which
-prevented the directory from ever being removed (rmdir always failed
-with -ENOTEMPTY, even if the directory had no more child inodes).
+The issue in btrfs was that adding a new hard link to an inode that
+already had a large number of hardlinks and fsync the inode, would
+make the fsync log replay code update the inode with a wrong link count
+(smaller than the correct value). This resulted later in dangling
+directory index entries, after removing most of the hard links
+(correct_value - wrong_value), that were visible to user space but it
+was impossible to delete them or do any other operation on them (since
+they pointed to an inode that didn't exist anymore, resulting in -ESTALE
+errors).
 
 The btrfs issue was fixed by the following linux kernel patch:
 
-    Btrfs: fix directory inconsistency after fsync log replay
+   Btrfs: fix fsync when extend references are added to an inode
+
+This issue was present in btrfs since the extrefs (extend references)
+feature was added (2012).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-
-V2: Fixed copyright year, s/2014/2015/. Updated comments to add more
-    details about the issue.
-
- tests/generic/039     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/039.out |   2 +
+ tests/generic/040     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/040.out |   4 ++
  tests/generic/group   |   1 +
- 3 files changed, 115 insertions(+)
- create mode 100755 tests/generic/039
- create mode 100644 tests/generic/039.out
+ 3 files changed, 135 insertions(+)
+ create mode 100755 tests/generic/040
+ create mode 100644 tests/generic/040.out
 
-diff --git a/tests/generic/039 b/tests/generic/039
+diff --git a/tests/generic/040 b/tests/generic/040
 new file mode 100755
-index 0000000..4997aac
+index 0000000..5f10f48
 --- /dev/null
-+++ b/tests/generic/039
-@@ -0,0 +1,112 @@
++++ b/tests/generic/040
+@@ -0,0 +1,130 @@
 +#! /bin/bash
-+# FS QA Test No. 039
++# FS QA Test No. 040
 +#
 +# This test is motivated by an fsync issue discovered in btrfs.
-+# The issue was that after fsyncing an inode that got its link count
-+# decremented, and the new link count is greater than zero, after the
-+# fsync log replay the inode's parent directory metadata became
-+# inconsistent - it had a wrong i_size and dangling index entries which
-+# prevented the directory from ever being removed (rmdir always failed
-+# with -ENOTEMPTY, even if the directory had no more child inodes).
++# The issue in btrfs was that adding a new hard link to an inode that already
++# had a large number of hardlinks and fsync the inode, would make the fsync
++# log replay code update the inode with a wrong link count (smaller than the
++# correct value). This resulted later in dangling directory index entries,
++# after removing most of the hard links (correct_value - wrong_value), that
++# were visible to user space but it was impossible to delete them or do
++# any other operation on them (since they pointed to an inode that didn't
++# exist anymore, resulting in -ESTALE errors).
 +#
 +# The btrfs issue was fixed by the following linux kernel patch:
 +#
-+#    Btrfs: fix directory inconsistency after fsync log replay
++#    Btrfs: fix fsync when extend references are added to an inode
++#
++# This issue was present in btrfs since the extrefs (extend references)
++# feature was added (2012).
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -108,22 +113,33 @@ index 0000000..4997aac
 +
 +rm -f $seqres.full
 +
-+_scratch_mkfs >> $seqres.full 2>&1
++# If the test filesystem is btrfs, make sure we create a filesystem with
++# the extend references (extrefs) feature enabled (it's enabled by default
++# in recent versions of btrfs-progs).
++if [ "$FSTYP" = "btrfs" ]; then
++	_scratch_mkfs "-O extref" >> $seqres.full 2>&1
++else
++	_scratch_mkfs >> $seqres.full 2>&1
++fi
 +
 +_init_flakey
 +_mount_flakey
 +
-+# Create a test file with 2 hard links in the same directory.
-+mkdir -p $SCRATCH_MNT/a/b
-+echo "hello world" > $SCRATCH_MNT/a/b/foo
-+ln $SCRATCH_MNT/a/b/foo $SCRATCH_MNT/a/b/bar
++# Create a test file with 3001 hard links. This number is large enough to
++# make btrfs start using extrefs at some point even if the fs has the maximum
++# possible leaf/node size (64Kb).
++echo "hello world" > $SCRATCH_MNT/foo
++for i in `seq 1 3000`; do
++	ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
++done
 +
 +# Make sure all metadata and data are durably persisted.
 +sync
 +
-+# Now remove one of the hard links and fsync the inode.
-+rm -f $SCRATCH_MNT/a/b/bar
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/b/foo
++# Add one more link to the inode that ends up being a btrfs extref and fsync
++# the inode.
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 +
 +# Simulate a crash/power loss. This makes sure the next mount
 +# will see an fsync log and will replay that log.
@@ -134,47 +150,51 @@ index 0000000..4997aac
 +_load_flakey_table $FLAKEY_ALLOW_WRITES
 +_mount_flakey
 +
-+# Remove the last hard link of the file and attempt to remove its parent
-+# directory - this failed in btrfs because the fsync log and replay code
-+# didn't decrement the parent directory's i_size and left dangling directory
-+# index entries - this made the btrfs rmdir implementation always fail with
-+# the error -ENOTEMPTY.
++# Now after the fsync log replay btrfs left our inode with a wrong link count N,
++# which was smaller than the correct link count M (N < M).
++# So after removing N hard links, the remaining M - N directory entries were
++# still visible to user space but it was impossible to do anything with them
++# because they pointed to an inode that didn't exist anymore. This resulted in
++# stale file handle errors (-ESTALE) when accessing those dentries for example.
 +#
-+# The dangling directory index entries were visible to user space, but it was
-+# impossible to do anything on them (unlink, open, read, write, stat, etc)
-+# because the inode they pointed to did not exist anymore.
++# So remove all hard links except the first one and then attempt to read the
++# file, to verify we don't get an -ESTALE error when accessing the inode.
 +#
-+# The parent directory's metadata inconsistency (stale index entries) was
-+# also detected by btrfs' fsck tool, which is run automatically by the fstests
-+# framework when the test finishes. The error message reported by fsck was:
++# The btrfs fsck tool also detected the incorrect inode link count and it
++# reported an error message like the following:
 +#
-+# root 5 inode 259 errors 2001, no inode item, link count wrong
-+#   unresolved ref dir 258 index 3 namelen 3 name bar filetype 1 errors 4, no inode ref
++# root 5 inode 257 errors 2001, no inode item, link count wrong
++#   unresolved ref dir 256 index 2978 namelen 13 name foo_link_2976 filetype 1 errors 4, no inode ref
 +#
-+rm -f $SCRATCH_MNT/a/b/*
-+rmdir $SCRATCH_MNT/a/b
-+rmdir $SCRATCH_MNT/a
++# The fstests framework automatically calls fsck after a test is run, so we
++# don't need to call fsck explicitly here.
 +
-+echo "Silence is golden"
++echo "Link count before rm foo_link_*: $(stat --format=%h $SCRATCH_MNT/foo)"
++rm -f $SCRATCH_MNT/foo_link_*
++echo "Link count after rm foo_link_*: $(stat --format=%h $SCRATCH_MNT/foo)"
++cat $SCRATCH_MNT/foo
++
 +status=0
 +exit
-diff --git a/tests/generic/039.out b/tests/generic/039.out
+diff --git a/tests/generic/040.out b/tests/generic/040.out
 new file mode 100644
-index 0000000..d4e7ef6
+index 0000000..e4095da
 --- /dev/null
-+++ b/tests/generic/039.out
-@@ -0,0 +1,2 @@
-+QA output created by 039
-+Silence is golden
++++ b/tests/generic/040.out
+@@ -0,0 +1,4 @@
++QA output created by 040
++Link count before rm foo_link_*: 3002
++Link count after rm foo_link_*: 1
++hello world
 diff --git a/tests/generic/group b/tests/generic/group
-index 1e89848..6af5a1a 100644
+index 6af5a1a..0ea8916 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -41,6 +41,7 @@
- 036 auto aio rw stress
+@@ -42,6 +42,7 @@
  037 metadata auto quick
  038 auto stress
-+039 metadata auto quick
+ 039 metadata auto quick
++040 metadata auto quick
  053 acl repair auto quick
  062 attr udf auto quick
  068 other auto freeze dangerous stress

@@ -1,67 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47363 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:56285 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751726AbbAMQbU (ORCPT
+	by vger.kernel.org with ESMTP id S1752131AbbAMQbU (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
 	Tue, 13 Jan 2015 11:31:20 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2] fstests: add generic test for fsync on inode with many hard links
-Date: Tue, 13 Jan 2015 16:31:03 +0000
-Message-Id: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2] fstests: add another generic test for fsync on inode with many hard links
+Date: Tue, 13 Jan 2015 16:31:04 +0000
+Message-Id: <1421166664-15208-2-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
+References: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This test is motivated by an fsync issue discovered in btrfs.
-The issue in btrfs was that adding a new hard link to an inode that
-already had a large number of hardlinks and fsync the inode, would
-make the fsync log replay code update the inode with a wrong link count
-(smaller than the correct value). This resulted later in dangling
-directory index entries, after removing most of the hard links
-(correct_value - wrong_value), that were visible to user space but it
-was impossible to delete them or do any other operation on them (since
-they pointed to an inode that didn't exist anymore, resulting in -ESTALE
-errors).
+The steps to trigger the issue were:
 
-The btrfs issue was fixed by the following linux kernel patch:
+1) remove an hard link from an inode with a large number of hard links;
+2) add a new hard link;
+3) add another hard link with the same name as the one removed in step 1;
+4) fsync the inode.
 
-   Btrfs: fix fsync when extend references are added to an inode
+These steps made the btrfs fsync log replay fail (with the -EOVERFLOW
+error), making the filesystem unmountable, requiring the use of
+btrfs-zero-log (it wipes the fsync log) in order to make the filesystem
+mountable again (but losing some data/metadata).
+
+The btrfs issue was fixed by the following linux kernel patches:
+
+  Btrfs: fix fsync when extend references are added to an inode
+  Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
 
 This issue was present in btrfs since the extrefs (extend references)
 feature was added (2012).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/040     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/040.out |   4 ++
+ tests/generic/041     | 126 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/041.out |   3 ++
  tests/generic/group   |   1 +
- 3 files changed, 135 insertions(+)
- create mode 100755 tests/generic/040
- create mode 100644 tests/generic/040.out
+ 3 files changed, 130 insertions(+)
+ create mode 100755 tests/generic/041
+ create mode 100644 tests/generic/041.out
 
-diff --git a/tests/generic/040 b/tests/generic/040
+diff --git a/tests/generic/041 b/tests/generic/041
 new file mode 100755
-index 0000000..5f10f48
+index 0000000..8b8160b
 --- /dev/null
-+++ b/tests/generic/040
-@@ -0,0 +1,130 @@
++++ b/tests/generic/041
+@@ -0,0 +1,126 @@
 +#! /bin/bash
-+# FS QA Test No. 040
++# FS QA Test No. 041
 +#
 +# This test is motivated by an fsync issue discovered in btrfs.
-+# The issue in btrfs was that adding a new hard link to an inode that already
-+# had a large number of hardlinks and fsync the inode, would make the fsync
-+# log replay code update the inode with a wrong link count (smaller than the
-+# correct value). This resulted later in dangling directory index entries,
-+# after removing most of the hard links (correct_value - wrong_value), that
-+# were visible to user space but it was impossible to delete them or do
-+# any other operation on them (since they pointed to an inode that didn't
-+# exist anymore, resulting in -ESTALE errors).
++# The steps to trigger the issue were:
 +#
-+# The btrfs issue was fixed by the following linux kernel patch:
++# 1) remove an hard link from an inode with a large number of hard links;
++# 2) add a new hard link;
++# 3) add another hard link with the same name as the one removed in step 1;
++# 4) fsync the inode.
 +#
-+#    Btrfs: fix fsync when extend references are added to an inode
++# These steps made the btrfs fsync log replay fail (with the -EOVERFLOW error),
++# making the filesystem unmountable, requiring the use of btrfs-zero-log (it
++# wipes the fsync log) in order to make the filesystem mountable again (but
++# losing some data/metadata).
++#
++# The btrfs issue was fixed by the following linux kernel patches:
++#
++#  Btrfs: fix fsync when extend references are added to an inode
++#  Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
 +#
 +# This issue was present in btrfs since the extrefs (extend references)
 +# feature was added (2012).
@@ -136,9 +145,11 @@ index 0000000..5f10f48
 +# Make sure all metadata and data are durably persisted.
 +sync
 +
-+# Add one more link to the inode that ends up being a btrfs extref and fsync
-+# the inode.
++# Now remove one link, add a new one with a new name, add another new one with
++# the same name as the one we just removed and fsync the inode.
++rm -f $SCRATCH_MNT/foo_link_0001
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_0001
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 +
 +# Simulate a crash/power loss. This makes sure the next mount
@@ -150,51 +161,40 @@ index 0000000..5f10f48
 +_load_flakey_table $FLAKEY_ALLOW_WRITES
 +_mount_flakey
 +
-+# Now after the fsync log replay btrfs left our inode with a wrong link count N,
-+# which was smaller than the correct link count M (N < M).
-+# So after removing N hard links, the remaining M - N directory entries were
-+# still visible to user space but it was impossible to do anything with them
-+# because they pointed to an inode that didn't exist anymore. This resulted in
-+# stale file handle errors (-ESTALE) when accessing those dentries for example.
-+#
-+# So remove all hard links except the first one and then attempt to read the
-+# file, to verify we don't get an -ESTALE error when accessing the inode.
-+#
-+# The btrfs fsck tool also detected the incorrect inode link count and it
-+# reported an error message like the following:
-+#
-+# root 5 inode 257 errors 2001, no inode item, link count wrong
-+#   unresolved ref dir 256 index 2978 namelen 13 name foo_link_2976 filetype 1 errors 4, no inode ref
-+#
-+# The fstests framework automatically calls fsck after a test is run, so we
-+# don't need to call fsck explicitly here.
-+
-+echo "Link count before rm foo_link_*: $(stat --format=%h $SCRATCH_MNT/foo)"
++# Check that the number of hard links is correct, we are able to remove all
++# the hard links and read the file's data. This is just to verify we don't
++# get stale file handle errors (due to dangling directory index entries that
++# point to inodes that no longer exist).
++echo "Link count: $(stat --format=%h $SCRATCH_MNT/foo)"
++[ -f $SCRATCH_MNT/foo ] || echo "Link foo is missing"
++for i in `seq 1 3001`; do
++	name=foo_link_`printf "%04d" $i`
++	[ -f $SCRATCH_MNT/$name ] || echo "Link $name is missing"
++done
 +rm -f $SCRATCH_MNT/foo_link_*
-+echo "Link count after rm foo_link_*: $(stat --format=%h $SCRATCH_MNT/foo)"
 +cat $SCRATCH_MNT/foo
++rm -f $SCRATCH_MNT/foo
 +
 +status=0
 +exit
-diff --git a/tests/generic/040.out b/tests/generic/040.out
+diff --git a/tests/generic/041.out b/tests/generic/041.out
 new file mode 100644
-index 0000000..e4095da
+index 0000000..7773885
 --- /dev/null
-+++ b/tests/generic/040.out
-@@ -0,0 +1,4 @@
-+QA output created by 040
-+Link count before rm foo_link_*: 3002
-+Link count after rm foo_link_*: 1
++++ b/tests/generic/041.out
+@@ -0,0 +1,3 @@
++QA output created by 041
++Link count: 3002
 +hello world
 diff --git a/tests/generic/group b/tests/generic/group
-index 6af5a1a..0ea8916 100644
+index 0ea8916..fb67b57 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -42,6 +42,7 @@
- 037 metadata auto quick
+@@ -43,6 +43,7 @@
  038 auto stress
  039 metadata auto quick
-+040 metadata auto quick
+ 040 metadata auto quick
++041 metadata auto quick
  053 acl repair auto quick
  062 attr udf auto quick
  068 other auto freeze dangerous stress

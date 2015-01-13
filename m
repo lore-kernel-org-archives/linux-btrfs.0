@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:15899 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752419AbbAMCEy (ORCPT
+	with ESMTP id S1752419AbbAMCE4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Jan 2015 21:04:54 -0500
+	Mon, 12 Jan 2015 21:04:56 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0D24G4Z025907
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0D24GS7025912
 	for <linux-btrfs@vger.kernel.org>; Tue, 13 Jan 2015 10:04:16 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/4] btrfs-progs: Report corrupted trees after check_chunks_and_extents()
-Date: Tue, 13 Jan 2015 10:04:44 +0800
-Message-ID: <1421114687-6084-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs-progs: Continue repair even some extent reference can't be repaired and report result to user.
+Date: Tue, 13 Jan 2015 10:04:45 +0800
+Message-ID: <1421114687-6084-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,175 +19,146 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function check_chunks_and_extents() will iterate all the extents, so
-we should have a brief view on which tree is corrupted according to the
-backref of extents we iterated.
+Before this patch, btrfsck will exit repairing if some extent reference
+can't be repaired.
+This is somewhat overkilled.
 
-This patch will mark root corrupted if we find extents whose backref
-can't be verified.
-And after check_chunks_and_extents() report it to user.
-This will helps a lot for users to determine later recovery strategy,
-e.g. if user find only csum tree is corrupted, --init-csum will be the
-best choice (and in fact, current btrfsck only gives tons of unfriendly
-error and no advice or what tree is corrupted).
-
-This patch also provides the basis for later automatic csum/extent tree
-rebuild.
+This patch will report number of all errors and fixed/recorded one, and
+continue in repair mode.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 96 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ctree.h      |  2 ++
- 2 files changed, 98 insertions(+)
+ cmds-check.c | 56 +++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 33 insertions(+), 23 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index ddc0ded..500207e 100644
+index 500207e..b275b39 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -7221,6 +7221,53 @@ static void reset_cached_block_groups(struct btrfs_fs_info *fs_info)
- 	}
- }
+@@ -7279,6 +7279,9 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 	int fixed = 0;
+ 	int had_dups = 0;
+ 	int recorded = 0;
++	u64 nr_fixed = 0;
++	u64 nr_recorded = 0;
++	u64 nr_err = 0;
  
-+/*
-+ * Mark corresponding btrfs_root corrupted according to the extent_record.
-+ * NOTE: For subvolume/fs tree, it will all be marked to fs tree since
-+ * we can't determine which exact tree.
-+ */
-+static int mark_root_corrupted(struct btrfs_fs_info *fs_info,
-+			       struct extent_record *rec)
-+{
-+	struct extent_backref *back;
-+	struct tree_backref *tback;
-+	struct btrfs_key key;
-+	struct btrfs_root *root;
+ 	if (repair) {
+ 		/*
+@@ -7340,12 +7343,12 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 	if (had_dups)
+ 		return -EAGAIN;
+ 
+-	while(1) {
++	cache = first_cache_extent(extent_cache);
++	while(cache) {
++		err = 0;
+ 		fixed = 0;
+ 		recorded = 0;
+-		cache = search_cache_extent(extent_cache, 0);
+-		if (!cache)
+-			break;
 +
-+	/* For data, it must be fs/subvolue tree */
-+	if (!rec->metadata) {
-+data:
-+		fs_info->have_corrupted_root = 1;
-+		fs_info->fs_root->corrupted = 1;
-+		return 0;
-+	}
-+
-+	if (list_empty(&rec->backrefs))
-+		return -EINVAL;
-+	back = list_entry(rec->backrefs.next, struct extent_backref, list);
-+	/* Impossible, but still consider it as data */
-+	if (back->is_data)
-+		goto data;
-+
-+	tback = (struct tree_backref *)back;
-+	if (is_fstree(tback->root))
-+		key.objectid = BTRFS_FS_TREE_OBJECTID;
-+	else
-+		key.objectid = tback->root;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+
-+	root = btrfs_read_fs_root(fs_info, &key);
-+	if (PTR_ERR(root) == -ENOENT)
-+		root = NULL;
-+	if (IS_ERR(root))
-+		return PTR_ERR(root);
-+	fs_info->have_corrupted_root = 1;
-+	if (root)
-+		root->corrupted = 1;
-+	return 0;
-+}
-+
- static int check_extent_refs(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct cache_tree *extent_cache)
-@@ -7362,6 +7409,8 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 		rec = container_of(cache, struct extent_record, cache);
+ 		if (rec->num_duplicates) {
+ 			fprintf(stderr, "extent item %llu has multiple extent "
+@@ -7360,9 +7363,10 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 			fprintf(stderr, "extent item %llu, found %llu\n",
+ 				(unsigned long long)rec->extent_item_refs,
+ 				(unsigned long long)rec->refs);
++			err = 1;
+ 			ret = record_orphan_data_extents(root->fs_info, rec);
+ 			if (ret < 0)
+-				goto repair_abort;
++				goto next;
+ 			if (ret == 0) {
+ 				recorded = 1;
+ 			} else {
+@@ -7375,11 +7379,10 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 							root->fs_info,
+ 							extent_cache, rec);
+ 					if (ret)
+-						goto repair_abort;
++						goto next;
+ 					fixed = 1;
+ 				}
  			}
- 			err = 1;
- 		}
-+		if (err && !fixed)
-+			mark_root_corrupted(root->fs_info, rec);
+-			err = 1;
  
+ 		}
+ 		if (all_backpointers_checked(rec, 1)) {
+@@ -7387,48 +7390,55 @@ static int check_extent_refs(struct btrfs_trans_handle *trans,
+ 				(unsigned long long)rec->start,
+ 				(unsigned long long)rec->nr);
+ 
++			err = 1;
+ 			if (!fixed && !recorded && repair) {
+ 				ret = fixup_extent_refs(trans, root->fs_info,
+ 							extent_cache, rec);
+ 				if (ret)
+-					goto repair_abort;
++					goto next;
+ 				fixed = 1;
+ 			}
+-			err = 1;
+ 		}
+ 		if (!rec->owner_ref_checked) {
+ 			fprintf(stderr, "owner ref check failed [%llu %llu]\n",
+ 				(unsigned long long)rec->start,
+ 				(unsigned long long)rec->nr);
++			err = 1;
+ 			if (!fixed && !recorded && repair) {
+ 				ret = fixup_extent_refs(trans, root->fs_info,
+ 							extent_cache, rec);
+ 				if (ret)
+-					goto repair_abort;
++					goto next;
+ 				fixed = 1;
+ 			}
+-			err = 1;
+ 		}
+-		if (err && !fixed)
+-			mark_root_corrupted(root->fs_info, rec);
+-
  		remove_cache_extent(extent_cache, cache);
  		free_all_extent_backrefs(rec);
-@@ -8885,6 +8934,48 @@ out:
- 	return bad_roots;
+ 		free(rec);
++next:
++		if (err && !fixed)
++			mark_root_corrupted(root->fs_info, rec);
++
++		nr_err += err;
++		nr_fixed += fixed;
++		nr_recorded += recorded;
++		cache = next_cache_extent(cache);
+ 	}
+-repair_abort:
++
+ 	if (repair) {
+-		if (ret && ret != -EAGAIN) {
+-			fprintf(stderr, "failed to repair damaged filesystem, aborting\n");
+-			exit(1);
+-		} else if (!ret) {
++		if (!ret)
+ 			btrfs_fix_block_accounting(trans, root);
+-		}
+-		if (err)
+-			fprintf(stderr, "repaired damaged extent references\n");
++		printf("Found %llu errors, fixed %llu, recorded %llu\n",
++		       nr_err, nr_fixed, nr_recorded);
++		if (nr_fixed == nr_err)
++			printf("repaired all damaged extent references\n");
++		else if (nr_fixed + nr_recorded == nr_err)
++			printf("all damaged extent references repaired or recorded for later repair\n");
++		else
++			printf("some extent referenced can't be repaired\n");
+ 		return ret;
+ 	}
+-	return err;
++	return nr_err;
  }
  
-+#define CORRUPTED_ROOT		(1<<0)
-+#define CORRUPTED_CHUNK		(1<<1)
-+#define CORRUPTED_EXTENT	(1<<2)
-+#define CORRUPTED_DEVICE	(1<<3)
-+#define CORRUPTED_FS		(1<<4)
-+#define CORRUPTED_CSUM		(1<<5)
-+static u16 report_root_corrupted(struct btrfs_fs_info *fs_info,
-+				  const char *prefix)
-+{
-+	int ret = 0;
-+
-+	if (!fs_info->have_corrupted_root)
-+		return ret;
-+	fprintf(stderr,
-+		"The following tree(s) may have corrupted/missing extent references:\n");
-+	if (!fs_info->tree_root || fs_info->tree_root->corrupted) {
-+		fprintf(stderr, "%sroot tree\n", prefix);
-+		ret |= CORRUPTED_ROOT;
-+	}
-+	if (!fs_info->chunk_root || fs_info->chunk_root->corrupted) {
-+		fprintf(stderr, "%schunk tree\n", prefix);
-+		ret |= CORRUPTED_CHUNK;
-+	}
-+	if (!fs_info->extent_root || fs_info->extent_root->corrupted) {
-+		fprintf(stderr, "%sextent tree\n", prefix);
-+		ret |= CORRUPTED_EXTENT;
-+	}
-+	if (!fs_info->dev_root || fs_info->dev_root->corrupted) {
-+		fprintf(stderr, "%sdevice tree\n", prefix);
-+		ret |= CORRUPTED_DEVICE;
-+	}
-+	if (!fs_info->fs_root || fs_info->fs_root->corrupted) {
-+		fprintf(stderr, "%sfs/file tree\n", prefix);
-+		ret |= CORRUPTED_FS;
-+	}
-+	if (!fs_info->csum_root || fs_info->csum_root->corrupted) {
-+		fprintf(stderr, "%schecksum tree\n", prefix);
-+		ret |= CORRUPTED_CSUM;
-+	}
-+	return ret;
-+}
-+
- static struct option long_options[] = {
- 	{ "super", 1, NULL, 's' },
- 	{ "repair", 0, NULL, 0 },
-@@ -9113,6 +9204,11 @@ int cmd_check(int argc, char **argv)
- 	if (ret)
- 		fprintf(stderr, "Errors found in extent allocation tree or chunk allocation\n");
- 
-+	/*
-+	 * chunk and extent tree check has iterates all the extents,
-+	 * so know we have a brief view on which trees are damaged.
-+	 */
-+	report_root_corrupted(info, "\t");
- 	ret = repair_root_items(info);
- 	if (ret < 0)
- 		goto close_out;
-diff --git a/ctree.h b/ctree.h
-index 5dbc767..48fa492 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1004,6 +1004,7 @@ struct btrfs_fs_info {
- 				int refs_to_drop);
- 	struct cache_tree *fsck_extent_cache;
- 	struct cache_tree *corrupt_blocks;
-+	unsigned int have_corrupted_root:1;
- };
- 
- /*
-@@ -1052,6 +1053,7 @@ struct btrfs_root {
- 	/* the dirty list is only used by non-reference counted roots */
- 	struct list_head dirty_list;
- 	struct rb_node rb_node;
-+	unsigned int corrupted:1;
- };
- 
- /*
+ u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
 -- 
 2.2.1
 

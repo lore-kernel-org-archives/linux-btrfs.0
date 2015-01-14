@@ -1,217 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59281 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751004AbbANBwr (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 13 Jan 2015 20:52:47 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
-Date: Wed, 14 Jan 2015 01:52:25 +0000
-Message-Id: <1421200345-9907-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
-References: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:56535 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752469AbbANIVV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Jan 2015 03:21:21 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0E8KhNm025582
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Jan 2015 16:20:43 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: cleanup a straight free-after-malloc branch for free-space-cache
+Date: Wed, 14 Jan 2015 16:18:54 +0800
+Message-ID: <1421223534-11799-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we have an inode with a large number of hard links, some of which may
-be extrefs, turn a regular ref into an extref, fsync the inode and then
-replay the fsync log (after a crash/reboot), we can endup with an fsync
-log that makes the replay code always fail with -EOVERFLOW when processing
-the inode's references.
+Move the branch that is unrelated to the result of io_ctl_init() before
+the function call, so we can save a kmalloc() & kfree() pair in that
+branch.
 
-This is easy to reproduce with the test case I made for xfstests. Its steps
-are the following:
-
-   _scratch_mkfs "-O extref" >> $seqres.full 2>&1
-   _init_flakey
-   _mount_flakey
-
-   # Create a test file with 3001 hard links. This number is large enough to
-   # make btrfs start using extrefs at some point even if the fs has the maximum
-   # possible leaf/node size (64Kb).
-   echo "hello world" > $SCRATCH_MNT/foo
-   for i in `seq 1 3000`; do
-       ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
-   done
-
-   # Make sure all metadata and data are durably persisted.
-   sync
-
-   # Now remove one link, add a new one with a new name, add another new one with
-   # the same name as the one we just removed and fsync the inode.
-   rm -f $SCRATCH_MNT/foo_link_0001
-   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
-   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_0001
-   rm -f $SCRATCH_MNT/foo_link_0002
-   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3002
-   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3003
-   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-
-   # Simulate a crash/power loss. This makes sure the next mount
-   # will see an fsync log and will replay that log.
-
-   _load_flakey_table $FLAKEY_DROP_WRITES
-   _unmount_flakey
-
-   _load_flakey_table $FLAKEY_ALLOW_WRITES
-   _mount_flakey
-
-   # Check that the number of hard links is correct, we are able to remove all
-   # the hard links and read the file's data. This is just to verify we don't
-   # get stale file handle errors (due to dangling directory index entries that
-   # point to inodes that no longer exist).
-   echo "Link count: $(stat --format=%h $SCRATCH_MNT/foo)"
-   [ -f $SCRATCH_MNT/foo ] || echo "Link foo is missing"
-   for ((i = 1; i <= 3003; i++)); do
-       name=foo_link_`printf "%04d" $i`
-       if [ $i -eq 2 ]; then
-           [ -f $SCRATCH_MNT/$name ] && echo "Link $name found"
-       else
-           [ -f $SCRATCH_MNT/$name ] || echo "Link $name is missing"
-       fi
-   done
-   rm -f $SCRATCH_MNT/foo_link_*
-   cat $SCRATCH_MNT/foo
-   rm -f $SCRATCH_MNT/foo
-
-   status=0
-   exit
-
-The fix is simply to correct the overflow condition when overwriting a
-reference item because it was wrong, trying to increase the item in the
-fs/subvol tree by an impossible amount. Also ensure that we don't insert
-one normal ref and one ext ref for the same dentry - this happened because
-processing a dir index entry from the parent in the log happened when
-the normal ref item was full, which made the logic insert an extref and
-later when the normal ref had enough room, it would be inserted again
-when processing the ref item from the child inode in the log.
-
-This issue has been present since the introduction of the extrefs feature
-(2012).
-
-A test case for xfstests follows soon. This test only passes if the previous
-patch titled "Btrfs: fix fsync when extend references are added to an inode"
-is applied too.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
+ fs/btrfs/free-space-cache.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-V2: Deal with another case (and updated test case) where the replay
-    logic inserted the same dentry both as a normal ref and as an extref,
-    resulting in similar directory corruption.
-V3: Unified eexist and eoverflow logic in overwrite_item().
-
- fs/btrfs/inode-item.c |  9 +++++++--
- fs/btrfs/tree-log.c   | 39 ++++++++++++++++++++++++++++++++++++---
- 2 files changed, 43 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index 8ffa478..265e03c 100644
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -344,6 +344,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d6c03f7..88f6122 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1132,10 +1132,6 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	if (!i_size_read(inode))
+ 		return -1;
  
- 	path->leave_spinning = 1;
-+	path->skip_release_on_error = 1;
- 	ret = btrfs_insert_empty_item(trans, root, path, &key,
- 				      ins_len);
- 	if (ret == -EEXIST) {
-@@ -362,8 +363,12 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 		ptr = (unsigned long)(ref + 1);
- 		ret = 0;
- 	} else if (ret < 0) {
--		if (ret == -EOVERFLOW)
--			ret = -EMLINK;
-+		if (ret == -EOVERFLOW) {
-+			if (find_name_in_backref(path, name, name_len, &ref))
-+				ret = -EEXIST;
-+			else
-+				ret = -EMLINK;
-+		}
- 		goto out;
- 	} else {
- 		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index b44880f..920fe42 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -453,11 +453,13 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
- insert:
- 	btrfs_release_path(path);
- 	/* try to insert the key into the destination tree */
-+	path->skip_release_on_error = 1;
- 	ret = btrfs_insert_empty_item(trans, root, path,
- 				      key, item_size);
-+	path->skip_release_on_error = 0;
+-	ret = io_ctl_init(&io_ctl, inode, root, 1);
+-	if (ret)
+-		return -1;
+-
+ 	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA)) {
+ 		down_write(&block_group->data_rwsem);
+ 		spin_lock(&block_group->lock);
+@@ -1145,11 +1141,15 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 			up_write(&block_group->data_rwsem);
+ 			BTRFS_I(inode)->generation = 0;
+ 			ret = 0;
+-			goto out;
++			goto out_skip;
+ 		}
+ 		spin_unlock(&block_group->lock);
+ 	}
  
- 	/* make sure any existing item is the correct size */
--	if (ret == -EEXIST) {
-+	if (ret == -EEXIST || ret == -EOVERFLOW) {
- 		u32 found_size;
- 		found_size = btrfs_item_size_nr(path->nodes[0],
- 						path->slots[0]);
-@@ -844,7 +846,7 @@ out:
- static noinline int backref_in_log(struct btrfs_root *log,
- 				   struct btrfs_key *key,
- 				   u64 ref_objectid,
--				   char *name, int namelen)
-+				   const char *name, int namelen)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_inode_ref *ref;
-@@ -1555,6 +1557,30 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
++	ret = io_ctl_init(&io_ctl, inode, root, 1);
++	if (ret)
++		return -1;
++
+ 	/* Lock all pages first so we can lock the extent safely. */
+ 	io_ctl_prepare_pages(&io_ctl, inode, 0);
+ 
+@@ -1212,13 +1212,14 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	/* Flush the dirty pages in the cache file. */
+ 	ret = flush_dirty_cache(inode);
+ 	if (ret)
+-		goto out;
++		goto out_free;
+ 
+ 	/* Update the cache item to tell everyone this cache file is valid. */
+ 	ret = update_cache_item(trans, root, inode, path, offset,
+ 				entries, bitmaps);
+-out:
++out_free:
+ 	io_ctl_free(&io_ctl);
++out_skip:
+ 	if (ret) {
+ 		invalidate_inode_pages2(inode->i_mapping);
+ 		BTRFS_I(inode)->generation = 0;
+@@ -1232,7 +1233,7 @@ out_nospc:
+ 	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA))
+ 		up_write(&block_group->data_rwsem);
+ 
+-	goto out;
++	goto out_free;
  }
  
- /*
-+ * Return true if an inode reference exists in the log for the given name,
-+ * inode and parent inode.
-+ */
-+static bool name_in_log_ref(struct btrfs_root *log_root,
-+			    const char *name, const int name_len,
-+			    const u64 dirid, const u64 ino)
-+{
-+	struct btrfs_key search_key;
-+
-+	search_key.objectid = ino;
-+	search_key.type = BTRFS_INODE_REF_KEY;
-+	search_key.offset = dirid;
-+	if (backref_in_log(log_root, &search_key, dirid, name, name_len))
-+		return true;
-+
-+	search_key.type = BTRFS_INODE_EXTREF_KEY;
-+	search_key.offset = btrfs_extref_hash(dirid, name, name_len);
-+	if (backref_in_log(log_root, &search_key, dirid, name, name_len))
-+		return true;
-+
-+	return false;
-+}
-+
-+/*
-  * take a single entry in a log directory item and replay it into
-  * the subvolume.
-  *
-@@ -1664,10 +1690,17 @@ out:
- 	return ret;
- 
- insert:
-+	if (name_in_log_ref(root->log_root, name, name_len,
-+			    key->objectid, log_key.objectid)) {
-+		/* The dentry will be added later. */
-+		ret = 0;
-+		update_size = false;
-+		goto out;
-+	}
- 	btrfs_release_path(path);
- 	ret = insert_one_name(trans, root, path, key->objectid, key->offset,
- 			      name, name_len, log_type, &log_key);
--	if (ret && ret != -ENOENT)
-+	if (ret && ret != -ENOENT && ret != -EEXIST)
- 		goto out;
- 	update_size = false;
- 	ret = 0;
+ int btrfs_write_out_cache(struct btrfs_root *root,
 -- 
-2.1.3
+1.8.1.4
 

@@ -1,94 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f49.google.com ([209.85.216.49]:48967 "EHLO
-	mail-qa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751286AbbANV0B (ORCPT
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:58387 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751016AbbANW1U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Jan 2015 16:26:01 -0500
-Received: by mail-qa0-f49.google.com with SMTP id v8so8525544qal.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jan 2015 13:26:00 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
-References: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
-Date: Wed, 14 Jan 2015 16:26:00 -0500
-Message-ID: <CAPs0Bij=86RtrvY3MApgxKvUdKe0xanpysguo5quWJCBfGEE3w@mail.gmail.com>
+	Wed, 14 Jan 2015 17:27:20 -0500
+Received: by mail-pa0-f52.google.com with SMTP id eu11so13203950pac.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jan 2015 14:27:19 -0800 (PST)
+Date: Wed, 14 Jan 2015 14:27:17 -0800
+From: Zach Brown <zab@zabbo.net>
+To: Sandy McArthur Jr <sandymac@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs scrub status reports not running when it is
-From: Sandy McArthur Jr <sandymac@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20150114222717.GA9900@lenny.home.zabbo.net>
+References: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Okay, different output when the scrub is actually complete:
-
-completed status:
-
-scrub status for 94b3345e-2589-423c-a228-d569bf94ab58
-scrub started at Tue Jan 13 01:18:22 2015 and finished after 139459 seconds
-total bytes scrubbed: 23.30TiB with 513 errors
-error details: verify=19 csum=494
-corrected errors: 512, uncorrectable errors: 1, unverified errors: 0
-
-
-Still, the output when wrapping up is still not intuitive to me:
-
-"scrub started at Tue Jan 13 01:18:22 2015, interrupted after 136982
-seconds, not running"
-
-
-On Wed, Jan 14, 2015 at 4:06 PM, Sandy McArthur Jr <sandymac@gmail.com> wrote:
+On Wed, Jan 14, 2015 at 04:06:02PM -0500, Sandy McArthur Jr wrote:
 > Sometimes btrfs scrub status reports that is not running when it still is.
->
+> 
 > I think this a cosmetic bug. And I believe this is related to the
 > scrub completing on some drives before others in a multi-drive btrfs
 > filesystem that is not well balanced.
->
-> Based on `iostat 1` activity the last drive in the btrfs filesystem
-> was still being scrubbed at the time I copied the output below, you
-> can see the total bytes scrubbed is increasing despite showing as "not
-> running". The last drive being scrubbed was not the device identified
-> when you list mount points with `mount`:
->
->
-> # date ; echo ; btrfs scrub status /mcmedia/
-> Wed Jan 14 15:20:18 EST 2015
->
-> scrub status for 94b3345e-2589-423c-a228-d569bf94ab58
-> scrub started at Tue Jan 13 01:18:22 2015, interrupted after 136912
-> seconds, not running
-> total bytes scrubbed: 23.05TiB with 513 errors
-> error details: verify=19 csum=494
-> corrected errors: 512, uncorrectable errors: 1, unverified errors: 0
->
->
-> # date ; echo ; btrfs scrub status /mcmedia/
-> Wed Jan 14 15:21:25 EST 2015
->
-> scrub status for 94b3345e-2589-423c-a228-d569bf94ab58
-> scrub started at Tue Jan 13 01:18:22 2015, interrupted after 136982
-> seconds, not running
-> total bytes scrubbed: 23.06TiB with 513 errors
-> error details: verify=19 csum=494
-> corrected errors: 512, uncorrectable errors: 1, unverified errors: 0
->
->
-> # uname -a
-> Linux mcplex 3.18.2-gentoo #1 SMP Mon Jan 12 10:24:25 EST 2015 x86_64
-> Intel(R) Core(TM) i7-2600S CPU @ 2.80GHz GenuineIntel GNU/Linux
->
-> # btrfs --version
-> Btrfs v3.18.1
->
->
-> --
-> Sandy McArthur Jr
->
-> "He who dares not offend cannot be honest."
-> - Thomas Paine
 
+Boy, I don't really know this code, but it looks like:
 
+if (ss->in_progress)
+	printf(", running for %llu seconds\n", ss->duration);
+else
+	printf(", interrupted after %llu seconds, not running\n",
+			ss->duration);
 
--- 
-Sandy McArthur
+in_progress = is_scrub_running_in_kernel(fdmnt, di_args, fi_args.num_devices);
 
-"He who dares not offend cannot be honest."
-- Thomas Paine
+static int is_scrub_running_in_kernel(int fd,
+                struct btrfs_ioctl_dev_info_args *di_args, u64 max_devices)
+{
+        struct scrub_progress sp;
+        int i;
+        int ret;
+
+        for (i = 0; i < max_devices; i++) {
+                memset(&sp, 0, sizeof(sp));
+                sp.scrub_args.devid = di_args[i].devid;
+                ret = ioctl(fd, BTRFS_IOC_SCRUB_PROGRESS, &sp.scrub_args);
+                if (ret < 0 && errno == ENODEV)
+                        continue;
+                if (ret < 0 && errno == ENOTCONN)
+                        return 0;
+
+It says that scrub isn't running if any devices have completed.  If you drop
+all those ret < 0 conditional branches that are either noops or wrong, does it
+work like you'd expect?
+
+- z

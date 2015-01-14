@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:54941 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:59281 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751256AbbANB3V (ORCPT
+	by vger.kernel.org with ESMTP id S1751004AbbANBwr (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 13 Jan 2015 20:29:21 -0500
+	Tue, 13 Jan 2015 20:52:47 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
-Date: Wed, 14 Jan 2015 01:28:42 +0000
-Message-Id: <1421198922-22745-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
+Date: Wed, 14 Jan 2015 01:52:25 +0000
+Message-Id: <1421200345-9907-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
 References: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -101,10 +101,11 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
 V2: Deal with another case (and updated test case) where the replay
     logic inserted the same dentry both as a normal ref and as an extref,
     resulting in similar directory corruption.
+V3: Unified eexist and eoverflow logic in overwrite_item().
 
  fs/btrfs/inode-item.c |  9 +++++++--
- fs/btrfs/tree-log.c   | 44 ++++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 49 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-log.c   | 39 ++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 43 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
 index 8ffa478..265e03c 100644
@@ -134,10 +135,10 @@ index 8ffa478..265e03c 100644
  	} else {
  		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index b44880f..fce782d 100644
+index b44880f..920fe42 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -453,8 +453,10 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
+@@ -453,11 +453,13 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
  insert:
  	btrfs_release_path(path);
  	/* try to insert the key into the destination tree */
@@ -147,22 +148,12 @@ index b44880f..fce782d 100644
 +	path->skip_release_on_error = 0;
  
  	/* make sure any existing item is the correct size */
- 	if (ret == -EEXIST) {
-@@ -466,6 +468,13 @@ insert:
- 		else if (found_size < item_size)
- 			btrfs_extend_item(root, path,
- 					  item_size - found_size);
-+	} else if (ret == -EOVERFLOW) {
-+		u32 found_size;
-+
-+		found_size = btrfs_item_size_nr(path->nodes[0],
-+						path->slots[0]);
-+		ASSERT(item_size > found_size);
-+		btrfs_extend_item(root, path, item_size - found_size);
- 	} else if (ret) {
- 		return ret;
- 	}
-@@ -844,7 +853,7 @@ out:
+-	if (ret == -EEXIST) {
++	if (ret == -EEXIST || ret == -EOVERFLOW) {
+ 		u32 found_size;
+ 		found_size = btrfs_item_size_nr(path->nodes[0],
+ 						path->slots[0]);
+@@ -844,7 +846,7 @@ out:
  static noinline int backref_in_log(struct btrfs_root *log,
  				   struct btrfs_key *key,
  				   u64 ref_objectid,
@@ -171,7 +162,7 @@ index b44880f..fce782d 100644
  {
  	struct btrfs_path *path;
  	struct btrfs_inode_ref *ref;
-@@ -1555,6 +1564,30 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
+@@ -1555,6 +1557,30 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
  }
  
  /*
@@ -202,7 +193,7 @@ index b44880f..fce782d 100644
   * take a single entry in a log directory item and replay it into
   * the subvolume.
   *
-@@ -1664,10 +1697,17 @@ out:
+@@ -1664,10 +1690,17 @@ out:
  	return ret;
  
  insert:

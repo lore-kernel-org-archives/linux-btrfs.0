@@ -1,48 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57063 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750995AbbANBMT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 20:12:19 -0500
-Date: Tue, 13 Jan 2015 20:12:04 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: avoid build warning on 32-bit
-To: <dsterba@suse.cz>
-CC: Arnd Bergmann <arnd@arndb.de>, Miao Xie <miaox@cn.fujitsu.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Message-ID: <1421197924.21014.17@mail.thefacebook.com>
-In-Reply-To: <20150114001606.GQ3685@twin.jikos.cz>
-References: <4264141.3m7C7LgF5c@wuerfel>
-	<20150114001606.GQ3685@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:54941 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751256AbbANB3V (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 13 Jan 2015 20:29:21 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs
+Date: Wed, 14 Jan 2015 01:28:42 +0000
+Message-Id: <1421198922-22745-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
+References: <1421166468-8721-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 13, 2015 at 7:16 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Tue, Jan 13, 2015 at 03:09:03PM +0100, Arnd Bergmann wrote:
->>  A recent change introduced a type cast from a private 64-bit
->>  value to a pointer, which works fine on 64-bit architectures,
->>  but not on 32-bit ones, where it produces a harmless compiler
->>  warning:
->> 
->>  fs/btrfs/extent_io.c: In function 'btrfs_free_io_failure_record':
->>  fs/btrfs/extent_io.c:2193:13: warning: cast to pointer from integer 
->> of different size [-Wint-to-pointer-cast]
->> 
->>  This adds an intermediate cast to 'unsigned long', which tells
->>  the compiler to ignore the type mismatch.
->> 
->>  Signed-off-by: Arnd Bergmann <arnd@arndb.de>
->>  Fixes: f612496bca664 ("Btrfs: cleanup the read failure record after 
->> write
->>  			or when the inode is freeing")
-> 
-> Already reported, but not merged
+If we have an inode with a large number of hard links, some of which may
+be extrefs, turn a regular ref into an extref, fsync the inode and then
+replay the fsync log (after a crash/reboot), we can endup with an fsync
+log that makes the replay code always fail with -EOVERFLOW when processing
+the inode's references.
 
-I'll take the original cast one for now and we can do the larger 
-cleanup for the next merge window.
+This is easy to reproduce with the test case I made for xfstests. Its steps
+are the following:
 
--chris
+   _scratch_mkfs "-O extref" >> $seqres.full 2>&1
+   _init_flakey
+   _mount_flakey
+
+   # Create a test file with 3001 hard links. This number is large enough to
+   # make btrfs start using extrefs at some point even if the fs has the maximum
+   # possible leaf/node size (64Kb).
+   echo "hello world" > $SCRATCH_MNT/foo
+   for i in `seq 1 3000`; do
+       ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_`printf "%04d" $i`
+   done
+
+   # Make sure all metadata and data are durably persisted.
+   sync
+
+   # Now remove one link, add a new one with a new name, add another new one with
+   # the same name as the one we just removed and fsync the inode.
+   rm -f $SCRATCH_MNT/foo_link_0001
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_0001
+   rm -f $SCRATCH_MNT/foo_link_0002
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3002
+   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3003
+   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+
+   # Simulate a crash/power loss. This makes sure the next mount
+   # will see an fsync log and will replay that log.
+
+   _load_flakey_table $FLAKEY_DROP_WRITES
+   _unmount_flakey
+
+   _load_flakey_table $FLAKEY_ALLOW_WRITES
+   _mount_flakey
+
+   # Check that the number of hard links is correct, we are able to remove all
+   # the hard links and read the file's data. This is just to verify we don't
+   # get stale file handle errors (due to dangling directory index entries that
+   # point to inodes that no longer exist).
+   echo "Link count: $(stat --format=%h $SCRATCH_MNT/foo)"
+   [ -f $SCRATCH_MNT/foo ] || echo "Link foo is missing"
+   for ((i = 1; i <= 3003; i++)); do
+       name=foo_link_`printf "%04d" $i`
+       if [ $i -eq 2 ]; then
+           [ -f $SCRATCH_MNT/$name ] && echo "Link $name found"
+       else
+           [ -f $SCRATCH_MNT/$name ] || echo "Link $name is missing"
+       fi
+   done
+   rm -f $SCRATCH_MNT/foo_link_*
+   cat $SCRATCH_MNT/foo
+   rm -f $SCRATCH_MNT/foo
+
+   status=0
+   exit
+
+The fix is simply to correct the overflow condition when overwriting a
+reference item because it was wrong, trying to increase the item in the
+fs/subvol tree by an impossible amount. Also ensure that we don't insert
+one normal ref and one ext ref for the same dentry - this happened because
+processing a dir index entry from the parent in the log happened when
+the normal ref item was full, which made the logic insert an extref and
+later when the normal ref had enough room, it would be inserted again
+when processing the ref item from the child inode in the log.
+
+This issue has been present since the introduction of the extrefs feature
+(2012).
+
+A test case for xfstests follows soon. This test only passes if the previous
+patch titled "Btrfs: fix fsync when extend references are added to an inode"
+is applied too.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Deal with another case (and updated test case) where the replay
+    logic inserted the same dentry both as a normal ref and as an extref,
+    resulting in similar directory corruption.
+
+ fs/btrfs/inode-item.c |  9 +++++++--
+ fs/btrfs/tree-log.c   | 44 ++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 49 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
+index 8ffa478..265e03c 100644
+--- a/fs/btrfs/inode-item.c
++++ b/fs/btrfs/inode-item.c
+@@ -344,6 +344,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
++	path->skip_release_on_error = 1;
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key,
+ 				      ins_len);
+ 	if (ret == -EEXIST) {
+@@ -362,8 +363,12 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
+ 		ptr = (unsigned long)(ref + 1);
+ 		ret = 0;
+ 	} else if (ret < 0) {
+-		if (ret == -EOVERFLOW)
+-			ret = -EMLINK;
++		if (ret == -EOVERFLOW) {
++			if (find_name_in_backref(path, name, name_len, &ref))
++				ret = -EEXIST;
++			else
++				ret = -EMLINK;
++		}
+ 		goto out;
+ 	} else {
+ 		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index b44880f..fce782d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -453,8 +453,10 @@ static noinline int overwrite_item(struct btrfs_trans_handle *trans,
+ insert:
+ 	btrfs_release_path(path);
+ 	/* try to insert the key into the destination tree */
++	path->skip_release_on_error = 1;
+ 	ret = btrfs_insert_empty_item(trans, root, path,
+ 				      key, item_size);
++	path->skip_release_on_error = 0;
+ 
+ 	/* make sure any existing item is the correct size */
+ 	if (ret == -EEXIST) {
+@@ -466,6 +468,13 @@ insert:
+ 		else if (found_size < item_size)
+ 			btrfs_extend_item(root, path,
+ 					  item_size - found_size);
++	} else if (ret == -EOVERFLOW) {
++		u32 found_size;
++
++		found_size = btrfs_item_size_nr(path->nodes[0],
++						path->slots[0]);
++		ASSERT(item_size > found_size);
++		btrfs_extend_item(root, path, item_size - found_size);
+ 	} else if (ret) {
+ 		return ret;
+ 	}
+@@ -844,7 +853,7 @@ out:
+ static noinline int backref_in_log(struct btrfs_root *log,
+ 				   struct btrfs_key *key,
+ 				   u64 ref_objectid,
+-				   char *name, int namelen)
++				   const char *name, int namelen)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_inode_ref *ref;
+@@ -1555,6 +1564,30 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
+ }
+ 
+ /*
++ * Return true if an inode reference exists in the log for the given name,
++ * inode and parent inode.
++ */
++static bool name_in_log_ref(struct btrfs_root *log_root,
++			    const char *name, const int name_len,
++			    const u64 dirid, const u64 ino)
++{
++	struct btrfs_key search_key;
++
++	search_key.objectid = ino;
++	search_key.type = BTRFS_INODE_REF_KEY;
++	search_key.offset = dirid;
++	if (backref_in_log(log_root, &search_key, dirid, name, name_len))
++		return true;
++
++	search_key.type = BTRFS_INODE_EXTREF_KEY;
++	search_key.offset = btrfs_extref_hash(dirid, name, name_len);
++	if (backref_in_log(log_root, &search_key, dirid, name, name_len))
++		return true;
++
++	return false;
++}
++
++/*
+  * take a single entry in a log directory item and replay it into
+  * the subvolume.
+  *
+@@ -1664,10 +1697,17 @@ out:
+ 	return ret;
+ 
+ insert:
++	if (name_in_log_ref(root->log_root, name, name_len,
++			    key->objectid, log_key.objectid)) {
++		/* The dentry will be added later. */
++		ret = 0;
++		update_size = false;
++		goto out;
++	}
+ 	btrfs_release_path(path);
+ 	ret = insert_one_name(trans, root, path, key->objectid, key->offset,
+ 			      name, name_len, log_type, &log_key);
+-	if (ret && ret != -ENOENT)
++	if (ret && ret != -ENOENT && ret != -EEXIST)
+ 		goto out;
+ 	update_size = false;
+ 	ret = 0;
+-- 
+2.1.3
 

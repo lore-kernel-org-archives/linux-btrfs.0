@@ -1,103 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60352 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:36343 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751182AbbANPWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Jan 2015 10:22:03 -0500
-Date: Wed, 14 Jan 2015 16:22:02 +0100
+	id S1751999AbbANSgc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Jan 2015 13:36:32 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 06F5DAB0E
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Jan 2015 18:36:30 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: cleanup a straight free-after-malloc branch for
- free-space-cache
-Message-ID: <20150114152202.GT3685@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1421223534-11799-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421223534-11799-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PULL] [PATCH 0/5] Btrfs: leak in btrfs_find_item and cleanups
+Date: Wed, 14 Jan 2015 19:36:30 +0100
+Message-Id: <cover.1421259762.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 14, 2015 at 04:18:54PM +0800, Gui Hecheng wrote:
-> Move the branch that is unrelated to the result of io_ctl_init() before
-> the function call, so we can save a kmalloc() & kfree() pair in that
-> branch.
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/free-space-cache.c | 17 +++++++++--------
->  1 file changed, 9 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index d6c03f7..88f6122 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -1132,10 +1132,6 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
->  	if (!i_size_read(inode))
->  		return -1;
->  
-> -	ret = io_ctl_init(&io_ctl, inode, root, 1);
-> -	if (ret)
-> -		return -1;
+Coverity for btrfs-progs spotted a variable leak in btrfs_find_item though the
+same error is not reported in the kernel project and the code is the same.  The
+leak is very rare though and does not need to go to stable immediatelly. The
+rest of patches are cleanups in the related codepaths.
 
-I'm not sure this preserves the original semantics. This can fail if
-there's no memory, fine, but also ENOSPC if the "crcs do not fit into
-the first page" as the comment in io_ctl_init() says. There's an
-additional condition that the inode is not FREE_INO, ie. it is the
-FREE_SPACE inode.
+You can also pull the changes from
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git fix/find-item-path-leak
 
-So in some cases io_ctl_init may fail but would not after your patch.
+Top commit: 1d4c08e0a60be3561
+Base: 3.19-rc4
 
-> -
->  	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA)) {
->  		down_write(&block_group->data_rwsem);
->  		spin_lock(&block_group->lock);
-> @@ -1145,11 +1141,15 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
->  			up_write(&block_group->data_rwsem);
->  			BTRFS_I(inode)->generation = 0;
->  			ret = 0;
-> -			goto out;
-> +			goto out_skip;
->  		}
->  		spin_unlock(&block_group->lock);
->  	}
->  
-> +	ret = io_ctl_init(&io_ctl, inode, root, 1);
-> +	if (ret)
-> +		return -1;
+David Sterba (5):
+  btrfs: fix leak of path in btrfs_find_item
+  btrfs: cleanup, remove inode_item_info helper
+  btrfs: cleanup, remove inode_ref_info helper
+  btrfs: simplify insert_orphan_item
+  btrfs: expand btrfs_find_item if found_key is NULL
 
-This would leave block_group->data_rwsem locked, ie. another exit path
-would have to be added that would reflect the current state (no io_ctl
-initialized and the extent range not locked). We cannot use out_enospc
-here.
+ fs/btrfs/backref.c  | 28 ++++++----------------------
+ fs/btrfs/backref.h  |  3 ---
+ fs/btrfs/ctree.c    | 18 +++++-------------
+ fs/btrfs/disk-io.c  | 15 +++++++++++++--
+ fs/btrfs/inode.c    | 10 +++++++---
+ fs/btrfs/scrub.c    | 10 +++++++++-
+ fs/btrfs/tree-log.c | 11 ++++++-----
+ 7 files changed, 46 insertions(+), 49 deletions(-)
 
-I'm not sure if the kmalloc/kfree savings are significant here.
+-- 
+1.8.4.5
 
-> +
->  	/* Lock all pages first so we can lock the extent safely. */
->  	io_ctl_prepare_pages(&io_ctl, inode, 0);
->  
-> @@ -1212,13 +1212,14 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
->  	/* Flush the dirty pages in the cache file. */
->  	ret = flush_dirty_cache(inode);
->  	if (ret)
-> -		goto out;
-> +		goto out_free;
->  
->  	/* Update the cache item to tell everyone this cache file is valid. */
->  	ret = update_cache_item(trans, root, inode, path, offset,
->  				entries, bitmaps);
-> -out:
-> +out_free:
->  	io_ctl_free(&io_ctl);
-> +out_skip:
->  	if (ret) {
->  		invalidate_inode_pages2(inode->i_mapping);
->  		BTRFS_I(inode)->generation = 0;
-> @@ -1232,7 +1233,7 @@ out_nospc:
->  	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA))
->  		up_write(&block_group->data_rwsem);
->  
-> -	goto out;
-> +	goto out_free;
->  }

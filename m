@@ -1,23 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nala.villavu.com ([188.165.243.101]:42484 "EHLO
-	nala.villavu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750921AbbANAcc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Jan 2015 19:32:32 -0500
-Date: Wed, 14 Jan 2015 01:31:34 +0100 (CET)
-From: Merlijn Wajer <merlijn@wizzup.org>
-To: Josef Bacik <jbacik@fb.com>
-cc: David Sterba <dsterba@suse.cz>,
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47667 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750995AbbANAjI convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Jan 2015 19:39:08 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: Merlijn Wajer <merlijn@wizzup.org>
+CC: David Sterba <dsterba@suse.cz>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Revert "btrfs-progs: disable backtrace and define
  __always_inline"
-In-Reply-To: <o7p8o4w432kx17p86ckfs9b3.1421195194593@email.android.com>
-Message-ID: <alpine.LNX.2.00.1501140126290.19863@chrometwo.fritz.box>
-References: <1421187619-24936-1-git-send-email-jbacik@fb.com> <20150114001341.GP3685@twin.jikos.cz>,<54B5B5FA.20904@wizzup.org> <o7p8o4w432kx17p86ckfs9b3.1421195194593@email.android.com>
+Date: Wed, 14 Jan 2015 00:39:02 +0000
+Message-ID: <q9fvbbb948egl9yswpp15tpe.1421195940816@email.android.com>
+References: <1421187619-24936-1-git-send-email-jbacik@fb.com>
+ <20150114001341.GP3685@twin.jikos.cz>,<54B5B5FA.20904@wizzup.org>
+ <o7p8o4w432kx17p86ckfs9b3.1421195194593@email.android.com>,<alpine.LNX.2.00.1501140126290.19863@chrometwo.fritz.box>
+In-Reply-To: <alpine.LNX.2.00.1501140126290.19863@chrometwo.fritz.box>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Yeah just make sure we still get a backtrace on glibc.  Thanks,
+
+Josef
+
+Merlijn Wajer <merlijn@wizzup.org> wrote:
+
 
 Hi,
 

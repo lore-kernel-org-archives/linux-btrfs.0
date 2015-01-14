@@ -1,33 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:33189 "EHLO csamuel.org"
+Received: from cantor2.suse.de ([195.135.220.15]:60931 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751253AbbAPEsQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 23:48:16 -0500
-Message-ID: <54B897F4.201@csamuel.org>
-Date: Fri, 16 Jan 2015 15:47:48 +1100
-From: Chris Samuel <chris@csamuel.org>
+	id S1751930AbbANPqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Jan 2015 10:46:35 -0500
+Date: Wed, 14 Jan 2015 16:46:33 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 RESEND] btrfs-progs: make btrfs qgroups show human
+ readable sizes
+Message-ID: <20150114154633.GU3685@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1421128419-17169-1-git-send-email-fancn.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Lennart Poettering <lennart@poettering.net>, chandanrmail@gmail.com
-Subject: Re: btrfs_inode_item's otime?
-References: <20150105172152.GB19126@gardel-login> <3797928.30urVis5AR@quad> <20150106184100.GF24104@twin.jikos.cz> <2188846.ArnMyWRJKN@quad> <20150109161142.GC3685@twin.jikos.cz> <20150115104820.GZ3685@twin.jikos.cz>
-In-Reply-To: <20150115104820.GZ3685@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1421128419-17169-1-git-send-email-fancn.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 15/01/15 21:48, David Sterba wrote:
+On Tue, Jan 13, 2015 at 01:53:39PM +0800, Fan Chengniang wrote:
+> make btrfs qgroups show human readable sizes
+> using --human-readable option, example:
 
-> Chandan, please drop the btrfs_inode_otime helper and resend. Thanks.
+That's too long to type and the idea was to add all the long options
+that force the specific unit base, ie. --kbytes/--mbytes/..., --raw,
+--si and --iec. We can possibly make the human readable the default
+because that's what I'd expect to see to have a quick overview and can
+use the other options otherwise.
 
-Thanks!
+The geopt parser accepts short options if they're unique, so --kb or
+even --k works as a very convenient shorcut for frequent commandline
+use.
 
-Sorry I'd had no further time to look at this, I've been fully committed
-with $DAY_JOB and on a number of projects with our local community
-observatory (if anyone is in/visiting Melbourne and into astronomy ping
-me for details).
+> qgroupid rfer         excl         max_rfer     max_excl     parent  child
+> -------- ----         ----         --------     --------     ------  -----
+> 0/5      299.58MiB    299.58MiB    400.00MiB    0.00B        1/1     ---
+> 0/265    299.58MiB    16.00KiB     0.00B        320.00MiB    1/1     ---
+> 0/266    299.58MiB    16.00KiB     350.00MiB    0.00B        ---     ---
+> 1/1      599.16MiB    299.59MiB    800.00MiB    0.00B        ---     0/5,0/265
 
-All the best,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+The values should be also aligned to the right.

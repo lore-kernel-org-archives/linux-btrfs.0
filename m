@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:56285 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:57678 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752131AbbAMQbU (ORCPT
+	by vger.kernel.org with ESMTP id S1752186AbbANB3f (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 13 Jan 2015 11:31:20 -0500
+	Tue, 13 Jan 2015 20:29:35 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] fstests: add another generic test for fsync on inode with many hard links
-Date: Tue, 13 Jan 2015 16:31:04 +0000
-Message-Id: <1421166664-15208-2-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
-References: <1421166664-15208-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2 2/2] fstests: add another generic test for fsync on inode with many hard links
+Date: Wed, 14 Jan 2015 01:29:09 +0000
+Message-Id: <1421198949-31137-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1421166664-15208-2-git-send-email-fdmanana@suse.com>
+References: <1421166664-15208-2-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -38,19 +38,24 @@ feature was added (2012).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/041     | 126 ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+V2: Updated the test to remove and add more links after the sync.
+    This triggered an additional issue in btrfs that I failed to
+    observe initially.
+
+ tests/generic/041     | 133 ++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/generic/041.out |   3 ++
  tests/generic/group   |   1 +
- 3 files changed, 130 insertions(+)
+ 3 files changed, 137 insertions(+)
  create mode 100755 tests/generic/041
  create mode 100644 tests/generic/041.out
 
 diff --git a/tests/generic/041 b/tests/generic/041
 new file mode 100755
-index 0000000..8b8160b
+index 0000000..36a6f42
 --- /dev/null
 +++ b/tests/generic/041
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,133 @@
 +#! /bin/bash
 +# FS QA Test No. 041
 +#
@@ -150,6 +155,9 @@ index 0000000..8b8160b
 +rm -f $SCRATCH_MNT/foo_link_0001
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3001
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_0001
++rm -f $SCRATCH_MNT/foo_link_0002
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3002
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link_3003
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 +
 +# Simulate a crash/power loss. This makes sure the next mount
@@ -167,9 +175,13 @@ index 0000000..8b8160b
 +# point to inodes that no longer exist).
 +echo "Link count: $(stat --format=%h $SCRATCH_MNT/foo)"
 +[ -f $SCRATCH_MNT/foo ] || echo "Link foo is missing"
-+for i in `seq 1 3001`; do
++for ((i = 1; i <= 3003; i++)); do
 +	name=foo_link_`printf "%04d" $i`
-+	[ -f $SCRATCH_MNT/$name ] || echo "Link $name is missing"
++	if [ $i -eq 2 ]; then
++		[ -f $SCRATCH_MNT/$name ] && echo "Link $name found"
++	else
++		[ -f $SCRATCH_MNT/$name ] || echo "Link $name is missing"
++	fi
 +done
 +rm -f $SCRATCH_MNT/foo_link_*
 +cat $SCRATCH_MNT/foo
@@ -179,12 +191,12 @@ index 0000000..8b8160b
 +exit
 diff --git a/tests/generic/041.out b/tests/generic/041.out
 new file mode 100644
-index 0000000..7773885
+index 0000000..577c525
 --- /dev/null
 +++ b/tests/generic/041.out
 @@ -0,0 +1,3 @@
 +QA output created by 041
-+Link count: 3002
++Link count: 3003
 +hello world
 diff --git a/tests/generic/group b/tests/generic/group
 index 0ea8916..fb67b57 100644

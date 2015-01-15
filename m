@@ -1,229 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60030 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751175AbbAOI4m (ORCPT
+Received: from mail-yk0-f179.google.com ([209.85.160.179]:45207 "EHLO
+	mail-yk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753442AbbAONcf convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 03:56:42 -0500
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <clm@fb.com>, <dsterba@suse.cz>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 2/2 RESEND] btrfs: introduce shrinker for rb_tree that keeps valid btrfs_devices
-Date: Thu, 15 Jan 2015 16:53:08 +0800
-Message-ID: <1421311988-11976-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1421311988-11976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1421311988-11976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	Thu, 15 Jan 2015 08:32:35 -0500
+Received: by mail-yk0-f179.google.com with SMTP id 19so6832653ykq.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jan 2015 05:32:34 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <B9FB0052-C5D5-4463-B2EB-78056506E351@gmail.com>
+References: <CABdHLQ4P4=rNCHpAuL7azGMA4xTgoHqyFNZ25sw4X2bsHQWwcg@mail.gmail.com>
+	<B9FB0052-C5D5-4463-B2EB-78056506E351@gmail.com>
+Date: Thu, 15 Jan 2015 14:32:33 +0100
+Message-ID: <CABdHLQ75YskzRje8T75=MKmwDKeaar2JfyTwq0LnUBEOL4KfyQ@mail.gmail.com>
+Subject: Re: btrfs performance - ssd array
+From: "P. Remek" <p.remek1@googlemail.com>
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following patch:
-	btrfs: remove empty fs_devices to prevent memory runout
+Hello,
 
-introduces @valid_dev_root aiming at recording @btrfs_device objects that
-have corresponding block devices with btrfs.
-But if a block device is broken or unplugged, no one tells the
-@valid_dev_root to cleanup the "dead" objects.
+>
+> Could you check how many extents with BTRFS and Ext4:
+> # filefrag test1
 
-To recycle the memory occuppied by those "dead"s, we could rely on
-the shrinker. The shrinker's scan function will traverse the
-@valid_dev_root and trys to open the devices one by one, if it fails
-or encounters a non-btrfs it will remove the "dead" @btrfs_device.
+So my findings are odd:
 
-A special case to deal with is that a block device is unplugged and
-replugged, then it appears with a new @bdev->bd_dev as devnum.
-In this case, we should remove the older since we should have a new
-one for that block device already.
+On BTRFS when I run fio with a single worker thread (target file is
+12GB large,and its 100% random write of 4kb blocks), then number of
+extents reported by filefrag is around 3.
+However when I do the same with 4 worker threads, I get some crazy
+number of extents - "test1: 3141866 extents found". Also when running
+with 4 threads when I check CPU, the sys% utilization takes 80% of CPU
+( in the top output I see that all is consumed by kworker processes).
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- fs/btrfs/super.c   | 10 ++++++++
- fs/btrfs/volumes.c | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h |  4 +++
- 3 files changed, 87 insertions(+), 1 deletion(-)
+On the EXT4 I get only 13 extents even when running with 4 worker
+threads. (note that I created RAID10 using mdadm before setting up
+ext4 there in order to get comparable "storage solution" to what we
+test with  BTRFS).
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 001cba5..022381e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2017,6 +2017,12 @@ static struct miscdevice btrfs_misc = {
- 	.fops		= &btrfs_ctl_fops
- };
- 
-+static struct shrinker btrfs_valid_dev_shrinker = {
-+	.scan_objects = btrfs_valid_dev_scan,
-+	.count_objects = btrfs_valid_dev_count,
-+	.seeks = DEFAULT_SEEKS,
-+};
-+
- MODULE_ALIAS_MISCDEV(BTRFS_MINOR);
- MODULE_ALIAS("devname:btrfs-control");
- 
-@@ -2130,6 +2136,8 @@ static int __init init_btrfs_fs(void)
- 
- 	btrfs_init_lockdep();
- 
-+	register_shrinker(&btrfs_valid_dev_shrinker);
-+
- 	btrfs_print_info();
- 
- 	err = btrfs_run_sanity_tests();
-@@ -2143,6 +2151,7 @@ static int __init init_btrfs_fs(void)
- 	return 0;
- 
- unregister_ioctl:
-+	unregister_shrinker(&btrfs_valid_dev_shrinker);
- 	btrfs_interface_exit();
- free_end_io_wq:
- 	btrfs_end_io_wq_exit();
-@@ -2183,6 +2192,7 @@ static void __exit exit_btrfs_fs(void)
- 	btrfs_interface_exit();
- 	btrfs_end_io_wq_exit();
- 	unregister_filesystem(&btrfs_fs_type);
-+	unregister_shrinker(&btrfs_valid_dev_shrinker);
- 	btrfs_exit_sysfs();
- 	btrfs_cleanup_valid_dev_root();
- 	btrfs_cleanup_fs_uuids();
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 228a7e0..5462557 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -54,6 +54,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
- DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
- static struct rb_root valid_dev_root = RB_ROOT;
-+static atomic_long_t unopened_dev_count = ATOMIC_LONG_INIT(0);
- 
- static struct btrfs_device *insert_valid_device(struct btrfs_device *new_dev)
- {
-@@ -130,6 +131,8 @@ static void free_invalid_device(struct btrfs_device *invalid_dev)
- {
- 	struct btrfs_fs_devices *old_fs;
- 
-+	atomic_long_dec(&unopened_dev_count);
-+
- 	old_fs = invalid_dev->fs_devices;
- 	mutex_lock(&old_fs->device_list_mutex);
- 	list_del(&invalid_dev->dev_list);
-@@ -605,6 +608,7 @@ static noinline int device_list_add(const char *path,
- 		list_add_rcu(&device->dev_list, &fs_devices->devices);
- 		fs_devices->num_devices++;
- 		mutex_unlock(&fs_devices->device_list_mutex);
-+		atomic_long_inc(&unopened_dev_count);
- 
- 		ret = 1;
- 		device->fs_devices = fs_devices;
-@@ -778,6 +782,7 @@ again:
- 			blkdev_put(device->bdev, device->mode);
- 			device->bdev = NULL;
- 			fs_devices->open_devices--;
-+			atomic_long_inc(&unopened_dev_count);
- 		}
- 		if (device->writeable) {
- 			list_del_init(&device->dev_alloc_list);
-@@ -840,8 +845,10 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		struct btrfs_device *new_device;
- 		struct rcu_string *name;
- 
--		if (device->bdev)
-+		if (device->bdev) {
- 			fs_devices->open_devices--;
-+			atomic_long_inc(&unopened_dev_count);
-+		}
- 
- 		if (device->writeable &&
- 		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-@@ -971,6 +978,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 			fs_devices->rotating = 1;
- 
- 		fs_devices->open_devices++;
-+		atomic_long_dec(&unopened_dev_count);
- 		if (device->writeable &&
- 		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 			fs_devices->rw_devices++;
-@@ -6848,3 +6856,67 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 	}
- 	unlock_chunks(root);
- }
-+
-+static unsigned long shrink_valid_dev_root(void)
-+{
-+	struct rb_node *n;
-+	struct btrfs_device *device;
-+	struct block_device *bdev;
-+	struct buffer_head *bh;
-+	unsigned long freed = 0;
-+	unsigned long possible_deads;
-+	int ret = 0;
-+	dev_t cur_devnum;
-+
-+	mutex_lock(&uuid_mutex);
-+
-+	possible_deads = atomic_long_read(&unopened_dev_count);
-+	if (!possible_deads)
-+		goto out;
-+
-+	for (n = rb_first(&valid_dev_root); n ; n = rb_next(n)) {
-+		device = rb_entry(n, struct btrfs_device, rb_node);
-+
-+		if (device->bdev)
-+			continue;
-+		if (!device->name)
-+			continue;
-+
-+		ret = btrfs_get_bdev_and_sb(device->name->str, FMODE_READ,
-+						NULL, 0, &bdev, &bh);
-+		/* can't open as btrfs, not valid, drop it */
-+		if (ret)
-+			goto shrink;
-+
-+		cur_devnum = bdev->bd_dev;
-+
-+		brelse(bh);
-+		blkdev_put(bdev, FMODE_READ);
-+
-+		if (device->devnum == cur_devnum)
-+			continue;
-+		/* bdev->bd_dev changed, not valid, drop it */
-+
-+shrink:
-+		rb_erase(n, &valid_dev_root);
-+		free_invalid_device(device);
-+
-+		freed++;
-+	}
-+
-+out:
-+	mutex_unlock(&uuid_mutex);
-+	return freed;
-+}
-+
-+unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
-+				   struct shrink_control *sc)
-+{
-+	return shrink_valid_dev_root();
-+}
-+
-+unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
-+				    struct shrink_control *sc)
-+{
-+	return atomic_long_read(&unopened_dev_count);
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7f5c7ea..49f4fff 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -432,6 +432,10 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
- 					const u8 *uuid);
- int btrfs_rm_device(struct btrfs_root *root, char *device_path);
- void btrfs_cleanup_valid_dev_root(void);
-+unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
-+				   struct shrink_control *sc);
-+unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
-+				    struct shrink_control *sc);
- void btrfs_cleanup_fs_uuids(void);
- int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
- int btrfs_grow_device(struct btrfs_trans_handle *trans,
--- 
-1.8.1.4
+Another odd thing is, that it takes very long time for the filefrag
+utility to return the result on the BTRFS and not only for the case
+where I got 3 milions of extents but also for the first case where I
+ran single worker and the number of extents was only 3. Filefrag on
+EXT4 returns immediately.
 
+
+> To see if this is because bad fragments for BTRFS. I am still not
+> sure how fio will test randwrite here, so here is possibilities:
+>
+> case1:
+>      if fio don’t repeat write same position for several time, i think
+>      you could add --overite=0, and retest to see if it helps.
+
+Not sure  what parameter do you mean here.
+
+> case2:
+>     if fio randwrite did write same position for several time, i think
+>     you could use ‘-o nodatacow’ mount option to verify if this is because
+>     BTRFS COW caused serious fragments.
+>
+
+It seems that mounting it with this option does have some effect but
+not very significant and it is not very deterministic. The IOPs are
+slightly higher at the beginning (~25 000 IOPs) but IOPs perfromance
+is very spiky and I can still see that CPU sys% is very high. As soon
+as the kworker threads start consuming CPU, the IOPs performance goes
+down again to some ~15 000 IOPs.

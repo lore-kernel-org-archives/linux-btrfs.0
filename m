@@ -1,51 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43599 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:47680 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751044AbbALFX3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Jan 2015 00:23:29 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YAXTK-0003uP-Nh
-	for linux-btrfs@vger.kernel.org; Mon, 12 Jan 2015 06:23:26 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 06:23:26 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Jan 2015 06:23:26 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: What about storing more crc32 in the unused csum size for
- metadata?
-Date: Mon, 12 Jan 2015 05:23:16 +0000 (UTC)
-Message-ID: <pan$279da$6f12814e$e8e5572b$d2a90667@cox.net>
-References: <54B3323E.3090100@cn.fujitsu.com>
-	<pan$8d162$d4e83036$79c5caa1$f18c808@cox.net>
-	<54B353EE.6090605@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1751403AbbAOKsW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Jan 2015 05:48:22 -0500
+Date: Thu, 15 Jan 2015 11:48:20 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chris Samuel <chris@csamuel.org>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        Lennart Poettering <lennart@poettering.net>, chandanrmail@gmail.com
+Subject: Re: btrfs_inode_item's otime?
+Message-ID: <20150115104820.GZ3685@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20150105172152.GB19126@gardel-login>
+ <3797928.30urVis5AR@quad>
+ <20150106184100.GF24104@twin.jikos.cz>
+ <2188846.ArnMyWRJKN@quad>
+ <20150109161142.GC3685@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150109161142.GC3685@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Mon, 12 Jan 2015 12:56:14 +0800 as excerpted:
-
-> Oh, my fault, sector 1 should contains csum for the second eighth of the
-> leaf/node...
-> Since the first eighth csum can be calculated  vice verse.
+On Fri, Jan 09, 2015 at 05:11:42PM +0100, David Sterba wrote:
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -5835,6 +5835,11 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+> >                              sizeof(*inode_item));
+> >         fill_inode_item(trans, path->nodes[0], inode_item, inode);
+> >  
+> > +       /*
+> > +        * Set the creation time on the inode.
+> > +        */
+> > +       btrfs_set_stack_timespec_sec( &inode.otime, cur_time.tv_sec );
 > 
-> Thanks,
+> Drop the spaces after/before parens and also set usec the same way.
+> There's no such thing as 'current_time', only CURRENT_TIME but that
+> cannot be used directly as a structure.
+> 
+> Given that the mtime is set a few lines above, copy the tv_sec and
+> tv_usec from there.
 
-Thanks indeed.
+chandan pointed out on IRC the other day that he'd sent a patch for that
+already
 
-/Now/ it makes sense.  Skip the one and reverse-calculate it.  (Which you 
-had actually implied and I guess it doesn't matter which one as long as 
-it's /only/ one, but given my general unfamiliarity with crc at a 
-practical level and impaired logic state, and your hiding it in the ... 
-gap, I needed a bit more help to make the leap. =:^)
+http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg17508.html
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Though the patch cannot be applied as-is, it's more complete (I've
+missed a few places where the otime has to be set).
 
+Chandan, please drop the btrfs_inode_otime helper and resend. Thanks.

@@ -1,27 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39613 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750795AbbAOFH4 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 00:07:56 -0500
-Message-ID: <54B74AF8.2050600@cn.fujitsu.com>
-Date: Thu, 15 Jan 2015 13:07:04 +0800
-From: =?UTF-8?B?RmFuIENoZW5nbmlhbmcv5qiK5oiQ6YW/?=
-	<fancn.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:49156 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753602AbbAOMgk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Jan 2015 07:36:40 -0500
+Date: Thu, 15 Jan 2015 13:36:39 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Merlijn Wajer <merlijn@wizzup.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        dsterba@suse.cz, Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] Restore backtrace functionality on glibc
+Message-ID: <20150115123639.GF3685@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <54B65F5E.6020103@wizzup.org>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs-progs:btrfstune: choose to ignore error when
- setting seeding enabled
-References: <1420791102-9948-1-git-send-email-fancn.fnst@cn.fujitsu.com> <20150114154831.GV3685@twin.jikos.cz>
-In-Reply-To: <20150114154831.GV3685@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54B65F5E.6020103@wizzup.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jan 14, 2015 at 01:21:50PM +0100, Merlijn Wajer wrote:
+> Josef, can you verify that this patch restores the backtrace functionality?
 
-在 2015年01月14日 23:48, David Sterba 写道:
-> On Fri, Jan 09, 2015 at 04:11:41PM +0800, Fan Chengniang wrote:
->> Before with -S option, setting positive value on seeding-enabled btrfs
->> filesystem will cause error. So I add -i option which can ignore it.
-> Why can't we use the existing --force/-f option for that?
-That is a good idea. I will use -f instead of adding -i.
+Worked for me, patch applied.
+
+> I'm sorry that my previous patch broke the backtrace functionality -- I
+> guess that sometimes trivial patches can still be wrong. :-)
+
+Yeah :)

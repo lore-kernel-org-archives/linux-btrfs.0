@@ -1,529 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:60030 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751175AbbAOI4k (ORCPT
+	with ESMTP id S1751175AbbAOI4m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 03:56:40 -0500
+	Thu, 15 Jan 2015 03:56:42 -0500
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <clm@fb.com>, <dsterba@suse.cz>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2 1/2 RESEND] btrfs: remove empty fs_devices to prevent memory runout
-Date: Thu, 15 Jan 2015 16:53:07 +0800
-Message-ID: <1421311988-11976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/2 RESEND] btrfs: introduce shrinker for rb_tree that keeps valid btrfs_devices
+Date: Thu, 15 Jan 2015 16:53:08 +0800
+Message-ID: <1421311988-11976-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1421311988-11976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1421311988-11976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a global list @fs_uuids to keep @fs_devices object
-for each created btrfs. But when a btrfs becomes "empty"
-(all devices belong to it are gone), its @fs_devices remains
-in @fs_uuids list until module exit.
-If we keeps mkfs.btrfs on the same device again and again,
-all empty @fs_devices produced are sure to eat up our memory.
-So this case has better to be prevented.
+The following patch:
+	btrfs: remove empty fs_devices to prevent memory runout
 
-I think that each time we setup btrfs on that device, we should
-check whether we are stealing some device from another btrfs
-seen before. To faciliate the search procedure, we could insert
-all @btrfs_device in a rb_root, one @btrfs_device per each physical
-device, with @bdev->bd_dev as key. Each time device stealing happens,
-we should replace the corresponding @btrfs_device in the rb_root with
-an up-to-date version.
-If the stolen device is the last device in its @fs_devices,
-then we have an empty btrfs to be deleted.
+introduces @valid_dev_root aiming at recording @btrfs_device objects that
+have corresponding block devices with btrfs.
+But if a block device is broken or unplugged, no one tells the
+@valid_dev_root to cleanup the "dead" objects.
 
-Actually there are 3 ways to steal devices and lead to empty btrfs
-        1. mkfs, with -f option
-        2. device add, with -f option
-        3. device replace, with -f option
-We should act under these cases.
+To recycle the memory occuppied by those "dead"s, we could rely on
+the shrinker. The shrinker's scan function will traverse the
+@valid_dev_root and trys to open the devices one by one, if it fails
+or encounters a non-btrfs it will remove the "dead" @btrfs_device.
 
-Moreover, there are special cases to consider:
-o If there are seed devices, then it is asured that
-  the devices in cloned @fs_devices are not treated as valid devices.
-o If a device disappears and reappears without any touch, its
-  @bdev->bd_dev may change, so we have to re-insert it into the rb_root.
+A special case to deal with is that a block device is unplugged and
+replugged, then it appears with a new @bdev->bd_dev as devnum.
+In this case, we should remove the older since we should have a new
+one for that block device already.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
-changelog
-        v1->v2: add handle for device disappears and reappears event
-
-	*Note*
-	Actually this handles the case when a device disappears and
-	reappears without any touch.
-	We are going to recycle all "dead" btrfs_device in another patch.
-	Two events leads to the "dead"s:
-		1) device disappears and never returns again
-		2) device disappears and returns with a new fs on it
-	A shrinker shall kill the "dead"s.
----
- fs/btrfs/super.c   |   1 +
- fs/btrfs/volumes.c | 281 ++++++++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/volumes.h |   6 ++
- 3 files changed, 230 insertions(+), 58 deletions(-)
+ fs/btrfs/super.c   | 10 ++++++++
+ fs/btrfs/volumes.c | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h |  4 +++
+ 3 files changed, 87 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 60f7cbe..001cba5 100644
+index 001cba5..022381e 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -2184,6 +2184,7 @@ static void __exit exit_btrfs_fs(void)
+@@ -2017,6 +2017,12 @@ static struct miscdevice btrfs_misc = {
+ 	.fops		= &btrfs_ctl_fops
+ };
+ 
++static struct shrinker btrfs_valid_dev_shrinker = {
++	.scan_objects = btrfs_valid_dev_scan,
++	.count_objects = btrfs_valid_dev_count,
++	.seeks = DEFAULT_SEEKS,
++};
++
+ MODULE_ALIAS_MISCDEV(BTRFS_MINOR);
+ MODULE_ALIAS("devname:btrfs-control");
+ 
+@@ -2130,6 +2136,8 @@ static int __init init_btrfs_fs(void)
+ 
+ 	btrfs_init_lockdep();
+ 
++	register_shrinker(&btrfs_valid_dev_shrinker);
++
+ 	btrfs_print_info();
+ 
+ 	err = btrfs_run_sanity_tests();
+@@ -2143,6 +2151,7 @@ static int __init init_btrfs_fs(void)
+ 	return 0;
+ 
+ unregister_ioctl:
++	unregister_shrinker(&btrfs_valid_dev_shrinker);
+ 	btrfs_interface_exit();
+ free_end_io_wq:
+ 	btrfs_end_io_wq_exit();
+@@ -2183,6 +2192,7 @@ static void __exit exit_btrfs_fs(void)
+ 	btrfs_interface_exit();
  	btrfs_end_io_wq_exit();
  	unregister_filesystem(&btrfs_fs_type);
++	unregister_shrinker(&btrfs_valid_dev_shrinker);
  	btrfs_exit_sysfs();
-+	btrfs_cleanup_valid_dev_root();
+ 	btrfs_cleanup_valid_dev_root();
  	btrfs_cleanup_fs_uuids();
- 	btrfs_exit_compress();
- 	btrfs_hash_exit();
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0144790..228a7e0 100644
+index 228a7e0..5462557 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -27,6 +27,7 @@
- #include <linux/kthread.h>
- #include <linux/raid/pq.h>
- #include <linux/semaphore.h>
-+#include <linux/rbtree.h>
- #include <asm/div64.h>
- #include "ctree.h"
- #include "extent_map.h"
-@@ -52,6 +53,126 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
- 
+@@ -54,6 +54,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
  DEFINE_MUTEX(uuid_mutex);
  static LIST_HEAD(fs_uuids);
-+static struct rb_root valid_dev_root = RB_ROOT;
-+
-+static struct btrfs_device *insert_valid_device(struct btrfs_device *new_dev)
-+{
-+	struct rb_node **p;
-+	struct rb_node *parent;
-+	struct rb_node *new;
-+	struct btrfs_device *old_dev;
-+
-+	WARN_ON(!mutex_is_locked(&uuid_mutex));
-+
-+	parent = NULL;
-+	new = &new_dev->rb_node;
-+
-+	p = &valid_dev_root.rb_node;
-+	while (*p) {
-+		parent = *p;
-+		old_dev = rb_entry(parent, struct btrfs_device, rb_node);
-+
-+		if (new_dev->devnum < old_dev->devnum)
-+			p = &parent->rb_left;
-+		else if (new_dev->devnum > old_dev->devnum)
-+			p = &parent->rb_right;
-+		else {
-+			rb_replace_node(parent, new, &valid_dev_root);
-+			RB_CLEAR_NODE(parent);
-+
-+			goto out;
-+		}
-+	}
-+
-+	old_dev = NULL;
-+	rb_link_node(new, parent, p);
-+	rb_insert_color(new, &valid_dev_root);
-+
-+out:
-+	return old_dev;
-+}
-+
-+static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
-+{
-+	struct btrfs_device *device;
-+	WARN_ON(fs_devices->opened);
-+	while (!list_empty(&fs_devices->devices)) {
-+		device = list_entry(fs_devices->devices.next,
-+				    struct btrfs_device, dev_list);
-+		list_del(&device->dev_list);
-+		rcu_string_free(device->name);
-+		kfree(device);
-+	}
-+	kfree(fs_devices);
-+}
-+
-+static void remove_empty_fs_if_need(struct btrfs_fs_devices *old_fs)
-+{
-+	struct btrfs_fs_devices *seed_fs;
-+
-+	if (!list_empty(&old_fs->devices))
-+		return;
-+
-+	list_del(&old_fs->list);
-+
-+	/* free the seed clones */
-+	seed_fs = old_fs->seed;
-+	free_fs_devices(old_fs);
-+	while (seed_fs) {
-+		old_fs = seed_fs;
-+		seed_fs = seed_fs->seed;
-+		free_fs_devices(old_fs);
-+	}
-+
-+}
-+
-+static void free_invalid_device(struct btrfs_device *invalid_dev)
-+{
-+	struct btrfs_fs_devices *old_fs;
-+
-+	old_fs = invalid_dev->fs_devices;
-+	mutex_lock(&old_fs->device_list_mutex);
-+	list_del(&invalid_dev->dev_list);
-+	rcu_string_free(invalid_dev->name);
-+	kfree(invalid_dev);
-+	mutex_unlock(&old_fs->device_list_mutex);
-+
-+	remove_empty_fs_if_need(old_fs);
-+}
-+
-+static void replace_invalid_device(struct btrfs_device *new_dev)
-+{
-+	struct btrfs_device *invalid_dev;
-+
-+	WARN_ON(!mutex_is_locked(&uuid_mutex));
-+
-+	invalid_dev = insert_valid_device(new_dev);
-+	if (!invalid_dev)
-+		return;
-+
-+	free_invalid_device(invalid_dev);
-+}
-+
-+static void remove_valid_device(struct btrfs_device *old_dev)
-+{
-+	WARN_ON(!mutex_is_locked(&uuid_mutex));
-+
-+	if (!RB_EMPTY_NODE(&old_dev->rb_node)) {
-+		rb_erase(&old_dev->rb_node, &valid_dev_root);
-+		RB_CLEAR_NODE(&old_dev->rb_node);
-+	}
-+}
-+
-+void btrfs_cleanup_valid_dev_root(void)
-+{
-+	struct rb_node *rb_node;
-+
-+	rb_node = rb_first(&valid_dev_root);
-+	while (rb_node) {
-+		rb_erase(rb_node, &valid_dev_root);
-+		rb_node = rb_first(&valid_dev_root);
-+	}
-+}
+ static struct rb_root valid_dev_root = RB_ROOT;
++static atomic_long_t unopened_dev_count = ATOMIC_LONG_INIT(0);
  
- static struct btrfs_fs_devices *__alloc_fs_devices(void)
+ static struct btrfs_device *insert_valid_device(struct btrfs_device *new_dev)
  {
-@@ -96,20 +217,6 @@ static struct btrfs_fs_devices *alloc_fs_devices(const u8 *fsid)
- 	return fs_devs;
- }
- 
--static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
--{
--	struct btrfs_device *device;
--	WARN_ON(fs_devices->opened);
--	while (!list_empty(&fs_devices->devices)) {
--		device = list_entry(fs_devices->devices.next,
--				    struct btrfs_device, dev_list);
--		list_del(&device->dev_list);
--		rcu_string_free(device->name);
--		kfree(device);
--	}
--	kfree(fs_devices);
--}
--
- static void btrfs_kobject_uevent(struct block_device *bdev,
- 				 enum kobject_action action)
+@@ -130,6 +131,8 @@ static void free_invalid_device(struct btrfs_device *invalid_dev)
  {
-@@ -155,6 +262,8 @@ static struct btrfs_device *__alloc_device(void)
- 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_WAIT);
- 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_WAIT);
+ 	struct btrfs_fs_devices *old_fs;
  
-+	RB_CLEAR_NODE(&dev->rb_node);
++	atomic_long_dec(&unopened_dev_count);
 +
- 	return dev;
- }
- 
-@@ -451,7 +560,7 @@ static void pending_bios_fn(struct btrfs_work *work)
-  * < 0 - error
-  */
- static noinline int device_list_add(const char *path,
--			   struct btrfs_super_block *disk_super,
-+			   struct btrfs_super_block *disk_super, dev_t devnum,
- 			   u64 devid, struct btrfs_fs_devices **fs_devices_ret)
- {
- 	struct btrfs_device *device;
-@@ -499,53 +608,65 @@ static noinline int device_list_add(const char *path,
+ 	old_fs = invalid_dev->fs_devices;
+ 	mutex_lock(&old_fs->device_list_mutex);
+ 	list_del(&invalid_dev->dev_list);
+@@ -605,6 +608,7 @@ static noinline int device_list_add(const char *path,
+ 		list_add_rcu(&device->dev_list, &fs_devices->devices);
+ 		fs_devices->num_devices++;
+ 		mutex_unlock(&fs_devices->device_list_mutex);
++		atomic_long_inc(&unopened_dev_count);
  
  		ret = 1;
  		device->fs_devices = fs_devices;
--	} else if (!device->name || strcmp(device->name->str, path)) {
--		/*
--		 * When FS is already mounted.
--		 * 1. If you are here and if the device->name is NULL that
--		 *    means this device was missing at time of FS mount.
--		 * 2. If you are here and if the device->name is different
--		 *    from 'path' that means either
--		 *      a. The same device disappeared and reappeared with
--		 *         different name. or
--		 *      b. The missing-disk-which-was-replaced, has
--		 *         reappeared now.
--		 *
--		 * We must allow 1 and 2a above. But 2b would be a spurious
--		 * and unintentional.
--		 *
--		 * Further in case of 1 and 2a above, the disk at 'path'
--		 * would have missed some transaction when it was away and
--		 * in case of 2a the stale bdev has to be updated as well.
--		 * 2b must not be allowed at all time.
--		 */
-+		device->devnum = devnum;
-+		replace_invalid_device(device);
-+	} else {
-+		if (!device->name || strcmp(device->name->str, path)) {
-+			/*
-+			 * When FS is already mounted.
-+			 * 1. If you are here and if the device->name is NULL that
-+			 *    means this device was missing at time of FS mount.
-+			 * 2. If you are here and if the device->name is different
-+			 *    from 'path' that means either
-+			 *      a. The same device disappeared and reappeared with
-+			 *         different name. or
-+			 *      b. The missing-disk-which-was-replaced, has
-+			 *         reappeared now.
-+			 *
-+			 * We must allow 1 and 2a above. But 2b would be a spurious
-+			 * and unintentional.
-+			 *
-+			 * Further in case of 1 and 2a above, the disk at 'path'
-+			 * would have missed some transaction when it was away and
-+			 * in case of 2a the stale bdev has to be updated as well.
-+			 * 2b must not be allowed at all time.
-+			 */
- 
--		/*
--		 * For now, we do allow update to btrfs_fs_device through the
--		 * btrfs dev scan cli after FS has been mounted.  We're still
--		 * tracking a problem where systems fail mount by subvolume id
--		 * when we reject replacement on a mounted FS.
--		 */
--		if (!fs_devices->opened && found_transid < device->generation) {
- 			/*
--			 * That is if the FS is _not_ mounted and if you
--			 * are here, that means there is more than one
--			 * disk with same uuid and devid.We keep the one
--			 * with larger generation number or the last-in if
--			 * generation are equal.
-+			 * For now, we do allow update to btrfs_fs_device through the
-+			 * btrfs dev scan cli after FS has been mounted.  We're still
-+			 * tracking a problem where systems fail mount by subvolume id
-+			 * when we reject replacement on a mounted FS.
- 			 */
--			return -EEXIST;
--		}
-+			if (!fs_devices->opened && found_transid < device->generation) {
-+				/*
-+				 * That is if the FS is _not_ mounted and if you
-+				 * are here, that means there is more than one
-+				 * disk with same uuid and devid.We keep the one
-+				 * with larger generation number or the last-in if
-+				 * generation are equal.
-+				 */
-+				return -EEXIST;
-+			}
- 
--		name = rcu_string_strdup(path, GFP_NOFS);
--		if (!name)
--			return -ENOMEM;
--		rcu_string_free(device->name);
--		rcu_assign_pointer(device->name, name);
--		if (device->missing) {
--			fs_devices->missing_devices--;
--			device->missing = 0;
-+			name = rcu_string_strdup(path, GFP_NOFS);
-+			if (!name)
-+				return -ENOMEM;
-+			rcu_string_free(device->name);
-+			rcu_assign_pointer(device->name, name);
-+			if (device->missing) {
-+				fs_devices->missing_devices--;
-+				device->missing = 0;
-+			}
+@@ -778,6 +782,7 @@ again:
+ 			blkdev_put(device->bdev, device->mode);
+ 			device->bdev = NULL;
+ 			fs_devices->open_devices--;
++			atomic_long_inc(&unopened_dev_count);
  		}
-+
-+		/*
-+		 * device may reappear with new devnum,
-+		 * re-insert to keep it up-to-date
-+		 */
-+		rb_erase(&device->rb_node, &valid_dev_root);
-+		device->devnum = devnum;
-+		insert_valid_device(device);
- 	}
+ 		if (device->writeable) {
+ 			list_del_init(&device->dev_alloc_list);
+@@ -840,8 +845,10 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		struct btrfs_device *new_device;
+ 		struct rcu_string *name;
  
- 	/*
-@@ -599,6 +720,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+-		if (device->bdev)
++		if (device->bdev) {
+ 			fs_devices->open_devices--;
++			atomic_long_inc(&unopened_dev_count);
++		}
  
- 		list_add(&device->dev_list, &fs_devices->devices);
- 		device->fs_devices = fs_devices;
-+		device->devnum = orig_dev->devnum;
- 		fs_devices->num_devices++;
+ 		if (device->writeable &&
+ 		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+@@ -971,6 +978,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			fs_devices->rotating = 1;
+ 
+ 		fs_devices->open_devices++;
++		atomic_long_dec(&unopened_dev_count);
+ 		if (device->writeable &&
+ 		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+ 			fs_devices->rw_devices++;
+@@ -6848,3 +6856,67 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
  	}
- 	mutex_unlock(&orig->device_list_mutex);
-@@ -609,6 +731,15 @@ error:
- 	return ERR_PTR(-ENOMEM);
+ 	unlock_chunks(root);
  }
- 
-+/*
-+ * If @fs_devices is not in global list @fs_uuids,
-+ * then it is a cloned btrfs_fs_devices for seeding
-+ */
-+static int is_cloned_fs_devices(struct btrfs_fs_devices *fs_devices)
++
++static unsigned long shrink_valid_dev_root(void)
 +{
-+	return list_empty(&fs_devices->list);
++	struct rb_node *n;
++	struct btrfs_device *device;
++	struct block_device *bdev;
++	struct buffer_head *bh;
++	unsigned long freed = 0;
++	unsigned long possible_deads;
++	int ret = 0;
++	dev_t cur_devnum;
++
++	mutex_lock(&uuid_mutex);
++
++	possible_deads = atomic_long_read(&unopened_dev_count);
++	if (!possible_deads)
++		goto out;
++
++	for (n = rb_first(&valid_dev_root); n ; n = rb_next(n)) {
++		device = rb_entry(n, struct btrfs_device, rb_node);
++
++		if (device->bdev)
++			continue;
++		if (!device->name)
++			continue;
++
++		ret = btrfs_get_bdev_and_sb(device->name->str, FMODE_READ,
++						NULL, 0, &bdev, &bh);
++		/* can't open as btrfs, not valid, drop it */
++		if (ret)
++			goto shrink;
++
++		cur_devnum = bdev->bd_dev;
++
++		brelse(bh);
++		blkdev_put(bdev, FMODE_READ);
++
++		if (device->devnum == cur_devnum)
++			continue;
++		/* bdev->bd_dev changed, not valid, drop it */
++
++shrink:
++		rb_erase(n, &valid_dev_root);
++		free_invalid_device(device);
++
++		freed++;
++	}
++
++out:
++	mutex_unlock(&uuid_mutex);
++	return freed;
 +}
 +
- void btrfs_close_extra_devices(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_fs_devices *fs_devices, int step)
- {
-@@ -655,6 +786,10 @@ again:
- 				fs_devices->rw_devices--;
- 		}
- 		list_del_init(&device->dev_list);
++unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
++				   struct shrink_control *sc)
++{
++	return shrink_valid_dev_root();
++}
 +
-+		/* skip cloned fs_devices which act as seed devices*/
-+		if (!is_cloned_fs_devices(fs_devices))
-+			remove_valid_device(device);
- 		fs_devices->num_devices--;
- 		rcu_string_free(device->name);
- 		kfree(device);
-@@ -730,6 +865,11 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 
- 		list_replace_rcu(&device->dev_list, &new_device->dev_list);
- 		new_device->fs_devices = device->fs_devices;
-+		new_device->devnum = device->devnum;
-+
-+		/* skip cloned fs_devices which act as seed devices*/
-+		if (!is_cloned_fs_devices(device->fs_devices))
-+			insert_valid_device(new_device);
- 
- 		call_rcu(&device->rcu, free_device);
- 	}
-@@ -942,7 +1082,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	transid = btrfs_super_generation(disk_super);
- 	total_devices = btrfs_super_num_devices(disk_super);
- 
--	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
-+	ret = device_list_add(path, disk_super, bdev->bd_dev,
-+				devid, fs_devices_ret);
- 	if (ret > 0) {
- 		if (disk_super->label[0]) {
- 			if (disk_super->label[BTRFS_LABEL_SIZE - 1])
-@@ -1678,6 +1819,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	 */
- 
- 	cur_devices = device->fs_devices;
-+	remove_valid_device(device);
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
- 	list_del_rcu(&device->dev_list);
- 
-@@ -1825,6 +1967,8 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
- 
- 	if (srcdev->bdev)
- 		fs_devices->open_devices--;
-+
-+	remove_valid_device(srcdev);
- }
- 
- void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
-@@ -1879,6 +2023,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	if (tgtdev->bdev == fs_info->fs_devices->latest_bdev)
- 		fs_info->fs_devices->latest_bdev = next_device->bdev;
- 	list_del_rcu(&tgtdev->dev_list);
-+	remove_valid_device(tgtdev);
- 
- 	call_rcu(&tgtdev->rcu, free_device);
- 
-@@ -1971,12 +2116,22 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
- 		return PTR_ERR(old_devices);
- 	}
- 
-+	/*
-+	 * Here @old_devices represent the fs_devices that will be linked
-+	 * in the fs_uuids, and devices in it should be valid.
-+	 * All devices in @fs_devices which will be moved into @seed_devices
-+	 * and they just act as clones. So replace those clones which sit
-+	 * in @dev_map_root for now with valid devices in @old_devices.
-+	 */
-+	list_for_each_entry(device, &old_devices->devices, dev_list)
-+		insert_valid_device(device);
- 	list_add(&old_devices->list, &fs_uuids);
- 
- 	memcpy(seed_devices, fs_devices, sizeof(*seed_devices));
- 	seed_devices->opened = 1;
- 	INIT_LIST_HEAD(&seed_devices->devices);
- 	INIT_LIST_HEAD(&seed_devices->alloc_list);
-+	INIT_LIST_HEAD(&seed_devices->list);
- 	mutex_init(&seed_devices->device_list_mutex);
- 
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
-@@ -2174,6 +2329,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	}
- 
- 	device->fs_devices = root->fs_info->fs_devices;
-+	device->devnum = bdev->bd_dev;
- 
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
- 	lock_chunks(root);
-@@ -2273,6 +2429,10 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 		ret = btrfs_commit_transaction(trans, root);
- 	}
- 
-+	mutex_lock(&uuid_mutex);
-+	replace_invalid_device(device);
-+	mutex_unlock(&uuid_mutex);
-+
- 	/* Update ctime/mtime for libblkid */
- 	update_dev_time(device_path);
- 	return ret;
-@@ -2374,11 +2534,16 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
- 	device->dev_stats_valid = 1;
- 	set_blocksize(device->bdev, 4096);
- 	device->fs_devices = fs_info->fs_devices;
-+	device->devnum = bdev->bd_dev;
- 	list_add(&device->dev_list, &fs_info->fs_devices->devices);
- 	fs_info->fs_devices->num_devices++;
- 	fs_info->fs_devices->open_devices++;
- 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
- 
-+	mutex_lock(&uuid_mutex);
-+	replace_invalid_device(device);
-+	mutex_unlock(&uuid_mutex);
-+
- 	*device_out = device;
- 	return ret;
- 
++unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
++				    struct shrink_control *sc)
++{
++	return atomic_long_read(&unopened_dev_count);
++}
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d6fe73c..7f5c7ea 100644
+index 7f5c7ea..49f4fff 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -80,6 +80,11 @@ struct btrfs_device {
- 	seqcount_t data_seqcount;
- #endif
- 
-+	struct rb_node rb_node;
-+
-+	/* node key in valid_dev_root */
-+	dev_t devnum;
-+
- 	/* the internal btrfs device id */
- 	u64 devid;
- 
-@@ -426,6 +431,7 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
- 					const u64 *devid,
+@@ -432,6 +432,10 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
  					const u8 *uuid);
  int btrfs_rm_device(struct btrfs_root *root, char *device_path);
-+void btrfs_cleanup_valid_dev_root(void);
+ void btrfs_cleanup_valid_dev_root(void);
++unsigned long btrfs_valid_dev_scan(struct shrinker *shrink,
++				   struct shrink_control *sc);
++unsigned long btrfs_valid_dev_count(struct shrinker *shrink,
++				    struct shrink_control *sc);
  void btrfs_cleanup_fs_uuids(void);
  int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
  int btrfs_grow_device(struct btrfs_trans_handle *trans,

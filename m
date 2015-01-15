@@ -1,39 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34977 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750856AbbANR6c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Jan 2015 12:58:32 -0500
-Date: Wed, 14 Jan 2015 18:58:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs-progs: Enhance btrfs-find-root.
-Message-ID: <20150114175830.GX3685@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1415771534-7979-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1415771534-7979-2-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:53264 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751598AbbAOAdj convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Jan 2015 19:33:39 -0500
+Message-ID: <54B70AE0.2090203@cn.fujitsu.com>
+Date: Thu, 15 Jan 2015 08:33:36 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1415771534-7979-2-git-send-email-quwenruo@cn.fujitsu.com>
+To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] btrfs-progs: tests, add support for running commands
+ under root
+References: <1419471135-10878-1-git-send-email-quwenruo@cn.fujitsu.com> <1421256302-8503-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1421256302-8503-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 12, 2014 at 01:52:12PM +0800, Qu Wenruo wrote:
-> Enhance btrfs-find-root in the following way:
-> 1. Use existing or lightly modified btrfs infrastructure
->    Don't use btrfs-find-root local defined open_ctree or csum check.
->    Slightly modify open_ctree() and csum_tree_block() to provide the
->    chunk-only open_ctree and suprress error output for csum_tree_block()
-> 
-> 2. Output the trees in an ascending order of generation
->    Normally, end user running btrfs-find-root is hoping to find out a
->    recently new old root.
->    So output the search result in an ascending order of generation.
-> 
-> 3. Hide the obviously not tree root node/leaf
->    Only output the node/leaf with the highest level among its generation
->    to simplify the output.
 
-Can you please split this patch into logical and possibly independent
-parts? There are cleanups, core functionality changes and new option(s)
-added.
+-------- Original Message --------
+Subject: [PATCH 1/2] btrfs-progs: tests, add support for running 
+commands under root
+From: David Sterba <dsterba@suse.cz>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2015年01月15日 01:25
+> Most of the checks run fine without root, but some of them may need to
+> do a mount test or access the data. Add the support to selectively run
+> commands under root, hardcoded to sudo for now.
+I'm a little worried about using sudo in such test.
+If the test is ran by a script, test will be stuck waiting for input and 
+timeout after a long time.
+
+I prefer NOT RUN just like xfstests.
+
+Thanks
+Qu
+>
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>
+>   tests/common | 15 +++++++++++++++
+>   1 file changed, 15 insertions(+)
+>
+> diff --git a/tests/common b/tests/common
+> index 80a538165949..84a4b9d335e2 100644
+> --- a/tests/common
+> +++ b/tests/common
+> @@ -47,3 +47,18 @@ check_all_images()
+>   		rm $i.restored
+>   	done
+>   }
+> +
+> +# some tests need to mount the recovered image and do verifications call
+> +# 'setup_root_helper' and then check for have_root_helper == 1 if the test
+> +# needs to fail otherwise; using sudo by default for now
+> +sudo=
+> +have_root_helper=0
+> +export sudo
+> +export have_root_helper
+> +setup_root_helper()
+> +{
+> +	if [ $UID != 0 ]; then
+> +		sudo=sudo
+> +	fi
+> +	have_root_helper=1
+> +}
+

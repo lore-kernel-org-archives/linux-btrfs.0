@@ -1,48 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48192 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38525 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752830AbbAOL2C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 06:28:02 -0500
-Date: Thu, 15 Jan 2015 12:28:00 +0100
+	id S1752505AbbAPLAb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Jan 2015 06:00:31 -0500
+Date: Fri, 16 Jan 2015 12:00:28 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: fix test btrfs/017 (qgroup shared extent
- accounting test)
-Message-ID: <20150115112800.GB3685@twin.jikos.cz>
+To: clm@fb.com
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        miaoxie@huawei.com, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: fix raid56 scrub failed in xfstests btrfs/072
+Message-ID: <20150116110028.GO3685@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1421277703-32154-1-git-send-email-fdmanana@suse.com>
+References: <1420767580-19380-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421277703-32154-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1420767580-19380-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 14, 2015 at 11:21:43PM +0000, Filipe Manana wrote:
-> Currently this test fails on 2 situations:
+On Fri, Jan 09, 2015 at 09:39:40AM +0800, Gui Hecheng wrote:
+> The xfstests btrfs/072 reports uncorrectable read errors in dmesg,
+> because scrub forgets to use commit_root for parity scrub routine
+> and scrub attempts to scrub those extents items whose contents are
+> not fully on disk.
 > 
-> 1) The scratch device supports trim/discard. In this case any modern
->    version of mkfs.btrfs outputs a message (to stderr) informing that
->    a trim is performed, which the golden output doesn't expect:
+> To fix it, we just add the @search_commit_root flag back.
 > 
->    btrfs/017	 - output mismatch (see /git/xfstests/results//btrfs/017.out.bad)
->        --- tests/btrfs/017.out	2015-01-06 11:14:22.730143144 +0000
->        +++ /git/xfstests/results//btrfs/017.out.bad	2015-01-14 22:33:01.582195719 +0000
->        @@ -1,4 +1,5 @@
->         QA output created by 017
->        +Performing full device TRIM (100.00GiB) ...
->         wrote 8192/8192 bytes at offset 0
->           XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->         4096 4096
->         ...
->         (Run 'diff -u tests/btrfs/017.out /git/xfstests/results//btrfs/017.out.bad'  to see the entire diff)
-> 
->     So like others tests do, just redirect mkfs' standard error.
-> 
-> 2) On platforms with a page size greater than 4Kb. At the moment btrfs
->    doesn't support a node/leaf size smaller than the page size, but it
->    supports a larger one. So use the max supported node size (64Kb) so
->    that the test runs on any platform currently supported by Linux.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Chris, please add this patch to 3.19-rc queue, followup to the new
+raid56 scrub code.

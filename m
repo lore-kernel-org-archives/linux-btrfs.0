@@ -1,75 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58141 "EHLO plane.gmane.org"
+Received: from mail.virtall.com ([178.63.195.102]:51770 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753540AbbAOWwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Jan 2015 17:52:54 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YBtHX-0003xm-0j
-	for linux-btrfs@vger.kernel.org; Thu, 15 Jan 2015 23:52:51 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jan 2015 23:52:50 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Jan 2015 23:52:50 +0100
+	id S1752881AbbAPBFk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 Jan 2015 20:05:40 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 16 Jan 2015 10:05:35 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BtrFs on drives with error recovery control / TLER?
-Date: Thu, 15 Jan 2015 22:52:45 +0000 (UTC)
-Message-ID: <pan$4400a$2a1b3182$7ae7e911$d2acb24@cox.net>
-References: <54B81AE2.7050902@pocock.pro>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: Re: Kernel bug in 3.19-rc4
+Message-ID: <672b579b39da1cc6fa5f91ba4b964731@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Daniel Pocock posted on Thu, 15 Jan 2015 20:54:10 +0100 as excerpted:
+> I just started some btrfs stress testing on latest linux kernel 
+> 3.19-rc4:
+> A few hours later, filesystem stopped working - the kernel bug report
+> can be found below.
 
-> Can anybody comment on how BtrFs (particularly RAID1 mirroring)
-> interacts with drives that offer error recovery control (or TLER in WDC
-> terms)?
-> 
-> I generally prefer to buy this type of drive for any serious data
-> storage purposes
-> 
-> I notice ZFS gets a mention in the Wikipedia article about the topic:
-> http://en.wikipedia.org/wiki/Error_recovery_control
-> 
-> Should BtrFs be mentioned there too?
+Hi,
 
-I make no claims to being an expert in this area and others with more 
-expertise will likely be along shortly.  However...
+your "kernel BUG at fs/btrfs/inode.c:3142!" from 3.19-rc4 corresponds to 
+http://marc.info/?l=linux-btrfs&m=141903172106342&w=2 - it was "kernel 
+BUG at /home/apw/COD/linux/fs/btrfs/inode.c:3123!" in 3.18.1, and is 
+exactly the same code in both cases:
 
-In general you have a valid worry, and the recommendation is as with 
-other raid technology, if possible, set your device to a recovery time 
-under 30 seconds, as that's the default Linux SCSI level link reset time, 
-and it will short-circuit the process and doesn't get the bad sector 
-marked as such and remapped to a reserve sector, on the device.
 
-On consumer level devices where setting the device recovery time isn't 
-possible, the hard-wired recovery time can be near two minutes, so the 
-recommendation is to set the Linux SCSI level link reset time to 120 
-seconds or so, thus allowing the hardware device to timeout first so it 
-can again recognize the bad sector and do its remapping thing.
+         /* grab metadata reservation from transaction handle */
+         if (reserve) {
+                 ret = btrfs_orphan_reserve_metadata(trans, inode);
+                 BUG_ON(ret); /* -ENOSPC in reservation; Logic error? JDM 
+*/
+         }
 
-In general, this recommendation should apply to all Linux-kernel-based 
-soft-raid technologies (including btrfs, mdraid, dmraid...) where the 
-raid redundancy can fill in the missing data so letting it fail and 
-potentially trigger a remap is the best strategy.
-
-OTOH, the shorter time wouldn't be recommended (tho a longer SCSI reset 
-time well could be) for a single-device btrfs or a multi-device btrfs in 
-raid0 or single mode, because in those cases, the assumption is that 
-there's no other copies of the data, so letting the device take up to two 
-minutes to try to retrieve that data in the hope that the extra tries 
-will finally be successful, can very possibly save that data... of course 
-at the cost of a system that goes unresponsive for upto two minutes at a 
-time, which clearly isn't going to work if it's happening frequently.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Tomasz Chmielewski
+http://www.sslrack.com
 

@@ -1,26 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38304 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38467 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754156AbbAPKvd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Jan 2015 05:51:33 -0500
-Date: Fri, 16 Jan 2015 11:51:31 +0100
+	id S1751926AbbAPKzd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Jan 2015 05:55:33 -0500
+Date: Fri, 16 Jan 2015 11:55:32 +0100
 From: David Sterba <dsterba@suse.cz>
-To: clm@fb.com
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix typo of variable in scrub_stripe
-Message-ID: <20150116105131.GL3685@twin.jikos.cz>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: cleanup init for list in free-space-cache
+Message-ID: <20150116105532.GN3685@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <201501090837.AA00007@WIN-R1VKH1IH438.jp.fujitsu.com>
+References: <1419990695-2062-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201501090837.AA00007@WIN-R1VKH1IH438.jp.fujitsu.com>
+In-Reply-To: <1419990695-2062-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 09, 2015 at 05:37:52PM +0900, Tsutomu Itoh wrote:
-> The address that should be freed is not 'ppath' but 'path'.
+On Wed, Dec 31, 2014 at 09:51:35AM +0800, Gui Hecheng wrote:
+> o removed an unecessary INIT_LIST_HEAD after LIST_HEAD
 > 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com> 
-
-Chris, please add this patch to the next 3.19-rc, the code has been
-introduced during this merge window.
+> o merge a declare & INIT_LIST_HEAD pair into one LIST_HEAD
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>

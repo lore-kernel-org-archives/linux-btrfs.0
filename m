@@ -1,26 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38467 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751926AbbAPKzd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Jan 2015 05:55:33 -0500
-Date: Fri, 16 Jan 2015 11:55:32 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: cleanup init for list in free-space-cache
-Message-ID: <20150116105532.GN3685@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1419990695-2062-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1419990695-2062-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:35103 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751415AbbAPNZ0 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 16 Jan 2015 08:25:26 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix race deleting block group from space_info->ro_bgs list
+Date: Fri, 16 Jan 2015 13:24:40 +0000
+Message-Id: <1421414680-1676-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1421343488-28263-1-git-send-email-fdmanana@suse.com>
+References: <1421343488-28263-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 31, 2014 at 09:51:35AM +0800, Gui Hecheng wrote:
-> o removed an unecessary INIT_LIST_HEAD after LIST_HEAD
-> 
-> o merge a declare & INIT_LIST_HEAD pair into one LIST_HEAD
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+When removing a block group we were deleting it from its space_info's
+ro_bgs list without the correct protection - the space info's spinlock.
+Fix this by doing the list delete while holding the spinlock of the
+corresponding space info, which is the correct lock for any operation
+on that list.
+
+This issue was introduced in the 3.19 kernel by the following change:
+
+    Btrfs: move read only block groups onto their own list V2
+    commit 633c0aad4c0243a506a3e8590551085ad78af82d
+
+I ran into a kernel crash while a task was running statfs, which iterates
+the space_info->ro_bgs list while holding the space info's spinlock,
+and another task was deleting it from the same list, without holding that
+spinlock, as part of the block group remove operation (while running the
+function btrfs_remove_block_group). This happened often when running the
+stress test xfstests/generic/038 I recently made.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Added a comment to struct btrfs_space_info mentioning the ro_bgs list
+    is protected by the spinlock member 'lock'. Reworded a bit commit
+    message to remove irrelevant details.
+
+ fs/btrfs/ctree.h       | 1 +
+ fs/btrfs/extent-tree.c | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7e60741..0b18070 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1171,6 +1171,7 @@ struct btrfs_space_info {
+ 	struct percpu_counter total_bytes_pinned;
+ 
+ 	struct list_head list;
++	/* Protected by the spinlock 'lock'. */
+ 	struct list_head ro_bgs;
+ 
+ 	struct rw_semaphore groups_sem;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5a45253..ddf914b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9424,7 +9424,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	 * are still on the list after taking the semaphore
+ 	 */
+ 	list_del_init(&block_group->list);
+-	list_del_init(&block_group->ro_list);
+ 	if (list_empty(&block_group->space_info->block_groups[index])) {
+ 		kobj = block_group->space_info->block_group_kobjs[index];
+ 		block_group->space_info->block_group_kobjs[index] = NULL;
+@@ -9466,6 +9465,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	btrfs_remove_free_space_cache(block_group);
+ 
+ 	spin_lock(&block_group->space_info->lock);
++	list_del_init(&block_group->ro_list);
+ 	block_group->space_info->total_bytes -= block_group->key.offset;
+ 	block_group->space_info->bytes_readonly -= block_group->key.offset;
+ 	block_group->space_info->disk_total -= block_group->key.offset * factor;
+-- 
+2.1.3
+

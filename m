@@ -1,83 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13782 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751510AbbAFJar (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jan 2015 04:30:47 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t069UDBg016362
-	for <linux-btrfs@vger.kernel.org>; Tue, 6 Jan 2015 17:30:13 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] btrfs-progs: Fix a buffer overflow causing segfault in fstests/btrfs/069
-Date: Tue, 6 Jan 2015 17:30:44 +0800
-Message-ID: <1420536644-12152-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:42092 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752949AbbAPP0R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Jan 2015 10:26:17 -0500
+Date: Fri, 16 Jan 2015 16:26:13 +0100
+From: Karel Zak <kzak@redhat.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-prog: improve build-system by autoconf
+Message-ID: <20150116152613.GC2181@x2.net.home>
+References: <1418387724-20188-1-git-send-email-kzak@redhat.com>
+ <20141217140726.GY27601@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141217140726.GY27601@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The newly introduced search_chunk_tree_for_fs_info() won't count devid 0
-in fi_arg->num_devices, which will cause buffer overflow since later
-get_device_info() will fill di_args with devid.
+On Wed, Dec 17, 2014 at 03:07:26PM +0100, David Sterba wrote:
+> On Fri, Dec 12, 2014 at 01:35:14PM +0100, Karel Zak wrote:
+> > This is first step to make btrfs-progs build system more conventional
+> > for userspace users and developers. All is implemented by small incremental
+> > patches to keep things review-able.
+> 
+> Thanks. I went through the patches and haven't found major problems. The
+> changes are affecting build system and this will need a longer period
+> before all distros have a chance to adapt to that, so I'm postponing it
+> to 3.19.
 
-This can be trigger by fstests/btrfs/069 and any operations needs to
-iterate over all the devices like 'fi show' or 'dev stat' while
-replacing.
+ Note that I have rebased the autoconf patches and fixed some issues,
+ the latest version is available at
 
-The fix is do an extra probe specifically for devid 0 after
-search_chunk_tree_for_fs_info() and change num_devices if needed.
+    https://github.com/karelzak/btrfs-progs/commits/autoconf
 
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- utils.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ you can merge it (now or later) on command line by:
 
-diff --git a/utils.c b/utils.c
-index af0a8fe..6581568 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1934,8 +1934,10 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 	int ret = 0;
- 	int ndevs = 0;
- 	int i = 0;
-+	int replacing = 0;
- 	struct btrfs_fs_devices *fs_devices_mnt = NULL;
- 	struct btrfs_ioctl_dev_info_args *di_args;
-+	struct btrfs_ioctl_dev_info_args tmp;
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
- 	DIR *dirstream = NULL;
- 
-@@ -2003,6 +2005,19 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		ret = search_chunk_tree_for_fs_info(fd, fi_args);
- 		if (ret)
- 			goto out;
-+
-+		/*
-+		 * search_chunk_tree_for_fs_info() will lacks the devid 0
-+		 * so manual probe for it here.
-+		 */
-+		ret = get_device_info(fd, 0, &tmp);
-+		if (!ret) {
-+			fi_args->num_devices++;
-+			ndevs++;
-+			replacing = 1;
-+			if (i == 0)
-+				i++;
-+		}
- 	}
- 
- 	if (!fi_args->num_devices)
-@@ -2014,6 +2029,8 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		goto out;
- 	}
- 
-+	if (replacing)
-+		memcpy(di_args, &tmp, sizeof(tmp));
- 	for (; i <= fi_args->max_id; ++i) {
- 		ret = get_device_info(fd, i, &di_args[ndevs]);
- 		if (ret == -ENODEV)
+    git pull --log git@github.com:karelzak/btrfs-progs.git autoconf
+
+
+  Karel
+
 -- 
-2.2.1
-
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

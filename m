@@ -1,82 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f181.google.com ([209.85.216.181]:41640 "EHLO
-	mail-qc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751438AbbAQVpD (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:44638 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751335AbbARDO0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 17 Jan 2015 16:45:03 -0500
-Received: by mail-qc0-f181.google.com with SMTP id l6so12999605qcy.12
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jan 2015 13:45:01 -0800 (PST)
-Received: from [192.168.11.50] ([98.113.246.12])
-        by mx.google.com with ESMTPSA id i51sm7873548qgf.37.2015.01.17.13.45.01
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 17 Jan 2015 13:45:01 -0800 (PST)
-Message-ID: <54BAD7DC.2020302@gmail.com>
-Date: Sat, 17 Jan 2015 16:45:00 -0500
-From: Elliot Wolk <elliot.wolk@gmail.com>
-MIME-Version: 1.0
+	Sat, 17 Jan 2015 22:14:26 -0500
+Date: Sat, 17 Jan 2015 22:14:23 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: linux-btrfs@vger.kernel.org
-Subject: move subvolume to directory fails
-Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: repeatable btrfs deadlock in unlink, kernel versions v3.15..v3.18.3
+Message-ID: <20150118031423.GA12780@hungrycats.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="oyUTqETQ0mS9luUI"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-renaming read-only subvolumes works fine, as long as you dont move them 
-to a new directory.
-create a ro snapshot, and mv it to a subdir or a parent directory. it 
-fails with 'Read-only file system'. no nested-subvolumes involved, just 
-the base and the single snapshot.
-is this a bug? is this by design? i cant find any documentation about it 
-or any bug reports. all i see is the same advice 'just use mv to rename 
-subvols', 'subvols are basically directories', etc.
 
-this makes re-organizing subvolumes difficult, especially if you 
-consider send|receive which cannot be snapshotted without breaking the 
-parent ids. {for normal subvols, making a snapshot and deleting the old 
-is a sufficient workaround}
+--oyUTqETQ0mS9luUI
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-root:~$ uname -r
-3.18-0.towo-siduction-amd64
-root:~$ mkfs.btrfs /dev/sdc1 -f
-Btrfs v3.17
-See http://btrfs.wiki.kernel.org for more information.
+Processes keep getting stuck in btrfs_evict_inode during unlink.
 
-Turning ON incompat feature 'extref': increased hardlink limit per file 
-to 65536
-fs created label (null) on /dev/sdc1
-     nodesize 16384 leafsize 16384 sectorsize 4096 size 15.01GiB
-root:~$ mkdir test
-root:~$ mount -t btrfs /dev/sdc1 test
-root:~$ cd test
-root:~/test$ touch content
-root:~/test$
-root:~/test$ btrfs subvol snapshot -r ./ ro_snap
-Create a readonly snapshot of './' in './ro_snap'
-root:~/test$ mv ro_snap/ ro_snap_applesauce
-root:~/test$ mv ro_snap_applesauce/ ro_snap
-root:~/test$
-root:~/test$ mkdir snapshot_container
-root:~/test$ mv ro_snap/ snapshot_container
-mv: cannot move ‘ro_snap/’ to ‘snapshot_container/ro_snap’: Read-only 
-file system
-root:~/test$
-root:~/test$ btrfs subvol snapshot -r ./ snapshot_container/ro_snap2
-Create a readonly snapshot of './' in 'snapshot_container/ro_snap2'
-root:~/test$ mv snapshot_container/ro_snap2/ 
-snapshot_container/ro_snap2_applesauce
-root:~/test$ mv snapshot_container/ro_snap2_applesauce/ 
-snapshot_container/ro_snap2
-root:~/test$
-root:~/test$ mv snapshot_container/ro_snap2/ .
-mv: cannot move ‘snapshot_container/ro_snap2/’ to ‘./ro_snap2’: 
-Read-only file system
-root:~/test$
-root:~/test$ mv snapshot_container/ snapshot_container_applesauce
-root:~/test$ mv snapshot_container_applesauce/ro_snap2/ 
-snapshot_container_applesauce/ro_snap2_applesauce
-root:~/test$ mv snapshot_container_applesauce/ro_snap2_applesauce/ 
-snapshot_container_applesauce/ro_snap2
-root:~/test$ mv snapshot_container_applesauce/ro_snap2/ .
-mv: cannot move ‘snapshot_container_applesauce/ro_snap2/’ to 
-‘./ro_snap2’: Read-only file system
+I've seen this dozens of times, usually when two subvols on a btrfs
+filesystem are active at the same time (i.e. it never happens on
+single-subvol filesystems).  It happens on kernel versions v3.15..v3.18.3.
 
+This used to happen with SyS_renameat2 on the stack, but I haven't seen
+a stack trace including that function since late November (v3.18-rc6).
+
+	[<ffffffff81387dc0>] lock_extent_bits+0x1b0/0x200
+	[<ffffffff81375e99>] btrfs_evict_inode+0x139/0x550
+	[<ffffffff8120d708>] evict+0xb8/0x190
+	[<ffffffff8120dec5>] iput+0x105/0x1a0
+	[<ffffffff812001d9>] do_unlinkat+0x189/0x2d0
+	[<ffffffff81202e26>] SyS_unlink+0x16/0x20
+	[<ffffffff8185e96d>] system_call_fastpath+0x1a/0x1f
+	[<ffffffffffffffff>] 0xffffffffffffffff
+
+--oyUTqETQ0mS9luUI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlS7JQ8ACgkQgfmLGlazG5xKMQCgxLSeDLVg7RP+tDlHXsM1BMCW
+qTIAoJqVOi5nx+VaC6XOlgWAD/84XhyJ
+=kQ89
+-----END PGP SIGNATURE-----
+
+--oyUTqETQ0mS9luUI--

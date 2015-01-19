@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21761 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50525 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750728AbbASMAk (ORCPT
+	with ESMTP id S1750988AbbASMAz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 07:00:40 -0500
+	Mon, 19 Jan 2015 07:00:55 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 09/16] Btrfs: Break loop when reach BTRFS_MAX_MIRRORS in scrub_setup_recheck_block()
-Date: Mon, 19 Jan 2015 19:20:58 +0800
-Message-ID: <1421666465-3892-10-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 01/16] Btrfs: fix a out-of-bound access of raid_map
+Date: Mon, 19 Jan 2015 19:20:50 +0800
+Message-ID: <1421666465-3892-2-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,28 +19,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Use break instead of useless loop should be more suitable in this
-case.
+We add the number of stripes on target devices into bbio->num_stripes
+if we are under device replacement, and we just sort the raid_map of
+those stripes that not on the target devices, so if when we need
+real raid_map, we need skip the stripes on the target devices.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/scrub.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c93c43f..9afc6dd 100644
+index 9e1569f..9d19065 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1386,7 +1386,7 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 			struct scrub_page *page;
+@@ -1291,7 +1291,9 @@ out:
+ static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio, u64 *raid_map)
+ {
+ 	if (raid_map) {
+-		if (raid_map[bbio->num_stripes - 1] == RAID6_Q_STRIPE)
++		int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
++
++		if (raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
+ 			return 3;
+ 		else
+ 			return 2;
+@@ -1412,7 +1414,8 @@ leave_nomem:
  
- 			if (mirror_index >= BTRFS_MAX_MIRRORS)
--				continue;
-+				break;
- 
- 			sblock = sblocks_for_recheck + mirror_index;
- 			sblock->sctx = sctx;
+ 			scrub_stripe_index_and_offset(logical, raid_map,
+ 						      mapped_length,
+-						      bbio->num_stripes,
++						      bbio->num_stripes -
++						      bbio->num_tgtdevs,
+ 						      mirror_index,
+ 						      &stripe_index,
+ 						      &stripe_offset);
 -- 
 1.8.5.1
 

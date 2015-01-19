@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46969 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59353 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751612AbbASLWj (ORCPT
+	with ESMTP id S1751605AbbASLWg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 06:22:39 -0500
+	Mon, 19 Jan 2015 06:22:36 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 13/16] Btrfs: Simplify scrub_setup_recheck_block()'s argument
-Date: Mon, 19 Jan 2015 19:21:02 +0800
-Message-ID: <1421666465-3892-14-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 11/16] Btrfs: Separate finding-right-mirror and writing-to-target's process in scrub_handle_errored_block()
+Date: Mon, 19 Jan 2015 19:21:00 +0800
+Message-ID: <1421666465-3892-12-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,93 +19,92 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-scrub_setup_recheck_block() have many arguments but most of them
-can be get from one of them, we can remove them to make code clean.
-Some other cleanup for that function also included in this patch.
+In corrent code, code of finding-right-mirror and writing-to-target
+are mixed in logic, if we find a right mirror but failed in writing
+to target, it will treat as "hadn't found right block", and fill the
+target with sblock_bad.
+
+Actually, "failed in writing to target" does not mean "source
+block is wrong", this patch separate above two condition in logic,
+and do some cleanup to make code clean.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 25 +++++++++----------------
- 1 file changed, 9 insertions(+), 16 deletions(-)
+ fs/btrfs/scrub.c | 44 +++++++++++++++++---------------------------
+ 1 file changed, 17 insertions(+), 27 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index de959f6..25c9611 100644
+index 6cf0dc7..285f8cf 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -235,10 +235,7 @@ static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
- static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
- static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx);
- static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
--static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
--				     struct btrfs_fs_info *fs_info,
--				     struct scrub_block *original_sblock,
--				     u64 length, u64 logical,
-+static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 				     struct scrub_block *sblocks_for_recheck);
- static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 				struct scrub_block *sblock, int is_metadata,
-@@ -952,8 +949,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	}
+@@ -1110,35 +1110,21 @@ nodatasum_case:
+ 		success = 1;
+ 		for (page_num = 0; page_num < sblock_bad->page_count;
+ 		     page_num++) {
+-			int sub_success;
++			struct scrub_block *sblock_other = NULL;
  
- 	/* setup the context, map the logical blocks and alloc the pages */
--	ret = scrub_setup_recheck_block(sctx, fs_info, sblock_to_check, length,
--					logical, sblocks_for_recheck);
-+	ret = scrub_setup_recheck_block(sblock_to_check, sblocks_for_recheck);
- 	if (ret) {
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.read_errors++;
-@@ -1321,19 +1317,20 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
- 	}
- }
- 
--static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
--				     struct btrfs_fs_info *fs_info,
--				     struct scrub_block *original_sblock,
--				     u64 length, u64 logical,
-+static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 				     struct scrub_block *sblocks_for_recheck)
- {
-+	struct scrub_ctx *sctx = original_sblock->sctx;
-+	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
-+	u64 length = original_sblock->page_count * PAGE_SIZE;
-+	u64 logical = original_sblock->pagev[0]->logical;
- 	struct scrub_recover *recover;
- 	struct btrfs_bio *bbio;
- 	u64 sublen;
- 	u64 mapped_length;
- 	u64 stripe_offset;
- 	int stripe_index;
--	int page_index;
-+	int page_index = 0;
- 	int mirror_index;
- 	int nmirrors;
- 	int ret;
-@@ -1344,7 +1341,6 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 	 * the recheck procedure
- 	 */
- 
--	page_index = 0;
- 	while (length > 0) {
- 		sublen = min_t(u64, length, PAGE_SIZE);
- 		mapped_length = sublen;
-@@ -1373,15 +1369,12 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
- 
- 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
- 
--		nmirrors = scrub_nr_raid_mirrors(bbio);
-+		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
- 		for (mirror_index = 0; mirror_index < nmirrors;
- 		     mirror_index++) {
- 			struct scrub_block *sblock;
- 			struct scrub_page *page;
- 
--			if (mirror_index >= BTRFS_MAX_MIRRORS)
--				break;
+-			sub_success = 0;
+ 			for (mirror_index = 0;
+ 			     mirror_index < BTRFS_MAX_MIRRORS &&
+ 			     sblocks_for_recheck[mirror_index].page_count > 0;
+ 			     mirror_index++) {
+-				struct scrub_block *sblock_other =
+-					sblocks_for_recheck + mirror_index;
+-				struct scrub_page *page_other =
+-					sblock_other->pagev[page_num];
 -
- 			sblock = sblocks_for_recheck + mirror_index;
- 			sblock->sctx = sctx;
- 			page = kzalloc(sizeof(*page), GFP_NOFS);
+-				if (!page_other->io_error) {
+-					ret = scrub_write_page_to_dev_replace(
+-							sblock_other, page_num);
+-					if (ret == 0) {
+-						/* succeeded for this page */
+-						sub_success = 1;
+-						break;
+-					} else {
+-						btrfs_dev_replace_stats_inc(
+-							&sctx->dev_root->
+-							fs_info->dev_replace.
+-							num_write_errors);
+-					}
++				if (!sblocks_for_recheck[mirror_index].
++				    pagev[page_num]->io_error) {
++					sblock_other = sblocks_for_recheck +
++						       mirror_index;
++					break;
+ 				}
+ 			}
+ 
+-			if (!sub_success) {
++			if (!sblock_other) {
+ 				/*
+ 				 * did not find a mirror to fetch the page
+ 				 * from. scrub_write_page_to_dev_replace()
+@@ -1146,13 +1132,17 @@ nodatasum_case:
+ 				 * filling the block with zeros before
+ 				 * submitting the write request
+ 				 */
++				sblock_other = sblock_bad;
++				success = 0;
++			}
++
++			if (scrub_write_page_to_dev_replace(sblock_other,
++							    page_num) != 0) {
++				btrfs_dev_replace_stats_inc(
++					&sctx->dev_root->
++					fs_info->dev_replace.
++					num_write_errors);
+ 				success = 0;
+-				ret = scrub_write_page_to_dev_replace(
+-						sblock_bad, page_num);
+-				if (ret)
+-					btrfs_dev_replace_stats_inc(
+-						&sctx->dev_root->fs_info->
+-						dev_replace.num_write_errors);
+ 			}
+ 		}
+ 
 -- 
 1.8.5.1
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50525 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21761 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751396AbbASMAx (ORCPT
+	with ESMTP id S1750988AbbASMAw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 07:00:53 -0500
+	Mon, 19 Jan 2015 07:00:52 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 05/16] Btrfs: Fix a jump typo of nodatasum_case to avoid wrong WARN_ON()
-Date: Mon, 19 Jan 2015 19:20:54 +0800
-Message-ID: <1421666465-3892-6-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 08/16] Btrfs: btrfs_rm_dev_replace_blocked(): Use wait_event()
+Date: Mon, 19 Jan 2015 19:20:57 +0800
+Message-ID: <1421666465-3892-9-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,39 +19,37 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-if (sctx->is_dev_replace && !is_metadata && !have_csum) {
-    ...
-    goto nodatasum_case;
-}
-...
-nodatasum_case:
-    WARN_ON(sctx->is_dev_replace);
-
-In above code, nodatasum_case marker should be moved after
-WARN_ON().
-
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/dev-replace.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 1c50982..ec0a2f8 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1028,9 +1028,10 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	if (!is_metadata && !have_csum) {
- 		struct scrub_fixup_nodatasum *fixup_nodatasum;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 92109b7..5ec03d9 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -440,18 +440,9 @@ leave:
+  */
+ static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
+ {
+-	s64 writers;
+-	DEFINE_WAIT(wait);
+-
+ 	set_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
+-	do {
+-		prepare_to_wait(&fs_info->replace_wait, &wait,
+-				TASK_UNINTERRUPTIBLE);
+-		writers = percpu_counter_sum(&fs_info->bio_counter);
+-		if (writers)
+-			schedule();
+-		finish_wait(&fs_info->replace_wait, &wait);
+-	} while (writers);
++	wait_event(fs_info->replace_wait, !percpu_counter_sum(
++		   &fs_info->bio_counter));
+ }
  
--nodatasum_case:
- 		WARN_ON(sctx->is_dev_replace);
- 
-+nodatasum_case:
-+
- 		/*
- 		 * !is_metadata and !have_csum, this means that the data
- 		 * might not be COW'ed, that it might be modified
+ /*
 -- 
 1.8.5.1
 

@@ -1,430 +1,377 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga11.intel.com ([192.55.52.93]:20500 "EHLO mga11.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751289AbbARBxC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 17 Jan 2015 20:53:02 -0500
-From: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Drop feature defines from C files, in favour of CFLAGS defines.
-Date: Sun, 18 Jan 2015 01:52:58 +0000
-Message-Id: <1421545978-19661-1-git-send-email-dimitri.j.ledkov@intel.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:3384 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750968AbbASHT3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Jan 2015 02:19:29 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0J7IWCv024598
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 15:18:32 +0800
+From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs-progs: make btrfs qgroups show human readable sizes
+Date: Mon, 19 Jan 2015 15:18:18 +0800
+Message-ID: <1421651898-792-1-git-send-email-fancn.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-glibc 2.10+ (5+ years old) enables all the desired features:
-_XOPEN_SOURCE 700, __XOPEN2K8, POSIX_C_SOURCE, DEFAULT_SOURCE; with a
-single _GNU_SOURCE define in the makefile alone. For portability to
-other libc implementations (e.g. dietlibc) _XOPEN_SOURCE=700 is also
-defined.
+add --raw, --si, --iec, --kbytes, --mbytes, --gbytes, --tbytes options
+make columns which show sizes align to right. Others aligned to left.
 
-This also resolves Debian bug report filed by Michael Tautschnig -
-"Inconsistent use of _XOPEN_SOURCE results in conflicting
-declarations". Whilst I was not able to reproduce the results, the
-reported fact is that _XOPEN_SOURCE set to 500 in one set of files
-(e.g. cmds-filesystem.c) generates/defines different struct stat from
-other files (cmds-replace.c).
+example:
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5         299.58MiB    299.58MiB    300.00MiB    300.00MiB 1/1     ---
+0/265       299.58MiB     16.00KiB    400.00MiB        0.00B 1/1     ---
+0/266       299.58MiB     16.00KiB    350.00MiB        0.00B ---     ---
+1/1         599.16MiB    299.59MiB    800.00MiB        0.00B ---     0/5,0/265
 
-This patch thus cleans up all feature defines, and sets them at a
-consistent level.
-
-Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=747969
-Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
+Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
 ---
- Makefile              | 2 +-
- btrfs-calc-size.c     | 2 --
- btrfs-convert.c       | 3 ---
- btrfs-corrupt-block.c | 2 --
- btrfs-find-root.c     | 2 --
- btrfs-fragments.c     | 1 -
- btrfs-image.c         | 2 --
- btrfs-list.c          | 1 -
- btrfs-map-logical.c   | 2 --
- btrfs-select-super.c  | 2 --
- btrfs-show-super.c    | 2 --
- btrfs-zero-log.c      | 2 --
- btrfs.c               | 1 -
- btrfstune.c           | 2 --
- chunk-recover.c       | 2 --
- cmds-check.c          | 2 --
- cmds-filesystem.c     | 1 -
- cmds-receive.c        | 5 -----
- cmds-restore.c        | 2 --
- cmds-send.c           | 1 -
- disk-io.c             | 3 ---
- extent_io.c           | 2 --
- mkfs.c                | 3 ---
- send-test.c           | 2 --
- super-recover.c       | 3 ---
- utils-lib.c           | 2 --
- utils.c               | 4 ----
- volumes.c             | 2 --
- 28 files changed, 1 insertion(+), 59 deletions(-)
+v2:
+- change -h option to --human-readable
+- merge need_print and human_readable into format
+- add print_group_size function
+v3:
+- remove --human-readable option
+- add --raw, --si, --iec, --kbytes, --mbytes, --gbytes, --tbytes options
+- by default, sizes are shown in human readable format
+- make columns which show sizes align to right. Others aligned to left.
 
-diff --git a/Makefile b/Makefile
-index 8b843bb..4d7cb4a 100644
---- a/Makefile
-+++ b/Makefile
-@@ -4,7 +4,7 @@ export
- CC = gcc
- LN = ln
- AR = ar
--AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fno-strict-aliasing -fPIC
-+AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -D_XOPEN_SOURCE=700 -D_GNU_SOURCE -fno-strict-aliasing -fPIC
- CFLAGS = -g -O1 -fno-strict-aliasing
- LDFLAGS = -rdynamic
- objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-index 501111c..17d048c 100644
---- a/btrfs-calc-size.c
-+++ b/btrfs-calc-size.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+ Documentation/btrfs-qgroup.txt | 14 ++++++++
+ cmds-qgroup.c                  | 56 ++++++++++++++++++++++++------
+ qgroup.c                       | 77 ++++++++++++++++++++++++++++--------------
+ qgroup.h                       |  1 +
+ 4 files changed, 113 insertions(+), 35 deletions(-)
+
+diff --git a/Documentation/btrfs-qgroup.txt b/Documentation/btrfs-qgroup.txt
+index 3e13373..89dbd6c 100644
+--- a/Documentation/btrfs-qgroup.txt
++++ b/Documentation/btrfs-qgroup.txt
+@@ -73,6 +73,20 @@ print max exclusive size of qgroup.
+ list all qgroups which impact the given path(include ancestral qgroups)
+ -f::::
+ list all qgroups which impact the given path(exclude ancestral qgroups)
++--raw::::
++raw numbers in bytes, without the 'B' suffix.
++--iec::::
++select the 1024 base for the following options, according to the IEC standard.
++--si::::
++select the 1000 base for the following options, according to the SI standard.
++--kbytes::::
++show sizes in KiB, or kB with --si.
++--mbytes::::
++show sizes in MiB, or MB with --si.
++--gbytes::::
++show sizes in GiB, or GB with --si.
++--tbytes::::
++show sizes in TiB, or TB with --si.
+ --sort=[\+/-]<attr>[,[+/-]<attr>]...::::
+ list qgroups in order of <attr>.
+ +
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 957fbc9..2474251 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -208,19 +208,26 @@ static const char * const cmd_qgroup_show_usage[] = {
+ 	"btrfs qgroup show -pcreFf "
+ 	"[--sort=qgroupid,rfer,excl,max_rfer,max_excl] <path>",
+ 	"Show subvolume quota groups.",
+-	"-p		print parent qgroup id",
+-	"-c		print child qgroup id",
+-	"-r		print max referenced size of qgroup",
+-	"-e		print max exclusive size of qgroup",
+-	"-F		list all qgroups which impact the given path"
++	"-p             print parent qgroup id",
++	"-c             print child qgroup id",
++	"-r             print max referenced size of qgroup",
++	"-e             print max exclusive size of qgroup",
++	"-F             list all qgroups which impact the given path"
+ 	"(include ancestral qgroups)",
+-	"-f		list all qgroups which impact the given path"
++	"-f             list all qgroups which impact the given path"
+ 	"(exclude ancestral qgroups)",
++	"--raw          raw numbers in bytes",
++	"--iec          use 1024 as a base (KiB, MiB, GiB, TiB)",
++	"--si           use 1000 as a base (kB, MB, GB, TB)",
++	"--kbytes       show sizes in KiB, or kB with --si",
++	"--mbytes       show sizes in MiB, or MB with --si",
++	"--gbytes       show sizes in GiB, or GB with --si",
++	"--tbytes       show sizes in TiB, or TB with --si",
+ 	"--sort=qgroupid,rfer,excl,max_rfer,max_excl",
+-	"		list qgroups in order of qgroupid,"
++	"               list qgroups in order of qgroupid,"
+ 	"rfer,max_rfer or max_excl",
+-	"		you can use '+' or '-' in front of each item.",
+-	"		(+:ascending, -:descending, ascending default)",
++	"               you can use '+' or '-' in front of each item.",
++	"               (+:ascending, -:descending, ascending default)",
+ 	NULL
+ };
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <ctype.h>
- #include <stdio.h>
- #include <stdlib.h>
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index bbd19bb..da10ad6 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -16,9 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+@@ -234,6 +241,8 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 	int c;
+ 	u64 qgroupid;
+ 	int filter_flag = 0;
++	int option_index = 0;
++	unsigned unit_mode = UNITS_DEFAULT;
  
--#define _XOPEN_SOURCE 600
--#define _GNU_SOURCE 1
--
- #include "kerncompat.h"
+ 	struct btrfs_qgroup_comparer_set *comparer_set;
+ 	struct btrfs_qgroup_filter_set *filter_set;
+@@ -241,16 +250,41 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 	comparer_set = btrfs_qgroup_alloc_comparer_set();
+ 	struct option long_options[] = {
+ 		{"sort", 1, NULL, 'S'},
++		{"raw", no_argument, NULL, 0},
++		{"kbytes", no_argument, NULL, 0},
++		{"mbytes", no_argument, NULL, 0},
++		{"gbytes", no_argument, NULL, 0},
++		{"tbytes", no_argument, NULL, 0},
++		{"si", no_argument, NULL, GETOPT_VAL_SI},
++		{"iec", no_argument, NULL, GETOPT_VAL_IEC},
+ 		{0, 0, 0, 0}
+ 	};
  
+ 	optind = 1;
+ 	while (1) {
+ 		c = getopt_long(argc, argv, "pcreFf",
+-				long_options, NULL);
++				long_options, &option_index);
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
++		case 0:
++			if (option_index == 1)
++				unit_mode = UNITS_RAW;
++			else if (option_index == 2)
++				units_set_base(&unit_mode, UNITS_KBYTES);
++			else if (option_index == 3)
++				units_set_base(&unit_mode, UNITS_MBYTES);
++			else if (option_index == 4)
++				units_set_base(&unit_mode, UNITS_GBYTES);
++			else if (option_index == 5)
++				units_set_base(&unit_mode, UNITS_TBYTES);
++			break;
++		case GETOPT_VAL_SI:
++			units_set_mode(&unit_mode, UNITS_DECIMAL);
++			break;
++		case GETOPT_VAL_IEC:
++			units_set_mode(&unit_mode, UNITS_BINARY);
++			break;
+ 		case 'p':
+ 			btrfs_qgroup_setup_print_column(
+ 				BTRFS_QGROUP_PARENT);
+@@ -283,6 +317,8 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 			usage(cmd_qgroup_show_usage);
+ 		}
+ 	}
++	btrfs_qgroup_setup_human_readable(unit_mode);
++
+ 	if (check_argc_exact(argc - optind, 1))
+ 		usage(cmd_qgroup_show_usage);
+ 
+diff --git a/qgroup.c b/qgroup.c
+index 1a4866c..8ec55df 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -20,6 +20,7 @@
  #include <sys/ioctl.h>
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index b477e87..6b9dac5 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 6fa61cc..3517107 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
-diff --git a/btrfs-fragments.c b/btrfs-fragments.c
-index 360f10f..d742f60 100644
---- a/btrfs-fragments.c
-+++ b/btrfs-fragments.c
-@@ -14,7 +14,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _GNU_SOURCE
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-diff --git a/btrfs-image.c b/btrfs-image.c
-index cb17f16..0485c8f 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <pthread.h>
- #include <stdio.h>
- #include <stdlib.h>
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 50edcf4..3e29cf8 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -16,7 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _GNU_SOURCE
- #include <sys/ioctl.h>
- #include <sys/mount.h>
+ #include "ctree.h"
  #include "ioctl.h"
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index 47d1104..c235d44 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
++#include "utils.h"
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
-diff --git a/btrfs-select-super.c b/btrfs-select-super.c
-index 6231d42..063ffa3 100644
---- a/btrfs-select-super.c
-+++ b/btrfs-select-super.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+ #define BTRFS_QGROUP_NFILTERS_INCREASE (2 * BTRFS_QGROUP_FILTER_MAX)
+ #define BTRFS_QGROUP_NCOMPS_INCREASE (2 * BTRFS_QGROUP_COMP_MAX)
+@@ -80,53 +81,62 @@ static struct {
+ 	char *name;
+ 	char *column_name;
+ 	int need_print;
++	unsigned unit_mode;
+ 	int max_len;
+ } btrfs_qgroup_columns[] = {
+ 	{
+ 		.name		= "qgroupid",
+ 		.column_name	= "Qgroupid",
+ 		.need_print	= 1,
++		.unit_mode	= 0,
+ 		.max_len	= 8,
+ 	},
+ 	{
+ 		.name		= "rfer",
+ 		.column_name	= "Rfer",
+ 		.need_print	= 1,
+-		.max_len	= 4,
++		.unit_mode	= UNITS_DEFAULT,
++		.max_len	= 12,
+ 	},
+ 	{
+ 		.name		= "excl",
+ 		.column_name	= "Excl",
+ 		.need_print	= 1,
+-		.max_len	= 4,
++		.unit_mode	= UNITS_DEFAULT,
++		.max_len	= 12,
+ 	},
+ 	{	.name		= "max_rfer",
+ 		.column_name	= "Max_rfer",
+ 		.need_print	= 0,
+-		.max_len	= 8,
++		.unit_mode	= UNITS_DEFAULT,
++		.max_len	= 12,
+ 	},
+ 	{
+ 		.name		= "max_excl",
+ 		.column_name	= "Max_excl",
+ 		.need_print	= 0,
+-		.max_len	= 8,
++		.unit_mode	= UNITS_DEFAULT,
++		.max_len	= 12,
+ 	},
+ 	{
+ 		.name		= "parent",
+ 		.column_name	= "Parent",
+ 		.need_print	= 0,
++		.unit_mode	= 0,
+ 		.max_len	= 7,
+ 	},
+ 	{
+ 		.name		= "child",
+ 		.column_name	= "Child",
+ 		.need_print	= 0,
++		.unit_mode	= 0,
+ 		.max_len	= 5,
+ 	},
+ 	{
+ 		.name		= NULL,
+ 		.column_name	= NULL,
+ 		.need_print	= 0,
++		.unit_mode	= 0,
+ 	},
+ };
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index 2b48f44..4afa852 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+@@ -147,6 +157,14 @@ void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column)
+ 		btrfs_qgroup_columns[i].need_print = 1;
+ }
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
-diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
-index 4154175..31e7481 100644
---- a/btrfs-zero-log.c
-+++ b/btrfs-zero-log.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
++void btrfs_qgroup_setup_human_readable(unsigned unit_mode)
++{
++	btrfs_qgroup_columns[BTRFS_QGROUP_RFER].unit_mode = unit_mode;
++	btrfs_qgroup_columns[BTRFS_QGROUP_EXCL].unit_mode = unit_mode;
++	btrfs_qgroup_columns[BTRFS_QGROUP_MAX_RFER].unit_mode = unit_mode;
++	btrfs_qgroup_columns[BTRFS_QGROUP_MAX_EXCL].unit_mode = unit_mode;
++}
++
+ static int print_parent_column(struct btrfs_qgroup *qgroup)
+ {
+ 	struct btrfs_qgroup_list *list = NULL;
+@@ -194,6 +212,8 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ {
+ 	BUG_ON(column >= BTRFS_QGROUP_ALL || column < 0);
+ 	int len;
++	int unit_mode = btrfs_qgroup_columns[column].unit_mode;
++	int max_len = btrfs_qgroup_columns[column].max_len;
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
-diff --git a/btrfs.c b/btrfs.c
-index e83349c..2451885 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -14,7 +14,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+ 	switch (column) {
  
--#define _GNU_SOURCE
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-diff --git a/btrfstune.c b/btrfstune.c
-index 050418a..e175137 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
+@@ -203,24 +223,20 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_QGROUPID, len);
+ 		break;
+ 	case BTRFS_QGROUP_RFER:
+-		len = printf("%llu", qgroup->rfer);
+-		print_qgroup_column_add_blank(BTRFS_QGROUP_RFER, len);
++		len = printf("%*s", max_len, pretty_size_mode(qgroup->rfer, unit_mode));
+ 		break;
+ 	case BTRFS_QGROUP_EXCL:
+-		len = printf("%llu", qgroup->excl);
+-		print_qgroup_column_add_blank(BTRFS_QGROUP_EXCL, len);
++		len = printf("%*s", max_len, pretty_size_mode(qgroup->excl, unit_mode));
+ 		break;
+ 	case BTRFS_QGROUP_PARENT:
+ 		len = print_parent_column(qgroup);
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_PARENT, len);
+ 		break;
+ 	case BTRFS_QGROUP_MAX_RFER:
+-		len = printf("%llu", qgroup->max_rfer);
+-		print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_RFER, len);
++		len = printf("%*s", max_len, pretty_size_mode(qgroup->max_rfer, unit_mode));
+ 		break;
+ 	case BTRFS_QGROUP_MAX_EXCL:
+-		len = printf("%llu", qgroup->max_excl);
+-		print_qgroup_column_add_blank(BTRFS_QGROUP_MAX_EXCL, len);
++		len = printf("%*s", max_len, pretty_size_mode(qgroup->max_excl, unit_mode));
+ 		break;
+ 	case BTRFS_QGROUP_CHILD:
+ 		len = print_child_column(qgroup);
+@@ -250,30 +266,41 @@ static void print_table_head()
+ {
+ 	int i;
+ 	int len;
++	int max_len;
  
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <sys/types.h>
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 381b596..89219d2 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -15,8 +15,6 @@
-  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-  * Boston, MA 021110-1307, USA.
-  */
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE
- 
- #include <stdio.h>
- #include <stdio_ext.h>
-diff --git a/cmds-check.c b/cmds-check.c
-index f06e029..6741003 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <unistd.h>
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index a3cf114..da12ede 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -14,7 +14,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-diff --git a/cmds-receive.c b/cmds-receive.c
-index f269ade..983d179 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -16,11 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _GNU_SOURCE
--#define _POSIX_C_SOURCE 200809
--#define _XOPEN_SOURCE 700
--#define _DEFAULT_SOURCE
+ 	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
++		max_len = btrfs_qgroup_columns[i].max_len;
+ 		if (!btrfs_qgroup_columns[i].need_print)
+ 			continue;
+-		printf("%s", btrfs_qgroup_columns[i].name);
+-		len = btrfs_qgroup_columns[i].max_len -
+-		      strlen(btrfs_qgroup_columns[i].name);
+-		while (len--)
+-			printf(" ");
++		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
++			(i == BTRFS_QGROUP_CHILD))
++			printf("%-*s", max_len, btrfs_qgroup_columns[i].name);
++		else
++			printf("%*s", max_len, btrfs_qgroup_columns[i].name);
+ 		printf(" ");
+ 	}
+ 	printf("\n");
+ 	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
++		max_len = btrfs_qgroup_columns[i].max_len;
+ 		if (!btrfs_qgroup_columns[i].need_print)
+ 			continue;
 -
- #include "kerncompat.h"
- 
- #include <unistd.h>
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 859deaf..0bcba92 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -16,8 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
- 
- #include "kerncompat.h"
- 
-diff --git a/cmds-send.c b/cmds-send.c
-index 9b32c1f..e59ba50 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -16,7 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _GNU_SOURCE
- 
- #include "kerncompat.h"
- 
-diff --git a/disk-io.c b/disk-io.c
-index b853f66..7f03790 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -16,9 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 600
--#define __USE_XOPEN2K
--#define _GNU_SOURCE 1
- #include <stdio.h>
- #include <stdlib.h>
- #include <sys/types.h>
-diff --git a/extent_io.c b/extent_io.c
-index 9c982f9..cd0efdd 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -16,8 +16,6 @@
-  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-  * Boston, MA 021110-1307, USA.
-  */
--#define _XOPEN_SOURCE 600
--#define __USE_XOPEN2K
- #include <stdio.h>
- #include <stdlib.h>
- #include <sys/types.h>
-diff --git a/mkfs.c b/mkfs.c
-index 98a1edd..9e63b2e 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -16,9 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE
--
- #include "kerncompat.h"
- 
- #include <sys/ioctl.h>
-diff --git a/send-test.c b/send-test.c
-index 0e804a2..af8229e 100644
---- a/send-test.c
-+++ b/send-test.c
-@@ -21,8 +21,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _GNU_SOURCE
--
- #include <unistd.h>
- #include <stdint.h>
- #include <dirent.h>
-diff --git a/super-recover.c b/super-recover.c
-index adb2c44..197fc4b 100644
---- a/super-recover.c
-+++ b/super-recover.c
-@@ -16,9 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 500
--#define _GNU_SOURCE 1
--
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
-diff --git a/utils-lib.c b/utils-lib.c
-index 9d53c6e..79ef35e 100644
---- a/utils-lib.c
-+++ b/utils-lib.c
-@@ -1,5 +1,3 @@
--#define _GNU_SOURCE
--
- #include "kerncompat.h"
- #include <unistd.h>
- #include <stdlib.h>
-diff --git a/utils.c b/utils.c
-index 9b08144..a818950 100644
---- a/utils.c
-+++ b/utils.c
-@@ -17,10 +17,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 700
--#define __USE_XOPEN2K8
--#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
--#define _GNU_SOURCE	/* O_NOATIME */
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-diff --git a/volumes.c b/volumes.c
-index 5ba5db5..16dbf64 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -15,8 +15,6 @@
-  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-  * Boston, MA 021110-1307, USA.
-  */
--#define _XOPEN_SOURCE 600
--#define __USE_XOPEN2K
- #include <stdio.h>
- #include <stdlib.h>
- #include <sys/types.h>
+-		len = strlen(btrfs_qgroup_columns[i].name);
+-		while (len--)
+-			printf("-");
+-		len = btrfs_qgroup_columns[i].max_len -
+-		      strlen(btrfs_qgroup_columns[i].name);
++		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
++			(i == BTRFS_QGROUP_CHILD)) {
++			len = strlen(btrfs_qgroup_columns[i].name);
++			while (len--)
++				printf("-");
++			len = max_len - strlen(btrfs_qgroup_columns[i].name);
++			while (len--)
++				printf(" ");
++		} else {
++			len = max_len - strlen(btrfs_qgroup_columns[i].name);
++			while (len--)
++				printf(" ");
++			len = strlen(btrfs_qgroup_columns[i].name);
++			while (len--)
++				printf("-");
++		}
+ 		printf(" ");
+-		while (len--)
+-			printf(" ");
+ 	}
+ 	printf("\n");
+ }
+diff --git a/qgroup.h b/qgroup.h
+index 653cf1c..09070b6 100644
+--- a/qgroup.h
++++ b/qgroup.h
+@@ -83,6 +83,7 @@ u64 btrfs_get_path_rootid(int fd);
+ int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
+ 		       struct btrfs_qgroup_comparer_set *);
+ void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
++void btrfs_qgroup_setup_human_readable(unsigned unit_mode);
+ struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
+ void btrfs_qgroup_free_filter_set(struct btrfs_qgroup_filter_set *filter_set);
+ int btrfs_qgroup_setup_filter(struct btrfs_qgroup_filter_set **filter_set,
 -- 
-2.1.0
+1.9.1
 

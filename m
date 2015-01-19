@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60017 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41939 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751430AbbASGrX (ORCPT
+	with ESMTP id S1751518AbbASGrY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 01:47:23 -0500
+	Mon, 19 Jan 2015 01:47:24 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0J6kjbF022581
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 14:46:45 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0J6kjIC022584
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 14:46:46 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 07/10] btrfs-progs: Swith btrfs-find-root to use the find-root infrastructure.
-Date: Mon, 19 Jan 2015 14:45:09 +0800
-Message-ID: <1421649912-14539-8-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 08/10] btrfs-progs: Cleanup unneeded btrfs-find-root codes.
+Date: Mon, 19 Jan 2015 14:45:10 +0800
+Message-ID: <1421649912-14539-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1421649912-14539-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1421649912-14539-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,136 +19,270 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the new find-root infrastructure is here with better root
-judgement with less codes, just switch to it.
+Since we switched to new open_ctree flag and new find-root facility,
+there is no need to keep the old find-root codes.
 
-To switch to the new infrastructure, new print function is added and
-output format is slighted changed.
+Clean it up.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-find-root.c | 81 ++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 71 insertions(+), 10 deletions(-)
+ btrfs-find-root.c | 237 ------------------------------------------------------
+ 1 file changed, 237 deletions(-)
 
 diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 45c48c2..c451c7b 100644
+index c451c7b..31fe0ae 100644
 --- a/btrfs-find-root.c
 +++ b/btrfs-find-root.c
-@@ -34,6 +34,8 @@
- #include "volumes.h"
- #include "utils.h"
- #include "crc32c.h"
-+#include "extent-cache.h"
-+#include "find-root.h"
+@@ -37,249 +37,12 @@
+ #include "extent-cache.h"
+ #include "find-root.h"
  
- static u16 csum_size = 0;
- static u64 search_objectid = BTRFS_ROOT_TREE_OBJECTID;
-@@ -333,22 +335,70 @@ static void get_root_gen_and_level(u64 objectid, struct btrfs_fs_info *fs_info,
- 	}
- }
- 
-+static void print_one_result(struct cache_extent *tree_block,
-+			     u8 level, u64 generation,
-+			     struct btrfs_find_root_filter *filter)
-+{
-+	int unsure = 0;
-+
-+	if (filter->match_gen == (u64)-1 || filter->match_level == (u8)-1)
-+		unsure = 1;
-+	printf("Well block %llu(gen: %llu level: %u) seems good, ",
-+	       tree_block->start, generation, level);
-+	if (unsure)
-+		printf("but we are unsure about the correct generation/level\n");
-+	else
-+		printf("but generation/level doesn't match, want gen: %llu level: %u\n",
-+		       filter->match_gen, filter->match_level);
-+}
-+
-+static void print_find_root_result(struct cache_tree *result,
-+				   struct btrfs_find_root_filter *filter)
-+{
-+	struct btrfs_find_root_gen_cache *gen_cache;
-+	struct cache_extent *cache;
-+	struct cache_extent *tree_block;
-+	u64 generation = 0;
-+	u8 level = 0;
-+
-+	for (cache = last_cache_extent(result);
-+	     cache; cache = prev_cache_extent(cache)) {
-+		gen_cache = container_of(cache,
-+				struct btrfs_find_root_gen_cache, cache);
-+		level = gen_cache->highest_level;
-+		generation = cache->start;
-+		if (level == filter->match_level &&
-+		    generation == filter->match_gen)
-+			continue;
-+		for (tree_block = last_cache_extent(&gen_cache->eb_tree);
-+		     tree_block; tree_block = prev_cache_extent(tree_block))
-+			print_one_result(tree_block, level, generation, filter);
-+	}
-+}
-+
- int main(int argc, char **argv)
+-static u16 csum_size = 0;
+-static u64 search_objectid = BTRFS_ROOT_TREE_OBJECTID;
+-static u64 search_generation = 0;
+-static unsigned long search_level = 0;
+-
+ static void usage(void)
  {
- 	struct btrfs_root *root;
-+	struct btrfs_find_root_filter filter = {0};
-+	struct cache_tree result;
-+	struct cache_extent *found;
- 	int opt;
- 	int ret;
- 
-+	/* Default to search root tree */
-+	filter.objectid = BTRFS_ROOT_TREE_OBJECTID;
-+	filter.match_gen = (u64)-1;
-+	filter.match_level = (u8)-1;
- 	while ((opt = getopt(argc, argv, "l:o:g:")) != -1) {
- 		switch(opt) {
- 			case 'o':
--				search_objectid = arg_strtou64(optarg);
-+				filter.objectid = arg_strtou64(optarg);
- 				break;
- 			case 'g':
--				search_generation = arg_strtou64(optarg);
-+				filter.generation = arg_strtou64(optarg);
- 				break;
- 			case 'l':
--				search_level = arg_strtou64(optarg);
-+				filter.level = arg_strtou64(optarg);
- 				break;
- 			default:
- 				usage();
-@@ -369,13 +419,24 @@ int main(int argc, char **argv)
- 		fprintf(stderr, "Open ctree failed\n");
- 		exit(1);
- 	}
--
--	if (search_generation == 0)
--		get_root_gen_and_level(search_objectid, root->fs_info,
--				       &search_generation, NULL);
--
--	csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
--	ret = find_root(root);
-+	cache_tree_init(&result);
-+
-+	get_root_gen_and_level(filter.objectid, root->fs_info,
-+			       &filter.match_gen, &filter.match_level);
-+	ret = btrfs_find_root_search(root, &filter, &result, &found);
-+	if (ret < 0) {
-+		fprintf(stderr, "Fail to search the tree root: %s\n",
-+			strerror(-ret));
-+		goto out;
-+	}
-+	if (ret > 0) {
-+		printf("Found tree root at %llu gen %llu level %u\n",
-+		       found->start, filter.match_gen, filter.match_level);
-+		ret = 0;
-+	}
-+	print_find_root_result(&result, &filter);
-+out:
-+	btrfs_find_root_free(&result);
- 	close_ctree(root);
- 	return ret;
+ 	fprintf(stderr, "Usage: find-roots [-o search_objectid] "
+ 		"[ -g search_generation ] [ -l search_level ] <device>\n");
  }
+ 
+-static int csum_block(void *buf, u32 len)
+-{
+-	char *result;
+-	u32 crc = ~(u32)0;
+-	int ret = 0;
+-
+-	result = malloc(csum_size * sizeof(char));
+-	if (!result) {
+-		fprintf(stderr, "No memory\n");
+-		return 1;
+-	}
+-
+-	len -= BTRFS_CSUM_SIZE;
+-	crc = crc32c(crc, buf + BTRFS_CSUM_SIZE, len);
+-	btrfs_csum_final(crc, result);
+-
+-	if (memcmp(buf, result, csum_size))
+-		ret = 1;
+-	free(result);
+-	return ret;
+-}
+-
+-static struct btrfs_root *open_ctree_broken(int fd, const char *device)
+-{
+-	struct btrfs_fs_info *fs_info;
+-	struct btrfs_super_block *disk_super;
+-	struct btrfs_fs_devices *fs_devices = NULL;
+-	struct extent_buffer *eb;
+-	int ret;
+-
+-	fs_info = btrfs_new_fs_info(0, BTRFS_SUPER_INFO_OFFSET);
+-	if (!fs_info) {
+-		fprintf(stderr, "Failed to allocate memory for fs_info\n");
+-		return NULL;
+-	}
+-
+-	ret = btrfs_scan_fs_devices(fd, device, &fs_devices, 0, 1);
+-	if (ret)
+-		goto out;
+-
+-	fs_info->fs_devices = fs_devices;
+-
+-	ret = btrfs_open_devices(fs_devices, O_RDONLY);
+-	if (ret)
+-		goto out_devices;
+-
+-	disk_super = fs_info->super_copy;
+-	ret = btrfs_read_dev_super(fs_devices->latest_bdev,
+-				   disk_super, fs_info->super_bytenr, 1);
+-	if (ret) {
+-		printk("No valid btrfs found\n");
+-		goto out_devices;
+-	}
+-
+-	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
+-
+-	ret = btrfs_check_fs_compatibility(disk_super, 0);
+-	if (ret)
+-		goto out_devices;
+-
+-	ret = btrfs_setup_chunk_tree_and_device_map(fs_info);
+-	if (ret)
+-		goto out_chunk;
+-
+-	eb = fs_info->chunk_root->node;
+-	read_extent_buffer(eb, fs_info->chunk_tree_uuid,
+-			   btrfs_header_chunk_tree_uuid(eb), BTRFS_UUID_SIZE);
+-
+-	return fs_info->chunk_root;
+-out_chunk:
+-	free_extent_buffer(fs_info->chunk_root->node);
+-	btrfs_cleanup_all_caches(fs_info);
+-out_devices:
+-	btrfs_close_devices(fs_info->fs_devices);
+-out:
+-	btrfs_free_fs_info(fs_info);
+-	return NULL;
+-}
+-
+-static int search_iobuf(struct btrfs_root *root, void *iobuf,
+-			size_t iobuf_size, off_t offset)
+-{
+-	u64 gen = search_generation;
+-	u64 objectid = search_objectid;
+-	u32 size = btrfs_super_nodesize(root->fs_info->super_copy);
+-	u8 level = search_level;
+-	size_t block_off = 0;
+-
+-	while (block_off < iobuf_size) {
+-		void *block = iobuf + block_off;
+-		struct btrfs_header *header = block;
+-		u64 h_byte, h_level, h_gen, h_owner;
+-
+-//		printf("searching %Lu\n", offset + block_off);
+-		h_byte = btrfs_stack_header_bytenr(header);
+-		h_owner = btrfs_stack_header_owner(header);
+-		h_level = header->level;
+-		h_gen = btrfs_stack_header_generation(header);
+-
+-		if (h_owner != objectid)
+-			goto next;
+-		if (h_byte != (offset + block_off))
+-			goto next;
+-		if (h_level < level)
+-			goto next;
+-		level = h_level;
+-		if (csum_block(block, size)) {
+-			fprintf(stderr, "Well block %Lu seems good, "
+-				"but the csum doesn't match\n",
+-				h_byte);
+-			goto next;
+-		}
+-		if (h_gen != gen) {
+-			fprintf(stderr, "Well block %Lu seems great, "
+-				"but generation doesn't match, "
+-				"have=%Lu, want=%Lu level %Lu\n", h_byte,
+-				h_gen, gen, h_level);
+-			goto next;
+-		}
+-		printf("Found tree root at %Lu gen %Lu level %Lu\n", h_byte,
+-		       h_gen, h_level);
+-		return 0;
+-next:
+-		block_off += size;
+-	}
+-
+-	return 1;
+-}
+-
+-static int read_physical(struct btrfs_root *root, int fd, u64 offset,
+-			 u64 bytenr, u64 len)
+-{
+-	char *iobuf = malloc(len);
+-	ssize_t done;
+-	size_t total_read = 0;
+-	int ret = 1;
+-
+-	if (!iobuf) {
+-		fprintf(stderr, "No memory\n");
+-		return -1;
+-	}
+-
+-	while (total_read < len) {
+-		done = pread64(fd, iobuf + total_read, len - total_read,
+-			       bytenr + total_read);
+-		if (done < 0) {
+-			fprintf(stderr, "Failed to read: %s\n",
+-				strerror(errno));
+-			ret = -1;
+-			goto out;
+-		}
+-		total_read += done;
+-	}
+-
+-	ret = search_iobuf(root, iobuf, total_read, offset);
+-out:
+-	free(iobuf);
+-	return ret;
+-}
+-
+-static int find_root(struct btrfs_root *root)
+-{
+-	struct btrfs_multi_bio *multi = NULL;
+-	struct btrfs_device *device;
+-	u64 metadata_offset = 0, metadata_size = 0;
+-	off_t offset = 0;
+-	off_t bytenr;
+-	int fd;
+-	int err;
+-	int ret = 1;
+-
+-	printf("Super think's the tree root is at %Lu, chunk root %Lu\n",
+-	       btrfs_super_root(root->fs_info->super_copy),
+-	       btrfs_super_chunk_root(root->fs_info->super_copy));
+-
+-	err = btrfs_next_metadata(&root->fs_info->mapping_tree,
+-				  &metadata_offset, &metadata_size);
+-	if (err)
+-		return ret;
+-
+-	offset = metadata_offset;
+-	while (1) {
+-		u64 map_length = 4096;
+-		u64 type;
+-
+-		if (offset >
+-		    btrfs_super_total_bytes(root->fs_info->super_copy)) {
+-			printf("Went past the fs size, exiting");
+-			break;
+-		}
+-		if (offset >= (metadata_offset + metadata_size)) {
+-			err = btrfs_next_metadata(&root->fs_info->mapping_tree,
+-						  &metadata_offset,
+-						  &metadata_size);
+-			if (err) {
+-				printf("No more metdata to scan, exiting\n");
+-				break;
+-			}
+-			offset = metadata_offset;
+-		}
+-		err = __btrfs_map_block(&root->fs_info->mapping_tree, READ,
+-				      offset, &map_length, &type,
+-				      &multi, 0, NULL);
+-		if (err) {
+-			offset += map_length;
+-			continue;
+-		}
+-
+-		if (!(type & BTRFS_BLOCK_GROUP_METADATA)) {
+-			offset += map_length;
+-			kfree(multi);
+-			continue;
+-		}
+-
+-		device = multi->stripes[0].dev;
+-		fd = device->fd;
+-		bytenr = multi->stripes[0].physical;
+-		kfree(multi);
+-
+-		err = read_physical(root, fd, offset, bytenr, map_length);
+-		if (!err) {
+-			ret = 0;
+-			break;
+-		} else if (err < 0) {
+-			ret = err;
+-			break;
+-		}
+-		offset += map_length;
+-	}
+-	return ret;
+-}
+-
+ /*
+  * Get reliable generation and level for given root.
+  *
 -- 
 2.2.2
 

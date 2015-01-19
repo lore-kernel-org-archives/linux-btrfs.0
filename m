@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63914 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21761 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751446AbbASMA4 (ORCPT
+	with ESMTP id S1751514AbbASMA5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 07:00:56 -0500
+	Mon, 19 Jan 2015 07:00:57 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 02/16] Btrfs: sort raid_map before adding tgtdev stripes
-Date: Mon, 19 Jan 2015 19:20:51 +0800
-Message-ID: <1421666465-3892-3-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 04/16] Btrfs: add ref_count and free function for btrfs_bio
+Date: Mon, 19 Jan 2015 19:20:53 +0800
+Message-ID: <1421666465-3892-5-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,79 +19,350 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It can avoid complex calculation of real stripes in sort,
-moreover, we can clean up code of sorting tgtdev_map because it
-will be in order initially.
+1: ref_count is simple than current RBIO_HOLD_BBIO_MAP_BIT flag
+   to keep btrfs_bio's memory in raid56 recovery implement.
+2: free function for bbio will make code clean and flexible, plus
+   forced data type checking in compile.
+
+Changelog v1->v2:
+ Rename following by David Sterba's suggestion:
+ put_btrfs_bio() -> btrfs_put_bio()
+ get_btrfs_bio() -> btrfs_get_bio()
+ bbio->ref_count -> bbio->refs
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/extent_io.c   |  2 +-
+ fs/btrfs/raid56.c      | 39 +++++++++------------------------------
+ fs/btrfs/reada.c       |  4 ++--
+ fs/btrfs/scrub.c       | 12 ++++++------
+ fs/btrfs/volumes.c     | 43 ++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/volumes.h     | 10 +++-------
+ 7 files changed, 58 insertions(+), 54 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0144790..db779ca 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4876,18 +4876,17 @@ static inline int parity_smaller(u64 a, u64 b)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1511658..44e7e43 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1925,7 +1925,7 @@ int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+ 			 */
+ 			ret = 0;
+ 		}
+-		kfree(bbio);
++		btrfs_put_bbio(bbio);
+ 	}
+ 
+ 	if (actual_bytes)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ebabd2..7488154 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2057,7 +2057,7 @@ int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
+ 	sector = bbio->stripes[mirror_num-1].physical >> 9;
+ 	bio->bi_iter.bi_sector = sector;
+ 	dev = bbio->stripes[mirror_num-1].dev;
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ 	if (!dev || !dev->bdev || !dev->writeable) {
+ 		bio_put(bio);
+ 		return -EIO;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index e301d33..30065fc 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -58,15 +58,6 @@
+  */
+ #define RBIO_CACHE_READY_BIT	3
+ 
+-/*
+- * bbio and raid_map is managed by the caller, so we shouldn't free
+- * them here. And besides that, all rbios with this flag should not
+- * be cached, because we need raid_map to check the rbios' stripe
+- * is the same or not, but it is very likely that the caller has
+- * free raid_map, so don't cache those rbios.
+- */
+-#define RBIO_HOLD_BBIO_MAP_BIT	4
+-
+ #define RBIO_CACHE_SIZE 1024
+ 
+ enum btrfs_rbio_ops {
+@@ -834,19 +825,6 @@ done_nolock:
+ 		remove_rbio_from_cache(rbio);
  }
  
- /* Bubble-sort the stripe set to put the parity/syndrome stripes last */
--static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
-+static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map,
-+				int num_stripes)
- {
- 	struct btrfs_bio_stripe s;
--	int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
- 	int i;
- 	u64 l;
- 	int again = 1;
--	int m;
- 
- 	while (again) {
- 		again = 0;
--		for (i = 0; i < real_stripes - 1; i++) {
-+		for (i = 0; i < num_stripes - 1; i++) {
- 			if (parity_smaller(raid_map[i], raid_map[i+1])) {
- 				s = bbio->stripes[i];
- 				l = raid_map[i];
-@@ -4896,13 +4895,6 @@ static void sort_parity_stripes(struct btrfs_bio *bbio, u64 *raid_map)
- 				bbio->stripes[i+1] = s;
- 				raid_map[i+1] = l;
- 
--				if (bbio->tgtdev_map) {
--					m = bbio->tgtdev_map[i];
--					bbio->tgtdev_map[i] =
--							bbio->tgtdev_map[i + 1];
--					bbio->tgtdev_map[i + 1] = m;
--				}
+-static inline void
+-__free_bbio(struct btrfs_bio *bbio, int need)
+-{
+-	if (need)
+-		kfree(bbio);
+-}
 -
- 				again = 1;
- 			}
+-static inline void free_bbio(struct btrfs_raid_bio *rbio)
+-{
+-	__free_bbio(rbio->bbio,
+-		    !test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags));
+-}
+-
+ static void __free_raid_bio(struct btrfs_raid_bio *rbio)
+ {
+ 	int i;
+@@ -866,8 +844,7 @@ static void __free_raid_bio(struct btrfs_raid_bio *rbio)
  		}
-@@ -5340,6 +5332,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS))
- 		max_errors = btrfs_chunk_max_errors(map);
- 
-+	if (raid_map)
-+		sort_parity_stripes(bbio, raid_map, num_stripes);
-+
- 	tgtdev_indexes = 0;
- 	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)) &&
- 	    dev_replace->tgtdev != NULL) {
-@@ -5443,10 +5438,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		bbio->stripes[0].physical = physical_to_patch_in_first_stripe;
- 		bbio->mirror_num = map->num_stripes + 1;
  	}
--	if (raid_map) {
--		sort_parity_stripes(bbio, raid_map);
+ 
+-	free_bbio(rbio);
+-
++	btrfs_put_bbio(rbio->bbio);
+ 	kfree(rbio);
+ }
+ 
+@@ -1774,7 +1751,7 @@ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
+ 
+ 	rbio = alloc_rbio(root, bbio, stripe_len);
+ 	if (IS_ERR(rbio)) {
+-		__free_bbio(bbio, 1);
++		btrfs_put_bbio(bbio);
+ 		return PTR_ERR(rbio);
+ 	}
+ 	bio_list_add(&rbio->bio_list, bio);
+@@ -1990,8 +1967,7 @@ cleanup:
+ 
+ cleanup_io:
+ 	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
+-		if (err == 0 &&
+-		    !test_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags))
++		if (err == 0)
+ 			cache_rbio_pages(rbio);
+ 		else
+ 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
+@@ -2153,7 +2129,8 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 
+ 	rbio = alloc_rbio(root, bbio, stripe_len);
+ 	if (IS_ERR(rbio)) {
+-		__free_bbio(bbio, generic_io);
++		if (generic_io)
++			btrfs_put_bbio(bbio);
+ 		return PTR_ERR(rbio);
+ 	}
+ 
+@@ -2164,7 +2141,8 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 	rbio->faila = find_logical_bio_stripe(rbio, bio);
+ 	if (rbio->faila == -1) {
+ 		BUG();
+-		__free_bbio(bbio, generic_io);
++		if (generic_io)
++			btrfs_put_bbio(bbio);
+ 		kfree(rbio);
+ 		return -EIO;
+ 	}
+@@ -2173,9 +2151,10 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 		btrfs_bio_counter_inc_noblocked(root->fs_info);
+ 		rbio->generic_bio_cnt = 1;
+ 	} else {
+-		set_bit(RBIO_HOLD_BBIO_MAP_BIT, &rbio->flags);
++		btrfs_get_bbio(bbio);
+ 	}
+ 
 +
-+	if (raid_map_ret)
- 		*raid_map_ret = raid_map;
--	}
- out:
+ 	/*
+ 	 * reconstruct from the q stripe if they are
+ 	 * asking for mirror 3
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index b63ae20..cfdffc5 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -463,7 +463,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
+ 	spin_unlock(&fs_info->reada_lock);
+ 	btrfs_dev_replace_unlock(&fs_info->dev_replace);
+ 
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ 	return re;
+ 
+ error:
+@@ -488,7 +488,7 @@ error:
+ 		kref_put(&zone->refcnt, reada_zone_release);
+ 		spin_unlock(&fs_info->reada_lock);
+ 	}
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ 	kfree(re);
+ 	return re_exist;
+ }
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 8f32520..1c50982 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -847,7 +847,7 @@ static inline void scrub_get_recover(struct scrub_recover *recover)
+ static inline void scrub_put_recover(struct scrub_recover *recover)
+ {
+ 	if (atomic_dec_and_test(&recover->refs)) {
+-		kfree(recover->bbio);
++		btrfs_put_bbio(recover->bbio);
+ 		kfree(recover);
+ 	}
+ }
+@@ -1365,13 +1365,13 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+ 		ret = btrfs_map_sblock(fs_info, REQ_GET_READ_MIRRORS, logical,
+ 				       &mapped_length, &bbio, 0, 1);
+ 		if (ret || !bbio || mapped_length < sublen) {
+-			kfree(bbio);
++			btrfs_put_bbio(bbio);
+ 			return -EIO;
+ 		}
+ 
+ 		recover = kzalloc(sizeof(struct scrub_recover), GFP_NOFS);
+ 		if (!recover) {
+-			kfree(bbio);
++			btrfs_put_bbio(bbio);
+ 			return -ENOMEM;
+ 		}
+ 
+@@ -2740,7 +2740,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+ rbio_out:
+ 	bio_put(bio);
+ bbio_out:
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ 	bitmap_or(sparity->ebitmap, sparity->ebitmap, sparity->dbitmap,
+ 		  sparity->nsectors);
+ 	spin_lock(&sctx->stat_lock);
+@@ -3871,14 +3871,14 @@ static void scrub_remap_extent(struct btrfs_fs_info *fs_info,
+ 			      &mapped_length, &bbio, 0);
+ 	if (ret || !bbio || mapped_length < extent_len ||
+ 	    !bbio->stripes[0].dev->bdev) {
+-		kfree(bbio);
++		btrfs_put_bbio(bbio);
+ 		return;
+ 	}
+ 
+ 	*extent_physical = bbio->stripes[0].physical;
+ 	*extent_mirror_num = bbio->mirror_num;
+ 	*extent_dev = bbio->stripes[0].dev;
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ }
+ 
+ static int scrub_setup_wr_ctx(struct scrub_ctx *sctx,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b364e14..de74206 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4901,6 +4901,37 @@ static void sort_parity_stripes(struct btrfs_bio *bbio, int num_stripes)
+ 	}
+ }
+ 
++static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
++{
++	struct btrfs_bio *bbio = kzalloc(
++		sizeof(struct btrfs_bio) +
++		sizeof(struct btrfs_bio_stripe) * (total_stripes) +
++		sizeof(int) * (real_stripes) +
++		sizeof(u64) * (real_stripes),
++		GFP_NOFS);
++	if (!bbio)
++		return NULL;
++
++	atomic_set(&bbio->error, 0);
++	atomic_set(&bbio->refs, 1);
++
++	return bbio;
++}
++
++void btrfs_get_bbio(struct btrfs_bio *bbio)
++{
++	WARN_ON(!atomic_read(&bbio->refs));
++	atomic_inc(&bbio->refs);
++}
++
++void btrfs_put_bbio(struct btrfs_bio *bbio)
++{
++	if (!bbio)
++		return;
++	if (atomic_dec_and_test(&bbio->refs))
++		kfree(bbio);
++}
++
+ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 			     u64 logical, u64 *length,
+ 			     struct btrfs_bio **bbio_ret,
+@@ -5052,7 +5083,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 			 * is not left of the left cursor
+ 			 */
+ 			ret = -EIO;
+-			kfree(tmp_bbio);
++			btrfs_put_bbio(tmp_bbio);
+ 			goto out;
+ 		}
+ 
+@@ -5087,11 +5118,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		} else {
+ 			WARN_ON(1);
+ 			ret = -EIO;
+-			kfree(tmp_bbio);
++			btrfs_put_bbio(tmp_bbio);
+ 			goto out;
+ 		}
+ 
+-		kfree(tmp_bbio);
++		btrfs_put_bbio(tmp_bbio);
+ 	} else if (mirror_num > map->num_stripes) {
+ 		mirror_num = 0;
+ 	}
+@@ -5213,13 +5244,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		tgtdev_indexes = num_stripes;
+ 	}
+ 
+-	bbio = kzalloc(btrfs_bio_size(num_alloc_stripes, tgtdev_indexes),
+-		       GFP_NOFS);
++	bbio = alloc_btrfs_bio(num_alloc_stripes, tgtdev_indexes);
+ 	if (!bbio) {
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+-	atomic_set(&bbio->error, 0);
  	if (dev_replace_is_ongoing)
- 		btrfs_dev_replace_unlock(dev_replace);
+ 		bbio->tgtdev_map = (int *)(bbio->stripes + num_alloc_stripes);
+ 
+@@ -5558,7 +5587,7 @@ static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio, int e
+ 		bio_endio_nodec(bio, err);
+ 	else
+ 		bio_endio(bio, err);
+-	kfree(bbio);
++	btrfs_put_bbio(bbio);
+ }
+ 
+ static void btrfs_end_bio(struct bio *bio, int err)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index fb0e8c3..4313e8f 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -295,6 +295,7 @@ typedef void (btrfs_bio_end_io_t) (struct btrfs_bio *bio, int err);
+ #define BTRFS_BIO_ORIG_BIO_SUBMITTED	(1 << 0)
+ 
+ struct btrfs_bio {
++	atomic_t refs;
+ 	atomic_t stripes_pending;
+ 	struct btrfs_fs_info *fs_info;
+ 	bio_end_io_t *end_io;
+@@ -394,13 +395,8 @@ struct btrfs_balance_control {
+ 
+ int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
+ 				   u64 end, u64 *length);
+-
+-#define btrfs_bio_size(total_stripes, real_stripes)		\
+-	(sizeof(struct btrfs_bio) +				\
+-	 (sizeof(struct btrfs_bio_stripe) * (total_stripes)) +	\
+-	 (sizeof(int) * (real_stripes)) +			\
+-	 (sizeof(u64) * (real_stripes)))
+-
++void btrfs_get_bbio(struct btrfs_bio *bbio);
++void btrfs_put_bbio(struct btrfs_bio *bbio);
+ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_bio **bbio_ret, int mirror_num);
 -- 
 1.8.5.1
 

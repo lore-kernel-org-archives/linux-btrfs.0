@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:59353 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751585AbbASLWf (ORCPT
+	with ESMTP id S1751592AbbASLWi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 06:22:35 -0500
+	Mon, 19 Jan 2015 06:22:38 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 10/16] Btrfs: Avoid trustless page-level-repair in dev-replace
-Date: Mon, 19 Jan 2015 19:20:59 +0800
-Message-ID: <1421666465-3892-11-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 12/16] Btrfs: Combine per-page recover in dev-replace and scrub
+Date: Mon, 19 Jan 2015 19:21:01 +0800
+Message-ID: <1421666465-3892-13-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,43 +19,165 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Current code of page level repair for dev-replace can only support
-io-error, we can't use it in checksum-fail case.
-
-We can skip this kind of repair in dev-replace just as we in scrub.
+The code are similar, combine them to make code clean and easy to maintenance.
+Some lost condition are also completed with benefit of this combination.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/scrub.c | 110 ++++++++++++++++++++++++++++---------------------------
+ 1 file changed, 57 insertions(+), 53 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 9afc6dd..6cf0dc7 100644
+index 285f8cf..de959f6 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1099,6 +1099,10 @@ nodatasum_case:
+@@ -1099,19 +1099,47 @@ nodatasum_case:
  		}
  	}
  
-+	/* can only fix I/O errors from here on */
-+	if (sblock_bad->no_io_error_seen)
-+		goto did_not_correct_error;
++	/*
++	 * In case of I/O errors in the area that is supposed to be
++	 * repaired, continue by picking good copies of those pages.
++	 * Select the good pages from mirrors to rewrite bad pages from
++	 * the area to fix. Afterwards verify the checksum of the block
++	 * that is supposed to be repaired. This verification step is
++	 * only done for the purpose of statistic counting and for the
++	 * final scrub report, whether errors remain.
++	 * A perfect algorithm could make use of the checksum and try
++	 * all possible combinations of pages from the different mirrors
++	 * until the checksum verification succeeds. For example, when
++	 * the 2nd page of mirror #1 faces I/O errors, and the 2nd page
++	 * of mirror #2 is readable but the final checksum test fails,
++	 * then the 2nd page of mirror #3 could be tried, whether now
++	 * the final checksum succeedes. But this would be a rare
++	 * exception and is therefore not implemented. At least it is
++	 * avoided that the good copy is overwritten.
++	 * A more useful improvement would be to pick the sectors
++	 * without I/O error based on sector sizes (512 bytes on legacy
++	 * disks) instead of on PAGE_SIZE. Then maybe 512 byte of one
++	 * mirror could be repaired by taking 512 byte of a different
++	 * mirror, even if other 512 byte sectors in the same PAGE_SIZE
++	 * area are unreadable.
++	 */
 +
+ 	/* can only fix I/O errors from here on */
+ 	if (sblock_bad->no_io_error_seen)
+ 		goto did_not_correct_error;
+ 
+-	/*
+-	 * for dev_replace, pick good pages and write to the target device.
+-	 */
+-	if (sctx->is_dev_replace) {
+-		success = 1;
+-		for (page_num = 0; page_num < sblock_bad->page_count;
+-		     page_num++) {
+-			struct scrub_block *sblock_other = NULL;
++	success = 1;
++	for (page_num = 0; page_num < sblock_bad->page_count;
++	     page_num++) {
++		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
++		struct scrub_block *sblock_other = NULL;
+ 
++		/* skip no-io-error page in scrub */
++		if (!page_bad->io_error && !sctx->is_dev_replace)
++			continue;
++
++		/* try to find no-io-error page in mirrors */
++		if (page_bad->io_error) {
+ 			for (mirror_index = 0;
+ 			     mirror_index < BTRFS_MAX_MIRRORS &&
+ 			     sblocks_for_recheck[mirror_index].page_count > 0;
+@@ -1123,18 +1151,20 @@ nodatasum_case:
+ 					break;
+ 				}
+ 			}
++			if (!sblock_other)
++				success = 0;
++		}
+ 
+-			if (!sblock_other) {
+-				/*
+-				 * did not find a mirror to fetch the page
+-				 * from. scrub_write_page_to_dev_replace()
+-				 * handles this case (page->io_error), by
+-				 * filling the block with zeros before
+-				 * submitting the write request
+-				 */
++		if (sctx->is_dev_replace) {
++			/*
++			 * did not find a mirror to fetch the page
++			 * from. scrub_write_page_to_dev_replace()
++			 * handles this case (page->io_error), by
++			 * filling the block with zeros before
++			 * submitting the write request
++			 */
++			if (!sblock_other)
+ 				sblock_other = sblock_bad;
+-				success = 0;
+-			}
+ 
+ 			if (scrub_write_page_to_dev_replace(sblock_other,
+ 							    page_num) != 0) {
+@@ -1144,9 +1174,15 @@ nodatasum_case:
+ 					num_write_errors);
+ 				success = 0;
+ 			}
++		} else if (sblock_other) {
++			ret = scrub_repair_page_from_good_copy(sblock_bad,
++							       sblock_other,
++							       page_num, 0);
++			if (0 == ret)
++				page_bad->io_error = 0;
++			else
++				success = 0;
+ 		}
+-
+-		goto out;
+ 	}
+ 
  	/*
- 	 * for dev_replace, pick good pages and write to the target device.
- 	 */
-@@ -1181,10 +1185,6 @@ nodatasum_case:
+@@ -1175,39 +1211,7 @@ nodatasum_case:
  	 * area are unreadable.
  	 */
  
--	/* can only fix I/O errors from here on */
--	if (sblock_bad->no_io_error_seen)
--		goto did_not_correct_error;
+-	success = 1;
+-	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
+-		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
 -
- 	success = 1;
- 	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
- 		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
+-		if (!page_bad->io_error)
+-			continue;
+-
+-		for (mirror_index = 0;
+-		     mirror_index < BTRFS_MAX_MIRRORS &&
+-		     sblocks_for_recheck[mirror_index].page_count > 0;
+-		     mirror_index++) {
+-			struct scrub_block *sblock_other = sblocks_for_recheck +
+-							   mirror_index;
+-			struct scrub_page *page_other = sblock_other->pagev[
+-							page_num];
+-
+-			if (!page_other->io_error) {
+-				ret = scrub_repair_page_from_good_copy(
+-					sblock_bad, sblock_other, page_num, 0);
+-				if (0 == ret) {
+-					page_bad->io_error = 0;
+-					break; /* succeeded for this page */
+-				}
+-			}
+-		}
+-
+-		if (page_bad->io_error) {
+-			/* did not find a mirror to copy the page from */
+-			success = 0;
+-		}
+-	}
+-
+-	if (success) {
++	if (success && !sctx->is_dev_replace) {
+ 		if (is_metadata || have_csum) {
+ 			/*
+ 			 * need to verify the checksum now that all
 -- 
 1.8.5.1
 

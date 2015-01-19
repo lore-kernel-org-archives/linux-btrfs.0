@@ -1,15 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46969 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59806 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751611AbbASLWk (ORCPT
+	with ESMTP id S1751617AbbASLWk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 19 Jan 2015 06:22:40 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0JBM2Z2007844
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 19:22:02 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 15/16] Btrfs: Introduce BTRFS_BLOCK_GROUP_RAID56_MASK to check raid56 simply
-Date: Mon, 19 Jan 2015 19:21:04 +0800
-Message-ID: <1421666465-3892-16-git-send-email-zhaolei@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 16/16] Rename all ref_count to refs in struct
+Date: Mon, 19 Jan 2015 19:21:05 +0800
+Message-ID: <1421666465-3892-17-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,203 +22,126 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-So we can check raid56 with:
- (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
-instead of long:
- (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
+refs is better than ref_count to record a struct's ref count.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Suggested-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ctree.h   |  3 +++
- fs/btrfs/inode.c   |  3 +--
- fs/btrfs/scrub.c   | 17 ++++++-----------
- fs/btrfs/volumes.c | 24 +++++++++---------------
- 4 files changed, 19 insertions(+), 28 deletions(-)
+ fs/btrfs/scrub.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7e60741..f6caf77 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1020,6 +1020,9 @@ enum btrfs_raid_types {
- 					 BTRFS_BLOCK_GROUP_RAID6 |   \
- 					 BTRFS_BLOCK_GROUP_DUP |     \
- 					 BTRFS_BLOCK_GROUP_RAID10)
-+#define BTRFS_BLOCK_GROUP_RAID56_MASK	(BTRFS_BLOCK_GROUP_RAID5 |   \
-+					 BTRFS_BLOCK_GROUP_RAID6)
-+
- /*
-  * We need a bit for restriper to be able to tell when chunks of type
-  * SINGLE are available.  This "extended" profile format is used in
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8a036ed..54295a6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7808,8 +7808,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
- 	}
- 
- 	/* async crcs make it difficult to collect full stripe writes. */
--	if (btrfs_get_alloc_profile(root, 1) &
--	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
-+	if (btrfs_get_alloc_profile(root, 1) & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		async_submit = 0;
- 	else
- 		async_submit = 1;
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index caad71c..6b5e635 100644
+index 6b5e635..d2d9dcd 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1293,7 +1293,7 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 map_type,
- {
- 	int i;
+@@ -79,7 +79,7 @@ struct scrub_page {
+ 	u64			logical;
+ 	u64			physical;
+ 	u64			physical_for_dev_replace;
+-	atomic_t		ref_count;
++	atomic_t		refs;
+ 	struct {
+ 		unsigned int	mirror_num:8;
+ 		unsigned int	have_csum:1;
+@@ -112,7 +112,7 @@ struct scrub_block {
+ 	struct scrub_page	*pagev[SCRUB_MAX_PAGES_PER_BLOCK];
+ 	int			page_count;
+ 	atomic_t		outstanding_pages;
+-	atomic_t		ref_count; /* free mem on transition to zero */
++	atomic_t		refs; /* free mem on transition to zero */
+ 	struct scrub_ctx	*sctx;
+ 	struct scrub_parity	*sparity;
+ 	struct {
+@@ -141,7 +141,7 @@ struct scrub_parity {
  
--	if (map_type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
-+	if (map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		/* RAID5/6 */
- 		for (i = 0; i < nstripes; i++) {
- 			if (raid_map[i] == RAID6_Q_STRIPE ||
-@@ -1440,8 +1440,7 @@ static void scrub_bio_wait_endio(struct bio *bio, int error)
- static inline int scrub_is_page_on_raid56(struct scrub_page *page)
+ 	int			stripe_len;
+ 
+-	atomic_t		ref_count;
++	atomic_t		refs;
+ 
+ 	struct list_head	spages;
+ 
+@@ -1333,7 +1333,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 	int ret;
+ 
+ 	/*
+-	 * note: the two members ref_count and outstanding_pages
++	 * note: the two members refs and outstanding_pages
+ 	 * are not used (and not set) in the blocks that are used for
+ 	 * the recheck procedure
+ 	 */
+@@ -2046,12 +2046,12 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 
+ static void scrub_block_get(struct scrub_block *sblock)
  {
- 	return page->recover &&
--	       (page->recover->bbio->map_type & (BTRFS_BLOCK_GROUP_RAID5 |
--	       BTRFS_BLOCK_GROUP_RAID6));
-+	       (page->recover->bbio->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK);
+-	atomic_inc(&sblock->ref_count);
++	atomic_inc(&sblock->refs);
  }
  
- static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
-@@ -3014,8 +3013,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
- 		increment = map->stripe_len;
- 		mirror_num = num % map->num_stripes + 1;
--	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--				BTRFS_BLOCK_GROUP_RAID6)) {
-+	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		get_raid56_logic_offset(physical, num, map, &offset, NULL);
- 		increment = map->stripe_len * nr_data_stripes(map);
- 		mirror_num = 1;
-@@ -3049,8 +3047,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 */
- 	logical = base + offset;
- 	physical_end = physical + nstripes * map->stripe_len;
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_RAID6)) {
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		get_raid56_logic_offset(physical_end, num,
- 					map, &logic_end, NULL);
- 		logic_end += base;
-@@ -3096,8 +3093,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	ret = 0;
- 	while (physical < physical_end) {
- 		/* for raid56, we skip parity stripe */
--		if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--				BTRFS_BLOCK_GROUP_RAID6)) {
-+		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 			ret = get_raid56_logic_offset(physical, num,
- 					map, &logical, &stripe_logical);
- 			logical += base;
-@@ -3255,8 +3251,7 @@ again:
- 			scrub_free_csums(sctx);
- 			if (extent_logical + extent_len <
- 			    key.objectid + bytes) {
--				if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--					BTRFS_BLOCK_GROUP_RAID6)) {
-+				if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 					/*
- 					 * loop until we find next data stripe
- 					 * or we have finished all stripes.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 565a0eb..c0a792f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4196,7 +4196,7 @@ static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
- 
- static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
+ static void scrub_block_put(struct scrub_block *sblock)
  {
--	if (!(type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)))
-+	if (!(type & BTRFS_BLOCK_GROUP_RAID56_MASK))
+-	if (atomic_dec_and_test(&sblock->ref_count)) {
++	if (atomic_dec_and_test(&sblock->refs)) {
+ 		int i;
+ 
+ 		if (sblock->sparity)
+@@ -2065,12 +2065,12 @@ static void scrub_block_put(struct scrub_block *sblock)
+ 
+ static void scrub_page_get(struct scrub_page *spage)
+ {
+-	atomic_inc(&spage->ref_count);
++	atomic_inc(&spage->refs);
+ }
+ 
+ static void scrub_page_put(struct scrub_page *spage)
+ {
+-	if (atomic_dec_and_test(&spage->ref_count)) {
++	if (atomic_dec_and_test(&spage->refs)) {
+ 		if (spage->page)
+ 			__free_page(spage->page);
+ 		kfree(spage);
+@@ -2196,7 +2196,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 
+ 	/* one ref inside this function, plus one for each page added to
+ 	 * a bio later on */
+-	atomic_set(&sblock->ref_count, 1);
++	atomic_set(&sblock->refs, 1);
+ 	sblock->sctx = sctx;
+ 	sblock->no_io_error_seen = 1;
+ 
+@@ -2489,7 +2489,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
+ 
+ 	/* one ref inside this function, plus one for each page added to
+ 	 * a bio later on */
+-	atomic_set(&sblock->ref_count, 1);
++	atomic_set(&sblock->refs, 1);
+ 	sblock->sctx = sctx;
+ 	sblock->no_io_error_seen = 1;
+ 	sblock->sparity = sparity;
+@@ -2741,12 +2741,12 @@ static inline int scrub_calc_parity_bitmap_len(int nsectors)
+ 
+ static void scrub_parity_get(struct scrub_parity *sparity)
+ {
+-	atomic_inc(&sparity->ref_count);
++	atomic_inc(&sparity->refs);
+ }
+ 
+ static void scrub_parity_put(struct scrub_parity *sparity)
+ {
+-	if (!atomic_dec_and_test(&sparity->ref_count))
++	if (!atomic_dec_and_test(&sparity->refs))
  		return;
  
- 	btrfs_set_fs_incompat(info, RAID56);
-@@ -4803,10 +4803,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
- 	map = (struct map_lookup *)em->bdev;
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_RAID6)) {
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		len = map->stripe_len * nr_data_stripes(map);
--	}
- 	free_extent_map(em);
- 	return len;
- }
-@@ -4826,8 +4824,7 @@ int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
- 	map = (struct map_lookup *)em->bdev;
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_RAID6))
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		ret = 1;
- 	free_extent_map(em);
- 	return ret;
-@@ -4998,7 +4995,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 	stripe_offset = offset - stripe_offset;
- 
- 	/* if we're here for raid56, we need to know the stripe aligned start */
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		unsigned long full_stripe_len = stripe_len * nr_data_stripes(map);
- 		raid56_full_stripe_start = offset;
- 
-@@ -5011,8 +5008,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 
- 	if (rw & REQ_DISCARD) {
- 		/* we don't discard raid56 yet */
--		if (map->type &
--		    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
-+		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 			ret = -EOPNOTSUPP;
- 			goto out;
- 		}
-@@ -5022,7 +5018,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		/* For writes to RAID[56], allow a full stripeset across all disks.
- 		   For other RAID types and for RAID[56] reads, just allow a single
- 		   stripe (on a single disk). */
--		if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+		if ((map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) &&
- 		    (rw & REQ_WRITE)) {
- 			max_len = stripe_len * nr_data_stripes(map) -
- 				(offset - raid56_full_stripe_start);
-@@ -5188,8 +5184,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 			mirror_num = stripe_index - old_stripe_index + 1;
- 		}
- 
--	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--				BTRFS_BLOCK_GROUP_RAID6)) {
-+	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		if (need_raid_map &&
- 		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
- 		     mirror_num > 1)) {
-@@ -5253,7 +5248,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		bbio->tgtdev_map = (int *)(bbio->stripes + num_alloc_stripes);
- 
- 	/* build raid_map */
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK &&
- 	    need_raid_map && ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
- 	    mirror_num > 1)) {
- 		u64 tmp;
-@@ -5534,8 +5529,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 		do_div(length, map->num_stripes / map->sub_stripes);
- 	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
- 		do_div(length, map->num_stripes);
--	else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--			      BTRFS_BLOCK_GROUP_RAID6)) {
-+	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		do_div(length, nr_data_stripes(map));
- 		rmap_len = map->stripe_len * nr_data_stripes(map);
- 	}
+ 	scrub_parity_check_and_repair(sparity);
+@@ -2796,7 +2796,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 	sparity->scrub_dev = sdev;
+ 	sparity->logic_start = logic_start;
+ 	sparity->logic_end = logic_end;
+-	atomic_set(&sparity->ref_count, 1);
++	atomic_set(&sparity->refs, 1);
+ 	INIT_LIST_HEAD(&sparity->spages);
+ 	sparity->dbitmap = sparity->bitmap;
+ 	sparity->ebitmap = (void *)sparity->bitmap + bitmap_len;
 -- 
 1.8.5.1
 

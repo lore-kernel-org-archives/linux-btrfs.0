@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59353 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21761 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751605AbbASLWg (ORCPT
+	with ESMTP id S1750728AbbASMAk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 06:22:36 -0500
+	Mon, 19 Jan 2015 07:00:40 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 11/16] Btrfs: Separate finding-right-mirror and writing-to-target's process in scrub_handle_errored_block()
-Date: Mon, 19 Jan 2015 19:21:00 +0800
-Message-ID: <1421666465-3892-12-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 09/16] Btrfs: Break loop when reach BTRFS_MAX_MIRRORS in scrub_setup_recheck_block()
+Date: Mon, 19 Jan 2015 19:20:58 +0800
+Message-ID: <1421666465-3892-10-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,92 +19,28 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-In corrent code, code of finding-right-mirror and writing-to-target
-are mixed in logic, if we find a right mirror but failed in writing
-to target, it will treat as "hadn't found right block", and fill the
-target with sblock_bad.
-
-Actually, "failed in writing to target" does not mean "source
-block is wrong", this patch separate above two condition in logic,
-and do some cleanup to make code clean.
+Use break instead of useless loop should be more suitable in this
+case.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 44 +++++++++++++++++---------------------------
- 1 file changed, 17 insertions(+), 27 deletions(-)
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 6cf0dc7..285f8cf 100644
+index c93c43f..9afc6dd 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1110,35 +1110,21 @@ nodatasum_case:
- 		success = 1;
- 		for (page_num = 0; page_num < sblock_bad->page_count;
- 		     page_num++) {
--			int sub_success;
-+			struct scrub_block *sblock_other = NULL;
+@@ -1386,7 +1386,7 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+ 			struct scrub_page *page;
  
--			sub_success = 0;
- 			for (mirror_index = 0;
- 			     mirror_index < BTRFS_MAX_MIRRORS &&
- 			     sblocks_for_recheck[mirror_index].page_count > 0;
- 			     mirror_index++) {
--				struct scrub_block *sblock_other =
--					sblocks_for_recheck + mirror_index;
--				struct scrub_page *page_other =
--					sblock_other->pagev[page_num];
--
--				if (!page_other->io_error) {
--					ret = scrub_write_page_to_dev_replace(
--							sblock_other, page_num);
--					if (ret == 0) {
--						/* succeeded for this page */
--						sub_success = 1;
--						break;
--					} else {
--						btrfs_dev_replace_stats_inc(
--							&sctx->dev_root->
--							fs_info->dev_replace.
--							num_write_errors);
--					}
-+				if (!sblocks_for_recheck[mirror_index].
-+				    pagev[page_num]->io_error) {
-+					sblock_other = sblocks_for_recheck +
-+						       mirror_index;
-+					break;
- 				}
- 			}
+ 			if (mirror_index >= BTRFS_MAX_MIRRORS)
+-				continue;
++				break;
  
--			if (!sub_success) {
-+			if (!sblock_other) {
- 				/*
- 				 * did not find a mirror to fetch the page
- 				 * from. scrub_write_page_to_dev_replace()
-@@ -1146,13 +1132,17 @@ nodatasum_case:
- 				 * filling the block with zeros before
- 				 * submitting the write request
- 				 */
-+				sblock_other = sblock_bad;
-+				success = 0;
-+			}
-+
-+			if (scrub_write_page_to_dev_replace(sblock_other,
-+							    page_num) != 0) {
-+				btrfs_dev_replace_stats_inc(
-+					&sctx->dev_root->
-+					fs_info->dev_replace.
-+					num_write_errors);
- 				success = 0;
--				ret = scrub_write_page_to_dev_replace(
--						sblock_bad, page_num);
--				if (ret)
--					btrfs_dev_replace_stats_inc(
--						&sctx->dev_root->fs_info->
--						dev_replace.num_write_errors);
- 			}
- 		}
- 
+ 			sblock = sblocks_for_recheck + mirror_index;
+ 			sblock->sctx = sctx;
 -- 
 1.8.5.1
 

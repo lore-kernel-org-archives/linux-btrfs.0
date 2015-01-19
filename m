@@ -1,18 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59806 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46969 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751617AbbASLWk (ORCPT
+	with ESMTP id S1751612AbbASLWj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 06:22:40 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0JBM2Z2007844
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 19:22:02 +0800
+	Mon, 19 Jan 2015 06:22:39 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 16/16] Rename all ref_count to refs in struct
-Date: Mon, 19 Jan 2015 19:21:05 +0800
-Message-ID: <1421666465-3892-17-git-send-email-zhaolei@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH 13/16] Btrfs: Simplify scrub_setup_recheck_block()'s argument
+Date: Mon, 19 Jan 2015 19:21:02 +0800
+Message-ID: <1421666465-3892-14-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,126 +19,93 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-refs is better than ref_count to record a struct's ref count.
+scrub_setup_recheck_block() have many arguments but most of them
+can be get from one of them, we can remove them to make code clean.
+Some other cleanup for that function also included in this patch.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Suggested-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
+ fs/btrfs/scrub.c | 25 +++++++++----------------
+ 1 file changed, 9 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 6b5e635..d2d9dcd 100644
+index de959f6..25c9611 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -79,7 +79,7 @@ struct scrub_page {
- 	u64			logical;
- 	u64			physical;
- 	u64			physical_for_dev_replace;
--	atomic_t		ref_count;
-+	atomic_t		refs;
- 	struct {
- 		unsigned int	mirror_num:8;
- 		unsigned int	have_csum:1;
-@@ -112,7 +112,7 @@ struct scrub_block {
- 	struct scrub_page	*pagev[SCRUB_MAX_PAGES_PER_BLOCK];
- 	int			page_count;
- 	atomic_t		outstanding_pages;
--	atomic_t		ref_count; /* free mem on transition to zero */
-+	atomic_t		refs; /* free mem on transition to zero */
- 	struct scrub_ctx	*sctx;
- 	struct scrub_parity	*sparity;
- 	struct {
-@@ -141,7 +141,7 @@ struct scrub_parity {
+@@ -235,10 +235,7 @@ static void scrub_pending_bio_dec(struct scrub_ctx *sctx);
+ static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx);
+ static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx);
+ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
+-static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+-				     struct btrfs_fs_info *fs_info,
+-				     struct scrub_block *original_sblock,
+-				     u64 length, u64 logical,
++static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 				     struct scrub_block *sblocks_for_recheck);
+ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 				struct scrub_block *sblock, int is_metadata,
+@@ -952,8 +949,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	}
  
- 	int			stripe_len;
+ 	/* setup the context, map the logical blocks and alloc the pages */
+-	ret = scrub_setup_recheck_block(sctx, fs_info, sblock_to_check, length,
+-					logical, sblocks_for_recheck);
++	ret = scrub_setup_recheck_block(sblock_to_check, sblocks_for_recheck);
+ 	if (ret) {
+ 		spin_lock(&sctx->stat_lock);
+ 		sctx->stat.read_errors++;
+@@ -1321,19 +1317,20 @@ static inline void scrub_stripe_index_and_offset(u64 logical, u64 *raid_map,
+ 	}
+ }
  
--	atomic_t		ref_count;
-+	atomic_t		refs;
- 
- 	struct list_head	spages;
- 
-@@ -1333,7 +1333,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+-static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
+-				     struct btrfs_fs_info *fs_info,
+-				     struct scrub_block *original_sblock,
+-				     u64 length, u64 logical,
++static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 				     struct scrub_block *sblocks_for_recheck)
+ {
++	struct scrub_ctx *sctx = original_sblock->sctx;
++	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
++	u64 length = original_sblock->page_count * PAGE_SIZE;
++	u64 logical = original_sblock->pagev[0]->logical;
+ 	struct scrub_recover *recover;
+ 	struct btrfs_bio *bbio;
+ 	u64 sublen;
+ 	u64 mapped_length;
+ 	u64 stripe_offset;
+ 	int stripe_index;
+-	int page_index;
++	int page_index = 0;
+ 	int mirror_index;
+ 	int nmirrors;
  	int ret;
- 
- 	/*
--	 * note: the two members ref_count and outstanding_pages
-+	 * note: the two members refs and outstanding_pages
- 	 * are not used (and not set) in the blocks that are used for
+@@ -1344,7 +1341,6 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
  	 * the recheck procedure
  	 */
-@@ -2046,12 +2046,12 @@ static int scrub_checksum_super(struct scrub_block *sblock)
  
- static void scrub_block_get(struct scrub_block *sblock)
- {
--	atomic_inc(&sblock->ref_count);
-+	atomic_inc(&sblock->refs);
- }
+-	page_index = 0;
+ 	while (length > 0) {
+ 		sublen = min_t(u64, length, PAGE_SIZE);
+ 		mapped_length = sublen;
+@@ -1373,15 +1369,12 @@ static int scrub_setup_recheck_block(struct scrub_ctx *sctx,
  
- static void scrub_block_put(struct scrub_block *sblock)
- {
--	if (atomic_dec_and_test(&sblock->ref_count)) {
-+	if (atomic_dec_and_test(&sblock->refs)) {
- 		int i;
+ 		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
  
- 		if (sblock->sparity)
-@@ -2065,12 +2065,12 @@ static void scrub_block_put(struct scrub_block *sblock)
+-		nmirrors = scrub_nr_raid_mirrors(bbio);
++		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
+ 		for (mirror_index = 0; mirror_index < nmirrors;
+ 		     mirror_index++) {
+ 			struct scrub_block *sblock;
+ 			struct scrub_page *page;
  
- static void scrub_page_get(struct scrub_page *spage)
- {
--	atomic_inc(&spage->ref_count);
-+	atomic_inc(&spage->refs);
- }
- 
- static void scrub_page_put(struct scrub_page *spage)
- {
--	if (atomic_dec_and_test(&spage->ref_count)) {
-+	if (atomic_dec_and_test(&spage->refs)) {
- 		if (spage->page)
- 			__free_page(spage->page);
- 		kfree(spage);
-@@ -2196,7 +2196,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->ref_count, 1);
-+	atomic_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 
-@@ -2489,7 +2489,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->ref_count, 1);
-+	atomic_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 	sblock->sparity = sparity;
-@@ -2741,12 +2741,12 @@ static inline int scrub_calc_parity_bitmap_len(int nsectors)
- 
- static void scrub_parity_get(struct scrub_parity *sparity)
- {
--	atomic_inc(&sparity->ref_count);
-+	atomic_inc(&sparity->refs);
- }
- 
- static void scrub_parity_put(struct scrub_parity *sparity)
- {
--	if (!atomic_dec_and_test(&sparity->ref_count))
-+	if (!atomic_dec_and_test(&sparity->refs))
- 		return;
- 
- 	scrub_parity_check_and_repair(sparity);
-@@ -2796,7 +2796,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
- 	sparity->scrub_dev = sdev;
- 	sparity->logic_start = logic_start;
- 	sparity->logic_end = logic_end;
--	atomic_set(&sparity->ref_count, 1);
-+	atomic_set(&sparity->refs, 1);
- 	INIT_LIST_HEAD(&sparity->spages);
- 	sparity->dbitmap = sparity->bitmap;
- 	sparity->ebitmap = (void *)sparity->bitmap + bitmap_len;
+-			if (mirror_index >= BTRFS_MAX_MIRRORS)
+-				break;
+-
+ 			sblock = sblocks_for_recheck + mirror_index;
+ 			sblock->sctx = sctx;
+ 			page = kzalloc(sizeof(*page), GFP_NOFS);
 -- 
 1.8.5.1
 

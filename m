@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21761 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50525 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751396AbbASMAy (ORCPT
+	with ESMTP id S1751396AbbASMAx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 07:00:54 -0500
+	Mon, 19 Jan 2015 07:00:53 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 06/16] Btrfs: Remove noneed force_write in scrub_write_block_to_dev_replace
-Date: Mon, 19 Jan 2015 19:20:55 +0800
-Message-ID: <1421666465-3892-7-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 05/16] Btrfs: Fix a jump typo of nodatasum_case to avoid wrong WARN_ON()
+Date: Mon, 19 Jan 2015 19:20:54 +0800
+Message-ID: <1421666465-3892-6-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421666465-3892-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,69 +19,39 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It is always 1 in this place, because !1 case was already jumped
-out in previous code.
+if (sctx->is_dev_replace && !is_metadata && !have_csum) {
+    ...
+    goto nodatasum_case;
+}
+...
+nodatasum_case:
+    WARN_ON(sctx->is_dev_replace);
+
+In above code, nodatasum_case marker should be moved after
+WARN_ON().
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 19 +++++++------------
- 1 file changed, 7 insertions(+), 12 deletions(-)
+ fs/btrfs/scrub.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ec0a2f8..c93c43f 100644
+index 1c50982..ec0a2f8 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -250,8 +250,7 @@ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
- 					 const u8 *csum, u64 generation,
- 					 u16 csum_size);
- static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
--					     struct scrub_block *sblock_good,
--					     int force_write);
-+					     struct scrub_block *sblock_good);
- static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
- 					    struct scrub_block *sblock_good,
- 					    int page_num, int force_write);
-@@ -1090,15 +1089,13 @@ nodatasum_case:
- 		    sblock_other->no_io_error_seen) {
- 			if (sctx->is_dev_replace) {
- 				scrub_write_block_to_dev_replace(sblock_other);
-+				goto corrected_error;
- 			} else {
--				int force_write = is_metadata || have_csum;
--
- 				ret = scrub_repair_block_from_good_copy(
--						sblock_bad, sblock_other,
--						force_write);
-+						sblock_bad, sblock_other);
-+				if (!ret)
-+					goto corrected_error;
- 			}
--			if (0 == ret)
--				goto corrected_error;
- 		}
- 	}
+@@ -1028,9 +1028,10 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	if (!is_metadata && !have_csum) {
+ 		struct scrub_fixup_nodatasum *fixup_nodatasum;
  
-@@ -1611,8 +1608,7 @@ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
- }
+-nodatasum_case:
+ 		WARN_ON(sctx->is_dev_replace);
  
- static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
--					     struct scrub_block *sblock_good,
--					     int force_write)
-+					     struct scrub_block *sblock_good)
- {
- 	int page_num;
- 	int ret = 0;
-@@ -1622,8 +1618,7 @@ static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
- 
- 		ret_sub = scrub_repair_page_from_good_copy(sblock_bad,
- 							   sblock_good,
--							   page_num,
--							   force_write);
-+							   page_num, 1);
- 		if (ret_sub)
- 			ret = ret_sub;
- 	}
++nodatasum_case:
++
+ 		/*
+ 		 * !is_metadata and !have_csum, this means that the data
+ 		 * might not be COW'ed, that it might be modified
 -- 
 1.8.5.1
 

@@ -1,49 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54726 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60296 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751267AbbASNVG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 08:21:06 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 3D903ACB2
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 13:21:04 +0000 (UTC)
+	id S1751465AbbASRp2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Jan 2015 12:45:28 -0500
+Date: Mon, 19 Jan 2015 18:45:26 +0100
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@suse.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3.19-rc] btrfs: sync ioctl, handle errors after transaction start
-Date: Mon, 19 Jan 2015 14:21:02 +0100
-Message-Id: <1421673662-11530-1-git-send-email-dsterba@suse.cz>
+To: Zach Brown <zab@zabbo.net>
+Cc: dsterba@suse.cz, Sandy McArthur Jr <sandymac@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs scrub status reports not running when it is
+Message-ID: <20150119174525.GC13289@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
+ <20150114222717.GA9900@lenny.home.zabbo.net>
+ <20150115112441.GA3685@twin.jikos.cz>
+ <20150115180237.GA28510@lenny.home.zabbo.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150115180237.GA28510@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The version merged to 3.19 did not handle errors from start_trancaction
-and could pass an invalid pointer to commit_transaction.
+On Thu, Jan 15, 2015 at 10:02:37AM -0800, Zach Brown wrote:
+> > > It says that scrub isn't running if any devices have completed.  If you drop
+> > > all those ret < 0 conditional branches that are either noops or wrong, does it
+> > > work like you'd expect?
+> > 
+> > Why wrong? The ioctl callback returns -ENODEV or -ENOTCONN that get
+> > translated to the errno values and ioctl(...) returns -1 in both cases.
+> 
+> Wrong because returning 0 on the first ENOTCONN, instead of continuing
+> to find more devices which might still be scrubbing, leads to this
+> confusing status message.
 
-Fixes: 6b5fe46dfa52441f ("btrfs: do commit in sync_fs if there are pending changes")
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
-
-This is a followup to a patch merged during this dev cycle.
-
- fs/btrfs/super.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 60f7cbe815e9..c86fb5438454 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1001,9 +1001,9 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 			if (fs_info->pending_changes == 0)
- 				return 0;
- 			trans = btrfs_start_transaction(root, 0);
--		} else {
--			return PTR_ERR(trans);
- 		}
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
- 	}
- 	return btrfs_commit_transaction(trans, root);
- }
--- 
-1.8.4.5
-
+You're right, fix on the way.

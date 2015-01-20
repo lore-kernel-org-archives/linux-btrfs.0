@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:7142 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753451AbbATHNO (ORCPT
+	with ESMTP id S1753449AbbATHNJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 02:13:14 -0500
+	Tue, 20 Jan 2015 02:13:09 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 11/15] Btrfs: Combine per-page recover in dev-replace and scrub
-Date: Tue, 20 Jan 2015 15:11:41 +0800
-Message-ID: <1421737905-1693-12-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 08/15] Btrfs: btrfs_rm_dev_replace_blocked(): Use wait_event()
+Date: Tue, 20 Jan 2015 15:11:38 +0800
+Message-ID: <1421737905-1693-9-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,167 +19,37 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-The code are similar, combine them to make code clean and easy to maintenance.
-Some lost condition are also completed with benefit of this combination.
-
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 120 ++++++++++++++++++++++---------------------------------
- 1 file changed, 48 insertions(+), 72 deletions(-)
+ fs/btrfs/dev-replace.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 26d5dbf..6850971 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1099,54 +1099,10 @@ nodatasum_case:
- 		}
- 	}
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 92109b7..5ec03d9 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -440,18 +440,9 @@ leave:
+  */
+ static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
+ {
+-	s64 writers;
+-	DEFINE_WAIT(wait);
+-
+ 	set_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
+-	do {
+-		prepare_to_wait(&fs_info->replace_wait, &wait,
+-				TASK_UNINTERRUPTIBLE);
+-		writers = percpu_counter_sum(&fs_info->bio_counter);
+-		if (writers)
+-			schedule();
+-		finish_wait(&fs_info->replace_wait, &wait);
+-	} while (writers);
++	wait_event(fs_info->replace_wait, !percpu_counter_sum(
++		   &fs_info->bio_counter));
+ }
  
--	/*
--	 * for dev_replace, pick good pages and write to the target device.
--	 */
--	if (sctx->is_dev_replace) {
--		success = 1;
--		for (page_num = 0; page_num < sblock_bad->page_count;
--		     page_num++) {
--			struct scrub_block *sblock_other = NULL;
--
--			for (mirror_index = 0;
--			     mirror_index < BTRFS_MAX_MIRRORS &&
--			     sblocks_for_recheck[mirror_index].page_count > 0;
--			     mirror_index++) {
--				if (!sblocks_for_recheck[mirror_index].
--				    pagev[page_num]->io_error) {
--					sblock_other = sblocks_for_recheck +
--						       mirror_index;
--					break;
--				}
--			}
--
--			if (!sblock_other) {
--				/*
--				 * did not find a mirror to fetch the page
--				 * from. scrub_write_page_to_dev_replace()
--				 * handles this case (page->io_error), by
--				 * filling the block with zeros before
--				 * submitting the write request
--				 */
--				sblock_other = sblock_bad;
--				success = 0;
--			}
--
--			if (scrub_write_page_to_dev_replace(sblock_other,
--							    page_num) != 0) {
--				btrfs_dev_replace_stats_inc(
--					&sctx->dev_root->
--					fs_info->dev_replace.
--					num_write_errors);
--				success = 0;
--			}
--		}
--
--		goto out;
--	}
-+	if (sblock_bad->no_io_error_seen && !sctx->is_dev_replace)
-+		goto did_not_correct_error;
- 
- 	/*
--	 * for regular scrub, repair those pages that are errored.
- 	 * In case of I/O errors in the area that is supposed to be
- 	 * repaired, continue by picking good copies of those pages.
- 	 * Select the good pages from mirrors to rewrite bad pages from
-@@ -1170,44 +1126,64 @@ nodatasum_case:
- 	 * mirror, even if other 512 byte sectors in the same PAGE_SIZE
- 	 * area are unreadable.
- 	 */
--
--	/* can only fix I/O errors from here on */
--	if (sblock_bad->no_io_error_seen)
--		goto did_not_correct_error;
--
- 	success = 1;
--	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
-+	for (page_num = 0; page_num < sblock_bad->page_count;
-+	     page_num++) {
- 		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
-+		struct scrub_block *sblock_other = NULL;
- 
--		if (!page_bad->io_error)
-+		/* skip no-io-error page in scrub */
-+		if (!page_bad->io_error && !sctx->is_dev_replace)
- 			continue;
- 
--		for (mirror_index = 0;
--		     mirror_index < BTRFS_MAX_MIRRORS &&
--		     sblocks_for_recheck[mirror_index].page_count > 0;
--		     mirror_index++) {
--			struct scrub_block *sblock_other = sblocks_for_recheck +
--							   mirror_index;
--			struct scrub_page *page_other = sblock_other->pagev[
--							page_num];
--
--			if (!page_other->io_error) {
--				ret = scrub_repair_page_from_good_copy(
--					sblock_bad, sblock_other, page_num, 0);
--				if (0 == ret) {
--					page_bad->io_error = 0;
--					break; /* succeeded for this page */
-+		/* try to find no-io-error page in mirrors */
-+		if (page_bad->io_error) {
-+			for (mirror_index = 0;
-+			     mirror_index < BTRFS_MAX_MIRRORS &&
-+			     sblocks_for_recheck[mirror_index].page_count > 0;
-+			     mirror_index++) {
-+				if (!sblocks_for_recheck[mirror_index].
-+				    pagev[page_num]->io_error) {
-+					sblock_other = sblocks_for_recheck +
-+						       mirror_index;
-+					break;
- 				}
- 			}
-+			if (!sblock_other)
-+				success = 0;
- 		}
- 
--		if (page_bad->io_error) {
--			/* did not find a mirror to copy the page from */
--			success = 0;
-+		if (sctx->is_dev_replace) {
-+			/*
-+			 * did not find a mirror to fetch the page
-+			 * from. scrub_write_page_to_dev_replace()
-+			 * handles this case (page->io_error), by
-+			 * filling the block with zeros before
-+			 * submitting the write request
-+			 */
-+			if (!sblock_other)
-+				sblock_other = sblock_bad;
-+
-+			if (scrub_write_page_to_dev_replace(sblock_other,
-+							    page_num) != 0) {
-+				btrfs_dev_replace_stats_inc(
-+					&sctx->dev_root->
-+					fs_info->dev_replace.
-+					num_write_errors);
-+				success = 0;
-+			}
-+		} else if (sblock_other) {
-+			ret = scrub_repair_page_from_good_copy(sblock_bad,
-+							       sblock_other,
-+							       page_num, 0);
-+			if (0 == ret)
-+				page_bad->io_error = 0;
-+			else
-+				success = 0;
- 		}
- 	}
- 
--	if (success) {
-+	if (success && !sctx->is_dev_replace) {
- 		if (is_metadata || have_csum) {
- 			/*
- 			 * need to verify the checksum now that all
+ /*
 -- 
 1.8.5.1
 

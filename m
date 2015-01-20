@@ -1,82 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f174.google.com ([209.85.217.174]:63061 "EHLO
-	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752655AbbAPNaB (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:34259 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751633AbbATEYo convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Jan 2015 08:30:01 -0500
-Received: by mail-lb0-f174.google.com with SMTP id 10so18439097lbg.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Jan 2015 05:29:59 -0800 (PST)
+	Mon, 19 Jan 2015 23:24:44 -0500
+Message-ID: <54BDD888.3090903@cn.fujitsu.com>
+Date: Tue, 20 Jan 2015 12:24:40 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1415968484-9648-1-git-send-email-dsterba@suse.cz>
-References: <6b5fe46dfa52441f49c7432b1c1b1cb767834708.1415894837.git.dsterba@suse.cz>
-	<1415968484-9648-1-git-send-email-dsterba@suse.cz>
-Date: Fri, 16 Jan 2015 13:29:59 +0000
-Message-ID: <CAL3q7H5i7LgcdRryhZFDP+1n7MKOSSzX96ixKh5q+K6+nPm9kQ@mail.gmail.com>
-Subject: Re: [PATCH 2/6 v2] btrfs: do commit in sync_fs if there are pending changes
-From: Filipe David Manana <fdmanana@gmail.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/6] btrfs: add support for processing pending changes
+References: <cover.1415894837.git.dsterba@suse.cz> <572d9ab7845ea0e043ec34cd733a75228130ad03.1415894837.git.dsterba@suse.cz>
+In-Reply-To: <572d9ab7845ea0e043ec34cd733a75228130ad03.1415894837.git.dsterba@suse.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 14, 2014 at 12:34 PM, David Sterba <dsterba@suse.cz> wrote:
-> If a pending change is requested, it's not processed unless there is a
-> transaction commit about to happen, not even after sync or SYNC_FS
-> ioctl. For example a remount that toggles the inode_cache option will
-> not take effect after sync on a quiescent filesystem.
+
+-------- Original Message --------
+Subject: [PATCH 1/6] btrfs: add support for processing pending changes
+From: David Sterba <dsterba@suse.cz>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2014年11月14日 18:33
+> There are some actions that modify global filesystem state but cannot be
+> performed at the time of request, but later at the transaction commit
+> time when the filesystem is in a known state.
+>
+> For example enabling new incompat features on-the-fly or issuing
+> transaction commit from unsafe contexts (sysfs handlers).
 >
 > Signed-off-by: David Sterba <dsterba@suse.cz>
 > ---
+>   fs/btrfs/ctree.h       | 45 +++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/disk-io.c     |  6 ++++++
+>   fs/btrfs/transaction.c | 16 ++++++++++++++++
+>   fs/btrfs/transaction.h |  2 ++
+>   4 files changed, 69 insertions(+)
 >
-> v2: catch error from btrfs_start_transaction
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index fe69edda11fb..f30b061ef77d 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1402,6 +1402,11 @@ struct btrfs_fs_info {
+>   	 */
+>   	u64 last_trans_log_full_commit;
+>   	unsigned long mount_opt;
+> +	/*
+> +	 * Track requests for actions that need to be done during transaction
+> +	 * commit (like for some mount options).
+> +	 */
+> +	unsigned long pending_changes;
+>   	unsigned long compress_type:4;
+>   	int commit_interval;
+>   	/*
+> @@ -2103,6 +2108,7 @@ struct btrfs_ioctl_defrag_range_args {
+>   #define btrfs_raw_test_opt(o, opt)	((o) & BTRFS_MOUNT_##opt)
+>   #define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
+>   					 BTRFS_MOUNT_##opt)
+> +
+>   #define btrfs_set_and_info(root, opt, fmt, args...)			\
+>   {									\
+>   	if (!btrfs_test_opt(root, opt))					\
+> @@ -2118,6 +2124,45 @@ struct btrfs_ioctl_defrag_range_args {
+>   }
+>   
+>   /*
+> + * Requests for changes that need to be done during transaction commit.
+> + *
+> + * Internal mount options that are used for special handling of the real
+> + * mount options (eg. cannot be set during remount and have to be set during
+> + * transaction commit)
+> + */
+> +
+> +#define btrfs_test_pending(info, opt)	\
+> +	test_bit(BTRFS_PENDING_##opt, &(info)->pending_changes)
+> +#define btrfs_set_pending(info, opt)	\
+> +	set_bit(BTRFS_PENDING_##opt, &(info)->pending_changes)
+> +#define btrfs_clear_pending(info, opt)	\
+> +	clear_bit(BTRFS_PENDING_##opt, &(info)->pending_changes)
+> +
+> +/*
+> + * Helpers for setting pending mount option changes.
+> + *
+> + * Expects corresponding macros
+> + * BTRFS_PENDING_SET_ and CLEAR_ + short mount option name
+> + */
+> +#define btrfs_set_pending_and_info(info, opt, fmt, args...)            \
+> +do {                                                                   \
+> +       if (!btrfs_raw_test_opt((info)->mount_opt, opt)) {              \
+> +               btrfs_info((info), fmt, ##args);                        \
+> +               btrfs_set_pending((info), SET_##opt);                   \
+> +               btrfs_clear_pending((info), CLEAR_##opt);               \
+> +       }                                                               \
+> +} while(0)
+> +
+> +#define btrfs_clear_pending_and_info(info, opt, fmt, args...)          \
+> +do {                                                                   \
+> +       if (btrfs_raw_test_opt((info)->mount_opt, opt)) {               \
+> +               btrfs_info((info), fmt, ##args);                        \
+> +               btrfs_set_pending((info), CLEAR_##opt);                 \
+> +               btrfs_clear_pending((info), SET_##opt);                 \
+> +       }                                                               \
+> +} while(0)
+> +
+> +/*
+>    * Inode flags
+>    */
+>   #define BTRFS_INODE_NODATASUM		(1 << 0)
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 1bf9f897065d..fd80c0d98421 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2834,6 +2834,12 @@ retry_root_backup:
+>   	if (btrfs_test_opt(tree_root, CHANGE_INODE_CACHE))
+>   		btrfs_set_opt(tree_root->fs_info->mount_opt, INODE_MAP_CACHE);
+>   
+> +	/*
+> +	 * Mount does not set all options immediatelly, we can do it now and do
+> +	 * not have to wait for transaction commit
+> +	 */
+> +	btrfs_apply_pending_changes(fs_info);
+> +
+>   #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+>   	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
+>   		ret = btrfsic_mount(tree_root, fs_devices,
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index dcaae3616728..7a4024a55e5c 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1850,6 +1850,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>   	else
+>   		btrfs_clear_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
+>   
+> +	btrfs_apply_pending_changes(root->fs_info);
+> +
+>   	/* commit_fs_roots gets rid of all the tree log roots, it is now
+>   	 * safe to free the root of tree log roots
+>   	 */
+> @@ -2019,3 +2021,17 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
+>   
+>   	return (ret < 0) ? 0 : 1;
+>   }
+> +
+> +void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info)
+> +{
+> +	unsigned long prev;
+> +	unsigned long bit;
+> +
+> +	prev = cmpxchg(&fs_info->pending_changes, 0, 0);
+Another HUGE problem here.
+cmpxchg will only change the pending_changes to 0 if it's already 0.
+If it not 0, it will not change pending_changes to 0.
 
-V2 didn't make it to 3.19:
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=6b5fe46dfa52441f49c7432b1c1b1cb767834708
+So pending_changes will always be non-zero if set_pending....
 
->
->  fs/btrfs/super.c | 14 +++++++++++---
->  1 file changed, 11 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 54bd91ece35b..0cf589402d8d 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -993,9 +993,17 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
->         trans = btrfs_attach_transaction_barrier(root);
->         if (IS_ERR(trans)) {
->                 /* no transaction, don't bother */
-> -               if (PTR_ERR(trans) == -ENOENT)
-> -                       return 0;
-> -               return PTR_ERR(trans);
-> +               if (PTR_ERR(trans) == -ENOENT) {
-> +                       /*
-> +                        * Exit unless we have some pending changes
-> +                        * that need to go through commit
-> +                        */
-> +                       if (fs_info->pending_changes == 0)
-> +                               return 0;
-> +                       trans = btrfs_start_transaction(root, 0);
-> +               }
-> +               if (IS_ERR(trans))
-> +                       return PTR_ERR(trans);
->         }
->         return btrfs_commit_transaction(trans, root);
->  }
-> --
-> 2.1.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Qu
+> +	if (!prev)
+> +		return;
+> +
+> +	if (prev)
+> +		btrfs_warn(fs_info,
+> +			"unknown pending changes left 0x%lx, ignoring", prev);
+> +}
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index d8f40e1a5d2d..75ebcfce9d57 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -170,4 +170,6 @@ int btrfs_wait_marked_extents(struct btrfs_root *root,
+>   int btrfs_transaction_blocked(struct btrfs_fs_info *info);
+>   int btrfs_transaction_in_commit(struct btrfs_fs_info *info);
+>   void btrfs_put_transaction(struct btrfs_transaction *transaction);
+> +void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info);
+> +
+>   #endif
 
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

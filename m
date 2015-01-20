@@ -1,18 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:7142 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753460AbbATHNZ (ORCPT
+	with ESMTP id S1753451AbbATHNO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 02:13:25 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0K7CkQ9004315
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2015 15:12:46 +0800
+	Tue, 20 Jan 2015 02:13:14 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 15/15] Rename all ref_count to refs in struct
-Date: Tue, 20 Jan 2015 15:11:45 +0800
-Message-ID: <1421737905-1693-16-git-send-email-zhaolei@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH 11/15] Btrfs: Combine per-page recover in dev-replace and scrub
+Date: Tue, 20 Jan 2015 15:11:41 +0800
+Message-ID: <1421737905-1693-12-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,126 +19,167 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-refs is better than ref_count to record a struct's ref count.
+The code are similar, combine them to make code clean and easy to maintenance.
+Some lost condition are also completed with benefit of this combination.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Suggested-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
+ fs/btrfs/scrub.c | 120 ++++++++++++++++++++++---------------------------------
+ 1 file changed, 48 insertions(+), 72 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 94f2b2b..ad5f487 100644
+index 26d5dbf..6850971 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -79,7 +79,7 @@ struct scrub_page {
- 	u64			logical;
- 	u64			physical;
- 	u64			physical_for_dev_replace;
--	atomic_t		ref_count;
-+	atomic_t		refs;
- 	struct {
- 		unsigned int	mirror_num:8;
- 		unsigned int	have_csum:1;
-@@ -112,7 +112,7 @@ struct scrub_block {
- 	struct scrub_page	*pagev[SCRUB_MAX_PAGES_PER_BLOCK];
- 	int			page_count;
- 	atomic_t		outstanding_pages;
--	atomic_t		ref_count; /* free mem on transition to zero */
-+	atomic_t		refs; /* free mem on transition to zero */
- 	struct scrub_ctx	*sctx;
- 	struct scrub_parity	*sparity;
- 	struct {
-@@ -141,7 +141,7 @@ struct scrub_parity {
+@@ -1099,54 +1099,10 @@ nodatasum_case:
+ 		}
+ 	}
  
- 	int			stripe_len;
- 
--	atomic_t		ref_count;
-+	atomic_t		refs;
- 
- 	struct list_head	spages;
- 
-@@ -1305,7 +1305,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 	int ret;
+-	/*
+-	 * for dev_replace, pick good pages and write to the target device.
+-	 */
+-	if (sctx->is_dev_replace) {
+-		success = 1;
+-		for (page_num = 0; page_num < sblock_bad->page_count;
+-		     page_num++) {
+-			struct scrub_block *sblock_other = NULL;
+-
+-			for (mirror_index = 0;
+-			     mirror_index < BTRFS_MAX_MIRRORS &&
+-			     sblocks_for_recheck[mirror_index].page_count > 0;
+-			     mirror_index++) {
+-				if (!sblocks_for_recheck[mirror_index].
+-				    pagev[page_num]->io_error) {
+-					sblock_other = sblocks_for_recheck +
+-						       mirror_index;
+-					break;
+-				}
+-			}
+-
+-			if (!sblock_other) {
+-				/*
+-				 * did not find a mirror to fetch the page
+-				 * from. scrub_write_page_to_dev_replace()
+-				 * handles this case (page->io_error), by
+-				 * filling the block with zeros before
+-				 * submitting the write request
+-				 */
+-				sblock_other = sblock_bad;
+-				success = 0;
+-			}
+-
+-			if (scrub_write_page_to_dev_replace(sblock_other,
+-							    page_num) != 0) {
+-				btrfs_dev_replace_stats_inc(
+-					&sctx->dev_root->
+-					fs_info->dev_replace.
+-					num_write_errors);
+-				success = 0;
+-			}
+-		}
+-
+-		goto out;
+-	}
++	if (sblock_bad->no_io_error_seen && !sctx->is_dev_replace)
++		goto did_not_correct_error;
  
  	/*
--	 * note: the two members ref_count and outstanding_pages
-+	 * note: the two members refs and outstanding_pages
- 	 * are not used (and not set) in the blocks that are used for
- 	 * the recheck procedure
+-	 * for regular scrub, repair those pages that are errored.
+ 	 * In case of I/O errors in the area that is supposed to be
+ 	 * repaired, continue by picking good copies of those pages.
+ 	 * Select the good pages from mirrors to rewrite bad pages from
+@@ -1170,44 +1126,64 @@ nodatasum_case:
+ 	 * mirror, even if other 512 byte sectors in the same PAGE_SIZE
+ 	 * area are unreadable.
  	 */
-@@ -2018,12 +2018,12 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+-
+-	/* can only fix I/O errors from here on */
+-	if (sblock_bad->no_io_error_seen)
+-		goto did_not_correct_error;
+-
+ 	success = 1;
+-	for (page_num = 0; page_num < sblock_bad->page_count; page_num++) {
++	for (page_num = 0; page_num < sblock_bad->page_count;
++	     page_num++) {
+ 		struct scrub_page *page_bad = sblock_bad->pagev[page_num];
++		struct scrub_block *sblock_other = NULL;
  
- static void scrub_block_get(struct scrub_block *sblock)
- {
--	atomic_inc(&sblock->ref_count);
-+	atomic_inc(&sblock->refs);
- }
+-		if (!page_bad->io_error)
++		/* skip no-io-error page in scrub */
++		if (!page_bad->io_error && !sctx->is_dev_replace)
+ 			continue;
  
- static void scrub_block_put(struct scrub_block *sblock)
- {
--	if (atomic_dec_and_test(&sblock->ref_count)) {
-+	if (atomic_dec_and_test(&sblock->refs)) {
- 		int i;
+-		for (mirror_index = 0;
+-		     mirror_index < BTRFS_MAX_MIRRORS &&
+-		     sblocks_for_recheck[mirror_index].page_count > 0;
+-		     mirror_index++) {
+-			struct scrub_block *sblock_other = sblocks_for_recheck +
+-							   mirror_index;
+-			struct scrub_page *page_other = sblock_other->pagev[
+-							page_num];
+-
+-			if (!page_other->io_error) {
+-				ret = scrub_repair_page_from_good_copy(
+-					sblock_bad, sblock_other, page_num, 0);
+-				if (0 == ret) {
+-					page_bad->io_error = 0;
+-					break; /* succeeded for this page */
++		/* try to find no-io-error page in mirrors */
++		if (page_bad->io_error) {
++			for (mirror_index = 0;
++			     mirror_index < BTRFS_MAX_MIRRORS &&
++			     sblocks_for_recheck[mirror_index].page_count > 0;
++			     mirror_index++) {
++				if (!sblocks_for_recheck[mirror_index].
++				    pagev[page_num]->io_error) {
++					sblock_other = sblocks_for_recheck +
++						       mirror_index;
++					break;
+ 				}
+ 			}
++			if (!sblock_other)
++				success = 0;
+ 		}
  
- 		if (sblock->sparity)
-@@ -2037,12 +2037,12 @@ static void scrub_block_put(struct scrub_block *sblock)
+-		if (page_bad->io_error) {
+-			/* did not find a mirror to copy the page from */
+-			success = 0;
++		if (sctx->is_dev_replace) {
++			/*
++			 * did not find a mirror to fetch the page
++			 * from. scrub_write_page_to_dev_replace()
++			 * handles this case (page->io_error), by
++			 * filling the block with zeros before
++			 * submitting the write request
++			 */
++			if (!sblock_other)
++				sblock_other = sblock_bad;
++
++			if (scrub_write_page_to_dev_replace(sblock_other,
++							    page_num) != 0) {
++				btrfs_dev_replace_stats_inc(
++					&sctx->dev_root->
++					fs_info->dev_replace.
++					num_write_errors);
++				success = 0;
++			}
++		} else if (sblock_other) {
++			ret = scrub_repair_page_from_good_copy(sblock_bad,
++							       sblock_other,
++							       page_num, 0);
++			if (0 == ret)
++				page_bad->io_error = 0;
++			else
++				success = 0;
+ 		}
+ 	}
  
- static void scrub_page_get(struct scrub_page *spage)
- {
--	atomic_inc(&spage->ref_count);
-+	atomic_inc(&spage->refs);
- }
- 
- static void scrub_page_put(struct scrub_page *spage)
- {
--	if (atomic_dec_and_test(&spage->ref_count)) {
-+	if (atomic_dec_and_test(&spage->refs)) {
- 		if (spage->page)
- 			__free_page(spage->page);
- 		kfree(spage);
-@@ -2168,7 +2168,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->ref_count, 1);
-+	atomic_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 
-@@ -2461,7 +2461,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 
- 	/* one ref inside this function, plus one for each page added to
- 	 * a bio later on */
--	atomic_set(&sblock->ref_count, 1);
-+	atomic_set(&sblock->refs, 1);
- 	sblock->sctx = sctx;
- 	sblock->no_io_error_seen = 1;
- 	sblock->sparity = sparity;
-@@ -2713,12 +2713,12 @@ static inline int scrub_calc_parity_bitmap_len(int nsectors)
- 
- static void scrub_parity_get(struct scrub_parity *sparity)
- {
--	atomic_inc(&sparity->ref_count);
-+	atomic_inc(&sparity->refs);
- }
- 
- static void scrub_parity_put(struct scrub_parity *sparity)
- {
--	if (!atomic_dec_and_test(&sparity->ref_count))
-+	if (!atomic_dec_and_test(&sparity->refs))
- 		return;
- 
- 	scrub_parity_check_and_repair(sparity);
-@@ -2768,7 +2768,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
- 	sparity->scrub_dev = sdev;
- 	sparity->logic_start = logic_start;
- 	sparity->logic_end = logic_end;
--	atomic_set(&sparity->ref_count, 1);
-+	atomic_set(&sparity->refs, 1);
- 	INIT_LIST_HEAD(&sparity->spages);
- 	sparity->dbitmap = sparity->bitmap;
- 	sparity->ebitmap = (void *)sparity->bitmap + bitmap_len;
+-	if (success) {
++	if (success && !sctx->is_dev_replace) {
+ 		if (is_metadata || have_csum) {
+ 			/*
+ 			 * need to verify the checksum now that all
 -- 
 1.8.5.1
 

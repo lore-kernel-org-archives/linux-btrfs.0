@@ -1,36 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59881 "EHLO mx2.suse.de"
+Received: from imap.thunk.org ([74.207.234.97]:51373 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752780AbbATQBG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 11:01:06 -0500
-Date: Tue, 20 Jan 2015 17:01:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, clm@fb.com
-Subject: Re: [PATCH RFC v2 1/5] btrfs: Fix the bug that
- fs_info->pending_changes is never cleared.
-Message-ID: <20150120160104.GG13289@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1421744737-16586-2-git-send-email-quwenruo@cn.fujitsu.com>
+	id S1754562AbbATRNt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 12:13:49 -0500
+Date: Tue, 20 Jan 2015 12:13:48 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Andreas Philipp <philipp.andreas@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Snapshot cannot be deleted
+Message-ID: <20150120171348.GA24217@thunk.org>
+References: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421744737-16586-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 20, 2015 at 05:05:33PM +0800, Qu Wenruo wrote:
-> Fs_info->pending_changes is never cleared since the original code uses
-> cmpxchg(&fs_info->pending_changes, 0, 0), which will only clear it if
-> pending_changes is already 0.
-> 
-> This will cause a lot of problem when mount it with inode_cache mount
-> option.
-> If the btrfs is mounted as inode_cache, pending_changes will always be
-> 1, even when the fs is frozen.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
++linux-btrfs,-linux-ext4
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+On Tue, Jan 20, 2015 at 01:28:04PM +0100, Andreas Philipp wrote:
+> 
+> Due to the known (and fixed) bug in kernel 3.17.0 one of my btrfs
+> volume suffers from unreadable and - even worse - uneraseable
+> snapshots. Whenever such a snapshot is accessed there is "parent
+> transid verify failed" in dmesg.
+> Is there any way to delete these snapshots?
 
-Chris, please add this to 3.19-rc, introduced in this dev cycle.
+You sent this to the wrong mailing list, so I'm reforwarding this to
+the linux-btrfs list.
+
+Cheers,
+
+						- Ted

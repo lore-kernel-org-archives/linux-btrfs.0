@@ -1,74 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59678 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751241AbbATMlp (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 20 Jan 2015 07:41:45 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix setup_leaf_for_split() to avoid leaf corruption
-Date: Tue, 20 Jan 2015 12:40:53 +0000
-Message-Id: <1421757653-14370-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59437 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752449AbbATPxS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 10:53:18 -0500
+Date: Tue, 20 Jan 2015 16:53:16 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH RFC v2 0/5] Fix bugs introduced by the new pending changes
+Message-ID: <20150120155316.GF13289@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were incorrectly detecting when the target key didn't exist anymore
-after releasing the path and re-searching the tree. This could make
-us split or duplicate (btrfs_split_item() and btrfs_duplicate_item()
-are its only callers at the moment) an item when we should not.
+On Tue, Jan 20, 2015 at 05:05:32PM +0800, Qu Wenruo wrote:
+> Commit 572d9ab7845ea0e0 ("btrfs: add support for processing pending
+> changes") introduced several bugs which will eventually cause a
+> deadlock.
+> 
+> The deadlock can be triggered by fstests/generic/068 with inode_cache
+> mount option.
+> 
+> The deadlock happens in the following flow:
+> moutn with inode_cache -> freeze fs -> sync -> unfreeze.
+> 
+> Sync_fs stack:				Thaw_fs stack:
+> (Holding s_umount)			(Waiting s_umount)
+> |- btrfs_sync_fs()
+>    |- start_transaction()
+>       (Waiting thaw_fs to unfreeze the fs)
+> 
+> The problem has several causes:
+> 1) Cmpxchg in btrfs_apply_pending_changes() doesn't work
+> Cmpxchg in btrfs_apply_pending_changes() will only clear
+> fs_info->pending_changes if it is already 0.
+> So fs_info->pending_changes will never cleared, and every sync_fs() on
+> frozen btrfs will try to start a new transaction and deadlock.
+> 
+> So patch 1 fixes it by using xchg() other than cmpxchg().
 
-For the case of duplicating an item, we currently only duplicate
-checksum items (csum tree) and file extent items (fs/subvol trees).
-For the checksum items we end up overriding the item completely,
-but for file extent items we update only some of their fields in
-the copy (done in __btrfs_drop_extents), which means we can end up
-having a logical corruption for some values.
+Right, that's a silly mistake.
 
-Also for the case where we duplicate a file extent item it will make
-us produce a leaf with a wrong key order, as btrfs_duplicate_item()
-advances us to the next slot and then its caller sets a smaller key
-on the new item at that slot (like in __btrfs_drop_extents() e.g.).
-Alternatively if the tree search in setup_leaf_for_split() leaves
-with path->slots[0] == btrfs_header_nritems(path->nodes[0]), we end
-up accessing beyond the leaf's end (when we check if the item's size
-has changed) and make our caller insert an item at the invalid slot
-btrfs_header_nritems(path->nodes[0]) + 1, causing an invalid memory
-access if the leaf is full or nearly full.
+> 2) btrfs_freeze() doesn't handle and clear pending_changes
 
-This issue has been present since the introduction of this function
-in 2009:
+I don't se a major problem to delay the pending changes, ie. do not
+start a new transaction (like the IOC_SYNC does). This would be handled
+after thawing and the next full transaction commit.
 
-    Btrfs: Add btrfs_duplicate_item
-    commit ad48fd754676bfae4139be1a897b1ea58f9aaf21
+We could flush the pending changes from the freeze callback, this adds
+not much extra work but could mean that some user-triggered change hits
+the disk before the filesystem becomes frozen.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+> If btrfs start a transaction if there are pending changes but no running
+> transaction,
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 14a72ed..78e8993c1 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4356,13 +4356,15 @@ static noinline int setup_leaf_for_split(struct btrfs_trans_handle *trans,
- 	path->search_for_split = 1;
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	path->search_for_split = 0;
-+	if (ret > 0)
-+		ret = -EAGAIN;
- 	if (ret < 0)
- 		goto err;
- 
- 	ret = -EAGAIN;
- 	leaf = path->nodes[0];
--	/* if our item isn't there or got smaller, return now */
--	if (ret > 0 || item_size != btrfs_item_size_nr(leaf, path->slots[0]))
-+	/* if our item isn't there, return now */
-+	if (item_size != btrfs_item_size_nr(leaf, path->slots[0]))
- 		goto err;
- 
- 	/* the leaf has  changed, it now has room.  return now */
--- 
-2.1.3
+> sync should never start a transaction on frozen fs.
 
+I agree with that and this is the actual bug I see here.
+
+> (Except the following sysfs case)
+> 
+> So patch 2~3 fixes it by adding pending changes handler in
+> btrfs_freeze().
+>
+> 3) Changes through sysfs interface can create pending changes without
+>    waiting for unfreezing.
+
+The sysfs callbacks were changed so they do not trigger any writes, just
+make a note for later. There's no difference regarding freezing.
+
+> Since sysfs changes doesn't go through normal open routine,
+> which will initiate sb_start_*write() and waiting for unfreezing,
+> changes through sysfs like changing label will set
+> fs_info->pending_changes to non-zero, and later sync_fs will deadlock
+> again.
+> 
+> So patch 4~5 reverts the commits relating patches to fix such problem.
+
+I don't agree with the reverts for obvious reasons, that's just changing
+one buggy behaviour with another one.

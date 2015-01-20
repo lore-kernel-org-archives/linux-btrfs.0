@@ -1,34 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:51373 "EHLO imap.thunk.org"
+Received: from cantor2.suse.de ([195.135.220.15]:37163 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754562AbbATRNt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 12:13:49 -0500
-Date: Tue, 20 Jan 2015 12:13:48 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Andreas Philipp <philipp.andreas@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Snapshot cannot be deleted
-Message-ID: <20150120171348.GA24217@thunk.org>
-References: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
+	id S1751621AbbATSF3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 13:05:29 -0500
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: guihc.fnst@cn.fujitsu.com, quwenruo@cn.fujitsu.com, miaoxie@huawei.com,
+        David Sterba <dsterba@suse.cz>, clm@fb.com
+Subject: [PULL] [PATCH 0/3] Btrfs, fixes for freezing vs pending changes
+Date: Tue, 20 Jan 2015 19:05:27 +0100
+Message-Id: <cover.1421776294.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-+linux-btrfs,-linux-ext4
+There was some churn regarding the patches to $SUBJ, here's what I think is
+enough to fix it for 3.19.
 
-On Tue, Jan 20, 2015 at 01:28:04PM +0100, Andreas Philipp wrote:
-> 
-> Due to the known (and fixed) bug in kernel 3.17.0 one of my btrfs
-> volume suffers from unreadable and - even worse - uneraseable
-> snapshots. Whenever such a snapshot is accessed there is "parent
-> transid verify failed" in dmesg.
-> Is there any way to delete these snapshots?
+It's based on top of my other patch "btrfs: sync ioctl, handle errors after
+transaction start" that might land in Chris' for-linus already so it's not
+included here.
 
-You sent this to the wrong mailing list, so I'm reforwarding this to
-the linux-btrfs list.
+The patches are for review by the involved people, also available in this
+branch:
 
-Cheers,
+ git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
 
-						- Ted
+David Sterba (1):
+  btrfs: remove a no-op unfreeze superbock callback
+
+Qu Wenruo (2):
+  btrfs: Fix the bug that fs_info->pending_changes is never cleared.
+  btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid
+    deadlock.
+
+ fs/btrfs/super.c       | 16 ++++++++++------
+ fs/btrfs/transaction.c |  2 +-
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+-- 
+2.1.3
+

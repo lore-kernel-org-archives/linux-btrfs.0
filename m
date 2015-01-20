@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21430 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42399 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752526AbbATJHs (ORCPT
+	with ESMTP id S1752087AbbATJHs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 20 Jan 2015 04:07:48 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH RFC v2 3/5] btrfs: Handle pending changes in btrfs_freeze().
-Date: Tue, 20 Jan 2015 17:05:35 +0800
-Message-ID: <1421744737-16586-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC v2 5/5] Revert "btrfs: move commit out of sysfs when changing features"
+Date: Tue, 20 Jan 2015 17:05:37 +0800
+Message-ID: <1421744737-16586-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,109 +17,62 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before the patch, btrfs_freeze() does not start a transaction if there
-is pending changes but no transaction is running.
+This reverts commit 0eae2747ec1dd ("btrfs: move commit out of sysfs
+when changing features").
 
-This will lead to deadlock if the fs is frozen but there are pending
-changes, since sync_fs will start a transaction with s_umount mutex,
-blocked by frozen fs. And later unfreeze will wait sync_fs to release
-the s_umount mutex.
+Unlike most btrfs file operations, sysfs don't go through the normal
+open/read/write routine which will initiate a sb_start_*write/read.
 
-This patch will ensure the frozen fs from having pending changes, except
-some one use sysfs interfaces to create pending changes again.
+This is very dangerous on frozen btrfs, if using the pending changes
+method, sysfs change can make fs_info->pending_changes to 1, and later
+sync_fs() call will cause deadlock.
+
+So revert the patch to deal the deadlock caused by the following workload:
+freeze() -> change features -> sync() -> unfreeze()
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/super.c | 52 +++++++++++++++++++++++++---------------------------
- 1 file changed, 25 insertions(+), 27 deletions(-)
+ fs/btrfs/sysfs.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 60f7cbe..5229786 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -975,32 +975,22 @@ fail_close:
- 	return err;
- }
- 
--int btrfs_sync_fs(struct super_block *sb, int wait)
-+static int commit_current_or_new_trans(struct btrfs_fs_info *fs_info,
-+				       int freezing)
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 226f726..b2e7bb4 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -111,6 +111,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
  {
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 	struct btrfs_root *root = fs_info->tree_root;
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
++	struct btrfs_trans_handle *trans;
+ 	u64 features, set, clear;
+ 	unsigned long val;
+ 	int ret;
+@@ -152,6 +153,10 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	btrfs_info(fs_info, "%s %s feature flag",
+ 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
  
--	trace_btrfs_sync_fs(wait);
--
--	if (!wait) {
--		filemap_flush(fs_info->btree_inode->i_mapping);
--		return 0;
--	}
--
--	btrfs_wait_ordered_roots(fs_info, -1);
--
- 	trans = btrfs_attach_transaction_barrier(root);
- 	if (IS_ERR(trans)) {
--		/* no transaction, don't bother */
- 		if (PTR_ERR(trans) == -ENOENT) {
--			/*
--			 * Exit unless we have some pending changes
--			 * that need to go through commit
--			 */
-+			/* No pending changes, don't bother*/
- 			if (fs_info->pending_changes == 0)
- 				return 0;
--			trans = btrfs_start_transaction(root, 0);
-+			if (freezing)
-+				trans = btrfs_start_transaction_freeze(root, 0);
-+			else
-+				trans = btrfs_start_transaction(root, 0);
- 		} else {
- 			return PTR_ERR(trans);
- 		}
-@@ -1008,6 +998,22 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 	return btrfs_commit_transaction(trans, root);
++	trans = btrfs_start_transaction(fs_info->fs_root, 0);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
+ 	spin_lock(&fs_info->super_lock);
+ 	features = get_features(fs_info, fa->feature_set);
+ 	if (val)
+@@ -161,11 +166,9 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	set_features(fs_info, fa->feature_set, features);
+ 	spin_unlock(&fs_info->super_lock);
+ 
+-	/*
+-	 * We don't want to do full transaction commit from inside sysfs
+-	 */
+-	btrfs_set_pending(fs_info, COMMIT);
+-	wake_up_process(fs_info->transaction_kthread);
++	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
++	if (ret)
++		return ret;
+ 
+ 	return count;
  }
- 
-+int btrfs_sync_fs(struct super_block *sb, int wait)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-+
-+	trace_btrfs_sync_fs(wait);
-+
-+	if (!wait) {
-+		filemap_flush(fs_info->btree_inode->i_mapping);
-+		return 0;
-+	}
-+
-+	btrfs_wait_ordered_roots(fs_info, -1);
-+
-+	return commit_current_or_new_trans(fs_info, 0);
-+}
-+
- static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *info = btrfs_sb(dentry->d_sb);
-@@ -1935,17 +1941,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 
- static int btrfs_freeze(struct super_block *sb)
- {
--	struct btrfs_trans_handle *trans;
--	struct btrfs_root *root = btrfs_sb(sb)->tree_root;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 
--	trans = btrfs_attach_transaction_barrier(root);
--	if (IS_ERR(trans)) {
--		/* no transaction, don't bother */
--		if (PTR_ERR(trans) == -ENOENT)
--			return 0;
--		return PTR_ERR(trans);
--	}
--	return btrfs_commit_transaction(trans, root);
-+	return commit_current_or_new_trans(fs_info, 1);
- }
- 
- static int btrfs_unfreeze(struct super_block *sb)
 -- 
 2.2.2
 

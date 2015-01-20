@@ -1,61 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34440 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755042AbbATRNp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 12:13:45 -0500
-Date: Tue, 20 Jan 2015 18:13:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
-        miaoxie@huawei.com, clm@fb.com
-Subject: Re: [PATCH] btrfs: Don't call btrfs_start_transaction() on frozen fs
- to avoid deadlock.
-Message-ID: <20150120171344.GH13289@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1421653361-18630-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:39157 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751474AbbATVZR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 16:25:17 -0500
+Received: by mail-wi0-f172.google.com with SMTP id bs8so29934269wib.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2015 13:25:16 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421653361-18630-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <CAJCQCtRe+0n84PUZuWKw0UUwK_RF_AhW4sMZ+07r96qaNvRWKg@mail.gmail.com>
+References: <CA+WRLO9nCFgjHzY1F_xR5PpmgaSEemfmZ=MtiSpiaHcROQnq-A@mail.gmail.com>
+	<CA+WRLO8gGUxxHhqQfgQWXyU0kT2=nf7u5oPFYJTWY=hSMNBj=w@mail.gmail.com>
+	<CAJCQCtRe+0n84PUZuWKw0UUwK_RF_AhW4sMZ+07r96qaNvRWKg@mail.gmail.com>
+Date: Wed, 21 Jan 2015 08:25:16 +1100
+Message-ID: <CA+WRLO-VnULLGOE1VkrOortCdQNCKPCwJ70FDJL3KQwru8TLhQ@mail.gmail.com>
+Subject: Re: btrfs convert running out of space
+From: Gareth Pye <gareth@cerberos.id.au>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 19, 2015 at 03:42:41PM +0800, Qu Wenruo wrote:
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1000,6 +1000,14 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
->  			 */
->  			if (fs_info->pending_changes == 0)
->  				return 0;
-> +			/*
-> +			 * Test if the fs is frozen, or start_trasaction
-> +			 * will deadlock on itself.
-> +			 */
-> +			if (__sb_start_write(sb, SB_FREEZE_FS, false))
-> +				__sb_end_write(sb, SB_FREEZE_FS);
-> +			else
-> +				return 0;
+Yeah, I have updated btrfs-progs to 3.18. While it is plausible that
+the bug was created by using 3.12, none of the behavior has changed
+now I'm using 3.18.
 
-The more I look into that the more I think that the first fix is the
-right one.
+I was experimenting with -dusage values to try and process the blocks
+in a different order to see if that made any difference. It did let me
+get through more of the file system before erroring but now it errors
+on the first block it tries.
 
-Has been pointed out in this thread, it is ok to skip processing the
-pending changes if the filesystem is frozen.
+Using "btrfs balance start -v -dusage=2 /data" cleans up all the empty
+block groups that "btrfs balance start -v
+-dconvert=raid1,soft,limit=10 /data" creates. I'm using limit=10 to
+speed up testing, I have tried without it and it just takes longer to
+complete and the whole time the RAID1 total sky rockets while the
+RAID1 used doesn't move.
 
-The pending changes have to flushed from sync (by design), we cannot use
-mnt_want_write or the sb_start* protections that.
+On Tue, Jan 20, 2015 at 6:38 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> On Mon, Jan 19, 2015 at 5:13 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
+>> I just tried from a slightly different tack, after doing another
+>> -dusage=2 pass I did the following:
+>> # btrfs balance start -v -dconvert=raid1 -dsoft -dusage=96 /data
+>> Dumping filters: flags 0x1, state 0x0, force is off
+>>   DATA (flags 0x302): converting, target=16, soft is on, usage=96
+>> Done, had to relocate 0 out of 3763 chunks
+>> # btrfs balance start -v -dconvert=raid1 -dsoft -dusage=99 /data
+>> Dumping filters: flags 0x1, state 0x0, force is off
+>>   DATA (flags 0x302): converting, target=16, soft is on, usage=99
+>> ERROR: error during balancing '/data' - No space left on device
+>
+>
+> I guess I don't really understand the purpose of combining dconvert
+> and dusage. Sure, it should either work or give an error, so there may
+> still be a bug here. But I'm just not following why they'd be used
+> together, seems superfluous. What happens when they're tried
+> separately? I'm not sure which one's instigating the problem.
+>
+> Also I think you should upgrade to btrfs-progs 3.18, seeing as 3.12 is
+> old and if there's a bug in that version of progs vs the kernel, it's
+> not going to get fixed.
+>
+>
+>
+> --
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-The btrfs_freeze callback can safely do the last commit, that's under
-s_umount held by vfs::freeze_super. Then any other new transaction would
-block. Any other call to btrfs_sync_fs will not find any active
-transaction and with this patch will not start one. Sounds safe to me.
-
-I think the right level to check is SB_FREEZE_WRITE though, to stop any
-potential writes as soon as possible and when the s_umount lock is still
-held in vfs::freeze_super.
-
-I'll collect the relevant patches and will send it for review.
 
 
->  			trans = btrfs_start_transaction(root, 0);
->  		} else {
->  			return PTR_ERR(trans);
+-- 
+Gareth Pye
+Level 2 MTG Judge, Melbourne, Australia
+"Dear God, I would like to file a bug report"

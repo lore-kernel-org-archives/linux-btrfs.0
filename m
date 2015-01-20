@@ -1,98 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37169 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37173 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751621AbbATSFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 13:05:35 -0500
+	id S1752389AbbATSFi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 13:05:38 -0500
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: guihc.fnst@cn.fujitsu.com, quwenruo@cn.fujitsu.com, miaoxie@huawei.com,
         David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/3] btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid deadlock.
-Date: Tue, 20 Jan 2015 19:05:33 +0100
-Message-Id: <bd55c3d5bb8e5899aaedb3f8262cd84f6d095794.1421776294.git.dsterba@suse.cz>
+Subject: [PATCH 3/3] btrfs: remove a no-op unfreeze superbock callback
+Date: Tue, 20 Jan 2015 19:05:37 +0100
+Message-Id: <6db856a9498f4716320fb1442f58dbfd39d442da.1421776294.git.dsterba@suse.cz>
 In-Reply-To: <cover.1421776294.git.dsterba@suse.cz>
 References: <cover.1421776294.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-Commit 6b5fe46dfa52 (btrfs: do commit in sync_fs if there are pending
-changes) will call btrfs_start_transaction() in sync_fs(), to handle
-some operations needed to be done in next transaction.
-
-However this can cause deadlock if the filesystem is frozen, with the
-following sys_r+w output:
-[  143.255932] Call Trace:
-[  143.255936]  [<ffffffff816c0e09>] schedule+0x29/0x70
-[  143.255939]  [<ffffffff811cb7f3>] __sb_start_write+0xb3/0x100
-[  143.255971]  [<ffffffffa040ec06>] start_transaction+0x2e6/0x5a0
-[btrfs]
-[  143.255992]  [<ffffffffa040f1eb>] btrfs_start_transaction+0x1b/0x20
-[btrfs]
-[  143.256003]  [<ffffffffa03dc0ba>] btrfs_sync_fs+0xca/0xd0 [btrfs]
-[  143.256007]  [<ffffffff811f7be0>] sync_fs_one_sb+0x20/0x30
-[  143.256011]  [<ffffffff811cbd01>] iterate_supers+0xe1/0xf0
-[  143.256014]  [<ffffffff811f7d75>] sys_sync+0x55/0x90
-[  143.256017]  [<ffffffff816c49d2>] system_call_fastpath+0x12/0x17
-[  143.256111] Call Trace:
-[  143.256114]  [<ffffffff816c0e09>] schedule+0x29/0x70
-[  143.256119]  [<ffffffff816c3405>] rwsem_down_write_failed+0x1c5/0x2d0
-[  143.256123]  [<ffffffff8133f013>] call_rwsem_down_write_failed+0x13/0x20
-[  143.256131]  [<ffffffff811caae8>] thaw_super+0x28/0xc0
-[  143.256135]  [<ffffffff811db3e5>] do_vfs_ioctl+0x3f5/0x540
-[  143.256187]  [<ffffffff811db5c1>] SyS_ioctl+0x91/0xb0
-[  143.256213]  [<ffffffff816c49d2>] system_call_fastpath+0x12/0x17
-
-The reason is like the following:
-(Holding s_umount)
-VFS sync_fs staff:
-|- btrfs_sync_fs()
-   |- btrfs_start_transaction()
-      |- sb_start_intwrite()
-      (Waiting thaw_fs to unfreeze)
-					VFS thaw_fs staff:
-					thaw_fs()
-					(Waiting sync_fs to release
-					 s_umount)
-
-So deadlock happens.
-This can be easily triggered by fstest/generic/068 with inode_cache
-mount option.
-
-The fix is to check if the fs is frozen, if the fs is frozen, just
-return and waiting for the next transaction.
-
-Cc: David Sterba <dsterba@suse.cz>
-Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-[enhanced comment, changed to SB_FREEZE_WRITE]
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/super.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ fs/btrfs/super.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c86fb5438454..6f49b2872a64 100644
+index 6f49b2872a64..05fef198ff94 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1000,6 +1000,16 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 			 */
- 			if (fs_info->pending_changes == 0)
- 				return 0;
-+			/*
-+			 * A non-blocking test if the fs is frozen. We must not
-+			 * start a new transaction here otherwise a deadlock
-+			 * happens. The pending operations are delayed to the
-+			 * next commit after thawing.
-+			 */
-+			if (__sb_start_write(sb, SB_FREEZE_WRITE, false))
-+				__sb_end_write(sb, SB_FREEZE_WRITE);
-+			else
-+				return 0;
- 			trans = btrfs_start_transaction(root, 0);
- 		}
- 		if (IS_ERR(trans))
+@@ -1958,11 +1958,6 @@ static int btrfs_freeze(struct super_block *sb)
+ 	return btrfs_commit_transaction(trans, root);
+ }
+ 
+-static int btrfs_unfreeze(struct super_block *sb)
+-{
+-	return 0;
+-}
+-
+ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
+@@ -2011,7 +2006,6 @@ static const struct super_operations btrfs_super_ops = {
+ 	.statfs		= btrfs_statfs,
+ 	.remount_fs	= btrfs_remount,
+ 	.freeze_fs	= btrfs_freeze,
+-	.unfreeze_fs	= btrfs_unfreeze,
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {
 -- 
 2.1.3
 

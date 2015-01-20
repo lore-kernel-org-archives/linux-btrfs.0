@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7142 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:7729 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753423AbbATHNH (ORCPT
+	with ESMTP id S1752547AbbATHM6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 02:13:07 -0500
+	Tue, 20 Jan 2015 02:12:58 -0500
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 07/15] Btrfs: Cleanup btrfs_bio_counter_inc_blocked()
-Date: Tue, 20 Jan 2015 15:11:37 +0800
-Message-ID: <1421737905-1693-8-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 01/15] Btrfs: fix a out-of-bound access of raid_map
+Date: Tue, 20 Jan 2015 15:11:31 +0800
+Message-ID: <1421737905-1693-2-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1421737905-1693-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,42 +19,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-1: Remove no-need DEFINE_WAIT(wait)
-2: Add likely() for BTRFS_FS_STATE_DEV_REPLACING condition
-3: Use while loop instead of goto
+We add the number of stripes on target devices into bbio->num_stripes
+if we are under device replacement, and we just sort the raid_map of
+those stripes that not on the target devices, so if when we need
+real raid_map, we need skip the stripes on the target devices.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/scrub.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index ca6a3a3..92109b7 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -932,15 +932,15 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
- 
- void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 9e1569f..9d19065 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1291,7 +1291,9 @@ out:
+ static inline int scrub_nr_raid_mirrors(struct btrfs_bio *bbio, u64 *raid_map)
  {
--	DEFINE_WAIT(wait);
--again:
--	percpu_counter_inc(&fs_info->bio_counter);
--	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
-+	while (1) {
-+		percpu_counter_inc(&fs_info->bio_counter);
-+		if (likely(!test_bit(BTRFS_FS_STATE_DEV_REPLACING,
-+				     &fs_info->fs_state)))
-+			break;
+ 	if (raid_map) {
+-		if (raid_map[bbio->num_stripes - 1] == RAID6_Q_STRIPE)
++		int real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
 +
- 		btrfs_bio_counter_dec(fs_info);
- 		wait_event(fs_info->replace_wait,
- 			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
- 				     &fs_info->fs_state));
--		goto again;
- 	}
--
- }
++		if (raid_map[real_stripes - 1] == RAID6_Q_STRIPE)
+ 			return 3;
+ 		else
+ 			return 2;
+@@ -1412,7 +1414,8 @@ leave_nomem:
+ 
+ 			scrub_stripe_index_and_offset(logical, raid_map,
+ 						      mapped_length,
+-						      bbio->num_stripes,
++						      bbio->num_stripes -
++						      bbio->num_tgtdevs,
+ 						      mirror_index,
+ 						      &stripe_index,
+ 						      &stripe_offset);
 -- 
 1.8.5.1
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37167 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37169 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751621AbbATSFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 13:05:32 -0500
+	id S1751621AbbATSFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 13:05:35 -0500
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: guihc.fnst@cn.fujitsu.com, quwenruo@cn.fujitsu.com, miaoxie@huawei.com,
         David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/3] btrfs: Fix the bug that fs_info->pending_changes is never cleared.
-Date: Tue, 20 Jan 2015 19:05:30 +0100
-Message-Id: <027da0c9dbad00712b53e26aeb53f3bceb80ab1d.1421776294.git.dsterba@suse.cz>
+Subject: [PATCH 2/3] btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid deadlock.
+Date: Tue, 20 Jan 2015 19:05:33 +0100
+Message-Id: <bd55c3d5bb8e5899aaedb3f8262cd84f6d095794.1421776294.git.dsterba@suse.cz>
 In-Reply-To: <cover.1421776294.git.dsterba@suse.cz>
 References: <cover.1421776294.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,35 +17,82 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Fs_info->pending_changes is never cleared since the original code uses
-cmpxchg(&fs_info->pending_changes, 0, 0), which will only clear it if
-pending_changes is already 0.
+Commit 6b5fe46dfa52 (btrfs: do commit in sync_fs if there are pending
+changes) will call btrfs_start_transaction() in sync_fs(), to handle
+some operations needed to be done in next transaction.
 
-This will cause a lot of problem when mount it with inode_cache mount
-option.
-If the btrfs is mounted as inode_cache, pending_changes will always be
-1, even when the fs is frozen.
+However this can cause deadlock if the filesystem is frozen, with the
+following sys_r+w output:
+[  143.255932] Call Trace:
+[  143.255936]  [<ffffffff816c0e09>] schedule+0x29/0x70
+[  143.255939]  [<ffffffff811cb7f3>] __sb_start_write+0xb3/0x100
+[  143.255971]  [<ffffffffa040ec06>] start_transaction+0x2e6/0x5a0
+[btrfs]
+[  143.255992]  [<ffffffffa040f1eb>] btrfs_start_transaction+0x1b/0x20
+[btrfs]
+[  143.256003]  [<ffffffffa03dc0ba>] btrfs_sync_fs+0xca/0xd0 [btrfs]
+[  143.256007]  [<ffffffff811f7be0>] sync_fs_one_sb+0x20/0x30
+[  143.256011]  [<ffffffff811cbd01>] iterate_supers+0xe1/0xf0
+[  143.256014]  [<ffffffff811f7d75>] sys_sync+0x55/0x90
+[  143.256017]  [<ffffffff816c49d2>] system_call_fastpath+0x12/0x17
+[  143.256111] Call Trace:
+[  143.256114]  [<ffffffff816c0e09>] schedule+0x29/0x70
+[  143.256119]  [<ffffffff816c3405>] rwsem_down_write_failed+0x1c5/0x2d0
+[  143.256123]  [<ffffffff8133f013>] call_rwsem_down_write_failed+0x13/0x20
+[  143.256131]  [<ffffffff811caae8>] thaw_super+0x28/0xc0
+[  143.256135]  [<ffffffff811db3e5>] do_vfs_ioctl+0x3f5/0x540
+[  143.256187]  [<ffffffff811db5c1>] SyS_ioctl+0x91/0xb0
+[  143.256213]  [<ffffffff816c49d2>] system_call_fastpath+0x12/0x17
 
+The reason is like the following:
+(Holding s_umount)
+VFS sync_fs staff:
+|- btrfs_sync_fs()
+   |- btrfs_start_transaction()
+      |- sb_start_intwrite()
+      (Waiting thaw_fs to unfreeze)
+					VFS thaw_fs staff:
+					thaw_fs()
+					(Waiting sync_fs to release
+					 s_umount)
+
+So deadlock happens.
+This can be easily triggered by fstest/generic/068 with inode_cache
+mount option.
+
+The fix is to check if the fs is frozen, if the fs is frozen, just
+return and waiting for the next transaction.
+
+Cc: David Sterba <dsterba@suse.cz>
+Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+[enhanced comment, changed to SB_FREEZE_WRITE]
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/transaction.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/super.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a605d4e2f2bc..e88b59d13439 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2118,7 +2118,7 @@ void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info)
- 	unsigned long prev;
- 	unsigned long bit;
- 
--	prev = cmpxchg(&fs_info->pending_changes, 0, 0);
-+	prev = xchg(&fs_info->pending_changes, 0);
- 	if (!prev)
- 		return;
- 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c86fb5438454..6f49b2872a64 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1000,6 +1000,16 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 			 */
+ 			if (fs_info->pending_changes == 0)
+ 				return 0;
++			/*
++			 * A non-blocking test if the fs is frozen. We must not
++			 * start a new transaction here otherwise a deadlock
++			 * happens. The pending operations are delayed to the
++			 * next commit after thawing.
++			 */
++			if (__sb_start_write(sb, SB_FREEZE_WRITE, false))
++				__sb_end_write(sb, SB_FREEZE_WRITE);
++			else
++				return 0;
+ 			trans = btrfs_start_transaction(root, 0);
+ 		}
+ 		if (IS_ERR(trans))
 -- 
 2.1.3
 

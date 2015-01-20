@@ -1,78 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40132 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754060AbbATM2D (ORCPT
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:61150 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752499AbbATMka convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 07:28:03 -0500
-Date: Tue, 20 Jan 2015 12:27:59 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
+	Tue, 20 Jan 2015 07:40:30 -0500
+Received: by mail-lb0-f175.google.com with SMTP id z11so33334525lbi.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jan 2015 04:40:28 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <zarafa.54be46da.4c2a.173b20d60cef42a6@mascot.commandict.com.au>
+References: <zarafa.54be46da.4c2a.173b20d60cef42a6@mascot.commandict.com.au>
+Date: Tue, 20 Jan 2015 12:40:28 +0000
+Message-ID: <CAL3q7H4Dx5X9R2uWvhxS4EaPUWL4ovbM-_Jqo7aqgJqi=u-54Q@mail.gmail.com>
+Subject: Re: Recovery options for FS forced readonly due to 3.17 snapshot bug
+From: Filipe David Manana <fdmanana@gmail.com>
 To: brett.king@commandict.com.au
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Recovery options for FS forced readonly due to 3.17 snapshot bug
-Message-ID: <20150120122759.GM32182@carfax.org.uk>
-References: <zarafa.54be46da.4c2a.173b20d60cef42a6@mascot.commandict.com.au>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="KjJb61kpjaVQeLm7"
-In-Reply-To: <zarafa.54be46da.4c2a.173b20d60cef42a6@mascot.commandict.com.au>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---KjJb61kpjaVQeLm7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Jan 20, 2015 at 11:15:22PM +1100, brett.king@commandict.com.au wrote:
+On Tue, Jan 20, 2015 at 12:15 PM,  <brett.king@commandict.com.au> wrote:
 > Hi,
 > My FS has been forced readonly by the early 3.17 snapshot bug. After much reading, I'm looking for validation of some recovery scenarios:
-> 
+>
 > 1) btrfsck --repair under a later kernel.
-
-   Kernel won't make a difference here, only the version of the btrfs
-progs you're using, which should be "as recent as possible", but at
-least 3.17 (best to try one of the 3.18.x releases).
-
-   It's entirely possible that you've got a different issue as well
-which is preventing the btrfs check from repairing the FS.
-
+>
 > 2) replacing the devices one by one under a later kernel, effectively removing the corruption.
-
-   This won't work -- the FS would still try to migrate the broken
-metadata.
-
+>
 > 3) Just copying data across from the readonly source to a new FS created under a later kernel.
-
-   That would work.
-
+>
 > Option 1 with check only (not repair) segfaults and coredumps on 3.18 (see below) .. are there some other options needed here or perhaps patches pending to rectify this ?
-> 
+>
 > Option 2 would be better than nothing, as I get to keep my snapshots and don't need any more surplus drives than 2x units of the largest size (data is RAID1).
-> 
+>
 > Option 3 is a fallback and basically forfeits the source FS including snapshots, is guaranteed to work (I can read the data fine), however requires 1:1 capacity in new disks to achieve.
-> 
+>
 > So being unable to complete a btrfsck check and generally scared off by a btrfsck -repair, will option 2 work ? I.E. can I still replace devices on a readonly FS ?
-> 
+>
 > And are there any other options ?
-> 
+>
 > Note the FS is very nearly full of data - I did also get continuous disk activity due to this high utilisation triggering the endless reclaim unused extent routine, for a few days prior to it being forced readonly.
-> 
+>
 > [root@array ~]# uname -r
 > 3.18.2-200.fc21.x86_64
-> 
+>
 > (upgraded since getting the issue)
-> 
+>
 > [root@array ~]# btrfsck /dev/sdm
 > <snip>
 > parent transid verify failed on 40198674350080 wanted 1623837 found 1622986
 > Ignoring transid failure
 > Segmentation fault (core dumped)
-
-   Even at its worst, this should not be segfaulting. This should be
-considered a bug in btrfs check at the very least.
-
-   Hugo.
-
+>
 > [root@array ~]# btrfs fi sh /export/archive/
 > Label: 'archive'  uuid: 22c7663a-93ca-40a6-9491-26abaa62b924
 >         Total devices 8 FS bytes used 18.07TiB
@@ -84,19 +64,19 @@ considered a bug in btrfs check at the very least.
 >         devid    8 size 4.55TiB used 4.55TiB path /dev/sdj
 >         devid    9 size 4.55TiB used 4.55TiB path /dev/sdk
 >         devid   10 size 4.55TiB used 4.55TiB path /dev/sde
-> 
+>
 > Btrfs v3.18.1
-> 
+>
 > [root@array ~]# df -h /export/archive/
 > Filesystem      Size  Used Avail Use% Mounted on
 > /dev/sdm         19T   19T  123G 100% /export/archive
-> 
+>
 > [root@array ~]# btrfs fi df /export/archive/
 > Data, RAID1: total=18.17TiB, used=18.05TiB
 > System, RAID1: total=32.00MiB, used=3.00MiB
 > Metadata, RAID1: total=23.00GiB, used=22.49GiB
 > GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
+>
 > [root@array ~]# dmesg |grep -i btrfs |less
 > [    2.044134] Btrfs loaded
 > [    2.046327] BTRFS: device label array devid 1 transid 289965 /dev/sda4
@@ -116,6 +96,32 @@ considered a bug in btrfs check at the very least.
 > [    3.903421] BTRFS: bdev /dev/sdd errs: wr 2805, rd 0, flush 0, corrupt 0, gen 0
 > [    3.903426] BTRFS: bdev /dev/sdb errs: wr 2805, rd 33, flush 0, corrupt 0, gen 0
 > [    3.903430] BTRFS: bdev /dev/sdc errs: wr 2806, rd 0, flush 0, corrupt 0, gen 0
+
+You have device write and read errors here - the snapshots issue with
+3.17 wouldn't bump these device error stats.
+Even if you were affected by the snapshots issue, you clearly have
+here another problem, very likely hardware related due to those stats.
+
+If you are affected by the snapshots issue, btrfs check/btrfsck as of
+btrfs-progs v3.17+ should be able to fix it and if you are affected by
+it, it reports at a very early stage (without --repair) one or more
+messages with the following format:
+
+"root %llu has a root item with a more recent gen (%llu) compared to
+the found root node (%llu)\n"
+
+If the snapshots issue from 3.17.0/1 was the only issue you had, those
+messages would be reported by fsck before it segfaults (at least for
+all cases I've seen).
+
+Also when one is affected by the snapshots issue, it should only cause
+problems when reading from the affected readonly snapshots, and not
+when running the delayed references code in the trace below.
+
+My best recommendation is to check how healthy your drives are,
+perform a backup of whatever is possible (btrfs restore for example)
+and then only after run btrfsck with --repair.
+
 > [ 1432.231219] BTRFS: space cache generation (1623006) does not match inode (1623943)
 > [ 1432.231283] BTRFS warning (device sde): failed to load free space cache for block group 57021632675840, rebuild it now
 > [ 1434.603652] BTRFS (device sde): parent transid verify failed on 57022998740992 wanted 1623896 found 1622991
@@ -164,37 +170,20 @@ considered a bug in btrfs check at the very least.
 > [ 1444.708855] BTRFS (device sde): parent transid verify failed on 29796242833408 wanted 1623940 found 1622980
 > [ 1444.717589] BTRFS (device sde): parent transid verify failed on 29795054223360 wanted 1623939 found 1623007
 > [ 1444.719838] BTRFS (device sde): parent transid verify failed on 29797253316608 wanted 1623941 found 1622981
-> 
+>
 > The FS mounts RW fine on boot, until a write is actually attempted, at which point it spits these errors - ultimately the write doesn't get committed & the FS gets forced readonly.
-> 
+>
 > Thanks in advance !
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
 
 -- 
-Hugo Mills             | My code is never released, it escapes from the git
-hugo@... carfax.org.uk | repo and kills a few beta testers on the way out
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |                                             Diablo-D3
+Filipe David Manana,
 
---KjJb61kpjaVQeLm7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJUvknPAAoJEFheFHXiqx3k16oQALs0FJBS3sGz5dPuGfVza39K
-+EOAgpPa1KRRO1JUI9s6IemHKPSDlDitGz4/1zjKWr/djXTq9I6Lb+Avj+xn6ipq
-GRfjOMLtZqMTOd9gK027c8xcK5Kc2CxaoGv34uq+fykzOIUXwteMyiXIS6Su1R03
-ZfWQFMjs9+6RyP7e20JCzxjsYUgQtL80raSsExpkq5Na0QUSHwcNET6q1WbZ6PN1
-HY7ADTkRBQmXqslsKLnpDhg7jQ6qP+W0fp6LHXfAiJd8cbCLfwUOPHi+KM5qyQSf
-0OG7KitpYLFYRi+fMB8bCmKnrgzCj0HkxsuABcRVG+SqltDSg2n8xAiNN5Hra8Ut
-Ngsln7DoAqxI4hkIQAqtiKZp/vQFFLKsH3SqQEdBs5yFhvOx8ENZFDkFMgzypMJH
-oThoEzxAxyK8TJ+Zj5ILVq84c8p1hehH0Ftp2liyfNU5m9nyWMo2MSzCMLrh9Ifa
-utDqVzpxi9Yf/JA3Xst+C/bnxnDkahQUALPJQdTutBy0KRictOpDK1Ypz5hLRR/v
-o4DtpjvXLGkEWuirKJTUXJiV/6zKxzNCB3VSIp4M9ep4RUi0TvwZBQTfmuaf5SP+
-S0quitO0RiyGEXttrTdvkjW/VlQldpk0qCZ74+omalLiO6LbXXa+24Mqblz4F+hQ
-IdH5THUVQ1+m8SdBdwaV
-=R+Rj
------END PGP SIGNATURE-----
-
---KjJb61kpjaVQeLm7--
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

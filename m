@@ -1,36 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60296 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751465AbbASRp2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 12:45:28 -0500
-Date: Mon, 19 Jan 2015 18:45:26 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Zach Brown <zab@zabbo.net>
-Cc: dsterba@suse.cz, Sandy McArthur Jr <sandymac@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs scrub status reports not running when it is
-Message-ID: <20150119174525.GC13289@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAPs0BijZX-BcM7uRq58TwSUqsNRqsySXeHYRezgVQcfXw-d22g@mail.gmail.com>
- <20150114222717.GA9900@lenny.home.zabbo.net>
- <20150115112441.GA3685@twin.jikos.cz>
- <20150115180237.GA28510@lenny.home.zabbo.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:62662 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750956AbbATJHo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 04:07:44 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH RFC v2 0/5] Fix bugs introduced by the new pending changes
+Date: Tue, 20 Jan 2015 17:05:32 +0800
+Message-ID: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150115180237.GA28510@lenny.home.zabbo.net>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 15, 2015 at 10:02:37AM -0800, Zach Brown wrote:
-> > > It says that scrub isn't running if any devices have completed.  If you drop
-> > > all those ret < 0 conditional branches that are either noops or wrong, does it
-> > > work like you'd expect?
-> > 
-> > Why wrong? The ioctl callback returns -ENODEV or -ENOTCONN that get
-> > translated to the errno values and ioctl(...) returns -1 in both cases.
-> 
-> Wrong because returning 0 on the first ENOTCONN, instead of continuing
-> to find more devices which might still be scrubbing, leads to this
-> confusing status message.
+Commit 572d9ab7845ea0e0 ("btrfs: add support for processing pending
+changes") introduced several bugs which will eventually cause a
+deadlock.
 
-You're right, fix on the way.
+The deadlock can be triggered by fstests/generic/068 with inode_cache
+mount option.
+
+The deadlock happens in the following flow:
+moutn with inode_cache -> freeze fs -> sync -> unfreeze.
+
+Sync_fs stack:				Thaw_fs stack:
+(Holding s_umount)			(Waiting s_umount)
+|- btrfs_sync_fs()
+   |- start_transaction()
+      (Waiting thaw_fs to unfreeze the fs)
+
+The problem has several causes:
+1) Cmpxchg in btrfs_apply_pending_changes() doesn't work
+Cmpxchg in btrfs_apply_pending_changes() will only clear
+fs_info->pending_changes if it is already 0.
+So fs_info->pending_changes will never cleared, and every sync_fs() on
+frozen btrfs will try to start a new transaction and deadlock.
+
+So patch 1 fixes it by using xchg() other than cmpxchg().
+
+2) btrfs_freeze() doesn't handle and clear pending_changes
+If btrfs start a transaction if there are pending changes but no running
+transaction, sync should never start a transaction on frozen fs.
+(Except the following sysfs case)
+
+So patch 2~3 fixes it by adding pending changes handler in
+btrfs_freeze().
+
+3) Changes through sysfs interface can create pending changes without
+   waiting for unfreezing.
+Since sysfs changes doesn't go through normal open routine,
+which will initiate sb_start_*write() and waiting for unfreezing,
+changes through sysfs like changing label will set
+fs_info->pending_changes to non-zero, and later sync_fs will deadlock
+again.
+
+So patch 4~5 reverts the commits relating patches to fix such problem.
+
+Qu Wenruo (5):
+  btrfs: Fix the bug that fs_info->pending_changes is never cleared.
+  btrfs: Add btrfs_start_transaction_freeze() to start transaction in   
+     btrfs_freeze()
+  btrfs: Handle pending changes in btrfs_freeze().
+  Revert "btrfs: move commit out of sysfs when changing label"
+  Revert "btrfs: move commit out of sysfs when changing features"
+
+ fs/btrfs/super.c       | 52 ++++++++++++++++++++++++--------------------------
+ fs/btrfs/sysfs.c       | 34 ++++++++++++++++++++-------------
+ fs/btrfs/transaction.c | 10 +++++++++-
+ fs/btrfs/transaction.h |  2 ++
+ 4 files changed, 57 insertions(+), 41 deletions(-)
+
+-- 
+2.2.2
+

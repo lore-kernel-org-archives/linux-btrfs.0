@@ -1,78 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42399 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752087AbbATJHs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 04:07:48 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH RFC v2 5/5] Revert "btrfs: move commit out of sysfs when changing features"
-Date: Tue, 20 Jan 2015 17:05:37 +0800
-Message-ID: <1421744737-16586-6-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1421744737-16586-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:59678 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751241AbbATMlp (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 20 Jan 2015 07:41:45 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix setup_leaf_for_split() to avoid leaf corruption
+Date: Tue, 20 Jan 2015 12:40:53 +0000
+Message-Id: <1421757653-14370-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit 0eae2747ec1dd ("btrfs: move commit out of sysfs
-when changing features").
+We were incorrectly detecting when the target key didn't exist anymore
+after releasing the path and re-searching the tree. This could make
+us split or duplicate (btrfs_split_item() and btrfs_duplicate_item()
+are its only callers at the moment) an item when we should not.
 
-Unlike most btrfs file operations, sysfs don't go through the normal
-open/read/write routine which will initiate a sb_start_*write/read.
+For the case of duplicating an item, we currently only duplicate
+checksum items (csum tree) and file extent items (fs/subvol trees).
+For the checksum items we end up overriding the item completely,
+but for file extent items we update only some of their fields in
+the copy (done in __btrfs_drop_extents), which means we can end up
+having a logical corruption for some values.
 
-This is very dangerous on frozen btrfs, if using the pending changes
-method, sysfs change can make fs_info->pending_changes to 1, and later
-sync_fs() call will cause deadlock.
+Also for the case where we duplicate a file extent item it will make
+us produce a leaf with a wrong key order, as btrfs_duplicate_item()
+advances us to the next slot and then its caller sets a smaller key
+on the new item at that slot (like in __btrfs_drop_extents() e.g.).
+Alternatively if the tree search in setup_leaf_for_split() leaves
+with path->slots[0] == btrfs_header_nritems(path->nodes[0]), we end
+up accessing beyond the leaf's end (when we check if the item's size
+has changed) and make our caller insert an item at the invalid slot
+btrfs_header_nritems(path->nodes[0]) + 1, causing an invalid memory
+access if the leaf is full or nearly full.
 
-So revert the patch to deal the deadlock caused by the following workload:
-freeze() -> change features -> sync() -> unfreeze()
+This issue has been present since the introduction of this function
+in 2009:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+    Btrfs: Add btrfs_duplicate_item
+    commit ad48fd754676bfae4139be1a897b1ea58f9aaf21
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/sysfs.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 226f726..b2e7bb4 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -111,6 +111,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- {
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
-+	struct btrfs_trans_handle *trans;
- 	u64 features, set, clear;
- 	unsigned long val;
- 	int ret;
-@@ -152,6 +153,10 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	btrfs_info(fs_info, "%s %s feature flag",
- 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 14a72ed..78e8993c1 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4356,13 +4356,15 @@ static noinline int setup_leaf_for_split(struct btrfs_trans_handle *trans,
+ 	path->search_for_split = 1;
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	path->search_for_split = 0;
++	if (ret > 0)
++		ret = -EAGAIN;
+ 	if (ret < 0)
+ 		goto err;
  
-+	trans = btrfs_start_transaction(fs_info->fs_root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
- 	spin_lock(&fs_info->super_lock);
- 	features = get_features(fs_info, fa->feature_set);
- 	if (val)
-@@ -161,11 +166,9 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	set_features(fs_info, fa->feature_set, features);
- 	spin_unlock(&fs_info->super_lock);
+ 	ret = -EAGAIN;
+ 	leaf = path->nodes[0];
+-	/* if our item isn't there or got smaller, return now */
+-	if (ret > 0 || item_size != btrfs_item_size_nr(leaf, path->slots[0]))
++	/* if our item isn't there, return now */
++	if (item_size != btrfs_item_size_nr(leaf, path->slots[0]))
+ 		goto err;
  
--	/*
--	 * We don't want to do full transaction commit from inside sysfs
--	 */
--	btrfs_set_pending(fs_info, COMMIT);
--	wake_up_process(fs_info->transaction_kthread);
-+	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
-+	if (ret)
-+		return ret;
- 
- 	return count;
- }
+ 	/* the leaf has  changed, it now has room.  return now */
 -- 
-2.2.2
+2.1.3
 

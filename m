@@ -1,33 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38525 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752505AbbAPLAb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Jan 2015 06:00:31 -0500
-Date: Fri, 16 Jan 2015 12:00:28 +0100
-From: David Sterba <dsterba@suse.cz>
-To: clm@fb.com
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        miaoxie@huawei.com, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH] btrfs: fix raid56 scrub failed in xfstests btrfs/072
-Message-ID: <20150116110028.GO3685@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1420767580-19380-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:4872 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753896AbbAUET0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Jan 2015 23:19:26 -0500
+Date: Wed, 21 Jan 2015 15:19:11 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs/079: Fix wrong value passed to available
+ space check.
+Message-ID: <20150121041911.GE16510@dastard>
+References: <1419837438-13771-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1420767580-19380-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1419837438-13771-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 09, 2015 at 09:39:40AM +0800, Gui Hecheng wrote:
-> The xfstests btrfs/072 reports uncorrectable read errors in dmesg,
-> because scrub forgets to use commit_root for parity scrub routine
-> and scrub attempts to scrub those extents items whose contents are
-> not fully on disk.
-> 
-> To fix it, we just add the @search_commit_root flag back.
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+On Mon, Dec 29, 2014 at 03:17:18PM +0800, Qu Wenruo wrote:
+> Before the patch, we passed wrong value to _require_fs_space, which
+> should be in unit of 1024, but passed in unit of GB.
 
-Chris, please add this patch to 3.19-rc queue, followup to the new
-raid56 scrub code.
+Yes, that needs fixing.
+
+> Fix it and add better prompt for falloc failure.
+
+That doesn't....
+
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  tests/btrfs/079 | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/tests/btrfs/079 b/tests/btrfs/079
+> index 202d3e6..99d0187 100755
+> --- a/tests/btrfs/079
+> +++ b/tests/btrfs/079
+> @@ -73,8 +73,9 @@ rm -f $seqres.full
+>  
+>  _scratch_mkfs >>$seqres.full 2>&1
+>  _scratch_mount
+> -_require_fs_space $SCRATCH_MNT $(($filesize / 1024 / 1024 / 1024))
+> -$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile
+> +_require_fs_space $SCRATCH_MNT $(($filesize / 1024))
+> +$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile || \
+> +	_fail "falloc failed"
+
+If the falloc fails, then the golden output match will fail. Let the
+test run, regardless, because the first thing it does is try to
+overwrite the fallocated region where the success or failure of the
+writes are completely ignored. Hence a falloc failure should also be
+ignored...
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

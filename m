@@ -1,52 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62013 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751974AbbATAYW convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 19:24:22 -0500
-Message-ID: <54BDA033.7020203@cn.fujitsu.com>
-Date: Tue, 20 Jan 2015 08:24:19 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57113 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751235AbbAUQX7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Jan 2015 11:23:59 -0500
+Date: Wed, 21 Jan 2015 17:23:57 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Doc: Add explain on 'source' and 'target'
+ for btrfs-image.
+Message-ID: <20150121162357.GI13289@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1416814064-29543-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: tests, use non-interactive sudo helper
-References: <1421691107-4106-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1421691107-4106-1-git-send-email-dsterba@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1416814064-29543-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
--------- Original Message --------
-Subject: [PATCH] btrfs-progs: tests, use non-interactive sudo helper
-From: David Sterba <dsterba@suse.cz>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2015年01月20日 02:11
-> Sudo may not be configured to run without user prompt, in that case the
-> tests would be stuck.
->
-> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->   tests/common | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/tests/common b/tests/common
-> index 84a4b9d335e2..d7d2e9bef050 100644
-> --- a/tests/common
-> +++ b/tests/common
-> @@ -58,7 +58,7 @@ export have_root_helper
->   setup_root_helper()
->   {
->   	if [ $UID != 0 ]; then
-> -		sudo=sudo
-> +		sudo="sudo --non-interactive"
->   	fi
->   	have_root_helper=1
->   }
-Looks good for me.
-
-This seems much better than the original interactive one.
-
-Thanks,
-Qu
+On Mon, Nov 24, 2014 at 03:27:44PM +0800, Qu Wenruo wrote:
+> Add explain on 'source' and 'target', which is somewhat confusing for
+> users who want to restore dumped image.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Applied with minor changes. Thanks.

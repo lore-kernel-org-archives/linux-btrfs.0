@@ -1,78 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:39376 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751691AbbAUEyv (ORCPT
+Received: from mout.kundenserver.de ([212.227.126.130]:59560 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750813AbbAULnJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 23:54:51 -0500
-Date: Wed, 21 Jan 2015 15:54:35 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: Re: [PATCH] fstest: btrfs/006: Add extra check on return value and
- 'fi show' by device
-Message-ID: <20150121045435.GG16510@dastard>
-References: <1421373430-21915-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150121040315.GC16510@dastard>
- <54BF28D4.80303@cn.fujitsu.com>
+	Wed, 21 Jan 2015 06:43:09 -0500
+Received: from [141.2.9.4] ([141.2.9.4]) by mrelayeu.kundenserver.de
+ (mreue004) with ESMTPSA (Nemesis) id 0LzFLh-1Xilzf45jN-014TM1 for
+ <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2015 12:43:07 +0100
+Message-ID: <54BF90C5.8060100@spth.de>
+Date: Wed, 21 Jan 2015 12:43:01 +0100
+From: Philipp Klaus Krause <pkk@spth.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54BF28D4.80303@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: BTRFS critical (device dm-2): invalid dir item name len: 77
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 21, 2015 at 12:19:32PM +0800, Qu Wenruo wrote:
-> From: Dave Chinner <david@fromorbit.com>
-> >On Fri, Jan 16, 2015 at 09:57:10AM +0800, Qu Wenruo wrote:
-> >>Reported in Red Hat BZ#1181627, 'btrfs fi show' on unmounted device will
-> >>return 1 even no error happens.
-> >Please describe the bug in the commit message, don't make me have to
-> >go look at some web page to work out what you are trying to fix.
-> OK, I'll make the description more detailed.
-> >
-> >>Introduced by: commit 2513077f
-> >>btrfs-progs: fix device missing of btrfs fi show with seed devices
-> >>
-> >>Patch fixing it:
-> >>https://patchwork.kernel.org/patch/5626001/
-> >>btrfs-progs: Fix wrong return value when executing 'fi show' on
-> >>umounted device.
-> >What btrfs progs commit introduced and fixed is not actually
-> >relevant to fstests.
-> This just saves some time for some users who failed the test and
-> what to check if the bug is fixed or not.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Doesn't save me time - it takes me much longer as I have to use 3
-different tools to follow those three references to try to
-understand why you are making the change.
+Hello,
 
-> >If I have to go read other stuff to understand
-> >the change you are making, then the description needs more detail
-> >and less external references....
+I've been using btrfs on a Debian GNU/Linux system. After about 9
+months, I encountered my first filesystem issue. It first appeared while
+doing an rm -rf, which resulted in a
 
-> I understand that I need to make the description more detailed.
-> Although external reference does not help much for fstests, but it
-> will really saves time for some tests.  Like Fillipe Manana's
-> test, which embedded such info into the test script, saved me a
-> lot of time to find the regression commit.
+rm: cannot remove [=E2=80=A6]: Directory not empty
 
-What it helps is people running a new fstests tree on an older
-distro kernels. It doesn't save time for reviewers, yet reviewer
-resources are in much scarcer supply than distro QA resources.
-If you want your changes reviewed faster, then commit messages need
-to be reviewer friendly. Further, if you review other people's
-changes, then they are much more likely to review your changes
-quickly.
+a du -s on the directory gives an
 
-If the review burden is left to me all the time then, like Andrew
-Morton, I get grumpy when people say "but it helps me".....
+BTRFS critical (device dm-2): invalid dir item name len: 77
 
-> BTW, do I need to cleanup all the $BTRFS_UTIL_PROG in the original test?
+I can mv directory around (which is good so it doesn't get in my way any
+more), but can't rm it.
 
-Not if it causes older btrfs progs installations to fail.
+How can I get id of it?
 
-Cheers,
+Philipp
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+
+--G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlS/kMkACgkQbtUV+xsoLpq+5ACgxthXKjw1M4hDv+CbbvNbNakA
+21EAoJH7FryLVeQ+Q/tqi4D6L0N2pJab
+=WIbU
+-----END PGP SIGNATURE-----
+
+--G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu--

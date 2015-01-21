@@ -1,66 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55136 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754367AbbAUEVu convert rfc822-to-8bit (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:50064 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751691AbbAUE0m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Jan 2015 23:21:50 -0500
-Message-ID: <54BF295C.6060902@cn.fujitsu.com>
-Date: Wed, 21 Jan 2015 12:21:48 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Tue, 20 Jan 2015 23:26:42 -0500
+Date: Wed, 21 Jan 2015 15:26:27 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, fdmanana@gmail.com
+Subject: Re: [PATCH v2] xfstests: btrfs: fix up 001.out
+Message-ID: <20150121042627.GF16510@dastard>
+References: <1420055304-4633-1-git-send-email-anand.jain@oracle.com>
+ <1420203869-26085-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: Re: [PATCH] fstests: btrfs/079: Fix wrong value passed to available
- space check.
-References: <1419837438-13771-1-git-send-email-quwenruo@cn.fujitsu.com> <20150121041911.GE16510@dastard>
-In-Reply-To: <20150121041911.GE16510@dastard>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1420203869-26085-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jan 02, 2015 at 09:04:29PM +0800, Anand Jain wrote:
+> The subvol delete output has changed with btrfs-progs
+>     -Delete subvolume 'SCRATCH_MNT/snap'
+>     +Delete subvolume (no-commit): 'SCRATCH_MNT/snap'
+> 
+> so fix 001 failing.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> 
+> v2: Thanks Filipe for mentioning now we have _run_btrfs_util_prog. and
+>     commit update
+> ---
+>  tests/btrfs/001     | 2 +-
+>  tests/btrfs/001.out | 1 -
+>  2 files changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/tests/btrfs/001 b/tests/btrfs/001
+> index 8258d06..a7747c8 100755
+> --- a/tests/btrfs/001
+> +++ b/tests/btrfs/001
+> @@ -99,7 +99,7 @@ echo "Listing subvolumes"
+>  $BTRFS_UTIL_PROG subvolume list $SCRATCH_MNT | awk '{ print $NF }'
+>  
+>  # Delete the snapshot
+> -$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/snap | _filter_btrfs_subvol_delete
+> +_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
 
--------- Original Message --------
-Subject: Re: [PATCH] fstests: btrfs/079: Fix wrong value passed to 
-available space check.
-From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年01月21日 12:19
-> On Mon, Dec 29, 2014 at 03:17:18PM +0800, Qu Wenruo wrote:
->> Before the patch, we passed wrong value to _require_fs_space, which
->> should be in unit of 1024, but passed in unit of GB.
-> Yes, that needs fixing.
->
->> Fix it and add better prompt for falloc failure.
-> That doesn't....
->
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   tests/btrfs/079 | 5 +++--
->>   1 file changed, 3 insertions(+), 2 deletions(-)
->>
->> diff --git a/tests/btrfs/079 b/tests/btrfs/079
->> index 202d3e6..99d0187 100755
->> --- a/tests/btrfs/079
->> +++ b/tests/btrfs/079
->> @@ -73,8 +73,9 @@ rm -f $seqres.full
->>   
->>   _scratch_mkfs >>$seqres.full 2>&1
->>   _scratch_mount
->> -_require_fs_space $SCRATCH_MNT $(($filesize / 1024 / 1024 / 1024))
->> -$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile
->> +_require_fs_space $SCRATCH_MNT $(($filesize / 1024))
->> +$XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile || \
->> +	_fail "falloc failed"
-> If the falloc fails, then the golden output match will fail. Let the
-> test run, regardless, because the first thing it does is try to
-> overwrite the fallocated region where the success or failure of the
-> writes are completely ignored. Hence a falloc failure should also be
-> ignored...
->
-> Cheers,
->
-> Dave.
-OK, I'll send a V2 one for this.
+This is also the wrong way to fix the problem.
 
-Thanks for reviewing.
-Qu
+We have output filters for a reason, people:
+
+_filter_btrfs_subvol_delete()
+{
+	_filter_scratch | _filter_transcation_commit_default
+}
+
+Simply becomes:
+
+_filter_btrfs_subvol_delete()
+{
+	_filter_scratch | _filter_transcation_commit_default | \
+		sed -e 's/^Delete subvolume.*:/Delete subvolume/'
+}
+
+The golden output does not change - the filter simply removes the
+part of the message that changed between versions.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,84 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24451 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750810AbbAUFYv (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:13739 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750735AbbAUGKo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Jan 2015 00:24:51 -0500
-Message-ID: <54BF396A.9000101@oracle.com>
-Date: Wed, 21 Jan 2015 13:30:18 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 21 Jan 2015 01:10:44 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+Subject: [PATCH v2] fstests: btrfs/079: Fix wrong value passed to available space check.
+Date: Wed, 21 Jan 2015 14:08:37 +0800
+Message-ID: <1421820518-27797-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, fdmanana@gmail.com
-Subject: Re: [PATCH v2] xfstests: btrfs: fix up 001.out
-References: <1420055304-4633-1-git-send-email-anand.jain@oracle.com> <1420203869-26085-1-git-send-email-anand.jain@oracle.com> <20150121042627.GF16510@dastard>
-In-Reply-To: <20150121042627.GF16510@dastard>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Wrong value is passed to _require_fs_space, which should be in unit of
+kilobyte(1024), but passed in unit of gigabyte(1024^3).
 
-Dave,
+Fix it.
 
-On 01/21/2015 12:26 PM, Dave Chinner wrote:
-> On Fri, Jan 02, 2015 at 09:04:29PM +0800, Anand Jain wrote:
->> The subvol delete output has changed with btrfs-progs
->>      -Delete subvolume 'SCRATCH_MNT/snap'
->>      +Delete subvolume (no-commit): 'SCRATCH_MNT/snap'
->>
->> so fix 001 failing.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>
->> v2: Thanks Filipe for mentioning now we have _run_btrfs_util_prog. and
->>      commit update
->> ---
->>   tests/btrfs/001     | 2 +-
->>   tests/btrfs/001.out | 1 -
->>   2 files changed, 1 insertion(+), 2 deletions(-)
->>
->> diff --git a/tests/btrfs/001 b/tests/btrfs/001
->> index 8258d06..a7747c8 100755
->> --- a/tests/btrfs/001
->> +++ b/tests/btrfs/001
->> @@ -99,7 +99,7 @@ echo "Listing subvolumes"
->>   $BTRFS_UTIL_PROG subvolume list $SCRATCH_MNT | awk '{ print $NF }'
->>
->>   # Delete the snapshot
->> -$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/snap | _filter_btrfs_subvol_delete
->> +_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
->
-> This is also the wrong way to fix the problem.
->
-> We have output filters for a reason, people:
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/079 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-  actually I purposely discouraged using the output filters (instead use
-  command exit code), mainly because output filters are
-  unnecessary hindrance to the good changes. And UIs using btrfs-progs
-  anyway has to depend on the exit code to check the command status,
-  so we should rightfully check that in our test scripts, this may
-  apply lightly for commands like show, but would fit well for commands
-  like delete as in here. just my point of view.
+diff --git a/tests/btrfs/079 b/tests/btrfs/079
+index 202d3e6..b4a4189 100755
+--- a/tests/btrfs/079
++++ b/tests/btrfs/079
+@@ -73,7 +73,7 @@ rm -f $seqres.full
+ 
+ _scratch_mkfs >>$seqres.full 2>&1
+ _scratch_mount
+-_require_fs_space $SCRATCH_MNT $(($filesize / 1024 / 1024 / 1024))
++_require_fs_space $SCRATCH_MNT $(($filesize / 1024))
+ $XFS_IO_PROG -f -c "falloc 0 $filesize" $testfile
+ 
+ dd_work() {
+-- 
+2.2.2
 
-Thanks,
-
-> _filter_btrfs_subvol_delete()
-> {
-> 	_filter_scratch | _filter_transcation_commit_default
-> }
->
-> Simply becomes:
->
-> _filter_btrfs_subvol_delete()
-> {
-> 	_filter_scratch | _filter_transcation_commit_default | \
-> 		sed -e 's/^Delete subvolume.*:/Delete subvolume/'
-> }
->
-> The golden output does not change - the filter simply removes the
-> part of the message that changed between versions.
->
-> Cheers,
->
-> Dave.
->

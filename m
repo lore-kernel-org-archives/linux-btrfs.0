@@ -1,60 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.130]:59560 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750813AbbAULnJ (ORCPT
+Received: from mail-lb0-f171.google.com ([209.85.217.171]:54556 "EHLO
+	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752696AbbAUM0J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Jan 2015 06:43:09 -0500
-Received: from [141.2.9.4] ([141.2.9.4]) by mrelayeu.kundenserver.de
- (mreue004) with ESMTPSA (Nemesis) id 0LzFLh-1Xilzf45jN-014TM1 for
- <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2015 12:43:07 +0100
-Message-ID: <54BF90C5.8060100@spth.de>
-Date: Wed, 21 Jan 2015 12:43:01 +0100
-From: Philipp Klaus Krause <pkk@spth.de>
+	Wed, 21 Jan 2015 07:26:09 -0500
+Received: by mail-lb0-f171.google.com with SMTP id u14so2453323lbd.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Jan 2015 04:26:08 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: BTRFS critical (device dm-2): invalid dir item name len: 77
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
+References: <CAKVY-+9cjRKfXFVVEamtNVLaWE1+jc44M4kyrJOOk915v2fxtA@mail.gmail.com>
+Date: Wed, 21 Jan 2015 12:26:07 +0000
+Message-ID: <CAL3q7H6+hdRSE_3E8NsR=NekUeLJxS6rcVBstYPriJfnfRLM-Q@mail.gmail.com>
+Subject: Re: Snapshot cannot be deleted
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Andreas Philipp <philipp.andreas@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+On Tue, Jan 20, 2015 at 12:28 PM, Andreas Philipp
+<philipp.andreas@gmail.com> wrote:
+> Hi,
+>
+> Due to the known (and fixed) bug in kernel 3.17.0 one of my btrfs
+> volume suffers from unreadable and - even worse - uneraseable
+> snapshots. Whenever such a snapshot is accessed there is "parent
+> transid verify failed" in dmesg.
+> Is there any way to delete these snapshots?
 
-Hello,
+It can be fixed with btrfs-progs v3.17 and later (3.18.x is the latest release).
+To confirm that you are affected by the 3.17 kernel issue, run btrfsck
+in readonly mode first (without --repair or any other flags), which
+will print one message with the following format for each corrupt
+snapshot:
 
-I've been using btrfs on a Debian GNU/Linux system. After about 9
-months, I encountered my first filesystem issue. It first appeared while
-doing an rm -rf, which resulted in a
+"root %llu has a root item with a more recent gen (%llu) compared to
+the found root node (%llu)\n"
 
-rm: cannot remove [=E2=80=A6]: Directory not empty
+Any other error messages are likely unrelated and therefore associated
+with other eventual issues.
+As usual, before running btrfsck with --repair (which fixes the issue
+and the snapshots will be fully repaired), create backups of your
+data.
 
-a du -s on the directory gives an
+Hope it helps.
 
-BTRFS critical (device dm-2): invalid dir item name len: 77
+>
+> Thanks,
+> Andreas
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-ext4" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-I can mv directory around (which is good so it doesn't get in my way any
-more), but can't rm it.
-
-How can I get id of it?
-
-Philipp
 
 
---G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+-- 
+Filipe David Manana,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlS/kMkACgkQbtUV+xsoLpq+5ACgxthXKjw1M4hDv+CbbvNbNakA
-21EAoJH7FryLVeQ+Q/tqi4D6L0N2pJab
-=WIbU
------END PGP SIGNATURE-----
-
---G1n51Ia0JavIkVEmc9fMHcP2qrQtQ66bu--
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

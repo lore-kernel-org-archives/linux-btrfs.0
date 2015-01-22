@@ -1,40 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17923 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751995AbbAVJ54 (ORCPT
+Received: from mail-lb0-f181.google.com ([209.85.217.181]:42982 "EHLO
+	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750792AbbAVKMc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Jan 2015 04:57:56 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t0M9vtab029322
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2015 09:57:55 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id t0M9vsHD028912
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2015 09:57:55 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id t0M9vsTq028900
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2015 09:57:54 GMT
-Message-ID: <54C0CAFB.4020708@oracle.com>
-Date: Thu, 22 Jan 2015 18:03:39 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Thu, 22 Jan 2015 05:12:32 -0500
+Received: by mail-lb0-f181.google.com with SMTP id u10so639108lbd.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Jan 2015 02:12:30 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: replace seed/sprout hangs  (regression ?)
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <54C0CAFB.4020708@oracle.com>
+References: <54C0CAFB.4020708@oracle.com>
+Date: Thu, 22 Jan 2015 10:12:30 +0000
+Message-ID: <CAL3q7H59s0d9EwMzSRUc59r6W3zOJNm=wUzYxNcaL3ZCi4kUyA@mail.gmail.com>
+Subject: Re: replace seed/sprout hangs (regression ?)
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jan 22, 2015 at 10:03 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
+>
+>  The following test case hangs as of now, but as I remember Fujitsu
+>  had sent a patch to fix this, a long time back. Can't find now,
+>  any idea. ?
+>
+>  Test case:
+>    add a spout device
+>    replace seed / sprout device
+>
+>  hangs at:
+>   (btrfs_reada_wait+0x4d/0xb0)
 
-  The following test case hangs as of now, but as I remember Fujitsu
-  had sent a patch to fix this, a long time back. Can't find now,
-  any idea. ?
+No idea when it happened.
+But perhaps, it's a good time to start having an xfstest for it? :)
 
-  Test case:
-    add a spout device
-    replace seed / sprout device
+thanks
 
-  hangs at:
-   (btrfs_reada_wait+0x4d/0xb0)
+>
+> Thanks, Anand
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Thanks, Anand
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

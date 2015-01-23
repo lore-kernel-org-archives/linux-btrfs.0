@@ -1,89 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63359 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63574 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750917AbbAWCcU convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1751121AbbAWHdD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Jan 2015 21:32:20 -0500
-Message-ID: <54C1B2B0.8040406@cn.fujitsu.com>
-Date: Fri, 23 Jan 2015 10:32:16 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Fri, 23 Jan 2015 02:33:03 -0500
+From: Xing Gu <gux.fnst@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>,
+        <quwenruo@cn.fujitsu.com>, <eguan@redhat.com>,
+        Xing Gu <gux.fnst@cn.fujitsu.com>
+Subject: [PATCH v4] btrfs: add regression test for remount with thread_pool resized
+Date: Fri, 23 Jan 2015 15:28:59 +0800
+Message-ID: <1421998139-15881-1-git-send-email-gux.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-CC: <guihc.fnst@cn.fujitsu.com>, <miaoxie@huawei.com>, <clm@fb.com>
-Subject: Re: [PULL] [PATCH 0/3] Btrfs, fixes for freezing vs pending changes
-References: <cover.1421776294.git.dsterba@suse.cz>
-In-Reply-To: <cover.1421776294.git.dsterba@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+Regression test for a btrfs issue of resizing 'thread_pool' when
+remount the fs.
 
-Would you please delay this patchset to be merged into next rc?
+This regression was introduced by the following linux kernel commit:
+    btrfs: Added btrfs_workqueue_struct implemented ordered
+    execution based on kernel workqueue
+    08a9ff3264181986d1d692a4e6fce3669700c9f8
+And it was fixed by the following linux kernel commit:
+    btrfs: fix crash in remount(thread_pool=) case
+    800ee2247f483b6d05ed47ef3bbc90b56451746c
 
-In fact, I think there is a better solution for such problem.
+Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+---
+ v3->v4: Remove the check for a bug message.
 
-1) mount option change problem.
-In fact, there is no need to start a transaction to change mount option, 
-since it doesn't change anything
-on-disk.
-What we need is just to keep the mount option doesn't change during 
-transaction.
-(Although several exceptions still exists, but should be OK)
+ v2->v3: Add the regresssion commit in description.
+         Remove "dmesg -c > /dev/null".
+         Echo "Silence is golden" to indicate that an empty output
+         file is expected.
 
-So I prefer to add a rwsem to protect mount_opt, each btrfs_transaction 
-will hold the read lock on it
-and upon btrfs_put_transaction(), read unlock it.
-btrfs_parse_option() should wait for write lock to change it.
+ v1->v2: Add the fix commit in description.
+         Add the check for a bug message.
+---
+ tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/082.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 68 insertions(+)
+ create mode 100755 tests/btrfs/082
+ create mode 100644 tests/btrfs/082.out
 
-BTW, current btrfs_parse_options() is not atomic, and for nospace_cache 
-mount option,
-SPACE_CACHE bit is always first set and later cleared, which created a 
-window btrfs_commit_transaction()
-can create space cache. I'll solve it by using copy-n-update method.
-
-2) Sysfs label/feature change problem
-For this problem, I agree with Miao to keep the behavior the same as 
-"btrfs pro set" command,
-since it will write something on disk.
-And since btrfs_ioctl_set_fslabel() is synchronized, I didn't see the 
-necessity to change it to async using sysfs.
-
-What do you think about this idea?
-Although, I'm afraid this may revert all your pending_changes 
-patches.... :-<
-(In fact, I'm already dealing the mount option change problem)
-
-Thanks,
-Qu
-
--------- Original Message --------
-Subject: [PULL] [PATCH 0/3] Btrfs, fixes for freezing vs pending changes
-From: David Sterba <dsterba@suse.cz>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2015年01月21日 02:05
-> There was some churn regarding the patches to $SUBJ, here's what I think is
-> enough to fix it for 3.19.
->
-> It's based on top of my other patch "btrfs: sync ioctl, handle errors after
-> transaction start" that might land in Chris' for-linus already so it's not
-> included here.
->
-> The patches are for review by the involved people, also available in this
-> branch:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
->
-> David Sterba (1):
->    btrfs: remove a no-op unfreeze superbock callback
->
-> Qu Wenruo (2):
->    btrfs: Fix the bug that fs_info->pending_changes is never cleared.
->    btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid
->      deadlock.
->
->   fs/btrfs/super.c       | 16 ++++++++++------
->   fs/btrfs/transaction.c |  2 +-
->   2 files changed, 11 insertions(+), 7 deletions(-)
->
+diff --git a/tests/btrfs/082 b/tests/btrfs/082
+new file mode 100755
+index 0000000..7a6e4b5
+--- /dev/null
++++ b/tests/btrfs/082
+@@ -0,0 +1,65 @@
++#!/bin/bash
++# FS QA Test No. btrfs/082
++#
++# Regression test for a btrfs issue of resizing 'thread_pool' when
++# remount the fs.
++#
++# This regression was introduced by the following linux kernel commit:
++#     btrfs: Added btrfs_workqueue_struct implemented ordered
++#     execution based on kernel workqueue
++#     08a9ff3264181986d1d692a4e6fce3669700c9f8
++# And it was fixed by the following linux kernel commit:
++#     btrfs: fix crash in remount(thread_pool=) case
++#     800ee2247f483b6d05ed47ef3bbc90b56451746c
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null
++
++_scratch_mount "-o thread_pool=6"
++_scratch_mount "-o remount,thread_pool=10"
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
+new file mode 100644
+index 0000000..2977f14
+--- /dev/null
++++ b/tests/btrfs/082.out
+@@ -0,0 +1,2 @@
++QA output created by 082
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e29999b..fd2fa76 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -84,3 +84,4 @@
+ 079 auto rw metadata
+ 080 auto snapshot
+ 081 auto quick clone
++082 auto quick remount
+-- 
+1.9.3
 

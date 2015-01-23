@@ -1,56 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55893 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750946AbbAWO5e convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 09:57:34 -0500
-Date: Fri, 23 Jan 2015 09:56:54 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: 3.19-rc5: Bug 91911: [REGRESSION] rm command hangs big time
- with deleting a lot of files at once
-To: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Message-ID: <1422025014.28436.1@mail.thefacebook.com>
-In-Reply-To: <pan.2015.01.23.14.38.09@googlemail.com>
-References: <2506104.3YBgc9qdaM@merkaba>
-	<pan.2015.01.23.14.38.09@googlemail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:37812 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751100AbbAWQHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Jan 2015 11:07:14 -0500
+Date: Fri, 23 Jan 2015 17:07:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        guihc.fnst@cn.fujitsu.com, miaoxie@huawei.com, clm@fb.com
+Subject: Re: [PULL] [PATCH 0/3] Btrfs, fixes for freezing vs pending changes
+Message-ID: <20150123160712.GO13289@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1421776294.git.dsterba@suse.cz>
+ <54C1B2B0.8040406@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54C1B2B0.8040406@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jan 23, 2015 at 10:32:16AM +0800, Qu Wenruo wrote:
+> 1) mount option change problem.
+> In fact, there is no need to start a transaction to change mount option, 
+> since it doesn't change anything
+> on-disk.
 
+The commit is to flush all the data that should see the same state
+of the mount option.
 
-On Fri, Jan 23, 2015 at 9:38 AM, Holger Hoffstätte 
-<holger.hoffstaette@googlemail.com> wrote:
-> On Fri, 23 Jan 2015 15:01:28 +0100, Martin Steigerwald wrote:
-> 
->>  Hi!
->> 
->>  Anyone seen this?
->> 
->>  Reported as:
->> 
->>  
->> https://urldefense.proofpoint.com/v1/url?u=https://bugzilla.kernel.org/show_bug.cgi?id%3D91911&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=fHpzX%2FNpDGcY26Q1T%2B0VtIyZz0GPMnG3qvE%2FVJ%2Blsf0%3D%0A&s=66b06542cc5a9585c9913a0b76885b4baba0a8028f70149803982388c9333d71
-> 
-> You might be interested in:
-> 
-> https://urldefense.proofpoint.com/v1/url?u=https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?h%3Devict-softlockup%26id%3D29249e14d6e3379a5c4bb098dd4beddfefbc606f&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=fHpzX%2FNpDGcY26Q1T%2B0VtIyZz0GPMnG3qvE%2FVJ%2Blsf0%3D%0A&s=137b101ca50e644b95dc2b14758cf1472e9cc0097b4f89f7edf8e2845455b20f
-> 
-> and
-> 
-> https://urldefense.proofpoint.com/v1/url?u=https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?h%3Devict-softlockup%26id%3De4a58b71ff981b098ac3371f4d573dc6a90006ce&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=fHpzX%2FNpDGcY26Q1T%2B0VtIyZz0GPMnG3qvE%2FVJ%2Blsf0%3D%0A&s=3462ceb04ffed8316e21ffe16eee4e3274f9771a58326cd1bbb9c1cfc1eef9ba
-> 
-> I'm sure everyone would love to hear how this works out for you ;-)
+> What we need is just to keep the mount option doesn't change during 
+> transaction.
 
-These are a little different.  Josef is fixing softlockups (CPUs pegged 
-in R state) while this bug report is for sleeping procs.  The fact that 
-things come back sound like we're pegged waiting for IO?  Do you have a 
-lot of writing going on at the same time?
+Yes, that's better.
 
--chris
+> So I prefer to add a rwsem to protect mount_opt, each btrfs_transaction 
+> will hold the read lock on it
+> and upon btrfs_put_transaction(), read unlock it.
+> btrfs_parse_option() should wait for write lock to change it.
 
+Ok.
 
+> BTW, current btrfs_parse_options() is not atomic, and for nospace_cache 
+> mount option,
+> SPACE_CACHE bit is always first set and later cleared, which created a 
+> window btrfs_commit_transaction()
+> can create space cache. I'll solve it by using copy-n-update method.
 
+That's a unrelated fix to the pending changes, but a needed one.
+
+> 2) Sysfs label/feature change problem
+> For this problem, I agree with Miao to keep the behavior the same as 
+> "btrfs pro set" command,
+> since it will write something on disk.
+> And since btrfs_ioctl_set_fslabel() is synchronized, I didn't see the 
+> necessity to change it to async using sysfs.
+
+The calling context is different from 'btrfs prop set' and direct ioctl
+call. Details in the reply to your RFC mail.
+
+> What do you think about this idea?
+> Although, I'm afraid this may revert all your pending_changes 
+> patches.... :-<
+
+Given the timeframe of dev cycle, I think the minimal fix to avoid the
+sync deadlock will probably go in, as is in the for-linus branch right
+now.
+
+Next, the lock-protected mount options would replace current way of
+handling the inode_cache and we can see if we find different way how to
+get rid of the async commit.

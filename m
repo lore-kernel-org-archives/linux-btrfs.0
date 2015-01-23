@@ -1,140 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63574 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751121AbbAWHdD (ORCPT
+Received: from netz.smurf.noris.de ([213.95.21.43]:37894 "EHLO
+	netz.extern.smurf.noris.de" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754193AbbAWKP6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 02:33:03 -0500
-From: Xing Gu <gux.fnst@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>,
-        <quwenruo@cn.fujitsu.com>, <eguan@redhat.com>,
-        Xing Gu <gux.fnst@cn.fujitsu.com>
-Subject: [PATCH v4] btrfs: add regression test for remount with thread_pool resized
-Date: Fri, 23 Jan 2015 15:28:59 +0800
-Message-ID: <1421998139-15881-1-git-send-email-gux.fnst@cn.fujitsu.com>
+	Fri, 23 Jan 2015 05:15:58 -0500
+Received: from [2001:780:107:0:1278:d2ff:fea3:d4a6] (helo=smurf.noris.de)
+	by netz.extern.smurf.noris.de with smtp (Exim 4.84)
+	(envelope-from <matthias@urlichs.de>)
+	id 1YEb76-0006RQ-45
+	for linux-btrfs@vger.kernel.org; Fri, 23 Jan 2015 10:05:17 +0000
+Date: Fri, 23 Jan 2015 11:05:15 +0100
+From: Matthias Urlichs <matthias@urlichs.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Moving snapshots
+Message-ID: <20150123100515.GD26830@smurf.noris.de>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="XF85m9dhOBO43t/C"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for a btrfs issue of resizing 'thread_pool' when
-remount the fs.
 
-This regression was introduced by the following linux kernel commit:
-    btrfs: Added btrfs_workqueue_struct implemented ordered
-    execution based on kernel workqueue
-    08a9ff3264181986d1d692a4e6fce3669700c9f8
-And it was fixed by the following linux kernel commit:
-    btrfs: fix crash in remount(thread_pool=) case
-    800ee2247f483b6d05ed47ef3bbc90b56451746c
+--XF85m9dhOBO43t/C
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
----
- v3->v4: Remove the check for a bug message.
+Hello,
 
- v2->v3: Add the regresssion commit in description.
-         Remove "dmesg -c > /dev/null".
-         Echo "Silence is golden" to indicate that an empty output
-         file is expected.
+how do I move a (read-only) snapshot?
 
- v1->v2: Add the fix commit in description.
-         Add the check for a bug message.
----
- tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/082.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 68 insertions(+)
- create mode 100755 tests/btrfs/082
- create mode 100644 tests/btrfs/082.out
+Simply creating another read-only snap from the first one and then deleting
+the source works, except that it destroy's the snapshot's identity -- which
+means that it can't be used as a parent for "btrfs receive" any more.  :-(
 
-diff --git a/tests/btrfs/082 b/tests/btrfs/082
-new file mode 100755
-index 0000000..7a6e4b5
---- /dev/null
-+++ b/tests/btrfs/082
-@@ -0,0 +1,65 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/082
-+#
-+# Regression test for a btrfs issue of resizing 'thread_pool' when
-+# remount the fs.
-+#
-+# This regression was introduced by the following linux kernel commit:
-+#     btrfs: Added btrfs_workqueue_struct implemented ordered
-+#     execution based on kernel workqueue
-+#     08a9ff3264181986d1d692a4e6fce3669700c9f8
-+# And it was fixed by the following linux kernel commit:
-+#     btrfs: fix crash in remount(thread_pool=) case
-+#     800ee2247f483b6d05ed47ef3bbc90b56451746c
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null
-+
-+_scratch_mount "-o thread_pool=6"
-+_scratch_mount "-o remount,thread_pool=10"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
-new file mode 100644
-index 0000000..2977f14
---- /dev/null
-+++ b/tests/btrfs/082.out
-@@ -0,0 +1,2 @@
-+QA output created by 082
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e29999b..fd2fa76 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -84,3 +84,4 @@
- 079 auto rw metadata
- 080 auto snapshot
- 081 auto quick clone
-+082 auto quick remount
--- 
-1.9.3
+--=20
+-- Matthias Urlichs
 
+--XF85m9dhOBO43t/C
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUwhzbAAoJEHLPjl4ltMKTIaEQAM8sYdNbYjU6yDTHiVfb2UFS
+fIB2qDVNo6ogWbKheWqE2KopSHQgKSvQSO8Dn1Nx2OT5NUqK7SLbX8IJORUS86qI
+xUDrmlmKdxz8b5CZlukwuRDECTw3iNx1Tt9roAaeOYxcx7pyW8LYQ2JFWyi2gzh/
+yH6Doimd3hEra+F9FmcOayUBGCjtbrKj4Ei3zi6FkNFsiBBFBE3SWZ//1qWKIdvM
+H0xut37wfAXMycsBHzvUJv44FOlXRySPRMd3kNYarOoTcqOw/vv12cN5v7QrRwOe
+n02dBUyljR4bLgO/9hIctF2RVYa5q4WvaUqXOmU26mmhTYIpPzjUrwL1ElxVOjKW
+o4QemgTGvo/7JcJSgopftxxrsnKWdFoO2CtzxbtGuNKm8pdUWTnXBrGqAVB73K+9
+13/53e5aW8WJY489zeIfdhi+WqO9cZCiIyTjS9v+3A+Tr8f2yMFi3Wpc2GiPru6d
+3aREgGHpVepvp4XncMiGp1J/QLZYwic23IY8Ud2zhSpBWB5KwHddgFeYqiqFw8/C
+rNHMWEMPnI6IO40LQAweY++6xINQ6OoKjh3WsfWKVDjk8tKcl1pkFL1uprr++cN3
+4KSXrbK5eCgLX7eAtfm1UMfgeI8M4i9FaWedkwNyIA3wK0EtcAyvaO4bRXaxHO6b
+v7YRiHDUm3ZeEM7ogAX3
+=/tmg
+-----END PGP SIGNATURE-----
+
+--XF85m9dhOBO43t/C--

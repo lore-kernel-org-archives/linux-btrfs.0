@@ -1,160 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:35041 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:49630 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750902AbbAWMgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 07:36:46 -0500
-Date: Fri, 23 Jan 2015 20:36:37 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Xing Gu <gux.fnst@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, david@fromorbit.com,
-        quwenruo@cn.fujitsu.com
-Subject: Re: [PATCH v4] btrfs: add regression test for remount with
- thread_pool resized
-Message-ID: <20150123123637.GQ3094@dhcp-13-216.nay.redhat.com>
-References: <1421998139-15881-1-git-send-email-gux.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421998139-15881-1-git-send-email-gux.fnst@cn.fujitsu.com>
+	id S1752764AbbAWN2Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Jan 2015 08:28:24 -0500
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: zab@zabbo.net, chandan r <chandanrmail@gmail.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH v3] Btrfs: Add code to support file creation time
+Date: Fri, 23 Jan 2015 14:28:17 +0100
+Message-Id: <1422019697-31866-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1421947241-9323-1-git-send-email-dsterba@suse.cz>
+References: <1421947241-9323-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 23, 2015 at 03:28:59PM +0800, Xing Gu wrote:
-> Regression test for a btrfs issue of resizing 'thread_pool' when
-> remount the fs.
-> 
-> This regression was introduced by the following linux kernel commit:
->     btrfs: Added btrfs_workqueue_struct implemented ordered
->     execution based on kernel workqueue
->     08a9ff3264181986d1d692a4e6fce3669700c9f8
-> And it was fixed by the following linux kernel commit:
->     btrfs: fix crash in remount(thread_pool=) case
->     800ee2247f483b6d05ed47ef3bbc90b56451746c
-> 
-> Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
-> ---
->  v3->v4: Remove the check for a bug message.
-> 
->  v2->v3: Add the regresssion commit in description.
->          Remove "dmesg -c > /dev/null".
->          Echo "Silence is golden" to indicate that an empty output
->          file is expected.
-> 
->  v1->v2: Add the fix commit in description.
->          Add the check for a bug message.
-> ---
->  tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/082.out |  2 ++
->  tests/btrfs/group   |  1 +
->  3 files changed, 68 insertions(+)
->  create mode 100755 tests/btrfs/082
->  create mode 100644 tests/btrfs/082.out
-> 
-> diff --git a/tests/btrfs/082 b/tests/btrfs/082
-> new file mode 100755
-> index 0000000..7a6e4b5
-> --- /dev/null
-> +++ b/tests/btrfs/082
-> @@ -0,0 +1,65 @@
-> +#!/bin/bash
-> +# FS QA Test No. btrfs/082
-> +#
-> +# Regression test for a btrfs issue of resizing 'thread_pool' when
-> +# remount the fs.
-> +#
-> +# This regression was introduced by the following linux kernel commit:
-> +#     btrfs: Added btrfs_workqueue_struct implemented ordered
-> +#     execution based on kernel workqueue
-> +#     08a9ff3264181986d1d692a4e6fce3669700c9f8
-> +# And it was fixed by the following linux kernel commit:
-> +#     btrfs: fix crash in remount(thread_pool=) case
-> +#     800ee2247f483b6d05ed47ef3bbc90b56451746c
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +
-> +_cleanup()
-> +{
-> +    rm -f $tmp.*
-> +}
-> +
-> +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +_scratch_mkfs > /dev/null
+From: chandan r <chandanrmail@gmail.com>
 
-Redirect stderr to /dev/null too, otherwise test fails if scratch device
-supports trim.
+This patch adds a new member to the 'struct btrfs_inode' structure to hold
+the file creation time.
 
-btrfs/082 0s ... - output mismatch (see /root/xfstests/results//btrfs/082.out.bad)
-    --- tests/btrfs/082.out     2015-01-23 20:27:15.603689913 +0800
-    +++ /root/xfstests/results//btrfs/082.out.bad       2015-01-23 20:33:46.514259626 +0800
-    @@ -1,2 +1,3 @@
-     QA output created by 082
-    +Performing full device TRIM (5.00GiB) ...
-     Silence is golden
-    ...
-    (Run 'diff -u tests/btrfs/082.out /root/xfstests/results//btrfs/082.out.bad'  to see the entire diff)
+Signed-off-by: chandan <chandanrmail@gmail.com>
+[refreshed, removed btrfs_inode_otime]
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-Others look good to me.
+V3:
+- removed forgotten use of btrfs_inode_otime
+- simplified current time assignments (Zach)
 
-Thanks,
-Eryu
-> +
-> +_scratch_mount "-o thread_pool=6"
-> +_scratch_mount "-o remount,thread_pool=10"
-> +
-> +echo "Silence is golden"
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
-> new file mode 100644
-> index 0000000..2977f14
-> --- /dev/null
-> +++ b/tests/btrfs/082.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 082
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index e29999b..fd2fa76 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -84,3 +84,4 @@
->  079 auto rw metadata
->  080 auto snapshot
->  081 auto quick clone
-> +082 auto quick remount
-> -- 
-> 1.9.3
-> 
+ fs/btrfs/btrfs_inode.h   |  3 +++
+ fs/btrfs/delayed-inode.c | 10 ++++++++++
+ fs/btrfs/inode.c         | 25 +++++++++++++++++++++++--
+ 3 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 4aadadcfab20..de5e4f2adfea 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -185,6 +185,9 @@ struct btrfs_inode {
+ 
+ 	struct btrfs_delayed_node *delayed_node;
+ 
++	/* File creation time. */
++	struct timespec i_otime;
++
+ 	struct inode vfs_inode;
+ };
+ 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 116eb4bed8d3..82f0c7c95474 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1769,6 +1769,11 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
+ 				     inode->i_ctime.tv_sec);
+ 	btrfs_set_stack_timespec_nsec(&inode_item->ctime,
+ 				      inode->i_ctime.tv_nsec);
++
++	btrfs_set_stack_timespec_sec(&inode_item->otime,
++				     BTRFS_I(inode)->i_otime.tv_sec);
++	btrfs_set_stack_timespec_nsec(&inode_item->otime,
++				     BTRFS_I(inode)->i_otime.tv_nsec);
+ }
+ 
+ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+@@ -1810,6 +1815,11 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ 	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(&inode_item->ctime);
+ 	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(&inode_item->ctime);
+ 
++	BTRFS_I(inode)->i_otime.tv_sec =
++		btrfs_stack_timespec_sec(&inode_item->otime);
++	BTRFS_I(inode)->i_otime.tv_nsec =
++		btrfs_stack_timespec_nsec(&inode_item->otime);
++
+ 	inode->i_generation = BTRFS_I(inode)->generation;
+ 	BTRFS_I(inode)->index_cnt = (u64)-1;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 87f1d9b8727e..5da80af467a6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3535,6 +3535,11 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, &inode_item->ctime);
+ 	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, &inode_item->ctime);
+ 
++	BTRFS_I(inode)->i_otime.tv_sec =
++		btrfs_timespec_sec(leaf, &inode_item->otime);
++	BTRFS_I(inode)->i_otime.tv_nsec =
++		btrfs_timespec_nsec(leaf, &inode_item->otime);
++
+ 	inode_set_bytes(inode, btrfs_inode_nbytes(leaf, inode_item));
+ 	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
+ 	BTRFS_I(inode)->last_trans = btrfs_inode_transid(leaf, inode_item);
+@@ -3669,6 +3674,11 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_token_timespec_nsec(leaf, &item->ctime,
+ 				      inode->i_ctime.tv_nsec, &token);
+ 
++	btrfs_set_token_timespec_sec(leaf, &item->otime,
++				     BTRFS_I(inode)->i_otime.tv_sec, &token);
++	btrfs_set_token_timespec_nsec(leaf, &item->otime,
++				      BTRFS_I(inode)->i_otime.tv_nsec, &token);
++
+ 	btrfs_set_token_inode_nbytes(leaf, item, inode_get_bytes(inode),
+ 				     &token);
+ 	btrfs_set_token_inode_generation(leaf, item, BTRFS_I(inode)->generation,
+@@ -5256,7 +5266,10 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 	inode->i_op = &btrfs_dir_ro_inode_operations;
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
+-	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
++	inode->i_mtime = CURRENT_TIME;
++	inode->i_atime = inode->i_mtime;
++	inode->i_ctime = inode->i_mtime;
++	BTRFS_I(inode)->i_otime = inode->i_mtime;
+ 
+ 	return inode;
+ }
+@@ -5824,7 +5837,12 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 
+ 	inode_init_owner(inode, dir, mode);
+ 	inode_set_bytes(inode, 0);
+-	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
++
++	inode->i_mtime = CURRENT_TIME;
++	inode->i_atime = inode->i_mtime;
++	inode->i_ctime = inode->i_mtime;
++	BTRFS_I(inode)->i_otime = inode->i_mtime;
++
+ 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				  struct btrfs_inode_item);
+ 	memset_extent_buffer(path->nodes[0], 0, (unsigned long)inode_item,
+@@ -8574,6 +8592,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 
+ 	ei->delayed_node = NULL;
+ 
++	ei->i_otime.tv_sec = 0;
++	ei->i_otime.tv_nsec = 0;
++
+ 	inode = &ei->vfs_inode;
+ 	extent_map_tree_init(&ei->extent_tree);
+ 	extent_io_tree_init(&ei->io_tree, &inode->i_data);
+-- 
+1.8.4.5
+

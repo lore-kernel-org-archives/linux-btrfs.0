@@ -1,85 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.commandict.com.au ([203.190.234.55]:48067 "EHLO
-	mascot.commandict.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751730AbbAWJh1 convert rfc822-to-8bit (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:51564 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752608AbbAWJsA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 04:37:27 -0500
-Subject: RE: Recovery Operation With Multiple Devices
-From: =?utf-8?Q?Brett_King?= <brett.king@commandict.com.au>
-To: =?utf-8?Q?linux-btrfs=40vger=2Ekernel=2Eorg?=
-	<linux-btrfs@vger.kernel.org>,
-        =?utf-8?Q?Brendan_Hide?= <brendan@swiftspirit.co.za>
-Date: Fri, 23 Jan 2015 20:37:24 +1100
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Message-Id: <zarafa.54c21654.532e.08ee9fa1411c5834@mascot.commandict.com.au>
+	Fri, 23 Jan 2015 04:48:00 -0500
+Date: Fri, 23 Jan 2015 09:47:56 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Brett King <brett.king@commandict.com.au>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Recovery Operation With Multiple Devices
+Message-ID: <20150123094756.GB1654@carfax.org.uk>
+References: <zarafa.54c1fe06.4689.28909bac67ef9272@mascot.commandict.com.au>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="VrqPEDrXMn8OVzN4"
+In-Reply-To: <zarafa.54c1fe06.4689.28909bac67ef9272@mascot.commandict.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------Original message-----
-From:	Brendan Hide <brendan@swiftspirit.co.za>
-Sent:	Fri 01-23-2015 08:18 pm
-Subject:	Re: Recovery Operation With Multiple Devices
-To:	Brett King <brett.king@commandict.com.au>; linux-btrfs@vger.kernel.org; 
-> On 2015/01/23 09:53, Brett King wrote:
-> > Hi All,
-> > Just wondering how 'btrfs recovery' operates
-> I'm assuming you're referring to a different set of commands or general 
-> scrub/recovery processes. AFAIK there is no "btrfs recovery" command.
-> 
 
-Oh yes, my apologies - I did mean 'btrfs restore' as a means of recovery.
+--VrqPEDrXMn8OVzN4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> > , when the source device given is one of many in an MD array - I can't find 
-> anything documentation beyond a single device use case.
-> btrfs doesn't know what an md array or member is, therefore your results 
-> aren't going to be well-defined. Depending on the type of md array the 
-> member was in, your data may be mostly readable (RAID1) or 
-> completely/mostly non-interpretable (RAID5/6/10/0) until md fixes the array.
+On Fri, Jan 23, 2015 at 06:53:42PM +1100, Brett King wrote:
+> Hi All,
+> Just wondering how 'btrfs recovery' operates, when the source device given is one of many in an MD array - I can't find anything documentation beyond a single device use case.
 > 
+> Does it automatically include all devices in the relevant MD array as occurs when mounting, or does it only restore the data which happened to be written to the specific, single device given ?
 
-Apologies again, by 'MD' I mean btrfs multiple devices not the MD for block-level RAID via mdadm.
+   Neither. :)
 
-> > Does it automatically include all devices in the relevant MD array as occurs 
-> when mounting, or does it only restore the data which happened to be written to 
-> the specific, single device given ?
-> As above, btrfs is not md-aware. It will attempt to work with what it is 
-> given. It might not understand anything it sees as it will not have a 
-> good description of what it is looking at. Imagine being given 
-> instructions on how to get somewhere only to find that the first 20 
-> instructions and every second instruction thereafter was skipped and 
-> there's a 50% chance the destination doesn't exist.
-> 
-> >  From an inverse perspective, how can I restore all data including snapshots, 
-> which are spread across a damaged MD FS to a new (MD) FS ?
-> Your best bet is to restore the md array. More details are needed for 
-> anyone to assist - for example what RAID-type was the array set up with, 
-> how many disks were in the array, and how it failed. Also, technically 
-> this is the wrong place to ask for advice about restoring md arrays. ;)
-> 
+   It automatically includes all devices as occurs when running
+btrfsck. OK, it's a relatively pointless distinction, but the
+mechanisms are slightly different.
 
-The FS is btrfs RAID1 and gets forced readonly from what appears to be related to the 3.17 snapshot bug.
+> From an inverse perspective, how can I restore all data including snapshots, which are spread across a damaged MD FS to a new (MD) FS ?
 
-> > Can send / receive do this perhaps ?
-> Send/receive is for sending good data to a destination that can accept 
-> it. This, as above, depends on the data being readable/available. Very 
-> likely the data will be unreadable from a single disk unless the md 
-> array was RAID1.
-> 
+   btrfs restore -l will show you the list of tree roots, which (for
+trees numbered 256 and up) correspond to subvolumes and snapshots. You
+can then use -r to select the tree to restore.
 
-I can read the data fine and tried the 'btrfs restore -sxv', which appeared to do what I wanted but I don't yet have enough space on the restore target to confirm that it gets more data than the single source disk I specify on the command.
+> Can send / receive do this perhaps ?
 
-> > Thanks in advance !
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> -- 
-> __________
-> Brendan Hide
-> http://swiftspirit.co.za/
-> http://www.webafrica.co.za/?AFF1E97
-> 
->
+   Yes, but only if you can mount the FS.
+
+   Hugo.
+
+-- 
+Hugo Mills             | I know of three kinds: hot, cool, and
+hugo@... carfax.org.uk | what-time-does-the-tune-start?
+http://carfax.org.uk/  |
+PGP: 65E74AC0          |                                          Chris Dollin
+
+--VrqPEDrXMn8OVzN4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJUwhjMAAoJEFheFHXiqx3kpUMQAJb965nbvhNjNb+GQXLng3fv
+YLI9cXjXU6+4aaOOeYUiYCSf/Y+K3EycRcRC0xHxGYuTmfFLPmyFzeT8WXD8dsU6
+02Poms5jic8t2ickrFMdN9rPRj/1JfGq6MMzfihJMbQrbK0WvwBk9a3geSX+Awc3
+yC32kIaNrQikxfmyMfW8eSJMAXZnD07kavPuoZNAZrmL8ZM+DHbyIMQnMUTwNh6l
+OwNcKBKPTgNUDPSowxfTfvsuDb9nOenGYEF9NR8/YoDBMv2TjVgzsZjRtDt80X+D
+Hi3H+bnyRlYqGjpZEJPRBlZrT1dDonDuCIH4JzJRCt7dlNNEm3ebZ6YlXBBrW46A
+SP1IHfKSzYAdQIQA5pVKROjpwX+aqu1qo4Wc05PJUPpUz3VuiqehdJOpJQ8i0LyA
+2Gj+8ZsYUBY2SF5zpnEf/wASO9eJYDzXZIWlubqxO2lhYAaSMuFU/6XIAodD6ioj
++hLJ89r1IPmQBkphYAqdmOM036xDZrJ37YIXu31m7+MfxMP+rDumV6bnvdZ7tFit
+lLQ4RZWD1DnCK8RuGqwUDHpzKdt/irX27waRUhb32VVJsEEW93aM2bJwpPqs6WXl
+h6A2Pi1PxthzH1uJgzAqZkKKKVeClN32hZKD7qz7buECqLB2ahGYt3rN2tZVX2CP
+DoJaBVhze+9CbjodEq0X
+=R8Rh
+-----END PGP SIGNATURE-----
+
+--VrqPEDrXMn8OVzN4--

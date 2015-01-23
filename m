@@ -1,44 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63557 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752275AbbAWB4k convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Jan 2015 20:56:40 -0500
-Message-ID: <54C1AA53.2060207@cn.fujitsu.com>
-Date: Fri, 23 Jan 2015 09:56:35 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:37912 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755659AbbAWQK0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Jan 2015 11:10:26 -0500
+Date: Fri, 23 Jan 2015 17:10:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: Re: [PATCH v2] fstests: btrfs/079: Fix wrong value passed to
+ available space check.
+Message-ID: <20150123161025.GP13289@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1421820518-27797-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <clm@fb.com>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>, <miaoxie@huawei.com>
-Subject: Re: [PATCH] btrfs: fix raid56 scrub failed in xfstests btrfs/072
-References: <1420767580-19380-1-git-send-email-guihc.fnst@cn.fujitsu.com> <20150116110028.GO3685@twin.jikos.cz>
-In-Reply-To: <20150116110028.GO3685@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1421820518-27797-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jan 21, 2015 at 02:08:37PM +0800, Qu Wenruo wrote:
+> Wrong value is passed to _require_fs_space, which should be in unit of
+> kilobyte(1024), but passed in unit of gigabyte(1024^3).
+> 
+> Fix it.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: fix raid56 scrub failed in xfstests btrfs/072
-From: David Sterba <dsterba@suse.cz>
-To: <clm@fb.com>
-Date: 2015年01月16日 19:00
-> On Fri, Jan 09, 2015 at 09:39:40AM +0800, Gui Hecheng wrote:
->> The xfstests btrfs/072 reports uncorrectable read errors in dmesg,
->> because scrub forgets to use commit_root for parity scrub routine
->> and scrub attempts to scrub those extents items whose contents are
->> not fully on disk.
->>
->> To fix it, we just add the @search_commit_root flag back.
->>
->> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Chris, please add this patch to 3.19-rc queue, followup to the new
-> raid56 scrub code.
-Hi Chris,
-
-This patch doesn't seems to be included in 3.19-rc5, would you please 
-add it to next rc?
-
-Thanks,
-Qu
+Reviewed-by: David Sterba <dsterba@suse.cz>

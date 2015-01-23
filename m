@@ -1,55 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53244 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48533 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754777AbbAWJdr (ORCPT
+	with ESMTP id S1752608AbbAWJdv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 04:33:47 -0500
+	Fri, 23 Jan 2015 04:33:51 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>, <miaoxie@huawei.com>
-Subject: [PATCH RFC v3 0/5] mount options consistent enhancement
-Date: Fri, 23 Jan 2015 17:31:40 +0800
-Message-ID: <1422005505-9472-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC v3 3/5] btrfs: Introduce per-transaction mount_opt to keep mount option consistent during transaction.
+Date: Fri, 23 Jan 2015 17:31:43 +0800
+Message-ID: <1422005505-9472-4-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1422005505-9472-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1422005505-9472-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patchset to solve the previous found deadlock and enhance mount options
-consistence.
+Before this patch, mount_opt is not consistent during a transaction.
+btrfs_parse_options() can race with transaction.
 
-Unlike previous pending_changes, which uses transaction commits to
-ensure mount option doesn't change during transaction.
-This patch use the RCU-like concept, which will copy the mount_opt from
-fs_info into btrfs_transaction, and each btrfs_test_opt() for specific
-mount option bit(SPACE_CACHE/INODE_MAP_CACHE) should be changed to
-btrfs_test_trans_opt().
-So mount option during transaction won't be changed, and also, no extra
-read_only or freeze check is needed, the commit routine is also
-untouched.
+Now each transaction will keep a copy of fs_info->mount_opt upon
+creation, and new btrfs_test_trans_opt() macro is introduced to get the
+mount_opt in the transaction.
 
-Qu Wenruo (5):
-  Revert "btrfs: add support for processing pending changes" related    
-    commits
-  btrfs: Make btrfs_parse_options() parse mount option in a atomic way
-  btrfs: Introduce per-transaction mount_opt to keep mount option    
-    consistent during transaction.
-  btrfs: Use btrfs_test_trans_opt() to handle SPACE_CACHE if it's under 
-       transaction protect.
-  btrfs: Use btrfs_test_trans_opt() to handle INODE_CACHE if it's under 
-       transaction protect.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c | 1 +
+ fs/btrfs/transaction.h | 4 ++++
+ 2 files changed, 5 insertions(+)
 
- fs/btrfs/ctree.h            |  64 +++-------------------
- fs/btrfs/disk-io.c          |   6 ---
- fs/btrfs/extent-tree.c      |   2 +-
- fs/btrfs/free-space-cache.c |   2 +-
- fs/btrfs/inode-map.c        |   5 +-
- fs/btrfs/super.c            | 129 ++++++++++++++++++++++----------------------
- fs/btrfs/sysfs.c            |  34 +++++++-----
- fs/btrfs/transaction.c      |  43 ++-------------
- fs/btrfs/transaction.h      |   6 ++-
- 9 files changed, 107 insertions(+), 184 deletions(-)
-
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 295a135..846e1b8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -210,6 +210,7 @@ loop:
+ 		return -EROFS;
+ 	}
+ 
++	cur_trans->mount_opt = fs_info->mount_opt;
+ 	atomic_set(&cur_trans->num_writers, 1);
+ 	extwriter_counter_init(cur_trans, type);
+ 	init_waitqueue_head(&cur_trans->writer_wait);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index fd400a3..4052879 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -52,6 +52,7 @@ struct btrfs_transaction {
+ 	struct list_head list;
+ 	struct extent_io_tree dirty_pages;
+ 	unsigned long start_time;
++	unsigned long mount_opt;
+ 	wait_queue_head_t writer_wait;
+ 	wait_queue_head_t commit_wait;
+ 	struct list_head pending_snapshots;
+@@ -126,6 +127,9 @@ struct btrfs_pending_snapshot {
+ 	struct list_head list;
+ };
+ 
++#define btrfs_test_trans_opt(trans, opt)	\
++	(btrfs_raw_test_opt(trans->transaction->mount_opt, opt))
++
+ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
+ 					      struct inode *inode)
+ {
 -- 
 2.2.2
 

@@ -1,72 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:50278 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752237AbbAWS1j (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 23 Jan 2015 13:27:39 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: add missing cleanup on sysfs init failure
-Date: Fri, 23 Jan 2015 18:27:00 +0000
-Message-Id: <1422037620-12362-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15410 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752848AbbAWStY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Jan 2015 13:49:24 -0500
+Date: Fri, 23 Jan 2015 13:49:18 -0500
+From: Chris Mason <clm@fb.com>
+To: <torvalds@linux-foundation.org>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs fixes
+Message-ID: <20150123184911.GA17437@ret.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we failed during initialization of sysfs, we weren't unregistering the
-top level btrfs sysfs entry nor the debugfs stuff.
-Not unregistering the top level sysfs entry makes future attempts to reload
-the btrfs module impossible and the following is reported in dmesg:
+Hi Linus,
 
-[ 2246.451296] WARNING: CPU: 3 PID: 10999 at fs/sysfs/dir.c:486 sysfs_warn_dup+0x91/0xb0()
-[ 2246.451298] sysfs: cannot create duplicate filename '/fs/btrfs'
-[ 2246.451298] Modules linked in: btrfs(+) raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc parport psmouse serio_raw pcspkr evbug i2c_piix4 e1000 floppy [last unloaded: btrfs]
-[ 2246.451310] CPU: 3 PID: 10999 Comm: modprobe Tainted: G        W    3.13.0-fdm-btrfs-next-24+ #7
-[ 2246.451311] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
-[ 2246.451312]  0000000000000009 ffff8800d353fa08 ffffffff816f1da6 0000000000000410
-[ 2246.451314]  ffff8800d353fa58 ffff8800d353fa48 ffffffff8104a32c ffff88020821a290
-[ 2246.451316]  ffff88020821a290 ffff88020821a290 ffff8802148f0000 ffff8800d353fb80
-[ 2246.451318] Call Trace:
-[ 2246.451322]  [<ffffffff816f1da6>] dump_stack+0x4e/0x68
-[ 2246.451324]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
-[ 2246.451325]  [<ffffffff8104a416>] warn_slowpath_fmt+0x46/0x50
-[ 2246.451328]  [<ffffffff81367dc5>] ? strlcat+0x65/0x90
-(....)
+We have a few fixes in my for-linus branch:
 
-This fixes the following change:
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-    btrfs: add simple debugfs interface
-    commit 1bae30982bc86ab66d61ccb6e22792593b45d44d
+Qu Wenruo's batch fix a regression between some our merge window pull
+and the inode_cache feature.  The rest are smaller bugs.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/sysfs.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+Qu Wenruo (2) commits (+11/-1):
+    btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid deadlock. (+10/-0)
+    btrfs: Fix the bug that fs_info->pending_changes is never cleared. (+1/-1)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 92db3f6..94edb0a 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -733,10 +733,18 @@ int btrfs_init_sysfs(void)
- 
- 	ret = btrfs_init_debugfs();
- 	if (ret)
--		return ret;
-+		goto out1;
- 
- 	init_feature_attrs();
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
-+	if (ret)
-+		goto out2;
-+
-+	return 0;
-+out2:
-+	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
-+out1:
-+	kset_unregister(btrfs_kset);
- 
- 	return ret;
- }
--- 
-2.1.3
+Satoru Takeuchi (1) commits (+1/-1):
+    btrfs: fix state->private cast on 32 bit machines
 
+David Sterba (1) commits (+2/-2):
+    btrfs: sync ioctl, handle errors after transaction start
+
+Filipe Manana (1) commits (+2/-1):
+    Btrfs: fix race deleting block group from space_info->ro_bgs list
+
+Tsutomu Itoh (1) commits (+1/-1):
+    Btrfs: fix incorrect freeing in scrub_stripe
+
+Total: (6) commits (+17/-6)
+
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/extent_io.c   |  2 +-
+ fs/btrfs/scrub.c       |  2 +-
+ fs/btrfs/super.c       | 14 ++++++++++++--
+ fs/btrfs/transaction.c |  2 +-
+ 6 files changed, 17 insertions(+), 6 deletions(-)

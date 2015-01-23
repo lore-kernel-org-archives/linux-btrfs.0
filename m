@@ -1,45 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39936 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752417AbbAWRwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 12:52:15 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A22C7ACE9
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Jan 2015 17:52:13 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+Received: from victor.provo.novell.com ([137.65.250.26]:50278 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752237AbbAWS1j (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 23 Jan 2015 13:27:39 -0500
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3.19-rc] btrfs: add read-only check to sysfs handler of features
-Date: Fri, 23 Jan 2015 18:52:11 +0100
-Message-Id: <1422035531-22930-1-git-send-email-dsterba@suse.cz>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: add missing cleanup on sysfs init failure
+Date: Fri, 23 Jan 2015 18:27:00 +0000
+Message-Id: <1422037620-12362-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't want to trigger the change on a read-only filesystem, similar
-to what the label handler does.
+If we failed during initialization of sysfs, we weren't unregistering the
+top level btrfs sysfs entry nor the debugfs stuff.
+Not unregistering the top level sysfs entry makes future attempts to reload
+the btrfs module impossible and the following is reported in dmesg:
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+[ 2246.451296] WARNING: CPU: 3 PID: 10999 at fs/sysfs/dir.c:486 sysfs_warn_dup+0x91/0xb0()
+[ 2246.451298] sysfs: cannot create duplicate filename '/fs/btrfs'
+[ 2246.451298] Modules linked in: btrfs(+) raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc parport psmouse serio_raw pcspkr evbug i2c_piix4 e1000 floppy [last unloaded: btrfs]
+[ 2246.451310] CPU: 3 PID: 10999 Comm: modprobe Tainted: G        W    3.13.0-fdm-btrfs-next-24+ #7
+[ 2246.451311] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+[ 2246.451312]  0000000000000009 ffff8800d353fa08 ffffffff816f1da6 0000000000000410
+[ 2246.451314]  ffff8800d353fa58 ffff8800d353fa48 ffffffff8104a32c ffff88020821a290
+[ 2246.451316]  ffff88020821a290 ffff88020821a290 ffff8802148f0000 ffff8800d353fb80
+[ 2246.451318] Call Trace:
+[ 2246.451322]  [<ffffffff816f1da6>] dump_stack+0x4e/0x68
+[ 2246.451324]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
+[ 2246.451325]  [<ffffffff8104a416>] warn_slowpath_fmt+0x46/0x50
+[ 2246.451328]  [<ffffffff81367dc5>] ? strlcat+0x65/0x90
+(....)
+
+This fixes the following change:
+
+    btrfs: add simple debugfs interface
+    commit 1bae30982bc86ab66d61ccb6e22792593b45d44d
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-
-This emerged during the discussions about pending changes problems.
-
- fs/btrfs/sysfs.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/sysfs.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 92db3f648df4..00b9c46e351c 100644
+index 92db3f6..94edb0a 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -119,6 +119,9 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	if (!fs_info)
- 		return -EPERM;
+@@ -733,10 +733,18 @@ int btrfs_init_sysfs(void)
  
-+	if (fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
- 	ret = kstrtoul(skip_spaces(buf), 0, &val);
+ 	ret = btrfs_init_debugfs();
  	if (ret)
- 		return ret;
+-		return ret;
++		goto out1;
+ 
+ 	init_feature_attrs();
+ 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
++	if (ret)
++		goto out2;
++
++	return 0;
++out2:
++	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
++out1:
++	kset_unregister(btrfs_kset);
+ 
+ 	return ret;
+ }
 -- 
 2.1.3
 

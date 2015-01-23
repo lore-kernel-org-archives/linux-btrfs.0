@@ -1,51 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15410 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752848AbbAWStY (ORCPT
+Received: from mail-we0-f181.google.com ([74.125.82.181]:47715 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750890AbbAWTVU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 13:49:24 -0500
-Date: Fri, 23 Jan 2015 13:49:18 -0500
-From: Chris Mason <clm@fb.com>
-To: <torvalds@linux-foundation.org>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Message-ID: <20150123184911.GA17437@ret.masoncoding.com>
+	Fri, 23 Jan 2015 14:21:20 -0500
+Received: by mail-we0-f181.google.com with SMTP id k48so7652544wev.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Jan 2015 11:21:19 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20150123100515.GD26830@smurf.noris.de>
+References: <20150123100515.GD26830@smurf.noris.de>
+From: Noah Massey <noah.massey@gmail.com>
+Date: Fri, 23 Jan 2015 14:20:38 -0500
+Message-ID: <CADfjVrg6f21W1+LeXL0t+jXYn2LnQhscZDWgFFUhiR2xBswwkQ@mail.gmail.com>
+Subject: Re: Moving snapshots
+To: Matthias Urlichs <matthias@urlichs.de>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Fri, Jan 23, 2015 at 5:05 AM, Matthias Urlichs <matthias@urlichs.de> wrote:
+> Hello,
+>
+> how do I move a (read-only) snapshot?
+>
 
-We have a few fixes in my for-linus branch:
+If you want to move a read-only snapshot to a different directory,
+'..' changes, and therefore is not a read-only operation.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+> Simply creating another read-only snap from the first one and then deleting
+> the source works, except that it destroy's the snapshot's identity -- which
+> means that it can't be used as a parent for "btrfs receive" any more.  :-(
 
-Qu Wenruo's batch fix a regression between some our merge window pull
-and the inode_cache feature.  The rest are smaller bugs.
+# btrfs property set -ts /path/to/snapshot ro false
+# mv /path/to/snapshot /new/path
+# btrfs property set -ts /new/path ro true
 
-Qu Wenruo (2) commits (+11/-1):
-    btrfs: Don't call btrfs_start_transaction() on frozen fs to avoid deadlock. (+10/-0)
-    btrfs: Fix the bug that fs_info->pending_changes is never cleared. (+1/-1)
+worked for me
 
-Satoru Takeuchi (1) commits (+1/-1):
-    btrfs: fix state->private cast on 32 bit machines
+>
+> --
+> -- Matthias Urlichs
 
-David Sterba (1) commits (+2/-2):
-    btrfs: sync ioctl, handle errors after transaction start
-
-Filipe Manana (1) commits (+2/-1):
-    Btrfs: fix race deleting block group from space_info->ro_bgs list
-
-Tsutomu Itoh (1) commits (+1/-1):
-    Btrfs: fix incorrect freeing in scrub_stripe
-
-Total: (6) commits (+17/-6)
-
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/extent_io.c   |  2 +-
- fs/btrfs/scrub.c       |  2 +-
- fs/btrfs/super.c       | 14 ++++++++++++--
- fs/btrfs/transaction.c |  2 +-
- 6 files changed, 17 insertions(+), 6 deletions(-)
+--
+Noah

@@ -1,59 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw4a.wadns.net ([196.220.39.46]:42769 "EHLO fw4a.wadns.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753087AbbAWL0K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 06:26:10 -0500
-Message-ID: <54C211E0.6090403@swiftspirit.co.za>
-Date: Fri, 23 Jan 2015 11:18:24 +0200
+Received: from fw12a-dovie.wadns.net ([41.185.62.186]:37922 "EHLO
+	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751199AbbAWOdb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Jan 2015 09:33:31 -0500
+Message-ID: <54C25BAB.50102@swiftspirit.co.za>
+Date: Fri, 23 Jan 2015 16:33:15 +0200
 From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-To: Brett King <brett.king@commandict.com.au>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Recovery Operation With Multiple Devices
-References: <zarafa.54c1fe06.4689.28909bac67ef9272@mascot.commandict.com.au>
-In-Reply-To: <zarafa.54c1fe06.4689.28909bac67ef9272@mascot.commandict.com.au>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: Matthias Urlichs <matthias@urlichs.de>, linux-btrfs@vger.kernel.org
+Subject: Re: "btrfs send" and interrupts
+References: <20150123095846.GC26830@smurf.noris.de>
+In-Reply-To: <20150123095846.GC26830@smurf.noris.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015/01/23 09:53, Brett King wrote:
-> Hi All,
-> Just wondering how 'btrfs recovery' operates
-I'm assuming you're referring to a different set of commands or general 
-scrub/recovery processes. AFAIK there is no "btrfs recovery" command.
+On 2015/01/23 11:58, Matthias Urlichs wrote:
+> Hi,
+>
+> root@data:/daten/backup/email/xmit# btrfs send foo | ssh wherever btrfs receive /mnt/mail/xmit/
+> At subvol foo
+> At subvol foo
+> [ some time passes and I need to do something else on that volume ]
+>
+> ^Z
+> [1]+  Stopped                 btrfs send foo | ssh -p50022 surf btrfs receive /mnt/mail/xmit/
+> root@data:/daten/backup/email/xmit# bg
+> [1]+ btrfs send foo | ssh -p50022 surf btrfs receive /mnt/mail/xmit/ &
+> root@data:/daten/backup/email/xmit#
+> [ Immediately afterwards, this happens: ]
+>
+> ERROR: crc32 mismatch in command.
+>
+> At subvol foo
+>
+> At subvol foo
+> ERROR: creating subvolume foo failed. File exists
+> [1]+  Exit 1                  btrfs send foo | ssh -p50022 surf btrfs receive /mnt/mail/xmit/
+> root@data:/daten/backup/email/xmit#
+>
+> Yowch. Please make sure that the simple act of backgrounding a data
+> transfer doesn't abort it. That was ten hours in, now I have to repeat
+> the whole thing. :-/
+>
+> Thank you.
+Interesting case. I'm not sure of the merits/workaround needed to do 
+this. It appears even using cat into netcat (nc) causes netcat to quit 
+if you background the operation.
 
-> , when the source device given is one of many in an MD array - I can't find anything documentation beyond a single device use case.
-btrfs doesn't know what an md array or member is, therefore your results 
-aren't going to be well-defined. Depending on the type of md array the 
-member was in, your data may be mostly readable (RAID1) or 
-completely/mostly non-interpretable (RAID5/6/10/0) until md fixes the array.
-
-> Does it automatically include all devices in the relevant MD array as occurs when mounting, or does it only restore the data which happened to be written to the specific, single device given ?
-As above, btrfs is not md-aware. It will attempt to work with what it is 
-given. It might not understand anything it sees as it will not have a 
-good description of what it is looking at. Imagine being given 
-instructions on how to get somewhere only to find that the first 20 
-instructions and every second instruction thereafter was skipped and 
-there's a 50% chance the destination doesn't exist.
-
->  From an inverse perspective, how can I restore all data including snapshots, which are spread across a damaged MD FS to a new (MD) FS ?
-Your best bet is to restore the md array. More details are needed for 
-anyone to assist - for example what RAID-type was the array set up with, 
-how many disks were in the array, and how it failed. Also, technically 
-this is the wrong place to ask for advice about restoring md arrays. ;)
-
-> Can send / receive do this perhaps ?
-Send/receive is for sending good data to a destination that can accept 
-it. This, as above, depends on the data being readable/available. Very 
-likely the data will be unreadable from a single disk unless the md 
-array was RAID1.
-
-> Thanks in advance !
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+A workaround for future: I *strongly* recommend using screen for 
+long-lived operations. This would have avoided the problem. Perhaps you 
+were sitting in front of the server and it wasn't much of a concern at 
+the time - but most admins work remotely. Never mind ^z, what about 
+other occurrences such as if the power/internet goes out at your 
+office/home and the server is on another continent? Your session dies 
+and you lose 10 hours of work/waiting. With a screen session, that is no 
+longer true.
 
 -- 
 __________

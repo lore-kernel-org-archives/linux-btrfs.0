@@ -1,77 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:48226 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751981AbbAXPrv (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:36632 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753261AbbAXSGE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Jan 2015 10:47:51 -0500
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Daniel Pocock <daniel@pocock.pro>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: RAID1 migrate to bigger disks
-Date: Sat, 24 Jan 2015 16:47:49 +0100
-Message-ID: <1427188.PHcY3qXV8q@merkaba>
-In-Reply-To: <54C3B03E.8080002@pocock.pro>
-References: <54C3AD0C.7080407@pocock.pro> <20150124143632.GF1654@carfax.org.uk> <54C3B03E.8080002@pocock.pro>
+	Sat, 24 Jan 2015 13:06:04 -0500
+Date: Sat, 24 Jan 2015 13:06:01 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: linux-btrfs@vger.kernel.org
+Subject: spuious I/O errors from btrfs...at the caching layer?
+Message-ID: <20150124180601.GA15018@hungrycats.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="x+6KMIRAuhnl3hBn"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 24. Januar 2015, 15:46:22 schrieb Daniel Pocock:
-> On 24/01/15 15:36, Hugo Mills wrote:
-> > On Sat, Jan 24, 2015 at 03:32:44PM +0100, Daniel Pocock wrote:
-> >> I've got a RAID1 on two 1TB partitions, /dev/sda3 and /dev/sdb3
-> >> 
-> >> I'm adding two new disks, they will have bigger partitions
-> >> /dev/sdc3 and /dev/sdd3
-> >> 
-> >> I'd like the BtrFs to migrate from the old partitions to the new
-> >> ones as safely and quickly as possible and if it is reasonable to
-> >> do so, keeping it online throughout the migration.
-> >> 
-> >> Should I do the following:
-> >> 
-> >> btrfs device add /dev/sdc3 /dev/sdd3 /mnt/btrfs0 btrfs device
-> >> delete /dev/sda3 /dev/sdb3 /mnt/btrfs0
-> >> 
-> >> or should I do it this way:
-> >> 
-> >> btrfs device add /dev/sdc3 /mnt/btrfs0 btrfs device delete
-> >> /dev/sda3 /mnt/btrfs0 btrfs device add /dev/sdd3 /mnt/btrfs0
-> >> btrfs device delete /dev/sdb3 /mnt/btrfs0
-> >> 
-> >> or is there some other way to go about it?
-> > 
-> > btrfs replace start /dev/sda3 /dev/sdc3 /mountpoint btrfs fi resize
-> > 3:max /mountpoint btrfs replace start /dev/sdb3 /dev/sdd3
-> > /mountpoint btrfs fi resize 4:max /mountpoint
-> > 
-> > The 3 and 4 in the resize commands should be the devid of the
-> > newly-added device.
-> 
-> Thanks for the fast reply
-> 
-> In the event of power failure, can I safely shutdown the server during
-> this operation and resume after starting again?
-> 
-> I get more than 2 hours runtime from the UPS but I suspect that
-> migrating 1TB will take at least 12 hours.
 
-You can at least cancel the replacing:
+--x+6KMIRAuhnl3hBn
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-merkaba:~> btrfs replace --help
-usage: btrfs replace <command> [<args>]
+I am seeing a lot of spurious I/O errors that look like they come from
+the cache-facing side of btrfs.  While running a heavy load with some
+extent-sharing (e.g. building 20 Linux kernels at once from source trees
+copied with 'cp -a --reflink=always'), some files will return spurious
+EIO on read.  It happens often enough to prevent a Linux kernel build
+about 1/3 of the time.
 
-    btrfs replace start [-Bfr] <srcdev>|<devid> <targetdev> <mount_point>
-        Replace device of a btrfs filesystem.
-    btrfs replace status [-1] <mount_point>
-        Print status and progress information of a running device replace
-    btrfs replace cancel <mount_point>
-        Cancel a running device replace operation.
+I believe the I/O errors to be spurious because:
 
-I thought you could resume it then later, but I don't see this. The man 
-page doesn't see it either.
+	- there is no kernel message of any kind during the event
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+	- scrub detects 0 errors
+
+	- device stats report 0 errors
+
+	- the drive firmware reports nothing wrong through SMART
+
+	- there seems to be no attempt to read the disk when the error
+	is reported
+
+	- "sysctl vm.drop_caches={1,2}" makes the I/O error go away.
+
+Files become unreadable at random, and stay unreadable indefinitely;
+however, any time I discover a file that gives EIO on read, I can
+poke vm.drop_caches and make the EIO go away.  The file can then be
+read normally and has correct contents.  The disk does not seem to be
+involved in the I/O error return.
+
+This seems to happen more often when snapshots are being deleted;
+however, it occurs on systems with no snapshots as well (though
+in these cases the system had snapshots in the past).
+
+When a file returns EIO on read, other snapshots of the same file also
+return EIO on read.  I have not been able to test whether this affects
+reflink copies (clones) as well.
+
+Observed from 3.17..3.18.3.  All filesystems affected use skinny-metadata.
+No filesystems that are not using skinny-metadata seem to have this
+problem.
+
+--x+6KMIRAuhnl3hBn
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlTD3wkACgkQgfmLGlazG5wx0ACffEO9Hjy9niiBZfoEGBdB6u55
+X9IAn3qMRUeKd8NquGdIPFzogSX8sO24
+=Bev4
+-----END PGP SIGNATURE-----
+
+--x+6KMIRAuhnl3hBn--

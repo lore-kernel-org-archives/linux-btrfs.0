@@ -1,60 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1887 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751879AbbAWSWY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Jan 2015 13:22:24 -0500
-Date: Fri, 23 Jan 2015 13:21:57 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] btrfs: Don't call btrfs_start_transaction() on frozen
- fs to avoid deadlock.
-To: <dsterba@suse.cz>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>, Miao Xie <miaoxie@huawei.com>,
-        <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Message-ID: <1422037317.28436.3@mail.thefacebook.com>
-In-Reply-To: <20150123173909.GS13289@twin.jikos.cz>
-References: <54BEF99D.7090104@cn.fujitsu.com>
-	<1421802329.27917.8@mail.thefacebook.com>
-	<54BEFC56.3000403@cn.fujitsu.com>
-	<1421802656.27917.9@mail.thefacebook.com> <54BF189C.4070201@huawei.com>
-	<54BF19DD.8060600@cn.fujitsu.com> <54BF1C5B.509@huawei.com>
-	<54BF22BE.3080606@cn.fujitsu.com> <54BF4F62.3010805@huawei.com>
-	<54BF59AA.9070408@cn.fujitsu.com> <20150123173909.GS13289@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:45666 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752473AbbAXN2s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Jan 2015 08:28:48 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YF0lY-0001A1-Bk
+	for linux-btrfs@vger.kernel.org; Sat, 24 Jan 2015 14:28:44 +0100
+Received: from coffee.modeemi.fi ([130.230.72.140])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jan 2015 14:28:44 +0100
+Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jan 2015 14:28:44 +0100
+To: linux-btrfs@vger.kernel.org
+From: Erkki Seppala <flux-btrfs@inside.org>
+Subject: Re: "btrfs send" and interrupts
+Date: Sat, 24 Jan 2015 15:28:32 +0200
+Message-ID: <m49y4osnw8v.fsf@coffee.modeemi.fi>
+References: <20150123095846.GC26830@smurf.noris.de>
+	<54C25BAB.50102@swiftspirit.co.za>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Brendan Hide <brendan@swiftspirit.co.za> writes:
+> Interesting case. I'm not sure of the merits/workaround needed to do
+> this. It appears even using cat into netcat (nc) causes netcat to quit
+> if you background the operation.
 
+Well, that netcat has a bug doesn't mean btrfs-progs should have one as
+well :) (though I didn't manage to reproduce this with my netcat using
+tar c ~ | netcat host discard). Neither ssh nor socat mind being
+suspended and foregrounded.
 
-On Fri, Jan 23, 2015 at 12:39 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Jan 21, 2015 at 03:47:54PM +0800, Qu Wenruo wrote:
->>  To David:
->>  I'm a little curious about why inode_cache needs to be delayed to 
->> next
->>  transaction.
->>  In btrfs_remount() we have s_umount mutex, and we synced the whole
->>  filesystem already,
->>  so there should be no running transaction and we can just set any 
->> mount
->>  option into fs_info.
-> 
-> See our discussion under the noinode_cache option:
-> 
-> https://urldefense.proofpoint.com/v1/url?u=http://www.mail-archive.com/linux-btrfs%2540vger.kernel.org/msg30075.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=sv%2BL93W9i7vNsbS3ozpylY3o%2F3wpA4TZTQTtFh3mUXg%3D%0A&s=2d678af317413a7452f047aa9ed07bc7e5424d4bae831ac15fae5f23a2acd080
-> https://urldefense.proofpoint.com/v1/url?u=http://www.mail-archive.com/linux-btrfs%2540vger.kernel.org/msg30414.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=sv%2BL93W9i7vNsbS3ozpylY3o%2F3wpA4TZTQTtFh3mUXg%3D%0A&s=2fab711b3d70ab27c008694249bc62596f37e41af84dfc21077629930b4fe854
-> 
->>  What do you think about reverting the whole patchset and rework the
->>  sysfs interface?
-> 
-> IMO reverting should be the last option, we have a minimal fix to the
-> sync deadlock and you've proposed the per-trasaction mount options to
-> replace the pending inode_change.
+I imagine the fix is pretty trivial as well. Possibly a read - or a
+write - is short when it is assumed to be full, or possibly an EINTR is
+mishandled. (Though it could be more complicated if the operation is
+inside the kernel..)
 
-I agree, I'd rather build on top of what we have than use reverts at 
-this point.
+While the reasons for using screen you list are good to take into
+account, the advantage of that is that it protects against an error; but
+job control no error but the standard way for controlling jobs within a
+single terminal, and for example in this kind of case actually
+suspending the transfer for a while can be a desirable operation, ie. to
+reduce system/network/io load for achieving another concurrent operation
+faster.
 
--chris
-
-
+-- 
+  _____________________________________________________________________
+     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
+    / /_ / // // /\ \/ /                                            \  /
+   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
 

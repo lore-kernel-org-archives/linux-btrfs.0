@@ -1,105 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from shinra.asoshared.com ([65.99.237.192]:30393 "EHLO
-	shinra.asoshared.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752869AbbAZSdZ (ORCPT
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:51731 "EHLO
+	mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756684AbbAZUwK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Jan 2015 13:33:25 -0500
-From: Matt Robinson <git@nerdoftheherd.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>
-Cc: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@vger.kernel.org,
-        Matt Robinson <git@nerdoftheherd.com>
-Subject: [PATCH 1/1] btrfs: Align EOF length to block in extent_same
-Date: Mon, 26 Jan 2015 18:05:51 +0000
-Message-Id: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
+	Mon, 26 Jan 2015 15:52:10 -0500
+Received: by mail-oi0-f48.google.com with SMTP id v63so9228117oia.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2015 12:52:09 -0800 (PST)
+MIME-Version: 1.0
+Date: Mon, 26 Jan 2015 21:52:09 +0100
+Message-ID: <CANXojczR_jeVU0XNQGzatmDaaCv7CdWanis8NiSe2F75cuz_9g@mail.gmail.com>
+Subject: Get the diff from a file in two snapshots.
+From: Stef Bon <stefbon@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is not currently possible to deduplicate the last block of files
-whose size is not a multiple of the block size, as the btrfs_extent_same
-ioctl returns -EINVAL if offset + size is greater than the file size or
-is not aligned to the fs block size. This prevents btrfs from freeing up
-the last extent in the file, causing gains from deduplication to be
-smaller than expected.
+Hi,
 
-To resolve this, allow unaligned offset + length values to be passed to
-btrfs_ioctl_file_extent_same if offset + length = file size for both src
-and dest.  This is implemented in the same way as in btrfs_ioctl_clone.
+I'm working on a service/program for Linux which takes care of
+managing backupping of folders and the snapshots of those.
 
-Signed-off-by: Matt Robinson <git@nerdoftheherd.com>
----
- fs/btrfs/ioctl.c | 21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
+The user can assign forlders he/she want to be backupped (corect
+English?), and create a profile for this folder. This profile is about
+the files which will be taken into process, and which not.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d49fe8a..a407d8a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2871,14 +2871,16 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
- 	return ret;
- }
- 
--static int extent_same_check_offsets(struct inode *inode, u64 off, u64 len)
-+static int extent_same_check_offsets(struct inode *inode, u64 off, u64 len,
-+				     u64 len_aligned)
- {
- 	u64 bs = BTRFS_I(inode)->root->fs_info->sb->s_blocksize;
- 
- 	if (off + len > inode->i_size || off + len < off)
- 		return -EINVAL;
-+
- 	/* Check that we are block aligned - btrfs_clone() requires this */
--	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs))
-+	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len_aligned, bs))
- 		return -EINVAL;
- 
- 	return 0;
-@@ -2888,6 +2890,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 			     struct inode *dst, u64 dst_loff)
- {
- 	int ret;
-+	u64 len_aligned = len;
-+	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 
- 	/*
- 	 * btrfs_clone() can't handle extents in the same file
-@@ -2899,11 +2903,15 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 
- 	btrfs_double_lock(src, loff, dst, dst_loff, len);
- 
--	ret = extent_same_check_offsets(src, loff, len);
-+	/* if we extend to both eofs, continue to block boundaries */
-+	if (loff + len == src->i_size && dst_loff + len == dst->i_size)
-+		len_aligned = ALIGN(src->i_size, bs) - loff;
-+
-+	ret = extent_same_check_offsets(src, loff, len, len_aligned);
- 	if (ret)
- 		goto out_unlock;
- 
--	ret = extent_same_check_offsets(dst, dst_loff, len);
-+	ret = extent_same_check_offsets(dst, dst_loff, len, len_aligned);
- 	if (ret)
- 		goto out_unlock;
- 
-@@ -2916,7 +2924,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, len);
- 	if (ret == 0)
--		ret = btrfs_clone(src, dst, loff, len, len, dst_loff);
-+		ret = btrfs_clone(src, dst, loff, len, len_aligned, dst_loff);
- 
- out_unlock:
- 	btrfs_double_unlock(src, loff, dst, dst_loff, len);
-@@ -3162,8 +3170,7 @@ static void clone_update_extent_map(struct inode *inode,
-  * @inode: Inode to clone to
-  * @off: Offset within source to start clone from
-  * @olen: Original length, passed by user, of range to clone
-- * @olen_aligned: Block-aligned value of olen, extent_same uses
-- *               identical values here
-+ * @olen_aligned: Block-aligned value of olen
-  * @destoff: Offset within @inode to start clone
-  */
- static int btrfs_clone(struct inode *src, struct inode *inode,
--- 
-2.1.0
+As tool to backup and manage the snapshots I use btrfs.
+Now in my construction I get a lot of situations like:
 
+/path/to/snapshots/201501261603/path/to/some/file
+
+is another version of the same file at:
+
+/path/to/snapshots/201501252252/path/to/some/file
+
+is there a way to get the difference between these two files by making
+use of btrfs?
+
+I know there are "high level" tools like diff, and tools that fit with
+the mimetype of the file
+(for ODT files you need another tool than say plaintext files)
+
+I know there is a tool like btrfs send / receive, but that count for
+whole snapshots.
+
+If there is such a tool, the next step would be whether it's possible
+to provide the user comprehensive information what has changed in the
+file, when the mimetype is something else than plaintext, but that's
+another question.
+
+Stef Bon

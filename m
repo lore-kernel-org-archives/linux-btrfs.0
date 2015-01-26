@@ -1,75 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:36687 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752701AbbAYQuw (ORCPT
+Received: from szxga02-in.huawei.com ([119.145.14.65]:2323 "EHLO
+	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751138AbbAZAhD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Jan 2015 11:50:52 -0500
-Date: Sun, 25 Jan 2015 11:50:36 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: spuious I/O errors from btrfs...at the caching layer?
-Message-ID: <20150125165035.GA15935@hungrycats.org>
-References: <20150124180601.GA15018@hungrycats.org>
+	Sun, 25 Jan 2015 19:37:03 -0500
+Message-ID: <54C58ADE.9090608@huawei.com>
+Date: Mon, 26 Jan 2015 08:31:26 +0800
+From: Miao Xie <miaoxie@huawei.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="envbJBWh7q8WU6mo"
-In-Reply-To: <20150124180601.GA15018@hungrycats.org>
+To: <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Don't call btrfs_start_transaction() on frozen
+ fs to avoid deadlock.
+References: <20150120171344.GH13289@twin.jikos.cz> <54BEF99D.7090104@cn.fujitsu.com> <1421802329.27917.8@mail.thefacebook.com> <54BEFC56.3000403@cn.fujitsu.com> <1421802656.27917.9@mail.thefacebook.com> <54BF189C.4070201@huawei.com> <54BF19DD.8060600@cn.fujitsu.com> <54BF1C5B.509@huawei.com> <54BF22BE.3080606@cn.fujitsu.com> <54BF4F62.3010805@huawei.com> <20150123165949.GR13289@twin.jikos.cz>
+In-Reply-To: <20150123165949.GR13289@twin.jikos.cz>
+Content-Type: text/plain; charset="windows-1252"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, 23 Jan 2015 17:59:49 +0100, David Sterba wrote:
+> On Wed, Jan 21, 2015 at 03:04:02PM +0800, Miao Xie wrote:
+>>> Pending changes are *not* only mount options. Feature change and label change
+>>> are also pending changes if using sysfs.
+>>
+>> My miss, I don't notice feature and label change by sysfs.
+>>
+>> But the implementation of feature and label change by sysfs is wrong, we can
+>> not change them without write permission.
+> 
+> Label change does not happen if the fs is readonly. If the filesystem is
+> RW and label is changed through sysfs, then remount to RO will sync the
+> filesystem and the new label will be saved.
+> 
+> The sysfs features write handler is missing that protection though, I'll
+> send a patch.
 
---envbJBWh7q8WU6mo
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+First, the R/O protection is so cheap, there is a race between R/O remount and
+label/feature change, please consider the following case:
+	Remount R/O task		Label/Attr Change Task
+					Check R/O
+	remount ro R/O
+					change Label/feature
 
-On Sat, Jan 24, 2015 at 01:06:01PM -0500, Zygo Blaxell wrote:
-> I am seeing a lot of spurious I/O errors that look like they come from
-> the cache-facing side of btrfs.  While running a heavy load with some
-> extent-sharing (e.g. building 20 Linux kernels at once from source trees
-> copied with 'cp -a --reflink=always'), some files will return spurious
-> EIO on read.  It happens often enough to prevent a Linux kernel build
-> about 1/3 of the time.
-[...]
-> Observed from 3.17..3.18.3.  All filesystems affected use skinny-metadata.
-> No filesystems that are not using skinny-metadata seem to have this
-> problem.
+Second, it forgets to handle the freezing event.
 
-I ran a test overnight using 3.18.3 on a freshly formatted filesystem with
-no skinny-metadata.
+> 
+>>> For freeze, it's not the same problem since the fs will be unfreeze sooner or
+>>> later and transaction will be initiated.
+>>
+>> You can not assume the operations of the users, they might freeze the fs and
+>> then shutdown the machine.
+> 
+> The semantics of freezing should make the on-device image consistent,
+> but still keep some changes in memory.
+> 
+>>>>> For example, if we change the features/label through sysfs, and then umount
+>>>>> the fs,
+>>>> It is different from pending change.
+>>> No, now features/label changing using sysfs both use pending changes to do the
+>>> commit.
+>>> See BTRFS_PENDING_COMMIT bit.
+>>> So freeze -> change features/label -> sync will still cause the deadlock in the
+>>> same way,
+>>> and you can try it yourself.
+>>
+>> As I said above, the implementation of sysfs feature and label change is wrong,
+>> it is better to separate them from the pending mount option change, make the
+>> sysfs feature and label change be done in the context of transaction after
+>> getting the write permission. If so, we needn't do anything special when sync
+>> the fs.
+> 
+> That would mean to drop the write support of sysfs files that change
+> global filesystem state (label and features right now). This would leave
+> only the ioctl way to do that. I'd like to keep the sysfs write support
+> though for ease of use from scripts and languages not ioctl-friendly.
+> .
 
-The test consisted of creating reflink copies of a Linux kernel source
-tree and running kernel builds in each copy simultaneously, like this:
+not drop the write support of sysfs, just fix the bug and make it change the
+label and features under the writable context.
 
-	# assume you have a ready-to-build kernel tree in 'linux'
-	for x in $(seq 1 5); do
-		cp -a --reflink linux linux-$x
-	done
-
-	# build all the kernels at once
-	for x in $(seq 1 5); do
-		(cd linux-$x && make -j10 2>&1 | tee make.log) &
-	done
-
-	wait
-	# then tail all the make.logs and see how many failed due to
-	# I/O errors
-
-Spurious I/O errors occured with as few as two concurrent kernel builds.
-
-The test machine has 16GB of RAM and the filesystem is also 16GB,
-RAID1 on two spinning disks.
-
-
---envbJBWh7q8WU6mo
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlTFHtsACgkQgfmLGlazG5xIcACg0MKIKh4bIn/zgdVLamtqdbhr
-Sw8AnRixSHSCFaiFeIKVSh8T5IUl+8af
-=H6Iu
------END PGP SIGNATURE-----
-
---envbJBWh7q8WU6mo--
+Thanks
+Miao

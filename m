@@ -1,83 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga02-in.huawei.com ([119.145.14.65]:2323 "EHLO
-	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751138AbbAZAhD (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:3072 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751962AbbAZAhx convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Jan 2015 19:37:03 -0500
-Message-ID: <54C58ADE.9090608@huawei.com>
-Date: Mon, 26 Jan 2015 08:31:26 +0800
-From: Miao Xie <miaoxie@huawei.com>
+	Sun, 25 Jan 2015 19:37:53 -0500
+Message-ID: <54C58C5C.30701@cn.fujitsu.com>
+Date: Mon, 26 Jan 2015 08:37:48 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Don't call btrfs_start_transaction() on frozen
- fs to avoid deadlock.
-References: <20150120171344.GH13289@twin.jikos.cz> <54BEF99D.7090104@cn.fujitsu.com> <1421802329.27917.8@mail.thefacebook.com> <54BEFC56.3000403@cn.fujitsu.com> <1421802656.27917.9@mail.thefacebook.com> <54BF189C.4070201@huawei.com> <54BF19DD.8060600@cn.fujitsu.com> <54BF1C5B.509@huawei.com> <54BF22BE.3080606@cn.fujitsu.com> <54BF4F62.3010805@huawei.com> <20150123165949.GR13289@twin.jikos.cz>
-In-Reply-To: <20150123165949.GR13289@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <miaoxie@huawei.com>
+Subject: Re: [PATCH RFC v3 1/5] Revert "btrfs: add support for processing
+ pending changes" related commits
+References: <1422005505-9472-1-git-send-email-quwenruo@cn.fujitsu.com> <1422005505-9472-2-git-send-email-quwenruo@cn.fujitsu.com> <20150123145735.GN13289@twin.jikos.cz>
+In-Reply-To: <20150123145735.GN13289@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 23 Jan 2015 17:59:49 +0100, David Sterba wrote:
-> On Wed, Jan 21, 2015 at 03:04:02PM +0800, Miao Xie wrote:
->>> Pending changes are *not* only mount options. Feature change and label change
->>> are also pending changes if using sysfs.
->>
->> My miss, I don't notice feature and label change by sysfs.
->>
->> But the implementation of feature and label change by sysfs is wrong, we can
->> not change them without write permission.
-> 
-> Label change does not happen if the fs is readonly. If the filesystem is
-> RW and label is changed through sysfs, then remount to RO will sync the
-> filesystem and the new label will be saved.
-> 
-> The sysfs features write handler is missing that protection though, I'll
-> send a patch.
 
-First, the R/O protection is so cheap, there is a race between R/O remount and
-label/feature change, please consider the following case:
-	Remount R/O task		Label/Attr Change Task
-					Check R/O
-	remount ro R/O
-					change Label/feature
+-------- Original Message --------
+Subject: Re: [PATCH RFC v3 1/5] Revert "btrfs: add support for 
+processing pending changes" related commits
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年01月23日 22:57
+> On Fri, Jan 23, 2015 at 05:31:41PM +0800, Qu Wenruo wrote:
+>> For mount option change, later patches will introduce copy-n-update
+>> method and rwsem protects to keep mount options consistent during
+>> transaction.
+> That's a better approach, for the mount options.
+I'm glad that you like this method.
+Although the description in this patch is outdated, it is now 
+per-transaction mount option.
+Sorry for the confusion.
+>
+>> For sysfs interface to change label/features, it will keep the same
+>> behavior as 'btrfs pro set', so pending changes are also not needed.
+> This still leaves the transaction commit inside the syfs handler, that
+> was one of the points not to do that.
+>
+> The callstack looks safe from, eg. the label handler:
+>
+> [169148.523158] WARNING: CPU: 1 PID: 2044 at fs/btrfs/sysfs.c:394 btrfs_label_store+0x135/0x190 [btrfs]()
+> [169148.533925] Modules linked in: btrfs dm_flakey rpcsec_gss_krb5 loop [last unloaded: btrfs]
+> [169148.536950] CPU: 1 PID: 2044 Comm: bash Tainted: G        W      3.19.0-rc5-default+ #211
+> [169148.536952] Hardware name: Intel Corporation Santa Rosa platform/Matanzas, BIOS TSRSCRB1.86C.0047.B00.0610170821 10/17/06
+> [169148.536954]  000000000000018a ffff88007a753dc8 ffffffff81a9898b 000000000000018a
+> [169148.536963]  0000000000000000 ffff88007a753e08 ffffffff81077f65 ffff880077fb0100
+> [169148.536972]  ffff880075dc0000 ffff880077fbff00 0000000000000009 ffff880075dc06d0
+> [169148.536980] Call Trace:
+> [169148.536983]  [<ffffffff81a9898b>] dump_stack+0x4f/0x6c
+> [169148.536991]  [<ffffffff81077f65>] warn_slowpath_common+0x95/0xe0
+> [169148.537000]  [<ffffffff81077fca>] warn_slowpath_null+0x1a/0x20
+> [169148.537005]  [<ffffffffa0052b65>] btrfs_label_store+0x135/0x190 [btrfs]
+> [169148.537030]  [<ffffffff813ed8b7>] kobj_attr_store+0x17/0x20
+> [169148.537037]  [<ffffffff812147ff>] sysfs_kf_write+0x4f/0x70
+> [169148.537044]  [<ffffffff81213cc8>] kernfs_fop_write+0x128/0x180
+> [169148.537051]  [<ffffffff8119f404>] vfs_write+0xd4/0x1d0
+> [169148.537059]  [<ffffffff8119f7b9>] SyS_write+0x59/0xd0
+> [169148.537070]  [<ffffffff81a9f9d2>] system_call_fastpath+0x12/0x17
+>
+> Lockep shows these locks held:
+>
+> [169148.537296] 4 locks held by bash/2044:
+> [169148.537309]  #0:  (sb_writers#5){.+.+.+}, at: [<ffffffff8119f4e0>] vfs_write+0x1b0/0x1d0
+> [169148.537319]  #1:  (&of->mutex){+.+.+.}, at: [<ffffffff81213c2e>] kernfs_fop_write+0x8e/0x180
+> [169148.537330]  #2:  (s_active#214){.+.+.+}, at: [<ffffffff81213c36>] kernfs_fop_write+0x96/0x180
+> [169148.537342]  #3:  (tasklist_lock){.+.+..}, at: [<ffffffff810b9ed4>] debug_show_all_locks+0x44/0x1e0
+>
+> #3 is from lockdep
+> #2 is not really a lock, annotated vfs atomic counter
+> #0 is annotated atomic, the freezing barrier
+>
+> #1 is a kernfs mutex that, afaics it's per file, but I don't like to see
+> the lock dependency here. That's a lock we can see now, but it's outside
+> of btrfs or the vfs. It's a matter of precaution.
+Thanks for pointing out the problem.
+It makes sense to delay it.
 
-Second, it forgets to handle the freezing event.
+But we have btrfs-workqueue, why not put it to "worker" workqueue?
 
-> 
->>> For freeze, it's not the same problem since the fs will be unfreeze sooner or
->>> later and transaction will be initiated.
->>
->> You can not assume the operations of the users, they might freeze the fs and
->> then shutdown the machine.
-> 
-> The semantics of freezing should make the on-device image consistent,
-> but still keep some changes in memory.
-> 
->>>>> For example, if we change the features/label through sysfs, and then umount
->>>>> the fs,
->>>> It is different from pending change.
->>> No, now features/label changing using sysfs both use pending changes to do the
->>> commit.
->>> See BTRFS_PENDING_COMMIT bit.
->>> So freeze -> change features/label -> sync will still cause the deadlock in the
->>> same way,
->>> and you can try it yourself.
->>
->> As I said above, the implementation of sysfs feature and label change is wrong,
->> it is better to separate them from the pending mount option change, make the
->> sysfs feature and label change be done in the context of transaction after
->> getting the write permission. If so, we needn't do anything special when sync
->> the fs.
-> 
-> That would mean to drop the write support of sysfs files that change
-> global filesystem state (label and features right now). This would leave
-> only the ioctl way to do that. I'd like to keep the sysfs write support
-> though for ease of use from scripts and languages not ioctl-friendly.
-> .
+If using this method, we can just wrap btrfs_ioctl_set_fslabel() and 
+queue it to fs_info->workers.
+This can avoid the the lockdep problem, but the behavior is still 
+inconsistent with the synchronized
+ioctl method.
+Although not perfect, it should be good enough and still clean enough.
 
-not drop the write support of sysfs, just fix the bug and make it change the
-label and features under the writable context.
+What do you think about such method?
 
-Thanks
-Miao
+Thanks,
+Qu

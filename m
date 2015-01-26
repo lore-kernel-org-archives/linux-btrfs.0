@@ -1,463 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27798 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753100AbbAZKCI (ORCPT
+Received: from mail.automatix.de ([213.131.255.221]:43365 "EHLO
+	mail.automatix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752697AbbAZMZp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Jan 2015 05:02:08 -0500
-Message-ID: <54C611FD.7000407@oracle.com>
-Date: Mon, 26 Jan 2015 18:07:57 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 26 Jan 2015 07:25:45 -0500
+Received: from [192.168.11.16] (vpn1 [213.131.255.219])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: jojo@automatix.de)
+	by mail.automatix.de (Postfix) with ESMTPSA id D4C7C600A6
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Jan 2015 13:16:33 +0100 (CET)
+Message-ID: <54C63021.8000502@automatix.de>
+Date: Mon, 26 Jan 2015 13:16:33 +0100
+From: Juergen Sauer <juergen.sauer@automatix.de>
+Reply-To: service@automatix.de
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-CC: clm@fb.com, dsterba@suse.cz
-Subject: Re: [PATCH 1/1] Btrfs: move super_kobj and device_dir_kobj from fs_info
- to btrfs_fs_devices
-References: <1421683347-18226-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1421683347-18226-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Bug Report Data Rescue: btrfs send ... btrfs set prop on linux 3.18-2
+ on Arch Linux
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-This patch needs
+Moin,
 
-   [PATCH 1/1] Btrfs: btrfs_release_super_kobj() should clean up the 
-kobject data
+this weekend a ssd disk got an problem.
 
-further, I am planning to clean up and split below patch to show
-the enhancements and fix-ups separately. Will send V2 soon. Thanks.
+No Problem, I thought... but real word acts sometime other the you think :)
 
-Anand
+1. Szenario
+I got an media Error on a ssd disk. So, I think trimming the whole
+device may work.
+Mounting the btrfs in rw is not possible anymore. Because the system is
+going to write on damaged blocks.
 
+Mounting ro is possible.
+So I tried to
+	mount -o ro,subvol=/ /dev/sdl1 /mnt -> worked.
 
+The Try to send the ro-mounted subvol "rootfs", which I want to recover
+did not work:
+	btrfs send -f /srv/backup/rootfs.btrfs rootfs
+	ERROR: /mnt/rootfs is not read-only
 
-On 01/20/2015 12:02 AM, Anand Jain wrote:
-> This patch will provide a framework and help to create attributes
-> from the structure btrfs_fs_devices which are available even before
-> fs_info is created. So by moving the parent kobject super_kobj from
-> fs_info to btrfs_fs_devices, it will help to create attributes
-> from the btrfs_fs_devices as well.
->
-> Patches on top of this patch now will be able to create the
-> sys/fs/btrfs/fsid kobject and attributes from btrfs_fs_devices
-> when devices are scanned and registered to the kernel.
->
-> Just to note, this does not change any of the existing btrfs sysfs
-> external kobject names and its attributes and not even the life
-> cycle of them. Changes are internal only. And to ensure the same,
-> this path has been tested with various device operations and,
-> checking and comparing the sysfs kobjects and attributes with
-> sysfs kobject and attributes with out this patch, and they remain
-> same.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   fs/btrfs/ctree.h       |   3 --
->   fs/btrfs/dev-replace.c |   4 +-
->   fs/btrfs/disk-io.c     |   1 -
->   fs/btrfs/super.c       |   1 +
->   fs/btrfs/sysfs.c       | 116 ++++++++++++++++++++++++++++++++++---------------
->   fs/btrfs/sysfs.h       |   6 ++-
->   fs/btrfs/volumes.c     |  13 ++++--
->   fs/btrfs/volumes.h     |   7 +++
->   8 files changed, 105 insertions(+), 46 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index abf0c7b..d9604e5 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1580,10 +1580,7 @@ struct btrfs_fs_info {
->   	struct task_struct *cleaner_kthread;
->   	int thread_pool_size;
->
-> -	struct kobject super_kobj;
->   	struct kobject *space_info_kobj;
-> -	struct kobject *device_dir_kobj;
-> -	struct completion kobj_unregister;
->   	int do_barriers;
->   	int closing;
->   	int log_root_recovering;
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index ca6a3a3..124b60f 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -592,8 +592,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->   	mutex_unlock(&uuid_mutex);
->
->   	/* replace the sysfs entry */
-> -	btrfs_kobj_rm_device(fs_info, src_device);
-> -	btrfs_kobj_add_device(fs_info, tgt_device);
-> +	btrfs_kobj_rm_device(fs_info->fs_devices, src_device);
-> +	btrfs_kobj_add_device(fs_info->fs_devices, tgt_device);
->   	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
->
->   	/* write back the superblocks */
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 86ff8c2..f15d2d9 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2236,7 +2236,6 @@ int open_ctree(struct super_block *sb,
->   	mutex_init(&fs_info->delalloc_root_mutex);
->   	seqlock_init(&fs_info->profiles_lock);
->
-> -	init_completion(&fs_info->kobj_unregister);
->   	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
->   	INIT_LIST_HEAD(&fs_info->space_info);
->   	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 60f7cbe..a1d0a12 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1334,6 +1334,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
->   	}
->
->   	fs_info->fs_devices = fs_devices;
-> +	fs_devices->fs_info = fs_info;
->
->   	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
->   	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index 92db3f6..775fdb9 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -33,6 +33,7 @@
->   #include "volumes.h"
->
->   static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
-> +static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
->
->   static u64 get_features(struct btrfs_fs_info *fs_info,
->   			enum btrfs_feature_set set)
-> @@ -428,7 +429,7 @@ static ssize_t btrfs_clone_alignment_show(struct kobject *kobj,
->
->   BTRFS_ATTR(clone_alignment, btrfs_clone_alignment_show);
->
-> -static struct attribute *btrfs_attrs[] = {
-> +static const struct attribute *btrfs_attrs[] = {
->   	BTRFS_ATTR_PTR(label),
->   	BTRFS_ATTR_PTR(nodesize),
->   	BTRFS_ATTR_PTR(sectorsize),
-> @@ -438,21 +439,27 @@ static struct attribute *btrfs_attrs[] = {
->
->   static void btrfs_release_super_kobj(struct kobject *kobj)
->   {
-> -	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-> -	complete(&fs_info->kobj_unregister);
-> +	struct btrfs_fs_devices *fs_devs = to_fs_devs(kobj);
-> +	complete(&fs_devs->kobj_unregister);
->   }
->
->   static struct kobj_type btrfs_ktype = {
->   	.sysfs_ops	= &kobj_sysfs_ops,
->   	.release	= btrfs_release_super_kobj,
-> -	.default_attrs	= btrfs_attrs,
->   };
->
-> +static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj)
-> +{
-> +	if (kobj->ktype != &btrfs_ktype)
-> +		return NULL;
-> +	return container_of(kobj, struct btrfs_fs_devices, super_kobj);
-> +}
-> +
->   static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
->   {
->   	if (kobj->ktype != &btrfs_ktype)
->   		return NULL;
-> -	return container_of(kobj, struct btrfs_fs_info, super_kobj);
-> +	return to_fs_devs(kobj)->fs_info;
->   }
->
->   #define NUM_FEATURE_BITS 64
-> @@ -493,12 +500,12 @@ static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
->   			attrs[0] = &fa->kobj_attr.attr;
->   			if (add) {
->   				int ret;
-> -				ret = sysfs_merge_group(&fs_info->super_kobj,
-> +				ret = sysfs_merge_group(&fs_info->fs_devices->super_kobj,
->   							&agroup);
->   				if (ret)
->   					return ret;
->   			} else
-> -				sysfs_unmerge_group(&fs_info->super_kobj,
-> +				sysfs_unmerge_group(&fs_info->fs_devices->super_kobj,
->   						    &agroup);
->   		}
->
-> @@ -506,25 +513,44 @@ static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
->   	return 0;
->   }
->
-> -static void __btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
-> +/*
-> + * Can be called when a volume is removed from the system
-> + * as of now only during modunload
-> +*/
-> +static void btrfs_kobject_remove_fsid(struct btrfs_fs_devices *fs_devs)
->   {
-> -	kobject_del(&fs_info->super_kobj);
-> -	kobject_put(&fs_info->super_kobj);
-> -	wait_for_completion(&fs_info->kobj_unregister);
-> +	struct list_head *fs_uuids = btrfs_get_fs_uuids();
-> +
-> +	if (fs_devs) {
-> +		kobject_del(&fs_devs->super_kobj);
-> +		kobject_put(&fs_devs->super_kobj);
-> +		wait_for_completion(&fs_devs->kobj_unregister);
-> +		return;
-> +	}
-> +
-> +	list_for_each_entry(fs_devs, fs_uuids, list) {
-> +		kobject_del(&fs_devs->super_kobj);
-> +		kobject_put(&fs_devs->super_kobj);
-> +		wait_for_completion(&fs_devs->kobj_unregister);
-> +	}
->   }
->
-> +/* Called by the unmount thread */
->   void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
->   {
-> +	struct kobject *super_kobj = &fs_info->fs_devices->super_kobj;
-> +
->   	if (fs_info->space_info_kobj) {
->   		sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
->   		kobject_del(fs_info->space_info_kobj);
->   		kobject_put(fs_info->space_info_kobj);
->   	}
-> -	kobject_del(fs_info->device_dir_kobj);
-> -	kobject_put(fs_info->device_dir_kobj);
-> +
-> +	btrfs_kobj_rm_device(fs_info->fs_devices, NULL);
->   	addrm_unknown_feature_attrs(fs_info, false);
-> -	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
-> -	__btrfs_sysfs_remove_one(fs_info);
-> +	sysfs_remove_group(super_kobj, &btrfs_feature_attr_group);
-> +	sysfs_remove_files(super_kobj, btrfs_attrs);
-> +	btrfs_kobject_remove_fsid(fs_info->fs_devices);
->   }
->
->   const char * const btrfs_feature_set_names[3] = {
-> @@ -602,38 +628,43 @@ static void init_feature_attrs(void)
->   	}
->   }
->
-> -int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-> +/* Called by the volume manager operations */
-> +int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devs,
->   		struct btrfs_device *one_device)
->   {
->   	struct hd_struct *disk;
->   	struct kobject *disk_kobj;
->
-> -	if (!fs_info->device_dir_kobj)
-> +	if (!fs_devs->device_dir_kobj)
->   		return -EINVAL;
->
->   	if (one_device && one_device->bdev) {
->   		disk = one_device->bdev->bd_part;
->   		disk_kobj = &part_to_dev(disk)->kobj;
->
-> -		sysfs_remove_link(fs_info->device_dir_kobj,
-> +		sysfs_remove_link(fs_devs->device_dir_kobj,
->   						disk_kobj->name);
-> +		return 0;
->   	}
->
-> +	kobject_del(fs_devs->device_dir_kobj);
-> +	kobject_put(fs_devs->device_dir_kobj);
-> +
->   	return 0;
->   }
->
-> -int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
-> +/* Called by the volume manager operations */
-> +int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
->   		struct btrfs_device *one_device)
->   {
->   	int error = 0;
-> -	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
->   	struct btrfs_device *dev;
->
-> -	if (!fs_info->device_dir_kobj)
-> -		fs_info->device_dir_kobj = kobject_create_and_add("devices",
-> -						&fs_info->super_kobj);
-> +	if (!fs_devices->device_dir_kobj)
-> +		fs_devices->device_dir_kobj = kobject_create_and_add("devices",
-> +						&fs_devices->super_kobj);
->
-> -	if (!fs_info->device_dir_kobj)
-> +	if (!fs_devices->device_dir_kobj)
->   		return -ENOMEM;
->
->   	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
-> @@ -649,7 +680,7 @@ int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
->   		disk = dev->bdev->bd_part;
->   		disk_kobj = &part_to_dev(disk)->kobj;
->
-> -		error = sysfs_create_link(fs_info->device_dir_kobj,
-> +		error = sysfs_create_link(fs_devices->device_dir_kobj,
->   					  disk_kobj, disk_kobj->name);
->   		if (error)
->   			break;
-> @@ -667,21 +698,37 @@ static struct dentry *btrfs_debugfs_root_dentry;
->   /* Debugging tunables and exported data */
->   u64 btrfs_debugfs_test;
->
-> +/* Can be called by the device discovery thread */
-> +int btrfs_kobj_add_fsid(struct btrfs_fs_devices *fs_devs,
-> +					struct kobject *parent)
-> +{
-> +	int error;
-> +
-> +	init_completion(&fs_devs->kobj_unregister);
-> +	fs_devs->super_kobj.kset = btrfs_kset;
-> +	error = kobject_init_and_add(&fs_devs->super_kobj, &btrfs_ktype, NULL,
-> +				     "%pU", fs_devs->fsid);
-> +	return error;
-> +}
-> +
-> +/* Called when fs_info is created. That would be the mount thread */
->   int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
->   {
->   	int error;
-> +	struct kobject *super_kobj = &fs_info->fs_devices->super_kobj;
-> +
-> +	/* This to be called from the volume.c */
-> +	error = btrfs_kobj_add_fsid(fs_info->fs_devices, NULL);
-> +	if (error)
-> +		return error;
->
-> -	init_completion(&fs_info->kobj_unregister);
-> -	fs_info->super_kobj.kset = btrfs_kset;
-> -	error = kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
-> -				     "%pU", fs_info->fsid);
-> +	error = sysfs_create_files(super_kobj, btrfs_attrs);
->   	if (error)
->   		return error;
->
-> -	error = sysfs_create_group(&fs_info->super_kobj,
-> -				   &btrfs_feature_attr_group);
-> +	error = sysfs_create_group(super_kobj, &btrfs_feature_attr_group);
->   	if (error) {
-> -		__btrfs_sysfs_remove_one(fs_info);
-> +		sysfs_remove_files(super_kobj, btrfs_attrs);
->   		return error;
->   	}
->
-> @@ -689,12 +736,13 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
->   	if (error)
->   		goto failure;
->
-> -	error = btrfs_kobj_add_device(fs_info, NULL);
-> +	/* This to be called from the volume.c */
-> +	error = btrfs_kobj_add_device(fs_info->fs_devices, NULL);
->   	if (error)
->   		goto failure;
->
->   	fs_info->space_info_kobj = kobject_create_and_add("allocation",
-> -						  &fs_info->super_kobj);
-> +						  super_kobj);
->   	if (!fs_info->space_info_kobj) {
->   		error = -ENOMEM;
->   		goto failure;
-> diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-> index f7dd298..737cfd6 100644
-> --- a/fs/btrfs/sysfs.h
-> +++ b/fs/btrfs/sysfs.h
-> @@ -70,8 +70,10 @@ char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
->   extern const char * const btrfs_feature_set_names[3];
->   extern struct kobj_type space_info_ktype;
->   extern struct kobj_type btrfs_raid_ktype;
-> -int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
-> +int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devs,
->   		struct btrfs_device *one_device);
-> -int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-> +int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devs,
->                   struct btrfs_device *one_device);
-> +int btrfs_kobj_add_fsid(struct btrfs_fs_devices *fs_devs,
-> +					struct kobject *parent);
->   #endif /* _BTRFS_SYSFS_H_ */
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 0144790..b87a576 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -52,6 +52,10 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
->
->   DEFINE_MUTEX(uuid_mutex);
->   static LIST_HEAD(fs_uuids);
-> +struct list_head *btrfs_get_fs_uuids(void)
-> +{
-> +	return &fs_uuids;
-> +}
->
->   static struct btrfs_fs_devices *__alloc_fs_devices(void)
->   {
-> @@ -1697,7 +1701,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->   	if (device->bdev) {
->   		device->fs_devices->open_devices--;
->   		/* remove sysfs entry */
-> -		btrfs_kobj_rm_device(root->fs_info, device);
-> +		btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
->   	}
->
->   	call_rcu(&device->rcu, free_device);
-> @@ -2095,6 +2099,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->   	u64 tmp;
->   	int seeding_dev = 0;
->   	int ret = 0;
-> +	struct kobject *super_kobj = &root->fs_info->fs_devices->super_kobj;
->
->   	if ((sb->s_flags & MS_RDONLY) && !root->fs_info->fs_devices->seeding)
->   		return -EROFS;
-> @@ -2202,7 +2207,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->   				    tmp + 1);
->
->   	/* add sysfs device entry */
-> -	btrfs_kobj_add_device(root->fs_info, device);
-> +	btrfs_kobj_add_device(root->fs_info->fs_devices, device);
->
->   	/*
->   	 * we've got more storage, clear any full flags on the space
-> @@ -2243,7 +2248,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->   		 */
->   		snprintf(fsid_buf, BTRFS_UUID_UNPARSED_SIZE, "%pU",
->   						root->fs_info->fsid);
-> -		if (kobject_rename(&root->fs_info->super_kobj, fsid_buf))
-> +		if (kobject_rename(super_kobj, fsid_buf))
->   			goto error_trans;
->   	}
->
-> @@ -2280,7 +2285,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->   error_trans:
->   	btrfs_end_transaction(trans, root);
->   	rcu_string_free(device->name);
-> -	btrfs_kobj_rm_device(root->fs_info, device);
-> +	btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
->   	kfree(device);
->   error:
->   	blkdev_put(bdev, FMODE_EXCL);
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index d6fe73c..06fde15 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -253,6 +253,12 @@ struct btrfs_fs_devices {
->   	 * nonrot flag set
->   	 */
->   	int rotating;
-> +
-> +	struct btrfs_fs_info *fs_info;
-> +
-> +	struct kobject super_kobj;
-> +	struct kobject *device_dir_kobj;
-> +	struct completion kobj_unregister;
->   };
->
->   #define BTRFS_BIO_INLINE_CSUM_SIZE	64
-> @@ -534,5 +540,6 @@ static inline void unlock_chunks(struct btrfs_root *root)
->   	mutex_unlock(&root->fs_info->chunk_mutex);
->   }
->
-> +struct list_head *btrfs_get_fs_uuids(void);
->
->   #endif
->
+The try to change the ro-flag
+	btrfs prop set rootfs ro true
+	ERROR: failed to set flags for rootfs. Read-only file system
+
+was impossible.
+
+I think this is an Bug in btrfs send, not to check if an btrfs
+filesystem is mounted ro for refusing working.
+
+It may be much more easier to recover damaged systems, if such annoying
+thngs would not occour.
+
+mit freundlichen Grüßen
+Jürgen Sauer
+- -- 
+Jürgen Sauer - automatiX GmbH,
++49-4209-4699, juergen.sauer@automatix.de
+Geschäftsführer: Jürgen Sauer,
+Gerichtstand: Amtsgericht Walsrode • HRB 120986
+Ust-Id: DE191468481 • St.Nr.: 36/211/08000
+GPG Public Key zur Signaturprüfung:
+http://www.automatix.de/juergen_sauer_publickey.gpg
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlTGMCEACgkQW7UKI9EqarG8QwCgu80ihnBxKrnjy4rzzbrz6Riu
+wS0AoIEiNicS/6Zz12ct7T4fZncW5xsP
+=3PPi
+-----END PGP SIGNATURE-----

@@ -1,80 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47094 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757266AbbA0MOw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Jan 2015 07:14:52 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YG52d-0004XN-Kh
-	for linux-btrfs@vger.kernel.org; Tue, 27 Jan 2015 13:14:47 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2015 13:14:47 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jan 2015 13:14:47 +0100
+Received: from victor.provo.novell.com ([137.65.250.26]:49343 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932226AbbA0QNF (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 27 Jan 2015 11:13:05 -0500
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Am I missing partiy/redundancy - WARNING: RAID56 detected, not
- implemented
-Date: Tue, 27 Jan 2015 12:14:39 +0000 (UTC)
-Message-ID: <pan$be073$fe9f9943$23fa21e1$4f2014fe@cox.net>
-References: <CABeopkFyVaSAxzgVjXZyqmWAWMG2+mnVXx34w9wEp9mWMjo9Gw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix scrub race leading to use-after-free
+Date: Tue, 27 Jan 2015 16:11:18 +0000
+Message-Id: <1422375078-6916-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jeff Smith posted on Tue, 27 Jan 2015 02:21:24 -0700 as excerpted:
+While running a scrub on a kernel with CONFIG_DEBUG_PAGEALLOC=y, I got
+the following trace:
 
-> I am just getting started with btrfs and wanted to test raid5.  I set it
-> up and thought it was setup correctly but when I run " btrfs fi usage
-> /mnt/btrdata"  I get the message "WARNING: RAID56 detected, not
-> implemented".   Does this mean I have no redundancy?  I know it is
-> experimental and I am not relying on it for production data (or data
-> that cannot be replaced).  I don't think I do.  When I check the free
-> space (3.7TB) it is the same as all the drive together (4x931MB).
-> 
-> 
-> Any assistance in helping me understand would be appreciated greatly.
-> 
-> ------
-> uname -a Linux alexandria.localdomain 3.17.8-300.fc21.x86_64 #1 SMP Thu
-> Jan 8 23:32:49 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+[68127.807663] BUG: unable to handle kernel paging request at ffff8803f8947a50
+[68127.807663] IP: [<ffffffff8107da31>] do_raw_spin_lock+0x94/0x122
+[68127.807663] PGD 3003067 PUD 43e1f5067 PMD 43e030067 PTE 80000003f8947060
+[68127.807663] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+[68127.807663] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop parport_pc processor parpo
+[68127.807663] CPU: 2 PID: 3081 Comm: kworker/u8:5 Not tainted 3.18.0-rc6-btrfs-next-3+ #4
+[68127.807663] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[68127.807663] Workqueue: btrfs-btrfs-scrub btrfs_scrub_helper [btrfs]
+[68127.807663] task: ffff880101fc5250 ti: ffff8803f097c000 task.ti: ffff8803f097c000
+[68127.807663] RIP: 0010:[<ffffffff8107da31>]  [<ffffffff8107da31>] do_raw_spin_lock+0x94/0x122
+[68127.807663] RSP: 0018:ffff8803f097fbb8  EFLAGS: 00010093
+[68127.807663] RAX: 0000000028dd386c RBX: ffff8803f8947a50 RCX: 0000000028dd3854
+[68127.807663] RDX: 0000000000000018 RSI: 0000000000000002 RDI: 0000000000000001
+[68127.807663] RBP: ffff8803f097fbd8 R08: 0000000000000004 R09: 0000000000000001
+[68127.807663] R10: ffff880102620980 R11: ffff8801f3e8c900 R12: 000000000001d390
+[68127.807663] R13: 00000000cabd13c8 R14: ffff8803f8947800 R15: ffff88037c574f00
+[68127.807663] FS:  0000000000000000(0000) GS:ffff88043dd00000(0000) knlGS:0000000000000000
+[68127.807663] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[68127.807663] CR2: ffff8803f8947a50 CR3: 00000000b6481000 CR4: 00000000000006e0
+[68127.807663] Stack:
+[68127.807663]  ffffffff823942a8 ffff8803f8947a50 ffff8802a3416f80 0000000000000000
+[68127.807663]  ffff8803f097fc18 ffffffff8141e7c0 ffffffff81072948 000000000034f314
+[68127.807663]  ffff8803f097fc08 0000000000000292 ffff8803f097fc48 ffff8803f8947a50
+[68127.807663] Call Trace:
+[68127.807663]  [<ffffffff8141e7c0>] _raw_spin_lock_irqsave+0x4b/0x55
+[68127.807663]  [<ffffffff81072948>] ? __wake_up+0x22/0x4b
+[68127.807663]  [<ffffffff81072948>] __wake_up+0x22/0x4b
+[68127.807663]  [<ffffffffa0392327>] scrub_pending_bio_dec+0x32/0x36 [btrfs]
+[68127.807663]  [<ffffffffa0395e70>] scrub_bio_end_io_worker+0x5a3/0x5c9 [btrfs]
+[68127.807663]  [<ffffffff810e0c7c>] ? time_hardirqs_off+0x15/0x28
+[68127.807663]  [<ffffffff81078106>] ? trace_hardirqs_off_caller+0x4c/0xb9
+[68127.807663]  [<ffffffffa0372a7c>] normal_work_helper+0xf1/0x238 [btrfs]
+[68127.807663]  [<ffffffffa0372d3d>] btrfs_scrub_helper+0x12/0x14 [btrfs]
+[68127.807663]  [<ffffffff810582d2>] process_one_work+0x1e4/0x3b6
+[68127.807663]  [<ffffffff81078180>] ? trace_hardirqs_off+0xd/0xf
+[68127.807663]  [<ffffffff81058dc9>] worker_thread+0x1fb/0x2a8
+[68127.807663]  [<ffffffff81058bce>] ? rescuer_thread+0x219/0x219
+[68127.807663]  [<ffffffff8105cd75>] kthread+0xdb/0xe3
+[68127.807663]  [<ffffffff8105cc9a>] ? __kthread_parkme+0x67/0x67
+[68127.807663]  [<ffffffff8141f1ec>] ret_from_fork+0x7c/0xb0
+[68127.807663]  [<ffffffff8105cc9a>] ? __kthread_parkme+0x67/0x67
+[68127.807663] Code: 39 c2 75 14 8d 8a 00 00 01 00 89 d0 f0 0f b1 0b 39 d0 0f 84 81 00 00 00 4c 69 2d 27 86 99 00 fa 00 00 00 45 31 e4 4d 39 ec 74 2b <8b> 13 89 d0 c1 e8 10 66 39 c2 75
+[68127.807663] RIP  [<ffffffff8107da31>] do_raw_spin_lock+0x94/0x122
+[68127.807663]  RSP <ffff8803f097fbb8>
+[68127.807663] CR2: ffff8803f8947a50
+[68127.807663] ---[ end trace d7045aac00a66cd8 ]---
 
-On that kernel (or even a current 3.18 kernel), yes, in effect, no 
-redundancy.
+This is due to a very tiny time window that can happen when wake_up()
+attempts to unlock the wait queue's lock, the scrub context object (sctx),
+which embeds the wait queue, is freed by the main scrub task:
 
-As the announcement stated, the raid56 mode code wasn't entirely complete 
-at original commit, and as of current stable kernels, that hasn't 
-changed, tho it's actually changing right now.
+         CPU 1                                                     CPU 2
 
-Basically, normal operation works -- the kernel calculates and writes the 
-parity strips as expected.  However, the code to recover in case of 
-device drop or filesystem damage isn't complete, so in effect, raid56 
-mode is currently slow raid0 -- no redundancy -- in terms of recovery, 
-except that when the code /is/ completed, you'll effectively get a "free" 
-upgrade, as it has been writing the parity strips all along, it simply 
-didn't have the code to recover properly if anything went wrong.
+                                                                btrfs_scrub_dev()
+                                                                   wait sctx->bios_in_flight == 0
+scrub_bio_end_io_worker()
+   scrub_pending_bio_dec()
+       __wake_up()
+          spin_lock_irqsave(&sctx->list_wait->lock, flags)
+          default_wake_function()
+              wake up task at CPU 2
+                                                                   wait sctx->workers_pending == 0
+                                                                   mutex_lock(&fs_info->scrub_lock)
+                                                                   (...)
+                                                                   mutex_lock(&fs_info->scrub_lock)
+                                                                   scrub_free_ctx(sctx)
+                                                                      kfree(sctx)
+          spin_unlock_irqrestore(&sctx->list_wait->lock, flags)
 
-Meanwhile, the still in development 3.19 kernel (and corresponding 
-userspace) /finally/ has very nearly complete raid56 code, altho at 
-present there's still known bugs, and I'd not recommend actually 
-upgrading from the "no redundancy" consideration until kernel/userspace 
-3.20, tho 3.19 should give you significantly better chances at recovery 
-on raid56 than previous versions did.
+Fix this by holding the scrub lock while doing the wakeup.
 
-In addition to the announcement, status is documented on the wiki[1], and 
-is well known on the list, so with a bit of research you'd have known 
-that before trying it.  Well at least you tried it before relying on it. 
-=:^)
+This isn't a recent regression, the issue as been around since the scrub
+feature was added (2011, commit a2de733c78fa7af51ba9670482fa7d392aa67c57).
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-[1] https://btrfs.wiki.kernel.org
+ fs/btrfs/scrub.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 8f75b99..8252a5e 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -306,8 +306,17 @@ static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
+ 
+ static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
+ {
++	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
++
++	/*
++	 * Hold the scrub_lock while doing the wakeup to ensure the
++	 * sctx (and its wait queue list_wait) isn't destroyed/freed
++	 * during the wakeup.
++	 */
++	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&sctx->bios_in_flight);
+ 	wake_up(&sctx->list_wait);
++	mutex_unlock(&fs_info->scrub_lock);
+ }
+ 
+ static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+@@ -379,10 +388,15 @@ static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx)
+ 	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&fs_info->scrubs_running);
+ 	atomic_dec(&fs_info->scrubs_paused);
+-	mutex_unlock(&fs_info->scrub_lock);
+ 	atomic_dec(&sctx->workers_pending);
+ 	wake_up(&fs_info->scrub_pause_wait);
++	/*
++	 * Hold the scrub_lock while doing the wakeup to ensure the
++	 * sctx (and its wait queue list_wait) isn't destroyed/freed
++	 * during the wakeup.
++	 */
+ 	wake_up(&sctx->list_wait);
++	mutex_unlock(&fs_info->scrub_lock);
+ }
+ 
+ static void scrub_free_csums(struct scrub_ctx *sctx)
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.1.3
 

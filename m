@@ -1,41 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60170 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753427AbbA1UyE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 15:54:04 -0500
-Date: Wed, 28 Jan 2015 19:27:40 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/4] Better btrfsck tree corruption report and automatic
- csum tree rebuild.
-Message-ID: <20150128182740.GI3641@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from luna.xtsubasa.org ([128.199.32.223]:55324 "EHLO
+	luna.xtsubasa.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1761885AbbA1Up5 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Jan 2015 15:45:57 -0500
+Received: from localhost (melforce.xtsubasa.org [IPv6:2a02:578:5002:8062:285e:12ff:fea0:bb02])
+	by luna.xtsubasa.org (Postfix) with ESMTPSA id BD4A95BE64
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Jan 2015 20:04:40 +0300 (MSK)
+From: Pavel Volkov <sailor@lists.xtsubasa.org>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Linux documentation: btrfs.txt
+Date: Wed, 28 Jan 2015 20:04:39 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
+Message-ID: <d39d1736-4e2a-49cd-b6ef-5fdcab90bcaa@lists.xtsubasa.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 13, 2015 at 10:04:43AM +0800, Qu Wenruo wrote:
-> Although btrfsck can rebuild the csum tree, but has the following
-> problems for end users or sysadmins who is not familiar with btrfs.
-> 1) No brief info on which tree is corrupted.
->    In fact, after extent and chunk tree check, we iterate all the
->    extents and should have a brief view about which tree is corrupted.
->    We can info user the fact to give them a clear view about what to do
->    next
-> 
-> 2) No automatically csum tree rebuild.
->    If btrfsck can rebuild csum tree when needed and possible, why not
->    rebuild it?
+In my 3.18.3 sources the file at Documentation/filesystems/btrfs.txt says:
 
-> This patchset handles this 2 problems:
-> Patch 1 will handle problem 1) and patch 2~3) to handle problem 2).
-> Now csum tree will be automatically rebuilt if and only if csum tree is
-> broken but all other tree is OK.
+"Btrfs is under heavy development, and is not suitable for
+any uses other than benchmarking and review. The Btrfs disk format is
+not yet finalized."
 
-I don't agree here, rebuilding the csum tree should be user's decision.
-Point 1) is good, giving more information to the user certainly helps to
-make that decision.
+btrfs is no longer marked experimental in kernel and the file format is 
+stable. It is suited for general use except some features.
+Maybe it's time to update btrfs.txt?

@@ -1,28 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from luna.xtsubasa.org ([128.199.32.223]:55324 "EHLO
-	luna.xtsubasa.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1761885AbbA1Up5 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 15:45:57 -0500
-Received: from localhost (melforce.xtsubasa.org [IPv6:2a02:578:5002:8062:285e:12ff:fea0:bb02])
-	by luna.xtsubasa.org (Postfix) with ESMTPSA id BD4A95BE64
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Jan 2015 20:04:40 +0300 (MSK)
-From: Pavel Volkov <sailor@lists.xtsubasa.org>
-To: <linux-btrfs@vger.kernel.org>
-Subject: Linux documentation: btrfs.txt
-Date: Wed, 28 Jan 2015 20:04:39 +0300
+Received: from cantor2.suse.de ([195.135.220.15]:59190 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757388AbbA1UeI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Jan 2015 15:34:08 -0500
+Date: Wed, 28 Jan 2015 13:55:21 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Matt Robinson <git@nerdoftheherd.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, Mark Fasheh <mfasheh@suse.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs: Align EOF length to block in extent_same
+Message-ID: <20150128125521.GD3641@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
 MIME-Version: 1.0
-Message-ID: <d39d1736-4e2a-49cd-b6ef-5fdcab90bcaa@lists.xtsubasa.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In my 3.18.3 sources the file at Documentation/filesystems/btrfs.txt says:
+On Mon, Jan 26, 2015 at 06:05:51PM +0000, Matt Robinson wrote:
+> It is not currently possible to deduplicate the last block of files
+> whose size is not a multiple of the block size, as the btrfs_extent_same
+> ioctl returns -EINVAL if offset + size is greater than the file size or
+> is not aligned to the fs block size.
 
-"Btrfs is under heavy development, and is not suitable for
-any uses other than benchmarking and review. The Btrfs disk format is
-not yet finalized."
+Do you have a reproducer for that?
 
-btrfs is no longer marked experimental in kernel and the file format is 
-stable. It is suited for general use except some features.
-Maybe it's time to update btrfs.txt?
+The alignment is required to let btrfs_clone and the extent dropping
+functions to work. The inline files are not aligned and should not be
+deduplicated anyway.

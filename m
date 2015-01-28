@@ -1,52 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15899 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751938AbbAMCEw (ORCPT
+Received: from shinra.asoshared.com ([65.99.237.192]:27979 "EHLO
+	shinra.asoshared.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754119AbbA1UYs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Jan 2015 21:04:52 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0D24FGP025904
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Jan 2015 10:04:15 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/4] Better btrfsck tree corruption report and automatic csum tree rebuild.
-Date: Tue, 13 Jan 2015 10:04:43 +0800
-Message-ID: <1421114687-6084-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Wed, 28 Jan 2015 15:24:48 -0500
+Received: from mail-yk0-f171.google.com ([209.85.160.171]:59346)
+	by shinra.asoshared.com with esmtpsa (TLSv1:RC4-SHA:128)
+	(Exim 4.84)
+	(envelope-from <git@nerdoftheherd.com>)
+	id 1YGYYr-0004C2-97
+	for linux-btrfs@vger.kernel.org; Wed, 28 Jan 2015 14:46:01 -0500
+Received: by mail-yk0-f171.google.com with SMTP id 10so9809367ykt.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jan 2015 11:46:01 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20150128125521.GD3641@twin.jikos.cz>
+References: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
+	<20150128125521.GD3641@twin.jikos.cz>
+Date: Wed, 28 Jan 2015 19:46:00 +0000
+Message-ID: <CABJ34CJR=AjAavwct4v9ud_62mSSzd3StivGHqfhNXBjGTuvjA@mail.gmail.com>
+Subject: Re: [PATCH 1/1] btrfs: Align EOF length to block in extent_same
+From: Matt Robinson <git@nerdoftheherd.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>,
+        Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although btrfsck can rebuild the csum tree, but has the following
-problems for end users or sysadmins who is not familiar with btrfs.
-1) No brief info on which tree is corrupted.
-   In fact, after extent and chunk tree check, we iterate all the
-   extents and should have a brief view about which tree is corrupted.
-   We can info user the fact to give them a clear view about what to do
-   next
+On 28 January 2015 at 12:55, David Sterba <dsterba@suse.cz> wrote:
+> On Mon, Jan 26, 2015 at 06:05:51PM +0000, Matt Robinson wrote:
+>> It is not currently possible to deduplicate the last block of files
+>> whose size is not a multiple of the block size, as the btrfs_extent_same
+>> ioctl returns -EINVAL if offset + size is greater than the file size or
+>> is not aligned to the fs block size.
+>
+> Do you have a reproducer for that?
 
-2) No automatically csum tree rebuild.
-   If btrfsck can rebuild csum tree when needed and possible, why not
-   rebuild it?
+I've been using the (quick and dirty) bash script at the end of this
+mail which uses btrfs-extent-same from
+https://github.com/markfasheh/duperemove/ to call the ioctl.  To
+summarize: it creates a new filesystem, creates a file with a size
+which is not a multiple of the block size, copies it, and then calls
+the ioctl to ask firstly for all of the complete blocks (for
+comparison) and then the entire files to be deduplicated.
 
-This patchset handles this 2 problems:
-Patch 1 will handle problem 1) and patch 2~3) to handle problem 2).
-Now csum tree will be automatically rebuilt if and only if csum tree is
-broken but all other tree is OK.
+Running the script under a kernel compiled from
+git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git gives
+a status of -22 from the second btrfs-extent-same call and the final
+btrfs filesystem df shows:
+Data, single: total=8.00MiB, used=1.91MiB
 
-Qu Wenruo (4):
-  btrfs-progs: Report corrupted trees after check_chunks_and_extents()
-  btrfs-progs: Continue repair even some extent reference can't be    
-    repaired and report result to user.
-  btrfs-progs: Automatically rebuild csum/extent tree if no other tree
-    has     corrupted/missing extent.
-  btrfs-progs: Remove all csum extents for init_csum
+However, running under the same kernel plus my patch shows this final
+data usage:
+Data, single: total=8.00MiB, used=980.00KiB
 
- cmds-check.c  | 172 +++++++++++++++++++++++++++++++++++++++++++++++++++-------
- ctree.h       |   4 ++
- extent-tree.c | 108 ++++++++++++++++++++++++++++++++++++
- 3 files changed, 263 insertions(+), 21 deletions(-)
+> The alignment is required to let btrfs_clone and the extent dropping
+> functions to work. [...]
 
--- 
-2.2.1
+Which is why it is currently not possible to deduplicate a final
+incomplete block of a file:
+* Passing len + offset = the actual end of the file: Rejected as it is
+not aligned
+* Passing len + offset = the end of the block: Rejected as it exceeds
+the actual end of the file.
 
+Please let me know if you need any further information, if my
+implementation should be different or there is a better way I could
+demonstrate the issue?
+
+Many Thanks,
+
+Matt
+
+---
+
+#!/bin/bash -e
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
+
+loopback=$(losetup -f)
+
+echo "## Create new btrfs filesystem on a loopback device"
+dd if=/dev/zero of=testfs bs=1048576 count=1500
+losetup $loopback testfs
+mkfs.btrfs $loopback
+mkdir testfsmnt
+mount $loopback testfsmnt
+
+echo -e "\n## Create 1000000 byte random file"
+dd if=/dev/urandom of=testfsmnt/test1 bs=1000000 count=1
+echo
+btrfs filesystem sync testfsmnt
+btrfs filesystem df testfsmnt
+
+echo -e "\n## Copy file"
+cp testfsmnt/test1 testfsmnt/test2
+echo
+btrfs filesystem sync testfsmnt
+btrfs filesystem df testfsmnt
+
+echo -e "\n## Dedupe to end of last full block"
+btrfs-extent-same 999424 testfsmnt/test1 0 testfsmnt/test2 0
+echo
+btrfs filesystem sync testfsmnt
+btrfs filesystem df testfsmnt
+
+echo -e "\n## Dedupe to end of file"
+btrfs-extent-same 1000000 testfsmnt/test1 0 testfsmnt/test2 0
+echo
+btrfs filesystem sync testfsmnt
+btrfs filesystem df testfsmnt
+
+echo -e "\nClean up"
+umount testfsmnt
+rmdir testfsmnt
+losetup -d $loopback
+rm testfs

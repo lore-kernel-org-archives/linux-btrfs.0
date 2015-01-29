@@ -1,160 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61582 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752809AbbA2BaE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 20:30:04 -0500
-From: Xing Gu <gux.fnst@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>, <eguan@redhat.com>,
-        <quwenruo@cn.fujitsu.com>, Xing Gu <gux.fnst@cn.fujitsu.com>
-Subject: [PATCH v6] btrfs: add regression test for remount with thread_pool resized
-Date: Thu, 29 Jan 2015 08:46:00 +0800
-Message-ID: <1422492360-12243-1-git-send-email-gux.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:56896 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752687AbbA2TS7 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 29 Jan 2015 14:18:59 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between transaction commit and empty block group removal
+Date: Thu, 29 Jan 2015 19:18:25 +0000
+Message-Id: <1422559105-12844-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for a btrfs issue of resizing 'thread_pool' when
-remount the fs.
+Committing a transaction can race with automatic removal of empty block
+groups (cleaner kthread), leading to a BUG_ON() in the transaction
+commit code while running btrfs_finish_extent_commit(). The following
+sequence diagram shows how it can happen:
 
-This regression was introduced by the following linux kernel commit:
-    btrfs: Added btrfs_workqueue_struct implemented ordered
-    execution based on kernel workqueue
-    08a9ff3264181986d1d692a4e6fce3669700c9f8
-And it was fixed by the following linux kernel commit:
-    btrfs: fix crash in remount(thread_pool=) case
-    800ee2247f483b6d05ed47ef3bbc90b56451746c
+           CPU 1                                       CPU 2
 
-Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+btrfs_commit_transaction()
+  fs_info->running_transaction = NULL
+  btrfs_finish_extent_commit()
+    find_first_extent_bit()
+      -> found range for block group X
+         in fs_info->freed_extents[]
+
+                                               btrfs_delete_unused_bgs()
+                                                 -> found block group X
+
+                                                 Removed block group X's range
+                                                 from fs_info->freed_extents[]
+
+                                                 btrfs_remove_chunk()
+                                                    btrfs_remove_block_group(bg X)
+
+    unpin_extent_range(bg X range)
+       btrfs_lookup_block_group(bg X)
+          -> returns NULL
+            -> BUG_ON()
+
+The trace that results from the BUG_ON() is:
+
+[48665.187808] ------------[ cut here ]------------
+[48665.188032] kernel BUG at fs/btrfs/extent-tree.c:5675!
+[48665.188032] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+[48665.188032] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop parport_pc evdev microcode
+[48665.197388] CPU: 2 PID: 31211 Comm: kworker/u32:16 Tainted: G        W      3.19.0-rc5-btrfs-next-4+ #1
+[48665.197388] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[48665.197388] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
+[48665.197388] task: ffff880222011810 ti: ffff8801b56a4000 task.ti: ffff8801b56a4000
+[48665.197388] RIP: 0010:[<ffffffffa0350d05>]  [<ffffffffa0350d05>] unpin_extent_range+0x6a/0x1ba [btrfs]
+[48665.197388] RSP: 0018:ffff8801b56a7b88  EFLAGS: 00010246
+[48665.197388] RAX: 0000000000000000 RBX: ffff8802143a6000 RCX: ffff8802220120c8
+[48665.197388] RDX: 0000000000000001 RSI: 0000000000000001 RDI: ffff8800a3c140b0
+[48665.197388] RBP: ffff8801b56a7bd8 R08: 0000000000000003 R09: 0000000000000000
+[48665.197388] R10: 0000000000000000 R11: 000000000000bbac R12: 0000000012e8e000
+[48665.197388] R13: ffff8800a3c14000 R14: 0000000000000000 R15: 0000000000000000
+[48665.197388] FS:  0000000000000000(0000) GS:ffff88023ec40000(0000) knlGS:0000000000000000
+[48665.197388] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[48665.197388] CR2: 00007f065e42f270 CR3: 0000000206f70000 CR4: 00000000000006e0
+[48665.197388] Stack:
+[48665.197388]  ffff8801b56a7bd8 0000000012ea0000 01ff8800a3c14138 0000000012e9ffff
+[48665.197388]  ffff880141df3dd8 ffff8802143a6000 ffff8800a3c14138 ffff880141df3df0
+[48665.197388]  ffff880141df3dd8 0000000000000000 ffff8801b56a7c08 ffffffffa0354227
+[48665.197388] Call Trace:
+[48665.197388]  [<ffffffffa0354227>] btrfs_finish_extent_commit+0xb0/0xd9 [btrfs]
+[48665.197388]  [<ffffffffa0366b4b>] btrfs_commit_transaction+0x791/0x92c [btrfs]
+[48665.197388]  [<ffffffffa0352432>] flush_space+0x43d/0x452 [btrfs]
+[48665.197388]  [<ffffffff814295c3>] ? _raw_spin_unlock+0x28/0x33
+[48665.197388]  [<ffffffffa035255f>] btrfs_async_reclaim_metadata_space+0x118/0x164 [btrfs]
+[48665.197388]  [<ffffffff81059917>] ? process_one_work+0x14b/0x3ab
+[48665.197388]  [<ffffffff810599ac>] process_one_work+0x1e0/0x3ab
+[48665.197388]  [<ffffffff81079fa9>] ? trace_hardirqs_off+0xd/0xf
+[48665.197388]  [<ffffffff8105a55b>] worker_thread+0x210/0x2d0
+[48665.197388]  [<ffffffff8105a34b>] ? rescuer_thread+0x2c3/0x2c3
+[48665.197388]  [<ffffffff8105e5c0>] kthread+0xef/0xf7
+[48665.197388]  [<ffffffff81429682>] ? _raw_spin_unlock_irq+0x2d/0x39
+[48665.197388]  [<ffffffff8105e4d1>] ? __kthread_parkme+0xad/0xad
+[48665.197388]  [<ffffffff81429dec>] ret_from_fork+0x7c/0xb0
+[48665.197388]  [<ffffffff8105e4d1>] ? __kthread_parkme+0xad/0xad
+[48665.197388] Code: 85 f6 74 14 49 8b 06 49 03 46 09 49 39 c4 72 1d 4c 89 f7 e8 83 ec ff ff 4c 89 e6 4c 89 ef e8 1e f1 ff ff 48 85 c0 49 89 c6 75 02 <0f> 0b 49 8b 1e 49 03 5e 09 48 8b
+[48665.197388] RIP  [<ffffffffa0350d05>] unpin_extent_range+0x6a/0x1ba [btrfs]
+[48665.197388]  RSP <ffff8801b56a7b88>
+[48665.272246] ---[ end trace b9c6ab9957521376 ]---
+
+Fix this by ensuring that unpining the block group's range in
+btrfs_finish_extent_commit() is done in a synchronized fashion
+with removing the block group's range from freed_extents[]
+in btrfs_delete_unused_bgs()
+
+This race got introduced with the change:
+
+    Btrfs: remove empty block groups automatically
+    commit 47ab2a6c689913db23ccae38349714edf8365e0a
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- v5->v6: Add a filter to wipe "Performing full device TRIM" and
-         "Turning ON incompat feature" in common/filter:_filter_mkfs.
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     |  1 +
+ fs/btrfs/extent-tree.c | 21 ++++++++++++++++++++-
+ 3 files changed, 22 insertions(+), 1 deletion(-)
 
- v4->v5: Redirect stderr to /dev/null.
-
- v3->v4: Remove the check for a bug message.
-
- v2->v3: Add the regresssion commit in description.
-         Remove "dmesg -c > /dev/null".
-         Echo "Silence is golden" to indicate that an empty output
-         file is expected.
-
- v1->v2: Add the fix commit in description.
-         Add the check for a bug message.
----
- common/filter       |  4 ++++
- tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/082.out |  2 ++
- tests/btrfs/group   |  1 +
- 4 files changed, 72 insertions(+)
- create mode 100755 tests/btrfs/082
- create mode 100644 tests/btrfs/082.out
-
-diff --git a/common/filter b/common/filter
-index 05dbae6..71ef2e2 100644
---- a/common/filter
-+++ b/common/filter
-@@ -137,6 +137,10 @@ _filter_mkfs()
-     case $FSTYP in
-     xfs)
- 	;;
-+	btrfs)
-+	sed -e "/Performing full device TRIM/d" \
-+		-e "/Turning ON incompat feature/d"
-+	return ;;
-     *)
- 	cat - >/dev/null
- 	perl -e 'print STDERR "dbsize=4096\nisize=256\n"'
-diff --git a/tests/btrfs/082 b/tests/btrfs/082
-new file mode 100755
-index 0000000..dd3c87e
---- /dev/null
-+++ b/tests/btrfs/082
-@@ -0,0 +1,65 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/082
-+#
-+# Regression test for a btrfs issue of resizing 'thread_pool' when
-+# remount the fs.
-+#
-+# This regression was introduced by the following linux kernel commit:
-+#     btrfs: Added btrfs_workqueue_struct implemented ordered
-+#     execution based on kernel workqueue
-+#     08a9ff3264181986d1d692a4e6fce3669700c9f8
-+# And it was fixed by the following linux kernel commit:
-+#     btrfs: fix crash in remount(thread_pool=) case
-+#     800ee2247f483b6d05ed47ef3bbc90b56451746c
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs |& _filter_mkfs
-+
-+_scratch_mount "-o thread_pool=6"
-+_scratch_mount "-o remount,thread_pool=10"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
-new file mode 100644
-index 0000000..2977f14
---- /dev/null
-+++ b/tests/btrfs/082.out
-@@ -0,0 +1,2 @@
-+QA output created by 082
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e29999b..fd2fa76 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -84,3 +84,4 @@
- 079 auto rw metadata
- 080 auto snapshot
- 081 auto quick clone
-+082 auto quick remount
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 64320c3..b508e44 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1745,6 +1745,7 @@ struct btrfs_fs_info {
+ 
+ 	spinlock_t unused_bgs_lock;
+ 	struct list_head unused_bgs;
++	struct mutex unused_bg_unpin_mutex;
+ 
+ 	/* For btrfs to record security options */
+ 	struct security_mnt_opts security_opts;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 612d46e..b4db51c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2242,6 +2242,7 @@ int open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->qgroup_op_lock);
+ 	spin_lock_init(&fs_info->buffer_lock);
+ 	spin_lock_init(&fs_info->unused_bgs_lock);
++	mutex_init(&fs_info->unused_bg_unpin_mutex);
+ 	rwlock_init(&fs_info->tree_mod_log_lock);
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 04a0868..20ed46c6 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5735,10 +5735,13 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 		unpin = &fs_info->freed_extents[0];
+ 
+ 	while (1) {
++		mutex_lock(&fs_info->unused_bg_unpin_mutex);
+ 		ret = find_first_extent_bit(unpin, 0, &start, &end,
+ 					    EXTENT_DIRTY, NULL);
+-		if (ret)
++		if (ret) {
++			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			break;
++		}
+ 
+ 		if (btrfs_test_opt(root, DISCARD))
+ 			ret = btrfs_discard_extent(root, start,
+@@ -5746,6 +5749,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 
+ 		clear_extent_dirty(unpin, start, end, GFP_NOFS);
+ 		unpin_extent_range(root, start, end, true);
++		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 		cond_resched();
+ 	}
+ 
+@@ -9561,18 +9565,33 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		 */
+ 		start = block_group->key.objectid;
+ 		end = start + block_group->key.offset - 1;
++		/*
++		 * Hold the unused_bg_unpin_mutex lock to avoid racing with
++		 * btrfs_finish_extent_commit(). If we are at transaction N,
++		 * another task might be running finish_extent_commit() for the
++		 * previous transaction N - 1, and have seen a range belonging
++		 * to the block group in freed_extents[] before we were able to
++		 * clear the whole block group range from freed_extents[]. This
++		 * means that task can lookup for the block group after we
++		 * unpinned it from freed_extents[] and removed it, leading to
++		 * a BUG_ON() at btrfs_unpin_extent_range().
++		 */
++		mutex_lock(&fs_info->unused_bg_unpin_mutex);
+ 		ret = clear_extent_bits(&fs_info->freed_extents[0], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
++			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			btrfs_set_block_group_rw(root, block_group);
+ 			goto end_trans;
+ 		}
+ 		ret = clear_extent_bits(&fs_info->freed_extents[1], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
++			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			btrfs_set_block_group_rw(root, block_group);
+ 			goto end_trans;
+ 		}
++		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 
+ 		/* Reset pinned so btrfs_put_block_group doesn't complain */
+ 		block_group->pinned = 0;
 -- 
-1.9.3
+2.1.3
 

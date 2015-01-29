@@ -1,90 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26427 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:53445 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752740AbbA2JI0 (ORCPT
+	with ESMTP id S1758222AbbA2JI2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Jan 2015 04:08:26 -0500
+	Thu, 29 Jan 2015 04:08:28 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0T97hhS026087
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Jan 2015 17:07:43 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0T97kaY026090
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Jan 2015 17:07:46 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 00/10] Enhance btrfs-find-root and open_ctree() to provide better chance on damaged btrfs.
-Date: Thu, 29 Jan 2015 17:07:15 +0800
-Message-ID: <1422522437-18886-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 01/10] btrfs-progs: Cleanup check_tree_block() function and split the output to print_tree_block_err() function.
+Date: Thu, 29 Jan 2015 17:07:16 +0800
+Message-ID: <1422522437-18886-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1422522437-18886-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1422522437-18886-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patchset first enhance btrfs-find-root command and then use it to
-enhance open_ctree to provide a better chance to open heavily damaged
-btrfs.
+Before this patch, check_tree_block() will print error on bytenr
+mismatch but don't output error on fsid mismatch.
 
-Patch 1~9 are all enhancement/cleanup for btrfs-find-root in the following
-concepts.
-1) Reuse existing infrastructure.
-Use existing or slightly modified infrastructure other than
-copy-n-modify codes.
+This patch will modify check_tree_block(), so it will only return errno
+but not print error messages.
+The error message will be output by print_tree_block_err() function.
 
-2) Enhanced root search logic
-The old root search logic have many problems, like ignore newer root
-with smaller level and use wrong generation/level for searching.
-
-The new logic will keep a per-generation record to deal the tree search,
-and use different level/generation for different tree.
-
-3) Make the find-root infrastructure exported to other commands.
-Allow other btrfs-progs components to use find-root infrastructure, e.g.
-open_ctree can use it if all primary/backup tree roots are corrupted.
-
-Patch 10 is enhancement for open_ctree to use find-root infrastructure.
-
-Also, since only 2 patches is modified(although other part is slightly
-modified to match the change), to avoid mail bombing, I created the pull
-request on github and only send the first 2 patches with cover-letter.
-https://github.com/kdave/btrfs-progs/pull/5
-
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-changelog:
-v2:
-   Split patch into logically independent parts.
+Changelog:
 v3:
-   Change fs_info->suppress_error to fs_info->suppress_tree_err to avoid
-   naming confusion.
-   Cleanup the check_tree_block() output and provide better output in
-   print_tree_block_err().
+  Newly introduced.
 ---
+ disk-io.c | 45 +++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 37 insertions(+), 8 deletions(-)
 
-Qu Wenruo (10):
-  btrfs-progs: Cleanup check_tree_block() function and split the output
-    to     print_tree_block_err() function.
-  btrfs-progs: Add support to suppress tree block csum error output.
-  btrfs-progs: Add new btrfs_open_ctree_flags CHUNK_ONLY.
-  btrfs-progs: Add new find-root.[ch] infrastructure.
-  btrfs-progs: Switch btrfs-find-root to use the new open_ctree flags.
-  btrfs-progs: Add better search generation judgment for
-    btrfs-find-root.
-  btrfs-progs: Switch btrfs-find-root to use the find-root
-    infrastructure.
-  btrfs-progs: Cleanup unneeded btrfs-find-root codes.
-  btrfs-progs: Add new option for btrfs-find-root to search through all
-    the metadata extents.
-  btrfs-progs: Allow open_ctree use backup tree root or search it
-    automatically if primary tree root is corrupted.
-
- Documentation/btrfs-find-root.txt |   2 +
- Makefile                          |   2 +-
- btrfs-find-root.c                 | 379 +++++++++++++-------------------------
- ctree.h                           |   2 +
- disk-io.c                         | 172 ++++++++++++++---
- disk-io.h                         |  10 +
- find-root.c                       | 138 ++++++++++++++
- find-root.h                       |  84 +++++++++
- 8 files changed, 514 insertions(+), 275 deletions(-)
- create mode 100644 find-root.c
- create mode 100644 find-root.h
-
+diff --git a/disk-io.c b/disk-io.c
+index 7f03790..e14a143 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -22,6 +22,7 @@
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#include <uuid/uuid.h>
+ #include "kerncompat.h"
+ #include "radix-tree.h"
+ #include "ctree.h"
+@@ -33,17 +34,18 @@
+ #include "print-tree.h"
+ #include "rbtree-utils.h"
+ 
++/* specified errno for check_tree_block */
++#define EBYTENR		1
++#define EFSID		2
++
+ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
+ {
+ 
+ 	struct btrfs_fs_devices *fs_devices;
+-	int ret = 1;
++	int ret = -EFSID;
+ 
+-	if (buf->start != btrfs_header_bytenr(buf)) {
+-		printk("Check tree block failed, want=%Lu, have=%Lu\n",
+-		       buf->start, btrfs_header_bytenr(buf));
+-		return ret;
+-	}
++	if (buf->start != btrfs_header_bytenr(buf))
++		return -EBYTENR;
+ 
+ 	fs_devices = root->fs_info->fs_devices;
+ 	while (fs_devices) {
+@@ -58,6 +60,30 @@ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
+ 	return ret;
+ }
+ 
++static void print_tree_block_err(struct btrfs_root *root,
++				struct extent_buffer *eb,
++				int err)
++{
++	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = {'\0'};
++	char found_uuid[BTRFS_UUID_UNPARSED_SIZE] = {'\0'};
++	u8 buf[BTRFS_UUID_SIZE];
++
++	switch (err) {
++	case -EFSID:
++		read_extent_buffer(eb, buf, btrfs_header_fsid(),
++				   BTRFS_UUID_SIZE);
++		uuid_unparse(buf, found_uuid);
++		uuid_unparse(root->fs_info->fsid, fs_uuid);
++		fprintf(stderr, "fsid mismatch, want=%s, have=%s\n",
++			fs_uuid, found_uuid);
++		break;
++	case -EBYTENR:
++		fprintf(stderr, "bytenr mismatch, want=%llu, have=%llu\n",
++			eb->start, btrfs_header_bytenr(eb));
++		break;
++	}
++}
++
+ u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len)
+ {
+ 	return crc32c(seed, data, len);
+@@ -280,7 +306,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 		}
+ 		if (ignore) {
+ 			if (check_tree_block(root, eb))
+-				printk("read block failed check_tree_block\n");
++				print_tree_block_err(root, eb,
++						check_tree_block(root, eb));
+ 			else
+ 				printk("Csum didn't match\n");
+ 			break;
+@@ -342,8 +369,10 @@ static int write_tree_block(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_root *root,
+ 		     struct extent_buffer *eb)
+ {
+-	if (check_tree_block(root, eb))
++	if (check_tree_block(root, eb)) {
++		print_tree_block_err(root, eb, check_tree_block(root, eb));
+ 		BUG();
++	}
+ 
+ 	if (!btrfs_buffer_uptodate(eb, trans->transid))
+ 		BUG();
 -- 
 2.2.2
 

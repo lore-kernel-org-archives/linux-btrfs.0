@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61879 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:26041 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1761823AbbA2CZ7 (ORCPT
+	with ESMTP id S1759139AbbA2CZ7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 28 Jan 2015 21:25:59 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0T2PFUG026237
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Jan 2015 10:25:15 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function to get vfsmount from a given sb.
-Date: Thu, 29 Jan 2015 10:24:39 +0800
-Message-ID: <1422498281-20493-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RESEND v4 4/8] btrfs: Use btrfs_test_trans_opt() to handle SPACE_CACHE if it's under transaction protect.
+Date: Thu, 29 Jan 2015 10:24:37 +0800
+Message-ID: <1422498281-20493-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,69 +19,61 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are sysfs interfaces in some fs, only btrfs yet, which will modify
-on-disk data.
-Unlike normal file operation routine we can use mnt_want_write_file() to
-protect the operation, change through sysfs won't to be binded to any file
-in the filesystem.
-So we can only extract the first vfsmount of a superblock and pass it to
-mnt_want_write() to do the protection.
+Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
+transaction protection.
+This will ensure SPACE_CACHE bit is consistent during transaction.
 
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/namespace.c        | 25 +++++++++++++++++++++++++
- include/linux/mount.h |  1 +
- 2 files changed, 26 insertions(+)
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/transaction.c | 7 ++++---
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index cd1e968..5a16a62 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1105,6 +1105,31 @@ struct vfsmount *mntget(struct vfsmount *mnt)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1511658..c968d12 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3260,7 +3260,7 @@ again:
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
+-	    !btrfs_test_opt(root, SPACE_CACHE) ||
++	    !btrfs_test_trans_opt(trans, SPACE_CACHE) ||
+ 	    block_group->delalloc_bytes) {
+ 		/*
+ 		 * don't bother trying to write stuff out _if_
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 846e1b8..aec5a5a 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1507,7 +1507,8 @@ static noinline int create_pending_snapshots(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
- EXPORT_SYMBOL(mntget);
  
-+/*
-+ * get a vfsmount from a given sb
-+ *
-+ * This is especially used for case where change fs' sysfs interface
-+ * will lead to a write, e.g. Change label through sysfs in btrfs.
-+ * So vfs can get a vfsmount and then use mnt_want_write() to protect.
-+ */
-+struct vfsmount *get_vfsmount_sb(struct super_block *sb)
-+{
-+	struct vfsmount *ret_vfs = NULL;
-+	struct mount *mnt;
-+	int ret = 0;
-+
-+	lock_mount_hash();
-+	if (list_empty(&sb->s_mounts))
-+		goto out;
-+	mnt = list_entry(sb->s_mounts.next, struct mount, mnt_instance);
-+	ret_vfs = &mnt->mnt;
-+	ret_vfs = mntget(ret_vfs);
-+out:
-+	unlock_mount_hash();
-+	return ret_vfs;
-+}
-+EXPORT_SYMBOL(get_vfsmount_sb);
-+
- struct vfsmount *mnt_clone_internal(struct path *path)
+-static void update_super_roots(struct btrfs_root *root)
++static void update_super_roots(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *root)
  {
- 	struct mount *p;
-diff --git a/include/linux/mount.h b/include/linux/mount.h
-index c2c561d..cf1b0f5 100644
---- a/include/linux/mount.h
-+++ b/include/linux/mount.h
-@@ -79,6 +79,7 @@ extern void mnt_drop_write_file(struct file *file);
- extern void mntput(struct vfsmount *mnt);
- extern struct vfsmount *mntget(struct vfsmount *mnt);
- extern struct vfsmount *mnt_clone_internal(struct path *path);
-+extern struct vfsmount *get_vfsmount_sb(struct super_block *sb);
- extern int __mnt_is_readonly(struct vfsmount *mnt);
+ 	struct btrfs_root_item *root_item;
+ 	struct btrfs_super_block *super;
+@@ -1523,7 +1524,7 @@ static void update_super_roots(struct btrfs_root *root)
+ 	super->root = root_item->bytenr;
+ 	super->generation = root_item->generation;
+ 	super->root_level = root_item->level;
+-	if (btrfs_test_opt(root, SPACE_CACHE))
++	if (btrfs_test_trans_opt(trans, SPACE_CACHE))
+ 		super->cache_generation = root_item->generation;
+ 	if (root->fs_info->update_uuid_tree_gen)
+ 		super->uuid_tree_generation = root_item->generation;
+@@ -1987,7 +1988,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	switch_commit_roots(cur_trans, root->fs_info);
  
- struct path;
+ 	assert_qgroups_uptodate(trans);
+-	update_super_roots(root);
++	update_super_roots(trans, root);
+ 
+ 	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
+ 	btrfs_set_super_log_root_level(root->fs_info->super_copy, 0);
 -- 
 2.2.2
 

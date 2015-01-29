@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3925 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35213 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755354AbbA2B3K (ORCPT
+	with ESMTP id S1755342AbbA2B3C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 20:29:10 -0500
+	Wed, 28 Jan 2015 20:29:02 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v4 8/8] btrfs: Use mnt_want_write() to protect sysfs feature change.
-Date: Thu, 29 Jan 2015 09:27:43 +0800
-Message-ID: <1422494863-15077-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 4/8] btrfs: Use btrfs_test_trans_opt() to handle INODE_CACHE if it's under transaction protect.
+Date: Thu, 29 Jan 2015 09:27:37 +0800
+Message-ID: <1422494863-15077-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,65 +17,103 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just like label change, use mnt_want_write() to do a correct protection.
+Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
+transaction protection.
+
+This will ensure SPACE_CACHE bit is consistent during transaction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/sysfs.c | 25 ++++++++++++++++++++-----
- 1 file changed, 20 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h            | 1 -
+ fs/btrfs/disk-io.c          | 4 ----
+ fs/btrfs/free-space-cache.c | 2 +-
+ fs/btrfs/inode-map.c        | 5 +++--
+ fs/btrfs/transaction.c      | 9 ---------
+ 5 files changed, 4 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index cdfa6b9..71e50ba 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -113,6 +113,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
- 	struct btrfs_trans_handle *trans;
-+	struct vfsmount *vfsmount;
- 	u64 features, set, clear;
- 	unsigned long val;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5f99743..f72acf5 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2108,7 +2108,6 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+ #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+-#define	BTRFS_MOUNT_CHANGE_INODE_CACHE	(1 << 24)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(8192)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2d3c8b7..f4d168d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2832,10 +2832,6 @@ retry_root_backup:
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
+ 	}
+ 
+-	/* Set the real inode map cache flag */
+-	if (btrfs_test_opt(tree_root, CHANGE_INODE_CACHE))
+-		btrfs_set_opt(tree_root->fs_info->mount_opt, INODE_MAP_CACHE);
+-
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
+ 		ret = btrfsic_mount(tree_root, fs_devices,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d6c03f7..2b9cabf 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3348,7 +3348,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
  	int ret;
-@@ -154,9 +155,20 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	btrfs_info(fs_info, "%s %s feature flag",
- 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
  
-+	vfsmount = get_vfsmount_sb(fs_info->sb);
-+	if (!vfsmount)
-+		return -EINVAL;
-+
-+	ret = mnt_want_write(vfsmount);
-+	if (ret) {
-+		mntput(vfsmount);
-+		return ret;
-+	}
- 	trans = btrfs_start_transaction(fs_info->fs_root, 0);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
+ 		return 0;
  
- 	spin_lock(&fs_info->super_lock);
- 	features = get_features(fs_info, fa->feature_set);
-@@ -168,10 +180,13 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	spin_unlock(&fs_info->super_lock);
- 
- 	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
--	if (ret)
--		return ret;
- 
--	return count;
-+out:
-+	mnt_drop_write(vfsmount);
-+	mntput(vfsmount);
-+	if (!ret)
-+		return count;
-+	return ret;
+ 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, trans, path, 0);
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 81efd83..49b089c 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -178,7 +178,8 @@ static void start_caching(struct btrfs_root *root)
+ 			  root->root_key.objectid);
+ 	if (IS_ERR(tsk)) {
+ 		btrfs_warn(root->fs_info, "failed to start inode caching task");
+-		btrfs_clear_and_info(root, CHANGE_INODE_CACHE,
++		btrfs_clear_and_info(root->fs_info, root->fs_info->mount_opt,
++				INODE_MAP_CACHE,
+ 				"disabling inode map caching");
+ 	}
  }
+@@ -405,7 +406,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+ 	if (btrfs_root_refs(&root->root_item) == 0)
+ 		return 0;
  
- static umode_t btrfs_feature_visible(struct kobject *kobj,
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index aec5a5a..dd9e7af 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1939,15 +1939,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto scrub_continue;
+ 	}
+ 
+-	/*
+-	 * Since the transaction is done, we should set the inode map cache flag
+-	 * before any other comming transaction.
+-	 */
+-	if (btrfs_test_opt(root, CHANGE_INODE_CACHE))
+-		btrfs_set_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
+-	else
+-		btrfs_clear_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
+-
+ 	/* commit_fs_roots gets rid of all the tree log roots, it is now
+ 	 * safe to free the root of tree log roots
+ 	 */
 -- 
 2.2.2
 

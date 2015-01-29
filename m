@@ -1,40 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58036 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754155AbbA1UOJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 15:14:09 -0500
-Date: Wed, 28 Jan 2015 14:35:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Smith <jeff@unbiasedgeek.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Am I missing partiy/redundancy - WARNING: RAID56 detected, not
- implemented
-Message-ID: <20150128133515.GF3641@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CABeopkFyVaSAxzgVjXZyqmWAWMG2+mnVXx34w9wEp9mWMjo9Gw@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:61582 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752809AbbA2BaE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Jan 2015 20:30:04 -0500
+From: Xing Gu <gux.fnst@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>, <eguan@redhat.com>,
+        <quwenruo@cn.fujitsu.com>, Xing Gu <gux.fnst@cn.fujitsu.com>
+Subject: [PATCH v6] btrfs: add regression test for remount with thread_pool resized
+Date: Thu, 29 Jan 2015 08:46:00 +0800
+Message-ID: <1422492360-12243-1-git-send-email-gux.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CABeopkFyVaSAxzgVjXZyqmWAWMG2+mnVXx34w9wEp9mWMjo9Gw@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 27, 2015 at 02:21:24AM -0700, Jeff Smith wrote:
-> I am just getting started with btrfs and wanted to test raid5.  I set
-> it up and thought it was setup correctly but when I run " btrfs fi
-> usage /mnt/btrdata"  I get the message "WARNING: RAID56 detected, not
-> implemented".   Does this mean I have no redundancy?  I know it is
-> experimental and I am not relying on it for production data (or data
-> that cannot be replaced).  I don't think I do.  When I check the free
-> space (3.7TB) it is the same as all the drive together (4x931MB).
-> 
-> 
-> Any assistance in helping me understand would be appreciated greatly.
-> 
-> -----
-> btrfs fi usage /mnt/btrdata
-> WARNING: RAID56 detected, not implemented
-> WARNING: RAID56 detected, not implemented
-> WARNING: RAID56 detected, not implemented
+Regression test for a btrfs issue of resizing 'thread_pool' when
+remount the fs.
 
-The message is confusing, it means that space reporting for raid56 is
-not implemted. I'll fix that, thanks for the report.
+This regression was introduced by the following linux kernel commit:
+    btrfs: Added btrfs_workqueue_struct implemented ordered
+    execution based on kernel workqueue
+    08a9ff3264181986d1d692a4e6fce3669700c9f8
+And it was fixed by the following linux kernel commit:
+    btrfs: fix crash in remount(thread_pool=) case
+    800ee2247f483b6d05ed47ef3bbc90b56451746c
+
+Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
+---
+ v5->v6: Add a filter to wipe "Performing full device TRIM" and
+         "Turning ON incompat feature" in common/filter:_filter_mkfs.
+
+ v4->v5: Redirect stderr to /dev/null.
+
+ v3->v4: Remove the check for a bug message.
+
+ v2->v3: Add the regresssion commit in description.
+         Remove "dmesg -c > /dev/null".
+         Echo "Silence is golden" to indicate that an empty output
+         file is expected.
+
+ v1->v2: Add the fix commit in description.
+         Add the check for a bug message.
+---
+ common/filter       |  4 ++++
+ tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/082.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 4 files changed, 72 insertions(+)
+ create mode 100755 tests/btrfs/082
+ create mode 100644 tests/btrfs/082.out
+
+diff --git a/common/filter b/common/filter
+index 05dbae6..71ef2e2 100644
+--- a/common/filter
++++ b/common/filter
+@@ -137,6 +137,10 @@ _filter_mkfs()
+     case $FSTYP in
+     xfs)
+ 	;;
++	btrfs)
++	sed -e "/Performing full device TRIM/d" \
++		-e "/Turning ON incompat feature/d"
++	return ;;
+     *)
+ 	cat - >/dev/null
+ 	perl -e 'print STDERR "dbsize=4096\nisize=256\n"'
+diff --git a/tests/btrfs/082 b/tests/btrfs/082
+new file mode 100755
+index 0000000..dd3c87e
+--- /dev/null
++++ b/tests/btrfs/082
+@@ -0,0 +1,65 @@
++#!/bin/bash
++# FS QA Test No. btrfs/082
++#
++# Regression test for a btrfs issue of resizing 'thread_pool' when
++# remount the fs.
++#
++# This regression was introduced by the following linux kernel commit:
++#     btrfs: Added btrfs_workqueue_struct implemented ordered
++#     execution based on kernel workqueue
++#     08a9ff3264181986d1d692a4e6fce3669700c9f8
++# And it was fixed by the following linux kernel commit:
++#     btrfs: fix crash in remount(thread_pool=) case
++#     800ee2247f483b6d05ed47ef3bbc90b56451746c
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs |& _filter_mkfs
++
++_scratch_mount "-o thread_pool=6"
++_scratch_mount "-o remount,thread_pool=10"
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
+new file mode 100644
+index 0000000..2977f14
+--- /dev/null
++++ b/tests/btrfs/082.out
+@@ -0,0 +1,2 @@
++QA output created by 082
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e29999b..fd2fa76 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -84,3 +84,4 @@
+ 079 auto rw metadata
+ 080 auto snapshot
+ 081 auto quick clone
++082 auto quick remount
+-- 
+1.9.3
+

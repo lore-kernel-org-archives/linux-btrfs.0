@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21262 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:3925 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755338AbbA2B3H (ORCPT
+	with ESMTP id S1755354AbbA2B3K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 20:29:07 -0500
+	Wed, 28 Jan 2015 20:29:10 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: [PATCH v4 6/8] vfs: Add get_vfsmount_sb() function to get vfsmount from a given sb.
-Date: Thu, 29 Jan 2015 09:27:41 +0800
-Message-ID: <1422494863-15077-11-git-send-email-quwenruo@cn.fujitsu.com>
+CC: <dsterba@suse.cz>
+Subject: [PATCH v4 8/8] btrfs: Use mnt_want_write() to protect sysfs feature change.
+Date: Thu, 29 Jan 2015 09:27:43 +0800
+Message-ID: <1422494863-15077-13-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,69 +17,65 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are sysfs interfaces in some fs, only btrfs yet, which will modify
-on-disk data.
-Unlike normal file operation routine we can use mnt_want_write_file() to
-protect the operation, change through sysfs won't to be binded to any file
-in the filesystem.
-So we can only extract the first vfsmount of a superblock and pass it to
-mnt_want_write() to do the protection.
+Just like label change, use mnt_want_write() to do a correct protection.
 
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/namespace.c        | 25 +++++++++++++++++++++++++
- include/linux/mount.h |  1 +
- 2 files changed, 26 insertions(+)
+ fs/btrfs/sysfs.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index cd1e968..5a16a62 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1105,6 +1105,31 @@ struct vfsmount *mntget(struct vfsmount *mnt)
- }
- EXPORT_SYMBOL(mntget);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index cdfa6b9..71e50ba 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -113,6 +113,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
+ 	struct btrfs_trans_handle *trans;
++	struct vfsmount *vfsmount;
+ 	u64 features, set, clear;
+ 	unsigned long val;
+ 	int ret;
+@@ -154,9 +155,20 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	btrfs_info(fs_info, "%s %s feature flag",
+ 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
  
-+/*
-+ * get a vfsmount from a given sb
-+ *
-+ * This is especially used for case where change fs' sysfs interface
-+ * will lead to a write, e.g. Change label through sysfs in btrfs.
-+ * So vfs can get a vfsmount and then use mnt_want_write() to protect.
-+ */
-+struct vfsmount *get_vfsmount_sb(struct super_block *sb)
-+{
-+	struct vfsmount *ret_vfs = NULL;
-+	struct mount *mnt;
-+	int ret = 0;
++	vfsmount = get_vfsmount_sb(fs_info->sb);
++	if (!vfsmount)
++		return -EINVAL;
 +
-+	lock_mount_hash();
-+	if (list_empty(&sb->s_mounts))
++	ret = mnt_want_write(vfsmount);
++	if (ret) {
++		mntput(vfsmount);
++		return ret;
++	}
+ 	trans = btrfs_start_transaction(fs_info->fs_root, 0);
+-	if (IS_ERR(trans))
+-		return PTR_ERR(trans);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
 +		goto out;
-+	mnt = list_entry(sb->s_mounts.next, struct mount, mnt_instance);
-+	ret_vfs = &mnt->mnt;
-+	ret_vfs = mntget(ret_vfs);
-+out:
-+	unlock_mount_hash();
-+	return ret_vfs;
-+}
-+EXPORT_SYMBOL(get_vfsmount_sb);
-+
- struct vfsmount *mnt_clone_internal(struct path *path)
- {
- 	struct mount *p;
-diff --git a/include/linux/mount.h b/include/linux/mount.h
-index c2c561d..cf1b0f5 100644
---- a/include/linux/mount.h
-+++ b/include/linux/mount.h
-@@ -79,6 +79,7 @@ extern void mnt_drop_write_file(struct file *file);
- extern void mntput(struct vfsmount *mnt);
- extern struct vfsmount *mntget(struct vfsmount *mnt);
- extern struct vfsmount *mnt_clone_internal(struct path *path);
-+extern struct vfsmount *get_vfsmount_sb(struct super_block *sb);
- extern int __mnt_is_readonly(struct vfsmount *mnt);
++	}
  
- struct path;
+ 	spin_lock(&fs_info->super_lock);
+ 	features = get_features(fs_info, fa->feature_set);
+@@ -168,10 +180,13 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	spin_unlock(&fs_info->super_lock);
+ 
+ 	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
+-	if (ret)
+-		return ret;
+ 
+-	return count;
++out:
++	mnt_drop_write(vfsmount);
++	mntput(vfsmount);
++	if (!ret)
++		return count;
++	return ret;
+ }
+ 
+ static umode_t btrfs_feature_visible(struct kobject *kobj,
 -- 
 2.2.2
 

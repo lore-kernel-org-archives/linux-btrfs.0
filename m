@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62727 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21262 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753697AbbA2B3F (ORCPT
+	with ESMTP id S1755338AbbA2B3H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Jan 2015 20:29:05 -0500
+	Wed, 28 Jan 2015 20:29:07 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v4 5/8] btrfs: Make btrfs_parse_options() parse mount option in a atomic way
-Date: Thu, 29 Jan 2015 09:27:39 +0800
-Message-ID: <1422494863-15077-9-git-send-email-quwenruo@cn.fujitsu.com>
+CC: <dsterba@suse.cz>, linux-fsdevel <linux-fsdevel@vger.kernel.org>
+Subject: [PATCH v4 6/8] vfs: Add get_vfsmount_sb() function to get vfsmount from a given sb.
+Date: Thu, 29 Jan 2015 09:27:41 +0800
+Message-ID: <1422494863-15077-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422494863-15077-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,353 +17,69 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current btrfs_parse_options() is not atomic, which can set and clear a
-bit, especially for nospace_cache case.
+There are sysfs interfaces in some fs, only btrfs yet, which will modify
+on-disk data.
+Unlike normal file operation routine we can use mnt_want_write_file() to
+protect the operation, change through sysfs won't to be binded to any file
+in the filesystem.
+So we can only extract the first vfsmount of a superblock and pass it to
+mnt_want_write() to do the protection.
 
-For example, if a fs is mounted with nospace_cache,
-btrfs_parse_options() will set SPACE_CACHE bit first(since
-cache_generation is non-zeo) and clear the SPACE_CACHE bit due to
-nospace_cache mount option.
-So under heavy operations and remount a nospace_cache btrfs, there is a
-windows for commit to create space cache.
-
-This bug can be reproduced by fstest/btrfs/071 073 074 with
-nospace_cache mount option. It has about 50% chance to create space
-cache, and about 10% chance to create wrong space cache, which can't
-pass btrfsck.
-
-This patch will do the mount option parse in a copy-and-update method.
-First copy the mount_opt from fs_info to new_opt, and only update
-options in new_opt. At last, copy the new_opt back to
-fs_info->mount_opt.
-
-This patch is already good enough to fix the above nospace_cache +
-remount bug, but need later patch to make sure mount options does not
-change during transaction.
-
+Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h |  16 ++++----
- fs/btrfs/super.c | 115 +++++++++++++++++++++++++++++--------------------------
- 2 files changed, 69 insertions(+), 62 deletions(-)
+ fs/namespace.c        | 25 +++++++++++++++++++++++++
+ include/linux/mount.h |  1 +
+ 2 files changed, 26 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f72acf5..fa04db9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2118,18 +2118,18 @@ struct btrfs_ioctl_defrag_range_args {
- #define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
- 					 BTRFS_MOUNT_##opt)
- 
--#define btrfs_set_and_info(root, opt, fmt, args...)			\
-+#define btrfs_set_and_info(fs_info, val, opt, fmt, args...)		\
- {									\
--	if (!btrfs_test_opt(root, opt))					\
--		btrfs_info(root->fs_info, fmt, ##args);			\
--	btrfs_set_opt(root->fs_info->mount_opt, opt);			\
-+	if (!btrfs_raw_test_opt(val, opt))				\
-+		btrfs_info(fs_info, fmt, ##args);			\
-+	btrfs_set_opt(val, opt);					\
+diff --git a/fs/namespace.c b/fs/namespace.c
+index cd1e968..5a16a62 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1105,6 +1105,31 @@ struct vfsmount *mntget(struct vfsmount *mnt)
  }
+ EXPORT_SYMBOL(mntget);
  
--#define btrfs_clear_and_info(root, opt, fmt, args...)			\
-+#define btrfs_clear_and_info(fs_info, val, opt, fmt, args...)		\
- {									\
--	if (btrfs_test_opt(root, opt))					\
--		btrfs_info(root->fs_info, fmt, ##args);			\
--	btrfs_clear_opt(root->fs_info->mount_opt, opt);			\
-+	if (btrfs_raw_test_opt(val, opt))				\
-+		btrfs_info(fs_info, fmt, ##args);			\
-+	btrfs_clear_opt(val, opt);					\
- }
- 
- /*
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b0c45b2..490fe1f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -395,10 +395,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	int ret = 0;
- 	char *compress_type;
- 	bool compress_force = false;
-+	unsigned long new_opt;
++/*
++ * get a vfsmount from a given sb
++ *
++ * This is especially used for case where change fs' sysfs interface
++ * will lead to a write, e.g. Change label through sysfs in btrfs.
++ * So vfs can get a vfsmount and then use mnt_want_write() to protect.
++ */
++struct vfsmount *get_vfsmount_sb(struct super_block *sb)
++{
++	struct vfsmount *ret_vfs = NULL;
++	struct mount *mnt;
++	int ret = 0;
 +
-+	new_opt = info->mount_opt;
++	lock_mount_hash();
++	if (list_empty(&sb->s_mounts))
++		goto out;
++	mnt = list_entry(sb->s_mounts.next, struct mount, mnt_instance);
++	ret_vfs = &mnt->mnt;
++	ret_vfs = mntget(ret_vfs);
++out:
++	unlock_mount_hash();
++	return ret_vfs;
++}
++EXPORT_SYMBOL(get_vfsmount_sb);
++
+ struct vfsmount *mnt_clone_internal(struct path *path)
+ {
+ 	struct mount *p;
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index c2c561d..cf1b0f5 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -79,6 +79,7 @@ extern void mnt_drop_write_file(struct file *file);
+ extern void mntput(struct vfsmount *mnt);
+ extern struct vfsmount *mntget(struct vfsmount *mnt);
+ extern struct vfsmount *mnt_clone_internal(struct path *path);
++extern struct vfsmount *get_vfsmount_sb(struct super_block *sb);
+ extern int __mnt_is_readonly(struct vfsmount *mnt);
  
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
- 	if (cache_gen)
--		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
-+		btrfs_set_opt(new_opt, SPACE_CACHE);
- 
- 	if (!options)
- 		goto out;
-@@ -422,7 +425,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		switch (token) {
- 		case Opt_degraded:
- 			btrfs_info(root->fs_info, "allowing degraded mounts");
--			btrfs_set_opt(info->mount_opt, DEGRADED);
-+			btrfs_set_opt(new_opt, DEGRADED);
- 			break;
- 		case Opt_subvol:
- 		case Opt_subvolid:
-@@ -434,7 +437,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			 */
- 			break;
- 		case Opt_nodatasum:
--			btrfs_set_and_info(root, NODATASUM,
-+			btrfs_set_and_info(info, new_opt, NODATASUM,
- 					   "setting nodatasum");
- 			break;
- 		case Opt_datasum:
-@@ -444,8 +447,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				else
- 					btrfs_info(root->fs_info, "setting datasum");
- 			}
--			btrfs_clear_opt(info->mount_opt, NODATACOW);
--			btrfs_clear_opt(info->mount_opt, NODATASUM);
-+			btrfs_clear_opt(new_opt, NODATACOW);
-+			btrfs_clear_opt(new_opt, NODATASUM);
- 			break;
- 		case Opt_nodatacow:
- 			if (!btrfs_test_opt(root, NODATACOW)) {
-@@ -457,13 +460,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 					btrfs_info(root->fs_info, "setting nodatacow");
- 				}
- 			}
--			btrfs_clear_opt(info->mount_opt, COMPRESS);
--			btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
--			btrfs_set_opt(info->mount_opt, NODATACOW);
--			btrfs_set_opt(info->mount_opt, NODATASUM);
-+			btrfs_clear_opt(new_opt, COMPRESS);
-+			btrfs_clear_opt(new_opt, FORCE_COMPRESS);
-+			btrfs_set_opt(new_opt, NODATACOW);
-+			btrfs_set_opt(new_opt, NODATASUM);
- 			break;
- 		case Opt_datacow:
--			btrfs_clear_and_info(root, NODATACOW,
-+			btrfs_clear_and_info(info, new_opt, NODATACOW,
- 					     "setting datacow");
- 			break;
- 		case Opt_compress_force:
-@@ -477,20 +480,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			    strcmp(args[0].from, "zlib") == 0) {
- 				compress_type = "zlib";
- 				info->compress_type = BTRFS_COMPRESS_ZLIB;
--				btrfs_set_opt(info->mount_opt, COMPRESS);
--				btrfs_clear_opt(info->mount_opt, NODATACOW);
--				btrfs_clear_opt(info->mount_opt, NODATASUM);
-+				btrfs_set_opt(new_opt, COMPRESS);
-+				btrfs_clear_opt(new_opt, NODATACOW);
-+				btrfs_clear_opt(new_opt, NODATASUM);
- 			} else if (strcmp(args[0].from, "lzo") == 0) {
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
--				btrfs_set_opt(info->mount_opt, COMPRESS);
--				btrfs_clear_opt(info->mount_opt, NODATACOW);
--				btrfs_clear_opt(info->mount_opt, NODATASUM);
-+				btrfs_set_opt(new_opt, COMPRESS);
-+				btrfs_clear_opt(new_opt, NODATACOW);
-+				btrfs_clear_opt(new_opt, NODATASUM);
- 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
- 			} else if (strncmp(args[0].from, "no", 2) == 0) {
- 				compress_type = "no";
--				btrfs_clear_opt(info->mount_opt, COMPRESS);
--				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
-+				btrfs_clear_opt(new_opt, COMPRESS);
-+				btrfs_clear_opt(new_opt, FORCE_COMPRESS);
- 				compress_force = false;
- 			} else {
- 				ret = -EINVAL;
-@@ -498,7 +501,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			}
- 
- 			if (compress_force) {
--				btrfs_set_and_info(root, FORCE_COMPRESS,
-+				btrfs_set_and_info(info, new_opt,
-+						   FORCE_COMPRESS,
- 						   "force %s compression",
- 						   compress_type);
- 			} else {
-@@ -512,29 +516,29 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				 * flag, otherwise, there is no way for users
- 				 * to disable forcible compression separately.
- 				 */
--				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
-+				btrfs_clear_opt(new_opt, FORCE_COMPRESS);
- 			}
- 			break;
- 		case Opt_ssd:
--			btrfs_set_and_info(root, SSD,
-+			btrfs_set_and_info(info, new_opt, SSD,
- 					   "use ssd allocation scheme");
- 			break;
- 		case Opt_ssd_spread:
--			btrfs_set_and_info(root, SSD_SPREAD,
-+			btrfs_set_and_info(info, new_opt, SSD_SPREAD,
- 					   "use spread ssd allocation scheme");
--			btrfs_set_opt(info->mount_opt, SSD);
-+			btrfs_set_opt(new_opt, SSD);
- 			break;
- 		case Opt_nossd:
--			btrfs_set_and_info(root, NOSSD,
--					     "not using ssd allocation scheme");
--			btrfs_clear_opt(info->mount_opt, SSD);
-+			btrfs_set_and_info(info, new_opt, NOSSD,
-+					   "not using ssd allocation scheme");
-+			btrfs_clear_opt(new_opt, SSD);
- 			break;
- 		case Opt_barrier:
--			btrfs_clear_and_info(root, NOBARRIER,
-+			btrfs_clear_and_info(info, new_opt, NOBARRIER,
- 					     "turning on barriers");
- 			break;
- 		case Opt_nobarrier:
--			btrfs_set_and_info(root, NOBARRIER,
-+			btrfs_set_and_info(info, new_opt, NOBARRIER,
- 					   "turning off barriers");
- 			break;
- 		case Opt_thread_pool:
-@@ -594,19 +598,19 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
- 			break;
- 		case Opt_notreelog:
--			btrfs_set_and_info(root, NOTREELOG,
-+			btrfs_set_and_info(info, new_opt, NOTREELOG,
- 					   "disabling tree log");
- 			break;
- 		case Opt_treelog:
--			btrfs_clear_and_info(root, NOTREELOG,
-+			btrfs_clear_and_info(info, new_opt, NOTREELOG,
- 					     "enabling tree log");
- 			break;
- 		case Opt_flushoncommit:
--			btrfs_set_and_info(root, FLUSHONCOMMIT,
-+			btrfs_set_and_info(info, new_opt, FLUSHONCOMMIT,
- 					   "turning on flush-on-commit");
- 			break;
- 		case Opt_noflushoncommit:
--			btrfs_clear_and_info(root, FLUSHONCOMMIT,
-+			btrfs_clear_and_info(info, new_opt, FLUSHONCOMMIT,
- 					     "turning off flush-on-commit");
- 			break;
- 		case Opt_ratio:
-@@ -623,71 +627,71 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			}
- 			break;
- 		case Opt_discard:
--			btrfs_set_and_info(root, DISCARD,
-+			btrfs_set_and_info(info, new_opt, DISCARD,
- 					   "turning on discard");
- 			break;
- 		case Opt_nodiscard:
--			btrfs_clear_and_info(root, DISCARD,
-+			btrfs_clear_and_info(info, new_opt, DISCARD,
- 					     "turning off discard");
- 			break;
- 		case Opt_space_cache:
--			btrfs_set_and_info(root, SPACE_CACHE,
-+			btrfs_set_and_info(info, new_opt, SPACE_CACHE,
- 					   "enabling disk space caching");
- 			break;
- 		case Opt_rescan_uuid_tree:
--			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
-+			btrfs_set_opt(new_opt, RESCAN_UUID_TREE);
- 			break;
- 		case Opt_no_space_cache:
--			btrfs_clear_and_info(root, SPACE_CACHE,
-+			btrfs_clear_and_info(info, new_opt, SPACE_CACHE,
- 					     "disabling disk space caching");
- 			break;
- 		case Opt_inode_cache:
--			btrfs_set_pending_and_info(info, INODE_MAP_CACHE,
-+			btrfs_set_and_info(info, new_opt, INODE_MAP_CACHE,
- 					   "enabling inode map caching");
- 			break;
- 		case Opt_noinode_cache:
--			btrfs_clear_pending_and_info(info, INODE_MAP_CACHE,
-+			btrfs_clear_and_info(info, new_opt, INODE_MAP_CACHE,
- 					     "disabling inode map caching");
- 			break;
- 		case Opt_clear_cache:
--			btrfs_set_and_info(root, CLEAR_CACHE,
-+			btrfs_set_and_info(info, new_opt, CLEAR_CACHE,
- 					   "force clearing of disk cache");
- 			break;
- 		case Opt_user_subvol_rm_allowed:
--			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
-+			btrfs_set_opt(new_opt, USER_SUBVOL_RM_ALLOWED);
- 			break;
- 		case Opt_enospc_debug:
--			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
-+			btrfs_set_opt(new_opt, ENOSPC_DEBUG);
- 			break;
- 		case Opt_noenospc_debug:
--			btrfs_clear_opt(info->mount_opt, ENOSPC_DEBUG);
-+			btrfs_clear_opt(new_opt, ENOSPC_DEBUG);
- 			break;
- 		case Opt_defrag:
--			btrfs_set_and_info(root, AUTO_DEFRAG,
-+			btrfs_set_and_info(info, new_opt, AUTO_DEFRAG,
- 					   "enabling auto defrag");
- 			break;
- 		case Opt_nodefrag:
--			btrfs_clear_and_info(root, AUTO_DEFRAG,
-+			btrfs_clear_and_info(info, new_opt, AUTO_DEFRAG,
- 					     "disabling auto defrag");
- 			break;
- 		case Opt_recovery:
- 			btrfs_info(root->fs_info, "enabling auto recovery");
--			btrfs_set_opt(info->mount_opt, RECOVERY);
-+			btrfs_set_opt(new_opt, RECOVERY);
- 			break;
- 		case Opt_skip_balance:
--			btrfs_set_opt(info->mount_opt, SKIP_BALANCE);
-+			btrfs_set_opt(new_opt, SKIP_BALANCE);
- 			break;
- #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
- 		case Opt_check_integrity_including_extent_data:
- 			btrfs_info(root->fs_info,
- 				   "enabling check integrity including extent data");
--			btrfs_set_opt(info->mount_opt,
-+			btrfs_set_opt(new_opt,
- 				      CHECK_INTEGRITY_INCLUDING_EXTENT_DATA);
--			btrfs_set_opt(info->mount_opt, CHECK_INTEGRITY);
-+			btrfs_set_opt(new_opt, CHECK_INTEGRITY);
- 			break;
- 		case Opt_check_integrity:
- 			btrfs_info(root->fs_info, "enabling check integrity");
--			btrfs_set_opt(info->mount_opt, CHECK_INTEGRITY);
-+			btrfs_set_opt(new_opt, CHECK_INTEGRITY);
- 			break;
- 		case Opt_check_integrity_print_mask:
- 			ret = match_int(&args[0], &intarg);
-@@ -713,10 +717,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- #endif
- 		case Opt_fatal_errors:
- 			if (strcmp(args[0].from, "panic") == 0)
--				btrfs_set_opt(info->mount_opt,
-+				btrfs_set_opt(new_opt,
- 					      PANIC_ON_FATAL_ERROR);
- 			else if (strcmp(args[0].from, "bug") == 0)
--				btrfs_clear_opt(info->mount_opt,
-+				btrfs_clear_opt(new_opt,
- 					      PANIC_ON_FATAL_ERROR);
- 			else {
- 				ret = -EINVAL;
-@@ -752,8 +756,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		}
- 	}
- out:
--	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
--		btrfs_info(root->fs_info, "disk space caching is enabled");
-+	if (!ret) {
-+		if (btrfs_raw_test_opt(new_opt, SPACE_CACHE))
-+			btrfs_info(info, "disk space caching is enabled");
-+		info->mount_opt = new_opt;
-+	}
- 	kfree(orig);
- 	return ret;
- }
+ struct path;
 -- 
 2.2.2
 

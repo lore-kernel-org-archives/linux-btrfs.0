@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29041 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60688 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1760165AbbA3JXM (ORCPT
+	with ESMTP id S1760099AbbA3JXM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 30 Jan 2015 04:23:12 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MJf1028855
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: [PATCH v5 6/9] vfs: Add sb_want_write() function to get vfsmount from a given sb.
-Date: Fri, 30 Jan 2015 17:20:51 +0800
-Message-ID: <1422609654-19519-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 5/9] btrfs: Use btrfs_test_trans_opt() to handle INODE_CACHE if it's under transaction protect.
+Date: Fri, 30 Jan 2015 17:20:50 +0800
+Message-ID: <1422609654-19519-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,92 +19,109 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are sysfs interfaces in some fs, only btrfs yet, which will modify
-on-disk data.
-Unlike normal file operation routine we can use mnt_want_write_file() to
-protect the operation, change through sysfs won't to be binded to any file
-in the filesystem.
+Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
+transaction protection.
 
-So introduce new sb_want_write() to do the protection agains a super
-block, which acts much like mnt_want_write() but will return success if
-the super block is read-write.
+This will ensure SPACE_CACHE bit is consistent during transaction.
 
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Signed-off-by: Al Viro <viro@ZenIV.linux.org.uk>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 Changelog:
-v4:
+v3:
   Newly introduced.
-v5:
-  Change name to sb_want_write() and receive sb and parameter.
+v4~v5:
+  None
 ---
- fs/namespace.c        | 36 ++++++++++++++++++++++++++++++++++++
- include/linux/mount.h |  2 ++
- 2 files changed, 38 insertions(+)
+ fs/btrfs/ctree.h            | 1 -
+ fs/btrfs/disk-io.c          | 4 ----
+ fs/btrfs/free-space-cache.c | 2 +-
+ fs/btrfs/inode-map.c        | 5 +++--
+ fs/btrfs/transaction.c      | 9 ---------
+ 5 files changed, 4 insertions(+), 17 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index cd1e968..79bc762 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1105,6 +1105,42 @@ struct vfsmount *mntget(struct vfsmount *mnt)
- }
- EXPORT_SYMBOL(mntget);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0d44ea9..f381ae8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2109,7 +2109,6 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+ #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+-#define	BTRFS_MOUNT_CHANGE_INODE_CACHE	(1 << 24)
  
-+/**
-+ * sb_want_write - get write acess to a super block
-+ * @sb: the superblock of the filesystem
-+ *
-+ * This tells the low-level filesystem that a write is about to be performed to
-+ * it, and makes sure that the writes are allowed (superblock is read-write,
-+ * filesystem is not frozen) before returning success.
-+ * When the write operation is finished, sb_drop_write() must be called.
-+ * This is much like mnt_want_write() as a refcount, but only needs
-+ * the superblock to be read-write.
-+ */
-+int sb_want_write(struct super_block *sb)
-+{
-+	sb_start_write(sb);
-+	if (sb->s_readonly_remount || sb->s_flags & MS_RDONLY) {
-+		sb_end_write(sb);
-+		return -EROFS;
-+	}
-+	return 0;
-+}
-+EXPORT_SYMBOL(sb_want_write);
-+
-+/**
-+ * sb_drop_write - give up write acess to a super block
-+ * @sb: the superblock on which to give up write access
-+ *
-+ * Tells the low-level filesystem that we are done performing writes to it and
-+ * also allows filesystem to be frozen again. Must be matched with
-+ * sb_want_write() call above.
-+ */
-+void sb_drop_write(struct super_block *sb)
-+{
-+	sb_end_write(sb);
-+}
-+EXPORT_SYMBOL(sb_drop_write);
-+
- struct vfsmount *mnt_clone_internal(struct path *path)
- {
- 	struct mount *p;
-diff --git a/include/linux/mount.h b/include/linux/mount.h
-index c2c561d..abf4495 100644
---- a/include/linux/mount.h
-+++ b/include/linux/mount.h
-@@ -74,8 +74,10 @@ struct path;
- extern int mnt_want_write(struct vfsmount *mnt);
- extern int mnt_want_write_file(struct file *file);
- extern int mnt_clone_write(struct vfsmount *mnt);
-+extern int sb_want_write(struct super_block *sb);
- extern void mnt_drop_write(struct vfsmount *mnt);
- extern void mnt_drop_write_file(struct file *file);
-+extern void sb_drop_write(struct super_block *sb);
- extern void mntput(struct vfsmount *mnt);
- extern struct vfsmount *mntget(struct vfsmount *mnt);
- extern struct vfsmount *mnt_clone_internal(struct path *path);
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(8192)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2d3c8b7..f4d168d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2832,10 +2832,6 @@ retry_root_backup:
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
+ 	}
+ 
+-	/* Set the real inode map cache flag */
+-	if (btrfs_test_opt(tree_root, CHANGE_INODE_CACHE))
+-		btrfs_set_opt(tree_root->fs_info->mount_opt, INODE_MAP_CACHE);
+-
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
+ 		ret = btrfsic_mount(tree_root, fs_devices,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index d6c03f7..2b9cabf 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3348,7 +3348,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
+ 	int ret;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, trans, path, 0);
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 81efd83..49b089c 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -178,7 +178,8 @@ static void start_caching(struct btrfs_root *root)
+ 			  root->root_key.objectid);
+ 	if (IS_ERR(tsk)) {
+ 		btrfs_warn(root->fs_info, "failed to start inode caching task");
+-		btrfs_clear_and_info(root, CHANGE_INODE_CACHE,
++		btrfs_clear_and_info(root->fs_info, root->fs_info->mount_opt,
++				INODE_MAP_CACHE,
+ 				"disabling inode map caching");
+ 	}
+ }
+@@ -405,7 +406,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+ 	if (btrfs_root_refs(&root->root_item) == 0)
+ 		return 0;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index aec5a5a..dd9e7af 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1939,15 +1939,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto scrub_continue;
+ 	}
+ 
+-	/*
+-	 * Since the transaction is done, we should set the inode map cache flag
+-	 * before any other comming transaction.
+-	 */
+-	if (btrfs_test_opt(root, CHANGE_INODE_CACHE))
+-		btrfs_set_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
+-	else
+-		btrfs_clear_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
+-
+ 	/* commit_fs_roots gets rid of all the tree log roots, it is now
+ 	 * safe to free the root of tree log roots
+ 	 */
 -- 
 2.2.2
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:3495 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1760147AbbA3JXH (ORCPT
+	with ESMTP id S1759993AbbA3JXK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Jan 2015 04:23:07 -0500
+	Fri, 30 Jan 2015 04:23:10 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MH5u028846
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MIFf028852
 	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:18 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v5 3/9] btrfs: Introduce per-transaction mount_opt to keep mount option consistent during transaction.
-Date: Fri, 30 Jan 2015 17:20:48 +0800
-Message-ID: <1422609654-19519-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 4/9] btrfs: Use btrfs_test_trans_opt() to handle SPACE_CACHE if it's under transaction protect.
+Date: Fri, 30 Jan 2015 17:20:49 +0800
+Message-ID: <1422609654-19519-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,12 +19,9 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this patch, mount_opt is not consistent during a transaction.
-btrfs_parse_options() can race with transaction.
-
-Now each transaction will keep a copy of fs_info->mount_opt upon
-creation, and new btrfs_test_trans_opt() macro is introduced to get the
-mount_opt in the transaction.
+Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
+transaction protection.
+This will ensure SPACE_CACHE bit is consistent during transaction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
@@ -34,44 +31,55 @@ v3:
 v4~v5:
   None
 ---
- fs/btrfs/transaction.c | 1 +
- fs/btrfs/transaction.h | 4 ++++
- 2 files changed, 5 insertions(+)
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/transaction.c | 7 ++++---
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a684086..fde502c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3260,7 +3260,7 @@ again:
+ 
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
+-	    !btrfs_test_opt(root, SPACE_CACHE) ||
++	    !btrfs_test_trans_opt(trans, SPACE_CACHE) ||
+ 	    block_group->delalloc_bytes) {
+ 		/*
+ 		 * don't bother trying to write stuff out _if_
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 295a135..846e1b8 100644
+index 846e1b8..aec5a5a 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -210,6 +210,7 @@ loop:
- 		return -EROFS;
- 	}
+@@ -1507,7 +1507,8 @@ static noinline int create_pending_snapshots(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
-+	cur_trans->mount_opt = fs_info->mount_opt;
- 	atomic_set(&cur_trans->num_writers, 1);
- 	extwriter_counter_init(cur_trans, type);
- 	init_waitqueue_head(&cur_trans->writer_wait);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index fd400a3..4052879 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -52,6 +52,7 @@ struct btrfs_transaction {
- 	struct list_head list;
- 	struct extent_io_tree dirty_pages;
- 	unsigned long start_time;
-+	unsigned long mount_opt;
- 	wait_queue_head_t writer_wait;
- 	wait_queue_head_t commit_wait;
- 	struct list_head pending_snapshots;
-@@ -126,6 +127,9 @@ struct btrfs_pending_snapshot {
- 	struct list_head list;
- };
- 
-+#define btrfs_test_trans_opt(trans, opt)	\
-+	(btrfs_raw_test_opt(trans->transaction->mount_opt, opt))
-+
- static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 					      struct inode *inode)
+-static void update_super_roots(struct btrfs_root *root)
++static void update_super_roots(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *root)
  {
+ 	struct btrfs_root_item *root_item;
+ 	struct btrfs_super_block *super;
+@@ -1523,7 +1524,7 @@ static void update_super_roots(struct btrfs_root *root)
+ 	super->root = root_item->bytenr;
+ 	super->generation = root_item->generation;
+ 	super->root_level = root_item->level;
+-	if (btrfs_test_opt(root, SPACE_CACHE))
++	if (btrfs_test_trans_opt(trans, SPACE_CACHE))
+ 		super->cache_generation = root_item->generation;
+ 	if (root->fs_info->update_uuid_tree_gen)
+ 		super->uuid_tree_generation = root_item->generation;
+@@ -1987,7 +1988,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	switch_commit_roots(cur_trans, root->fs_info);
+ 
+ 	assert_qgroups_uptodate(trans);
+-	update_super_roots(root);
++	update_super_roots(trans, root);
+ 
+ 	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
+ 	btrfs_set_super_log_root_level(root->fs_info->super_copy, 0);
 -- 
 2.2.2
 

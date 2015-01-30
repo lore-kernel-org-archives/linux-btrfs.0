@@ -1,85 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3495 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1759993AbbA3JXK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Jan 2015 04:23:10 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MIFf028852
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:18 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v5 4/9] btrfs: Use btrfs_test_trans_opt() to handle SPACE_CACHE if it's under transaction protect.
-Date: Fri, 30 Jan 2015 17:20:49 +0800
-Message-ID: <1422609654-19519-5-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:55412 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759930AbbA3KCM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Jan 2015 05:02:12 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YH8Ot-0003sx-FL
+	for linux-btrfs@vger.kernel.org; Fri, 30 Jan 2015 11:02:07 +0100
+Received: from pd953e675.dip0.t-ipconnect.de ([217.83.230.117])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 11:02:07 +0100
+Received: from holger.hoffstaette by pd953e675.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 11:02:07 +0100
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Re: Indefinite hang in reserve_metadata_bytes on kernel 3.18.3
+Date: Fri, 30 Jan 2015 10:02:01 +0000 (UTC)
+Message-ID: <pan.2015.01.30.10.02.01@googlemail.com>
+References: <868704D3-B79F-476F-A4CF-33C41274E6D4@opentable.com>
+	<54CA06A6.3070108@googlemail.com>
+	<3630FFF1-5CE8-4BDD-85BD-A0A1BF671168@opentable.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
-transaction protection.
-This will ensure SPACE_CACHE bit is consistent during transaction.
+On Thu, 29 Jan 2015 22:50:20 +0000, Steven Schlansker wrote:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-changelog:
-v3:
-  Newly introduced.
-v4~v5:
-  None
----
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/transaction.c | 7 ++++---
- 2 files changed, 5 insertions(+), 4 deletions(-)
+> Thank you for the suggestion.  I did not find a 3.18.5 presented in any
+> form other than as a large number of *.patch files, so I went for
+> 3.19-rc6 instead (which I verified has this commit)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a684086..fde502c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3260,7 +3260,7 @@ again:
- 
- 	spin_lock(&block_group->lock);
- 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
--	    !btrfs_test_opt(root, SPACE_CACHE) ||
-+	    !btrfs_test_trans_opt(trans, SPACE_CACHE) ||
- 	    block_group->delalloc_bytes) {
- 		/*
- 		 * don't bother trying to write stuff out _if_
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 846e1b8..aec5a5a 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1507,7 +1507,8 @@ static noinline int create_pending_snapshots(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--static void update_super_roots(struct btrfs_root *root)
-+static void update_super_roots(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root)
- {
- 	struct btrfs_root_item *root_item;
- 	struct btrfs_super_block *super;
-@@ -1523,7 +1524,7 @@ static void update_super_roots(struct btrfs_root *root)
- 	super->root = root_item->bytenr;
- 	super->generation = root_item->generation;
- 	super->root_level = root_item->level;
--	if (btrfs_test_opt(root, SPACE_CACHE))
-+	if (btrfs_test_trans_opt(trans, SPACE_CACHE))
- 		super->cache_generation = root_item->generation;
- 	if (root->fs_info->update_uuid_tree_gen)
- 		super->uuid_tree_generation = root_item->generation;
-@@ -1987,7 +1988,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	switch_commit_roots(cur_trans, root->fs_info);
- 
- 	assert_qgroups_uptodate(trans);
--	update_super_roots(root);
-+	update_super_roots(trans, root);
- 
- 	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
- 	btrfs_set_super_log_root_level(root->fs_info->super_copy, 0);
--- 
-2.2.2
+3.18.5 is out now but it shouldn't matter, in your case it looks like 
+something else is wrong.
+
+> Now I am getting:
+> 
+> [ 1224.728313] ------------[ cut here ]------------
+> [ 1224.728323] kernel BUG at fs/btrfs/extent-tree.c:7362!
+
+That's -ENOMEM in btrfs_alloc_tree_block(), no definite idea what could 
+(really) cause that. In any case your first order of business should be 
+to get an up-to-date btrfs-progs (= 3.18.2) and see what a check says. 
+Your 3.12 is really old.
+
+Another thing that I found helpful is to mount the fs in question at 
+least once without the free-space-cache, aka with -o 
+clear_cache,nospace_cache options. btrfs tries to detect whether this 
+cache is out of sync/corrupted, but I've seen it lead to weird problems 
+down the road on rare occasion. So mount the fs without it, maybe do a 
+little cleanup/work, cleanly unmount it and then try to remount/work with 
+the cache enabled.
+
+If you first created & worked on this fs with 3.13 you may have other yet 
+undetected problems lurking.
+
+That's really all I can recommend for now from here. Good luck!
+
+-h
 

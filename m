@@ -1,65 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:50353 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750840AbbA2PXu (ORCPT
+Received: from szxga03-in.huawei.com ([119.145.14.66]:11893 "EHLO
+	szxga03-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751488AbbA3AcD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Jan 2015 10:23:50 -0500
-Date: Thu, 29 Jan 2015 15:23:47 +0000
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: Re: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function to get
- vfsmount from a given sb.
-Message-ID: <20150129152347.GE29656@ZenIV.linux.org.uk>
-References: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1422498281-20493-7-git-send-email-quwenruo@cn.fujitsu.com>
- <20150129123758.GJ3641@twin.jikos.cz>
+	Thu, 29 Jan 2015 19:32:03 -0500
+Message-ID: <54CAD0FC.4010503@huawei.com>
+Date: Fri, 30 Jan 2015 08:31:56 +0800
+From: Miao Xie <miaoxie@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150129123758.GJ3641@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RESEND v4 2/8] btrfs: Make btrfs_parse_options() parse
+ mount option in a atomic way
+References: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com> <1422498281-20493-3-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1422498281-20493-3-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="gbk"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 29, 2015 at 01:37:58PM +0100, David Sterba wrote:
-> Adding Al Viro into CC
+On Thu, 29 Jan 2015 10:24:35 +0800, Qu Wenruo wrote:
+> Current btrfs_parse_options() is not atomic, which can set and clear a
+> bit, especially for nospace_cache case.
 > 
-> On Thu, Jan 29, 2015 at 10:24:39AM +0800, Qu Wenruo wrote:
-> > +struct vfsmount *get_vfsmount_sb(struct super_block *sb)
-> > +{
-> > +	struct vfsmount *ret_vfs = NULL;
-> > +	struct mount *mnt;
-> > +	int ret = 0;
-> > +
-> > +	lock_mount_hash();
-> > +	if (list_empty(&sb->s_mounts))
-> > +		goto out;
-> > +	mnt = list_entry(sb->s_mounts.next, struct mount, mnt_instance);
+> For example, if a fs is mounted with nospace_cache,
+> btrfs_parse_options() will set SPACE_CACHE bit first(since
+> cache_generation is non-zeo) and clear the SPACE_CACHE bit due to
+> nospace_cache mount option.
+> So under heavy operations and remount a nospace_cache btrfs, there is a
+> windows for commit to create space cache.
 > 
-> from include/linux/fs.h:
+> This bug can be reproduced by fstest/btrfs/071 073 074 with
+> nospace_cache mount option. It has about 50% chance to create space
+> cache, and about 10% chance to create wrong space cache, which can't
+> pass btrfsck.
 > 
-> struct super_block {
-> ...
-> 	struct list_head        s_mounts;       /* list of mounts; _not_ for fs use */
-> ...
-> };
+> This patch will do the mount option parse in a copy-and-update method.
+> First copy the mount_opt from fs_info to new_opt, and only update
+> options in new_opt. At last, copy the new_opt back to
+> fs_info->mount_opt.
 > 
-> I hear a storm in the distance coming our direction ... so I'll
-> preemptively NAK this change.
+> This patch is already good enough to fix the above nospace_cache +
+> remount bug, but need later patch to make sure mount options does not
+> change during transaction.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h |  16 ++++----
+>  fs/btrfs/super.c | 115 +++++++++++++++++++++++++++++--------------------------
+>  2 files changed, 69 insertions(+), 62 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 5f99743..26bb47b 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2119,18 +2119,18 @@ struct btrfs_ioctl_defrag_range_args {
+>  #define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
+>  					 BTRFS_MOUNT_##opt)
+>  
+> -#define btrfs_set_and_info(root, opt, fmt, args...)			\
+> +#define btrfs_set_and_info(fs_info, val, opt, fmt, args...)		\
+>  {									\
+> -	if (!btrfs_test_opt(root, opt))					\
+> -		btrfs_info(root->fs_info, fmt, ##args);			\
+> -	btrfs_set_opt(root->fs_info->mount_opt, opt);			\
+> +	if (!btrfs_raw_test_opt(val, opt))				\
+> +		btrfs_info(fs_info, fmt, ##args);			\
+> +	btrfs_set_opt(val, opt);					\
+>  }
+>  
+> -#define btrfs_clear_and_info(root, opt, fmt, args...)			\
+> +#define btrfs_clear_and_info(fs_info, val, opt, fmt, args...)		\
+>  {									\
+> -	if (btrfs_test_opt(root, opt))					\
+> -		btrfs_info(root->fs_info, fmt, ##args);			\
+> -	btrfs_clear_opt(root->fs_info->mount_opt, opt);			\
+> +	if (btrfs_raw_test_opt(val, opt))				\
+> +		btrfs_info(fs_info, fmt, ##args);			\
+> +	btrfs_clear_opt(val, opt);					\
+>  }
+>  
+>  /*
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index b0c45b2..490fe1f 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -395,10 +395,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  	int ret = 0;
+>  	char *compress_type;
+>  	bool compress_force = false;
+> +	unsigned long new_opt;
+> +
+> +	new_opt = info->mount_opt;
 
-Could you explain what the devil is that for?  The primitive looks rather
-bogus - if nothing else, it includes "make random instance of the filesystem
-in someone's namespace appear busy to umount", which doesn't look like a
-part of useful interface...  The only piece of context I'd been able to find
-was something vague about sysfs-inflicted operations and wanting to use
-mnt_want_write() but having nothing to pass it; BTW, what if the (random)
-instance you run into happens to mounted r/o?
+Here and
 
-Assuming that your superblock is guaranteed to stay alive and usable for
-whatever work you are trying to do, what's wrong with sb_want_write()?  
+>  
+>  	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+>  	if (cache_gen)
+> -		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+[SNIP]
+>  out:
+> -	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
+> -		btrfs_info(root->fs_info, "disk space caching is enabled");
+> +	if (!ret) {
+> +		if (btrfs_raw_test_opt(new_opt, SPACE_CACHE))
+> +			btrfs_info(info, "disk space caching is enabled");
+> +		info->mount_opt = new_opt;
 
-If it's _not_ guaranteed to stay so, and this is what you are trying to
-solve, you are doing that at the wrong level - just take sysfs entry
-removals earlier in shutdown process and be done with that.  Beginning of
-close_ctree() would probably be early enough to be safe, but if that's
-not enough, you can take it into the beginning of btrfs_kill_super().
+Here need ACCESS_ONCE to wrap info->mount_opt, or the complier might use
+info->mount_opt instead of new_opt.
+
+But I worried that this is not key reason of the wrong space cache. Could
+you explain the race condition which caused the wrong space cache?
+
+Thanks
+Miao
+
+> +	}
+>  	kfree(orig);
+>  	return ret;
+>  }
+> 
+

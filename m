@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:41839 "EHLO
-	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752160AbbA3Lvs (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:9399 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752241AbbA3Qsn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Jan 2015 06:51:48 -0500
-From: Forrest Liu <forrestl@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Forrest Liu <forrestl@synology.com>
-Subject: [PATCH] Btrfs: add missing blk_finish_plug in btrfs_sync_log()
-Date: Fri, 30 Jan 2015 19:42:12 +0800
-Message-Id: <1422618132-30272-1-git-send-email-forrestl@synology.com>
+	Fri, 30 Jan 2015 11:48:43 -0500
+Date: Fri, 30 Jan 2015 11:48:27 -0500
+From: Chris Mason <clm@fb.com>
+To: <torvalds@linux-foundation.org>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs fix
+Message-ID: <20150130164739.GA16014@ret.dhcp.thefacebook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add missing blk_finish_plug in btrfs_sync_log()
+Hi Linus,
 
-Signed-off-by: Forrest Liu <forrestl@synology.com>
----
- fs/btrfs/tree-log.c | 1 +
- 1 file changed, 1 insertion(+)
+We have one more fix for btrfs in my for-linus branch:
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a266587..06f0283 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2623,6 +2623,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (log_root_tree->log_transid_committed >= root_log_ctx.log_transid) {
-+		blk_finish_plug(&plug);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		ret = root_log_ctx.log_ret;
- 		goto out;
--- 
-1.9.1
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+This was a bug in the new raid5/6 scrubbing support.
+
+Gui Hecheng (1) commits (+2/-0):
+    btrfs: fix raid56 scrub failed in xfstests btrfs/072
+
+Total: (1) commits (+2/-0)
+
+ fs/btrfs/scrub.c | 2 ++
+ 1 file changed, 2 insertions(+)

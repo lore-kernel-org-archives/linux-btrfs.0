@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3495 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60688 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1760180AbbA3JXN (ORCPT
+	with ESMTP id S1760128AbbA3JXN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 30 Jan 2015 04:23:13 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MLG2028861
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9ML0C028864
 	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:21 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v5 7/9] btrfs: Move btrfs_sysfs_remove_one(fs_info) before transcation thread cleanup.
-Date: Fri, 30 Jan 2015 17:20:52 +0800
-Message-ID: <1422609654-19519-8-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 8/9] btrfs: Use sb_want_write() to protect label change.
+Date: Fri, 30 Jan 2015 17:20:53 +0800
+Message-ID: <1422609654-19519-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,43 +19,70 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since btrfs sysfs interfaces can start new transaction, we need to do it
-before transaction thread cleanup.
+Use the new vfs API sb_want_write() to do the write protection of the
+label change transaction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v5:
+v4:
   Newly introduced.
+v5:
+  Change to use sb_want_write().
 ---
- fs/btrfs/disk-io.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/sysfs.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f4d168d..7c185a0 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3630,6 +3630,12 @@ void close_ctree(struct btrfs_root *root)
- 	fs_info->closing = 1;
- 	smp_mb();
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index b2e7bb4..3218245 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -25,6 +25,7 @@
+ #include <linux/bug.h>
+ #include <linux/genhd.h>
+ #include <linux/debugfs.h>
++#include <linux/mount.h>
  
-+	/*
-+	 * Remove btrfs sysfs interfaces first,
-+	 * since it can start new transaction.
-+	 */
-+	btrfs_sysfs_remove_one(fs_info);
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -377,8 +378,6 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
+ 	int ret;
+ 	size_t p_len;
+ 
+-	if (fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
+ 
+ 	/*
+ 	 * p_len is the len until the first occurrence of either
+@@ -389,9 +388,15 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
+ 	if (p_len >= BTRFS_LABEL_SIZE)
+ 		return -EINVAL;
+ 
++	ret = sb_want_write(fs_info->sb);
++	if (ret)
++		return ret;
 +
- 	/* wait for the uuid_scan task to finish */
- 	down(&fs_info->uuid_tree_rescan_sem);
- 	/* avoid complains from lockdep et al., set sem back to initial state */
-@@ -3673,8 +3679,6 @@ void close_ctree(struct btrfs_root *root)
- 		       percpu_counter_sum(&fs_info->delalloc_bytes));
- 	}
+ 	trans = btrfs_start_transaction(root, 0);
+-	if (IS_ERR(trans))
+-		return PTR_ERR(trans);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
  
--	btrfs_sysfs_remove_one(fs_info);
+ 	spin_lock(&root->fs_info->super_lock);
+ 	memset(fs_info->super_copy->label, 0, BTRFS_LABEL_SIZE);
+@@ -399,9 +404,10 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
+ 	spin_unlock(&root->fs_info->super_lock);
+ 	ret = btrfs_commit_transaction(trans, root);
+ 
++out:
++	sb_drop_write(fs_info->sb);
+ 	if (!ret)
+ 		return len;
 -
- 	btrfs_free_fs_roots(fs_info);
- 
- 	btrfs_put_block_group_cache(fs_info);
+ 	return ret;
+ }
+ BTRFS_ATTR_RW(label, btrfs_label_show, btrfs_label_store);
 -- 
 2.2.2
 

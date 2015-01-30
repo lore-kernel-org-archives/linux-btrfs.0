@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60688 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:3495 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1760099AbbA3JXM (ORCPT
+	with ESMTP id S1760147AbbA3JXH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Jan 2015 04:23:12 -0500
+	Fri, 30 Jan 2015 04:23:07 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MJf1028855
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:19 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0U9MH5u028846
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Jan 2015 17:22:18 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v5 5/9] btrfs: Use btrfs_test_trans_opt() to handle INODE_CACHE if it's under transaction protect.
-Date: Fri, 30 Jan 2015 17:20:50 +0800
-Message-ID: <1422609654-19519-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 3/9] btrfs: Introduce per-transaction mount_opt to keep mount option consistent during transaction.
+Date: Fri, 30 Jan 2015 17:20:48 +0800
+Message-ID: <1422609654-19519-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1422609654-19519-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,109 +19,59 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert btrfs_test_opt() to btrfs_test_trans_opt() if it's called under
-transaction protection.
+Before this patch, mount_opt is not consistent during a transaction.
+btrfs_parse_options() can race with transaction.
 
-This will ensure SPACE_CACHE bit is consistent during transaction.
+Now each transaction will keep a copy of fs_info->mount_opt upon
+creation, and new btrfs_test_trans_opt() macro is introduced to get the
+mount_opt in the transaction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-Changelog:
+changelog:
 v3:
   Newly introduced.
 v4~v5:
   None
 ---
- fs/btrfs/ctree.h            | 1 -
- fs/btrfs/disk-io.c          | 4 ----
- fs/btrfs/free-space-cache.c | 2 +-
- fs/btrfs/inode-map.c        | 5 +++--
- fs/btrfs/transaction.c      | 9 ---------
- 5 files changed, 4 insertions(+), 17 deletions(-)
+ fs/btrfs/transaction.c | 1 +
+ fs/btrfs/transaction.h | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0d44ea9..f381ae8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2109,7 +2109,6 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
- #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
--#define	BTRFS_MOUNT_CHANGE_INODE_CACHE	(1 << 24)
- 
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(8192)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2d3c8b7..f4d168d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2832,10 +2832,6 @@ retry_root_backup:
- 		btrfs_set_opt(fs_info->mount_opt, SSD);
- 	}
- 
--	/* Set the real inode map cache flag */
--	if (btrfs_test_opt(tree_root, CHANGE_INODE_CACHE))
--		btrfs_set_opt(tree_root->fs_info->mount_opt, INODE_MAP_CACHE);
--
- #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
- 	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
- 		ret = btrfsic_mount(tree_root, fs_devices,
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d6c03f7..2b9cabf 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3348,7 +3348,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
- 	int ret;
- 
--	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
-+	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
- 		return 0;
- 
- 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, trans, path, 0);
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 81efd83..49b089c 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -178,7 +178,8 @@ static void start_caching(struct btrfs_root *root)
- 			  root->root_key.objectid);
- 	if (IS_ERR(tsk)) {
- 		btrfs_warn(root->fs_info, "failed to start inode caching task");
--		btrfs_clear_and_info(root, CHANGE_INODE_CACHE,
-+		btrfs_clear_and_info(root->fs_info, root->fs_info->mount_opt,
-+				INODE_MAP_CACHE,
- 				"disabling inode map caching");
- 	}
- }
-@@ -405,7 +406,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
- 	if (btrfs_root_refs(&root->root_item) == 0)
- 		return 0;
- 
--	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
-+	if (!btrfs_test_trans_opt(trans, INODE_MAP_CACHE))
- 		return 0;
- 
- 	path = btrfs_alloc_path();
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index aec5a5a..dd9e7af 100644
+index 295a135..846e1b8 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -1939,15 +1939,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		goto scrub_continue;
+@@ -210,6 +210,7 @@ loop:
+ 		return -EROFS;
  	}
  
--	/*
--	 * Since the transaction is done, we should set the inode map cache flag
--	 * before any other comming transaction.
--	 */
--	if (btrfs_test_opt(root, CHANGE_INODE_CACHE))
--		btrfs_set_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
--	else
--		btrfs_clear_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
--
- 	/* commit_fs_roots gets rid of all the tree log roots, it is now
- 	 * safe to free the root of tree log roots
- 	 */
++	cur_trans->mount_opt = fs_info->mount_opt;
+ 	atomic_set(&cur_trans->num_writers, 1);
+ 	extwriter_counter_init(cur_trans, type);
+ 	init_waitqueue_head(&cur_trans->writer_wait);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index fd400a3..4052879 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -52,6 +52,7 @@ struct btrfs_transaction {
+ 	struct list_head list;
+ 	struct extent_io_tree dirty_pages;
+ 	unsigned long start_time;
++	unsigned long mount_opt;
+ 	wait_queue_head_t writer_wait;
+ 	wait_queue_head_t commit_wait;
+ 	struct list_head pending_snapshots;
+@@ -126,6 +127,9 @@ struct btrfs_pending_snapshot {
+ 	struct list_head list;
+ };
+ 
++#define btrfs_test_trans_opt(trans, opt)	\
++	(btrfs_raw_test_opt(trans->transaction->mount_opt, opt))
++
+ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
+ 					      struct inode *inode)
+ {
 -- 
 2.2.2
 

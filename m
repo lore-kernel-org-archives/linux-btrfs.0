@@ -1,176 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20304 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:47617 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754725AbbA3DaY convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1757981AbbA3EAp convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Jan 2015 22:30:24 -0500
-Message-ID: <54CAFAC6.9030705@cn.fujitsu.com>
-Date: Fri, 30 Jan 2015 11:30:14 +0800
+	Thu, 29 Jan 2015 23:00:45 -0500
+Message-ID: <54CAF9BF.5060908@cn.fujitsu.com>
+Date: Fri, 30 Jan 2015 11:25:51 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Miao Xie <miaoxie@huawei.com>, <linux-btrfs@vger.kernel.org>
-CC: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: Re: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function to
- get vfsmount from a given sb.
-References: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com> <1422498281-20493-7-git-send-email-quwenruo@cn.fujitsu.com> <54CAD5DC.2060603@huawei.com> <54CAE1E3.1040406@cn.fujitsu.com> <54CAE632.1020908@cn.fujitsu.com> <54CAF8E6.8030100@huawei.com>
-In-Reply-To: <54CAF8E6.8030100@huawei.com>
+Subject: Re: [PATCH RESEND v4 2/8] btrfs: Make btrfs_parse_options() parse
+ mount option in a atomic way
+References: <1422498281-20493-1-git-send-email-quwenruo@cn.fujitsu.com> <1422498281-20493-3-git-send-email-quwenruo@cn.fujitsu.com> <54CAD0FC.4010503@huawei.com> <54CADC6E.2070703@cn.fujitsu.com> <54CADE7D.5000607@huawei.com> <54CADF5D.4000003@cn.fujitsu.com> <54CAE719.6060604@huawei.com> <54CAF1C8.5010001@cn.fujitsu.com> <54CAF8AB.6060108@huawei.com>
+In-Reply-To: <54CAF8AB.6060108@huawei.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 -------- Original Message --------
-Subject: Re: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function 
-to get vfsmount from a given sb.
+Subject: Re: [PATCH RESEND v4 2/8] btrfs: Make btrfs_parse_options() 
+parse mount option in a atomic way
 From: Miao Xie <miaoxie@huawei.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Date: 2015年01月30日 11:22
-> On Fri, 30 Jan 2015 10:02:26 +0800, Qu Wenruo wrote:
+Date: 2015年01月30日 11:21
+> On Fri, 30 Jan 2015 10:51:52 +0800, Qu Wenruo wrote:
 >> -------- Original Message --------
->> Subject: Re: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function to get
->> vfsmount from a given sb.
->> From: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> To: Miao Xie <miaoxie@huawei.com>, linux-btrfs@vger.kernel.org
->> Date: 2015年01月30日 09:44
->>> -------- Original Message --------
->>> Subject: Re: [PATCH RESEND v4 6/8] vfs: Add get_vfsmount_sb() function to get
->>> vfsmount from a given sb.
->>> From: Miao Xie <miaoxie@huawei.com>
->>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
->>> Date: 2015年01月30日 08:52
->>>> On Thu, 29 Jan 2015 10:24:39 +0800, Qu Wenruo wrote:
->>>>> There are sysfs interfaces in some fs, only btrfs yet, which will modify
->>>>> on-disk data.
->>>>> Unlike normal file operation routine we can use mnt_want_write_file() to
->>>>> protect the operation, change through sysfs won't to be binded to any file
->>>>> in the filesystem.
->>>>> So we can only extract the first vfsmount of a superblock and pass it to
->>>>> mnt_want_write() to do the protection.
->>>> This method is wrong, becasue one fs  may be mounted on the multi places
->>>> at the same time, someone is R/O, someone is R/W, you may get a R/O and
->>>> fail to get the write permission.
->>> This shouldn't happen. If someone is ro, the whole fs should be ro, right?
->>> You can mount a device which is already mounted as rw to other point as ro,
->>> and remount a mount point to ro will also cause all other mount point to ro.
+>> Subject: Re: [PATCH RESEND v4 2/8] btrfs: Make btrfs_parse_options() parse mount
+>> option in a atomic way
+>> From: Miao Xie <miaoxie@huawei.com>
+>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+>> Date: 2015年01月30日 10:06
+>>> On Fri, 30 Jan 2015 09:33:17 +0800, Qu Wenruo wrote:
+>>>> -------- Original Message --------
+>>>> Subject: Re: [PATCH RESEND v4 2/8] btrfs: Make btrfs_parse_options() parse mount
+>>>> option in a atomic way
+>>>> From: Miao Xie <miaoxie@huawei.com>
+>>>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+>>>> Date: 2015年01月30日 09:29
+>>>>> On Fri, 30 Jan 2015 09:20:46 +0800, Qu Wenruo wrote:
+>>>>>>> Here need ACCESS_ONCE to wrap info->mount_opt, or the complier might use
+>>>>>>> info->mount_opt instead of new_opt.
+>>>>>> Thanks for pointing out this one.
+>>>>>>> But I worried that this is not key reason of the wrong space cache. Could
+>>>>>>> you explain the race condition which caused the wrong space cache?
+>>>>>>>
+>>>>>>> Thanks
+>>>>>>> Miao
+>>>>>> CPU0:
+>>>>>> remount()
+>>>>>> |- sync_fs() <- after sync_fs() we can start new trans
+>>>>>> |- btrfs_parse_options()     CPU1:
+>>>>>>                        |- start_transaction()
+>>>>>>                        |- Do some bg allocation, not recorded in space_cache.
+>>>>> I think it is a bug if a free space is not recorded in space cache. Could you
+>>>>> explain why it is not recorded?
+>>>>>
+>>>>> Thanks
+>>>>> Miao
+>>>> IIRC, in that window, the fs_info->mount_opt's SPACE_CACHE bit is cleared.
+>>>> So space cache is not recorded.
+>>> SPACE_CACHE is used to control cache write out, not in-memory cache. All the
+>>> free space should be recorded in in-memory cache.And when we write out
+>>> the in-memory space cache, we need protect the space cache from changing.
 >>>
->>> So I didn't see the problem here.
->>>> I think you do label/feature change by sysfs interface by the following way
->>>>
->>>> btrfs_sysfs_change_XXXX()
->>>> {
->>>>      /* Use trylock to avoid the race with umount */
->>>>      if(!mutex_trylock(&sb->s_umount))
->>>>          return -EBUSY;
->>>>
->>>>      check R/O and FREEZE
->>>>
->>>>      mutex_unlock(&sb->s_umount);
->>>> }
->>> This looks better since it not introduce changes to VFS.
->>>
->>> Thanks,
->>> Qu
->> Oh, wait a second, this one leads to the old problem and old solution.
->>
->> If we hold s_umount mutex, we must do freeze check and can't start transaction
->> since it will deadlock.
->>
->> And for freeze check, we must use sb_try_start_intwrite() to hold the freeze
->> lock and then add a new
->> btrfs_start_transaction_freeze() which will not call sb_start_write()...
->>
->> Oh this seems so similar, v2 or v3 version RFC patch?
->> So still goes to the old method?
-> No. Just check R/O and RREEZE, if failed, go out. if the check pass,
-> we start_transaction. Because we do it in s_umount lock, no one can
-> change fs to R/O or FREEZE.
+>>> Thanks
+>>> Miao
+>> You're right, the wrong space cache problem is not caused by the non-atomic
+>> mount option problem.
+>> But the atomic mount option change with per-transaction mount option will at
+>> least make it disappear
+>> when using nospace_cache mount option.
+> But we need fix a problem, not hide a problem.
 >
-> Maybe the above description is not so clear, explain it again.
->
-> btrfs_sysfs_change_XXXX()
-> {
-> 	/* Use trylock to avoid the race with umount */
-> 	if(!mutex_trylock(&sb->s_umount))
-> 		return -EBUSY;
->
-> 	if (fs is R/O or FREEZED) {
-> 		mutex_unlock(&sb->s_umount);
-> 		return -EACCES;
-> 	}
->
-> 	btrfs_start_transaction()
-> 	change label/feature
-> 	btrfs_commit_transaction()
->
-> 	mutex_unlock(&sb->s_umount);
-> }
-I prefer the sb_want_write() method, since it doesn't even need to hold 
-the s_umount mutex.
+> Thanks
+> Miao
+Yes, But I don't mean to hide it.
+If it's a bug in space cache, it will still be reproducible on with 
+space_cache mount option.
+
+The patch itself is focused on the space cache created with 
+nospace_cache mount option,
+at least it's doing it job.
+
+The wrong space cahce problem is another story then.
+I'll remove the wrong space cache description in the commit message in 
+next version.
 
 Thanks,
 Qu
-> Thanks
-> Miao
 >
 >> Thanks,
 >> Qu
->>>> Thanks
->>>> Miao
->>>>
->>>>> Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
->>>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>>> ---
->>>>>    fs/namespace.c        | 25 +++++++++++++++++++++++++
->>>>>    include/linux/mount.h |  1 +
->>>>>    2 files changed, 26 insertions(+)
->>>>>
->>>>> diff --git a/fs/namespace.c b/fs/namespace.c
->>>>> index cd1e968..5a16a62 100644
->>>>> --- a/fs/namespace.c
->>>>> +++ b/fs/namespace.c
->>>>> @@ -1105,6 +1105,31 @@ struct vfsmount *mntget(struct vfsmount *mnt)
->>>>>    }
->>>>>    EXPORT_SYMBOL(mntget);
->>>>>    +/*
->>>>> + * get a vfsmount from a given sb
->>>>> + *
->>>>> + * This is especially used for case where change fs' sysfs interface
->>>>> + * will lead to a write, e.g. Change label through sysfs in btrfs.
->>>>> + * So vfs can get a vfsmount and then use mnt_want_write() to protect.
->>>>> + */
->>>>> +struct vfsmount *get_vfsmount_sb(struct super_block *sb)
->>>>> +{
->>>>> +    struct vfsmount *ret_vfs = NULL;
->>>>> +    struct mount *mnt;
->>>>> +    int ret = 0;
->>>>> +
->>>>> +    lock_mount_hash();
->>>>> +    if (list_empty(&sb->s_mounts))
->>>>> +        goto out;
->>>>> +    mnt = list_entry(sb->s_mounts.next, struct mount, mnt_instance);
->>>>> +    ret_vfs = &mnt->mnt;
->>>>> +    ret_vfs = mntget(ret_vfs);
->>>>> +out:
->>>>> +    unlock_mount_hash();
->>>>> +    return ret_vfs;
->>>>> +}
->>>>> +EXPORT_SYMBOL(get_vfsmount_sb);
->>>>> +
->>>>>    struct vfsmount *mnt_clone_internal(struct path *path)
->>>>>    {
->>>>>        struct mount *p;
->>>>> diff --git a/include/linux/mount.h b/include/linux/mount.h
->>>>> index c2c561d..cf1b0f5 100644
->>>>> --- a/include/linux/mount.h
->>>>> +++ b/include/linux/mount.h
->>>>> @@ -79,6 +79,7 @@ extern void mnt_drop_write_file(struct file *file);
->>>>>    extern void mntput(struct vfsmount *mnt);
->>>>>    extern struct vfsmount *mntget(struct vfsmount *mnt);
->>>>>    extern struct vfsmount *mnt_clone_internal(struct path *path);
->>>>> +extern struct vfsmount *get_vfsmount_sb(struct super_block *sb);
->>>>>    extern int __mnt_is_readonly(struct vfsmount *mnt);
->>>>>      struct path;
->>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>>>         |- set SPACE_CACHE bit due to cache_gen
+>>>>>>
+>>>>>>                        |- commit_transaction()
+>>>>>>                            |- write space cache and update cache_gen.
+>>>>>>                                but since some of it is not recorded in space
+>>>>>> cache,
+>>>>>>                                the space cache missing some records.
+>>>>>>         |- clear SPACE_CACHE bit dut to nospace_cache
+>>>>>>
+>>>>>> So the space cache is wrong.
+>>>>>>
+>>>>>> Thanks,
+>>>>>> Qu
+>>>>>>>> +    }
+>>>>>>>>          kfree(orig);
+>>>>>>>>          return ret;
+>>>>>>>>      }
+>>>>>>>>
+>>>>>> .
+>>>>>>
 >> .
 >>
 

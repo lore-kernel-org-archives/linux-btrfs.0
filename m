@@ -1,114 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:36746 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932206AbbBBOGZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 09:06:25 -0500
-Received: by mail-ig0-f180.google.com with SMTP id b16so16923431igk.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Feb 2015 06:06:25 -0800 (PST)
+Received: from userp1040.oracle.com ([156.151.31.81]:39655 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752087AbbBAUvi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Feb 2015 15:51:38 -0500
+Date: Sun, 1 Feb 2015 23:51:19 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: mfasheh@suse.de
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: btrfs: qgroup: account shared subtrees during snapshot delete
+Message-ID: <20150201205119.GB29298@mwanda>
 MIME-Version: 1.0
-From: John C F <john.ch.fr@gmail.com>
-Date: Mon, 2 Feb 2015 19:36:03 +0530
-Message-ID: <CAFWTvYSGpk8r1M96rDqoH1zMdaY09fGd8L=9CGghxc7WTPHmbg@mail.gmail.com>
-Subject: btrfs-progs bash completion
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=20cf302667fcb293ef050e1b75b7
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---20cf302667fcb293ef050e1b75b7
-Content-Type: text/plain; charset=UTF-8
+Hello Mark Fasheh,
 
-Hi
-I've extended the bash-completion file proposed by Joseph Wang,
-which was extended from that by Alfredo Esteban.
+The patch 1152651a0817: "btrfs: qgroup: account shared subtrees
+during snapshot delete" from Jul 17, 2014, leads to the following
+static checker warning:
 
-I don't know about any licensing info that I should mention
-in the file, but I don't claim any rights on it, and anyone
-is free to modify/distribute with/without acknowledging me.
-I'd be happy if it could be distributed with btrfs-progs.
+	fs/btrfs/extent-tree.c:7642 account_shared_subtree()
+	error: off-by-one overflow 'path->nodes' size 8.  index range = '1-8'
 
-I'm a relatively new btrfs user and am more than satisfied with it.
-Thank you for your great work developers.
+fs/btrfs/extent-tree.c
+  7611          BUG_ON(root_level < 0 || root_level > BTRFS_MAX_LEVEL);
 
-[Installation notes to general audience: probably copying this file
-to /usr/share/bash-completion/
-completions/ should do it]
+At first I thought that I could just change this > to >= to fix this
+warning.
 
---20cf302667fcb293ef050e1b75b7
-Content-Type: application/octet-stream; name=btrfs
-Content-Disposition: attachment; filename=btrfs
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_i5nxj9z10
+  7612          BUG_ON(root_eb == NULL);
+  7613  
+  7614          if (!root->fs_info->quota_enabled)
+  7615                  return 0;
+  7616  
+  7617          if (!extent_buffer_uptodate(root_eb)) {
+  7618                  ret = btrfs_read_buffer(root_eb, root_gen);
+  7619                  if (ret)
+  7620                          goto out;
+  7621          }
+  7622  
+  7623          if (root_level == 0) {
+  7624                  ret = account_leaf_items(trans, root, root_eb);
+  7625                  goto out;
+  7626          }
+  7627  
+  7628          path = btrfs_alloc_path();
+  7629          if (!path)
+  7630                  return -ENOMEM;
+  7631  
+  7632          /*
+  7633           * Walk down the tree.  Missing extent blocks are filled in as
+  7634           * we go. Metadata is accounted every time we read a new
+  7635           * extent block.
+  7636           *
+  7637           * When we reach a leaf, we account for file extent items in it,
+  7638           * walk back up the tree (adjusting slot pointers as we go)
+  7639           * and restart the search process.
+  7640           */
+  7641          extent_buffer_get(root_eb); /* For path */
+  7642          path->nodes[root_level] = root_eb;
 
-IyBvcmlnaW5hbCBieSBBbGZyZWRvIEVzdGViYW4gPGFlZGVsYXRvcnJlIGF0IHh4eHh4eHh4eD4K
-IyAoaHR0cDovL3d3dy5zcGluaWNzLm5ldC9saXN0cy9saW51eC1idHJmcy9tc2cxNTg5OS5odG1s
-KQojIGVkaXRlZCBieSBKb3NlcGggV2FuZyA8am9lcXVhbnQgYXQgZ21haWwuY29tPgojIChodHRw
-Oi8vbGlzdHMuYWxpb3RoLmRlYmlhbi5vcmcvcGlwZXJtYWlsL2Jhc2gtY29tcGxldGlvbi1kZXZl
-bC8yMDEzLUp1bmUvMDA0ODY4Lmh0bWwpCiMgZWRpdGVkIGJ5IEpvaG4gQyBGIDxqb2huLmNoLmZy
-IGF0IGdtYWlsLmNvbT4gb24gMjAxNS0wMi0wMgoKX2J0cmZzX2RldnMoKQp7CiAgICBsb2NhbCBE
-RVZTCiAgICBERVZTPScnOyB3aGlsZSByZWFkIGRldjsgZG8gREVWUys9IiRkZXYgIjsgZG9uZSA8
-IDwobHNibGsgLXBucm8gbmFtZSkKCUNPTVBSRVBMWSs9KCAkKCBjb21wZ2VuIC1XICIkREVWUyIg
-LS0gIiRjdXIiICkgKQp9CgpfYnRyZnNfbW50cygpCnsKCWxvY2FsIE1OVFMKCU1OVFM9JycKCXdo
-aWxlIHJlYWQgbW50OyBkbyBNTlRTKz0iJG1udCAiCglkb25lIDwgPChtb3VudCB8IGF3ayAne3By
-aW50ICQzfScpCglDT01QUkVQTFkrPSggJCggY29tcGdlbiAtVyAiJE1OVFMiIC0tICIkY3VyIiAp
-ICkKfQoKX2J0cmZzKCkgCnsKCWxvY2FsIGN1ciBwcmV2IHdvcmRzIGN3b3JkCiAgICBfaW5pdF9j
-b21wbGV0aW9uIHx8IHJldHVybgoKICAgIENPTVBSRVBMWT0oKQogICAgCglsb2NhbCBjbWQ9JHt3
-b3Jkc1sxXX0KCiAgICBjb21tYW5kcz0nc3Vidm9sdW1lIGZpbGVzeXN0ZW0gYmFsYW5jZSBkZXZp
-Y2Ugc2NydWIgY2hlY2sgcmVzY3VlIHJlc3RvcmUgaW5zcGVjdC1pbnRlcm5hbCBwcm9wZXJ0eSBz
-ZW5kIHJlY2VpdmUgcXVvdGEgcWdyb3VwIHJlcGxhY2UgaGVscCB2ZXJzaW9uJwogICAgY29tbWFu
-ZHNfc3Vidm9sdW1lPSdjcmVhdGUgZGVsZXRlIGxpc3Qgc25hcHNob3QgZmluZC1uZXcgZ2V0LWRl
-ZmF1bHQgc2V0LWRlZmF1bHQgc2hvdyBzeW5jJwogICAgY29tbWFuZHNfZmlsZXN5c3RlbT0nZGVm
-cmFnbWVudCBzeW5jIHJlc2l6ZSBzaG93IGRmIGxhYmVsJwogICAgY29tbWFuZHNfYmFsYW5jZT0n
-c3RhcnQgcGF1c2UgY2FuY2VsIHJlc3VtZSBzdGF0dXMnCiAgICBjb21tYW5kc19kZXZpY2U9J3Nj
-YW4gYWRkIGRlbGV0ZSByZWFkeSBzdGF0cycKICAgIGNvbW1hbmRzX3NjcnViPSdzdGFydCBjYW5j
-ZWwgcmVzdW1lIHN0YXR1cycKICAgIGNvbW1hbmRzX3Jlc2N1ZT0nY2h1bmstcmVjb3ZlciBzdXBl
-ci1yZWNvdmVyJwogICAgY29tbWFuZHNfaW5zcGVjdF9pbnRlcm5hbD0naW5vZGUtcmVzb2x2ZSBs
-b2dpY2FsLXJlc29sdmUgc3Vidm9saWQtcmVzb2x2ZSByb290aWQnCiAgICBjb21tYW5kc19wcm9w
-ZXJ0eT0nZ2V0IHNldCBsaXN0JwogICAgY29tbWFuZHNfcXVvdGE9J2VuYWJsZSBkaXNhYmxlIHJl
-c2NhbicKICAgIGNvbW1hbmRzX3Fncm91cD0nYXNzaWduIHJlbW92ZSBjcmVhdGUgZGVzdHJveSBz
-aG93IGxpbWl0JwogICAgY29tbWFuZHNfcmVwbGFjZT0nc3RhcnQgc3RhdHVzIGNhbmNlbCcKCglp
-ZiBbWyAiJGN1ciIgPT0gLSogJiYgJGN3b3JkIC1sZSAzICYmICIkY21kIiAhPSAiaGVscCIgXV07
-IHRoZW4KCQlDT01QUkVQTFk9KCAkKCBjb21wZ2VuIC1XICctLWhlbHAnIC0tICIkY3VyIiApICkK
-CQlyZXR1cm4gMAoJZmkKCiAgICBpZiBbWyAkY3dvcmQgLWVxIDEgXV07IHRoZW4KICAgICAgICBD
-T01QUkVQTFk9KCAkKCBjb21wZ2VuIC1XICIkY29tbWFuZHMiIC0tICIkY3VyIiApICkKICAgICAg
-ICByZXR1cm4gMAogICAgZWxpZiBbWyAkY3dvcmQgLWVxIDIgXV07IHRoZW4KICAgICAgICBjYXNl
-ICRjbWQgaW4KICAgICAgICAgICAgc3Vidm9sdW1lKQogICAgICAgICAgICAgICAgb3B0cz0iJGNv
-bW1hbmRzX3N1YnZvbHVtZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGZpbGVzeXN0
-ZW0pCiAgICAgICAgICAgICAgICBvcHRzPSIkY29tbWFuZHNfZmlsZXN5c3RlbSIKICAgICAgICAg
-ICAgICAgIDs7CiAgICAgICAgICAgIGJhbGFuY2UpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29t
-bWFuZHNfYmFsYW5jZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGRldmljZSkKICAg
-ICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19kZXZpY2UiCiAgICAgICAgICAgICAgICA7Owog
-ICAgICAgICAgICBzY3J1YikKICAgICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19zY3J1YiIK
-ICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGNoZWNrKQogICAgICAgICAgICAgICAgX2J0
-cmZzX2RldnMKCQkJCXJldHVybiAwCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICByZXNj
-dWUpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29tbWFuZHNfcmVzY3VlIgogICAgICAgICAgICAg
-ICAgOzsKICAgICAgICAgICAgcmVzdG9yZSkKICAgICAgICAgICAgICAgIF9idHJmc19kZXZzCgkJ
-CQlyZXR1cm4gMAogICAgICAgICAgICAgICAgOzsKICAgICAgICAgICAgaW5zcGVjdC1pbnRlcm5h
-bCkKICAgICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19pbnNwZWN0X2ludGVybmFsIgogICAg
-ICAgICAgICAgICAgOzsKICAgICAgICAgICAgcHJvcGVydHkpCiAgICAgICAgICAgICAgICBvcHRz
-PSIkY29tbWFuZHNfcHJvcGVydHkiCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICBzZW5k
-fHJlY2VpdmUpCiAgICAgICAgICAgICAgICBfZmlsZWRpciAtZAogICAgICAgICAgICAgICAgcmV0
-dXJuIDAKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIHF1b3RhKQogICAgICAgICAgICAg
-ICAgb3B0cz0iJGNvbW1hbmRzX3F1b3RhIgogICAgICAgICAgICAgICAgOzsKICAgICAgICAgICAg
-cWdyb3VwKQogICAgICAgICAgICAgICAgb3B0cz0iJGNvbW1hbmRzX3Fncm91cCIKICAgICAgICAg
-ICAgICAgIDs7CiAgICAgICAgICAgIHJlcGxhY2UpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29t
-bWFuZHNfcmVwbGFjZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGhlbHApCiAgICAg
-ICAgICAgICAgICBvcHRzPSItLWZ1bGwiCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICB2
-ZXJzaW9uKQogICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAgICAgIDs7CiAgICAg
-ICAgZXNhYwogICAgICAgIENPTVBSRVBMWT0oICQoIGNvbXBnZW4gLVcgIiRvcHRzIiAtLSAiJGN1
-ciIgKSApCiAgICAgICAgcmV0dXJuIDAKICAgIGVsaWYgW1sgJGN3b3JkIC1lcSAzIF1dOyB0aGVu
-CiAgICAgICAgY2FzZSAkY21kIGluCiAgICAgICAgICAgIGZpbGVzeXN0ZW0pCgkJCQljYXNlICRw
-cmV2IGluCgkJCQkJZGVmcmFnbWVudCkKCQkJCQkJX2ZpbGVkaXIKCQkJCQkJcmV0dXJuIDAKCQkJ
-CQkJOzsKCQkJCQlsYWJlbCkKCQkJCQkJX2J0cmZzX21udHMKCQkJCQkJX2J0cmZzX2RldnMKCQkJ
-CQkJcmV0dXJuIDAKCQkJCQkJOzsKCQkJCWVzYWMKICAgICAgICAgICAgICAgIDs7CiAgICAgICAg
-ICAgIGRldmljZXxyZXNjdWUpCgkJCQlfYnRyZnNfZGV2cwogICAgICAgICAgICAgICAgcmV0dXJu
-IDAKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIHJlcGxhY2UpCiAgICAgICAgICAgICAg
-ICBjYXNlICRwcmV2IGluCiAgICAgICAgICAgICAgICAgICAgc3RhdHVzfGNhbmNlbCkKCQkJCQkJ
-X2J0cmZzX21udHMKICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAg
-ICAgICAgICAgICAgOzsKICAgICAgICAgICAgICAgICAgICBzdGFydCkKCQkJCQkJX2J0cmZzX2Rl
-dnMKICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAgICAgICAgICAg
-ICAgOzsKICAgICAgICAgICAgICAgIGVzYWMKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgZXNh
-YwogICAgZmkKCiAgICBpZiBbWyAiJGNtZCIgPT0gInJlY2VpdmUiICYmICIkcHJldiIgPT0gIi1m
-IiBdXTsgdGhlbgogICAgICAgIF9maWxlZGlyCiAgICAgICAgcmV0dXJuIDAKICAgIGZpCgogICAg
-X2ZpbGVkaXIgLWQKICAgIHJldHVybiAwICAKfQoKY29tcGxldGUgLUYgX2J0cmZzIGJ0cmZzCg==
---20cf302667fcb293ef050e1b75b7--
+->nodes[] has BTRFS_MAX_LEVEL elements.
+
+  7643          path->slots[root_level] = 0;
+  7644          path->locks[root_level] = 0; /* so release_path doesn't try to unlock */
+  7645  walk_down:
+  7646          level = root_level;
+  7647          while (level >= 0) {
+  7648                  if (path->nodes[level] == NULL) {
+  7649                          int parent_slot;
+  7650                          u64 child_gen;
+  7651                          u64 child_bytenr;
+  7652  
+  7653                          /* We need to get child blockptr/gen from
+  7654                           * parent before we can read it. */
+  7655                          eb = path->nodes[level + 1];
+                                         ^^^^^^^^^^^^^^^^^^
+But when I changed that, then it introduced a warning here because we
+add one.  I'm not sure what to do.
+
+  7656                          parent_slot = path->slots[level + 1];
+  7657                          child_bytenr = btrfs_node_blockptr(eb, parent_slot);
+  7658                          child_gen = btrfs_node_ptr_generation(eb, parent_slot);
+  7659  
+  7660                          eb = read_tree_block(root, child_bytenr, child_gen);
+  7661                          if (!eb || !extent_buffer_uptodate(eb)) {
+  7662                                  ret = -EIO;
+  7663                                  goto out;
+  7664                          }
+  7665  
+  7666                          path->nodes[level] = eb;
+  7667                          path->slots[level] = 0;
+  7668  
+
+regards,
+dan carpenter

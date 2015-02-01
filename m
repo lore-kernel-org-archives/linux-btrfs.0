@@ -1,64 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51323 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751388AbbBAIDI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Feb 2015 03:03:08 -0500
+Received: from aserp1040.oracle.com ([141.146.126.69]:27143 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751490AbbBAIDE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Feb 2015 03:03:04 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH 07/12] Btrfs: sysfs: rename __btrfs_sysfs_remove_one to btrfs_sysfs_remove_fsid
-Date: Sun,  1 Feb 2015 16:01:37 +0800
-Message-Id: <1422777702-12584-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/12] Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
+Date: Sun,  1 Feb 2015 16:01:35 +0800
+Message-Id: <1422777702-12584-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1422777702-12584-1-git-send-email-anand.jain@oracle.com>
 References: <1421683347-18226-1-git-send-email-anand.jain@oracle.com>
  <1422777702-12584-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since the failure code in the btrfs_sysfs_add_one() can
+call btrfs_sysfs_remove_one() even before device_dir_kobj
+has been created we need to check if its null.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/sysfs.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c3e7f06..c923e8b 100644
+index 15fead2..506f7e4 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -508,7 +508,7 @@ static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
- 	return 0;
- }
- 
--static void __btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
-+static void btrfs_sysfs_remove_fsid(struct btrfs_fs_info *fs_info)
- {
- 	if (fs_info->device_dir_kobj) {
- 		btrfs_kobj_rm_device(fs_info, NULL);
-@@ -531,7 +531,7 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+@@ -522,10 +522,12 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ 		kobject_del(fs_info->space_info_kobj);
+ 		kobject_put(fs_info->space_info_kobj);
  	}
+-	btrfs_kobj_rm_device(fs_info, NULL);
+-	kobject_del(fs_info->device_dir_kobj);
+-	kobject_put(fs_info->device_dir_kobj);
+-	fs_info->device_dir_kobj = NULL;
++	if (fs_info->device_dir_kobj) {
++		btrfs_kobj_rm_device(fs_info, NULL);
++		kobject_del(fs_info->device_dir_kobj);
++		kobject_put(fs_info->device_dir_kobj);
++		fs_info->device_dir_kobj = NULL;
++	}
  	addrm_unknown_feature_attrs(fs_info, false);
  	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
--	__btrfs_sysfs_remove_one(fs_info);
-+	btrfs_sysfs_remove_fsid(fs_info);
- }
- 
- const char * const btrfs_feature_set_names[3] = {
-@@ -703,14 +703,14 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- 
- 	error = btrfs_kobj_add_device(fs_info, NULL);
- 	if (error) {
--		__btrfs_sysfs_remove_one(fs_info);
-+		btrfs_sysfs_remove_fsid(fs_info);
- 		return error;
- 	}
- 
- 	error = sysfs_create_group(&fs_info->super_kobj,
- 				   &btrfs_feature_attr_group);
- 	if (error) {
--		__btrfs_sysfs_remove_one(fs_info);
-+		btrfs_sysfs_remove_fsid(fs_info);
- 		return error;
- 	}
- 
+ 	__btrfs_sysfs_remove_one(fs_info);
 -- 
 1.9.1
 

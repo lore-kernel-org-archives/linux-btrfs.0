@@ -1,98 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36814 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751693AbbB0RwL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Feb 2015 12:52:11 -0500
-Date: Fri, 27 Feb 2015 09:51:59 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
-Cc: "Theodore Ts'o" <tytso@mit.edu>, Eric Sandeen <sandeen@redhat.com>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        XFS Developers <xfs@oss.sgi.com>, linux-man@vger.kernel.org,
-        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>
-Subject: Re: Documenting MS_LAZYTIME
-Message-ID: <20150227175159.GC11031@birch.djwong.org>
-References: <CAHO5Pa0k7QkV_6BDjwTVxa7LV9tFyN9nGFFcSvOC6HYO08wfrw@mail.gmail.com>
- <54E7578E.4090809@redhat.com>
- <20150221025636.GB7922@thunk.org>
- <54EEDE23.6080009@gmail.com>
- <20150226133113.GD11217@thunk.org>
- <54EF2161.90607@gmail.com>
- <20150227000409.GC17174@thunk.org>
- <54F02446.2050008@gmail.com>
+Received: from mga03.intel.com ([134.134.136.65]:20948 "EHLO mga03.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752513AbbBADnS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 Jan 2015 22:43:18 -0500
+Date: Sat, 31 Jan 2015 19:43:15 -0800
+From: Fengguang Wu <fengguang.wu@intel.com>
+To: Peter Zijlstra <peterz@infradead.org>
+Cc: LKP <lkp@01.org>, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        Dan Williams <dan.j.williams@intel.com>, NeilBrown <neilb@suse.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: __might_sleep() warnings on v3.19-rc6
+Message-ID: <20150201034315.GA20124@wfg-t540p.sh.intel.com>
+References: <20141028142541.GA19097@wfg-t540p.sh.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <54F02446.2050008@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20141028142541.GA19097@wfg-t540p.sh.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 27, 2015 at 09:01:10AM +0100, Michael Kerrisk (man-pages) wrote:
-> On 02/27/2015 01:04 AM, Theodore Ts'o wrote:
-> > On Thu, Feb 26, 2015 at 02:36:33PM +0100, Michael Kerrisk (man-pages) wrote:
-> >>
-> >>     The disadvantage of MS_STRICTATIME | MS_LAZYTIME is that
-> >>     in the case of a system crash, the atime and mtime fields
-> >>     on disk might be out of date by at most 24 hours.
-> > 
-> > I'd change to "The disadvantage of MS_LAZYTIME is that..."  and
-> > perhaps move that so it's clear it applies to any use of MS_LAZYTIME
-> > has this as a downside.
-> > 
-> > Does that make sense?
-> 
-> Thanks, Ted. Got it. So, now we have:
-> 
->        MS_LAZYTIME (since Linux 3.20)
+Hi all,
 
-"since Linux 4.0".
+I see 2 __might_sleep() warnings on when running LKP tests on
+v3.19-rc6, one related to raid5 and another related to btrfs.
 
---D
+They might be exposed by this patch.
 
->               Reduce  on-disk  updates  of  inode  timestamps  (atime,
->               mtime, ctime) by maintaining these changes only in  mem‐
->               ory.  The on-disk timestamps are updated only when:
-> 
->               (a)  the inode needs to be updated for some change unre‐
->                    lated to file timestamps;
-> 
->               (b)  the application  employs  fsync(2),  syncfs(2),  or
->                    sync(2);
-> 
->               (c)  an undeleted inode is evicted from memory; or
-> 
->               (d)  more  than 24 hours have passed since the inode was
->                    written to disk.
-> 
->               This mount significantly reduces writes needed to update
->               the  inode's  timestamps,  especially  mtime  and atime.
->               However, in the event of a system crash, the  atime  and
->               mtime  fields  on  disk might be out of date by up to 24
->               hours.
-> 
->               Examples of workloads where this option could be of sig‐
->               nificant  benefit include frequent random writes to pre‐
->               allocated files, as well as cases where the  MS_STRICTA‐
->               TIME  mount  option  is also enabled.  (The advantage of
->               (MS_STRICTATIME |  MS_LAZYTIME)  is  that  stat(2)  will
->               return  the  correctly  updated  atime,  but  the  atime
->               updates will be flushed to disk only when (1) the  inode
->               needs  to  be  updated for filesystem / data consistency
->               reasons or (2) the inode is pushed out of memory, or (3)
->               the filesystem is unmounted.)
-> 
-> Cheers,
-> 
-> Michael
-> 
-> 
-> -- 
-> Michael Kerrisk
-> Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-> Linux/UNIX System Programming Training: http://man7.org/training/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-ext4" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+commit 8eb23b9f35aae413140d3fda766a98092c21e9b0
+Author:     Peter Zijlstra <peterz@infradead.org>
+
+    sched: Debug nested sleeps
+    
+    Validate we call might_sleep() with TASK_RUNNING, which catches places
+    where we nest blocking primitives, eg. mutex usage in a wait loop.
+    
+    Since all blocking is arranged through task_struct::state, nesting
+    this will cause the inner primitive to set TASK_RUNNING and the outer
+    will thus not block.
+    
+    Another observed problem is calling a blocking function from
+    schedule()->sched_submit_work()->blk_schedule_flush_plug() which will
+    then destroy the task state for the actual __schedule() call that
+    comes after it.
+
+
+dmesg-ivb44:20150129001242:x86_64-rhel:3.19.0-rc6-g26bc420b:1
+
+
+FSUse%        Count         Size    Files/sec     App Overhead
+[   60.691525] ------------[ cut here ]------------
+[   60.697499] WARNING: CPU: 0 PID: 1065 at kernel/sched/core.c:7300 __might_sleep+0xbd/0xd0()
+[   60.709010] do not call blocking ops when !TASK_RUNNING; state=2 set at [<ffffffff810b63ff>] prepare_to_wait+0x2f/0x90
+[   60.721646] Modules linked in: f2fs raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq ipmi_watchdog netconsole sg sd_mod mgag200 syscopyarea sysfillrect isci sysimgblt libsas ttm snd_pcm ahci snd_timer drm_kms_helper scsi_transport_sas libahci snd sb_edac soundcore drm libata edac_core i2c_i801 pcspkr wmi ipmi_si ipmi_msghandler
+[   60.759585] CPU: 0 PID: 1065 Comm: kworker/u481:6 Not tainted 3.19.0-rc6-g26bc420b #1
+[   60.769025] Hardware name: Intel Corporation S2600WP/S2600WP, BIOS SE5C600.86B.02.02.0002.122320131210 12/23/2013
+[   60.781193] Workqueue: writeback bdi_writeback_workfn (flush-9:0)
+[   60.788725]  ffffffff81b75d50 ffff88080979b3e8 ffffffff818a38f0 ffff88081ee100f8
+[   60.797820]  ffff88080979b438 ffff88080979b428 ffffffff8107260a ffff88080979b428
+[   60.806879]  ffffffff81b8c759 00000000000004d9 0000000000000000 0000000063fbe018
+[   60.815935] Call Trace:
+[   60.819368]  [<ffffffff818a38f0>] dump_stack+0x4c/0x65
+[   60.825817]  [<ffffffff8107260a>] warn_slowpath_common+0x8a/0xc0
+[   60.833269]  [<ffffffff81072686>] warn_slowpath_fmt+0x46/0x50
+[   60.840379]  [<ffffffff810afe95>] ? pick_next_task_fair+0x1b5/0x8d0
+[   60.848104]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
+[   60.855215]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
+[   60.862337]  [<ffffffff8109874d>] __might_sleep+0xbd/0xd0
+[   60.869044]  [<ffffffff811c7cd7>] kmem_cache_alloc_trace+0x1d7/0x250
+[   60.876830]  [<ffffffff817175d7>] ? bitmap_get_counter+0x117/0x280
+[   60.884429]  [<ffffffff817175d7>] bitmap_get_counter+0x117/0x280
+[   60.891807]  [<ffffffff810f6d02>] ? __module_text_address+0x12/0x70
+[   60.899452]  [<ffffffff81717f54>] bitmap_startwrite+0x74/0x300
+[   60.906601]  [<ffffffffa017659a>] add_stripe_bio+0x2aa/0x350 [raid456]
+[   60.914518]  [<ffffffffa017d20d>] make_request+0x1dd/0xf30 [raid456]
+[   60.922211]  [<ffffffff818aae00>] ? __account_scheduler_latency+0x150/0x370
+[   60.930581]  [<ffffffff810b67e0>] ? wait_woken+0xc0/0xc0
+[   60.937100]  [<ffffffff8109201f>] ? kthread+0xef/0x110
+[   60.943404]  [<ffffffff8170b8c4>] md_make_request+0xf4/0x190
+[   60.950277]  [<ffffffff8140fa3d>] ? radix_tree_lookup+0xd/0x10
+[   60.957392]  [<ffffffffa027829c>] ? get_node_info+0x8c/0x2b0 [f2fs]
+[   60.964937]  [<ffffffff813db848>] generic_make_request+0xd8/0x130
+[   60.972291]  [<ffffffff813db908>] submit_bio+0x68/0x160
+[   60.978677]  [<ffffffffa0273d58>] __submit_merged_bio+0x48/0x110 [f2fs]
+[   60.986622]  [<ffffffffa0274b48>] f2fs_submit_page_mbio+0xa8/0x1f0 [f2fs]
+[   60.994817]  [<ffffffffa027f7c0>] write_data_page+0x90/0xc0 [f2fs]
+[   61.002272]  [<ffffffffa0276adf>] do_write_data_page+0xdf/0x310 [f2fs]
+[   61.010119]  [<ffffffffa0276ee6>] f2fs_write_data_page+0x1d6/0x3e0 [f2fs]
+[   61.018275]  [<ffffffffa0273e37>] __f2fs_writepage+0x17/0x50 [f2fs]
+[   61.025831]  [<ffffffff811758cc>] write_cache_pages+0x21c/0x4e0
+[   61.033003]  [<ffffffff813db848>] ? generic_make_request+0xd8/0x130
+[   61.040543]  [<ffffffffa0273e20>] ? __submit_merged_bio+0x110/0x110 [f2fs]
+[   61.048843]  [<ffffffffa027481c>] f2fs_write_data_pages+0xac/0x200 [f2fs]
+[   61.056969]  [<ffffffff8117777e>] do_writepages+0x1e/0x30
+[   61.063506]  [<ffffffff812108f0>] __writeback_single_inode+0x40/0x280
+[   61.071217]  [<ffffffff810b6385>] ? wake_up_bit+0x25/0x30
+[   61.077763]  [<ffffffff81211b03>] writeback_sb_inodes+0x263/0x410
+[   61.085114]  [<ffffffff81211d4f>] __writeback_inodes_wb+0x9f/0xd0
+[   61.092423]  [<ffffffff8121220b>] wb_writeback+0x24b/0x300
+[   61.099030]  [<ffffffff81214194>] bdi_writeback_workfn+0x1d4/0x470
+[   61.106400]  [<ffffffff8108bcc8>] process_one_work+0x158/0x4b0
+[   61.113383]  [<ffffffff8108c08b>] worker_thread+0x6b/0x5e0
+[   61.119967]  [<ffffffff8108c020>] ? process_one_work+0x4b0/0x4b0
+[   61.127117]  [<ffffffff8109201f>] kthread+0xef/0x110
+[   61.133102]  [<ffffffff81091f30>] ? kthread_create_on_node+0x180/0x180
+[   61.140805]  [<ffffffff818abf7c>] ret_from_fork+0x7c/0xb0
+[   61.147269]  [<ffffffff81091f30>] ? kthread_create_on_node+0x180/0x180
+[   61.154973] ---[ end trace 2db29906e8050768 ]---
+    17        51200      4194304         32.0          2701319
+
+dmesg-lkp-ne04:20150128110549:x86_64-rhel:3.19.0-rc6-g26bc420b:1
+
+
+FSUse%        Count         Size    Files/sec     App Overhead
+[  101.678419] ------------[ cut here ]------------
+[  101.684612] WARNING: CPU: 4 PID: 2153 at kernel/sched/core.c:7300 __might_sleep+0xbd/0xd0()
+[  101.696412] do not call blocking ops when !TASK_RUNNING; state=2 set at [<ffffffff810b63ff>] prepare_to_wait+0x2f/0x90
+[  101.709259] Modules linked in: ipmi_watchdog btrfs sr_mod cdrom xor raid6_pq sg sd_mod snd_pcm snd_timer snd soundcore pcspkr mgag200 syscopyarea sysfillrect sysimgblt ttm ahci drm_kms_helper libahci drm libata usb_storage i2c_i801 ipmi_si ipmi_msghandler i7core_edac edac_core acpi_cpufreq
+[  101.741823] CPU: 4 PID: 2153 Comm: fs_mark Not tainted 3.19.0-rc6-g26bc420b #1
+[  101.750851] Hardware name: Intel Corporation S5520UR/S5520UR, BIOS S5500.86B.01.00.0050.050620101605 05/06/2010
+[  101.763101]  ffffffff81b75d50 ffff8801dd947c78 ffffffff818a38f0 ffff8801e9c500f8
+[  101.772473]  ffff8801dd947cc8 ffff8801dd947cb8 ffffffff8107260a 0000000000000004
+[  101.781793]  ffffffff81b76780 0000000000000061 0000000000000000 ffff8801e8438000
+[  101.791140] Call Trace:
+[  101.794751]  [<ffffffff818a38f0>] dump_stack+0x4c/0x65
+[  101.801386]  [<ffffffff8107260a>] warn_slowpath_common+0x8a/0xc0
+[  101.809003]  [<ffffffff81072686>] warn_slowpath_fmt+0x46/0x50
+[  101.816335]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
+[  101.823616]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
+[  101.830875]  [<ffffffff8109874d>] __might_sleep+0xbd/0xd0
+[  101.837766]  [<ffffffff818a9364>] mutex_lock+0x24/0x50
+[  101.844399]  [<ffffffffa0285e88>] wait_for_writer+0x68/0xc0 [btrfs]
+[  101.853029]  [<ffffffff810b67e0>] ? wait_woken+0xc0/0xc0
+[  101.859849]  [<ffffffffa028b918>] btrfs_sync_log+0xf8/0xa70 [btrfs]
+[  101.867740]  [<ffffffffa028c7bd>] ? btrfs_log_dentry_safe+0x6d/0x80 [btrfs]
+[  101.876395]  [<ffffffffa02605d2>] btrfs_sync_file+0x2f2/0x330 [btrfs]
+[  101.884375]  [<ffffffff81218101>] do_fsync+0x51/0x80
+[  101.890737]  [<ffffffff81197977>] ? might_fault+0x47/0x50
+[  101.897610]  [<ffffffff812183a0>] SyS_fsync+0x10/0x20
+[  101.904096]  [<ffffffff818ac029>] system_call_fastpath+0x12/0x17
+[  101.911647] ---[ end trace 77681997f1c4e23f ]---
+     1        51200         8192        365.3          2076332
+
+Thanks,
+Fengguang

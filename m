@@ -1,56 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41939 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751221AbbASGrU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Jan 2015 01:47:20 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t0J6kenc022555
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Jan 2015 14:46:40 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 01/10] btrfs-progs: Cleanup, use bitshift instead of immediate number in btrfs_open_ctree_flags.
-Date: Mon, 19 Jan 2015 14:45:03 +0800
-Message-ID: <1421649912-14539-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1421649912-14539-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1421649912-14539-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from aserp1040.oracle.com ([141.146.126.69]:27124 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751186AbbBAIC6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Feb 2015 03:02:58 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, clm@fb.com
+Subject: [PATCH 00/12] provide frame work so that sysfs attributs from the fs_devices can be added
+Date: Sun,  1 Feb 2015 16:01:30 +0800
+Message-Id: <1422777702-12584-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1421683347-18226-1-git-send-email-anand.jain@oracle.com>
+References: <1421683347-18226-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Change the immediate number in btrfs_open_ctree_flags to bit shift.
+This patch set will provide a framework and help to create attributes
+from the structure btrfs_fs_devices which are available even before
+fs_info is created. So by moving the parent kobject super_kobj from
+fs_info to btrfs_fs_devices, it will help to create attributes
+from the btrfs_fs_devices as well.
+    
+Just to note, this does not change any of the existing btrfs sysfs
+external kobject names and its attributes and not even the life
+cycle of them. Changes are internal only. And to ensure the same,
+this path has been tested with various device operations and,
+checking and comparing the sysfs kobjects and attributes with
+sysfs kobject and attributes with out this patch, and they remain
+same. These test cases are added to the progs as test-btrfs-devmgt.sh,
+its patch is below as well.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- disk-io.h | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/disk-io.h b/disk-io.h
-index 4818109..e12870e 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -26,13 +26,13 @@
- #define BTRFS_SUPER_MIRROR_SHIFT 12
- 
- enum btrfs_open_ctree_flags {
--	OPEN_CTREE_WRITES		= 1,
--	OPEN_CTREE_PARTIAL		= 2,
--	OPEN_CTREE_BACKUP_ROOT		= 4,
--	OPEN_CTREE_RECOVER_SUPER	= 8,
--	OPEN_CTREE_RESTORE		= 16,
--	OPEN_CTREE_NO_BLOCK_GROUPS	= 32,
--	OPEN_CTREE_EXCLUSIVE		= 64,
-+	OPEN_CTREE_WRITES		= (1 << 0),
-+	OPEN_CTREE_PARTIAL		= (1 << 1),
-+	OPEN_CTREE_BACKUP_ROOT		= (1 << 2),
-+	OPEN_CTREE_RECOVER_SUPER	= (1 << 3),
-+	OPEN_CTREE_RESTORE		= (1 << 4),
-+	OPEN_CTREE_NO_BLOCK_GROUPS	= (1 << 5),
-+	OPEN_CTREE_EXCLUSIVE		= (1 << 6),
- };
- 
- static inline u64 btrfs_sb_offset(int mirror)
+Anand Jain (12):
+  Btrfs: sysfs: fix, btrfs_release_super_kobj() should to clean up the
+    kobject data
+  Btrfs: sysfs: fix, fs_info kobject_unregister has init_completion()
+    twice
+  Btrfs: sysfs: fix, undo sysfs device links
+  Btrfs: sysfs: fix, kobject pointer clean up needed after kobject
+    release
+  Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
+  Btrfs: sysfs: reorder the kobject creations
+  Btrfs: sysfs: rename __btrfs_sysfs_remove_one to
+    btrfs_sysfs_remove_fsid
+  Btrfs: sysfs: introduce function btrfs_sysfs_add_fsid() to create
+    sysfs fsid
+  Btrfs: sysfs: let default_attrs be separate from the kset
+  Btrfs: sysfs: separate device kobject and its attribute creation
+  Btrfs: sysfs: move super_kobj and device_dir_kobj from fs_info to
+    btrfs_fs_devices
+  Btrfs: sysfs: add pointer to access fs_info from fs_devices
+
+ fs/btrfs/ctree.h   |   3 --
+ fs/btrfs/disk-io.c |   1 -
+ fs/btrfs/sysfs.c   | 133 +++++++++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/volumes.c |   3 +-
+ fs/btrfs/volumes.h |   6 +++
+ 5 files changed, 107 insertions(+), 39 deletions(-)
+
+
+Anand Jain (1):
+  Btrfs-progs: add regression tests for sysfs contents during btrfs
+    device management
+
+ tests/test-btrfs-devmgt.sh | 863 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 863 insertions(+)
+ create mode 100755 tests/test-btrfs-devmgt.sh
 -- 
-2.2.2
+1.9.1
 

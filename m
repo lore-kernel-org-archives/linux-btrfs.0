@@ -1,88 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:52796 "EHLO
-	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932197AbbBBNEZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 08:04:25 -0500
-From: Forrest Liu <forrestl@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Forrest Liu <forrestl@synology.com>, Chien-Kuan Yeh <ckya@synology.com>
-Subject: [PATCH] Btrfs: btrfs_release_extent_buffer_page() didn't free pages of dummy extent
-Date: Mon,  2 Feb 2015 21:04:17 +0800
-Message-Id: <1422882257-15449-1-git-send-email-forrestl@synology.com>
+Received: from mail001.aei.ca ([206.123.6.130]:41059 "EHLO mail001.aei.ca"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750876AbbBBOpt convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 09:45:49 -0500
+From: Ed Tomlinson <edt@aei.ca>
+To: Forrest Liu <forrestl@synology.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix =?iso-8859-1?Q?find=5Ffree=5Fdev=5Fextent()_malfunction_in_case_device_tr?=
+ =?iso-8859-1?Q?ee_has_hole?=
+Date: Mon, 02 Feb 2015 09:39:06 -0500
+MIME-Version: 1.0
+Message-ID: <9348c3e9-9858-4c1a-9489-fab558f1e169@aei.ca>
+In-Reply-To: <1422862299-7361-1-git-send-email-forrestl@synology.com>
+References: <1422862299-7361-1-git-send-email-forrestl@synology.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_release_extent_buffer_page() can't handle dummy extent that
-allocated by btrfs_clone_extent_buffer() properly.
+Hi,
 
-Reference count of pages that allocated by btrfs_clone_extent_buffer()
-was 2, 1 by alloc_page(), and another by attach_extent_buffer_page().
+Found a problem compile testing this.  
 
-Signed-off-by: Chien-Kuan Yeh <ckya@synology.com>
-Signed-off-by: Forrest Liu <forrestl@synology.com>
----
- fs/btrfs/extent_io.c | 43 ++++++++++++++++++++++---------------------
- 1 file changed, 22 insertions(+), 21 deletions(-)
+hole_size = key_offset - search_start;
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dab8af4..58a5183 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4555,32 +4555,33 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
- 	do {
- 		index--;
- 		page = eb->pages[index];
--		if (page && mapped) {
-+		if (page && mapped)
- 			spin_lock(&page->mapping->private_lock);
-+		/*
-+		 * We do this since we'll remove the pages after we've
-+		 * removed the eb from the radix tree, so we could race
-+		 * and have this page now attached to the new eb.  So
-+		 * only clear page_private if it's still connected to
-+		 * this eb.
-+		 */
-+		if (PagePrivate(page) &&
-+		    page->private == (unsigned long)eb) {
-+			BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-+			BUG_ON(PageDirty(page));
-+			BUG_ON(PageWriteback(page));
- 			/*
--			 * We do this since we'll remove the pages after we've
--			 * removed the eb from the radix tree, so we could race
--			 * and have this page now attached to the new eb.  So
--			 * only clear page_private if it's still connected to
--			 * this eb.
-+			 * We need to make sure we haven't be attached
-+			 * to a new eb.
- 			 */
--			if (PagePrivate(page) &&
--			    page->private == (unsigned long)eb) {
--				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
--				BUG_ON(PageDirty(page));
--				BUG_ON(PageWriteback(page));
--				/*
--				 * We need to make sure we haven't be attached
--				 * to a new eb.
--				 */
--				ClearPagePrivate(page);
--				set_page_private(page, 0);
--				/* One for the page private */
--				page_cache_release(page);
--			}
-+			ClearPagePrivate(page);
-+			set_page_private(page, 0);
-+			/* One for the page private */
-+			page_cache_release(page);
-+		}
-+
-+		if (page && mapped)
- 			spin_unlock(&page->mapping->private_lock);
- 
--		}
- 		if (page) {
- 			/* One for when we alloced the page */
- 			page_cache_release(page);
--- 
-1.9.1
+Should not that be key.offset ?
+
+TIA
+Ed Tomlinson
+
+
+On Monday, February 2, 2015 2:31:39 AM EST, Forrest Liu wrote:
+> If device tree has hole, find_free_dev_extent() cannot find available
+> address properly.
+>
+> The example below, has one BIG hole in device tree, and can only
+> allocate just one chunk in a transaction.
+>
+>     item 9 key (1 DEV_EXTENT 273841913856) itemoff 15811 itemsize 48
+>         dev extent chunk_tree 3
+>         chunk objectid 256 chunk offset 272759783424 length 1073741824
+>     item 10 key (1 DEV_EXTENT 1071632089088) itemoff 15763 itemsize 48
+>         dev extent chunk_tree 3
+>         chunk objectid 256 chunk offset 1070549958656 length 1073741824
+>     item 11 key (1 DEV_EXTENT 1072705830912) itemoff 15715 itemsize 48
+>             dev extent chunk_tree 3
+>             chunk objectid 256 chunk offset 1071623700480 length
+>
+> Signed-off-by: Forrest Liu <forrestl@synology.com>
+> ---
+>  fs/btrfs/volumes.c | 15 +++++++++++----
+>  1 file changed, 11 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index da7e0e1..61be789 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1060,6 +1060,7 @@ static int contains_pending_extent(struct 
+> btrfs_trans_handle *trans,
+>  	struct extent_map *em;
+>  	struct list_head *search_list = &trans->transaction->pending_chunks;
+>  	int ret = 0;
+> +	u64 physical_start = *start;
+>  
+>  again:
+>  	list_for_each_entry(em, search_list, list) {
+> @@ -1070,9 +1071,9 @@ again:
+>  		for (i = 0; i < map->num_stripes; i++) {
+>  			if (map->stripes[i].dev != device)
+>  				continue;
+> -			if (map->stripes[i].physical >= *start + len ||
+> +			if (map->stripes[i].physical >= physical_start + len ||
+>  			    map->stripes[i].physical + em->orig_block_len <=
+> -			    *start)
+> +			    physical_start)
+>  				continue;
+>  			*start = map->stripes[i].physical +
+>  				em->orig_block_len;
+> @@ -1195,8 +1196,14 @@ again:
+>  			 */
+>  			if (contains_pending_extent(trans, device,
+>  						    &search_start,
+> -						    hole_size))
+> -				hole_size = 0;
+> +						    hole_size)) {
+> +				if (key.offset >= search_start)
+> +					hole_size = key_offset - search_start;
+> +				else {
+> +					WARN_ON(1);
+> +					hole_size = 0;
+> +				}
+> +			}
+>  
+>  			if (hole_size > max_hole_size) {
+>  				max_hole_start = search_start;
 

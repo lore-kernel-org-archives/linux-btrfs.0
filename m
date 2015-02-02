@@ -1,145 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50889 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58111 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753662AbbBAXDt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 1 Feb 2015 18:03:49 -0500
-Date: Mon, 2 Feb 2015 10:03:38 +1100
+	id S1754440AbbBBE65 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 1 Feb 2015 23:58:57 -0500
+Date: Mon, 2 Feb 2015 15:58:43 +1100
 From: NeilBrown <neilb@suse.de>
-To: Fengguang Wu <fengguang.wu@intel.com>
-Cc: Peter Zijlstra <peterz@infradead.org>, LKP <lkp@01.org>,
+To: Peter Zijlstra <peterz@infradead.org>
+Cc: Fengguang Wu <fengguang.wu@intel.com>, LKP <lkp@01.org>,
         linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         Shaohua Li <shli@kernel.org>, Dan Williams <dan.j.williams@intel.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Ingo Molnar <mingo@kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>
 Subject: Re: __might_sleep() warnings on v3.19-rc6
-Message-ID: <20150202100338.4fa9eefa@notabene.brown>
-In-Reply-To: <20150201034315.GA20124@wfg-t540p.sh.intel.com>
+Message-ID: <20150202155843.5991a10c@notabene.brown>
+In-Reply-To: <20150202100338.4fa9eefa@notabene.brown>
 References: <20141028142541.GA19097@wfg-t540p.sh.intel.com>
 	<20150201034315.GA20124@wfg-t540p.sh.intel.com>
+	<20150202100338.4fa9eefa@notabene.brown>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/9oiBLEO9vw8rQTIi8RbRl1S"; protocol="application/pgp-signature"
+ boundary="Sig_/iDmEtqUMulV6XzoywgT5Fty"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/9oiBLEO9vw8rQTIi8RbRl1S
+--Sig_/iDmEtqUMulV6XzoywgT5Fty
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, 31 Jan 2015 19:43:15 -0800 Fengguang Wu <fengguang.wu@intel.com>
-wrote:
 
-> Hi all,
->=20
-> I see 2 __might_sleep() warnings on when running LKP tests on
-> v3.19-rc6, one related to raid5 and another related to btrfs.
->=20
-> They might be exposed by this patch.
->=20
-> commit 8eb23b9f35aae413140d3fda766a98092c21e9b0
-> Author:     Peter Zijlstra <peterz@infradead.org>
->=20
->     sched: Debug nested sleeps
->    =20
->     Validate we call might_sleep() with TASK_RUNNING, which catches places
->     where we nest blocking primitives, eg. mutex usage in a wait loop.
->    =20
->     Since all blocking is arranged through task_struct::state, nesting
->     this will cause the inner primitive to set TASK_RUNNING and the outer
->     will thus not block.
->    =20
->     Another observed problem is calling a blocking function from
->     schedule()->sched_submit_work()->blk_schedule_flush_plug() which will
->     then destroy the task state for the actual __schedule() call that
->     comes after it.
->=20
->=20
-> dmesg-ivb44:20150129001242:x86_64-rhel:3.19.0-rc6-g26bc420b:1
->=20
->=20
-> FSUse%        Count         Size    Files/sec     App Overhead
-> [   60.691525] ------------[ cut here ]------------
-> [   60.697499] WARNING: CPU: 0 PID: 1065 at kernel/sched/core.c:7300 __mi=
-ght_sleep+0xbd/0xd0()
-> [   60.709010] do not call blocking ops when !TASK_RUNNING; state=3D2 set=
- at [<ffffffff810b63ff>] prepare_to_wait+0x2f/0x90
-> [   60.721646] Modules linked in: f2fs raid456 async_raid6_recov async_me=
-mcpy async_pq async_xor xor async_tx raid6_pq ipmi_watchdog netconsole sg s=
-d_mod mgag200 syscopyarea sysfillrect isci sysimgblt libsas ttm snd_pcm ahc=
-i snd_timer drm_kms_helper scsi_transport_sas libahci snd sb_edac soundcore=
- drm libata edac_core i2c_i801 pcspkr wmi ipmi_si ipmi_msghandler
-> [   60.759585] CPU: 0 PID: 1065 Comm: kworker/u481:6 Not tainted 3.19.0-r=
-c6-g26bc420b #1
-> [   60.769025] Hardware name: Intel Corporation S2600WP/S2600WP, BIOS SE5=
-C600.86B.02.02.0002.122320131210 12/23/2013
-> [   60.781193] Workqueue: writeback bdi_writeback_workfn (flush-9:0)
-> [   60.788725]  ffffffff81b75d50 ffff88080979b3e8 ffffffff818a38f0 ffff88=
-081ee100f8
-> [   60.797820]  ffff88080979b438 ffff88080979b428 ffffffff8107260a ffff88=
-080979b428
-> [   60.806879]  ffffffff81b8c759 00000000000004d9 0000000000000000 000000=
-0063fbe018
-> [   60.815935] Call Trace:
-> [   60.819368]  [<ffffffff818a38f0>] dump_stack+0x4c/0x65
-> [   60.825817]  [<ffffffff8107260a>] warn_slowpath_common+0x8a/0xc0
-> [   60.833269]  [<ffffffff81072686>] warn_slowpath_fmt+0x46/0x50
-> [   60.840379]  [<ffffffff810afe95>] ? pick_next_task_fair+0x1b5/0x8d0
-> [   60.848104]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
-> [   60.855215]  [<ffffffff810b63ff>] ? prepare_to_wait+0x2f/0x90
-> [   60.862337]  [<ffffffff8109874d>] __might_sleep+0xbd/0xd0
-> [   60.869044]  [<ffffffff811c7cd7>] kmem_cache_alloc_trace+0x1d7/0x250
-> [   60.876830]  [<ffffffff817175d7>] ? bitmap_get_counter+0x117/0x280
-> [   60.884429]  [<ffffffff817175d7>] bitmap_get_counter+0x117/0x280
-> [   60.891807]  [<ffffffff810f6d02>] ? __module_text_address+0x12/0x70
-> [   60.899452]  [<ffffffff81717f54>] bitmap_startwrite+0x74/0x300
-> [   60.906601]  [<ffffffffa017659a>] add_stripe_bio+0x2aa/0x350 [raid456]
-> [   60.914518]  [<ffffffffa017d20d>] make_request+0x1dd/0xf30 [raid456]
+(high-jacking the thread a bit... I don't have the patch that I want to rep=
+ly
+to still in my mail box:  the subject still matches...)
+
+I just got a might-sleep warning in my own testing.
+This was introduced by=20
+
+commit e22b886a8a43b147e1994a9f970f678fc0df2033
+Author: Peter Zijlstra <peterz@infradead.org>
+Date:   Wed Sep 24 10:18:48 2014 +0200
+
+    sched/wait: Add might_sleep() checks
 
 
-This one is a false-positive - I think.
+In particular:
 
-It is certainly true that if the inner primitive needs to block, then the
-outer loop will not wait.  However that case is the exception.  Most of the
-time the inner blocking primitive isn't called and the outer loop will wait=
- as
-expected.  Certainly the inner blocking primitive (a kmalloc) wouldn't be
-called more than once without the outer loop making real progress.
+@@ -318,6 +320,7 @@ do {                                                   =
+    =20
+  */
+ #define wait_event_cmd(wq, condition, cmd1, cmd2)                      \
+ do {                                                                   \
++       might_sleep();                                                  \
+        if (condition)                                                  \
+                break;                                                  \
+        __wait_event_cmd(wq, condition, cmd1, cmd2);                    \
 
-If the outer loop sometime runs around the loop and extra time, that is no =
-great cost.
 
-However I see the value in having these warnings, even if they don't work f=
-or
-me.
-I guess I could
-      __set_current_state(TASK_RUNNING);
-somewhere to defeat the warning, and add a comment explaining why.
+Where I call this in raid5_quiesce(), 'cmd1' releases a lock and enables
+interrupts and  cmd2 takes the lock and disables interrupts.
 
-Would that be a good thing?
+So it is perfectly OK to sleep at the point where schedule is called, but n=
+ot
+at the point where wait_event_cmd is called.
+
+I can't use wait_event_lock_irq_cmd() as there are actually several spinloc=
+ks
+I need to manipulate.
+
+So I'm hoping that this part of the patch (at least) can be reverted.
+
+Otherwise I guess I'll need to use __wait_event_cmd().
 
 Thanks,
 NeilBrown
 
-
---Sig_/9oiBLEO9vw8rQTIi8RbRl1S
+--Sig_/iDmEtqUMulV6XzoywgT5Fty
 Content-Type: application/pgp-signature
 Content-Description: OpenPGP digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQIUAwUBVM6wyjnsnt1WYoG5AQIG5w/42JzBEtMo4RYB1O+5VFje7/PZ+oyQOAgQ
-XvF7ESpW6MWad6AiUTsFwPdZZ3pc2Aj5iAyBFf4p+peAyUUQk0UCVbYoUeiQK1cH
-SVjF2/FGHk0jxNGCoCNxZ+NRK0JsKi/lqPdTl5HOfeFpjMeECB5d2QTkeB9zFCML
-MjVeaq3n+eP5VXaeoTRW2C0gCUvPGVL0EyZQDJwP8snpKlqXcSluGhOs8pHHZJ5T
-6RjO1b8tnzJEyO/l45WZP8xN5qPobuZHYY6lC6XsZ3H49VgoHaVOJ3T18mBGzT8f
-xXHVwTds0bNvBwW4XdsWTiCEvMYes5SZ4JVODyTVHiqOS6mRzt4yMg0ZM4xmpSZN
-M2ma4L8OKBWyEPhdYte6TUKc2Bm1ynDsaoNRXq/k0uRT7q7j7mqYd/f76NGZ59Kw
-MsCnTOkLwM+0vFG9L0FgNGPy+8tyKMDRW8SkNRsRo14IK6PmfbYig/OGNm4w6eNC
-nNIJRBFimqzSY8p/V2fLowVtKjGJx/NcbhmzzUAjxoKQJpd0XafURy4NMvs920Uf
-zpDhm6zGhIl6/keTew3vbj67mAyu4x4Yx5o9xaGBMmKUQ7FrtM0gzf6GcXAFKn+D
-Av/QbFS6h/uTR99qRJ5daygi7BgT2QEWBmX6iX8wv9LxFVuLdNIzv7/QBAe3zggG
-petZgYzJOg==
-=o/0t
+iQIVAwUBVM8EAznsnt1WYoG5AQKQXQ//cKbxdLF0oju54f+wJp3BjocLwxET9tDS
+iMT4vqMiWTXnrVIwrmpaJug4fE4mXjX4HBnHAhcRXTvSfL5GBh5CncaJWL7s/g9U
+cre856fTQnthcWZVdXJ9yxFn7P8oAtPr2UwE8nHN+c1YjNy6hLu/2wZQJGs4q92b
+qUXiW0mjhKYO54tGaq4PeTewxUBqgzojX/Yzgmc1T4x4sIF0YFXg+SvOQBt+ycz9
+wpINN6A/BHr8fSp9gy1nKNrpizN0bnzZjnWqXHmp1PxeVFnY3SBA6bJiWE2UQz3J
+OGsfZGIHpxYywvkWUelIt/uSBfszZCYEQl49nw910EKcMvoI2sqllRpgnYQe2aQB
+QIKkk/QjrreLW0mQG/nQYt4J/+8gLo42sdpXnVYW9Wx6AhaJkCPKCkDQCjClvlOr
+nt6v43dcXPgpG0DMy5M1/SZBBIM2Pnr/FHVe9BhqY7fHFrwCTLsghhIXFUgxBwjD
+YKL2EDxGaR58WWBNRH8p6rvyXfTlUIGF4f8SEgxkDXuRWpnQuMkcuS40Tql7r8gg
+BotD3iJyFu5acsB1AAWA1gFggwpZEzGD3zwgd0nykdpDuWvEpuivKrQ8m0M949+6
+vL3/bttx6uqF7c8fbmVFfIaJRPoJd/KAzYWuCDhOvS53JBRjqOHtLB+FfuRPQQYk
+PMy20kmsmCg=
+=mrSD
 -----END PGP SIGNATURE-----
 
---Sig_/9oiBLEO9vw8rQTIi8RbRl1S--
+--Sig_/iDmEtqUMulV6XzoywgT5Fty--

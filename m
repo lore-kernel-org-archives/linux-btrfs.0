@@ -1,24 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40825 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:39416 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752181AbbB0Qx3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Feb 2015 11:53:29 -0500
-Date: Fri, 27 Feb 2015 17:53:28 +0100
+	id S1754292AbbBBS1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Feb 2015 13:27:47 -0500
+Date: Mon, 2 Feb 2015 19:27:45 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Augusto Mecking Caringi <augustocaringi@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Add more detailed package dependency information to
- INSTALL file
-Message-ID: <20150227165328.GI8720@twin.jikos.cz>
+Subject: Re: [PATCH v3 1/2] btrfs-progs: read_tree_block() and
+ read_node_slot() cleanup.
+Message-ID: <20150202182745.GD24227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1401517486-26769-1-git-send-email-augustocaringi@gmail.com>
+References: <1422411175-28039-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1401517486-26769-1-git-send-email-augustocaringi@gmail.com>
+In-Reply-To: <1422411175-28039-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 31, 2014 at 03:24:46AM -0300, Augusto Mecking Caringi wrote:
-> Signed-off-by: Augusto Mecking Caringi <augustocaringi@gmail.com>
+On Wed, Jan 28, 2015 at 10:12:55AM +0800, Qu Wenruo wrote:
+> Allow read_tree_block() and read_node_slot() to return error pointer.
+> This should help caller to get more specified error number.
+> 
+> For existing callers, change (!eb) judgmentt to
+> (!extent_buffer_uptodate(eb)) to keep the compatibility, and for caller
+> missing the check, use PTR_ERR(eb) if possible.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Applied, thanks.
+Applied to 3.19, thanks.

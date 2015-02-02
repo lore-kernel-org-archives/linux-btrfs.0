@@ -1,33 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35343 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932524AbbBBQrM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Feb 2015 11:47:12 -0500
-Date: Mon, 2 Feb 2015 17:47:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: John C F <john.ch.fr@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs bash completion
-Message-ID: <20150202164711.GB24227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAFWTvYSGpk8r1M96rDqoH1zMdaY09fGd8L=9CGghxc7WTPHmbg@mail.gmail.com>
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:36746 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932206AbbBBOGZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 09:06:25 -0500
+Received: by mail-ig0-f180.google.com with SMTP id b16so16923431igk.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Feb 2015 06:06:25 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAFWTvYSGpk8r1M96rDqoH1zMdaY09fGd8L=9CGghxc7WTPHmbg@mail.gmail.com>
+From: John C F <john.ch.fr@gmail.com>
+Date: Mon, 2 Feb 2015 19:36:03 +0530
+Message-ID: <CAFWTvYSGpk8r1M96rDqoH1zMdaY09fGd8L=9CGghxc7WTPHmbg@mail.gmail.com>
+Subject: btrfs-progs bash completion
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=20cf302667fcb293ef050e1b75b7
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 02, 2015 at 07:36:03PM +0530, John C F wrote:
-> I've extended the bash-completion file proposed by Joseph Wang,
-> which was extended from that by Alfredo Esteban.
+--20cf302667fcb293ef050e1b75b7
+Content-Type: text/plain; charset=UTF-8
 
-Thanks! Worked for me and I think we can keep it up to date with new
-commands.
+Hi
+I've extended the bash-completion file proposed by Joseph Wang,
+which was extended from that by Alfredo Esteban.
 
-> I don't know about any licensing info that I should mention
-> in the file, but I don't claim any rights on it, and anyone
-> is free to modify/distribute with/without acknowledging me.
-> I'd be happy if it could be distributed with btrfs-progs.
+I don't know about any licensing info that I should mention
+in the file, but I don't claim any rights on it, and anyone
+is free to modify/distribute with/without acknowledging me.
+I'd be happy if it could be distributed with btrfs-progs.
 
-I hope it's ok to include it in progs, the authors and original posts
-are mentioned in the file.
+I'm a relatively new btrfs user and am more than satisfied with it.
+Thank you for your great work developers.
+
+[Installation notes to general audience: probably copying this file
+to /usr/share/bash-completion/
+completions/ should do it]
+
+--20cf302667fcb293ef050e1b75b7
+Content-Type: application/octet-stream; name=btrfs
+Content-Disposition: attachment; filename=btrfs
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_i5nxj9z10
+
+IyBvcmlnaW5hbCBieSBBbGZyZWRvIEVzdGViYW4gPGFlZGVsYXRvcnJlIGF0IHh4eHh4eHh4eD4K
+IyAoaHR0cDovL3d3dy5zcGluaWNzLm5ldC9saXN0cy9saW51eC1idHJmcy9tc2cxNTg5OS5odG1s
+KQojIGVkaXRlZCBieSBKb3NlcGggV2FuZyA8am9lcXVhbnQgYXQgZ21haWwuY29tPgojIChodHRw
+Oi8vbGlzdHMuYWxpb3RoLmRlYmlhbi5vcmcvcGlwZXJtYWlsL2Jhc2gtY29tcGxldGlvbi1kZXZl
+bC8yMDEzLUp1bmUvMDA0ODY4Lmh0bWwpCiMgZWRpdGVkIGJ5IEpvaG4gQyBGIDxqb2huLmNoLmZy
+IGF0IGdtYWlsLmNvbT4gb24gMjAxNS0wMi0wMgoKX2J0cmZzX2RldnMoKQp7CiAgICBsb2NhbCBE
+RVZTCiAgICBERVZTPScnOyB3aGlsZSByZWFkIGRldjsgZG8gREVWUys9IiRkZXYgIjsgZG9uZSA8
+IDwobHNibGsgLXBucm8gbmFtZSkKCUNPTVBSRVBMWSs9KCAkKCBjb21wZ2VuIC1XICIkREVWUyIg
+LS0gIiRjdXIiICkgKQp9CgpfYnRyZnNfbW50cygpCnsKCWxvY2FsIE1OVFMKCU1OVFM9JycKCXdo
+aWxlIHJlYWQgbW50OyBkbyBNTlRTKz0iJG1udCAiCglkb25lIDwgPChtb3VudCB8IGF3ayAne3By
+aW50ICQzfScpCglDT01QUkVQTFkrPSggJCggY29tcGdlbiAtVyAiJE1OVFMiIC0tICIkY3VyIiAp
+ICkKfQoKX2J0cmZzKCkgCnsKCWxvY2FsIGN1ciBwcmV2IHdvcmRzIGN3b3JkCiAgICBfaW5pdF9j
+b21wbGV0aW9uIHx8IHJldHVybgoKICAgIENPTVBSRVBMWT0oKQogICAgCglsb2NhbCBjbWQ9JHt3
+b3Jkc1sxXX0KCiAgICBjb21tYW5kcz0nc3Vidm9sdW1lIGZpbGVzeXN0ZW0gYmFsYW5jZSBkZXZp
+Y2Ugc2NydWIgY2hlY2sgcmVzY3VlIHJlc3RvcmUgaW5zcGVjdC1pbnRlcm5hbCBwcm9wZXJ0eSBz
+ZW5kIHJlY2VpdmUgcXVvdGEgcWdyb3VwIHJlcGxhY2UgaGVscCB2ZXJzaW9uJwogICAgY29tbWFu
+ZHNfc3Vidm9sdW1lPSdjcmVhdGUgZGVsZXRlIGxpc3Qgc25hcHNob3QgZmluZC1uZXcgZ2V0LWRl
+ZmF1bHQgc2V0LWRlZmF1bHQgc2hvdyBzeW5jJwogICAgY29tbWFuZHNfZmlsZXN5c3RlbT0nZGVm
+cmFnbWVudCBzeW5jIHJlc2l6ZSBzaG93IGRmIGxhYmVsJwogICAgY29tbWFuZHNfYmFsYW5jZT0n
+c3RhcnQgcGF1c2UgY2FuY2VsIHJlc3VtZSBzdGF0dXMnCiAgICBjb21tYW5kc19kZXZpY2U9J3Nj
+YW4gYWRkIGRlbGV0ZSByZWFkeSBzdGF0cycKICAgIGNvbW1hbmRzX3NjcnViPSdzdGFydCBjYW5j
+ZWwgcmVzdW1lIHN0YXR1cycKICAgIGNvbW1hbmRzX3Jlc2N1ZT0nY2h1bmstcmVjb3ZlciBzdXBl
+ci1yZWNvdmVyJwogICAgY29tbWFuZHNfaW5zcGVjdF9pbnRlcm5hbD0naW5vZGUtcmVzb2x2ZSBs
+b2dpY2FsLXJlc29sdmUgc3Vidm9saWQtcmVzb2x2ZSByb290aWQnCiAgICBjb21tYW5kc19wcm9w
+ZXJ0eT0nZ2V0IHNldCBsaXN0JwogICAgY29tbWFuZHNfcXVvdGE9J2VuYWJsZSBkaXNhYmxlIHJl
+c2NhbicKICAgIGNvbW1hbmRzX3Fncm91cD0nYXNzaWduIHJlbW92ZSBjcmVhdGUgZGVzdHJveSBz
+aG93IGxpbWl0JwogICAgY29tbWFuZHNfcmVwbGFjZT0nc3RhcnQgc3RhdHVzIGNhbmNlbCcKCglp
+ZiBbWyAiJGN1ciIgPT0gLSogJiYgJGN3b3JkIC1sZSAzICYmICIkY21kIiAhPSAiaGVscCIgXV07
+IHRoZW4KCQlDT01QUkVQTFk9KCAkKCBjb21wZ2VuIC1XICctLWhlbHAnIC0tICIkY3VyIiApICkK
+CQlyZXR1cm4gMAoJZmkKCiAgICBpZiBbWyAkY3dvcmQgLWVxIDEgXV07IHRoZW4KICAgICAgICBD
+T01QUkVQTFk9KCAkKCBjb21wZ2VuIC1XICIkY29tbWFuZHMiIC0tICIkY3VyIiApICkKICAgICAg
+ICByZXR1cm4gMAogICAgZWxpZiBbWyAkY3dvcmQgLWVxIDIgXV07IHRoZW4KICAgICAgICBjYXNl
+ICRjbWQgaW4KICAgICAgICAgICAgc3Vidm9sdW1lKQogICAgICAgICAgICAgICAgb3B0cz0iJGNv
+bW1hbmRzX3N1YnZvbHVtZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGZpbGVzeXN0
+ZW0pCiAgICAgICAgICAgICAgICBvcHRzPSIkY29tbWFuZHNfZmlsZXN5c3RlbSIKICAgICAgICAg
+ICAgICAgIDs7CiAgICAgICAgICAgIGJhbGFuY2UpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29t
+bWFuZHNfYmFsYW5jZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGRldmljZSkKICAg
+ICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19kZXZpY2UiCiAgICAgICAgICAgICAgICA7Owog
+ICAgICAgICAgICBzY3J1YikKICAgICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19zY3J1YiIK
+ICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGNoZWNrKQogICAgICAgICAgICAgICAgX2J0
+cmZzX2RldnMKCQkJCXJldHVybiAwCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICByZXNj
+dWUpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29tbWFuZHNfcmVzY3VlIgogICAgICAgICAgICAg
+ICAgOzsKICAgICAgICAgICAgcmVzdG9yZSkKICAgICAgICAgICAgICAgIF9idHJmc19kZXZzCgkJ
+CQlyZXR1cm4gMAogICAgICAgICAgICAgICAgOzsKICAgICAgICAgICAgaW5zcGVjdC1pbnRlcm5h
+bCkKICAgICAgICAgICAgICAgIG9wdHM9IiRjb21tYW5kc19pbnNwZWN0X2ludGVybmFsIgogICAg
+ICAgICAgICAgICAgOzsKICAgICAgICAgICAgcHJvcGVydHkpCiAgICAgICAgICAgICAgICBvcHRz
+PSIkY29tbWFuZHNfcHJvcGVydHkiCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICBzZW5k
+fHJlY2VpdmUpCiAgICAgICAgICAgICAgICBfZmlsZWRpciAtZAogICAgICAgICAgICAgICAgcmV0
+dXJuIDAKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIHF1b3RhKQogICAgICAgICAgICAg
+ICAgb3B0cz0iJGNvbW1hbmRzX3F1b3RhIgogICAgICAgICAgICAgICAgOzsKICAgICAgICAgICAg
+cWdyb3VwKQogICAgICAgICAgICAgICAgb3B0cz0iJGNvbW1hbmRzX3Fncm91cCIKICAgICAgICAg
+ICAgICAgIDs7CiAgICAgICAgICAgIHJlcGxhY2UpCiAgICAgICAgICAgICAgICBvcHRzPSIkY29t
+bWFuZHNfcmVwbGFjZSIKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGhlbHApCiAgICAg
+ICAgICAgICAgICBvcHRzPSItLWZ1bGwiCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICB2
+ZXJzaW9uKQogICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAgICAgIDs7CiAgICAg
+ICAgZXNhYwogICAgICAgIENPTVBSRVBMWT0oICQoIGNvbXBnZW4gLVcgIiRvcHRzIiAtLSAiJGN1
+ciIgKSApCiAgICAgICAgcmV0dXJuIDAKICAgIGVsaWYgW1sgJGN3b3JkIC1lcSAzIF1dOyB0aGVu
+CiAgICAgICAgY2FzZSAkY21kIGluCiAgICAgICAgICAgIGZpbGVzeXN0ZW0pCgkJCQljYXNlICRw
+cmV2IGluCgkJCQkJZGVmcmFnbWVudCkKCQkJCQkJX2ZpbGVkaXIKCQkJCQkJcmV0dXJuIDAKCQkJ
+CQkJOzsKCQkJCQlsYWJlbCkKCQkJCQkJX2J0cmZzX21udHMKCQkJCQkJX2J0cmZzX2RldnMKCQkJ
+CQkJcmV0dXJuIDAKCQkJCQkJOzsKCQkJCWVzYWMKICAgICAgICAgICAgICAgIDs7CiAgICAgICAg
+ICAgIGRldmljZXxyZXNjdWUpCgkJCQlfYnRyZnNfZGV2cwogICAgICAgICAgICAgICAgcmV0dXJu
+IDAKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIHJlcGxhY2UpCiAgICAgICAgICAgICAg
+ICBjYXNlICRwcmV2IGluCiAgICAgICAgICAgICAgICAgICAgc3RhdHVzfGNhbmNlbCkKCQkJCQkJ
+X2J0cmZzX21udHMKICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAg
+ICAgICAgICAgICAgOzsKICAgICAgICAgICAgICAgICAgICBzdGFydCkKCQkJCQkJX2J0cmZzX2Rl
+dnMKICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAgICAgICAgICAg
+ICAgOzsKICAgICAgICAgICAgICAgIGVzYWMKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgZXNh
+YwogICAgZmkKCiAgICBpZiBbWyAiJGNtZCIgPT0gInJlY2VpdmUiICYmICIkcHJldiIgPT0gIi1m
+IiBdXTsgdGhlbgogICAgICAgIF9maWxlZGlyCiAgICAgICAgcmV0dXJuIDAKICAgIGZpCgogICAg
+X2ZpbGVkaXIgLWQKICAgIHJldHVybiAwICAKfQoKY29tcGxldGUgLUYgX2J0cmZzIGJ0cmZzCg==
+--20cf302667fcb293ef050e1b75b7--

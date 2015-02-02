@@ -1,43 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:64075 "EHLO
+Received: from mail.synology.com ([59.124.41.242]:52796 "EHLO
 	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932677AbbBBIIz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 03:08:55 -0500
+	with ESMTP id S932197AbbBBNEZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Feb 2015 08:04:25 -0500
 From: Forrest Liu <forrestl@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Forrest Liu <forrestl@synology.com>
-Subject: [PATCH] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group
-Date: Mon,  2 Feb 2015 16:08:48 +0800
-Message-Id: <1422864528-8625-1-git-send-email-forrestl@synology.com>
+Cc: Forrest Liu <forrestl@synology.com>, Chien-Kuan Yeh <ckya@synology.com>
+Subject: [PATCH] Btrfs: btrfs_release_extent_buffer_page() didn't free pages of dummy extent
+Date: Mon,  2 Feb 2015 21:04:17 +0800
+Message-Id: <1422882257-15449-1-git-send-email-forrestl@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_orphan_reserve_metadata() will grab metadata reservation from
-transaction handle, and the transaction handle was passed from
-btrfs_delete_unused_bgs() when delete unused block group.
+btrfs_release_extent_buffer_page() can't handle dummy extent that
+allocated by btrfs_clone_extent_buffer() properly.
 
-Repace btrfs_join_transaction() with btrfs_start_transaction() in
-btrfs_delete_unused_bgs() to prevent BUG_ON() in btrfs_orphan_add()
+Reference count of pages that allocated by btrfs_clone_extent_buffer()
+was 2, 1 by alloc_page(), and another by attach_extent_buffer_page().
 
+Signed-off-by: Chien-Kuan Yeh <ckya@synology.com>
 Signed-off-by: Forrest Liu <forrestl@synology.com>
 ---
- fs/btrfs/extent-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 43 ++++++++++++++++++++++---------------------
+ 1 file changed, 22 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53294da..61a3255 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9548,7 +9548,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 * Want to do this before we do anything else so we can recover
- 		 * properly if we fail to join the transaction.
- 		 */
--		trans = btrfs_join_transaction(root);
-+		/* 1 for btrfs_orphan_reserve_metadata() */
-+		trans = btrfs_start_transaction(root, 1);
- 		if (IS_ERR(trans)) {
- 			btrfs_set_block_group_rw(root, block_group);
- 			ret = PTR_ERR(trans);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index dab8af4..58a5183 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4555,32 +4555,33 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+ 	do {
+ 		index--;
+ 		page = eb->pages[index];
+-		if (page && mapped) {
++		if (page && mapped)
+ 			spin_lock(&page->mapping->private_lock);
++		/*
++		 * We do this since we'll remove the pages after we've
++		 * removed the eb from the radix tree, so we could race
++		 * and have this page now attached to the new eb.  So
++		 * only clear page_private if it's still connected to
++		 * this eb.
++		 */
++		if (PagePrivate(page) &&
++		    page->private == (unsigned long)eb) {
++			BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
++			BUG_ON(PageDirty(page));
++			BUG_ON(PageWriteback(page));
+ 			/*
+-			 * We do this since we'll remove the pages after we've
+-			 * removed the eb from the radix tree, so we could race
+-			 * and have this page now attached to the new eb.  So
+-			 * only clear page_private if it's still connected to
+-			 * this eb.
++			 * We need to make sure we haven't be attached
++			 * to a new eb.
+ 			 */
+-			if (PagePrivate(page) &&
+-			    page->private == (unsigned long)eb) {
+-				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
+-				BUG_ON(PageDirty(page));
+-				BUG_ON(PageWriteback(page));
+-				/*
+-				 * We need to make sure we haven't be attached
+-				 * to a new eb.
+-				 */
+-				ClearPagePrivate(page);
+-				set_page_private(page, 0);
+-				/* One for the page private */
+-				page_cache_release(page);
+-			}
++			ClearPagePrivate(page);
++			set_page_private(page, 0);
++			/* One for the page private */
++			page_cache_release(page);
++		}
++
++		if (page && mapped)
+ 			spin_unlock(&page->mapping->private_lock);
+ 
+-		}
+ 		if (page) {
+ 			/* One for when we alloced the page */
+ 			page_cache_release(page);
 -- 
 1.9.1
 

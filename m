@@ -1,219 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:60162 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751220AbbB1VFX (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 28 Feb 2015 16:05:23 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: btrfs test for incremental send with directory renames
-Date: Sat, 28 Feb 2015 21:04:50 +0000
-Message-Id: <1425157490-24776-1-git-send-email-fdmanana@suse.com>
+Received: from mail-ie0-f175.google.com ([209.85.223.175]:54939 "EHLO
+	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753676AbbBCW0B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Feb 2015 17:26:01 -0500
+Received: by mail-ie0-f175.google.com with SMTP id ar1so28891258iec.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Feb 2015 14:26:00 -0800 (PST)
+MIME-Version: 1.0
+Date: Tue, 3 Feb 2015 22:26:00 +0000
+Message-ID: <CALOYprUOeeeeXTZwCjBDvC5rapM-Dk5xwQ26S9nVZWKaG2c1mA@mail.gmail.com>
+Subject: Btrfs-progs 3.19rc1 issues
+From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test for incremental send where the difference between the parent and
-child snapshots is that a directory A was renamed and a directory B was
-renamed to the name directory A had before (in the parent snapshot),
-but directory A's rename must happen before some other directory C is
-renamed.
+Hi David,
 
-This issue was fixed by the following linux kernel btrfs patch:
+I've been watching the 3.19.x branch with interest, and noticed that
+you've tagged rc1. Unfortunately, I think I've found a few problems
+with it. I will try to explain here:
 
-  Btrfs: incremental send, don't rename a directory too soon
+For the record, I'm building using devtools (a set of clean chroot
+build scripts) on an up-to-date Arch Linux box.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/083     | 159 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/083.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 162 insertions(+)
- create mode 100755 tests/btrfs/083
- create mode 100644 tests/btrfs/083.out
+1) Building with the following:
 
-diff --git a/tests/btrfs/083 b/tests/btrfs/083
-new file mode 100755
-index 0000000..e4b6767
---- /dev/null
-+++ b/tests/btrfs/083
-@@ -0,0 +1,159 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/083
-+#
-+# Test for incremental send where the difference between the parent and child
-+# snapshots is that a directory A was renamed and a directory B was renamed to
-+# the name directory A had before (in the parent snapshot), but directory A's
-+# rename must happen before some other directory C is renamed.
-+#
-+# This issue was fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: incremental send, don't rename a directory too soon
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	rm -fr $send_files_dir
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_fssum
-+_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir $SCRATCH_MNT/a
-+mkdir $SCRATCH_MNT/b
-+mkdir $SCRATCH_MNT/c
-+touch $SCRATCH_MNT/a/file
-+
-+mkdir $SCRATCH_MNT/d
-+mkdir $SCRATCH_MNT/e
-+touch $SCRATCH_MNT/e/file2
-+mkdir $SCRATCH_MNT/f
-+
-+# Filesystem looks like:
-+#
-+# .                                       (ino 256)
-+# |---- a/                                (ino 257)
-+# |     |---- file                        (ino 260)
-+# |
-+# |---- b/                                (ino 258)
-+# |---- c/                                (ino 259)
-+# |---- d/                                (ino 261)
-+# |---- e/                                (ino 262)
-+# |     |--- file2                        (ino 263)
-+# |
-+# |---- f/                                (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+
-+# Now make inode 257 a child of inode 259 and rename inode 258 to the name that
-+# inode 257 had before. When the incremental send processes inode 257, it can't
-+# do the rename immediately because inode 259 must be renamed first, so inode's
-+# 257 rename is delayed and happens after the rename for inode 259 is done.
-+# Since send processes inodes by ascending order of their number, inode 258
-+# can't be renamed before inode 257 is renamed and therefore must be delayed
-+# as well. So the send stream must issue rename commands in the following order:
-+#
-+# 1 - rename inode 259 ('c' -> 'x')
-+# 2 - rename inode 257 ('a' -> 'x/y')
-+# 3 - rename inode 258 ('b' -> 'a')
-+#
-+# Before the fix mentioned above, the send stream attempted to rename inode 258
-+# before inode 257 was renamed, resulting in a client error mentioning
-+# 'directory not empty'.
-+#
-+# Same logic applies to 'd', 'e' and 'f', but the difference is that in the
-+# second snapshot 'e' is associated to an inode with a lower inode number than
-+# in the first snapshot.
-+#
-+mv $SCRATCH_MNT/c $SCRATCH_MNT/x
-+mv $SCRATCH_MNT/a $SCRATCH_MNT/x/y
-+mv $SCRATCH_MNT/b $SCRATCH_MNT/a
-+
-+mv $SCRATCH_MNT/f $SCRATCH_MNT/f2
-+mv $SCRATCH_MNT/e $SCRATCH_MNT/f2/e2
-+mv $SCRATCH_MNT/d $SCRATCH_MNT/e
-+
-+# Filesystem now looks like:
-+#
-+#
-+# .                                       (ino 256)
-+# |---- a/                                (ino 258)
-+# |---- x/                                (ino 259)
-+# |     |---- y/                          (ino 257)
-+# |           |----- file                 (ino 260)
-+# |
-+# |---- e/                                (ino 261)
-+# |---- f2/                               (ino 264)
-+# |     |----- e2/                        (ino 262)
-+#              |---- file2                (ino 263)
-+
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
-new file mode 100644
-index 0000000..0beba30
---- /dev/null
-+++ b/tests/btrfs/083.out
-@@ -0,0 +1,2 @@
-+QA output created by 083
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fd2fa76..fe82a9c 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -85,3 +85,4 @@
- 080 auto snapshot
- 081 auto quick clone
- 082 auto quick remount
-+083 auto quick send
--- 
-2.1.3
+./autogen.sh
+configure --prefix="/usr"
+make
+...
+make DESTDIR="/path/to/destdir" install
 
+Results in binaries and libraries being installed to
+/path/to/destdir/bin and /path/to/destdir/lib respectively.
+
+If I want things to be installed into /path/to/destdir/usr/{lib,bin},
+I have to 'export exec_prefix="/usr"'. That's not what I would expect.
+
+Incidentally, --exec-prefix seems to have no effect, the same as --prefix.
+
+
+2) No matter how you build, the installed btrfsck symlink points to
+the build dir's btrfs binary. e.g.
+
+$ ls -l bin/btrfsck
+lrwxrwxrwx 1 wormzy users 52 Feb  3 21:14 bin/btrfsck ->
+/build/btrfs-progs-git/pkg/btrfs-progs-git/
+
+Assuming that btrfs and btrfsck will always be installed into the same
+directory, it should just be a relative symlink to the btrfs binary.
+
+
+3) By default, 'make test' tries to use installed btrfs-progs shared
+object and btrfs-image, rather than the built ones:
+
+$ make test
+    [TEST]   fsck-tests.sh
+    [TEST]   001-bad-file-extent-bytenr
+/build/btrfs-progs-git/src/btrfs-progs-unstable/btrfs-image: error
+while loading shared libraries: libbtrfs.so.0: cannot open shared
+object file: No such file or directory
+failed to extract image
+/build/btrfs-progs-git/src/btrfs-progs-unstable/tests/fsck-tests/001-bad-file-extent-bytenr/default_case.img
+Makefile:159: recipe for target 'test' failed
+make: *** [test] Error 1
+
+...
+
+$ export LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH"
+$ make test
+    [TEST]   fsck-tests.sh
+    [TEST]   001-bad-file-extent-bytenr
+    [TEST]   002-bad-transid
+    [TEST]   003-shift-offsets
+    [TEST]   004-no-dir-index
+    [TEST]   005-bad-item-offset
+    [TEST]   006-bad-root-items
+    [TEST]   007-bad-offset-snapshots
+    [TEST]   008-bad-dir-index-name
+    [TEST]   009-no-dir-item-or-index
+    [TEST]   010-no-rootdir-inode-item
+    [TEST]   011-no-inode-item
+    [TEST]   012-leaf-corruption
+./test.sh: line 40: btrfs-image: command not found
+failed to extract leaf_corrupt_no_data_ext.btrfs-image
+test failed for case 012-leaf-corruption
+Makefile:159: recipe for target 'test' failed
+make: *** [test] Error 1
+
+...
+
+$ export LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH"
+$ export PATH="$(pwd):$PATH"
+$ make test
+    [TEST]   fsck-tests.sh
+    [TEST]   001-bad-file-extent-bytenr
+    [TEST]   002-bad-transid
+    [TEST]   003-shift-offsets
+    [TEST]   004-no-dir-index
+    [TEST]   005-bad-item-offset
+    [TEST]   006-bad-root-items
+    [TEST]   007-bad-offset-snapshots
+    [TEST]   008-bad-dir-index-name
+    [TEST]   009-no-dir-item-or-index
+    [TEST]   010-no-rootdir-inode-item
+    [TEST]   011-no-inode-item
+    [TEST]   012-leaf-corruption
+sudo: a password is required
+sudo: a password is required
+inode 1862 not recovered correctly
+test failed for case 012-leaf-corruption
+Makefile:159: recipe for target 'test' failed
+make: *** [test] Error 1
+
+The sudo thing has been discussed in another thread, so I'll not
+comment on that. Thankfully, it will skip the test if sudo isn't
+installed. Unfortunately sudo is installed when using Arch's devtools
+scripts, so I usually force-skip this test by "rm -rf"-ing
+tests/012-leaf-corruption before running 'make test'. I believe that
+the PATH/LD_LIBRARY_PATH problem is still something that needs fixing
+regardless.
+
+I'm hoping these problems are just easily fixed bugs, but if I'm
+misunderstanding something about the build process (especially
+regarding --{exec-,}prefix), please let me know.
+
+Cheers,
+
+
+WorMzy

@@ -1,130 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19836 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752740AbbBCLFT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Feb 2015 06:05:19 -0500
-Date: Tue, 3 Feb 2015 19:05:12 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use asynchronous submit for large DIO io in
- single profile
-Message-ID: <20150203110512.GE23433@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1422960338-12187-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-la0-f51.google.com ([209.85.215.51]:54880 "EHLO
+	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752740AbbBCLgm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Feb 2015 06:36:42 -0500
+Received: by mail-la0-f51.google.com with SMTP id ge10so50724897lab.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Feb 2015 03:36:40 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1422960338-12187-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <6ada49cc-4bf0-4a9d-8ed7-27754af3639c@aei.ca>
+References: <1422862299-7361-1-git-send-email-forrestl@synology.com>
+	<9348c3e9-9858-4c1a-9489-fab558f1e169@aei.ca>
+	<6ada49cc-4bf0-4a9d-8ed7-27754af3639c@aei.ca>
+Date: Tue, 3 Feb 2015 19:36:40 +0800
+Message-ID: <CAJSVwFP89ZSqtL1Y2E12KXE8y+hhs_JkbqWqcidcfvc920HSMw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix find_free_dev_extent() malfunction in case
+ device tree has hole
+From: Forrest Liu <forrestl@synology.com>
+To: Ed Tomlinson <edt@aei.ca>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, this is only btrfs concerned, I made a typo in email address.
+2015-02-03 2:40 GMT+08:00 Ed Tomlinson <edt@aei.ca>:
+> On Monday, February 2, 2015 9:39:06 AM EST, Ed Tomlinson wrote:
+>
+> Hi
+>
+> Booting a kernel with the three patches:
+> [PATCH] Btrfs: fix find_free_dev_extent() malfunction in case device tree
+> has hole
+> [PATCH] Btrfs: btrfs_release_extent_buffer_page() didn't free pages of dummy
+> extent
+> [PATCH] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block
+> group
+>
+> generates lots of opps here (I hate to post an anemic report but my serial
+> console was not recording so I do not have the opps).  They occured when
+> starting X and, If I read them correctly, had something to do with extents.
+>
 
-Thanks,
+My fault, i should test these patches before i submit these patches.
+The oops was caused by patch
+"Btrfs: btrfs_release_extent_buffer_page() didn't free pages of dummy extent"
 
--liubo
+I will resend these patches after test on linux-3.19-rc7.
 
-On Tue, Feb 03, 2015 at 06:45:38PM +0800, Liu Bo wrote:
-> Commit 1ae399382512 ("Btrfs: do not use async submit for small DIO io's")
-> benefits small DIO io's.
-> 
-> However, if we're owning the SINGLE profile, this also affects large DIO io's
-> since in that case, map_length is (chunk_length - bio's offset_in_chunk),
-> it's farily large so that it's very likely to be larger than a large bio's
-> size, which avoids asynchronous submit.
-> For instance, if we have a 512k bio, the efforts of calculating (512k/4k=128)
-> checksums will be taken by the DIO task.
-> 
-> Test results with fio (tested on a hard disk, not tested on ssd, 4cpu, 8g memory)
-> 
-> bs	async	sync		async	sync
-> 	bw	bw(KB/S)	iops	iop
-> 4k	115312	115480		28827.6	28869.6
-> 8k	114381	115586		14297.4	14447.6
-> 16k	115393	116290		7211.4	7267.6
-> 32k	114268	116589		3570.4	3643
-> 64k	115421	113417		1803	1771.8	<-----ASYNC wins here
-> 128k	115545	112585		902	879
-> 256k	115178	111521		449.2	435
-> 512k	115874	111620		226	217.6
-> 
-> This adds a limit 'BTRFS_STRIPE_LEN(64k)' to decide if it's small enough to avoid
-> asynchronous submit.
-> 
-> Still, in this case we don't need to split the bio and can submit it directly.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> The job in the test,
-> 
-> [global]
-> rw=write
-> ioengine=libaio
-> direct=1
-> iodepth=64
-> iodepth_batch=64
-> iodepth_batch_complete=64
-> iodepth_low=64
-> bs=4k
-> size=8g
-> sync=0
-> group_reporting
-> fallocate=posix
-> invalidate=1
-> runtime=30
-> 
-> [dio]
-> directory=/mnt/btrfs
-> filename=foobar
-> 
->  fs/btrfs/inode.c | 16 ++++++++++++++--
->  1 file changed, 14 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index e687bb0..c640d7e 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7792,6 +7792,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
->  	int nr_pages = 0;
->  	int ret;
->  	int async_submit = 0;
-> +	u64 alloc_profile;
->  
->  	map_length = orig_bio->bi_iter.bi_size;
->  	ret = btrfs_map_block(root->fs_info, rw, start_sector << 9,
-> @@ -7799,15 +7800,26 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
->  	if (ret)
->  		return -EIO;
->  
-> +	alloc_profile = btrfs_get_alloc_profile(root, 1);
-> +
->  	if (map_length >= orig_bio->bi_iter.bi_size) {
->  		bio = orig_bio;
->  		dip->flags |= BTRFS_DIO_ORIG_BIO_SUBMITTED;
-> +
-> +		/*
-> +		 * In the case of 'single' profile, the above check is very
-> +		 * likely to be true as map_length is (chunk_length - offset),
-> +		 * so checking BTRFS_STRIPE_LEN here.
-> +		 */
-> +		if ((alloc_profile & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
-> +		    orig_bio->bi_iter.bi_size >= BTRFS_STRIPE_LEN)
-> +			async_submit = 1;
-> +
->  		goto submit;
->  	}
->  
->  	/* async crcs make it difficult to collect full stripe writes. */
-> -	if (btrfs_get_alloc_profile(root, 1) &
-> -	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
-> +	if (alloc_profile & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6))
->  		async_submit = 0;
->  	else
->  		async_submit = 1;
-> -- 
-> 1.8.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks
+Forrest
+
+> Anyone else?
+>
+> Thanks
+> Ed Tomlinson
+>
+>> Hi,
+>>
+>> Found a problem compile testing this.
+>> hole_size = key_offset - search_start;
+>>
+>> Should not that be key.offset ?
+>>
+>> TIA
+>> Ed Tomlinson
+>>
+>>
+>> On Monday, February 2, 2015 2:31:39 AM EST, Forrest Liu wrote:
+>>>
+>>> If device tree has hole, find_free_dev_extent() cannot find available
+>>> address properly.
+>>>
+>>> The example below, has one BIG hole in device tree, and can only
+>>> allocate just one chunk in a transaction.
+>>>
+>>>     item 9 key (1 DEV_EXTENT 273841913856) itemoff 15811 itemsize 48 ...
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>

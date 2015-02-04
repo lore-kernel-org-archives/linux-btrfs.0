@@ -1,138 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48002 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:53919 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752018AbbBSXRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Feb 2015 18:17:41 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YOaLk-0003hs-1i
-	for linux-btrfs@vger.kernel.org; Fri, 20 Feb 2015 00:17:40 +0100
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2015 00:17:40 +0100
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2015 00:17:40 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: BTRFS hot relocation not merged
-Date: Fri, 20 Feb 2015 00:07:33 +0100
-Message-ID: <lu6irb-klc.ln1@hurikhan77.spdns.de>
-References: <54E5CDD1.9040909@gmx.de> <pan$e6dc2$a63e8c87$78de93c6$7e62ee60@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+	id S1751202AbbBDLkp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Feb 2015 06:40:45 -0500
+Date: Wed, 4 Feb 2015 12:40:39 +0100
+From: Karel Zak <kzak@redhat.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-prog: improve build-system by autoconf
+Message-ID: <20150204114039.GB1238@ws.net.home>
+References: <1418387724-20188-1-git-send-email-kzak@redhat.com>
+ <20141217140726.GY27601@twin.jikos.cz>
+ <20150116152613.GC2181@x2.net.home>
+ <20150128153815.GG3641@suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150128153815.GG3641@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan@cox.net> schrieb:
-
-> Max Schettler posted on Thu, 19 Feb 2015 12:49:37 +0100 as excerpted:
+On Wed, Jan 28, 2015 at 04:38:15PM +0100, David Sterba wrote:
+> Rebased on 3.18.3, fixed some minor conflicts.
 > 
->> I recently was looking for the status of hot relocation on btrfs.
->> There seemed to be some activity on the mailinglist around 5/2013
->> regarding patches that should provide the functionality.
->> However they have not been merged yet and there hasn`t been further
->> discussion about them (to my knowledge).
->> What is the status of hot relocation?
+> * I'm a bit surprised that automake is required for the
+>   config.{guess,sub} and install-sh files
+
+ well, it's not required, but autoconf does not provide the scripts.
+ You have to maintain the scripts in git three (IMHO not elegant
+ solution) or use the scripts from automake.
+ 
+ This problem does not exist if you have fully "autotoolized" project,
+ because automake provides automatically all the scripts.
+
+> * my oldish testbox' automake does not support the --print-libdir option
+>   (automake-1.11), enterprise distros ship automake of similar age
 > 
-> The current suggestion is to use something like bcache or dmcache in
-> tandem with btrfs.  I'm not sure of dmcache/btrfs status, but there are
-> people actually using bcache/btrfs here on this list, with the reports
-> I've read generally very positive.
-
-Yes, here's one! :-)
-
-[...]
-> There's also this rather vague comment on the wiki, on the main page,
-> under Features, additional features in development or planned (so closer
-> to News, then scroll up a bit)...
+> * library build test fails, but this may be because I've mismerged
+>   something, I'll check again
 > 
-> * Hot data tracking and moving to faster devices (currently being pushed
-> as a generic feature available through VFS)
+> Otherwise looks ok and I'll merge it, plus a few fixups to make it build
+> for me.
 > 
-> https://btrfs.wiki.kernel.org/index.php/Main_Page#News
+> >     https://github.com/karelzak/btrfs-progs/commits/autoconf
+> > 
+> >  you can merge it (now or later) on command line by:
+> > 
+> >     git pull --log git@github.com:karelzak/btrfs-progs.git autoconf
 > 
-> (and scroll up a bit)
-> 
-> I'm not sure if that refers to bcache and similar, or something else, tho
-> I didn't check the talk and history pages, which may have a hint...
+> git-pulls are not (yet) established workflow, mailinglist is preferred,
+> but it does not hurt to publish branches along.
 
-Actually, bcache does not implement hot data tracking. It more or less acts 
-as a huge scheduler (so it is in a range with deadline/cfq/... and friends) 
-and thus minimizes seek times as its primary focus. This is achieved by 
-trying to detect random reads and optionally writes, and caching those in a 
-log structured file systems by using access patterns optimized for non-
-rotational media. Optionally cached writes are written back lazily in the 
-background and reordered to minimize seek and maximize throuput to the 
-rotational media. Linear access patterns are directly passed through to the 
-rotational media as they are not that bad for those kind of access patterns 
-(at least compared with past-generation SSDs). In that regard, even a good 
-USB stick could do as a cache, or an internal card reader - tho I'd probably 
-strongly recommend against using it.
+ OK.
 
-The nice thing is, that this way, bcache can combine mixed fast SSD random 
-access patterns and linear HDD access patterns into one stream with summed 
-transfer rates. So it is by definition faster than plain HDD access on its 
-own.
+> I've noticed the 'automake' branch that switches to automake. Looking at
+> the amount of changes and the result, I'm not quite happy and don't see
+> the benefit of automake. An extra layer that only obfuscates the build.
 
-But it even goes beyond: The read and write latencies of the cache devices 
-are measured, and if it goes above a certain threshold, it will fall back 
-fetching the data from the slower device which probably will, and this is a 
-heuristic, have the data ready faster then the congested caching device. 
-This is pretty neat, as it adds benefit to the summed transfer rates.
+ I don't think the set of changes is so huge, all the changes are
+ mostly Makefile.am.
+ 
+ Anyway, why automake:
 
-With this, if I can trust ksysguard, I get transfer rates of up to 800 MB/s 
-in a bcache+3xbtrfs(mraid1,draid0) setup, tho most times it peaks at around 
-150 MB/s where I had around 80 MB/s usual peaks without bcache. But this is 
-not the main benefit. My access latencies and IO queue depths have gone down 
-to virtually zero. And this is probably where the most speedup comes from.
+  - it's way how to standardize build-system, the automake rules are
+    really easy to read, the Makefile.am files are almost the same in
+    all projects. 
 
-System boot (on systemd, with services like postfix and mariadb, using 
-autodefrag and readahead) went down from around 60s to 5s (measured in 
-systemd-analyze critical path), with almost no seeking sounds from the 
-harddisks. KDE starts a lot faster now (maybe another 60-80s down to around 
-10s) and is instantly responsive with all panels, backgrounds and icons 
-loaded when the splash fades out while I had a black background and a lot of 
-ongoing IO previously after splash faded out.
+  - automake+autoconf provides AM_CONDITIONAL(), so you can keep your
+    makefiles pretty simple and maintain all if-then logic in ./configure
+    script where you have available shell and huge number of tests.
 
-The cache hit rate is usually above 80% with an 80 GB bcache partition for a 
-3x 1TB btrfs volume. My SSD is specified with 550 MB/s reading and 150 MB/s 
-writing. Measured it's lower (around 480/130) but still faster than HDD even 
-at linear writing.
+    For example in util-linux we have many internal and external
+    dependencies, but in makefiles we have only "if BUILD_UTILNAME",
+    all logic is strictly in ./configure.ac
 
-I'm using writeback. And I had no data loss or inconsistencies yet, even I 
-had to hard reboot one time or another. But btrfs without bcache has also 
-been rock solid for me in the past few months wrt hard reboots or powerloss. 
-Some people actually say, with bcache the probability of loosing data should 
-be potentially lower as the data is faster on stable storage and thus 
-transactions on btrfs can be closed faster. While bcache will still be in 
-dirty state, it will write back data later and replay its log if it didn't 
-finish before rebooting. Well, bcache is always in dirty state, by design.
+  - provides large set of targets
 
-I just wonder what role bcache would play in writeback mode and btrfs-raid 
-scenario as a single bcache device covers multiple btrfs devices when btrfs 
-itself assumes (and only sees) multiple devices - but it's actually one when 
-passed through bcache first. Write errors may go undetected (because bcache 
-writes behind) while btrfs still sees good data from the cache. But btrfs 
-checksums should probably handle this anyways... I'm not sure. Maybe bcache 
-should not allow reading blocks from the cache which are going to be written 
-back, and then evict written blocks from the cache before those need to be 
-read again from the backing device. It would ensure that btrfs really sees 
-what is on the platter instead of what's maybe cached. Probably in the end, 
-it's the same problem as bit-rot when bcache and HDD unkowningly don't match 
-and later bcache evicts good data from cache and leaves bad data behind.
+  - provides more portable environment
+    (for example: if you want to distribute man pages, then
+    dist_man_MANS += foo.8 is enough, you don't have to care about
+    target directories for the man page section, etc.)
 
-Ahh, complicated... ;-)
+  - forces maintainer to generate better tarballs, after successful
+    "make diskcheck" you can be sure that your tarballs are really
+    usable (for example -- do you know how many header files are
+    missing in the current btrfs-progs Makefile? Do you have a way how
+    to check it?)
 
-But I trust bcache by now though I didn't forcibly try the big disasters (by 
-cutting the power cord during heavy IO or similar funny things). And 
-nevertheless, I still have my daily backups around. ;-)
+  - manually write and maintain smart build-system is difficult and
+    result is almost always very complex stuff
 
-Altogehter, I wonder if having a real hot data cache would bring so much 
-additional benefit. Maybe only when it's huge and when it's really fast (I 
-mean those SSDs capable of doing 500+ MB/s at reading AND writing).
+ There is only one disadvantage, developers have to learn something
+ new. Yes, people hate this thing :-)
+
+ I guess we will see more and more stuff in btrfs-progs, so it's
+ better to the change now than later. 
+ 
+ See e2fsprogs (sorry Ted), it's result of "automake only obfuscates", 
+ many Makefile.in files, '@' everywhere, nightmare.
+
+    Karel
 
 -- 
-Replies to list only preferred.
-
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

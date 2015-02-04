@@ -1,45 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f47.google.com ([209.85.213.47]:63136 "EHLO
-	mail-yh0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161826AbbBDUxK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 15:53:10 -0500
-Received: by mail-yh0-f47.google.com with SMTP id z6so1746064yhz.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 12:53:09 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.21]:52828 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S964903AbbBDVNS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Feb 2015 16:13:18 -0500
+Received: from [192.168.178.24] ([85.176.186.15]) by mail.gmx.com (mrgmx102)
+ with ESMTPSA (Nemesis) id 0LhCDT-1Xp3hE2n4B-00oZXL for
+ <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 22:13:15 +0100
+Message-ID: <54D28B6A.8000200@gmx.de>
+Date: Wed, 04 Feb 2015 22:13:14 +0100
+From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS1cTQqbsYM01baLUmqTXDNE5HZfM-uL8gx0HkHXo-a+A@mail.gmail.com>
-References: <CAJCQCtS1cTQqbsYM01baLUmqTXDNE5HZfM-uL8gx0HkHXo-a+A@mail.gmail.com>
-Date: Wed, 4 Feb 2015 13:53:09 -0700
-Message-ID: <CAJCQCtQUrfYhiG_Huv+M5w=6bEsvgnY1kUbreO-dANMhCrALbQ@mail.gmail.com>
-Subject: Re: paused balance convert from raid1 can no longer be a writeable mount
-From: Chris Murphy <lists@colorremedies.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: INFO: trying to register non-static key with 3.18.5
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is completely reproducible with a brand new file system created
-as raid1, using kernel 3.19 and btrfs-progs 3.18.
+At a 32 bit Gentoo  Linux I get with 3.18.5 the following syslog message:
 
-The conversion from raid1 to single, if paused, will apparently break
-the file system's ability to be subsequently mounted writable. And
-further, btrfs-image fails. I've updated the bug report.
-https://bugzilla.kernel.org/show_bug.cgi?id=92641
+Feb  4 22:09:36 n22 kernel: INFO: trying to register non-static key.
+Feb  4 22:09:36 n22 kernel: the code is fine but needs lockdep annotation.
+Feb  4 22:09:36 n22 kernel: turning off the locking correctness validator.
+Feb  4 22:09:36 n22 kernel: CPU: 0 PID: 2341 Comm: btrfs-cleaner Tainted: G     U         3.18.5 #1
+Feb  4 22:09:36 n22 kernel: Hardware name: LENOVO 4180F65/4180F65, BIOS 83ET75WW (1.45 ) 05/10/2013
+Feb  4 22:09:36 n22 kernel: 00000000 00000000 f04e5db0 c141af35 00000000 f04e5dbc c14188ae c1558ba4
+Feb  4 22:09:36 n22 kernel: f04e5df8 c107ce56 00000000 00000000 f8438888 00000000 00000246 00000000
+Feb  4 22:09:36 n22 kernel: f0e5c78c e1773150 00000000 e76c3a94 e76c3a94 00000246 00000000 f04e5e2c
+Feb  4 22:09:36 n22 kernel: Call Trace:
+Feb  4 22:09:36 n22 kernel: [<c141af35>] dump_stack+0x41/0x52
+Feb  4 22:09:36 n22 kernel: [<c14188ae>] register_lock_class.part.22+0x32/0x36
+Feb  4 22:09:36 n22 kernel: [<c107ce56>] __lock_acquire.isra.29+0x8e6/0x910
+Feb  4 22:09:36 n22 kernel: [<f8438888>] ? btrfs_remove_chunk+0x2d8/0x810 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<c107d4b5>] lock_acquire+0x75/0xe0
+Feb  4 22:09:36 n22 kernel: [<f83fad9d>] ? btrfs_delete_unused_bgs+0x22d/0x260 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f84388d6>] btrfs_remove_chunk+0x326/0x810 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f83fad9d>] ? btrfs_delete_unused_bgs+0x22d/0x260 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f8429f94>] ? free_extent_state.part.31+0x34/0x80 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f83fad9d>] btrfs_delete_unused_bgs+0x22d/0x260 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f8402952>] cleaner_kthread+0x132/0x180 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<f8402820>] ? btree_releasepage+0x40/0x40 [btrfs]
+Feb  4 22:09:36 n22 kernel: [<c105b656>] kthread+0xa6/0xc0
+Feb  4 22:09:36 n22 kernel: [<c1421a81>] ret_from_kernel_thread+0x21/0x30
+Feb  4 22:09:36 n22 kernel: [<c105b5b0>] ? kthread_create_on_node+0x180/0x180
 
-First, the conversion from data/metadata raid1 should be faster than
-requiring fully reading and writing the file system. As this is a 2
-device raid1, each is already effectively data/metadata single, so I'm
-not sure why anything other than metadata needs rewriting.
+With the 3.17 series this was not observed AFAICT.
 
-Second, either what I'm doing should be disallowed (user can't force
-conversion of a degraded array to single), or the file system
-shouldn't break like this.
+-- 
+Toralf
+pgp key: 7B1A 07F4 EC82 0F90 D4C2  8936 872A E508 0076 E94E
 
-Third, the error message is confusing "too many missing devices,
-writeable mount is not allowed" the first part of that is definitely
-not true. How can there be too many missing devices when it started
-out as a 2 device volume and the remaining device isn't an ro or seed
-device?
-
-
-Chris Murphy

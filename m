@@ -1,106 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35254 "EHLO plane.gmane.org"
+Received: from srv1.host37.de ([176.28.54.59]:48570 "EHLO srv1.host37.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754475AbbBDXAJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Feb 2015 18:00:09 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YJ8vU-0008Qw-GW
-	for linux-btrfs@vger.kernel.org; Thu, 05 Feb 2015 00:00:04 +0100
-Received: from moeller.plus.com ([81.174.172.105])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Feb 2015 00:00:04 +0100
-Received: from huaraz by moeller.plus.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Feb 2015 00:00:04 +0100
+	id S965179AbbBDXL7 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 18:11:59 -0500
+Received: from [10.172.14.149] (unknown [130.75.172.171])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by srv1.host37.de (Postfix) with ESMTPSA id 07AD91121
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Feb 2015 23:42:37 +0100 (CET)
+From: Juergen Fitschen <me@jue.yt>
+Content-Type: text/plain; charset=us-ascii
+Subject: Deadlock on 3.18.5
+Message-Id: <2BFED81A-1A34-4A4B-800A-A4B6286B74C7@jue.yt>
+Date: Thu, 5 Feb 2015 00:05:33 +0100
 To: linux-btrfs@vger.kernel.org
-From: "Markus Moeller" <huaraz@moeller.plus.com>
-Subject: Btrfs subvolume question
-Date: Wed, 4 Feb 2015 22:54:49 -0000
-Message-ID: <mau7vs$pjj$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-1";
-	reply-type=original
+Mime-Version: 1.0 (Mac OS X Mail 8.1 \(1993\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi ,
+Hey,
 
-   I am new to btrfs and wonder what I need to do to move subvolumes to the 
-right filesystem.  I see the following:
+I just got a deadlock on Linux 3.18.5. It occurred while processing a some data: All in all reading from the btrfs volume, decompressing it (the bottleneck in this process), doing some calculations and finally writing the results back to a new file on the volume.
 
-df -h
-Filesystem                       Size  Used Avail Use% Mounted on
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /
-devtmpfs                         235M  8.0K  235M   1% /dev
-tmpfs                            242M   84K  242M   1% /dev/shm
-tmpfs                            242M  2.4M  240M   1% /run
-tmpfs                            242M     0  242M   0% /sys/fs/cgroup
-/dev/mapper/system_13.2-usr_lv    18G  6.9G   10G  41% /usr
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /srv
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /.snapshots
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /tmp
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /usr/local
-/dev/sda2                        486M   59M  398M  13% /boot
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% 
-/boot/grub2/x86_64-efi
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /boot/grub2/i386-pc
-/dev/mapper/export_vg-export_lv   20G   18G  2.9G  86% /export
-/dev/mapper/export_vg-src_lv     5.0G  2.6G  2.5G  51% /src
-/dev/mapper/system_13.2-var_lv   4.0G  196M  3.4G   6% /var
-/dev/mapper/system_13.2-opt_lv   6.0G  152M  5.3G   3% /opt
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/spool
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/tmp
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/opt
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/log
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/named
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/mailman
-/dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/pgsql
+I am using a freshly installed Ubuntu 14.04 in a virtual machine. The block device used for btrfs is a LVM volume offered by the KVM hypervisor.
+Unfortunately I was using an old version of my user space tools (Version 3.12-1), so it might be related to that?
+The volume was mounted with the following mount options:
+> default,compress-force=lzo,subvol=data
 
-
-and I would like to have all the var subvolumes using the /var filesystem 
-space and not root.   The same for /boot/grub2 subvolumes. They should use 
-the /boot filesystem.   I don't know how I got to this and don't know how to 
-change.
-
-# cat /etc/fstab
-UUID=d300b5ad-372b-4f86-b952-4aa4fc62a84e swap swap defaults 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f / btrfs defaults 0 0
-UUID=fd14684f-1950-4f33-95b5-b54f069b4fe0 /boot ext4 acl,user_xattr 1 2
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /boot/grub2/i386-pc btrfs 
-subvol=boot/grub2/i386-pc 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /boot/grub2/x86_64-efi btrfs 
-subvol=boot/grub2/x86_64-efi 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /home btrfs subvol=home 0 0
-UUID=f535177b-18a5-443c-8236-96105d58a621 /opt btrfs defaults 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /srv btrfs subvol=srv 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /tmp btrfs subvol=tmp 0 0
-UUID=62ffc2f3-7e3a-433e-8a4e-5a89a352f8cf /usr btrfs defaults 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /usr/local btrfs subvol=usr/local 
-0 0
-UUID=323ba68a-e7ed-4f0f-9716-dcad92bb9808 /var btrfs defaults 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/crash btrfs subvol=var/crash 
-0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/lib/mailman btrfs 
-subvol=var/lib/mailman 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/lib/named btrfs 
-subvol=var/lib/named 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/lib/pgsql btrfs 
-subvol=var/lib/pgsql 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/log btrfs subvol=var/log 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/opt btrfs subvol=var/opt 0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/spool btrfs subvol=var/spool 
-0 0
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /var/tmp btrfs subvol=var/tmp 0 0
-/dev/export_vg/export_lv /export xfs defaults 1 2
-/dev/export_vg/src_lv /src xfs defaults 1 2
-UUID=7a681ad4-5b82-4e78-9b20-1d719c89fe6f /.snapshots btrfs 
-subvol=.snapshots 0 0
-
-Thank you
-Markus 
+Related kernel stack trace:
+> Feb  4 22:00:41 qdock03 kernel: [22560.284120] INFO: task btrfs-transacti:508 blocked for more than 120 seconds.
+> Feb  4 22:00:41 qdock03 kernel: [22560.284200]       Tainted: G        W      3.18.5-031805-generic #201501292218
+> Feb  4 22:00:41 qdock03 kernel: [22560.284267] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> Feb  4 22:00:41 qdock03 kernel: [22560.284339] btrfs-transacti D 0000000000000001     0   508      2 0x00000000
+> Feb  4 22:00:41 qdock03 kernel: [22560.284345]  ffff881ece617b28 0000000000000046 ffffffffc0136e90 00000000008bee9a
+> Feb  4 22:00:41 qdock03 kernel: [22560.284349]  ffff881ece617fd8 0000000000013640 ffff881ece095b00 0000000000013640
+> Feb  4 22:00:41 qdock03 kernel: [22560.284352]  ffff881ed0638000 ffff881ecfdf5000 ffff881ece617b98 ffff881f79c33f40
+> Feb  4 22:00:41 qdock03 kernel: [22560.284356] Call Trace:
+> Feb  4 22:00:41 qdock03 kernel: [22560.284397]  [<ffffffffc0136e90>] ? btree_io_failed_hook+0x60/0x60 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284406]  [<ffffffff817b0750>] ? bit_wait_timeout+0x80/0x80
+> Feb  4 22:00:41 qdock03 kernel: [22560.284411]  [<ffffffff817afd29>] schedule+0x29/0x70
+> Feb  4 22:00:41 qdock03 kernel: [22560.284415]  [<ffffffff817afdff>] io_schedule+0x8f/0xd0
+> Feb  4 22:00:41 qdock03 kernel: [22560.284419]  [<ffffffff817b077c>] bit_wait_io+0x2c/0x50
+> Feb  4 22:00:41 qdock03 kernel: [22560.284423]  [<ffffffff817b04e5>] __wait_on_bit+0x65/0x90
+> Feb  4 22:00:41 qdock03 kernel: [22560.284428]  [<ffffffff8117888b>] ? find_get_pages_tag+0xcb/0x170
+> Feb  4 22:00:41 qdock03 kernel: [22560.284449]  [<ffffffffc015ce8e>] ? clear_state_bit+0xae/0x170 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284455]  [<ffffffff81177e37>] wait_on_page_bit+0xc7/0xd0
+> Feb  4 22:00:41 qdock03 kernel: [22560.284460]  [<ffffffff810b4cf0>] ? wake_atomic_t_function+0x40/0x40
+> Feb  4 22:00:41 qdock03 kernel: [22560.284465]  [<ffffffff81178004>] filemap_fdatawait_range+0xf4/0x180
+> Feb  4 22:00:41 qdock03 kernel: [22560.284483]  [<ffffffffc013f41f>] btrfs_wait_marked_extents+0x8f/0x140 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284498]  [<ffffffffc013f532>] btrfs_write_and_wait_transaction+0x62/0xb0 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284514]  [<ffffffffc013fe04>] btrfs_commit_transaction+0x734/0xae0 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284528]  [<ffffffffc013d4d5>] transaction_kthread+0x1d5/0x250 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284543]  [<ffffffffc013d300>] ? open_ctree+0x1f50/0x1f50 [btrfs]
+> Feb  4 22:00:41 qdock03 kernel: [22560.284548]  [<ffffffff81093a79>] kthread+0xc9/0xe0
+> Feb  4 22:00:41 qdock03 kernel: [22560.284552]  [<ffffffff810939b0>] ? flush_kthread_worker+0x90/0x90
+> Feb  4 22:00:41 qdock03 kernel: [22560.284556]  [<ffffffff817b3ebc>] ret_from_fork+0x7c/0xb0
+> Feb  4 22:00:41 qdock03 kernel: [22560.284559]  [<ffffffff810939b0>] ? flush_kthread_worker+0x90/0x90
 
 
+
+Regards,
+  Juergen

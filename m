@@ -1,136 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f170.google.com ([209.85.217.170]:52125 "EHLO
-	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933738AbbBDM2c (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 07:28:32 -0500
-Received: by mail-lb0-f170.google.com with SMTP id w7so1213454lbi.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 04:28:30 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1422864528-8625-1-git-send-email-forrestl@synology.com>
-References: <1422864528-8625-1-git-send-email-forrestl@synology.com>
-Date: Wed, 4 Feb 2015 20:28:30 +0800
-Message-ID: <CAJSVwFMaA9_d64TeWfL6b9Keae+Gb2d__HiTv1W_E8Rv=QFS9A@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete
- unused block group
-From: Forrest Liu <forrestl@synology.com>
+Received: from cantor2.suse.de ([195.135.220.15]:53838 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S966247AbbBDP4u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Feb 2015 10:56:50 -0500
+Date: Wed, 4 Feb 2015 16:56:48 +0100
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: Forrest Liu <forrestl@synology.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 3.19-rc1
+Message-ID: <20150204155648.GG24227@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel BUG_ON when running following script on kernel 3.19-rc7
+Hi,
 
-mntpath=/btrfs
-loopdev=/dev/loop0
-filepath=/volume2/100g_image
+this is a heads-up pre-release that should let the distro people test
+the reworked build system, switched to autoconf.
 
-umount $mntpath
-losetup -d $loopdev
-truncate --size 1000g $filepath
-losetup $loopdev $filepath
-mkfs.btrfs -f $loopdev
-mount $loopdev $mntpath
+However there were some problems [1] found so we have to fix them first
+and rc2 should be ready for wider testing in distros.  The other changes
+are non-intrusive so it's basically 3.18.2 and should be safe as a
+replacement for general use.
 
-for i in `seq 1 1 100`; do
-        echo "round $i"
-        for j in `seq 1 1 1000`; do
-                fallocate -l 1g $mntpath/$j
-        done
-        rm $mntpath/*
-done
+[1] http://news.gmane.org/gmane.comp.file-systems.btrfs
 
-[  613.093084] ------------[ cut here ]------------
-[  613.097928] kernel BUG at fs/btrfs/inode.c:3142!
-[  613.105855] invalid opcode: 0000 [#1] SMP
-[  613.112702] Modules linked in: coretemp(E) crc32_pclmul(E)
-ghash_clmulni_intel(E) aesni_intel(E) snd_ens1371(E) snd_ac97_codec(E)
-aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ppdev(E) ac97_bus(E)
-ablk_helper(E) gameport(E) cryptd(E) snd_rawmidi(E) snd_seq_device(E)
-snd_pcm(E) vmw_balloon(E) snd_timer(E) snd(E) soundcore(E)
-serio_raw(E) vmwgfx(E) ttm(E) drm_kms_helper(E) drm(E) vmw_vmci(E)
-parport_pc(E) shpchp(E) i2c_piix4(E) mac_hid(E) lp(E) parport(E)
-btrfs(E) xor(E) raid6_pq(E) hid_generic(E) usbhid(E) hid(E) psmouse(E)
-ahci(E) libahci(E) e1000(E) mptspi(E) mptscsih(E) mptbase(E) floppy(E)
-vmw_pvscsi(E) vmxnet3(E)
-[  613.144196] CPU: 0 PID: 1480 Comm: btrfs-cleaner Tainted: G
-   E  3.19.0-rc7-custom #2
-[  613.148501] Hardware name: VMware, Inc. VMware Virtual
-Platform/440BX Desktop Reference Platform, BIOS 6.00 07/31/2013
-[  613.152694] task: ffff880035cdb1a0 ti: ffff880039cf4000 task.ti:
-ffff880039cf4000
-[  613.154969] RIP: 0010:[<ffffffffa01441c2>]  [<ffffffffa01441c2>]
-btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
-[  613.157780] RSP: 0018:ffff880039cf7c48  EFLAGS: 00010286
-[  613.159560] RAX: 00000000ffffffe4 RBX: ffff88003bd981a0 RCX: ffff88003c9e4000
-[  613.161904] RDX: 0000000000002244 RSI: 0000000000040000 RDI: ffff88003c9e4138
-[  613.164264] RBP: ffff880039cf7c88 R08: 000060ffc0000850 R09: 0000000000000000
-[  613.166507] R10: ffff88003bc4b7a0 R11: ffffea0000eb6740 R12: ffff88003c9c0000
-[  613.168681] R13: ffff88003c102160 R14: ffff88003c9c0458 R15: 0000000000000001
-[  613.170932] FS:  0000000000000000(0000) GS:ffff88003f600000(0000)
-knlGS:0000000000000000
-[  613.173316] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  613.175227] CR2: 00007f6343537000 CR3: 0000000036329000 CR4: 00000000000407f0
-[  613.177554] Stack:
-[  613.178712]  ffff880039cf7c88 ffffffffa0182a54 ffff88003c9e4b04
-ffff88003c9c7800
-[  613.181297]  ffff88003bc4b7a0 ffff88003bd981a0 ffff88003c8db200
-ffff88003c2fcc60
-[  613.183782]  ffff880039cf7d18 ffffffffa012da97 ffff88003bc4b7a4
-ffff88003bc4b7a0
-[  613.186171] Call Trace:
-[  613.187493]  [<ffffffffa0182a54>] ?
-lookup_free_space_inode+0x44/0x100 [btrfs]
-[  613.189801]  [<ffffffffa012da97>]
-btrfs_remove_block_group+0x137/0x740 [btrfs]
-[  613.192126]  [<ffffffffa0166912>] btrfs_remove_chunk+0x672/0x780 [btrfs]
-[  613.194267]  [<ffffffffa012e2ff>] btrfs_delete_unused_bgs+0x25f/0x280 [btrfs]
-[  613.196567]  [<ffffffffa0135e4c>] cleaner_kthread+0x12c/0x190 [btrfs]
-[  613.198687]  [<ffffffffa0135d20>] ? check_leaf+0x350/0x350 [btrfs]
-[  613.200758]  [<ffffffff8108f232>] kthread+0xd2/0xf0
-[  613.202616]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
-[  613.204738]  [<ffffffff8175dabc>] ret_from_fork+0x7c/0xb0
-[  613.206652]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
-[  613.208741] Code: ff ff 0f 1f 80 00 00 00 00 89 45 c8 3e 80 63 80
-fd 48 89 df e8 d0 23 fe ff 8b 45 c8 e9 14 ff ff ff b8 f4 ff ff ff e9
-12 ff ff ff <0f> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90
-55 48
-[  613.216562] RIP  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
-[  613.218828]  RSP <ffff880039cf7c48>
-[  613.220382] ---[ end trace 71073106deb8a457 ]---
+Changes:
+* clean build in checkout requires
+  ./autogen.sh
+  ./configure
+  make
+* build from tarball may skip the autogen step
+* missing build dependencies are caught by configure
+* optional features during build:
+  --disable-documentation -- ported existing makefile feature
+  --disable-backtrace -- dtto
+  --disable-convert -- optional build of convert due to external dependencies
 
-The patch fix problem of BUG_ON
+Shortlog, as not all changes went through the mailinglist:
 
-Thanks,
-Forrest
+David Sterba (18):
+      btrfs-progs: build, make build test work again
+      btrfs-progs: build, clean all generated files
+      btrfs-progs: build, use autoconf to detect RM
+      btrfs-progs: build, make autogen.sh work on older systems
+      btrfs-progs: build more utilities by default
+      btrfs-progs: add bash completion script
+      btrfs-progs: drop old fi balance syntax from help
+      btrfs-progs: build, fix rules to clean temporary files in docs
+      btrfs-progs: autoconf: generate documentation makefile as well
+      btrfs-progs: autoconf: use variable substitutions in doc makefile
+      btrfs-progs: build, fix version macro name
+      btrfs-progs: autoconf: detect tools to build docs
+      btrfs-progs: autoconf: make btrfs-convert build optional
+      btrfs-progs: autoconf: print summary about features
+      btrfs-progs: autoconf: check if backtrace is really supported
+      btrfs-progs: autoconf: check btrfs-convert dependencies
+      btrfs-progs: qgroups, adjust help text
+      Btrfs progs v3.19-rc1
 
-2015-02-02 16:08 GMT+08:00 Forrest Liu <forrestl@synology.com>:
-> btrfs_orphan_reserve_metadata() will grab metadata reservation from
-> transaction handle, and the transaction handle was passed from
-> btrfs_delete_unused_bgs() when delete unused block group.
->
-> Repace btrfs_join_transaction() with btrfs_start_transaction() in
-> btrfs_delete_unused_bgs() to prevent BUG_ON() in btrfs_orphan_add()
->
-> Signed-off-by: Forrest Liu <forrestl@synology.com>
-> ---
->  fs/btrfs/extent-tree.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 53294da..61a3255 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -9548,7 +9548,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->                  * Want to do this before we do anything else so we can recover
->                  * properly if we fail to join the transaction.
->                  */
-> -               trans = btrfs_join_transaction(root);
-> +               /* 1 for btrfs_orphan_reserve_metadata() */
-> +               trans = btrfs_start_transaction(root, 1);
->                 if (IS_ERR(trans)) {
->                         btrfs_set_block_group_rw(root, block_group);
->                         ret = PTR_ERR(trans);
-> --
-> 1.9.1
->
+Karel Zak (10):
+      btrfs-progs: autoconf: add ./configure script
+      btrfs-progs: autoconf: use config.h
+      btrfs-progs: autoconf: use standard PACKAGE_* macros
+      btrfs-progs: autoconf: use ./configure to generate version.h
+      btrfs-progs: autoconf: check for build programs in ./configure
+      btrfs-progs: autoconf: use paths and $*_LIBS from ./configure
+      btrfs-progs: autoconf: cleanup compilation flags usage
+      btrfs-progs: autoconf: clean generated files, make version.h stuff more robust
+      btrfs-progs: autoconf: add --disable-backtrace
+      btrfs-progs: autoconf: add --disable-documentation
+
+Qu Wenruo (6):
+      btrfs-progs: Record orphan data extent ref to corresponding root.
+      btrfs-progs: Add btrfs_get_extent() and btrfs_punch_hole().
+      btrfs-progs: Record and report every file extent hole.
+      btrfs-progs: Add repair and report function for orphan file extent.
+      btrfs-progs: Add repair function for discount file extent hole.
+      btrfs-progs: read_tree_block() and read_node_slot() cleanup.

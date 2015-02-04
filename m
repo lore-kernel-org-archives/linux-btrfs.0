@@ -1,104 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40570 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751383AbbBDHOz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 02:14:55 -0500
-Date: Wed, 4 Feb 2015 15:14:44 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Forrest Liu <forrestl@synology.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix find_free_dev_extent() malfunction in case
- device tree has hole
-Message-ID: <20150204071443.GA15258@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1422862299-7361-1-git-send-email-forrestl@synology.com>
+Received: from szxga02-in.huawei.com ([119.145.14.65]:30572 "EHLO
+	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932204AbbBDIJg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 03:09:36 -0500
+Message-ID: <54D1D3B4.9060209@huawei.com>
+Date: Wed, 4 Feb 2015 16:09:24 +0800
+From: Miao Xie <miaoxie@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1422862299-7361-1-git-send-email-forrestl@synology.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+CC: <linux-fsdevel@vger.kernel.org>
+Subject: Re: [PATCH RFC v6 6/9] vfs: Add sb_want_write() function to get vfsmount
+ from a given sb.
+References: <1423015855-27357-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1423015855-27357-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="gbk"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 02, 2015 at 03:31:39PM +0800, Forrest Liu wrote:
-> If device tree has hole, find_free_dev_extent() cannot find available
-> address properly.
+On Wed, 04 Feb 2015 10:10:55 +0800, Qu Wenruo wrote:
+> *** Please DON'T merge this patch, it's only for disscusion purpose ***
 > 
-> The example below, has one BIG hole in device tree, and can only
-> allocate just one chunk in a transaction.
+> There are sysfs interfaces in some fs, only btrfs yet, which will modify
+> on-disk data.
+> Unlike normal file operation routine we can use mnt_want_write_file() to
+> protect the operation, change through sysfs won't to be binded to any file
+> in the filesystem.
 > 
->     item 9 key (1 DEV_EXTENT 273841913856) itemoff 15811 itemsize 48
->         dev extent chunk_tree 3
->         chunk objectid 256 chunk offset 272759783424 length 1073741824
->     item 10 key (1 DEV_EXTENT 1071632089088) itemoff 15763 itemsize 48
->         dev extent chunk_tree 3
->         chunk objectid 256 chunk offset 1070549958656 length 1073741824
->     item 11 key (1 DEV_EXTENT 1072705830912) itemoff 15715 itemsize 48
->             dev extent chunk_tree 3
->             chunk objectid 256 chunk offset 1071623700480 length
+> So introduce new sb_want_write() to do the protection agains a super
+> block, which acts much like mnt_want_write() but will return success if
+> the super block is read-write.
 > 
-> Signed-off-by: Forrest Liu <forrestl@synology.com>
-> ---
->  fs/btrfs/volumes.c | 15 +++++++++++----
->  1 file changed, 11 insertions(+), 4 deletions(-)
+> Since sysfs handler don't go through the normal vfsmount, so it won't
+> increase the refcount of and even we have sb_want_write() waiting sb to
+> be unfrozen, the fs can still be unmounted without problem.
+> Causing the modules unable to be removed and user can find out what's
+> wrong until 
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index da7e0e1..61be789 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1060,6 +1060,7 @@ static int contains_pending_extent(struct btrfs_trans_handle *trans,
->  	struct extent_map *em;
->  	struct list_head *search_list = &trans->transaction->pending_chunks;
->  	int ret = 0;
-> +	u64 physical_start = *start;
->  
->  again:
->  	list_for_each_entry(em, search_list, list) {
-> @@ -1070,9 +1071,9 @@ again:
->  		for (i = 0; i < map->num_stripes; i++) {
->  			if (map->stripes[i].dev != device)
->  				continue;
-> -			if (map->stripes[i].physical >= *start + len ||
-> +			if (map->stripes[i].physical >= physical_start + len ||
->  			    map->stripes[i].physical + em->orig_block_len <=
-> -			    *start)
-> +			    physical_start)
->  				continue;
->  			*start = map->stripes[i].physical +
->  				em->orig_block_len;
-
-This part looks good.
-
-> @@ -1195,8 +1196,14 @@ again:
->  			 */
->  			if (contains_pending_extent(trans, device,
->  						    &search_start,
-> -						    hole_size))
-> -				hole_size = 0;
-> +						    hole_size)) {
-> +				if (key.offset >= search_start)
-> +					hole_size = key_offset - search_start;
-> +				else {
-> +					WARN_ON(1);
-> +					hole_size = 0;
-
-I'd prefer WARN_ON_ONCE(1) since key.offset should not be less than search_start by design.
-
-Other looks good.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
-
-> +				}
-> +			}
->  
->  			if (hole_size > max_hole_size) {
->  				max_hole_start = search_start;
-> -- 
-> 1.9.1
+> To solve such problem, we have different strategies to solve it.
+> 1) Extra check on last instance umount of a sb
+> This is the method the patch uses.
+> This method seems valid enough, since we want to get write protection on
+> a sb, so it's OK for the sb if there is *ANY* mount instance.
+> Problem 1.1)
+> But lsof and other tools won't help if sb_want_write() on frozen fs cause
+> it unable to be unmounted.
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Problem 1.2)
+> When get namespace involved, things will get more complicated.
+> Like the following case:
+> 	Alice				|		Bob
+> Mount devA on /mnt1 in her ns		| Mount devA on /mnt2/ in his ns
+> freeze /mnt1				|
+> sb_want_write() (waiting)		|
+> umount /mnt1 (success since there is 	|
+> another mount instance)			|
+> 					| umount /mnt2 (fail since there
+> 					| is sb_want_write() waiting)
+> 
+> So Alice can't thaw the fs since there is no mount point for it now.
+> 
+> 2) Don't allow any umount of the sb if there is sb_want_write().
+> More aggressive one, purpose by Miao Xie.
+> Can't resolve problem 1.1) but will solve problem 1.2).
+
+This is one of the two methods that I told you, but not the one I recommended.
+What I wanted to recommend is that thaw the fs at the beginning of the
+sb kill process, and in sb_want_write(), we check if the sb is active or
+not after we pass sb_start_write, if the sb is not active, go back.
+(This way also is not so good, but better than the above one)
+
+> Although introduced new problem like the following:
+> 	Alice
+> Mount devA on /mnt1
+> freeze /mnt1
+> sb_want_write() (waiting)
+> mount devA on /mnt2 and /mnt3
+> 
+> /mnt[123] all can't be unmounted, but new mount can still be created.
+> 
+> 3) sb_want_write() doesn't make any sense and break VFS rules!
+> Action which will change on-disk data should not be tunable through sysfs,
+> and sb_want_write() things which by-pass all the VFS check is just evil.
+> And for btrfs, we already have the ioctl to set label, why bothering new
+> sysfs interface to do it again?
+> 
+> Although I use method 1) to do it, I am still not certain about which is
+> method is the correct one.
+> 
+> So any advise is welcomed.
+> 
+> Thanks,
+> Qu
+
+[SNIP]
+
+> +/**
+> + * sb_want_write - get write acess to a super block
+> + * @sb: the superblock of the filesystem
+> + *
+> + * This tells the low-level filesystem that a write is about to be performed to
+> + * it, and makes sure that the writes are allowed (superblock is read-write,
+> + * filesystem is not frozen) before returning success.
+> + * When the write operation is finished, sb_drop_write() must be called.
+> + * This is much like mnt_want_write() as a refcount, but only needs
+> + * the superblock to be read-write.
+> + */
+> +int sb_want_write(struct super_block *sb)
+> +{
+> +	spin_lock(&sb->s_want_write_lock);
+> +	if (sb->s_want_write_block) {
+> +		spin_unlock(&sb->s_want_write_lock);
+> +		return -EBUSY;
+> +	}
+> +	sb->s_want_write_count++;
+> +	spin_unlock(&sb->s_want_write_lock);
+> +
+> +	sb_start_write(sb);
+> +	if (sb->s_readonly_remount || sb->s_flags & MS_RDONLY) {
+
+If someone remount the fs to R/O here(after the check), we should not continue
+to change label/features. I think we need add some check in remount functions.
+
+Thanks
+Miao

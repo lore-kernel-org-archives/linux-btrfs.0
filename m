@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34439 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31549 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753709AbbBDHUI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 02:20:08 -0500
+	with ESMTP id S1753796AbbBDHUJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 02:20:09 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t147IH8h020241
-	for <linux-btrfs@vger.kernel.org>; Wed, 4 Feb 2015 15:18:17 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t147IIsG020247
+	for <linux-btrfs@vger.kernel.org>; Wed, 4 Feb 2015 15:18:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/7] btrfs-progs: Introduce new function reset_tree_block_csum() for later tree block csum reset.
-Date: Wed, 4 Feb 2015 15:16:51 +0800
-Message-ID: <1423034213-14018-8-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 6/7] btrfs-progs: Introduce new function reset_(one_root/roots)_csum() to reset one/all tree's csum in tree root.
+Date: Wed, 4 Feb 2015 15:16:52 +0800
+Message-ID: <1423034213-14018-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1423034213-14018-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1423034213-14018-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,77 +18,196 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-New function reset_tree_block_csum() will do the black magic to reset
-csum for a tree block in-place.
-
-This provides the basis to the whole tree csum resetting function.
+New function reset_one_root_csum() will reset all csum in one root.
+And reset_roots_csum() will reset all csum of all trees in tree root.
+which provides the basis for later dangerous options.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 56 insertions(+)
+ cmds-check.c | 176 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 176 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 5817ecf..e4b4f4a 100644
+index e4b4f4a..535a518 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -9137,6 +9137,62 @@ static u16 report_root_corrupted(struct btrfs_fs_info *fs_info,
+@@ -9193,6 +9193,182 @@ out:
  	return ret;
  }
  
-+/*
-+ * Black magics to reset the csum of a tree block.
-+ * The evil part is to modify block without transaction/cow.
-+ *
-+ * Return 0 if the csum is OK or reset the csum
-+ * Return <0 if error happened
-+ */
-+static int reset_tree_block_csum(struct btrfs_fs_info *fs_info,
-+				 u64 bytenr, u32 len)
++static int reset_one_root_csum(struct btrfs_root *root)
 +{
-+	/*
-+	 * read_tree_block just use root as ladder to reach fs_info,
-+	 * so use chunk_root since it must be OK.
-+	 */
-+	struct btrfs_root *root = fs_info->chunk_root;
-+	struct extent_buffer *eb;
-+	char *buf = NULL;
-+	u32 crc;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct extent_buffer *node;
++	u32 sectorsize = root->sectorsize;
++	int max_level = btrfs_root_level(&root->root_item);
++	int slot;
++	int i;
 +	int ret = 0;
 +
-+	eb = read_tree_block(root, bytenr, len, 0);
-+	/* No need to do anything since its csum is OK */
-+	if (extent_buffer_uptodate(eb))
-+		goto out;
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->reada = 0;
 +
-+	buf = malloc(len);
-+	if (!buf) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	ret = read_data_from_disk(fs_info, buf, bytenr, len, 0);
-+	if (ret < 0)
-+		goto out;
-+	crc = ~(u32)0;
-+	crc = btrfs_csum_data(NULL, buf + BTRFS_CSUM_SIZE, crc,
-+			      len - BTRFS_CSUM_SIZE);
-+	btrfs_csum_final(crc, buf);
-+	ret = write_data_to_disk(fs_info, buf, bytenr, len, 0);
-+	if (ret < 0)
-+		goto out;
++	/* Iterate all levels except level 0 */
++	for (i = 0; i < max_level; i++) {
++		int cur_level = max_level - i;
 +
-+	/* Make sure now we can read the tree block */
-+	eb = read_tree_block(root, bytenr, len, 0);
-+	if (!extent_buffer_uptodate(eb)) {
-+		if (IS_ERR(eb))
-+			ret = PTR_ERR(eb);
-+		else
-+			ret = -EINVAL;
-+		goto out;
++		path->lowest_level = cur_level;
++		key.offset = 0;
++		key.objectid = 0;
++		key.type = 0;
++
++		/*
++		 * btrfs_search_slot() can't work with lowest_level and cow,
++		 * so use inslen=0 and cow=0 and later modify will be done
++		 * directly to disk.
++		 */
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0)
++			goto out;
++
++		/* Iterate all node slots in this level */
++		while (1) {
++			u64 bytenr;
++
++			node = path->nodes[0];
++			slot = path->slots[0];
++			bytenr = btrfs_node_blockptr(node, slot);
++
++			if (bytenr != round_down(bytenr, sectorsize)) {
++				bytenr = round_down(bytenr, sectorsize);
++				btrfs_set_node_blockptr(node, slot, bytenr);
++				ret = write_tree_block(NULL, root, node);
++				if (ret < 0) {
++					fprintf(stderr,
++					"Fail to write extent at %llu\n",
++						bytenr);
++					goto out;
++				}
++			}
++			ret = reset_tree_block_csum(fs_info, bytenr,
++						    root->nodesize);
++			if (ret < 0) {
++				fprintf(stderr,
++					"Fail to reset csum for tree block at %llu\n",
++					bytenr);
++				goto out;
++			}
++
++			ret = btrfs_next_slot(root, path, cur_level);
++			/*
++			 * Error should not happen since higher level iteration
++			 * has already reset the csum of this level.
++			 * Either way, goto next level should be OK.
++			 */
++			if (ret)
++				break;
++		}
++		btrfs_release_path(path);
 +	}
 +out:
-+	free(buf);
-+	free_extent_buffer(eb);
++	btrfs_free_path(path);
++	return ret;
++}
++
++static int reset_roots_csum(struct btrfs_root *tree_root)
++{
++	struct btrfs_fs_info *fs_info = tree_root->fs_info;
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	struct btrfs_root_item *ri;
++	struct btrfs_root *root;
++	struct extent_buffer *node;
++	u32 nodesize = tree_root->nodesize;
++	u32 sectorsize = tree_root->sectorsize;
++	u64 bytenr;
++	int slot;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = 0;
++	key.offset = 0;
++	key.type = 0;
++
++	/*
++	 * Tree root is OK and we can do cow. But in case extent tree is
++	 * corrupted, we still use the nocow method.
++	 */
++	ret = btrfs_search_slot(NULL, tree_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	while (1) {
++		slot = path->slots[0];
++		node = path->nodes[0];
++		btrfs_item_key_to_cpu(node, &key, slot);
++		if (key.type != BTRFS_ROOT_ITEM_KEY)
++			goto next;
++
++		/*
++		 * skip tree reloc tree, it's not support by
++		 * btrfs_read_fs_root() yet.
++		 */
++		if (key.objectid == BTRFS_TREE_RELOC_OBJECTID)
++			goto next;
++
++		ri = btrfs_item_ptr(node, slot, struct btrfs_root_item);
++		bytenr = btrfs_disk_root_bytenr(node, ri);
++
++		/*
++		 * Check if the bytenr is aligned.
++		 * If the error bit is only in the low all zero bits,
++		 * no real damage will happen since we will align it.
++		 */
++		if (round_down(bytenr, sectorsize) != bytenr) {
++			bytenr = round_down(bytenr, sectorsize);
++			btrfs_set_disk_root_bytenr(node, ri, bytenr);
++			ret = write_tree_block(NULL, root, node);
++			if (ret < 0) {
++				fprintf(stderr,
++				"Fail to write extent at %llu\n",
++					bytenr);
++				goto out;
++			}
++		}
++
++		ret = reset_tree_block_csum(fs_info, bytenr, nodesize);
++		if (ret < 0) {
++			fprintf(stderr,
++				"Failed to reset root for tree %llu, skip it\n",
++				key.objectid);
++			goto next;
++		}
++		key.offset = (u64)-1;
++		root = btrfs_read_fs_root(fs_info, &key);
++		if (!root || IS_ERR(root) ||
++		    !extent_buffer_uptodate(root->node)) {
++			fprintf(stderr,
++				"Root of tree %lld is still corrupted, skip it\n",
++				key.objectid);
++			goto next;
++		}
++		ret = reset_one_root_csum(root);
++		if (ret < 0)
++			goto next;
++
++next:
++		ret = btrfs_next_item(tree_root, path);
++		if (ret < 0)
++			goto out;
++		if (ret > 0) {
++			ret = 0;
++			goto out;
++		}
++	}
++out:
++	btrfs_free_path(path);
 +	return ret;
 +}
 +

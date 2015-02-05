@@ -1,117 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:32930 "EHLO
-	resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751260AbbBEDsn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Feb 2015 22:48:43 -0500
-Message-ID: <54D2E62E.7080208@pobox.com>
-Date: Wed, 04 Feb 2015 19:40:30 -0800
-From: Robert White <rwhite@pobox.com>
+Received: from mail-la0-f43.google.com ([209.85.215.43]:34626 "EHLO
+	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751979AbbBEECx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 23:02:53 -0500
+Received: by mail-la0-f43.google.com with SMTP id pn19so5206281lab.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 20:02:52 -0800 (PST)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Markus Moeller <huaraz@moeller.plus.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs subvolume question
-References: <mau7vs$pjj$1@ger.gmane.org> <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
-In-Reply-To: <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <54D2DEBF.1080404@ctac.me.uk>
+References: <54D2DEBF.1080404@ctac.me.uk>
+Date: Thu, 5 Feb 2015 12:02:52 +0800
+Message-ID: <CAJSVwFMCJnJS0yp=--oxToKBNWGRSkUY_hiSvwWdX3sEw-7UmA@mail.gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:3123!
+From: Forrest Liu <forrestl@synology.com>
+To: Chris Baker <ktg@ctac.me.uk>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/04/2015 06:27 PM, Chris Murphy wrote:
-> On Wed, Feb 4, 2015 at 3:54 PM, Markus Moeller <huaraz@moeller.plus.com> wrote:
->> Hi ,
->>
->>    I am new to btrfs and wonder what I need to do to move subvolumes to the
->> right filesystem.  I see the following:
->>
->> df -h
->> Filesystem                       Size  Used Avail Use% Mounted on
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /
->> devtmpfs                         235M  8.0K  235M   1% /dev
->> tmpfs                            242M   84K  242M   1% /dev/shm
->> tmpfs                            242M  2.4M  240M   1% /run
->> tmpfs                            242M     0  242M   0% /sys/fs/cgroup
->> /dev/mapper/system_13.2-usr_lv    18G  6.9G   10G  41% /usr
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /srv
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /.snapshots
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /tmp
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /usr/local
->> /dev/sda2                        486M   59M  398M  13% /boot
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32%
->> /boot/grub2/x86_64-efi
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /boot/grub2/i386-pc
->> /dev/mapper/export_vg-export_lv   20G   18G  2.9G  86% /export
->> /dev/mapper/export_vg-src_lv     5.0G  2.6G  2.5G  51% /src
->> /dev/mapper/system_13.2-var_lv   4.0G  196M  3.4G   6% /var
->> /dev/mapper/system_13.2-opt_lv   6.0G  152M  5.3G   3% /opt
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/spool
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/tmp
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/opt
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/log
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/named
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/mailman
->> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/pgsql
->>
->>
->> and I would like to have all the var subvolumes using the /var filesystem
->> space and not root.  The same for /boot/grub2 subvolumes. They should use
->> the /boot filesystem.
+Hi Chris,
+
+The problem can be fix by [PATCH] Btrfs: fix BUG_ON in
+btrfs_orphan_add() when delete unused block group
+
+Thanks,
+-Forrest
+
+
+2015-02-05 11:08 GMT+08:00 Chris Baker <ktg@ctac.me.uk>:
+> This report also filed on Bugzilla on kernel.org per instructions on btrfs
+> Wiki, ID: 92771
 >
-> The giveaway is in the first column. All of these are device mapper
-> LVM LV's, they are not Btrfs subvolumes, in fact they're separate
-> Btrfs volumes (unique, unrelated filesystems). What's suspicious,
-> though, is that a bunch of these LV's have exactly 1.5G Used, which
-> makes no sense. For example, /boot/grub2/i386-pc has 1.5G used, but
-> that's not possible, the entire GRUB2 package is maybe 50MB.
-
-Actually given that the first column repeats 
-/dev/mapper/system_13.2-root_lv as the device, I think he's repeatedly 
-mounted the same device filesystem with different subovol= directives.
-
-That's why so many of them have the same 1.5G used.
-
-In terms of actual LVs he only seems to have _root_ _opt_ _var_ and 
-_usr_ once you strip away the various noise components.
-
-In particular oddity fassion /var is a different device but /var/log 
-goes back to the root device.
-
-In a slightly over-thought way its kind of twisted genius if you view 
-/var/lib/named and such as being tightly bound to /etc. (/var/tmp is 
-totally wrong.)
-
-It's not something I would want to maintain either.
-
-They also might be bind mounts instead of subvol= mounts. I'd have to 
-see /etc/fstab.
-
-The output of btrfs subvol list  on / /var /usr and /opt would be nice 
-as well.
-
-
+> Circumstances
 >
-> Honestly, I suggest reinstalling and don't deal with the tricky task
-> of converting all of this. It'll take longer for me to explain, and
-> you to read, how to fix this without reinstalling. I also suggest
-> making sure that you don't put Btrfs on LVM, there's no good reason to
-> do this for most use cases.
+> Bug appeared during a btrfs send operation, from a Sata system drive to a
+> USB 3 connected portable drive.
 >
+> The bug occurred around 7GB into a 500GB transfer.
 >
->   I don't know how I got to this and don't know how to
->> change.
+> The USB disk is encrypted AES-256 via cryptsetup. Originally setup and
+> formatted 26-Oct-14 on whatever the latest Arch linux & btrfs tools were at
+> that point,  the original snap copy was stored via btrfs send, approx 500GB.
 >
-> It's not your fault. This is a pathological side effect of openSUSE
-> 13.2's, quite frankly bizarre, layout. By default it creates a single
-> Btrfs volume, and makes all of these subvolumes, which is strange
-> enough on its own because it's overly complicated (just look at
-> /etc/fstab) for no good reason. But somehow in your case, you ended up
-> with a bunch of LVM LVs first, and then each of those is a Btrfs
-> volume. If it were me, I'd file a bug report against 13.2, and then
-> file a feature request citing the bug report. If you don't want to do
-> both, then just file the feature request against Factory because
-> installer related bug reports on openSUSE basically get rejected
-> seeing as there's nothing that can be done about it in Distribution
-> now anyway.
+> Today the disk was reattached for the first time since October, the old snap
+> was deleted with:
 >
-
+>     sudo btrfs subvolume delete -c usb_snap
+>
+> Immediately after a new send was started with:
+>
+>     sudo btrfs send sever_snap | sudo btrfs receive usb_snap
+>
+> I note that my Google-fu found 2 other recent reports mentioning
+> fs/btrfs/inode.c:3123! to linux-btrfs:
+> * Tomasz Chmielewski on 20 Dec 2014
+> * Fengguang Wu on 10 Oct 2014
+>
+> I could not see these on Bugzilla, hence my report. I apologise if my search
+> skills failed me, I could not see any resolution.
+>
+> $ uname -a
+> Linux ts140a 3.18.5-1-ARCH #1 SMP PREEMPT Fri Jan 30 07:31:50 CET 2015
+> x86_64 GNU/Linux
+> $ btrfs --version
+> Btrfs v3.18.1
+> $ btrfs fi show
+> Btrfs v3.18.1
+> $ btrfs fi df /media/secureUSB/
+> Data, single: total=273.01GiB, used=7.05GiB
+> System, DUP: total=8.00MiB, used=48.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, DUP: total=2.00GiB, used=66.28MiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=32.00MiB, used=0.00B
+>
+> [18312.185891] usb 4-4: new SuperSpeed USB device number 2 using xhci_hcd
+> [18312.200213] usb-storage 4-4:1.0: USB Mass Storage device detected
+> [18312.200299] scsi host7: usb-storage 4-4:1.0
+> [18315.223903] scsi 7:0:0:0: Direct-Access     HitachiG ST
+> 0000 PQ: 0 ANSI: 6
+> [18317.245534] sd 7:0:0:0: [sdc] 1953523708 512-byte logical blocks: (1.00
+> TB/931 GiB)
+> [18317.245799] sd 7:0:0:0: [sdc] Write Protect is off
+> [18317.245804] sd 7:0:0:0: [sdc] Mode Sense: 27 00 00 00
+> [18317.246023] sd 7:0:0:0: [sdc] No Caching mode page found
+> [18317.246733] sd 7:0:0:0: [sdc] Assuming drive cache: write through
+> [18317.359178]  sdc: sdc1 sdc2 sdc3
+> [18317.360056] sd 7:0:0:0: [sdc] Attached SCSI disk
+> [24727.038743] BTRFS: device label CARD Rescue Disk devid 1 transid 351
+> /dev/dm-0
+> [24727.228345] BTRFS info (device dm-0): disk space caching is enabled
+> [25088.256677] ------------[ cut here ]------------
+> [25088.257101] kernel BUG at fs/btrfs/inode.c:3123!
+> [25088.257503] invalid opcode: 0000 [#1] PREEMPT SMP
+> [25088.257943] Modules linked in: dm_crypt algif_skcipher af_alg dm_mod
+> cfg80211 rfkill coretemp hwmon intel_rapl x86_pkg_temp_thermal
+> intel_powerclamp kvm_intel btrfs xor snd_hda_codec_realtek
+> snd_hda_codec_generic kvm snd_hda_intel snd_hda_controller raid6_pq
+> crct10dif_pclmul crc32_pclmul crc32c_intel ghash_clmulni_intel snd_hda_codec
+> aesni_intel aes_x86_64 lrw snd_hwdep snd_pcm gf128mul snd_timer ppdev evdev
+> glue_helper iTCO_wdt iTCO_vendor_support psmouse mac_hid ablk_helper i915
+> drm_kms_helper drm cryptd serio_raw pcspkr tpm_tis intel_gtt tpm e1000e
+> i2c_i801 i2c_algo_bit i2c_core mei_me mei ptp snd soundcore thermal wmi
+> ie31200_edac edac_core video fan lpc_ich parport_pc shpchp parport battery
+> button pps_core processor sch_fq_codel ext4 crc16 mbcache jbd2 uas
+> usb_storage sr_mod cdrom sd_mod atkbd
+> [25088.264996]  libps2 ahci libahci libata xhci_pci ehci_pci scsi_mod
+> xhci_hcd ehci_hcd usbcore usb_common i8042 serio
+> [25088.265918] CPU: 3 PID: 24953 Comm: btrfs-cleaner Not tainted
+> 3.18.5-1-ARCH #1
+> [25088.266549] Hardware name: LENOVO ThinkServer TS140/ThinkServer TS140,
+> BIOS FBKT82AUS 04/02/2014
+> [25088.267318] task: ffff880101cc64a0 ti: ffff880013620000 task.ti:
+> ffff880013620000
+> [25088.267972] RIP: 0010:[<ffffffffa066a6d0>]  [<ffffffffa066a6d0>]
+> btrfs_orphan_add+0x1c0/0x1e0 [btrfs]
+> [25088.268797] RSP: 0018:ffff880013623c38  EFLAGS: 00010286
+> [25088.269258] RAX: 00000000ffffffe4 RBX: ffff880402564000 RCX:
+> 0000000000000085
+> [25088.284983] RDX: 0000000000040000 RSI: 0000000000040000 RDI:
+> ffff8803ffd51138
+> [25088.300825] RBP: ffff880013623c78 R08: 000000000001b2a0 R09:
+> ffff880103ee02d0
+> [25088.316749] R10: ffff88041eb9be10 R11: ffffea000dfc1740 R12:
+> ffff8800ce9d58e0
+> [25088.332206] R13: ffff880400e3c840 R14: ffff880402564458 R15:
+> 0000000000000001
+> [25088.347278] FS:  0000000000000000(0000) GS:ffff88041eb80000(0000)
+> knlGS:0000000000000000
+> [25088.376992] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [25088.392231] CR2: 00007faa7d857000 CR3: 0000000001811000 CR4:
+> 00000000001407e0
+> [25088.407565] Stack:
+> [25088.422398]  ffff880013623c78 ffffffffa06ab595 ffff8803ffd51000
+> ffff880402dbe000
+> [25088.452291]  ffff880103ee02d0 0000000000000001 ffff8800ce9d58e0
+> ffff8800139e4600
+> [25088.482088]  ffff880013623d08 ffffffffa0653655 ffff880103ee02d8
+> ffff880103ee0350
+> [25088.511893] Call Trace:
+> [25088.526267]  [<ffffffffa06ab595>] ? lookup_free_space_inode+0x45/0xf0
+> [btrfs]
+> [25088.540940]  [<ffffffffa0653655>] btrfs_remove_block_group+0x145/0x540
+> [btrfs]
+> [25088.569257]  [<ffffffffa068e839>] btrfs_remove_chunk+0x709/0x820 [btrfs]
+> [25088.583683]  [<ffffffffa0653c6e>] btrfs_delete_unused_bgs+0x21e/0x250
+> [btrfs]
+> [25088.597927]  [<ffffffffa065b254>] cleaner_kthread+0x154/0x1b0 [btrfs]
+> [25088.611956]  [<ffffffffa065b100>] ? btrfs_destroy_pinned_extent+0xe0/0xe0
+> [btrfs]
+> [25088.639203]  [<ffffffff81090e3a>] kthread+0xea/0x100
+> [25088.652771]  [<ffffffff81090d50>] ? kthread_create_on_node+0x1c0/0x1c0
+> [25088.666254]  [<ffffffff815552fc>] ret_from_fork+0x7c/0xb0
+> [25088.679401]  [<ffffffff81090d50>] ? kthread_create_on_node+0x1c0/0x1c0
+> [25088.692562] Code: 60 04 00 00 e9 b0 fe ff ff 66 90 89 45 c8 f0 41 80 64
+> 24 80 fd 4c 89 e7 e8 0e 16 fe ff 8b 45 c8 e9 1b ff ff ff 66 0f 1f 44 00 00
+> <0f> 0b b8 f4 ff ff ff e9 10 ff ff ff 4c 89 f7 45 31 f6 e8 69 a2
+> [25088.733126] RIP  [<ffffffffa066a6d0>] btrfs_orphan_add+0x1c0/0x1e0
+> [btrfs]
+> [25088.746891]  RSP <ffff880013623c38>
+> [25088.778367] ---[ end trace 2ea2e74ef404d7c8 ]---
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

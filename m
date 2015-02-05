@@ -1,84 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41429 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751046AbbBEBnY convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 20:43:24 -0500
-Message-ID: <54D2CAB8.8010709@cn.fujitsu.com>
-Date: Thu, 5 Feb 2015 09:43:20 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-yk0-f170.google.com ([209.85.160.170]:34059 "EHLO
+	mail-yk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751360AbbBEC1S (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 21:27:18 -0500
+Received: by mail-yk0-f170.google.com with SMTP id q9so2206913ykb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 18:27:18 -0800 (PST)
 MIME-Version: 1.0
-To: Paul Jones <paul@pauljones.id.au>,
-        Martin Steigerwald <martin@lichtvoll.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/7] Allow btrfsck to reset csum of all tree blocks, AKA
- dangerous mode.
-References: <1423034213-14018-1-git-send-email-quwenruo@cn.fujitsu.com> <4749287.qr2O8ff0qM@merkaba> <B7F2379062E32745A8651FBDB20F645940A8D157@Server.waterlogic.com.au>
-In-Reply-To: <B7F2379062E32745A8651FBDB20F645940A8D157@Server.waterlogic.com.au>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <mau7vs$pjj$1@ger.gmane.org>
+References: <mau7vs$pjj$1@ger.gmane.org>
+Date: Wed, 4 Feb 2015 19:27:17 -0700
+Message-ID: <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
+Subject: Re: Btrfs subvolume question
+From: Chris Murphy <lists@colorremedies.com>
+To: Markus Moeller <huaraz@moeller.plus.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
--------- Original Message --------
-Subject: Re: [PATCH 0/7] Allow btrfsck to reset csum of all tree blocks, 
-AKA dangerous mode.
-From: Paul Jones <paul@pauljones.id.au>
-To: Martin Steigerwald <martin@lichtvoll.de>, Qu Wenruo 
-<quwenruo@cn.fujitsu.com>
-Date: 2015年02月04日 18:07
->> -----Original Message-----
->> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
->> owner@vger.kernel.org] On Behalf Of Martin Steigerwald
->> Sent: Wednesday, 4 February 2015 8:16 PM
->> To: Qu Wenruo
->> Cc: linux-btrfs@vger.kernel.org
->> Subject: Re: [PATCH 0/7] Allow btrfsck to reset csum of all tree blocks, AKA
->> dangerous mode.
->>
->> Am Mittwoch, 4. Februar 2015, 15:16:44 schrieb Qu Wenruo:
->>> Btrfs's metadata csum is a good mechanism, keeping bit error away from
->>> sensitive kernel. But such mechanism will also be too sensitive, like
->>> bit error in csum bytes or low all zero bits in nodeptr.
->>> It's a trade using "error tolerance" for stable, and is reasonable for
->>> most cases since there is DUP/RAID1/5/6/10 duplication level.
->>>
->>> But in some case, whatever for development purpose or despair user who
->>> can't tolerant all his/her inline data lost, or even crazy QA team
->>> hoping btrfs can survive heavy random bits bombing, there are some
->>> guys want to get rid of the csum protection and face the crucial raw
->>> data no matter what disaster may happen.
->>>
->>> So, introduce the new '--dangerous' (or "destruction"/"debug" if you
->>> like) option for btrfsck to reset all csum of tree blocks.
->> I often wondered about this: AFAIK if you get a csum error BTRFS makes this
->> an input/output error. For being able to access the data in place, how about a
->> "iwantmycorrupteddataback" mount option where BTRFS just logs csum
->> errors but allows one to access the files nonetheless. This could even work
->> together with remount. Maybe it would be good not to allow writing to
->> broken csum blocks, i.e. fail these with input/output error.
->>
->> This way, the csum would not be automatically fixed, *but* one is able to
->> access the broken data, *while* knowing it is broken.
+On Wed, Feb 4, 2015 at 3:54 PM, Markus Moeller <huaraz@moeller.plus.com> wrote:
+> Hi ,
 >
-> I seriously could have used that yesterday - I had a raw VM image with a csum error that wouldn't go away.
-Is the image stored in btrfs? And you are sure the csum error belongs to 
-the image?
-If so, this function will not really help since the --dangerous option 
-will only reset metadata csum, not
-data csum.
-
-And in that case, btrfsck --init-csum-tree  <your btrfs device> would be 
-a much better choice.
-> The VM worked fine (even rebooting) so I figured I would just copy the file to another filesystem and then copy it back. Rsync doesn't play nicely with errors so I used dd if=disk1 of=/elsewhere/disk1 bs=4096 conv=notrunc,noerror but after waiting for 100G to copy twice it no longer booted.
-Not quite sure about conv=noerror, for case 4K OK, 4K bad, 4K OK case, 
-if conv=noerror cause output to be
-4K OK, 4K OK then that's the problem.
-If conv=noerror cause output to be 4K OK, 4K all zero, 4K OK, then IMHO 
-the problem should not happen...
-
-Thanks,
-Qu
-> The backup was only 8 hours old so no big deal, but if it was a busy day that could have been nasty! (Why I didn't press the backup button before I did the above I don't know...)
+>   I am new to btrfs and wonder what I need to do to move subvolumes to the
+> right filesystem.  I see the following:
 >
-> Paul.
+> df -h
+> Filesystem                       Size  Used Avail Use% Mounted on
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /
+> devtmpfs                         235M  8.0K  235M   1% /dev
+> tmpfs                            242M   84K  242M   1% /dev/shm
+> tmpfs                            242M  2.4M  240M   1% /run
+> tmpfs                            242M     0  242M   0% /sys/fs/cgroup
+> /dev/mapper/system_13.2-usr_lv    18G  6.9G   10G  41% /usr
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /srv
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /.snapshots
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /tmp
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /usr/local
+> /dev/sda2                        486M   59M  398M  13% /boot
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32%
+> /boot/grub2/x86_64-efi
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /boot/grub2/i386-pc
+> /dev/mapper/export_vg-export_lv   20G   18G  2.9G  86% /export
+> /dev/mapper/export_vg-src_lv     5.0G  2.6G  2.5G  51% /src
+> /dev/mapper/system_13.2-var_lv   4.0G  196M  3.4G   6% /var
+> /dev/mapper/system_13.2-opt_lv   6.0G  152M  5.3G   3% /opt
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/spool
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/tmp
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/opt
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/log
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/named
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/mailman
+> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/pgsql
+>
+>
+> and I would like to have all the var subvolumes using the /var filesystem
+> space and not root.  The same for /boot/grub2 subvolumes. They should use
+> the /boot filesystem.
 
+The giveaway is in the first column. All of these are device mapper
+LVM LV's, they are not Btrfs subvolumes, in fact they're separate
+Btrfs volumes (unique, unrelated filesystems). What's suspicious,
+though, is that a bunch of these LV's have exactly 1.5G Used, which
+makes no sense. For example, /boot/grub2/i386-pc has 1.5G used, but
+that's not possible, the entire GRUB2 package is maybe 50MB.
+
+Honestly, I suggest reinstalling and don't deal with the tricky task
+of converting all of this. It'll take longer for me to explain, and
+you to read, how to fix this without reinstalling. I also suggest
+making sure that you don't put Btrfs on LVM, there's no good reason to
+do this for most use cases.
+
+
+ I don't know how I got to this and don't know how to
+> change.
+
+It's not your fault. This is a pathological side effect of openSUSE
+13.2's, quite frankly bizarre, layout. By default it creates a single
+Btrfs volume, and makes all of these subvolumes, which is strange
+enough on its own because it's overly complicated (just look at
+/etc/fstab) for no good reason. But somehow in your case, you ended up
+with a bunch of LVM LVs first, and then each of those is a Btrfs
+volume. If it were me, I'd file a bug report against 13.2, and then
+file a feature request citing the bug report. If you don't want to do
+both, then just file the feature request against Factory because
+installer related bug reports on openSUSE basically get rejected
+seeing as there's nothing that can be done about it in Distribution
+now anyway.
+
+-- 
+Chris Murphy

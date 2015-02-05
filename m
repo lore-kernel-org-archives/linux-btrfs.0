@@ -1,91 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f170.google.com ([209.85.160.170]:34059 "EHLO
-	mail-yk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751360AbbBEC1S (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Feb 2015 21:27:18 -0500
-Received: by mail-yk0-f170.google.com with SMTP id q9so2206913ykb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Feb 2015 18:27:18 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <mau7vs$pjj$1@ger.gmane.org>
-References: <mau7vs$pjj$1@ger.gmane.org>
-Date: Wed, 4 Feb 2015 19:27:17 -0700
-Message-ID: <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
-Subject: Re: Btrfs subvolume question
-From: Chris Murphy <lists@colorremedies.com>
-To: Markus Moeller <huaraz@moeller.plus.com>
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33138 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751560AbbBECik (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Feb 2015 21:38:40 -0500
+Date: Wed, 4 Feb 2015 21:38:35 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Chris Murphy <lists@colorremedies.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: paused balance convert from raid1 can no longer be a writeable
+ mount
+Message-ID: <20150205023835.GA23108@hungrycats.org>
+References: <CAJCQCtS1cTQqbsYM01baLUmqTXDNE5HZfM-uL8gx0HkHXo-a+A@mail.gmail.com>
+ <CAJCQCtQUrfYhiG_Huv+M5w=6bEsvgnY1kUbreO-dANMhCrALbQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="jRHKVT23PllUwdXP"
+In-Reply-To: <CAJCQCtQUrfYhiG_Huv+M5w=6bEsvgnY1kUbreO-dANMhCrALbQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 4, 2015 at 3:54 PM, Markus Moeller <huaraz@moeller.plus.com> wrote:
-> Hi ,
->
->   I am new to btrfs and wonder what I need to do to move subvolumes to the
-> right filesystem.  I see the following:
->
-> df -h
-> Filesystem                       Size  Used Avail Use% Mounted on
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /
-> devtmpfs                         235M  8.0K  235M   1% /dev
-> tmpfs                            242M   84K  242M   1% /dev/shm
-> tmpfs                            242M  2.4M  240M   1% /run
-> tmpfs                            242M     0  242M   0% /sys/fs/cgroup
-> /dev/mapper/system_13.2-usr_lv    18G  6.9G   10G  41% /usr
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /srv
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /.snapshots
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /tmp
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /usr/local
-> /dev/sda2                        486M   59M  398M  13% /boot
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32%
-> /boot/grub2/x86_64-efi
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /boot/grub2/i386-pc
-> /dev/mapper/export_vg-export_lv   20G   18G  2.9G  86% /export
-> /dev/mapper/export_vg-src_lv     5.0G  2.6G  2.5G  51% /src
-> /dev/mapper/system_13.2-var_lv   4.0G  196M  3.4G   6% /var
-> /dev/mapper/system_13.2-opt_lv   6.0G  152M  5.3G   3% /opt
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/spool
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/tmp
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/opt
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/log
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/named
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/mailman
-> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/pgsql
->
->
-> and I would like to have all the var subvolumes using the /var filesystem
-> space and not root.  The same for /boot/grub2 subvolumes. They should use
-> the /boot filesystem.
 
-The giveaway is in the first column. All of these are device mapper
-LVM LV's, they are not Btrfs subvolumes, in fact they're separate
-Btrfs volumes (unique, unrelated filesystems). What's suspicious,
-though, is that a bunch of these LV's have exactly 1.5G Used, which
-makes no sense. For example, /boot/grub2/i386-pc has 1.5G used, but
-that's not possible, the entire GRUB2 package is maybe 50MB.
+--jRHKVT23PllUwdXP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Honestly, I suggest reinstalling and don't deal with the tricky task
-of converting all of this. It'll take longer for me to explain, and
-you to read, how to fix this without reinstalling. I also suggest
-making sure that you don't put Btrfs on LVM, there's no good reason to
-do this for most use cases.
+On Wed, Feb 04, 2015 at 01:53:09PM -0700, Chris Murphy wrote:
+> This is completely reproducible with a brand new file system created
+> as raid1, using kernel 3.19 and btrfs-progs 3.18.
 
+I think you'll find it's reproducible with any kernel after 3.8-rc1
+(circa October 2012).
 
- I don't know how I got to this and don't know how to
-> change.
+> The conversion from raid1 to single, if paused, will apparently break
+> the file system's ability to be subsequently mounted writable.=20
 
-It's not your fault. This is a pathological side effect of openSUSE
-13.2's, quite frankly bizarre, layout. By default it creates a single
-Btrfs volume, and makes all of these subvolumes, which is strange
-enough on its own because it's overly complicated (just look at
-/etc/fstab) for no good reason. But somehow in your case, you ended up
-with a bunch of LVM LVs first, and then each of those is a Btrfs
-volume. If it were me, I'd file a bug report against 13.2, and then
-file a feature request citing the bug report. If you don't want to do
-both, then just file the feature request against Factory because
-installer related bug reports on openSUSE basically get rejected
-seeing as there's nothing that can be done about it in Distribution
-now anyway.
+Only if you remove a disk (or one fails).
 
--- 
-Chris Murphy
+> And
+> further, btrfs-image fails. I've updated the bug report.
+> https://bugzilla.kernel.org/show_bug.cgi?id=3D92641
+>=20
+> First, the conversion from data/metadata raid1 should be faster than
+> requiring fully reading and writing the file system. As this is a 2
+> device raid1, each is already effectively data/metadata single, so I'm
+> not sure why anything other than metadata needs rewriting.
+>=20
+> Second, either what I'm doing should be disallowed (user can't force
+> conversion of a degraded array to single), or the file system
+> shouldn't break like this.
+>=20
+> Third, the error message is confusing "too many missing devices,
+> writeable mount is not allowed" the first part of that is definitely
+> not true. How can there be too many missing devices when it started
+> out as a 2 device volume and the remaining device isn't an ro or seed
+> device?
+
+I'd point out bug #60594, but it seems you've already been there.
+I bumped into the same bug myself.
+
+The problem is that one is more than the maximum number of missing devices
+for the single profile, and you are missing one disk, so the filesystem
+gives up.  It doesn't check that all the single chunks are on currently
+present disks.
+
+If you revert commit 292fd7fc39aa06668f3a8db546714e727120cb3e
+you might be able to finish the balance and resume non-degraded read-write
+operation.
+
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--jRHKVT23PllUwdXP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlTS16sACgkQgfmLGlazG5xDzwCgjBUdgGgHQ5bYqwgrid42chUu
+XR8AoJQaOoXtk+Q9K4mA88KP6T+oJf91
+=1jJw
+-----END PGP SIGNATURE-----
+
+--jRHKVT23PllUwdXP--

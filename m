@@ -1,144 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45963 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753740AbbBEDnh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Feb 2015 22:43:37 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YJDLr-0003nh-Cl
-	for linux-btrfs@vger.kernel.org; Thu, 05 Feb 2015 04:43:35 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Feb 2015 04:43:35 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Feb 2015 04:43:35 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: What does scrub tell me?
-Date: Thu, 5 Feb 2015 03:43:29 +0000 (UTC)
-Message-ID: <pan$e108e$e9933d01$2069a082$32e36a2e@cox.net>
-References: <CAPs0Big=8SsBRFjrDPcradYW100GUnWEzC=ycvvDQScTSYKt5A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:32930 "EHLO
+	resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751260AbbBEDsn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Feb 2015 22:48:43 -0500
+Message-ID: <54D2E62E.7080208@pobox.com>
+Date: Wed, 04 Feb 2015 19:40:30 -0800
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>,
+        Markus Moeller <huaraz@moeller.plus.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Btrfs subvolume question
+References: <mau7vs$pjj$1@ger.gmane.org> <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
+In-Reply-To: <CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sandy McArthur Jr posted on Wed, 04 Feb 2015 12:31:07 -0500 as excerpted:
+On 02/04/2015 06:27 PM, Chris Murphy wrote:
+> On Wed, Feb 4, 2015 at 3:54 PM, Markus Moeller <huaraz@moeller.plus.com> wrote:
+>> Hi ,
+>>
+>>    I am new to btrfs and wonder what I need to do to move subvolumes to the
+>> right filesystem.  I see the following:
+>>
+>> df -h
+>> Filesystem                       Size  Used Avail Use% Mounted on
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /
+>> devtmpfs                         235M  8.0K  235M   1% /dev
+>> tmpfs                            242M   84K  242M   1% /dev/shm
+>> tmpfs                            242M  2.4M  240M   1% /run
+>> tmpfs                            242M     0  242M   0% /sys/fs/cgroup
+>> /dev/mapper/system_13.2-usr_lv    18G  6.9G   10G  41% /usr
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /srv
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /.snapshots
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /tmp
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /usr/local
+>> /dev/sda2                        486M   59M  398M  13% /boot
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32%
+>> /boot/grub2/x86_64-efi
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /boot/grub2/i386-pc
+>> /dev/mapper/export_vg-export_lv   20G   18G  2.9G  86% /export
+>> /dev/mapper/export_vg-src_lv     5.0G  2.6G  2.5G  51% /src
+>> /dev/mapper/system_13.2-var_lv   4.0G  196M  3.4G   6% /var
+>> /dev/mapper/system_13.2-opt_lv   6.0G  152M  5.3G   3% /opt
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/spool
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/tmp
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/opt
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/log
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/named
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/mailman
+>> /dev/mapper/system_13.2-root_lv  5.0G  1.5G  3.2G  32% /var/lib/pgsql
+>>
+>>
+>> and I would like to have all the var subvolumes using the /var filesystem
+>> space and not root.  The same for /boot/grub2 subvolumes. They should use
+>> the /boot filesystem.
+>
+> The giveaway is in the first column. All of these are device mapper
+> LVM LV's, they are not Btrfs subvolumes, in fact they're separate
+> Btrfs volumes (unique, unrelated filesystems). What's suspicious,
+> though, is that a bunch of these LV's have exactly 1.5G Used, which
+> makes no sense. For example, /boot/grub2/i386-pc has 1.5G used, but
+> that's not possible, the entire GRUB2 package is maybe 50MB.
 
-> Does a btrfs scrub verify the integrity of the whole filesystem or just
-> the data in that filesystem?
+Actually given that the first column repeats 
+/dev/mapper/system_13.2-root_lv as the device, I think he's repeatedly 
+mounted the same device filesystem with different subovol= directives.
 
-Btrfs scrub verifies both data and metadata /checksum/ integrity.  From 
-the below it looks like that's very likely what you're most worried about 
-anyway and you likely already get what I explain in the next paragraph, 
-but for the benefit of others that read this... =:^)  
+That's why so many of them have the same 1.5G used.
 
-A lot of people misunderstand what scrub does and try to use it as if it 
-were btrfs check, verifying metadata structure and function integrity as 
-well, and then wonder why their filesystem passes scrub and yet won't 
-balance or has other filesystem errors.  Thus the emphasis on 
-/checksum/.  (Meta)data can be valid as saved and still be corrupt, 
-because it was corrupted before the save due to a bug.  The checksum, and 
-thus scrub, verifies that you're getting exactly what was saved, but it, 
-by itself, doesn't say anything about whether what was saved was actually 
-valid in the first place, and a lot of folks miss the significance of 
-that difference until it is explained to them.
+In terms of actual LVs he only seems to have _root_ _opt_ _var_ and 
+_usr_ once you strip away the various noise components.
 
-> I recently removed some unreliable drives from my multi-volume RAID1
-> btrfs filesystem and ran a scrub that completed with two corrected
-> errors (see below).  I've struggled with this filesystem due to poor
-> choices in hardware on my part and had to recover it several times. As
-> of now I've eliminated all older drives or drives labeled as "desktop"
-> drives. (Knowing what I know now, I'm impressed with how well btrfs has
-> preserved my data despite myself.)
-> 
-> I'm at a point where I can grow my existing btrfs filesystem as RAID1 or
-> I can afford to migrate data to a new btrfs single filesystem and then
-> add drives back in to get back to RAID1 mirroring again. Is there value
-> to starting a fresh btrfs filesystem given my history?
-> 
-> 
-> # btrfs scrub status /mcmedia/ ; echo ; btrfs --version 
-> scrub status for 94b3345e-2589-423c-a228-d569bf94ab58
-> scrub resumed at Mon Feb  2 22:03:14 2015 and finished after 204126
-> seconds
-> total bytes scrubbed: 23.38TiB with 2 errors
-> error details: csum=2
-> corrected errors: 2, uncorrectable errors: 0, unverified errors: 0
-> 
-> Btrfs v3.18.2
+In particular oddity fassion /var is a different device but /var/log 
+goes back to the root device.
 
-If you like you can run a btrfs check (--readonly, without --repair or 
-similar write option) and/or btrfs balance, and if they complete without 
-error, it's reasonably safe to assume your filesystem is "clean".
+In a slightly over-thought way its kind of twisted genius if you view 
+/var/lib/named and such as being tightly bound to /etc. (/var/tmp is 
+totally wrong.)
 
-That said, personally, I prefer to start "clean" every few kernel (and 
-thus btrfs-tools userspace as well) cycles in any case, for a couple 
-reasons.
+It's not something I would want to maintain either.
 
-Here, I do it as part of my regular backup cycle, where my first-level 
-backup is a set of btrfs of the same size, and I do a fresh mkfs.btrfs to 
-purge the old backup, mount the new filesystem, copy everything over from 
-the working filesystem, reboot to the backup (for root) or unmount the 
-working btrfs and mount the backup to test the backup, then when I'm 
-satisfied with the now tested backup, reverse the cycle, doing a 
-mkfs.btrfs of my normal working filesystem and copying everything back 
-from the backup.  (FWIW, my second level backup is non-btrfs, reiserfs in 
-my case since I've used it for years and it has proved itself very 
-resilient since data=ordered by default, thru the various hardware issues 
-I've had.  I do test pre-release kernels and that way, if there's a 
-serious btrfs bug that eats both my working copy and the backup when I 
-try to boot to it for recovery, I still have the reiserfs backup, which 
-will hopefully be unaffected.)
+They also might be bind mounts instead of subvol= mounts. I'd have to 
+see /etc/fstab.
 
-The reasons:
+The output of btrfs subvol list  on / /var /usr and /opt would be nice 
+as well.
 
-1) Btrfs is still under rapid, not entirely stable yet, development.  By 
-starting clean I eliminate the filesystem back-history and with it the 
-possibility of some previously unknown side effect of some long fixed bug 
-coming back to haunt me.  This probably isn't as likely to eliminate 
-issues now as it was back before say 3.11 (when they started dropping the 
-most dire warnings, IIRC), but I'm used to doing it now, and call it 
-sysadmin superstition if you like, but I still rest better when I can 
-say, OK, I know for sure that filesystem couldn't have been affected by 
-anything previous to 3.x kernel and userspace, as that's when I created 
-it.
 
-2) As long as you don't have to worry about compatibility with old 
-kernels, a fresh mkfs.btrfs allows you to take advantage of (relatively) 
-newer filesystem options like skinny-metadata, no-holes, and 16 KiB 
-nodesizes.  These make the filesystem more efficient.  While some such 
-features can be enabled at runtime, not all of them can, and the old data/
-metadata will still be written with the old options until a balance or 
-whatever to rewrite them.
-
-Of course if you need to maintain compatibility with old enough kernels 
-you'll want to turn off these features anyway, and this reason disappears.
-
-Meanwhile, if the filesystem is still reasonably new, time-wise, even if 
-it has been thru some tough hardware issues, and you originally created 
-it with the options you wanted already, this reason goes away in that 
-case as well, as the available options have remained steady for awhile 
-now, tho the defaults have recently changed for a couple of them.
-
-Bottomline:
-
-While you're likely fine in terms of filesystem stability, particularly 
-if you run a btrfs check and a balance and they both work fine, I'd still 
-personally recommend a fresh mkfs for the reasons above, given the 
-current opportunity and the fact that running the check and balance are 
-likely to take a good chunk of the time that starting with a fresh 
-mkfs.btrfs, copying things over, and balancing back to the expanded 
-raid1, would take, and you won't know if the existing setup is reliable 
-until you do that check and balance anyway, so you may well end up with a 
-clean filesystem in any case.
-
-IOW, if it were my system, I'd go the clean mkfs.btrfs route. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+>
+> Honestly, I suggest reinstalling and don't deal with the tricky task
+> of converting all of this. It'll take longer for me to explain, and
+> you to read, how to fix this without reinstalling. I also suggest
+> making sure that you don't put Btrfs on LVM, there's no good reason to
+> do this for most use cases.
+>
+>
+>   I don't know how I got to this and don't know how to
+>> change.
+>
+> It's not your fault. This is a pathological side effect of openSUSE
+> 13.2's, quite frankly bizarre, layout. By default it creates a single
+> Btrfs volume, and makes all of these subvolumes, which is strange
+> enough on its own because it's overly complicated (just look at
+> /etc/fstab) for no good reason. But somehow in your case, you ended up
+> with a bunch of LVM LVs first, and then each of those is a Btrfs
+> volume. If it were me, I'd file a bug report against 13.2, and then
+> file a feature request citing the bug report. If you don't want to do
+> both, then just file the feature request against Factory because
+> installer related bug reports on openSUSE basically get rejected
+> seeing as there's nothing that can be done about it in Distribution
+> now anyway.
+>
 

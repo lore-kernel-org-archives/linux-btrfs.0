@@ -1,120 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:42158 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755838AbbBFMf7 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 6 Feb 2015 07:35:59 -0500
-From: Filipe Manana <fdmanana@suse.com>
+Received: from plane.gmane.org ([80.91.229.3]:60014 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753556AbbBFNBG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 6 Feb 2015 08:01:06 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YJiWv-0002hH-78
+	for linux-btrfs@vger.kernel.org; Fri, 06 Feb 2015 14:01:05 +0100
+Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 14:01:05 +0100
+Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 14:01:05 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix fsync race leading to ordered extent memory leaks
-Date: Fri,  6 Feb 2015 12:34:08 +0000
-Message-Id: <1423226048-23351-1-git-send-email-fdmanana@suse.com>
+From: Lutz Vieweg <lvml@5t9.de>
+Subject: Re: Can I get a checksum for a file from btrfs (without reading the
+ whole file)?
+Date: Fri, 06 Feb 2015 14:00:53 +0100
+Message-ID: <mb2du5$esf$1@ger.gmane.org>
+References: <mavhab$f8m$1@ger.gmane.org> <54D44F2A.8090108@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <54D44F2A.8090108@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can have two concurrent fsync operations against the same file
-that target different ranges of the file, in which case both fsyncs
-will process ordered extents that overlap both ranges. This allows
-for a time window where a race can lead to those ordered extents
-never getting their reference count decremented to 0, leading to
-memory leaks, getting referenced by multiple lists and resulting in
-inode leaks too (an iput for the ordered extent's inode is scheduled
-only when the ordered extent's refcount drops to 0).
-The following sequence diagram explains this race:
+On 02/06/2015 06:20 AM, Qu Wenruo wrote:
+> From: Lutz Vieweg <lvml@5t9.de>
+>> use case: You have two huge files on a btrfs, you assume they contain the same bytes,
+>> but you do not know for sure.
+>>
+>> Is there a way to get a checksum of both files from btrfs with less effort than
+>> reading the whole of both files and computing a hash sum?
+> For short, NO.
+>
+> For long:
+> For current implement, btrfs use calculate 4K sector into 4bytes(32bit) crc32 and restore it into
+> csum tree.
+>
+> So, for large files, e.g. 1G(already quite small for modern storage), its checksum will be 1M in size.
+> Which means even using crc32 (same as kernel and crc32(a+b) = crc32(a) + crc32(b)), you still needs to
+> do crc32 on the all 1M crc32.
 
-         CPU 1                                        CPU 2
+And yet, having to read only 1 MB checksums instead of 1 GB data sounds
+like a good deal - is there some userspace interface allowing to read
+(only) those per-4k checksums for a file?
 
-btrfs_sync_file() range [0, 8K]              btrfs_sync_file() range [8K, 16K]
+> But there is still some case btrfs can help you determine whether the files are the same in a faster
+> way.
+> Prerequisite:
+> The two files are copied using clone(cp --reflink command) or deduplicated
 
-  mutex_lock(inode->i_mutex)
-  btrfs_log_inode()
-    btrfs_get_logged_extents()
-      --> collected ordered extent X that
-          covers range [4K, 12K]
-      --> incremented ordered extent X's
-          refcount
-    btrfs_submit_logged_extents()
-  mutex_unlock(inode->i_mutex)
+In my case I know for sure that no cloning/deduplication happened when
+the files were written.
 
-                                               mutex_lock(inode->i_mutex)
-                                               btrfs_log_inode()
-                                                  btrfs_get_logged_extents()
-                                                    --> collected ordered extent X
-                                                        as well
-                                                    --> incremented ordered extent
-                                                        X's refcount
-                                                    --> ordered extent X is now
-                                                        referenced by 2 different
-                                                        lists, due to use of
-                                                        list_add() and not list_move()
-                                                  btrfs_submit_logged_extents()
-                                               mutex_unlock(inode->i_mutex)
+Regards,
 
-  btrfs_sync_log()
-     btrfs_wait_logged_extents()
-       --> set flag BTRFS_ORDERED_LOGGED
-           on ordered extent X and adds it
-           to trans->ordered
-  btrfs_sync_log() finishes
-
-                                               btrfs_sync_log()
-                                                 btrfs_wait_logged_extents()
-                                                   --> Sees flag BTRFS_ORDERED_LOGGED set
-                                                       in ordered extent and therefore
-                                                       won't do anything with it
-                                                   --> The increment on ordered extent
-                                                       X's refcount done before by the
-                                                       task at CPU 2 will never have a
-                                                       matching decrement
-
-Fix this by using the flag BTRFS_ORDERED_LOGGED differently. Use it to
-mean that an ordered extent is already being processed by an fsync call,
-which prevents it from ever being collected by multiple concurrent
-fsync operations against the same inode.
-
-This race was introduced with the following change (added in 3.19 and
-backported to stable 3.18 and 3.17):
-
-  Btrfs: make sure logged extents complete in the current transaction V3
-  commit 50d9aa99bd35c77200e0e3dd7a72274f8304701f
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ordered-data.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 534544e..87c8976 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -454,7 +454,7 @@ void btrfs_get_logged_extents(struct inode *inode,
- 			break;
- 		if (!list_empty(&ordered->log_list))
- 			continue;
--		if (test_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
-+		if (test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
- 			continue;
- 		list_add(&ordered->log_list, logged_list);
- 		atomic_inc(&ordered->refs);
-@@ -470,6 +470,7 @@ void btrfs_put_logged_extents(struct list_head *logged_list)
- 		ordered = list_first_entry(logged_list,
- 					   struct btrfs_ordered_extent,
- 					   log_list);
-+		clear_bit(BTRFS_ORDERED_LOGGED, &ordered->flags);
- 		list_del_init(&ordered->log_list);
- 		btrfs_put_ordered_extent(ordered);
- 	}
-@@ -511,8 +512,7 @@ void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
- 		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
- 						   &ordered->flags));
- 
--		if (!test_and_set_bit(BTRFS_ORDERED_LOGGED, &ordered->flags))
--			list_add_tail(&ordered->trans_list, &trans->ordered);
-+		list_add_tail(&ordered->trans_list, &trans->ordered);
- 		spin_lock_irq(&log->log_extents_lock[index]);
- 	}
- 	spin_unlock_irq(&log->log_extents_lock[index]);
--- 
-2.1.3
+Lutz Vieweg
 

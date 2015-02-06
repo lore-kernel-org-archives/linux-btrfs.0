@@ -1,103 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39153 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753939AbbBFInQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 03:43:16 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t168gT81028727
-	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 16:42:29 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/2] btrfs: Fix out-of-space bug caused by searching commit_root in find_free_dev_extent()
-Date: Fri, 6 Feb 2015 16:42:01 +0800
-Message-ID: <1423212122-12952-2-git-send-email-zhaolei@cn.fujitsu.com>
-In-Reply-To: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
-References: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:36984 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751925AbbBFJY0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 04:24:26 -0500
+Received: by mail-lb0-f174.google.com with SMTP id f15so16770544lbj.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 01:24:24 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <CAL3q7H7iSCnLxU=A60RY84TMPmvsZFF+TSKBQXbNb46afG4N4w@mail.gmail.com>
+References: <1422864528-8625-1-git-send-email-forrestl@synology.com>
+	<CAJSVwFMaA9_d64TeWfL6b9Keae+Gb2d__HiTv1W_E8Rv=QFS9A@mail.gmail.com>
+	<CAL3q7H7iSCnLxU=A60RY84TMPmvsZFF+TSKBQXbNb46afG4N4w@mail.gmail.com>
+Date: Fri, 6 Feb 2015 17:24:24 +0800
+Message-ID: <CAJSVwFOZjCumLK6otoZPr1v8FG2ndqTezAU+ye0xUy5_mcf-Fw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete
+ unused block group
+From: Forrest Liu <forrestl@synology.com>
+To: fdmanana@gmail.com
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+2015-02-05 18:23 GMT+08:00 Filipe David Manana <fdmanana@gmail.com>:
+> On Wed, Feb 4, 2015 at 12:28 PM, Forrest Liu <forrestl@synology.com> wrote:
+>> Kernel BUG_ON when running following script on kernel 3.19-rc7
+>>
+>> mntpath=/btrfs
+>> loopdev=/dev/loop0
+>> filepath=/volume2/100g_image
+>>
+>> umount $mntpath
+>> losetup -d $loopdev
+>> truncate --size 1000g $filepath
+>> losetup $loopdev $filepath
+>> mkfs.btrfs -f $loopdev
+>> mount $loopdev $mntpath
+>>
+>> for i in `seq 1 1 100`; do
+>>         echo "round $i"
+>>         for j in `seq 1 1 1000`; do
+>>                 fallocate -l 1g $mntpath/$j
+>>         done
+>>         rm $mntpath/*
+>> done
+>>
+>> [  613.093084] ------------[ cut here ]------------
+>> [  613.097928] kernel BUG at fs/btrfs/inode.c:3142!
+>> [  613.105855] invalid opcode: 0000 [#1] SMP
+>> [  613.112702] Modules linked in: coretemp(E) crc32_pclmul(E)
+>> ghash_clmulni_intel(E) aesni_intel(E) snd_ens1371(E) snd_ac97_codec(E)
+>> aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ppdev(E) ac97_bus(E)
+>> ablk_helper(E) gameport(E) cryptd(E) snd_rawmidi(E) snd_seq_device(E)
+>> snd_pcm(E) vmw_balloon(E) snd_timer(E) snd(E) soundcore(E)
+>> serio_raw(E) vmwgfx(E) ttm(E) drm_kms_helper(E) drm(E) vmw_vmci(E)
+>> parport_pc(E) shpchp(E) i2c_piix4(E) mac_hid(E) lp(E) parport(E)
+>> btrfs(E) xor(E) raid6_pq(E) hid_generic(E) usbhid(E) hid(E) psmouse(E)
+>> ahci(E) libahci(E) e1000(E) mptspi(E) mptscsih(E) mptbase(E) floppy(E)
+>> vmw_pvscsi(E) vmxnet3(E)
+>> [  613.144196] CPU: 0 PID: 1480 Comm: btrfs-cleaner Tainted: G
+>>    E  3.19.0-rc7-custom #2
+>> [  613.148501] Hardware name: VMware, Inc. VMware Virtual
+>> Platform/440BX Desktop Reference Platform, BIOS 6.00 07/31/2013
+>> [  613.152694] task: ffff880035cdb1a0 ti: ffff880039cf4000 task.ti:
+>> ffff880039cf4000
+>> [  613.154969] RIP: 0010:[<ffffffffa01441c2>]  [<ffffffffa01441c2>]
+>> btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
+>> [  613.157780] RSP: 0018:ffff880039cf7c48  EFLAGS: 00010286
+>> [  613.159560] RAX: 00000000ffffffe4 RBX: ffff88003bd981a0 RCX: ffff88003c9e4000
+>> [  613.161904] RDX: 0000000000002244 RSI: 0000000000040000 RDI: ffff88003c9e4138
+>> [  613.164264] RBP: ffff880039cf7c88 R08: 000060ffc0000850 R09: 0000000000000000
+>> [  613.166507] R10: ffff88003bc4b7a0 R11: ffffea0000eb6740 R12: ffff88003c9c0000
+>> [  613.168681] R13: ffff88003c102160 R14: ffff88003c9c0458 R15: 0000000000000001
+>> [  613.170932] FS:  0000000000000000(0000) GS:ffff88003f600000(0000)
+>> knlGS:0000000000000000
+>> [  613.173316] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>> [  613.175227] CR2: 00007f6343537000 CR3: 0000000036329000 CR4: 00000000000407f0
+>> [  613.177554] Stack:
+>> [  613.178712]  ffff880039cf7c88 ffffffffa0182a54 ffff88003c9e4b04
+>> ffff88003c9c7800
+>> [  613.181297]  ffff88003bc4b7a0 ffff88003bd981a0 ffff88003c8db200
+>> ffff88003c2fcc60
+>> [  613.183782]  ffff880039cf7d18 ffffffffa012da97 ffff88003bc4b7a4
+>> ffff88003bc4b7a0
+>> [  613.186171] Call Trace:
+>> [  613.187493]  [<ffffffffa0182a54>] ?
+>> lookup_free_space_inode+0x44/0x100 [btrfs]
+>> [  613.189801]  [<ffffffffa012da97>]
+>> btrfs_remove_block_group+0x137/0x740 [btrfs]
+>> [  613.192126]  [<ffffffffa0166912>] btrfs_remove_chunk+0x672/0x780 [btrfs]
+>> [  613.194267]  [<ffffffffa012e2ff>] btrfs_delete_unused_bgs+0x25f/0x280 [btrfs]
+>> [  613.196567]  [<ffffffffa0135e4c>] cleaner_kthread+0x12c/0x190 [btrfs]
+>> [  613.198687]  [<ffffffffa0135d20>] ? check_leaf+0x350/0x350 [btrfs]
+>> [  613.200758]  [<ffffffff8108f232>] kthread+0xd2/0xf0
+>> [  613.202616]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
+>> [  613.204738]  [<ffffffff8175dabc>] ret_from_fork+0x7c/0xb0
+>> [  613.206652]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
+>> [  613.208741] Code: ff ff 0f 1f 80 00 00 00 00 89 45 c8 3e 80 63 80
+>> fd 48 89 df e8 d0 23 fe ff 8b 45 c8 e9 14 ff ff ff b8 f4 ff ff ff e9
+>> 12 ff ff ff <0f> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90
+>> 55 48
+>> [  613.216562] RIP  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
+>> [  613.218828]  RSP <ffff880039cf7c48>
+>> [  613.220382] ---[ end trace 71073106deb8a457 ]---
+>>
+>> The patch fix problem of BUG_ON
+>
+> Why don't you include the reproducing steps and stack traces in the
+> commit message? Those are very useful information to have there.
+>
 
-Btrfs will report NO_SPACE when we create and remove files for several times:
-1: Create a single-dev btrfs fs with default option
-2: Write a file into it to take up most fs space
-3: Delete above file
-4: Wait about 100s to let chunk removed
-5: goto 2
+I will resend patches that include the reproducing steps and stack traces
+in commit message. Thanks for your comment
 
-Script is like following:
- #!/bin/bash
 
- # Recommend 1.2G space, too large disk will make test slow
- DEV="/dev/sda16"
- MNT="/mnt/tmp"
-
- dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
- file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
-
- echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
-
- for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
- echo "mkfs $DEV"
- mkfs.btrfs -f "$DEV" >/dev/null || exit 2
- echo "mount $DEV $MNT"
- mount "$DEV" "$MNT" || exit 2
-
- for ((loop_i = 0; loop_i < 20; loop_i++)); do
-     echo
-     echo "loop $loop_i"
-
-     echo "dd file..."
-     cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
-     "${cmd[@]}" 2>/dev/null || {
-         # NO_SPACE error triggered
-         echo "dd failed: ${cmd[*]}"
-         exit 1
-     }
-
-     echo "rm file..."
-     rm -f "$MNT"/file0 || exit 2
-
-     for ((i = 0; i < 10; i++)); do
-         df "$MNT" | tail -1
-         sleep 10
-     done
- done
-
-Reason:
-Btrfs get free disk space by calling find_free_dev_extent() when
-re-create chunk for write, but current code set search_commit_root
-flag in searching tree, so disk spaces which was freed from dev_tree
-but not commited can not get from find_free_dev_extent(), then
-btrfs report NO_SPACE on above case.
-
-Fix:
-Remove "path->search_commit_root = 1" in find_free_dev_extent().
-
-Tested by above script, and confirmed action with many printk.
-
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/volumes.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 50c5a87..5cd0930 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1147,7 +1147,6 @@ again:
- 	}
- 
- 	path->reada = 2;
--	path->search_commit_root = 1;
- 	path->skip_locking = 1;
- 
- 	key.objectid = device->devid;
--- 
-1.8.5.1
-
+> Also, would you consider adding a regression test as generic xfstest?
+> Code changes over time, and it's unlikely (and unrealistic) that
+> someone will run these steps for every future kernel release candidate
+> to verify there are no regressions... xfstests serves that purpose, to
+> find out if there are regressions.
+>
+> This comment applies to your other 2 patches as well.
+>
+> Thanks Forrest.
+>
+>>
+>> Thanks,
+>> Forrest
+>>
+>> 2015-02-02 16:08 GMT+08:00 Forrest Liu <forrestl@synology.com>:
+>>> btrfs_orphan_reserve_metadata() will grab metadata reservation from
+>>> transaction handle, and the transaction handle was passed from
+>>> btrfs_delete_unused_bgs() when delete unused block group.
+>>>
+>>> Repace btrfs_join_transaction() with btrfs_start_transaction() in
+>>> btrfs_delete_unused_bgs() to prevent BUG_ON() in btrfs_orphan_add()
+>>>
+>>> Signed-off-by: Forrest Liu <forrestl@synology.com>
+>>> ---
+>>>  fs/btrfs/extent-tree.c | 3 ++-
+>>>  1 file changed, 2 insertions(+), 1 deletion(-)
+>>>
+>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>> index 53294da..61a3255 100644
+>>> --- a/fs/btrfs/extent-tree.c
+>>> +++ b/fs/btrfs/extent-tree.c
+>>> @@ -9548,7 +9548,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+>>>                  * Want to do this before we do anything else so we can recover
+>>>                  * properly if we fail to join the transaction.
+>>>                  */
+>>> -               trans = btrfs_join_transaction(root);
+>>> +               /* 1 for btrfs_orphan_reserve_metadata() */
+>>> +               trans = btrfs_start_transaction(root, 1);
+>>>                 if (IS_ERR(trans)) {
+>>>                         btrfs_set_block_group_rw(root, block_group);
+>>>                         ret = PTR_ERR(trans);
+>>> --
+>>> 1.9.1
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+> --
+> Filipe David Manana,
+>
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."

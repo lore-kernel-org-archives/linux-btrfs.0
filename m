@@ -1,128 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:33174 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751043AbbBFJ4N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 04:56:13 -0500
-Received: by mail-lb0-f177.google.com with SMTP id p9so16924921lbv.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 01:56:11 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:5092 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752099AbbBFKvp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 05:51:45 -0500
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <fdmanana@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>	<1423212122-12952-2-git-send-email-zhaolei@cn.fujitsu.com> <CAL3q7H7J6jw=dq+UbXs+Mz-PQcy7x8xfuHgQR+iLdJgdBuiZAA@mail.gmail.com>
+In-Reply-To: <CAL3q7H7J6jw=dq+UbXs+Mz-PQcy7x8xfuHgQR+iLdJgdBuiZAA@mail.gmail.com>
+Subject: RE: [PATCH 1/2] btrfs: Fix out-of-space bug caused by searching commit_root in find_free_dev_extent()
+Date: Fri, 6 Feb 2015 18:50:42 +0800
+Message-ID: <006001d041fa$c0abac10$42030430$@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1423212122-12952-3-git-send-email-zhaolei@cn.fujitsu.com>
-References: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
-	<1423212122-12952-3-git-send-email-zhaolei@cn.fujitsu.com>
-Date: Fri, 6 Feb 2015 09:56:11 +0000
-Message-ID: <CAL3q7H61kG20B66wKd52bbks2dYgsikst__kq+dzOG-jOAKXvw@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: Set hole_size to free space in case of contains_pending_extent
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Zhaolei <zhaolei@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 6, 2015 at 8:42 AM, Zhaolei <zhaolei@cn.fujitsu.com> wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
->
-> Btrfs will report NO_SPACE when we create and remove files for several times:
-> 1: Create a single-dev btrfs fs with default option
-> 2: Write a file into it to take up most fs space
-> 3: Delete above file
-> 4: Wait about 100s to let chunk removed
-> 5: goto 2
->
-> Script is like following:
->  #!/bin/bash
->
->  # Recommend 1.2G space, too large disk will make test slow
->  DEV="/dev/sda16"
->  MNT="/mnt/tmp"
->
->  dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
->  file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
->
->  echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
->
->  for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
->  echo "mkfs $DEV"
->  mkfs.btrfs -f "$DEV" >/dev/null || exit 2
->  echo "mount $DEV $MNT"
->  mount "$DEV" "$MNT" || exit 2
->
->  for ((loop_i = 0; loop_i < 20; loop_i++)); do
->      echo
->      echo "loop $loop_i"
->
->      echo "dd file..."
->      cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
->      "${cmd[@]}" 2>/dev/null || {
->          # NO_SPACE error triggered
->          echo "dd failed: ${cmd[*]}"
->          exit 1
->      }
->
->      echo "rm file..."
->      rm -f "$MNT"/file0 || exit 2
->
->      for ((i = 0; i < 10; i++)); do
->          df "$MNT" | tail -1
->          sleep 10
->      done
->  done
->
-> Reason:
-> When we get a free space segment with pending_extent in
-> find_free_dev_extent(), we need bypass pending_extent segment in
-> front and continue to use free space segment in tail.
-> But current code ignored whole dev_extent, and cause NO_SPACE in
-> some case.
->
-> Fix:
-> Adjust hole_size to real free space value instead of 0 in
-> find_free_dev_extent().
->
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
->
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hi, Filipe
 
-This was already fixed by Forrest recently. See:
-https://patchwork.kernel.org/patch/5776231/
+> > Reason:
+> > Btrfs get free disk space by calling find_free_dev_extent() when
+> > re-create chunk for write, but current code set search_commit_root
+> > flag in searching tree, so disk spaces which was freed from dev_tree
+> > but not commited can not get from find_free_dev_extent(), then
+> > btrfs report NO_SPACE on above case.
+> 
+> Yes, and that is correct.
+> If you re-use the same physical space within the same transaction,
+> write to it and a crash happens before writing the next super block
+> (transaction commit), the next time the fs is mounted it will have
+> data or metadata corrupted.
+> 
+> With your change this could happen:
+> 
+> 1) Delete metadata block group X, which takes physical space [2G, 3G]
+> (assuming single metadata profile);
+> 
+> 2) A chunk allocation for a data block group happens, and it gets that
+> same physical space in the range [2G, 3G];
+> 
+> 3) Data is written into it - for e.g. due to memory pressure, the VM
+> calls writepages() for some inodes;
+> 
+> 4) Crash/reboot happens before the transaction commits;
+> 
+> 5) On the next mount, you have metadata corrupted - there's now file
+> data instead of btree nodes/leafs in metadata the block group at the
+> physical range [2G, 3G]
+> 
+Thanks for notice.
 
-> ---
->  fs/btrfs/volumes.c | 8 ++++++--
->  1 file changed, 6 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 5cd0930..0cc9422 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1194,8 +1194,12 @@ again:
->                          */
->                         if (contains_pending_extent(trans, device,
->                                                     &search_start,
-> -                                                   hole_size))
-> -                               hole_size = 0;
-> +                                                   hole_size)) {
-> +                               if (search_start > key.offset)
-> +                                       hole_size = 0;
-> +                               else
-> +                                       hole_size = key.offset - search_start;
-> +                       }
->
->                         if (hole_size > max_hole_size) {
->                                 max_hole_start = search_start;
+Since above NO_SPACE bug is still exist and need to be fixed, maybe we
+need to do a commit transaction after remove_bgs.
+I'll test this way and resend.
+
+Thanks
+Zhaolei
+
+> That said, unless I missed something, I disagree with this patch.
+> 
+> >
+> > Fix:
+> > Remove "path->search_commit_root = 1" in find_free_dev_extent().
+> >
+> > Tested by above script, and confirmed action with many printk.
+> >
+> > Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> >
+> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> > ---
+> >  fs/btrfs/volumes.c | 1 -
+> >  1 file changed, 1 deletion(-)
+> >
+> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > index 50c5a87..5cd0930 100644
+> > --- a/fs/btrfs/volumes.c
+> > +++ b/fs/btrfs/volumes.c
+> > @@ -1147,7 +1147,6 @@ again:
+> >         }
+> >
+> >         path->reada = 2;
+> > -       path->search_commit_root = 1;
+> >         path->skip_locking = 1;
+> >
+> >         key.objectid = device->devid;
+> > --
+> > 1.8.5.1
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
 > --
-> 1.8.5.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Filipe David Manana,
+> 
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."
 
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

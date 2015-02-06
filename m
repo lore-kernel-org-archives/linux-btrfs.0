@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62547 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:57905 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751580AbbBFFrp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 00:47:45 -0500
+	with ESMTP id S1751143AbbBFFrm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 00:47:42 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t165l0BO016596
-	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 13:47:00 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t165kuLS016583
+	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 13:46:56 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v7 8/9] btrfs: Use sb_want_write() to protect label change.
-Date: Fri, 6 Feb 2015 13:45:33 +0800
-Message-ID: <1423201534-19309-9-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 4/9] btrfs: Introduce per-transaction mount_opt to keep mount option consistent during transaction.
+Date: Fri, 6 Feb 2015 13:45:29 +0800
+Message-ID: <1423201534-19309-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1423201534-19309-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1423201534-19309-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,81 +18,60 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the new vfs API sb_want_write() to do the write protection of the
-label change transaction.
+Before this patch, mount_opt is not consistent during a transaction.
+btrfs_parse_options() can race with transaction.
+
+Now each transaction will keep a copy of fs_info->mount_opt upon
+creation, and new btrfs_test_trans_opt() macro is introduced to get the
+mount_opt in the transaction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
-v4:
+changelog:
+v3:
   Newly introduced.
-v5:
-  Change to use sb_want_write().
-v6:
-  Move sb_want_write() at the beginning of the function.
-v7:
+v4~v7:
   None
 ---
- fs/btrfs/sysfs.c | 22 +++++++++++++++-------
- 1 file changed, 15 insertions(+), 7 deletions(-)
+ fs/btrfs/transaction.c | 1 +
+ fs/btrfs/transaction.h | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index b2e7bb4..7e548f7 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -25,6 +25,7 @@
- #include <linux/bug.h>
- #include <linux/genhd.h>
- #include <linux/debugfs.h>
-+#include <linux/mount.h>
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 295a135..846e1b8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -210,6 +210,7 @@ loop:
+ 		return -EROFS;
+ 	}
  
- #include "ctree.h"
- #include "disk-io.h"
-@@ -377,8 +378,9 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	int ret;
- 	size_t p_len;
++	cur_trans->mount_opt = fs_info->mount_opt;
+ 	atomic_set(&cur_trans->num_writers, 1);
+ 	extwriter_counter_init(cur_trans, type);
+ 	init_waitqueue_head(&cur_trans->writer_wait);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index fd400a3..4052879 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -52,6 +52,7 @@ struct btrfs_transaction {
+ 	struct list_head list;
+ 	struct extent_io_tree dirty_pages;
+ 	unsigned long start_time;
++	unsigned long mount_opt;
+ 	wait_queue_head_t writer_wait;
+ 	wait_queue_head_t commit_wait;
+ 	struct list_head pending_snapshots;
+@@ -126,6 +127,9 @@ struct btrfs_pending_snapshot {
+ 	struct list_head list;
+ };
  
--	if (fs_info->sb->s_flags & MS_RDONLY)
--		return -EROFS;
-+	ret = sb_want_write(fs_info->sb);
-+	if (ret)
-+		return ret;
- 
- 	/*
- 	 * p_len is the len until the first occurrence of either
-@@ -386,12 +388,17 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	 */
- 	p_len = strcspn(buf, "\n");
- 
--	if (p_len >= BTRFS_LABEL_SIZE)
--		return -EINVAL;
-+	if (p_len >= BTRFS_LABEL_SIZE) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
++#define btrfs_test_trans_opt(trans, opt)	\
++	(btrfs_raw_test_opt(trans->transaction->mount_opt, opt))
 +
- 
- 	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
- 
- 	spin_lock(&root->fs_info->super_lock);
- 	memset(fs_info->super_copy->label, 0, BTRFS_LABEL_SIZE);
-@@ -399,9 +406,10 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	spin_unlock(&root->fs_info->super_lock);
- 	ret = btrfs_commit_transaction(trans, root);
- 
-+out:
-+	sb_drop_write(fs_info->sb);
- 	if (!ret)
- 		return len;
--
- 	return ret;
- }
- BTRFS_ATTR_RW(label, btrfs_label_show, btrfs_label_store);
+ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
+ 					      struct inode *inode)
+ {
 -- 
 2.2.2
 

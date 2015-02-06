@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57905 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14041 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751143AbbBFFrm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 00:47:42 -0500
+	with ESMTP id S1751603AbbBFFrp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 00:47:45 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t165kuLS016583
-	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 13:46:56 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t165l184016599
+	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 13:47:01 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v7 4/9] btrfs: Introduce per-transaction mount_opt to keep mount option consistent during transaction.
-Date: Fri, 6 Feb 2015 13:45:29 +0800
-Message-ID: <1423201534-19309-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 9/9] btrfs: Use sb_want_write() to protect sysfs feature change.
+Date: Fri, 6 Feb 2015 13:45:34 +0800
+Message-ID: <1423201534-19309-10-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1423201534-19309-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1423201534-19309-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,60 +18,95 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this patch, mount_opt is not consistent during a transaction.
-btrfs_parse_options() can race with transaction.
-
-Now each transaction will keep a copy of fs_info->mount_opt upon
-creation, and new btrfs_test_trans_opt() macro is introduced to get the
-mount_opt in the transaction.
+Just like label change, use sb_want_write() to do a correct protection.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
-changelog:
-v3:
+v4:
   Newly introduced.
-v4~v7:
+v5:
+  Change to sb_want_write().
+v6:
+  Move sb_want_write() to the beginning of the function.
+v7:
   None
 ---
- fs/btrfs/transaction.c | 1 +
- fs/btrfs/transaction.h | 4 ++++
- 2 files changed, 5 insertions(+)
+ fs/btrfs/sysfs.c | 31 +++++++++++++++++++++----------
+ 1 file changed, 21 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 295a135..846e1b8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -210,6 +210,7 @@ loop:
- 		return -EROFS;
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 7e548f7..fbd4d2f 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -117,13 +117,19 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	unsigned long val;
+ 	int ret;
+ 
++	ret = sb_want_write(fs_info->sb);
++	if (ret)
++		return ret;
++
+ 	fs_info = to_fs_info(kobj);
+-	if (!fs_info)
+-		return -EPERM;
++	if (!fs_info) {
++		ret = -EPERM;
++		goto out;
++	}
+ 
+ 	ret = kstrtoul(skip_spaces(buf), 0, &val);
+ 	if (ret)
+-		return ret;
++		goto out;
+ 
+ 	if (fa->feature_set == FEAT_COMPAT) {
+ 		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
+@@ -141,22 +147,25 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	/* Nothing to do */
+ 	if ((val && (features & fa->feature_bit)) ||
+ 	    (!val && !(features & fa->feature_bit)))
+-		return count;
++		goto out;
+ 
+ 	if ((val && !(set & fa->feature_bit)) ||
+ 	    (!val && !(clear & fa->feature_bit))) {
+ 		btrfs_info(fs_info,
+ 			"%sabling feature %s on mounted fs is not supported.",
+ 			val ? "En" : "Dis", fa->kobj_attr.attr.name);
+-		return -EPERM;
++		ret = -EPERM;
++		goto out;
  	}
  
-+	cur_trans->mount_opt = fs_info->mount_opt;
- 	atomic_set(&cur_trans->num_writers, 1);
- 	extwriter_counter_init(cur_trans, type);
- 	init_waitqueue_head(&cur_trans->writer_wait);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index fd400a3..4052879 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -52,6 +52,7 @@ struct btrfs_transaction {
- 	struct list_head list;
- 	struct extent_io_tree dirty_pages;
- 	unsigned long start_time;
-+	unsigned long mount_opt;
- 	wait_queue_head_t writer_wait;
- 	wait_queue_head_t commit_wait;
- 	struct list_head pending_snapshots;
-@@ -126,6 +127,9 @@ struct btrfs_pending_snapshot {
- 	struct list_head list;
- };
+ 	btrfs_info(fs_info, "%s %s feature flag",
+ 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
  
-+#define btrfs_test_trans_opt(trans, opt)	\
-+	(btrfs_raw_test_opt(trans->transaction->mount_opt, opt))
-+
- static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 					      struct inode *inode)
- {
+ 	trans = btrfs_start_transaction(fs_info->fs_root, 0);
+-	if (IS_ERR(trans))
+-		return PTR_ERR(trans);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
+ 
+ 	spin_lock(&fs_info->super_lock);
+ 	features = get_features(fs_info, fa->feature_set);
+@@ -168,10 +177,12 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	spin_unlock(&fs_info->super_lock);
+ 
+ 	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
+-	if (ret)
+-		return ret;
+ 
+-	return count;
++out:
++	sb_drop_write(fs_info->sb);
++	if (!ret)
++		return count;
++	return ret;
+ }
+ 
+ static umode_t btrfs_feature_visible(struct kobject *kobj,
 -- 
 2.2.2
 

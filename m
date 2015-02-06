@@ -1,79 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41805 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:39153 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751225AbbBFFUq convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 00:20:46 -0500
-Message-ID: <54D44F2A.8090108@cn.fujitsu.com>
-Date: Fri, 6 Feb 2015 13:20:42 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	with ESMTP id S1752157AbbBFInO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 03:43:14 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t168gSYZ028724
+	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 16:42:28 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 0/2] btrfs: Fix out-of-space bug
+Date: Fri, 6 Feb 2015 16:42:00 +0800
+Message-ID: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Lutz Vieweg <lvml@5t9.de>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Can I get a checksum for a file from btrfs (without reading the
- whole file)?
-References: <mavhab$f8m$1@ger.gmane.org>
-In-Reply-To: <mavhab$f8m$1@ger.gmane.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
--------- Original Message --------
-Subject: Can I get a checksum for a file from btrfs (without reading the 
-whole file)?
-From: Lutz Vieweg <lvml@5t9.de>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2015年02月05日 18:40
-> Hi,
->
-> use case: You have two huge files on a btrfs, you assume they contain 
-> the same bytes,
-> but you do not know for sure.
->
-> Is there a way to get a checksum of both files from btrfs with less 
-> effort than
-> reading the whole of both files and computing a hash sum?
-For short, NO.
+Btrfs will report NO_SPACE when we create and remove files for several times:
+1: Create a single-dev btrfs fs with default option
+2: Write a file into it to take up most fs space
+3: Delete above file
+4: Wait about 100s to let chunk removed
+5: goto 2
 
-For long:
-For current implement, btrfs use calculate 4K sector into 4bytes(32bit) 
-crc32 and restore it into csum tree.
+Script is like following:
+ #!/bin/bash
 
-So, for large files, e.g. 1G(already quite small for modern storage), 
-its checksum will be 1M in size.
-Which means even using crc32 (same as kernel and crc32(a+b) = crc32(a) + 
-crc32(b)), you still needs to
-do crc32 on the all 1M crc32.
-And if you want other checksum like md5/sha256, you have no choice but 
-read them all and calculate.
+ # Recommend 1.2G space, too large disk will make test slow
+ DEV="/dev/sda16"
+ MNT="/mnt/tmp"
 
+ dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
+ file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
 
-But there is still some case btrfs can help you determine whether the 
-files are the same in a faster way.
-Prerequisite:
-The two files are copied using clone(cp --reflink command) or 
-deduplicated(see btrfs 
-wiki:https://btrfs.wiki.kernel.org/index.php/Deduplication)
+ echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
 
-Method:
-If cloned/deduplicated, file will share same file extents (one can up to 
-128M).
-So you can compare file extents to compare the whole file.
-Per 128M compare will be definitely faster. (if not modified after cp 
---clone or deduplication)
+ for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
+ echo "mkfs $DEV"
+ mkfs.btrfs -f "$DEV" >/dev/null || exit 2
+ echo "mount $DEV $MNT"
+ mount "$DEV" "$MNT" || exit 2
 
-I didn't see such implement yet, so it's just a concept...
+ for ((loop_i = 0; loop_i < 20; loop_i++)); do
+     echo
+     echo "loop $loop_i"
 
-Thanks,
-Qu
->
-> (I was thinking that the btrfs-internal CRCs might be of use, here...)
->
-> Regards,
->
-> Lutz Vieweg
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+     echo "dd file..."
+     cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
+     "${cmd[@]}" 2>/dev/null || {
+         # NO_SPACE error triggered
+         echo "dd failed: ${cmd[*]}"
+         exit 1
+     }
+
+     echo "rm file..."
+     rm -f "$MNT"/file0 || exit 2
+
+     for ((i = 0; i < 10; i++)); do
+         df "$MNT" | tail -1
+         sleep 10
+     done
+ done
+
+Reason:
+It is triggered by commit: 47ab2a6c689913db23ccae38349714edf8365e0a
+which is used to remove empty block groups automatically, but the
+reason is not in that patch. Code before works well because btrfs
+don't need to create and delete chunks so many times and with high
+complexity.
+
+Reason1:
+ Btrfs get free disk space by calling find_free_dev_extent() when
+ re-create chunk for write, but current code set search_commit_root
+ flag in searching tree, so disk spaces which was freed from dev_tree
+ but not commited can not get from find_free_dev_extent(), then
+ btrfs report NO_SPACE on above case.
+ Fixed in patch 1/2.
+
+Reason2:
+ When we remove some continuous chunks but leave other chunks after,
+ these disk space should be used by chunk-recreating, but in current
+ code, only first create will successed.
+ Fixed in patch 2/2.
+
+Reason3:
+ contains_pending_extent() return wrong value in calculation.
+ Fixed by Forrest Liu <forrestl@synology.com> in:
+ Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
+
+Tested by above script, and confirmed action with many printk.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+
+Zhao Lei (2):
+  btrfs: Fix out-of-space bug caused by searching commit_root in
+    find_free_dev_extent()
+  btrfs: Set hole_size to free space in case of contains_pending_extent
+
+ fs/btrfs/volumes.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+-- 
+1.8.5.1
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63885 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:39153 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754813AbbBFInP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 03:43:15 -0500
+	with ESMTP id S1753939AbbBFInQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 03:43:16 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t168gTQc028731
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t168gT81028727
 	for <linux-btrfs@vger.kernel.org>; Fri, 6 Feb 2015 16:42:29 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs: Set hole_size to free space in case of contains_pending_extent
-Date: Fri, 6 Feb 2015 16:42:02 +0800
-Message-ID: <1423212122-12952-3-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Fix out-of-space bug caused by searching commit_root in find_free_dev_extent()
+Date: Fri, 6 Feb 2015 16:42:01 +0800
+Message-ID: <1423212122-12952-2-git-send-email-zhaolei@cn.fujitsu.com>
 In-Reply-To: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
 References: <1423212122-12952-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -68,42 +68,36 @@ Script is like following:
  done
 
 Reason:
-When we get a free space segment with pending_extent in
-find_free_dev_extent(), we need bypass pending_extent segment in
-front and continue to use free space segment in tail.
-But current code ignored whole dev_extent, and cause NO_SPACE in
-some case.
+Btrfs get free disk space by calling find_free_dev_extent() when
+re-create chunk for write, but current code set search_commit_root
+flag in searching tree, so disk spaces which was freed from dev_tree
+but not commited can not get from find_free_dev_extent(), then
+btrfs report NO_SPACE on above case.
 
 Fix:
-Adjust hole_size to real free space value instead of 0 in
-find_free_dev_extent().
+Remove "path->search_commit_root = 1" in find_free_dev_extent().
+
+Tested by above script, and confirmed action with many printk.
 
 Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 1 -
+ 1 file changed, 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5cd0930..0cc9422 100644
+index 50c5a87..5cd0930 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1194,8 +1194,12 @@ again:
- 			 */
- 			if (contains_pending_extent(trans, device,
- 						    &search_start,
--						    hole_size))
--				hole_size = 0;
-+						    hole_size)) {
-+				if (search_start > key.offset)
-+					hole_size = 0;
-+				else
-+					hole_size = key.offset - search_start;
-+			}
+@@ -1147,7 +1147,6 @@ again:
+ 	}
  
- 			if (hole_size > max_hole_size) {
- 				max_hole_start = search_start;
+ 	path->reada = 2;
+-	path->search_commit_root = 1;
+ 	path->skip_locking = 1;
+ 
+ 	key.objectid = device->devid;
 -- 
 1.8.5.1
 

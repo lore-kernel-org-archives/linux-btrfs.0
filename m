@@ -1,54 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f175.google.com ([209.85.160.175]:46731 "EHLO
-	mail-yk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752737AbbBGAOc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 19:14:32 -0500
-Received: by mail-yk0-f175.google.com with SMTP id 10so3136244ykt.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 16:14:31 -0800 (PST)
+Received: from mail-yh0-f54.google.com ([209.85.213.54]:56197 "EHLO
+	mail-yh0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754976AbbBGAXv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Feb 2015 19:23:51 -0500
+Received: by mail-yh0-f54.google.com with SMTP id 29so7701623yhl.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Feb 2015 16:23:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <mb3f86$tum$1@ger.gmane.org>
-References: <mau7vs$pjj$1@ger.gmane.org>
-	<CAJCQCtSXJZ4paKiZBNDOp-yKccrLbizmGDj_8y5k5EC-9DFjXg@mail.gmail.com>
-	<54D2E62E.7080208@pobox.com>
-	<CAJCQCtSLBg7-XoVjTfDq5PbZ-dk1WXeXGT2YEbQYNNc0VoSu-A@mail.gmail.com>
-	<mb0jp0$pnd$1@ger.gmane.org>
-	<CAJCQCtT1pSrFEU7Q0qspNkqzY9naDHxzzyE5y3fyqgZqqkT_vA@mail.gmail.com>
-	<mb0s1l$3ta$1@ger.gmane.org>
-	<CAJCQCtRHsiau97r66O9PC6O0mK7Yafc3aE2HX=4bT-w4nw8OZg@mail.gmail.com>
-	<mb3f86$tum$1@ger.gmane.org>
-Date: Fri, 6 Feb 2015 17:14:31 -0700
-Message-ID: <CAJCQCtQuk0XWWBcW4j=CBJ=GBgd9jS-PKCki7zOH2cNOuroanA@mail.gmail.com>
-Subject: Re: Btrfs subvolume question
+In-Reply-To: <CAPn+qJhxzbG-FjUUG9VzzZvvA=nSyaFxp3PQrMSm10QXrCtNNw@mail.gmail.com>
+References: <CAPn+qJhxzbG-FjUUG9VzzZvvA=nSyaFxp3PQrMSm10QXrCtNNw@mail.gmail.com>
+Date: Fri, 6 Feb 2015 17:23:50 -0700
+Message-ID: <CAJCQCtQn=HQU15D5qfS4ASR7HZM974f1p8xKQQCQRmR-NPXQ+w@mail.gmail.com>
+Subject: Re: RAID1, SSD+non-SSD
 From: Chris Murphy <lists@colorremedies.com>
-To: Markus Moeller <huaraz@moeller.plus.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 6, 2015 at 3:29 PM, Markus Moeller <huaraz@moeller.plus.com> wrote:
-> So what I don't understand which process created the sub volumes.
+On Fri, Feb 6, 2015 at 1:01 PM, Brian B <canis8585@gmail.com> wrote:
+> My laptop has two disks, a SSD and a traditional magnetic disk. I plan
+> to make a partition on the mag disk equal in size the SSD and set up
+> BTRFS RAID1. This I know how to do.
 
-Yast had to have done it. It did all the partitioning, creation of the
-file system, and it created fstab.
+There isn't a write mostly option in btrfs like there is with md raid,
+so I don't know how Btrfs will tolerate one device being exceptionally
+slower than the other. It may be most of the time it won't matter, but
+I can imagine with a ton of IOPS backing up on the hard drive, having
+completed on the SSD, could maybe be a problem. I'd test it unless
+someone else who has pipes up.
 
+>
+> The only reason I'm doing the RAID1 is for the self-healing. I realize
+> writing large amounts of data will be slower than the SSD alone, but
+> is it possible to set it up to only read from the magnetic drive if
+> there's an error reading from the SSD?
 
-> I fear if
-> I start again it will be the same.
+No.
+>
+> In other words, is there a way to tell it to only read from the faster
+> disk?  Is that even necessary?  Is there a better way to accomplish
+> this?
 
-Don't check the LVM option. I don't have the installer UI right in
-front of me so I don't know exactly where it is or what it's called,
-but it's not enabled by default because I've done a default openSUSE
-13.2 installation and it did use Btrfs and created a pile of
-subvolumes, but it didn't use LVM at all.
+No. No. And maybe. In order.
 
+If there is an error detected by either drive, or by Btrfs, Btrfs will
+get the correct data from the other drive and fix the problem on the
+original drive. You don't need to configure anything. The only concern
+is the asymmetric performance.
 
-> The OpenSuse YAST2 Partition tool does
-> not show any subvolumes.
-
-That sounds like a feature request. They're clearly there.
-
-
+I think the use case is better achieved with two HDD's + two SSD
+partitions, configured either with bcache or dmcache. The result is
+two logical devices using HDDs as backing device and SSD partitions as
+cache, and then format them as Btrfs raid1. The question there of
+course, is maturity of bcache vs dmcache and their interactions with
+Btrfs. But at least that's supposed to work.
 
 -- 
 Chris Murphy

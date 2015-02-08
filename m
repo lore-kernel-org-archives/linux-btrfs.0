@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46029 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:46047 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759779AbbBIH6T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 02:58:19 -0500
+	with ESMTP id S1759795AbbBIH6X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 02:58:23 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 08/24] Btrfs: sysfs: introduce function btrfs_sysfs_add_fsid() to create sysfs fsid
-Date: Mon,  9 Feb 2015 07:56:09 +0800
-Message-Id: <1423439785-10260-9-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 10/24] Btrfs: sysfs: separate device kobject and its attribute creation
+Date: Mon,  9 Feb 2015 07:56:11 +0800
+Message-Id: <1423439785-10260-11-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1423439785-10260-1-git-send-email-anand.jain@oracle.com>
 References: <1423439785-10260-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,47 +16,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-We need it in a seperate function so that it can be called from the
-device discovery thread as well.
+Separate device kobject and its attribute creation so that device
+kobject can be created from the device discovery thread.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ fs/btrfs/sysfs.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c923e8b..f42d8fd 100644
+index 5208a49..2cb4c69 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -690,7 +690,12 @@ static struct dentry *btrfs_debugfs_root_dentry;
- /* Debugging tunables and exported data */
- u64 btrfs_debugfs_test;
+@@ -645,13 +645,8 @@ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
  
--int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
-+/*
-+ * Can be called by the device discovery thread.
-+ * And parent can be specified for seed device
-+ */
-+int btrfs_sysfs_add_fsid(struct btrfs_fs_info *fs_info,
-+				struct kobject *parent)
+-int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
+-		struct btrfs_device *one_device)
++int btrfs_sysfs_add_device(struct btrfs_fs_info *fs_info)
  {
- 	int error;
+-	int error = 0;
+-	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+-	struct btrfs_device *dev;
+-
+ 	if (!fs_info->device_dir_kobj)
+ 		fs_info->device_dir_kobj = kobject_create_and_add("devices",
+ 						&fs_info->super_kobj);
+@@ -659,6 +654,20 @@ int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
+ 	if (!fs_info->device_dir_kobj)
+ 		return -ENOMEM;
  
-@@ -698,6 +703,14 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- 	fs_info->super_kobj.kset = btrfs_kset;
- 	error = kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
- 				     "%pU", fs_info->fsid);
-+	return error;
++	return 0;
 +}
 +
-+int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
++int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
++		struct btrfs_device *one_device)
 +{
-+	int error;
++	int error = 0;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_device *dev;
 +
-+	error = btrfs_sysfs_add_fsid(fs_info, NULL);
- 	if (error)
- 		return error;
- 
++	error = btrfs_sysfs_add_device(fs_info);
++	if (error)
++		return error;
++
+ 	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
+ 		struct hd_struct *disk;
+ 		struct kobject *disk_kobj;
 -- 
 2.0.0.153.g79dcccc
 

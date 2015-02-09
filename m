@@ -1,138 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56606 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752391AbbBIFgz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 00:36:55 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <fdmanana@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <1423317228-5307-1-git-send-email-zhaolei@cn.fujitsu.com> <CAL3q7H5WRP3AaF_xXJXBDHKn9LvUUByfpzC5PJpTwmar_YV0Hw@mail.gmail.com>
-In-Reply-To: <CAL3q7H5WRP3AaF_xXJXBDHKn9LvUUByfpzC5PJpTwmar_YV0Hw@mail.gmail.com>
-Subject: RE: [PATCH v2] btrfs: Fix out-of-space bug
-Date: Mon, 9 Feb 2015 13:35:54 +0800
-Message-ID: <000c01d0442a$464de690$d2e9b3b0$@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from plane.gmane.org ([80.91.229.3]:36876 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752522AbbBIFwe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Feb 2015 00:52:34 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YKhGq-0000T3-Am
+	for linux-btrfs@vger.kernel.org; Mon, 09 Feb 2015 06:52:32 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 06:52:32 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 06:52:32 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Replacing a (or two?) failed drive(s) in RAID-1 btrfs
+ filesystem
+Date: Mon, 9 Feb 2015 05:52:26 +0000 (UTC)
+Message-ID: <pan$85656$96220f39$b610095f$78e833eb@cox.net>
+References: <CANcfdL0x_LTSnyL1FP8vVV4=MaFrewT4pd0MZgu3qzxOviXDgg@mail.gmail.com>
+	<CAJCQCtT+8+02KkYOcRUOhscj3AP0av8PpNmsK526hvJY=3ucRw@mail.gmail.com>
+	<CANcfdL0twe-pi4f1ZVNG=m82gQTKc5QL3pcodY6diJ6uLj2Q9A@mail.gmail.com>
+	<CAJCQCtSJ+kgxKb-gGnuOCFEVBsr2UP0aUWg_M60Ts_OQaSL8oQ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Filipe
+Chris Murphy posted on Sun, 08 Feb 2015 15:43:35 -0700 as excerpted:
 
-> > Changelog v1->v2:
-> >  V1 will introduce a new bug when create a metadata bg in space of
-> >  old data bg which was just removed, noticed by:
-> >  Filipe David Manana <fdmanana@gmail.com>
-> >  V2 fix this bug by commit transaction after remove block grops.
-> 
-> Well it's not specific to reusing the space from a deleted metadata
-> block group for a new data block group. This is true for any other
-> combination, even "data -> data". When using COW for both metadata and
-> data, if a crash happens before the transaction commits, it is
-> guaranteed that all data and metadata committed in the previous
-> transaction are available on the next mount (and all new data in the
-> current transaction if it was fsync'ed) - this applies to any COW
-> system, be it a filesystem or a database for example.
-> 
-Yes, wil change above description.
+> Confusing is that sdd1, sdi1, sdg1 have gen 0 and also have corruptions
+> reported, just not anywhere near as many as sdc1. So I don't know what
+> problems you have with your hardware, but they're not restricted to just
+> one or two drives. Generation 0 makes no sense to me.
 
-> >
-> > Tested for severial times by above script.
-> >
-> > Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> > ---
-> >  fs/btrfs/extent-tree.c | 4 ++++
-> >  1 file changed, 4 insertions(+)
-> >
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index a684086..67c85ff 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -9653,6 +9653,10 @@ next:
-> >                 spin_lock(&fs_info->unused_bgs_lock);
-> >         }
-> >         spin_unlock(&fs_info->unused_bgs_lock);
-> > +       trans = btrfs_join_transaction(root);
-> > +       if (!IS_ERR(trans))
-> > +               btrfs_commit_transaction(trans, root);
-> > +
-> 
-> At the very least, before doing the commit, you should verify if any
-> block groups were actually deleted - under some conditions we skip
-> their deletion in the loop. 
-Good suggestion, it can reduce useless committing.
+There was a btrfs bug along about kernel 3.17 (or was it 3.18), that 
+reset the generation count.  Several people posted weird generation 
+outputs within a few days, and then there was a fast bug-fix that went 
+into the new kernel and stable for the previous kernel (which IIRC was 
+the only one affected), almost before we'd figured out that the reports 
+were connected and it was a definite bug!
 
-> Plus, it would be good to check if the sum
-> of the sizes of the deleted block groups exceeds some minimum
-> threshold (lets say 1G or 2G, whatever), so that we don't get the
-> overhead of committing a transaction for little or no gains.
->
-Chunks are large enough in normal-size btrfs filesystem(size > 10G), or
-worthed to be deleted in small-size filesystem, which have chunk
-size <= 128M but large percent of total size.
+The good news is that the devs are getting MUCH faster at fixing these 
+things -- the first widespread bug from a few kernels ago took just over 
+a full kernel cycle to trace down and fix, the next one was fixed in the 
+same kernel cycle, this one was traced and fixed so fast that even tho we 
+had a number of reports, the devs found and fixed the bug at about the 
+same time most list users even became aware that there was a bug in the 
+first place!
 
-And it is easy to trigger above problem in case that we ignore
-deleting 128M chunks when fs is empty.
+The bad news is that because it was found and fixed so fast, you 
+evidently weren't aware of it at all or you'd have seen it in these zero-
+gen reports here, and while I was aware of it, I have less details than 
+on the other bugs.
 
-So I think always commit transaction when delete empty chunks
-will make logic simple, but ... , see below.
+Meanwhile, more good news in that there's a fix, and btrfs check from the 
+latest btrfs-progs 3.18.x should have no problems fixing it -- on an 
+otherwise normal btrfs, anyway.  But the bad news is that I don't know if 
+it'll handle it with the one missing device and one failing, as seems to 
+be the case here.
 
-> I would also consider doing the commit only if the fs is really
-> running out of free space or close to being out of free space.
-> 
-Maybe the better way is to delay deleting-chunks.
+So to the problem at hand, and mostly addressing constantine (OP) now...
 
-The patch of "delete empty bgs" is used to fix problem that
-"no space for allocate metadata chunks but data chunks are free".
-It is to say, we only need to free data chunks when we have no space
-for metadata(or conversely), and need not always delete free chunks.
-Do delete-bg in allow_chunk() will be better.
+The lack of a good backup in this case is... unfortunate.  I'd be 
+surprised if there's any list regulars that trust the "still stabilizing" 
+btrfs without backups for any data they value, yet.  As any good sysadmin 
+(and by that I mean anyone administering systems, professional or not, 
+IOW, anyone making this sort of decision is a sysadmin) knows, if the 
+data's not backed up (and a good sysadmin knows a backup isn't complete 
+until it's tested to whatever level they're comfortable with restoring 
+from), by definition, the data is considered of low enough value that 
+it's not worth the backup hassle and the admin is prepared to do without 
+it as a fair price to pay for avoiding the hassle of backup.  And that's 
+the general rule, applying even to stable and mature filesystems.  
+Because btrfs is still maturing and isn't yet fully stable, the rule 
+applies to btrfs more than ever, so indeed, if it's not backed up, by 
+definition, you don't care about losing the data.
 
-But it is complex than current method, I want to avoid new bugs in rc,
-to give users a stable version in 3.19.
+Which interpreted strictly, means since there wasn't a backup here, the 
+data is by definition of actions of the person responsible, worth less 
+than the hassle of backing it up, which by definition means it's loss is 
+no big deal, no matter any claims to the contrary.  That being the case, 
+in the strict sense, call it a loss and be on to something more important.
 
-> You can get into many similar cases of space not being released until
-> the transaction commits.
-> For example, create 10 files with a size of 1Gb each (via fallocate
-> for e.g.), and then truncate them all to a size of 1M in the same
-> transaction for example. You'll get 999Mb * 10 of space that won't be
-> available for use until the current transaction commits - it's exactly
-> the same problem you found, it just doesn't imply deleting whole block
-> groups/chunks.
-> 
-This bug is more serious than above.
+But back here dealing in reality... well let's just try to retrieve what 
+can be retrieved.
 
-In my test, when NO_SPACE happened, we can not write into filesystem
-forever(may be something with space_info->full), so I wish to solve it
-before 3.19.
+As Chris Murphy has said, that means backing up what you can now.  If at 
+all possible leave the existing filesystem as it is when you do that (and 
+preferably mount it read-only for now, to minimize the chance of anything 
+else going bad on it in the mean time), which means... if you have to get 
+out the credit card to get enough storage to create a backup... well, 
+it's that or very high risk of losing even more of the data by taking 
+another drive out of the array and using it for backup.  This is serious 
+rock and hard place time, now.
 
-Thanks
-Zhaolei
+What fails to backup should show in the log.  Hopefully it's not too much 
+and not too valuable.  If you can do without it, great.  Otherwise, again 
+as Chris suggested, try btrfs restore on the unmounted filesystem... and 
+hope.  Because worked properly, restore can let you recover earlier 
+states of the files in question, you may be able to do that for otherwise 
+unrecoverable files, even if you can't get the current version.
 
-> Thanks
-> 
-> >  }
-> >
-> >  int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
-> > --
-> > 1.8.5.1
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> --
-> Filipe David Manana,
-> 
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Personally, I'd try those before trying the checksums reset he 
+suggested.  Because that's writing to the damaged filesystem, which of 
+course means possibly losing more if things go wrong.  Only if both 
+normal backup of what's possible, and restore, can't retrieve critical 
+files, would I even bother with the checksum zeroing and further rescue 
+efforts.
 
+
+Meanwhile, when you're done and everything's settled down again, 
+regardless of whether you stick with btrfs or revert to a more mature 
+filesystem, for the love of your data, PLEASE backup anything you 
+consider important.  Even if you don't regularly update those backups, a 
+backup of most of it losing the last month or six of work still gives you 
+SOMEWHERE to start!  Because if it's not backed up, as you've found out, 
+it really does mean you consider the risk of its loss of lower value than 
+the time/hassle/media-money you'd spend backing it up.  But I doubt I 
+have to tell you that... now!
+
+Meanwhile, even if it's all lost as horrible as that would be, NOT all is 
+lost, because it's a lesson most people don't have to learn twice, but 
+quite a few do end up learning once the hard way as most admins will tell 
+you if they're being honest!  So look at it this way, you'll be a much 
+better sysadmin from now on, having learned this lesson!
+
+And regardless of how bad the loss might be, it's only data.  You didn't 
+lose your house in a fire; you didn't just have your doctor tell you 
+you'll never walk again due to this accident, and you're not looking at 
+prison for driving head-on, drunk, into a bus full of people.  Put in 
+perspective against the TRULY important things in life, you're actually 
+still in pretty good shape, even if you lose all the data, but it 
+actually looks like you have a good chance at recovering most of it, so 
+you're in even BETTER shape! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

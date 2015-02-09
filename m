@@ -1,77 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59870 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932505AbbBIJPN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 04:15:13 -0500
-Date: Mon, 9 Feb 2015 09:15:10 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: "Devon B." <devon.b@virtualcomplete.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Accepting discard to free space from disk images
-Message-ID: <20150209091510.GJ28427@carfax.org.uk>
-References: <54D842FD.1010806@virtualcomplete.com>
- <20150209114023.137402bf@natsu>
- <20150209083941.GI28427@carfax.org.uk>
- <20150209141221.099d4fe5@natsu>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="dpynvXbW/eW9Tpc3"
-In-Reply-To: <20150209141221.099d4fe5@natsu>
+Received: from mail.synology.com ([59.124.41.242]:21657 "EHLO
+	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759748AbbBIJbF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 04:31:05 -0500
+From: Forrest Liu <forrestl@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Forrest Liu <forrestl@synology.com>
+Subject: [PATCH v3] Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
+Date: Mon,  9 Feb 2015 17:30:47 +0800
+Message-Id: <1423474247-26652-1-git-send-email-forrestl@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+If device tree has hole, find_free_dev_extent() cannot find available
+address properly.
 
---dpynvXbW/eW9Tpc3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The problem can be reproduce by following script.
 
-On Mon, Feb 09, 2015 at 02:12:21PM +0500, Roman Mamedov wrote:
-> On Mon, 9 Feb 2015 08:39:41 +0000
-> Hugo Mills <hugo@carfax.org.uk> wrote:
-> 
-> > > I use KVM (QEMU) with discard pass-through from the VM guest ("discard=unmap"
-> > > option), with the VM images stored on Btrfs. It works just fine, the disk
-> > > space used for the image file does shrink when the guest OS issues discards on
-> > > its FS. Maybe there is a difference in how KVM and the 'loop' module submit
-> > > discards to Btrfs?
-> > 
-> >    This is interesting, because I've tried exactly that setup (KVM,
-> > discard=unmap) and it's not worked for me.
-> 
-> Did you use the emulated IDE interface in KVM? Others such as virtio, ahci and
-> maybe SCSI may not support discard. Did you get a successful result issuing
-> TRIM within the guest (e.g. fstrim -v / succeeds and doesn't -ENOSUPP)?
+    mntpath=/btrfs
+    loopdev=/dev/loop0
+    filepath=/home/forrest/image
 
-   I used SCSI, so maybe that's the problem. I'll try with IDE.
+    umount $mntpath
+    losetup -d $loopdev
+    truncate --size 100g $filepath
+    losetup $loopdev $filepath
+    mkfs.btrfs -f $loopdev
+    mount $loopdev $mntpath
 
-   Hugo.
+    # make device tree with one big hole
+    for i in `seq 1 1 100`; do
+        fallocate -l 1g $mntpath/$i
+    done
+    sync
+    for i in `seq 1 1 95`; do
+        rm $mntpath/$i
+    done
+    sync
 
+    # wait cleaner thread remove unused block group
+    sleep 300
+
+    fallocate -l 1g $mntpath/aaa
+
+    # failed to allocate new chunk
+    fallocate -l 1g $mntpath/bbb
+
+Above script will make device tree with one big hole, and can only allocate
+just one chunk in a transaction, so failed to allocate new chunk for $mntpath/bbb
+
+    item 8 key (1 DEV_EXTENT 2185232384) itemoff 15859 itemsize 48
+        dev extent chunk_tree 3
+        chunk objectid 256 chunk offset 106292051968 length 1073741824
+    item 9 key (1 DEV_EXTENT 104190705664) itemoff 15811 itemsize 48
+        dev extent chunk_tree 3
+        chunk objectid 256 chunk offset 103108575232 length 1073741824
+
+Signed-off-by: Forrest Liu <forrestl@synology.com>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+---
+V2: fix typo key_offset
+    replace WARN_ON with WARN_ON_ONCE
+V3: add missing {} to stick to kernel coding style
+    add reprducing step in commit message
+
+ fs/btrfs/volumes.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 50c5a87..ddda8a0 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1060,6 +1060,7 @@ static int contains_pending_extent(struct btrfs_trans_handle *trans,
+ 	struct extent_map *em;
+ 	struct list_head *search_list = &trans->transaction->pending_chunks;
+ 	int ret = 0;
++	u64 physical_start = *start;
+ 
+ again:
+ 	list_for_each_entry(em, search_list, list) {
+@@ -1070,9 +1071,9 @@ again:
+ 		for (i = 0; i < map->num_stripes; i++) {
+ 			if (map->stripes[i].dev != device)
+ 				continue;
+-			if (map->stripes[i].physical >= *start + len ||
++			if (map->stripes[i].physical >= physical_start + len ||
+ 			    map->stripes[i].physical + em->orig_block_len <=
+-			    *start)
++			    physical_start)
+ 				continue;
+ 			*start = map->stripes[i].physical +
+ 				em->orig_block_len;
+@@ -1195,8 +1196,14 @@ again:
+ 			 */
+ 			if (contains_pending_extent(trans, device,
+ 						    &search_start,
+-						    hole_size))
+-				hole_size = 0;
++						    hole_size)) {
++				if (key.offset >= search_start) {
++					hole_size = key.offset - search_start;
++				} else {
++					WARN_ON_ONCE(1);
++					hole_size = 0;
++				}
++			}
+ 
+ 			if (hole_size > max_hole_size) {
+ 				max_hole_start = search_start;
 -- 
-Hugo Mills             | I was cursed with poetry very young. It creates
-hugo@... carfax.org.uk | unrealistic expectations.
-http://carfax.org.uk/  |                                   Victor Frankenstein
-PGP: 65E74AC0          |                                        Penny Dreadful
+1.9.1
 
---dpynvXbW/eW9Tpc3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJU2HqeAAoJEFheFHXiqx3kffQQAKYk6YgERPK/T6UuDKVZjZbH
-qa3mHQTXbTTy/6FjwetEHAt8LBjads4ZlkH7yMKIk2GpjC87CqSPD/ALje/3anmK
-M8A4dzrfedYqqAesvNlaZozBuA+aTcq0e9nNgeId359QDGaSYnLuwdKnY9j4718G
-Ash5NUB3Mhx/KdR/NDXI+yv0IW1mtE/UgTRtOc4H4TFFAMEifA8oJwTgJPiIH1/7
-fKdfGi6Wa4Hu6QDy7j6ub1RI3SabbIggR1wm0nw+/tQzIwYhefozLKnYlSgsp4GN
-Y4ms0CzQoailwZN85VmaA5e0t7khx52DbVBuog0Wo7mjtCtMqSo29GcXlNzn4HG0
-Jdgnk4mq9qAMwfWOWLv4XSW7S0iwrP9XyxP2a3bYNuka1Eh4jI5KxL+b9kJFeL+4
-AabUH0uIf8etr9AGGO5cYioWheBV4ZFOsDQL6L4olodgCvpDU40CF5RSSjxvoXNy
-wstAZ/9VXsQWMgQPHsb9O6SlLLgbMkSu2NXad+NmLeKUnKlssYda6W9KcI+qKOAL
-uSSi46Pc3YvqaOv11tRqJV/Vg5BjmqDXxKSmpgmliL56g8wjBOPshINiZvYDPRji
-OPUqMz2G+oJKkivBWTC7n6hXquUbjCHLhagMUEiNupTSpKajPOZukDfkYtoXqzm3
-S9bCChA+nY24HG5JC9xa
-=Tf7J
------END PGP SIGNATURE-----
-
---dpynvXbW/eW9Tpc3--

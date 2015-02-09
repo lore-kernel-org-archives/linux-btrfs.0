@@ -1,43 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from asuka.romanrm.net ([128.199.122.184]:44925 "EHLO
-	asuka.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759454AbbBIGrE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 01:47:04 -0500
-Date: Mon, 9 Feb 2015 11:40:23 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: "Devon B." <devon.b@virtualcomplete.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Accepting discard to free space from disk images
-Message-ID: <20150209114023.137402bf@natsu>
-In-Reply-To: <54D842FD.1010806@virtualcomplete.com>
-References: <54D842FD.1010806@virtualcomplete.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from cn.fujitsu.com ([59.151.112.132]:62475 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751780AbbBIHAy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 02:00:54 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t197084B013370
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Feb 2015 15:00:08 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: cleanup: remove no-used alloc_chunk in btrfs_check_data_free_space()
+Date: Mon, 9 Feb 2015 14:59:43 +0800
+Message-ID: <1423465183-6327-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 09 Feb 2015 00:17:49 -0500
-"Devon B." <devon.b@virtualcomplete.com> wrote:
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-> Looking to use btrfs with disk images that contain ext4, xfs, and other
-> possible filesystems.  One of my main concerns is reclaiming disk space
-> when files are deleted on the disk image's filesystem.  Using fstrim on
-> the mount point of the disk image or mounting the disk image (loop) with
-> discard doesn't appear to pass the freed blocks to btrfs.
-> 
-> The image file on the btrfs filesystem just keeps growing in size.  When
-> hosting images on ext4, using fstrim or discard frees up the space on
-> the host filesystem (ext4).
-> 
-> I see discard is pretty well supported for btrfs to the underlying block
-> devices but is there any way to properly free space on the btrfs host
-> filesystem from overlying filesystems while they are online?
+int alloc_chunk is never used in this function, remove it.
 
-I use KVM (QEMU) with discard pass-through from the VM guest ("discard=unmap"
-option), with the VM images stored on Btrfs. It works just fine, the disk
-space used for the image file does shrink when the guest OS issues discards on
-its FS. Maybe there is a difference in how KVM and the 'loop' module submit
-discards to Btrfs?
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a684086..765e72a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3679,7 +3679,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 used;
+-	int ret = 0, committed = 0, alloc_chunk = 1;
++	int ret = 0, committed = 0;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
+@@ -3707,7 +3707,7 @@ again:
+ 		 * if we don't have enough free bytes in this space then we need
+ 		 * to alloc a new chunk.
+ 		 */
+-		if (!data_sinfo->full && alloc_chunk) {
++		if (!data_sinfo->full) {
+ 			u64 alloc_target;
+ 
+ 			data_sinfo->force_alloc = CHUNK_ALLOC_FORCE;
 -- 
-With respect,
-Roman
+1.8.5.1
+

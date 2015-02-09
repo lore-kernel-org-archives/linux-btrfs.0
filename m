@@ -1,68 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34317 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35521 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759730AbbBIUIE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Feb 2015 15:08:04 -0500
+	id S932799AbbBIU2G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Feb 2015 15:28:06 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YKuck-00004z-HI
-	for linux-btrfs@vger.kernel.org; Mon, 09 Feb 2015 21:08:02 +0100
+	id 1YKuw8-0008Tr-Sj
+	for linux-btrfs@vger.kernel.org; Mon, 09 Feb 2015 21:28:04 +0100
 Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 21:08:02 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 21:28:04 +0100
 Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 21:08:02 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 21:28:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: btrfs performance, sudden drop to 0 IOPs
-Date: Mon, 09 Feb 2015 20:56:29 +0100
-Message-ID: <d0gnqb-u59.ln1@hurikhan77.spdns.de>
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
+Subject: Re: btrfs features
+Date: Mon, 09 Feb 2015 21:08:51 +0100
+Message-ID: <jngnqb-34a.ln1@hurikhan77.spdns.de>
+References: <CAGwxe4hr=6WW=-JuqbitNZTHE9HV-G4=Q6RYh03mh2iLN6Qtzw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-P. Remek <p.remek1@googlemail.com> schrieb:
+Tobias Holst <tobby@tobby.eu> schrieb:
 
-> Hello,
+> Hi
 > 
-> I am benchmarking Btrfs and when benchmarking random writes with fio
-> utility, I noticed following two things:
+> I am just looking at the features enabled on my btrfs volume.
+>> ls /sys/fs/btrfs/[UUID]/features/
+> shows the following output:
+>> big_metadata  compress_lzo  extended_iref  mixed_backref  raid56
 > 
-> 1) On first run when target file doesn't exist yet, perfromance is
-> about 8000 IOPs. On second, and every other run, performance goes up
-> to 70000 IOPs. Its massive difference. The target file is the one
-> created during the first run.
-> 
-> 2) There are windows during the test where IOPs drop to 0 and stay 0
-> about 10 seconds and then it goes back again, and after couple of
-> seconds again to 0. This is reproducible 100% times.
-> 
-> Can somobody shred some light on what's happening?
+> So "big_metadata" means I am not using "skinny-metadata",
 
-I'm not an expert or dev but it's probably due to btrfs doing some 
-housekeeping under the hood. Could you check the output of "btrfs filesystem 
-usage /mountpoint" while running the test? I'd guess there's some pressure 
-on the global reserve during those times.
+No, both can be enabled at the same time. "big_metadata" means you are using 
+the new default 16k nodesize vs the old default 4k nodesize. I have two 
+btrfs, the main one created early and missing "big_metadata" (it can only be 
+enabled at fs-creation time) and my backup volume which was recreated later 
+from scratch. Both are having "skinny_extents", tho.
 
-> Command: fio --randrepeat=1 --ioengine=libaio --direct=1
-> --gtod_reduce=1 --name=test9 --filename=test9 --bs=4k --iodepth=256
-> --size=10G --numjobs=1 --readwrite=randwrite
-> 
-> Environment:
-> CPU: dual socket: E5-2630 v2
->    RAM: 32 GB ram
->    OS: Ubuntu server 14.10
->    Kernel: 3.19.0-031900rc2-generic
->    btrfs tools: Btrfs v3.14.1
->    2x LSI 9300 HBAs - SAS3 12/Gbs
->    8x SSD Ultrastar SSD1600MM 400GB SAS3 12/Gbs
-> 
+> "compress_lzo" means I am using compression. "raid56" means I am using
+> the experimental RAID-features of btrfs.
+
+Yep.
+
+> But the other two flags are a little bit unclear... I think "extended
+> _iref" is the "extref" feature of mkfs.btrfs - right?
+
+Probably yes. Here's a list you can check against:
+
+https://btrfs.wiki.kernel.org/index.php/Changelog
+
+> I am not sure about the "mixed_backref" feature. What does it mean? Is
+> this the "mixed-bg"-feature of mkfs.btrfs?
+
+I have this, too. But I think, mixed-bg (mixed block groups, default on very 
+small devices) is different because I certainly don't use that but still 
+have "mixed_backref". So, I cannot say what it is except that it is not the 
+same.
+
+> Also I try to change these features. I am missing the skinny extends,
+> this can be enabled by "btrfstune -x [one device of my raid]",
+> correct?
+
+Yep. Ensure running a capable kernel and use it on the unmounted device. 
+I've done that in the past and it works.
+
+> And how can I enable the missing "no-holes"-feature on my volume?
+
+Didn't know of that yet, I'd be interested, too. ;-)
+
 > Regards,
-> Premek
+> Tobias
+
+Here's some additional info explaining the purpose of various features and 
+defaults:
+https://btrfs.wiki.kernel.org/index.php/FAQ
 
 -- 
 Replies to list only preferred.

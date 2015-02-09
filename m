@@ -1,31 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39416 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754292AbbBBS1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Feb 2015 13:27:47 -0500
-Date: Mon, 2 Feb 2015 19:27:45 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/2] btrfs-progs: read_tree_block() and
- read_node_slot() cleanup.
-Message-ID: <20150202182745.GD24227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1422411175-28039-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41944 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1759087AbbBIUD1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Feb 2015 15:03:27 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Subject: [GIT PULL] btrfsck and btrfs-image fixes
+Date: Mon, 9 Feb 2015 15:03:03 -0500
+Message-ID: <1423512199-16552-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1422411175-28039-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 28, 2015 at 10:12:55AM +0800, Qu Wenruo wrote:
-> Allow read_tree_block() and read_node_slot() to return error pointer.
-> This should help caller to get more specified error number.
-> 
-> For existing callers, change (!eb) judgmentt to
-> (!extent_buffer_uptodate(eb)) to keep the compatibility, and for caller
-> missing the check, use PTR_ERR(eb) if possible.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+This series of patches fixes up btrfsck in lots of ways and adds some new
+functionality.  These patches were required to fix Hugo's broken multi-disk fs
+as well as fix fsck so it would actually pass all of the fsck tests.  This also
+fixes a long standing btrfs-image problem where it wouldn't restore multi disk
+images onto a single disk properly.  Dave you can pull this from
 
-Applied to 3.19, thanks.
+https://github.com/josefbacik/btrfs-progs.git for-kdave
+
+These patches all pass make test.  Thanks,
+
+Josef

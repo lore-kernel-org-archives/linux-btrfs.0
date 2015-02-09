@@ -1,237 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f49.google.com ([209.85.216.49]:41967 "EHLO
-	mail-qa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933593AbbBISIj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 13:08:39 -0500
-Received: by mail-qa0-f49.google.com with SMTP id v8so22255784qal.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 10:08:38 -0800 (PST)
-Received: from [127.0.0.1] (68-188-183-115.dhcp.bycy.mi.charter.com. [68.188.183.115])
-        by mx.google.com with ESMTPSA id q5sm12569249qan.24.2015.02.09.10.08.37
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Mon, 09 Feb 2015 10:08:37 -0800 (PST)
-Message-ID: <54D8F7B6.1060802@virtualcomplete.com>
-Date: Mon, 09 Feb 2015 13:08:54 -0500
-From: "Devon B." <devon.b@virtualcomplete.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:28599 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752519AbbBITHU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Feb 2015 14:07:20 -0500
+Date: Mon, 9 Feb 2015 14:07:12 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] Btrfs: fix scrub race leading to use-after-free
+To: Filipe Manana <fdmanana@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1423508832.26622.2@mail.thefacebook.com>
+In-Reply-To: <1422375078-6916-1-git-send-email-fdmanana@suse.com>
+References: <1422375078-6916-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Accepting discard to free space from disk images
-References: <54D842FD.1010806@virtualcomplete.com> <20150209114023.137402bf@natsu> <54D8D1A9.1070006@virtualcomplete.com> <20150209204256.51278106@natsu> <20150209204521.7b556d93@natsu>
-In-Reply-To: <20150209204521.7b556d93@natsu>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Thanks for your testing.  I haven't tried 3.14.  I tried on CentOS 6 box 
-(2.6.32 - which is experimental) and Ubuntu 14.04 (3.13) and neither 
-worked.  So the question remains, what is the difference?  Possibly a 
-small difference between the 3.13 and 3.14 kernels, I don't think it is 
-any of the mount options.  I guess if anyone else has insight on this, 
-that would be great.  Otherwise, I'll see if I can get a newer kernel 
-loaded up and do some more testing.
 
-> Roman Mamedov <mailto:rm@romanrm.net>
-> Monday, February 9, 2015 10:45 AM
-> On Mon, 9 Feb 2015 20:42:56 +0500
-> Roman Mamedov<rm@romanrm.net>  wrote:
->
->> On Mon, 09 Feb 2015 10:26:33 -0500
->> "Devon B."<devon.b@virtualcomplete.com>  wrote:
->>
->>> If you don't mind me asking, what version kernel are you running and are
->>> you using any special mount options?
->> Well actually I did not claim I have working discard through 'loop', but your
->> post made me curious.
->>
->> $ sudo dd if=/dev/zero of=100g bs=1M seek=100000 count=1
->> 1+0 records in
->> 1+0 records out
->> 1048576 bytes (1.0 MB) copied, 0.00221052 s, 474 MB/s
->>
->> $ sudo mkfs.ext4 100g
->> [...]
->>
->> $ du -hsc 100g
->> 133M	100g
->> 133M	total
->>
->> $ sudo mount -o loop 100g /mnt/tmp1/
->>
->> (then in a new terminal window):
->> $ cd /mnt/tmp1/
->> $ df -h .
->> Filesystem      Size  Used Avail Use% Mounted on
->> /dev/loop0       96G   60M   92G   1% /mnt/tmp1
->> $ sudo dd if=/dev/zero of=zerofile bs=1M count=1024
->> 1024+0 records in
->> 1024+0 records out
->> 1073741824 bytes (1.1 GB) copied, 0.944377 s, 1.1 GB/s
->> $ sync
->>
->> (back to the original one):
->> $ du -hsc 100g
->> 1.2G	100g
->> 1.2G	total
->
->> (2nd window):
->
-> Forgot to add I also did 'rm zerofile' here, of course.
->
->> $ sudo fstrim .
->>
->> (back to the original one):
->> $ du -hsc 100g
->> 133M	100g
->> 133M	total
->>
->> So it does work for me just fine even with 'loop'.
->> Kernel version 3.14.32, mount options
->> rw,noatime,nodiratime,compress=zlib,space_cache,inode_cache.
->>
->
->
-> Roman Mamedov <mailto:rm@romanrm.net>
-> Monday, February 9, 2015 10:42 AM
-> On Mon, 09 Feb 2015 10:26:33 -0500
->
-> Well actually I did not claim I have working discard through 'loop', 
-> but your
-> post made me curious.
->
-> $ sudo dd if=/dev/zero of=100g bs=1M seek=100000 count=1
-> 1+0 records in
-> 1+0 records out
-> 1048576 bytes (1.0 MB) copied, 0.00221052 s, 474 MB/s
->
-> $ sudo mkfs.ext4 100g
-> [...]
->
-> $ du -hsc 100g
-> 133M 100g
-> 133M total
->
-> $ sudo mount -o loop 100g /mnt/tmp1/
->
-> (then in a new terminal window):
-> $ cd /mnt/tmp1/
-> $ df -h .
-> Filesystem Size Used Avail Use% Mounted on
-> /dev/loop0 96G 60M 92G 1% /mnt/tmp1
-> $ sudo dd if=/dev/zero of=zerofile bs=1M count=1024
-> 1024+0 records in
-> 1024+0 records out
-> 1073741824 bytes (1.1 GB) copied, 0.944377 s, 1.1 GB/s
-> $ sync
->
-> (back to the original one):
-> $ du -hsc 100g
-> 1.2G 100g
-> 1.2G total
->
-> (2nd window):
-> $ sudo fstrim .
->
-> (back to the original one):
-> $ du -hsc 100g
-> 133M 100g
-> 133M total
->
-> So it does work for me just fine even with 'loop'.
-> Kernel version 3.14.32, mount options
-> rw,noatime,nodiratime,compress=zlib,space_cache,inode_cache.
->
-> Devon B. <mailto:devon.b@virtualcomplete.com>
-> Monday, February 9, 2015 10:26 AM
-> If you don't mind me asking, what version kernel are you running and 
-> are you using any special mount options?
->
-> Here is a quick example:
->
-> # qemu-img create -f raw /btrfs/sub/raw.img 100G
-> Formatting '/btrfs/sub/raw.img', fmt=raw size=107374182400
->
-> # mkfs.ext4 /btrfs/sub/raw.img
-> ...
->
-> # mount -o loop /btrfs/sub/raw.img /mnt/test
->
-> # du -hs /btrfs/sub/raw.img
-> 1.7G    /btrfs/sub/raw.img
->
-> # fstrim -v /mnt/test
-> /mnt/test: 105492688896 bytes were trimmed
->
-> # du -hs /btrfs/sub/raw.img
-> 1.7G    /btrfs/sub/raw.img
->
-> # dd if=/dev/zero of=/mnt/test/1GB count=1k bs=1M
-> 1024+0 records in
-> 1024+0 records out
-> 1073741824 bytes (1.1 GB) copied, 0.493057 s, 2.2 GB/s
->
-> # du -hs /btrfs/sub/raw.img
-> 2.7G    /btrfs/sub/raw.img
->
-> # rm -f /mnt/test/1GB
->
-> # fstrim -v /mnt/test
-> /mnt/test: 1186967552 bytes were trimmed
->
-> # du -hs /btrfs/sub/raw.img
-> 2.7G    /btrfs/sub/raw.img
->
-> # dd if=/dev/zero of=/mnt/test/1GB count=1k bs=1M
-> 1024+0 records in
-> 1024+0 records out
-> 1073741824 bytes (1.1 GB) copied, 0.467089 s, 2.3 GB/s
->
-> # du -hs /btrfs/sub/raw.img
-> 3.7G    /btrfs/sub/raw.img
->
-> # rm -f /mnt/test/1GB
->
-> # fstrim -v /mnt/test
-> /mnt/test: 1203761152 bytes were trimmed
->
-> # du -hs /btrfs/sub/raw.img
-> 3.7G    /btrfs/sub/raw.img
->
-> # du -hs /mnt/test
-> 20K     /mnt/test
->
-> So even though there is nothing in /mnt/test, the disk image is 
-> consuming 3.7GB of space.  Maybe you could test similarly with your 
-> server if you have time on your hands.
->
-> Thanks!
-> Roman Mamedov <mailto:rm@romanrm.net>
-> Monday, February 9, 2015 1:40 AM
-> On Mon, 09 Feb 2015 00:17:49 -0500
->
-> I use KVM (QEMU) with discard pass-through from the VM guest 
-> ("discard=unmap"
-> option), with the VM images stored on Btrfs. It works just fine, the disk
-> space used for the image file does shrink when the guest OS issues 
-> discards on
-> its FS. Maybe there is a difference in how KVM and the 'loop' module 
-> submit
-> discards to Btrfs?
->
-> Devon B. <mailto:devon.b@virtualcomplete.com>
-> Monday, February 9, 2015 12:17 AM
-> Looking to use btrfs with disk images that contain ext4, xfs, and other
-> possible filesystems. One of my main concerns is reclaiming disk space
-> when files are deleted on the disk image's filesystem. Using fstrim on
-> the mount point of the disk image or mounting the disk image (loop) with
-> discard doesn't appear to pass the freed blocks to btrfs.
->
-> The image file on the btrfs filesystem just keeps growing in size. When
-> hosting images on ext4, using fstrim or discard frees up the space on
-> the host filesystem (ext4).
->
-> I see discard is pretty well supported for btrfs to the underlying block
-> devices but is there any way to properly free space on the btrfs host
-> filesystem from overlying filesystems while they are online?
->
-> Thanks.
+On Tue, Jan 27, 2015 at 11:11 AM, Filipe Manana <fdmanana@suse.com> 
+wrote:
+> While running a scrub on a kernel with CONFIG_DEBUG_PAGEALLOC=y, I got
+> the following trace:
+
+This actually trades one bug for another:
+
+[ 1928.950319] BUG: sleeping function called from invalid context at 
+kernel/locking/mutex.c:621^M
+[ 1928.967334] in_atomic(): 1, irqs_disabled(): 0, pid: 149670, name: 
+fsstress^M
+[ 1928.981324] INFO: lockdep is turned off.^M
+[ 1928.989244] CPU: 24 PID: 149670 Comm: fsstress Tainted: G        W   
+   3.19.0-rc7-mason+ #41^M
+[ 1929.006418] Hardware name: ZTSYSTEMS Echo Ridge T4  /A9DRPF-10D, 
+BIOS 1.07 05/10/2012^M
+[ 1929.022207]  ffffffff81a22cf8 ffff881076e03b78 ffffffff816b8dd9 
+ffff881076e03b78^M
+[ 1929.037267]  ffff880d8e828710 ffff881076e03ba8 ffffffff810856c4 
+ffff881076e03bc8^M
+[ 1929.052315]  0000000000000000 000000000000026d ffffffff81a22cf8 
+ffff881076e03bd8^M
+[ 1929.067381] Call Trace:^M
+[ 1929.072344]  <IRQ>  [<ffffffff816b8dd9>] dump_stack+0x4f/0x6e^M
+[ 1929.083968]  [<ffffffff810856c4>] ___might_sleep+0x174/0x230^M
+[ 1929.095352]  [<ffffffff810857d2>] __might_sleep+0x52/0x90^M
+[ 1929.106223]  [<ffffffff816bb68f>] mutex_lock_nested+0x2f/0x3b0^M
+[ 1929.117951]  [<ffffffff810ab37d>] ? trace_hardirqs_on+0xd/0x10^M
+[ 1929.129708]  [<ffffffffa05dc838>] scrub_pending_bio_dec+0x38/0x70 
+[btrfs]^M
+[ 1929.143370]  [<ffffffffa05dd0e0>] scrub_parity_bio_endio+0x50/0x70 
+[btrfs]^M
+[ 1929.157191]  [<ffffffff812fa603>] bio_endio+0x53/0xa0^M
+[ 1929.167382]  [<ffffffffa05f96bc>] rbio_orig_end_io+0x7c/0xa0 
+[btrfs]^M
+[ 1929.180161]  [<ffffffffa05f97ba>] raid_write_parity_end_io+0x5a/0x80 
+[btrfs]^M
+[ 1929.194318]  [<ffffffff812fa603>] bio_endio+0x53/0xa0^M
+[ 1929.204496]  [<ffffffff8130401b>] blk_update_request+0x1eb/0x450^M
+[ 1929.216569]  [<ffffffff81096e58>] ? trigger_load_balance+0x78/0x500^M
+[ 1929.229176]  [<ffffffff8144c74d>] scsi_end_request+0x3d/0x1f0^M
+[ 1929.240740]  [<ffffffff8144ccac>] scsi_io_completion+0xac/0x5b0^M
+[ 1929.252654]  [<ffffffff81441c50>] scsi_finish_command+0xf0/0x150^M
+[ 1929.264725]  [<ffffffff8144d317>] scsi_softirq_done+0x147/0x170^M
+[ 1929.276635]  [<ffffffff8130ace6>] blk_done_softirq+0x86/0xa0^M
+[ 1929.288014]  [<ffffffff8105d92e>] __do_softirq+0xde/0x600^M
+[ 1929.298885]  [<ffffffff8105df6d>] irq_exit+0xbd/0xd0^M
+[ 1929.308879]  [<ffffffff81034ea5>] 
+smp_call_function_single_interrupt+0x35/0x40^M
+[ 1929.323455]  [<ffffffff816c126f>] 
+call_function_single_interrupt+0x6f/0x80^M
+[ 1929.337270]  <EOI>  [<ffffffff811fc745>] ? 
+sync_inodes_sb+0x1b5/0x2a0^M
+[ 1929.350261]  [<ffffffff811fc728>] ? sync_inodes_sb+0x198/0x2a0^M
+[ 1929.361991]  [<ffffffff816badcf>] ? wait_for_completion+0xef/0x120^M
+[ 1929.374423]  [<ffffffff812028d0>] ? fdatawrite_one_bdev+0x20/0x20^M
+[ 1929.386671]  [<ffffffff812028d0>] ? fdatawrite_one_bdev+0x20/0x20^M
+[ 1929.398930]  [<ffffffff812028ed>] sync_inodes_one_sb+0x1d/0x30^M
+[ 1929.410668]  [<ffffffff811cf4c6>] iterate_supers+0xb6/0xf0^M
+[ 1929.421712]  [<ffffffff81202935>] sys_sync+0x35/0x90^M
+[ 1929.431704]  [<ffffffff816bfed2>] system_call_fastpath+0x12/0x17^M
+
+So we'll have to either put in a refcount or a spinlock instead.
+
+-chris
+

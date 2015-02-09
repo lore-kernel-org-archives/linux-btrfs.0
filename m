@@ -1,60 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33515 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754624AbbB0I0k (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6896 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1760826AbbBIUDx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Feb 2015 03:26:40 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8Pl22019912
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2015 16:25:47 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/7] btrfs-progs: qgroup related enhance.
-Date: Fri, 27 Feb 2015 16:26:32 +0800
-Message-ID: <1425025599-30048-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Mon, 9 Feb 2015 15:03:53 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Subject: [PATCH 01/16] Btrfs-progs: let btrfs-corrupt-block specify a root
+Date: Mon, 9 Feb 2015 15:03:04 -0500
+Message-ID: <1423512199-16552-2-git-send-email-jbacik@fb.com>
+In-Reply-To: <1423512199-16552-1-git-send-email-jbacik@fb.com>
+References: <1423512199-16552-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patchset include the following bugfix:
-1) Update qgroup status flags to keep consistent with kernel
+Sometimes we want to corrupt specific keys or delete items on different roots,
+so allow btrfs-corrupt-block to take a root objectid so we can corrupt a
+specific root.  Thanks,
 
-And the following enhancement:
-1) debug-tree: Add human readable qgroup status flag.
-2) qgroup show: Check status and print warning before if INCONSISTENT or
-RESCANNING(*1)
-3) parse_qgroup: Accept path and resolve it into qgroupid.
-4) qgroup assign/remove: Auto schedule a rescan if the assign/remove
-needs.(*2)
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ btrfs-corrupt-block.c | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
 
-*1: The kernel has a bug that never clear INCONSISTENT flag, so need to
-cooperate with the kernel patchset or warning is always output.
-
-*2: Need to cooperate with the kernel patchset to detect such change.
-
-Qu Wenruo (7):
-  btrfs-progs: Update qgroup status flags and replace qgroup
-    level/subvid     calculation with inline function.
-  btrfs-progs: Allow btrfs-debug-tree to print human readable qgroup    
-    status flag.
-  btrfs-progs: Move parse_qgroupid() to utils.c
-  btrfs-progs: Allow parse_qgroupid() to resolve subvolume path into    
-    qgroupid.
-  btrfs-progs: Add stack get/set functions for btrfs_qgroup_status_item.
-  btrfs-progs: Print warning message if qgroup data is inconsistent.
-  btrfs-progs: Schedule quota rescan if qgroup assign caused    
-    inconsistence.
-
- cmds-qgroup.c | 26 ++++++++++++++++---
- ctree.h       | 26 ++++++++++++++++---
- print-tree.c  | 38 +++++++++++++++++++--------
- qgroup.c      | 82 +++++++++++++++++++++++++++++------------------------------
- qgroup.h      |  1 -
- utils.c       | 66 +++++++++++++++++++++++++++++++++++++++++++++++
- utils.h       |  1 +
- 7 files changed, 179 insertions(+), 61 deletions(-)
-
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 5db18a1..f332bdf 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -109,6 +109,7 @@ static void print_usage(void)
+ 		"to corrupt and a root+key for the item)\n");
+ 	fprintf(stderr, "\t-D Corrupt a dir item, must specify key and field\n");
+ 	fprintf(stderr, "\t-d Delete this item (must specify -K)\n");
++	fprintf(stderr, "\t-r Operate on this root (only works with -d)\n");
+ 	exit(1);
+ }
+ 
+@@ -1007,6 +1008,7 @@ int main(int ac, char **av)
+ 	u64 metadata_block = 0;
+ 	u64 inode = 0;
+ 	u64 file_extent = (u64)-1;
++	u64 root_objectid = 0;
+ 	char field[FIELD_BUF_LEN];
+ 
+ 	field[0] = '\0';
+@@ -1034,11 +1036,12 @@ int main(int ac, char **av)
+ 			{ "item", 0, NULL, 'I'},
+ 			{ "dir-item", 0, NULL, 'D'},
+ 			{ "delete", 0, NULL, 'd'},
++			{ "root", 0, NULL, 'r'},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(ac, av, "l:c:b:eEkuUi:f:x:m:K:IDd", long_options,
+-				&option_index);
++		c = getopt_long(ac, av, "l:c:b:eEkuUi:f:x:m:K:IDdr:",
++				long_options, &option_index);
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -1098,6 +1101,9 @@ int main(int ac, char **av)
+ 			case 'd':
+ 				delete = 1;
+ 				break;
++			case 'r':
++				root_objectid = arg_strtou64(optarg);
++				break;
+ 			default:
+ 				print_usage();
+ 		}
+@@ -1206,9 +1212,25 @@ int main(int ac, char **av)
+ 		ret = corrupt_btrfs_item(root, &key, field);
+ 	}
+ 	if (delete) {
++		struct btrfs_root *target = root;
++
+ 		if (!key.objectid)
+ 			print_usage();
+-		ret = delete_item(root, &key);
++		if (root_objectid) {
++			struct btrfs_key root_key;
++
++			root_key.objectid = root_objectid;
++			root_key.type = BTRFS_ROOT_ITEM_KEY;
++			root_key.offset = (u64)-1;
++
++			target = btrfs_read_fs_root(root->fs_info, &root_key);
++			if (IS_ERR(target)) {
++				fprintf(stderr, "Couldn't find root %llu\n",
++					(unsigned long long)root_objectid);
++				print_usage();
++			}
++		}
++		ret = delete_item(target, &key);
+ 		goto out_close;
+ 	}
+ 	if (key.objectid || key.offset || key.type) {
 -- 
-2.3.0
+1.8.3.1
 

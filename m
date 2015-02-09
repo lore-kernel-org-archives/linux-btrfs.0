@@ -1,105 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:58337 "EHLO
+Received: from mail.synology.com ([59.124.41.242]:48062 "EHLO
 	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759665AbbBIJbl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 04:31:41 -0500
+	with ESMTP id S1759523AbbBIJbz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 04:31:55 -0500
 From: Forrest Liu <forrestl@synology.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Forrest Liu <forrestl@synology.com>
-Subject: [PATCH v2] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group
-Date: Mon,  9 Feb 2015 17:31:31 +0800
-Message-Id: <1423474291-26710-1-git-send-email-forrestl@synology.com>
+Cc: Forrest Liu <forrestl@synology.com>, Chien-Kuan Yeh <ckya@synology.com>
+Subject: [PATCH v3] Btrfs: btrfs_release_extent_buffer_page didn't free pages of dummy extent
+Date: Mon,  9 Feb 2015 17:31:45 +0800
+Message-Id: <1423474305-26751-1-git-send-email-forrestl@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Removing large amount of block group in a transaction may encounters
-BUG_ON() in btrfs_orphan_add(). That is becuase btrfs_orphan_reserve_metadata()
-will grab metadata reservation from transaction handle, and
-btrfs_delete_unused_bgs() didn't reserve metadata for trnasaction handle when
-delete unused block group.
+btrfs_release_extent_buffer_page() can't handle dummy extent that
+allocated by btrfs_clone_extent_buffer() properly. That is because
+reference count of pages that allocated by btrfs_clone_extent_buffer()
+was 2, 1 by alloc_page(), and another by attach_extent_buffer_page().
 
-The problem can be reproduce by following script
+Running following command repeatly can check this memory leak problem
 
-    mntpath=/btrfs
-    loopdev=/dev/loop0
-    filepath=/home/forrest/image
+    btrfs inspect-internal inode-resolve 256 /mnt/btrfs
 
-    umount $mntpath
-    losetup -d $loopdev
-    truncate --size 1000g $filepath
-    losetup $loopdev $filepath
-    mkfs.btrfs -f $loopdev
-    mount $loopdev $mntpath
-
-    for j in `seq 1 1 1000`; do
-        fallocate -l 1g $mntpath/$j
-    done
-    # wait cleaner thread remove unused block group
-    sleep 300
-
-The call trace that results from the BUG_ON() is:
-
-[  613.093084] ------------[ cut here ]------------
-[  613.097928] kernel BUG at fs/btrfs/inode.c:3142!
-[  613.105855] invalid opcode: 0000 [#1] SMP
-[  613.112702] Modules linked in: coretemp(E) crc32_pclmul(E) ghash_clmulni_intel(E) aesni_intel(E) snd_ens1371(E) snd_ac97_codec(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ppdev(E) ac97_bus(E) ablk_helper(E) gameport(E) cryptd(E) snd_rawmidi(E) snd_seq_device(E) snd_pcm(E) vmw_balloon(E) snd_timer(E) snd(E) soundcore(E) serio_raw(E) vmwgfx(E) ttm(E) drm_kms_helper(E) drm(E) vmw_vmci(E) parport_pc(E) shpchp(E) i2c_piix4(E) mac_hid(E) lp(E) parport(E) btrfs(E) xor(E) raid6_pq(E) hid_generic(E) usbhid(E) hid(E) psmouse(E) ahci(E) libahci(E) e1000(E) mptspi(E) mptscsih(E) mptbase(E) floppy(E) vmw_pvscsi(E) vmxnet3(E)
-[  613.144196] CPU: 0 PID: 1480 Comm: btrfs-cleaner Tainted: G            E  3.19.0-rc7-custom #2
-[  613.148501] Hardware name: VMware, Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 07/31/2013
-[  613.152694] task: ffff880035cdb1a0 ti: ffff880039cf4000 task.ti: ffff880039cf4000
-[  613.154969] RIP: 0010:[<ffffffffa01441c2>]  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
-[  613.157780] RSP: 0018:ffff880039cf7c48  EFLAGS: 00010286
-[  613.159560] RAX: 00000000ffffffe4 RBX: ffff88003bd981a0 RCX: ffff88003c9e4000
-[  613.161904] RDX: 0000000000002244 RSI: 0000000000040000 RDI: ffff88003c9e4138
-[  613.164264] RBP: ffff880039cf7c88 R08: 000060ffc0000850 R09: 0000000000000000
-[  613.166507] R10: ffff88003bc4b7a0 R11: ffffea0000eb6740 R12: ffff88003c9c0000
-[  613.168681] R13: ffff88003c102160 R14: ffff88003c9c0458 R15: 0000000000000001
-[  613.170932] FS:  0000000000000000(0000) GS:ffff88003f600000(0000) knlGS:0000000000000000
-[  613.173316] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  613.175227] CR2: 00007f6343537000 CR3: 0000000036329000 CR4: 00000000000407f0
-[  613.177554] Stack:
-[  613.178712]  ffff880039cf7c88 ffffffffa0182a54 ffff88003c9e4b04 ffff88003c9c7800
-[  613.181297]  ffff88003bc4b7a0 ffff88003bd981a0 ffff88003c8db200 ffff88003c2fcc60
-[  613.183782]  ffff880039cf7d18 ffffffffa012da97 ffff88003bc4b7a4 ffff88003bc4b7a0
-[  613.186171] Call Trace:
-[  613.187493]  [<ffffffffa0182a54>] ? lookup_free_space_inode+0x44/0x100 [btrfs]
-[  613.189801]  [<ffffffffa012da97>] btrfs_remove_block_group+0x137/0x740 [btrfs]
-[  613.192126]  [<ffffffffa0166912>] btrfs_remove_chunk+0x672/0x780 [btrfs]
-[  613.194267]  [<ffffffffa012e2ff>] btrfs_delete_unused_bgs+0x25f/0x280 [btrfs]
-[  613.196567]  [<ffffffffa0135e4c>] cleaner_kthread+0x12c/0x190 [btrfs]
-[  613.198687]  [<ffffffffa0135d20>] ? check_leaf+0x350/0x350 [btrfs]
-[  613.200758]  [<ffffffff8108f232>] kthread+0xd2/0xf0
-[  613.202616]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
-[  613.204738]  [<ffffffff8175dabc>] ret_from_fork+0x7c/0xb0
-[  613.206652]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
-[  613.208741] Code: ff ff 0f 1f 80 00 00 00 00 89 45 c8 3e 80 63 80 fd 48 89 df e8 d0 23 fe ff 8b 45 c8 e9 14 ff ff ff b8 f4 ff ff ff e9 12 ff ff ff <0f> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 55 48
-[  613.216562] RIP  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
-[  613.218828]  RSP <ffff880039cf7c48>
-[  613.220382] ---[ end trace 71073106deb8a457 ]---
-
-This patch replace btrfs_join_transaction() with btrfs_start_transaction() in
-btrfs_delete_unused_bgs() to revent BUG_ON() in btrfs_orphan_add()
-
+Signed-off-by: Chien-Kuan Yeh <ckya@synology.com>
 Signed-off-by: Forrest Liu <forrestl@synology.com>
 ---
-V2: add reproducing step and call trace in commit message
+V2: do not call PagePrivate if page is NULL
+V3: add reproducing step in commit message
 
- fs/btrfs/extent-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 51 ++++++++++++++++++++++++++-------------------------
+ 1 file changed, 26 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a684086..63b974f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9611,7 +9611,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 * Want to do this before we do anything else so we can recover
- 		 * properly if we fail to join the transaction.
- 		 */
--		trans = btrfs_join_transaction(root);
-+		/* 1 for btrfs_orphan_reserve_metadata() */
-+		trans = btrfs_start_transaction(root, 1);
- 		if (IS_ERR(trans)) {
- 			btrfs_set_block_group_rw(root, block_group);
- 			ret = PTR_ERR(trans);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 790dbae..9de93ee 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4554,36 +4554,37 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+ 	do {
+ 		index--;
+ 		page = eb->pages[index];
+-		if (page && mapped) {
++		if (!page)
++			continue;
++		if (mapped)
+ 			spin_lock(&page->mapping->private_lock);
++		/*
++		 * We do this since we'll remove the pages after we've
++		 * removed the eb from the radix tree, so we could race
++		 * and have this page now attached to the new eb.  So
++		 * only clear page_private if it's still connected to
++		 * this eb.
++		 */
++		if (PagePrivate(page) &&
++		    page->private == (unsigned long)eb) {
++			BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
++			BUG_ON(PageDirty(page));
++			BUG_ON(PageWriteback(page));
+ 			/*
+-			 * We do this since we'll remove the pages after we've
+-			 * removed the eb from the radix tree, so we could race
+-			 * and have this page now attached to the new eb.  So
+-			 * only clear page_private if it's still connected to
+-			 * this eb.
++			 * We need to make sure we haven't be attached
++			 * to a new eb.
+ 			 */
+-			if (PagePrivate(page) &&
+-			    page->private == (unsigned long)eb) {
+-				BUG_ON(test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
+-				BUG_ON(PageDirty(page));
+-				BUG_ON(PageWriteback(page));
+-				/*
+-				 * We need to make sure we haven't be attached
+-				 * to a new eb.
+-				 */
+-				ClearPagePrivate(page);
+-				set_page_private(page, 0);
+-				/* One for the page private */
+-				page_cache_release(page);
+-			}
+-			spin_unlock(&page->mapping->private_lock);
+-
+-		}
+-		if (page) {
+-			/* One for when we alloced the page */
++			ClearPagePrivate(page);
++			set_page_private(page, 0);
++			/* One for the page private */
+ 			page_cache_release(page);
+ 		}
++
++		if (mapped)
++			spin_unlock(&page->mapping->private_lock);
++
++		/* One for when we alloced the page */
++		page_cache_release(page);
+ 	} while (index != 0);
+ }
+ 
 -- 
 1.9.1
 

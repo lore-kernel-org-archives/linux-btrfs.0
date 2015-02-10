@@ -1,75 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34136 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933495AbbBIWrm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 17:47:42 -0500
-Date: Mon, 9 Feb 2015 22:47:40 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Rich Freeman <r-btrfs@thefreemanclan.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs raid5 with mixed disks
-Message-ID: <20150209224740.GK28427@carfax.org.uk>
-References: <CAGfcS_=Jz8Ktz3VMwkeKTZyAd5=8r+_YnkhDsVad9yGmpfkyAg@mail.gmail.com>
+Received: from mail-lb0-f180.google.com ([209.85.217.180]:41222 "EHLO
+	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932287AbbBJAzS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 19:55:18 -0500
+Received: by mail-lb0-f180.google.com with SMTP id z12so12150168lbi.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 16:55:16 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="M2Pxvdb9QxnGd/3e"
-In-Reply-To: <CAGfcS_=Jz8Ktz3VMwkeKTZyAd5=8r+_YnkhDsVad9yGmpfkyAg@mail.gmail.com>
+In-Reply-To: <CANcfdL0x_LTSnyL1FP8vVV4=MaFrewT4pd0MZgu3qzxOviXDgg@mail.gmail.com>
+References: <CANcfdL0x_LTSnyL1FP8vVV4=MaFrewT4pd0MZgu3qzxOviXDgg@mail.gmail.com>
+From: constantine <costas.magnuse@gmail.com>
+Date: Tue, 10 Feb 2015 00:54:56 +0000
+Message-ID: <CANcfdL2FgE9UDCjVkzNUa8X1y63=JLfjcwqT4=KDLOu-YTe=sA@mail.gmail.com>
+Subject: Re: Replacing a (or two?) failed drive(s) in RAID-1 btrfs filesystem
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thank you everybody for your support, care, cheerful comments and
+understandable criticism. I am in the process of backing up every
+file.
 
---M2Pxvdb9QxnGd/3e
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Could you please answer two questions?:
 
-On Mon, Feb 09, 2015 at 05:24:42PM -0500, Rich Freeman wrote:
-> How does btrfs raid5 handle mixed-size disks?  The docs weren't
-> terribly clear on this.
->=20
-> Suppose I have 4x3TB and 1x1TB disks.  Using conventional lvm+mdadm in
-> raid5 mode I'd expect to be able to fit about 10TB of space on those
-> (2TB striped across 4 disks plus 1TB striped across 5 disks after
-> partitioning).  How much would btrfs be able to store in the same
-> configuration?  I did see something about being able to use fixed-size
-> stripes, and I'm not sure if this helps.  If it does, are there any
-> penalties, especially with future expansion of the array?
->=20
-> With raid1 mode btrfrs is reasonably smart about mixed disk sizes, and
-> you usually end up with half of the total space available.
+1.  I am testing various files and all seem readable. Is there a way
+to list every file that resides on a particular device (like
+/dev/sdc1?) so as to check them? There are a handful of files that
+seem corrupted, since I get from scrub:
+"""
+BTRFS: checksum error at logical 10792783298560 on dev /dev/sdc1,
+sector 737159648, root 5, inode 1376754, offset 175428419584, length
+4096, links 1 (path: long/path/file.img)
+""",
+but are these the only files that could be corrupted?
 
-   http://carfax.org.uk/btrfs-usage/ may be useful here.
 
-   Hugo.
+2. Chris mentioned:
 
---=20
-Hugo Mills             | "It was half way to Rivendell when the drugs began
-hugo@... carfax.org.uk | to take hold"
-http://carfax.org.uk/  |                                      Hunter S Tolk=
-ien
-PGP: 65E74AC0          |                        Fear and Loathing in Barad =
-D=FBr
+A. On Mon, Feb 9, 2015 at 12:31 AM, Chris Murphy
+<lists@colorremedies.com> wrote:
+> [[[try # btrfs device delete /dev/sdc1 /mnt/mountpoint]]]. Just realize that any data that's on both the
+> failed drive and sdc1 will be lost
 
---M2Pxvdb9QxnGd/3e
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+and later
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+B. On Mon, Feb 9, 2015 at 1:34 AM, Chris Murphy <lists@colorremedies.com> wrote:
+> So now I have a 4 device
+> raid1 mounted degraded. And I can still device delete another device.
+> So one device missing and one device removed.
 
-iQIcBAEBAgAGBQJU2TkMAAoJEFheFHXiqx3kPhEQAKxVswBKWARGHoqZSteVRSGg
-Up95pvrQBBYuIctFK7i3yes9ucK6LbskGMGB8pUpfHpZduS3r437B236Zhoc5Lip
-S1zHaqeveJXowtJz6Y0UjwTL/lStDLK1v9/yUWLaN3A7Ljc8vrE/7vlfibGt5SBP
-5iFx4OGrvk3Zv4yt6yIb6Lx1fprzQ4ji48QkF7wM64HyQvQxX9C0fT1BINBketCa
-mld8l+joHgYOXq2RauyvoWYtZax6/8PBS+2uBe9VRT5MJEEkNnZRX20EeaKmy00/
-qCEBwc5+YMfYVWIEIZZu1UrRndvKJh3cAHl+fJygdVNGigEvUz9hFbBzqdoUD73B
-OqZNdXi43U4NS2mKhXsGfo01CkpMbIf0ql/pyHGJE/QSz7co4h+ML7OUUWqPuPN2
-JAF3hrYYURy/EyCQXa77thaCagbUiDEvA2op5+1ygbCFURA7oz/06yVy5ptntinV
-X0ALklempf7932nWgHGrST59soKEoNb6vvljAAVpDFZJssowWg84wGi59MMhljHm
-vqaZ1QdZIs38jWdsL6L4LU9U8//0LVqaljaZg5EM+e//EBas5kD9GQvyK10q5FDo
-uevxq9NTOHRer3ESUUbTlziqbJwQrqegg+E3+D9OT9Uio35UAgnt7589fHDUANE7
-tgAYLSUkpbmIH+6SlPTy
-=zn2/
------END PGP SIGNATURE-----
+So when I do the "# btrfs device delete /dev/sdc1 /mnt/mountpoint" the
+normal behavior would for the files that are located in /dev/sdc1 (and
+also were on the missing/failed drive) to be transferred to other
+drives and not lose them, right? (Does B. hold and contradict A.?)
 
---M2Pxvdb9QxnGd/3e--
+
+
+Long PS: Obviously, I have backed-up critical data that "I would
+almost consider committing suicide" if I lost them with services like
+tarsnap/dropbox/etc. However, I did not do this for
+non-critical-yet-important
+data-that-would-make-me-depressed-if-I-lost-them-for-some-months
+because of budget constraints.
+
+For network stumblers, RAID-1 btrfs was working for me for a couple
+years and had the sense that I was covered. I obviously was not since
+I neglected looking at dmesg after each scrub. Second, I rushed and
+added both of the new 6TB in the array, instead of only one of them
+and using the second for backing up my data. After the whole process,
+I suppose I will have a more robust array structure the RED/RAID
+drives and appropriate cron jobs as indicated in the thread.

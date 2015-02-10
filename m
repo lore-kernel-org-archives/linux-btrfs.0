@@ -1,19 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27943 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51320 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755099AbbBJK1q (ORCPT
+	with ESMTP id S1755148AbbBJK1t (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:27:46 -0500
+	Tue, 10 Feb 2015 05:27:49 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAR0wl000958
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:27:00 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAR27K000966
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:27:02 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>,
-        Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/4] btrfs-progs:specify qgroup type when creating qgroup
-Date: Tue, 10 Feb 2015 18:24:16 +0800
-Message-ID: <1423563862-9151-6-git-send-email-yangds.fnst@cn.fujitsu.com>
+CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Subject: [PATCH 4/4] btrfs-progs:show qgroup type
+Date: Tue, 10 Feb 2015 18:24:18 +0800
+Message-ID: <1423563862-9151-8-git-send-email-yangds.fnst@cn.fujitsu.com>
 In-Reply-To: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 References: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -23,92 +22,119 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
 
-add --qgroup-type option to specify qgroup type. Type
-can be metadata, data or mixed.
+make 'btrfs qgroup show' command show qgroup type.
 
 Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 ---
- Documentation/btrfs-qgroup.txt |  5 +++++
- cmds-qgroup.c                  | 37 ++++++++++++++++++++++++++++++++++---
- 2 files changed, 39 insertions(+), 3 deletions(-)
+ qgroup.c | 42 +++++++++++++++++++++++++++++++++++++++---
+ qgroup.h |  1 +
+ 2 files changed, 40 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/btrfs-qgroup.txt b/Documentation/btrfs-qgroup.txt
-index eadfe1c..7b07e97 100644
---- a/Documentation/btrfs-qgroup.txt
-+++ b/Documentation/btrfs-qgroup.txt
-@@ -45,6 +45,11 @@ Create a subvolume quota group.
- +
- For the '0/<subvolume id>' qgroup, a qgroup can be created even before the
- subvolume created.
-++
-+--qgroup-type=<type>::::
-+specify the <type> of qgroup to set qgroup limit.
-++
-+<attr> can be one of metadata, data, mixed.
+diff --git a/qgroup.c b/qgroup.c
+index a647925..d359659 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -135,6 +135,13 @@ static struct {
+ 		.max_len	= 5,
+ 	},
+ 	{
++		.name		= "type",
++		.column_name	= "Type",
++		.need_print	= 1,
++		.unit_mode	= 0,
++		.max_len	= 8,
++	},
++	{
+ 		.name		= NULL,
+ 		.column_name	= NULL,
+ 		.need_print	= 0,
+@@ -201,6 +208,20 @@ static int print_child_column(struct btrfs_qgroup *qgroup)
+ 	return len;
+ }
  
- *destroy* <qgroupid> <path>::
- Destroy a qgroup.
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 30f0851..23accdf 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -78,16 +78,45 @@ static int qgroup_create(int create, int argc, char **argv)
- 	int ret = 0;
- 	int fd;
- 	int e;
--	char *path = argv[2];
-+	char *path = argv[argc - 1];
- 	struct btrfs_ioctl_qgroup_create_args args;
- 	DIR *dirstream = NULL;
-+	__u8 qgroup_type = 0;
-+	__u64 create_type;
- 
--	if (check_argc_exact(argc, 3))
-+	optind = 1;
-+	while (1) {
-+		int c;
-+		static const struct option long_options[] = {
-+			{"qgroup-type", required_argument, NULL, 'q'},
-+			{NULL, 0, NULL, 0}
-+		};
++static int print_type_column(struct btrfs_qgroup *qgroup)
++{
++	__u8 type = qgroup->type;
++	int len = 0;
 +
-+		c = getopt_long(argc, argv, "", long_options, NULL);
-+		if (c < 0)
-+			break;
++	if (type == BTRFS_QGROUP_TYPE_DATA)
++		len = printf("data");
++	if (type == BTRFS_QGROUP_TYPE_METADATA)
++		len = printf("metadata");
++	if (type == BTRFS_QGROUP_TYPE_MIXED)
++		len = printf("metadata,data");
++	return len;
++}
 +
-+		switch (c) {
-+		case 'q':
-+			ret = btrfs_qgroup_set_qgroup_type(&qgroup_type, optarg);
-+			if (ret)
-+				return -1;
-+			break;
-+		default:
-+			return -1;
-+		}
-+	}
-+
-+	if (check_argc_exact(argc - optind, 2))
- 		return -1;
+ static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
+ 					  int len)
+ {
+@@ -244,6 +265,10 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 		len = print_child_column(qgroup);
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
+ 		break;
++	case BTRFS_QGROUP_TYPE:
++		len = print_type_column(qgroup);
++		print_qgroup_column_add_blank(BTRFS_QGROUP_TYPE, len);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -258,7 +283,7 @@ static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
+ 			continue;
+ 		print_qgroup_column(qgroup, i);
  
- 	memset(&args, 0, sizeof(args));
- 	args.create = create;
--	args.qgroupid = parse_qgroupid(argv[1]);
-+	if (create && qgroup_type) {
-+		create_type = qgroup_type;
-+		args.create |= (create_type << BTRFS_QGROUP_TYPE_SHIFT);
-+	}
-+	args.qgroupid = parse_qgroupid(argv[argc - 2]);
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
-@@ -137,6 +166,8 @@ static int cmd_qgroup_remove(int argc, char **argv)
- static const char * const cmd_qgroup_create_usage[] = {
- 	"btrfs qgroup create <qgroupid> <path>",
- 	"Create a subvolume quota group.",
-+	"--qgroup-type=metadata,data,mixed",
-+	"               specify which qgroup type to set qgroup limit",
- 	NULL
+-		if (i != BTRFS_QGROUP_CHILD)
++		if (i != BTRFS_QGROUP_ALL - 1)
+ 			printf(" ");
+ 	}
+ 	printf("\n");
+@@ -275,7 +300,7 @@ static void print_table_head()
+ 		if (!btrfs_qgroup_columns[i].need_print)
+ 			continue;
+ 		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
+-			(i == BTRFS_QGROUP_CHILD))
++			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_TYPE))
+ 			printf("%-*s", max_len, btrfs_qgroup_columns[i].name);
+ 		else
+ 			printf("%*s", max_len, btrfs_qgroup_columns[i].name);
+@@ -287,7 +312,7 @@ static void print_table_head()
+ 		if (!btrfs_qgroup_columns[i].need_print)
+ 			continue;
+ 		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
+-			(i == BTRFS_QGROUP_CHILD)) {
++			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_TYPE)) {
+ 			len = strlen(btrfs_qgroup_columns[i].name);
+ 			while (len--)
+ 				printf("-");
+@@ -976,6 +1001,17 @@ static void __update_columns_max_len(struct btrfs_qgroup *bq,
+ 		if (btrfs_qgroup_columns[column].max_len < len)
+ 			btrfs_qgroup_columns[column].max_len = len;
+ 		break;
++	case BTRFS_QGROUP_TYPE:
++		len = 0;
++		if (bq->type == BTRFS_QGROUP_TYPE_DATA)
++			len = strlen("data");
++		if (bq->type == BTRFS_QGROUP_TYPE_METADATA)
++			len = strlen("metadata");
++		if (bq->type == BTRFS_QGROUP_TYPE_MIXED)
++			len = strlen("metadata,data");
++		if (btrfs_qgroup_columns[column].max_len < len)
++			btrfs_qgroup_columns[column].max_len = len;
++		break;
+ 	default:
+ 		break;
+ 	}
+diff --git a/qgroup.h b/qgroup.h
+index 8423fdf..cc61477 100644
+--- a/qgroup.h
++++ b/qgroup.h
+@@ -75,6 +75,7 @@ enum btrfs_qgroup_column_enum {
+ 	BTRFS_QGROUP_MAX_EXCL,
+ 	BTRFS_QGROUP_PARENT,
+ 	BTRFS_QGROUP_CHILD,
++        BTRFS_QGROUP_TYPE,
+ 	BTRFS_QGROUP_ALL,
  };
  
 -- 

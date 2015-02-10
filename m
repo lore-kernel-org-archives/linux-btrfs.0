@@ -1,55 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail001.aei.ca ([206.123.6.130]:50913 "EHLO mail001.aei.ca"
+Received: from cantor2.suse.de ([195.135.220.15]:50965 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754883AbbBJNPV convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 08:15:21 -0500
-From: Ed Tomlinson <edt@aei.ca>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: Repair broken btrfs =?iso-8859-1?Q?raid6=3F?=
-Date: Tue, 10 Feb 2015 08:15:19 -0500
+	id S1754910AbbBJNa5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Feb 2015 08:30:57 -0500
+Date: Tue, 10 Feb 2015 14:30:55 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check valid
+ root/sudo privilege
+Message-ID: <20150210133055.GA28877@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1423462312-4239-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Message-ID: <486ed2b2-3c80-4856-8701-bcd71a212b18@aei.ca>
-In-Reply-To: <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
-References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
- <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1423462312-4239-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, February 10, 2015 2:17:43 AM EST, Kai Krakow wrote:
-> Tobias Holst <tobby@tobby.eu> schrieb:
->
->> and "btrfs scrub status /[device]" gives me the following output:
->>> "scrub status for [UUID]
->>> scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008
->>> seconds total bytes scrubbed: 113.04GiB with 0 errors"
->
-> Does not look very correct to me:
->
-> Why should a scrub in a six-drivers btrfs array which is probably multi-
-> terabytes big (as you state a restore from backup would take 
-> days) take only 
-> ~2000 seconds? And scrub only ~120 GB worth of data. Either your 6 devices 
-> are really small (then why RAID-6), or your data is very sparse (then way 
-> does it take so long), or scrub prematurely aborts and never checks the 
-> complete devices (I guess this is it).
->
-> And that's what it actually says: "aborted after 2008" seconds. I'd expect 
-> "finished after XXXX seconds" if I remember my scrub runs 
-> correctly (which I 
-> currently don't do regularly because it takes long and IO performance sucks 
-> during running it).
+On Mon, Feb 09, 2015 at 02:11:52PM +0800, Qu Wenruo wrote:
+> Although fsck-test/012 uses sudo, it uses 'sudo -n', which won't prompt
+> user to input password and will return 1 if no valid credential is
+> found.
+> 
+> And this makes test result quite annoying since it fails to mount and
+> still continue, which will always fail.
+> 
+> This patch introduced the new check_sudo() to check sudo before calling
+> $sudo. This function will check "sudo -v -n" to get the credential.
+> And if it fails, then the test will not be run.
 
-IO perfermance does suffer during a scrub.  I use the following:
+This logic is fine, but the setup fails for me even if typing the
+password is not required. I think the 'sudo -v' check is wrong as it
+tries to refresh the credentials.
 
-ionice -c 3 btrfs scrub start -Bd -n 19 /<target>
+  $ sudo -v -n
+  sudo: a password is required
 
-The combo of -n19 and ionice makes it workable here.  
+while
 
-Tobias why do you think btrfsck does not work on raid6?  It runs fine
-here on raid5.
+  $ sudo -n /bin/true
 
-
-
+works.

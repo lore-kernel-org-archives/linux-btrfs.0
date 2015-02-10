@@ -1,106 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27943 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41413 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755041AbbBJK1l (ORCPT
+	with ESMTP id S1754918AbbBJK1J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:27:41 -0500
+	Tue, 10 Feb 2015 05:27:09 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAQsH1000942
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:26:54 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAQNia000905
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:26:23 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH 0/7] Btrfs: qgroup: part-4: Add type to btrfs qgroup.
-Date: Tue, 10 Feb 2015 18:24:11 +0800
-Message-ID: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 3/4] Btrfs: qgroup, Account data space in more proper timings.
+Date: Tue, 10 Feb 2015 18:23:47 +0800
+Message-ID: <1423563828-9053-4-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+References: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-	This patchset is based on [Btrfs: qgroup: part-3: bug fixes.]
+Currenly, in data writing, ->reserved is accounted in
+fill_delalloc(), but ->may_use is released in clear_bit_hook()
+which is called by btrfs_finish_ordered_io(). That's too late,
+that said, between fill_delalloc() and btrfs_finish_ordered_io(),
+the data is doublely accounted by qgroup. It will cause some
+unexpected -EDQUOT.
 
-I am introducing a type to qgroup, then we can get the numbers what we
-only care about.
+Example:
+	# btrfs quota enable /root/btrfs-auto-test/
+	# btrfs subvolume create /root/btrfs-auto-test//sub
+	Create subvolume '/root/btrfs-auto-test/sub'
+	# btrfs qgroup limit 1G /root/btrfs-auto-test//sub
+	dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
+	dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
+	681353+0 records in
+	681352+0 records out
+	697704448 bytes (698 MB) copied, 8.15563 s, 85.5 MB/s
+It's (698 MB) when we got an -EDQUOT, but we limit it by 1G.
 
-Easy way to get the code for testing:
-	btrfs: https://yangdongsheng@github.com/yangdongsheng/linux.git qgroup_type
-  btrfs-progs: https://yangdongsheng@github.com/yangdongsheng/btrfs-progs.git qgroup_type
-with the patches applied in this series, both in btrfs and btrfs-progs:
+This patch move the btrfs_qgroup_reserve/free() for data from
+btrfs_delalloc_reserve/release_metadata() to btrfs_check_data_free_space()
+and btrfs_free_reserved_data_space(). Then the accounter in qgroup
+will be updated at the same time with the accounter in space_info updated.
+In this way, the unexpected -EDQUOT will be killed.
 
-[root@atest-guest linux_btrfs]# mkfs.btrfs -O qgroup-type /dev/sdc -f
-Btrfs v3.18-76-ga900a61
-See http://btrfs.wiki.kernel.org for more information.
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 16 +++++++++-------
+ fs/btrfs/file.c        |  9 ---------
+ 2 files changed, 9 insertions(+), 16 deletions(-)
 
-Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-Turning ON incompat feature 'skinny-metadata': reduced-size metadata extent refs
-Turning ON incompat feature 'qgroup-type': create qgroup in different type
-fs created label (null) on /dev/sdc
-	nodesize 16384 leafsize 16384 sectorsize 4096 size 10.00GiB
-[root@atest-guest linux_btrfs]# mount /dev/sdc  /mnt/
-[root@atest-guest linux_btrfs]# btrfs quota enable /mnt
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child type          
---------         ----         ----     --------     -------- ------  ----- ----          
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child type          
---------         ----         ----     --------     -------- ------  ----- ----          
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data <--- default type is mixed.
-[root@atest-guest linux_btrfs]# btrfs sub create --qgroup-type data /mnt/sub1
-Create subvolume '/mnt/sub1'
-Set qgroup arguments:
-	qgroup type: data
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child type          
---------         ----         ----     --------     -------- ------  ----- ----          
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-0/258           0.00B        0.00B        0.00B        0.00B ---     ---   data     	 <--- create a data qgroup
-[root@atest-guest linux_btrfs]# btrfs qgroup limit -e 5M 0/258 /mnt
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child type          
---------         ----         ----     --------     -------- ------  ----- ----          
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
-0/258           0.00B        0.00B        0.00B      5.00MiB ---     ---   data    
-[root@atest-guest linux_btrfs]# dd if=/dev/zero of=/mnt/sub1/data bs=1024
-dd: error writing \u2018/mnt/sub1/data\u2019: Disk quota exceeded
-5121+0 records in
-5120+0 records out
-5242880 bytes (5.2 MB) copied, 0.0218646 s, 240 MB/s
-[root@atest-guest linux_btrfs]# sync
-[root@atest-guest linux_btrfs]# ll /mnt/sub1/data 
--rw-r--r--. 1 root root 5242880 Feb 10 16:17 /mnt/sub1/data
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce --raw /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child type          
---------         ----         ----     --------     -------- ------  ----- ----          
-0/5             16384        16384            0            0 ---     ---   metadata,data
-0/257           16384        16384            0            0 ---     ---   metadata,data
-0/258         5242880      5242880            0      5242880 ---     ---   data   	<--- excl == max_excl == data_size == 5M == 5242880
-
-Dongsheng Yang (7):
-  Btrfs: qgroup: Add type to btrfs_qgroup.
-  btrfs: qgroup: apply type to the recording and accounting.
-  btrfs: qgroup: Apply type to btrfs_qgroup_inherit().
-  btrfs: qgroup: Apply qgroup type to qgroup creating.
-  btrfs: qgroup: Apply qgroup type to subvol creating.
-  btrfs: qgroup: apply type to quota rescan.
-  btrfs: qgroup: fix a bug when type of parent is different with
-    child's.
-
- fs/btrfs/ctree.h              |  10 ++-
- fs/btrfs/extent-tree.c        |  48 ++++++-----
- fs/btrfs/ioctl.c              |  49 ++++++++---
- fs/btrfs/qgroup.c             | 186 ++++++++++++++++++++++++++++--------------
- fs/btrfs/qgroup.h             |  29 ++++++-
- fs/btrfs/tests/qgroup-tests.c |  19 +++--
- fs/btrfs/transaction.c        |  13 +--
- include/uapi/linux/btrfs.h    |   1 +
- 8 files changed, 246 insertions(+), 109 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d1a7ce0..67c2e28 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3774,12 +3774,16 @@ commit_trans:
+ 					      data_sinfo->flags, bytes, 1);
+ 		return -ENOSPC;
+ 	}
++	ret = btrfs_qgroup_reserve(root, bytes);
++	if (ret)
++		goto out;
+ 	data_sinfo->bytes_may_use += bytes;
+ 	trace_btrfs_space_reservation(root->fs_info, "space_info",
+ 				      data_sinfo->flags, bytes, 1);
++out:
+ 	spin_unlock(&data_sinfo->lock);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ /*
+@@ -3796,6 +3800,7 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
+ 	data_sinfo = root->fs_info->data_sinfo;
+ 	spin_lock(&data_sinfo->lock);
+ 	WARN_ON(data_sinfo->bytes_may_use < bytes);
++	btrfs_qgroup_free(root, bytes);
+ 	data_sinfo->bytes_may_use -= bytes;
+ 	trace_btrfs_space_reservation(root->fs_info, "space_info",
+ 				      data_sinfo->flags, bytes, 0);
+@@ -5191,8 +5196,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+ 	if (root->fs_info->quota_enabled) {
+-		ret = btrfs_qgroup_reserve(root, num_bytes +
+-					   nr_extents * root->nodesize);
++		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
+ 		if (ret)
+ 			goto out_fail;
+ 	}
+@@ -5200,8 +5204,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+ 	if (unlikely(ret)) {
+ 		if (root->fs_info->quota_enabled)
+-			btrfs_qgroup_free(root, num_bytes +
+-						nr_extents * root->nodesize);
++			btrfs_qgroup_free(root, nr_extents * root->nodesize);
+ 		goto out_fail;
+ 	}
+ 
+@@ -5319,8 +5322,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 	trace_btrfs_space_reservation(root->fs_info, "delalloc",
+ 				      btrfs_ino(inode), to_free, 0);
+ 	if (root->fs_info->quota_enabled) {
+-		btrfs_qgroup_free(root, num_bytes +
+-					dropped * root->nodesize);
++		btrfs_qgroup_free(root, dropped * root->nodesize);
+ 	}
+ 
+ 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e409025..0ab1333 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2527,7 +2527,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ {
+ 	struct inode *inode = file_inode(file);
+ 	struct extent_state *cached_state = NULL;
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 cur_offset;
+ 	u64 last_byte;
+ 	u64 alloc_start;
+@@ -2555,11 +2554,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
+ 	if (ret)
+ 		return ret;
+-	if (root->fs_info->quota_enabled) {
+-		ret = btrfs_qgroup_reserve(root, alloc_end - alloc_start);
+-		if (ret)
+-			goto out_reserve_fail;
+-	}
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 	ret = inode_newsize_ok(inode, alloc_end);
+@@ -2677,9 +2671,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			     &cached_state, GFP_NOFS);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+-	if (root->fs_info->quota_enabled)
+-		btrfs_qgroup_free(root, alloc_end - alloc_start);
+-out_reserve_fail:
+ 	/* Let go of our reservation. */
+ 	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
+ 	return ret;
 -- 
 1.8.4.2
 

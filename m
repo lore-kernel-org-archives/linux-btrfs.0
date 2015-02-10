@@ -1,359 +1,279 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62764 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:27943 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754576AbbBJK0p (ORCPT
+	with ESMTP id S1754918AbbBJK1n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:26:45 -0500
+	Tue, 10 Feb 2015 05:27:43 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAPwdo000845
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:25:58 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAQtw7000945
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:26:55 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs:set max_rfer and max_excl on creating new subvolume
-Date: Tue, 10 Feb 2015 18:23:15 +0800
-Message-ID: <1423563803-8996-4-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/4] btrfs-progs: Add type to qgroup.
+Date: Tue, 10 Feb 2015 18:24:12 +0800
+Message-ID: <1423563862-9151-2-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+References: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-
-add -r and -e options to enable setting max reference size
-and max exclusive on creating new subvolumes.
-
-Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 ---
- Documentation/btrfs-subvolume.txt |  8 +++-
- cmds-qgroup.c                     | 42 ------------------
- cmds-subvolume.c                  | 57 +++++++++++++++++++++++-
- ioctl.h                           |  3 ++
- qgroup.c                          | 92 +++++++++++++++++++++++++++++++++++++++
- qgroup.h                          |  3 ++
- 6 files changed, 160 insertions(+), 45 deletions(-)
+ ctree.h      | 12 +++++++++++-
+ ioctl.h      |  1 +
+ mkfs.c       |  2 ++
+ print-tree.c |  9 +++++++++
+ qgroup.c     | 25 +++++++++++++++++++------
+ qgroup.h     | 16 ++++++++++++++++
+ 6 files changed, 58 insertions(+), 7 deletions(-)
 
-diff --git a/Documentation/btrfs-subvolume.txt b/Documentation/btrfs-subvolume.txt
-index b0ae030..fe13943 100644
---- a/Documentation/btrfs-subvolume.txt
-+++ b/Documentation/btrfs-subvolume.txt
-@@ -43,7 +43,7 @@ from normal directories.
+diff --git a/ctree.h b/ctree.h
+index c069a95..6b8e144 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -474,6 +474,10 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
  
- SUBCOMMAND
- -----------
--*create* [-i <qgroupid>] [<dest>]<name>::
-+*create* [-i <qgroupid>] [-r <max_rfer>] [-e <max_excl>] [<dest>]<name>::
- Create a subvolume <name> in <dest>.
- +
- If <dest> is not given, subvolume <name> will be created in the currently
-@@ -54,6 +54,12 @@ directory.
- -i <qgroupid>::::
- Add the newly created subvolume to a qgroup. This option can be given multiple
- times.
-++
-+-r <max_rfer>::::
-+set the newly created subvolume's max reference size
-++
-+-e <max_excl>::::
-+set the newly created subvolume's max exclusive size
++/*
++ *  * Add a type in btrfs_qgroup_info_item;
++ *   */
++#define BTRFS_FEATURE_INCOMPAT_QGROUP_TYPE      (1ULL << 10)
  
- *delete* [options] <subvolume> [<subvolume>...]::
- Delete the subvolume(s) from the filesystem.
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 2172944..30f0851 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -106,48 +106,6 @@ static int qgroup_create(int create, int argc, char **argv)
- 	return 0;
- }
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+@@ -486,7 +490,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+-	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
++	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
++	 BTRFS_FEATURE_INCOMPAT_QGROUP_TYPE)
  
--static int parse_limit(const char *p, unsigned long long *s)
--{
--	char *endptr;
--	unsigned long long size;
--
--	if (strcasecmp(p, "none") == 0) {
--		*s = 0;
--		return 1;
--	}
--	size = strtoull(p, &endptr, 10);
--	switch (*endptr) {
--	case 'T':
--	case 't':
--		size *= 1024;
--		/* fallthrough */
--	case 'G':
--	case 'g':
--		size *= 1024;
--		/* fallthrough */
--	case 'M':
--	case 'm':
--		size *= 1024;
--		/* fallthrough */
--	case 'K':
--	case 'k':
--		size *= 1024;
--		++endptr;
--		break;
--	case 0:
--		break;
--	default:
--		return 0;
--	}
--
--	if (*endptr)
--		return 0;
--
--	*s = size;
--
--	return 1;
--}
--
- static const char * const cmd_qgroup_assign_usage[] = {
- 	"btrfs qgroup assign <src> <dst> <path>",
- 	"Enable subvolume qgroup support for a filesystem.",
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index a31cb1b..f0e22ac 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -42,13 +42,15 @@ static const char * const subvolume_cmd_group_usage[] = {
- };
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+@@ -892,6 +897,7 @@ struct btrfs_qgroup_info_item {
+ 	__le64 referenced_compressed;
+ 	__le64 exclusive;
+ 	__le64 exclusive_compressed;
++	__u8   type;
+ } __attribute__ ((__packed__));
  
- static const char * const cmd_subvol_create_usage[] = {
--	"btrfs subvolume create [-i <qgroupid>] [<dest>/]<name>",
-+	"btrfs subvolume create [-i <qgroupid>] [-r <max_rfer>] [-e <max_excl>] [<dest>/]<name>",
- 	"Create a subvolume",
- 	"Create a subvolume <name> in <dest>.  If <dest> is not given",
- 	"subvolume <name> will be created in the current directory.",
- 	"",
- 	"-i <qgroupid>  add the newly created subvolume to a qgroup. This",
- 	"               option can be given multiple times.",
-+	"-r <max_rfer>  set the newly created subvolume's max reference size",
-+	"-e <max_excl>  set the newly created subvolume's max exclusive size",
- 	NULL
- };
+ /* flags definition for qgroup limits */
+@@ -2059,6 +2065,8 @@ BTRFS_SETGET_FUNCS(qgroup_status_scan, struct btrfs_qgroup_status_item,
+ /* btrfs_qgroup_info_item */
+ BTRFS_SETGET_FUNCS(qgroup_info_generation, struct btrfs_qgroup_info_item,
+ 		   generation, 64);
++BTRFS_SETGET_FUNCS(qgroup_info_type, struct btrfs_qgroup_info_item,
++		   type, 8);
+ BTRFS_SETGET_FUNCS(qgroup_info_referenced, struct btrfs_qgroup_info_item,
+ 		   referenced, 64);
+ BTRFS_SETGET_FUNCS(qgroup_info_referenced_compressed,
+@@ -2070,6 +2078,8 @@ BTRFS_SETGET_FUNCS(qgroup_info_exclusive_compressed,
  
-@@ -66,7 +68,7 @@ static int cmd_subvol_create(int argc, char **argv)
- 
- 	optind = 1;
- 	while (1) {
--		int c = getopt(argc, argv, "c:i:v");
-+		int c = getopt(argc, argv, "c:i:r:e:v");
- 		if (c < 0)
- 			break;
- 
-@@ -85,6 +87,20 @@ static int cmd_subvol_create(int argc, char **argv)
- 				goto out;
- 			}
- 			break;
-+		case 'r':
-+			res = qgroup_inherit_set_maxrfer(&inherit, optarg);
-+			if (res) {
-+				retval = res;
-+				goto out;
-+			}
-+			break;
-+		case 'e':
-+			res = qgroup_inherit_set_maxexcl(&inherit, optarg);
-+			if (res) {
-+				retval = res;
-+				goto out;
-+			}
-+			break;
- 		default:
- 			usage(cmd_subvol_create_usage);
- 		}
-@@ -129,6 +145,43 @@ static int cmd_subvol_create(int argc, char **argv)
- 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
- 	if (inherit) {
- 		struct btrfs_ioctl_vol_args_v2	args;
-+		struct btrfs_ioctl_quota_ctl_args sa;
-+
-+		printf("Set qgroup arguments:\n");
-+		if (inherit->num_qgroups > 0) {
-+			__u64 index;
-+			__u64 qgroupid;
-+
-+			printf("\tparent qgroup: ");
-+			for (index = 0; index < inherit->num_qgroups; index++) {
-+				qgroupid = inherit->qgroups[index];
-+				printf("%llu/%llu ", qgroupid >> 48,
-+					(qgroupid << 16) >> 16);
-+			}
-+			printf("\n");
-+		}
-+		if (inherit->lim.flags) {
-+			if (inherit->lim.flags & BTRFS_QGROUP_LIMIT_MAX_RFER)
-+				printf("\tmax reference: %llu\n",
-+					inherit->lim.max_referenced);
-+			if (inherit->lim.flags & BTRFS_QGROUP_LIMIT_MAX_EXCL)
-+				printf("\tmax exclusive: %llu\n",
-+					inherit->lim.max_exclusive);
-+		}
-+
-+		sa.cmd = BTRFS_QUOTA_CTL_STATUS;
-+		res = ioctl(fddst, BTRFS_IOC_QUOTA_CTL, &sa);
-+		if (res < 0) {
-+			fprintf(stderr, "ERROR: cannot get quota status - %s\n",
-+			       strerror(errno));
-+			retval = 1;
-+			goto out;
-+		}
-+		if (!(sa.status & BTRFS_QUOTA_STATUS_QUOTA_ENABLED)) {
-+			fprintf(stderr, "ERROR: quota disabled\n");
-+			retval = 1;
-+			goto out;
-+		}
- 
- 		memset(&args, 0, sizeof(args));
- 		strncpy_null(args.name, newname);
+ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_generation,
+ 			 struct btrfs_qgroup_info_item, generation, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_type,
++			 struct btrfs_qgroup_info_item, type, 8);
+ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_referenced,
+ 			 struct btrfs_qgroup_info_item, referenced, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_referenced_compressed,
 diff --git a/ioctl.h b/ioctl.h
-index d550ca6..a47eab8 100644
+index a47eab8..892f8de 100644
 --- a/ioctl.h
 +++ b/ioctl.h
-@@ -450,6 +450,9 @@ struct btrfs_ioctl_get_dev_stats {
- /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
- #define BTRFS_QUOTA_CTL_ENABLE	1
- #define BTRFS_QUOTA_CTL_DISABLE	2
-+#define BTRFS_QUOTA_CTL_STATUS  4
+@@ -77,6 +77,7 @@ struct btrfs_ioctl_vol_args_v2 {
+ 		struct {
+ 			__u64 size;
+ 			struct btrfs_qgroup_inherit *qgroup_inherit;
++			__u8 qgroup_type;
+ 		};
+ 		__u64 unused[4];
+ 	};
+diff --git a/mkfs.c b/mkfs.c
+index 18c4cb0..379068d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1144,6 +1144,8 @@ static const struct btrfs_fs_feature {
+ 		"reduced-size metadata extent refs" },
+ 	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
+ 		"no explicit hole extents for files" },
++	{ "qgroup-type", BTRFS_FEATURE_INCOMPAT_QGROUP_TYPE,
++		"create qgroup in different type" },
+ 	/* Keep this one last */
+ 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+ };
+diff --git a/print-tree.c b/print-tree.c
+index 70a7acc..6bfcc32 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -25,6 +25,7 @@
+ #include "disk-io.h"
+ #include "print-tree.h"
+ #include "utils.h"
++#include "qgroup.h"
+ 
+ 
+ static void print_dir_item_type(struct extent_buffer *eb,
+@@ -797,6 +798,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	u32 nr = btrfs_header_nritems(l);
+ 	u64 objectid;
+ 	u32 type;
++	u8 qgroup_type = BTRFS_QGROUP_TYPE_DEFAULT;
+ 	char bg_flags_str[32];
+ 
+ 	printf("leaf %llu items %d free space %d generation %llu owner %llu\n",
+@@ -980,6 +982,13 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 			       (unsigned long long)
+ 			       btrfs_qgroup_info_exclusive_compressed(l,
+ 								      qg_info));
++			
++			if (btrfs_fs_incompat(root->fs_info,
++					BTRFS_FEATURE_INCOMPAT_QGROUP_TYPE))
++				qgroup_type = btrfs_qgroup_info_type(l, qg_info);
 +
-+#define BTRFS_QUOTA_STATUS_QUOTA_ENABLED 1
- /* 3 has formerly been reserved for BTRFS_QUOTA_CTL_RESCAN */
- struct btrfs_ioctl_quota_ctl_args {
- 	__u64 cmd;
++			printf("\t\tqgroup type %u\n",
++			       (unsigned int)qgroup_type);
+ 			break;
+ 		case BTRFS_QGROUP_LIMIT_KEY:
+ 			qg_limit = btrfs_item_ptr(l, i,
 diff --git a/qgroup.c b/qgroup.c
-index 5a4e393..620ec7e 100644
+index 620ec7e..8a7c20f 100644
 --- a/qgroup.c
 +++ b/qgroup.c
-@@ -1273,6 +1273,48 @@ err:
- 	exit(-1);
- }
+@@ -48,6 +48,7 @@ struct btrfs_qgroup {
+ 	u64 rfer_cmpr;	/*referenced compressed*/
+ 	u64 excl;	/*exclusive*/
+ 	u64 excl_cmpr;	/*exclusive compressed*/
++	u8 type;
  
-+int parse_limit(const char *p, unsigned long long *s)
-+{
-+	char *endptr;
-+	unsigned long long size;
-+
-+	if (strcasecmp(p, "none") == 0) {
-+		*s = 0;
-+		return 1;
-+	}
-+	size = strtoull(p, &endptr, 10);
-+	switch (*endptr) {
-+	case 'T':
-+	case 't':
-+		size *= 1024;
-+		/* fallthrough */
-+	case 'G':
-+	case 'g':
-+		size *= 1024;
-+		/* fallthrough */
-+	case 'M':
-+	case 'm':
-+		size *= 1024;
-+		/* fallthrough */
-+	case 'K':
-+	case 'k':
-+		size *= 1024;
-+		++endptr;
-+		break;
-+	case 0:
-+		break;
-+	default:
-+		return 0;
-+	}
-+
-+	if (*endptr)
-+		return 0;
-+
-+	*s = size;
-+
-+	return 1;
-+}
-+
- int qgroup_inherit_size(struct btrfs_qgroup_inherit *p)
+ 	/*
+ 	 *limit_item
+@@ -572,7 +573,7 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
+ 
+ static int update_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 			 u64 generation, u64 rfer, u64 rfer_cmpr, u64 excl,
+-			 u64 excl_cmpr, u64 flags, u64 max_rfer, u64 max_excl,
++			 u64 excl_cmpr, u8 type, u64 flags, u64 max_rfer, u64 max_excl,
+ 			 u64 rsv_rfer, u64 rsv_excl, struct btrfs_qgroup *pa,
+ 			 struct btrfs_qgroup *child)
  {
- 	return sizeof(*p) + sizeof(p->qgroups[0]) *
-@@ -1302,6 +1344,8 @@ qgroup_inherit_realloc(struct btrfs_qgroup_inherit **inherit, int n, int pos)
- 		struct btrfs_qgroup_inherit *i = *inherit;
- 		int s = sizeof(out->qgroups[0]);
+@@ -593,6 +594,8 @@ static int update_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 		bq->excl = excl;
+ 	if (excl_cmpr)
+ 		bq->excl_cmpr = excl_cmpr;
++	if (type)
++		bq->type = type;
+ 	if (flags)
+ 		bq->flags = flags;
+ 	if (max_rfer)
+@@ -617,7 +620,7 @@ static int update_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
  
-+		out->flags = i->flags;
-+		out->lim = i->lim;
- 		out->num_qgroups = i->num_qgroups;
- 		out->num_ref_copies = i->num_ref_copies;
- 		out->num_excl_copies = i->num_excl_copies;
-@@ -1378,3 +1422,51 @@ bad:
+ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 		      u64 generation, u64 rfer, u64 rfer_cmpr, u64 excl,
+-		      u64 excl_cmpr, u64 flags, u64 max_rfer, u64 max_excl,
++		      u64 excl_cmpr, u8 type, u64 flags, u64 max_rfer, u64 max_excl,
+ 		      u64 rsv_rfer, u64 rsv_excl, struct btrfs_qgroup *parent,
+ 		      struct btrfs_qgroup *child)
+ {
+@@ -626,7 +629,7 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 	int ret;
  
- 	return 0;
- }
+ 	ret = update_qgroup(qgroup_lookup, qgroupid, generation, rfer,
+-			    rfer_cmpr, excl, excl_cmpr, flags, max_rfer,
++			    rfer_cmpr, excl, excl_cmpr, type, flags, max_rfer,
+ 			    max_excl, rsv_rfer, rsv_excl, parent, child);
+ 	if (!ret)
+ 		return 0;
+@@ -652,6 +655,8 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 		bq->excl = excl;
+ 	if (excl_cmpr)
+ 		bq->excl_cmpr = excl_cmpr;
++	if (type)
++		bq->type = type;
+ 	if (flags)
+ 		bq->flags = flags;
+ 	if (max_rfer)
+@@ -1031,6 +1036,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 	u64 a3;
+ 	u64 a4;
+ 	u64 a5;
++	u8 type;
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
+@@ -1044,6 +1050,8 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 
+ 	qgroup_lookup_init(qgroup_lookup);
+ 
++	type = BTRFS_QGROUP_TYPE_DEFAULT;
 +
-+int qgroup_inherit_set_maxrfer(struct btrfs_qgroup_inherit **inherit, char *arg)
-+{
-+	unsigned long long size;
-+
-+	if(!parse_limit(arg, &size)) {
-+		fprintf(stderr, "Invalid size argument given\n");
-+		return 1;
-+	}
-+
-+	if ((*inherit) == NULL) {
-+		(*inherit) = malloc(sizeof(struct btrfs_qgroup_inherit));
-+		if ((*inherit) == NULL) {
-+			fprintf(stderr, "ERROR: Not enough memory\n");
-+			return -ENOMEM;
-+		}
-+		memset((*inherit), 0, sizeof(struct btrfs_qgroup_inherit));
-+	}
-+
-+	(*inherit)->flags |= BTRFS_QGROUP_INHERIT_SET_LIMITS;
-+	(*inherit)->lim.flags |= BTRFS_QGROUP_LIMIT_MAX_RFER;
-+	(*inherit)->lim.max_referenced = size;
-+	return 0;
-+}
-+
-+int qgroup_inherit_set_maxexcl(struct btrfs_qgroup_inherit **inherit, char *arg)
-+{
-+	unsigned long long size;
-+
-+	if(!parse_limit(arg, &size)) {
-+		fprintf(stderr, "Invalid size argument given\n");
-+		return 1;
-+	}
-+
-+	if ((*inherit) == NULL) {
-+		(*inherit) = malloc(sizeof(struct btrfs_qgroup_inherit));
-+		if ((*inherit) == NULL) {
-+			fprintf(stderr, "ERROR: Not enough memory\n");
-+			return -ENOMEM;
-+		}
-+		memset((*inherit), 0, sizeof(struct btrfs_qgroup_inherit));
-+	}
-+
-+	(*inherit)->flags |= BTRFS_QGROUP_INHERIT_SET_LIMITS;
-+	(*inherit)->lim.flags |= BTRFS_QGROUP_LIMIT_MAX_EXCL;
-+	(*inherit)->lim.max_exclusive = size;
-+	return 0;
-+}
+ 	while (1) {
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+ 		e = errno;
+@@ -1079,8 +1087,13 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 				a5 =
+ 				  btrfs_stack_qgroup_info_exclusive_compressed
+ 				  (info);
++				/*
++				 * Check incompatability of qgroup->type.
++				 */
++				if (sh->len == sizeof(*info))
++					type = btrfs_stack_qgroup_info_type(info);
+ 				add_qgroup(qgroup_lookup, sh->offset, a1, a2,
+-					   a3, a4, a5, 0, 0, 0, 0, 0, 0, 0);
++					   a3, a4, a5, type, 0, 0, 0, 0, 0, 0, 0);
+ 			} else if (sh->type == BTRFS_QGROUP_LIMIT_KEY) {
+ 				limit = (struct btrfs_qgroup_limit_item *)
+ 				    (args.buf + off);
+@@ -1095,7 +1108,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 				a5 = btrfs_stack_qgroup_limit_rsv_exclusive
+ 				     (limit);
+ 				add_qgroup(qgroup_lookup, sh->offset, 0, 0,
+-					   0, 0, 0, a1, a2, a3, a4, a5, 0, 0);
++					   0, 0, 0, 0, a1, a2, a3, a4, a5, 0, 0);
+ 			} else if (sh->type == BTRFS_QGROUP_RELATION_KEY) {
+ 				if (sh->offset < sh->objectid)
+ 					goto skip;
+@@ -1108,7 +1121,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 				if (!bq1)
+ 					goto skip;
+ 				add_qgroup(qgroup_lookup, sh->offset, 0, 0,
+-					   0, 0, 0, 0, 0, 0, 0, 0, bq, bq1);
++					   0, 0, 0, 0, 0, 0, 0, 0, 0, bq, bq1);
+ 			} else
+ 				goto done;
+ skip:
 diff --git a/qgroup.h b/qgroup.h
-index 6e65ef7..e5d03ca 100644
+index e5d03ca..421eb42 100644
 --- a/qgroup.h
 +++ b/qgroup.h
-@@ -94,9 +94,12 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
- 				enum btrfs_qgroup_comp_enum comparer,
- 				int is_descending);
- u64 parse_qgroupid(char *p);
-+int parse_limit(const char *p, unsigned long long *s);
- int qgroup_inherit_size(struct btrfs_qgroup_inherit *p);
- int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
- int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
- 			    int type);
-+int qgroup_inherit_set_maxrfer(struct btrfs_qgroup_inherit **inherit, char *arg);
-+int qgroup_inherit_set_maxexcl(struct btrfs_qgroup_inherit **inherit, char *arg);
+@@ -22,6 +22,22 @@
+ #include "ioctl.h"
+ #include "kerncompat.h"
  
- #endif
++/*
++ *  * Type for qgroup.
++ *   */
++#define BTRFS_QGROUP_TYPE_DATA          (1 << 0)
++#define BTRFS_QGROUP_TYPE_METADATA      (1 << 1)
++#define BTRFS_QGROUP_TYPE_MIXED         (BTRFS_QGROUP_TYPE_DATA | \
++                                         BTRFS_QGROUP_TYPE_METADATA)
++
++#define BTRFS_QGROUP_TYPE_DEFAULT       BTRFS_QGROUP_TYPE_MIXED
++
++/*
++ *  * We are using the first byte in ->create of btrfs_ioctl_qgroup_create_args
++ *   * to specify the type of the qgroup to be created.
++ *    */
++#define BTRFS_QGROUP_TYPE_SHIFT         56
++
+ struct btrfs_qgroup;
+ 
+ typedef int (*btrfs_qgroup_filter_func)(struct btrfs_qgroup *, u64);
 -- 
 1.8.4.2
 

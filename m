@@ -1,27 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52976 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56566 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753098AbbBBNnP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Feb 2015 08:43:15 -0500
-Date: Mon, 2 Feb 2015 14:43:13 +0100
+	id S1751201AbbBJOsl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Feb 2015 09:48:41 -0500
+Date: Tue, 10 Feb 2015 15:48:39 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 1/5] btrfs-progs: Record orphan data extent ref to
- corresponding root.
-Message-ID: <20150202134313.GA24227@twin.jikos.cz>
+Subject: Re: [PATCH v3 00/10] Enhance btrfs-find-root and open_ctree() to
+ provide better chance on damaged btrfs.
+Message-ID: <20150210144839.GC28877@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1420182753-2724-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1422522437-18886-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1420182753-2724-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1422522437-18886-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 02, 2015 at 03:12:29PM +0800, Qu Wenruo wrote:
-> v2:
->    Do not record file extent if the file extent pointed by the data
->    backref exists but only bytenr mismatch.
->    This fix a regression bug causing fsck-test 001 fail.
+On Thu, Jan 29, 2015 at 05:07:15PM +0800, Qu Wenruo wrote:
+> Also, since only 2 patches is modified(although other part is slightly
+> modified to match the change), to avoid mail bombing, I created the pull
+> request on github and only send the first 2 patches with cover-letter.
+> https://github.com/kdave/btrfs-progs/pull/5
 
-Patches 1-5 applied to 3.19, thanks.
+Sending the changed patches only is ok (if you point me at the rest of
+the patches), but it's not necessary to open the github pull request.
+
+The version to version changelogs are also stored in the commit
+changelogs, that's a bit unexpected for a branch to be pulled.
+
+I've been reviewing this patch series and am mostly ok with that so I'm
+going to pull that soon.
+

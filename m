@@ -1,169 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:52104 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1761174AbbBIVOp (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 9 Feb 2015 16:14:45 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: scrub, fix sleep in atomic context
-Date: Mon,  9 Feb 2015 21:14:24 +0000
-Message-Id: <1423516464-18101-1-git-send-email-fdmanana@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11910 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751032AbbBJJA5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Feb 2015 04:00:57 -0500
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: "'Forrest Liu'" <forrestl@synology.com>, <linux-btrfs@vger.kernel.org>
+References: <1423474291-26710-1-git-send-email-forrestl@synology.com>
+In-Reply-To: <1423474291-26710-1-git-send-email-forrestl@synology.com>
+Subject: RE: [PATCH v2] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group
+Date: Tue, 10 Feb 2015 16:16:31 +0800
+Message-ID: <006301d04509$e074d640$a15e82c0$@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My previous patch "Btrfs: fix scrub race leading to use-after-free"
-introduced the possibility to sleep in an atomic context, which happens
-when the scrub_lock mutex is held at the time scrub_pending_bio_dec()
-is called - this function can be called under an atomic context.
-Chris ran into this in a debug kernel which gave the following trace:
+Hi, Liu
 
-[ 1928.950319] BUG: sleeping function called from invalid context at kernel/locking/mutex.c:621
-[ 1928.967334] in_atomic(): 1, irqs_disabled(): 0, pid: 149670, name: fsstress
-[ 1928.981324] INFO: lockdep is turned off.
-[ 1928.989244] CPU: 24 PID: 149670 Comm: fsstress Tainted: G        W     3.19.0-rc7-mason+ #41
-[ 1929.006418] Hardware name: ZTSYSTEMS Echo Ridge T4  /A9DRPF-10D, BIOS 1.07 05/10/2012
-[ 1929.022207]  ffffffff81a22cf8 ffff881076e03b78 ffffffff816b8dd9 ffff881076e03b78
-[ 1929.037267]  ffff880d8e828710 ffff881076e03ba8 ffffffff810856c4 ffff881076e03bc8
-[ 1929.052315]  0000000000000000 000000000000026d ffffffff81a22cf8 ffff881076e03bd8
-[ 1929.067381] Call Trace:
-[ 1929.072344]  <IRQ>  [<ffffffff816b8dd9>] dump_stack+0x4f/0x6e
-[ 1929.083968]  [<ffffffff810856c4>] ___might_sleep+0x174/0x230
-[ 1929.095352]  [<ffffffff810857d2>] __might_sleep+0x52/0x90
-[ 1929.106223]  [<ffffffff816bb68f>] mutex_lock_nested+0x2f/0x3b0
-[ 1929.117951]  [<ffffffff810ab37d>] ? trace_hardirqs_on+0xd/0x10
-[ 1929.129708]  [<ffffffffa05dc838>] scrub_pending_bio_dec+0x38/0x70 [btrfs]
-[ 1929.143370]  [<ffffffffa05dd0e0>] scrub_parity_bio_endio+0x50/0x70 [btrfs]
-[ 1929.157191]  [<ffffffff812fa603>] bio_endio+0x53/0xa0
-[ 1929.167382]  [<ffffffffa05f96bc>] rbio_orig_end_io+0x7c/0xa0 [btrfs]
-[ 1929.180161]  [<ffffffffa05f97ba>] raid_write_parity_end_io+0x5a/0x80 [btrfs]
-[ 1929.194318]  [<ffffffff812fa603>] bio_endio+0x53/0xa0
-[ 1929.204496]  [<ffffffff8130401b>] blk_update_request+0x1eb/0x450
-[ 1929.216569]  [<ffffffff81096e58>] ? trigger_load_balance+0x78/0x500
-[ 1929.229176]  [<ffffffff8144c74d>] scsi_end_request+0x3d/0x1f0
-[ 1929.240740]  [<ffffffff8144ccac>] scsi_io_completion+0xac/0x5b0
-[ 1929.252654]  [<ffffffff81441c50>] scsi_finish_command+0xf0/0x150
-[ 1929.264725]  [<ffffffff8144d317>] scsi_softirq_done+0x147/0x170
-[ 1929.276635]  [<ffffffff8130ace6>] blk_done_softirq+0x86/0xa0
-[ 1929.288014]  [<ffffffff8105d92e>] __do_softirq+0xde/0x600
-[ 1929.298885]  [<ffffffff8105df6d>] irq_exit+0xbd/0xd0
-(...)
+> Removing large amount of block group in a transaction may encounters
+> BUG_ON() in btrfs_orphan_add(). That is becuase btrfs_orphan_reserve_metadata()
+Not big matter,
+s/becuase/because
 
-Fix this by using a reference count on the scrub context structure
-instead of locking the scrub_lock mutex.
+Thanks
+Zhaolei
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/scrub.c | 39 +++++++++++++++++++++++----------------
- 1 file changed, 23 insertions(+), 16 deletions(-)
+> will grab metadata reservation from transaction handle, and
+> btrfs_delete_unused_bgs() didn't reserve metadata for trnasaction handle when
+> delete unused block group.
+> 
+> The problem can be reproduce by following script
+> 
+>     mntpath=/btrfs
+>     loopdev=/dev/loop0
+>     filepath=/home/forrest/image
+> 
+>     umount $mntpath
+>     losetup -d $loopdev
+>     truncate --size 1000g $filepath
+>     losetup $loopdev $filepath
+>     mkfs.btrfs -f $loopdev
+>     mount $loopdev $mntpath
+> 
+>     for j in `seq 1 1 1000`; do
+>         fallocate -l 1g $mntpath/$j
+>     done
+>     # wait cleaner thread remove unused block group
+>     sleep 300
+> 
+> The call trace that results from the BUG_ON() is:
+> 
+> [  613.093084] ------------[ cut here ]------------
+> [  613.097928] kernel BUG at fs/btrfs/inode.c:3142!
+> [  613.105855] invalid opcode: 0000 [#1] SMP
+> [  613.112702] Modules linked in: coretemp(E) crc32_pclmul(E) ghash_clmulni_intel(E) aesni_intel(E) snd_ens1371(E)
+snd_ac97_codec(E)
+> aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ppdev(E) ac97_bus(E) ablk_helper(E) gameport(E) cryptd(E) snd_rawmidi(E)
+> snd_seq_device(E) snd_pcm(E) vmw_balloon(E) snd_timer(E) snd(E) soundcore(E) serio_raw(E) vmwgfx(E) ttm(E) drm_kms_helper(E)
+drm(E)
+> vmw_vmci(E) parport_pc(E) shpchp(E) i2c_piix4(E) mac_hid(E) lp(E) parport(E) btrfs(E) xor(E) raid6_pq(E) hid_generic(E) usbhid(E)
+hid(E)
+> psmouse(E) ahci(E) libahci(E) e1000(E) mptspi(E) mptscsih(E) mptbase(E) floppy(E) vmw_pvscsi(E) vmxnet3(E)
+> [  613.144196] CPU: 0 PID: 1480 Comm: btrfs-cleaner Tainted: G            E  3.19.0-rc7-custom #2
+> [  613.148501] Hardware name: VMware, Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 07/31/2013
+> [  613.152694] task: ffff880035cdb1a0 ti: ffff880039cf4000 task.ti: ffff880039cf4000
+> [  613.154969] RIP: 0010:[<ffffffffa01441c2>]  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
+> [  613.157780] RSP: 0018:ffff880039cf7c48  EFLAGS: 00010286
+> [  613.159560] RAX: 00000000ffffffe4 RBX: ffff88003bd981a0 RCX: ffff88003c9e4000
+> [  613.161904] RDX: 0000000000002244 RSI: 0000000000040000 RDI: ffff88003c9e4138
+> [  613.164264] RBP: ffff880039cf7c88 R08: 000060ffc0000850 R09: 0000000000000000
+> [  613.166507] R10: ffff88003bc4b7a0 R11: ffffea0000eb6740 R12: ffff88003c9c0000
+> [  613.168681] R13: ffff88003c102160 R14: ffff88003c9c0458 R15: 0000000000000001
+> [  613.170932] FS:  0000000000000000(0000) GS:ffff88003f600000(0000) knlGS:0000000000000000
+> [  613.173316] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [  613.175227] CR2: 00007f6343537000 CR3: 0000000036329000 CR4: 00000000000407f0
+> [  613.177554] Stack:
+> [  613.178712]  ffff880039cf7c88 ffffffffa0182a54 ffff88003c9e4b04 ffff88003c9c7800
+> [  613.181297]  ffff88003bc4b7a0 ffff88003bd981a0 ffff88003c8db200 ffff88003c2fcc60
+> [  613.183782]  ffff880039cf7d18 ffffffffa012da97 ffff88003bc4b7a4 ffff88003bc4b7a0
+> [  613.186171] Call Trace:
+> [  613.187493]  [<ffffffffa0182a54>] ? lookup_free_space_inode+0x44/0x100 [btrfs]
+> [  613.189801]  [<ffffffffa012da97>] btrfs_remove_block_group+0x137/0x740 [btrfs]
+> [  613.192126]  [<ffffffffa0166912>] btrfs_remove_chunk+0x672/0x780 [btrfs]
+> [  613.194267]  [<ffffffffa012e2ff>] btrfs_delete_unused_bgs+0x25f/0x280 [btrfs]
+> [  613.196567]  [<ffffffffa0135e4c>] cleaner_kthread+0x12c/0x190 [btrfs]
+> [  613.198687]  [<ffffffffa0135d20>] ? check_leaf+0x350/0x350 [btrfs]
+> [  613.200758]  [<ffffffff8108f232>] kthread+0xd2/0xf0
+> [  613.202616]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
+> [  613.204738]  [<ffffffff8175dabc>] ret_from_fork+0x7c/0xb0
+> [  613.206652]  [<ffffffff8108f160>] ? kthread_create_on_node+0x180/0x180
+> [  613.208741] Code: ff ff 0f 1f 80 00 00 00 00 89 45 c8 3e 80 63 80 fd 48 89 df e8 d0 23 fe ff 8b 45 c8 e9 14 ff ff ff b8 f4 ff
+ff ff e9 12 ff ff ff <0f>
+> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 55 48
+> [  613.216562] RIP  [<ffffffffa01441c2>] btrfs_orphan_add+0x1d2/0x1e0 [btrfs]
+> [  613.218828]  RSP <ffff880039cf7c48>
+> [  613.220382] ---[ end trace 71073106deb8a457 ]---
+> 
+> This patch replace btrfs_join_transaction() with btrfs_start_transaction() in
+> btrfs_delete_unused_bgs() to revent BUG_ON() in btrfs_orphan_add()
+> 
+> Signed-off-by: Forrest Liu <forrestl@synology.com>
+> ---
+> V2: add reproducing step and call trace in commit message
+> 
+>  fs/btrfs/extent-tree.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index a684086..63b974f 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -9611,7 +9611,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+>  		 * Want to do this before we do anything else so we can recover
+>  		 * properly if we fail to join the transaction.
+>  		 */
+> -		trans = btrfs_join_transaction(root);
+> +		/* 1 for btrfs_orphan_reserve_metadata() */
+> +		trans = btrfs_start_transaction(root, 1);
+>  		if (IS_ERR(trans)) {
+>  			btrfs_set_block_group_rw(root, block_group);
+>  			ret = PTR_ERR(trans);
+> --
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index d5d790c..ec57687 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -193,6 +193,15 @@ struct scrub_ctx {
- 	 */
- 	struct btrfs_scrub_progress stat;
- 	spinlock_t		stat_lock;
-+
-+	/*
-+	 * Use a ref counter to avoid use-after-free issues. Scrub workers
-+	 * decrement bios_in_flight and workers_pending and then do a wakeup
-+	 * on the list_wait wait queue. We must ensure the main scrub task
-+	 * doesn't free the scrub context before or while the workers are
-+	 * doing the wakeup() call.
-+	 */
-+	atomic_t                refs;
- };
- 
- struct scrub_fixup_nodatasum {
-@@ -297,26 +306,20 @@ static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- static void copy_nocow_pages_worker(struct btrfs_work *work);
- static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info);
- static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info);
-+static void scrub_put_ctx(struct scrub_ctx *sctx);
- 
- 
- static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
- {
-+	atomic_inc(&sctx->refs);
- 	atomic_inc(&sctx->bios_in_flight);
- }
- 
- static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
- {
--	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
--
--	/*
--	 * Hold the scrub_lock while doing the wakeup to ensure the
--	 * sctx (and its wait queue list_wait) isn't destroyed/freed
--	 * during the wakeup.
--	 */
--	mutex_lock(&fs_info->scrub_lock);
- 	atomic_dec(&sctx->bios_in_flight);
- 	wake_up(&sctx->list_wait);
--	mutex_unlock(&fs_info->scrub_lock);
-+	scrub_put_ctx(sctx);
- }
- 
- static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-@@ -350,6 +353,7 @@ static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx)
- {
- 	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
- 
-+	atomic_inc(&sctx->refs);
- 	/*
- 	 * increment scrubs_running to prevent cancel requests from
- 	 * completing as long as a worker is running. we must also
-@@ -388,15 +392,11 @@ static void scrub_pending_trans_workers_dec(struct scrub_ctx *sctx)
- 	mutex_lock(&fs_info->scrub_lock);
- 	atomic_dec(&fs_info->scrubs_running);
- 	atomic_dec(&fs_info->scrubs_paused);
-+	mutex_unlock(&fs_info->scrub_lock);
- 	atomic_dec(&sctx->workers_pending);
- 	wake_up(&fs_info->scrub_pause_wait);
--	/*
--	 * Hold the scrub_lock while doing the wakeup to ensure the
--	 * sctx (and its wait queue list_wait) isn't destroyed/freed
--	 * during the wakeup.
--	 */
- 	wake_up(&sctx->list_wait);
--	mutex_unlock(&fs_info->scrub_lock);
-+	scrub_put_ctx(sctx);
- }
- 
- static void scrub_free_csums(struct scrub_ctx *sctx)
-@@ -442,6 +442,12 @@ static noinline_for_stack void scrub_free_ctx(struct scrub_ctx *sctx)
- 	kfree(sctx);
- }
- 
-+static void scrub_put_ctx(struct scrub_ctx *sctx)
-+{
-+	if (atomic_dec_and_test(&sctx->refs))
-+		scrub_free_ctx(sctx);
-+}
-+
- static noinline_for_stack
- struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
- {
-@@ -466,6 +472,7 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
- 	sctx = kzalloc(sizeof(*sctx), GFP_NOFS);
- 	if (!sctx)
- 		goto nomem;
-+	atomic_set(&sctx->refs, 1);
- 	sctx->is_dev_replace = is_dev_replace;
- 	sctx->pages_per_rd_bio = pages_per_rd_bio;
- 	sctx->curr = -1;
-@@ -3741,7 +3748,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	scrub_workers_put(fs_info);
- 	mutex_unlock(&fs_info->scrub_lock);
- 
--	scrub_free_ctx(sctx);
-+	scrub_put_ctx(sctx);
- 
- 	return ret;
- }
--- 
-2.1.3
 

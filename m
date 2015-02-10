@@ -1,100 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:42645 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752334AbbBJHgi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 02:36:38 -0500
-Received: by mail-yh0-f45.google.com with SMTP id a41so9809580yho.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Feb 2015 23:36:37 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CANcfdL2FgE9UDCjVkzNUa8X1y63=JLfjcwqT4=KDLOu-YTe=sA@mail.gmail.com>
-References: <CANcfdL0x_LTSnyL1FP8vVV4=MaFrewT4pd0MZgu3qzxOviXDgg@mail.gmail.com>
-	<CANcfdL2FgE9UDCjVkzNUa8X1y63=JLfjcwqT4=KDLOu-YTe=sA@mail.gmail.com>
-Date: Tue, 10 Feb 2015 00:36:37 -0700
-Message-ID: <CAJCQCtQ5Uf4Vm3=CHZcaqWTdTrzmr+=isO_YuuJP4W01nrs+og@mail.gmail.com>
-Subject: Re: Replacing a (or two?) failed drive(s) in RAID-1 btrfs filesystem
-From: Chris Murphy <lists@colorremedies.com>
-To: constantine <costas.magnuse@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:34788 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750923AbbBJHnu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Feb 2015 02:43:50 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YL5U4-0004jE-NC
+	for linux-btrfs@vger.kernel.org; Tue, 10 Feb 2015 08:43:48 +0100
+Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 08:43:48 +0100
+Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 08:43:48 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: Repair broken btrfs raid6?
+Date: Tue, 10 Feb 2015 08:17:43 +0100
+Message-ID: <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
+References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 9, 2015 at 5:54 PM, constantine <costas.magnuse@gmail.com> wrote:
+Tobias Holst <tobby@tobby.eu> schrieb:
 
-> 1.  I am testing various files and all seem readable. Is there a way
-> to list every file that resides on a particular device (like
-> /dev/sdc1?) so as to check them? There are a handful of files that
-> seem corrupted, since I get from scrub:
-> """
-> BTRFS: checksum error at logical 10792783298560 on dev /dev/sdc1,
-> sector 737159648, root 5, inode 1376754, offset 175428419584, length
-> 4096, links 1 (path: long/path/file.img)
-> """,
-> but are these the only files that could be corrupted?
+> and "btrfs scrub status /[device]" gives me the following output:
+>> "scrub status for [UUID]
+>>scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008
+>>seconds total bytes scrubbed: 113.04GiB with 0 errors"
 
-It should be true the only corrupt files are the listed ones. I don't
-have a good suggestion for the first question, whether btrfs restore
-can help or btrfs-debug-tree - assuming you want something independent
-from mounting the filesystem and just using recursive ls or tree
-commands.
+Does not look very correct to me:
 
+Why should a scrub in a six-drivers btrfs array which is probably multi-
+terabytes big (as you state a restore from backup would take days) take only 
+~2000 seconds? And scrub only ~120 GB worth of data. Either your 6 devices 
+are really small (then why RAID-6), or your data is very sparse (then way 
+does it take so long), or scrub prematurely aborts and never checks the 
+complete devices (I guess this is it).
 
-
-
->
->
-> 2. Chris mentioned:
->
-> A. On Mon, Feb 9, 2015 at 12:31 AM, Chris Murphy
-> <lists@colorremedies.com> wrote:
->> [[[try # btrfs device delete /dev/sdc1 /mnt/mountpoint]]]. Just realize that any data that's on both the
->> failed drive and sdc1 will be lost
->
-> and later
->
-> B. On Mon, Feb 9, 2015 at 1:34 AM, Chris Murphy <lists@colorremedies.com> wrote:
->> So now I have a 4 device
->> raid1 mounted degraded. And I can still device delete another device.
->> So one device missing and one device removed.
->
-> So when I do the "# btrfs device delete /dev/sdc1 /mnt/mountpoint" the
-> normal behavior would for the files that are located in /dev/sdc1 (and
-> also were on the missing/failed drive) to be transferred to other
-> drives and not lose them, right? (Does B. hold and contradict A.?)
-
-The normal case, a non-degraded volume, a device delete will
-successfully migrate data, and the volume remains non-degraded.
-
-The unusual case, a degraded volume, a device delete is suspiciously
-permitted. I think this is risky and maybe ought to be disallowed, or
-at least require the user to use --force. And the reason is, it's a
-degraded array. The first course of business is to do a 'device
-replace start' or if enough devices exist 'btrfs device delete
-missing' to get the volume from degraded to normal state. And then do
-any additional device deletes.
-
-But the even more unusual case, a degrade volume, with a 2nd device
-that's producing a huge pile of read, write and corruption errors,
-Btrfs can't migrate any data off the dead/removed drive (obviously),
-but it also has problems removing the data that now only exists on the
-2nd device that spitting out errors. I don't expect this device delete
-to succeed.
-
-The difference between case A and B, is that there isn't a 2nd drive
-spitting out a pile of errors. It's merely degraded, with a drive
-being deleted, and even that ended in a kernel panic for me, which
-I've reproduced. However, as a followup, after rebooting, the btrfs
-volume is mountable (degraded) without error. I can further btrfs
-device delete missing, and remount normally (not degraded). So this is
-good.
-
->After the whole process,
-> I suppose I will have a more robust array structure the RED/RAID
-> drives and appropriate cron jobs as indicated in the thread.
-
-Good ending sounds like.
+And that's what it actually says: "aborted after 2008" seconds. I'd expect 
+"finished after XXXX seconds" if I remember my scrub runs correctly (which I 
+currently don't do regularly because it takes long and IO performance sucks 
+during running it).
 
 -- 
-Chris Murphy
+Replies to list only preferred.
+

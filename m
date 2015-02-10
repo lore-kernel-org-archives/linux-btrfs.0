@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24217 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62764 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754771AbbBJK0o (ORCPT
+	with ESMTP id S1754770AbbBJK0o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 10 Feb 2015 05:26:44 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAPvEV000842
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:25:57 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAPuoh000837
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:25:56 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/9] btrfs: qgroup: move WARN_ON() to the correct location.
-Date: Tue, 10 Feb 2015 18:23:14 +0800
-Message-ID: <1423563803-8996-3-git-send-email-yangds.fnst@cn.fujitsu.com>
+CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs:correct the return value
+Date: Tue, 10 Feb 2015 18:23:13 +0800
+Message-ID: <1423563803-8996-2-git-send-email-yangds.fnst@cn.fujitsu.com>
 In-Reply-To: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 References: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,35 +20,56 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In function qgroup_excl_accounting(), we need to WARN when
-qg->excl is less than what we want to free, same to child
-and parents. But currently, for parent qgroup, the WARN_ON()
-is located after freeing qg->excl. It will WARN out even we
-free it normally.
+From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
 
-This patch move this WARN_ON() before freeing qg->excl.
+the return values 12 and 13 are not used spectially except as
+return value. No description and definition about them. so I
+change them to generic errno
 
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ qgroup.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 48b60db..97159a8 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1431,9 +1431,8 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 		qgroup = u64_to_ptr(unode->aux);
- 		qgroup->rfer += sign * oper->num_bytes;
- 		qgroup->rfer_cmpr += sign * oper->num_bytes;
-+		WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
- 		qgroup->excl += sign * oper->num_bytes;
--		if (sign < 0)
--			WARN_ON(qgroup->excl < oper->num_bytes);
- 		qgroup->excl_cmpr += sign * oper->num_bytes;
- 		qgroup_dirty(fs_info, qgroup);
+diff --git a/qgroup.c b/qgroup.c
+index d59f4bb..5a4e393 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -21,6 +21,7 @@
+ #include "ctree.h"
+ #include "ioctl.h"
+ #include "utils.h"
++#include <errno.h>
  
+ #define BTRFS_QGROUP_NFILTERS_INCREASE (2 * BTRFS_QGROUP_FILTER_MAX)
+ #define BTRFS_QGROUP_NCOMPS_INCREASE (2 * BTRFS_QGROUP_COMP_MAX)
+@@ -1294,7 +1295,7 @@ qgroup_inherit_realloc(struct btrfs_qgroup_inherit **inherit, int n, int pos)
+ 	out = calloc(sizeof(*out) + sizeof(out->qgroups[0]) * (nitems + n), 1);
+ 	if (out == NULL) {
+ 		fprintf(stderr, "ERROR: Not enough memory\n");
+-		return 13;
++		return -ENOMEM;
+ 	}
+ 
+ 	if (*inherit) {
+@@ -1322,7 +1323,7 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg)
+ 
+ 	if (qgroupid == 0) {
+ 		fprintf(stderr, "ERROR: bad qgroup specification\n");
+-		return 12;
++		return -EINVAL;
+ 	}
+ 
+ 	if (*inherit)
+@@ -1349,7 +1350,7 @@ int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+ 	if (!p) {
+ bad:
+ 		fprintf(stderr, "ERROR: bad copy specification\n");
+-		return 12;
++		return -EINVAL;
+ 	}
+ 	*p = 0;
+ 	qgroup_src = parse_qgroupid(arg);
 -- 
 1.8.4.2
 

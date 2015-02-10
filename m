@@ -1,84 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24217 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41413 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754576AbbBJK0n (ORCPT
+	with ESMTP id S1754909AbbBJK1H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:26:43 -0500
+	Tue, 10 Feb 2015 05:27:07 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAPtT3000832
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:25:56 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAQKwV000894
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:26:20 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH 0/9] Btrfs: qgroup: part-1: bug fixes for qgroup inherit.
-Date: Tue, 10 Feb 2015 18:23:12 +0800
-Message-ID: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 0/4] Btrfs: qgroup: part-2: bug fixes for qgroup reservation.
+Date: Tue, 10 Feb 2015 18:23:44 +0800
+Message-ID: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi all,
+	This is part2 for qgroup. It is based on 
+	[PATCH 0/9] Btrfs: qgroup: part-1: bug fixes.
 
-[1/9] is a RESEND with a reviewed-by.
+[1/4] is reviewed-by Josef.
 
-[2/9]-[6/9] are bug fixes about qgroup_inherit(), these patch make
-user can set the limits when creating a subvolume with the related
-patch in userspace applied.
+[2/4] - [4/4] are trying to solve a problem in qgroup reservation.
+It would be weired I introduce a may_use in 2/4 and delete it in 4/4.
 
-[7/9]-[8/9] are a cleanup for qgroup.
+Yes, I am glad to rebase and squash them, here I am keeping this history
+of the problem for reviewing. I have explained the problem and sent the
+[2/4] out. Josef give me a looks good at that time. But in the later, I
+found another problem and solved it with [4/4]. So they are trying to
+solve different problems at different timing. When the all patches are
+reviewed by you guys, I am okey to squash them if you request.
 
-[9/9] provides a way for btrfs-progs to get the quota status by ioctl(),
-then btrfs-progs can warn user when they are using qgroup with quota_disabled.
+Thanx.
 
-With this series patch applied, both btrfs and btrfs-progs:
+Dongsheng Yang (4):
+  Btrfs: qgroup: free reserved in exceeding quota.
+  Btrfs: qgroup: Introduce a may_use to account
+    space_info->bytes_may_use.
+  Btrfs: qgroup, Account data space in more proper timings.
+  btrfs: qgroup: do a reservation in a higher level.
 
-[root@atest-guest linux_btrfs]# btrfs quota enable /mnt
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child 
---------         ----         ----     --------     -------- ------  ----- 
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---  
-[root@atest-guest linux_btrfs]# btrfs sub create /mnt/sub1
-Create subvolume '/mnt/sub1'
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child 
---------         ----         ----     --------     -------- ------  ----- 
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---  
-0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---  
-[root@atest-guest linux_btrfs]# btrfs sub create /mnt/sub2 -r 10M -e 5M
-Create subvolume '/mnt/sub2'
-Set qgroup arguments:
-	max reference: 10485760
-	max exclusive: 5242880
-[root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
-qgroupid         rfer         excl     max_rfer     max_excl parent  child 
---------         ----         ----     --------     -------- ------  ----- 
-0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---  
-0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---  
-0/258        16.00KiB     16.00KiB     10.00MiB      5.00MiB ---     --- 
-
-Dongsheng Yang (8):
-  btrfs: qgroup: move WARN_ON() to the correct location.
-  btrfs: qgroup: inherit limit info from srcgroup in creating snapshot.
-  btrfs: qgroup: update qgroup in memory at the same time when we update
-    it in btree.
-  btrfs: qgroup: consolidate the parameter of fucntion
-    update_qgroup_limit_item().
-  btrfs: qgroup: update limit info in function btrfs_run_qgroups().
-  btrfs: qgroup: fix limit args override whole limit struct
-  Btrfs: qgroup: make the btree for qgroup increase from left to right.
-  Btrfs: qgroup: cleanup, remove an unsued parameter in
-    btrfs_create_qgroup().
-
-Fan Chengniang (1):
-  btrfs: qgroup: obtain quota status
-
- fs/btrfs/ioctl.c              |   9 +++-
- fs/btrfs/qgroup.c             | 109 +++++++++++++++++++++++++++---------------
- fs/btrfs/qgroup.h             |   6 ++-
- fs/btrfs/tests/qgroup-tests.c |   4 +-
- include/uapi/linux/btrfs.h    |   3 ++
- 5 files changed, 87 insertions(+), 44 deletions(-)
+ fs/btrfs/ctree.h       |  2 +-
+ fs/btrfs/extent-tree.c | 25 +++++++++++--------------
+ fs/btrfs/file.c        | 13 ++-----------
+ fs/btrfs/inode.c       |  3 ++-
+ fs/btrfs/qgroup.c      | 10 ++++------
+ fs/btrfs/relocation.c  |  2 +-
+ 6 files changed, 21 insertions(+), 34 deletions(-)
 
 -- 
 1.8.4.2

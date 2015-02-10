@@ -1,142 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51320 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755148AbbBJK1t (ORCPT
+Received: from mail001.aei.ca ([206.123.6.130]:50913 "EHLO mail001.aei.ca"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754883AbbBJNPV convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:27:49 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAR27K000966
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:27:02 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs-progs:show qgroup type
-Date: Tue, 10 Feb 2015 18:24:18 +0800
-Message-ID: <1423563862-9151-8-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+	Tue, 10 Feb 2015 08:15:21 -0500
+From: Ed Tomlinson <edt@aei.ca>
+To: Kai Krakow <hurikhan77@gmail.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Subject: Re: Repair broken btrfs =?iso-8859-1?Q?raid6=3F?=
+Date: Tue, 10 Feb 2015 08:15:19 -0500
 MIME-Version: 1.0
-Content-Type: text/plain
+Message-ID: <486ed2b2-3c80-4856-8701-bcd71a212b18@aei.ca>
+In-Reply-To: <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
+References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+ <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
+On Tuesday, February 10, 2015 2:17:43 AM EST, Kai Krakow wrote:
+> Tobias Holst <tobby@tobby.eu> schrieb:
+>
+>> and "btrfs scrub status /[device]" gives me the following output:
+>>> "scrub status for [UUID]
+>>> scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008
+>>> seconds total bytes scrubbed: 113.04GiB with 0 errors"
+>
+> Does not look very correct to me:
+>
+> Why should a scrub in a six-drivers btrfs array which is probably multi-
+> terabytes big (as you state a restore from backup would take 
+> days) take only 
+> ~2000 seconds? And scrub only ~120 GB worth of data. Either your 6 devices 
+> are really small (then why RAID-6), or your data is very sparse (then way 
+> does it take so long), or scrub prematurely aborts and never checks the 
+> complete devices (I guess this is it).
+>
+> And that's what it actually says: "aborted after 2008" seconds. I'd expect 
+> "finished after XXXX seconds" if I remember my scrub runs 
+> correctly (which I 
+> currently don't do regularly because it takes long and IO performance sucks 
+> during running it).
 
-make 'btrfs qgroup show' command show qgroup type.
+IO perfermance does suffer during a scrub.  I use the following:
 
-Signed-off-by: Fan Chengniang <fancn.fnst@cn.fujitsu.com>
----
- qgroup.c | 42 +++++++++++++++++++++++++++++++++++++++---
- qgroup.h |  1 +
- 2 files changed, 40 insertions(+), 3 deletions(-)
+ionice -c 3 btrfs scrub start -Bd -n 19 /<target>
 
-diff --git a/qgroup.c b/qgroup.c
-index a647925..d359659 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -135,6 +135,13 @@ static struct {
- 		.max_len	= 5,
- 	},
- 	{
-+		.name		= "type",
-+		.column_name	= "Type",
-+		.need_print	= 1,
-+		.unit_mode	= 0,
-+		.max_len	= 8,
-+	},
-+	{
- 		.name		= NULL,
- 		.column_name	= NULL,
- 		.need_print	= 0,
-@@ -201,6 +208,20 @@ static int print_child_column(struct btrfs_qgroup *qgroup)
- 	return len;
- }
- 
-+static int print_type_column(struct btrfs_qgroup *qgroup)
-+{
-+	__u8 type = qgroup->type;
-+	int len = 0;
-+
-+	if (type == BTRFS_QGROUP_TYPE_DATA)
-+		len = printf("data");
-+	if (type == BTRFS_QGROUP_TYPE_METADATA)
-+		len = printf("metadata");
-+	if (type == BTRFS_QGROUP_TYPE_MIXED)
-+		len = printf("metadata,data");
-+	return len;
-+}
-+
- static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
- 					  int len)
- {
-@@ -244,6 +265,10 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
- 		len = print_child_column(qgroup);
- 		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
- 		break;
-+	case BTRFS_QGROUP_TYPE:
-+		len = print_type_column(qgroup);
-+		print_qgroup_column_add_blank(BTRFS_QGROUP_TYPE, len);
-+		break;
- 	default:
- 		break;
- 	}
-@@ -258,7 +283,7 @@ static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
- 			continue;
- 		print_qgroup_column(qgroup, i);
- 
--		if (i != BTRFS_QGROUP_CHILD)
-+		if (i != BTRFS_QGROUP_ALL - 1)
- 			printf(" ");
- 	}
- 	printf("\n");
-@@ -275,7 +300,7 @@ static void print_table_head()
- 		if (!btrfs_qgroup_columns[i].need_print)
- 			continue;
- 		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
--			(i == BTRFS_QGROUP_CHILD))
-+			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_TYPE))
- 			printf("%-*s", max_len, btrfs_qgroup_columns[i].name);
- 		else
- 			printf("%*s", max_len, btrfs_qgroup_columns[i].name);
-@@ -287,7 +312,7 @@ static void print_table_head()
- 		if (!btrfs_qgroup_columns[i].need_print)
- 			continue;
- 		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
--			(i == BTRFS_QGROUP_CHILD)) {
-+			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_TYPE)) {
- 			len = strlen(btrfs_qgroup_columns[i].name);
- 			while (len--)
- 				printf("-");
-@@ -976,6 +1001,17 @@ static void __update_columns_max_len(struct btrfs_qgroup *bq,
- 		if (btrfs_qgroup_columns[column].max_len < len)
- 			btrfs_qgroup_columns[column].max_len = len;
- 		break;
-+	case BTRFS_QGROUP_TYPE:
-+		len = 0;
-+		if (bq->type == BTRFS_QGROUP_TYPE_DATA)
-+			len = strlen("data");
-+		if (bq->type == BTRFS_QGROUP_TYPE_METADATA)
-+			len = strlen("metadata");
-+		if (bq->type == BTRFS_QGROUP_TYPE_MIXED)
-+			len = strlen("metadata,data");
-+		if (btrfs_qgroup_columns[column].max_len < len)
-+			btrfs_qgroup_columns[column].max_len = len;
-+		break;
- 	default:
- 		break;
- 	}
-diff --git a/qgroup.h b/qgroup.h
-index 8423fdf..cc61477 100644
---- a/qgroup.h
-+++ b/qgroup.h
-@@ -75,6 +75,7 @@ enum btrfs_qgroup_column_enum {
- 	BTRFS_QGROUP_MAX_EXCL,
- 	BTRFS_QGROUP_PARENT,
- 	BTRFS_QGROUP_CHILD,
-+        BTRFS_QGROUP_TYPE,
- 	BTRFS_QGROUP_ALL,
- };
- 
--- 
-1.8.4.2
+The combo of -n19 and ionice makes it workable here.  
+
+Tobias why do you think btrfsck does not work on raid6?  It runs fine
+here on raid5.
+
+
 

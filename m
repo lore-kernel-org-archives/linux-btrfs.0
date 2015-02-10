@@ -1,151 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41413 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754918AbbBJK1J (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:42889 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750801AbbBJLYe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 05:27:09 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAQNia000905
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:26:23 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/4] Btrfs: qgroup, Account data space in more proper timings.
-Date: Tue, 10 Feb 2015 18:23:47 +0800
-Message-ID: <1423563828-9053-4-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+	Tue, 10 Feb 2015 06:24:34 -0500
+Received: by mail-lb0-f170.google.com with SMTP id u14so11297483lbd.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 03:24:33 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1423563845-9103-4-git-send-email-yangds.fnst@cn.fujitsu.com>
+References: <1423563845-9103-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+	<1423563845-9103-4-git-send-email-yangds.fnst@cn.fujitsu.com>
+Date: Tue, 10 Feb 2015 11:24:33 +0000
+Message-ID: <CAL3q7H7yBTBeTkOY8rGKRRbjmKPzRdVsARNs6DjkAThcqBGatg@mail.gmail.com>
+Subject: Re: [PATCH 3/3] btrfs: qgroup: fix a wrong parameter of no_quota.
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currenly, in data writing, ->reserved is accounted in
-fill_delalloc(), but ->may_use is released in clear_bit_hook()
-which is called by btrfs_finish_ordered_io(). That's too late,
-that said, between fill_delalloc() and btrfs_finish_ordered_io(),
-the data is doublely accounted by qgroup. It will cause some
-unexpected -EDQUOT.
+On Tue, Feb 10, 2015 at 10:24 AM, Dongsheng Yang
+<yangds.fnst@cn.fujitsu.com> wrote:
+> In function of __btrfs_mod_ref(), we are passing the no_quota=1
+> to process_func() anyway. It will make the numbers in qgroup be
+> wrong when deleting a subvolume. The data size in a deleted subvolume
+> will never be decressed from all related qgroups.
 
-Example:
-	# btrfs quota enable /root/btrfs-auto-test/
-	# btrfs subvolume create /root/btrfs-auto-test//sub
-	Create subvolume '/root/btrfs-auto-test/sub'
-	# btrfs qgroup limit 1G /root/btrfs-auto-test//sub
-	dd if=/dev/zero of=/root/btrfs-auto-test//sub/file bs=1024 count=1500000
-	dd: error writing '/root/btrfs-auto-test//sub/file': Disk quota exceeded
-	681353+0 records in
-	681352+0 records out
-	697704448 bytes (698 MB) copied, 8.15563 s, 85.5 MB/s
-It's (698 MB) when we got an -EDQUOT, but we limit it by 1G.
+How about getting a test case for xfstests for this?
 
-This patch move the btrfs_qgroup_reserve/free() for data from
-btrfs_delalloc_reserve/release_metadata() to btrfs_check_data_free_space()
-and btrfs_free_reserved_data_space(). Then the accounter in qgroup
-will be updated at the same time with the accounter in space_info updated.
-In this way, the unexpected -EDQUOT will be killed.
+thanks
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 16 +++++++++-------
- fs/btrfs/file.c        |  9 ---------
- 2 files changed, 9 insertions(+), 16 deletions(-)
+>
+> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 8 ++++++--
+>  1 file changed, 6 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 652be74..f59809c 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3056,6 +3056,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>         int i;
+>         int level;
+>         int ret = 0;
+> +       int no_quota = 0;
+>         int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
+>                             u64, u64, u64, u64, u64, u64, int);
+>
+> @@ -3080,6 +3081,9 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>         else
+>                 parent = 0;
+>
+> +       if (!root->fs_info->quota_enabled || !is_fstree(ref_root))
+> +               no_quota = 1;
+> +
+>         for (i = 0; i < nritems; i++) {
+>                 if (level == 0) {
+>                         btrfs_item_key_to_cpu(buf, &key, i);
+> @@ -3098,7 +3102,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>                         key.offset -= btrfs_file_extent_offset(buf, fi);
+>                         ret = process_func(trans, root, bytenr, num_bytes,
+>                                            parent, ref_root, key.objectid,
+> -                                          key.offset, 1);
+> +                                          key.offset, no_quota);
+>                         if (ret)
+>                                 goto fail;
+>                 } else {
+> @@ -3106,7 +3110,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>                         num_bytes = root->nodesize;
+>                         ret = process_func(trans, root, bytenr, num_bytes,
+>                                            parent, ref_root, level - 1, 0,
+> -                                          1);
+> +                                          no_quota);
+>                         if (ret)
+>                                 goto fail;
+>                 }
+> --
+> 1.8.4.2
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d1a7ce0..67c2e28 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3774,12 +3774,16 @@ commit_trans:
- 					      data_sinfo->flags, bytes, 1);
- 		return -ENOSPC;
- 	}
-+	ret = btrfs_qgroup_reserve(root, bytes);
-+	if (ret)
-+		goto out;
- 	data_sinfo->bytes_may_use += bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 1);
-+out:
- 	spin_unlock(&data_sinfo->lock);
- 
--	return 0;
-+	return ret;
- }
- 
- /*
-@@ -3796,6 +3800,7 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
- 	data_sinfo = root->fs_info->data_sinfo;
- 	spin_lock(&data_sinfo->lock);
- 	WARN_ON(data_sinfo->bytes_may_use < bytes);
-+	btrfs_qgroup_free(root, bytes);
- 	data_sinfo->bytes_may_use -= bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 0);
-@@ -5191,8 +5196,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
- 	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, num_bytes +
--					   nr_extents * root->nodesize);
-+		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
- 		if (ret)
- 			goto out_fail;
- 	}
-@@ -5200,8 +5204,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (unlikely(ret)) {
- 		if (root->fs_info->quota_enabled)
--			btrfs_qgroup_free(root, num_bytes +
--						nr_extents * root->nodesize);
-+			btrfs_qgroup_free(root, nr_extents * root->nodesize);
- 		goto out_fail;
- 	}
- 
-@@ -5319,8 +5322,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 	trace_btrfs_space_reservation(root->fs_info, "delalloc",
- 				      btrfs_ino(inode), to_free, 0);
- 	if (root->fs_info->quota_enabled) {
--		btrfs_qgroup_free(root, num_bytes +
--					dropped * root->nodesize);
-+		btrfs_qgroup_free(root, dropped * root->nodesize);
- 	}
- 
- 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e409025..0ab1333 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2527,7 +2527,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- {
- 	struct inode *inode = file_inode(file);
- 	struct extent_state *cached_state = NULL;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 cur_offset;
- 	u64 last_byte;
- 	u64 alloc_start;
-@@ -2555,11 +2554,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
- 	if (ret)
- 		return ret;
--	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, alloc_end - alloc_start);
--		if (ret)
--			goto out_reserve_fail;
--	}
- 
- 	mutex_lock(&inode->i_mutex);
- 	ret = inode_newsize_ok(inode, alloc_end);
-@@ -2677,9 +2671,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 			     &cached_state, GFP_NOFS);
- out:
- 	mutex_unlock(&inode->i_mutex);
--	if (root->fs_info->quota_enabled)
--		btrfs_qgroup_free(root, alloc_end - alloc_start);
--out_reserve_fail:
- 	/* Let go of our reservation. */
- 	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
- 	return ret;
+
+
 -- 
-1.8.4.2
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

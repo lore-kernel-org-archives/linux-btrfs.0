@@ -1,114 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6649 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752801AbbBIGLv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Feb 2015 01:11:51 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check valid root/sudo privilege
-Date: Mon, 9 Feb 2015 14:11:52 +0800
-Message-ID: <1423462312-4239-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-yk0-f181.google.com ([209.85.160.181]:35252 "EHLO
+	mail-yk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750803AbbBJRoe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Feb 2015 12:44:34 -0500
+Received: by mail-yk0-f181.google.com with SMTP id 200so9619788ykr.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 09:44:34 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
+References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
+	<pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
+Date: Tue, 10 Feb 2015 18:44:33 +0100
+Message-ID: <CABdHLQ6La7BO-TJ3cYEx_NnOUhAYJ69uv3tGnVRYsWkiUrqCsQ@mail.gmail.com>
+Subject: Re: btrfs performance, sudden drop to 0 IOPs
+From: "P. Remek" <p.remek1@googlemail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although fsck-test/012 uses sudo, it uses 'sudo -n', which won't prompt
-user to input password and will return 1 if no valid credential is
-found.
+> What I /suspect/ is happening, is that at the 10 GiB files size, on
+> original file creation, btrfs is creating a large file of several
+> comparatively large extents (possibly 1 GiB each, the nominal data chunk
+> size, tho it can be larger on large enough filesystems).  Note that btrfs
+> will normally wait to sync, accumulating further writes into the file
+> before actually writing it.  By default it's 30 seconds, but there's a
+> mount option to change that.  So btrfs is probably waiting, then writing
+> out all changes for the last 30 seconds at once, allowing it to use
+> fairly large extents when it does so.
 
-And this makes test result quite annoying since it fails to mount and
-still continue, which will always fail.
+In the test, I use --direct=1 parameter for fio which basically does
+O_DIRECT on target file. The O_DIRECT should guarantee that the
+filesystem cache is bypassed and IO is sent directly to the
+underlaying storage. Are you saying that btrfs buffers writes despite
+of O_DIRECT?
 
-This patch introduced the new check_sudo() to check sudo before calling
-$sudo. This function will check "sudo -v -n" to get the credential.
-And if it fails, then the test will not be run.
+I also tried to mount the filesystem with commit parameter set to a) 1
+second and b) 1000 seconds as follows:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/common                                 | 18 ++++++++++++++++++
- tests/fsck-tests/012-leaf-corruption/test.sh |  9 +++++----
- 2 files changed, 23 insertions(+), 4 deletions(-)
+root@lab1:/# mount -o autodefrag,commit=1 /dev/mapper/prm-0 /mnt/vol1
 
-diff --git a/tests/common b/tests/common
-index d7d2e9b..56ae0e6 100644
---- a/tests/common
-+++ b/tests/common
-@@ -62,3 +62,21 @@ setup_root_helper()
- 	fi
- 	have_root_helper=1
- }
-+
-+check_sudo()
-+{
-+	if [ $UID -eq 0 ]; then
-+		return 0
-+	elif [ $have_root_helper ]; then
-+		$sudo -v &> /dev/null
-+		return $?
-+	else
-+		return 1
-+	fi
-+}
-+
-+not_run_lack_privlege ()
-+{
-+	echo "    [NOTRUN] root or valid sudo credential needed"
-+	exit 0
-+}
-diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
-index 896f717..7396b05 100755
---- a/tests/fsck-tests/012-leaf-corruption/test.sh
-+++ b/tests/fsck-tests/012-leaf-corruption/test.sh
-@@ -55,12 +55,14 @@ check_inode()
- 	name=$5
- 
- 	# Check whether the inode exists
-+	check_sudo || not_run_lack_privlege
- 	exists=$($sudo find $path -inum $ino)
- 	if [ -z "$exists" ]; then
- 		_fail "inode $ino not recovered correctly"
- 	fi
- 
- 	# Check inode type
-+	check_sudo || not_run_lack_privlege
- 	found_mode=$(printf "%o" 0x$($sudo stat $exists -c %f))
- 	if [ $found_mode -ne $mode ]; then
- 		echo "$found_mode"
-@@ -68,6 +70,7 @@ check_inode()
- 	fi
- 
- 	# Check inode size
-+	check_sudo || not_run_lack_privlege
- 	found_size=$($sudo stat $exists -c %s)
- 	if [ $mode -ne 41700 -a $found_size -ne $size ]; then
- 		_fail "inode $ino size not recovered correctly"
-@@ -85,15 +88,12 @@ check_inode()
- check_leaf_corrupt_no_data_ext()
- {
- 	image=$1
--	if [ $have_root_helper -ne 1 ]; then
--		echo "     [NOTRUN] root privileges needed to verify recovery"
--		exit 0
--	fi
- 	if [ -z $TEST_MNT ]; then
- 		echo "\$TEST_MNT not set, use $(pwd)/tmp as fallback"
- 		TEST_MNT="$(pwd)/tmp"
- 	fi
- 	mkdir -p $TEST_MNT || _fail "failed to create mount point"
-+	check_sudo || not_run_lack_privlege
- 	$sudo mount $image -o ro $TEST_MNT
- 
- 	i=0
-@@ -106,6 +106,7 @@ check_leaf_corrupt_no_data_ext()
- 			    ${leaf_no_data_ext_list[i + 4]}
- 			    ((i+=4))
- 	done
-+	check_sudo || not_run_lack_privlege
- 	$sudo umount $TEST_MNT
- }
- 
--- 
-2.3.0
+It didn't chage the behavior - after about 30-40 second of running
+there is a drop to 0 IOPs and lasts about 20 seconds.
 
+
+> Those 70K IOPs are all the extra work the filesystem is doing in ordered
+> to track those 4 KiB COWed writes!
+
+This sounds like you are thinking that getting 70K IOPs is a bad thing
+but I am testing performance which means higher IOPS = better result.
+In other words, after second run when that target file already
+existed, the performance improved significantly.
+
+In the light of what you are saying it more looks like there is some
+higher overhead when allocating completely new block of data for the
+file compared to overhead with COW operation on already existing block
+of data.
+
+
+
+> I suppose you're already aware that you're running a rather outdated
+> userspace/btrfs-progs (what I assume you meant by tools).  Userspace
+> versions sync with the kernel cycle, with a particular 3.x.0 version
+> typically being released a couple weeks after the kernel of the same
+> version, usually with a couple 3.x.y, y-update releases following before
+> the next kernel-synced x-version bump.
+
+I was hoping that btrfs-progs doesn't have any influence on runtime
+properties of the btrfs filesystem. As I am doing performance tests, I
+hope that btrfs-progs version doesn't have any impact on the results.
+
+
+Regards,
+P.

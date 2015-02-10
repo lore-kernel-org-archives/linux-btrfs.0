@@ -1,92 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:6079 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750955AbbBXVhg (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:24217 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754771AbbBJK0o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 16:37:36 -0500
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t1OLZWL2014845
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 13:37:36 -0800
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1srvwfrk49-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 13:37:36 -0800
-From: Josef Bacik <jbacik@fb.com>
+	Tue, 10 Feb 2015 05:26:44 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1AAPvEV000842
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 18:25:57 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: throttle transactions based on dirty bgs
-Date: Tue, 24 Feb 2015 16:37:33 -0500
-Message-ID: <1424813853-26382-1-git-send-email-jbacik@fb.com>
+CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/9] btrfs: qgroup: move WARN_ON() to the correct location.
+Date: Tue, 10 Feb 2015 18:23:14 +0800
+Message-ID: <1423563803-8996-3-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+References: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we delete large files that span many block groups we can run short on the
-global reserve as we use it to account for space in the csum tree as well as the
-extent tree.  If our files span many block groups then we can get into a
-situation where we don't have enough room to update all the block groups and we
-abort the transaction.  So keep track of the number of dirty block groups and
-use that space in seeing if we have enough global reserve.  Thanks,
+In function qgroup_excl_accounting(), we need to WARN when
+qg->excl is less than what we want to free, same to child
+and parents. But currently, for parent qgroup, the WARN_ON()
+is located after freeing qg->excl. It will WARN out even we
+free it normally.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+This patch move this WARN_ON() before freeing qg->excl.
+
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 3 +++
- fs/btrfs/transaction.c | 1 +
- fs/btrfs/transaction.h | 1 +
- 3 files changed, 5 insertions(+)
+ fs/btrfs/qgroup.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 89f1726..b2f7cf4 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2632,6 +2632,7 @@ int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_block_rsv *global_rsv;
- 	u64 num_heads = trans->transaction->delayed_refs.num_heads_ready;
-+	u64 num_dirty_bgs = trans->transaction->num_dirty_bgs;
- 	u64 num_bytes;
- 	int ret = 0;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 48b60db..97159a8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1431,9 +1431,8 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		qgroup = u64_to_ptr(unode->aux);
+ 		qgroup->rfer += sign * oper->num_bytes;
+ 		qgroup->rfer_cmpr += sign * oper->num_bytes;
++		WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
+ 		qgroup->excl += sign * oper->num_bytes;
+-		if (sign < 0)
+-			WARN_ON(qgroup->excl < oper->num_bytes);
+ 		qgroup->excl_cmpr += sign * oper->num_bytes;
+ 		qgroup_dirty(fs_info, qgroup);
  
-@@ -2640,6 +2641,7 @@ int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
- 	if (num_heads > 1)
- 		num_bytes += (num_heads - 1) * root->nodesize;
- 	num_bytes <<= 1;
-+	num_bytes += btrfs_calc_trans_metadata_size(root, num_dirty_bgs);
- 	global_rsv = &root->fs_info->global_block_rsv;
- 
- 	/*
-@@ -5365,6 +5367,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 			if (list_empty(&cache->dirty_list)) {
- 				list_add_tail(&cache->dirty_list,
- 					      &trans->transaction->dirty_bgs);
-+				trans->transaction->num_dirty_bgs++;
- 				btrfs_get_block_group(cache);
- 			}
- 			spin_unlock(&trans->transaction->dirty_bgs_lock);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index e0faf80..822a26e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -249,6 +249,7 @@ loop:
- 	INIT_LIST_HEAD(&cur_trans->switch_commits);
- 	INIT_LIST_HEAD(&cur_trans->pending_ordered);
- 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
-+	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 3305451..8ac29f0 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -59,6 +59,7 @@ struct btrfs_transaction {
- 	struct list_head pending_ordered;
- 	struct list_head switch_commits;
- 	struct list_head dirty_bgs;
-+	u64 num_dirty_bgs;
- 	spinlock_t dirty_bgs_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
 -- 
-1.8.3.1
+1.8.4.2
 

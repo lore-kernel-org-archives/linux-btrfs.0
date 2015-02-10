@@ -1,86 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55634 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760975AbbBJDg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Feb 2015 22:36:27 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YL1cf-0001Jg-4y
-	for linux-btrfs@vger.kernel.org; Tue, 10 Feb 2015 04:36:25 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 04:36:25 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 04:36:25 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Repair broken btrfs raid6?
-Date: Tue, 10 Feb 2015 03:36:14 +0000 (UTC)
-Message-ID: <pan$cda6d$176f5270$fba14a89$4e5f5430@cox.net>
-References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from fw7a-drew.wadns.net ([41.185.62.57]:5730 "EHLO fw7a.wadns.net"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751210AbbBJE35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Feb 2015 23:29:57 -0500
+Message-ID: <54D98927.7060704@swiftspirit.co.za>
+Date: Tue, 10 Feb 2015 06:29:27 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Replacing a (or two?) failed drive(s) in RAID-1 btrfs filesystem
+References: <CANcfdL0x_LTSnyL1FP8vVV4=MaFrewT4pd0MZgu3qzxOviXDgg@mail.gmail.com> <CAJCQCtT+8+02KkYOcRUOhscj3AP0av8PpNmsK526hvJY=3ucRw@mail.gmail.com> <CANcfdL0twe-pi4f1ZVNG=m82gQTKc5QL3pcodY6diJ6uLj2Q9A@mail.gmail.com> <CAJCQCtSJ+kgxKb-gGnuOCFEVBsr2UP0aUWg_M60Ts_OQaSL8oQ@mail.gmail.com> <CANcfdL2aSfE5uwgwt1KYGRsucF_wTGSyEVT=LfX+COd2gywJ+A@mail.gmail.com> <CANcfdL3qEG8HPDzRE8z8rEuuBpkcbMF4ZjV0oQrH9sZ8FSpxXg@mail.gmail.com> <CAJCQCtRy=Duyd9T5_rnPF06=a-fuqjhR=0yos0UtA1vm1r2v2A@mail.gmail.com> <CANcfdL1rT7BMM05cO7=Kd1JzKYSbUXXW+23YdzMc3+SYVra=TQ@mail.gmail.com> <54D85452.9070306@swiftspirit.co.za> <ivhnqb-40b.ln1@hurikhan77.spdns.de>
+In-Reply-To: <ivhnqb-40b.ln1@hurikhan77.spdns.de>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tobias Holst posted on Mon, 09 Feb 2015 23:45:21 +0100 as excerpted:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> So a short summary:
-> - btrfs raid6 on 3.19.0 with btrfs-progs 3.19-rc2
-> - does not mount at boot up, "open_ctree failed" (disk 3)
-> - mounts successfully after bootup
-> - randomly "checksum verify failed" (disk 5)
-> - balance and scrub crash after some time
-> - after a while the volume gets unreadable, saying "parent transid
-> verify failed" (disk 4 or 5)
+On 2015/02/09 10:30 PM, Kai Krakow wrote:
+> Brendan Hide <brendan@swiftspirit.co.za> schrieb:
 > 
-> And it looks like there still is no way to btrfsck a raid6.
+>> I have the following two lines in 
+>> /etc/udev/rules.d/61-persistent-storage.rules for two old 250GB
+[snip]
+> Wouldn't it be easier and more efficient to use this:
 > 
-> Any ideas how to repair this filesystem?
+> ACTION=="add|change", KERNEL=="sd[a-z]", ENV{ID_SERIAL}=="...", 
+> ATTR{device/timeout}="120"
+> 
+> Otherwise you always spawn a shell and additional file descriptors,
+> and you could spare a variable interpolation. Tho it probably
+> depends on your udev version...
+> 
+> I'm using this and it works setting the attributes (set deadline on
+> SSD):
+> 
+> ACTION=="add|change", KERNEL=="sd[a-z]",
+> ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="deadline"
+> 
+> And, I think you missed the double-equal "==" behind ENV{}...
+> Right? Otherwise you just assign a value. Tho, you could probably
+> match on ATTR{devices/model} instead to be more generic (the serial
+> is probably too specific). You can get those from the
+> /sys/block/sd* subtree.
+> 
 
-(As a btrfs user/sysadmin and a list regular, not a dev, and not yet 
-brave enough to try raid5/6 modes here...)
+It is certainly possible that it isn't 100% the right way - but it has
+been working. Your suggestions certainly sound more
+efficient/canonical. I was following what I found online until it
+"worked".  :)
 
-Btrfs raid6 should indeed be generally working in 3.19, including repair, 
-yes.  Certainly, it's much closer to working than anything previous.
+I'll make the appropriate adjustments and test.
 
-However, that code, while it actually exists now and is I believe in 
-theory complete, is still very VERY new, and thus, it can be expected to 
-be still quite buggy.  I've been telling people not to expect it to 
-actually work for another kernel cycle (3.20), and even then, don't 
-expect it to be as stable as the raid0/1/10 code, which after all has 
-been in actual use for (well) over a year now, and thus has had a chance 
-to have even many of the the not immediately obvious bugs show up and get 
-worked out.  That'll take several more kernel cycles -- I've been 
-suggesting that people not consider the raid56 code as stable as the 
-earlier raid forms for another two cycles (3.22) at least.
+Thanks!
 
-HOWEVER, without claiming to speak for the devs working on it themselves, 
-now that the code is actually there and it's time to start exterminating 
-bugs in it, I expect they'll be very interested in your bug report, and 
-if you're prepared to spend the time working thru it with them, applying 
-patches, etc, you could well find your bugs fixed and be back operational 
-before 3.20 or whatever. =:^)
+- -- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (MingW32)
 
-Meanwhile, there's actually an integration branch with even newer code 
-that hasn't hit release yet.  Given the still very new state of the 
-btrfs56 mode code, if you're already brave enough to be running raid6 
-mode and are having problems, your chances with integration are likely to 
-be even better than with current release.  Of course it could break 
-things worse too, but if you're already running raid56 mode I guess 
-you're already prepared for that, and are either testing with throw-away 
-data or data that's already well backed up, such that you're prepared to 
-lose the btrfs raid6 copy of it in any case, so you might as well try 
-integration...
-
-See the wiki or other posts for the integration branch repos.  (As I said 
-above I'm not brave enough to try raid56 yet, nor have I tried 
-integration, so I don't have the links handy.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+iQEcBAEBAgAGBQJU2YknAAoJEE+uni74c4qNopMH/34nj5wEi3m25jk/vEUud3hh
+bbK4/mh564VnMc1NnpYXe++gUUTf0+203JDERgCQ1k3XjFMUe3VDPQBSdCIxcuOV
+H7BtFWcuUYvaTd/3kHTcB2mp097RUQs25Jhcmf8y/+YZdnglnpSrRYtIIMM8osil
+Y70IzoSRLuVHYlZT5VPmH7r7P9CeW5VnEG0jb3DkDe+tLH2Ed1Wy/Ti5myX0BF2l
+7vJ1gTnPMmIUu/MKmNka6/hSWKGV7G2MeFoOy9UB2HhWsdGCjpJ1z8ToRQLcZbWX
+yCpSjw2GDCtdG91iKiWK+kAJOreKqWGA3GSdgKqZhAQVg6LFeml1qLrBZ7H9H1o=
+=TtpU
+-----END PGP SIGNATURE-----

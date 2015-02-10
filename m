@@ -1,76 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f181.google.com ([209.85.160.181]:35252 "EHLO
-	mail-yk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750803AbbBJRoe (ORCPT
+Received: from mail-la0-f50.google.com ([209.85.215.50]:43512 "EHLO
+	mail-la0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751220AbbBJSSu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 12:44:34 -0500
-Received: by mail-yk0-f181.google.com with SMTP id 200so9619788ykr.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 09:44:34 -0800 (PST)
+	Tue, 10 Feb 2015 13:18:50 -0500
+Received: by labhv19 with SMTP id hv19so21945226lab.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Feb 2015 10:18:49 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
-	<pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
-Date: Tue, 10 Feb 2015 18:44:33 +0100
-Message-ID: <CABdHLQ6La7BO-TJ3cYEx_NnOUhAYJ69uv3tGnVRYsWkiUrqCsQ@mail.gmail.com>
-Subject: Re: btrfs performance, sudden drop to 0 IOPs
-From: "P. Remek" <p.remek1@googlemail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
+References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+ <ntnoqb-jvq.ln1@hurikhan77.spdns.de>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Tue, 10 Feb 2015 19:18:28 +0100
+Message-ID: <CAGwxe4hVkLKDWWeTVLdZuWNYt8px-CyPMzYiX-Bfs3Sx03mnmQ@mail.gmail.com>
+Subject: Re: Repair broken btrfs raid6?
+To: Kai Krakow <hurikhan77@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> What I /suspect/ is happening, is that at the 10 GiB files size, on
-> original file creation, btrfs is creating a large file of several
-> comparatively large extents (possibly 1 GiB each, the nominal data chunk
-> size, tho it can be larger on large enough filesystems).  Note that btrfs
-> will normally wait to sync, accumulating further writes into the file
-> before actually writing it.  By default it's 30 seconds, but there's a
-> mount option to change that.  So btrfs is probably waiting, then writing
-> out all changes for the last 30 seconds at once, allowing it to use
-> fairly large extents when it does so.
+2015-02-10 8:17 GMT+01:00 Kai Krakow <hurikhan77@gmail.com>:
+> Tobias Holst <tobby@tobby.eu> schrieb:
+>
+>> and "btrfs scrub status /[device]" gives me the following output:
+>>> "scrub status for [UUID]
+>>>scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008
+>>>seconds total bytes scrubbed: 113.04GiB with 0 errors"
+>
+> Does not look very correct to me:
+>
+> Why should a scrub in a six-drivers btrfs array which is probably multi-
+> terabytes big (as you state a restore from backup would take days) take only
+> ~2000 seconds? And scrub only ~120 GB worth of data. Either your 6 devices
+> are really small (then why RAID-6), or your data is very sparse (then way
+> does it take so long), or scrub prematurely aborts and never checks the
+> complete devices (I guess this is it).
 
-In the test, I use --direct=1 parameter for fio which basically does
-O_DIRECT on target file. The O_DIRECT should guarantee that the
-filesystem cache is bypassed and IO is sent directly to the
-underlaying storage. Are you saying that btrfs buffers writes despite
-of O_DIRECT?
+Yes, sorry, I didn't post an output of "btrfs filesystem show" - but here it is:
 
-I also tried to mount the filesystem with commit parameter set to a) 1
-second and b) 1000 seconds as follows:
+Label: 'tobby-btrfs'  uuid: b689ab76-7ff5-434c-a2c6-03efb45faa46
+        Total devices 6 FS bytes used 13.13TiB
+        devid    1 size 3.64TiB used 3.28TiB path /dev/mapper/sde_crypt
+        devid    2 size 3.64TiB used 3.28TiB path /dev/mapper/sdd_crypt
+        devid    3 size 3.64TiB used 3.28TiB path /dev/mapper/sdf_crypt
+        devid    4 size 3.64TiB used 3.28TiB path /dev/mapper/sda_crypt
+        devid    5 size 3.64TiB used 3.28TiB path /dev/mapper/sdb_crypt
+        devid    6 size 3.64TiB used 3.28TiB path /dev/mapper/sdc_crypt
+btrfs-progs v3.19-rc2
 
-root@lab1:/# mount -o autodefrag,commit=1 /dev/mapper/prm-0 /mnt/vol1
+So there are ~13TiB of data on this raid6 - but like it says it was
+"aborted" after 2008 seconds (about half an hour) and ~120GB of data.
+Then a "parent transid verify failed" happened, the volume got
+unreadable and the scrub was aborted. Until a remount of the btrfs -
+and until it happens again...
 
-It didn't chage the behavior - after about 30-40 second of running
-there is a drop to 0 IOPs and lasts about 20 seconds.
-
-
-> Those 70K IOPs are all the extra work the filesystem is doing in ordered
-> to track those 4 KiB COWed writes!
-
-This sounds like you are thinking that getting 70K IOPs is a bad thing
-but I am testing performance which means higher IOPS = better result.
-In other words, after second run when that target file already
-existed, the performance improved significantly.
-
-In the light of what you are saying it more looks like there is some
-higher overhead when allocating completely new block of data for the
-file compared to overhead with COW operation on already existing block
-of data.
-
-
-
-> I suppose you're already aware that you're running a rather outdated
-> userspace/btrfs-progs (what I assume you meant by tools).  Userspace
-> versions sync with the kernel cycle, with a particular 3.x.0 version
-> typically being released a couple weeks after the kernel of the same
-> version, usually with a couple 3.x.y, y-update releases following before
-> the next kernel-synced x-version bump.
-
-I was hoping that btrfs-progs doesn't have any influence on runtime
-properties of the btrfs filesystem. As I am doing performance tests, I
-hope that btrfs-progs version doesn't have any impact on the results.
-
-
-Regards,
-P.
+>
+> And that's what it actually says: "aborted after 2008" seconds. I'd expect
+> "finished after XXXX seconds" if I remember my scrub runs correctly (which I
+> currently don't do regularly because it takes long and IO performance sucks
+> during running it).
+>
+> --
+> Replies to list only preferred.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

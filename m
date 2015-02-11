@@ -1,56 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:37689 "EHLO
-	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752335AbbBKMkf (ORCPT
+Received: from mail-lb0-f182.google.com ([209.85.217.182]:35523 "EHLO
+	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752901AbbBKOqz convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 07:40:35 -0500
-Received: by mail-ig0-f181.google.com with SMTP id hn18so4002905igb.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 04:40:34 -0800 (PST)
-Message-ID: <54DB4DB8.2020705@gmail.com>
-Date: Wed, 11 Feb 2015 07:40:24 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Wed, 11 Feb 2015 09:46:55 -0500
+Received: by mail-lb0-f182.google.com with SMTP id f15so2786854lbj.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 06:46:53 -0800 (PST)
 MIME-Version: 1.0
-To: "P. Remek" <p.remek1@googlemail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs performance, sudden drop to 0 IOPs
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
-In-Reply-To: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Wed, 11 Feb 2015 15:46:33 +0100
+Message-ID: <CAGwxe4gp5O3yRZt=s8ppqyfap0rZmzwSseA709X-C5kkQkODUw@mail.gmail.com>
+Subject: Re: Repair broken btrfs raid6?
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-02-09 12:26, P. Remek wrote:
-> Hello,
->
-> I am benchmarking Btrfs and when benchmarking random writes with fio
-> utility, I noticed following two things:
->
-Based on what I know about BTRFS, I think that these issues actually 
-have distinct causes.
-> 1) On first run when target file doesn't exist yet, perfromance is
-> about 8000 IOPs. On second, and every other run, performance goes up
-> to 70000 IOPs. Its massive difference. The target file is the one
-> created during the first run.
-I've noticed that almost always, file creation on BTRFS is slower than 
-file re-writes.  This seems to especially be the case when using AIO 
-and/or O_DIRECT (although O_DIRECT on a COW filesystem is _really_ 
-complicated to get right).  I don't know that there is really any way 
-currently to solve this, although it would be interesting to see if 
-fallocat'ing the files prior to the initial run would have any 
-significant performance impact.
->
-> 2) There are windows during the test where IOPs drop to 0 and stay 0
-> about 10 seconds and then it goes back again, and after couple of
-> seconds again to 0. This is reproducible 100% times.
-I've seen this same behavior on a number of filesystems (not just BTRFS) 
-when using the default I/O scheduler with it's default parameters, 
-especially on systems with high performance storage.  IIRC, Ubuntu 13.10 
-switched from using the upstream default I/O scheduler (CFQ) to using 
-the Deadline I/O scheduler because it has better performance (and is 
-more deterministic) on most cheap commodity desktop/laptop hardware. 
-I've found however that the Deadline scheduler actually tends to perform 
-worse than CFQ when used on higher-end server systems and/or SSD's, 
-although CFQ with default parameters only does marginally better.  I'd 
-suggest experimenting with some of the parameters under /sys/block 
-(check the files in the Documentation/block directory of the Linux 
-kernel sources for information about what (almost) everything there does).
+Hmm, it looks like it is getting worse... Here are some parts of my
+syslog, including two crashed btrfs-threads:
 
+So I am still getting many of these:
+> BTRFS (device dm-5): parent transid verify failed on 25033166798848 wanted 108976 found 108958
+> BTRFS warning (device dm-5): page private not zero on page 25033166798848
+> BTRFS warning (device dm-5): page private not zero on page 25033166802944
+> BTRFS warning (device dm-5): page private not zero on page 25033166807040
+> BTRFS warning (device dm-5): page private not zero on page 25033166811136
+> BTRFS info (device dm-5): force lzo compression
+> BTRFS info (device dm-5): disk space caching is enabled
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+> BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+
+Then there is this crash of "super"/btrfs_abort_transaction:
+> ------------[ cut here ]------------
+> WARNING: CPU: 0 PID: 30526 at /home/kernel/COD/linux/fs/btrfs/super.c:260 __btrfs_abort_transaction+0x5f/0x140 [btrfs]()
+> BTRFS: Transaction aborted (error -5)
+> Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
+> CPU: 0 PID: 30526 Comm: kworker/u16:6 Tainted: G        W   E  3.19.0-031900-generic #201502091451
+> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+> Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+> 0000000000000104 ffff880002743c18 ffffffff817c4c00 0000000000000007
+> ffff880002743c68 ffff880002743c58 ffffffff81076e87 ffff880002743c58
+> ffff88020a8694d0 ffff8801fb715800 00000000fffffffb 0000000000000ae8
+> Call Trace:
+> [<ffffffff817c4c00>] dump_stack+0x45/0x57
+> [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
+> [<ffffffff81076f86>] warn_slowpath_fmt+0x46/0x50
+> [<ffffffffc06375cf>] __btrfs_abort_transaction+0x5f/0x140 [btrfs]
+> [<ffffffffc0655105>] btrfs_run_delayed_refs.part.82+0x175/0x290 [btrfs]
+> [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+> [<ffffffffc0655507>] delayed_ref_async_start+0x37/0x90 [btrfs]
+> [<ffffffffc069720e>] normal_work_helper+0x7e/0x1b0 [btrfs]
+> [<ffffffffc0697572>] btrfs_extent_refs_helper+0x12/0x20 [btrfs]
+> [<ffffffff8108f76d>] process_one_work+0x14d/0x460
+> [<ffffffff8109014b>] worker_thread+0x11b/0x3f0
+> [<ffffffff81090030>] ? create_worker+0x1e0/0x1e0
+> [<ffffffff81095d59>] kthread+0xc9/0xe0
+> [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+> [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
+> [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+> ---[ end trace dd65465954546462 ]---
+> BTRFS: error (device dm-5) in btrfs_run_delayed_refs:2792: errno=-5 IO failure
+> BTRFS info (device dm-5): forced readonly
+
+and this crash of "delayed-ref"/btrfs_select_ref_head:
+> ------------[ cut here ]------------
+> WARNING: CPU: 7 PID: 3159 at /home/kernel/COD/linux/fs/btrfs/delayed-ref.c:438 btrfs_select_ref_head+0x120/0x130 [btrfs]()
+> Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
+> CPU: 7 PID: 3159 Comm: btrfs-transacti Tainted: G        W   E  3.19.0-031900-generic #201502091451
+> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+> 00000000000001b6 ffff8801cb687c48 ffffffff817c4c00 0000000000000007
+> 0000000000000000 ffff8801cb687c88 ffffffff81076e87 0000000000000001
+> ffff8801fe80bf00 0000000000000000 ffff8801fe80bfc8 ffff8802345d8280
+> Call Trace:
+> [<ffffffff817c4c00>] dump_stack+0x45/0x57
+> [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
+> [<ffffffff81076eea>] warn_slowpath_null+0x1a/0x20
+> [<ffffffffc06b2d40>] btrfs_select_ref_head+0x120/0x130 [btrfs]
+> [<ffffffffc0652cd1>] __btrfs_run_delayed_refs+0x1e1/0x5f0 [btrfs]
+> [<ffffffffc0654ffa>] btrfs_run_delayed_refs.part.82+0x6a/0x290 [btrfs]
+> [<ffffffffc0664e5c>] ? join_transaction.isra.31+0x13c/0x380 [btrfs]
+> [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+> [<ffffffffc0665e50>] btrfs_commit_transaction+0xb0/0xa70 [btrfs]
+> [<ffffffffc0663d95>] transaction_kthread+0x1d5/0x250 [btrfs]
+> [<ffffffffc0663bc0>] ? open_ctree+0x1f40/0x1f40 [btrfs]
+> [<ffffffff81095d59>] kthread+0xc9/0xe0
+> [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+> [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
+> [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+> ---[ end trace dd65465954546463 ]---
+> BTRFS warning (device dm-5): Skipping commit of aborted transaction.
+> BTRFS: error (device dm-5) in cleanup_transaction:1670: errno=-5 IO failure
+
+
+Any thoughts? Would it help to unplug the "dm5"-device which seems to
+be causing this errors and then balance the array?
+
+Regards,
+Tobias
+
+2015-02-09 23:45 GMT+01:00 Tobias Holst <tobby@tobby.eu>:
+> Hi
+>
+> I'm having some trouble with my six-drives btrfs raid6 (each drive
+> encrypted with LUKS). At first: Yes, I do have backups, but it may
+> take at least days, maybe weeks or even some month to restore
+> everything from the (offside) backups. So it is not essential to
+> recover the data, but would be great ;-)
+>
+> OS: Ubuntu 14.04
+> Kernel: 3.19.0
+> btrfs-progs: 3.19-rc2
+>
+> When booting my server I am getting this in the syslog:
+>> [    8.026362] BTRFS: device label tobby-btrfs devid 3 transid 108721 /dev/dm-0
+>> [    8.118896] BTRFS: device label tobby-btrfs devid 6 transid 108721 /dev/dm-1
+>> [    8.202477] BTRFS: device label tobby-btrfs devid 1 transid 108721 /dev/dm-2
+>> [    8.520988] BTRFS: device label tobby-btrfs devid 4 transid 108721 /dev/dm-3
+>> [    8.555570] BTRFS info (device dm-3): force lzo compression
+>> [    8.555574] BTRFS info (device dm-3): disk space caching is enabled
+>> [    8.556310] BTRFS: failed to read the system array on dm-3
+>> [    8.592135] BTRFS: open_ctree failed
+>> [    9.039187] BTRFS: device label tobby-btrfs devid 2 transid 108721 /dev/dm-4
+>> [    9.107779] BTRFS: device label tobby-btrfs devid 5 transid 108721 /dev/dm-5
+> Looks like there is something wrong on drive 3, giving me "open_ctree
+> failed". I have to press "S" to skip mounting of the btrfs volume. It
+> boots and with "sudo mount --all" I can successfully mount the btrfs
+> volume. Sometimes it takes one or two minutes but it will mount.
+>
+> After a while I am sometimes/randomly getting this in the syslog:
+>> [ 1161.283246] BTRFS: dm-5 checksum verify failed on 39099619901440 wanted BB5B0AD5 found 6B6F5040 level 0
+> Looks like something else is broken on dm-5... But shouldn't this be
+> repaired with the new raid56-repair-features of kernel 3.19?
+>
+> After some more time I am getting this:
+>> [637017.631044] BTRFS (device dm-4): parent transid verify failed on 39099305132032 wanted 108722 found 108719
+> Then it is not possible to access the mounted volume anymore. I have
+> to "umount -l" to unmount it and then I can remount it. Until it
+> happens again (after some time)...
+>
+> I also tried a balance and a scrub but they "crash". Syslog is full of
+> messages like the following examples:
+>> [ 3355.523157] csum_tree_block: 53 callbacks suppressed
+>> [ 3355.523160] BTRFS: dm-5 checksum verify failed on 39099306917888 wanted F90D8231 found 5981C697 level 0
+>> [ 4006.935632]  BTRFS (device dm-5): parent transid verify failed on 30525418536960 wanted 108975 found 108767
+> and "btrfs scrub status /[device]" gives me the following output:
+>> "scrub status for [UUID]
+>>        scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008 seconds
+>>        total bytes scrubbed: 113.04GiB with 0 errors"
+>
+> So a short summary:
+> - btrfs raid6 on 3.19.0 with btrfs-progs 3.19-rc2
+> - does not mount at boot up, "open_ctree failed" (disk 3)
+> - mounts successfully after bootup
+> - randomly "checksum verify failed" (disk 5)
+> - balance and scrub crash after some time
+> - after a while the volume gets unreadable, saying "parent transid
+> verify failed" (disk 4 or 5)
+>
+> And it looks like there still is no way to btrfsck a raid6.
+>
+> Any ideas how to repair this filesystem?
+>
+> Regards,
+> Tobias

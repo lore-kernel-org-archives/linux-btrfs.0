@@ -1,51 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19424 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4805 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750918AbbBKAs1 (ORCPT
+	with ESMTP id S1751100AbbBKB7W (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 19:48:27 -0500
+	Tue, 10 Feb 2015 20:59:22 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: Move -rdynamic linker only option to LDFLAGS.
-Date: Wed, 11 Feb 2015 08:46:24 +0800
-Message-ID: <1423615584-32176-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Fix 2 extent buffer leak in btrfs-debug-tree.
+Date: Wed, 11 Feb 2015 09:57:17 +0800
+Message-ID: <1423619837-24073-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Same thing as clang cleanup patch:
-commit 040b3f11ba6b5555d793a9ef79ed4d9032d22370
-Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date:   Fri Dec 19 14:13:08 2014 +0800
+There are 2 known extent buffer:
+1) With -t option.
+-t option will skip other tree roots, but it will read the root node
+first and then skip it.
+Where it forgets to free the tree block it read.
 
-    btrfs-progs: Makefile: Move linker only option to LDFLAGS
-
-But the move to autoconfig seems using old Makefile.
-So do it again.
+2) with -b option.
+It forgets to free the tree block it read.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Makefile.in | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ btrfs-debug-tree.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/Makefile.in b/Makefile.in
-index 3a60398..d5940c6 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -17,9 +17,9 @@ CFLAGS = @CFLAGS@ \
- 	 -D_XOPEN_SOURCE=700  \
- 	 -fno-strict-aliasing \
- 	 -fPIC \
--	 -rdynamic
+diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
+index ce7a792..610624e 100644
+--- a/btrfs-debug-tree.c
++++ b/btrfs-debug-tree.c
+@@ -221,6 +221,7 @@ int main(int ac, char **av)
+ 			goto close_root;
+ 		}
+ 		btrfs_print_tree(root, leaf, 0);
++		free_extent_buffer(leaf);
+ 		goto close_root;
+ 	}
  
--LDFLAGS = @LDFLAGS@
-+LDFLAGS = @LDFLAGS@ \
-+	  -rdynamic
+@@ -284,8 +285,10 @@ again:
+ 					      0);
+ 			if (!extent_buffer_uptodate(buf))
+ 				goto next;
+-			if (tree_id && found_key.objectid != tree_id)
++			if (tree_id && found_key.objectid != tree_id) {
++				free_extent_buffer(buf);
+ 				goto next;
++			}
  
- LIBS = @UUID_LIBS@ @BLKID_LIBS@ @ZLIB_LIBS@ @LZO2_LIBS@ -L. -pthread
- LIBBTRFS_LIBS = $(LIBS)
+ 			switch(found_key.objectid) {
+ 			case BTRFS_ROOT_TREE_OBJECTID:
 -- 
 2.3.0
 

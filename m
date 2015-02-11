@@ -1,62 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7627 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:61373 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751412AbbBKA3K convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1751256AbbBKCzF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 19:29:10 -0500
-Message-ID: <54DAA252.1090207@cn.fujitsu.com>
-Date: Wed, 11 Feb 2015 08:29:06 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Tue, 10 Feb 2015 21:55:05 -0500
+Message-ID: <54DAC3C2.8080504@cn.fujitsu.com>
+Date: Wed, 11 Feb 2015 10:51:46 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check valid
- root/sudo privilege
-References: <1423462312-4239-1-git-send-email-quwenruo@cn.fujitsu.com> <20150210133055.GA28877@twin.jikos.cz>
-In-Reply-To: <20150210133055.GA28877@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: <fdmanana@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/3] btrfs: qgroup: fix a wrong parameter of no_quota.
+References: <1423563845-9103-1-git-send-email-yangds.fnst@cn.fujitsu.com>	<1423563845-9103-4-git-send-email-yangds.fnst@cn.fujitsu.com> <CAL3q7H7yBTBeTkOY8rGKRRbjmKPzRdVsARNs6DjkAThcqBGatg@mail.gmail.com>
+In-Reply-To: <CAL3q7H7yBTBeTkOY8rGKRRbjmKPzRdVsARNs6DjkAThcqBGatg@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 02/10/2015 07:24 PM, Filipe David Manana wrote:
+> On Tue, Feb 10, 2015 at 10:24 AM, Dongsheng Yang
+> <yangds.fnst@cn.fujitsu.com> wrote:
+>> In function of __btrfs_mod_ref(), we are passing the no_quota=1
+>> to process_func() anyway. It will make the numbers in qgroup be
+>> wrong when deleting a subvolume. The data size in a deleted subvolume
+>> will never be decressed from all related qgroups.
+> How about getting a test case for xfstests for this?
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check 
-valid root/sudo privilege
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年02月10日 21:30
-> On Mon, Feb 09, 2015 at 02:11:52PM +0800, Qu Wenruo wrote:
->> Although fsck-test/012 uses sudo, it uses 'sudo -n', which won't prompt
->> user to input password and will return 1 if no valid credential is
->> found.
+Good idea!!
+
+Will do it.
+
+Thanx
+>
+> thanks
+>
+>> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+>> ---
+>>   fs/btrfs/extent-tree.c | 8 ++++++--
+>>   1 file changed, 6 insertions(+), 2 deletions(-)
 >>
->> And this makes test result quite annoying since it fails to mount and
->> still continue, which will always fail.
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 652be74..f59809c 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -3056,6 +3056,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>>          int i;
+>>          int level;
+>>          int ret = 0;
+>> +       int no_quota = 0;
+>>          int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
+>>                              u64, u64, u64, u64, u64, u64, int);
 >>
->> This patch introduced the new check_sudo() to check sudo before calling
->> $sudo. This function will check "sudo -v -n" to get the credential.
->> And if it fails, then the test will not be run.
-> This logic is fine, but the setup fails for me even if typing the
-> password is not required. I think the 'sudo -v' check is wrong as it
-> tries to refresh the credentials.
+>> @@ -3080,6 +3081,9 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>>          else
+>>                  parent = 0;
+>>
+>> +       if (!root->fs_info->quota_enabled || !is_fstree(ref_root))
+>> +               no_quota = 1;
+>> +
+>>          for (i = 0; i < nritems; i++) {
+>>                  if (level == 0) {
+>>                          btrfs_item_key_to_cpu(buf, &key, i);
+>> @@ -3098,7 +3102,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>>                          key.offset -= btrfs_file_extent_offset(buf, fi);
+>>                          ret = process_func(trans, root, bytenr, num_bytes,
+>>                                             parent, ref_root, key.objectid,
+>> -                                          key.offset, 1);
+>> +                                          key.offset, no_quota);
+>>                          if (ret)
+>>                                  goto fail;
+>>                  } else {
+>> @@ -3106,7 +3110,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>>                          num_bytes = root->nodesize;
+>>                          ret = process_func(trans, root, bytenr, num_bytes,
+>>                                             parent, ref_root, level - 1, 0,
+>> -                                          1);
+>> +                                          no_quota);
+>>                          if (ret)
+>>                                  goto fail;
+>>                  }
+>> --
+>> 1.8.4.2
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
->    $ sudo -v -n
->    sudo: a password is required
 >
-> while
->
->    $ sudo -n /bin/true
->
-> works.
-Err, this seems strange.
-I think the bug is in sudo itself.
-
-BTW, what's the version of your sudo?
-Mine works fine even no need for password:
-$ sudo -v -n
-No error....
-
-My sudo version is 1.8.11p2
-
-Thanks,
-Qu
 

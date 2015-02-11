@@ -1,54 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44718 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:45005 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753020AbbBKSxB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 13:53:01 -0500
-Date: Wed, 11 Feb 2015 19:52:59 +0100
+	id S1752614AbbBKTBC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Feb 2015 14:01:02 -0500
+Date: Wed, 11 Feb 2015 20:01:01 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-Subject: Re: [PATCH 23/24] Btrfs: sysfs: support seed devices in the sysfs
- layout
-Message-ID: <20150211185259.GM28877@twin.jikos.cz>
+Subject: Re: [PATCH 00/24 V2] provide frame work so that sysfs attributs from
+ the fs_devices can be added
+Message-ID: <20150211190101.GN28877@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1423439785-10260-1-git-send-email-anand.jain@oracle.com>
- <1423439785-10260-24-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423439785-10260-24-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1423439785-10260-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 09, 2015 at 07:56:24AM +0800, Anand Jain wrote:
-> This adds an enhancement to show the seed fsid and devices.
-> 
-> The way sprouting handles fs_devices:
->       clone seed fs_devices and add to the fs_uuids
->       mem copy seed fs_devices and assign to fs_devices->seed (move dev_list)
->       evacuate seed fs_devices contents to hold sprout fs devices contents
-> 
->   So to be inline with this fs_devices changes during seeding,
->   represent seed fsid under the sprout fsid, this is achieved
->   by using the kobject_move()
-> 
-> eg: showing two levels of seeding.
+On Mon, Feb 09, 2015 at 07:56:01AM +0800, Anand Jain wrote:
+> This patch set will provide a framework and help to create attributes
+> from the structure btrfs_fs_devices which are available even before
+> fs_info is created. So by moving the parent kobject super_kobj from
+> fs_info to btrfs_fs_devices, it will help to create attributes
+> from the btrfs_fs_devices as well.
+>     
+> Just to note, this does not change any of the existing btrfs sysfs
+> external kobject names and its attributes and not even the life
+> cycle of them. Changes are internal only. And to ensure the same,
+> this path has been tested with various device operations and,
+> checking and comparing the sysfs kobjects and attributes with
+> sysfs kobject and attributes with out this patch, and they remain
+> same. These test cases are added to the progs as test-btrfs-devmgt.sh,
+> its patch is below as well.
 
-That's new to me, how does nested seeding work?
+I went through the patchset, looks ok to me in general. The only concern
+is about the new seeding representation, but the other changes seem ok
+(but I did not do in-depth review).
 
-> find /sys/fs/btrfs/ -type d -name devices -exec ls {} \; -print
-> 
-> sde
-> /sys/fs/btrfs/8c2772d4-6951-43c3-89b6-3ab3c70a13f8/f7ef2904-ce89-4421-bfb0-49fd999e9a0b/devices
-> sdd
-> /sys/fs/btrfs/8c2772d4-6951-43c3-89b6-3ab3c70a13f8/f7ef2904-ce89-4421-bfb0-49fd999e9a0b/53ac3265-0c34-4afd-9453-cc0d1a07be64/devices
+I like the patch separation, that really helps to understand the changes
+although there are 20+ patches in total.
 
-The plain uuid is IMHO not the best naming convention, although it's
-acceptable in the global list in /sys/fs/btrfs/* I'd rather avoid it if
-it's mixed with other files.
-
-Would it be enough to print all relevant seeding information into a
-single file? If the "UUID" directoreis do not contain anything else,
-that would be IMHO best.
-
-Do the seeding fsids exist on their own in /sys/sf/btrfs? I haven't
-tested the patchset so I'd probably find that out myself.
+We can merge patches 1-22, patch 23 should be folded into 24 as it fixes
+a bug introduced there.

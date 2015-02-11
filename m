@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17348 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:52291 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751418AbbBKJ4n (ORCPT
+	with ESMTP id S1750923AbbBKKCc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 04:56:43 -0500
+	Wed, 11 Feb 2015 05:02:32 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1B9ttUr025797
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 17:55:56 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1BA1jtc026060
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 18:01:45 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Fix out-of-space bug
-Date: Wed, 11 Feb 2015 17:55:32 +0800
-Message-ID: <1423648532-25535-1-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs: Fix out-of-space bug
+Date: Wed, 11 Feb 2015 18:01:21 +0800
+Message-ID: <1423648881-4845-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -78,32 +78,32 @@ Reason:
  Above bug is caused by many reason, any of them can trigger it.
 
 Reason1:
- btrfs_check_data_free_space() try to commit transaction and retry
- allocating chunk when the first allocating failed, but space_info->full
- is set in first allocating, and prevent second allocating in retry.
- When we commit transaction with removed bgs, we need to clear
- space_info->full.
- Fixed in this patch.
-
-Reason2:
  When we remove some continuous chunks but leave other chunks after,
  these disk space should be used by chunk-recreating, but in current
  code, only first create will successed.
  Fixed by Forrest Liu <forrestl@synology.com> in:
  Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
 
-Reason3:
+Reason2:
  contains_pending_extent() return wrong value in calculation.
  Fixed by Forrest Liu <forrestl@synology.com> in:
  Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
 
+Reason3:
+ btrfs_check_data_free_space() try to commit transaction and retry
+ allocating chunk when the first allocating failed, but space_info->full
+ is set in first allocating, and prevent second allocating in retry.
+ Fixed in this patch by clear space_info->full in commit transaction.
+
 Changelog v2->v3:
  v2 fixed the bug by adding more commit-transaction, but we
  only need to reclaim space when we are really have no space for
- new chunk.
- Actually, code already have this type of commit-and-retry, we only
- need to make it working with removed-bgs.
- v3 fixed the bug by above way.
+ new chunk, noticed by:
+ Filipe David Manana <fdmanana@gmail.com>
+
+ Actually, our code already have this type of commit-and-retry,
+ we only need to make it working with removed-bgs.
+ v3 fixed the bug with above way.
 
 Changelog v1->v2:
  v1 will introduce a new bug when delete and create chunk in same disk

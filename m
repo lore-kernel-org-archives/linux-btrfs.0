@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31724 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751478AbbBLHV7 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:26244 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753041AbbBLHWA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 02:21:59 -0500
+	Thu, 12 Feb 2015 02:22:00 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 04/24] Btrfs: sysfs: fix, kobject pointer clean up needed after kobject release
-Date: Thu, 12 Feb 2015 07:20:48 +0800
-Message-Id: <1423696868-8971-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/24] Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
+Date: Thu, 12 Feb 2015 07:20:49 +0800
+Message-Id: <1423696868-8971-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1423696868-8971-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -17,36 +17,33 @@ References: <1423696868-8971-1-git-send-email-anand.jain@oracle.com>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-The sysfs clean up self test like in the below code fails, since
-fs_info->device_dir_kobject still points to its stale kobject.
-Reseting this pointer will help to fix this.
-
-open_ctree()
-{
-
-ret = btrfs_sysfs_add_one(fs_info);
-::
-+       btrfs_sysfs_remove_one(fs_info);
-+       ret = btrfs_sysfs_add_one(fs_info);
-+       if (ret) {
-+               pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
-+               goto fail_block_groups;
-+       }
+Since the failure code in the btrfs_sysfs_add_one() can
+call btrfs_sysfs_remove_one() even before device_dir_kobj
+has been created we need to check if its null.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/sysfs.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index adfac3e..15fead2 100644
+index 15fead2..506f7e4 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -525,6 +525,7 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- 	btrfs_kobj_rm_device(fs_info, NULL);
- 	kobject_del(fs_info->device_dir_kobj);
- 	kobject_put(fs_info->device_dir_kobj);
-+	fs_info->device_dir_kobj = NULL;
+@@ -522,10 +522,12 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ 		kobject_del(fs_info->space_info_kobj);
+ 		kobject_put(fs_info->space_info_kobj);
+ 	}
+-	btrfs_kobj_rm_device(fs_info, NULL);
+-	kobject_del(fs_info->device_dir_kobj);
+-	kobject_put(fs_info->device_dir_kobj);
+-	fs_info->device_dir_kobj = NULL;
++	if (fs_info->device_dir_kobj) {
++		btrfs_kobj_rm_device(fs_info, NULL);
++		kobject_del(fs_info->device_dir_kobj);
++		kobject_put(fs_info->device_dir_kobj);
++		fs_info->device_dir_kobj = NULL;
++	}
  	addrm_unknown_feature_attrs(fs_info, false);
  	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
  	__btrfs_sysfs_remove_one(fs_info);

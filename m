@@ -1,176 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52291 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750923AbbBKKCc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 05:02:32 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1BA1jtc026060
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 18:01:45 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3] btrfs: Fix out-of-space bug
-Date: Wed, 11 Feb 2015 18:01:21 +0800
-Message-ID: <1423648881-4845-1-git-send-email-zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:50905 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751418AbbBKLNH (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Wed, 11 Feb 2015 06:13:07 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix scheduler warning when syncing log
+Date: Wed, 11 Feb 2015 11:12:39 +0000
+Message-Id: <1423653159-20812-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+We try to lock a mutex while the current task state is not TASK_RUNNING,
+which results in the following warning when CONFIG_DEBUG_LOCK_ALLOC=y:
 
-Btrfs will report NO_SPACE when we create and remove files for several times,
-and we can't write to filesystem until mount it again.
+[30736.772501] ------------[ cut here ]------------
+[30736.774545] WARNING: CPU: 9 PID: 19972 at kernel/sched/core.c:7300 __might_sleep+0x8b/0xa8()
+[30736.783453] do not call blocking ops when !TASK_RUNNING; state=2 set at [<ffffffff8107499b>] prepare_to_wait+0x43/0x89
+[30736.786261] Modules linked in: dm_flakey dm_mod crc32c_generic btrfs xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop parport_pc psmouse parport pcspkr microcode serio_raw evdev processor thermal_sys i2c_piix4 i2c_core button ext4 crc16 jbd2 mbcache sg sr_mod cdrom sd_mod ata_generic virtio_scsi floppy ata_piix libata virtio_pci virtio_ring e1000 virtio scsi_mod
+[30736.794323] CPU: 9 PID: 19972 Comm: fsstress Not tainted 3.19.0-rc7-btrfs-next-5+ #1
+[30736.795821] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[30736.798788]  0000000000000009 ffff88042743fbd8 ffffffff814248ed ffff88043d32f2d8
+[30736.800504]  ffff88042743fc28 ffff88042743fc18 ffffffff81045338 0000000000000001
+[30736.802131]  ffffffff81064514 ffffffff817c52d1 000000000000026d 0000000000000000
+[30736.803676] Call Trace:
+[30736.804256]  [<ffffffff814248ed>] dump_stack+0x4c/0x65
+[30736.805245]  [<ffffffff81045338>] warn_slowpath_common+0xa1/0xbb
+[30736.806360]  [<ffffffff81064514>] ? __might_sleep+0x8b/0xa8
+[30736.807391]  [<ffffffff81045398>] warn_slowpath_fmt+0x46/0x48
+[30736.808511]  [<ffffffff8107499b>] ? prepare_to_wait+0x43/0x89
+[30736.809620]  [<ffffffff8107499b>] ? prepare_to_wait+0x43/0x89
+[30736.810691]  [<ffffffff81064514>] __might_sleep+0x8b/0xa8
+[30736.811703]  [<ffffffff81426eaf>] mutex_lock_nested+0x2f/0x3a0
+[30736.812889]  [<ffffffff8107bfa1>] ? trace_hardirqs_on_caller+0x18f/0x1ab
+[30736.814138]  [<ffffffff8107bfca>] ? trace_hardirqs_on+0xd/0xf
+[30736.819878]  [<ffffffffa038cfff>] wait_for_writer.isra.12+0x91/0xaa [btrfs]
+[30736.821260]  [<ffffffff810748bd>] ? signal_pending_state+0x31/0x31
+[30736.822410]  [<ffffffffa0391f0a>] btrfs_sync_log+0x160/0x947 [btrfs]
+[30736.823574]  [<ffffffff8107bfa1>] ? trace_hardirqs_on_caller+0x18f/0x1ab
+[30736.824847]  [<ffffffff8107bfca>] ? trace_hardirqs_on+0xd/0xf
+[30736.825972]  [<ffffffffa036e555>] btrfs_sync_file+0x2b0/0x319 [btrfs]
+[30736.827684]  [<ffffffff8117901a>] vfs_fsync_range+0x21/0x23
+[30736.828932]  [<ffffffff81179038>] vfs_fsync+0x1c/0x1e
+[30736.829917]  [<ffffffff8117928b>] do_fsync+0x34/0x4e
+[30736.830862]  [<ffffffff811794b3>] SyS_fsync+0x10/0x14
+[30736.831819]  [<ffffffff8142a512>] system_call_fastpath+0x12/0x17
+[30736.832982] ---[ end trace c0b57df60d32ae5c ]---
 
-Steps to reproduce:
- 1: Create a single-dev btrfs fs with default option
- 2: Write a file into it to take up most fs space
- 3: Delete above file
- 4: Wait about 100s to let chunk removed
- 5: goto 2
+Fix this my acquiring the mutex after calling finish_wait(), which sets the
+task's state to TASK_RUNNING.
 
-Script is like following:
- #!/bin/bash
-
- # Recommend 1.2G space, too large disk will make test slow
- DEV="/dev/sda16"
- MNT="/mnt/tmp"
-
- dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
- file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
-
- echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
-
- for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
- echo "mkfs $DEV"
- mkfs.btrfs -f "$DEV" >/dev/null || exit 2
- echo "mount $DEV $MNT"
- mount "$DEV" "$MNT" || exit 2
-
- for ((loop_i = 0; loop_i < 20; loop_i++)); do
-     echo
-     echo "loop $loop_i"
-
-     echo "dd file..."
-     cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
-     "${cmd[@]}" 2>/dev/null || {
-         # NO_SPACE error triggered
-         echo "dd failed: ${cmd[*]}"
-         exit 1
-     }
-
-     echo "rm file..."
-     rm -f "$MNT"/file0 || exit 2
-
-     for ((i = 0; i < 10; i++)); do
-         df "$MNT" | tail -1
-         sleep 10
-     done
- done
-
-Reason:
- It is triggered by commit: 47ab2a6c689913db23ccae38349714edf8365e0a
- which is used to remove empty block groups automatically, but the
- reason is not in that patch. Code before works well because btrfs
- don't need to create and delete chunks so many times with high
- complexity.
- Above bug is caused by many reason, any of them can trigger it.
-
-Reason1:
- When we remove some continuous chunks but leave other chunks after,
- these disk space should be used by chunk-recreating, but in current
- code, only first create will successed.
- Fixed by Forrest Liu <forrestl@synology.com> in:
- Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
-
-Reason2:
- contains_pending_extent() return wrong value in calculation.
- Fixed by Forrest Liu <forrestl@synology.com> in:
- Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
-
-Reason3:
- btrfs_check_data_free_space() try to commit transaction and retry
- allocating chunk when the first allocating failed, but space_info->full
- is set in first allocating, and prevent second allocating in retry.
- Fixed in this patch by clear space_info->full in commit transaction.
-
-Changelog v2->v3:
- v2 fixed the bug by adding more commit-transaction, but we
- only need to reclaim space when we are really have no space for
- new chunk, noticed by:
- Filipe David Manana <fdmanana@gmail.com>
-
- Actually, our code already have this type of commit-and-retry,
- we only need to make it working with removed-bgs.
- v3 fixed the bug with above way.
-
-Changelog v1->v2:
- v1 will introduce a new bug when delete and create chunk in same disk
- space in same transaction, noticed by:
- Filipe David Manana <fdmanana@gmail.com>
- V2 fix this bug by commit transaction after remove block grops.
-
-Tested for severial times by above script.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/transaction.c | 4 ++++
- fs/btrfs/transaction.h | 5 +++++
- fs/btrfs/volumes.c     | 2 ++
- 3 files changed, 11 insertions(+)
+ fs/btrfs/tree-log.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8cc0e97..f9299f3 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -220,6 +220,7 @@ loop:
- 	 * commit the transaction.
- 	 */
- 	atomic_set(&cur_trans->use_count, 2);
-+	atomic_set(&cur_trans->have_free_bgs, 0);
- 	cur_trans->start_time = get_seconds();
- 
- 	cur_trans->delayed_refs.href_root = RB_ROOT;
-@@ -2030,6 +2031,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_finish_extent_commit(trans, root);
- 
-+	if (atomic_read(&cur_trans->have_free_bgs))
-+		btrfs_clear_space_info_full(root->fs_info);
-+
- 	root->fs_info->last_trans_committed = cur_trans->transid;
- 	/*
- 	 * We needn't acquire the lock here because there is no other task
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 00ed29c..5225326 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -47,6 +47,11 @@ struct btrfs_transaction {
- 	atomic_t num_writers;
- 	atomic_t use_count;
- 
-+	/*
-+	 * true if there is free bgs operations in this transaction
-+	 */
-+	atomic_t have_free_bgs;
-+
- 	/* Be protected by fs_info->trans_lock when we want to change it. */
- 	enum btrfs_trans_state state;
- 	struct list_head list;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ba9857d..46495a1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1323,6 +1323,8 @@ again:
- 	if (ret) {
- 		btrfs_error(root->fs_info, ret,
- 			    "Failed to remove dev extent item");
-+	} else {
-+		atomic_set(&trans->transaction->have_free_bgs, 1);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index a266587..ea0431d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2448,8 +2448,8 @@ static void wait_for_writer(struct btrfs_trans_handle *trans,
+ 		mutex_unlock(&root->log_mutex);
+ 		if (atomic_read(&root->log_writers))
+ 			schedule();
+-		mutex_lock(&root->log_mutex);
+ 		finish_wait(&root->log_writer_wait, &wait);
++		mutex_lock(&root->log_mutex);
  	}
- out:
- 	btrfs_free_path(path);
+ }
+ 
 -- 
-1.8.5.1
+2.1.3
 

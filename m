@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46361 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35208 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752691AbbBLHnZ (ORCPT
+	with ESMTP id S1755157AbbBLHn0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 02:43:25 -0500
+	Thu, 12 Feb 2015 02:43:26 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C7gaZt016506
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 15:42:36 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C7gdRU016518
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 15:42:39 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs: cleanup: remove unuesd DEDINE_WAIT() in btrfs_bio_counter_inc_blocked()
-Date: Thu, 12 Feb 2015 15:42:11 +0800
-Message-ID: <1423726931-7706-1-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 3/3] btrfs: cleanup: use for() loop in btrfs_map_bio()
+Date: Thu, 12 Feb 2015 15:42:16 +0800
+Message-ID: <1423726936-7784-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,41 +20,58 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-1: Remove unused DEFINE_WAIT(wait)
-2: Add likely() for BTRFS_FS_STATE_DEV_REPLACING condition
-3: Use a look instead of goto
+for() is obviously better in these code block, and remove noused
+init-value to reduce about 6 bytes binary size.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/volumes.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index ca6a3a3..92109b7 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -932,15 +932,15 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e86f4ca..46d07b9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5812,8 +5812,8 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 	u64 map_length;
+ 	u64 *raid_map = NULL;
+ 	int ret;
+-	int dev_nr = 0;
+-	int total_devs = 1;
++	int dev_nr;
++	int total_devs;
+ 	struct btrfs_bio *bbio = NULL;
  
- void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
- {
--	DEFINE_WAIT(wait);
--again:
--	percpu_counter_inc(&fs_info->bio_counter);
--	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
-+	while (1) {
-+		percpu_counter_inc(&fs_info->bio_counter);
-+		if (likely(!test_bit(BTRFS_FS_STATE_DEV_REPLACING,
-+				     &fs_info->fs_state)))
-+			break;
-+
- 		btrfs_bio_counter_dec(fs_info);
- 		wait_event(fs_info->replace_wait,
- 			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
- 				     &fs_info->fs_state));
--		goto again;
+ 	length = bio->bi_iter.bi_size;
+@@ -5856,11 +5856,10 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 		BUG();
  	}
--
- }
+ 
+-	while (dev_nr < total_devs) {
++	for (dev_nr = 0; dev_nr < total_devs; dev_nr++) {
+ 		dev = bbio->stripes[dev_nr].dev;
+ 		if (!dev || !dev->bdev || (rw & WRITE && !dev->writeable)) {
+ 			bbio_error(bbio, first_bio, logical);
+-			dev_nr++;
+ 			continue;
+ 		}
+ 
+@@ -5873,7 +5872,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
+ 						 dev_nr, rw, async_submit);
+ 			BUG_ON(ret);
+-			dev_nr++;
+ 			continue;
+ 		}
+ 
+@@ -5888,7 +5886,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 		submit_stripe_bio(root, bbio, bio,
+ 				  bbio->stripes[dev_nr].physical, dev_nr, rw,
+ 				  async_submit);
+-		dev_nr++;
+ 	}
+ 	btrfs_bio_counter_dec(root->fs_info);
+ 	return 0;
 -- 
 1.8.5.1
 

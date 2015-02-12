@@ -1,64 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f49.google.com ([209.85.192.49]:42803 "EHLO
-	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753289AbbBLCVc (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36378 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754242AbbBLD4G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 21:21:32 -0500
-Received: by mail-qg0-f49.google.com with SMTP id q107so5905572qgd.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Feb 2015 18:21:31 -0800 (PST)
-From: Kevin Mulvey <kevin@kevinmulvey.net>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Cc: Kevin Mulvey <kmulvey@linux.com>
-Subject: [PATCH] fix spacing in btrfs/inode.c
-Date: Wed, 11 Feb 2015 21:17:22 -0500
-Message-Id: <1423707442-9485-1-git-send-email-kmulvey@linux.com>
+	Wed, 11 Feb 2015 22:56:06 -0500
+Date: Thu, 12 Feb 2015 11:52:35 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] Btrfs: only adjust outstanding_extents when we do a
+ short write
+Message-ID: <20150212035234.GA2416@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1423685339-8278-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1423685339-8278-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a patch to inode.c that fixes some spacing errors found by checkpatch.pl
+On Wed, Feb 11, 2015 at 03:08:57PM -0500, Josef Bacik wrote:
+> We have this weird dance where we always inc outstanding_extents when we do a
+> O_DIRECT write, even if we allocate the entire range.  To get around this we
+> also drop the metadata space if we successfully write.  This is an unnecessary
+> dance, we only need to jack up outstanding_extents if we don't satisfy the
+> entire range request in get_blocks_direct, otherwise we are good using our
+> original reservation.  So drop the unconditional inc and the drop of the
+> metadata space that we have for the unconditional inc.  Thanks,
 
-Signed-off-by: Kevin Mulvey <kmulvey@linux.com>
----
- fs/btrfs/inode.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+Looks good.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8bf326a..6516839 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4545,7 +4545,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 			break;
- 		}
- 		last_byte = min(extent_map_end(em), block_end);
--		last_byte = ALIGN(last_byte , root->sectorsize);
-+		last_byte = ALIGN(last_byte, root->sectorsize);
- 		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
- 			struct extent_map *hole_em;
- 			hole_size = last_byte - cur_offset;
-@@ -8829,9 +8829,9 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	 */
- 	trans = btrfs_start_transaction(root, 11);
- 	if (IS_ERR(trans)) {
--                ret = PTR_ERR(trans);
--                goto out_notrans;
--        }
-+		ret = PTR_ERR(trans);
-+		goto out_notrans;
-+	}
- 
- 	if (dest != root)
- 		btrfs_record_root_in_trans(trans, dest);
-@@ -9324,7 +9324,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 			break;
- 		}
- 		btrfs_drop_extent_cache(inode, cur_offset,
--					cur_offset + ins.offset -1, 0);
-+					cur_offset + ins.offset - 1, 0);
- 
- 		em = alloc_extent_map();
- 		if (!em) {
--- 
-2.1.0
+Thanks,
 
+-liubo
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/inode.c | 11 ++++++-----
+>  1 file changed, 6 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 8a036ed..e78a2fd 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7137,6 +7137,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+>  	u64 start = iblock << inode->i_blkbits;
+>  	u64 lockstart, lockend;
+>  	u64 len = bh_result->b_size;
+> +	u64 orig_len = len;
+>  	int unlock_bits = EXTENT_LOCKED;
+>  	int ret = 0;
+>  
+> @@ -7272,9 +7273,11 @@ unlock:
+>  		if (start + len > i_size_read(inode))
+>  			i_size_write(inode, start + len);
+>  
+> -		spin_lock(&BTRFS_I(inode)->lock);
+> -		BTRFS_I(inode)->outstanding_extents++;
+> -		spin_unlock(&BTRFS_I(inode)->lock);
+> +		if (len < orig_len) {
+> +			spin_lock(&BTRFS_I(inode)->lock);
+> +			BTRFS_I(inode)->outstanding_extents++;
+> +			spin_unlock(&BTRFS_I(inode)->lock);
+> +		}
+>  
+>  		ret = set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
+>  				     lockstart + len - 1, EXTENT_DELALLOC, NULL,
+> @@ -8056,8 +8059,6 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+>  		else if (ret >= 0 && (size_t)ret < count)
+>  			btrfs_delalloc_release_space(inode,
+>  						     count - (size_t)ret);
+> -		else
+> -			btrfs_delalloc_release_metadata(inode, 0);
+>  	}
+>  out:
+>  	if (wakeup)
+> -- 
+> 1.8.3.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

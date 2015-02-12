@@ -1,188 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33125 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752026AbbBLJQR (ORCPT
+Received: from mail-bl2on0119.outbound.protection.outlook.com ([65.55.169.119]:34272
+	"EHLO na01-bl2-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752691AbbBLL2R convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 04:16:17 -0500
-Date: Thu, 12 Feb 2015 17:16:04 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Tobias Holst <tobby@tobby.eu>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Repair broken btrfs raid6?
-Message-ID: <20150212091603.GE2416@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
- <CAGwxe4gp5O3yRZt=s8ppqyfap0rZmzwSseA709X-C5kkQkODUw@mail.gmail.com>
+	Thu, 12 Feb 2015 06:28:17 -0500
+From: Steven Schlansker <sschlansker@opentable.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Forever blocked in bit_wait with kernel 3.19
+Date: Thu, 12 Feb 2015 11:12:25 +0000
+Message-ID: <9E2DE950-1434-424B-974C-2ABE4BD22EE5@opentable.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAGwxe4gp5O3yRZt=s8ppqyfap0rZmzwSseA709X-C5kkQkODUw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 11, 2015 at 03:46:33PM +0100, Tobias Holst wrote:
-> Hmm, it looks like it is getting worse... Here are some parts of my
-> syslog, including two crashed btrfs-threads:
-> 
-> So I am still getting many of these:
-> > BTRFS (device dm-5): parent transid verify failed on 25033166798848 wanted 108976 found 108958
-> > BTRFS warning (device dm-5): page private not zero on page 25033166798848
-> > BTRFS warning (device dm-5): page private not zero on page 25033166802944
-> > BTRFS warning (device dm-5): page private not zero on page 25033166807040
-> > BTRFS warning (device dm-5): page private not zero on page 25033166811136
+[ Please CC me on replies, I'm not on the list ]
+[ This is a followup to http://www.spinics.net/lists/linux-btrfs/msg41496.html ]
 
-First we probably make sure that your device is well setup, since these
-messages usually occur after a drive is removed(the device is somehow droping
-writes), the below -EIO also implies btrfs cannot read/write data from or to that drive.
+Hello linux-btrfs,
+I've been having troubles keeping my Apache Mesos / Docker slave nodes stable.  After some period of load, tasks begin to hang.  Once this happens task after task ends up waiting at the same point, never to return.  The system quickly becomes unusable and must be terminated.
 
-And in theory, RAID6 can tolerate two drive failures, so what's your mkfs.btrfs option?
+After the previous issues, I was encouraged to upgrade and retry.  I am now running
 
+Linux 3.19.0 #1 SMP Mon Feb 9 09:43:11 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+Btrfs v3.18.2 (and this version was also used to mkfs)
+
+root@ip-10-30-38-86:~# btrfs fi show
+Label: none  uuid: 0e8c3f1d-b07b-4643-9834-a41dafb80257
+	Total devices 2 FS bytes used 3.92GiB
+	devid    1 size 74.99GiB used 4.01GiB path /dev/xvdc
+	devid    2 size 74.99GiB used 4.01GiB path /dev/xvdd
+
+Btrfs v3.18.2
+
+Data, RAID0: total=6.00GiB, used=3.69GiB
+System, RAID0: total=16.00MiB, used=16.00KiB
+Metadata, RAID0: total=2.00GiB, used=229.30MiB
+GlobalReserve, single: total=80.00MiB, used=0.00B
+
+This is the first hung task:
+
+[146280.252086] INFO: task java:28252 blocked for more than 120 seconds.
+[146280.252096]       Tainted: G            E  3.19.0 #1
+[146280.252098] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[146280.252102] java            D ffff8805584df528     0 28252   1400 0x00000000
+[146280.252106]  ffff8805584df528 ffff880756a24aa0 0000000000014100 ffff8805584dffd8
+[146280.252108]  0000000000014100 ffff8807567c31c0 ffff880756a24aa0 ffff8805584df5d0
+[146280.252109]  ffff88075a314a00 ffff8805584df5d0 ffff88077c3f8ce8 0000000000000002
+[146280.252111] Call Trace:
+[146280.252120]  [<ffffffff8194efa0>] ? bit_wait+0x50/0x50
+[146280.252122]  [<ffffffff8194e770>] io_schedule+0xa0/0x130
+[146280.252125]  [<ffffffff8194efcc>] bit_wait_io+0x2c/0x50
+[146280.252127]  [<ffffffff8194ec05>] __wait_on_bit+0x65/0x90
+[146280.252131]  [<ffffffff81169ad7>] wait_on_page_bit+0xc7/0xd0
+[146280.252134]  [<ffffffff810b0840>] ? autoremove_wake_function+0x40/0x40
+[146280.252137]  [<ffffffff8117d9ed>] shrink_page_list+0x2fd/0xa90
+[146280.252139]  [<ffffffff8117e7ad>] shrink_inactive_list+0x1cd/0x590
+[146280.252141]  [<ffffffff8117f5b5>] shrink_lruvec+0x5f5/0x810
+[146280.252144]  [<ffffffff81086d01>] ? pwq_activate_delayed_work+0x31/0x90
+[146280.252146]  [<ffffffff8117f867>] shrink_zone+0x97/0x240
+[146280.252148]  [<ffffffff8117fd75>] do_try_to_free_pages+0x155/0x440
+[146280.252150]  [<ffffffff81180257>] try_to_free_mem_cgroup_pages+0xa7/0x130
+[146280.252154]  [<ffffffff811d2931>] try_charge+0x151/0x620
+[146280.252158]  [<ffffffff81815a05>] ? tcp_schedule_loss_probe+0x145/0x1e0
+[146280.252160]  [<ffffffff811d6f48>] mem_cgroup_try_charge+0x98/0x110
+[146280.252164]  [<ffffffff8170957e>] ? __alloc_skb+0x7e/0x2b0
+[146280.252166]  [<ffffffff8116accf>] __add_to_page_cache_locked+0x7f/0x290
+[146280.252169]  [<ffffffff8116af28>] add_to_page_cache_lru+0x28/0x80
+[146280.252171]  [<ffffffff8116b00f>] pagecache_get_page+0x8f/0x1c0
+[146280.252173]  [<ffffffff81952570>] ? _raw_spin_unlock_bh+0x20/0x40
+[146280.252189]  [<ffffffffa0045935>] prepare_pages.isra.19+0xc5/0x180 [btrfs]
+[146280.252199]  [<ffffffffa00464ec>] __btrfs_buffered_write+0x1cc/0x590 [btrfs]
+[146280.252208]  [<ffffffffa0049c07>] btrfs_file_write_iter+0x287/0x510 [btrfs]
+[146280.252211]  [<ffffffff813f7076>] ? aa_path_perm+0xd6/0x170
+[146280.252214]  [<ffffffff811dfd91>] new_sync_write+0x81/0xb0
+[146280.252216]  [<ffffffff811e0537>] vfs_write+0xb7/0x1f0
+[146280.252217]  [<ffffffff81950636>] ? mutex_lock+0x16/0x37
+[146280.252219]  [<ffffffff811e1146>] SyS_write+0x46/0xb0
+[146280.252221]  [<ffffffff819529ed>] system_call_fastpath+0x16/0x1b
+
+Here is a slightly different stacktrace:
+
+[158880.240245] INFO: task kworker/u16:6:13974 blocked for more than 120 seconds.
+[158880.240249]       Tainted: G            E  3.19.0 #1
+[158880.240252] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[158880.240254] kworker/u16:6   D ffff88064e7b76c8     0 13974      2 0x00000000
+[158880.240259] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-1)
+[158880.240260]  ffff88064e7b76c8 ffff88066f0c18e0 0000000000014100 ffff88064e7b7fd8
+[158880.240262]  0000000000014100 ffffffff8201e4a0 ffff88066f0c18e0 ffff88077c3e06e8
+[158880.240264]  ffff88075a214a00 ffff88077c3e06e8 ffff88064e7b7770 0000000000000002
+[158880.240266] Call Trace:
+[158880.240268]  [<ffffffff8194efa0>] ? bit_wait+0x50/0x50
+[158880.240270]  [<ffffffff8194e770>] io_schedule+0xa0/0x130
+[158880.240273]  [<ffffffff8194efcc>] bit_wait_io+0x2c/0x50
+[158880.240275]  [<ffffffff8194ed9b>] __wait_on_bit_lock+0x4b/0xb0
+[158880.240277]  [<ffffffff81169f2e>] __lock_page+0xae/0xb0
+[158880.240279]  [<ffffffff810b0840>] ? autoremove_wake_function+0x40/0x40
+[158880.240289]  [<ffffffffa00501bd>] lock_delalloc_pages+0x13d/0x1d0 [btrfs]
+[158880.240299]  [<ffffffffa005fc8a>] ? btrfs_map_block+0x1a/0x20 [btrfs]
+[158880.240308]  [<ffffffffa0050476>] ? find_delalloc_range.constprop.46+0xa6/0x160 [btrfs]
+[158880.240318]  [<ffffffffa0052cb3>] find_lock_delalloc_range+0x143/0x1f0 [btrfs]
+[158880.240326]  [<ffffffffa00534e0>] ? end_extent_writepage+0xa0/0xa0 [btrfs]
+[158880.240335]  [<ffffffffa0052de1>] writepage_delalloc.isra.32+0x81/0x160 [btrfs]
+[158880.240343]  [<ffffffffa0053fab>] __extent_writepage+0xbb/0x2a0 [btrfs]
+[158880.240350]  [<ffffffffa00544ca>] extent_write_cache_pages.isra.29.constprop.49+0x33a/0x3f0 [btrfs]
+[158880.240359]  [<ffffffffa0055f1d>] extent_writepages+0x4d/0x70 [btrfs]
+[158880.240368]  [<ffffffffa0039090>] ? btrfs_submit_direct+0x7a0/0x7a0 [btrfs]
+[158880.240371]  [<ffffffff8109c0a0>] ? default_wake_function+0x10/0x20
+[158880.240378]  [<ffffffffa00360a8>] btrfs_writepages+0x28/0x30 [btrfs]
+[158880.240380]  [<ffffffff81176d2e>] do_writepages+0x1e/0x40
+[158880.240383]  [<ffffffff81209400>] __writeback_single_inode+0x40/0x220
+[158880.240385]  [<ffffffff81209f13>] writeback_sb_inodes+0x263/0x430
+[158880.240387]  [<ffffffff8120a17f>] __writeback_inodes_wb+0x9f/0xd0
+[158880.240389]  [<ffffffff8120a3f3>] wb_writeback+0x243/0x2c0
+[158880.240392]  [<ffffffff8120c9b3>] bdi_writeback_workfn+0x113/0x440
+[158880.240394]  [<ffffffff810981bc>] ? finish_task_switch+0x6c/0x1a0
+[158880.240397]  [<ffffffff81088f3f>] process_one_work+0x14f/0x3f0
+[158880.240399]  [<ffffffff810896a1>] worker_thread+0x121/0x4e0
+[158880.240402]  [<ffffffff81089580>] ? rescuer_thread+0x3a0/0x3a0
+[158880.240404]  [<ffffffff8108ea72>] kthread+0xd2/0xf0
+[158880.240406]  [<ffffffff8108e9a0>] ? kthread_create_on_node+0x180/0x180
+[158880.240408]  [<ffffffff8195293c>] ret_from_fork+0x7c/0xb0
+[158880.240411]  [<ffffffff8108e9a0>] ? kthread_create_on_node+0x180/0x180
+
+
+Help!
 Thanks,
+Steven
 
--liubo
-
-> > BTRFS info (device dm-5): force lzo compression
-> > BTRFS info (device dm-5): disk space caching is enabled
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
-> 
-> Then there is this crash of "super"/btrfs_abort_transaction:
-> > ------------[ cut here ]------------
-> > WARNING: CPU: 0 PID: 30526 at /home/kernel/COD/linux/fs/btrfs/super.c:260 __btrfs_abort_transaction+0x5f/0x140 [btrfs]()
-> > BTRFS: Transaction aborted (error -5)
-> > Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
-> > CPU: 0 PID: 30526 Comm: kworker/u16:6 Tainted: G        W   E  3.19.0-031900-generic #201502091451
-> > Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-> > Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-> > 0000000000000104 ffff880002743c18 ffffffff817c4c00 0000000000000007
-> > ffff880002743c68 ffff880002743c58 ffffffff81076e87 ffff880002743c58
-> > ffff88020a8694d0 ffff8801fb715800 00000000fffffffb 0000000000000ae8
-> > Call Trace:
-> > [<ffffffff817c4c00>] dump_stack+0x45/0x57
-> > [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
-> > [<ffffffff81076f86>] warn_slowpath_fmt+0x46/0x50
-> > [<ffffffffc06375cf>] __btrfs_abort_transaction+0x5f/0x140 [btrfs]
-> > [<ffffffffc0655105>] btrfs_run_delayed_refs.part.82+0x175/0x290 [btrfs]
-> > [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
-> > [<ffffffffc0655507>] delayed_ref_async_start+0x37/0x90 [btrfs]
-> > [<ffffffffc069720e>] normal_work_helper+0x7e/0x1b0 [btrfs]
-> > [<ffffffffc0697572>] btrfs_extent_refs_helper+0x12/0x20 [btrfs]
-> > [<ffffffff8108f76d>] process_one_work+0x14d/0x460
-> > [<ffffffff8109014b>] worker_thread+0x11b/0x3f0
-> > [<ffffffff81090030>] ? create_worker+0x1e0/0x1e0
-> > [<ffffffff81095d59>] kthread+0xc9/0xe0
-> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
-> > [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
-> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
-> > ---[ end trace dd65465954546462 ]---
-> > BTRFS: error (device dm-5) in btrfs_run_delayed_refs:2792: errno=-5 IO failure
-> > BTRFS info (device dm-5): forced readonly
-> 
-> and this crash of "delayed-ref"/btrfs_select_ref_head:
-> > ------------[ cut here ]------------
-> > WARNING: CPU: 7 PID: 3159 at /home/kernel/COD/linux/fs/btrfs/delayed-ref.c:438 btrfs_select_ref_head+0x120/0x130 [btrfs]()
-> > Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
-> > CPU: 7 PID: 3159 Comm: btrfs-transacti Tainted: G        W   E  3.19.0-031900-generic #201502091451
-> > Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-> > 00000000000001b6 ffff8801cb687c48 ffffffff817c4c00 0000000000000007
-> > 0000000000000000 ffff8801cb687c88 ffffffff81076e87 0000000000000001
-> > ffff8801fe80bf00 0000000000000000 ffff8801fe80bfc8 ffff8802345d8280
-> > Call Trace:
-> > [<ffffffff817c4c00>] dump_stack+0x45/0x57
-> > [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
-> > [<ffffffff81076eea>] warn_slowpath_null+0x1a/0x20
-> > [<ffffffffc06b2d40>] btrfs_select_ref_head+0x120/0x130 [btrfs]
-> > [<ffffffffc0652cd1>] __btrfs_run_delayed_refs+0x1e1/0x5f0 [btrfs]
-> > [<ffffffffc0654ffa>] btrfs_run_delayed_refs.part.82+0x6a/0x290 [btrfs]
-> > [<ffffffffc0664e5c>] ? join_transaction.isra.31+0x13c/0x380 [btrfs]
-> > [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
-> > [<ffffffffc0665e50>] btrfs_commit_transaction+0xb0/0xa70 [btrfs]
-> > [<ffffffffc0663d95>] transaction_kthread+0x1d5/0x250 [btrfs]
-> > [<ffffffffc0663bc0>] ? open_ctree+0x1f40/0x1f40 [btrfs]
-> > [<ffffffff81095d59>] kthread+0xc9/0xe0
-> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
-> > [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
-> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
-> > ---[ end trace dd65465954546463 ]---
-> > BTRFS warning (device dm-5): Skipping commit of aborted transaction.
-> > BTRFS: error (device dm-5) in cleanup_transaction:1670: errno=-5 IO failure
-> 
-> 
-> Any thoughts? Would it help to unplug the "dm5"-device which seems to
-> be causing this errors and then balance the array?
-> 
-> Regards,
-> Tobias
-> 
-> 2015-02-09 23:45 GMT+01:00 Tobias Holst <tobby@tobby.eu>:
-> > Hi
-> >
-> > I'm having some trouble with my six-drives btrfs raid6 (each drive
-> > encrypted with LUKS). At first: Yes, I do have backups, but it may
-> > take at least days, maybe weeks or even some month to restore
-> > everything from the (offside) backups. So it is not essential to
-> > recover the data, but would be great ;-)
-> >
-> > OS: Ubuntu 14.04
-> > Kernel: 3.19.0
-> > btrfs-progs: 3.19-rc2
-> >
-> > When booting my server I am getting this in the syslog:
-> >> [    8.026362] BTRFS: device label tobby-btrfs devid 3 transid 108721 /dev/dm-0
-> >> [    8.118896] BTRFS: device label tobby-btrfs devid 6 transid 108721 /dev/dm-1
-> >> [    8.202477] BTRFS: device label tobby-btrfs devid 1 transid 108721 /dev/dm-2
-> >> [    8.520988] BTRFS: device label tobby-btrfs devid 4 transid 108721 /dev/dm-3
-> >> [    8.555570] BTRFS info (device dm-3): force lzo compression
-> >> [    8.555574] BTRFS info (device dm-3): disk space caching is enabled
-> >> [    8.556310] BTRFS: failed to read the system array on dm-3
-> >> [    8.592135] BTRFS: open_ctree failed
-> >> [    9.039187] BTRFS: device label tobby-btrfs devid 2 transid 108721 /dev/dm-4
-> >> [    9.107779] BTRFS: device label tobby-btrfs devid 5 transid 108721 /dev/dm-5
-> > Looks like there is something wrong on drive 3, giving me "open_ctree
-> > failed". I have to press "S" to skip mounting of the btrfs volume. It
-> > boots and with "sudo mount --all" I can successfully mount the btrfs
-> > volume. Sometimes it takes one or two minutes but it will mount.
-> >
-> > After a while I am sometimes/randomly getting this in the syslog:
-> >> [ 1161.283246] BTRFS: dm-5 checksum verify failed on 39099619901440 wanted BB5B0AD5 found 6B6F5040 level 0
-> > Looks like something else is broken on dm-5... But shouldn't this be
-> > repaired with the new raid56-repair-features of kernel 3.19?
-> >
-> > After some more time I am getting this:
-> >> [637017.631044] BTRFS (device dm-4): parent transid verify failed on 39099305132032 wanted 108722 found 108719
-> > Then it is not possible to access the mounted volume anymore. I have
-> > to "umount -l" to unmount it and then I can remount it. Until it
-> > happens again (after some time)...
-> >
-> > I also tried a balance and a scrub but they "crash". Syslog is full of
-> > messages like the following examples:
-> >> [ 3355.523157] csum_tree_block: 53 callbacks suppressed
-> >> [ 3355.523160] BTRFS: dm-5 checksum verify failed on 39099306917888 wanted F90D8231 found 5981C697 level 0
-> >> [ 4006.935632]  BTRFS (device dm-5): parent transid verify failed on 30525418536960 wanted 108975 found 108767
-> > and "btrfs scrub status /[device]" gives me the following output:
-> >> "scrub status for [UUID]
-> >>        scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008 seconds
-> >>        total bytes scrubbed: 113.04GiB with 0 errors"
-> >
-> > So a short summary:
-> > - btrfs raid6 on 3.19.0 with btrfs-progs 3.19-rc2
-> > - does not mount at boot up, "open_ctree failed" (disk 3)
-> > - mounts successfully after bootup
-> > - randomly "checksum verify failed" (disk 5)
-> > - balance and scrub crash after some time
-> > - after a while the volume gets unreadable, saying "parent transid
-> > verify failed" (disk 4 or 5)
-> >
-> > And it looks like there still is no way to btrfsck a raid6.
-> >
-> > Any ideas how to repair this filesystem?
-> >
-> > Regards,
-> > Tobias
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

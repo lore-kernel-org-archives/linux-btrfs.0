@@ -1,101 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f171.google.com ([209.85.160.171]:44363 "EHLO
-	mail-yk0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751468AbbBLUpy convert rfc822-to-8bit (ORCPT
+Received: from mail-lb0-f177.google.com ([209.85.217.177]:45021 "EHLO
+	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750810AbbBLXWj convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 15:45:54 -0500
-Received: by mail-yk0-f171.google.com with SMTP id q200so3190260ykb.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 12:45:54 -0800 (PST)
+	Thu, 12 Feb 2015 18:22:39 -0500
+Received: by mail-lb0-f177.google.com with SMTP id z11so12427837lbi.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 15:22:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <11865500.KaKfdqacBs@zafu>
-References: <11865500.KaKfdqacBs@zafu>
-Date: Thu, 12 Feb 2015 13:45:53 -0700
-Message-ID: <CAJCQCtRAz66sT_sKpy_JOhHnWf4ZvVMtYQyJXrMGLPx-oPDp8Q@mail.gmail.com>
-Subject: Re: BTRFS RAID-1 leaf size change scenario
-From: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20150212091603.GE2416@localhost.localdomain>
+References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com>
+ <CAGwxe4gp5O3yRZt=s8ppqyfap0rZmzwSseA709X-C5kkQkODUw@mail.gmail.com> <20150212091603.GE2416@localhost.localdomain>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Fri, 13 Feb 2015 00:22:16 +0100
+Message-ID: <CAGwxe4ji5sDBfm89iJMnF3dKOBKft2up-FZTzQxd0yvqLaV2iA@mail.gmail.com>
+Subject: Re: Repair broken btrfs raid6?
+To: bo.li.liu@oracle.com
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 12, 2015 at 6:26 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+Hi
 
-> It also contains *lots* of subvols and snapshots.
+I don't remember the exact mkfs.btrfs options anymore but
+> ls /sys/fs/btrfs/[UUID]/features/
+shows the following output:
+> big_metadata  compress_lzo  extended_iref  mixed_backref  raid56
 
-About how many is "lots"?
+I also tested my device with a short
+> hdparm -tT /dev/dm5
+and got
+> /dev/mapper/sdc_crypt:
+>  Timing cached reads:   30712 MB in  2.00 seconds = 15376.11 MB/sec
+>  Timing buffered disk reads: 444 MB in  3.01 seconds = 147.51 MB/sec
+
+Looks ok to me. Should I test more?
+
+I bought a few new hard drives so currently I am copying all my data
+to a second (faster) backup, so I can maybe overwrite the current file
+system, if it's not repairable.
+
+Regards,
+Tobias
 
 
-> 1/ Could I first pull a disk out of the current RAID-1 config, losing redundancy
-> without breaking anything else ?
+2015-02-12 10:16 GMT+01:00 Liu Bo <bo.li.liu@oracle.com>:
+> On Wed, Feb 11, 2015 at 03:46:33PM +0100, Tobias Holst wrote:
+>> Hmm, it looks like it is getting worse... Here are some parts of my
+>> syslog, including two crashed btrfs-threads:
+>>
+>> So I am still getting many of these:
+>> > BTRFS (device dm-5): parent transid verify failed on 25033166798848 wanted 108976 found 108958
+>> > BTRFS warning (device dm-5): page private not zero on page 25033166798848
+>> > BTRFS warning (device dm-5): page private not zero on page 25033166802944
+>> > BTRFS warning (device dm-5): page private not zero on page 25033166807040
+>> > BTRFS warning (device dm-5): page private not zero on page 25033166811136
 >
+> First we probably make sure that your device is well setup, since these
+> messages usually occur after a drive is removed(the device is somehow droping
+> writes), the below -EIO also implies btrfs cannot read/write data from or to that drive.
 >
-> 2/ Then reset the removed HD, and create onto it a new BTRFS FS with 16K leaf
-> size ?
+> And in theory, RAID6 can tolerate two drive failures, so what's your mkfs.btrfs option?
 >
-> 3/ Then is there a ways I could "btrfs send | btrfs receive" a complete volume
-> including its subvolumes and snapshots,or is this impossible (and would I
-> rather have to create the receiving volumes structure manually, and use rsync)
-> ?
+> Thanks,
 >
-> 4/ Once the data are copied onto the new FS, could I reset the remaining "old"
-> HD, import it into the new FS and get back to a RAID-1 config, rebuilding the
-> RAID with a "balance" operation ?
-
-You could do that, however at any point in the migration a read
-error/checksum mismatch could occur, and with the raid1 degraded, the
-entire point of having the btrfs raid1 in the first place is defeated.
-
-Best practices suggests acquiring a 3rd drive to migrate the data to.
-Only once that's successful and confirmed, then you can obliterate one
-of the old raid1 mirrors, and put the other old mirror on a shelf JUST
-IN CASE. You can always mount it ro,degraded later.
-
-When wiping one of the old mirrors, I go with some overkill by using
-btrfs-show-super -a to show all superblocks, and write 1MB of zeros to
-each super. Then add it to the new volume, then btrfs balance
--dconvert=raid1 -mconvert=raid1.
-
-The problems: All of your subvolumes and snapshots. To use btrfs
-send/receive on them, they each have to have a read-only version. And
-you have to have a naming convention that ensures you get either the
--p or -c correct, so that you aren't unnecessarily duplicating data
-during the send/receive. If you don't get it right, you either miss
-migrating important data, or you'll run out of space on the
-destination. The same problem applies with rsync if you want to keep
-most or all of these snapshots.
-
-The other option, is to make the raid1 volume a seed device, add two
-new drives, then delete the seed drive(s). I've only ever done this
-with a single device as seed, not a raid1. I don't even know if it
-will work because of this, but also there still may be seed device
-bugs in even recent kernels. The huge plus of this method though, is
-that you don't have to make a bunch of ro snapshots first, everything
-is migrated as it is on the seed. It's much easier. If it works. But
-since the seed is data and metadata raid1, so will be any added
-devices. So I think there isn't a way to make a raid1 a seed, where
-the added device is single profile. That'd be pretty nifty if it were
-possible.
-
-
+> -liubo
 >
-> (Machine's kernel is an Ubuntu 3.16.0-30 with btrfs-tools 3.14.1-1)
-
-Unless this kernel contains, at a minimum, the btrfs fixes in 3.16.2,
-I would stop using it. There are also a set of fixes in 3.16.7 that
-ought to be used. Since 3.16 isn't even a listed longterm or stable
-kernel anymore, I suggest using 3.17.8, 3.18.3 or newer.
-
-
-> Many thanks for all help / lights about if this is feasible / how to do it
-> without losing my data...
-
-I think the strategy at this point necessitates a 3rd drive. And
-you're going to need to thin out the herd of subvols and snapshots you
-have to something that can be manageably migrated to the new volume.
-Once that's done, break one of the old mirrors to make it into a new
-mirror (conversion), and put the other old mirror on a shelf in case
-this whole thing goes badly. It's the only safe way.
-
--- 
-Chris Murphy
+>> > BTRFS info (device dm-5): force lzo compression
+>> > BTRFS info (device dm-5): disk space caching is enabled
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>> > BTRFS: dm-5 checksum verify failed on 30525304061952 wanted 55270A94 found B18E3934 level 0
+>>
+>> Then there is this crash of "super"/btrfs_abort_transaction:
+>> > ------------[ cut here ]------------
+>> > WARNING: CPU: 0 PID: 30526 at /home/kernel/COD/linux/fs/btrfs/super.c:260 __btrfs_abort_transaction+0x5f/0x140 [btrfs]()
+>> > BTRFS: Transaction aborted (error -5)
+>> > Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
+>> > CPU: 0 PID: 30526 Comm: kworker/u16:6 Tainted: G        W   E  3.19.0-031900-generic #201502091451
+>> > Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+>> > Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+>> > 0000000000000104 ffff880002743c18 ffffffff817c4c00 0000000000000007
+>> > ffff880002743c68 ffff880002743c58 ffffffff81076e87 ffff880002743c58
+>> > ffff88020a8694d0 ffff8801fb715800 00000000fffffffb 0000000000000ae8
+>> > Call Trace:
+>> > [<ffffffff817c4c00>] dump_stack+0x45/0x57
+>> > [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
+>> > [<ffffffff81076f86>] warn_slowpath_fmt+0x46/0x50
+>> > [<ffffffffc06375cf>] __btrfs_abort_transaction+0x5f/0x140 [btrfs]
+>> > [<ffffffffc0655105>] btrfs_run_delayed_refs.part.82+0x175/0x290 [btrfs]
+>> > [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+>> > [<ffffffffc0655507>] delayed_ref_async_start+0x37/0x90 [btrfs]
+>> > [<ffffffffc069720e>] normal_work_helper+0x7e/0x1b0 [btrfs]
+>> > [<ffffffffc0697572>] btrfs_extent_refs_helper+0x12/0x20 [btrfs]
+>> > [<ffffffff8108f76d>] process_one_work+0x14d/0x460
+>> > [<ffffffff8109014b>] worker_thread+0x11b/0x3f0
+>> > [<ffffffff81090030>] ? create_worker+0x1e0/0x1e0
+>> > [<ffffffff81095d59>] kthread+0xc9/0xe0
+>> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+>> > [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
+>> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+>> > ---[ end trace dd65465954546462 ]---
+>> > BTRFS: error (device dm-5) in btrfs_run_delayed_refs:2792: errno=-5 IO failure
+>> > BTRFS info (device dm-5): forced readonly
+>>
+>> and this crash of "delayed-ref"/btrfs_select_ref_head:
+>> > ------------[ cut here ]------------
+>> > WARNING: CPU: 7 PID: 3159 at /home/kernel/COD/linux/fs/btrfs/delayed-ref.c:438 btrfs_select_ref_head+0x120/0x130 [btrfs]()
+>> > Modules linked in: ufs(E) qnx4(E) hfsplus(E) hfs(E) minix(E) ntfs(E) msdos(E) jfs(E) xfs(E) libcrc32c(E) btrfs(E) xor(E) raid6_pq(E) iosf_mbi(E) dm_crypt(E) kvm_intel(E) kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) ppdev(E) ghash_clmulni_intel(E) aesni_intel(E) aes_x86_64(E) lrw(E) gf128mul(E) glue_helper(E) ablk_helper(E) cryptd(E) 8250_fintek(E) serio_raw(E) virtio_rng(E) parport_pc(E) mac_hid(E) pvpanic(E) i2c_piix4(E) lp(E) parport(E) cirrus(E) syscopyarea(E) sysfillrect(E) sysimgblt(E) ttm(E) mpt2sas(E) drm_kms_helper(E) raid_class(E) floppy(E) psmouse(E) drm(E) scsi_transport_sas(E)
+>> > CPU: 7 PID: 3159 Comm: btrfs-transacti Tainted: G        W   E  3.19.0-031900-generic #201502091451
+>> > Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+>> > 00000000000001b6 ffff8801cb687c48 ffffffff817c4c00 0000000000000007
+>> > 0000000000000000 ffff8801cb687c88 ffffffff81076e87 0000000000000001
+>> > ffff8801fe80bf00 0000000000000000 ffff8801fe80bfc8 ffff8802345d8280
+>> > Call Trace:
+>> > [<ffffffff817c4c00>] dump_stack+0x45/0x57
+>> > [<ffffffff81076e87>] warn_slowpath_common+0x97/0xe0
+>> > [<ffffffff81076eea>] warn_slowpath_null+0x1a/0x20
+>> > [<ffffffffc06b2d40>] btrfs_select_ref_head+0x120/0x130 [btrfs]
+>> > [<ffffffffc0652cd1>] __btrfs_run_delayed_refs+0x1e1/0x5f0 [btrfs]
+>> > [<ffffffffc0654ffa>] btrfs_run_delayed_refs.part.82+0x6a/0x290 [btrfs]
+>> > [<ffffffffc0664e5c>] ? join_transaction.isra.31+0x13c/0x380 [btrfs]
+>> > [<ffffffffc0655237>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+>> > [<ffffffffc0665e50>] btrfs_commit_transaction+0xb0/0xa70 [btrfs]
+>> > [<ffffffffc0663d95>] transaction_kthread+0x1d5/0x250 [btrfs]
+>> > [<ffffffffc0663bc0>] ? open_ctree+0x1f40/0x1f40 [btrfs]
+>> > [<ffffffff81095d59>] kthread+0xc9/0xe0
+>> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+>> > [<ffffffff817d1e7c>] ret_from_fork+0x7c/0xb0
+>> > [<ffffffff81095c90>] ? flush_kthread_worker+0x90/0x90
+>> > ---[ end trace dd65465954546463 ]---
+>> > BTRFS warning (device dm-5): Skipping commit of aborted transaction.
+>> > BTRFS: error (device dm-5) in cleanup_transaction:1670: errno=-5 IO failure
+>>
+>>
+>> Any thoughts? Would it help to unplug the "dm5"-device which seems to
+>> be causing this errors and then balance the array?
+>>
+>> Regards,
+>> Tobias
+>>
+>> 2015-02-09 23:45 GMT+01:00 Tobias Holst <tobby@tobby.eu>:
+>> > Hi
+>> >
+>> > I'm having some trouble with my six-drives btrfs raid6 (each drive
+>> > encrypted with LUKS). At first: Yes, I do have backups, but it may
+>> > take at least days, maybe weeks or even some month to restore
+>> > everything from the (offside) backups. So it is not essential to
+>> > recover the data, but would be great ;-)
+>> >
+>> > OS: Ubuntu 14.04
+>> > Kernel: 3.19.0
+>> > btrfs-progs: 3.19-rc2
+>> >
+>> > When booting my server I am getting this in the syslog:
+>> >> [    8.026362] BTRFS: device label tobby-btrfs devid 3 transid 108721 /dev/dm-0
+>> >> [    8.118896] BTRFS: device label tobby-btrfs devid 6 transid 108721 /dev/dm-1
+>> >> [    8.202477] BTRFS: device label tobby-btrfs devid 1 transid 108721 /dev/dm-2
+>> >> [    8.520988] BTRFS: device label tobby-btrfs devid 4 transid 108721 /dev/dm-3
+>> >> [    8.555570] BTRFS info (device dm-3): force lzo compression
+>> >> [    8.555574] BTRFS info (device dm-3): disk space caching is enabled
+>> >> [    8.556310] BTRFS: failed to read the system array on dm-3
+>> >> [    8.592135] BTRFS: open_ctree failed
+>> >> [    9.039187] BTRFS: device label tobby-btrfs devid 2 transid 108721 /dev/dm-4
+>> >> [    9.107779] BTRFS: device label tobby-btrfs devid 5 transid 108721 /dev/dm-5
+>> > Looks like there is something wrong on drive 3, giving me "open_ctree
+>> > failed". I have to press "S" to skip mounting of the btrfs volume. It
+>> > boots and with "sudo mount --all" I can successfully mount the btrfs
+>> > volume. Sometimes it takes one or two minutes but it will mount.
+>> >
+>> > After a while I am sometimes/randomly getting this in the syslog:
+>> >> [ 1161.283246] BTRFS: dm-5 checksum verify failed on 39099619901440 wanted BB5B0AD5 found 6B6F5040 level 0
+>> > Looks like something else is broken on dm-5... But shouldn't this be
+>> > repaired with the new raid56-repair-features of kernel 3.19?
+>> >
+>> > After some more time I am getting this:
+>> >> [637017.631044] BTRFS (device dm-4): parent transid verify failed on 39099305132032 wanted 108722 found 108719
+>> > Then it is not possible to access the mounted volume anymore. I have
+>> > to "umount -l" to unmount it and then I can remount it. Until it
+>> > happens again (after some time)...
+>> >
+>> > I also tried a balance and a scrub but they "crash". Syslog is full of
+>> > messages like the following examples:
+>> >> [ 3355.523157] csum_tree_block: 53 callbacks suppressed
+>> >> [ 3355.523160] BTRFS: dm-5 checksum verify failed on 39099306917888 wanted F90D8231 found 5981C697 level 0
+>> >> [ 4006.935632]  BTRFS (device dm-5): parent transid verify failed on 30525418536960 wanted 108975 found 108767
+>> > and "btrfs scrub status /[device]" gives me the following output:
+>> >> "scrub status for [UUID]
+>> >>        scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008 seconds
+>> >>        total bytes scrubbed: 113.04GiB with 0 errors"
+>> >
+>> > So a short summary:
+>> > - btrfs raid6 on 3.19.0 with btrfs-progs 3.19-rc2
+>> > - does not mount at boot up, "open_ctree failed" (disk 3)
+>> > - mounts successfully after bootup
+>> > - randomly "checksum verify failed" (disk 5)
+>> > - balance and scrub crash after some time
+>> > - after a while the volume gets unreadable, saying "parent transid
+>> > verify failed" (disk 4 or 5)
+>> >
+>> > And it looks like there still is no way to btrfsck a raid6.
+>> >
+>> > Any ideas how to repair this filesystem?
+>> >
+>> > Regards,
+>> > Tobias
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

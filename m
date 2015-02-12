@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:52882 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:40413 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750801AbbBLQxv (ORCPT
+	by vger.kernel.org with ESMTP id S1752422AbbBLWJZ (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Feb 2015 11:53:51 -0500
+	Thu, 12 Feb 2015 17:09:25 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add generic test for fsync after creating hard link
-Date: Thu, 12 Feb 2015 16:51:29 +0000
-Message-Id: <1423759889-30546-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] fstests: generic, test fsync after adding hard link differently
+Date: Thu, 12 Feb 2015 22:08:58 +0000
+Message-Id: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -17,29 +17,32 @@ This test is motivated by an fsync issue discovered in btrfs.
 The issue was that we could lose file data, that was previously
 fsync'ed successfully, if we end up adding a hard link to our
 inode and then persist the fsync log later via an fsync of other
-inode for example.
+inode for example. This is similar to my previous test, except
+that in this test the inode that ends up losing data was created
+in (with some data) in a transaction different from the one we
+made an fsync.
 
 The btrfs issue was fixed by the following linux kernel patch:
 
-  Btrfs: fix fsync data loss after adding hard link to inode
+   Btrfs: fix fsync data loss after adding hard link to inode
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/042     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/042.out | 11 ++++++
- tests/generic/group   |  1 +
- 3 files changed, 111 insertions(+)
- create mode 100755 tests/generic/042
- create mode 100644 tests/generic/042.out
+ tests/generic/043     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/043.out |  17 ++++++++
+ tests/generic/group   |   1 +
+ 3 files changed, 128 insertions(+)
+ create mode 100755 tests/generic/043
+ create mode 100644 tests/generic/043.out
 
-diff --git a/tests/generic/042 b/tests/generic/042
+diff --git a/tests/generic/043 b/tests/generic/043
 new file mode 100755
-index 0000000..615526e
+index 0000000..5079c6d
 --- /dev/null
-+++ b/tests/generic/042
-@@ -0,0 +1,99 @@
++++ b/tests/generic/043
+@@ -0,0 +1,110 @@
 +#! /bin/bash
-+# FS QA Test No. 042
++# FS QA Test No. 043
 +#
 +# This test is motivated by an fsync issue discovered in btrfs.
 +# The issue was that we could lose file data, that was previously fsync'ed
@@ -102,23 +105,33 @@ index 0000000..615526e
 +_init_flakey
 +_mount_flakey
 +
-+# Create one file with data and fsync it.
-+# This made the btrfs fsync log persist the data and the inode metadata with
-+# a correct inode->i_size (4096 bytes).
-+$XFS_IO_PROG -f -c "pwrite -S 0xaa -b 4K 0 4K" -c "fsync" \
++# Create our test file with some data.
++$XFS_IO_PROG -f -c "pwrite -S 0xaa -b 8K 0 8K" \
 +	$SCRATCH_MNT/foo | _filter_xfs_io
 +
-+# Now add one hard link to our file. This made the btrfs code update the fsync
-+# log, in memory only, with an inode metadata having a size of 0.
++# Make sure the file is durably persisted.
++sync
++
++# Append some data to our file, to increase its size.
++$XFS_IO_PROG -f -c "pwrite -S 0xcc -b 4K 8K 4K" \
++	$SCRATCH_MNT/foo | _filter_xfs_io
++
++# Fsync the file, so from this point on if a crash/power failure happens, our
++# new data is guaranteed to be there next time the fs is mounted.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++
++# Add one hard link to our file. This made btrfs write into the in memory fsync
++# log a special inode with generation 0. Note that this didn't update the inode
++# in the fsync log on disk.
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
 +
-+# Now force persistence of the fsync log to disk, for example, by fsyncing some
-+# other file.
++# Now make sure the in memory fsync log is durably persisted.
++# Creating and fsync'ing another file will do it.
 +touch $SCRATCH_MNT/bar
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
 +
-+# Before a power loss or crash, we could read the 4Kb of data from our file as
-+# expected.
++# As expected, before the crash/power failure, we should be able to read the
++# 12Kb of file data.
 +echo "File content before:"
 +od -t x1 $SCRATCH_MNT/foo
 +
@@ -129,40 +142,47 @@ index 0000000..615526e
 +_load_flakey_table $FLAKEY_ALLOW_WRITES
 +_mount_flakey
 +
-+# After the fsync log replay, because the fsync log had a value of 0 for our
-+# inode's i_size, we couldn't read anymore the 4Kb of data that we previously
-+# wrote and fsync'ed. The size of the file became 0 after the fsync log replay.
++# After mounting the fs again, the fsync log was replayed.
++# The btrfs fsync log replay code didn't update the size of the persisted inode
++# with the size of the size found in the fsync log's inode metadata. This made
++# the last 4Kb of file data inaccessible.
 +echo "File content after:"
 +od -t x1 $SCRATCH_MNT/foo
 +
 +status=0
 +exit
-diff --git a/tests/generic/042.out b/tests/generic/042.out
+diff --git a/tests/generic/043.out b/tests/generic/043.out
 new file mode 100644
-index 0000000..a4ea5b6
+index 0000000..eaf9be5
 --- /dev/null
-+++ b/tests/generic/042.out
-@@ -0,0 +1,11 @@
-+QA output created by 042
-+wrote 4096/4096 bytes at offset 0
++++ b/tests/generic/043.out
+@@ -0,0 +1,17 @@
++QA output created by 043
++wrote 8192/8192 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 4096/4096 bytes at offset 8192
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +File content before:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
-+0010000
++0020000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++0030000
 +File content after:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
-+0010000
++0020000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++0030000
 diff --git a/tests/generic/group b/tests/generic/group
-index fb67b57..001ec80 100644
+index 001ec80..d686f2f 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -44,6 +44,7 @@
- 039 metadata auto quick
+@@ -45,6 +45,7 @@
  040 metadata auto quick
  041 metadata auto quick
-+042 metadata auto quick
+ 042 metadata auto quick
++043 metadata auto quick
  053 acl repair auto quick
  062 attr udf auto quick
  068 other auto freeze dangerous stress

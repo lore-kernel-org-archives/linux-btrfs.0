@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:65040 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59700 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753050AbbBLBqf (ORCPT
+	with ESMTP id S1753030AbbBLBwP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 20:46:35 -0500
+	Wed, 11 Feb 2015 20:52:15 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C1jmna023894
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 09:45:48 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C1pSls024294
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 09:51:28 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 9/9] btrfs: Use sb_want_write() to protect sysfs feature change.
-Date: Thu, 12 Feb 2015 09:44:33 +0800
-Message-ID: <1423705473-8597-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v8 9/9] btrfs: Use sb_want_write() to protect sysfs feature change.
+Date: Thu, 12 Feb 2015 09:50:14 +0800
+Message-ID: <1423705814-18007-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,25 +30,21 @@ v6:
 v7:
   None
 v8:
-  Move sb_want_write() after getting fs_info.
+  Move sb_want_write() after get fs_info.
 ---
- fs/btrfs/sysfs.c | 31 +++++++++++++++++++++----------
- 1 file changed, 21 insertions(+), 10 deletions(-)
+ fs/btrfs/sysfs.c | 27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 7e548f7..85848fc 100644
+index 7e548f7..2e8cc34 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -118,13 +118,19 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	int ret;
+@@ -119,12 +119,16 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
  
  	fs_info = to_fs_info(kobj);
--	if (!fs_info)
+ 	if (!fs_info)
 -		return -EPERM;
-+	if (!fs_info) {
 +		ret = -EPERM;
-+		goto out;
-+	}
  
 -	ret = kstrtoul(skip_spaces(buf), 0, &val);
 +	ret = sb_want_write(fs_info->sb);
@@ -62,7 +58,7 @@ index 7e548f7..85848fc 100644
  	if (fa->feature_set == FEAT_COMPAT) {
  		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
  		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
-@@ -141,22 +147,25 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+@@ -141,22 +145,25 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
  	/* Nothing to do */
  	if ((val && (features & fa->feature_bit)) ||
  	    (!val && !(features & fa->feature_bit)))
@@ -92,7 +88,7 @@ index 7e548f7..85848fc 100644
  
  	spin_lock(&fs_info->super_lock);
  	features = get_features(fs_info, fa->feature_set);
-@@ -168,10 +177,12 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+@@ -168,10 +175,12 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
  	spin_unlock(&fs_info->super_lock);
  
  	ret = btrfs_commit_transaction(trans, fs_info->fs_root);

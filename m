@@ -1,55 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52018 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753289AbbBLEmm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 23:42:42 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YLlbp-0000Al-WA
-	for linux-btrfs@vger.kernel.org; Thu, 12 Feb 2015 05:42:38 +0100
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 05:42:37 +0100
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 05:42:37 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:16933 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753655AbbBLE7P (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Feb 2015 23:59:15 -0500
+Date: Thu, 12 Feb 2015 12:59:03 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: "P. Remek" <p.remek1@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs performance, sudden drop to 0 IOPs
-Date: Thu, 12 Feb 2015 05:33:41 +0100
-Message-ID: <62ntqb-o2r.ln1@hurikhan77.spdns.de>
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com> <pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net> <CABdHLQ6La7BO-TJ3cYEx_NnOUhAYJ69uv3tGnVRYsWkiUrqCsQ@mail.gmail.com> <pan$9532$65b1220e$320184ed$94bcf659@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Message-ID: <20150212045902.GD2416@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan@cox.net> schrieb:
-
-> P. Remek posted on Tue, 10 Feb 2015 18:44:33 +0100 as excerpted:
+On Mon, Feb 09, 2015 at 06:26:49PM +0100, P. Remek wrote:
+> Hello,
 > 
->> In the test, I use --direct=1 parameter for fio which basically does
->> O_DIRECT on target file. The O_DIRECT should guarantee that the
->> filesystem cache is bypassed and IO is sent directly to the underlaying
->> storage. Are you saying that btrfs buffers writes despite of O_DIRECT?
+> I am benchmarking Btrfs and when benchmarking random writes with fio
+> utility, I noticed following two things:
 > 
-> I'm out of my (admin, no claims at developer) league on that.  I see
-> someone else replied, and would defer to them on this.
+> 1) On first run when target file doesn't exist yet, perfromance is
+> about 8000 IOPs. On second, and every other run, performance goes up
+> to 70000 IOPs. Its massive difference. The target file is the one
+> created during the first run.
 
-I don't think that O_DIRECT can work efficiently on COW filesystems. It 
-probably has a negative effect and cannot be faster as normal access. Linus 
-itself said one time that O_DIRECT is broken and should go away, and instead 
-cache hinting should be used.
+I was doing similar tests in the last few days, well, the huge performance difference comes from AIO+DIO path,
 
-Think of this: For the _unbuffered_ direct-io request to be fulfilled the 
-file system has to go through its COW logic first which it otherwise had 
-buffered and done in background. Bypassing the cache is probably only a 
-side-effect of O_DIRECT, not its purpose.
+fs/direct-io.c: 1170
+        /*
+         * For file extending writes updating i_size before data
+         * writeouts
+         * complete can expose uninitialized blocks in dumb filesystems.
+         * In that case we need to wait for I/O completion even if asked
+         * for an asynchronous write.
+         */
+        if (is_sync_kiocb(iocb))
+                dio->is_async = false;
+        else if (!(dio->flags & DIO_ASYNC_EXTEND) &&
+            (rw & WRITE) && end > i_size_read(inode))
+                dio->is_async = false;
+        else
+                dio->is_async = true;
 
-At least I'd try with a nocow-file for the benchmark if you still have to 
-use O_DIRECT.
+So you may like to play with fio's fallocate option, although it's 'posix' on default which should have set proper i_size for you, but I don't believe it unless I set it to.
 
--- 
-Replies to list only preferred.
 
+> 
+> 2) There are windows during the test where IOPs drop to 0 and stay 0
+> about 10 seconds and then it goes back again, and after couple of
+> seconds again to 0. This is reproducible 100% times.
+> 
+> Can somobody shred some light on what's happening?
+> 
+
+I'd use a blktrace based tool like iowatcher or seekwatcher to see
+what's really happening on the performance drops.
+
+
+> 
+> Command: fio --randrepeat=1 --ioengine=libaio --direct=1
+> --gtod_reduce=1 --name=test9 --filename=test9 --bs=4k --iodepth=256
+> --size=10G --numjobs=1 --readwrite=randwrite
+
+Since this is just a libaio-dio random write, I think it has nothing to do with
+progs side.
+
+Thanks,
+
+-liubo
+> 
+> Environment:
+> CPU: dual socket: E5-2630 v2
+>    RAM: 32 GB ram
+>    OS: Ubuntu server 14.10
+>    Kernel: 3.19.0-031900rc2-generic
+>    btrfs tools: Btrfs v3.14.1
+>    2x LSI 9300 HBAs - SAS3 12/Gbs
+>    8x SSD Ultrastar SSD1600MM 400GB SAS3 12/Gbs
+> 
+> Regards,
+> Premek
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,42 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24789 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754986AbbBLHDx (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:35208 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751969AbbBLHnZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 02:03:53 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-fsdevel@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 1/1 V2] export symbol kobject_move()
-Date: Thu, 12 Feb 2015 07:03:37 +0800
-Message-Id: <1423695817-8895-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1423439315-4543-1-git-send-email-anand.jain@oracle.com>
-References: <1423439315-4543-1-git-send-email-anand.jain@oracle.com>
+	Thu, 12 Feb 2015 02:43:25 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C7gbic016512
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 15:42:37 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs: cleanup: use wait_event() for btrfs_rm_dev_replace_blocked()
+Date: Thu, 12 Feb 2015 15:42:15 +0800
+Message-ID: <1423726935-7745-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-drivers/cpufreq/cpufreq.c is already using this function. And now btrfs
-needs it as well. export symbol kobject_move().
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+wait_event() is just suit for these hand-made code.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
-v1->v2: Didn't notice there wasn't my signed-off, now added. Thanks Dave.
+ fs/btrfs/dev-replace.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
 
- lib/kobject.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/lib/kobject.c b/lib/kobject.c
-index 58751bb..e055c06 100644
---- a/lib/kobject.c
-+++ b/lib/kobject.c
-@@ -548,6 +548,7 @@ out:
- 	kfree(devpath);
- 	return error;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 92109b7..1a2d440 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -440,18 +440,9 @@ leave:
+  */
+ static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
+ {
+-	s64 writers;
+-	DEFINE_WAIT(wait);
+-
+ 	set_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
+-	do {
+-		prepare_to_wait(&fs_info->replace_wait, &wait,
+-				TASK_UNINTERRUPTIBLE);
+-		writers = percpu_counter_sum(&fs_info->bio_counter);
+-		if (writers)
+-			schedule();
+-		finish_wait(&fs_info->replace_wait, &wait);
+-	} while (writers);
++	wait_event(fs_info->replace_wait,
++		   !percpu_counter_sum(&fs_info->bio_counter));
  }
-+EXPORT_SYMBOL_GPL(kobject_move);
  
- /**
-  * kobject_del - unlink kobject from hierarchy.
+ /*
 -- 
-2.0.0.153.g79dcccc
+1.8.5.1
 

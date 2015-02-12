@@ -1,78 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32202 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752959AbbBKUPL (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:65040 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753050AbbBLBqf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 15:15:11 -0500
-Message-ID: <54DBB848.9030500@fb.com>
-Date: Wed, 11 Feb 2015 15:15:04 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 11 Feb 2015 20:46:35 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C1jmna023894
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 09:45:48 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 9/9] btrfs: Use sb_want_write() to protect sysfs feature change.
+Date: Thu, 12 Feb 2015 09:44:33 +0800
+Message-ID: <1423705473-8597-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Zhaolei <zhaolei@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3] btrfs: Fix out-of-space bug
-References: <1423648881-4845-1-git-send-email-zhaolei@cn.fujitsu.com>
-In-Reply-To: <1423648881-4845-1-git-send-email-zhaolei@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/11/2015 05:01 AM, Zhaolei wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
->
-> Btrfs will report NO_SPACE when we create and remove files for several times,
-> and we can't write to filesystem until mount it again.
->
-> Steps to reproduce:
->   1: Create a single-dev btrfs fs with default option
->   2: Write a file into it to take up most fs space
->   3: Delete above file
->   4: Wait about 100s to let chunk removed
->   5: goto 2
->
-> Script is like following:
->   #!/bin/bash
->
->   # Recommend 1.2G space, too large disk will make test slow
->   DEV="/dev/sda16"
->   MNT="/mnt/tmp"
->
->   dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
->   file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
->
->   echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
->
->   for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
->   echo "mkfs $DEV"
->   mkfs.btrfs -f "$DEV" >/dev/null || exit 2
->   echo "mount $DEV $MNT"
->   mount "$DEV" "$MNT" || exit 2
->
->   for ((loop_i = 0; loop_i < 20; loop_i++)); do
->       echo
->       echo "loop $loop_i"
->
->       echo "dd file..."
->       cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
->       "${cmd[@]}" 2>/dev/null || {
->           # NO_SPACE error triggered
->           echo "dd failed: ${cmd[*]}"
->           exit 1
->       }
->
->       echo "rm file..."
->       rm -f "$MNT"/file0 || exit 2
->
->       for ((i = 0; i < 10; i++)); do
->           df "$MNT" | tail -1
->           sleep 10
->       done
->   done
->
+Just like label change, use sb_want_write() to do a correct protection.
 
-Excellent find btw, please make sure to turn this into an xfstest.  An 
-atomic is a bit heavy handed for this, just use an int and set it to 1, 
-we don't need to worry about races since handles will have exited out in 
-time.  Thanks,
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v4:
+  Newly introduced.
+v5:
+  Change to sb_want_write().
+v6:
+  Move sb_want_write() to the beginning of the function.
+v7:
+  None
+v8:
+  Move sb_want_write() after getting fs_info.
+---
+ fs/btrfs/sysfs.c | 31 +++++++++++++++++++++----------
+ 1 file changed, 21 insertions(+), 10 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 7e548f7..85848fc 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -118,13 +118,19 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	int ret;
+ 
+ 	fs_info = to_fs_info(kobj);
+-	if (!fs_info)
+-		return -EPERM;
++	if (!fs_info) {
++		ret = -EPERM;
++		goto out;
++	}
+ 
+-	ret = kstrtoul(skip_spaces(buf), 0, &val);
++	ret = sb_want_write(fs_info->sb);
+ 	if (ret)
+ 		return ret;
+ 
++	ret = kstrtoul(skip_spaces(buf), 0, &val);
++	if (ret)
++		goto out;
++
+ 	if (fa->feature_set == FEAT_COMPAT) {
+ 		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
+ 		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
+@@ -141,22 +147,25 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	/* Nothing to do */
+ 	if ((val && (features & fa->feature_bit)) ||
+ 	    (!val && !(features & fa->feature_bit)))
+-		return count;
++		goto out;
+ 
+ 	if ((val && !(set & fa->feature_bit)) ||
+ 	    (!val && !(clear & fa->feature_bit))) {
+ 		btrfs_info(fs_info,
+ 			"%sabling feature %s on mounted fs is not supported.",
+ 			val ? "En" : "Dis", fa->kobj_attr.attr.name);
+-		return -EPERM;
++		ret = -EPERM;
++		goto out;
+ 	}
+ 
+ 	btrfs_info(fs_info, "%s %s feature flag",
+ 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
+ 
+ 	trans = btrfs_start_transaction(fs_info->fs_root, 0);
+-	if (IS_ERR(trans))
+-		return PTR_ERR(trans);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
+ 
+ 	spin_lock(&fs_info->super_lock);
+ 	features = get_features(fs_info, fa->feature_set);
+@@ -168,10 +177,12 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	spin_unlock(&fs_info->super_lock);
+ 
+ 	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
+-	if (ret)
+-		return ret;
+ 
+-	return count;
++out:
++	sb_drop_write(fs_info->sb);
++	if (!ret)
++		return count;
++	return ret;
+ }
+ 
+ static umode_t btrfs_feature_visible(struct kobject *kobj,
+-- 
+2.3.0
 

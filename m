@@ -1,105 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:33176 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750943AbbBLQvF (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Feb 2015 11:51:05 -0500
-From: Filipe Manana <fdmanana@suse.com>
+Received: from sandstone.cs.wisc.edu ([128.105.6.39]:50682 "EHLO
+	sandstone.cs.wisc.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751522AbbBLWAS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Feb 2015 17:00:18 -0500
+Received: from webmail.cs.wisc.edu (lilo.cs.wisc.edu [128.105.7.102])
+	by sandstone.cs.wisc.edu (8.14.1/8.14.1) with ESMTP id t1CLslBW005413
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 15:54:47 -0600
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Thu, 12 Feb 2015 16:54:47 -0500
+From: Nishant Agrawal <nragrawal@cs.wisc.edu>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix fsync data loss after adding hard link to inode
-Date: Thu, 12 Feb 2015 16:50:07 +0000
-Message-Id: <1423759807-29640-1-git-send-email-fdmanana@suse.com>
+Subject: How to compile =?UTF-8?Q?btrfs-progs=3F?=
+Message-ID: <cc8040167122fea3f732a80a953ef78f@cs.wisc.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have a scenario where after the fsync log replay we can lose file data
-that had been previously fsync'ed if we added an hard link for our inode
-and after that we sync'ed the fsync log (for example by fsync'ing some
-other file or directory).
+Hi,
 
-This is because when adding an hard link we updated the inode item in the
-log tree with an i_size value of 0. At that point the new inode item was
-in memory only and a subsequent fsync log replay would not make us lose
-the file data. However if after adding the hard link we sync the log tree
-to disk, by fsync'ing some other file or directory for example, we ended
-up losing the file data after log replay, because the inode item in the
-persisted log tree had an an i_size of zero.
+I am new to btrfs and trying to learn it.
 
-This is easy to reproduce, and the following excerpt from my test for
-xfstests shows this:
+I have download btrfs-progs code from the git repository but not able to 
+compile it.
 
-  _scratch_mkfs >> $seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
+Can someone help me with the steps to compile this user space programs?
 
-  # Create one file with data and fsync it.
-  # This made the btrfs fsync log persist the data and the inode metadata with
-  # a correct inode->i_size (4096 bytes).
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 4K 0 4K" -c "fsync" \
-       $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Now add one hard link to our file. This made the btrfs code update the fsync
-  # log, in memory only, with an inode metadata having a size of 0.
-  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
-
-  # Now force persistence of the fsync log to disk, for example, by fsyncing some
-  # other file.
-  touch $SCRATCH_MNT/bar
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-
-  # Before a power loss or crash, we could read the 4Kb of data from our file as
-  # expected.
-  echo "File content before:"
-  od -t x1 $SCRATCH_MNT/foo
-
-  # Simulate a crash/power loss.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  # After the fsync log replay, because the fsync log had a value of 0 for our
-  # inode's i_size, we couldn't read anymore the 4Kb of data that we previously
-  # wrote and fsync'ed. The size of the file became 0 after the fsync log replay.
-  echo "File content after:"
-  od -t x1 $SCRATCH_MNT/foo
-
-This isn't a new issue/regression. This problem has been around since the
-log tree code was added in 2008:
-
-  Btrfs: Add a write ahead tree log to optimize synchronous operations
-  (commit e02119d5a7b4396c5a872582fddc8bd6d305a70a)
-
-A test case for xfstests follows soon.
-
-CC: <stable@vger.kernel.org>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index ea0431d..8d8ae1e 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3263,14 +3263,13 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 		 * to say 'update this inode with these values'
- 		 */
- 		btrfs_set_token_inode_generation(leaf, item, 0, &token);
--		btrfs_set_token_inode_size(leaf, item, 0, &token);
- 	} else {
- 		btrfs_set_token_inode_generation(leaf, item,
- 						 BTRFS_I(inode)->generation,
- 						 &token);
--		btrfs_set_token_inode_size(leaf, item, inode->i_size, &token);
- 	}
- 
-+	btrfs_set_token_inode_size(leaf, item, i_size_read(inode), &token);
- 	btrfs_set_token_inode_uid(leaf, item, i_uid_read(inode), &token);
- 	btrfs_set_token_inode_gid(leaf, item, i_gid_read(inode), &token);
- 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
--- 
-2.1.3
-
+Thanks
+Nishant

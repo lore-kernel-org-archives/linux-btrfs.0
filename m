@@ -1,70 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43283 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754242AbbBLEpw (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:11719 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751227AbbBLGTb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Feb 2015 23:45:52 -0500
-Date: Thu, 12 Feb 2015 12:45:39 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] Btrfs: don't set and clear delalloc for O_DIRECT
- writes
-Message-ID: <20150212044539.GC2416@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1423685339-8278-1-git-send-email-jbacik@fb.com>
- <1423685339-8278-2-git-send-email-jbacik@fb.com>
+	Thu, 12 Feb 2015 01:19:31 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1C6IfPr010022
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 14:18:41 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v4] btrfs: Fix out-of-space bug
+Date: Thu, 12 Feb 2015 14:18:17 +0800
+Message-ID: <1423721897-29316-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423685339-8278-2-git-send-email-jbacik@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 11, 2015 at 03:08:58PM -0500, Josef Bacik wrote:
-> We do this to get the space accounting, but this is just needless churn on the
-> io_tree, so just drop setting/clearing delalloc and just drop the reserved data
-> space when we have a successfull allocation.  Thanks,
-> 
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Looks good.
+Btrfs will report NO_SPACE when we create and remove files for several times,
+and we can't write to filesystem until mount it again.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Steps to reproduce:
+ 1: Create a single-dev btrfs fs with default option
+ 2: Write a file into it to take up most fs space
+ 3: Delete above file
+ 4: Wait about 100s to let chunk removed
+ 5: goto 2
 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/inode.c | 8 ++------
->  1 file changed, 2 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index e78a2fd..fb16fd3 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7142,7 +7142,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
->  	int ret = 0;
->  
->  	if (create)
-> -		unlock_bits |= EXTENT_DELALLOC | EXTENT_DIRTY;
-> +		unlock_bits |= EXTENT_DIRTY;
->  	else
->  		len = min_t(u64, len, root->sectorsize);
->  
-> @@ -7278,11 +7278,7 @@ unlock:
->  			BTRFS_I(inode)->outstanding_extents++;
->  			spin_unlock(&BTRFS_I(inode)->lock);
->  		}
-> -
-> -		ret = set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
-> -				     lockstart + len - 1, EXTENT_DELALLOC, NULL,
-> -				     &cached_state, GFP_NOFS);
-> -		BUG_ON(ret);
-> +		btrfs_free_reserved_data_space(inode, len);
->  	}
->  
->  	/*
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Script is like following:
+ #!/bin/bash
+
+ # Recommend 1.2G space, too large disk will make test slow
+ DEV="/dev/sda16"
+ MNT="/mnt/tmp"
+
+ dev_size="$(lsblk -bn -o SIZE "$DEV")" || exit 2
+ file_size_m=$((dev_size * 75 / 100 / 1024 / 1024))
+
+ echo "Loop write ${file_size_m}M file on $((dev_size / 1024 / 1024))M dev"
+
+ for ((i = 0; i < 10; i++)); do umount "$MNT" 2>/dev/null; done
+ echo "mkfs $DEV"
+ mkfs.btrfs -f "$DEV" >/dev/null || exit 2
+ echo "mount $DEV $MNT"
+ mount "$DEV" "$MNT" || exit 2
+
+ for ((loop_i = 0; loop_i < 20; loop_i++)); do
+     echo
+     echo "loop $loop_i"
+
+     echo "dd file..."
+     cmd=(dd if=/dev/zero of="$MNT"/file0 bs=1M count="$file_size_m")
+     "${cmd[@]}" 2>/dev/null || {
+         # NO_SPACE error triggered
+         echo "dd failed: ${cmd[*]}"
+         exit 1
+     }
+
+     echo "rm file..."
+     rm -f "$MNT"/file0 || exit 2
+
+     for ((i = 0; i < 10; i++)); do
+         df "$MNT" | tail -1
+         sleep 10
+     done
+ done
+
+Reason:
+ It is triggered by commit: 47ab2a6c689913db23ccae38349714edf8365e0a
+ which is used to remove empty block groups automatically, but the
+ reason is not in that patch. Code before works well because btrfs
+ don't need to create and delete chunks so many times with high
+ complexity.
+ Above bug is caused by many reason, any of them can trigger it.
+
+Reason1:
+ When we remove some continuous chunks but leave other chunks after,
+ these disk space should be used by chunk-recreating, but in current
+ code, only first create will successed.
+ Fixed by Forrest Liu <forrestl@synology.com> in:
+ Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
+
+Reason2:
+ contains_pending_extent() return wrong value in calculation.
+ Fixed by Forrest Liu <forrestl@synology.com> in:
+ Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
+
+Reason3:
+ btrfs_check_data_free_space() try to commit transaction and retry
+ allocating chunk when the first allocating failed, but space_info->full
+ is set in first allocating, and prevent second allocating in retry.
+ Fixed in this patch by clear space_info->full in commit transaction.
+
+ Tested for severial times by above script.
+
+Changelog v3->v4:
+ use light weight int instead of atomic_t to record have_remove_bgs in
+ transaction, suggested by:
+ Josef Bacik <jbacik@fb.com>
+
+Changelog v2->v3:
+ v2 fixed the bug by adding more commit-transaction, but we
+ only need to reclaim space when we are really have no space for
+ new chunk, noticed by:
+ Filipe David Manana <fdmanana@gmail.com>
+
+ Actually, our code already have this type of commit-and-retry,
+ we only need to make it working with removed-bgs.
+ v3 fixed the bug with above way.
+
+Changelog v1->v2:
+ v1 will introduce a new bug when delete and create chunk in same disk
+ space in same transaction, noticed by:
+ Filipe David Manana <fdmanana@gmail.com>
+ V2 fix this bug by commit transaction after remove block grops.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Suggested-by: Filipe David Manana <fdmanana@gmail.com>
+Suggested-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c | 4 ++++
+ fs/btrfs/transaction.h | 5 +++++
+ fs/btrfs/volumes.c     | 2 ++
+ 3 files changed, 11 insertions(+)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index e88b59d..2c192f9 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -220,6 +220,7 @@ loop:
+ 	 * commit the transaction.
+ 	 */
+ 	atomic_set(&cur_trans->use_count, 2);
++	cur_trans->have_free_bgs = 0;
+ 	cur_trans->start_time = get_seconds();
+ 
+ 	cur_trans->delayed_refs.href_root = RB_ROOT;
+@@ -2026,6 +2027,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_finish_extent_commit(trans, root);
+ 
++	if (cur_trans->have_free_bgs)
++		btrfs_clear_space_info_full(root->fs_info);
++
+ 	root->fs_info->last_trans_committed = cur_trans->transid;
+ 	/*
+ 	 * We needn't acquire the lock here because there is no other task
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 00ed29c..22e45d1 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -47,6 +47,11 @@ struct btrfs_transaction {
+ 	atomic_t num_writers;
+ 	atomic_t use_count;
+ 
++	/*
++	 * true if there is free bgs operations in this transaction
++	 */
++	int have_free_bgs;
++
+ 	/* Be protected by fs_info->trans_lock when we want to change it. */
+ 	enum btrfs_trans_state state;
+ 	struct list_head list;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 50c5a87..e86f4ca 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1310,6 +1310,8 @@ again:
+ 	if (ret) {
+ 		btrfs_error(root->fs_info, ret,
+ 			    "Failed to remove dev extent item");
++	} else {
++		trans->transaction->have_free_bgs = 1;
+ 	}
+ out:
+ 	btrfs_free_path(path);
+-- 
+1.8.5.1
+

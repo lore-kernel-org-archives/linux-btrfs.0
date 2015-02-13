@@ -1,70 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47519 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751273AbbBMCqg (ORCPT
+Received: from mail-yh0-f54.google.com ([209.85.213.54]:57449 "EHLO
+	mail-yh0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751311AbbBMDiQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 21:46:36 -0500
-Date: Fri, 13 Feb 2015 10:46:24 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs performance, sudden drop to 0 IOPs
-Message-ID: <20150213024624.GB25697@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
- <pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
- <CABdHLQ6La7BO-TJ3cYEx_NnOUhAYJ69uv3tGnVRYsWkiUrqCsQ@mail.gmail.com>
- <pan$9532$65b1220e$320184ed$94bcf659@cox.net>
- <62ntqb-o2r.ln1@hurikhan77.spdns.de>
+	Thu, 12 Feb 2015 22:38:16 -0500
+Received: by mail-yh0-f54.google.com with SMTP id z6so6855850yhz.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Feb 2015 19:38:16 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <62ntqb-o2r.ln1@hurikhan77.spdns.de>
+In-Reply-To: <CAJCQCtRAz66sT_sKpy_JOhHnWf4ZvVMtYQyJXrMGLPx-oPDp8Q@mail.gmail.com>
+References: <11865500.KaKfdqacBs@zafu>
+	<CAJCQCtRAz66sT_sKpy_JOhHnWf4ZvVMtYQyJXrMGLPx-oPDp8Q@mail.gmail.com>
+Date: Thu, 12 Feb 2015 20:38:15 -0700
+Message-ID: <CAJCQCtQX_wDt0bFyJpHe428uYX2PEr+nuuLMdVncLsVsjwA7HA@mail.gmail.com>
+Subject: Re: BTRFS RAID-1 leaf size change scenario
+From: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 12, 2015 at 05:33:41AM +0100, Kai Krakow wrote:
-> Duncan <1i5t5.duncan@cox.net> schrieb:
-> 
-> > P. Remek posted on Tue, 10 Feb 2015 18:44:33 +0100 as excerpted:
-> > 
-> >> In the test, I use --direct=1 parameter for fio which basically does
-> >> O_DIRECT on target file. The O_DIRECT should guarantee that the
-> >> filesystem cache is bypassed and IO is sent directly to the underlaying
-> >> storage. Are you saying that btrfs buffers writes despite of O_DIRECT?
-> > 
-> > I'm out of my (admin, no claims at developer) league on that.  I see
-> > someone else replied, and would defer to them on this.
-> 
-> I don't think that O_DIRECT can work efficiently on COW filesystems. It 
-> probably has a negative effect and cannot be faster as normal access. Linus 
-> itself said one time that O_DIRECT is broken and should go away, and instead 
-> cache hinting should be used.
-> 
-> Think of this: For the _unbuffered_ direct-io request to be fulfilled the 
-> file system has to go through its COW logic first which it otherwise had 
-> buffered and done in background. Bypassing the cache is probably only a 
-> side-effect of O_DIRECT, not its purpose.
+I'm going to amend what I wrote earlier. The problem with the seed
+device method, it won't let you change the leafsize. And that means
+you'll need to go with a new volume with mkfs, and migrate data with
+btrfs send receive instead.
 
-Hmm, not true in btrfs, the COW logic mentioned above is nothing but to allocate
-a NEW extent, and it's not done in background.
+And to clarify, you don't need to thin out subvolume to start out with
+on the existing volume. Do the thinning as part of the send/receive
+strategy. Keep the old raid1 mirror as a read only archive until
+you're clear you don't need it as much as you need a new backup
+volume. I wouldn't combine archive and backup in a single device.
 
-Comparing to nocow logic, the main difference comes from 
-a) COW files' calculating checksums of the dirty data in DIO pages which nocow files don't need to.
-b) their endio handlers.
-
-Or am I missing something?
-
-Thanks,
-
--liubo
-> 
-> At least I'd try with a nocow-file for the benchmark if you still have to 
-> use O_DIRECT.
-> 
-> -- 
-> Replies to list only preferred.
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Chris Murphy

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:46011 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:52844 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752963AbbBMQPf (ORCPT
+	by vger.kernel.org with ESMTP id S1752469AbbBMQ4j (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 13 Feb 2015 11:15:35 -0500
+	Fri, 13 Feb 2015 11:56:39 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: don't remove extents and xattrs when logging new names
-Date: Fri, 13 Feb 2015 16:15:09 +0000
-Message-Id: <1423844109-18266-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: don't remove extents and xattrs when logging new names
+Date: Fri, 13 Feb 2015 16:56:14 +0000
+Message-Id: <1423846574-3391-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1423831124-21199-1-git-send-email-fdmanana@suse.com>
 References: <1423831124-21199-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -122,11 +122,14 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 V2: Added missing assignment to max_key.type for directory inode case.
 
- fs/btrfs/tree-log.c | 23 +++++++++++++++++------
- 1 file changed, 17 insertions(+), 6 deletions(-)
+V3: Fixed the test/clear bit logic so that the bits are only cleared
+    if we aren't logging new names.
+
+ fs/btrfs/tree-log.c | 39 +++++++++++++++++++++++++++------------
+ 1 file changed, 27 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index b0fe52a..5c91645 100644
+index b0fe52a..aa4ebea 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
 @@ -4069,8 +4069,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
@@ -142,25 +145,39 @@ index b0fe52a..5c91645 100644
  		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
  	} else {
  		if (inode_only == LOG_INODE_EXISTS) {
-@@ -4096,14 +4098,23 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 				       &BTRFS_I(inode)->runtime_flags)) {
- 			clear_bit(BTRFS_INODE_COPY_EVERYTHING,
- 				  &BTRFS_I(inode)->runtime_flags);
+@@ -4092,18 +4094,31 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 			if (err)
+ 				goto out_unlock;
+ 		}
+-		if (test_and_clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+-				       &BTRFS_I(inode)->runtime_flags)) {
+-			clear_bit(BTRFS_INODE_COPY_EVERYTHING,
+-				  &BTRFS_I(inode)->runtime_flags);
 -			ret = btrfs_truncate_inode_items(trans, log,
 -							 inode, 0, 0);
+-		} else if (test_and_clear_bit(BTRFS_INODE_COPY_EVERYTHING,
+-					      &BTRFS_I(inode)->runtime_flags) ||
++		if (test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
++			     &BTRFS_I(inode)->runtime_flags)) {
 +			if (inode_only == LOG_INODE_EXISTS) {
 +				max_key.type = BTRFS_INODE_EXTREF_KEY;
 +				ret = drop_objectid_items(trans, log, path, ino,
 +							  max_key.type);
 +			} else {
++				clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
++					  &BTRFS_I(inode)->runtime_flags);
++				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
++					  &BTRFS_I(inode)->runtime_flags);
 +				ret = btrfs_truncate_inode_items(trans, log,
 +								 inode, 0, 0);
 +			}
- 		} else if (test_and_clear_bit(BTRFS_INODE_COPY_EVERYTHING,
- 					      &BTRFS_I(inode)->runtime_flags) ||
++		} else if (test_bit(BTRFS_INODE_COPY_EVERYTHING,
++				    &BTRFS_I(inode)->runtime_flags) ||
  			   inode_only == LOG_INODE_EXISTS) {
 -			if (inode_only == LOG_INODE_ALL)
 +			if (inode_only == LOG_INODE_ALL) {
++				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
++					  &BTRFS_I(inode)->runtime_flags);
  				fast_search = true;
 -			max_key.type = BTRFS_XATTR_ITEM_KEY;
 +				max_key.type = BTRFS_XATTR_ITEM_KEY;

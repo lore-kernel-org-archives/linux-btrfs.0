@@ -1,34 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f179.google.com ([209.85.160.179]:36830 "EHLO
-	mail-yk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752532AbbBMNST (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:36307 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752684AbbBMOIu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Feb 2015 08:18:19 -0500
-Received: by mail-yk0-f179.google.com with SMTP id 9so7575086ykp.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 05:18:16 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <4F8CF413-337F-4E67-9DA1-C738390416C4@gmail.com>
-References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
-	<pan$321bc$90037b7$6ca4e371$e54e1a3b@cox.net>
-	<CABdHLQ6La7BO-TJ3cYEx_NnOUhAYJ69uv3tGnVRYsWkiUrqCsQ@mail.gmail.com>
-	<pan$9532$65b1220e$320184ed$94bcf659@cox.net>
-	<62ntqb-o2r.ln1@hurikhan77.spdns.de>
-	<20150213024624.GB25697@localhost.localdomain>
-	<4F8CF413-337F-4E67-9DA1-C738390416C4@gmail.com>
-Date: Fri, 13 Feb 2015 14:18:16 +0100
-Message-ID: <CABdHLQ44Oj+=AXSoduJFTNsz=SfDVJFJH2RLf2NtvjgCvwmGyA@mail.gmail.com>
+	Fri, 13 Feb 2015 09:08:50 -0500
+Date: Fri, 13 Feb 2015 22:08:42 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: "P. Remek" <p.remek1@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs performance, sudden drop to 0 IOPs
-From: "P. Remek" <p.remek1@googlemail.com>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: bo.li.liu@oracle.com, Kai Krakow <hurikhan77@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20150213140842.GE25697@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CABdHLQ7QPjUbzqNdzCfR0QxC-0coYs0dofuFvsROYXy-M9u4ig@mail.gmail.com>
+ <20150212045902.GD2416@localhost.localdomain>
+ <CABdHLQ5JwhizkAPA8GUFf_hBH4_LO4yJV5qkf+sRiNFG90oMGg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CABdHLQ5JwhizkAPA8GUFf_hBH4_LO4yJV5qkf+sRiNFG90oMGg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> We did benchmark Btrfs aio/dio performance before, we noticed one big differences
-> from COW and nocow is not only checksum but checksum cost more metadata, which will
-> make Btrfs performance drop suddenly for a while, because of metadata reservation.
+On Fri, Feb 13, 2015 at 02:06:27PM +0100, P. Remek wrote:
+> > I'd use a blktrace based tool like iowatcher or seekwatcher to see
+> > what's really happening on the performance drops.
+> 
+> So I used this command to see if there are any outstanding requests in
+> the I/O scheduler queue when the performance drops to 0 IOPs
+> root@lab1:/# iostat -c -d -x -t -m /dev/sdi 1 10000
+> 
+> The output is:
+> 
+> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s
+> avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+> 
+> sdi               0.00     0.00    0.00    0.00     0.00     0.00
+> 0.00     0.00    0.00    0.00    0.00   0.00   0.00
+> 
+> "avgqu-sz" gives the queue length (1 second avarage). So really it
+> seems that the system is not stuck in the Block I/O layer but in upper
+> layer instead (most likely filesystem layer).
+> 
+> I also created ext4 filesystem on another pair of disks - so I was
+> able to run simultaneous benchmark - one for ext4 and one for btrfs
+> (each having 4 SSDs assigned) and when btrfs went down to 0 IOPs the
+> ext4 fio benchmark kept generating high IOPs.
+> 
+> I also tried to mount the system with nodatacow:
+> 
+> /dev/sdi on /mnt/btrfs type btrfs (rw,nodatacow)
+> 
+> It didn't help with the performance drops.
 
-I mounted the filesystem with nodatacow which sould also switch off
-the checksuming but it didn't help - sudden drops are still there.
+It's just weird since 10s is too much for filesystems, I don't know
+what's happening and didn't have such an experience in my tests,
+
+Perhaps Try "perf record -a -g" to see magic.
+
+Thanks,
+
+-liubo

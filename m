@@ -1,62 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:39047 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:34660 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752362AbbBMMaL (ORCPT
+	by vger.kernel.org with ESMTP id S1752509AbbBMMsO (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 13 Feb 2015 07:30:11 -0500
+	Fri, 13 Feb 2015 07:48:14 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: generic, test fsync after adding hard link differently
-Date: Fri, 13 Feb 2015 12:29:49 +0000
-Message-Id: <1423830589-31546-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
-References: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fsync followed by truncate and link
+Date: Fri, 13 Feb 2015 12:47:54 +0000
+Message-Id: <1423831674-25678-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This test is motivated by an fsync issue discovered in btrfs.
-The issue was that we could lose file data, that was previously
-fsync'ed successfully, if we end up adding a hard link to our
-inode and then persist the fsync log later via an fsync of other
-inode for example. This is similar to my previous test, except
-that in this test the inode that ends up losing data was created
-(with some data) in a transaction different from the one we made
-an fsync.
+The issue was that we could lose file data, that was previously fsync'ed
+successfully, if we end up shrinking (via truncate) the file, add a hard
+link to our file and then persist the fsync log later via an fsync of
+other inode for example. After a power loss our file content wouldn't
+match what it had when we last fsync'ed, but instead it had the data
+prior to that fsync.
 
 The btrfs issue was fixed by the following linux kernel patch:
 
-   Btrfs: fix fsync data loss after adding hard link to inode
+  Btrfs: don't remove extents and xattrs when logging new names
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-
-V2: Updated two comments with more details about the issue.
-
- tests/generic/043     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/043.out |  17 ++++++++
+ tests/generic/044     | 131 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/044.out |  18 +++++++
  tests/generic/group   |   1 +
- 3 files changed, 130 insertions(+)
- create mode 100755 tests/generic/043
- create mode 100644 tests/generic/043.out
+ 3 files changed, 150 insertions(+)
+ create mode 100755 tests/generic/044
+ create mode 100644 tests/generic/044.out
 
-diff --git a/tests/generic/043 b/tests/generic/043
+diff --git a/tests/generic/044 b/tests/generic/044
 new file mode 100755
-index 0000000..9de2469
+index 0000000..95a42cc
 --- /dev/null
-+++ b/tests/generic/043
-@@ -0,0 +1,112 @@
++++ b/tests/generic/044
+@@ -0,0 +1,131 @@
 +#! /bin/bash
-+# FS QA Test No. 043
++# FS QA Test No. 044
 +#
 +# This test is motivated by an fsync issue discovered in btrfs.
 +# The issue was that we could lose file data, that was previously fsync'ed
-+# successfully, if we end up adding a hard link to our inode and then persist
-+# the fsync log later via an fsync of other inode for example.
++# successfully, if we end up shrinking (via truncate) the file, add a hard
++# link to our file and then persist the fsync log later via an fsync of other
++# inode for example. After a power loss our file content wouldn't match
++# what it had when we last fsync'ed, but instead it had the data prior to
++# that fsync.
 +#
 +# The btrfs issue was fixed by the following linux kernel patch:
 +#
-+#  Btrfs: fix fsync data loss after adding hard link to inode
++#  Btrfs: don't remove extents and xattrs when logging new names
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -125,18 +122,34 @@ index 0000000..9de2469
 +# new data is guaranteed to be there next time the fs is mounted.
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 +
-+# Add one hard link to our file. This made btrfs write into the in memory fsync
-+# log a special inode with generation 0 and an i_size of 0 too. Note that this
-+# didn't update the inode in the fsync log on disk.
++# Now shrink our file to 5000 bytes.
++$XFS_IO_PROG -c "truncate 5000" $SCRATCH_MNT/foo
++
++# Now do an expanding truncate to a size larger than what we had when we last
++# fsync'ed our file. This is just to verify that after power failure and
++# replaying the fsync log, our file matches what it was when we last fsync'ed
++# it - 12Kb size, first 8Kb of data had a value of 0xaa and the last 4Kb of
++# data had a value of 0xcc.
++$XFS_IO_PROG -c "truncate 32K" $SCRATCH_MNT/foo
++
++# Add one hard link to our file. This made btrfs drop all of our file's
++# metadata from the fsync log, including the metadata relative to the
++# extent we just wrote and fsync'ed. This change was made only to the fsync
++# log in memory, so adding the hard link alone doesn't change the persisted
++# fsync log. This happened because the previous truncates set the runtime
++# flag BTRFS_INODE_NEEDS_FULL_SYNC in the btrfs inode structure.
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
 +
 +# Now make sure the in memory fsync log is durably persisted.
 +# Creating and fsync'ing another file will do it.
++# After this our persisted fsync log will no longer have metadata for our file
++# foo that points to the extent we wrote and fsync'ed before.
 +touch $SCRATCH_MNT/bar
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
 +
-+# As expected, before the crash/power failure, we should be able to read the
-+# 12Kb of file data.
++# As expected, before the crash/power failure, we should be able to see a file
++# with a size of 32Kb, with its first 5000 bytes having the value 0xaa and all
++# the remaining bytes with value 0x00.
 +echo "File content before:"
 +od -t x1 $SCRATCH_MNT/foo
 +
@@ -148,23 +161,23 @@ index 0000000..9de2469
 +_mount_flakey
 +
 +# After mounting the fs again, the fsync log was replayed.
-+# The btrfs fsync log replay code didn't update the i_size of the persisted
-+# inode because the inode item in the log had a special generation with a
-+# value of 0 (and it couldn't know the correct i_size, since that inode item
-+# had a 0 i_size too). This made the last 4Kb of file data inaccessible and
-+# effectively lost.
++# The expected result is to see a file with a size of 12Kb, with its first 8Kb
++# of data having the value 0xaa and its last 4Kb of data having a value of 0xcc.
++# The btrfs bug used to leave the file as it used te be as of the last
++# transaction commit - that is, with a size of 8Kb with all bytes having a
++# value of 0xaa.
 +echo "File content after:"
 +od -t x1 $SCRATCH_MNT/foo
 +
 +status=0
 +exit
-diff --git a/tests/generic/043.out b/tests/generic/043.out
+diff --git a/tests/generic/044.out b/tests/generic/044.out
 new file mode 100644
-index 0000000..eaf9be5
+index 0000000..397dbae
 --- /dev/null
-+++ b/tests/generic/043.out
-@@ -0,0 +1,17 @@
-+QA output created by 043
++++ b/tests/generic/044.out
+@@ -0,0 +1,18 @@
++QA output created by 044
 +wrote 8192/8192 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 4096/4096 bytes at offset 8192
@@ -172,9 +185,10 @@ index 0000000..eaf9be5
 +File content before:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
-+0020000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++0011600 aa aa aa aa aa aa aa aa 00 00 00 00 00 00 00 00
++0011620 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 +*
-+0030000
++0100000
 +File content after:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
@@ -182,14 +196,14 @@ index 0000000..eaf9be5
 +*
 +0030000
 diff --git a/tests/generic/group b/tests/generic/group
-index 001ec80..d686f2f 100644
+index d686f2f..dc16972 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -45,6 +45,7 @@
- 040 metadata auto quick
+@@ -46,6 +46,7 @@
  041 metadata auto quick
  042 metadata auto quick
-+043 metadata auto quick
+ 043 metadata auto quick
++044 metadata auto quick
  053 acl repair auto quick
  062 attr udf auto quick
  068 other auto freeze dangerous stress

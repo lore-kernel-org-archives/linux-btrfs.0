@@ -1,115 +1,247 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40727 "EHLO plane.gmane.org"
+Received: from mail.virtall.com ([178.63.195.102]:34725 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751201AbbBMBTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 20:19:35 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YM4ur-000861-7i
-	for linux-btrfs@vger.kernel.org; Fri, 13 Feb 2015 02:19:33 +0100
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:19:33 +0100
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:19:33 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Repair broken btrfs raid6?
-Date: Fri, 13 Feb 2015 02:12:15 +0100
-Message-ID: <fkvvqb-ecc.ln1@hurikhan77.spdns.de>
-References: <CAGwxe4gXPEOTPfNc2=0E0HAfDfTRKRcqqPjVJimbWJr5riz4DA@mail.gmail.com> <ntnoqb-jvq.ln1@hurikhan77.spdns.de> <486ed2b2-3c80-4856-8701-bcd71a212b18@aei.ca>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+	id S1751201AbbBMBU3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Feb 2015 20:20:29 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP id 980BE4801A0
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:20:25 +0100 (CET)
+Received: from mailext.virtall.com ([127.0.0.1])
+	by localhost (web1.virtall.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id drgnxE1whiWs for <linux-btrfs@vger.kernel.org>;
+	Fri, 13 Feb 2015 02:20:25 +0100 (CET)
+Received: from admin.virtall.com (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:20:25 +0100 (CET)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 13 Feb 2015 10:20:25 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: WARNING: CPU: 1 PID: 2436 at fs/btrfs/qgroup.c:1414
+ =?UTF-8?Q?btrfs=5Fdelayed=5Fqgroup=5Faccounting+=30x=39f=31/=30xa=30b=20?=
+ =?UTF-8?Q?=5Bbtrfs=5D=28=29?=
+In-Reply-To: <27573d37c7d634c3232820fa8464f235@admin.virtall.com>
+References: <27573d37c7d634c3232820fa8464f235@admin.virtall.com>
+Message-ID: <109673fe6cda15800a731d1ee79d9175@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ed Tomlinson <edt@aei.ca> schrieb:
+FYI, still seeing this with 3.19:
 
-> On Tuesday, February 10, 2015 2:17:43 AM EST, Kai Krakow wrote:
->> Tobias Holst <tobby@tobby.eu> schrieb:
->>
->>> and "btrfs scrub status /[device]" gives me the following output:
->>>> "scrub status for [UUID]
->>>> scrub started at Mon Feb  9 18:16:38 2015 and was aborted after 2008
->>>> seconds total bytes scrubbed: 113.04GiB with 0 errors"
->>
->> Does not look very correct to me:
->>
->> Why should a scrub in a six-drivers btrfs array which is probably multi-
->> terabytes big (as you state a restore from backup would take
->> days) take only
->> ~2000 seconds? And scrub only ~120 GB worth of data. Either your 6
->> devices are really small (then why RAID-6), or your data is very sparse
->> (then way does it take so long), or scrub prematurely aborts and never
->> checks the complete devices (I guess this is it).
->>
->> And that's what it actually says: "aborted after 2008" seconds. I'd
->> expect "finished after XXXX seconds" if I remember my scrub runs
->> correctly (which I
->> currently don't do regularly because it takes long and IO performance
->> sucks during running it).
+[196992.429463] ------------[ cut here ]------------
+[196992.429526] WARNING: CPU: 1 PID: 26328 at fs/btrfs/qgroup.c:1414 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
+[196992.429617] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
+nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
+nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
+cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
+raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
+battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
+lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
+mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
+[196992.429979] CPU: 1 PID: 26328 Comm: kworker/u16:21 Not tainted 
+3.19.0 #1
+[196992.430026] Hardware name: System manufacturer System Product 
+Name/P8H77-M PRO, BIOS 1101 02/04/2013
+[196992.430123] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper 
+[btrfs]
+[196992.430171]  0000000000000009 ffff8800045a3c18 ffffffff813bc952 
+0000000000000000
+[196992.430260]  0000000000000000 ffff8800045a3c58 ffffffff8103b015 
+ffff8807f9281c90
+[196992.430349]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2747f00 
+ffffffffffffffff
+[196992.430438] Call Trace:
+[196992.430484]  [<ffffffff813bc952>] dump_stack+0x45/0x57
+[196992.430532]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
+[196992.430586]  [<ffffffffa0332a33>] ? 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[196992.430675]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
+[196992.430727]  [<ffffffffa0332a33>] 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[196992.430820]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
+[btrfs]
+[196992.430873]  [<ffffffffa02d1a2d>] delayed_ref_async_start+0x37/0x76 
+[btrfs]
+[196992.430927]  [<ffffffffa03069d7>] normal_work_helper+0xb5/0x16a 
+[btrfs]
+[196992.430981]  [<ffffffffa0306b98>] btrfs_extent_refs_helper+0xd/0xf 
+[btrfs]
+[196992.431030]  [<ffffffff8104c0cb>] process_one_work+0x187/0x2a9
+[196992.431077]  [<ffffffff8104c458>] worker_thread+0x241/0x33e
+[196992.431125]  [<ffffffff8104c217>] ? 
+process_scheduled_works+0x2a/0x2a
+[196992.431173]  [<ffffffff81050067>] kthread+0xcd/0xd5
+[196992.431219]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[196992.431268]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
+[196992.431315]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[196992.431363] ---[ end trace 5d57d07bb94831a0 ]---
+[197051.336444] ------------[ cut here ]------------
+[197051.336506] WARNING: CPU: 5 PID: 2544 at fs/btrfs/qgroup.c:1414 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
+[197051.336598] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
+nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
+nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
+cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
+raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
+battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
+lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
+mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
+[197051.336965] CPU: 5 PID: 2544 Comm: btrfs-cleaner Tainted: G        W 
+      3.19.0 #1
+[197051.337070] Hardware name: System manufacturer System Product 
+Name/P8H77-M PRO, BIOS 1101 02/04/2013
+[197051.337160]  0000000000000009 ffff8800c7e8bbe8 ffffffff813bc952 
+000000000000009b
+[197051.337249]  0000000000000000 ffff8800c7e8bc28 ffffffff8103b015 
+ffff8807f9281c90
+[197051.337338]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2740480 
+ffffffffffffffff
+[197051.337427] Call Trace:
+[197051.337473]  [<ffffffff813bc952>] dump_stack+0x45/0x57
+[197051.337521]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
+[197051.337576]  [<ffffffffa0332a33>] ? 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[197051.337664]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
+[197051.337717]  [<ffffffffa0332a33>] 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[197051.337809]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
+[btrfs]
+[197051.337863]  [<ffffffffa02df041>] 
+btrfs_should_end_transaction+0x4a/0x53 [btrfs]
+[197051.337955]  [<ffffffffa02cfdc3>] btrfs_drop_snapshot+0x379/0x68f 
+[btrfs]
+[197051.338009]  [<ffffffffa02ee811>] ? 
+btrfs_run_defrag_inodes+0x2fa/0x30e [btrfs]
+[197051.338101]  [<ffffffffa02d22f2>] ? 
+btrfs_delete_unused_bgs+0x3f/0x210 [btrfs]
+[197051.338193]  [<ffffffffa02df42b>] 
+btrfs_clean_one_deleted_snapshot+0xb4/0xc2 [btrfs]
+[197051.338284]  [<ffffffffa02be105>] ? btrfs_free_path+0x22/0x26 
+[btrfs]
+[197051.338336]  [<ffffffffa02d889e>] cleaner_kthread+0x134/0x16c 
+[btrfs]
+[197051.338388]  [<ffffffffa02d876a>] ? btrfs_alloc_root+0x2c/0x2c 
+[btrfs]
+[197051.338437]  [<ffffffff81050067>] kthread+0xcd/0xd5
+[197051.338484]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[197051.338533]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
+[197051.338580]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[197051.338628] ---[ end trace 5d57d07bb94831a1 ]---
+[197051.340365] ------------[ cut here ]------------
+[197051.340450] WARNING: CPU: 0 PID: 26314 at fs/btrfs/qgroup.c:1414 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
+[197051.340568] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
+nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
+nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
+cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
+raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
+battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
+lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
+mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
+[197051.341053] CPU: 0 PID: 26314 Comm: kworker/u16:5 Tainted: G        
+W      3.19.0 #1
+[197051.341165] Hardware name: System manufacturer System Product 
+Name/P8H77-M PRO, BIOS 1101 02/04/2013
+[197051.341297] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper 
+[btrfs]
+[197051.341360]  0000000000000009 ffff8802c511bc18 ffffffff813bc952 
+0000000000000000
+[197051.341475]  0000000000000000 ffff8802c511bc58 ffffffff8103b015 
+ffff8807f9281c90
+[197051.341590]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2745300 
+ffffffffffffffff
+[197051.341705] Call Trace:
+[197051.341763]  [<ffffffff813bc952>] dump_stack+0x45/0x57
+[197051.341825]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
+[197051.341901]  [<ffffffffa0332a33>] ? 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[197051.342015]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
+[197051.342089]  [<ffffffffa0332a33>] 
+btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
+[197051.342214]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
+[btrfs]
+[197051.342287]  [<ffffffffa02d1a2d>] delayed_ref_async_start+0x37/0x76 
+[btrfs]
+[197051.342365]  [<ffffffffa03069d7>] normal_work_helper+0xb5/0x16a 
+[btrfs]
+[197051.342441]  [<ffffffffa0306b98>] btrfs_extent_refs_helper+0xd/0xf 
+[btrfs]
+[197051.342506]  [<ffffffff8104c0cb>] process_one_work+0x187/0x2a9
+[197051.342568]  [<ffffffff8104c458>] worker_thread+0x241/0x33e
+[197051.342630]  [<ffffffff8104c217>] ? 
+process_scheduled_works+0x2a/0x2a
+[197051.342694]  [<ffffffff81050067>] kthread+0xcd/0xd5
+[197051.342755]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[197051.342819]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
+[197051.342880]  [<ffffffff8104ff9a>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[197051.342944] ---[ end trace 5d57d07bb94831a2 ]---
+
+
+Tomasz Chmielewski
+http://www.sslrack.com
+
+On 2015-01-04 07:58, Tomasz Chmielewski wrote:
+> Got this with 3.18.1 and qgroups enabled. Not sure how to reproduce.
 > 
-> IO perfermance does suffer during a scrub.  I use the following:
 > 
-> ionice -c 3 btrfs scrub start -Bd -n 19 /<target>
-
-Doesn't work for deadline scheduler... Although, when my btrfs was still 
-fresh (and already had a lot of data), I hardly noticed a running scrub in 
-the background. But since I did one balance, everything sucks IO 
-performance-wise.
-
-Off-topic but maybe interesting in this regard:
-
-Meanwhile, I switched away from deadline (which served me better than CFQ at 
-that time) and am running with BFQ scheduler. It works really nice though 
-booting is slower and application startup is a little bit less snappy. But 
-it copes with background IO much better since after the "balance incident".
-
-I went one step further and deployed bcache into the setup and everything is 
-really snappy now. So I'm playing with the thought of re-enabling a 
-regularly running scrub. But I still need to figure out if it would or 
-wouldn't destroy the bcache hit ratio and fill bcache with non-relevant 
-data.
-
-And thinking further about it: I'm not sure if btrfs RAID protection and 
-scrub make much sense at all with bcache inbetween... Due to the nature of 
-bcache, errors may slip through undetected until the bcache LRU forces 
-cached good copies out of the cache. If this data isn't dirty, it won't be 
-written to cache. In that case there are three possible outcomes: the 
-associated blocks on HDD are in perfect shape, one copy is rotten and one is 
-good, or both are rotten. In the last case, btrfs can no longer help me 
-there... Scrub may not have catched those as the good copies were in bcache 
-until shortly before. I wonder if bcache should have a policy for writing 
-back even non-dirty blocks if they are evicted from the cache...
-
-> The combo of -n19 and ionice makes it workable here.
-
-Yeah, should work here, too, now that I'm using BFQ. But then again, I am 
-not sure: bcache frontend runs on SSD whose block device is working with 
-deadline scheduler. My bcache backends are running on HDD with BFQ 
-scheduler. The virtual bcache partitions sitting inbetween both are 
-magically setting themselves to the noop scheduler (or maybe it even shows 
-"none", I'm not sure) - which is intended, I guess.
-
-So kernel access probably goes like this:
-
----> bcache0-2[noop] <---> phys. SSD [deadline] **
-         |
-          `---> phys. HDD 1-3 [bfq], mraid-1, draid-0 
-
-So, I guess part of block accesses pass through two schedulers if access to 
-both devices is needed (frontend and backend) with bcache acting as a huge 
-block-sorting scheduler itself (which is what makes its performance). But 
-for scrub, the deadline scheduler may becoming the dominating scheduler 
-which brings me back to the situation a had in the start while running 
-scrub.
-
-** --> maybe I should put noop here, too
-
-Does my thought experiment make work?
-
--- 
-Replies to list only preferred.
-
+> [1262648.802286] ------------[ cut here ]------------
+> [1262648.802350] WARNING: CPU: 1 PID: 2436 at fs/btrfs/qgroup.c:1414
+> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]()
+> [1262648.802441] Modules linked in: ipt_MASQUERADE
+> nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
+> nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand
+> cpufreq_conservative cpufreq_powersave cpufreq_stats nfsd auth_rpcgss
+> oid_registry exportfs nfs_acl nfs lockd grace fscache sunrpc ipv6
+> btrfs xor raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801
+> i2c_core battery parport_pc parport 8250_fintek tpm_infineon tpm_tis
+> tpm video ehci_pci ehci_hcd lpc_ich mfd_core acpi_cpufreq button ext4
+> crc16 jbd2 mbcache raid1 sg sd_mod r8169 mii ahci libahci libata
+> scsi_mod
+> [1262648.802854] CPU: 1 PID: 2436 Comm: btrfs-cleaner Not tainted 
+> 3.18.1 #1
+> [1262648.802902] Hardware name: System manufacturer System Product
+> Name/P8H77-M PRO, BIOS 1101 02/04/2013
+> [1262648.802992]  0000000000000009 ffff8800c805fbe8 ffffffff813b1128
+> 0000000000000000
+> [1262648.803081]  0000000000000000 ffff8800c805fc28 ffffffff81039b39
+> ffff8807f341c000
+> [1262648.803170]  ffffffffa0300be2 ffff8807f341c000 ffff8807f3fd8b40
+> ffffffffffffffff
+> [1262648.803259] Call Trace:
+> [1262648.803305]  [<ffffffff813b1128>] dump_stack+0x46/0x58
+> [1262648.803352]  [<ffffffff81039b39>] warn_slowpath_common+0x77/0x91
+> [1262648.803406]  [<ffffffffa0300be2>] ?
+> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]
+> [1262648.803495]  [<ffffffff81039b68>] warn_slowpath_null+0x15/0x17
+> [1262648.803548]  [<ffffffffa0300be2>]
+> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]
+> [1262648.803642]  [<ffffffffa02a12a5>]
+> btrfs_run_delayed_refs+0x1e4/0x21b [btrfs]
+> [1262648.803734]  [<ffffffffa02aec96>]
+> btrfs_should_end_transaction+0x4a/0x53 [btrfs]
+> [1262648.803826]  [<ffffffffa029fc34>] btrfs_drop_snapshot+0x379/0x68f 
+> [btrfs]
+> [1262648.803881]  [<ffffffffa02be478>] ?
+> btrfs_run_defrag_inodes+0x2fa/0x30e [btrfs]
+> [1262648.803974]  [<ffffffffa02b0401>]
+> btrfs_clean_one_deleted_snapshot+0xb3/0xc2 [btrfs]
+> [1262648.804067]  [<ffffffffa02a84ff>] cleaner_kthread+0x134/0x16c 
+> [btrfs]
+> [1262648.804119]  [<ffffffffa02a83cb>] ? btrfs_alloc_root+0x2c/0x2c 
+> [btrfs]
+> [1262648.804169]  [<ffffffff8104ebe7>] kthread+0xcd/0xd5
+> [1262648.804215]  [<ffffffff8104eb1a>] ? 
+> kthread_freezable_should_stop+0x43/0x43
+> [1262648.804264]  [<ffffffff813b59ec>] ret_from_fork+0x7c/0xb0
+> [1262648.804311]  [<ffffffff8104eb1a>] ? 
+> kthread_freezable_should_stop+0x43/0x43
+> [1262648.804360] ---[ end trace b76fd72b4be63515 ]---

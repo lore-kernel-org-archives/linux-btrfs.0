@@ -1,235 +1,328 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41009 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751025AbbBMCGm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 21:06:42 -0500
-Date: Fri, 13 Feb 2015 10:06:28 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3 v2] Btrfs: account for large extents with enospc
-Message-ID: <20150213020627.GA25697@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20150212043653.GB2416@localhost.localdomain>
- <1423757811-2511-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423757811-2511-1-git-send-email-jbacik@fb.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:35129 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752697AbbBMMbK (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 13 Feb 2015 07:31:10 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: stable@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v4] Btrfs: fix fsync data loss after adding hard link to inode
+Date: Fri, 13 Feb 2015 12:30:56 +0000
+Message-Id: <1423830656-31604-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1423759807-29640-1-git-send-email-fdmanana@suse.com>
+References: <1423759807-29640-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 12, 2015 at 11:16:51AM -0500, Josef Bacik wrote:
-> On our gluster boxes we stream large tar balls of backups onto our fses.  With
-> 160gb of ram this means we get really large contiguous ranges of dirty data, but
-> the way our ENOSPC stuff works is that as long as it's contiguous we only hold
-> metadata reservation for one extent.  The problem is we limit our extents to
-> 128mb, so we'll end up with at least 800 extents so our enospc accounting is
-> quite a bit lower than what we need.  To keep track of this make sure we
-> increase outstanding_extents for every multiple of the max extent size so we can
-> be sure to have enough reserved metadata space.  Thanks,
+We have a scenario where after the fsync log replay we can lose file data
+that had been previously fsync'ed if we added an hard link for our inode
+and after that we sync'ed the fsync log (for example by fsync'ing some
+other file or directory).
 
-Looks good.
+This is because when adding an hard link we updated the inode item in the
+log tree with an i_size value of 0. At that point the new inode item was
+in memory only and a subsequent fsync log replay would not make us lose
+the file data. However if after adding the hard link we sync the log tree
+to disk, by fsync'ing some other file or directory for example, we ended
+up losing the file data after log replay, because the inode item in the
+persisted log tree had an an i_size of zero.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+This is easy to reproduce, and the following excerpt from my test for
+xfstests shows this:
 
-Thanks,
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
 
--liubo
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
-> V1->V2:
-> -use bit shift instead of div64_u64.
-> -skip math if num_bytes < max_size in drop_outstanding_extents
-> 
->  fs/btrfs/ctree.h       |  8 ++++++++
->  fs/btrfs/extent-tree.c | 16 ++++++++++-----
->  fs/btrfs/extent_io.c   |  2 +-
->  fs/btrfs/inode.c       | 54 +++++++++++++++++++++++++++++++++++++++++++++++++-
->  4 files changed, 73 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 0b4683f..afdae42 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -198,6 +198,14 @@ static int btrfs_csum_sizes[] = { 4, 0 };
->  
->  #define BTRFS_DIRTY_METADATA_THRESH	(32 * 1024 * 1024)
->  
-> +#define BTRFS_MAX_EXTENT_SIZE (128 * 1024 * 1024)
-> +#define BTRFS_MAX_EXTENT_BIT 27
-> +
-> +static inline u64 btrfs_num_extents(u64 num_bytes)
-> +{
-> +	return (num_bytes + BTRFS_MAX_EXTENT_SIZE - 1) >> BTRFS_MAX_EXTENT_BIT;
-> +}
-> +
->  /*
->   * The key defines the order in the tree, and so it also defines (optimal)
->   * block layout.
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a346487..18e8a5a 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4966,19 +4966,25 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
->  /**
->   * drop_outstanding_extent - drop an outstanding extent
->   * @inode: the inode we're dropping the extent for
-> + * @num_bytes: the number of bytes we're relaseing.
->   *
->   * This is called when we are freeing up an outstanding extent, either called
->   * after an error or after an extent is written.  This will return the number of
->   * reserved extents that need to be freed.  This must be called with
->   * BTRFS_I(inode)->lock held.
->   */
-> -static unsigned drop_outstanding_extent(struct inode *inode)
-> +static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes)
->  {
->  	unsigned drop_inode_space = 0;
->  	unsigned dropped_extents = 0;
-> +	unsigned num_extents = 0;
->  
-> -	BUG_ON(!BTRFS_I(inode)->outstanding_extents);
-> -	BTRFS_I(inode)->outstanding_extents--;
-> +	num_extents = (num_bytes > BTRFS_MAX_EXTENT_SIZE) ?
-> +		(unsigned)btrfs_num_extents(num_bytes) : 1;
-> +
-> +	ASSERT(num_extents);
-> +	ASSERT(BTRFS_I(inode)->outstanding_extents >= num_extents);
-> +	BTRFS_I(inode)->outstanding_extents -= num_extents;
->  
->  	if (BTRFS_I(inode)->outstanding_extents == 0 &&
->  	    test_and_clear_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
-> @@ -5149,7 +5155,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
->  
->  out_fail:
->  	spin_lock(&BTRFS_I(inode)->lock);
-> -	dropped = drop_outstanding_extent(inode);
-> +	dropped = drop_outstanding_extent(inode, num_bytes);
->  	/*
->  	 * If the inodes csum_bytes is the same as the original
->  	 * csum_bytes then we know we haven't raced with any free()ers
-> @@ -5228,7 +5234,7 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
->  
->  	num_bytes = ALIGN(num_bytes, root->sectorsize);
->  	spin_lock(&BTRFS_I(inode)->lock);
-> -	dropped = drop_outstanding_extent(inode);
-> +	dropped = drop_outstanding_extent(inode, num_bytes);
->  
->  	if (num_bytes)
->  		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 4ebabd2..3fbc177 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3239,7 +3239,7 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
->  					       page,
->  					       &delalloc_start,
->  					       &delalloc_end,
-> -					       128 * 1024 * 1024);
-> +					       BTRFS_MAX_EXTENT_SIZE);
->  		if (nr_delalloc == 0) {
->  			delalloc_start = delalloc_end + 1;
->  			continue;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index fb16fd3..324cb6d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1530,10 +1530,41 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
->  static void btrfs_split_extent_hook(struct inode *inode,
->  				    struct extent_state *orig, u64 split)
->  {
-> +	u64 size;
-> +
->  	/* not delalloc, ignore it */
->  	if (!(orig->state & EXTENT_DELALLOC))
->  		return;
->  
-> +	size = orig->end - orig->start + 1;
-> +	if (size > BTRFS_MAX_EXTENT_SIZE) {
-> +		u64 new_size;
-> +
-> +		/*
-> +		 * We need the largest size of the remaining extent to see if we
-> +		 * need to add a new outstanding extent.  Think of the following
-> +		 * case
-> +		 *
-> +		 * [MEAX_EXTENT_SIZEx2 - 4k][4k]
-> +		 *
-> +		 * The new_size would just be 4k and we'd think we had enough
-> +		 * outstanding extents for this if we only took one side of the
-> +		 * split, same goes for the other direction.  We need to see if
-> +		 * the larger size still is the same amount of extents as the
-> +		 * original size, because if it is we need to add a new
-> +		 * outstanding extent.  But if we split up and the larger size
-> +		 * is less than the original then we are good to go since we've
-> +		 * already accounted for the extra extent in our original
-> +		 * accounting.
-> +		 */
-> +		new_size = orig->end - split + 1;
-> +		if ((split - orig->start) > new_size)
-> +			new_size = split - orig->start;
-> +
-> +		if (btrfs_num_extents(size) > btrfs_num_extents(new_size))
-> +			return;
-> +	}
-> +
->  	spin_lock(&BTRFS_I(inode)->lock);
->  	BTRFS_I(inode)->outstanding_extents++;
->  	spin_unlock(&BTRFS_I(inode)->lock);
-> @@ -1549,10 +1580,30 @@ static void btrfs_merge_extent_hook(struct inode *inode,
->  				    struct extent_state *new,
->  				    struct extent_state *other)
->  {
-> +	u64 new_size, old_size;
-> +
->  	/* not delalloc, ignore it */
->  	if (!(other->state & EXTENT_DELALLOC))
->  		return;
->  
-> +	old_size = other->end - other->start + 1;
-> +	new_size = old_size + (new->end - new->start + 1);
-> +
-> +	/* we're not bigger than the max, unreserve the space and go */
-> +	if (new_size <= BTRFS_MAX_EXTENT_SIZE) {
-> +		spin_lock(&BTRFS_I(inode)->lock);
-> +		BTRFS_I(inode)->outstanding_extents--;
-> +		spin_unlock(&BTRFS_I(inode)->lock);
-> +		return;
-> +	}
-> +
-> +	/*
-> +	 * If we grew by another max_extent, just return, we want to keep that
-> +	 * reserved amount.
-> +	 */
-> +	if (btrfs_num_extents(new_size) > btrfs_num_extents(old_size))
-> +		return;
-> +
->  	spin_lock(&BTRFS_I(inode)->lock);
->  	BTRFS_I(inode)->outstanding_extents--;
->  	spin_unlock(&BTRFS_I(inode)->lock);
-> @@ -1648,6 +1699,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
->  				 unsigned long *bits)
->  {
->  	u64 len = state->end + 1 - state->start;
-> +	u64 num_extents = btrfs_num_extents(len);
->  
->  	spin_lock(&BTRFS_I(inode)->lock);
->  	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG))
-> @@ -1667,7 +1719,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
->  			*bits &= ~EXTENT_FIRST_DELALLOC;
->  		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
->  			spin_lock(&BTRFS_I(inode)->lock);
-> -			BTRFS_I(inode)->outstanding_extents--;
-> +			BTRFS_I(inode)->outstanding_extents -= num_extents;
->  			spin_unlock(&BTRFS_I(inode)->lock);
->  		}
->  
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  # Create one file with data and fsync it.
+  # This made the btrfs fsync log persist the data and the inode metadata with
+  # a correct inode->i_size (4096 bytes).
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 4K 0 4K" -c "fsync" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Now add one hard link to our file. This made the btrfs code update the fsync
+  # log, in memory only, with an inode metadata having a size of 0.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
+
+  # Now force persistence of the fsync log to disk, for example, by fsyncing some
+  # other file.
+  touch $SCRATCH_MNT/bar
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
+
+  # Before a power loss or crash, we could read the 4Kb of data from our file as
+  # expected.
+  echo "File content before:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # After the fsync log replay, because the fsync log had a value of 0 for our
+  # inode's i_size, we couldn't read anymore the 4Kb of data that we previously
+  # wrote and fsync'ed. The size of the file became 0 after the fsync log replay.
+  echo "File content after:"
+  od -t x1 $SCRATCH_MNT/foo
+
+Another alternative test, that doesn't need to fsync an inode in the same
+transaction it was created, is:
+
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test file with some data.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 8K 0 8K" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Make sure the file is durably persisted.
+  sync
+
+  # Append some data to our file, to increase its size.
+  $XFS_IO_PROG -f -c "pwrite -S 0xcc -b 4K 8K 4K" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Fsync the file, so from this point on if a crash/power failure happens, our
+  # new data is guaranteed to be there next time the fs is mounted.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+
+  # Add one hard link to our file. This made btrfs write into the in memory fsync
+  # log a special inode with generation 0 and an i_size of 0 too. Note that this
+  # didn't update the inode in the fsync log on disk.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
+
+  # Now make sure the in memory fsync log is durably persisted.
+  # Creating and fsync'ing another file will do it.
+  touch $SCRATCH_MNT/bar
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
+
+  # As expected, before the crash/power failure, we should be able to read the
+  # 12Kb of file data.
+  echo "File content before:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # After mounting the fs again, the fsync log was replayed.
+  # The btrfs fsync log replay code didn't update the i_size of the persisted
+  # inode because the inode item in the log had a special generation with a
+  # value of 0 (and it couldn't know the correct i_size, since that inode item
+  # had a 0 i_size too). This made the last 4Kb of file data inaccessible and
+  # effectively lost.
+  echo "File content after:"
+  od -t x1 $SCRATCH_MNT/foo
+
+This isn't a new issue/regression. This problem has been around since the
+log tree code was added in 2008:
+
+  Btrfs: Add a write ahead tree log to optimize synchronous operations
+  (commit e02119d5a7b4396c5a872582fddc8bd6d305a70a)
+
+Test cases for xfstests follow soon.
+
+CC: <stable@vger.kernel.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Fixed additional similar case where the inode already existed in
+    the fs/subvol tree.
+    Made an xfstest for that case too.
+
+V3: Apply logic only to regular files.
+
+V4: Deal with case where after a log replay we would see an incorrect
+    expanding truncate effect: create file, write 4Kb into offset 0,
+    fsync file, write 4Kb into offset 4096, add hard link to file,
+    fsync some other file (to force a log sync), power fail - after
+    log replay, we would see the file with a size of 8Kb, where its
+    last 4Kb is a hole (zeroes), as if an expanding truncate happened,
+    instead of having a file with 4Kb.
+    And deal with the inverse case, seeing a shrinking truncate after
+    log replay if we didn't fsync after that truncate.
+
+ fs/btrfs/tree-log.c | 82 +++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 73 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index ea0431d..b0fe52a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -490,8 +490,20 @@ insert:
+ 		src_item = (struct btrfs_inode_item *)src_ptr;
+ 		dst_item = (struct btrfs_inode_item *)dst_ptr;
+ 
+-		if (btrfs_inode_generation(eb, src_item) == 0)
++		if (btrfs_inode_generation(eb, src_item) == 0) {
++			struct extent_buffer *dst_eb = path->nodes[0];
++
++			if (S_ISREG(btrfs_inode_mode(eb, src_item)) &&
++			    S_ISREG(btrfs_inode_mode(dst_eb, dst_item))) {
++				struct btrfs_map_token token;
++				u64 ino_size = btrfs_inode_size(eb, src_item);
++
++				btrfs_init_map_token(&token);
++				btrfs_set_token_inode_size(dst_eb, dst_item,
++							   ino_size, &token);
++			}
+ 			goto no_copy;
++		}
+ 
+ 		if (overwrite_root &&
+ 		    S_ISDIR(btrfs_inode_mode(eb, src_item)) &&
+@@ -3250,7 +3262,8 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
+ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 			    struct extent_buffer *leaf,
+ 			    struct btrfs_inode_item *item,
+-			    struct inode *inode, int log_inode_only)
++			    struct inode *inode, int log_inode_only,
++			    u64 logged_isize)
+ {
+ 	struct btrfs_map_token token;
+ 
+@@ -3263,7 +3276,7 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 		 * to say 'update this inode with these values'
+ 		 */
+ 		btrfs_set_token_inode_generation(leaf, item, 0, &token);
+-		btrfs_set_token_inode_size(leaf, item, 0, &token);
++		btrfs_set_token_inode_size(leaf, item, logged_isize, &token);
+ 	} else {
+ 		btrfs_set_token_inode_generation(leaf, item,
+ 						 BTRFS_I(inode)->generation,
+@@ -3315,7 +3328,7 @@ static int log_inode_item(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				    struct btrfs_inode_item);
+-	fill_inode_item(trans, path->nodes[0], inode_item, inode, 0);
++	fill_inode_item(trans, path->nodes[0], inode_item, inode, 0, 0);
+ 	btrfs_release_path(path);
+ 	return 0;
+ }
+@@ -3324,7 +3337,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 			       struct inode *inode,
+ 			       struct btrfs_path *dst_path,
+ 			       struct btrfs_path *src_path, u64 *last_extent,
+-			       int start_slot, int nr, int inode_only)
++			       int start_slot, int nr, int inode_only,
++			       u64 logged_isize)
+ {
+ 	unsigned long src_offset;
+ 	unsigned long dst_offset;
+@@ -3381,7 +3395,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 						    dst_path->slots[0],
+ 						    struct btrfs_inode_item);
+ 			fill_inode_item(trans, dst_path->nodes[0], inode_item,
+-					inode, inode_only == LOG_INODE_EXISTS);
++					inode, inode_only == LOG_INODE_EXISTS,
++					logged_isize);
+ 		} else {
+ 			copy_extent_buffer(dst_path->nodes[0], src, dst_offset,
+ 					   src_offset, ins_sizes[i]);
+@@ -3933,6 +3948,33 @@ process:
+ 	return ret;
+ }
+ 
++static int logged_inode_size(struct btrfs_root *log, struct inode *inode,
++			     struct btrfs_path *path, u64 *size_ret)
++{
++	struct btrfs_key key;
++	int ret;
++
++	key.objectid = btrfs_ino(inode);
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(NULL, log, &key, path, 0, 0);
++	if (ret < 0) {
++		return ret;
++	} else if (ret > 0) {
++		*size_ret = i_size_read(inode);
++	} else {
++		struct btrfs_inode_item *item;
++
++		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				      struct btrfs_inode_item);
++		*size_ret = btrfs_inode_size(path->nodes[0], item);
++	}
++
++	btrfs_release_path(path);
++	return 0;
++}
++
+ /* log a single inode in the tree log.
+  * At least one parent directory for this inode must exist in the tree
+  * or be logged already.
+@@ -3970,6 +4012,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	bool fast_search = false;
+ 	u64 ino = btrfs_ino(inode);
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	u64 logged_isize = 0;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -4030,6 +4073,25 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 			max_key_type = BTRFS_XATTR_ITEM_KEY;
+ 		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
+ 	} else {
++		if (inode_only == LOG_INODE_EXISTS) {
++			/*
++			 * Make sure the new inode item we write to the log has
++			 * the same isize as the current one (if it exists).
++			 * This is necessary to prevent data loss after log
++			 * replay, and also to prevent doing a wrong expanding
++			 * truncate - for e.g. create file, write 4K into offset
++			 * 0, fsync, write 4K into offset 4096, add hard link,
++			 * fsync some other file (to sync log), power fail - if
++			 * we use the inode's current i_size, after log replay
++			 * we get a 8Kb file, with the last 4Kb extent as a hole
++			 * (zeroes), as if an expanding truncate happened,
++			 * instead of getting a file of 4Kb only.
++			 */
++			err = logged_inode_size(log, inode, path,
++						&logged_isize);
++			if (err)
++				goto out_unlock;
++		}
+ 		if (test_and_clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 				       &BTRFS_I(inode)->runtime_flags)) {
+ 			clear_bit(BTRFS_INODE_COPY_EVERYTHING,
+@@ -4085,7 +4147,8 @@ again:
+ 		}
+ 
+ 		ret = copy_items(trans, inode, dst_path, path, &last_extent,
+-				 ins_start_slot, ins_nr, inode_only);
++				 ins_start_slot, ins_nr, inode_only,
++				 logged_isize);
+ 		if (ret < 0) {
+ 			err = ret;
+ 			goto out_unlock;
+@@ -4109,7 +4172,7 @@ next_slot:
+ 		if (ins_nr) {
+ 			ret = copy_items(trans, inode, dst_path, path,
+ 					 &last_extent, ins_start_slot,
+-					 ins_nr, inode_only);
++					 ins_nr, inode_only, logged_isize);
+ 			if (ret < 0) {
+ 				err = ret;
+ 				goto out_unlock;
+@@ -4130,7 +4193,8 @@ next_slot:
+ 	}
+ 	if (ins_nr) {
+ 		ret = copy_items(trans, inode, dst_path, path, &last_extent,
+-				 ins_start_slot, ins_nr, inode_only);
++				 ins_start_slot, ins_nr, inode_only,
++				 logged_isize);
+ 		if (ret < 0) {
+ 			err = ret;
+ 			goto out_unlock;
+-- 
+2.1.3
+

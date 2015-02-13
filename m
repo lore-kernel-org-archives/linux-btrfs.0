@@ -1,247 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:34725 "EHLO mail.virtall.com"
+Received: from plane.gmane.org ([80.91.229.3]:45288 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751201AbbBMBU3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 20:20:29 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by mailext.virtall.com (Postfix) with ESMTP id 980BE4801A0
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:20:25 +0100 (CET)
-Received: from mailext.virtall.com ([127.0.0.1])
-	by localhost (web1.virtall.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id drgnxE1whiWs for <linux-btrfs@vger.kernel.org>;
-	Fri, 13 Feb 2015 02:20:25 +0100 (CET)
-Received: from admin.virtall.com (localhost [127.0.0.1])
-	by mailext.virtall.com (Postfix) with ESMTP
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 02:20:25 +0100 (CET)
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Fri, 13 Feb 2015 10:20:25 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING: CPU: 1 PID: 2436 at fs/btrfs/qgroup.c:1414
- =?UTF-8?Q?btrfs=5Fdelayed=5Fqgroup=5Faccounting+=30x=39f=31/=30xa=30b=20?=
- =?UTF-8?Q?=5Bbtrfs=5D=28=29?=
-In-Reply-To: <27573d37c7d634c3232820fa8464f235@admin.virtall.com>
-References: <27573d37c7d634c3232820fa8464f235@admin.virtall.com>
-Message-ID: <109673fe6cda15800a731d1ee79d9175@admin.virtall.com>
+	id S1751241AbbBMCih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Feb 2015 21:38:37 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YM69L-0007kH-5n
+	for linux-btrfs@vger.kernel.org; Fri, 13 Feb 2015 03:38:35 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 03:38:35 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Feb 2015 03:38:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS RAID-1 leaf size change scenario
+Date: Fri, 13 Feb 2015 02:38:30 +0000 (UTC)
+Message-ID: <pan$79b87$bd73274f$12e14047$da846321@cox.net>
+References: <11865500.KaKfdqacBs@zafu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FYI, still seeing this with 3.19:
+Swâmi Petaramesh posted on Thu, 12 Feb 2015 14:26:09 +0100 as excerpted:
 
-[196992.429463] ------------[ cut here ]------------
-[196992.429526] WARNING: CPU: 1 PID: 26328 at fs/btrfs/qgroup.c:1414 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
-[196992.429617] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
-nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
-nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
-cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
-raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
-battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
-lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
-mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
-[196992.429979] CPU: 1 PID: 26328 Comm: kworker/u16:21 Not tainted 
-3.19.0 #1
-[196992.430026] Hardware name: System manufacturer System Product 
-Name/P8H77-M PRO, BIOS 1101 02/04/2013
-[196992.430123] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper 
-[btrfs]
-[196992.430171]  0000000000000009 ffff8800045a3c18 ffffffff813bc952 
-0000000000000000
-[196992.430260]  0000000000000000 ffff8800045a3c58 ffffffff8103b015 
-ffff8807f9281c90
-[196992.430349]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2747f00 
-ffffffffffffffff
-[196992.430438] Call Trace:
-[196992.430484]  [<ffffffff813bc952>] dump_stack+0x45/0x57
-[196992.430532]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
-[196992.430586]  [<ffffffffa0332a33>] ? 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[196992.430675]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
-[196992.430727]  [<ffffffffa0332a33>] 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[196992.430820]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
-[btrfs]
-[196992.430873]  [<ffffffffa02d1a2d>] delayed_ref_async_start+0x37/0x76 
-[btrfs]
-[196992.430927]  [<ffffffffa03069d7>] normal_work_helper+0xb5/0x16a 
-[btrfs]
-[196992.430981]  [<ffffffffa0306b98>] btrfs_extent_refs_helper+0xd/0xf 
-[btrfs]
-[196992.431030]  [<ffffffff8104c0cb>] process_one_work+0x187/0x2a9
-[196992.431077]  [<ffffffff8104c458>] worker_thread+0x241/0x33e
-[196992.431125]  [<ffffffff8104c217>] ? 
-process_scheduled_works+0x2a/0x2a
-[196992.431173]  [<ffffffff81050067>] kthread+0xcd/0xd5
-[196992.431219]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[196992.431268]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
-[196992.431315]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[196992.431363] ---[ end trace 5d57d07bb94831a0 ]---
-[197051.336444] ------------[ cut here ]------------
-[197051.336506] WARNING: CPU: 5 PID: 2544 at fs/btrfs/qgroup.c:1414 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
-[197051.336598] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
-nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
-nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
-cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
-raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
-battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
-lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
-mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
-[197051.336965] CPU: 5 PID: 2544 Comm: btrfs-cleaner Tainted: G        W 
-      3.19.0 #1
-[197051.337070] Hardware name: System manufacturer System Product 
-Name/P8H77-M PRO, BIOS 1101 02/04/2013
-[197051.337160]  0000000000000009 ffff8800c7e8bbe8 ffffffff813bc952 
-000000000000009b
-[197051.337249]  0000000000000000 ffff8800c7e8bc28 ffffffff8103b015 
-ffff8807f9281c90
-[197051.337338]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2740480 
-ffffffffffffffff
-[197051.337427] Call Trace:
-[197051.337473]  [<ffffffff813bc952>] dump_stack+0x45/0x57
-[197051.337521]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
-[197051.337576]  [<ffffffffa0332a33>] ? 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[197051.337664]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
-[197051.337717]  [<ffffffffa0332a33>] 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[197051.337809]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
-[btrfs]
-[197051.337863]  [<ffffffffa02df041>] 
-btrfs_should_end_transaction+0x4a/0x53 [btrfs]
-[197051.337955]  [<ffffffffa02cfdc3>] btrfs_drop_snapshot+0x379/0x68f 
-[btrfs]
-[197051.338009]  [<ffffffffa02ee811>] ? 
-btrfs_run_defrag_inodes+0x2fa/0x30e [btrfs]
-[197051.338101]  [<ffffffffa02d22f2>] ? 
-btrfs_delete_unused_bgs+0x3f/0x210 [btrfs]
-[197051.338193]  [<ffffffffa02df42b>] 
-btrfs_clean_one_deleted_snapshot+0xb4/0xc2 [btrfs]
-[197051.338284]  [<ffffffffa02be105>] ? btrfs_free_path+0x22/0x26 
-[btrfs]
-[197051.338336]  [<ffffffffa02d889e>] cleaner_kthread+0x134/0x16c 
-[btrfs]
-[197051.338388]  [<ffffffffa02d876a>] ? btrfs_alloc_root+0x2c/0x2c 
-[btrfs]
-[197051.338437]  [<ffffffff81050067>] kthread+0xcd/0xd5
-[197051.338484]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[197051.338533]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
-[197051.338580]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[197051.338628] ---[ end trace 5d57d07bb94831a1 ]---
-[197051.340365] ------------[ cut here ]------------
-[197051.340450] WARNING: CPU: 0 PID: 26314 at fs/btrfs/qgroup.c:1414 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]()
-[197051.340568] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
-nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
-nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
-cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
-raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801 i2c_core 
-battery parport_pc parport tpm_infineon tpm_tis tpm video 8250_fintek 
-lpc_ich mfd_core ehci_pci ehci_hcd button acpi_cpufreq ext4 crc16 jbd2 
-mbcache raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
-[197051.341053] CPU: 0 PID: 26314 Comm: kworker/u16:5 Tainted: G        
-W      3.19.0 #1
-[197051.341165] Hardware name: System manufacturer System Product 
-Name/P8H77-M PRO, BIOS 1101 02/04/2013
-[197051.341297] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper 
-[btrfs]
-[197051.341360]  0000000000000009 ffff8802c511bc18 ffffffff813bc952 
-0000000000000000
-[197051.341475]  0000000000000000 ffff8802c511bc58 ffffffff8103b015 
-ffff8807f9281c90
-[197051.341590]  ffffffffa0332a33 ffff8807f9281000 ffff8807f2745300 
-ffffffffffffffff
-[197051.341705] Call Trace:
-[197051.341763]  [<ffffffff813bc952>] dump_stack+0x45/0x57
-[197051.341825]  [<ffffffff8103b015>] warn_slowpath_common+0x97/0xb1
-[197051.341901]  [<ffffffffa0332a33>] ? 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[197051.342015]  [<ffffffff8103b044>] warn_slowpath_null+0x15/0x17
-[197051.342089]  [<ffffffffa0332a33>] 
-btrfs_delayed_qgroup_accounting+0x9f3/0xa0d [btrfs]
-[197051.342214]  [<ffffffffa02d1449>] btrfs_run_delayed_refs+0x1e4/0x21b 
-[btrfs]
-[197051.342287]  [<ffffffffa02d1a2d>] delayed_ref_async_start+0x37/0x76 
-[btrfs]
-[197051.342365]  [<ffffffffa03069d7>] normal_work_helper+0xb5/0x16a 
-[btrfs]
-[197051.342441]  [<ffffffffa0306b98>] btrfs_extent_refs_helper+0xd/0xf 
-[btrfs]
-[197051.342506]  [<ffffffff8104c0cb>] process_one_work+0x187/0x2a9
-[197051.342568]  [<ffffffff8104c458>] worker_thread+0x241/0x33e
-[197051.342630]  [<ffffffff8104c217>] ? 
-process_scheduled_works+0x2a/0x2a
-[197051.342694]  [<ffffffff81050067>] kthread+0xcd/0xd5
-[197051.342755]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[197051.342819]  [<ffffffff813c12ac>] ret_from_fork+0x7c/0xb0
-[197051.342880]  [<ffffffff8104ff9a>] ? 
-kthread_freezable_should_stop+0x43/0x43
-[197051.342944] ---[ end trace 5d57d07bb94831a2 ]---
-
-
-Tomasz Chmielewski
-http://www.sslrack.com
-
-On 2015-01-04 07:58, Tomasz Chmielewski wrote:
-> Got this with 3.18.1 and qgroups enabled. Not sure how to reproduce.
+> I have a BTRFS RAID-1 FS made from 2x 2TB SATA mechanical drives.
 > 
+> It was created a while ago, with defaults by the time of 4K leaf sizes.
 > 
-> [1262648.802286] ------------[ cut here ]------------
-> [1262648.802350] WARNING: CPU: 1 PID: 2436 at fs/btrfs/qgroup.c:1414
-> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]()
-> [1262648.802441] Modules linked in: ipt_MASQUERADE
-> nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
-> nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand
-> cpufreq_conservative cpufreq_powersave cpufreq_stats nfsd auth_rpcgss
-> oid_registry exportfs nfs_acl nfs lockd grace fscache sunrpc ipv6
-> btrfs xor raid6_pq zlib_deflate coretemp hwmon loop pcspkr i2c_i801
-> i2c_core battery parport_pc parport 8250_fintek tpm_infineon tpm_tis
-> tpm video ehci_pci ehci_hcd lpc_ich mfd_core acpi_cpufreq button ext4
-> crc16 jbd2 mbcache raid1 sg sd_mod r8169 mii ahci libahci libata
-> scsi_mod
-> [1262648.802854] CPU: 1 PID: 2436 Comm: btrfs-cleaner Not tainted 
-> 3.18.1 #1
-> [1262648.802902] Hardware name: System manufacturer System Product
-> Name/P8H77-M PRO, BIOS 1101 02/04/2013
-> [1262648.802992]  0000000000000009 ffff8800c805fbe8 ffffffff813b1128
-> 0000000000000000
-> [1262648.803081]  0000000000000000 ffff8800c805fc28 ffffffff81039b39
-> ffff8807f341c000
-> [1262648.803170]  ffffffffa0300be2 ffff8807f341c000 ffff8807f3fd8b40
-> ffffffffffffffff
-> [1262648.803259] Call Trace:
-> [1262648.803305]  [<ffffffff813b1128>] dump_stack+0x46/0x58
-> [1262648.803352]  [<ffffffff81039b39>] warn_slowpath_common+0x77/0x91
-> [1262648.803406]  [<ffffffffa0300be2>] ?
-> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]
-> [1262648.803495]  [<ffffffff81039b68>] warn_slowpath_null+0x15/0x17
-> [1262648.803548]  [<ffffffffa0300be2>]
-> btrfs_delayed_qgroup_accounting+0x9f1/0xa0b [btrfs]
-> [1262648.803642]  [<ffffffffa02a12a5>]
-> btrfs_run_delayed_refs+0x1e4/0x21b [btrfs]
-> [1262648.803734]  [<ffffffffa02aec96>]
-> btrfs_should_end_transaction+0x4a/0x53 [btrfs]
-> [1262648.803826]  [<ffffffffa029fc34>] btrfs_drop_snapshot+0x379/0x68f 
-> [btrfs]
-> [1262648.803881]  [<ffffffffa02be478>] ?
-> btrfs_run_defrag_inodes+0x2fa/0x30e [btrfs]
-> [1262648.803974]  [<ffffffffa02b0401>]
-> btrfs_clean_one_deleted_snapshot+0xb3/0xc2 [btrfs]
-> [1262648.804067]  [<ffffffffa02a84ff>] cleaner_kthread+0x134/0x16c 
-> [btrfs]
-> [1262648.804119]  [<ffffffffa02a83cb>] ? btrfs_alloc_root+0x2c/0x2c 
-> [btrfs]
-> [1262648.804169]  [<ffffffff8104ebe7>] kthread+0xcd/0xd5
-> [1262648.804215]  [<ffffffff8104eb1a>] ? 
-> kthread_freezable_should_stop+0x43/0x43
-> [1262648.804264]  [<ffffffff813b59ec>] ret_from_fork+0x7c/0xb0
-> [1262648.804311]  [<ffffffff8104eb1a>] ? 
-> kthread_freezable_should_stop+0x43/0x43
-> [1262648.804360] ---[ end trace b76fd72b4be63515 ]---
+> It also contains *lots* of subvols and snapshots.
+> 
+> It has become very slow over time, and I know that BTRFS performs better
+> with the new 16K leaf sizes.
+
+I agree with everything Chris Murphy said and were it me, would do the 
+migration as he suggested.  Here I'll focus on another aspect, and 
+reemphasize one he mentioned, as well.
+
+1) Focus: Snapshots
+
+Btrfs makes it deceivingly easy to make snapshots, since due to COW they 
+can be created at very close to zero cost.  Unfortunately, that ease of 
+creation belies the much more complicated snapshot maintenance and 
+deletion costs, and often people create and keep around far more 
+snapshots than is healthy for an optimally functioning btrfs.
+
+Basically, anything over say 500 snapshots on a btrfs is going to start 
+bogging it down, and more than around 250-ish snapshots of any single 
+subvolume should be entirely unnecessary.  Unfortunately, due to the 
+deceptive ease of creation, some people even take per-minute snapshots 
+and fail to thin them down well over time, thus ending up with thousands 
+to hundreds of thousands of snapshots, particularly if they're 
+snapshotting multiple subvolumes at that extreme per-minute frequency.  A 
+filesystem in this condition is going to be a nightmare to do any 
+reasonable maintenance (like a rebalance to add/remove/replace devices, 
+or a defrag of more than a few files) on at all, and even regular 
+operations will likely slow down due to fragmentation, etc.
+
+Given your starred-emphasis "*lots*" of snapshots, I strongly suspect 
+this to be one of the big reasons for your slowdowns, far more so than 
+the 4k nodesize, tho that won't help.  OTOH, if your characterization of 
+*lots* was actually less than this, snapshotting probably isn't such a 
+big problem after all and you can skip to the reemphasis point, below.
+
+Unfortunately, at this point it may not be reasonable to recover from the 
+situation on the existing filesystem, as doing the necessary thinning 
+down of those snapshots could take nigh eternity (well, days per 
+snapshot, "not reasonable" if you're dealing with anything near the 
+thousands of snapshots I suspect) due to all that overhead.
+
+But regardless of whether you can fix the existing btrfs, at least once 
+you start over with a new one, try to better manage your snapshotting 
+practices and I suspect the filesystem won't slow down as fast as this 
+one did, while if you don't, I strongly suspect the newer 16k nodesizes 
+aren't going to make that much difference and you'll get the same sort of 
+slowdowns over time as you're dealing with now.
+
+Here's the base argument concerning snapshot thinning management.  
+Suppose you're doing hourly snapshots, and not doing any thinning.  
+Suppose that a year later, you find you need a version of a file from a 
+year ago, and go to retrieve it from one of those snapshots.  So you go 
+to mount a year-old snapshot and you have to pick one.  Is it *REALLY* 
+going to matter, a year on, with no reason to access it since, what exact 
+hour it was?  How are you even going to /know/ what exact hour to pick?
+
+A year on, practicality suggests you'll simply pick one out of the 24 for 
+the day and call it good.  But is even that level of precision 
+necessary?  A year on, might a single snapshot for the week, or for the 
+month, or even the quarter, be sufficient?  Chances are it will be, and 
+if the one you pick is too new or too old, you can simply pick one newer 
+or one older and be done with it.
+
+Similarly, per-minute snapshots?  In the extreme case, maybe for a half 
+our or hour.  Then thin them down to say 10 minute snapshots, and to half 
+hour snapshots after four or six hours (depending on whether you're 
+basing on an 8-hour workday or a 24-hour day), then to hourly after a 
+day, four or six hourly after three days, and daily after a week.
+
+But in practice, per-minute snapshots are seldom necessary at all, and 
+could be problems for maintenance if they end up taking more than a 
+minute to delete.  Ten minute, possibly, more likely half-hour or hourly 
+is fine.
+
+So say we start with half hour snapshots, 24-hours/day, but thinning down 
+to hourly after four hours and to four-hourly after a day, for a week.  
+That's:
+
+8*half-hourly, 24-4=20*hourly, 7-1=6*6=36-4-hourly = 8+20+36 =
+64 snapshots in a week.
+
+Now, keep daily snapshots for three additional weeks = 64+21 =
+85 snapshots in four weeks.
+
+And keep weekly snapshots to fill out the half-year (26 weeks)
+26-4 = 22 weeks, 22*7=154, 154+85 = 239 snapshots in a half a year.
+
+Now after half a year, if the data is any value at all, it will have been 
+backed up elsewhere.  If you like, to avoid having to dig up those 
+backups, you can keep quarterly snapshots for... pretty much the life of 
+the filesystem or hardware, it'll only add four snapshots a year beyond 
+the 239 for nearest half-year.  Or delete snapshots beyond a quarter or a 
+half year and rely on the off-filesystem backups, allowing btrfs to 
+finally free the space tied up in the oldest and thus presumably most 
+changed copies of the files in question.
+
+As the above demonstrates, even at originally half-hourly snapshots, a 
+reasonable thinning program keeps snapshots per subvolume to 200-300.
+
+And if you can get by with say 4X per day (6-hourly on a 24-hour day) 
+snapshots and keep only two days of that, thinning to 2X per day for a 
+week, then daily for another week and weekly out to six months, that's:
+
+2-days of 4X-daily = 8, 5 days of 2X = 10, 7 dailies, 24 weeklies =
+8+10+7+24 = 49 snapshots to six months, starting with 6-hourly.
+
+Now say two of the half-hourly snapshotted subvolumes and five of the 6-
+hourly snapshotted subvolumes.  Rounding up for easier math and to allow 
+for a few quarterly snapshots, we're now at 2*250=500 at the higher 
+frequency, 5*60=300 at the lower frequency, 800 total for the filesystem.
+
+800 snapshots for the filesystem is a bit high, but it's manageable, and 
+**WELL** better than the tens or hundreds of thousands of snapshots that 
+some are trying to handle.  Obviously, if you can reasonably manage only 
+one subvolume at the higher snapshot frequency, or if you can reduce 
+snapshot frequency to daily or even not snapshot at all or only perhaps 
+weekly for some of those subvolumes, total snapshots will go down 
+accordingly.
+
+Bottom line, if you're dealing with much over a thousand snapshots per 
+filesystem, seriously reconsider your snapshotting strategy as you're 
+probably doing it wrong.  If possible, keep it to a few hundred.  
+Filesystem management and even general usage should be far better as a 
+result.
+
+Again, while it might be too late to reasonably recover from a bad 
+snapshotting strategy on the existing filesystem, as deleting all those 
+old snapshots now may take far longer than is reasonable (tho you could 
+try it and /see/ how long deleting a snapshot takes), at least try to 
+manage things better when you setup the new filesystem.
+
+2) Reemphasis: Versions.
+
+Restating what CM said, old btrfs versions are buggy btrfs versions.  
+Btrfs is still new enough and not yet stable and mature enough that 
+running current versions really does lower the risk to your data, as old 
+versions are known buggy versions, and running them is effectively 
+playing Russian Roulette with your data -- you might get away with it for 
+awhile, but play the odds long enough and eventually you'll get shot.
+
+More specifically, at operational runtime, it's the kernel that's most 
+vital, as userspace basically only tells the kernel what to do at a high 
+level, and the kernel actually executes the lower level code to do it.  
+So older kernels risk runtime damage on existing filesystems due to bugs 
+that have long since been found and fixed in newer kernel versions.
+
+However, in offline mode, such as when trying to repair an unmounted 
+filesystem using btrfs check, or when using btrfs-restore to try to 
+recover un-backed-up data from an unmountable filesystem before trying to 
+repair it, btrfs-progs userspace becomes vital, as it's actually touching 
+the filesystem then, without the kernel's direct involvement.
+
+So a current kernel is most vital for btrfs at runtime, while a current 
+btrfs-progs userspace is most vital if something screwed up and you're 
+trying to fix it or recover what you can before blowing the existing 
+filesystem away to start over.
+
+Meanwhile, beyond data corruption bugs, one of the big focuses recently 
+has been operation scaling.  If you have thousands of snapshots as I 
+suspect, it's very possible that the latest 3.18 or 3.19 kernel will 
+actually let you work with them in a reasonable timeframe, while a 3.16 
+vintage kernel will take so long it's impractical to do anything with 
+them at all.  I'd certainly try it, at least, before giving up on doing 
+anything practical with that old filesystem, unless of course you decide 
+to simply bite the bullet and start over with a new filesystem and new 
+devices, and only access the old one long enough to get current data and 
+possibly a few selected snapshots off of it.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

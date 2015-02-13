@@ -1,52 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33697 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:33962 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753375AbbBMPuh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Feb 2015 10:50:37 -0500
-Date: Fri, 13 Feb 2015 16:50:35 +0100
+	id S1753045AbbBMP4n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Feb 2015 10:56:43 -0500
+Date: Fri, 13 Feb 2015 16:56:41 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Josef Bacik <jbacik@fb.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v8 9/9] btrfs: Use sb_want_write() to protect sysfs
- feature change.
-Message-ID: <20150213155035.GJ8720@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: add metadump_v2 support to the kernel
+Message-ID: <20150213155641.GK8720@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1423705814-18007-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1423752599-17850-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423705814-18007-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1423752599-17850-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 12, 2015 at 09:50:14AM +0800, Qu Wenruo wrote:
-> Just like label change, use sb_want_write() to do a correct protection.
+On Thu, Feb 12, 2015 at 09:49:59AM -0500, Josef Bacik wrote:
+> For newly restored metadumps we can actually mount the fs and use it properly
+> except that the data obviously doesn't match properly.  To get around this make
+> us skip csum validation if the metadump_v2 flag is set on the fs, this will
+> allow us to reproduce balance issues with metadumps.  Thanks,
 > 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 > ---
-> v4:
->   Newly introduced.
-> v5:
->   Change to sb_want_write().
-> v6:
->   Move sb_want_write() to the beginning of the function.
-> v7:
->   None
-> v8:
->   Move sb_want_write() after get fs_info.
-> ---
->  fs/btrfs/sysfs.c | 27 ++++++++++++++++++---------
->  1 file changed, 18 insertions(+), 9 deletions(-)
+>  fs/btrfs/ctree.h | 1 +
+>  fs/btrfs/inode.c | 4 ++++
+>  2 files changed, 5 insertions(+)
 > 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index 7e548f7..2e8cc34 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -119,12 +119,16 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 1675602..bc16147 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -356,6 +356,7 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
 >  
->  	fs_info = to_fs_info(kobj);
->  	if (!fs_info)
-> -		return -EPERM;
-> +		ret = -EPERM;
+>  #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
+>  #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
+> +#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
+>  
+>  #define BTRFS_BACKREF_REV_MAX		256
+>  #define BTRFS_BACKREF_REV_SHIFT		56
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 4564975..70d0af8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3039,6 +3039,10 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+>  	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
+>  		return 0;
+>  
 
-Same patch version (v8), different code and buggy in a different way :)
-but the fix is the same.
+Please add the text from changelog here as a comment, the flag is not
+really selfexplanatory.
+
+> +	if (btrfs_super_flags(root->fs_info->super_copy) &
+> +	    BTRFS_SUPER_FLAG_METADUMP_V2)
+> +		return 0;
+> +
+>  	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
+>  	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
+>  		clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM,

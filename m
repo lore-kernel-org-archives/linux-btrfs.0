@@ -1,166 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44609 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752513AbbBMMj2 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 13 Feb 2015 07:39:28 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: don't remove extents and xattrs when logging new names
-Date: Fri, 13 Feb 2015 12:38:44 +0000
-Message-Id: <1423831124-21199-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:60435 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753033AbbBMPZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Feb 2015 10:25:21 -0500
+Date: Fri, 13 Feb 2015 16:25:18 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Zhaolei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: cleanup: remove unuesd DEDINE_WAIT() in
+ btrfs_bio_counter_inc_blocked()
+Message-ID: <20150213152518.GD8720@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1423726931-7706-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1423726931-7706-1-git-send-email-zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we are recording in the tree log that an inode has new names (new hard
-links were added), we would drop items, belonging to the inode, that we
-shouldn't:
+On Thu, Feb 12, 2015 at 03:42:11PM +0800, Zhaolei wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> 1: Remove unused DEFINE_WAIT(wait)
+> 2: Add likely() for BTRFS_FS_STATE_DEV_REPLACING condition
 
-1) When the flag BTRFS_INODE_COPY_EVERYTHING is set in the inode's runtime
-   flags, we ended up dropping all the extent and xattr items that were
-   previously logged. This was done only in memory, since logging a new
-   name doesn't imply syncing the log;
+Using likely() here is poitnless, it's not a performance sensitive path
+at all.
 
-2) When the flag BTRFS_INODE_COPY_EVERYTHING is set in the inode's runtime
-   flags, we ended up dropping all the xattr items that were previously
-   logged. Like the case before, this was done only in memory because
-   logging a new name doesn't imply syncing the log.
+> 3: Use a look instead of goto
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-This led to some surprises in scenarios such as the following:
-
-1) write some extents to an inode;
-2) fsync the inode;
-3) truncate the inode or delete/modify some of its xattrs
-4) add a new hard link for that inode
-5) fsync some other file, to force the log tree to be durably persisted
-6) power failure happens
-
-The next time the fs is mounted, the fsync log replay code is executed,
-and the resulting file doesn't have the content it had when the last fsync
-against it was performed, instead if has a content matching what it had
-when the last transaction commit happened.
-
-So change the behaviour such that when a new name is logged, only the inode
-item and reference items are processed.
-
-This is easy to reproduce with the test I just made for xfstests, whose
-main body is:
-
-  _scratch_mkfs >> $seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  # Create our test file with some data.
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 8K 0 8K" \
-      $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Make sure the file is durably persisted.
-  sync
-
-  # Append some data to our file, to increase its size.
-  $XFS_IO_PROG -f -c "pwrite -S 0xcc -b 4K 8K 4K" \
-      $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Fsync the file, so from this point on if a crash/power failure happens, our
-  # new data is guaranteed to be there next time the fs is mounted.
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-
-  # Now shrink our file to 5000 bytes.
-  $XFS_IO_PROG -c "truncate 5000" $SCRATCH_MNT/foo
-
-  # Now do an expanding truncate to a size larger than what we had when we last
-  # fsync'ed our file. This is just to verify that after power failure and
-  # replaying the fsync log, our file matches what it was when we last fsync'ed
-  # it - 12Kb size, first 8Kb of data had a value of 0xaa and the last 4Kb of
-  # data had a value of 0xcc.
-  $XFS_IO_PROG -c "truncate 32K" $SCRATCH_MNT/foo
-
-  # Add one hard link to our file. This made btrfs drop all of our file's
-  # metadata from the fsync log, including the metadata relative to the
-  # extent we just wrote and fsync'ed. This change was made only to the fsync
-  # log in memory, so adding the hard link alone doesn't change the persisted
-  # fsync log. This happened because the previous truncates set the runtime
-  # flag BTRFS_INODE_NEEDS_FULL_SYNC in the btrfs inode structure.
-  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
-
-  # Now make sure the in memory fsync log is durably persisted.
-  # Creating and fsync'ing another file will do it.
-  # After this our persisted fsync log will no longer have metadata for our file
-  # foo that points to the extent we wrote and fsync'ed before.
-  touch $SCRATCH_MNT/bar
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-
-  # As expected, before the crash/power failure, we should be able to see a file
-  # with a size of 32Kb, with its first 5000 bytes having the value 0xaa and all
-  # the remaining bytes with value 0x00.
-  echo "File content before:"
-  od -t x1 $SCRATCH_MNT/foo
-
-  # Simulate a crash/power loss.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  # After mounting the fs again, the fsync log was replayed.
-  # The expected result is to see a file with a size of 12Kb, with its first 8Kb
-  # of data having the value 0xaa and its last 4Kb of data having a value of 0xcc.
-  # The btrfs bug used to leave the file as it used te be as of the last
-  # transaction commit - that is, with a size of 8Kb with all bytes having a
-  # value of 0xaa.
-  echo "File content after:"
-  od -t x1 $SCRATCH_MNT/foo
-
-The test case for xfstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index b0fe52a..0f00569 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4070,7 +4070,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
- 
- 		if (inode_only == LOG_INODE_EXISTS)
--			max_key_type = BTRFS_XATTR_ITEM_KEY;
-+			max_key_type = BTRFS_INODE_EXTREF_KEY;
- 		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
- 	} else {
- 		if (inode_only == LOG_INODE_EXISTS) {
-@@ -4096,14 +4096,23 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 				       &BTRFS_I(inode)->runtime_flags)) {
- 			clear_bit(BTRFS_INODE_COPY_EVERYTHING,
- 				  &BTRFS_I(inode)->runtime_flags);
--			ret = btrfs_truncate_inode_items(trans, log,
--							 inode, 0, 0);
-+			if (inode_only == LOG_INODE_EXISTS) {
-+				max_key.type = BTRFS_INODE_EXTREF_KEY;
-+				ret = drop_objectid_items(trans, log, path, ino,
-+							  max_key.type);
-+			} else {
-+				ret = btrfs_truncate_inode_items(trans, log,
-+								 inode, 0, 0);
-+			}
- 		} else if (test_and_clear_bit(BTRFS_INODE_COPY_EVERYTHING,
- 					      &BTRFS_I(inode)->runtime_flags) ||
- 			   inode_only == LOG_INODE_EXISTS) {
--			if (inode_only == LOG_INODE_ALL)
-+			if (inode_only == LOG_INODE_ALL) {
- 				fast_search = true;
--			max_key.type = BTRFS_XATTR_ITEM_KEY;
-+				max_key.type = BTRFS_XATTR_ITEM_KEY;
-+			} else {
-+				max_key.type = BTRFS_INODE_EXTREF_KEY;
-+			}
- 			ret = drop_objectid_items(trans, log, path, ino,
- 						  max_key.type);
- 		} else {
--- 
-2.1.3
-
+Ack, for the rest.

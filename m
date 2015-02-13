@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:40413 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:39047 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752422AbbBLWJZ (ORCPT
+	by vger.kernel.org with ESMTP id S1752362AbbBMMaL (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Feb 2015 17:09:25 -0500
+	Fri, 13 Feb 2015 07:30:11 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic, test fsync after adding hard link differently
-Date: Thu, 12 Feb 2015 22:08:58 +0000
-Message-Id: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] fstests: generic, test fsync after adding hard link differently
+Date: Fri, 13 Feb 2015 12:29:49 +0000
+Message-Id: <1423830589-31546-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
+References: <1423778938-24038-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -19,8 +21,8 @@ fsync'ed successfully, if we end up adding a hard link to our
 inode and then persist the fsync log later via an fsync of other
 inode for example. This is similar to my previous test, except
 that in this test the inode that ends up losing data was created
-in (with some data) in a transaction different from the one we
-made an fsync.
+(with some data) in a transaction different from the one we made
+an fsync.
 
 The btrfs issue was fixed by the following linux kernel patch:
 
@@ -28,19 +30,22 @@ The btrfs issue was fixed by the following linux kernel patch:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/043     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+V2: Updated two comments with more details about the issue.
+
+ tests/generic/043     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/generic/043.out |  17 ++++++++
  tests/generic/group   |   1 +
- 3 files changed, 128 insertions(+)
+ 3 files changed, 130 insertions(+)
  create mode 100755 tests/generic/043
  create mode 100644 tests/generic/043.out
 
 diff --git a/tests/generic/043 b/tests/generic/043
 new file mode 100755
-index 0000000..5079c6d
+index 0000000..9de2469
 --- /dev/null
 +++ b/tests/generic/043
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,112 @@
 +#! /bin/bash
 +# FS QA Test No. 043
 +#
@@ -121,8 +126,8 @@ index 0000000..5079c6d
 +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
 +
 +# Add one hard link to our file. This made btrfs write into the in memory fsync
-+# log a special inode with generation 0. Note that this didn't update the inode
-+# in the fsync log on disk.
++# log a special inode with generation 0 and an i_size of 0 too. Note that this
++# didn't update the inode in the fsync log on disk.
 +ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
 +
 +# Now make sure the in memory fsync log is durably persisted.
@@ -143,9 +148,11 @@ index 0000000..5079c6d
 +_mount_flakey
 +
 +# After mounting the fs again, the fsync log was replayed.
-+# The btrfs fsync log replay code didn't update the size of the persisted inode
-+# with the size of the size found in the fsync log's inode metadata. This made
-+# the last 4Kb of file data inaccessible.
++# The btrfs fsync log replay code didn't update the i_size of the persisted
++# inode because the inode item in the log had a special generation with a
++# value of 0 (and it couldn't know the correct i_size, since that inode item
++# had a 0 i_size too). This made the last 4Kb of file data inaccessible and
++# effectively lost.
 +echo "File content after:"
 +od -t x1 $SCRATCH_MNT/foo
 +

@@ -1,74 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47363 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752621AbbBLWKU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Feb 2015 17:10:20 -0500
-Date: Thu, 12 Feb 2015 22:10:18 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Nishant Agrawal <nragrawal@cs.wisc.edu>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How to compile btrfs-progs?
-Message-ID: <20150212221018.GS28427@carfax.org.uk>
-References: <cc8040167122fea3f732a80a953ef78f@cs.wisc.edu>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="gPQW1Pk7T/0rhUBV"
-In-Reply-To: <cc8040167122fea3f732a80a953ef78f@cs.wisc.edu>
+Received: from victor.provo.novell.com ([137.65.250.26]:46666 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751273AbbBMAQt (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 12 Feb 2015 19:16:49 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: stable@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: fix fsync data loss after adding hard link to inode
+Date: Fri, 13 Feb 2015 00:16:06 +0000
+Message-Id: <1423786566-15161-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1423759807-29640-1-git-send-email-fdmanana@suse.com>
+References: <1423759807-29640-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We have a scenario where after the fsync log replay we can lose file data
+that had been previously fsync'ed if we added an hard link for our inode
+and after that we sync'ed the fsync log (for example by fsync'ing some
+other file or directory).
 
---gPQW1Pk7T/0rhUBV
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This is because when adding an hard link we updated the inode item in the
+log tree with an i_size value of 0. At that point the new inode item was
+in memory only and a subsequent fsync log replay would not make us lose
+the file data. However if after adding the hard link we sync the log tree
+to disk, by fsync'ing some other file or directory for example, we ended
+up losing the file data after log replay, because the inode item in the
+persisted log tree had an an i_size of zero.
 
-On Thu, Feb 12, 2015 at 04:54:47PM -0500, Nishant Agrawal wrote:
-> Hi,
-> 
-> I am new to btrfs and trying to learn it.
-> 
-> I have download btrfs-progs code from the git repository but not
-> able to compile it.
-> 
-> Can someone help me with the steps to compile this user space programs?
+This is easy to reproduce, and the following excerpt from my test for
+xfstests shows this:
 
-   There's a bunch of prerequisites you need to install. The wiki
-documentation at [1], [2] may be of assistance. If you're still having
-problems after that, it'd be handy to know how things are going wrong
-for you, rather than "not able to compile".
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
 
-   Hugo.
+  # Create one file with data and fsync it.
+  # This made the btrfs fsync log persist the data and the inode metadata with
+  # a correct inode->i_size (4096 bytes).
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 4K 0 4K" -c "fsync" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
 
-[1] https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories#Dependencies
-[2] https://btrfs.wiki.kernel.org/index.php/Getting_started#Compiling_the_userspace_utilities
+  # Now add one hard link to our file. This made the btrfs code update the fsync
+  # log, in memory only, with an inode metadata having a size of 0.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
 
+  # Now force persistence of the fsync log to disk, for example, by fsyncing some
+  # other file.
+  touch $SCRATCH_MNT/bar
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
+
+  # Before a power loss or crash, we could read the 4Kb of data from our file as
+  # expected.
+  echo "File content before:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # After the fsync log replay, because the fsync log had a value of 0 for our
+  # inode's i_size, we couldn't read anymore the 4Kb of data that we previously
+  # wrote and fsync'ed. The size of the file became 0 after the fsync log replay.
+  echo "File content after:"
+  od -t x1 $SCRATCH_MNT/foo
+
+Another alternative test, that doesn't need to fsync an inode in the same
+transaction it was created, is:
+
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test file with some data.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 8K 0 8K" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Make sure the file is durably persisted.
+  sync
+
+  # Append some data to our file, to increase its size.
+  $XFS_IO_PROG -f -c "pwrite -S 0xcc -b 4K 8K 4K" \
+       $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Fsync the file, so from this point on if a crash/power failure happens, our
+  # new data is guaranteed to be there next time the fs is mounted.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+
+  # Add one hard link to our file. This made btrfs write into the in memory fsync
+  # log a special inode with generation 0. Note that this didn't update the inode
+  # in the fsync log on disk.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
+
+  # Now make sure the in memory fsync log is durably persisted.
+  # Creating and fsync'ing another file will do it.
+  touch $SCRATCH_MNT/bar
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
+
+  # As expected, before the crash/power failure, we should be able to read the
+  # 12Kb of file data.
+  echo "File content before:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # After mounting the fs again, the fsync log was replayed.
+  # The btrfs fsync log replay code didn't update the size of the persisted inode
+  # with the size of the size found in the fsync log's inode metadata. This made
+  # the last 4Kb of file data inaccessible.
+  echo "File content after:"
+  od -t x1 $SCRATCH_MNT/foo
+
+This isn't a new issue/regression. This problem has been around since the
+log tree code was added in 2008:
+
+  Btrfs: Add a write ahead tree log to optimize synchronous operations
+  (commit e02119d5a7b4396c5a872582fddc8bd6d305a70a)
+
+Test cases for xfstests follow soon.
+
+CC: <stable@vger.kernel.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Fixed additional similar case where the inode already existed in
+    the fs/subvol tree.
+    Made an xfstest for that case too.
+V3: Apply logic only to regular files.
+
+ fs/btrfs/tree-log.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index ea0431d..2959935 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -490,8 +490,20 @@ insert:
+ 		src_item = (struct btrfs_inode_item *)src_ptr;
+ 		dst_item = (struct btrfs_inode_item *)dst_ptr;
+ 
+-		if (btrfs_inode_generation(eb, src_item) == 0)
++		if (btrfs_inode_generation(eb, src_item) == 0) {
++			struct extent_buffer *dst_eb = path->nodes[0];
++
++			if (S_ISREG(btrfs_inode_mode(eb, src_item)) &&
++			    S_ISREG(btrfs_inode_mode(dst_eb, dst_item))) {
++				struct btrfs_map_token token;
++				u64 ino_size = btrfs_inode_size(eb, src_item);
++
++				btrfs_init_map_token(&token);
++				btrfs_set_token_inode_size(dst_eb, dst_item,
++							   ino_size, &token);
++			}
+ 			goto no_copy;
++		}
+ 
+ 		if (overwrite_root &&
+ 		    S_ISDIR(btrfs_inode_mode(eb, src_item)) &&
+@@ -3263,14 +3275,13 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 		 * to say 'update this inode with these values'
+ 		 */
+ 		btrfs_set_token_inode_generation(leaf, item, 0, &token);
+-		btrfs_set_token_inode_size(leaf, item, 0, &token);
+ 	} else {
+ 		btrfs_set_token_inode_generation(leaf, item,
+ 						 BTRFS_I(inode)->generation,
+ 						 &token);
+-		btrfs_set_token_inode_size(leaf, item, inode->i_size, &token);
+ 	}
+ 
++	btrfs_set_token_inode_size(leaf, item, i_size_read(inode), &token);
+ 	btrfs_set_token_inode_uid(leaf, item, i_uid_read(inode), &token);
+ 	btrfs_set_token_inode_gid(leaf, item, i_gid_read(inode), &token);
+ 	btrfs_set_token_inode_mode(leaf, item, inode->i_mode, &token);
 -- 
-Hugo Mills             | "There's a Martian war machine outside -- they want
-hugo@... carfax.org.uk | to talk to you about a cure for the common cold."
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |                           Stephen Franklin, Babylon 5
+2.1.3
 
---gPQW1Pk7T/0rhUBV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJU3STJAAoJEFheFHXiqx3kKTEP/3O8oEgwKRu7tlipT7FNy8JE
-2JPSernWXEqlAmPFoPBntw0dNtYbiWJVh3oYWsSGALGodSwXGxDMNKbwn4louSqY
-81gXn3Wl8nDO6w9vPq83tWFgwfKpZKvN+12Cz8TiYnSQuzDUyMnYlR54h1pVAEzV
-PDVvmPJ896PS9C7looEJkamT6ign6sY+Qu+t6ezPjKa9ifoBhbO0rHjL0ndKVMgR
-PrvL0pTVg+SuyXoMqvfKXqaDr9Z8a34VrAiqc5uACR6bzEv9BLEWkU6M862LU8cH
-vlCIT8WiU5ZQhid6pNXTN0/BK/SYd8+FcAfXQ4/GL3dBfmyfEr8Z7ntyUaEUNyff
-9/KYk4/1YGwEzt7uUslxCWlF7NzUmX39kIAygILORY8H11r6dNkGU2YEv+cFs4/7
-BAT2V1AgdLKfEcL0snuERx3Xmh1CarrunIaXt7XSq30O0MKb/fMZISZiahr031rv
-ZJN5CnAZotkRQKFNQj3pBQtruZCV7hmCjstCi1+4qJA2zn70daiYdBPTprSPg4Gg
-IpMcm2wvjCJN2PIjeniH8QHV3UgcA6cyx/ZL6DP7wirigC7TAPSOSbJv5xVdDPuk
-1Nw0+86a8EV1e84DiNgxWMEnIjKrzSzdRDMT8ikDo67Ni+2eX04+WweoiJdcHeDq
-zbsSwvdkiKoOUhEcikKU
-=30Zj
------END PGP SIGNATURE-----
-
---gPQW1Pk7T/0rhUBV--

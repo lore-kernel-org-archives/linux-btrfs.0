@@ -1,44 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay116.isp.belgacom.be ([195.238.20.143]:12121 "EHLO
-	mailrelay116.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753951AbbBNMKa (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:33330 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754026AbbBNNTv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Feb 2015 07:10:30 -0500
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1 linux-next] btrfs: fix sizeof format specifier in btrfs_check_super_valid()
-Date: Sat, 14 Feb 2015 13:10:22 +0100
-Message-Id: <1423915822-23442-1-git-send-email-fabf@skynet.be>
+	Sat, 14 Feb 2015 08:19:51 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1EDJ1V4031133
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Feb 2015 21:19:02 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: fix condition of commit transaction
+Date: Sat, 14 Feb 2015 21:18:39 +0800
+Message-ID: <1423919919-25118-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fixes mips compilation warning:
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-fs/btrfs/disk-io.c: In function 'btrfs_check_super_valid':
-fs/btrfs/disk-io.c:3927:21: warning: format '%lu' expects argument
-of type 'long unsigned int', but argument 3 has type 'unsigned int' [-Wformat]
+Old code bypass commit transaction when we don't have enough
+pinned space, but another case is there exist freed bgs in current
+transction, it have possibility to make alloc_chunk success.
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
+This patch modify the condition to:
+if (have_free_bg || have_pinned_space) commit_transaction()
+
+Confirmed above action by printk before and after patch.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f79f385..639f266 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3921,7 +3921,7 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	}
- 	if (btrfs_super_sys_array_size(sb) < sizeof(struct btrfs_disk_key)
- 			+ sizeof(struct btrfs_chunk)) {
--		printk(KERN_ERR "BTRFS: system chunk array too small %u < %lu\n",
-+		printk(KERN_ERR "BTRFS: system chunk array too small %u < %zu\n",
- 				btrfs_super_sys_array_size(sb),
- 				sizeof(struct btrfs_disk_key)
- 				+ sizeof(struct btrfs_chunk));
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a684086..414d533 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3679,7 +3679,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 used;
+-	int ret = 0, committed = 0, alloc_chunk = 1;
++	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
+@@ -3747,11 +3747,12 @@ alloc:
+ 
+ 		/*
+ 		 * If we don't have enough pinned space to deal with this
+-		 * allocation don't bother committing the transaction.
++		 * allocation, and no removed chunk in current transaction,
++		 * don't bother committing the transaction.
+ 		 */
+ 		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+ 					   bytes) < 0)
+-			committed = 1;
++			have_pinned_space = 0;
+ 		spin_unlock(&data_sinfo->lock);
+ 
+ 		/* commit the current transaction and try again */
+@@ -3763,10 +3764,15 @@ commit_trans:
+ 			trans = btrfs_join_transaction(root);
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
+-			ret = btrfs_commit_transaction(trans, root);
+-			if (ret)
+-				return ret;
+-			goto again;
++			if (have_pinned_space ||
++			    trans->transaction->have_free_bgs) {
++				ret = btrfs_commit_transaction(trans, root);
++				if (ret)
++					return ret;
++				goto again;
++			} else {
++				btrfs_end_transaction(trans, root);
++			}
+ 		}
+ 
+ 		trace_btrfs_space_reservation(root->fs_info,
 -- 
-2.1.0
+1.8.5.1
 

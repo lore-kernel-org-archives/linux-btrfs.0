@@ -1,211 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18360 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754451AbbBOEjd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Feb 2015 23:39:33 -0500
-Date: Sun, 15 Feb 2015 12:39:14 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: don't remove extents and xattrs when logging
- new names
-Message-ID: <20150215043913.GA27387@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1423831124-21199-1-git-send-email-fdmanana@suse.com>
- <1423846574-3391-1-git-send-email-fdmanana@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423846574-3391-1-git-send-email-fdmanana@suse.com>
+Received: from plane.gmane.org ([80.91.229.3]:38876 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754724AbbBOVBX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Feb 2015 16:01:23 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YN6Jd-0001KD-Ln
+	for linux-btrfs@vger.kernel.org; Sun, 15 Feb 2015 22:01:21 +0100
+Received: from p4ff58ced.dip0.t-ipconnect.de ([79.245.140.237])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Feb 2015 22:01:21 +0100
+Received: from holger.hoffstaette by p4ff58ced.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Feb 2015 22:01:21 +0100
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Suddenly cannot change metadata profile any longer
+Date: Sun, 15 Feb 2015 21:01:07 +0000 (UTC)
+Message-ID: <pan.2015.02.15.21.01.07@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 13, 2015 at 04:56:14PM +0000, Filipe Manana wrote:
-> If we are recording in the tree log that an inode has new names (new hard
-> links were added), we would drop items, belonging to the inode, that we
-> shouldn't:
-> 
-> 1) When the flag BTRFS_INODE_COPY_EVERYTHING is set in the inode's runtime
->    flags, we ended up dropping all the extent and xattr items that were
->    previously logged. This was done only in memory, since logging a new
->    name doesn't imply syncing the log;
-> 
-> 2) When the flag BTRFS_INODE_COPY_EVERYTHING is set in the inode's runtime
->    flags, we ended up dropping all the xattr items that were previously
->    logged. Like the case before, this was done only in memory because
->    logging a new name doesn't imply syncing the log.
-> 
-> This led to some surprises in scenarios such as the following:
-> 
-> 1) write some extents to an inode;
-> 2) fsync the inode;
-> 3) truncate the inode or delete/modify some of its xattrs
-> 4) add a new hard link for that inode
-> 5) fsync some other file, to force the log tree to be durably persisted
-> 6) power failure happens
-> 
-> The next time the fs is mounted, the fsync log replay code is executed,
-> and the resulting file doesn't have the content it had when the last fsync
-> against it was performed, instead if has a content matching what it had
-> when the last transaction commit happened.
-> 
-> So change the behaviour such that when a new name is logged, only the inode
-> item and reference items are processed.
-> 
-> This is easy to reproduce with the test I just made for xfstests, whose
-> main body is:
-> 
->   _scratch_mkfs >> $seqres.full 2>&1
->   _init_flakey
->   _mount_flakey
-> 
->   # Create our test file with some data.
->   $XFS_IO_PROG -f -c "pwrite -S 0xaa -b 8K 0 8K" \
->       $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Make sure the file is durably persisted.
->   sync
-> 
->   # Append some data to our file, to increase its size.
->   $XFS_IO_PROG -f -c "pwrite -S 0xcc -b 4K 8K 4K" \
->       $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Fsync the file, so from this point on if a crash/power failure happens, our
->   # new data is guaranteed to be there next time the fs is mounted.
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-> 
->   # Now shrink our file to 5000 bytes.
->   $XFS_IO_PROG -c "truncate 5000" $SCRATCH_MNT/foo
-> 
->   # Now do an expanding truncate to a size larger than what we had when we last
->   # fsync'ed our file. This is just to verify that after power failure and
->   # replaying the fsync log, our file matches what it was when we last fsync'ed
->   # it - 12Kb size, first 8Kb of data had a value of 0xaa and the last 4Kb of
->   # data had a value of 0xcc.
->   $XFS_IO_PROG -c "truncate 32K" $SCRATCH_MNT/foo
-> 
->   # Add one hard link to our file. This made btrfs drop all of our file's
->   # metadata from the fsync log, including the metadata relative to the
->   # extent we just wrote and fsync'ed. This change was made only to the fsync
->   # log in memory, so adding the hard link alone doesn't change the persisted
->   # fsync log. This happened because the previous truncates set the runtime
->   # flag BTRFS_INODE_NEEDS_FULL_SYNC in the btrfs inode structure.
->   ln $SCRATCH_MNT/foo $SCRATCH_MNT/foo_link
-> 
->   # Now make sure the in memory fsync log is durably persisted.
->   # Creating and fsync'ing another file will do it.
->   # After this our persisted fsync log will no longer have metadata for our file
->   # foo that points to the extent we wrote and fsync'ed before.
->   touch $SCRATCH_MNT/bar
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-> 
->   # As expected, before the crash/power failure, we should be able to see a file
->   # with a size of 32Kb, with its first 5000 bytes having the value 0xaa and all
->   # the remaining bytes with value 0x00.
->   echo "File content before:"
->   od -t x1 $SCRATCH_MNT/foo
-> 
->   # Simulate a crash/power loss.
->   _load_flakey_table $FLAKEY_DROP_WRITES
->   _unmount_flakey
-> 
->   _load_flakey_table $FLAKEY_ALLOW_WRITES
->   _mount_flakey
-> 
->   # After mounting the fs again, the fsync log was replayed.
->   # The expected result is to see a file with a size of 12Kb, with its first 8Kb
->   # of data having the value 0xaa and its last 4Kb of data having a value of 0xcc.
->   # The btrfs bug used to leave the file as it used te be as of the last
->   # transaction commit - that is, with a size of 8Kb with all bytes having a
->   # value of 0xaa.
->   echo "File content after:"
->   od -t x1 $SCRATCH_MNT/foo
-> 
-> The test case for xfstests follows soon.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Added missing assignment to max_key.type for directory inode case.
-> 
-> V3: Fixed the test/clear bit logic so that the bits are only cleared
->     if we aren't logging new names.
-> 
->  fs/btrfs/tree-log.c | 39 +++++++++++++++++++++++++++------------
->  1 file changed, 27 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index b0fe52a..aa4ebea 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -4069,8 +4069,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
->  	if (S_ISDIR(inode->i_mode)) {
->  		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
->  
-> -		if (inode_only == LOG_INODE_EXISTS)
-> -			max_key_type = BTRFS_XATTR_ITEM_KEY;
-> +		if (inode_only == LOG_INODE_EXISTS) {
-> +			max_key_type = BTRFS_INODE_EXTREF_KEY;
-> +			max_key.type = max_key_type;
-> +		}
->  		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
->  	} else {
->  		if (inode_only == LOG_INODE_EXISTS) {
-> @@ -4092,18 +4094,31 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
->  			if (err)
->  				goto out_unlock;
->  		}
-> -		if (test_and_clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-> -				       &BTRFS_I(inode)->runtime_flags)) {
-> -			clear_bit(BTRFS_INODE_COPY_EVERYTHING,
-> -				  &BTRFS_I(inode)->runtime_flags);
-> -			ret = btrfs_truncate_inode_items(trans, log,
-> -							 inode, 0, 0);
-> -		} else if (test_and_clear_bit(BTRFS_INODE_COPY_EVERYTHING,
-> -					      &BTRFS_I(inode)->runtime_flags) ||
-> +		if (test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-> +			     &BTRFS_I(inode)->runtime_flags)) {
-> +			if (inode_only == LOG_INODE_EXISTS) {
-> +				max_key.type = BTRFS_INODE_EXTREF_KEY;
-> +				ret = drop_objectid_items(trans, log, path, ino,
-> +							  max_key.type);
 
-BTRFS_INODE_NEEDS_FULL_SYNC is set in several cases, one of them is
-'evict inode and re-read', and this patch is made for truncate,
-can you make sure that there is no side effect in other cases?
+Here's a new one (with kernel 3.18.7++):
 
-Thanks,
+$btrfs --version
+Btrfs v3.18.2 (also tried 3.19-rc2)
 
--liubo
+$mount /dev/sdf1 /mnt/usb
 
-> +			} else {
-> +				clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-> +					  &BTRFS_I(inode)->runtime_flags);
-> +				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
-> +					  &BTRFS_I(inode)->runtime_flags);
-> +				ret = btrfs_truncate_inode_items(trans, log,
-> +								 inode, 0, 0);
-> +			}
-> +		} else if (test_bit(BTRFS_INODE_COPY_EVERYTHING,
-> +				    &BTRFS_I(inode)->runtime_flags) ||
->  			   inode_only == LOG_INODE_EXISTS) {
-> -			if (inode_only == LOG_INODE_ALL)
-> +			if (inode_only == LOG_INODE_ALL) {
-> +				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
-> +					  &BTRFS_I(inode)->runtime_flags);
->  				fast_search = true;
-> -			max_key.type = BTRFS_XATTR_ITEM_KEY;
-> +				max_key.type = BTRFS_XATTR_ITEM_KEY;
-> +			} else {
-> +				max_key.type = BTRFS_INODE_EXTREF_KEY;
-> +			}
->  			ret = drop_objectid_items(trans, log, path, ino,
->  						  max_key.type);
->  		} else {
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+$btrfs filesystem df /mnt/usb
+Data, single: total=8.00MiB, used=256.00KiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=1.00GiB, used=112.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+Note: metadata=single - done right after mkfs for the initial balance.
+
+$btrfs balance start -mconvert=dup /mnt/usb    
+Done, had to relocate 2 out of 3 chunks
+
+root>btrfs filesystem df /mnt/usb              
+Data, single: total=8.00MiB, used=512.00KiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=1.00GiB, used=192.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+Wait, what? Still single?
+
+This used to work, but somehow no longer does (verified on another
+filesystem). If it's dup, it stays dup; if it's single, it stays single.
+
+What works is the very first balance after the mkfs - it successfully
+changes from the initial default dup to single, but subsequent balances
+don't work. They also don't really fail.
+
+Any ideas what might have caused this? Must have been a recent patch.
+
+Holger
+

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail14.tpgi.com.au ([203.12.160.182]:58840 "EHLO
+Received: from mail14.tpgi.com.au ([203.12.160.182]:59609 "EHLO
 	mail14.tpgi.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754458AbbBOEkY convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1754451AbbBOEkv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Feb 2015 23:40:24 -0500
+	Sat, 14 Feb 2015 23:40:51 -0500
 Received: from office.waterlogic.com.au (14-203-212-247.tpgi.com.au [14.203.212.247])
-	by mail14.tpgi.com.au (envelope-from paul@pauljones.id.au) (8.14.3/8.14.3) with ESMTP id t1F4eJSZ000565
+	by mail14.tpgi.com.au (envelope-from paul@pauljones.id.au) (8.14.3/8.14.3) with ESMTP id t1F4emOf004734
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 15 Feb 2015 15:40:21 +1100
+	for <linux-btrfs@vger.kernel.org>; Sun, 15 Feb 2015 15:40:49 +1100
 From: Paul Jones <paul@pauljones.id.au>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Error while balancing
-Date: Sun, 15 Feb 2015 04:40:17 +0000
-Message-ID: <B7F2379062E32745A8651FBDB20F645940D1E920@Server.waterlogic.com.au>
+Subject: csum error shows wrong device
+Date: Sun, 15 Feb 2015 04:40:45 +0000
+Message-ID: <B7F2379062E32745A8651FBDB20F645940D1E934@Server.waterlogic.com.au>
 Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,155 +20,49 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-The below error was obtained while running a balance with a slightly flakey disk (SSD).
-I had to powercycle the server to get it to reboot, and mounting with skip_balance made it stop ok.
-I copied the data to another filesystem and recreated the faulty one, but surprisingly there were no errors while copying the files
+I have a failing SSD I need to replace so I added another disk to my array, but didn't get around to removing the faulty one. A few days later I went to remove the faulty one and there were no more errors, I presume because the bad portion of the SSD was now not in use. Because I didn't know what disk to remove (2 are identical) I removed the new one in the hope to trigger the error with the old one so I could note it's serial number.
+This was successful, but btrfs is claiming the error is on the disk that I removed. I presume this is a bug?
+This is the command I used to remove the new disks:
+btrfs dev del /dev/sda1 /dev/sdb1 /media/fast/
 
-This is about all I could find before the errors started
+I note in dmesg there was no mention of /dev/sda1
 
-Feb 14 19:18:59 vm-server kernel: BTRFS: checksum error at logical 734897631232 on dev /dev/sdg1, sector 720162808, root 5, inode 4835, offset 1546301440, length 4096, links 1 (path: vm/win-server.raw)
-Feb 14 19:18:59 vm-server kernel: BTRFS: bdev /dev/sdg1 errs: wr 0, rd 0, flush 0, corrupt 8, gen 0
-Feb 14 19:18:59 vm-server kernel: BTRFS: unable to fixup (regular) error at logical 734897631232 on dev /dev/sdg1
+'Fast' is the filesystem in question.
 
-While running balance the following happened: (about 30 times per second - I did a grep for one minute of /var/log/message and it was 96 MB!)
-
-Feb 14 21:08:04 vm-server kernel: BTRFS info (device sdb1): found 2023 extents
-Feb 14 21:08:15 vm-server kernel: BTRFS info (device sdb1): found 2023 extents
-Feb 14 21:08:15 vm-server kernel: BTRFS info (device sdb1): relocating block group 827959803904 flags 17
-Feb 14 21:08:24 vm-server kernel: BTRFS info (device sdb1): found 14383 extents
-Feb 14 21:08:42 vm-server kernel: BTRFS info (device sdb1): found 14383 extents
-Feb 14 21:08:42 vm-server kernel: BTRFS info (device sdb1): relocating block group 826886062080 flags 17
-Feb 14 21:08:53 vm-server kernel: BTRFS info (device sdb1): found 18344 extents
-Feb 14 21:09:13 vm-server kernel: BTRFS info (device sdb1): found 18344 extents
-Feb 14 21:09:13 vm-server kernel: BTRFS info (device sdb1): relocating block group 825812320256 flags 20
-Feb 14 21:09:13 vm-server kernel: ------------[ cut here ]------------
-Feb 14 21:09:13 vm-server kernel: WARNING: CPU: 1 PID: 10863 at fs/btrfs/relocation.c:925 build_backref_tree+0x5ca/0xe82()
-Feb 14 21:09:13 vm-server kernel: Modules linked in: vhost_net vhost macvtap macvlan xt_TCPMSS xt_REDIRECT nf_nat_redirect cls_u32 sch_htb sch_sfq nf_conntrack_sip nf_conntrack_ftp nf_conntrack_sane ts_kmp nf_conntrack_amanda nf_conntrack_pptp nf_conntrack_proto_gre nf_conntrack_netbios_ns nf_conntrack_snmp nf_conntrack_broadcast nf_conntrack_tftp nf_conntrack_h323 nf_conntrack_irc xt_CHECKSUM ipt_rpfilter xt_DSCP xt_dscp xt_statistic xt_CT xt_AUDIT xt_NFLOG xt_time xt_connlimit xt_realm xt_NFQUEUE xt_tcpmss xt_addrtype xt_pkttype iptable_raw xt_TPROXY nf_defrag_ipv6 xt_CLASSIFY xt_mark xt_hashlimit xt_comment xt_length xt_connmark xt_owner xt_recent xt_iprange xt_physdev xt_policy iptable_mangle xt_nat xt_multiport xt_conntrack ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4 ipt_ECN ipt_CLUSTERIP ipt_ah iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat iptable_filter ip_tables nfsd lockd grace sunrpc x86_pkg_temp_thermal coretemp pcspkr microcode r8169 i2c_i801 mii fan thermal battery processor xts gf128mul aes_x86_64 cbc sha512_generic fuse dm_mod hid_sunplus hid_sony hid_samsung hid_pl hid_petalynx hid_gyration sl811_hcd ohci_pci ohci_hcd uhci_hcd usb_storage megaraid_sas megaraid_mbox usbhid megaraid_mm megaraid sata_inic162x ata_piix sata_nv sata_sil24 pata_jmicron pata_amd pata_mpiix ahci libahci ehci_pci ehci_hcd
-Feb 14 21:09:13 vm-server kernel: CPU: 1 PID: 10863 Comm: btrfs Not tainted 3.19.0-gentoo #1
-Feb 14 21:09:13 vm-server kernel: Hardware name: System manufacturer System Product Name/P8Z68-V LE, BIOS 3808 05/10/2012
-Feb 14 21:09:13 vm-server kernel: 0000000000000009 ffff88058b313918 ffffffff8154306a 0000000080000000
-Feb 14 21:09:13 vm-server kernel: 0000000000000000 ffff88058b313958 ffffffff81065bf3 0000000000001000
-Feb 14 21:09:13 vm-server kernel: ffffffff81216991 ffff880602b23800 0000000000000001 ffff88060279b800
-Feb 14 21:09:13 vm-server kernel: Call Trace:
-Feb 14 21:09:13 vm-server kernel: [<ffffffff8154306a>] dump_stack+0x4f/0x7b
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81065bf3>] warn_slowpath_common+0x97/0xb1
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81216991>] ? build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81065ca1>] warn_slowpath_null+0x15/0x17
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81216991>] build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:13 vm-server kernel: [<ffffffff811ce112>] ? free_root_pointers+0x56/0x56
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81217d3b>] relocate_tree_blocks+0x1a1/0x4d9
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81289f6a>] ? debug_smp_processor_id+0x17/0x19
-Feb 14 21:09:13 vm-server kernel: [<ffffffff8121364b>] ? tree_insert+0x48/0x4c
-Feb 14 21:09:13 vm-server kernel: [<ffffffff8121626a>] ? add_tree_block+0x13c/0x166
-Feb 14 21:09:13 vm-server kernel: [<ffffffff812190df>] relocate_block_group+0x29c/0x4de
-Feb 14 21:09:13 vm-server kernel: [<ffffffff8121947a>] btrfs_relocate_block_group+0x159/0x26e
-Feb 14 21:09:13 vm-server kernel: [<ffffffff811f6c19>] btrfs_relocate_chunk.isra.37+0x35/0xaa
-Feb 14 21:09:13 vm-server kernel: [<ffffffff811f8283>] btrfs_balance+0xa94/0xc49
-Feb 14 21:09:13 vm-server kernel: [<ffffffff812944ad>] ? __percpu_counter_add+0x8c/0xa5
-Feb 14 21:09:13 vm-server kernel: [<ffffffff811fe278>] btrfs_ioctl_balance+0x239/0x2b2
-Feb 14 21:09:13 vm-server kernel: [<ffffffff810e17e9>] ? __lru_cache_add+0x6d/0x82
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81203029>] btrfs_ioctl+0xf20/0x2357
-Feb 14 21:09:13 vm-server kernel: [<ffffffff8105d2b2>] ? __do_page_fault+0x2f6/0x41f
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81122b2f>] do_vfs_ioctl+0x367/0x421
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81122c22>] SyS_ioctl+0x39/0x61
-Feb 14 21:09:13 vm-server kernel: [<ffffffff81548d12>] system_call_fastpath+0x12/0x17
-Feb 14 21:09:13 vm-server kernel: ---[ end trace 487c38a475fdc11b ]---
-Feb 14 21:09:14 vm-server kernel: ------------[ cut here ]------------
-Feb 14 21:09:14 vm-server kernel: WARNING: CPU: 1 PID: 10863 at fs/btrfs/relocation.c:925 build_backref_tree+0x5ca/0xe82()
-Feb 14 21:09:14 vm-server kernel: Modules linked in: vhost_net vhost macvtap macvlan xt_TCPMSS xt_REDIRECT nf_nat_redirect cls_u32 sch_htb sch_sfq nf_conntrack_sip nf_conntrack_ftp nf_conntrack_sane ts_kmp nf_conntrack_amanda nf_conntrack_pptp nf_conntrack_proto_gre nf_conntrack_netbios_ns nf_conntrack_snmp nf_conntrack_broadcast nf_conntrack_tftp nf_conntrack_h323 nf_conntrack_irc xt_CHECKSUM ipt_rpfilter xt_DSCP xt_dscp xt_statistic xt_CT xt_AUDIT xt_NFLOG xt_time xt_connlimit xt_realm xt_NFQUEUE xt_tcpmss xt_addrtype xt_pkttype iptable_raw xt_TPROXY nf_defrag_ipv6 xt_CLASSIFY xt_mark xt_hashlimit xt_comment xt_length xt_connmark xt_owner xt_recent xt_iprange xt_physdev xt_policy iptable_mangle xt_nat xt_multiport xt_conntrack ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4 ipt_ECN ipt_CLUSTERIP ipt_ah iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat iptable_filter ip_tables nfsd lockd grace sunrpc x86_pkg_temp_thermal coretemp pcspkr microcode r8169 i2c_i801 mii fan thermal battery processor xts gf128mul aes_x86_64 cbc sha512_generic fuse dm_mod hid_sunplus hid_sony hid_samsung hid_pl hid_petalynx hid_gyration sl811_hcd ohci_pci ohci_hcd uhci_hcd usb_storage megaraid_sas megaraid_mbox usbhid megaraid_mm megaraid sata_inic162x ata_piix sata_nv sata_sil24 pata_jmicron pata_amd pata_mpiix ahci libahci ehci_pci ehci_hcd
-Feb 14 21:09:14 vm-server kernel: CPU: 1 PID: 10863 Comm: btrfs Tainted: G        W      3.19.0-gentoo #1
-Feb 14 21:09:14 vm-server kernel: Hardware name: System manufacturer System Product Name/P8Z68-V LE, BIOS 3808 05/10/2012
-Feb 14 21:09:14 vm-server kernel: 0000000000000009 ffff88058b313918 ffffffff8154306a 0000000080000000
-Feb 14 21:09:14 vm-server kernel: 0000000000000000 ffff88058b313958 ffffffff81065bf3 0000000000001000
-Feb 14 21:09:14 vm-server kernel: ffffffff81216991 ffff880602b23800 0000000000000001 ffff88060279b800
-Feb 14 21:09:14 vm-server kernel: Call Trace:
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8154306a>] dump_stack+0x4f/0x7b
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065bf3>] warn_slowpath_common+0x97/0xb1
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] ? build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065ca1>] warn_slowpath_null+0x15/0x17
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811ce112>] ? free_root_pointers+0x56/0x56
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81217d3b>] relocate_tree_blocks+0x1a1/0x4d9
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81289f6a>] ? debug_smp_processor_id+0x17/0x19
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121364b>] ? tree_insert+0x48/0x4c
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121626a>] ? add_tree_block+0x13c/0x166
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812190df>] relocate_block_group+0x29c/0x4de
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121947a>] btrfs_relocate_block_group+0x159/0x26e
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f6c19>] btrfs_relocate_chunk.isra.37+0x35/0xaa
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f8283>] btrfs_balance+0xa94/0xc49
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812944ad>] ? __percpu_counter_add+0x8c/0xa5
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811fe278>] btrfs_ioctl_balance+0x239/0x2b2
-Feb 14 21:09:14 vm-server kernel: [<ffffffff810e17e9>] ? __lru_cache_add+0x6d/0x82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81203029>] btrfs_ioctl+0xf20/0x2357
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8105d2b2>] ? __do_page_fault+0x2f6/0x41f
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122b2f>] do_vfs_ioctl+0x367/0x421
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122c22>] SyS_ioctl+0x39/0x61
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81548d12>] system_call_fastpath+0x12/0x17
-Feb 14 21:09:14 vm-server kernel: ---[ end trace 487c38a475fdc11c ]---
-Feb 14 21:09:14 vm-server kernel: ------------[ cut here ]------------
-Feb 14 21:09:14 vm-server kernel: WARNING: CPU: 1 PID: 10863 at fs/btrfs/relocation.c:925 build_backref_tree+0x5ca/0xe82()
-Feb 14 21:09:14 vm-server kernel: Modules linked in: vhost_net vhost macvtap macvlan xt_TCPMSS xt_REDIRECT nf_nat_redirect cls_u32 sch_htb sch_sfq nf_conntrack_sip nf_conntrack_ftp nf_conntrack_sane ts_kmp nf_conntrack_amanda nf_conntrack_pptp nf_conntrack_proto_gre nf_conntrack_netbios_ns nf_conntrack_snmp nf_conntrack_broadcast nf_conntrack_tftp nf_conntrack_h323 nf_conntrack_irc xt_CHECKSUM ipt_rpfilter xt_DSCP xt_dscp xt_statistic xt_CT xt_AUDIT xt_NFLOG xt_time xt_connlimit xt_realm xt_NFQUEUE xt_tcpmss xt_addrtype xt_pkttype iptable_raw xt_TPROXY nf_defrag_ipv6 xt_CLASSIFY xt_mark xt_hashlimit xt_comment xt_length xt_connmark xt_owner xt_recent xt_iprange xt_physdev xt_policy iptable_mangle xt_nat xt_multiport xt_conntrack ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4 ipt_ECN ipt_CLUSTERIP ipt_ah iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat iptable_filter ip_tables nfsd lockd grace sunrpc x86_pkg_temp_thermal coretemp pcspkr microcode r8169 i2c_i801 mii fan thermal battery processor xts gf128mul aes_x86_64 cbc sha512_generic fuse dm_mod hid_sunplus hid_sony hid_samsung hid_pl hid_petalynx hid_gyration sl811_hcd ohci_pci ohci_hcd uhci_hcd usb_storage megaraid_sas megaraid_mbox usbhid megaraid_mm megaraid sata_inic162x ata_piix sata_nv sata_sil24 pata_jmicron pata_amd pata_mpiix ahci libahci ehci_pci ehci_hcd
-Feb 14 21:09:14 vm-server kernel: CPU: 1 PID: 10863 Comm: btrfs Tainted: G        W      3.19.0-gentoo #1
-Feb 14 21:09:14 vm-server kernel: Hardware name: System manufacturer System Product Name/P8Z68-V LE, BIOS 3808 05/10/2012
-Feb 14 21:09:14 vm-server kernel: 0000000000000009 ffff88058b313918 ffffffff8154306a 0000000080000000
-Feb 14 21:09:14 vm-server kernel: 0000000000000000 ffff88058b313958 ffffffff81065bf3 0000000000001000
-Feb 14 21:09:14 vm-server kernel: ffffffff81216991 ffff880602b23800 0000000000000001 ffff88060279b800
-Feb 14 21:09:14 vm-server kernel: Call Trace:
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8154306a>] dump_stack+0x4f/0x7b
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065bf3>] warn_slowpath_common+0x97/0xb1
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] ? build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065ca1>] warn_slowpath_null+0x15/0x17
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811ce112>] ? free_root_pointers+0x56/0x56
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81217d3b>] relocate_tree_blocks+0x1a1/0x4d9
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81289f6a>] ? debug_smp_processor_id+0x17/0x19
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121364b>] ? tree_insert+0x48/0x4c
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121626a>] ? add_tree_block+0x13c/0x166
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812190df>] relocate_block_group+0x29c/0x4de
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121947a>] btrfs_relocate_block_group+0x159/0x26e
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f6c19>] btrfs_relocate_chunk.isra.37+0x35/0xaa
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f8283>] btrfs_balance+0xa94/0xc49
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812944ad>] ? __percpu_counter_add+0x8c/0xa5
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811fe278>] btrfs_ioctl_balance+0x239/0x2b2
-Feb 14 21:09:14 vm-server kernel: [<ffffffff810e17e9>] ? __lru_cache_add+0x6d/0x82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81203029>] btrfs_ioctl+0xf20/0x2357
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8105d2b2>] ? __do_page_fault+0x2f6/0x41f
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122b2f>] do_vfs_ioctl+0x367/0x421
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122c22>] SyS_ioctl+0x39/0x61
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81548d12>] system_call_fastpath+0x12/0x17
-Feb 14 21:09:14 vm-server kernel: ---[ end trace 487c38a475fdc11d ]---
-Feb 14 21:09:14 vm-server kernel: ------------[ cut here ]------------
-Feb 14 21:09:14 vm-server kernel: WARNING: CPU: 1 PID: 10863 at fs/btrfs/relocation.c:925 build_backref_tree+0x5ca/0xe82()
-Feb 14 21:09:14 vm-server kernel: Modules linked in: vhost_net vhost macvtap macvlan xt_TCPMSS xt_REDIRECT nf_nat_redirect cls_u32 sch_htb sch_sfq nf_conntrack_sip nf_conntrack_ftp nf_conntrack_sane ts_kmp nf_conntrack_amanda nf_conntrack_pptp nf_conntrack_proto_gre nf_conntrack_netbios_ns nf_conntrack_snmp nf_conntrack_broadcast nf_conntrack_tftp nf_conntrack_h323 nf_conntrack_irc xt_CHECKSUM ipt_rpfilter xt_DSCP xt_dscp xt_statistic xt_CT xt_AUDIT xt_NFLOG xt_time xt_connlimit xt_realm xt_NFQUEUE xt_tcpmss xt_addrtype xt_pkttype iptable_raw xt_TPROXY nf_defrag_ipv6 xt_CLASSIFY xt_mark xt_hashlimit xt_comment xt_length xt_connmark xt_owner xt_recent xt_iprange xt_physdev xt_policy iptable_mangle xt_nat xt_multiport xt_conntrack ipt_REJECT nf_reject_ipv4 ipt_MASQUERADE nf_nat_masquerade_ipv4 ipt_ECN ipt_CLUSTERIP ipt_ah iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat iptable_filter ip_tables nfsd lockd grace sunrpc x86_pkg_temp_thermal coretemp pcspkr microcode r8169 i2c_i801 mii fan thermal battery processor xts gf128mul aes_x86_64 cbc sha512_generic fuse dm_mod hid_sunplus hid_sony hid_samsung hid_pl hid_petalynx hid_gyration sl811_hcd ohci_pci ohci_hcd uhci_hcd usb_storage megaraid_sas megaraid_mbox usbhid megaraid_mm megaraid sata_inic162x ata_piix sata_nv sata_sil24 pata_jmicron pata_amd pata_mpiix ahci libahci ehci_pci ehci_hcd
-Feb 14 21:09:14 vm-server kernel: CPU: 1 PID: 10863 Comm: btrfs Tainted: G        W      3.19.0-gentoo #1
-Feb 14 21:09:14 vm-server kernel: Hardware name: System manufacturer System Product Name/P8Z68-V LE, BIOS 3808 05/10/2012
-Feb 14 21:09:14 vm-server kernel: 0000000000000009 ffff88058b313918 ffffffff8154306a 0000000080000000
-Feb 14 21:09:14 vm-server kernel: 0000000000000000 ffff88058b313958 ffffffff81065bf3 0000000000001000
-Feb 14 21:09:14 vm-server kernel: ffffffff81216991 ffff880602b23800 0000000000000001 ffff88060279b800
-Feb 14 21:09:14 vm-server kernel: Call Trace:
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8154306a>] dump_stack+0x4f/0x7b
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065bf3>] warn_slowpath_common+0x97/0xb1
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] ? build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81065ca1>] warn_slowpath_null+0x15/0x17
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81216991>] build_backref_tree+0x5ca/0xe82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811ce112>] ? free_root_pointers+0x56/0x56
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81217d3b>] relocate_tree_blocks+0x1a1/0x4d9
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81289f6a>] ? debug_smp_processor_id+0x17/0x19
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121364b>] ? tree_insert+0x48/0x4c
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121626a>] ? add_tree_block+0x13c/0x166
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812190df>] relocate_block_group+0x29c/0x4de
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8121947a>] btrfs_relocate_block_group+0x159/0x26e
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f6c19>] btrfs_relocate_chunk.isra.37+0x35/0xaa
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811f8283>] btrfs_balance+0xa94/0xc49
-Feb 14 21:09:14 vm-server kernel: [<ffffffff812944ad>] ? __percpu_counter_add+0x8c/0xa5
-Feb 14 21:09:14 vm-server kernel: [<ffffffff811fe278>] btrfs_ioctl_balance+0x239/0x2b2
-Feb 14 21:09:14 vm-server kernel: [<ffffffff810e17e9>] ? __lru_cache_add+0x6d/0x82
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81203029>] btrfs_ioctl+0xf20/0x2357
-Feb 14 21:09:14 vm-server kernel: [<ffffffff8105d2b2>] ? __do_page_fault+0x2f6/0x41f
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122b2f>] do_vfs_ioctl+0x367/0x421
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81122c22>] SyS_ioctl+0x39/0x61
-Feb 14 21:09:14 vm-server kernel: [<ffffffff81548d12>] system_call_fastpath+0x12/0x17
-Feb 14 21:09:14 vm-server kernel: ---[ end trace 487c38a475fdc11e ]---
+..
+[46474.872519] BTRFS info (device sdb1): relocating block group 382315003904 flags 17
+[46477.090985] BTRFS info (device sdb1): found 8 extents
+[46479.747538] BTRFS info (device sdb1): found 8 extents
+[46479.921532] BTRFS info (device sdb1): relocating block group 383388745728 flags 17
+[46482.140193] BTRFS info (device sdb1): found 8 extents
+[46484.880514] BTRFS info (device sdb1): found 8 extents
+[46485.024671] BTRFS info (device sdb1): relocating block group 384462487552 flags 17
+[46487.291166] BTRFS info (device sdb1): found 8 extents
+[46490.073738] BTRFS info (device sdb1): found 8 extents
+[46490.235649] BTRFS info (device sdb1): relocating block group 385536229376 flags 17
+[46492.364366] BTRFS info (device sdb1): found 3903 extents
+[46495.326886] BTRFS info (device sdb1): found 3902 extents
+[46495.446426] BTRFS info (device sdb1): disk deleted /dev/sdb1
+[59516.406169] BTRFS info (device sdb1): csum failed ino 40605 off 54317748224 csum 3288447127 expected csum 2629848265
+[59516.406175] BTRFS info (device sdb1): csum failed ino 40605 off 54412632064 csum 4245055996 expected csum 3450832795
+[59516.406359] BTRFS: read error corrected: ino 40605 off 54317748224 (dev /dev/sde1 sector 431254408)
+[59516.406449] BTRFS: read error corrected: ino 40605 off 54412632064 (dev /dev/sde1 sector 431439728)
+[59516.406548] BTRFS info (device sdb1): csum failed ino 40605 off 55994003456 csum 42039089 expected csum 2302529568
+[59516.406727] BTRFS: read error corrected: ino 40605 off 55994003456 (dev /dev/sdf1 sector 434440280)
+[59516.408562] BTRFS info (device sdb1): csum failed ino 40605 off 14022791168 csum 3859837505 expected csum 3337046449
+[59516.408573] BTRFS info (device sdb1): csum failed ino 40605 off 55445471232 csum 1108896639 expected csum 3859837505
+[59516.408683] BTRFS info (device sdb1): csum failed ino 40605 off 56895586304 csum 2469353283 expected csum 761457267
+[59516.408691] BTRFS info (device sdb1): csum failed ino 40605 off 61744017408 csum 1385882588 expected csum 2439148438
+[59516.408702] BTRFS info (device sdb1): csum failed ino 40605 off 63789928448 csum 3337046449 expected csum 2586270899
+[59516.408717] BTRFS info (device sdb1): csum failed ino 40605 off 14022791168 csum 1108896639 expected csum 3337046449
+[59516.408785] BTRFS info (device sdb1): csum failed ino 40605 off 55445471232 csum 3867769240 expected csum 3859837505
+[59516.408894] BTRFS: read error corrected: ino 40605 off 56895586304 (dev /dev/sde1 sector 434192096)
+[59516.409129] BTRFS: read error corrected: ino 40605 off 63789928448 (dev /dev/sde1 sector 574273160)
+[59516.409230] BTRFS: read error corrected: ino 40605 off 61744017408 (dev /dev/sde1 sector 505265528)
+[59516.417206] BTRFS: read error corrected: ino 40605 off 62792196096 (dev /dev/sdf1 sector 441426544)
+[59516.417241] BTRFS: read error corrected: ino 40605 off 59971190784 (dev /dev/sdf1 sector 579309536)
+[59517.423114] BTRFS: read error corrected: ino 40605 off 59917271040 (dev /dev/sde1 sector 505891968)
+[59518.423088] BTRFS: read error corrected: ino 40605 off 22458654720 (dev /dev/sde1 sector 400486896)
 
 Linux vm-server 3.19.0-gentoo #1 SMP PREEMPT Wed Feb 11 16:48:13 AEDT 2015 x86_64 Intel(R) Core(TM) i7-2600K CPU @ 3.40GHz GenuineIntel GNU/Linux
 
@@ -196,4 +90,3 @@ Label: 'Fast'  uuid: e15bab07-1fcf-48b1-92d5-a2609f0fe469
         devid    3 size 407.12GiB used 295.03GiB path /dev/sdf1
 
 Btrfs v3.18.2
-

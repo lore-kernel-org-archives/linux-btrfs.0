@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48474 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:3827 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751827AbbBPDzT (ORCPT
+	with ESMTP id S1751827AbbBPD5i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Feb 2015 22:55:19 -0500
+	Sun, 15 Feb 2015 22:57:38 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1G3sUma030793
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 11:54:30 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1G3uoHQ030850
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 11:56:50 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs: cleanup: use for() loop in btrfs_map_bio()
-Date: Mon, 16 Feb 2015 11:54:08 +0800
-Message-ID: <1424058848-23724-1-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 1/3] btrfs: cleanup: remove unuesd DEDINE_WAIT() in btrfs_bio_counter_inc_blocked()
+Date: Mon, 16 Feb 2015 11:56:28 +0800
+Message-ID: <1424058988-30118-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,59 +20,47 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-for() is obviously better in these code block, and remove noused
-init-value to reduce about 6 bytes binary size.
+1: Remove unused DEFINE_WAIT(wait)
+2: Use a loop instead of goto
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Changelog v2->v3:
+ s/look/loop in description.
+
+Changelog v1->v2:
+ Remove likely() in v1 because it is not a performance sensitive path,
+ suggesed by: David Sterba <dsterba@suse.cz>
+
+Acked-by: David Sterba <dsterba@suse.cz>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/dev-replace.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 50c5a87..85f2bfc 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5810,8 +5810,8 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 	u64 map_length;
- 	u64 *raid_map = NULL;
- 	int ret;
--	int dev_nr = 0;
--	int total_devs = 1;
-+	int dev_nr;
-+	int total_devs;
- 	struct btrfs_bio *bbio = NULL;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index ca6a3a3..e444eeb 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -932,15 +932,14 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
  
- 	length = bio->bi_iter.bi_size;
-@@ -5854,11 +5854,10 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 		BUG();
+ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+ {
+-	DEFINE_WAIT(wait);
+-again:
+-	percpu_counter_inc(&fs_info->bio_counter);
+-	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
++	while (1) {
++		percpu_counter_inc(&fs_info->bio_counter);
++		if (!test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state))
++			break;
++
+ 		btrfs_bio_counter_dec(fs_info);
+ 		wait_event(fs_info->replace_wait,
+ 			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
+ 				     &fs_info->fs_state));
+-		goto again;
  	}
- 
--	while (dev_nr < total_devs) {
-+	for (dev_nr = 0; dev_nr < total_devs; dev_nr++) {
- 		dev = bbio->stripes[dev_nr].dev;
- 		if (!dev || !dev->bdev || (rw & WRITE && !dev->writeable)) {
- 			bbio_error(bbio, first_bio, logical);
--			dev_nr++;
- 			continue;
- 		}
- 
-@@ -5871,7 +5870,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
- 						 dev_nr, rw, async_submit);
- 			BUG_ON(ret);
--			dev_nr++;
- 			continue;
- 		}
- 
-@@ -5886,7 +5884,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 		submit_stripe_bio(root, bbio, bio,
- 				  bbio->stripes[dev_nr].physical, dev_nr, rw,
- 				  async_submit);
--		dev_nr++;
- 	}
- 	btrfs_bio_counter_dec(root->fs_info);
- 	return 0;
+-
+ }
 -- 
 1.8.5.1
 

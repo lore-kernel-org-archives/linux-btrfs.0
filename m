@@ -1,174 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58218 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753341AbbBOWjI (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sun, 15 Feb 2015 17:39:08 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: add missing inode update when punching hole
-Date: Sun, 15 Feb 2015 22:38:54 +0000
-Message-Id: <1424039934-4846-1-git-send-email-fdmanana@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:48474 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751797AbbBPDzS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Feb 2015 22:55:18 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1G3sRE7030784
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 11:54:27 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 1/3] btrfs: cleanup: remove unuesd DEDINE_WAIT() in btrfs_bio_counter_inc_blocked()
+Date: Mon, 16 Feb 2015 11:54:05 +0800
+Message-ID: <1424058845-23646-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When punching a file hole if we endup only zeroing parts of a page,
-because the start offset isn't a multiple of the sector size or the
-start offset and length fall within the same page, we were not updating
-the inode item. This prevented an fsync from doing anything, if no other
-file changes happened in the current transaction, because the fields
-in btrfs_inode used to check if the inode needs to be fsync'ed weren't
-updated.
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-This issue is easy to reproduce and the following excerpt from the
-xfstest case I made shows how to trigger it:
+1: Remove unused DEFINE_WAIT(wait)
+2: Use a look instead of goto
 
-  _scratch_mkfs >> $seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
+Changelog v1->v2:
+ Remove likely() in v1 because it is not a performance sensitive path,
+ suggesed by: David Sterba <dsterba@suse.cz>
 
-  # Create our test file.
-  $XFS_IO_PROG -f -c "pwrite -S 0x22 -b 16K 0 16K" \
-      $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Fsync the file, this makes btrfs update some btrfs inode specific fields
-  # that are used to track if the inode needs to be written/updated to the fsync
-  # log or not. After this fsync, the new values for those fields indicate that
-  # a subsequent fsync does not need to touch the fsync log.
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-
-  # Force a commit of the current transaction. After this point, any operation
-  # that modifies the data or metadata of our file, should update those fields in
-  # the btrfs inode with values that make the next fsync operation write to the
-  # fsync log.
-  sync
-
-  # Punch a hole in our file. This small range affects only 1 page.
-  # This made the btrfs hole punching implementation write only some zeroes in
-  # one page, but it did not update the btrfs inode fields used to determine if
-  # the next fsync needs to write to the fsync log.
-  $XFS_IO_PROG -c "fpunch 8000 4K" $SCRATCH_MNT/foo
-
-  # Another variation of the previously mentioned case.
-  $XFS_IO_PROG -c "fpunch 15000 100" $SCRATCH_MNT/foo
-
-  # Now fsync the file. This was a no-operation because the previous hole punch
-  # operation didn't update the inode's fields mentioned before, so they remained
-  # with the values they had after the first fsync - that is, they indicate that
-  # it is not needed to write to fsync log.
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-
-  echo "File content before:"
-  od -t x1 $SCRATCH_MNT/foo
-
-  # Simulate a crash/power loss.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  # Enable writes and mount the fs. This makes the fsync log replay code run.
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  # Because the last fsync didn't do anything, here the file content matched what
-  # it was after the first fsync, before the holes were punched, and not what it
-  # was after the holes were punched.
-  echo "File content after:"
-  od -t x1 $SCRATCH_MNT/foo
-
-This issue has been around since 2012, when the punch hole implementation
-was added, commit 2aaa66558172 ("Btrfs: add hole punching").
-
-A test case for xfstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Acked-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/file.c | 31 ++++++++++++++++++++++++++++---
- 1 file changed, 28 insertions(+), 3 deletions(-)
+ fs/btrfs/dev-replace.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e409025..b476e56 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2276,6 +2276,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	bool same_page;
- 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
- 	u64 ino_size;
-+	bool truncated_page = false;
-+	bool updated_inode = false;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index ca6a3a3..e444eeb 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -932,15 +932,14 @@ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
  
- 	ret = btrfs_wait_ordered_range(inode, offset, len);
- 	if (ret)
-@@ -2307,13 +2309,18 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	 * entire page.
- 	 */
- 	if (same_page && len < PAGE_CACHE_SIZE) {
--		if (offset < ino_size)
-+		if (offset < ino_size) {
-+			truncated_page = true;
- 			ret = btrfs_truncate_page(inode, offset, len, 0);
-+		} else {
-+			ret = 0;
-+		}
- 		goto out_only_mutex;
+ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+ {
+-	DEFINE_WAIT(wait);
+-again:
+-	percpu_counter_inc(&fs_info->bio_counter);
+-	if (test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state)) {
++	while (1) {
++		percpu_counter_inc(&fs_info->bio_counter);
++		if (!test_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state))
++			break;
++
+ 		btrfs_bio_counter_dec(fs_info);
+ 		wait_event(fs_info->replace_wait,
+ 			   !test_bit(BTRFS_FS_STATE_DEV_REPLACING,
+ 				     &fs_info->fs_state));
+-		goto again;
  	}
- 
- 	/* zero back part of the first page */
- 	if (offset < ino_size) {
-+		truncated_page = true;
- 		ret = btrfs_truncate_page(inode, offset, 0, 0);
- 		if (ret) {
- 			mutex_unlock(&inode->i_mutex);
-@@ -2349,6 +2356,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		if (!ret) {
- 			/* zero the front end of the last page */
- 			if (tail_start + tail_len < ino_size) {
-+				truncated_page = true;
- 				ret = btrfs_truncate_page(inode,
- 						tail_start + tail_len, 0, 1);
- 				if (ret)
-@@ -2358,8 +2366,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	}
- 
- 	if (lockend < lockstart) {
--		mutex_unlock(&inode->i_mutex);
--		return 0;
-+		ret = 0;
-+		goto out_only_mutex;
- 	}
- 
- 	while (1) {
-@@ -2507,6 +2515,7 @@ out_trans:
- 
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	ret = btrfs_update_inode(trans, root, inode);
-+	updated_inode = true;
- 	btrfs_end_transaction(trans, root);
- 	btrfs_btree_balance_dirty(root);
- out_free:
-@@ -2516,6 +2525,22 @@ out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			     &cached_state, GFP_NOFS);
- out_only_mutex:
-+	if (!updated_inode && truncated_page && !ret && !err) {
-+		/*
-+		 * If we only end up zeroing part of a page, we still need to
-+		 * update the inode item, so that all the time fields are
-+		 * updated as well as the necessary btrfs inode in memory fields
-+		 * for detecting, at fsync time, if the inode isn't yet in the
-+		 * log tree or it's there but not up to date.
-+		 */
-+		trans = btrfs_start_transaction(root, 1);
-+		if (IS_ERR(trans)) {
-+			err = PTR_ERR(trans);
-+		} else {
-+			err = btrfs_update_inode(trans, root, inode);
-+			ret = btrfs_end_transaction(trans, root);
-+		}
-+	}
- 	mutex_unlock(&inode->i_mutex);
- 	if (ret && !err)
- 		err = ret;
+-
+ }
 -- 
-2.1.3
+1.8.5.1
 

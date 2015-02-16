@@ -1,126 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from port-92-195-67-144.dynamic.qsc.de ([92.195.67.144]:40975 "EHLO
-	richtercloud.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755794AbbBPL3t (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:3050 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755465AbbBPL45 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Feb 2015 06:29:49 -0500
-Message-ID: <54E1D25C.4090900@richtercloud.de>
-Date: Mon, 16 Feb 2015 12:19:56 +0100
-From: Karl-Philipp Richter <richter@richtercloud.de>
+	Mon, 16 Feb 2015 06:56:57 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1GBu8T0019520
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 19:56:08 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Fix tail space processing in find_free_dev_extent()
+Date: Mon, 16 Feb 2015 19:55:46 +0800
+Message-ID: <1424087746-23440-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Tim DeNike <tim@denike.us>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs check --init-csum-tree removes csums again
-References: <54E05DCD.3050508@richtercloud.de>	<CAJCQCtSSeSbb9r=f830k=5UjKkw=3huE6H_o3oqNWYg2UFJTwg@mail.gmail.com>	<54E1AD61.7010007@cn.fujitsu.com> <CAEr6y+VaV_d6rg3mobkKRQbm5oV0LjUu+Xv-14sx6Rg3fDVLLg@mail.gmail.com>
-In-Reply-To: <CAEr6y+VaV_d6rg3mobkKRQbm5oV0LjUu+Xv-14sx6Rg3fDVLLg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-I get the same output except some differences in address offsets:
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-    $ sudo btrfs check --init-csum-tree /dev/disk/by-uuid/bd6298ea-
-0748-45fe-87c8-eace6793ca89
-    Creating a new CRC tree
-    Checking filesystem on
-/dev/disk/by-uuid/bd6298ea-0748-45fe-87c8-eace6793ca89
-    UUID: bd6298ea-0748-45fe-87c8-eace6793ca89
-    Reinit crc root
-    extent-tree.c:2657: btrfs_reserve_extent: Assertion `ret` failed.
-    btrfs[0x43da2a]
-    btrfs(btrfs_reserve_extent+0xb63)[0x44347a]
-    btrfs(btrfs_alloc_free_block+0x5a)[0x4434f5]
-    btrfs[0x4368db]
-    btrfs(btrfs_search_slot+0x11d1)[0x438652]
-    btrfs(btrfs_csum_file_block+0x3ce)[0x447b35]
-    btrfs(cmd_check+0xf76)[0x426191]
-    btrfs(main+0x15d)[0x40993d]
-    /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fe6b0807ec5]
-    btrfs[0x4094f9]
+It is another reason of NO_SPACE bug.
 
-with 3.18.2 and 3.19-rc2. The check runs for hours completing reading up
-to 90 % of the device.
+When we found enough free space in loop and saved them to
+max_hole_start/size before, and tail space contains pending extent,
+origional innocent max_hole_start/size data are reset in retry.
 
-Find kern.log attached, but there's nothing in it afaik except 1
-trillion complaints about missing csums... In case you wonder why
-there're so many segmentation faults in crucial programs - It's from an
-Ubuntu 14.10 system ;). I'm running the amd64 version.
+As a result, find_free_dev_extent() returns less space than it can,
+and finally cause NO_SPACE problem.
 
-Best regards,
-Kalle
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 24 +++++++++++++-----------
+ 1 file changed, 13 insertions(+), 11 deletions(-)
 
-Am 16.02.2015 um 11:21 schrieb Tim DeNike:
-> I just ran through with vanilla 3.19 kernel and btrfs-progs 3.18.2
-> with the same result.  Nothing in kernel log at all. Output of btrfs
-> check below.
-> 
-> [root@938el btrfs-progs]# ./btrfs check --repair --init-csum-tree /dev/sda
-> enabling repair mode
-> Creating a new CRC tree
-> Checking filesystem on /dev/sda
-> UUID: 1de92eed-c588-4471-b853-7f6a0a22c9a6
-> Reinit crc root
-> extent-tree.c:2657: btrfs_reserve_extent: Assertion `ret` failed.
-> ./btrfs[0x43c93f]
-> ./btrfs(btrfs_reserve_extent+0xaf8)[0x441f83]
-> ./btrfs(btrfs_alloc_free_block+0x57)[0x44202b]
-> ./btrfs[0x435805]
-> ./btrfs(btrfs_search_slot+0x12ce)[0x437666]
-> ./btrfs(btrfs_csum_file_block+0x3c2)[0x4462d4]
-> ./btrfs(cmd_check+0xf7d)[0x42564e]
-> ./btrfs(main+0x15d)[0x4098e1]
-> /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fdb99224af5]
-> ./btrfs[0x409499]
-> [root@938el btrfs-progs]# ./btrfs --version
-> Btrfs v3.18.2
-> 
-> On Mon, Feb 16, 2015 at 3:42 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->> -------- Original Message --------
->> Subject: Re: btrfs check --init-csum-tree removes csums again
->> From: Chris Murphy <lists@colorremedies.com>
->> To: Karl-Philipp Richter <richter@richtercloud.de>
->> Date: 2015年02月16日 13:59
->>>
->>> On Sun, Feb 15, 2015 at 1:50 AM, Karl-Philipp Richter
->>> <richter@richtercloud.de> wrote:
->>>>
->>>> Hi,
->>>> After running `btrfs check --init-csum-tree` 3.18.2 and 3.19-rc2 on a
->>>> btrfs all checksums are gone (thousands of line in the form of `no csum
->>>> found for inode X start Y` in `/var/log/kern.log`). I know that this
->>>> behavior (to delete all csums) was a stub in a dev version and remember
->>>> that it was fixed and that I even fixed a csum tree at one point. Could
->>>> someone please confirm and maybe even point me to a working version?
->>>
->>> I just tried this on CentOS 7 with kernel-3.19-0 and
->>> btrfs-progs-3.18.2 (from Fedora 21) and it rebuilt the csums, and took
->>> a little while to do it, unlike 3.12 which was very fast by just
->>> removing the csums. So... worksforme. However I used it with --repair,
->>> not by itself.
->>>
->>>
->> The behavior that deletes all csum tree but not to rebuilt them maybe a bug
->> happens when extent tree is also
->> corrupted or with '--init-extent-tree' in 3.18.2.
->>
->> And --init-csum-tree should imply --repair, so Chris' result should also be
->> OK.
->>
->> To Karl:
->> Would you please provide the full output of "btrfs check --init-csum-tree"
->> and the kernel log?
->> IMHO this should help to find the bug in btrfsck.
->>
->> Thanks,
->> Qu
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 53b70c9..ce473bc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1137,11 +1137,11 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-again:
++
+ 	max_hole_start = search_start;
+ 	max_hole_size = 0;
+-	hole_size = 0;
+ 
++again:
+ 	if (search_start >= search_end || device->is_tgtdev_for_dev_replace) {
+ 		ret = -ENOSPC;
+ 		goto out;
+@@ -1240,21 +1240,23 @@ next:
+ 	 * allocated dev extents, and when shrinking the device,
+ 	 * search_end may be smaller than search_start.
+ 	 */
+-	if (search_end > search_start)
++	if (search_end > search_start) {
+ 		hole_size = search_end - search_start;
+ 
+-	if (hole_size > max_hole_size) {
+-		max_hole_start = search_start;
+-		max_hole_size = hole_size;
+-	}
++		if (contains_pending_extent(trans, device, &search_start,
++					    hole_size)) {
++			btrfs_release_path(path);
++			goto again;
++		}
+ 
+-	if (contains_pending_extent(trans, device, &search_start, hole_size)) {
+-		btrfs_release_path(path);
+-		goto again;
++		if (hole_size > max_hole_size) {
++			max_hole_start = search_start;
++			max_hole_size = hole_size;
++		}
+ 	}
+ 
+ 	/* See above. */
+-	if (hole_size < num_bytes)
++	if (max_hole_size < num_bytes)
+ 		ret = -ENOSPC;
+ 	else
+ 		ret = 0;
+-- 
+1.8.5.1
+

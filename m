@@ -1,100 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43769 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754623AbbBPJ3u (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25436 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754955AbbBPJdI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Feb 2015 04:29:50 -0500
-Date: Mon, 16 Feb 2015 17:29:35 +0800
+	Mon, 16 Feb 2015 04:33:08 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t1G9X7Dw013845
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 09:33:07 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id t1G9X7Zm008776
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 09:33:07 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id t1G9X6sv008741
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 09:33:06 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Zhaolei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix condition of commit transaction
-Message-ID: <20150216092934.GA23683@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1423919919-25118-1-git-send-email-zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1423919919-25118-1-git-send-email-zhaolei@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: cleanup alloc_chunk
+Date: Mon, 16 Feb 2015 17:32:58 +0800
+Message-Id: <1424079178-21976-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 14, 2015 at 09:18:39PM +0800, Zhaolei wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
-> 
-> Old code bypass commit transaction when we don't have enough
-> pinned space, but another case is there exist freed bgs in current
-> transction, it have possibility to make alloc_chunk success.
-> 
-> This patch modify the condition to:
-> if (have_free_bg || have_pinned_space) commit_transaction()
-> 
-> Confirmed above action by printk before and after patch.
+"alloc_chunk" is used to avoid alloc_chunk for free space cache inode, but since
+it's safe now to do that, let's just remove it.
 
-Looks good.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a684086..765e72a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3679,7 +3679,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 used;
+-	int ret = 0, committed = 0, alloc_chunk = 1;
++	int ret = 0, committed = 0;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
+@@ -3707,7 +3707,7 @@ again:
+ 		 * if we don't have enough free bytes in this space then we need
+ 		 * to alloc a new chunk.
+ 		 */
+-		if (!data_sinfo->full && alloc_chunk) {
++		if (!data_sinfo->full) {
+ 			u64 alloc_target;
+ 
+ 			data_sinfo->force_alloc = CHUNK_ALLOC_FORCE;
+-- 
+1.8.1.4
 
-Thanks,
-
--liubo
-> 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> ---
->  fs/btrfs/extent-tree.c | 20 +++++++++++++-------
->  1 file changed, 13 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a684086..414d533 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3679,7 +3679,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	u64 used;
-> -	int ret = 0, committed = 0, alloc_chunk = 1;
-> +	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
->  
->  	/* make sure bytes are sectorsize aligned */
->  	bytes = ALIGN(bytes, root->sectorsize);
-> @@ -3747,11 +3747,12 @@ alloc:
->  
->  		/*
->  		 * If we don't have enough pinned space to deal with this
-> -		 * allocation don't bother committing the transaction.
-> +		 * allocation, and no removed chunk in current transaction,
-> +		 * don't bother committing the transaction.
->  		 */
->  		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
->  					   bytes) < 0)
-> -			committed = 1;
-> +			have_pinned_space = 0;
->  		spin_unlock(&data_sinfo->lock);
->  
->  		/* commit the current transaction and try again */
-> @@ -3763,10 +3764,15 @@ commit_trans:
->  			trans = btrfs_join_transaction(root);
->  			if (IS_ERR(trans))
->  				return PTR_ERR(trans);
-> -			ret = btrfs_commit_transaction(trans, root);
-> -			if (ret)
-> -				return ret;
-> -			goto again;
-> +			if (have_pinned_space ||
-> +			    trans->transaction->have_free_bgs) {
-> +				ret = btrfs_commit_transaction(trans, root);
-> +				if (ret)
-> +					return ret;
-> +				goto again;
-> +			} else {
-> +				btrfs_end_transaction(trans, root);
-> +			}
->  		}
->  
->  		trace_btrfs_space_reservation(root->fs_info,
-> -- 
-> 1.8.5.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

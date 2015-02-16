@@ -1,90 +1,1147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f42.google.com ([209.85.215.42]:37262 "EHLO
-	mail-la0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752104AbbBPKVR convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48031 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752130AbbBPKkg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Feb 2015 05:21:17 -0500
-Received: by labpn19 with SMTP id pn19so27458002lab.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 02:21:15 -0800 (PST)
+	Mon, 16 Feb 2015 05:40:36 -0500
+Date: Mon, 16 Feb 2015 18:40:28 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Tomasz Chmielewski <tch@virtall.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.19 - "unable" to replace a failed drive - 100% CPU usage in
+ kworker and btrfs-transacti
+Message-ID: <20150216104026.GC23683@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <de541fe6037c9b5516e398e3a98597f8@admin.virtall.com>
 MIME-Version: 1.0
-In-Reply-To: <54E1AD61.7010007@cn.fujitsu.com>
-References: <54E05DCD.3050508@richtercloud.de>
-	<CAJCQCtSSeSbb9r=f830k=5UjKkw=3huE6H_o3oqNWYg2UFJTwg@mail.gmail.com>
-	<54E1AD61.7010007@cn.fujitsu.com>
-Date: Mon, 16 Feb 2015 05:21:15 -0500
-Message-ID: <CAEr6y+VaV_d6rg3mobkKRQbm5oV0LjUu+Xv-14sx6Rg3fDVLLg@mail.gmail.com>
-Subject: Re: btrfs check --init-csum-tree removes csums again
-From: Tim DeNike <tim@denike.us>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <de541fe6037c9b5516e398e3a98597f8@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just ran through with vanilla 3.19 kernel and btrfs-progs 3.18.2
-with the same result.  Nothing in kernel log at all. Output of btrfs
-check below.
+On Mon, Feb 16, 2015 at 11:32:56AM +0900, Tomasz Chmielewski wrote:
+> I had a failed drive in RAID-1, so it was replaced with a good one,
+> followed by:
+> 
+> btrfs device add /dev/sdb4 /home
+> btrfs device delete missing /home
+> 
+> 
+> 4 days later, it got to a state when there is no IO anymore
+> (according to iostat), "btrfs device delete missing" did not
+> complete:
+> 
+> # uptime
+>  03:29:03 up 4 days, 14:38,  1 user,  load average: 2.36, 2.43, 2.54
+> 
+> # btrfs fi show
+> Label: none  uuid: 84d087aa-3a32-46da-844f-a233237cf04f
+>         Total devices 3 FS bytes used 206.53GiB
+>         devid    3 size 1.71TiB used 214.03GiB path /dev/sda4
+>         devid    4 size 1.71TiB used 177.00GiB path /dev/sdb4
+>         *** Some devices missing
+> 
+> Btrfs v3.18.2
+> 
+>   PID USER      PR  NI  VIRT  RES  SHR S  %CPU %MEM    TIME+  COMMAND
+>  6269 root      20   0     0    0    0 R  92.5  0.0   2769:33
+> btrfs-transacti
+> 22247 root      20   0     0    0    0 R  92.5  0.0  42:38.65
+> kworker/u16:16
 
-[root@938el btrfs-progs]# ./btrfs check --repair --init-csum-tree /dev/sda
-enabling repair mode
-Creating a new CRC tree
-Checking filesystem on /dev/sda
-UUID: 1de92eed-c588-4471-b853-7f6a0a22c9a6
-Reinit crc root
-extent-tree.c:2657: btrfs_reserve_extent: Assertion `ret` failed.
-./btrfs[0x43c93f]
-./btrfs(btrfs_reserve_extent+0xaf8)[0x441f83]
-./btrfs(btrfs_alloc_free_block+0x57)[0x44202b]
-./btrfs[0x435805]
-./btrfs(btrfs_search_slot+0x12ce)[0x437666]
-./btrfs(btrfs_csum_file_block+0x3c2)[0x4462d4]
-./btrfs(cmd_check+0xf7d)[0x42564e]
-./btrfs(main+0x15d)[0x4098e1]
-/lib64/libc.so.6(__libc_start_main+0xf5)[0x7fdb99224af5]
-./btrfs[0x409499]
-[root@938el btrfs-progs]# ./btrfs --version
-Btrfs v3.18.2
+Can you cat /proc/22247/stack and /proc/6269/stack?
 
-On Mon, Feb 16, 2015 at 3:42 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
-> -------- Original Message --------
-> Subject: Re: btrfs check --init-csum-tree removes csums again
-> From: Chris Murphy <lists@colorremedies.com>
-> To: Karl-Philipp Richter <richter@richtercloud.de>
-> Date: 2015年02月16日 13:59
->>
->> On Sun, Feb 15, 2015 at 1:50 AM, Karl-Philipp Richter
->> <richter@richtercloud.de> wrote:
->>>
->>> Hi,
->>> After running `btrfs check --init-csum-tree` 3.18.2 and 3.19-rc2 on a
->>> btrfs all checksums are gone (thousands of line in the form of `no csum
->>> found for inode X start Y` in `/var/log/kern.log`). I know that this
->>> behavior (to delete all csums) was a stub in a dev version and remember
->>> that it was fixed and that I even fixed a csum tree at one point. Could
->>> someone please confirm and maybe even point me to a working version?
->>
->> I just tried this on CentOS 7 with kernel-3.19-0 and
->> btrfs-progs-3.18.2 (from Fedora 21) and it rebuilt the csums, and took
->> a little while to do it, unlike 3.12 which was very fast by just
->> removing the csums. So... worksforme. However I used it with --repair,
->> not by itself.
->>
->>
-> The behavior that deletes all csum tree but not to rebuilt them maybe a bug
-> happens when extent tree is also
-> corrupted or with '--init-extent-tree' in 3.18.2.
->
-> And --init-csum-tree should imply --repair, so Chris' result should also be
-> OK.
->
-> To Karl:
-> Would you please provide the full output of "btrfs check --init-csum-tree"
-> and the kernel log?
-> IMHO this should help to find the bug in btrfsck.
->
-> Thanks,
-> Qu
->
+Thanks,
+
+-liubo
+> 
+> 
+> # dmesg
+> [397948.321324] SysRq : Show Blocked State
+> [397948.321386]   task                        PC stack   pid father
+> [397948.321465] btrfs           D ffff8802d67ef948     0  7611
+> 6275 0x00000000
+> [397948.321521]  ffff8802d67ef948 ffff8804d2a9ba40 ffff88081917e040
+> 00000000000113c0
+> [397948.321621]  0000000000004000 ffff88081be30000 ffff88081917e040
+> ffff8802d67ef8b8
+> [397948.321720]  ffffffff8105f3c4 ffff88083fa40000 ffff88083fa913c0
+> ffff88083fa913c0
+> [397948.321819] Call Trace:
+> [397948.321872]  [<ffffffff8105f3c4>] ? enqueue_task_fair+0x3e5/0x44f
+> [397948.321927]  [<ffffffff81054ab6>] ? resched_curr+0x45/0x55
+> [397948.321979]  [<ffffffff81055122>] ? check_preempt_curr+0x3e/0x6d
+> [397948.322032]  [<ffffffff81055163>] ? ttwu_do_wakeup+0x12/0x7f
+> [397948.322085]  [<ffffffff8105526e>] ?
+> ttwu_do_activate.constprop.73+0x57/0x5c
+> [397948.322141]  [<ffffffff813be618>] schedule+0x65/0x67
+> [397948.322193]  [<ffffffff813c03b8>] schedule_timeout+0x26/0x18d
+> [397948.322245]  [<ffffffff81057d1e>] ? wake_up_process+0x30/0x34
+> [397948.322299]  [<ffffffff8104b1a3>] ? wake_up_worker+0x1f/0x21
+> [397948.322352]  [<ffffffff8104b3ea>] ? insert_work+0x87/0x94
+> [397948.322414]  [<ffffffffa02e183d>] ? free_block_list+0x1f/0x34
+> [btrfs]
+> [397948.322468]  [<ffffffff813bef76>] wait_for_common+0x10d/0x13e
+> [397948.322521]  [<ffffffff81057cdf>] ? try_to_wake_up+0x250/0x250
+> [397948.322574]  [<ffffffff813befbf>] wait_for_completion+0x18/0x1a
+> [397948.322631]  [<ffffffffa028dedc>]
+> btrfs_async_run_delayed_refs+0xc1/0xe4 [btrfs]
+> [397948.322734]  [<ffffffffa02a3189>]
+> __btrfs_end_transaction+0x315/0x33b [btrfs]
+> [397948.322836]  [<ffffffffa02a31bd>]
+> btrfs_end_transaction_throttle+0xe/0x10 [btrfs]
+> [397948.322939]  [<ffffffffa02e5cf1>]
+> relocate_block_group+0x2ad/0x4de [btrfs]
+> [397948.323039]  [<ffffffffa02e607a>]
+> btrfs_relocate_block_group+0x158/0x278 [btrfs]
+> [397948.323152]  [<ffffffffa02c37e1>]
+> btrfs_relocate_chunk.isra.69+0x35/0xa5 [btrfs]
+> [397948.323256]  [<ffffffffa02c41da>]
+> btrfs_shrink_device+0x235/0x408 [btrfs]
+> [397948.323316]  [<ffffffffa02c6ba9>] btrfs_rm_device+0x2a9/0x704
+> [btrfs]
+> [397948.323371]  [<ffffffff810f5441>] ?
+> __kmalloc_track_caller+0x40/0x178
+> [397948.323431]  [<ffffffffa02cf7a7>] btrfs_ioctl+0xa9c/0x22f5 [btrfs]
+> [397948.323485]  [<ffffffff8110f142>] ? putname+0x23/0x2c
+> [397948.323537]  [<ffffffff8110f6d3>] ? user_path_at_empty+0x60/0x90
+> [397948.323593]  [<ffffffff811783bf>] ? avc_has_perm+0x2e/0xf7
+> [397948.323654]  [<ffffffff8111171b>] do_vfs_ioctl+0x418/0x460
+> [397948.323706]  [<ffffffff81106745>] ? vfs_stat+0x16/0x18
+> [397948.323758]  [<ffffffff811117b1>] SyS_ioctl+0x4e/0x7d
+> [397948.323809]  [<ffffffff81031c5b>] ? do_page_fault+0xc/0x11
+> [397948.323862]  [<ffffffff813c1352>] system_call_fastpath+0x12/0x17
+> [397948.323917] Sched Debug Version: v0.11, 3.19.0 #1
+> [397948.323968] ktime                                   :
+> 398158300.945440
+> [397948.324021] sched_clk                               :
+> 397948323.916497
+> [397948.324074] cpu_clk                                 :
+> 397948323.916513
+> [397948.324127] jiffies                                 : 4334753127
+> [397948.324180] sched_clock_stable()                    : 1
+> [397948.324231]
+> [397948.324277] sysctl_sched
+> [397948.324325]   .sysctl_sched_latency                    : 24.000000
+> [397948.324378]   .sysctl_sched_min_granularity            : 3.000000
+> [397948.324430]   .sysctl_sched_wakeup_granularity         : 4.000000
+> [397948.324483]   .sysctl_sched_child_runs_first           : 0
+> [397948.324534]   .sysctl_sched_features                   : 11899
+> [397948.324586]   .sysctl_sched_tunable_scaling            : 1
+> (logaritmic)
+> [397948.324639]
+> [397948.324686] cpu#0, 3411.800 MHz
+> [397948.324734]   .nr_running                    : 0
+> [397948.324784]   .load                          : 0
+> [397948.324834]   .nr_switches                   : 137328510
+> [397948.324885]   .nr_load_updates               : 23262071
+> [397948.324936]   .nr_uninterruptible            : -738004
+> [397948.324987]   .next_balance                  : 4334.753128
+> [397948.325039]   .curr->pid                     : 0
+> [397948.325089]   .clock                         : 397948323.134939
+> [397948.325141]   .cpu_load[0]                   : 0
+> [397948.325191]   .cpu_load[1]                   : 0
+> [397948.325241]   .cpu_load[2]                   : 0
+> [397948.325292]   .cpu_load[3]                   : 0
+> [397948.325343]   .cpu_load[4]                   : 0
+> [397948.325393]   .yld_count                     : 223168
+> [397948.325444]   .sched_count                   : 137673310
+> [397948.325496]   .sched_goidle                  : 50221823
+> [397948.325547]   .avg_idle                      : 878593
+> [397948.325599]   .max_idle_balance_cost         : 500000
+> [397948.325650]   .ttwu_count                    : 86464371
+> [397948.325701]   .ttwu_local                    : 52888650
+> [397948.325752]
+> [397948.325752] cfs_rq[0]:/autogroup-1114
+> [397948.325847]   .exec_clock                    : 11.086901
+> [397948.325899]   .MIN_vruntime                  : 0.000001
+> [397948.325950]   .min_vruntime                  : 10.038325
+> [397948.326001]   .max_vruntime                  : 0.000001
+> [397948.326052]   .spread                        : 0.000000
+> [397948.326103]   .spread0                       : -96825607.013236
+> [397948.326155]   .nr_spread_over                : 0
+> [397948.326205]   .nr_running                    : 0
+> [397948.326256]   .load                          : 0
+> [397948.326306]   .runnable_load_avg             : 0
+> [397948.326357]   .blocked_load_avg              : 0
+> [397948.326407]   .tg_load_contrib               : 0
+> [397948.326458]   .tg_runnable_contrib           : 0
+> [397948.326508]   .tg_load_avg                   : 0
+> [397948.326559]   .tg->runnable_avg              : 0
+> [397948.326609]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.326659]   .throttled                     : 0
+> [397948.326710]   .throttle_count                : 0
+> [397948.326760]   .se->exec_start                : 397948321.211399
+> [397948.326812]   .se->vruntime                  : 96825606.516443
+> [397948.326865]   .se->sum_exec_runtime          : 11.086901
+> [397948.326916]   .se->statistics.wait_start     : 0.000000
+> [397948.326967]   .se->statistics.sleep_start    : 0.000000
+> [397948.327018]   .se->statistics.block_start    : 0.000000
+> [397948.327069]   .se->statistics.sleep_max      : 0.000000
+> [397948.327121]   .se->statistics.block_max      : 0.000000
+> [397948.327172]   .se->statistics.exec_max       : 2.982069
+> [397948.327223]   .se->statistics.slice_max      : 0.000000
+> [397948.327275]   .se->statistics.wait_max       : 0.019006
+> [397948.327326]   .se->statistics.wait_sum       : 0.019006
+> [397948.327378]   .se->statistics.wait_count     : 136
+> [397948.327429]   .se->load.weight               : 2
+> [397948.327479]   .se->avg.runnable_avg_sum      : 42
+> [397948.327530]   .se->avg.runnable_avg_period   : 48335
+> [397948.327581]   .se->avg.load_avg_contrib      : 0
+> [397948.327631]   .se->avg.decay_count           : 379513094
+> [397948.327683]
+> [397948.327683] cfs_rq[0]:/autogroup-6
+> [397948.327777]   .exec_clock                    : 1407434.382402
+> [397948.327829]   .MIN_vruntime                  : 0.000001
+> [397948.327880]   .min_vruntime                  : 1154990.729705
+> [397948.327932]   .max_vruntime                  : 0.000001
+> [397948.327984]   .spread                        : 0.000000
+> [397948.328035]   .spread0                       : -95670626.321856
+> [397948.328087]   .nr_spread_over                : 255
+> [397948.329388]   .nr_running                    : 0
+> [397948.329438]   .load                          : 0
+> [397948.329489]   .runnable_load_avg             : 0
+> [397948.329539]   .blocked_load_avg              : 2
+> [397948.329590]   .tg_load_contrib               : 2
+> [397948.329640]   .tg_runnable_contrib           : 4
+> [397948.329690]   .tg_load_avg                   : 12
+> [397948.329740]   .tg->runnable_avg              : 4
+> [397948.329791]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.329841]   .throttled                     : 0
+> [397948.329892]   .throttle_count                : 0
+> [397948.329943]   .se->exec_start                : 397948323.133861
+> [397948.329995]   .se->vruntime                  : 96825606.879532
+> [397948.330047]   .se->sum_exec_runtime          : 1407466.511198
+> [397948.330098]   .se->statistics.wait_start     : 0.000000
+> [397948.330150]   .se->statistics.sleep_start    : 0.000000
+> [397948.330201]   .se->statistics.block_start    : 0.000000
+> [397948.330252]   .se->statistics.sleep_max      : 0.000000
+> [397948.330303]   .se->statistics.block_max      : 0.000000
+> [397948.330354]   .se->statistics.exec_max       : 10.021049
+> [397948.330406]   .se->statistics.slice_max      : 16.519045
+> [397948.330457]   .se->statistics.wait_max       : 16.098230
+> [397948.330509]   .se->statistics.wait_sum       : 77143.758185
+> [397948.330561]   .se->statistics.wait_count     : 12935361
+> [397948.330613]   .se->load.weight               : 2
+> [397948.330663]   .se->avg.runnable_avg_sum      : 206
+> [397948.330714]   .se->avg.runnable_avg_period   : 47204
+> [397948.330765]   .se->avg.load_avg_contrib      : 2
+> [397948.330816]   .se->avg.decay_count           : 379513096
+> [397948.330868]
+> [397948.330868] cfs_rq[0]:/
+> [397948.330959]   .exec_clock                    : 98523331.737970
+> [397948.331011]   .MIN_vruntime                  : 0.000001
+> [397948.331062]   .min_vruntime                  : 96825617.051561
+> [397948.331115]   .max_vruntime                  : 0.000001
+> [397948.331166]   .spread                        : 0.000000
+> [397948.331217]   .spread0                       : 0.000000
+> [397948.331269]   .nr_spread_over                : 270
+> [397948.331320]   .nr_running                    : 0
+> [397948.331370]   .load                          : 0
+> [397948.331421]   .runnable_load_avg             : 0
+> [397948.331471]   .blocked_load_avg              : 2
+> [397948.331522]   .tg_load_contrib               : 2
+> [397948.331572]   .tg_runnable_contrib           : 6
+> [397948.331622]   .tg_load_avg                   : 1490
+> [397948.331673]   .tg->runnable_avg              : 1068
+> [397948.331723]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.331774]   .throttled                     : 0
+> [397948.331824]   .throttle_count                : 0
+> [397948.331875]   .avg->runnable_avg_sum         : 286
+> [397948.331926]   .avg->runnable_avg_period      : 46637
+> [397948.331979]
+> [397948.331979] rt_rq[0]:/
+> [397948.332071]   .rt_nr_running                 : 0
+> [397948.332121]   .rt_throttled                  : 0
+> [397948.332171]   .rt_time                       : 0.000000
+> [397948.332222]   .rt_runtime                    : 950.000000
+> [397948.332274]
+> [397948.332274] dl_rq[0]:
+> [397948.332366]   .dl_nr_running                 : 0
+> [397948.332417]
+> [397948.332417] runnable tasks:
+> [397948.332417]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.332417] ----------------------------------------------------------------------------------------------------------
+> [397948.332712]      ksoftirqd/0     3  96825605.109947    740015
+> 120  96825605.109947     12247.009129 397859768.730344 /
+> [397948.332817]      kworker/0:0     4  96823284.697816        53
+> 120  96823284.697816        17.309475 397934074.622814 /
+> [397948.332922]     kworker/0:0H     5      1015.287609         5
+> 100      1015.287609         0.041666      1136.081722 /
+> [397948.333053]        rcu_sched     7  96825608.780644  13143448
+> 120  96825608.780644    369650.173462 397567779.683357 /
+> [397948.333157]           rcu_bh     8       117.354314         2
+> 120       117.354314         0.000874         0.000722 /
+> [397948.333263]      migration/0     9         0.000000     40752
+> 0         0.000000     37728.554175         0.000853 /
+> [397948.333367]       watchdog/0    10       -11.786179     99549
+> 0       -11.786179     16602.242686        93.369695 /
+> [397948.333473]          kswapd0   506  96346153.194271     10895
+> 120  96346153.194271      5358.878543 396356848.501371 /
+> [397948.333577]  acpi_thermal_pm   618       478.127841         2
+> 100       478.127841         0.008079         0.004241 /
+> [397948.333682]          ata_sff   832       943.140921         2
+> 100       943.140921         0.005880         0.022278 /
+> [397948.333786]        scsi_eh_0   855      1012.563036        18
+> 120      1012.563036         0.875745       352.505402 /
+> [397948.333891]     kworker/0:1H   879  96825605.051890  19712713
+> 100  96825605.051890    933447.862690 396865888.829352 /
+> [397948.333995]       jbd2/md2-8   935  96824920.898850    673247
+> 120  96824920.898850     25939.369714 397908678.411380 /
+> [397948.334100]         rsyslogd  3062   1154978.849958       554
+> 120   1154978.849958        31.915075 397909811.026141 /autogroup-6
+> [397948.334206]            nginx  3235      4173.366889    645371
+> 120      4173.366889      8854.802084 393651417.627526 /autogroup-10
+> [397948.334312]           mysqld  4080   1154807.414715      5643
+> 120   1154807.414715       799.670146 395527445.704335 /autogroup-6
+> [397948.334418]           mysqld  4094   1154978.441261    796267
+> 120   1154978.441261      7509.987667 397898098.956672 /autogroup-6
+> [397948.334523]           mysqld  4097   1154978.442889   1253821
+> 120   1154978.442889     54810.874030 397848250.280201 /autogroup-6
+> [397948.334628]           mysqld  4098   1154978.441618   1282226
+> 120   1154978.441618     57182.533918 397845845.250436 /autogroup-6
+> [397948.334734]           mysqld  4102   1154978.441697    959988
+> 120   1154978.441697     10108.715585 397895341.475090 /autogroup-6
+> [397948.334839]           mysqld  4103   1154978.440507   1341686
+> 120   1154978.440507     16033.050027 397888981.976267 /autogroup-6
+> [397948.334945]           mysqld  4119   1154990.729705    404501
+> 120   1154990.729705    119263.212981 397785618.876052 /autogroup-6
+> [397948.335051]           mysqld  4150   1039299.577821   7023984
+> 120   1039299.577821   1407433.681869 320824575.671761 /autogroup-6
+> [397948.335157]           mysqld  5811   1154806.870976   1317671
+> 120   1154806.870976    299564.211303 346391209.749613 /autogroup-6
+> [397948.335264]           mysqld 15436   1154807.136306    292526
+> 120   1154807.136306    172005.952402 174398934.514010 /autogroup-6
+> [397948.335371]            getty  4374         0.817181       100
+> 120         0.817181         2.613716       146.560614 /autogroup-23
+> [397948.335478]  btrfs-transacti  6269  96825617.051561  22374147
+> 120  96825617.051561 166025164.637843 164906022.709080 /
+> [397948.335583]             bash  6275       132.300150       276
+> 120       132.300150        79.740920  21744924.508065
+> /autogroup-184
+> [397948.335690]      kworker/0:1 21018  96823285.353043   1816351
+> 120  96823285.353043    793610.285186  42038707.779192 /
+> [397948.335795]       ssl-params 22730       472.603845         4
+> 120       472.603845         0.877328         0.117947 /autogroup-17
+> [397948.335902]    kworker/u16:0 22761  96825069.356076     67516
+> 120  96825069.356076    540082.349638    226131.772902 /
+> [397948.336006]             sshd 22771        10.038325       150
+> 120        10.038325        13.472329     50175.143940
+> /autogroup-1114
+> [397948.336112]      kworker/0:2 22822  96825605.578025       507
+> 120  96825605.578025        47.279505     14055.084212 /
+> [397948.336218]
+> [397948.336280] cpu#1, 3411.800 MHz
+> [397948.336329]   .nr_running                    : 1
+> [397948.336379]   .load                          : 1024
+> [397948.336430]   .nr_switches                   : 84332707
+> [397948.336481]   .nr_load_updates               : 21967275
+> [397948.336533]   .nr_uninterruptible            : 483742
+> [397948.336584]   .next_balance                  : 4334.753129
+> [397948.336635]   .curr->pid                     : 22247
+> [397948.336686]   .clock                         : 397948333.217376
+> [397948.336738]   .cpu_load[0]                   : 1023
+> [397948.336788]   .cpu_load[1]                   : 1023
+> [397948.336839]   .cpu_load[2]                   : 1023
+> [397948.336890]   .cpu_load[3]                   : 1023
+> [397948.336940]   .cpu_load[4]                   : 1007
+> [397948.336991]   .yld_count                     : 135412
+> [397948.337043]   .sched_count                   : 84726950
+> [397948.337094]   .sched_goidle                  : 29157952
+> [397948.337145]   .avg_idle                      : 1000000
+> [397948.337196]   .max_idle_balance_cost         : 500000
+> [397948.337247]   .ttwu_count                    : 36438464
+> [397948.337299]   .ttwu_local                    : 19485954
+> [397948.337350]
+> [397948.337350] cfs_rq[1]:/
+> [397948.337441]   .exec_clock                    : 123202243.887995
+> [397948.337494]   .MIN_vruntime                  : 0.000001
+> [397948.337545]   .min_vruntime                  : 119610642.735572
+> [397948.337597]   .max_vruntime                  : 0.000001
+> [397948.337649]   .spread                        : 0.000000
+> [397948.337700]   .spread0                       : 22785025.684011
+> [397948.337752]   .nr_spread_over                : 301
+> [397948.337802]   .nr_running                    : 1
+> [397948.337852]   .load                          : 1024
+> [397948.337903]   .runnable_load_avg             : 1023
+> [397948.337954]   .blocked_load_avg              : 26
+> [397948.338004]   .tg_load_contrib               : 1042
+> [397948.338055]   .tg_runnable_contrib           : 1010
+> [397948.338106]   .tg_load_avg                   : 1317
+> [397948.338156]   .tg->runnable_avg              : 1293
+> [397948.338206]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.338256]   .throttled                     : 0
+> [397948.338307]   .throttle_count                : 0
+> [397948.338357]   .avg->runnable_avg_sum         : 46120
+> [397948.338408]   .avg->runnable_avg_period      : 46120
+> [397948.338459]
+> [397948.338459] rt_rq[1]:/
+> [397948.338550]   .rt_nr_running                 : 0
+> [397948.338600]   .rt_throttled                  : 0
+> [397948.339900]   .rt_time                       : 0.000000
+> [397948.339951]   .rt_runtime                    : 950.000000
+> [397948.340003]
+> [397948.340003] dl_rq[1]:
+> [397948.340094]   .dl_nr_running                 : 0
+> [397948.340144]
+> [397948.340144] runnable tasks:
+> [397948.340144]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.340144] ----------------------------------------------------------------------------------------------------------
+> [397948.340438]       watchdog/1    11        -2.973570     99543
+> 0        -2.973570     21159.974792        85.639910 /
+> [397948.340543]      migration/1    12         0.000000     37023
+> 0         0.000000     30622.595831         0.000758 /
+> [397948.340648]      ksoftirqd/1    13 119609979.133122     91495
+> 120 119609979.133122      1646.457418 397900354.563118 /
+> [397948.340752]     kworker/1:0H    15       582.372111         6
+> 100       582.372111         0.027131      2733.616385 /
+> [397948.340858]       khungtaskd   204 119577195.763580      3319
+> 120 119577195.763580       182.485563 397829939.496656 /
+> [397948.340962]        kpsmoused   686        25.893051         2
+> 100        25.893051         0.010838         0.003636 /
+> [397948.341068]      kworker/1:2   688 102920251.057920        55
+> 120 102920251.057920         0.504998 355091633.648033 /
+> [397948.341172]          deferwq   731       158.015576         2
+> 100       158.015576         0.009076         0.003883 /
+> [397948.341277]       scsi_tmf_0   856       442.536328         2
+> 100       442.536328         0.008945         0.003987 /
+> [397948.341382]        scsi_eh_1   857       539.461151        16
+> 120       539.461151         0.868588       350.508685 /
+> [397948.341486]       scsi_tmf_1   858       466.554669         2
+> 100       466.554669         0.008786         0.003948 /
+> [397948.341590]        scsi_eh_2   859       514.602593         3
+> 120       514.602593         0.016414         1.372299 /
+> [397948.341695]        scsi_eh_3   861       514.603810         3
+> 120       514.603810         0.016837         1.222996 /
+> [397948.341799]       scsi_tmf_3   862       502.578935         2
+> 100       502.578935         0.008052         0.003896 /
+> [397948.341904]       scsi_tmf_4   864       514.587500         2
+> 100       514.587500         0.008905         0.004404 /
+> [397948.342009]     kworker/1:1H   968 118250346.559508    456123
+> 100 118250346.559508      6526.369618 394080278.360060 /
+> [397948.342114]             cron  3301       777.910417      7708
+> 120       777.910417       405.566912 397904071.914015 /autogroup-12
+> [397948.342219]             sshd  3426         0.515010        28
+> 120         0.515010         3.325645 397861007.941426 /autogroup-15
+> [397948.342326]      mysqld_safe  3464      1418.978306       435
+> 120      1418.978306        26.375085       974.715839 /autogroup-6
+> [397948.342432]           mysqld  4118    690369.357591    400760
+> 120    690369.357591     50887.461054 397853256.747730 /autogroup-6
+> [397948.342539]            getty  4372         0.769188       104
+> 120         0.769188         2.833955       146.554963 /autogroup-21
+> [397948.342645]    btrfs-cleaner  6268 119610036.344925     21815
+> 120 119610036.344925      5411.552915 342317734.332486 /
+> [397948.342750]            btrfs  7611    311971.962451   2055291
+> 120    311971.962451   1498599.957865 319025222.198539
+> /autogroup-184
+> [397948.342856]      kworker/1:0 21019 119610630.984203   2134678
+> 120 119610630.984203   1030853.178543  41814652.278685 /
+> [397948.342969] R kworker/u16:16 22247 119610652.481537    293438
+> 120 119610652.481537   2301421.627687   2218308.587596 /
+> [397948.343099]
+> [397948.343161] cpu#2, 3411.800 MHz
+> [397948.343210]   .nr_running                    : 3
+> [397948.343259]   .load                          : 2048
+> [397948.343310]   .nr_switches                   : 76867052
+> [397948.343360]   .nr_load_updates               : 19847327
+> [397948.343411]   .nr_uninterruptible            : 139945
+> [397948.343462]   .next_balance                  : 4334.753139
+> [397948.343513]   .curr->pid                     : 22773
+> [397948.343563]   .clock                         : 397948336.246820
+> [397948.343615]   .cpu_load[0]                   : 275
+> [397948.343666]   .cpu_load[1]                   : 212
+> [397948.343716]   .cpu_load[2]                   : 127
+> [397948.343767]   .cpu_load[3]                   : 70
+> [397948.343818]   .cpu_load[4]                   : 50
+> [397948.343868]   .yld_count                     : 92399
+> [397948.343919]   .sched_count                   : 77151242
+> [397948.343970]   .sched_goidle                  : 27487304
+> [397948.344021]   .avg_idle                      : 1000000
+> [397948.344072]   .max_idle_balance_cost         : 500000
+> [397948.344123]   .ttwu_count                    : 35275362
+> [397948.344175]   .ttwu_local                    : 17426867
+> [397948.344227]
+> [397948.344227] cfs_rq[2]:/autogroup-1115
+> [397948.344321]   .exec_clock                    : 77.755926
+> [397948.344372]   .MIN_vruntime                  : 0.000001
+> [397948.344423]   .min_vruntime                  : 169.689274
+> [397948.344475]   .max_vruntime                  : 0.000001
+> [397948.344526]   .spread                        : 0.000000
+> [397948.344578]   .spread0                       : -96825447.362287
+> [397948.344629]   .nr_spread_over                : 7
+> [397948.344680]   .nr_running                    : 1
+> [397948.344730]   .load                          : 1024
+> [397948.344781]   .runnable_load_avg             : 271
+> [397948.344831]   .blocked_load_avg              : 0
+> [397948.344882]   .tg_load_contrib               : 271
+> [397948.344932]   .tg_runnable_contrib           : 271
+> [397948.344983]   .tg_load_avg                   : 271
+> [397948.345033]   .tg->runnable_avg              : 271
+> [397948.345083]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.345133]   .throttled                     : 0
+> [397948.345183]   .throttle_count                : 0
+> [397948.345234]   .se->exec_start                : 397948336.246820
+> [397948.345286]   .se->vruntime                  : 100334135.344609
+> [397948.345338]   .se->sum_exec_runtime          : 77.755926
+> [397948.345389]   .se->statistics.wait_start     : 0.000000
+> [397948.345440]   .se->statistics.sleep_start    : 0.000000
+> [397948.345491]   .se->statistics.block_start    : 0.000000
+> [397948.345542]   .se->statistics.sleep_max      : 0.000000
+> [397948.345593]   .se->statistics.block_max      : 0.000000
+> [397948.345644]   .se->statistics.exec_max       : 13.202718
+> [397948.345694]   .se->statistics.slice_max      : 0.000000
+> [397948.345745]   .se->statistics.wait_max       : 0.020544
+> [397948.345796]   .se->statistics.wait_sum       : 0.209415
+> [397948.345847]   .se->statistics.wait_count     : 128
+> [397948.345898]   .se->load.weight               : 1024
+> [397948.345949]   .se->avg.runnable_avg_sum      : 12487
+> [397948.345999]   .se->avg.runnable_avg_period   : 47064
+> [397948.346051]   .se->avg.load_avg_contrib      : 275
+> [397948.346101]   .se->avg.decay_count           : 0
+> [397948.346152]
+> [397948.346152] cfs_rq[2]:/
+> [397948.346244]   .exec_clock                    : 102436933.654759
+> [397948.346296]   .MIN_vruntime                  : 100334120.416350
+> [397948.346348]   .min_vruntime                  : 100334132.312627
+> [397948.346401]   .max_vruntime                  : 100334120.416350
+> [397948.346453]   .spread                        : 0.000000
+> [397948.346504]   .spread0                       : 3508515.261066
+> [397948.346556]   .nr_spread_over                : 450
+> [397948.346606]   .nr_running                    : 2
+> [397948.346657]   .load                          : 2048
+> [397948.346708]   .runnable_load_avg             : 275
+> [397948.346758]   .blocked_load_avg              : 0
+> [397948.346809]   .tg_load_contrib               : 275
+> [397948.346859]   .tg_runnable_contrib           : 271
+> [397948.346910]   .tg_load_avg                   : 1323
+> [397948.346961]   .tg->runnable_avg              : 1293
+> [397948.347011]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.347061]   .throttled                     : 0
+> [397948.347111]   .throttle_count                : 0
+> [397948.347161]   .avg->runnable_avg_sum         : 12763
+> [397948.347212]   .avg->runnable_avg_period      : 48021
+> [397948.347263]
+> [397948.347263] rt_rq[2]:/
+> [397948.347354]   .rt_nr_running                 : 0
+> [397948.347404]   .rt_throttled                  : 0
+> [397948.347455]   .rt_time                       : 0.000000
+> [397948.347506]   .rt_runtime                    : 950.000000
+> [397948.347557]
+> [397948.347557] dl_rq[2]:
+> [397948.347649]   .dl_nr_running                 : 0
+> [397948.347699]
+> [397948.347699] runnable tasks:
+> [397948.347699]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.347699] ----------------------------------------------------------------------------------------------------------
+> [397948.347992]             init     1       509.594135     79809
+> 120       509.594135      2619.143889 397945091.854170 /autogroup-2
+> [397948.348098]       watchdog/2    16        -5.976382     99543
+> 0        -5.976382     17476.538367        72.326265 /
+> [397948.348202]      migration/2    17         0.000000     32592
+> 0         0.000000     29450.114444         0.001139 /
+> [397948.348306]      ksoftirqd/2    18 100333573.328598     69839
+> 120 100333573.328598      1929.169352 397913601.175468 /
+> [397948.348410]      kworker/2:0    19  49262954.665776        38
+> 120  49262954.665776         0.122608 231013304.220524 /
+> [397948.348514]     kworker/2:0H    20      3650.646229         6
+> 100      3650.646229         0.037533     34187.208217 /
+> [397948.348619]        scsi_eh_4   863      3072.735732         3
+> 120      3072.735732         0.015446         1.048287 /
+> [397948.348724]        scsi_eh_5   865      3072.733721         3
+> 120      3072.733721         0.012919         0.910030 /
+> [397948.348828]        md1_raid1   910 100169530.338537      1429
+> 120 100169530.338537        66.597411 397503924.718962 /
+> [397948.348932]     kworker/2:1H  1466 100323518.282583    394863
+> 100 100323518.282583      5278.861299 397866015.984528 /
+> [397948.349036]         rsyslogd  3033    428725.147921        28
+> 120    428725.147921         2.679249 322287744.247447 /autogroup-6
+> [397948.350392]              atd  3189         0.622217       112
+> 120         0.622217         2.344474 395791202.210800 /autogroup-9
+> [397948.350498]            acpid  3240         0.478710        41
+> 120         0.478710         1.730662 321163512.935538 /autogroup-11
+> [397948.350605]      dbus-daemon  3404         0.942824         6
+> 120         0.942824         1.484584  55885009.390813 /autogroup-14
+> [397948.350710]           mysqld  4095    459653.767988    848117
+> 120    459653.767988      9524.934466 397895732.816642 /autogroup-6
+> [397948.350817]           mysqld 15425    459502.220847    261927
+> 120    459502.220847    145837.180966 174449080.595390 /autogroup-6
+> [397948.350923]             qmgr  4370       357.389137      2476
+> 120       357.389137       280.199510 397622564.351466 /autogroup-19
+> [397948.351029]            getty  4373         0.640858       102
+> 120         0.640858         2.425952       146.827128 /autogroup-22
+> [397948.351135]  btrfs-worker-hi  6248   1154879.053331         2
+> 100   1154879.053331         0.017567         0.003220 /
+> [397948.351240]   btrfs-delalloc  6249   1154891.063212         2
+> 100   1154891.063212         0.010622         0.003413 /
+> [397948.351345]  btrfs-flush_del  6250   1154903.071666         2
+> 100   1154903.071666         0.009022         0.003320 /
+> [397948.351449]      btrfs-cache  6251   1154915.081079         2
+> 100   1154915.081079         0.015404         0.003203 /
+> [397948.351554]     btrfs-submit  6252   1154915.162054         2
+> 100   1154915.162054         0.096237         0.023172 /
+> [397948.351659]  btrfs-endio-met  6256   1154927.254127         2
+> 100   1154927.254127         0.093435         0.002869 /
+> [397948.351763]        btrfs-rmw  6259   1154939.263666         2
+> 100   1154939.263666         0.010258         0.003176 /
+> [397948.351868]  btrfs-freespace  6261   1154951.272823         2
+> 100   1154951.272823         0.009779         0.003215 /
+> [397948.351972]  btrfs-delayed-m  6262   1154963.281556         2
+> 100   1154963.281556         0.009338         0.003128 /
+> [397948.352076]  btrfs-qgroup-re  6264   1154975.290187         2
+> 100   1154975.290187         0.009265         0.003113 /
+> [397948.352180]      kworker/2:2 16094 100334120.416350   6973086
+> 120 100334120.416350   3053548.894806 163847153.385628 /
+> [397948.352285]           pickup 22744       369.431995        35
+> 120       369.431995         4.254482   1980726.020374 /autogroup-19
+> [397948.352391] R           bash 22773       169.689274       106
+> 120       169.689274        49.563444     46410.281275
+> /autogroup-1115
+> [397948.352497]
+> [397948.352543] cpu#3, 3411.800 MHz
+> [397948.352591]   .nr_running                    : 0
+> [397948.352641]   .load                          : 0
+> [397948.352692]   .nr_switches                   : 78216804
+> [397948.352743]   .nr_load_updates               : 20561275
+> [397948.352794]   .nr_uninterruptible            : 84689
+> [397948.352845]   .next_balance                  : 4334.753130
+> [397948.352896]   .curr->pid                     : 0
+> [397948.352955]   .clock                         : 397948343.119396
+> [397948.353033]   .cpu_load[0]                   : 0
+> [397948.353100]   .cpu_load[1]                   : 0
+> [397948.353150]   .cpu_load[2]                   : 0
+> [397948.353200]   .cpu_load[3]                   : 0
+> [397948.353251]   .cpu_load[4]                   : 0
+> [397948.353300]   .yld_count                     : 73921
+> [397948.353351]   .sched_count                   : 78424464
+> [397948.353402]   .sched_goidle                  : 27817319
+> [397948.353453]   .avg_idle                      : 1000000
+> [397948.353504]   .max_idle_balance_cost         : 500000
+> [397948.353555]   .ttwu_count                    : 36987465
+> [397948.353605]   .ttwu_local                    : 18034474
+> [397948.353656]
+> [397948.353656] cfs_rq[3]:/autogroup-6
+> [397948.353751]   .exec_clock                    : 484988.006368
+> [397948.353802]   .MIN_vruntime                  : 0.000001
+> [397948.353854]   .min_vruntime                  : 404786.905985
+> [397948.353905]   .max_vruntime                  : 0.000001
+> [397948.353956]   .spread                        : 0.000000
+> [397948.354007]   .spread0                       : -96420830.145576
+> [397948.354058]   .nr_spread_over                : 245
+> [397948.354109]   .nr_running                    : 0
+> [397948.354159]   .load                          : 0
+> [397948.354209]   .runnable_load_avg             : 0
+> [397948.354259]   .blocked_load_avg              : 4
+> [397948.354310]   .tg_load_contrib               : 4
+> [397948.354360]   .tg_runnable_contrib           : 5
+> [397948.354409]   .tg_load_avg                   : 4
+> [397948.354460]   .tg->runnable_avg              : 7
+> [397948.354510]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.354560]   .throttled                     : 0
+> [397948.354610]   .throttle_count                : 0
+> [397948.354661]   .se->exec_start                : 397948323.578248
+> [397948.354713]   .se->vruntime                  : 102939999.703983
+> [397948.354766]   .se->sum_exec_runtime          : 485015.851159
+> [397948.354817]   .se->statistics.wait_start     : 0.000000
+> [397948.354868]   .se->statistics.sleep_start    : 0.000000
+> [397948.354919]   .se->statistics.block_start    : 0.000000
+> [397948.354970]   .se->statistics.sleep_max      : 0.000000
+> [397948.355021]   .se->statistics.block_max      : 0.000000
+> [397948.355072]   .se->statistics.exec_max       : 9.999422
+> [397948.355123]   .se->statistics.slice_max      : 9.991785
+> [397948.355174]   .se->statistics.wait_max       : 19.987876
+> [397948.355225]   .se->statistics.wait_sum       : 7370.667707
+> [397948.355277]   .se->statistics.wait_count     : 3844653
+> [397948.355327]   .se->load.weight               : 2
+> [397948.355378]   .se->avg.runnable_avg_sum      : 266
+> [397948.355428]   .se->avg.runnable_avg_period   : 47445
+> [397948.355479]   .se->avg.load_avg_contrib      : 5
+> [397948.355529]   .se->avg.decay_count           : 379513096
+> [397948.355581]
+> [397948.355581] cfs_rq[3]:/
+> [397948.355673]   .exec_clock                    : 105213301.964322
+> [397948.355725]   .MIN_vruntime                  : 0.000001
+> [397948.355776]   .min_vruntime                  : 102940010.804921
+> [397948.355828]   .max_vruntime                  : 0.000001
+> [397948.355879]   .spread                        : 0.000000
+> [397948.355930]   .spread0                       : 6114393.753360
+> [397948.355982]   .nr_spread_over                : 326
+> [397948.356033]   .nr_running                    : 0
+> [397948.356083]   .load                          : 0
+> [397948.356133]   .runnable_load_avg             : 0
+> [397948.356183]   .blocked_load_avg              : 0
+> [397948.356234]   .tg_load_contrib               : 0
+> [397948.356284]   .tg_runnable_contrib           : 6
+> [397948.356335]   .tg_load_avg                   : 1319
+> [397948.356385]   .tg->runnable_avg              : 1291
+> [397948.356436]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.356486]   .throttled                     : 0
+> [397948.356537]   .throttle_count                : 0
+> [397948.356587]   .avg->runnable_avg_sum         : 307
+> [397948.356637]   .avg->runnable_avg_period      : 46706
+> [397948.356688]
+> [397948.356688] rt_rq[3]:/
+> [397948.356781]   .rt_nr_running                 : 0
+> [397948.356831]   .rt_throttled                  : 0
+> [397948.356882]   .rt_time                       : 0.000000
+> [397948.356933]   .rt_runtime                    : 950.000000
+> [397948.356984]
+> [397948.356984] dl_rq[3]:
+> [397948.357076]   .dl_nr_running                 : 0
+> [397948.357127]
+> [397948.357127] runnable tasks:
+> [397948.357127]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.357127] ----------------------------------------------------------------------------------------------------------
+> [397948.357422]         kthreadd     2 102939126.157704      1315
+> 120 102939126.157704        38.637725 397940297.121677 /
+> [397948.357527]       watchdog/3    21        -5.984614     99544
+> 0        -5.984614     18147.844668        58.998123 /
+> [397948.357632]      migration/3    22         0.000000     32291
+> 0         0.000000     32254.090833         0.000847 /
+> [397948.357737]      ksoftirqd/3    23 102939780.572027     62304
+> 120 102939780.572027      1739.164572 397906895.811056 /
+> [397948.357841]      kworker/3:0    24  33082955.717338        56
+> 120  33082955.717338         0.596786 176596062.108639 /
+> [397948.357946]     kworker/3:0H    25      1600.396479         6
+> 100      1600.396479         0.027776     33504.961049 /
+> [397948.358051]          khelper    46        10.955864         2
+> 100        10.955864         0.005052         0.001801 /
+> [397948.358156]        writeback   205       311.132001         2
+> 100       311.132001         0.003788         0.001292 /
+> [397948.358261]           crypto   208       323.135116         2
+> 100       323.135116         0.003395         0.001548 /
+> [397948.358365]           bioset   209       335.138067         2
+> 100       335.138067         0.003268         0.001389 /
+> [397948.358470]          kblockd   210       347.141115         2
+> 100       347.141115         0.003369         0.001350 /
+> [397948.358574]               md   361       359.144676         2
+> 100       359.144676         0.003908         0.001863 /
+> [397948.358679]    fsnotify_mark   576   1285553.304174        56
+> 120   1285553.304174         1.356477  77382968.604008 /
+> [397948.358784]           bioset   909      1410.076226         2
+> 100      1410.076226         0.008348         0.004053 /
+> [397948.358888]        md2_raid1   920 102939126.258310   5305156
+> 120 102939126.258310    235266.004521 397697550.934379 /
+> [397948.358994]     kworker/3:1H  1233 101531219.068494    383437
+> 100 101531219.068494      4828.918177 393998408.709581 /
+> [397948.359098]    rs:main Q:Reg  3060    404775.410651      3733
+> 120    404775.410651       584.098973 397909253.918002 /autogroup-6
+> [397948.359205]          vnstatd  3041      1938.625022     80791
+> 120      1938.625022      7728.375777 397899296.874075 /autogroup-7
+> [397948.359311]            mdadm  3144        21.070081       419
+> 120        21.070081        64.059078 397466901.661042 /autogroup-8
+> [397948.359417]            nginx  3232      4286.796414        20
+> 120      4286.796414         1.473683 322285293.302498 /autogroup-10
+> [397948.359524]            nginx  3233      5123.741553    498857
+> 120      5123.741553      6408.084381 397902171.919015 /autogroup-10
+> [397948.359631]            nginx  3234      5123.781505    795481
+> 120      5123.781505     10575.489835 397897949.295633 /autogroup-10
+> [397948.360989]            nginx  3236      5123.792442    453567
+> 120      5123.792442      6288.632023 397902307.034538 /autogroup-10
+> [397948.361094]             ntpd  3378      3177.303496    399798
+> 120      3177.303496     11384.417725 397896567.168923 /autogroup-13
+> [397948.361201]           mysqld  4096    404775.038669   1280416
+> 120    404775.038669     56190.329409 397846935.062842 /autogroup-6
+> [397948.361306]           mysqld  4099    404775.037536   1237509
+> 120    404775.037536     53709.818619 397849497.344214 /autogroup-6
+> [397948.361413]           mysqld  4100    404775.128644   1410134
+> 120    404775.128644     17179.021072 397887821.391458 /autogroup-6
+> [397948.361520]           mysqld  4101    404775.136626   1023118
+> 120    404775.136626     11032.276249 397894304.441429 /autogroup-6
+> [397948.361625]           mysqld  4120    404774.916067     79647
+> 120    404774.916067      1272.295740 397899969.656177 /autogroup-6
+> [397948.361732]           mysqld  4121    404774.944173     79565
+> 120    404774.944173      1158.311382 397903499.069766 /autogroup-6
+> [397948.361838]           mysqld  4123    260297.226173    260619
+> 120    260297.226173     48020.432086 156765824.444851 /autogroup-6
+> [397948.361944]           mysqld  4154    404597.326324   2178558
+> 120    404597.326324    373081.589987 395136259.717365 /autogroup-6
+> [397948.362049]           mysqld  4393    404597.164623   1651064
+> 120    404597.164623    338373.325108 395122973.929693 /autogroup-6
+> [397948.362156]           mysqld  4396    404771.119995   1079825
+> 120    404771.119995    305191.529334 397422077.680807 /autogroup-6
+> [397948.362261]           mysqld 15426    404596.822357    784917
+> 120    404596.822357    137130.712105 174453678.251801 /autogroup-6
+> [397948.362367]           mysqld 15435    404596.986208    228061
+> 120    404596.986208    118651.907457 174461622.198681 /autogroup-6
+> [397948.362473]          dovecot  4220       409.745461      1991
+> 120       409.745461       113.183818 397150716.515321 /autogroup-17
+> [397948.362579]           master  4345       415.904754     20039
+> 120       415.904754       991.626364 397859137.298652 /autogroup-19
+> [397948.362684]            getty  4375         0.839336       103
+> 120         0.839336         1.796678       147.205983 /autogroup-24
+> [397948.362791]             tmux  6274     11456.276708    987382
+> 120     11456.276708     43704.262889 342265075.730957
+> /autogroup-183
+> [397948.362897]      kworker/3:1 13622 102939999.914193   9663630
+> 120 102939999.914193   4235651.348825 217069990.063754 /
+> [397948.363034]    kworker/u16:2 22232 102939126.098258    163122
+> 120 102939126.098258   1130115.311569   3704906.322727 /
+> [397948.363138]    kworker/u17:0 22250 100814026.249739         4
+> 100 100814026.249739         0.109630         5.440267 /
+> [397948.363243]
+> [397948.363304] cpu#4, 3411.800 MHz
+> [397948.363352]   .nr_running                    : 0
+> [397948.363403]   .load                          : 0
+> [397948.363452]   .nr_switches                   : 31446353
+> [397948.363503]   .nr_load_updates               : 3466700
+> [397948.363554]   .nr_uninterruptible            : 12378
+> [397948.363605]   .next_balance                  : 4334.753132
+> [397948.363656]   .curr->pid                     : 0
+> [397948.363706]   .clock                         : 397948363.266319
+> [397948.363758]   .cpu_load[0]                   : 0
+> [397948.363809]   .cpu_load[1]                   : 0
+> [397948.363858]   .cpu_load[2]                   : 0
+> [397948.363909]   .cpu_load[3]                   : 0
+> [397948.363958]   .cpu_load[4]                   : 0
+> [397948.364009]   .yld_count                     : 30496
+> [397948.364060]   .sched_count                   : 31745499
+> [397948.364111]   .sched_goidle                  : 13288472
+> [397948.364162]   .avg_idle                      : 1000000
+> [397948.364213]   .max_idle_balance_cost         : 500000
+> [397948.364264]   .ttwu_count                    : 12079122
+> [397948.364315]   .ttwu_local                    : 3235209
+> [397948.364366]
+> [397948.364366] cfs_rq[4]:/
+> [397948.364458]   .exec_clock                    : 18189528.762014
+> [397948.364510]   .MIN_vruntime                  : 0.000001
+> [397948.364561]   .min_vruntime                  : 22358073.568236
+> [397948.364613]   .max_vruntime                  : 0.000001
+> [397948.364664]   .spread                        : 0.000000
+> [397948.364715]   .spread0                       : -74467543.483325
+> [397948.364768]   .nr_spread_over                : 290
+> [397948.364818]   .nr_running                    : 0
+> [397948.364868]   .load                          : 0
+> [397948.364919]   .runnable_load_avg             : 0
+> [397948.364968]   .blocked_load_avg              : 0
+> [397948.365018]   .tg_load_contrib               : 0
+> [397948.365069]   .tg_runnable_contrib           : 0
+> [397948.365119]   .tg_load_avg                   : 1315
+> [397948.365170]   .tg->runnable_avg              : 1290
+> [397948.365220]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.365271]   .throttled                     : 0
+> [397948.365321]   .throttle_count                : 0
+> [397948.365371]   .avg->runnable_avg_sum         : 0
+> [397948.365421]   .avg->runnable_avg_period      : 48326
+> [397948.365472]
+> [397948.365472] rt_rq[4]:/
+> [397948.365564]   .rt_nr_running                 : 0
+> [397948.365614]   .rt_throttled                  : 0
+> [397948.365664]   .rt_time                       : 0.000000
+> [397948.365715]   .rt_runtime                    : 950.000000
+> [397948.365766]
+> [397948.365766] dl_rq[4]:
+> [397948.365858]   .dl_nr_running                 : 0
+> [397948.365909]
+> [397948.365909] runnable tasks:
+> [397948.365909]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.365909] ----------------------------------------------------------------------------------------------------------
+> [397948.366203]       watchdog/4    26        -8.974112     99544
+> 0        -8.974112      1925.403645        45.684752 /
+> [397948.366307]      migration/4    27         0.000000     32687
+> 0         0.000000     19510.524185         0.000834 /
+> [397948.366412]      ksoftirqd/4    28  22357044.685798     13474
+> 120  22357044.685798       152.288196 397896961.880208 /
+> [397948.366516]      kworker/4:0    29   1190565.109457        20
+> 120   1190565.109457         0.048792  84471152.489397 /
+> [397948.366621]     kworker/4:0H    30      1300.883814         6
+> 100      1300.883814         0.042505     33602.235307 /
+> [397948.366726]    irq/28-mei_me   673         0.000000        14
+> 49         0.000000         0.320285         0.000000 /
+> [397948.366831]     kworker/4:1H  1287  22130377.005493     40420
+> 100  22130377.005493       571.072101 394074352.751479 /
+> [397948.366937]           mysqld  4148    104218.340695         6
+> 120    104218.340695         0.235452 160281236.866385 /autogroup-6
+> [397948.367043]            anvil  4282       508.617446       540
+> 120       508.617446        25.108427 395113557.223988 /autogroup-17
+> [397948.367148]            getty  4371         3.299146       103
+> 120         3.299146         4.682491       144.819918 /autogroup-20
+> [397948.367255]      kworker/4:2  9937  22358061.586618   2184600
+> 120  22358061.586618    951220.510870 312483748.018300 /
+> [397948.367360]    kworker/u17:6 21267  21365561.424208        10
+> 100  21365561.424208         2.594598  27216695.208805 /
+> [397948.367465]    kworker/u16:1 22824  22358073.568236         4
+> 120  22358073.568236         0.080475      4901.819753 /
+> [397948.367569]
+> [397948.367615] cpu#5, 3411.800 MHz
+> [397948.367664]   .nr_running                    : 0
+> [397948.367714]   .load                          : 0
+> [397948.367764]   .nr_switches                   : 29264631
+> [397948.367816]   .nr_load_updates               : 3974073
+> [397948.367867]   .nr_uninterruptible            : 5752
+> [397948.367917]   .next_balance                  : 4334.753132
+> [397948.367969]   .curr->pid                     : 0
+> [397948.368020]   .clock                         : 397948363.266965
+> [397948.368072]   .cpu_load[0]                   : 0
+> [397948.368122]   .cpu_load[1]                   : 0
+> [397948.368172]   .cpu_load[2]                   : 0
+> [397948.368222]   .cpu_load[3]                   : 0
+> [397948.368272]   .cpu_load[4]                   : 0
+> [397948.368323]   .yld_count                     : 23948
+> [397948.368373]   .sched_count                   : 29418990
+> [397948.368424]   .sched_goidle                  : 12116624
+> [397948.368475]   .avg_idle                      : 1000000
+> [397948.368526]   .max_idle_balance_cost         : 500000
+> [397948.368577]   .ttwu_count                    : 14464828
+> [397948.368628]   .ttwu_local                    : 3286532
+> [397948.368679]
+> [397948.368679] cfs_rq[5]:/
+> [397948.368771]   .exec_clock                    : 21096887.422727
+> [397948.368823]   .MIN_vruntime                  : 0.000001
+> [397948.368873]   .min_vruntime                  : 24070921.092851
+> [397948.368926]   .max_vruntime                  : 0.000001
+> [397948.368977]   .spread                        : 0.000000
+> [397948.369028]   .spread0                       : -72754695.958710
+> [397948.369080]   .nr_spread_over                : 219
+> [397948.369131]   .nr_running                    : 0
+> [397948.369181]   .load                          : 0
+> [397948.369232]   .runnable_load_avg             : 0
+> [397948.369282]   .blocked_load_avg              : 0
+> [397948.369332]   .tg_load_contrib               : 0
+> [397948.369382]   .tg_runnable_contrib           : 0
+> [397948.369432]   .tg_load_avg                   : 1315
+> [397948.369483]   .tg->runnable_avg              : 1290
+> [397948.369534]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.369584]   .throttled                     : 0
+> [397948.369634]   .throttle_count                : 0
+> [397948.369685]   .avg->runnable_avg_sum         : 0
+> [397948.369735]   .avg->runnable_avg_period      : 47521
+> [397948.369786]
+> [397948.369786] rt_rq[5]:/
+> [397948.369878]   .rt_nr_running                 : 0
+> [397948.369928]   .rt_throttled                  : 0
+> [397948.369979]   .rt_time                       : 0.000000
+> [397948.370030]   .rt_runtime                    : 950.000000
+> [397948.370081]
+> [397948.370081] dl_rq[5]:
+> [397948.371423]   .dl_nr_running                 : 0
+> [397948.371474]
+> [397948.371474] runnable tasks:
+> [397948.371474]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.371474] ----------------------------------------------------------------------------------------------------------
+> [397948.371769]       watchdog/5    31        -8.977217     99543
+> 0        -8.977217      2363.156345        32.364766 /
+> [397948.371873]      migration/5    32         0.000000     25712
+> 0         0.000000     15366.174996         0.000845 /
+> [397948.371977]      ksoftirqd/5    33  24070879.321423     15403
+> 120  24070879.321423       155.107046 397934935.415490 /
+> [397948.372082]      kworker/5:0    34       239.267711        17
+> 120       239.267711         0.034507       632.432629 /
+> [397948.372186]     kworker/5:0H    35       632.111736         6
+> 100       632.111736         0.059549      2815.362585 /
+> [397948.372291]      kworker/5:1   611  24070909.178313   2597656
+> 120  24070909.178313   1203696.900841 396713444.701918 /
+> [397948.372396]       scsi_tmf_2   860       534.239404         2
+> 100       534.239404         0.008896         0.005460 /
+> [397948.372500]       scsi_tmf_5   866       558.255161         2
+> 100       558.255161         0.008179         0.004413 /
+> [397948.372605]     kworker/5:1H  1061  23860072.399440     45682
+> 100  23860072.399440       510.190883 394083026.021665 /
+> [397948.372711]
+> [397948.372757] cpu#6, 3411.800 MHz
+> [397948.372805]   .nr_running                    : 0
+> [397948.372855]   .load                          : 0
+> [397948.372905]   .nr_switches                   : 30595250
+> [397948.372972]   .nr_load_updates               : 4632598
+> [397948.373039]   .nr_uninterruptible            : 6640
+> [397948.373089]   .next_balance                  : 4334.753132
+> [397948.373140]   .curr->pid                     : 0
+> [397948.373191]   .clock                         : 397948363.267655
+> [397948.373243]   .cpu_load[0]                   : 0
+> [397948.373292]   .cpu_load[1]                   : 0
+> [397948.373342]   .cpu_load[2]                   : 0
+> [397948.373393]   .cpu_load[3]                   : 0
+> [397948.373443]   .cpu_load[4]                   : 0
+> [397948.373494]   .yld_count                     : 20767
+> [397948.373545]   .sched_count                   : 30739543
+> [397948.373596]   .sched_goidle                  : 12161262
+> [397948.373647]   .avg_idle                      : 1000000
+> [397948.373698]   .max_idle_balance_cost         : 500000
+> [397948.373749]   .ttwu_count                    : 17363747
+> [397948.373800]   .ttwu_local                    : 4024881
+> [397948.373852]
+> [397948.373852] cfs_rq[6]:/
+> [397948.373944]   .exec_clock                    : 27066813.057347
+> [397948.373996]   .MIN_vruntime                  : 0.000001
+> [397948.374046]   .min_vruntime                  : 29909549.644335
+> [397948.374099]   .max_vruntime                  : 0.000001
+> [397948.374150]   .spread                        : 0.000000
+> [397948.374202]   .spread0                       : -66916067.407226
+> [397948.374253]   .nr_spread_over                : 407
+> [397948.374304]   .nr_running                    : 0
+> [397948.374354]   .load                          : 0
+> [397948.374404]   .runnable_load_avg             : 0
+> [397948.374454]   .blocked_load_avg              : 0
+> [397948.374504]   .tg_load_contrib               : 0
+> [397948.374554]   .tg_runnable_contrib           : 0
+> [397948.374605]   .tg_load_avg                   : 1313
+> [397948.374656]   .tg->runnable_avg              : 1289
+> [397948.374706]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.374757]   .throttled                     : 0
+> [397948.374807]   .throttle_count                : 0
+> [397948.374857]   .avg->runnable_avg_sum         : 0
+> [397948.374907]   .avg->runnable_avg_period      : 47423
+> [397948.374958]
+> [397948.374958] rt_rq[6]:/
+> [397948.375050]   .rt_nr_running                 : 0
+> [397948.375099]   .rt_throttled                  : 0
+> [397948.375149]   .rt_time                       : 0.000000
+> [397948.375200]   .rt_runtime                    : 950.000000
+> [397948.375258]
+> [397948.375258] dl_rq[6]:
+> [397948.375359]   .dl_nr_running                 : 0
+> [397948.375410]
+> [397948.375410] runnable tasks:
+> [397948.375410]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.375410] ----------------------------------------------------------------------------------------------------------
+> [397948.375704]       watchdog/6    36        -8.979370     99543
+> 0        -8.979370      3873.032642        19.046238 /
+> [397948.375809]      migration/6    37         0.000000     20867
+> 0         0.000000     12947.385988         0.000826 /
+> [397948.375914]      ksoftirqd/6    38  29909537.744505     17979
+> 120  29909537.744505       324.324395 397932684.911680 /
+> [397948.376018]      kworker/6:0    39      2652.785847        15
+> 120      2652.785847         0.034665       619.334482 /
+> [397948.376123]     kworker/6:0H    40      3222.777674         6
+> 100      3222.777674         0.042578     34131.960421 /
+> [397948.376228]      kworker/6:1   613  29909537.712176   3191586
+> 120  29909537.712176   1584243.664849 396333417.817101 /
+> [397948.376333]           bioset   898      2957.541580         2
+> 100      2957.541580         0.008747         0.006389 /
+> [397948.376438]     kworker/6:1H  1463  29688535.473225     50544
+> 100  29688535.473225       612.882638 394061042.264128 /
+> [397948.376542]        kjournald  2216      3410.060184         2
+> 120      3410.060184         0.412389         0.043474 /
+> [397948.376646]           bioset  2222      3422.126220         2
+> 100      3422.126220         0.088585         0.040787 /
+> [397948.376750]         rsyslogd  3061    163480.988716      3499
+> 120    163480.988716       146.745864 397862580.052157 /autogroup-6
+> [397948.376856]           mysqld  4122    163443.475621    644351
+> 120    163443.475621    179019.020540 393898317.914127 /autogroup-6
+> [397948.376962]            udevd  6137       246.142493        30
+> 120       246.142493         6.670412  22056460.101598 /autogroup-4
+> [397948.377068]            udevd  6138       242.586598        15
+> 120       242.586598         3.149366     49194.013301 /autogroup-4
+> [397948.377174]     btrfs-worker  6246   1051403.790298         2
+> 100   1051403.790298         0.011158         0.004647 /
+> [397948.377278]  btrfs-endio-met  6255   1051427.810805         2
+> 100   1051427.810805         0.017787         0.002771 /
+> [397948.377383]  btrfs-endio-rai  6257   1051439.820346         2
+> 100   1051439.820346         0.010462         0.002911 /
+> [397948.377487]  btrfs-endio-rep  6258   1051451.828334         2
+> 100   1051451.828334         0.008652         0.003137 /
+> [397948.377591]  btrfs-endio-wri  6260   1051463.836060         2
+> 100   1051463.836060         0.008410         0.003085 /
+> [397948.377695]  btrfs-readahead  6263   1051475.843882         2
+> 100   1051475.843882         0.008543         0.003153 /
+> [397948.377799]  btrfs-extent-re  6265   1051487.851432         2
+> 100   1051487.851432         0.008154         0.003265 /
+> [397948.377904]
+> [397948.377950] cpu#7, 3411.800 MHz
+> [397948.377998]   .nr_running                    : 0
+> [397948.378048]   .load                          : 0
+> [397948.378098]   .nr_switches                   : 28501260
+> [397948.378150]   .nr_load_updates               : 3359354
+> [397948.378200]   .nr_uninterruptible            : 4860
+> [397948.378251]   .next_balance                  : 4334.753132
+> [397948.378302]   .curr->pid                     : 0
+> [397948.378351]   .clock                         : 397948363.268406
+> [397948.378403]   .cpu_load[0]                   : 0
+> [397948.378453]   .cpu_load[1]                   : 0
+> [397948.378504]   .cpu_load[2]                   : 0
+> [397948.378554]   .cpu_load[3]                   : 0
+> [397948.378604]   .cpu_load[4]                   : 0
+> [397948.378654]   .yld_count                     : 22779
+> [397948.378705]   .sched_count                   : 28647495
+> [397948.378757]   .sched_goidle                  : 12446869
+> [397948.378808]   .avg_idle                      : 1000000
+> [397948.378859]   .max_idle_balance_cost         : 500000
+> [397948.378910]   .ttwu_count                    : 18391339
+> [397948.378961]   .ttwu_local                    : 2717640
+> [397948.379012]
+> [397948.379012] cfs_rq[7]:/
+> [397948.379112]   .exec_clock                    : 13565979.621209
+> [397948.379173]   .MIN_vruntime                  : 0.000001
+> [397948.379225]   .min_vruntime                  : 17262906.632013
+> [397948.379276]   .max_vruntime                  : 0.000001
+> [397948.379327]   .spread                        : 0.000000
+> [397948.379378]   .spread0                       : -79562710.419548
+> [397948.379430]   .nr_spread_over                : 255
+> [397948.379480]   .nr_running                    : 0
+> [397948.379530]   .load                          : 0
+> [397948.379581]   .runnable_load_avg             : 0
+> [397948.379631]   .blocked_load_avg              : 0
+> [397948.379682]   .tg_load_contrib               : 0
+> [397948.379732]   .tg_runnable_contrib           : 0
+> [397948.379783]   .tg_load_avg                   : 1313
+> [397948.379833]   .tg->runnable_avg              : 1288
+> [397948.379884]   .tg->cfs_bandwidth.timer_active: 0
+> [397948.379933]   .throttled                     : 0
+> [397948.379983]   .throttle_count                : 0
+> [397948.380034]   .avg->runnable_avg_sum         : 5
+> [397948.380084]   .avg->runnable_avg_period      : 47099
+> [397948.380135]
+> [397948.380135] rt_rq[7]:/
+> [397948.380227]   .rt_nr_running                 : 0
+> [397948.380277]   .rt_throttled                  : 0
+> [397948.380327]   .rt_time                       : 0.000000
+> [397948.380379]   .rt_runtime                    : 950.000000
+> [397948.380430]
+> [397948.380430] dl_rq[7]:
+> [397948.380522]   .dl_nr_running                 : 0
+> [397948.380572]
+> [397948.380572] runnable tasks:
+> [397948.380572]             task   PID         tree-key  switches
+> prio     exec-runtime         sum-exec        sum-sleep
+> [397948.380572] ----------------------------------------------------------------------------------------------------------
+> [397948.382132]       watchdog/7    41        -8.982956     99544
+> 0        -8.982956      1585.113591         5.725643 /
+> [397948.382236]      migration/7    42         0.000000     21048
+> 0         0.000000     12757.115970         0.000816 /
+> [397948.382341]      ksoftirqd/7    43  17254754.851360     11826
+> 120  17254754.851360       146.221401 397720187.660046 /
+> [397948.382446]      kworker/7:0    44       479.385599        15
+> 120       479.385599         0.031395       606.240559 /
+> [397948.382550]     kworker/7:0H    45      1817.499047         6
+> 100      1817.499047         0.047704     42727.098840 /
+> [397948.382655]            netns    47        10.955152         2
+> 100        10.955152         0.004076         0.001586 /
+> [397948.382759]             perf    50        22.958573         2
+> 100        22.958573         0.003794         0.001394 /
+> [397948.382863]      kworker/7:1   615  17262894.767216   1847690
+> 120  17262894.767216    746881.932822 397173736.970567 /
+> [397948.382992]        md0_raid1   899  17253995.722314     32645
+> 120  17253995.722314       997.731148 397503108.422867 /
+> [397948.383105]           bioset   919      1132.474026         2
+> 100      1132.474026         0.034373         0.004008 /
+> [397948.383210]  ext4-rsv-conver   936      1156.590460         2
+> 100      1156.590460         0.061309         0.026946 /
+> [397948.383315]            udevd  1124       405.566270       290
+> 120       405.566270        53.586152  77350627.244245 /autogroup-4
+> [397948.383421]    ipv6_addrconf  3209      1679.353321         2
+> 100      1679.353321         0.006452         0.002581 /
+> [397948.383527]     kworker/7:1H  4116  16792468.563089     52255
+> 100  16792468.563089       541.499314 393833366.670026 /
+> [397948.383632]              log  4283       574.060901       688
+> 120       574.060901        34.058909 395113548.562211 /autogroup-17
+> [397948.383739]            getty  4376         0.726364       103
+> 120         0.726364         1.882302       146.996217 /autogroup-25
+> [397948.383845]      btrfs-fixup  6253   1049025.643969         2
+> 100   1049025.643969         0.011376         0.003865 /
+> [397948.383950]      btrfs-endio  6254   1049037.659031         2
+> 100   1049037.659031         0.015618         0.001516 /
+> [397948.384056]
+> 
+> 
+> Tomasz Chmielewski
+> http://www.sslrack.com
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

@@ -1,51 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57178 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752058AbbBQJnK (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54175 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752415AbbBQO4C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Feb 2015 04:43:10 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1H9gLKi029814
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2015 17:42:21 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Adjust commit-transaction condition to avoid NO_SPACE more
-Date: Tue, 17 Feb 2015 17:42:00 +0800
-Message-ID: <1424166120-6394-1-git-send-email-zhaolei@cn.fujitsu.com>
+	Tue, 17 Feb 2015 09:56:02 -0500
+Date: Tue, 17 Feb 2015 09:55:53 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH v3] Btrfs: fix BUG_ON in btrfs_orphan_add() when delete
+ unused block group
+To: Forrest Liu <forrestl@synology.com>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1424184953.18101.1@mail.thefacebook.com>
+In-Reply-To: <1423635852-23258-1-git-send-email-forrestl@synology.com>
+References: <1423635852-23258-1-git-send-email-forrestl@synology.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Wed, Feb 11, 2015 at 1:24 AM, Forrest Liu <forrestl@synology.com> 
+wrote:
+> Removing large amount of block group in a transaction may encounters
+> BUG_ON() in btrfs_orphan_add(). That is because 
+> btrfs_orphan_reserve_metadata()
+> will grab metadata reservation from transaction handle, and
+> btrfs_delete_unused_bgs() didn't reserve metadata for trnasaction 
+> handle when
+> delete unused block group.
+> 
+> The problem can be reproduce by following script
+> 
+>     mntpath=/btrfs
+>     loopdev=/dev/loop0
+>     filepath=/home/forrest/image
+> 
+>     umount $mntpath
+>     losetup -d $loopdev
+>     truncate --size 1000g $filepath
+>     losetup $loopdev $filepath
+>     mkfs.btrfs -f $loopdev
+>     mount $loopdev $mntpath
+> 
+>     for j in `seq 1 1 1000`; do
+>         fallocate -l 1g $mntpath/$j
+>     done
+>     # wait cleaner thread remove unused block group
+>     sleep 300
+> 
+> The call trace that results from the BUG_ON() is:
+> 
+> [  613.093084] ------------[ cut here ]------------
+> [  613.097928] kernel BUG at fs/btrfs/inode.c:3142!
 
-If we have any chance to make a successful write, we should not give up.
+This should fix a hard to trigger bug we've seen in production here.  I 
+was on a different (wrong) track for explaining it, so your timing is 
+excellent.
 
-This patch adjust commit-transaction condition from:
-  pinned >= wanted
-to
-  left + pinned >= wanted
+Thanks.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+-chris
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 414d533..4ffce64 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3751,7 +3751,8 @@ alloc:
- 		 * don't bother committing the transaction.
- 		 */
- 		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
--					   bytes) < 0)
-+					   used + bytes -
-+					   data_sinfo->total_bytes) < 0)
- 			have_pinned_space = 0;
- 		spin_unlock(&data_sinfo->lock);
- 
--- 
-1.8.5.1
+
 

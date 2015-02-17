@@ -1,125 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44694 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753169AbbBXQvo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 11:51:44 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 027D4ADBA
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 16:51:43 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 4/4] btrfs: comment the rest of implicit barriers before waitqueue_active
-Date: Tue, 24 Feb 2015 17:51:42 +0100
-Message-Id: <1b127581ed4eb64dc941d2ecaba3174802870c07.1424795734.git.dsterba@suse.cz>
-In-Reply-To: <cover.1424795734.git.dsterba@suse.cz>
-References: <cover.1424795734.git.dsterba@suse.cz>
+Received: from e23smtp05.au.ibm.com ([202.81.31.147]:59153 "EHLO
+	e23smtp05.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752234AbbBQPql (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Feb 2015 10:46:41 -0500
+Received: from /spool/local
+	by e23smtp05.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 18 Feb 2015 01:46:39 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: fstests@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH] generic/325: Fix test case to work on 64K page size.
+Date: Tue, 17 Feb 2015 21:15:28 +0530
+Message-Id: <1424187928-28487-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are atomic operations that imply the barrier for waitqueue_active
-mixed in an if-condition.
+The test case passes 32K as the offset value to msync. This fails on machines
+with 64K page size. Fix this by creating a larger file and passing offset
+values which are multiples of 64K.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/delayed-inode.c | 4 ++++
- fs/btrfs/disk-io.c       | 3 +++
- fs/btrfs/inode.c         | 3 +++
- fs/btrfs/locking.c       | 9 +++++++++
- fs/btrfs/volumes.c       | 3 +++
- 5 files changed, 22 insertions(+)
+ tests/generic/325     | 10 +++++-----
+ tests/generic/325.out | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 82f0c7c95474..913d8295cb3f 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -463,6 +463,10 @@ static int __btrfs_add_delayed_deletion_item(struct btrfs_delayed_node *node,
- static void finish_one_item(struct btrfs_delayed_root *delayed_root)
- {
- 	int seq = atomic_inc_return(&delayed_root->items_seq);
-+
-+	/*
-+	 * atomic_dec_return implies a barrier for waitqueue_active
-+	 */
- 	if ((atomic_dec_return(&delayed_root->items) <
- 	    BTRFS_DELAYED_BACKGROUND || seq % BTRFS_DELAYED_BATCH == 0) &&
- 	    waitqueue_active(&delayed_root->wait))
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 41b320e235d7..7c29d81bd4b1 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -807,6 +807,9 @@ static void run_one_async_done(struct btrfs_work *work)
- 	limit = btrfs_async_submit_limit(fs_info);
- 	limit = limit * 2 / 3;
+diff --git a/tests/generic/325 b/tests/generic/325
+index c47e372..e62ac95 100755
+--- a/tests/generic/325
++++ b/tests/generic/325
+@@ -64,7 +64,7 @@ _init_flakey
+ _mount_flakey
  
-+	/*
-+	 * atomic_dec_return implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_dec_return(&fs_info->nr_async_submits) < limit &&
- 	    waitqueue_active(&fs_info->async_submit_wait))
- 		wake_up(&fs_info->async_submit_wait);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8564d8ce03de..11c7866184c6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1089,6 +1089,9 @@ static noinline void async_cow_submit(struct btrfs_work *work)
- 	nr_pages = (async_cow->end - async_cow->start + PAGE_CACHE_SIZE) >>
- 		PAGE_CACHE_SHIFT;
+ # Create the file first.
+-$XFS_IO_PROG -f -c "pwrite -S 0xff 0 64K" $SCRATCH_MNT/foo | _filter_xfs_io
++$XFS_IO_PROG -f -c "pwrite -S 0xff 0 256K" $SCRATCH_MNT/foo | _filter_xfs_io
  
-+	/*
-+	 * atomic_sub_return implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_sub_return(nr_pages, &root->fs_info->async_delalloc_pages) <
- 	    5 * 1024 * 1024 &&
- 	    waitqueue_active(&root->fs_info->async_submit_wait))
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index ec69baf28692..fe6de74bacda 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -79,6 +79,9 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- 		write_lock(&eb->lock);
- 		WARN_ON(atomic_read(&eb->spinning_writers));
- 		atomic_inc(&eb->spinning_writers);
-+		/*
-+		 * atomic_dec_and_test implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_and_test(&eb->blocking_writers) &&
- 		    waitqueue_active(&eb->write_lock_wq))
- 			wake_up(&eb->write_lock_wq);
-@@ -86,6 +89,9 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- 		BUG_ON(atomic_read(&eb->blocking_readers) == 0);
- 		read_lock(&eb->lock);
- 		atomic_inc(&eb->spinning_readers);
-+		/*
-+		 * atomic_dec_and_test implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_and_test(&eb->blocking_readers) &&
- 		    waitqueue_active(&eb->read_lock_wq))
- 			wake_up(&eb->read_lock_wq);
-@@ -229,6 +235,9 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
- 	}
- 	btrfs_assert_tree_read_locked(eb);
- 	WARN_ON(atomic_read(&eb->blocking_readers) == 0);
-+	/*
-+	 * atomic_dec_and_test implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_dec_and_test(&eb->blocking_readers) &&
- 	    waitqueue_active(&eb->read_lock_wq))
- 		wake_up(&eb->read_lock_wq);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8222f6f74147..8e34332c5f2e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -341,6 +341,9 @@ loop_lock:
- 		pending = pending->bi_next;
- 		cur->bi_next = NULL;
+ # Now sync the file data to disk using 'sync' and not an fsync. This is because
+ # in btrfs the first fsync clears the btrfs inode full fsync flag, which must
+@@ -80,11 +80,11 @@ sync
+ # This second msync() used to be a no-op for that btrfs bug (and the first fsync
+ # didn't log the last 4Kb extent as expected too).
+ $XFS_IO_PROG \
+-	-c "mmap -w 0 64K"         \
++	-c "mmap -w 0 256K"         \
+ 	-c "mwrite -S 0xaa 0 4K"   \
+-	-c "mwrite -S 0xbb 60K 4K" \
+-	-c "msync -s 0K 16K"       \
+-	-c "msync -s 32K 32K"      \
++	-c "mwrite -S 0xbb 252K 4K" \
++	-c "msync -s 0K 64K"       \
++	-c "msync -s 192K 64K"      \
+ 	-c "munmap"                \
+ 	$SCRATCH_MNT/foo | _filter_xfs_io
  
-+		/*
-+		 * atomic_dec_return implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_return(&fs_info->nr_async_bios) < limit &&
- 		    waitqueue_active(&fs_info->async_submit_wait))
- 			wake_up(&fs_info->async_submit_wait);
+diff --git a/tests/generic/325.out b/tests/generic/325.out
+index 9a78c3e..9373e01 100644
+--- a/tests/generic/325.out
++++ b/tests/generic/325.out
+@@ -1,19 +1,19 @@
+ QA output created by 325
+-wrote 65536/65536 bytes at offset 0
++wrote 262144/262144 bytes at offset 0
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ File content before crash/reboot:
+ 0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+ *
+ 0010000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0170000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++0770000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+ *
+-0200000
++1000000
+ File content after crash/reboot and fs mount:
+ 0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+ *
+ 0010000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0170000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++0770000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+ *
+-0200000
++1000000
 -- 
-1.8.4.5
+2.1.0
 

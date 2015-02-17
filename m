@@ -1,75 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43288 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755854AbbBPPSu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Feb 2015 10:18:50 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YNNRf-00040V-3M
-	for linux-btrfs@vger.kernel.org; Mon, 16 Feb 2015 16:18:47 +0100
-Received: from p4ff582e4.dip0.t-ipconnect.de ([79.245.130.228])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 16:18:47 +0100
-Received: from holger.hoffstaette by p4ff582e4.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Feb 2015 16:18:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Suddenly cannot change metadata profile any longer (BISECTED)
-Date: Mon, 16 Feb 2015 15:18:40 +0000 (UTC)
-Message-ID: <pan.2015.02.16.15.18.40@googlemail.com>
-References: <pan.2015.02.15.21.01.07@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:26681 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752058AbbBQJkh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Feb 2015 04:40:37 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1H9dl1h029697
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Feb 2015 17:39:47 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 01/10] btrfs: Adjust commit-transaction condition to avoid NO_SPACE more
+Date: Tue, 17 Feb 2015 17:39:25 +0800
+Message-ID: <1424165965-4066-1-git-send-email-zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 15 Feb 2015 21:01:07 +0000, Holger Hoffstätte wrote:
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-> Here's a new one (with kernel 3.18.7++):
-> 
-> $btrfs --version
-> Btrfs v3.18.2 (also tried 3.19-rc2)
-> 
-> $mount /dev/sdf1 /mnt/usb
-> 
-> $btrfs filesystem df /mnt/usb
-> Data, single: total=8.00MiB, used=256.00KiB
-> System, single: total=32.00MiB, used=16.00KiB
-> Metadata, single: total=1.00GiB, used=112.00KiB
-> GlobalReserve, single: total=16.00MiB, used=0.00B
-> 
-> Note: metadata=single - done right after mkfs for the initial balance.
-> 
-> $btrfs balance start -mconvert=dup /mnt/usb    
-> Done, had to relocate 2 out of 3 chunks
-> 
-> root>btrfs filesystem df /mnt/usb              
-> Data, single: total=8.00MiB, used=512.00KiB
-> System, single: total=32.00MiB, used=16.00KiB
-> Metadata, single: total=1.00GiB, used=192.00KiB
-> GlobalReserve, single: total=16.00MiB, used=0.00B
-> 
-> Wait, what? Still single?
-> 
-> This used to work, but somehow no longer does (verified on another
-> filesystem). If it's dup, it stays dup; if it's single, it stays single.
-> 
-> What works is the very first balance after the mkfs - it successfully
-> changes from the initial default dup to single, but subsequent balances
-> don't work. They also don't really fail.
+If we have any chance to make a successful write, we should not give up.
 
-Bisection found that commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e [1]
-in the integration tree is the cause:
+This patch adjust commit-transaction condition from:
+  pinned >= wanted
+to
+  left + pinned >= wanted
 
-  btrfs: delete chunk allocation attemp when setting block group ro
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Reverting/omitting this patch lets me rebalance/convert at will.
-
-thanks,
-Holger
-
-[1] https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/?h=integration&id=2f0810880f082fa8ba66ab2c33b02e4ff9770a5e
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 414d533..4ffce64 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3751,7 +3751,8 @@ alloc:
+ 		 * don't bother committing the transaction.
+ 		 */
+ 		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+-					   bytes) < 0)
++					   used + bytes -
++					   data_sinfo->total_bytes) < 0)
+ 			have_pinned_space = 0;
+ 		spin_unlock(&data_sinfo->lock);
+ 
+-- 
+1.8.5.1
 

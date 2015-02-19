@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59447 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:54042 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751595AbbBSS1a (ORCPT
+	by vger.kernel.org with ESMTP id S1752711AbbBSXsm (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 19 Feb 2015 13:27:30 -0500
+	Thu, 19 Feb 2015 18:48:42 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix metadata inconsistencies after directory fsync
-Date: Thu, 19 Feb 2015 18:26:26 +0000
-Message-Id: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix metadata inconsistencies after directory fsync
+Date: Thu, 19 Feb 2015 23:48:23 +0000
+Message-Id: <1424389703-4065-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
+References: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -20,7 +22,7 @@ the link count of the inode that directory entries point to doesn't
 get updated, staying with an incorrect link count (smaller then the
 correct value). This later leads to stale file handle errors when
 accessing (including attempt to delete) some of the links if all the
-other ones are removed, which also implies impossiblity to delete the
+other ones are removed, which also implies impossibility to delete the
 parent directories, since the dentries can not be removed.
 
 Another issue is that, unlike xfs and ext4, when fsyncing a directory,
@@ -154,10 +156,14 @@ A test case for xfstests follows.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Speedup search when there's a gap between dentry indexes, and we reached
+    the last slot of a leaf, by using btrfs_next_leaf().
+
  fs/btrfs/file.c     |   5 +-
- fs/btrfs/tree-log.c | 175 ++++++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tree-log.c | 184 ++++++++++++++++++++++++++++++++++++++++++++++++++--
  fs/btrfs/tree-log.h |   2 +
- 3 files changed, 176 insertions(+), 6 deletions(-)
+ 3 files changed, 185 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
 index b476e56..2bd72cd 100644
@@ -176,7 +182,7 @@ index b476e56..2bd72cd 100644
  	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
  			     &BTRFS_I(inode)->runtime_flags);
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index aa4ebea..1dadb71 100644
+index aa4ebea..1b6742b 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
 @@ -3019,6 +3019,7 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
@@ -268,7 +274,7 @@ index aa4ebea..1dadb71 100644
  		if (ret) {
  			err = ret;
  			goto out_unlock;
-@@ -4371,6 +4403,131 @@ out:
+@@ -4371,6 +4403,140 @@ out:
  	return ret;
  }
  
@@ -320,6 +326,7 @@ index aa4ebea..1dadb71 100644
 +		else if (ret > 0)
 +			goto next_dir_inode;
 +
++process_leaf:
 +		leaf = path->nodes[0];
 +		nritems = btrfs_header_nritems(leaf);
 +		for (i = path->slots[0]; i < nritems; i++) {
@@ -377,6 +384,14 @@ index aa4ebea..1dadb71 100644
 +			}
 +			break;
 +		}
++		if (i == nritems) {
++			ret = btrfs_next_leaf(log, path);
++			if (ret < 0)
++				goto out;
++			else if (ret > 0)
++				break;
++			goto process_leaf;
++		}
 +		if (min_key.offset < (u64)-1) {
 +			min_key.offset++;
 +			goto again;
@@ -400,7 +415,7 @@ index aa4ebea..1dadb71 100644
  /*
   * helper function around btrfs_log_inode to make sure newly created
   * parent directories also end up in the log.  A minimal inode and backref
-@@ -4393,6 +4550,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4393,6 +4559,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  	const struct dentry * const first_parent = parent;
  	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
  				 last_committed);
@@ -409,7 +424,7 @@ index aa4ebea..1dadb71 100644
  
  	sb = inode->i_sb;
  
-@@ -4448,6 +4607,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4448,6 +4616,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		goto end_trans;
  	}
  
@@ -419,7 +434,7 @@ index aa4ebea..1dadb71 100644
  	while (1) {
  		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
  			break;
-@@ -4484,7 +4646,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4484,7 +4655,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		dput(old_parent);
  		old_parent = parent;
  	}

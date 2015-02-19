@@ -1,158 +1,219 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f171.google.com ([209.85.217.171]:42996 "EHLO
-	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753445AbbBSSQc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Feb 2015 13:16:32 -0500
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20150216220234.GK12722@dastard>
-References: <1423831674-25678-1-git-send-email-fdmanana@suse.com>
-	<20150216003337.GG12722@dastard>
-	<CAL3q7H5utEhz7r8ZeWq00_tuLY_NS34XR6PMXsAE-TG0UGUM7A@mail.gmail.com>
-	<20150216220234.GK12722@dastard>
-Date: Thu, 19 Feb 2015 18:16:29 +0000
-Message-ID: <CAL3q7H40rr2D9iSowsVBRBiPCp-UsV+56o4zPo89mDg1-=SMtQ@mail.gmail.com>
-Subject: Re: [PATCH] fstests: generic test for fsync followed by truncate and link
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Filipe Manana <fdmanana@suse.com>, fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from victor.provo.novell.com ([137.65.250.26]:34879 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751939AbbBSS3p (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 19 Feb 2015 13:29:45 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for directory fsync after adding hard links
+Date: Thu, 19 Feb 2015 18:29:11 +0000
+Message-Id: <1424370551-18884-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 16, 2015 at 10:02 PM, Dave Chinner <david@fromorbit.com> wrote:
-> On Mon, Feb 16, 2015 at 09:45:22AM +0000, Filipe David Manana wrote:
->> On Mon, Feb 16, 2015 at 12:33 AM, Dave Chinner <david@fromorbit.com> wrote:
->> > On Fri, Feb 13, 2015 at 12:47:54PM +0000, Filipe Manana wrote:
->> >> This test is motivated by an fsync issue discovered in btrfs.
->> >> The issue was that we could lose file data, that was previously fsync'ed
->> >> successfully, if we end up shrinking (via truncate) the file, add a hard
->> >> link to our file and then persist the fsync log later via an fsync of
->> >> other inode for example. After a power loss our file content wouldn't
->> >> match what it had when we last fsync'ed, but instead it had the data
->> >> prior to that fsync.
->> >
->> > Prior to which fsync?
->>
->> The fsync of file "foo" - this is the file we're testing for
->> correctness and we only fsync it once.
->
-> Ok. But there's also an implied fsync because btrfs is supposed to
-> have an ordered metadata transaction subsystem.
->
->> > XFS has strictly ordered metadata journalling, which means
->> > transactions committed prior to *any* fsync will be present on disk
->> > after the fsync. ext4 is not quite so strict, but has essentially
->> > the same behaviour. ext3 in ordered mode behaves like XFS.
->> >
->> > As such, ext3, ext4 and XFS return the state of the file as "0xaa for
->> > 0 to 5k, 0x00 out to 32k" and the hardlink foo_link is present after
->> > the filesystem is remounted and the log replayed.
->>
->> Well, that's not I get with XFS, at least on a 3.19 kernel.
->> After log replay, I get a file with a size of 32Kb, the first 8192
->> bytes have the value 0xaa and the remaining 24Kb have value 0x00 -
->> this doesn't match the file content after any operation.
->
-> See my previous reply in the thread. In memory behaviour appears
-> correct, which means fsx will pass but we won't have picked up a
-> regression in power failure behaviour.
->
->> I'm ok with changing the test to consider valid any of those 3 cases.
->>
->> >
->> > So, as this test is written, it does not encapsulate the
->> > longstanding, expected behaviour of existing filesystems. btrfs
->> > should behave like XFS, ext3 and ext4 if possible - being different
->> > is only going to cause confusion and pain for application
->> > developers.
->> >
->> >> The btrfs issue was fixed by the following linux kernel patch:
->> >>
->> >>   Btrfs: don't remove extents and xattrs when logging new names
->> >
->> > Sounds like you've just introduced an ordered mode behavioural
->> > journalling regression into btrfs...
->>
->> How can it be a regression?
->
-> Maybe it's not a regression - I don't know what the old behaviour
-> was - but it certainly seems like a bug to me.  Btrfs is supposed to
-> have a strongly ordered transaction model, similar to XFS and ext4
-> and the test as you've written it implies transactional change
-> ordering is not preserved in btrfs (ouch!).
->
-> Ordered mode on this test is tricky because you are running fsync on
-> a newly created file. That implies fsync on the parent directory,
-> because fsync means you are stabilising all the *transactions* that
-> changed metadata on the new file. That means the dirent created to
-> point to the new file should be fsync()d, too.
->
-> So, order of modifications:
->
-> file foo data written and synced
-> file foo truncate/extent
-> hard link foo_link to foo created
-> new file bar created
-> new file bar fsync
->
-> In this case, it's the hard link of foo to foo_link that creates the
-> ordered dependency between foo, the parent directory and bar. The
-> directory is then modified in a future transaction by creating bar,
-> and the fsync on bar stabilises the parent directory as
-> transactional atomicity requires all objects in a transaction to be
-> stabilised when one object is asked to be stabilised. And for the
-> latest modification to an object to be stabilised, ordered metadata
-> requires all previous modifications to that object also need to be
-> stabilised at the same time.
->
-> IOWs, the fsync on bar has this ordered change dependency
-> resolution:
->
-> fsync(bar)
->   - implied parent directory fsync for dirent pointing to bar
->     - stabilises parent directory, which
->       - also stabilises new hard link dirent to foo_link, which
->         - stabilises new link count in foo, which
->           - stabilises inode core of foo, which
->             - stabilises changed inode size from truncate/extent
->             - stabilises extent list changes from truncate/extent
->
-> IOWs, ordered metadata transactions mean the second fsync, through
-> the chain of dependent modifications previously made, should also
-> stabilise all the metadata changes made on foo since the fsync was
-> called on it.
->
->> Before this change, after the fsync log replay, the file content
->> matched what it had when "sync" was called - i.e. doesn't match the
->> content when the fsync (on "foo") was performed nor the content after
->> any of the subsequent truncate operations.
->
-> IOWs, btrfs did not follow ordered metadata behavioural rules before
-> the change, nor does it follow them after the change, but it's
-> now broken in a different, more subtle and surprising way.
+This test is motivated by an fsync issue discovered in btrfs.
+The issue was that after adding a new hard link to an existing file
+(one that was created in a past transaction) and fsync'ing the parent
+directory of the new hard link, after the fsync log replay the file's
+inode link count did not get its link count incremented, while the new
+directory entry was visible.
+Also, unlike xfs and ext4, new files under the directory we fsync were
+not being written to the fsync log, nor were any child directories and
+new files and links under the children directories. So this test verifies
+too that btrfs has the same behaviour as xfs and ext4.
 
-Dave, thanks for the detailed explanation.
-I'll update the test once I get btrfs to have the same behaviour as
-xfs and ext3/4.
+The btrfs issue was fixed by the following linux kernel patch:
 
+  Btrfs: fix metadata inconsistencies after directory fsync
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/060     | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/060.out |   3 +
+ tests/generic/group   |   1 +
+ 3 files changed, 154 insertions(+)
+ create mode 100755 tests/generic/060
+ create mode 100644 tests/generic/060.out
 
->
-> Cheers,
->
-> Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
-
-
-
+diff --git a/tests/generic/060 b/tests/generic/060
+new file mode 100755
+index 0000000..a3ff618
+--- /dev/null
++++ b/tests/generic/060
+@@ -0,0 +1,150 @@
++#! /bin/bash
++# FS QA Test No. 060
++#
++# This test is motivated by an fsync issue discovered in btrfs.
++# The issue was that after adding a new hard link to an existing file (one that
++# was created in a past transaction) and fsync'ing the parent directory of the
++# new hard link, after the fsync log replay the file's inode link count did not
++# get its link count incremented, while the new directory entry was visible.
++# Also, unlike xfs and ext4, new files under the directory we fsync were not
++# being written to the fsync log, nor were any child directories and new files
++# and links under the children directories. So this test verifies too that
++# btrfs has the same behaviour as xfs and ext4.
++#
++# The btrfs issue was fixed by the following linux kernel patch:
++#
++#  Btrfs: fix metadata inconsistencies after directory fsync
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++	_cleanup_flakey
++	rm -f $tmp.*
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_need_to_be_root
++_require_scratch
++_require_dm_flakey
++
++rm -f $seqres.full
++
++_scratch_mkfs >> $seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create our test file and directory.
++touch $SCRATCH_MNT/foo
++mkdir $SCRATCH_MNT/mydir
++
++# Make sure all metadata is durably persisted.
++sync
++
++# Add a hard link to 'foo' inside our test directory and fsync only the
++# directory. The btrfs fsync implementation had a bug that caused the new
++# directory entry to be visible after the fsync log replay but, the inode
++# of our file remained with a link count of 1.
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_2
++
++# Add a few more links and files created in the current transaction.
++# Just to verify nothing breaks or gives incorrect results.
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_3
++echo "hello world" > $SCRATCH_MNT/hello
++ln $SCRATCH_MNT/hello $SCRATCH_MNT/mydir/hello_2
++
++# Add some subdirectories and new files and links to them. This is to verify
++# that after fsyncing our top level directory 'mydir', all the subdirectories
++# and their files/links are registered in the fsync log and exist after the
++# fsync log is replayed - xfs and ext4 give this guarantee.
++mkdir -p $SCRATCH_MNT/mydir/x/y/z
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/foo_y_link
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/z/foo_z_link
++touch $SCRATCH_MNT/mydir/x/y/z/qwerty
++
++# Now fsync only our top directory.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/mydir
++
++# Simulate a crash/power loss.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++# Remove the first name of our inode. Because of the directory fsync bug, the
++# inode's link count was 1 instead of 5, so removing the 'foo' name ends up
++# deleting the inode and the other names are stale directory entries (and still
++# visible to applications). Attempting to remove or access the remaining
++# dentries pointing to that inode resulted in stale file handle errors, and
++# made it impossible to remove the parent directories since it was impossible
++# for them to become empty.
++echo "file 'foo' link count after log replay: $(stat -c %h $SCRATCH_MNT/foo)"
++rm -f $SCRATCH_MNT/foo
++
++# Now verify that all files, links and directories created before fsyncing our
++# directory exist after the fsync log was replayed.
++[ -f $SCRATCH_MNT/mydir/foo_2 ] || echo "Link mydir/foo_2 is missing"
++[ -f $SCRATCH_MNT/mydir/foo_3 ] || echo "Link mydir/foo_3 is missing"
++[ -f $SCRATCH_MNT/hello ] || echo "File hello is missing"
++echo "file 'hello' size after log replay: $(stat -c %s $SCRATCH_MNT/hello)"
++[ -f $SCRATCH_MNT/mydir/hello_2 ] || echo "Link mydir/hello_2 is missing"
++[ -f $SCRATCH_MNT/mydir/x/y/foo_y_link ] || \
++	echo "Link mydir/x/y/foo_y_link is missing"
++[ -f $SCRATCH_MNT/mydir/x/y/z/foo_z_link ] || \
++	echo "Link mydir/x/y/z/foo_z_link is missing"
++[ -f $SCRATCH_MNT/mydir/x/y/z/qwerty ] || \
++	echo "File mydir/x/y/z/qwerty is missing"
++
++# Now remove all files/links, under our test directory 'mydir', and verify we
++# can remove all the directories.
++rm -f $SCRATCH_MNT/mydir/x/y/z/*
++rmdir $SCRATCH_MNT/mydir/x/y/z
++rm -f $SCRATCH_MNT/mydir/x/y/*
++rmdir $SCRATCH_MNT/mydir/x/y
++rmdir $SCRATCH_MNT/mydir/x
++rm -f $SCRATCH_MNT/mydir/*
++rmdir $SCRATCH_MNT/mydir
++
++# An fsck, run by the fstests framework everytime a test finishes, also detected
++# the inconsistency and printed the following error message:
++#
++# root 5 inode 257 errors 2001, no inode item, link count wrong
++#    unresolved ref dir 258 index 2 namelen 5 name foo_2 filetype 1 errors 4, no inode ref
++#    unresolved ref dir 258 index 3 namelen 5 name foo_3 filetype 1 errors 4, no inode ref
++
++status=0
++exit
+diff --git a/tests/generic/060.out b/tests/generic/060.out
+new file mode 100644
+index 0000000..3ecb0a1
+--- /dev/null
++++ b/tests/generic/060.out
+@@ -0,0 +1,3 @@
++QA output created by 060
++file 'foo' link count after log replay: 5
++file 'hello' size after log replay: 0
+diff --git a/tests/generic/group b/tests/generic/group
+index f2eb87a..85ff384 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -61,6 +61,7 @@
+ 056 metadata auto quick
+ 057 metadata auto quick
+ 059 metadata auto quick
++060 metadata auto quick
+ 062 attr udf auto quick
+ 068 other auto freeze dangerous stress
+ 069 rw udf auto quick
 -- 
-Filipe David Manana,
+2.1.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

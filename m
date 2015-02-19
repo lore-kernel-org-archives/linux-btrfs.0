@@ -1,57 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24203 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750864AbbBSGd6 (ORCPT
+Received: from outbound-queue-1.mail.thdo.gradwell.net ([212.11.70.34]:37498
+	"EHLO outbound-queue-1.mail.thdo.gradwell.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752119AbbBSJg7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Feb 2015 01:33:58 -0500
-Message-ID: <54E583BB.2010707@oracle.com>
-Date: Thu, 19 Feb 2015 14:33:31 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Thu, 19 Feb 2015 04:36:59 -0500
+Received: from outbound-edge-1.mail.thdo.gradwell.net (bonnie.gradwell.net [212.11.70.2])
+	by outbound-queue-1.mail.thdo.gradwell.net (Postfix) with ESMTP id 1623521EEA
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Feb 2015 09:29:05 +0000 (GMT)
+Message-ID: <54E5ACE0.7000709@barrowhillfarm.org.uk>
+Date: Thu, 19 Feb 2015 09:29:04 +0000
+From: Bob Williams <linux@barrowhillfarm.org.uk>
 MIME-Version: 1.0
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: [PATCH 1/4] Btrfs-progs: add regression tests for sysfs contents
- during btrfs device management
-References: <1423465506-30934-1-git-send-email-anand.jain@oracle.com> <1423465506-30934-2-git-send-email-anand.jain@oracle.com> <54D86EAC.3090803@cn.fujitsu.com> <20150211181911.GI28877@twin.jikos.cz>
-In-Reply-To: <20150211181911.GI28877@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re-assembling a btrfs raid1 array
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
+My system comprises 2 x 3TB hard drives, each partitioned into a 4GB
+swap, a 36GB /, and the rest for /home. / and /home are (were) then
+assembled into btrfs raid1 arrays, with both metadata and data being
+mirrored.
 
-On 02/12/2015 02:19 AM, David Sterba wrote:
-> On Mon, Feb 09, 2015 at 04:24:12PM +0800, Qu Wenruo wrote:
->> This tests are not even not bind to btrfs-progs.
->> They are kernel tests in fact.
->>
->> So btrfs-progs isn't the best place for it.
->
-> Well, I agree. Userspace tools mostly exercise the checker, repair or
-> image, ie. mostly offline actions.  The mount test that now exists is to
-> really check that the fixed filesystem can be mounted.
->
-> The tests Anand proposes perform add, replace, seeding etc. That really
-> belongs to fstests.
+I then installed the wrong graphics drivers for my nVidia card,
+resulting in an unbootable system. The only way out was to reinstall
+the system (openSUSE 13.2), but it only used a single drive, resulting
+in the following setup:
 
-  we could get sysfs data collection in fstests like this..
+:~ # btrfs fi sh
+Label: none  uuid: d5919e1a-b52f-421d-9785-cb081ae3b334
+        Total devices 1 FS bytes used 5.60GiB
+        devid    1 size 36.00GiB used 8.04GiB path /dev/sdf2
 
-  _btrfs_progs()
-  {
-      btrfs $*
-      [[ -z TEST_SYSFS ]] && collect_sysfs_data
-  }
-  and TEST_SYSFS must be set in the config file.
+Label: 'home'  uuid: 56884b1d-93ab-4db9-bc93-eff3833e91e1
+        Total devices 2 FS bytes used 1.06TiB
+        devid    1 size 2.69TiB used 1.07TiB path /dev/sdf3
+        devid    2 size 2.69TiB used 1.07TiB path /dev/sdg3
 
-  Similarly for mount, unmount, modload and modunload etc..
+Label: none  uuid: 06ea503f-58ff-48ca-9c50-b0679288fae6
+        Total devices 2 FS bytes used 15.87GiB
+        devid    2 size 36.00GiB used 17.03GiB path /dev/sdg2
+        *** Some devices missing
 
-  For now my patches are already tested with  test-btrfs-devmgt, which 
-is uploaded here git@github.com:asj/test-btrfs-devmgt.git for reference, 
-(but I don't intend to maintain it though).
+Btrfs v3.16.2+20141003
 
-Thanks,  Anand
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+:~ # uname -r
+3.16.7-7-desktop
+
+I would like some advice on how to safely delete the contents of
+/dev/sdg2, and then add it to /dev/sdf2 to make a new raid1 array. I
+know how to do the second step,
+
+mkfs.btrfs -m raid1 -d raid1 /dev/sdf2 /dev/sdg2
+
+(or would that destroy the data on /dev/sdf2 ?)
+
+and I could delete the contents of the partition, but in between these
+two steps I'm supposing I need to disassemble one raid1 array and then
+put it together again.
+
+Or maybe I'm making this seem harder than it really is?
+
+Bob
+- -- 
+Bob Williams
+System:  Linux 3.16.7-7-desktop
+Distro:  openSUSE 13.2 (x86_64) with KDE Development Platform: 4.14.3
+Uptime:  06:00am up 7:55, 3 users, load average: 0.16, 0.05, 0.06
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlTlrNwACgkQ0Sr7eZJrmU6thgCbBpokV7zCv2sEejk1Qj8BRcb0
+ArMAn0gVQlRCZbc7oUJiw5Z4tV2i5VST
+=tMn3
+-----END PGP SIGNATURE-----

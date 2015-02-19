@@ -1,200 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f49.google.com ([209.85.215.49]:42515 "EHLO
-	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751595AbbBSSTJ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55363 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752387AbbBSUhC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Feb 2015 13:19:09 -0500
+	Thu, 19 Feb 2015 15:37:02 -0500
+Date: Thu, 19 Feb 2015 15:36:55 -0500
+From: Chris Mason <clm@fb.com>
+To: <torvalds@linux-foundation.org>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20150219203648.GA26100@ret.masoncoding.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1422492360-12243-1-git-send-email-gux.fnst@cn.fujitsu.com>
-References: <1422492360-12243-1-git-send-email-gux.fnst@cn.fujitsu.com>
-Date: Thu, 19 Feb 2015 18:19:06 +0000
-Message-ID: <CAL3q7H4Ozf40iodhjfuaQLT0SXc8A_bJnBQugyf+EPsF3Xwuvg@mail.gmail.com>
-Subject: Re: [PATCH v6] btrfs: add regression test for remount with
- thread_pool resized
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Xing Gu <gux.fnst@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>, eguan@redhat.com,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 29, 2015 at 12:46 AM, Xing Gu <gux.fnst@cn.fujitsu.com> wrote:
-> Regression test for a btrfs issue of resizing 'thread_pool' when
-> remount the fs.
->
-> This regression was introduced by the following linux kernel commit:
->     btrfs: Added btrfs_workqueue_struct implemented ordered
->     execution based on kernel workqueue
->     08a9ff3264181986d1d692a4e6fce3669700c9f8
-> And it was fixed by the following linux kernel commit:
->     btrfs: fix crash in remount(thread_pool=) case
->     800ee2247f483b6d05ed47ef3bbc90b56451746c
->
-> Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
-> ---
->  v5->v6: Add a filter to wipe "Performing full device TRIM" and
->          "Turning ON incompat feature" in common/filter:_filter_mkfs.
->
->  v4->v5: Redirect stderr to /dev/null.
->
->  v3->v4: Remove the check for a bug message.
->
->  v2->v3: Add the regresssion commit in description.
->          Remove "dmesg -c > /dev/null".
->          Echo "Silence is golden" to indicate that an empty output
->          file is expected.
->
->  v1->v2: Add the fix commit in description.
->          Add the check for a bug message.
-> ---
->  common/filter       |  4 ++++
->  tests/btrfs/082     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/082.out |  2 ++
->  tests/btrfs/group   |  1 +
->  4 files changed, 72 insertions(+)
->  create mode 100755 tests/btrfs/082
->  create mode 100644 tests/btrfs/082.out
->
-> diff --git a/common/filter b/common/filter
-> index 05dbae6..71ef2e2 100644
-> --- a/common/filter
-> +++ b/common/filter
-> @@ -137,6 +137,10 @@ _filter_mkfs()
->      case $FSTYP in
->      xfs)
->         ;;
-> +       btrfs)
-> +       sed -e "/Performing full device TRIM/d" \
-> +               -e "/Turning ON incompat feature/d"
-> +       return ;;
+Hi Linus,
 
-Hi,
-This change to the filter function makes generic/204 always fail like this:
+Please pull my for-linus branch:
 
-generic/204 5s ... - output mismatch (see
-/home/fdmanana/git/hub/xfstests/results//generic/204.out.bad)
-    --- tests/generic/204.out 2014-11-17 20:59:50.958203000 +0000
-    +++ /home/fdmanana/git/hub/xfstests/results//generic/204.out.bad
-2015-02-19 18:03:34.772608767 +0000
-    @@ -1,2 +1,3 @@
-     QA output created by 204
-    +./tests/generic/204: line 76: space / (isize + dbsize): division
-by 0 (error token is "(isize + dbsize)")
-     *** done
-    ...
-    (Run 'diff -u tests/generic/204.out
-/home/fdmanana/git/hub/xfstests/results//generic/204.out.bad'  to see
-the entire diff)
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
+This was held up a little trying to track down a use-after-free in btrfs
+raid5/6.  It's not clear yet if this is just made easier to trigger with
+this pull or if its a new bug from the raid5/6 cleanups.  Dave Sterba is
+the only one to trigger it so far, but he has a consistent way to
+reproduce, so we'll get it nailed shortly.
 
->      *)
->         cat - >/dev/null
->         perl -e 'print STDERR "dbsize=4096\nisize=256\n"'
-> diff --git a/tests/btrfs/082 b/tests/btrfs/082
-> new file mode 100755
-> index 0000000..dd3c87e
-> --- /dev/null
-> +++ b/tests/btrfs/082
-> @@ -0,0 +1,65 @@
-> +#!/bin/bash
-> +# FS QA Test No. btrfs/082
-> +#
-> +# Regression test for a btrfs issue of resizing 'thread_pool' when
-> +# remount the fs.
-> +#
-> +# This regression was introduced by the following linux kernel commit:
-> +#     btrfs: Added btrfs_workqueue_struct implemented ordered
-> +#     execution based on kernel workqueue
-> +#     08a9ff3264181986d1d692a4e6fce3669700c9f8
-> +# And it was fixed by the following linux kernel commit:
-> +#     btrfs: fix crash in remount(thread_pool=) case
-> +#     800ee2247f483b6d05ed47ef3bbc90b56451746c
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1       # failure is the default!
-> +
-> +_cleanup()
-> +{
-> +    rm -f $tmp.*
-> +}
-> +
-> +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +_scratch_mkfs |& _filter_mkfs
-> +
-> +_scratch_mount "-o thread_pool=6"
-> +_scratch_mount "-o remount,thread_pool=10"
-> +
-> +echo "Silence is golden"
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/082.out b/tests/btrfs/082.out
-> new file mode 100644
-> index 0000000..2977f14
-> --- /dev/null
-> +++ b/tests/btrfs/082.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 082
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index e29999b..fd2fa76 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -84,3 +84,4 @@
->  079 auto rw metadata
->  080 auto snapshot
->  081 auto quick clone
-> +082 auto quick remount
-> --
-> 1.9.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This pull is mostly cleanups and fixes.
 
+The raid5/6 cleanups from Zhao Lei fixup some long standing warts in the
+code and add improvements on top of the scrubbing support from 3.19.
 
+Josef has round one of our ENOSPC fixes coming from large btrfs clusters
+here at FB.
 
--- 
-Filipe David Manana,
+Dave Sterba continues a long series of cleanups (thanks Dave), and
+Filipe continues hammering on corner cases in fsync and others.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+David Sterba (25) commits (+332/-306):
+    btrfs: more superblock checks, lower bounds on devices and sectorsize/nodesize (+19/-0)
+    btrfs: sink blocksize parameter to btrfs_find_create_tree_block (+17/-12)
+    btrfs: cleanup, rename a few variables in btrfs_read_sys_array (+16/-15)
+    btrfs: sink blocksize parameter to reada_tree_block_flagged (+4/-4)
+    btrfs: sink blocksize parameter to btrfs_init_new_buffer (+4/-5)
+    btrfs: sink blocksize parameter to readahead_tree_block (+8/-11)
+    btrfs: sink blocksize parameter to tree_block_processed (+5/-4)
+    btrfs: use GFP_NOFS in __alloc_extent_buffer directly (+5/-5)
+    btrfs: set proper message level for skinny metadata (+1/-1)
+    btrfs: expand btrfs_find_item if found_key is NULL (+21/-8)
+    btrfs: update message levels after checksum errors (+2/-2)
+    btrfs: remove a no-op unfreeze superbock callback (+0/-6)
+    btrfs: update message levels during failed mount (+8/-8)
+    btrfs: sink parameter len to alloc_extent_buffer (+8/-8)
+    btrfs: add more checks to btrfs_read_sys_array (+23/-3)
+    btrfs: switch extent_state state to unsigned (+55/-55)
+    btrfs: cleanup, remove inode_item_info helper (+5/-15)
+    btrfs: cleanup, remove inode_ref_info helper (+6/-11)
+    btrfs: add checks for sys_chunk_array sizes (+19/-0)
+    btrfs: fix leak of path in btrfs_find_item (+22/-15)
+    btrfs: unify extent buffer allocation api (+35/-23)
+    btrfs: remove blocksize from reada_extent (+6/-9)
+    btrfs: kill btrfs_inode_*time helpers (+33/-69)
+    btrfs: update message levels for errors (+6/-5)
+    btrfs: simplify insert_orphan_item (+4/-12)
+
+Zhao Lei (16) commits (+332/-400):
+    Btrfs: Separate finding-right-mirror and writing-to-target's process in scrub_handle_errored_block() (+17/-27)
+    Btrfs: Break loop when reach BTRFS_MAX_MIRRORS in scrub_setup_recheck_block() (+1/-1)
+    Btrfs: Introduce BTRFS_BLOCK_GROUP_RAID56_MASK to check raid56 simply (+19/-28)
+    Btrfs: Remove noneed force_write in scrub_write_block_to_dev_replace (+7/-12)
+    Btrfs: Fix a jump typo of nodatasum_case to avoid wrong WARN_ON() (+2/-1)
+    Btrfs: Make raid_map array be inlined in btrfs_bio structure (+105/-125)
+    Btrfs: Combine per-page recover in dev-replace and scrub (+48/-72)
+    Btrfs: btrfs_rm_dev_replace_blocked(): Use wait_event() (+2/-11)
+    Btrfs: Simplify scrub_setup_recheck_block()'s argument (+9/-16)
+    Btrfs: add ref_count and free function for btrfs_bio (+57/-54)
+    Btrfs: sort raid_map before adding tgtdev stripes (+8/-14)
+    Btrfs: Cleanup btrfs_bio_counter_inc_blocked() (+6/-6)
+    Btrfs: fix a out-of-bound access of raid_map (+5/-2)
+    Rename all ref_count to refs in struct (+13/-13)
+    Btrfs: Include map_type in raid_bio (+22/-18)
+    btrfs: Fix out-of-space bug (+11/-0)
+
+Filipe Manana (12) commits (+257/-65):
+    Btrfs: fix fsync log replay for inodes with a mix of regular refs and extrefs (+43/-5)
+    Btrfs: fix race between transaction commit and empty block group removal (+22/-1)
+    Btrfs: lookup for block group only if needed when freeing a tree block (+6/-4)
+    Btrfs: don't remove extents and xattrs when logging new names (+27/-12)
+    Btrfs: fix fsync when extend references are added to an inode (+16/-11)
+    Btrfs: fix fsync data loss after adding hard link to inode (+73/-9)
+    Btrfs: fix directory inconsistency after fsync log replay (+18/-2)
+    Btrfs: fix setup_leaf_for_split() to avoid leaf corruption (+4/-2)
+    Btrfs: fix scrub race leading to use-after-free (+15/-1)
+    Btrfs: add missing cleanup on sysfs init failure (+9/-1)
+    Btrfs: fix scheduler warning when syncing log (+1/-1)
+    Btrfs: scrub, fix sleep in atomic context (+23/-16)
+
+Josef Bacik (5) commits (+177/-147):
+    Btrfs: only adjust outstanding_extents when we do a short write (+6/-5)
+    Btrfs: don't set and clear delalloc for O_DIRECT writes (+2/-6)
+    Btrfs: track dirty block groups on their own list (+72/-124)
+    Btrfs: account for large extents with enospc (+76/-7)
+    Btrfs: change how we track dirty roots (+21/-5)
+
+Shaohua Li (1) commits (+5/-8):
+    btrfs: delete chunk allocation attemp when setting block group ro
+
+Yang Dongsheng (1) commits (+1/-2):
+    btrfs: qgroup: move WARN_ON() to the correct location.
+
+Anand Jain (1) commits (+0/-4):
+    Btrfs: fix unused members in struct btrfs_root
+
+Liu Bo (1) commits (+1/-4):
+    Btrfs: cleanup unused run_most
+
+Satoru Takeuchi (1) commits (+1/-2):
+    Btrfs: Remove unnecessary placeholder in btrfs_err_code
+
+chandan r (1) commits (+36/-2):
+    Btrfs: Add code to support file creation time
+
+Forrest Liu (1) commits (+2/-1):
+    Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group
+
+chandan (1) commits (+1/-1):
+    Btrfs: insert_new_root: Fix lock type of the extent buffer.
+
+Naohiro Aota (1) commits (+3/-1):
+    btrfs: clear bio reference after submit_one_bio()
+
+Gui Hecheng (1) commits (+1/-4):
+    btrfs: cleanup init for list in free-space-cache
+
+Total: (68) commits (+1149/-947)
+
+ fs/btrfs/backref.c                   |  28 +---
+ fs/btrfs/backref.h                   |   3 -
+ fs/btrfs/btrfs_inode.h               |   3 +
+ fs/btrfs/ctree.c                     |  55 +++----
+ fs/btrfs/ctree.h                     |  39 ++---
+ fs/btrfs/delayed-inode.c             |  38 +++--
+ fs/btrfs/dev-replace.c               |  25 +--
+ fs/btrfs/disk-io.c                   | 102 +++++++++---
+ fs/btrfs/disk-io.h                   |   6 +-
+ fs/btrfs/extent-tree.c               | 250 ++++++++++++----------------
+ fs/btrfs/extent_io.c                 |  87 ++++++----
+ fs/btrfs/extent_io.h                 |  65 ++++----
+ fs/btrfs/free-space-cache.c          |  13 +-
+ fs/btrfs/inode-item.c                |   9 +-
+ fs/btrfs/inode.c                     | 156 +++++++++++++-----
+ fs/btrfs/qgroup.c                    |   3 +-
+ fs/btrfs/raid56.c                    | 103 ++++--------
+ fs/btrfs/raid56.h                    |  11 +-
+ fs/btrfs/reada.c                     |  19 +--
+ fs/btrfs/relocation.c                |  12 +-
+ fs/btrfs/scrub.c                     | 309 ++++++++++++++++-------------------
+ fs/btrfs/send.c                      |   9 +-
+ fs/btrfs/super.c                     |   6 -
+ fs/btrfs/sysfs.c                     |  10 +-
+ fs/btrfs/tests/extent-buffer-tests.c |   2 +-
+ fs/btrfs/tests/extent-io-tests.c     |   3 +-
+ fs/btrfs/tests/inode-tests.c         |   4 +-
+ fs/btrfs/tests/qgroup-tests.c        |  23 ++-
+ fs/btrfs/transaction.c               |  27 ++-
+ fs/btrfs/transaction.h               |   7 +
+ fs/btrfs/tree-log.c                  | 234 ++++++++++++++++++++------
+ fs/btrfs/volumes.c                   | 242 +++++++++++++++------------
+ fs/btrfs/volumes.h                   |  18 +-
+ include/uapi/linux/btrfs.h           |   3 +-
+ 34 files changed, 1063 insertions(+), 861 deletions(-)

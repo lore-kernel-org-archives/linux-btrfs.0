@@ -1,48 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bn1bon0146.outbound.protection.outlook.com ([157.56.111.146]:34788
-	"EHLO na01-bn1-obe.outbound.protection.outlook.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1752920AbbBRSFK convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:24203 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750864AbbBSGd6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Feb 2015 13:05:10 -0500
-From: Steven Schlansker <sschlansker@opentable.com>
-To: Omar Sandoval <osandov@osandov.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Forever blocked in bit_wait with kernel 3.19
-Date: Wed, 18 Feb 2015 17:49:09 +0000
-Message-ID: <EAACB1FB-AEBD-4ABC-B190-620C1D64EE3C@opentable.com>
-References: <9E2DE950-1434-424B-974C-2ABE4BD22EE5@opentable.com>
- <20150218062629.GA18372@mew>
-In-Reply-To: <20150218062629.GA18372@mew>
-Content-Type: text/plain; charset="us-ascii"
+	Thu, 19 Feb 2015 01:33:58 -0500
+Message-ID: <54E583BB.2010707@oracle.com>
+Date: Thu, 19 Feb 2015 14:33:31 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
+To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: [PATCH 1/4] Btrfs-progs: add regression tests for sysfs contents
+ during btrfs device management
+References: <1423465506-30934-1-git-send-email-anand.jain@oracle.com> <1423465506-30934-2-git-send-email-anand.jain@oracle.com> <54D86EAC.3090803@cn.fujitsu.com> <20150211181911.GI28877@twin.jikos.cz>
+In-Reply-To: <20150211181911.GI28877@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Feb 17, 2015, at 10:26 PM, Omar Sandoval <osandov@osandov.com> wrote:
 
-> On Thu, Feb 12, 2015 at 11:12:25AM +0000, Steven Schlansker wrote:
->> [ Please CC me on replies, I'm not on the list ]
->> [ This is a followup to http://www.spinics.net/lists/linux-btrfs/msg41496.html ]
->> 
->> Hello linux-btrfs,
->> I've been having troubles keeping my Apache Mesos / Docker slave nodes stable.  After some period of load, tasks begin to hang.  Once this happens task after task ends up waiting at the same point, never to return.  The system quickly becomes unusable and must be terminated.
-> 
-> Are you seeing any ENOMEM Btrfs-related errors in your dmesg? In your
-> previous thread you trigged an ENOMEM BUG_ON and you mentioned that your
-> containers often get OOM'ed.
+On 02/12/2015 02:19 AM, David Sterba wrote:
+> On Mon, Feb 09, 2015 at 04:24:12PM +0800, Qu Wenruo wrote:
+>> This tests are not even not bind to btrfs-progs.
+>> They are kernel tests in fact.
+>>
+>> So btrfs-progs isn't the best place for it.
+>
+> Well, I agree. Userspace tools mostly exercise the checker, repair or
+> image, ie. mostly offline actions.  The mount test that now exists is to
+> really check that the fixed filesystem can be mounted.
+>
+> The tests Anand proposes perform add, replace, seeding etc. That really
+> belongs to fstests.
 
-Correct, the containers OOM relatively frequently.  We're working on fixing this but accidents happen and we're doing heavy development with memory-hungry services.
+  we could get sysfs data collection in fstests like this..
 
-I've not observed any BTRFS complaints about memory; I'd assumed that it would be allocating outside of any container limits.  But I don't know how e.g. that interacts with page cache accounting.
+  _btrfs_progs()
+  {
+      btrfs $*
+      [[ -z TEST_SYSFS ]] && collect_sysfs_data
+  }
+  and TEST_SYSFS must be set in the config file.
 
-> 
-> I experimented with Btrfs in a memory-constrained cgroup and saw all
-> sorts of buggy behavior (https://lkml.org/lkml/2015/2/17/131), but I
-> haven't been able to reproduce this particular issue. This is a wild
-> guess, but there could be a buggy error handling path somewhere that
-> forgets to unlock a page.
+  Similarly for mount, unmount, modload and modunload etc..
 
-That seems like a very reasonable explanation.  Is there any particular debugging I could provide to diagnose this?  I can't reproduce it on demand but it's only a matter of time until it happens again...  And I'd like to help contribute to fixing it, but I'm not much of a filesystem developer :)
+  For now my patches are already tested with  test-btrfs-devmgt, which 
+is uploaded here git@github.com:asj/test-btrfs-devmgt.git for reference, 
+(but I don't intend to maintain it though).
 
+Thanks,  Anand
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,58 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4805 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751100AbbBKB7W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Feb 2015 20:59:22 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: Fix 2 extent buffer leak in btrfs-debug-tree.
-Date: Wed, 11 Feb 2015 09:57:17 +0800
-Message-ID: <1423619837-24073-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.sevenbyte.org ([5.9.90.188]:59316 "EHLO mail.sevenbyte.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750793AbbBULdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 21 Feb 2015 06:33:16 -0500
+From: Stefan Tatschner <stefan@sevenbyte.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Stefan Tatschner <stefan@sevenbyte.org>
+Subject: [PATCH] docs: fixed a grammar mistake
+Date: Sat, 21 Feb 2015 12:12:42 +0100
+Message-Id: <1424517162-6540-1-git-send-email-stefan@sevenbyte.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are 2 known extent buffer:
-1) With -t option.
--t option will skip other tree roots, but it will read the root node
-first and then skip it.
-Where it forgets to free the tree block it read.
-
-2) with -b option.
-It forgets to free the tree block it read.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Stefan Tatschner <stefan@sevenbyte.org>
 ---
- btrfs-debug-tree.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index ce7a792..610624e 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -221,6 +221,7 @@ int main(int ac, char **av)
- 			goto close_root;
- 		}
- 		btrfs_print_tree(root, leaf, 0);
-+		free_extent_buffer(leaf);
- 		goto close_root;
- 	}
+This patch is for the userspace tools btrfs-progs.
+
+ Documentation/btrfs-scrub.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/btrfs-scrub.txt b/Documentation/btrfs-scrub.txt
+index 6ebce60..7750868 100644
+--- a/Documentation/btrfs-scrub.txt
++++ b/Documentation/btrfs-scrub.txt
+@@ -11,8 +11,8 @@ SYNOPSIS
  
-@@ -284,8 +285,10 @@ again:
- 					      0);
- 			if (!extent_buffer_uptodate(buf))
- 				goto next;
--			if (tree_id && found_key.objectid != tree_id)
-+			if (tree_id && found_key.objectid != tree_id) {
-+				free_extent_buffer(buf);
- 				goto next;
-+			}
+ DESCRIPTION
+ -----------
+-*btrfs scrub* is used to scrub a btrfs filesystem, which will reading all data
+-from all disks and verifying checksums.
++*btrfs scrub* is used to scrub a btrfs filesystem, which will read all data
++from all disks and verify checksums.
  
- 			switch(found_key.objectid) {
- 			case BTRFS_ROOT_TREE_OBJECTID:
+ SUBCOMMAND
+ ----------
 -- 
 2.3.0
 

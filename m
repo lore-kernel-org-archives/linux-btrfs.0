@@ -1,50 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33377 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753745AbbBTOhq (ORCPT
+Received: from mail-ob0-f182.google.com ([209.85.214.182]:56034 "EHLO
+	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751755AbbBVLUM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Feb 2015 09:37:46 -0500
-Date: Fri, 20 Feb 2015 09:37:32 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: fix allocation size calculations in
- alloc_btrfs_bio
-To: <dsterba@suse.cz>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Zhao Lei <zhaolei@cn.fujitsu.com>
-Message-ID: <1424443052.23448.0@mail.thefacebook.com>
-In-Reply-To: <20150220143526.GS8720@suse.cz>
-References: <20150220015930.GA28726@ret.masoncoding.com>
-	<20150220143526.GS8720@suse.cz>
+	Sun, 22 Feb 2015 06:20:12 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1423915822-23442-1-git-send-email-fabf@skynet.be>
+References: <1423915822-23442-1-git-send-email-fabf@skynet.be>
+Date: Sun, 22 Feb 2015 12:20:11 +0100
+Message-ID: <CAMuHMdXOVzn36+akifJ0TNp8=Fss4k1iR9Z=D+P=KXd8kAHzFg@mail.gmail.com>
+Subject: Re: [PATCH 1/1 linux-next] btrfs: fix sizeof format specifier in btrfs_check_super_valid()
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Fabian Frederick <fabf@skynet.be>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 20, 2015 at 9:35 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Thu, Feb 19, 2015 at 08:59:30PM -0500, Chris Mason wrote:
->>  Since commit 8e5cfb55d3f (Btrfs: Make raid_map array be inlined in
->>  btrfs_bio structure), the raid map array is allocated along with the
->>  btrfs bio in alloc_btrfs_bio.  The calculation used to decide how 
->> much
->>  we need to allocate was using the wrong parameter passed into the
->>  allocation function.
->> 
->>  The passed in real_stripes will be zero if a target replace 
->> operation
->>  is not currently running.  We want to use total_stripes instead.
->> 
->>  Signed-off-by: Chris Mason <clm@fb.com>
->>  Reported-by: Dave Sterba <dsterba@suse.cz>
-> 
-> Tested-by: David Sterba <dsterba@suse.cz>
-> 
-> Current master + this patch with full slub_debug is now ok with
-> btrfs/023.
+On Sat, Feb 14, 2015 at 1:10 PM, Fabian Frederick <fabf@skynet.be> wrote:
+> This patch fixes mips compilation warning:
 
-Thanks Dave.  It also survived all night with raid6 and stress.sh.  I'm 
-sending to Linus today.
+Actually it happens on all 32-bit platforms (where size_t is unsigned int).
 
--chris
+> fs/btrfs/disk-io.c: In function 'btrfs_check_super_valid':
+> fs/btrfs/disk-io.c:3927:21: warning: format '%lu' expects argument
+> of type 'long unsigned int', but argument 3 has type 'unsigned int' [-Wformat]
+>
+> Signed-off-by: Fabian Frederick <fabf@skynet.be>
 
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
+> ---
+>  fs/btrfs/disk-io.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index f79f385..639f266 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3921,7 +3921,7 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>         }
+>         if (btrfs_super_sys_array_size(sb) < sizeof(struct btrfs_disk_key)
+>                         + sizeof(struct btrfs_chunk)) {
+> -               printk(KERN_ERR "BTRFS: system chunk array too small %u < %lu\n",
+> +               printk(KERN_ERR "BTRFS: system chunk array too small %u < %zu\n",
+>                                 btrfs_super_sys_array_size(sb),
+>                                 sizeof(struct btrfs_disk_key)
+>                                 + sizeof(struct btrfs_chunk));
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds

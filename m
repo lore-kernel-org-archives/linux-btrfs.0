@@ -1,63 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f182.google.com ([209.85.214.182]:56034 "EHLO
-	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751755AbbBVLUM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Feb 2015 06:20:12 -0500
-MIME-Version: 1.0
-In-Reply-To: <1423915822-23442-1-git-send-email-fabf@skynet.be>
-References: <1423915822-23442-1-git-send-email-fabf@skynet.be>
-Date: Sun, 22 Feb 2015 12:20:11 +0100
-Message-ID: <CAMuHMdXOVzn36+akifJ0TNp8=Fss4k1iR9Z=D+P=KXd8kAHzFg@mail.gmail.com>
-Subject: Re: [PATCH 1/1 linux-next] btrfs: fix sizeof format specifier in btrfs_check_super_valid()
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-To: Fabian Frederick <fabf@skynet.be>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:36440 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752070AbbBVSFE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Feb 2015 13:05:04 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YPatq-0000jX-Hk
+	for linux-btrfs@vger.kernel.org; Sun, 22 Feb 2015 19:05:02 +0100
+Received: from pd953e69f.dip0.t-ipconnect.de ([217.83.230.159])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2015 19:05:02 +0100
+Received: from holger.hoffstaette by pd953e69f.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Feb 2015 19:05:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Re: Suddenly cannot change metadata profile any longer (BISECTED)
+Date: Sun, 22 Feb 2015 18:01:07 +0000 (UTC)
+Message-ID: <pan.2015.02.22.18.01.07@googlemail.com>
+References: <pan.2015.02.15.21.01.07@googlemail.com>
+	<pan.2015.02.16.15.18.40@googlemail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 14, 2015 at 1:10 PM, Fabian Frederick <fabf@skynet.be> wrote:
-> This patch fixes mips compilation warning:
+On Mon, 16 Feb 2015 15:18:40 +0000, Holger Hoffstätte wrote:
 
-Actually it happens on all 32-bit platforms (where size_t is unsigned int).
+>> What works is the very first balance after the mkfs - it successfully
+>> changes from the initial default dup to single, but subsequent balances
+>> don't work. They also don't really fail.
+> 
+> Bisection found that commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e [1]
+> in the integration tree is the cause:
+> 
+>   btrfs: delete chunk allocation attemp when setting block group ro
+> 
+> Reverting/omitting this patch lets me rebalance/convert at will.
 
-> fs/btrfs/disk-io.c: In function 'btrfs_check_super_valid':
-> fs/btrfs/disk-io.c:3927:21: warning: format '%lu' expects argument
-> of type 'long unsigned int', but argument 3 has type 'unsigned int' [-Wformat]
->
-> Signed-off-by: Fabian Frederick <fabf@skynet.be>
+Just for the list archives: Chris mailed me privately that they could
+reproduce the problem and will provide a fix post-3.20-rc1
+(since that commit already went in with the merge window).
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+-h
 
-> ---
->  fs/btrfs/disk-io.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index f79f385..639f266 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3921,7 +3921,7 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
->         }
->         if (btrfs_super_sys_array_size(sb) < sizeof(struct btrfs_disk_key)
->                         + sizeof(struct btrfs_chunk)) {
-> -               printk(KERN_ERR "BTRFS: system chunk array too small %u < %lu\n",
-> +               printk(KERN_ERR "BTRFS: system chunk array too small %u < %zu\n",
->                                 btrfs_super_sys_array_size(sb),
->                                 sizeof(struct btrfs_disk_key)
->                                 + sizeof(struct btrfs_chunk));
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds

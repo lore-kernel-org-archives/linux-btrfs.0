@@ -1,47 +1,476 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:57398 "EHLO imap.thunk.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755820AbbBUH51 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 Feb 2015 02:57:27 -0500
-Date: Fri, 20 Feb 2015 21:56:36 -0500
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: Michael Kerrisk <mtk.manpages@gmail.com>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        XFS Developers <xfs@oss.sgi.com>, linux-man@vger.kernel.org,
-        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>
-Subject: Re: Documenting MS_LAZYTIME
-Message-ID: <20150221025636.GB7922@thunk.org>
-References: <CAHO5Pa0k7QkV_6BDjwTVxa7LV9tFyN9nGFFcSvOC6HYO08wfrw@mail.gmail.com>
- <54E7578E.4090809@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54E7578E.4090809@redhat.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:55366 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751707AbbBVQUj (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Sun, 22 Feb 2015 11:20:39 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: fix metadata inconsistencies after directory fsync
+Date: Sun, 22 Feb 2015 16:20:09 +0000
+Message-Id: <1424622009-19235-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
+References: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 20, 2015 at 09:49:34AM -0600, Eric Sandeen wrote:
-> 
-> >               This mount option significantly reduces  writes  to  the
-> >               inode  table  for workloads that perform frequent random
-> >               writes to preallocated files.
-> 
-> This seems like an overly specific description of a single workload out
-> of many which may benefit, but what do others think?  "inode table" is also
-> fairly extN-specific.
+We can get into inconsistency between inodes and directory entries
+after fsyncing a directory. The issue is that while a directory gets
+the new dentries persisted in the fsync log and replayed at mount time,
+the link count of the inode that directory entries point to doesn't
+get updated, staying with an incorrect link count (smaller then the
+correct value). This later leads to stale file handle errors when
+accessing (including attempt to delete) some of the links if all the
+other ones are removed, which also implies impossibility to delete the
+parent directories, since the dentries can not be removed.
 
-How about somethign like "This mount significantly reduces writes
-needed to update the inode's timestamps, especially mtime and actime.
-Examples of workloads where this could be a large win include frequent
-random writes to preallocated files, as well as cases where the
-MS_STRICTATIME mount option is enabled."?
+Another issue is that, unlike xfs and ext4, when fsyncing a directory,
+new files aren't logged (their metadata and dentries) nor any child
+directories. So this patch fixes this issue too, since it has the same
+resolution as the incorrect inode link count issue mentioned before.
 
-(The advantage of MS_STRICTATIME | MS_LAZYTIME is that stat system
-calls will return the correctly updated atime, but those atime updates
-won't get flushed to disk unless the inode needs to be updated for
-file system / data consistency reasons, or when the inode is pushed
-out of memory, or when the file system is unmounted.)
+This is very easy to reproduce, and the following excerpt from my test
+case for xfstests shows how:
 
-						- Ted
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test file and directory.
+  touch $SCRATCH_MNT/foo
+  mkdir $SCRATCH_MNT/mydir
+
+  # Make sure all metadata is durably persisted.
+  sync
+
+  # Add a hard link to 'foo' inside our test directory and fsync only the
+  # directory. The btrfs fsync implementation had a bug that caused the new
+  # directory entry to be visible after the fsync log replay but, the inode
+  # of our file remained with a link count of 1.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_2
+
+  # Add a few more links and files created in the current transaction.
+  # Just to verify nothing breaks or gives incorrect results.
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_3
+  echo "hello world" > $SCRATCH_MNT/hello
+  ln $SCRATCH_MNT/hello $SCRATCH_MNT/mydir/hello_2
+
+  # Add some subdirectories and new files and links to them. This is to verify
+  # that after fsyncing our top level directory 'mydir', all the subdirectories
+  # and their files/links are registered in the fsync log and exist after the
+  # fsync log is replayed - xfs and ext4 give this guarantee.
+  mkdir -p $SCRATCH_MNT/mydir/x/y/z
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/foo_y_link
+  ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/z/foo_z_link
+  touch $SCRATCH_MNT/mydir/x/y/z/qwerty
+
+  # Now fsync only our top directory.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/mydir
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # Remove the first name of our inode. Because of the directory fsync bug, the
+  # inode's link count was 1 instead of 5, so removing the 'foo' name ends up
+  # deleting the inode and the other names are stale directory entries (and still
+  # visible to applications). Attempting to remove or access the remaining
+  # dentries pointing to that inode resulted in stale file handle errors, and
+  # made it impossible to remove the parent directories since it was impossible
+  # for them to become empty.
+  echo "file 'foo' link count after log replay: $(stat -c %h $SCRATCH_MNT/foo)"
+  rm -f $SCRATCH_MNT/foo
+
+  # Now verify that all files, links and directories created before fsyncing our
+  # directory exist after the fsync log was replayed.
+  [ -f $SCRATCH_MNT/mydir/foo_2 ] || echo "Link mydir/foo_2 is missing"
+  [ -f $SCRATCH_MNT/mydir/foo_3 ] || echo "Link mydir/foo_3 is missing"
+  [ -f $SCRATCH_MNT/hello ] || echo "File hello is missing"
+  echo "file 'hello' size after log replay: $(stat -c %s $SCRATCH_MNT/hello)"
+  [ -f $SCRATCH_MNT/mydir/hello_2 ] || echo "Link mydir/hello_2 is missing"
+  [ -f $SCRATCH_MNT/mydir/x/y/foo_y_link ] || \
+      echo "Link mydir/x/y/foo_y_link is missing"
+  [ -f $SCRATCH_MNT/mydir/x/y/z/foo_z_link ] || \
+      echo "Link mydir/x/y/z/foo_z_link is missing"
+  [ -f $SCRATCH_MNT/mydir/x/y/z/qwerty ] || \
+     echo "File mydir/x/y/z/qwerty is missing"
+
+  # Now remove all files/links, under our test directory 'mydir', and verify we
+  # can remove all the directories.
+  rm -f $SCRATCH_MNT/mydir/x/y/z/*
+  rmdir $SCRATCH_MNT/mydir/x/y/z
+  rm -f $SCRATCH_MNT/mydir/x/y/*
+  rmdir $SCRATCH_MNT/mydir/x/y
+  rmdir $SCRATCH_MNT/mydir/x
+  rm -f $SCRATCH_MNT/mydir/*
+  rmdir $SCRATCH_MNT/mydir
+
+  # An fsck, run by the fstests framework everytime a test finishes, also detected
+  # the inconsistency and printed the following error message:
+  #
+  # root 5 inode 257 errors 2001, no inode item, link count wrong
+  #    unresolved ref dir 258 index 2 namelen 5 name foo_2 filetype 1 errors 4, no inode ref
+  #    unresolved ref dir 258 index 3 namelen 5 name foo_3 filetype 1 errors 4, no inode ref
+
+  status=0
+  exit
+
+The expected golden output for the test is:
+
+  file 'foo' link count after log replay: 5
+  file 'hello' size after log replay: 0
+
+Which is the output after this patch and when running the test against
+xfs and ext4. Without this patch, the test's output is:
+
+  file 'foo' link count after log replay: 1
+  Link mydir/foo_2 is missing
+  Link mydir/foo_3 is missing
+  File hello is missing
+  stat: cannot stat '/home/fdmanana/btrfs-tests/scratch_1/hello': No such file or directory
+  file 'hello' size after log replay:
+  Link mydir/hello_2 is missing
+  Link mydir/x/y/foo_y_link is missing
+  Link mydir/x/y/z/foo_z_link is missing
+  File mydir/x/y/z/qwerty is missing
+  rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/mydir/x/y/z': No such file or directory
+  rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/mydir/x/y': No such file or directory
+  rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/mydir/x': No such file or directory
+  rm: cannot remove '/home/fdmanana/btrfs-tests/scratch_1/mydir/foo_2': Stale file handle
+  rm: cannot remove '/home/fdmanana/btrfs-tests/scratch_1/mydir/foo_3': Stale file handle
+  rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/mydir': Directory not empty
+
+Fsck, without this fix, also complains about the wrong link count:
+
+  root 5 inode 257 errors 2001, no inode item, link count wrong
+      unresolved ref dir 258 index 2 namelen 5 name foo_2 filetype 1 errors 4, no inode ref
+      unresolved ref dir 258 index 3 namelen 5 name foo_3 filetype 1 errors 4, no inode ref
+
+So fix this by logging the dentries when fsyncing a directory.
+
+A test case for xfstests follows.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Speedup search when there's a gap between dentry indexes, and we reached
+    the last slot of a leaf, by using btrfs_next_leaf().
+
+V3: Don't break out of while loop if next_leaf returns 1, there might be
+    other child directory inodes to process, so goto next_dir_inode instead.
+    This is only for the case where parent directories have an inode number
+    larger than the number of some children directory inodes.
+
+ fs/btrfs/file.c     |   5 +-
+ fs/btrfs/tree-log.c | 184 ++++++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tree-log.h |   2 +
+ 3 files changed, 185 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b476e56..2bd72cd 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1901,7 +1901,10 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	if (ret)
+ 		return ret;
+ 
+-	mutex_lock(&inode->i_mutex);
++	if (S_ISDIR(inode->i_mode))
++		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
++	else
++		mutex_lock(&inode->i_mutex);
+ 	atomic_inc(&root->log_batch);
+ 	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			     &BTRFS_I(inode)->runtime_flags);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9a37f8b..3b8a53f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3020,6 +3020,7 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct inode *inode,
+ 			  struct btrfs_path *path,
+ 			  struct btrfs_path *dst_path, int key_type,
++			  struct btrfs_log_ctx *ctx,
+ 			  u64 min_offset, u64 *last_offset_ret)
+ {
+ 	struct btrfs_key min_key;
+@@ -3104,6 +3105,8 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 		src = path->nodes[0];
+ 		nritems = btrfs_header_nritems(src);
+ 		for (i = path->slots[0]; i < nritems; i++) {
++			struct btrfs_dir_item *di;
++
+ 			btrfs_item_key_to_cpu(src, &min_key, i);
+ 
+ 			if (min_key.objectid != ino || min_key.type != key_type)
+@@ -3114,6 +3117,33 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 				err = ret;
+ 				goto done;
+ 			}
++
++			/*
++			 * We must make sure that when we log a directory entry,
++			 * the corresponding inode, after log replay, has a
++			 * matching link count. For example:
++			 *
++			 * touch foo
++			 * mkdir mydir
++			 * sync
++			 * ln foo mydir/bar
++			 * xfs_io -c "fsync" mydir
++			 * <crash>
++			 * <mount fs and log replay>
++			 *
++			 * Would result in a fsync log that when replayed, our
++			 * file inode would have a link count of 1, but we get
++			 * two directory entries pointing to the same inode.
++			 * After removing one of the names, it would not be
++			 * possible to remove the other name, which resulted
++			 * always in stale file handle errors, and would not
++			 * be possible to rmdir the parent directory, since
++			 * its i_size could never decrement to the value
++			 * BTRFS_EMPTY_DIR_SIZE, resulting in -ENOTEMPTY errors.
++			 */
++			di = btrfs_item_ptr(src, i, struct btrfs_dir_item);
++			if (ctx && btrfs_dir_transid(src, di) == trans->transid)
++				ctx->log_new_dentries = true;
+ 		}
+ 		path->slots[0] = nritems;
+ 
+@@ -3175,7 +3205,8 @@ done:
+ static noinline int log_directory_changes(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct inode *inode,
+ 			  struct btrfs_path *path,
+-			  struct btrfs_path *dst_path)
++			  struct btrfs_path *dst_path,
++			  struct btrfs_log_ctx *ctx)
+ {
+ 	u64 min_key;
+ 	u64 max_key;
+@@ -3187,7 +3218,7 @@ again:
+ 	max_key = 0;
+ 	while (1) {
+ 		ret = log_dir_items(trans, root, inode, path,
+-				    dst_path, key_type, min_key,
++				    dst_path, key_type, ctx, min_key,
+ 				    &max_key);
+ 		if (ret)
+ 			return ret;
+@@ -3963,7 +3994,7 @@ static int logged_inode_size(struct btrfs_root *log, struct inode *inode,
+ 	if (ret < 0) {
+ 		return ret;
+ 	} else if (ret > 0) {
+-		*size_ret = i_size_read(inode);
++		*size_ret = 0;
+ 	} else {
+ 		struct btrfs_inode_item *item;
+ 
+@@ -4277,7 +4308,8 @@ log_extents:
+ 	}
+ 
+ 	if (inode_only == LOG_INODE_ALL && S_ISDIR(inode->i_mode)) {
+-		ret = log_directory_changes(trans, root, inode, path, dst_path);
++		ret = log_directory_changes(trans, root, inode, path, dst_path,
++					    ctx);
+ 		if (ret) {
+ 			err = ret;
+ 			goto out_unlock;
+@@ -4372,6 +4404,140 @@ out:
+ 	return ret;
+ }
+ 
++struct btrfs_dir_list {
++	u64 ino;
++	struct list_head list;
++};
++
++static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root,
++				struct inode *start_inode,
++				struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_root *log = root->log_root;
++	struct btrfs_path *path;
++	LIST_HEAD(dir_list);
++	struct btrfs_dir_list *dir_elem;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	dir_elem = kmalloc(sizeof(*dir_elem), GFP_NOFS);
++	if (!dir_elem) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	dir_elem->ino = btrfs_ino(start_inode);
++	list_add_tail(&dir_elem->list, &dir_list);
++
++	while (!list_empty(&dir_list)) {
++		struct extent_buffer *leaf;
++		struct btrfs_key min_key;
++		int nritems;
++		int i;
++
++		dir_elem = list_first_entry(&dir_list, struct btrfs_dir_list,
++					    list);
++
++		min_key.objectid = dir_elem->ino;
++		min_key.type = BTRFS_DIR_ITEM_KEY;
++		min_key.offset = 0;
++again:
++		btrfs_release_path(path);
++		ret = btrfs_search_forward(log, &min_key, path, trans->transid);
++		if (ret < 0)
++			goto out;
++		else if (ret > 0)
++			goto next_dir_inode;
++
++process_leaf:
++		leaf = path->nodes[0];
++		nritems = btrfs_header_nritems(leaf);
++		for (i = path->slots[0]; i < nritems; i++) {
++			struct btrfs_dir_item *di;
++			struct btrfs_key di_key;
++			struct inode *di_inode;
++			struct btrfs_dir_list *new_dir_elem;
++			int log_mode = LOG_INODE_EXISTS;
++
++			btrfs_item_key_to_cpu(leaf, &min_key, i);
++			if (min_key.objectid != dir_elem->ino ||
++			    min_key.type != BTRFS_DIR_ITEM_KEY)
++				goto next_dir_inode;
++
++			di = btrfs_item_ptr(leaf, i, struct btrfs_dir_item);
++			if (btrfs_dir_transid(leaf, di) < trans->transid)
++				continue;
++			btrfs_dir_item_key_to_cpu(leaf, di, &di_key);
++
++			di_inode = btrfs_iget(root->fs_info->sb, &di_key,
++					      root, NULL);
++			if (IS_ERR(di_inode)) {
++				ret = PTR_ERR(di_inode);
++				goto out;
++			}
++
++			if (btrfs_dir_type(leaf, di) == BTRFS_FT_DIR)
++				log_mode = LOG_INODE_ALL;
++
++			mutex_lock_nested(&di_inode->i_mutex, I_MUTEX_CHILD);
++			if (btrfs_inode_in_log(di_inode,
++					       root->fs_info->generation)) {
++				mutex_unlock(&di_inode->i_mutex);
++				iput(di_inode);
++				continue;
++			}
++
++			btrfs_release_path(path);
++			ctx->log_new_dentries = false;
++			ret = btrfs_log_inode(trans, root, di_inode,
++					      log_mode, 0, LLONG_MAX, ctx);
++			mutex_unlock(&di_inode->i_mutex);
++			iput(di_inode);
++			if (ret)
++				goto out;
++			if (ctx->log_new_dentries) {
++				new_dir_elem = kmalloc(sizeof(*new_dir_elem),
++						       GFP_NOFS);
++				if (!new_dir_elem) {
++					ret = -ENOMEM;
++					goto out;
++				}
++				new_dir_elem->ino = di_key.objectid;
++				list_add_tail(&new_dir_elem->list, &dir_list);
++			}
++			break;
++		}
++		if (i == nritems) {
++			ret = btrfs_next_leaf(log, path);
++			if (ret < 0)
++				goto out;
++			else if (ret > 0)
++				goto next_dir_inode;
++			goto process_leaf;
++		}
++		if (min_key.offset < (u64)-1) {
++			min_key.offset++;
++			goto again;
++		}
++next_dir_inode:
++		list_del(&dir_elem->list);
++		kfree(dir_elem);
++	}
++	ret = 0;
++out:
++	while (!list_empty(&dir_list)) {
++		dir_elem = list_first_entry(&dir_list, struct btrfs_dir_list,
++					    list);
++		list_del(&dir_elem->list);
++		kfree(dir_elem);
++	}
++	btrfs_free_path(path);
++	return ret;
++}
++
+ /*
+  * helper function around btrfs_log_inode to make sure newly created
+  * parent directories also end up in the log.  A minimal inode and backref
+@@ -4394,6 +4560,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	const struct dentry * const first_parent = parent;
+ 	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
+ 				 last_committed);
++	bool log_dentries = false;
++	struct inode *orig_inode = inode;
+ 
+ 	sb = inode->i_sb;
+ 
+@@ -4449,6 +4617,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		goto end_trans;
+ 	}
+ 
++	if (S_ISDIR(inode->i_mode) && ctx && ctx->log_new_dentries)
++		log_dentries = true;
++
+ 	while (1) {
+ 		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
+ 			break;
+@@ -4485,7 +4656,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		dput(old_parent);
+ 		old_parent = parent;
+ 	}
+-	ret = 0;
++	if (log_dentries)
++		ret = log_new_dir_dentries(trans, root, orig_inode, ctx);
++	else
++		ret = 0;
+ end_trans:
+ 	dput(old_parent);
+ 	if (ret < 0) {
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 154990c..6916a78 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -29,6 +29,7 @@ struct btrfs_log_ctx {
+ 	int log_ret;
+ 	int log_transid;
+ 	int io_err;
++	bool log_new_dentries;
+ 	struct list_head list;
+ };
+ 
+@@ -37,6 +38,7 @@ static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx)
+ 	ctx->log_ret = 0;
+ 	ctx->log_transid = 0;
+ 	ctx->io_err = 0;
++	ctx->log_new_dentries = false;
+ 	INIT_LIST_HEAD(&ctx->list);
+ }
+ 
+-- 
+2.1.3
+

@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f172.google.com ([209.85.217.172]:36620 "EHLO
-	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752484AbbBTWqz convert rfc822-to-8bit (ORCPT
+Received: from smtp-relay2.uniserve.net ([216.210.109.135]:39627 "EHLO
+	smtp-relay2.uniserve.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751744AbbBVBPC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Feb 2015 17:46:55 -0500
-Received: by lbvp9 with SMTP id p9so9196635lbv.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Feb 2015 14:46:54 -0800 (PST)
+	Sat, 21 Feb 2015 20:15:02 -0500
+Received: from webapp1.uniserve.ca ([204.239.42.114])
+	by smtp-relay2.uniserve.net with esmtp (Exim 4.72)
+	(envelope-from <geek@uniserve.com>)
+	id 1YPKwV-0002BZ-0n
+	for linux-btrfs@vger.kernel.org; Sat, 21 Feb 2015 17:02:43 -0800
+Message-ID: <20150221170242.97157f5dfm60oib6@webmail.uniserve.com>
+Date: Sat, 21 Feb 2015 17:02:42 -0800
+From: Dave Stevens <geek@uniserve.com>
+To: linux-btrfs@vger.kernel.org
+Subject: OT raid-1 from raid-10?
 MIME-Version: 1.0
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Date: Fri, 20 Feb 2015 17:46:34 -0500
-Message-ID: <CAF1iTguBBgEK++S9RcprrsB2VbQNpjfi6aZMD2X81mP66BVS4Q@mail.gmail.com>
-Subject: Re: scrub problem
-To: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+ charset=ISO-8859-1;
+ DelSp="Yes";
+ format="flowed"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2015-02-20 at 20:59 +0100, Johan Kröckel wrote:
-> The scrub is neither cancelable not stoppable. What is the problem?
->
-> [ root@host]# btrfs scrub status ./
-> scrub status for XXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXX
-> scrub started at Thu Feb 19 12:41:22 2015, running for 16964 seconds
-> total bytes scrubbed: 1.56TiB with 0 errors
-> [ root@host]# btrfs scrub cancel ./
-> ERROR: scrub cancel failed on ./: not running
-> [ root@host]# btrfs scrub start ./
-> ERROR: scrub is already running.
-> To cancel use 'btrfs scrub cancel ./'.
-> To see the status use 'btrfs scrub status [-d] ./'.
+If there's a better list please say so.
 
-You don't say here which version of btrfs-progs you are using...
+I have a raid-10 array with two dirty drives and (according to the  
+kernel) not enough mirrors to repair the raid-10. But I think drives  
+sda and sdb are mirrored and maybe I could read the data off them if I  
+changed the fs type from linux raid autodetect to ext3. is that  
+reasonable?
 
-As Bob said, this issue is caused by a desynchronization between the
-state file on the drive and the kernel state. However, code was added
-to btrfs-progs 3.17 to detect and correct this condition.
-
-I'd suggest updating your btrfs-progs.
+D
 
 -- 
-Calvin Walton <calvin.walton@kepstin.ca>
+"As long as politics is the shadow cast on society by big business,
+the attenuation of the shadow will not change the substance."
+
+-- John Dewey
+
+
+
+
+

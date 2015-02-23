@@ -1,64 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:34879 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38370 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751939AbbBSS3p (ORCPT
+	by vger.kernel.org with ESMTP id S1751951AbbBWUFr (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 19 Feb 2015 13:29:45 -0500
+	Mon, 23 Feb 2015 15:05:47 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic test for directory fsync after adding hard links
-Date: Thu, 19 Feb 2015 18:29:11 +0000
-Message-Id: <1424370551-18884-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fsync after removing xattrs
+Date: Mon, 23 Feb 2015 19:55:27 +0000
+Message-Id: <1424721327-25972-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This test is motivated by an fsync issue discovered in btrfs.
-The issue was that after adding a new hard link to an existing file
-(one that was created in a past transaction) and fsync'ing the parent
-directory of the new hard link, after the fsync log replay the file's
-inode link count did not get its link count incremented, while the new
-directory entry was visible.
-Also, unlike xfs and ext4, new files under the directory we fsync were
-not being written to the fsync log, nor were any child directories and
-new files and links under the children directories. So this test verifies
-too that btrfs has the same behaviour as xfs and ext4.
+The issue was that the fsync log replay code did not remove xattrs that
+were deleted before the inode was fsynced. The result was unexpected
+and differed from xfs and ext3/4 for example.
 
 The btrfs issue was fixed by the following linux kernel patch:
 
-  Btrfs: fix metadata inconsistencies after directory fsync
+   Btrfs: remove deleted xattrs on fsync log replay
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/060     | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/060.out |   3 +
+ tests/generic/061     | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/061.out |  10 +++++
  tests/generic/group   |   1 +
- 3 files changed, 154 insertions(+)
- create mode 100755 tests/generic/060
- create mode 100644 tests/generic/060.out
+ 3 files changed, 126 insertions(+)
+ create mode 100755 tests/generic/061
+ create mode 100644 tests/generic/061.out
 
-diff --git a/tests/generic/060 b/tests/generic/060
+diff --git a/tests/generic/061 b/tests/generic/061
 new file mode 100755
-index 0000000..a3ff618
+index 0000000..a5eb668
 --- /dev/null
-+++ b/tests/generic/060
-@@ -0,0 +1,150 @@
++++ b/tests/generic/061
+@@ -0,0 +1,115 @@
 +#! /bin/bash
-+# FS QA Test No. 060
++# FS QA Test No. 061
 +#
 +# This test is motivated by an fsync issue discovered in btrfs.
-+# The issue was that after adding a new hard link to an existing file (one that
-+# was created in a past transaction) and fsync'ing the parent directory of the
-+# new hard link, after the fsync log replay the file's inode link count did not
-+# get its link count incremented, while the new directory entry was visible.
-+# Also, unlike xfs and ext4, new files under the directory we fsync were not
-+# being written to the fsync log, nor were any child directories and new files
-+# and links under the children directories. So this test verifies too that
-+# btrfs has the same behaviour as xfs and ext4.
++# The issue was that the fsync log replay code did not remove xattrs that
++# were deleted before the inode was fsynced.
 +#
 +# The btrfs issue was fixed by the following linux kernel patch:
 +#
-+#  Btrfs: fix metadata inconsistencies after directory fsync
++#  Btrfs: remove deleted xattrs on fsync log replay
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -98,6 +86,7 @@ index 0000000..a3ff618
 +. ./common/rc
 +. ./common/filter
 +. ./common/dmflakey
++. ./common/attr
 +
 +# real QA test starts here
 +_supported_fs generic
@@ -105,6 +94,16 @@ index 0000000..a3ff618
 +_need_to_be_root
 +_require_scratch
 +_require_dm_flakey
++_require_attrs
++
++_crash_and_mount()
++{
++	# Simulate a crash/power loss.
++	_load_flakey_table $FLAKEY_DROP_WRITES
++	_unmount_flakey
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
++	_mount_flakey
++}
 +
 +rm -f $seqres.full
 +
@@ -112,105 +111,72 @@ index 0000000..a3ff618
 +_init_flakey
 +_mount_flakey
 +
-+# Create our test file and directory.
-+touch $SCRATCH_MNT/foo
-+mkdir $SCRATCH_MNT/mydir
++# Create out test file and add 3 xattrs to it.
++touch $SCRATCH_MNT/foobar
++$SETFATTR_PROG -n user.attr1 -v val1 $SCRATCH_MNT/foobar
++$SETFATTR_PROG -n user.attr2 -v val2 $SCRATCH_MNT/foobar
++$SETFATTR_PROG -n user.attr3 -v val3 $SCRATCH_MNT/foobar
 +
-+# Make sure all metadata is durably persisted.
++# Make sure everything is durably persisted.
 +sync
 +
-+# Add a hard link to 'foo' inside our test directory and fsync only the
-+# directory. The btrfs fsync implementation had a bug that caused the new
-+# directory entry to be visible after the fsync log replay but, the inode
-+# of our file remained with a link count of 1.
-+ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_2
++# Now delete the second xattr and fsync the inode.
++$SETFATTR_PROG -x user.attr2 $SCRATCH_MNT/foobar
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
 +
-+# Add a few more links and files created in the current transaction.
-+# Just to verify nothing breaks or gives incorrect results.
-+ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/foo_3
-+echo "hello world" > $SCRATCH_MNT/hello
-+ln $SCRATCH_MNT/hello $SCRATCH_MNT/mydir/hello_2
++_crash_and_mount
 +
-+# Add some subdirectories and new files and links to them. This is to verify
-+# that after fsyncing our top level directory 'mydir', all the subdirectories
-+# and their files/links are registered in the fsync log and exist after the
-+# fsync log is replayed - xfs and ext4 give this guarantee.
-+mkdir -p $SCRATCH_MNT/mydir/x/y/z
-+ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/foo_y_link
-+ln $SCRATCH_MNT/foo $SCRATCH_MNT/mydir/x/y/z/foo_z_link
-+touch $SCRATCH_MNT/mydir/x/y/z/qwerty
++# After the fsync log is replayed, the file should have only 2 xattrs, the ones
++# named user.attr1 and user.attr3. The btrfs fsync log replay bug left the file
++# with the 3 xattrs that we had before deleting the second one and fsyncing the
++# file.
++echo "xattr names and values after first fsync log replay:"
++$GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foobar | _filter_scratch
 +
-+# Now fsync only our top directory.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/mydir
++# Now write some data to our file, fsync it, remove the first xattr, add a new
++# hard link to our file and commit the fsync log by fsyncing some other new
++# file. This is to verify that after log replay our first xattr does not exist
++# anymore.
++echo "hello world!" >> $SCRATCH_MNT/foobar
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
++$SETFATTR_PROG -x user.attr1 $SCRATCH_MNT/foobar
++ln $SCRATCH_MNT/foobar $SCRATCH_MNT/foobar_link
++touch $SCRATCH_MNT/qwerty
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/qwerty
 +
-+# Simulate a crash/power loss.
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
++_crash_and_mount
 +
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+_mount_flakey
-+
-+# Remove the first name of our inode. Because of the directory fsync bug, the
-+# inode's link count was 1 instead of 5, so removing the 'foo' name ends up
-+# deleting the inode and the other names are stale directory entries (and still
-+# visible to applications). Attempting to remove or access the remaining
-+# dentries pointing to that inode resulted in stale file handle errors, and
-+# made it impossible to remove the parent directories since it was impossible
-+# for them to become empty.
-+echo "file 'foo' link count after log replay: $(stat -c %h $SCRATCH_MNT/foo)"
-+rm -f $SCRATCH_MNT/foo
-+
-+# Now verify that all files, links and directories created before fsyncing our
-+# directory exist after the fsync log was replayed.
-+[ -f $SCRATCH_MNT/mydir/foo_2 ] || echo "Link mydir/foo_2 is missing"
-+[ -f $SCRATCH_MNT/mydir/foo_3 ] || echo "Link mydir/foo_3 is missing"
-+[ -f $SCRATCH_MNT/hello ] || echo "File hello is missing"
-+echo "file 'hello' size after log replay: $(stat -c %s $SCRATCH_MNT/hello)"
-+[ -f $SCRATCH_MNT/mydir/hello_2 ] || echo "Link mydir/hello_2 is missing"
-+[ -f $SCRATCH_MNT/mydir/x/y/foo_y_link ] || \
-+	echo "Link mydir/x/y/foo_y_link is missing"
-+[ -f $SCRATCH_MNT/mydir/x/y/z/foo_z_link ] || \
-+	echo "Link mydir/x/y/z/foo_z_link is missing"
-+[ -f $SCRATCH_MNT/mydir/x/y/z/qwerty ] || \
-+	echo "File mydir/x/y/z/qwerty is missing"
-+
-+# Now remove all files/links, under our test directory 'mydir', and verify we
-+# can remove all the directories.
-+rm -f $SCRATCH_MNT/mydir/x/y/z/*
-+rmdir $SCRATCH_MNT/mydir/x/y/z
-+rm -f $SCRATCH_MNT/mydir/x/y/*
-+rmdir $SCRATCH_MNT/mydir/x/y
-+rmdir $SCRATCH_MNT/mydir/x
-+rm -f $SCRATCH_MNT/mydir/*
-+rmdir $SCRATCH_MNT/mydir
-+
-+# An fsck, run by the fstests framework everytime a test finishes, also detected
-+# the inconsistency and printed the following error message:
-+#
-+# root 5 inode 257 errors 2001, no inode item, link count wrong
-+#    unresolved ref dir 258 index 2 namelen 5 name foo_2 filetype 1 errors 4, no inode ref
-+#    unresolved ref dir 258 index 3 namelen 5 name foo_3 filetype 1 errors 4, no inode ref
++# Now only the xattr with name user.attr3 should be set in our file.
++echo "xattr names and values after second fsync log replay:"
++$GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foobar | _filter_scratch
 +
 +status=0
 +exit
-diff --git a/tests/generic/060.out b/tests/generic/060.out
+diff --git a/tests/generic/061.out b/tests/generic/061.out
 new file mode 100644
-index 0000000..3ecb0a1
+index 0000000..028d9e6
 --- /dev/null
-+++ b/tests/generic/060.out
-@@ -0,0 +1,3 @@
-+QA output created by 060
-+file 'foo' link count after log replay: 5
-+file 'hello' size after log replay: 0
++++ b/tests/generic/061.out
+@@ -0,0 +1,10 @@
++QA output created by 061
++xattr names and values after first fsync log replay:
++# file: SCRATCH_MNT/foobar
++user.attr1="val1"
++user.attr3="val3"
++
++xattr names and values after second fsync log replay:
++# file: SCRATCH_MNT/foobar
++user.attr3="val3"
++
 diff --git a/tests/generic/group b/tests/generic/group
-index f2eb87a..85ff384 100644
+index 85ff384..758f0e2 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -61,6 +61,7 @@
- 056 metadata auto quick
+@@ -62,6 +62,7 @@
  057 metadata auto quick
  059 metadata auto quick
-+060 metadata auto quick
+ 060 metadata auto quick
++061 metadata auto quick
  062 attr udf auto quick
  068 other auto freeze dangerous stress
  069 rw udf auto quick

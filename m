@@ -1,53 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:8734 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752028AbbBWTkB convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Feb 2015 14:40:01 -0500
-Date: Mon, 23 Feb 2015 14:39:54 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: Suddenly cannot change metadata profile any longer (BISECTED)
-To: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Message-ID: <1424720394.23448.1@mail.thefacebook.com>
-In-Reply-To: <pan.2015.02.22.18.01.07@googlemail.com>
-References: <pan.2015.02.15.21.01.07@googlemail.com>
-	<pan.2015.02.16.15.18.40@googlemail.com>
-	<pan.2015.02.22.18.01.07@googlemail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:57909 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751861AbbBWT7r (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 23 Feb 2015 14:59:47 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix off-by-one logic error in btrfs_realloc_node
+Date: Mon, 23 Feb 2015 19:48:52 +0000
+Message-Id: <1424720932-15388-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The end_slot variable actually matches the number of pointers in the
+node and not the last slot (which is 'nritems - 1'). Therefore in order
+to check that the current slot in the for loop doesn't match the last
+one, the correct logic is to check if 'i' is less than 'end_slot - 1'
+and not 'end_slot - 2'.
 
+Fix this and set end_slot to be 'nritems - 1', as it's less confusing
+since the variable name implies it's inclusive rather then exclusive.
 
-On Sun, Feb 22, 2015 at 1:01 PM, Holger Hoffstätte 
-<holger.hoffstaette@googlemail.com> wrote:
-> On Mon, 16 Feb 2015 15:18:40 +0000, Holger Hoffstätte wrote:
-> 
->>>  What works is the very first balance after the mkfs - it 
->>> successfully
->>>  changes from the initial default dup to single, but subsequent 
->>> balances
->>>  don't work. They also don't really fail.
->> 
->>  Bisection found that commit 
->> 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e [1]
->>  in the integration tree is the cause:
->> 
->>    btrfs: delete chunk allocation attemp when setting block group ro
->> 
->>  Reverting/omitting this patch lets me rebalance/convert at will.
-> 
-> Just for the list archives: Chris mailed me privately that they could
-> reproduce the problem and will provide a fix post-3.20-rc1
-> (since that commit already went in with the merge window).
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Apparently reply-to-all is harder than it looks.  Thanks for forwarding 
-this along.
-
--chris
-
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 9936421..6d67f32 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1645,14 +1645,14 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 
+ 	parent_nritems = btrfs_header_nritems(parent);
+ 	blocksize = root->nodesize;
+-	end_slot = parent_nritems;
++	end_slot = parent_nritems - 1;
+ 
+-	if (parent_nritems == 1)
++	if (parent_nritems <= 1)
+ 		return 0;
+ 
+ 	btrfs_set_lock_blocking(parent);
+ 
+-	for (i = start_slot; i < end_slot; i++) {
++	for (i = start_slot; i <= end_slot; i++) {
+ 		int close = 1;
+ 
+ 		btrfs_node_key(parent, &disk_key, i);
+@@ -1669,7 +1669,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 			other = btrfs_node_blockptr(parent, i - 1);
+ 			close = close_blocks(blocknr, other, blocksize);
+ 		}
+-		if (!close && i < end_slot - 2) {
++		if (!close && i < end_slot) {
+ 			other = btrfs_node_blockptr(parent, i + 1);
+ 			close = close_blocks(blocknr, other, blocksize);
+ 		}
+-- 
+2.1.3
 

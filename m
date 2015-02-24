@@ -1,80 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:35708 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753495AbbBXKra (ORCPT
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:33495 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753467AbbBXKr2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 05:47:30 -0500
-Received: by padfa1 with SMTP id fa1so35231375pad.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:29 -0800 (PST)
+	Tue, 24 Feb 2015 05:47:28 -0500
+Received: by pabkx10 with SMTP id kx10so35199881pab.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:27 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.cz>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 2/3] btrfs: fix race on ENOMEM in alloc_extent_buffer
-Date: Tue, 24 Feb 2015 02:47:05 -0800
-Message-Id: <bb30d69d671243192fb08002b31375e55afe9644.1424773781.git.osandov@osandov.com>
-In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
-References: <cover.1424773781.git.osandov@osandov.com>
-In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
-References: <cover.1424773781.git.osandov@osandov.com>
+Subject: [PATCH v2 0/3] btrfs: ENOMEM bugfixes
+Date: Tue, 24 Feb 2015 02:47:03 -0800
+Message-Id: <cover.1424773781.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Consider the following interleaving of overlapping calls to
-alloc_extent_buffer:
+Hi, everyone,
 
-Call 1:
+This patch series fixes a few bugs that occur under low memory conditions.
+These were exposed by a change in behavior of GFP_NOFS allocations in 3.19-rc7,
+by commit 9879de7373fc ("mm: page_alloc: embed OOM killing naturally into
+allocation slowpath"). While the mm people sort that out, we can fix these
+issues, which are bugs no matter what the outcome there is.
 
-- Successfully allocates a few pages with find_or_create_page
-- find_or_create_page fails, goto free_eb
-- Unlocks the allocated pages
+Here's a quick script which reproduces these bugs. With the patches applied, the
+filesystem will drop into read-only mode instead of blowing up.
 
-Call 2:
-- Calls find_or_create_page and gets a page in call 1's extent_buffer
-- Finds that the page is already associated with an extent_buffer
-- Grabs a reference to the half-written extent_buffer and calls
-  mark_extent_buffer_accessed on it
+----
+#!/bin/sh
 
-mark_extent_buffer_accessed will then try to call mark_page_accessed on
-a null page and panic.
+cgcreate -g memory:enomem
+MEM=$((64 * 1024 * 1024))
+echo $MEM > /sys/fs/cgroup/memory/enomem/memory.limit_in_bytes
 
-The fix is to decrement the reference count on the half-written
-extent_buffer before unlocking the pages so call 2 won't use it. We
-should also set exists = NULL in the case that we don't use exists to
-avoid accidentally returning a freed extent_buffer in an error case.
+cgexec -g memory:enomem ~/xfstests/ltp/fsstress -p128 -n999999999 -d /mnt/test &
+trap "killall fsstress; exit 0" SIGINT SIGTERM
 
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/btrfs/extent_io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+while true; do
+	cgexec -g memory:enomem python -c '
+l = []
+while True:
+    l.append(0)'
+done
+----
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c7233ff..7ecfae0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4867,6 +4867,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 				mark_extent_buffer_accessed(exists, p);
- 				goto free_eb;
- 			}
-+			exists = NULL;
- 
- 			/*
- 			 * Do this so attach doesn't complain and we need to
-@@ -4930,12 +4931,12 @@ again:
- 	return eb;
- 
- free_eb:
-+	WARN_ON(!atomic_dec_and_test(&eb->refs));
- 	for (i = 0; i < num_pages; i++) {
- 		if (eb->pages[i])
- 			unlock_page(eb->pages[i]);
- 	}
- 
--	WARN_ON(!atomic_dec_and_test(&eb->refs));
- 	btrfs_release_extent_buffer(eb);
- 	return exists;
- }
+Version 2 rebases on top of 4.0-rc1, has a simpler fix for the
+alloc_extent_buffer race, expands the commit messages to mention changed
+comments, and adds Liu Bo's Reviewed-by.
+
+Thanks!
+
+Omar Sandoval (3):
+  btrfs: handle ENOMEM in btrfs_alloc_tree_block
+  btrfs: fix race on ENOMEM in alloc_extent_buffer
+  btrfs: check io_ctl_prepare_pages return in __btrfs_write_out_cache
+
+ fs/btrfs/extent-tree.c      | 41 ++++++++++++++++++++++++++++-------------
+ fs/btrfs/extent_io.c        |  3 ++-
+ fs/btrfs/free-space-cache.c | 10 ++++++----
+ 3 files changed, 36 insertions(+), 18 deletions(-)
 -- 
 2.3.0
 

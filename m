@@ -1,286 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:40490 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751861AbbBWUEC (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 23 Feb 2015 15:04:02 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: remove deleted xattrs on fsync log replay
-Date: Mon, 23 Feb 2015 19:53:35 +0000
-Message-Id: <1424721215-24811-1-git-send-email-fdmanana@suse.com>
+Received: from ud10.udmedia.de ([194.117.254.50]:60531 "EHLO
+	mail.ud10.udmedia.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752314AbbBXM3F (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Feb 2015 07:29:05 -0500
+Date: Tue, 24 Feb 2015 13:29:01 +0100
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693
+ btrfs_destroy_inode+0x278/0x2a0()
+Message-ID: <20150224122901.GC343@x4>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150220100934.GA343@x4>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we deleted xattrs from a file and fsynced the file, after a log replay
-the xattrs would remain associated to the file. This was an unexpected
-behaviour and differs from what other filesystems do, such as for example
-xfs and ext3/4.
+On 2015.02.20 at 11:09 +0100, Markus Trippelsdorf wrote:
+> 
+> I get the following warnings during Firefox LTO build. lto1-wpa-stream
+> outputs the final object files in parallel and therefore stresses the
+> filessystem.
+> These warnings started with the git merge above.
+> 
+> The disk is a conventional drive:
+> 
+> [    2.438132] scsi 1:0:0:0: Direct-Access     ATA      ST2000DM001-1CH1 CC29 PQ: 0 ANSI: 5
+> [    2.438308] sd 1:0:0:0: [sda] 3907029168 512-byte logical blocks: (2.00 TB/1.81 TiB)
+> [    2.438310] sd 1:0:0:0: [sda] 4096-byte physical blocks
+> 
+> /dev/sda2      btrfs     1.9T  905G  946G  49% /var
+> /dev/sda2 on /var type btrfs (rw,relatime,compress=lzo,noacl,space_cache)
+> 
+> 
+> [ 4155.708579] ------------[ cut here ]------------
+> [ 4155.708590] WARNING: CPU: 1 PID: 8850 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> [ 4155.708593] CPU: 1 PID: 8850 Comm: lto1-wpa-stream Not tainted 3.19.0-08975-g3d883483dc0a-dirty #101
+> [ 4155.708594] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [ 4155.708595]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> [ 4155.708597]  ffffffff8106d2d2 ffff8800dad9bb78 ffff88018554ccc0 ffff880215e2e000
+> [ 4155.708599]  ffff880215f23000 0000000000000000 ffffffff8121b6f8 0000000000000000
+> [ 4155.708601] Call Trace:
+> [ 4155.708606]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> [ 4155.708609]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [ 4155.708611]  [<ffffffff8121b6f8>] ? btrfs_destroy_inode+0x278/0x2a0
+> [ 4155.708614]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> [ 4155.708615]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> [ 4155.708618]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> [ 4155.708621]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> [ 4155.708623]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> [ 4155.708625]  [<ffffffff810e3241>] ? try_to_free_pages+0x1e1/0x320
+> [ 4155.708626]  [<ffffffff810daa82>] ? __alloc_pages_nodemask+0x382/0x680
+> [ 4155.708629]  [<ffffffff810f597d>] ? handle_mm_fault+0xbbd/0xe60
+> [ 4155.708631]  [<ffffffff81092e15>] ? put_prev_task_fair+0x75/0x320
+> [ 4155.708632]  [<ffffffff810903b0>] ? __dequeue_entity+0x30/0x40
+> [ 4155.708633]  [<ffffffff81094975>] ? pick_next_task_fair+0x415/0x480
+> [ 4155.708636]  [<ffffffff81064144>] ? __do_page_fault+0x104/0x3a0
+> [ 4155.708637]  [<ffffffff8168fb77>] ? __schedule+0x257/0x860
+> [ 4155.708639]  [<ffffffff8169518f>] ? page_fault+0x1f/0x30
+> [ 4155.708640] ---[ end trace 265993ee076d84aa ]---
+> [ 4155.708641] ------------[ cut here ]------------
+> [ 4155.708643] WARNING: CPU: 1 PID: 8850 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> [ 4155.708644] CPU: 1 PID: 8850 Comm: lto1-wpa-stream Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> [ 4155.708645] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [ 4155.708645]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> [ 4155.708647]  ffffffff8106d2d2 ffff8800dad9bb78 ffff88018554ccc0 ffff880215e2e000
+> [ 4155.708648]  ffff880215f23000 0000000000000000 ffffffff8121b672 0000000000000000
+> [ 4155.708649] Call Trace:
+> [ 4155.708651]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> [ 4155.708652]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [ 4155.708654]  [<ffffffff8121b672>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> [ 4155.708655]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> [ 4155.708656]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> [ 4155.708658]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> [ 4155.708659]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> [ 4155.708661]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> [ 4155.708662]  [<ffffffff810e3241>] ? try_to_free_pages+0x1e1/0x320
+> [ 4155.708664]  [<ffffffff810daa82>] ? __alloc_pages_nodemask+0x382/0x680
+> [ 4155.708665]  [<ffffffff810f597d>] ? handle_mm_fault+0xbbd/0xe60
+> [ 4155.708667]  [<ffffffff81092e15>] ? put_prev_task_fair+0x75/0x320
+> [ 4155.708668]  [<ffffffff810903b0>] ? __dequeue_entity+0x30/0x40
+> [ 4155.708669]  [<ffffffff81094975>] ? pick_next_task_fair+0x415/0x480
+> [ 4155.708670]  [<ffffffff81064144>] ? __do_page_fault+0x104/0x3a0
+> [ 4155.708672]  [<ffffffff8168fb77>] ? __schedule+0x257/0x860
+> [ 4155.708673]  [<ffffffff8169518f>] ? page_fault+0x1f/0x30
+> [ 4155.708674] ---[ end trace 265993ee076d84ab ]---
+> [ 4156.021127] ------------[ cut here ]------------
+> [ 4156.021136] WARNING: CPU: 3 PID: 35 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> [ 4156.021139] CPU: 3 PID: 35 Comm: kswapd0 Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> [ 4156.021140] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [ 4156.021141]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> [ 4156.021143]  ffffffff8106d2d2 ffff8802160dfcb8 ffff88006b07a690 ffff880215e2e000
+> [ 4156.021145]  ffff880215f23000 0000000000000000 ffffffff8121b6f8 0000000000000000
+> [ 4156.021146] Call Trace:
+> [ 4156.021151]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> [ 4156.021154]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [ 4156.021156]  [<ffffffff8121b6f8>] ? btrfs_destroy_inode+0x278/0x2a0
+> [ 4156.021159]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> [ 4156.021160]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> [ 4156.021163]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> [ 4156.021166]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> [ 4156.021168]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> [ 4156.021169]  [<ffffffff810e3698>] ? kswapd+0x318/0x6c0
+> [ 4156.021171]  [<ffffffff810e3380>] ? try_to_free_pages+0x320/0x320
+> [ 4156.021173]  [<ffffffff81084c3c>] ? kthread+0xbc/0xe0
+> [ 4156.021175]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> [ 4156.021177]  [<ffffffff81693bec>] ? ret_from_fork+0x7c/0xb0
+> [ 4156.021178]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> [ 4156.021179] ---[ end trace 265993ee076d84ac ]---
+> [ 4156.021180] ------------[ cut here ]------------
+> [ 4156.021182] WARNING: CPU: 3 PID: 35 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> [ 4156.021183] CPU: 3 PID: 35 Comm: kswapd0 Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> [ 4156.021184] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [ 4156.021184]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> [ 4156.021186]  ffffffff8106d2d2 ffff8802160dfcb8 ffff88006b07a690 ffff880215e2e000
+> [ 4156.021187]  ffff880215f23000 0000000000000000 ffffffff8121b672 0000000000000000
+> [ 4156.021188] Call Trace:
+> [ 4156.021190]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> [ 4156.021191]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [ 4156.021192]  [<ffffffff8121b672>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> [ 4156.021194]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> [ 4156.021195]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> [ 4156.021197]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> [ 4156.021198]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> [ 4156.021200]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> [ 4156.021201]  [<ffffffff810e3698>] ? kswapd+0x318/0x6c0
+> [ 4156.021203]  [<ffffffff810e3380>] ? try_to_free_pages+0x320/0x320
+> [ 4156.021204]  [<ffffffff81084c3c>] ? kthread+0xbc/0xe0
+> [ 4156.021205]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> [ 4156.021207]  [<ffffffff81693bec>] ? ret_from_fork+0x7c/0xb0
+> [ 4156.021208]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> [ 4156.021209] ---[ end trace 265993ee076d84ad ]---
 
-Fix this by, on fsync log replay, check if every xattr in the fs/subvol
-tree (that belongs to a logged inode) has a matching xattr in the log,
-and if it does not, delete it from the fs/subvol tree. This is a similar
-approach to what we do for dentries when we replay a directory from the
-fsync log.
+Also happens when I remove directories:
 
-This issue is trivial to reproduce, and the following excerpt from my
-test for xfstests triggers the issue:
+[83159.023857] ------------[ cut here ]------------
+[83159.023865] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+[83159.023868] CPU: 2 PID: 32343 Comm: rm Not tainted 4.0.0-rc1-dirty #104
+[83159.023869] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+[83159.023870]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+[83159.023872]  ffffffff8106d2d2 0000000000000000 ffff880008dd8560 ffff880215805800
+[83159.023873]  ffff880169477eb8 ffff880008dd8560 ffffffff8121bab8 ffff880100675000
+[83159.023874] Call Trace:
+[83159.023878]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+[83159.023881]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+[83159.023882]  [<ffffffff8121bab8>] ? btrfs_destroy_inode+0x278/0x2a0
+[83159.023885]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+[83159.023887]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+[83159.023889]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+[83159.023891]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+[83159.023892] ---[ end trace 3b7c45c6e46fe8db ]---
+[83159.023892] ------------[ cut here ]------------
+[83159.023894] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+[83159.023895] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+[83159.023896] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+[83159.023897]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+[83159.023898]  ffffffff8106d2d2 0000000000000000 ffff880008dd8560 ffff880215805800
+[83159.023899]  ffff880169477eb8 ffff880008dd8560 ffffffff8121ba32 ffff880100675000
+[83159.023900] Call Trace:
+[83159.023902]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+[83159.023903]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+[83159.023905]  [<ffffffff8121ba32>] ? btrfs_destroy_inode+0x1f2/0x2a0
+[83159.023906]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+[83159.023907]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+[83159.023909]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+[83159.023910]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+[83159.023911] ---[ end trace 3b7c45c6e46fe8dc ]---
+[83159.038708] ------------[ cut here ]------------
+[83159.038716] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+[83159.038718] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+[83159.038719] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+[83159.038720]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+[83159.038722]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+[83159.038723]  ffff880169477eb8 ffff88005756edf0 ffffffff8121bab8 ffff880100675000
+[83159.038725] Call Trace:
+[83159.038728]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+[83159.038731]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+[83159.038732]  [<ffffffff8121bab8>] ? btrfs_destroy_inode+0x278/0x2a0
+[83159.038735]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+[83159.038737]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+[83159.038740]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+[83159.038742]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+[83159.038743] ---[ end trace 3b7c45c6e46fe8dd ]---
+[83159.038744] ------------[ cut here ]------------
+[83159.038745] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+[83159.038746] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+[83159.038747] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+[83159.038747]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+[83159.038749]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+[83159.038750]  ffff880169477eb8 ffff88005756edf0 ffffffff8121ba32 ffff880100675000
+[83159.038751] Call Trace:
+[83159.038753]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+[83159.038754]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+[83159.038755]  [<ffffffff8121ba32>] ? btrfs_destroy_inode+0x1f2/0x2a0
+[83159.038757]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+[83159.038758]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+[83159.038760]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+[83159.038761]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+[83159.038762] ---[ end trace 3b7c45c6e46fe8de ]---
 
-  _crash_and_mount()
-  {
-       # Simulate a crash/power loss.
-       _load_flakey_table $FLAKEY_DROP_WRITES
-       _unmount_flakey
-       _load_flakey_table $FLAKEY_ALLOW_WRITES
-       _mount_flakey
-  }
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >> $seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  # Create out test file and add 3 xattrs to it.
-  touch $SCRATCH_MNT/foobar
-  $SETFATTR_PROG -n user.attr1 -v val1 $SCRATCH_MNT/foobar
-  $SETFATTR_PROG -n user.attr2 -v val2 $SCRATCH_MNT/foobar
-  $SETFATTR_PROG -n user.attr3 -v val3 $SCRATCH_MNT/foobar
-
-  # Make sure everything is durably persisted.
-  sync
-
-  # Now delete the second xattr and fsync the inode.
-  $SETFATTR_PROG -x user.attr2 $SCRATCH_MNT/foobar
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
-
-  _crash_and_mount
-
-  # After the fsync log is replayed, the file should have only 2 xattrs, the ones
-  # named user.attr1 and user.attr3. The btrfs fsync log replay bug left the file
-  # with the 3 xattrs that we had before deleting the second one and fsyncing the
-  # file.
-  echo "xattr names and values after first fsync log replay:"
-  $GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foobar | _filter_scratch
-
-  # Now write some data to our file, fsync it, remove the first xattr, add a new
-  # hard link to our file and commit the fsync log by fsyncing some other new
-  # file. This is to verify that after log replay our first xattr does not exist
-  # anymore.
-  echo "hello world!" >> $SCRATCH_MNT/foobar
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
-  $SETFATTR_PROG -x user.attr1 $SCRATCH_MNT/foobar
-  ln $SCRATCH_MNT/foobar $SCRATCH_MNT/foobar_link
-  touch $SCRATCH_MNT/qwerty
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/qwerty
-
-  _crash_and_mount
-
-  # Now only the xattr with name user.attr3 should be set in our file.
-  echo "xattr names and values after second fsync log replay:"
-  $GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foobar | _filter_scratch
-
-  status=0
-  exit
-
-The expected golden output, which is produced with this patch applied or
-when testing against xfs or ext3/4, is:
-
-  xattr names and values after first fsync log replay:
-  # file: SCRATCH_MNT/foobar
-  user.attr1="val1"
-  user.attr3="val3"
-
-  xattr names and values after second fsync log replay:
-  # file: SCRATCH_MNT/foobar
-  user.attr3="val3"
-
-Without this patch applied, the output is:
-
-  xattr names and values after first fsync log replay:
-  # file: SCRATCH_MNT/foobar
-  user.attr1="val1"
-  user.attr2="val2"
-  user.attr3="val3"
-
-  xattr names and values after second fsync log replay:
-  # file: SCRATCH_MNT/foobar
-  user.attr1="val1"
-  user.attr2="val2"
-  user.attr3="val3"
-
-A patch with a test case for xfstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 109 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3b8a53f..c0ad094 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1951,6 +1951,104 @@ out:
- 	return ret;
- }
- 
-+static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root,
-+			      struct btrfs_root *log,
-+			      struct btrfs_path *path,
-+			      const u64 ino)
-+{
-+	struct btrfs_key search_key;
-+	struct btrfs_path *log_path;
-+	int i;
-+	int nritems;
-+	int ret;
-+
-+	log_path = btrfs_alloc_path();
-+	if (!log_path)
-+		return -ENOMEM;
-+
-+	search_key.objectid = ino;
-+	search_key.type = BTRFS_XATTR_ITEM_KEY;
-+	search_key.offset = 0;
-+again:
-+	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+process_leaf:
-+	nritems = btrfs_header_nritems(path->nodes[0]);
-+	for (i = path->slots[0]; i < nritems; i++) {
-+		struct btrfs_key key;
-+		struct btrfs_dir_item *di;
-+		struct btrfs_dir_item *log_di;
-+		u32 total_size;
-+		u32 cur;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, i);
-+		if (key.objectid != ino || key.type != BTRFS_XATTR_ITEM_KEY) {
-+			ret = 0;
-+			goto out;
-+		}
-+
-+		di = btrfs_item_ptr(path->nodes[0], i, struct btrfs_dir_item);
-+		total_size = btrfs_item_size_nr(path->nodes[0], i);
-+		cur = 0;
-+		while (cur < total_size) {
-+			u16 name_len = btrfs_dir_name_len(path->nodes[0], di);
-+			u16 data_len = btrfs_dir_data_len(path->nodes[0], di);
-+			u32 this_len = sizeof(*di) + name_len + data_len;
-+			char *name;
-+
-+			name = kmalloc(name_len, GFP_NOFS);
-+			if (!name) {
-+				ret = -ENOMEM;
-+				goto out;
-+			}
-+			read_extent_buffer(path->nodes[0], name,
-+					   (unsigned long)(di + 1), name_len);
-+
-+			log_di = btrfs_lookup_xattr(NULL, log, log_path, ino,
-+						    name, name_len, 0);
-+			btrfs_release_path(log_path);
-+			if (!log_di) {
-+				/* Doesn't exist in log tree, so delete it. */
-+				btrfs_release_path(path);
-+				di = btrfs_lookup_xattr(trans, root, path, ino,
-+							name, name_len, -1);
-+				kfree(name);
-+				if (IS_ERR(di)) {
-+					ret = PTR_ERR(di);
-+					goto out;
-+				}
-+				ASSERT(di);
-+				ret = btrfs_delete_one_dir_name(trans, root,
-+								path, di);
-+				if (ret)
-+					goto out;
-+				btrfs_release_path(path);
-+				search_key = key;
-+				goto again;
-+			}
-+			kfree(name);
-+			if (IS_ERR(log_di)) {
-+				ret = PTR_ERR(log_di);
-+				goto out;
-+			}
-+			cur += this_len;
-+			di = (struct btrfs_dir_item *)((char *)di + this_len);
-+		}
-+	}
-+	ret = btrfs_next_leaf(root, path);
-+	if (ret > 0)
-+		ret = 0;
-+	else if (ret == 0)
-+		goto process_leaf;
-+out:
-+	btrfs_free_path(log_path);
-+	btrfs_release_path(path);
-+	return ret;
-+}
-+
-+
- /*
-  * deletion replay happens before we copy any new directory items
-  * out of the log or out of backreferences from inodes.  It
-@@ -2104,6 +2202,10 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
- 
- 			inode_item = btrfs_item_ptr(eb, i,
- 					    struct btrfs_inode_item);
-+			ret = replay_xattr_deletes(wc->trans, root, log,
-+						   path, key.objectid);
-+			if (ret)
-+				break;
- 			mode = btrfs_inode_mode(eb, inode_item);
- 			if (S_ISDIR(mode)) {
- 				ret = replay_dir_deletes(wc->trans,
-@@ -4101,10 +4203,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	if (S_ISDIR(inode->i_mode)) {
- 		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
- 
--		if (inode_only == LOG_INODE_EXISTS) {
--			max_key_type = BTRFS_INODE_EXTREF_KEY;
--			max_key.type = max_key_type;
--		}
-+		if (inode_only == LOG_INODE_EXISTS)
-+			max_key_type = BTRFS_XATTR_ITEM_KEY;
- 		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
- 	} else {
- 		if (inode_only == LOG_INODE_EXISTS) {
-@@ -4129,7 +4229,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		if (test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 			     &BTRFS_I(inode)->runtime_flags)) {
- 			if (inode_only == LOG_INODE_EXISTS) {
--				max_key.type = BTRFS_INODE_EXTREF_KEY;
-+				max_key.type = BTRFS_XATTR_ITEM_KEY;
- 				ret = drop_objectid_items(trans, log, path, ino,
- 							  max_key.type);
- 			} else {
-@@ -4140,17 +4240,12 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 				ret = btrfs_truncate_inode_items(trans, log,
- 								 inode, 0, 0);
- 			}
--		} else if (test_bit(BTRFS_INODE_COPY_EVERYTHING,
--				    &BTRFS_I(inode)->runtime_flags) ||
-+		} else if (test_and_clear_bit(BTRFS_INODE_COPY_EVERYTHING,
-+					      &BTRFS_I(inode)->runtime_flags) ||
- 			   inode_only == LOG_INODE_EXISTS) {
--			if (inode_only == LOG_INODE_ALL) {
--				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
--					  &BTRFS_I(inode)->runtime_flags);
-+			if (inode_only == LOG_INODE_ALL)
- 				fast_search = true;
--				max_key.type = BTRFS_XATTR_ITEM_KEY;
--			} else {
--				max_key.type = BTRFS_INODE_EXTREF_KEY;
--			}
-+			max_key.type = BTRFS_XATTR_ITEM_KEY;
- 			ret = drop_objectid_items(trans, log, path, ino,
- 						  max_key.type);
- 		} else {
 -- 
-2.1.3
-
+Markus

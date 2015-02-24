@@ -1,66 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:33495 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753467AbbBXKr2 (ORCPT
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:34653 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753474AbbBXKr3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 05:47:28 -0500
-Received: by pabkx10 with SMTP id kx10so35199881pab.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:27 -0800 (PST)
+	Tue, 24 Feb 2015 05:47:29 -0500
+Received: by pabrd3 with SMTP id rd3so35204406pab.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:28 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.cz>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 0/3] btrfs: ENOMEM bugfixes
-Date: Tue, 24 Feb 2015 02:47:03 -0800
-Message-Id: <cover.1424773781.git.osandov@osandov.com>
+Subject: [PATCH v2 1/3] btrfs: handle ENOMEM in btrfs_alloc_tree_block
+Date: Tue, 24 Feb 2015 02:47:04 -0800
+Message-Id: <b0a70e4ad3c51e6da22cc01fed1ced4f383c5f4c.1424773781.git.osandov@osandov.com>
+In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
+References: <cover.1424773781.git.osandov@osandov.com>
+In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
+References: <cover.1424773781.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, everyone,
+This is one of the first places to give out when memory is tight. Handle
+it properly rather than with a BUG_ON.
 
-This patch series fixes a few bugs that occur under low memory conditions.
-These were exposed by a change in behavior of GFP_NOFS allocations in 3.19-rc7,
-by commit 9879de7373fc ("mm: page_alloc: embed OOM killing naturally into
-allocation slowpath"). While the mm people sort that out, we can fix these
-issues, which are bugs no matter what the outcome there is.
+Also fix the comment about the return value, which is an ERR_PTR, not
+NULL, on error.
 
-Here's a quick script which reproduces these bugs. With the patches applied, the
-filesystem will drop into read-only mode instead of blowing up.
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+---
+ fs/btrfs/extent-tree.c | 41 ++++++++++++++++++++++++++++-------------
+ 1 file changed, 28 insertions(+), 13 deletions(-)
 
-----
-#!/bin/sh
-
-cgcreate -g memory:enomem
-MEM=$((64 * 1024 * 1024))
-echo $MEM > /sys/fs/cgroup/memory/enomem/memory.limit_in_bytes
-
-cgexec -g memory:enomem ~/xfstests/ltp/fsstress -p128 -n999999999 -d /mnt/test &
-trap "killall fsstress; exit 0" SIGINT SIGTERM
-
-while true; do
-	cgexec -g memory:enomem python -c '
-l = []
-while True:
-    l.append(0)'
-done
-----
-
-Version 2 rebases on top of 4.0-rc1, has a simpler fix for the
-alloc_extent_buffer race, expands the commit messages to mention changed
-comments, and adds Liu Bo's Reviewed-by.
-
-Thanks!
-
-Omar Sandoval (3):
-  btrfs: handle ENOMEM in btrfs_alloc_tree_block
-  btrfs: fix race on ENOMEM in alloc_extent_buffer
-  btrfs: check io_ctl_prepare_pages return in __btrfs_write_out_cache
-
- fs/btrfs/extent-tree.c      | 41 ++++++++++++++++++++++++++++-------------
- fs/btrfs/extent_io.c        |  3 ++-
- fs/btrfs/free-space-cache.c | 10 ++++++----
- 3 files changed, 36 insertions(+), 18 deletions(-)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 571f402..7443d67 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7262,7 +7262,7 @@ static void unuse_block_rsv(struct btrfs_fs_info *fs_info,
+  * returns the key for the extent through ins, and a tree buffer for
+  * the first block of the extent through buf.
+  *
+- * returns the tree buffer or NULL.
++ * returns the tree buffer or an ERR_PTR on error.
+  */
+ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root,
+@@ -7273,6 +7273,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key ins;
+ 	struct btrfs_block_rsv *block_rsv;
+ 	struct extent_buffer *buf;
++	struct btrfs_delayed_extent_op *extent_op;
+ 	u64 flags = 0;
+ 	int ret;
+ 	u32 blocksize = root->nodesize;
+@@ -7293,13 +7294,14 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_reserve_extent(root, blocksize, blocksize,
+ 				   empty_size, hint, &ins, 0, 0);
+-	if (ret) {
+-		unuse_block_rsv(root->fs_info, block_rsv, blocksize);
+-		return ERR_PTR(ret);
+-	}
++	if (ret)
++		goto out_unuse;
+ 
+ 	buf = btrfs_init_new_buffer(trans, root, ins.objectid, level);
+-	BUG_ON(IS_ERR(buf)); /* -ENOMEM */
++	if (IS_ERR(buf)) {
++		ret = PTR_ERR(buf);
++		goto out_free_reserved;
++	}
+ 
+ 	if (root_objectid == BTRFS_TREE_RELOC_OBJECTID) {
+ 		if (parent == 0)
+@@ -7309,9 +7311,11 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 		BUG_ON(parent > 0);
+ 
+ 	if (root_objectid != BTRFS_TREE_LOG_OBJECTID) {
+-		struct btrfs_delayed_extent_op *extent_op;
+ 		extent_op = btrfs_alloc_delayed_extent_op();
+-		BUG_ON(!extent_op); /* -ENOMEM */
++		if (!extent_op) {
++			ret = -ENOMEM;
++			goto out_free_buf;
++		}
+ 		if (key)
+ 			memcpy(&extent_op->key, key, sizeof(extent_op->key));
+ 		else
+@@ -7326,13 +7330,24 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 		extent_op->level = level;
+ 
+ 		ret = btrfs_add_delayed_tree_ref(root->fs_info, trans,
+-					ins.objectid,
+-					ins.offset, parent, root_objectid,
+-					level, BTRFS_ADD_DELAYED_EXTENT,
+-					extent_op, 0);
+-		BUG_ON(ret); /* -ENOMEM */
++						 ins.objectid, ins.offset,
++						 parent, root_objectid, level,
++						 BTRFS_ADD_DELAYED_EXTENT,
++						 extent_op, 0);
++		if (ret)
++			goto out_free_delayed;
+ 	}
+ 	return buf;
++
++out_free_delayed:
++	btrfs_free_delayed_extent_op(extent_op);
++out_free_buf:
++	free_extent_buffer(buf);
++out_free_reserved:
++	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 0);
++out_unuse:
++	unuse_block_rsv(root->fs_info, block_rsv, blocksize);
++	return ERR_PTR(ret);
+ }
+ 
+ struct walk_control {
 -- 
 2.3.0
 

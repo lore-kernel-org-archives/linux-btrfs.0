@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:45801 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753575AbbBXKrb (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:35708 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753495AbbBXKra (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 05:47:31 -0500
-Received: by pdjz10 with SMTP id z10so32473589pdj.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:30 -0800 (PST)
+	Tue, 24 Feb 2015 05:47:30 -0500
+Received: by padfa1 with SMTP id fa1so35231375pad.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 02:47:29 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.cz>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 3/3] btrfs: check io_ctl_prepare_pages return in __btrfs_write_out_cache
-Date: Tue, 24 Feb 2015 02:47:06 -0800
-Message-Id: <5aa522a2a863d3cf6805f331932e503a37eeae66.1424773781.git.osandov@osandov.com>
+Subject: [PATCH v2 2/3] btrfs: fix race on ENOMEM in alloc_extent_buffer
+Date: Tue, 24 Feb 2015 02:47:05 -0800
+Message-Id: <bb30d69d671243192fb08002b31375e55afe9644.1424773781.git.osandov@osandov.com>
 In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
 References: <cover.1424773781.git.osandov@osandov.com>
 In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
@@ -21,56 +21,60 @@ References: <cover.1424773781.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If io_ctl_prepare_pages fails, the pages in io_ctl.pages are not valid.
-When we try to access them later, things will blow up in various ways.
+Consider the following interleaving of overlapping calls to
+alloc_extent_buffer:
 
-Also fix the comment about the return value, which is an errno on error,
-not -1, and update the cases where it was not.
+Call 1:
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+- Successfully allocates a few pages with find_or_create_page
+- find_or_create_page fails, goto free_eb
+- Unlocks the allocated pages
+
+Call 2:
+- Calls find_or_create_page and gets a page in call 1's extent_buffer
+- Finds that the page is already associated with an extent_buffer
+- Grabs a reference to the half-written extent_buffer and calls
+  mark_extent_buffer_accessed on it
+
+mark_extent_buffer_accessed will then try to call mark_page_accessed on
+a null page and panic.
+
+The fix is to decrement the reference count on the half-written
+extent_buffer before unlocking the pages so call 2 won't use it. We
+should also set exists = NULL in the case that we don't use exists to
+avoid accidentally returning a freed extent_buffer in an error case.
+
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/free-space-cache.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index a719785..03dcda2 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1112,7 +1112,7 @@ cleanup_write_cache_enospc(struct inode *inode,
-  *
-  * This function writes out a free space cache struct to disk for quick recovery
-  * on mount.  This will return 0 if it was successfull in writing the cache out,
-- * and -1 if it was not.
-+ * or an errno if it was not.
-  */
- static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 				   struct btrfs_free_space_ctl *ctl,
-@@ -1128,11 +1128,11 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	int ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c7233ff..7ecfae0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4867,6 +4867,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 				mark_extent_buffer_accessed(exists, p);
+ 				goto free_eb;
+ 			}
++			exists = NULL;
  
- 	if (!i_size_read(inode))
--		return -1;
-+		return -EIO;
+ 			/*
+ 			 * Do this so attach doesn't complain and we need to
+@@ -4930,12 +4931,12 @@ again:
+ 	return eb;
  
- 	ret = io_ctl_init(&io_ctl, inode, root, 1);
- 	if (ret)
--		return -1;
-+		return ret;
- 
- 	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA)) {
- 		down_write(&block_group->data_rwsem);
-@@ -1149,7 +1149,9 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ free_eb:
++	WARN_ON(!atomic_dec_and_test(&eb->refs));
+ 	for (i = 0; i < num_pages; i++) {
+ 		if (eb->pages[i])
+ 			unlock_page(eb->pages[i]);
  	}
  
- 	/* Lock all pages first so we can lock the extent safely. */
--	io_ctl_prepare_pages(&io_ctl, inode, 0);
-+	ret = io_ctl_prepare_pages(&io_ctl, inode, 0);
-+	if (ret)
-+		goto out;
- 
- 	lock_extent_bits(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
- 			 0, &cached_state);
+-	WARN_ON(!atomic_dec_and_test(&eb->refs));
+ 	btrfs_release_extent_buffer(eb);
+ 	return exists;
+ }
 -- 
 2.3.0
 

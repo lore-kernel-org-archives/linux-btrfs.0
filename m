@@ -1,73 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46699 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752177AbbBXPlC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 10:41:02 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YQHbV-0004a4-Rc
-	for linux-btrfs@vger.kernel.org; Tue, 24 Feb 2015 16:40:58 +0100
-Received: from netz.smurf.noris.de ([213.95.21.43])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 16:40:57 +0100
-Received: from matthias by netz.smurf.noris.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 16:40:57 +0100
-To: linux-btrfs@vger.kernel.org
-From: Matthias Urlichs <matthias@urlichs.de>
-Subject: Read performance problem
-Date: Tue, 24 Feb 2015 15:40:46 +0000 (UTC)
-Message-ID: <loom.20150224T161600-840@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15720 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750955AbbBXV3t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Feb 2015 16:29:49 -0500
+Received: from pps.filterd (m0004003 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t1OLNpbH004312
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 13:29:48 -0800
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1ss15bg0sw-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Feb 2015 13:29:48 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: make async space flushing suck less when we're full
+Date: Tue, 24 Feb 2015 16:29:45 -0500
+Message-ID: <1424813385-25945-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is 3.19, scanning an otherwise-idle filesystem on otherwise-idle disks,
-mounted with noatime and nodatasum.
+We noticed on our gluster boxes that rm's when very full we'd take forever.
+This was because the async flusher thread was committing the transaction over
+and over because we had no delalloc, no delayed items and no room to allocate
+new block groups.  So fix a few things
 
-11:41:51.703418 llistxattr("cpool/0/0/5/00556827384267bee22ab9adfb891807",
-"", 1024) = 0 <0.000018>
-11:41:51.703472 lstat("cpool/0/0/5/00524ed0f6edbadd2a92f9366bce00c4",
-{st_mode=S_IFREG|0640, st_size=1024, ...}) = 0 <0.002519>
-11:41:51.706044 getxattr("cpool/0/0/5/00524ed0f6edbadd2a92f9366bce00c4",
-"system.posix_acl_access", 0x7fff32f63090, 132) = -1 ENODATA (No data
-available) <0.000028>
-11:41:51.706125 stat("cpool/0/0/5/00524ed0f6edbadd2a92f9366bce00c4",
-{st_mode=S_IFREG|0640, st_size=1024, ...}) = 0 <0.000016>
-11:41:51.706170 llistxattr("cpool/0/0/5/00524ed0f6edbadd2a92f9366bce00c4",
-"", 1024) = 0 <0.000016>
+1) Don't commit the transaction.  If we need to do it we will do it ourselves.
+2) Don't requeue ourselves.  Once we stopped committing the transaction we would
+end up burning a CPU by just requeueing ourselves over and over again because we
+thought we need to flush more.
+3) Don't bother doing async reclaim if we're just full.  If we have 98% of our
+space actually used then doing things async really isn't going to be helpful, so
+skip it.
 
-11:41:51.706218 lstat("cpool/0/0/5/0056f3e500258614f19569d7dc014c80",
-{st_mode=S_IFREG|0640, st_size=351, ...}) = 0 <0.214911>
+This patch made the rm's on our extremely full gluster boxes not take all
+eternity.  Thanks,
 
-11:41:51.921209 getxattr("cpool/0/0/5/0056f3e500258614f19569d7dc014c80",
-"system.posix_acl_access", 0x7fff32f63090, 132) = -1 ENODATA (No data
-available) <0.000023>
-11:41:51.921294 stat("cpool/0/0/5/0056f3e500258614f19569d7dc014c80",
-{st_mode=S_IFREG|0640, st_size=351, ...}) = 0 <0.000008>
-11:41:51.921342 llistxattr("cpool/0/0/5/0056f3e500258614f19569d7dc014c80",
-"", 1024) = 0 <0.000018>
-11:41:51.921397 lstat("cpool/0/0/5/0058f2c720f7567989a0f4d33e5c8eb4",
-{st_mode=S_IFREG|0640, st_size=65, ...}) = 0 <0.007500>
-11:41:51.928959 getxattr("cpool/0/0/5/0058f2c720f7567989a0f4d33e5c8eb4",
-"system.posix_acl_access", 0x7fff32f63090, 132) = -1 ENODATA (No data
-available) <0.000027>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/extent-tree.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-
-0.2sec is not the longest delay I've seen here.
-
-iotop says:
-                                                             
- 7977 be/4 root      115.70 K/s    0.00 B/s  0.00 % 99.95 % rsync -aPHAX
-backup/backuppc/. /d/backup/backuppc/
- 7259 be/4 root      160.07 K/s  586.40 K/s  0.00 % 99.14 % [btrfs-transacti]
-
-OK. So how can this even happen when there is no writing process here? And
-what's the hold-up anyway, given that the partition easily sustains >20
-MByte/s write speed? The kernel thread is in 'D' state whenever I run "ps"
-and causes at most 2% of CPU load.
-
-https://bugzilla.kernel.org/show_bug.cgi?id=93801
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b2f7cf4..2364c5f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4277,8 +4277,13 @@ out:
+ static inline int need_do_async_reclaim(struct btrfs_space_info *space_info,
+ 					struct btrfs_fs_info *fs_info, u64 used)
+ {
+-	return (used >= div_factor_fine(space_info->total_bytes, 98) &&
+-		!btrfs_fs_closing(fs_info) &&
++	u64 thresh = div_factor_fine(space_info->total_bytes, 98);
++
++	/* If we're just plain full then async reclaim just slows us down. */
++	if (space_info->bytes_used >= thresh)
++		return 0;
++
++	return (used >= thresh && !btrfs_fs_closing(fs_info) &&
+ 		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
+ }
+ 
+@@ -4333,10 +4338,7 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+ 		if (!btrfs_need_do_async_reclaim(space_info, fs_info,
+ 						 flush_state))
+ 			return;
+-	} while (flush_state <= COMMIT_TRANS);
+-
+-	if (btrfs_need_do_async_reclaim(space_info, fs_info, flush_state))
+-		queue_work(system_unbound_wq, work);
++	} while (flush_state < COMMIT_TRANS);
+ }
+ 
+ void btrfs_init_async_reclaim_work(struct work_struct *work)
+-- 
+1.8.3.1
 

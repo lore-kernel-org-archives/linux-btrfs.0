@@ -1,100 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58574 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58578 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751866AbbBYSYj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 13:24:39 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 851FFAAC8
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Feb 2015 18:24:38 +0000 (UTC)
+	id S1751866AbbBYSYn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Feb 2015 13:24:43 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CA51CAAD1
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Feb 2015 18:24:41 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 02/11] btrfs: use cond_resched_lock where possible
-Date: Wed, 25 Feb 2015 19:24:38 +0100
-Message-Id: <14cc5298649a1fee36a8ff2a99cac4ef28dc8be5.1424880058.git.dsterba@suse.cz>
+Subject: [PATCH 03/11] btrfs: cleanup 64bit/32bit divs, compile time constants
+Date: Wed, 25 Feb 2015 19:24:41 +0100
+Message-Id: <5a186c670be1ccf7981493372abfb7c1ca5a1a4b.1424880058.git.dsterba@suse.cz>
 In-Reply-To: <cover.1424880058.git.dsterba@suse.cz>
 References: <cover.1424880058.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Clean the opencoded variant, cond_resched_lock also checks the lock for
-contention so it might help in some cases that were not covered by
-simple need_resched().
+Switch to div_u64 if the divisor is a numeric constant or sum of
+sizeof()s. We can remove a few instances of do_div that has the hidden
+semtantics of changing the 1st argument.
+
+Small power-of-two divisors are converted to bitshifts, large values are
+kept intact for clarity.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/file.c             |  6 +-----
- fs/btrfs/free-space-cache.c | 14 ++++----------
- fs/btrfs/transaction.c      |  7 ++-----
- 3 files changed, 7 insertions(+), 20 deletions(-)
+ fs/btrfs/dev-replace.c      |  6 +++---
+ fs/btrfs/disk-io.c          |  2 +-
+ fs/btrfs/extent-tree.c      | 15 +++++++--------
+ fs/btrfs/free-space-cache.c |  8 ++++----
+ fs/btrfs/math.h             |  6 ++----
+ fs/btrfs/super.c            |  2 +-
+ 6 files changed, 18 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e4090259569b..1e34bc00249f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -273,11 +273,7 @@ void btrfs_cleanup_defrag_inodes(struct btrfs_fs_info *fs_info)
- 		defrag = rb_entry(node, struct inode_defrag, rb_node);
- 		kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
- 
--		if (need_resched()) {
--			spin_unlock(&fs_info->defrag_inodes_lock);
--			cond_resched();
--			spin_lock(&fs_info->defrag_inodes_lock);
--		}
-+		cond_resched_lock(&fs_info->defrag_inodes_lock);
- 
- 		node = rb_first(&fs_info->defrag_inodes);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 5ec03d999c37..0573848c7333 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -670,8 +670,8 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
+ 		srcdev = dev_replace->srcdev;
+-		args->status.progress_1000 = div64_u64(dev_replace->cursor_left,
+-			div64_u64(btrfs_device_get_total_bytes(srcdev), 1000));
++		args->status.progress_1000 = div_u64(dev_replace->cursor_left,
++			div_u64(btrfs_device_get_total_bytes(srcdev), 1000));
+ 		break;
  	}
+ 	btrfs_dev_replace_unlock(dev_replace);
+@@ -806,7 +806,7 @@ static int btrfs_dev_replace_kthread(void *data)
+ 		btrfs_dev_replace_status(fs_info, status_args);
+ 		progress = status_args->status.progress_1000;
+ 		kfree(status_args);
+-		do_div(progress, 10);
++		progress = div_u64(progress, 10);
+ 		printk_in_rcu(KERN_INFO
+ 			"BTRFS: continuing dev_replace from %s (devid %llu) to %s @%u%%\n",
+ 			dev_replace->srcdev->missing ? "<missing disk>" :
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 41b320e235d7..73b152138221 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2277,7 +2277,7 @@ int open_ctree(struct super_block *sb,
+ 	fs_info->free_chunk_space = 0;
+ 	fs_info->tree_mod_log = RB_ROOT;
+ 	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
+-	fs_info->avg_delayed_ref_runtime = div64_u64(NSEC_PER_SEC, 64);
++	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
+ 	/* readahead state */
+ 	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
+ 	spin_lock_init(&fs_info->reada_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 28ce5c8004d4..2cb32bc45bcc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2561,8 +2561,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 		 */
+ 		spin_lock(&delayed_refs->lock);
+ 		avg = fs_info->avg_delayed_ref_runtime * 3 + runtime;
+-		avg = div64_u64(avg, 4);
+-		fs_info->avg_delayed_ref_runtime = avg;
++		fs_info->avg_delayed_ref_runtime = avg >> 2;	/* div by 4 */
+ 		spin_unlock(&delayed_refs->lock);
+ 	}
+ 	return 0;
+@@ -2624,7 +2623,7 @@ static inline u64 heads_to_leaves(struct btrfs_root *root, u64 heads)
+ 	 * We don't ever fill up leaves all the way so multiply by 2 just to be
+ 	 * closer to what we're really going to want to ouse.
+ 	 */
+-	return div64_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
++	return div_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
+ }
+ 
+ int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
+@@ -3193,7 +3192,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
+ 	struct inode *inode = NULL;
+ 	u64 alloc_hint = 0;
+ 	int dcs = BTRFS_DC_ERROR;
+-	int num_pages = 0;
++	u64 num_pages = 0;
+ 	int retries = 0;
+ 	int ret = 0;
+ 
+@@ -3277,7 +3276,7 @@ again:
+ 	 * taking up quite a bit since it's not folded into the other space
+ 	 * cache.
+ 	 */
+-	num_pages = (int)div64_u64(block_group->key.offset, 256 * 1024 * 1024);
++	num_pages = div_u64(block_group->key.offset, 256 * 1024 * 1024);
+ 	if (!num_pages)
+ 		num_pages = 1;
+ 
+@@ -4770,10 +4769,10 @@ static u64 calc_global_metadata_size(struct btrfs_fs_info *fs_info)
+ 
+ 	num_bytes = (data_used >> fs_info->sb->s_blocksize_bits) *
+ 		    csum_size * 2;
+-	num_bytes += div64_u64(data_used + meta_used, 50);
++	num_bytes += div_u64(data_used + meta_used, 50);
+ 
+ 	if (num_bytes * 3 > meta_used)
+-		num_bytes = div64_u64(meta_used, 3);
++		num_bytes = div_u64(meta_used, 3);
+ 
+ 	return ALIGN(num_bytes, fs_info->extent_root->nodesize << 10);
+ }
+@@ -5039,7 +5038,7 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
+ 	else
+ 		BTRFS_I(inode)->csum_bytes -= num_bytes;
+ 	csum_size = BTRFS_LEAF_DATA_SIZE(root) - sizeof(struct btrfs_item);
+-	num_csums_per_leaf = (int)div64_u64(csum_size,
++	num_csums_per_leaf = (int)div_u64(csum_size,
+ 					    sizeof(struct btrfs_csum_item) +
+ 					    sizeof(struct btrfs_disk_key));
+ 	num_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index a71978578fa7..96611fed552f 100644
+index 96611fed552f..cb84923561e4 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -2402,11 +2402,8 @@ static void __btrfs_remove_free_space_cache_locked(
- 		} else {
- 			free_bitmap(ctl, info);
- 		}
--		if (need_resched()) {
--			spin_unlock(&ctl->tree_lock);
--			cond_resched();
--			spin_lock(&ctl->tree_lock);
--		}
-+
-+		cond_resched_lock(&ctl->tree_lock);
+@@ -1537,7 +1537,7 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 		max_bytes = MAX_CACHE_BYTES_PER_GIG;
+ 	else
+ 		max_bytes = MAX_CACHE_BYTES_PER_GIG *
+-			div64_u64(size, 1024 * 1024 * 1024);
++			div_u64(size, 1024 * 1024 * 1024);
+ 
+ 	/*
+ 	 * we want to account for 1 more bitmap than what we have so we can make
+@@ -1552,14 +1552,14 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
  	}
+ 
+ 	/*
+-	 * we want the extent entry threshold to always be at most 1/2 the maxw
++	 * we want the extent entry threshold to always be at most 1/2 the max
+ 	 * bytes we can have, or whatever is less than that.
+ 	 */
+ 	extent_bytes = max_bytes - bitmap_bytes;
+-	extent_bytes = min_t(u64, extent_bytes, div64_u64(max_bytes, 2));
++	extent_bytes = min_t(u64, extent_bytes, max_bytes >> 1);
+ 
+ 	ctl->extents_thresh =
+-		div64_u64(extent_bytes, (sizeof(struct btrfs_free_space)));
++		div_u64(extent_bytes, sizeof(struct btrfs_free_space));
  }
  
-@@ -2431,11 +2428,8 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache *block_group)
- 
- 		WARN_ON(cluster->block_group != block_group);
- 		__btrfs_return_cluster_to_free_space(block_group, cluster);
--		if (need_resched()) {
--			spin_unlock(&ctl->tree_lock);
--			cond_resched();
--			spin_lock(&ctl->tree_lock);
--		}
-+
-+		cond_resched_lock(&ctl->tree_lock);
- 	}
- 	__btrfs_remove_free_space_cache_locked(ctl);
- 	spin_unlock(&ctl->tree_lock);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 038fcf6051e0..efc5ebffa7ea 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -93,11 +93,8 @@ static void clear_btree_io_tree(struct extent_io_tree *tree)
- 		 */
- 		ASSERT(!waitqueue_active(&state->wq));
- 		free_extent_state(state);
--		if (need_resched()) {
--			spin_unlock(&tree->lock);
--			cond_resched();
--			spin_lock(&tree->lock);
--		}
-+
-+		cond_resched_lock(&tree->lock);
- 	}
- 	spin_unlock(&tree->lock);
+ static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
+diff --git a/fs/btrfs/math.h b/fs/btrfs/math.h
+index b7816cefbd13..1b10a3cd1195 100644
+--- a/fs/btrfs/math.h
++++ b/fs/btrfs/math.h
+@@ -28,8 +28,7 @@ static inline u64 div_factor(u64 num, int factor)
+ 	if (factor == 10)
+ 		return num;
+ 	num *= factor;
+-	do_div(num, 10);
+-	return num;
++	return div_u64(num, 10);
  }
+ 
+ static inline u64 div_factor_fine(u64 num, int factor)
+@@ -37,8 +36,7 @@ static inline u64 div_factor_fine(u64 num, int factor)
+ 	if (factor == 100)
+ 		return num;
+ 	num *= factor;
+-	do_div(num, 100);
+-	return num;
++	return div_u64(num, 100);
+ }
+ 
+ #endif
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 100a0442c413..530a0baa7c71 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1704,7 +1704,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 		avail_space = device->total_bytes - device->bytes_used;
+ 
+ 		/* align with stripe_len */
+-		do_div(avail_space, BTRFS_STRIPE_LEN);
++		avail_space = div_u64(avail_space, BTRFS_STRIPE_LEN);
+ 		avail_space *= BTRFS_STRIPE_LEN;
+ 
+ 		/*
 -- 
 2.1.3
 

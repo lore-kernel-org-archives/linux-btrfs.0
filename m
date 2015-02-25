@@ -1,207 +1,212 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58578 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58587 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751866AbbBYSYn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 13:24:43 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id CA51CAAD1
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Feb 2015 18:24:41 +0000 (UTC)
+	id S1751866AbbBYSYq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Feb 2015 13:24:46 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 13F62AAC8
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Feb 2015 18:24:45 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 03/11] btrfs: cleanup 64bit/32bit divs, compile time constants
-Date: Wed, 25 Feb 2015 19:24:41 +0100
-Message-Id: <5a186c670be1ccf7981493372abfb7c1ca5a1a4b.1424880058.git.dsterba@suse.cz>
+Subject: [PATCH 04/11] btrfs: cleanup 64bit/32bit divs, provably bounded values
+Date: Wed, 25 Feb 2015 19:24:44 +0100
+Message-Id: <31454f437f9ee0fd74c59af6bf2b79a467ba8311.1424880058.git.dsterba@suse.cz>
 In-Reply-To: <cover.1424880058.git.dsterba@suse.cz>
 References: <cover.1424880058.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Switch to div_u64 if the divisor is a numeric constant or sum of
-sizeof()s. We can remove a few instances of do_div that has the hidden
-semtantics of changing the 1st argument.
-
-Small power-of-two divisors are converted to bitshifts, large values are
-kept intact for clarity.
+The divisor is derived from nodesize or PAGE_SIZE, fits into 32bit type.
+Get rid of a few more do_div instances.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/dev-replace.c      |  6 +++---
- fs/btrfs/disk-io.c          |  2 +-
- fs/btrfs/extent-tree.c      | 15 +++++++--------
+ fs/btrfs/extent-tree.c      |  4 ++--
  fs/btrfs/free-space-cache.c |  8 ++++----
- fs/btrfs/math.h             |  6 ++----
- fs/btrfs/super.c            |  2 +-
- 6 files changed, 18 insertions(+), 21 deletions(-)
+ fs/btrfs/ioctl.c            |  2 +-
+ fs/btrfs/scrub.c            |  8 +++-----
+ fs/btrfs/volumes.c          | 26 +++++++++++++-------------
+ 5 files changed, 23 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 5ec03d999c37..0573848c7333 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -670,8 +670,8 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
- 		srcdev = dev_replace->srcdev;
--		args->status.progress_1000 = div64_u64(dev_replace->cursor_left,
--			div64_u64(btrfs_device_get_total_bytes(srcdev), 1000));
-+		args->status.progress_1000 = div_u64(dev_replace->cursor_left,
-+			div_u64(btrfs_device_get_total_bytes(srcdev), 1000));
- 		break;
- 	}
- 	btrfs_dev_replace_unlock(dev_replace);
-@@ -806,7 +806,7 @@ static int btrfs_dev_replace_kthread(void *data)
- 		btrfs_dev_replace_status(fs_info, status_args);
- 		progress = status_args->status.progress_1000;
- 		kfree(status_args);
--		do_div(progress, 10);
-+		progress = div_u64(progress, 10);
- 		printk_in_rcu(KERN_INFO
- 			"BTRFS: continuing dev_replace from %s (devid %llu) to %s @%u%%\n",
- 			dev_replace->srcdev->missing ? "<missing disk>" :
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 41b320e235d7..73b152138221 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2277,7 +2277,7 @@ int open_ctree(struct super_block *sb,
- 	fs_info->free_chunk_space = 0;
- 	fs_info->tree_mod_log = RB_ROOT;
- 	fs_info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
--	fs_info->avg_delayed_ref_runtime = div64_u64(NSEC_PER_SEC, 64);
-+	fs_info->avg_delayed_ref_runtime = NSEC_PER_SEC >> 6; /* div by 64 */
- 	/* readahead state */
- 	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
- 	spin_lock_init(&fs_info->reada_lock);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 28ce5c8004d4..2cb32bc45bcc 100644
+index 2cb32bc45bcc..4ccc3397c644 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2561,8 +2561,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 		 */
- 		spin_lock(&delayed_refs->lock);
- 		avg = fs_info->avg_delayed_ref_runtime * 3 + runtime;
--		avg = div64_u64(avg, 4);
--		fs_info->avg_delayed_ref_runtime = avg;
-+		fs_info->avg_delayed_ref_runtime = avg >> 2;	/* div by 4 */
- 		spin_unlock(&delayed_refs->lock);
- 	}
- 	return 0;
-@@ -2624,7 +2623,7 @@ static inline u64 heads_to_leaves(struct btrfs_root *root, u64 heads)
- 	 * We don't ever fill up leaves all the way so multiply by 2 just to be
- 	 * closer to what we're really going to want to ouse.
- 	 */
--	return div64_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
-+	return div_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
- }
+@@ -5032,7 +5032,7 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
+ 	    BTRFS_I(inode)->csum_bytes == 0)
+ 		return 0;
  
- int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
-@@ -3193,7 +3192,7 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
- 	struct inode *inode = NULL;
- 	u64 alloc_hint = 0;
- 	int dcs = BTRFS_DC_ERROR;
--	int num_pages = 0;
-+	u64 num_pages = 0;
- 	int retries = 0;
- 	int ret = 0;
- 
-@@ -3277,7 +3276,7 @@ again:
- 	 * taking up quite a bit since it's not folded into the other space
- 	 * cache.
- 	 */
--	num_pages = (int)div64_u64(block_group->key.offset, 256 * 1024 * 1024);
-+	num_pages = div_u64(block_group->key.offset, 256 * 1024 * 1024);
- 	if (!num_pages)
- 		num_pages = 1;
- 
-@@ -4770,10 +4769,10 @@ static u64 calc_global_metadata_size(struct btrfs_fs_info *fs_info)
- 
- 	num_bytes = (data_used >> fs_info->sb->s_blocksize_bits) *
- 		    csum_size * 2;
--	num_bytes += div64_u64(data_used + meta_used, 50);
-+	num_bytes += div_u64(data_used + meta_used, 50);
- 
- 	if (num_bytes * 3 > meta_used)
--		num_bytes = div64_u64(meta_used, 3);
-+		num_bytes = div_u64(meta_used, 3);
- 
- 	return ALIGN(num_bytes, fs_info->extent_root->nodesize << 10);
- }
-@@ -5039,7 +5038,7 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
+-	old_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
++	old_csums = (int)div_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
+ 	if (reserve)
+ 		BTRFS_I(inode)->csum_bytes += num_bytes;
  	else
- 		BTRFS_I(inode)->csum_bytes -= num_bytes;
- 	csum_size = BTRFS_LEAF_DATA_SIZE(root) - sizeof(struct btrfs_item);
--	num_csums_per_leaf = (int)div64_u64(csum_size,
-+	num_csums_per_leaf = (int)div_u64(csum_size,
+@@ -5041,7 +5041,7 @@ static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
+ 	num_csums_per_leaf = (int)div_u64(csum_size,
  					    sizeof(struct btrfs_csum_item) +
  					    sizeof(struct btrfs_disk_key));
- 	num_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
+-	num_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
++	num_csums = (int)div_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
+ 	num_csums = num_csums + num_csums_per_leaf - 1;
+ 	num_csums = num_csums / num_csums_per_leaf;
+ 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 96611fed552f..cb84923561e4 100644
+index cb84923561e4..16cc62b87ba5 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -1537,7 +1537,7 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
- 		max_bytes = MAX_CACHE_BYTES_PER_GIG;
- 	else
- 		max_bytes = MAX_CACHE_BYTES_PER_GIG *
--			div64_u64(size, 1024 * 1024 * 1024);
-+			div_u64(size, 1024 * 1024 * 1024);
+@@ -1298,11 +1298,11 @@ static inline u64 offset_to_bitmap(struct btrfs_free_space_ctl *ctl,
+ 				   u64 offset)
+ {
+ 	u64 bitmap_start;
+-	u64 bytes_per_bitmap;
++	u32 bytes_per_bitmap;
  
- 	/*
- 	 * we want to account for 1 more bitmap than what we have so we can make
-@@ -1552,14 +1552,14 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	bytes_per_bitmap = BITS_PER_BITMAP * ctl->unit;
+ 	bitmap_start = offset - ctl->start;
+-	bitmap_start = div64_u64(bitmap_start, bytes_per_bitmap);
++	bitmap_start = div_u64(bitmap_start, bytes_per_bitmap);
+ 	bitmap_start *= bytes_per_bitmap;
+ 	bitmap_start += ctl->start;
+ 
+@@ -1521,8 +1521,8 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	u64 bitmap_bytes;
+ 	u64 extent_bytes;
+ 	u64 size = block_group->key.offset;
+-	u64 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
+-	int max_bitmaps = div64_u64(size + bytes_per_bg - 1, bytes_per_bg);
++	u32 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
++	u32 max_bitmaps = div_u64(size + bytes_per_bg - 1, bytes_per_bg);
+ 
+ 	max_bitmaps = max(max_bitmaps, 1);
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d49fe8a0f6b5..5544a79dc2ba 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1564,7 +1564,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		goto out_free;
  	}
  
- 	/*
--	 * we want the extent entry threshold to always be at most 1/2 the maxw
-+	 * we want the extent entry threshold to always be at most 1/2 the max
- 	 * bytes we can have, or whatever is less than that.
+-	do_div(new_size, root->sectorsize);
++	new_size = div_u64(new_size, root->sectorsize);
+ 	new_size *= root->sectorsize;
+ 
+ 	printk_in_rcu(KERN_INFO "BTRFS: new size for %s is %llu\n",
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index db21f17df996..07be15d4ce7b 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2624,9 +2624,8 @@ static int get_raid56_logic_offset(u64 physical, int num,
+ 	for (i = 0; i < nr_data_stripes(map); i++) {
+ 		*offset = last_offset + i * map->stripe_len;
+ 
+-		stripe_nr = *offset;
+-		do_div(stripe_nr, map->stripe_len);
+-		do_div(stripe_nr, nr_data_stripes(map));
++		stripe_nr = div_u64(*offset, map->stripe_len);
++		stripe_nr = div_u64(stripe_nr, nr_data_stripes(map));
+ 
+ 		/* Work out the disk rotation on this stripe-set */
+ 		rot = do_div(stripe_nr, map->num_stripes);
+@@ -2995,10 +2994,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	int extent_mirror_num;
+ 	int stop_loop = 0;
+ 
+-	nstripes = length;
+ 	physical = map->stripes[num].physical;
+ 	offset = 0;
+-	do_div(nstripes, map->stripe_len);
++	nstripes = div_u64(length, map->stripe_len);
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+ 		offset = map->stripe_len * num;
+ 		increment = map->stripe_len * map->num_stripes;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 50bb7b8b17e8..446e4b24fc14 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3021,7 +3021,7 @@ static int chunk_drange_filter(struct extent_buffer *leaf,
+ 
+ 		stripe_offset = btrfs_stripe_offset(leaf, stripe);
+ 		stripe_length = btrfs_chunk_length(leaf, chunk);
+-		do_div(stripe_length, factor);
++		stripe_length = div_u64(stripe_length, factor);
+ 
+ 		if (stripe_offset < bargs->pend &&
+ 		    stripe_offset + stripe_length > bargs->pstart)
+@@ -4399,8 +4399,8 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	 */
- 	extent_bytes = max_bytes - bitmap_bytes;
--	extent_bytes = min_t(u64, extent_bytes, div64_u64(max_bytes, 2));
-+	extent_bytes = min_t(u64, extent_bytes, max_bytes >> 1);
+ 	if (stripe_size * data_stripes > max_chunk_size) {
+ 		u64 mask = (1ULL << 24) - 1;
+-		stripe_size = max_chunk_size;
+-		do_div(stripe_size, data_stripes);
++
++		stripe_size = div_u64(max_chunk_size, data_stripes);
  
- 	ctl->extents_thresh =
--		div64_u64(extent_bytes, (sizeof(struct btrfs_free_space)));
-+		div_u64(extent_bytes, sizeof(struct btrfs_free_space));
- }
+ 		/* bump the answer up to a 16MB boundary */
+ 		stripe_size = (stripe_size + mask) & ~mask;
+@@ -4412,10 +4412,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			stripe_size = devices_info[ndevs-1].max_avail;
+ 	}
  
- static inline void __bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
-diff --git a/fs/btrfs/math.h b/fs/btrfs/math.h
-index b7816cefbd13..1b10a3cd1195 100644
---- a/fs/btrfs/math.h
-+++ b/fs/btrfs/math.h
-@@ -28,8 +28,7 @@ static inline u64 div_factor(u64 num, int factor)
- 	if (factor == 10)
- 		return num;
- 	num *= factor;
--	do_div(num, 10);
--	return num;
-+	return div_u64(num, 10);
- }
+-	do_div(stripe_size, dev_stripes);
++	stripe_size = div_u64(stripe_size, dev_stripes);
  
- static inline u64 div_factor_fine(u64 num, int factor)
-@@ -37,8 +36,7 @@ static inline u64 div_factor_fine(u64 num, int factor)
- 	if (factor == 100)
- 		return num;
- 	num *= factor;
--	do_div(num, 100);
--	return num;
-+	return div_u64(num, 100);
- }
+ 	/* align to BTRFS_STRIPE_LEN */
+-	do_div(stripe_size, raid_stripe_len);
++	stripe_size = div_u64(stripe_size, raid_stripe_len);
+ 	stripe_size *= raid_stripe_len;
  
- #endif
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 100a0442c413..530a0baa7c71 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1704,7 +1704,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 		avail_space = device->total_bytes - device->bytes_used;
+ 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
+@@ -5135,7 +5135,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 	stripe_index = 0;
+ 	stripe_nr_orig = stripe_nr;
+ 	stripe_nr_end = ALIGN(offset + *length, map->stripe_len);
+-	do_div(stripe_nr_end, map->stripe_len);
++	stripe_nr_end = div_u64(stripe_nr_end, map->stripe_len);
+ 	stripe_end_offset = stripe_nr_end * map->stripe_len -
+ 			    (offset + *length);
  
- 		/* align with stripe_len */
--		do_div(avail_space, BTRFS_STRIPE_LEN);
-+		avail_space = div_u64(avail_space, BTRFS_STRIPE_LEN);
- 		avail_space *= BTRFS_STRIPE_LEN;
+@@ -5197,8 +5197,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
+ 		     mirror_num > 1)) {
+ 			/* push stripe_nr back to the start of the full stripe */
+-			stripe_nr = raid56_full_stripe_start;
+-			do_div(stripe_nr, stripe_len * nr_data_stripes(map));
++			stripe_nr = div_u64(raid56_full_stripe_start,
++					stripe_len * nr_data_stripes(map));
  
- 		/*
+ 			/* RAID[56] write or recovery. Return all stripes */
+ 			num_stripes = map->num_stripes;
+@@ -5534,11 +5534,11 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 	rmap_len = map->stripe_len;
+ 
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
+-		do_div(length, map->num_stripes / map->sub_stripes);
++		length = div_u64(length, map->num_stripes / map->sub_stripes);
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
+-		do_div(length, map->num_stripes);
++		length = div_u64(length, map->num_stripes);
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+-		do_div(length, nr_data_stripes(map));
++		length = div_u64(length, nr_data_stripes(map));
+ 		rmap_len = map->stripe_len * nr_data_stripes(map);
+ 	}
+ 
+@@ -5553,11 +5553,11 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 			continue;
+ 
+ 		stripe_nr = physical - map->stripes[i].physical;
+-		do_div(stripe_nr, map->stripe_len);
++		stripe_nr = div_u64(stripe_nr, map->stripe_len);
+ 
+ 		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
+ 			stripe_nr = stripe_nr * map->num_stripes + i;
+-			do_div(stripe_nr, map->sub_stripes);
++			stripe_nr = div_u64(stripe_nr, map->sub_stripes);
+ 		} else if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+ 			stripe_nr = stripe_nr * map->num_stripes + i;
+ 		} /* else if RAID[56], multiply by nr_data_stripes().
 -- 
 2.1.3
 

@@ -1,63 +1,253 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10721 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753302AbbBZGt3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Feb 2015 01:49:29 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q6mZOO006727
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 14:48:35 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 2/2] btrfs: add WARN_ON() to check is space_info op current
-Date: Thu, 26 Feb 2015 14:48:14 +0800
-Message-ID: <b7eb09ad2f4c52a27560c1822700821ea9d68c3c.1424932917.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1424932917.git.zhaolei@cn.fujitsu.com>
-References: <cover.1424932917.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:39318 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752169AbbBZTxW (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 26 Feb 2015 14:53:22 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix data loss in the fast fsync path
+Date: Thu, 26 Feb 2015 19:52:57 +0000
+Message-Id: <1424980377-8060-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+When using the fast file fsync code path we can miss the fact that
+there new writes happened since the last file fsync and therefore
+return without waiting for the IO to finish and write the new extents
+to the fsync log.
 
-space_info's value calculation is some complex and easy to cause
-bug, add WARN_ON() to help debug.
+The comment this change adds to the fsync handler explains how this
+can happen and why, and therefore it's included here:
 
-Changelog v1->v2:
- Put WARN_ON()s under the ENOSPC_DEBUG mount option.
- Suggested by: David Sterba <dsterba@suse.cz>
+  "If the last transaction that changed this file was before the current
+   transaction and we have the full sync flag set in our inode, we can
+   bail out now without any syncing.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+   Note that we can't bail out if the full sync flag isn't set. This is
+   because when the full sync flag is set we start all ordered extents
+   and wait for them to fully complete - when they complete they update
+   the inode's last_trans field through:
+
+       btrfs_finish_ordered_io() ->
+           btrfs_update_inode_fallback() ->
+               btrfs_update_inode() ->
+                   btrfs_set_inode_last_trans()
+
+   So we are sure that last_trans is up to date and can do this check to
+   bail out safely. For the fast path, when the full sync flag is not
+   set in our inode, we can not do it because we start only our ordered
+   extents and don't wait for them to complete (that is when
+   btrfs_finish_ordered_io runs) - if we rely on the speculative value
+   for inode->last_trans set by btrfs_file_write_iter we lose data in
+   the following scenario:
+
+   1. fs_info->last_trans_committed == N - 1 and current transaction is
+      transaction N (fs_info->generation == N);
+
+   2. do a buffered write;
+
+   3. fsync our inode, this clears our inode's full sync flag, starts
+      an ordered extent and waits for it to complete - when it completes
+      at btrfs_finish_ordered_io(), the inode's last_trans is set to
+      the value N;
+
+   4. transaction N is committed, so fs_info->last_trans_committed is
+      now set to the value N and fs_info->generation remains with the
+      value N;
+
+   5. do another buffered write, when this happens btrfs_file_write_iter
+      sets our inode's last_trans to the value N + 1;
+
+   6. transaction N + 1 is started and fs_info->generation now has the
+      value N + 1;
+
+   7. transaction N + 1 is committed, so fs_info->last_trans_committed
+      is set to the value N + 1;
+
+   8. fsync our inode - because it doesn't have the full sync flag set,
+      we only start the ordered extent, we don't wait for it to complete
+      (only in a later phase) therefore its last_trans field has the
+      value N + 1 set previously by btrfs_file_write_iter(), and so we
+      have:
+
+          inode->last_trans <= fs_info->last_trans_committed
+              (N + 1)              (N + 1)
+
+      Which would make us not log the last buffered write, resulting in
+      data loss after a crash."
+
+This is actually deterministic and not hard to trigger. The following excerpt
+from a testcase I made for xfstests triggers the issue. It moves a dummy file
+across directories and then fsyncs the old parent directory - this is just to
+trigger a transaction commit, so moving files around isn't directly related
+to the issue but it was chosen because running 'sync' for example does more
+than just committing the current transaction, as it flushes/waits for all
+file data to be persisted.
+The body of the test is:
+
+  _scratch_mkfs >> $seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our main test file 'foo', the one we check for data loss.
+  # By doing an fsync against our file, it makes btrfs clear the 'needs_full_sync'
+  # bit from its flags (btrfs inode specific flags).
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 8K" \
+                  -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Now create one other file and 2 directories. We will move this second file
+  # from one directory to the other later because it forces btrfs to commit its
+  # currently open transaction if we fsync the old parent directory. This is
+  # necessary to trigger the data loss bug that affected btrfs.
+  mkdir $SCRATCH_MNT/testdir_1
+  touch $SCRATCH_MNT/testdir_1/bar
+  mkdir $SCRATCH_MNT/testdir_2
+
+  # Make sure everything is durably persisted.
+  sync
+
+  # Write more 8Kb of data to our file.
+  $XFS_IO_PROG -c "pwrite -S 0xbb 8K 8K" $SCRATCH_MNT/foo | _filter_xfs_io
+
+  # Move our 'bar' file into a new directory.
+  mv $SCRATCH_MNT/testdir_1/bar $SCRATCH_MNT/testdir_2/bar
+
+  # Fsync our first directory. Because it had a file moved into some other
+  # directory, this made btrfs commit the currently open transaction. This is
+  # a condition necessary to trigger the data loss bug.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir_1
+
+  # Now fsync our main test file. If the fsync succeeds, we expect the 8Kb of
+  # data we wrote previously to be persisted and available if a crash happens.
+  # This did not happen with btrfs, because of the transaction commit that
+  # happened when we fsynced the parent directory.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+
+  # Simulate a crash/power loss.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # Now check that all data we wrote before are available.
+  echo "File content after log replay:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  status=0
+  exit
+
+The expected golden output for the test, which is what we get with this
+fix applied (or when running against ext3/4 and xfs), is:
+
+  wrote 8192/8192 bytes at offset 0
+  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+  wrote 8192/8192 bytes at offset 8192
+  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+  File content after log replay:
+  0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+  *
+  0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+  *
+  0040000
+
+Without this fix applied, the output shows the test file is empty:
+
+  wrote 8192/8192 bytes at offset 0
+  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+  wrote 8192/8192 bytes at offset 8192
+  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+  File content after log replay:
+  0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+  *
+  0020000
+
+A test case for xfstests will be sent soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ fs/btrfs/file.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 58 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index bfb9105..6c19033 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9415,9 +9415,19 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 2bd72cd..91122b6 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1971,14 +1971,67 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	}
  
- 	spin_lock(&block_group->space_info->lock);
- 	list_del_init(&block_group->ro_list);
-+
-+	if (btrfs_test_opt(root, ENOSPC_DEBUG)) {
-+		WARN_ON(block_group->space_info->total_bytes
-+			< block_group->key.offset);
-+		WARN_ON(block_group->space_info->bytes_readonly
-+			< block_group->key.offset);
-+		WARN_ON(block_group->space_info->disk_total
-+			< block_group->key.offset * factor);
-+	}
- 	block_group->space_info->total_bytes -= block_group->key.offset;
- 	block_group->space_info->bytes_readonly -= block_group->key.offset;
- 	block_group->space_info->disk_total -= block_group->key.offset * factor;
-+
- 	spin_unlock(&block_group->space_info->lock);
+ 	/*
+-	 * if the last transaction that changed this file was before
+-	 * the current transaction, we can bail out now without any
+-	 * syncing
++	 * If the last transaction that changed this file was before the current
++	 * transaction and we have the full sync flag set in our inode, we can
++	 * bail out now without any syncing.
++	 *
++	 * Note that we can't bail out if the full sync flag isn't set. This is
++	 * because when the full sync flag is set we start all ordered extents
++	 * and wait for them to fully complete - when they complete they update
++	 * the inode's last_trans field through:
++	 *
++	 *     btrfs_finish_ordered_io() ->
++	 *         btrfs_update_inode_fallback() ->
++	 *             btrfs_update_inode() ->
++	 *                 btrfs_set_inode_last_trans()
++	 *
++	 * So we are sure that last_trans is up to date and can do this check to
++	 * bail out safely. For the fast path, when the full sync flag is not
++	 * set in our inode, we can not do it because we start only our ordered
++	 * extents and don't wait for them to complete (that is when
++	 * btrfs_finish_ordered_io runs) - if we rely on the speculative value
++	 * for inode->last_trans set by btrfs_file_write_iter we lose data in
++	 * the following scenario:
++	 *
++	 * 1. fs_info->last_trans_committed == N - 1 and current transaction is
++	 *    transaction N (fs_info->generation == N);
++	 *
++	 * 2. do a buffered write;
++	 *
++	 * 3. fsync our inode, this clears our inode's full sync flag, starts
++	 *    an ordered extent and waits for it to complete - when it completes
++	 *    at btrfs_finish_ordered_io(), the inode's last_trans is set to
++	 *    the value N;
++	 *
++	 * 4. transaction N is committed, so fs_info->last_trans_committed is
++	 *    now set to the value N and fs_info->generation remains with the
++	 *    value N;
++	 *
++	 * 5. do another buffered write, when this happens btrfs_file_write_iter
++	 *    sets our inode's last_trans to the value N + 1;
++	 *
++	 * 6. transaction N + 1 is started and fs_info->generation now has the
++	 *    value N + 1;
++	 *
++	 * 7. transaction N + 1 is committed, so fs_info->last_trans_committed
++	 *    is set to the value N + 1;
++	 *
++	 * 8. fsync our inode - because it doesn't have the full sync flag set,
++	 *    we only start the ordered extent, we don't wait for it to complete
++	 *    (only in a later phase) therefore its last_trans field has the
++	 *    value N + 1 set previously by btrfs_file_write_iter(), and so we
++	 *    have:
++	 *
++	 *        inode->last_trans <= fs_info->last_trans_committed
++	 *            (N + 1)              (N + 1)
++	 *
++	 *    Which would make us not log the last buffered write, resulting in
++	 *    data loss after a crash.
+ 	 */
+ 	smp_mb();
+ 	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
+-	    BTRFS_I(inode)->last_trans <=
+-	    root->fs_info->last_trans_committed) {
++	    (full_sync && BTRFS_I(inode)->last_trans <=
++	     root->fs_info->last_trans_committed)) {
+ 		BTRFS_I(inode)->last_trans = 0;
  
- 	memcpy(&key, &block_group->key, sizeof(key));
+ 		/*
 -- 
-1.8.5.1
+2.1.3
 

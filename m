@@ -1,20 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10721 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42345 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753273AbbBZGt2 (ORCPT
+	with ESMTP id S1753278AbbBZGt2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 26 Feb 2015 01:49:28 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q6mYe0006724
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 14:48:34 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q6mXbI006721
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 14:48:33 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 1/2] btrfs: Set relative data on clear btrfs_block_group_cache->pinned
-Date: Thu, 26 Feb 2015 14:48:13 +0800
-Message-ID: <3f74305b3cbcbbf667804c97a030cba4ce9292a5.1424932917.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1424932917.git.zhaolei@cn.fujitsu.com>
-References: <cover.1424932917.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 0/2] btrfs: Set relative data on clear btrfs_block_group_cache->pinned
+Date: Thu, 26 Feb 2015 14:48:12 +0800
+Message-ID: <cover.1424932917.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,62 +20,23 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Bug1:
-  space_info->bytes_readonly was set to very large(negative) value in
-  btrfs_remove_block_group().
+Changelog v1->v2:
+ [PATCH 2/2] btrfs: add WARN_ON() to check is space_info op current
+   Put WARN_ON()s under the ENOSPC_DEBUG mount option.
+   Suggested by: David Sterba <dsterba@suse.cz>
 
-Reason:
-  Current code set block_group_cache->pinned = 0 in btrfs_delete_unused_bgs(),
-  but above space was not counted to space_info->bytes_readonly.
+Changelog v1->v2:
+ drop patch of:
+  Remove BUG_ON() when failed searching block_group_cache in unpin_extent_range()
+  because Filipe Manana <fdmanana@suse.com> already fixed it with  better way.
 
-  Then in btrfs_remove_block_group():
-    block_group->space_info->bytes_readonly -= block_group->key.offset;
-  We can see following value in trace:
-    btrfs_remove_block_group: pid=2677 comm=btrfs-cleaner WARNING: bytes_readonly=12582912, key.offset=134217728
+Zhao Lei (2):
+  btrfs: Set relative data on clear btrfs_block_group_cache->pinned
+  btrfs: add WARN_ON() to check is space_info op current
 
-Bug2:
-  space_info->total_bytes_pinned grow to value larger than fs size.
-  In a 1.2G fs, we can get following trace log:
-  at first:
-    ZL_DEBUG: add_pinned_bytes: pid=2710 comm=sync change total_bytes_pinned flags=1 869793792 + 95944704 = 965738496
-  after some op:
-    ZL_DEBUG: add_pinned_bytes: pid=2770 comm=sync change total_bytes_pinned flags=1 1780178944 + 95944704 = 1876123648
-  after some op:
-    ZL_DEBUG: add_pinned_bytes: pid=3193 comm=sync change total_bytes_pinned flags=1 2924568576 + 95551488 = 3020120064
-  ...
+ fs/btrfs/extent-tree.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-Reason:
-  Similar to bug1, we also need to adjust space_info->total_bytes_pinned
-  in above code block.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index dc25e13..bfb9105 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9605,8 +9605,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
- 
- 		/* Reset pinned so btrfs_put_block_group doesn't complain */
-+		spin_lock(&space_info->lock);
-+		spin_lock(&block_group->lock);
-+
-+		space_info->bytes_pinned -= block_group->pinned;
-+		space_info->bytes_readonly += block_group->pinned;
-+		percpu_counter_add(&space_info->total_bytes_pinned,
-+				   -block_group->pinned);
- 		block_group->pinned = 0;
- 
-+		spin_unlock(&block_group->lock);
-+		spin_unlock(&space_info->lock);
-+
- 		/*
- 		 * Btrfs_remove_chunk will abort the transaction if things go
- 		 * horribly wrong.
 -- 
 1.8.5.1
 

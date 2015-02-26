@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:43036 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752583AbbBZDVg (ORCPT
+	with ESMTP id S1752953AbbBZDVh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 22:21:36 -0500
+	Wed, 25 Feb 2015 22:21:37 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q3KgrV027281
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 11:20:42 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q3KhIT027286
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 11:20:43 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 0/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
-Date: Thu, 26 Feb 2015 11:20:22 +0800
-Message-ID: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
+Date: Thu, 26 Feb 2015 11:20:23 +0800
+Message-ID: <1424920823-12176-2-git-send-email-zhaolei@cn.fujitsu.com>
+In-Reply-To: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
+References: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,38 +22,126 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It is the last patch to fix following write fail case:
-while true; do
-  write a file to 75% fs size
-  delete above file
-  sync or sleep
-done
+Steps to reproduce:
+  while true; do
+    dd if=/dev/zero of=/btrfs_dir/file count=[fs_size * 75%]
+    rm /btrfs_dir/file
+    sync
+  done
 
-Above issue is caused by several reason, and fixed in following patch
-respectively:
- Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
-  from Forrest Liu <forrestl@synology.com>
- btrfs: Fix out-of-space bug
-  merged into v4.0-rc1
- btrfs: fix condition of commit transaction
- btrfs: Fix tail space processing in find_free_dev_extent()
- btrfs: Adjust commit-transaction condition to avoid NO_SPACE more
- btrfs: Fix NO_SPACE bug caused by delayed-iput
-  this patch
+  And we'll see dd failed because btrfs return NO_SPACE.
 
-These patchs reduced fail-rate step by step, from 50 fails in 20 * 200
-loops, to 0 fails now.
-And now we can add a test case to xfstests for above action.
+Reason:
+  Normally, btrfs_commit_transaction() call btrfs_run_delayed_iputs()
+  in end to free fs space for next write, but sometimes it hadn't
+  done work on time, because btrfs-cleaner thread get delayed-iputs
+  from list before, but do iput() after next write.
 
-Zhao Lei (1):
-  btrfs: Fix NO_SPACE bug caused by delayed-iput
+  This is log:
+  [ 2569.050776] comm=btrfs-cleaner func=btrfs_evict_inode() begin
 
+  [ 2569.084280] comm=sync func=btrfs_commit_transaction() call btrfs_run_delayed_iputs()
+  [ 2569.085418] comm=sync func=btrfs_commit_transaction() done btrfs_run_delayed_iputs()
+  [ 2569.087554] comm=sync func=btrfs_commit_transaction() end
+
+  [ 2569.191081] comm=dd begin
+  [ 2569.790112] comm=dd func=__btrfs_buffered_write() ret=-28
+
+  [ 2569.847479] comm=btrfs-cleaner func=add_pinned_bytes() 0 + 32677888 = 32677888
+  [ 2569.849530] comm=btrfs-cleaner func=add_pinned_bytes() 32677888 + 23834624 = 56512512
+  ...
+  [ 2569.903893] comm=btrfs-cleaner func=add_pinned_bytes() 943976448 + 21762048 = 965738496
+  [ 2569.908270] comm=btrfs-cleaner func=btrfs_evict_inode() end
+
+Fix:
+  Make btrfs_commit_transaction() wait current running delayed-iputs()
+  done in end.
+
+Test:
+  Use script similar to above(more complex),
+  before patch:
+    7 failed in 100 * 20 loop.
+  after patch:
+    0 failed in 100 * 20 loop.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
  fs/btrfs/ctree.h       | 1 +
  fs/btrfs/disk-io.c     | 3 ++-
  fs/btrfs/inode.c       | 4 ++++
  fs/btrfs/transaction.c | 6 +++++-
  4 files changed, 12 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84c3b00..ec2dac0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1513,6 +1513,7 @@ struct btrfs_fs_info {
+ 
+ 	spinlock_t delayed_iput_lock;
+ 	struct list_head delayed_iputs;
++	struct rw_semaphore delayed_iput_sem;
+ 
+ 	/* this protects tree_mod_seq_list */
+ 	spinlock_t tree_mod_seq_lock;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f79f385..1c0d8ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2241,11 +2241,12 @@ int open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->qgroup_op_lock);
+ 	spin_lock_init(&fs_info->buffer_lock);
+ 	spin_lock_init(&fs_info->unused_bgs_lock);
+-	mutex_init(&fs_info->unused_bg_unpin_mutex);
+ 	rwlock_init(&fs_info->tree_mod_log_lock);
++	mutex_init(&fs_info->unused_bg_unpin_mutex);
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	seqlock_init(&fs_info->profiles_lock);
++	init_rwsem(&fs_info->delayed_iput_sem);
+ 
+ 	init_completion(&fs_info->kobj_unregister);
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a85c23d..a396bb9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3087,6 +3087,8 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 	if (empty)
+ 		return;
+ 
++	down_read(&fs_info->delayed_iput_sem);
++
+ 	spin_lock(&fs_info->delayed_iput_lock);
+ 	list_splice_init(&fs_info->delayed_iputs, &list);
+ 	spin_unlock(&fs_info->delayed_iput_lock);
+@@ -3097,6 +3099,8 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 		iput(delayed->inode);
+ 		kfree(delayed);
+ 	}
++
++	up_read(&fs_info->delayed_iput_sem);
+ }
+ 
+ /*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7e80f32..175cdef 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2068,8 +2068,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ 
+-	if (current != root->fs_info->transaction_kthread)
++	if (current != root->fs_info->transaction_kthread) {
+ 		btrfs_run_delayed_iputs(root);
++		/* make sure that all running delayed iput are done */
++		down_write(&root->fs_info->delayed_iput_sem);
++		up_write(&root->fs_info->delayed_iput_sem);
++	}
+ 
+ 	return ret;
+ 
 -- 
 1.8.5.1
 

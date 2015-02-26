@@ -1,147 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43036 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752953AbbBZDVh (ORCPT
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:42471 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752193AbbBZJzL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 22:21:37 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1Q3KhIT027286
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 11:20:43 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
-Date: Thu, 26 Feb 2015 11:20:23 +0800
-Message-ID: <1424920823-12176-2-git-send-email-zhaolei@cn.fujitsu.com>
-In-Reply-To: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
-References: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
+	Thu, 26 Feb 2015 04:55:11 -0500
+Received: by lbiw7 with SMTP id w7so9655696lbi.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 01:55:10 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <007f01d05099$01bc2430$05346c90$@cn.fujitsu.com>
+References: <1424792249-26672-1-git-send-email-zhaolei@cn.fujitsu.com>
+	<CAL3q7H63LBgPvVcggR+fZ3KrfLWH8D7ZJDjUo_orqbrmTVmeNw@mail.gmail.com>
+	<007f01d05099$01bc2430$05346c90$@cn.fujitsu.com>
+Date: Thu, 26 Feb 2015 09:55:10 +0000
+Message-ID: <CAL3q7H7E5dtfaj_W+rETOUkGYxYLaCqXKxuC0aP9X-OfOLwkuw@mail.gmail.com>
+Subject: Re: [PATCH 3/3] btrfs: Remove BUG_ON() when failed searching
+ block_group_cache in unpin_extent_range()
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Wed, Feb 25, 2015 at 1:18 AM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
+> Hi, Filipe
+>
+>> From: Filipe David Manana [mailto:fdmanana@gmail.com]
+>>
+>> On Tue, Feb 24, 2015 at 3:37 PM, Zhaolei <zhaolei@cn.fujitsu.com> wrote:
+>> > From: Zhao Lei <zhaolei@cn.fujitsu.com>
+>> >
+>> > Above BUG_ON() was triggered only one time in my test, but hadn't
+>> > happened again in same env.
+>> >
+>> > The reason maybe:
+>> > A block group which include pinned space was removed before
+>> > unpin_extent_range(), and no other block_group_cache after "start"
+>> > pos, so the code entered into above BUG_ON().
+>> >
+>> > To support auto-remove-bgs, we can remove above BUG_ON(), and bypass
+>> > removed bgs.
+>>
+>> I don't think it's a good idea to remove this BUG_ON().
+>> You're just hiding (potentially dangerous) logical bugs doing that - we need to
+>> understand exactly why that happens and fix it.
+>>
+>> I fixed a scenario where this happens recently, and the fix is in 4.0-rc1:
+>>
+>> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=d4b4
+>> 50cd4b33ce7c572e7fdccf33b59c4cdf361c
+>>
+>> Were you testing with or without this fix?
+>>
+> Thanks for notice, it is better way of fix.
+> I'll drop this patch.
 
-Steps to reproduce:
-  while true; do
-    dd if=/dev/zero of=/btrfs_dir/file count=[fs_size * 75%]
-    rm /btrfs_dir/file
-    sync
-  done
+Sorry I also missed to mention 2 things before:
 
-  And we'll see dd failed because btrfs return NO_SPACE.
+1) Your patch can lead to space leaks too. The range we're passing to
+unpin_extent_range() can cover more than 1 block group - for example
+the whole block group that is about to be deleted plus part of an
+adjacent block group that isn't empty. In this case you would be
+leaking space forever, and that space corresponds to the part of the
+block group that isn't empty;
 
-Reason:
-  Normally, btrfs_commit_transaction() call btrfs_run_delayed_iputs()
-  in end to free fs space for next write, but sometimes it hadn't
-  done work on time, because btrfs-cleaner thread get delayed-iputs
-  from list before, but do iput() after next write.
+2) There's another race my fix deals with which I haven't mentioned in
+the commit message. If you look at the time sequence diagram from the
+commit message, it's possible that after CPU 2 deletes the block group
+and before CPU 1 calls unpin_extent_range(), a new block group using
+the same logical address (but different physical address of course) is
+created and space allocated from it. In this (hopefully very unlikely)
+scenario, CPU 1 would just mark that allocated space as freed when it
+isn't, as it has no way to know there's a new block group with the
+same logical address - this would be terrible.
 
-  This is log:
-  [ 2569.050776] comm=btrfs-cleaner func=btrfs_evict_inode() begin
+thanks
 
-  [ 2569.084280] comm=sync func=btrfs_commit_transaction() call btrfs_run_delayed_iputs()
-  [ 2569.085418] comm=sync func=btrfs_commit_transaction() done btrfs_run_delayed_iputs()
-  [ 2569.087554] comm=sync func=btrfs_commit_transaction() end
+>
+> Thanks
+> Zhaolei
+>
+>> Thanks
+>>
+>> >
+>> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+>> > ---
+>> >  fs/btrfs/extent-tree.c | 3 ++-
+>> >  1 file changed, 2 insertions(+), 1 deletion(-)
+>> >
+>> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c index
+>> > 8b51eb5..ef0b40d 100644
+>> > --- a/fs/btrfs/extent-tree.c
+>> > +++ b/fs/btrfs/extent-tree.c
+>> > @@ -5751,7 +5751,8 @@ static int unpin_extent_range(struct btrfs_root
+>> *root, u64 start, u64 end,
+>> >                         if (cache)
+>> >                                 btrfs_put_block_group(cache);
+>> >                         cache = btrfs_lookup_block_group(fs_info,
+>> start);
+>> > -                       BUG_ON(!cache); /* Logic error */
+>> > +                       if (!cache)
+>> > +                               break;
+>> >                 }
+>> >
+>> >                 len = cache->key.objectid + cache->key.offset - start;
+>> > --
+>> > 1.8.5.1
+>> >
+>> > --
+>> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>> > in the body of a message to majordomo@vger.kernel.org More majordomo
+>> > info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>> --
+>> Filipe David Manana,
+>>
+>> "Reasonable men adapt themselves to the world.
+>>  Unreasonable men adapt the world to themselves.
+>>  That's why all progress depends on unreasonable men."
+>
+>
 
-  [ 2569.191081] comm=dd begin
-  [ 2569.790112] comm=dd func=__btrfs_buffered_write() ret=-28
 
-  [ 2569.847479] comm=btrfs-cleaner func=add_pinned_bytes() 0 + 32677888 = 32677888
-  [ 2569.849530] comm=btrfs-cleaner func=add_pinned_bytes() 32677888 + 23834624 = 56512512
-  ...
-  [ 2569.903893] comm=btrfs-cleaner func=add_pinned_bytes() 943976448 + 21762048 = 965738496
-  [ 2569.908270] comm=btrfs-cleaner func=btrfs_evict_inode() end
 
-Fix:
-  Make btrfs_commit_transaction() wait current running delayed-iputs()
-  done in end.
-
-Test:
-  Use script similar to above(more complex),
-  before patch:
-    7 failed in 100 * 20 loop.
-  after patch:
-    0 failed in 100 * 20 loop.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       | 1 +
- fs/btrfs/disk-io.c     | 3 ++-
- fs/btrfs/inode.c       | 4 ++++
- fs/btrfs/transaction.c | 6 +++++-
- 4 files changed, 12 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 84c3b00..ec2dac0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1513,6 +1513,7 @@ struct btrfs_fs_info {
- 
- 	spinlock_t delayed_iput_lock;
- 	struct list_head delayed_iputs;
-+	struct rw_semaphore delayed_iput_sem;
- 
- 	/* this protects tree_mod_seq_list */
- 	spinlock_t tree_mod_seq_lock;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f79f385..1c0d8ec 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2241,11 +2241,12 @@ int open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->qgroup_op_lock);
- 	spin_lock_init(&fs_info->buffer_lock);
- 	spin_lock_init(&fs_info->unused_bgs_lock);
--	mutex_init(&fs_info->unused_bg_unpin_mutex);
- 	rwlock_init(&fs_info->tree_mod_log_lock);
-+	mutex_init(&fs_info->unused_bg_unpin_mutex);
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	seqlock_init(&fs_info->profiles_lock);
-+	init_rwsem(&fs_info->delayed_iput_sem);
- 
- 	init_completion(&fs_info->kobj_unregister);
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a85c23d..a396bb9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3087,6 +3087,8 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
- 	if (empty)
- 		return;
- 
-+	down_read(&fs_info->delayed_iput_sem);
-+
- 	spin_lock(&fs_info->delayed_iput_lock);
- 	list_splice_init(&fs_info->delayed_iputs, &list);
- 	spin_unlock(&fs_info->delayed_iput_lock);
-@@ -3097,6 +3099,8 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
- 		iput(delayed->inode);
- 		kfree(delayed);
- 	}
-+
-+	up_read(&fs_info->delayed_iput_sem);
- }
- 
- /*
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 7e80f32..175cdef 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2068,8 +2068,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 
--	if (current != root->fs_info->transaction_kthread)
-+	if (current != root->fs_info->transaction_kthread) {
- 		btrfs_run_delayed_iputs(root);
-+		/* make sure that all running delayed iput are done */
-+		down_write(&root->fs_info->delayed_iput_sem);
-+		up_write(&root->fs_info->delayed_iput_sem);
-+	}
- 
- 	return ret;
- 
 -- 
-1.8.5.1
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

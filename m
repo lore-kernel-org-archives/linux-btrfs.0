@@ -1,156 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33608 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753268AbbBZMDy convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Feb 2015 07:03:54 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <fdmanana@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <1424792249-26672-1-git-send-email-zhaolei@cn.fujitsu.com>	<CAL3q7H63LBgPvVcggR+fZ3KrfLWH8D7ZJDjUo_orqbrmTVmeNw@mail.gmail.com>	<007f01d05099$01bc2430$05346c90$@cn.fujitsu.com> <CAL3q7H7E5dtfaj_W+rETOUkGYxYLaCqXKxuC0aP9X-OfOLwkuw@mail.gmail.com>
-In-Reply-To: <CAL3q7H7E5dtfaj_W+rETOUkGYxYLaCqXKxuC0aP9X-OfOLwkuw@mail.gmail.com>
-Subject: RE: [PATCH 3/3] btrfs: Remove BUG_ON() when failed searching block_group_cache in unpin_extent_range()
-Date: Thu, 26 Feb 2015 20:03:42 +0800
-Message-ID: <00c401d051bc$43c8d0c0$cb5a7240$@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from victor.provo.novell.com ([137.65.250.26]:41190 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753551AbbBZTxg (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 26 Feb 2015 14:53:36 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Generic test for file fsync after moving files across directories
+Date: Thu, 26 Feb 2015 19:53:14 +0000
+Message-Id: <1424980394-12592-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Manana
+Test file fsync after moving one file between directories and fsyncing the
+old parent directory before fsyncing the file. Verify that after a crash the
+file data we fsynced is available.
 
-* From: Filipe David Manana [mailto:fdmanana@gmail.com]
-> Sent: Thursday, February 26, 2015 5:55 PM
-> To: Zhao Lei
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 3/3] btrfs: Remove BUG_ON() when failed searching
-> block_group_cache in unpin_extent_range()
-> 
-> On Wed, Feb 25, 2015 at 1:18 AM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
-> > Hi, Filipe
-> >
-> >> From: Filipe David Manana [mailto:fdmanana@gmail.com]
-> >>
-> >> On Tue, Feb 24, 2015 at 3:37 PM, Zhaolei <zhaolei@cn.fujitsu.com> wrote:
-> >> > From: Zhao Lei <zhaolei@cn.fujitsu.com>
-> >> >
-> >> > Above BUG_ON() was triggered only one time in my test, but hadn't
-> >> > happened again in same env.
-> >> >
-> >> > The reason maybe:
-> >> > A block group which include pinned space was removed before
-> >> > unpin_extent_range(), and no other block_group_cache after "start"
-> >> > pos, so the code entered into above BUG_ON().
-> >> >
-> >> > To support auto-remove-bgs, we can remove above BUG_ON(), and
-> >> > bypass removed bgs.
-> >>
-> >> I don't think it's a good idea to remove this BUG_ON().
-> >> You're just hiding (potentially dangerous) logical bugs doing that -
-> >> we need to understand exactly why that happens and fix it.
-> >>
-> >> I fixed a scenario where this happens recently, and the fix is in 4.0-rc1:
-> >>
-> >> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commi
-> >> t/?id=d4b4
-> >> 50cd4b33ce7c572e7fdccf33b59c4cdf361c
-> >>
-> >> Were you testing with or without this fix?
-> >>
-> > Thanks for notice, it is better way of fix.
-> > I'll drop this patch.
-> 
-> Sorry I also missed to mention 2 things before:
-> 
-> 1) Your patch can lead to space leaks too. The range we're passing to
-> unpin_extent_range() can cover more than 1 block group - for example the
-> whole block group that is about to be deleted plus part of an adjacent block
-> group that isn't empty. In this case you would be leaking space forever, and
-> that space corresponds to the part of the block group that isn't empty;
-> 
-In this case, seems btrfs_lookup_block_group() will get adjacent block group,
-and will not run to BUG_ON() line.
+This test is motivated by an issue discovered in btrfs which caused the file
+data to be lost (despite fsync returning success to user space). That btrfs
+bug is fixed by the following linux kernel patch:
 
-> 2) There's another race my fix deals with which I haven't mentioned in the
-> commit message. If you look at the time sequence diagram from the commit
-> message, it's possible that after CPU 2 deletes the block group and before CPU
-> 1 calls unpin_extent_range(), a new block group using the same logical address
-> (but different physical address of course) is created and space allocated from it.
-> In this (hopefully very unlikely) scenario, CPU 1 would just mark that allocated
-> space as freed when it isn't, as it has no way to know there's a new block group
-> with the same logical address - this would be terrible.
-> 
-This is problem although in very rare condition, plus more rare that btrfs only
-get chunk address in end of current space, so only happened when delete last
-chunk.
-But it should be fixed, glad that you noticed out this hard-to-see condition,
-and your fix make code run in neat logic.
+   Btrfs: fix data loss in the fast fsync path
 
-Btw, find_next_chunk() return end pos of current space, it make logical address
-keeps increase when remove and new chunk automatically, not problem but not
-good-looking...
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/067     | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/067.out |  11 +++++
+ tests/generic/group   |   1 +
+ 3 files changed, 125 insertions(+)
+ create mode 100755 tests/generic/067
+ create mode 100644 tests/generic/067.out
 
-Thanks
-Zhaolei
-
-> thanks
-> 
-> >
-> > Thanks
-> > Zhaolei
-> >
-> >> Thanks
-> >>
-> >> >
-> >> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> >> > ---
-> >> >  fs/btrfs/extent-tree.c | 3 ++-
-> >> >  1 file changed, 2 insertions(+), 1 deletion(-)
-> >> >
-> >> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c index
-> >> > 8b51eb5..ef0b40d 100644
-> >> > --- a/fs/btrfs/extent-tree.c
-> >> > +++ b/fs/btrfs/extent-tree.c
-> >> > @@ -5751,7 +5751,8 @@ static int unpin_extent_range(struct
-> >> > btrfs_root
-> >> *root, u64 start, u64 end,
-> >> >                         if (cache)
-> >> >                                 btrfs_put_block_group(cache);
-> >> >                         cache = btrfs_lookup_block_group(fs_info,
-> >> start);
-> >> > -                       BUG_ON(!cache); /* Logic error */
-> >> > +                       if (!cache)
-> >> > +                               break;
-> >> >                 }
-> >> >
-> >> >                 len = cache->key.objectid + cache->key.offset -
-> >> > start;
-> >> > --
-> >> > 1.8.5.1
-> >> >
-> >> > --
-> >> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
-> >> > in the body of a message to majordomo@vger.kernel.org More
-> >> > majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >>
-> >>
-> >>
-> >> --
-> >> Filipe David Manana,
-> >>
-> >> "Reasonable men adapt themselves to the world.
-> >>  Unreasonable men adapt the world to themselves.
-> >>  That's why all progress depends on unreasonable men."
-> >
-> >
-> 
-> 
-> 
-> --
-> Filipe David Manana,
-> 
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
-
+diff --git a/tests/generic/067 b/tests/generic/067
+new file mode 100755
+index 0000000..90f26b2
+--- /dev/null
++++ b/tests/generic/067
+@@ -0,0 +1,113 @@
++#! /bin/bash
++# FS QA Test No. 067
++#
++# Test file fsync after moving one file between directories and fsyncing the
++# old parent directory before fsyncing the file. Verify that after a crash the
++# file data we fsynced is available.
++#
++# This test is motivated by an issue discovered in btrfs which caused the file
++# data to be lost (despite fsync returning success to user space). That btrfs
++# bug was fixed by the following linux kernel patch:
++#
++#   Btrfs: fix data loss in the fast fsync path
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++	_cleanup_flakey
++	rm -f $tmp.*
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_need_to_be_root
++_require_scratch
++_require_dm_flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >> $seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create our main test file 'foo', the one we check for data loss.
++# By doing an fsync against our file, it makes btrfs clear the 'needs_full_sync'
++# bit from its flags (btrfs inode specific flags).
++$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 8K" \
++		-c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
++
++# Now create one other file and 2 directories. We will move this second file
++# from one directory to the other later because it forces btrfs to commit its
++# currently open transaction if we fsync the old parent directory. This is
++# necessary to trigger the data loss bug that affected btrfs.
++mkdir $SCRATCH_MNT/testdir_1
++touch $SCRATCH_MNT/testdir_1/bar
++mkdir $SCRATCH_MNT/testdir_2
++
++# Make sure everything is durably persisted.
++sync
++
++# Write more 8Kb of data to our file.
++$XFS_IO_PROG -c "pwrite -S 0xbb 8K 8K" $SCRATCH_MNT/foo | _filter_xfs_io
++
++# Move our 'bar' file into a new directory.
++mv $SCRATCH_MNT/testdir_1/bar $SCRATCH_MNT/testdir_2/bar
++
++# Fsync our first directory. Because it had a file moved into some other
++# directory, this made btrfs commit the currently open transaction. This is
++# a condition necessary to trigger the data loss bug.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir_1
++
++# Now fsync our main test file. If the fsync succeeds, we expect the 8Kb of
++# data we wrote previously to be persisted and available if a crash happens.
++# This did not happen with btrfs, because of the transaction commit that
++# happened when we fsynced the parent directory.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++
++# Simulate a crash/power loss.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++# Now check that all data we wrote before are available.
++echo "File content after log replay:"
++od -t x1 $SCRATCH_MNT/foo
++
++status=0
++exit
+diff --git a/tests/generic/067.out b/tests/generic/067.out
+new file mode 100644
+index 0000000..f30f6ef
+--- /dev/null
++++ b/tests/generic/067.out
+@@ -0,0 +1,11 @@
++QA output created by 067
++wrote 8192/8192 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 8192
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after log replay:
++0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++0040000
+diff --git a/tests/generic/group b/tests/generic/group
+index e5db772..05cc6a9 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -69,6 +69,7 @@
+ 064 auto quick prealloc
+ 065 metadata auto quick
+ 066 metadata auto quick
++067 metadata auto quick
+ 068 other auto freeze dangerous stress
+ 069 rw udf auto quick
+ 070 attr udf auto quick stress
+-- 
+2.1.3
 

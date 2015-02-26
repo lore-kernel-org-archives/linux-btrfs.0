@@ -1,96 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f178.google.com ([74.125.82.178]:39454 "EHLO
-	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753539AbbBZVtw (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41645 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752986AbbBZWEU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Feb 2015 16:49:52 -0500
-Received: by wesx3 with SMTP id x3so15104214wes.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Feb 2015 13:49:51 -0800 (PST)
+	Thu, 26 Feb 2015 17:04:20 -0500
+Date: Thu, 26 Feb 2015 17:04:13 -0500
+From: Chris Mason <clm@fb.com>
+Subject: Re: Btrfs fixes, changes don't appear on git repo
+To: Matt <jackdachef@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, <jbacik@fb.com>
+Message-ID: <1424988253.7413.0@mail.thefacebook.com>
+In-Reply-To: <CAG-aW06oJ3NB1zOZ0NuAmLK36kOdKKJhQgJhKCZmVtpAqbZXrA@mail.gmail.com>
+References: <CAG-aW06oJ3NB1zOZ0NuAmLK36kOdKKJhQgJhKCZmVtpAqbZXrA@mail.gmail.com>
 MIME-Version: 1.0
-Date: Thu, 26 Feb 2015 22:49:51 +0100
-Message-ID: <CAG-aW06oJ3NB1zOZ0NuAmLK36kOdKKJhQgJhKCZmVtpAqbZXrA@mail.gmail.com>
-Subject: Btrfs fixes, changes don't appear on git repo
-From: Matt <jackdachef@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Chris Mason <clm@fb.com>, jbacik@fb.com
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi linux-btrfs list,
-
-Hi Chris, Hi Josef,
 
 
-it seemingly happened in the past and now it seems to happen again:
+On Thu, Feb 26, 2015 at 4:49 PM, Matt <jackdachef@gmail.com> wrote:
+> Hi linux-btrfs list,
+> 
+> Hi Chris, Hi Josef,
+> 
+> 
+> it seemingly happened in the past and now it seems to happen again:
+> 
+> after patches have been posted to the linux-btrfs mailing list and
+> pulled by Linus,
+> 
+> changes occured and additional pull-requests followed - the old
+> commits don't appear to be anywhere accessible besides Linus' tree
+> 
+> 
+> example:
+> 
+> http://marc.info/?l=linux-btrfs&m=142203898505309&w=2
+> 
+> [GIT PULL] Btrfs fixes
+> from January 23rd
 
-after patches have been posted to the linux-btrfs mailing list and
-pulled by Linus,
+Sorry for the confusion.  What happens is that I send Linus pulls for 
+the things he's missing, and we have slightly parallel development 
+branches.
 
-changes occured and additional pull-requests followed - the old
-commits don't appear to be anywhere accessible besides Linus' tree
+Before 3.19-rc1, I forked 3.18-rc5 and rebased my 3.19 merge window on 
+top of that.  All of my commits for 3.19 went on top of this branch.
 
+I forked our tree for the 4.0 merge window at 3.19-rc5.  This is where 
+all the 4.0 commits went.  But, 3.19 kept rolling and we had additional 
+fixes in before 3.19-final.
 
-example:
+I use the same branch for every pull to Linus (for-linus), so during 
+3.19-rc6 I sent him code on top of for-linus, which at the time was 
+based on 3.18-rc5 and had all my 3.19 code in it.
 
-http://marc.info/?l=linux-btrfs&m=142203898505309&w=2
+Then the 4.0 merge window started and I switched to my 3.19-rc5 based 
+merge window tree, which was actually missing the commit you mentioned 
+because Linus took it after rc5.
 
-[GIT PULL] Btrfs fixes
-from January 23rd
+It all works for Linus because git merges things easily, and he 
+actually prefers that you don't merge in later releases unless you need 
+some fix to keep things stable.  In other words, if my for-linus for 
+the 4.0 merge window has a merge with 3.19-final, he may push back.
 
+In general, you can take my for-linus on top of the last released Linus 
+kernel and have all the current commits that are considered stable.
 
-I picked a specific patch out:
-http://marc.info/?l=linux-btrfs&m=142141473603234&w=2
-Btrfs: fix race deleting block group from space_info->ro_bgs list
+In the future, I'll keep a for-linus-xxyyzz for the last release to 
+make this less confusing.
 
-since it might lead to lockups
-
-I've seen some lockups in the past few days which involved Btrfs while
-playing and adding some bleeding edge patches to my custom kernel
-(3.19 based) - or in general to have Btrfs' latest and greatest code
-
-thus I want to make sure that I have the latest
-stability-/bugfix-related patches
-
-
-When searching at
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/log/
-for "Btrfs: fix race deleting block group from space_info->ro_bgs list"
-
-it winds up in Linus' repo with a merge/pull from January 24th
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/log/?qt=grep&q=Btrfs%3A+fix+race+deleting+block+group+from+space_info-%3Ero_bgs+list
-
-
-But when searching in the "integration" or current "for-linus" branch
-http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/log/?h=integration
-http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/log/?h=for-linus
-
-http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/log/?h=for-linus&qt=grep&q=Btrfs%3A+fix+race+deleting+block+group+from+space_info-%3Ero_bgs+list
-
-http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/log/?h=integration&qt=grep&q=Btrfs%3A+fix+race+deleting+block+group+from+space_info-%3Ero_bgs+list
-
-There is no such commit - which I can't seem to wrap my head around
-
-The same result with
-
-git log --grep "foo ..."
-
-after having fetched the latest state of Chris' repo
-
-
-Am I missing something ?
-
-It would be really nice to have a repo where all of the latest Btrfs
-patches are stored and accessible - and a clear picture on why this
-weirdness happens
+-chris
 
 
-Sorry if this was already asked in the past, since I'm not aware of
-such a report
 
-
-Many thanks in advance for your answers
-
-Kind Regards
-
-Matt

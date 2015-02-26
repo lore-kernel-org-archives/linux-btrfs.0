@@ -1,106 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16316 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752925AbbBZBkd convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:46464 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752696AbbBZItn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 20:40:33 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'David Sterba'" <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-CC: <clm@fb.com>
-References: <cover.1424880058.git.dsterba@suse.cz>
-In-Reply-To: <cover.1424880058.git.dsterba@suse.cz>
-Subject: RE: [PULL] [PATCH 00/11] Cleanups for 4.1
-Date: Thu, 26 Feb 2015 09:39:57 +0800
-Message-ID: <009a01d05165$2112c790$633856b0$@cn.fujitsu.com>
+	Thu, 26 Feb 2015 03:49:43 -0500
+Message-ID: <54EEDE23.6080009@gmail.com>
+Date: Thu, 26 Feb 2015 09:49:39 +0100
+From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+To: "Theodore Ts'o" <tytso@mit.edu>, Eric Sandeen <sandeen@redhat.com>
+CC: mtk.manpages@gmail.com, Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>, linux-man@vger.kernel.org,
+        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux API <linux-api@vger.kernel.org>
+Subject: Re: Documenting MS_LAZYTIME
+References: <CAHO5Pa0k7QkV_6BDjwTVxa7LV9tFyN9nGFFcSvOC6HYO08wfrw@mail.gmail.com> <54E7578E.4090809@redhat.com> <20150221025636.GB7922@thunk.org>
+In-Reply-To: <20150221025636.GB7922@thunk.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David
+Ted,
 
-* From: linux-btrfs-owner@vger.kernel.org
-> Subject: [PULL] [PATCH 00/11] Cleanups for 4.1
+On 02/21/2015 03:56 AM, Theodore Ts'o wrote:
+> On Fri, Feb 20, 2015 at 09:49:34AM -0600, Eric Sandeen wrote:
+>>
+>>>               This mount option significantly reduces  writes  to  the
+>>>               inode  table  for workloads that perform frequent random
+>>>               writes to preallocated files.
+>>
+>> This seems like an overly specific description of a single workload out
+>> of many which may benefit, but what do others think?  "inode table" is also
+>> fairly extN-specific.
 > 
-> Hi,
-> 
-> a few cleanups that accumulated over time. No real fixes but there are changes
-> that may touch functionality (no fstests complaints though).
-> 
-I like these cleanups.
+> How about somethign like "This mount significantly reduces writes
+> needed to update the inode's timestamps, especially mtime and actime.
 
-But it cause following build warnings:
-  fs/btrfs/volumes.c: In function ‘__btrfs_map_block’:
-  fs/btrfs/volumes.c:5206: warning: unused variable ‘tmp’
+What is "actime" in the preceding line? Should it be "ctime"?
 
-  fs/btrfs/free-space-cache.c: In function ‘recalculate_thresholds’:
-  fs/btrfs/free-space-cache.c:1527: warning: comparison of distinct pointer types lacks a cast
+> Examples of workloads where this could be a large win include frequent
+> random writes to preallocated files, as well as cases where the
+> MS_STRICTATIME mount option is enabled."?
 
-And little checkpatch notice:
-  ERROR: "foo* bar" should be "foo *bar"
-  #41: FILE: fs/btrfs/sysfs.h:70:
-  +static inline struct kobj_attribute* attr_to_btrfs_attr(struct attribute *attr)
-In [PATCH 09/11].
+I think some version of the following text could also usefully go 
+into the page, but...
 
-Could you fix it?
+> (The advantage of MS_STRICTATIME | MS_LAZYTIME is that stat system
+> calls will return the correctly updated atime, but those atime updates
+> won't get flushed to disk unless the inode needs to be updated for
+> file system / data consistency reasons, or when the inode is pushed
+> out of memory, or when the file system is unmounted.)
 
-Thanks
-Zhaolei
+I find the wording of there a little confusing. Is the following 
+a correct rewrite:
 
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanups-for-4.1
-> 
-> all merged together, but are also available in the following topic branches
-> based on current for-linus branch.
-> 
-> cleanup/sched
-> cleanup/divs
-> cleanup/kmalloc-array
-> cleanup/shadow-vars
-> cleanup/initializers
-> 
-> David Sterba (11):
->   btrfs: need_resched not needed with cond_resched
->   btrfs: use cond_resched_lock where possible
->   btrfs: cleanup 64bit/32bit divs, compile time constants
->   btrfs: cleanup 64bit/32bit divs, provably bounded values
->   btrfs: replace remaining do_div calls with div_u64 variants
->   btrfs: cleanup, use correct type in div_u64_rem
->   btrfs: cleanup, use kmalloc_array/kcalloc array helpers
->   btrfs: remove shadowing variables in __btrfs_buffered_write
->   btrfs: switch helper macros to static inlines in sysfs.h
->   btrfs: remove shadowing variables in __btrfs_map_block
->   btrfs: use explicit initializer for seq_elem
-> 
->  fs/btrfs/backref.c          |  4 +--
->  fs/btrfs/check-integrity.c  |  4 +--
->  fs/btrfs/compression.c      |  2 +-
->  fs/btrfs/ctree.c            |  9 +++--
->  fs/btrfs/ctree.h            |  2 ++
->  fs/btrfs/dev-replace.c      |  6 ++--
->  fs/btrfs/disk-io.c          |  4 +--
->  fs/btrfs/extent-tree.c      | 21 ++++++------
->  fs/btrfs/file-item.c        |  4 +--
->  fs/btrfs/file.c             | 12 +++----
->  fs/btrfs/free-space-cache.c | 34 ++++++++-----------
->  fs/btrfs/inode.c            |  2 +-
->  fs/btrfs/ioctl.c            |  4 +--
->  fs/btrfs/math.h             |  6 ++--
->  fs/btrfs/qgroup.c           |  6 ++--
->  fs/btrfs/raid56.c           |  3 +-
->  fs/btrfs/scrub.c            | 23 ++++++-------
->  fs/btrfs/super.c            |  2 +-
->  fs/btrfs/sysfs.h            | 22 ++++++++++---
->  fs/btrfs/transaction.c      |  7 ++--
->  fs/btrfs/volumes.c          | 80
-> ++++++++++++++++++++++-----------------------
->  21 files changed, 125 insertions(+), 132 deletions(-)
-> 
-> --
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
-> of a message to majordomo@vger.kernel.org More majordomo info at
-> http://vger.kernel.org/majordomo-info.html
+    The advantage of MS_STRICTATIME | MS_LAZYTIME is that stat(2)
+    will return the correctly updated atime, but the atime updates
+    will be flushed to disk only when (1) the inode needs to be 
+    updated for filesystem / data consistency reasons or (2) the 
+    inode is pushed out of memory, or (3) the filesystem is 
+    unmounted.)
+
+?
+
+Thanks,
+
+Michael
 
 
+-- 
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/

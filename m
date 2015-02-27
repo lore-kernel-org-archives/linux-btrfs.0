@@ -1,273 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40792 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751461AbbB1PER (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Feb 2015 10:04:17 -0500
-Date: Sat, 28 Feb 2015 23:04:05 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix data loss in the fast fsync path
-Message-ID: <20150228150403.GA15950@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1424980377-8060-1-git-send-email-fdmanana@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1424980377-8060-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:47085 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752158AbbB0Sh0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Feb 2015 13:37:26 -0500
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Anand Jain <Anand.Jain@oracle.com>,
+        Zach Brown <zab@zabbo.net>
+Subject: [PATCH] btrfs-progs: use less memory for pretty_size_mode buffers
+Date: Fri, 27 Feb 2015 19:37:24 +0100
+Message-Id: <1425062244-14807-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 26, 2015 at 07:52:57PM +0000, Filipe Manana wrote:
-> When using the fast file fsync code path we can miss the fact that
-> there new writes happened since the last file fsync and therefore
-> return without waiting for the IO to finish and write the new extents
-> to the fsync log.
-> 
-> The comment this change adds to the fsync handler explains how this
-> can happen and why, and therefore it's included here:
-> 
->   "If the last transaction that changed this file was before the current
->    transaction and we have the full sync flag set in our inode, we can
->    bail out now without any syncing.
-> 
->    Note that we can't bail out if the full sync flag isn't set. This is
->    because when the full sync flag is set we start all ordered extents
->    and wait for them to fully complete - when they complete they update
->    the inode's last_trans field through:
-> 
->        btrfs_finish_ordered_io() ->
->            btrfs_update_inode_fallback() ->
->                btrfs_update_inode() ->
->                    btrfs_set_inode_last_trans()
-> 
->    So we are sure that last_trans is up to date and can do this check to
->    bail out safely. For the fast path, when the full sync flag is not
->    set in our inode, we can not do it because we start only our ordered
->    extents and don't wait for them to complete (that is when
->    btrfs_finish_ordered_io runs) - if we rely on the speculative value
->    for inode->last_trans set by btrfs_file_write_iter we lose data in
->    the following scenario:
-> 
->    1. fs_info->last_trans_committed == N - 1 and current transaction is
->       transaction N (fs_info->generation == N);
-> 
->    2. do a buffered write;
-> 
->    3. fsync our inode, this clears our inode's full sync flag, starts
->       an ordered extent and waits for it to complete - when it completes
->       at btrfs_finish_ordered_io(), the inode's last_trans is set to
->       the value N;
-> 
->    4. transaction N is committed, so fs_info->last_trans_committed is
->       now set to the value N and fs_info->generation remains with the
->       value N;
-> 
->    5. do another buffered write, when this happens btrfs_file_write_iter
->       sets our inode's last_trans to the value N + 1;
-> 
->    6. transaction N + 1 is started and fs_info->generation now has the
->       value N + 1;
-> 
->    7. transaction N + 1 is committed, so fs_info->last_trans_committed
->       is set to the value N + 1;
-> 
->    8. fsync our inode - because it doesn't have the full sync flag set,
->       we only start the ordered extent, we don't wait for it to complete
->       (only in a later phase) therefore its last_trans field has the
->       value N + 1 set previously by btrfs_file_write_iter(), and so we
->       have:
-> 
->           inode->last_trans <= fs_info->last_trans_committed
->               (N + 1)              (N + 1)
-> 
->       Which would make us not log the last buffered write, resulting in
->       data loss after a crash."
-> 
-> This is actually deterministic and not hard to trigger. The following excerpt
-> from a testcase I made for xfstests triggers the issue. It moves a dummy file
-> across directories and then fsyncs the old parent directory - this is just to
-> trigger a transaction commit, so moving files around isn't directly related
-> to the issue but it was chosen because running 'sync' for example does more
-> than just committing the current transaction, as it flushes/waits for all
-> file data to be persisted.
-> The body of the test is:
-> 
->   _scratch_mkfs >> $seqres.full 2>&1
->   _init_flakey
->   _mount_flakey
-> 
->   # Create our main test file 'foo', the one we check for data loss.
->   # By doing an fsync against our file, it makes btrfs clear the 'needs_full_sync'
->   # bit from its flags (btrfs inode specific flags).
->   $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 8K" \
->                   -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Now create one other file and 2 directories. We will move this second file
->   # from one directory to the other later because it forces btrfs to commit its
->   # currently open transaction if we fsync the old parent directory. This is
->   # necessary to trigger the data loss bug that affected btrfs.
->   mkdir $SCRATCH_MNT/testdir_1
->   touch $SCRATCH_MNT/testdir_1/bar
->   mkdir $SCRATCH_MNT/testdir_2
-> 
->   # Make sure everything is durably persisted.
->   sync
-> 
->   # Write more 8Kb of data to our file.
->   $XFS_IO_PROG -c "pwrite -S 0xbb 8K 8K" $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Move our 'bar' file into a new directory.
->   mv $SCRATCH_MNT/testdir_1/bar $SCRATCH_MNT/testdir_2/bar
-> 
->   # Fsync our first directory. Because it had a file moved into some other
->   # directory, this made btrfs commit the currently open transaction. This is
->   # a condition necessary to trigger the data loss bug.
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir_1
-> 
->   # Now fsync our main test file. If the fsync succeeds, we expect the 8Kb of
->   # data we wrote previously to be persisted and available if a crash happens.
->   # This did not happen with btrfs, because of the transaction commit that
->   # happened when we fsynced the parent directory.
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-> 
->   # Simulate a crash/power loss.
->   _load_flakey_table $FLAKEY_DROP_WRITES
->   _unmount_flakey
-> 
->   _load_flakey_table $FLAKEY_ALLOW_WRITES
->   _mount_flakey
-> 
->   # Now check that all data we wrote before are available.
->   echo "File content after log replay:"
->   od -t x1 $SCRATCH_MNT/foo
-> 
->   status=0
->   exit
-> 
-> The expected golden output for the test, which is what we get with this
-> fix applied (or when running against ext3/4 and xfs), is:
-> 
->   wrote 8192/8192 bytes at offset 0
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   wrote 8192/8192 bytes at offset 8192
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   File content after log replay:
->   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->   *
->   0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
->   *
->   0040000
-> 
-> Without this fix applied, the output shows the test file is empty:
-> 
->   wrote 8192/8192 bytes at offset 0
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   wrote 8192/8192 bytes at offset 8192
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   File content after log replay:
->   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->   *
->   0020000
-> 
-> A test case for xfstests will be sent soon.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/file.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
->  1 file changed, 58 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 2bd72cd..91122b6 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1971,14 +1971,67 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
->  	}
->  
->  	/*
-> -	 * if the last transaction that changed this file was before
-> -	 * the current transaction, we can bail out now without any
-> -	 * syncing
-> +	 * If the last transaction that changed this file was before the current
-> +	 * transaction and we have the full sync flag set in our inode, we can
-> +	 * bail out now without any syncing.
-> +	 *
-> +	 * Note that we can't bail out if the full sync flag isn't set. This is
-> +	 * because when the full sync flag is set we start all ordered extents
-> +	 * and wait for them to fully complete - when they complete they update
-> +	 * the inode's last_trans field through:
-> +	 *
-> +	 *     btrfs_finish_ordered_io() ->
-> +	 *         btrfs_update_inode_fallback() ->
-> +	 *             btrfs_update_inode() ->
-> +	 *                 btrfs_set_inode_last_trans()
-> +	 *
-> +	 * So we are sure that last_trans is up to date and can do this check to
-> +	 * bail out safely. For the fast path, when the full sync flag is not
-> +	 * set in our inode, we can not do it because we start only our ordered
-> +	 * extents and don't wait for them to complete (that is when
-> +	 * btrfs_finish_ordered_io runs) - if we rely on the speculative value
-> +	 * for inode->last_trans set by btrfs_file_write_iter we lose data in
-> +	 * the following scenario:
-> +	 *
-> +	 * 1. fs_info->last_trans_committed == N - 1 and current transaction is
-> +	 *    transaction N (fs_info->generation == N);
-> +	 *
-> +	 * 2. do a buffered write;
-> +	 *
-> +	 * 3. fsync our inode, this clears our inode's full sync flag, starts
-> +	 *    an ordered extent and waits for it to complete - when it completes
-> +	 *    at btrfs_finish_ordered_io(), the inode's last_trans is set to
-> +	 *    the value N;
-> +	 *
-> +	 * 4. transaction N is committed, so fs_info->last_trans_committed is
-> +	 *    now set to the value N and fs_info->generation remains with the
-> +	 *    value N;
-> +	 *
-> +	 * 5. do another buffered write, when this happens btrfs_file_write_iter
-> +	 *    sets our inode's last_trans to the value N + 1;
+Anand reports that the static buffers used for pertty size strings cause
+a stack overflow on SPARC. Zach proposed to change the printf format to
+wrap the number and the suffix into a macro. This would require to
+change all callsites of pretty_size* and is not very convienient to
+write.
 
-This problem proves that in step 5 it doesn't work any more by setting last_trans to "root->fs_info->generation + 1", we can remove that setting.
+This patch replaces the per-call-site static buffers with a limited
+number for slots that would be used on each invokation of pretty_size
+and wrap around. The number of array slots shall be 10 for now, in
+current codebase there are no more than 2 calls to pretty_size in a
+single argument list.
 
-Others look good.
+Reported-by: Anand Jain <Anand.Jain@oracle.com>
+CC: Zach Brown <zab@zabbo.net>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Anand, please test on a real SPARC machine.
 
-Thanks,
+ utils.c           | 18 ++++++++++++++++++
+ utils.h           |  8 ++------
+ 3 files changed, 21 insertions(+), 6 deletions(-)
 
--liubo
-> +	 *
-> +	 * 6. transaction N + 1 is started and fs_info->generation now has the
-> +	 *    value N + 1;
-> +	 *
-> +	 * 7. transaction N + 1 is committed, so fs_info->last_trans_committed
-> +	 *    is set to the value N + 1;
-> +	 *
-> +	 * 8. fsync our inode - because it doesn't have the full sync flag set,
-> +	 *    we only start the ordered extent, we don't wait for it to complete
-> +	 *    (only in a later phase) therefore its last_trans field has the
-> +	 *    value N + 1 set previously by btrfs_file_write_iter(), and so we
-> +	 *    have:
-> +	 *
-> +	 *        inode->last_trans <= fs_info->last_trans_committed
-> +	 *            (N + 1)              (N + 1)
-> +	 *
-> +	 *    Which would make us not log the last buffered write, resulting in
-> +	 *    data loss after a crash.
->  	 */
->  	smp_mb();
->  	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
-> -	    BTRFS_I(inode)->last_trans <=
-> -	    root->fs_info->last_trans_committed) {
-> +	    (full_sync && BTRFS_I(inode)->last_trans <=
-> +	     root->fs_info->last_trans_committed)) {
->  		BTRFS_I(inode)->last_trans = 0;
->  
->  		/*
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--- a/utils.c
++++ b/utils.c
+@@ -1366,6 +1366,24 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Note: this function uses a static per-thread buffer. Do not call this
++ * function more than 10 times within one argument list!
++ */
++const char *pretty_size_mode(u64 size, unsigned mode)
++{
++	static __thread int ps_index = 0;
++	static __thread char ps_array[10][32];
++	char *ret;
++
++	ret = ps_array[ps_index];
++	ps_index++;
++	ps_index %= 10;
++	(void)pretty_size_snprintf(size, ret, 32, mode);
++
++	return ret;
++}
++
+ static const char* unit_suffix_binary[] =
+ 	{ "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"};
+ static const char* unit_suffix_decimal[] =
+diff --git a/utils.h b/utils.h
+index 82ab5e82a3ff..539797c705b4 100644
+--- a/utils.h
++++ b/utils.h
+@@ -103,12 +103,7 @@ int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+ 
+ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, unsigned unit_mode);
+ #define pretty_size(size) 	pretty_size_mode(size, UNITS_DEFAULT)
+-#define pretty_size_mode(size, mode) 					      \
+-	({								      \
+-		static __thread char _str[32];				      \
+-		(void)pretty_size_snprintf((size), _str, sizeof(_str), (mode)); \
+-		_str;							      \
+-	})
++const char *pretty_size_mode(u64 size, unsigned mode);
+ 
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ int btrfs_scan_block_devices(int run_ioctl);

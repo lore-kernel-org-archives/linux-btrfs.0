@@ -1,50 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52437 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:39276 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752401AbbBXOWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Feb 2015 09:22:49 -0500
-Date: Tue, 24 Feb 2015 15:22:48 +0100
+	id S1754787AbbB0QbC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Feb 2015 11:31:02 -0500
+Date: Fri, 27 Feb 2015 17:31:00 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Fix a infinite loop when fixing nlink if
- file name conflicts twice.
-Message-ID: <20150224142248.GX8720@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: Make csum tree rebuild works with extent
+ tree rebuild.
+Message-ID: <20150227163100.GF8720@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1424678404-5493-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1422251582-23575-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1424678404-5493-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1422251582-23575-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 23, 2015 at 04:00:04PM +0800, Qu Wenruo wrote:
-> There is a case that can cause nlink fix function.
+On Mon, Jan 26, 2015 at 01:53:02PM +0800, Qu Wenruo wrote:
+> Before this patch, csum tree rebuild will not work with extent tree
+> rebuild, since extent tree rebuild will only build up basic block
+> groups, but csum tree rebuild needs data extents to rebuild.
+> So if one use btrfsck with --init-csum-tree and --init-extent-tree, csum
+> tree will be empty and tons of "missing csum" error will be outputted.
 > 
-> For example, lost+found dir already has the following files:
-> ---------------------------
-> |ino	|filename	  |
-> |-------------------------|
-> |258	|normal_file	  |
-> |259	|normal_file.260  |
-> ---------------------------
-> The next inode to be fixed is the following:
-> ---------------------------
-> |260	|normail_file	  |
-> ---------------------------
+> This patch allows csum tree rebuild get its data from fs/subvol trees
+> using regular file extents(which is also the only one using csum tree
+> currently)
 > 
-> And when trying to move inode to lost+found dir, its file name conflicts
-> with inode 258, and even add ".INO" suffix, it still conflicts with
-> inode 259.
-> 
-> Since the move failed, the LINK_COUNT_ERR flag is not cleared, the inode
-> record will not be freed, btrfsck will try fix it again and again,
-> causing the infinite loop.
-> 
-> The patch will first change the ".INO" suffix naming to a loop behavior,
-> and clear the LINK_COUNT_ERR flag anyway to avoid infinite loop.
-> 
-> Reported-by: Naohiro Aota <naota@elisp.net>
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
 Applied, thanks.

@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14543 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35835 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755215AbbB0IYg (ORCPT
+	with ESMTP id S1755209AbbB0IYf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Feb 2015 03:24:36 -0500
+	Fri, 27 Feb 2015 03:24:35 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8NgHK019787
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8NffY019782
 	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2015 16:23:42 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 6/7] btrfs: quota: Automatically update related qgroups or mark INCONSISTENT flags when assigning/deleting a qgroup relations.
-Date: Fri, 27 Feb 2015 16:24:27 +0800
-Message-ID: <1425025468-29749-7-git-send-email-quwenruo@cn.fujitsu.com>
+CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 5/7] btrfs: qgroup: clear STATUS_FLAG_ON in disabling quota.
+Date: Fri, 27 Feb 2015 16:24:26 +0800
+Message-ID: <1425025468-29749-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,285 +20,36 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Operation like qgroups assigning/deleting qgroup relations will mostly
-cause qgroup data inconsistent, since it needs to do the full rescan to
-determine whether shared extents are exclusive or still shared in
-parent qgroups.
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 
-But there are some exceptions, like qgroup with only exclusive extents
-(qgroup->excl == qgroup->rfer), in that case, we only needs to
-modify all its parents' excl and rfer.
+we forgot to clear STATUS_FLAG_ON in quota_disable(), it
+will cause a problem shown as below:
 
-So this patch adds a quick path for such qgroup in qgroup
-assign/remove routine, and if quick path failed, the qgroup status will
-be marked INCONSISTENT, and return 1 to info user-land.
+	# mount /dev/sdc /mnt
+	# btrfs quota enable /mnt
+	# btrfs quota disable /mnt
+	# btrfs quota rescan /mnt
+	quota rescan started <--- expecting it fail here.
+	# echo $?
+	0
 
-BTW since the quick path is much the same of qgroup_excl_accounting(),
-so move the core of it to __qgroup_excl_accounting() and reuse it.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 175 +++++++++++++++++++++++++++++++++++++-----------------
- 1 file changed, 122 insertions(+), 53 deletions(-)
+ fs/btrfs/qgroup.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b48f2c8..2d6bb92 100644
+index 20fe219..b48f2c8 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1002,6 +1002,106 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
- 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
- }
- 
-+/*
-+ * The easy accounting, if we are adding/removing the only ref for an extent
-+ * then this qgroup and all of the parent qgroups get their refrence and
-+ * exclusive counts adjusted.
-+ *
-+ * Caller should hold fs_info->qgroup_lock.
-+ */
-+static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
-+				    struct ulist *tmp, u64 ref_root,
-+				    u64 num_bytes, int sign)
-+{
-+	struct btrfs_qgroup *qgroup;
-+	struct btrfs_qgroup_list *glist;
-+	struct ulist_node *unode;
-+	struct ulist_iterator uiter;
-+	int ret = 0;
-+
-+	qgroup = find_qgroup_rb(fs_info, ref_root);
-+	if (!qgroup)
-+		goto out;
-+
-+	qgroup->rfer += sign * num_bytes;
-+	qgroup->rfer_cmpr += sign * num_bytes;
-+
-+	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
-+	qgroup->excl += sign * num_bytes;
-+	qgroup->excl_cmpr += sign * num_bytes;
-+
-+	qgroup_dirty(fs_info, qgroup);
-+
-+	/* Get all of the parent groups that contain this qgroup */
-+	list_for_each_entry(glist, &qgroup->groups, next_group) {
-+		ret = ulist_add(tmp, glist->group->qgroupid,
-+				ptr_to_u64(glist->group), GFP_ATOMIC);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	/* Iterate all of the parents and adjust their reference counts */
-+	ULIST_ITER_INIT(&uiter);
-+	while ((unode = ulist_next(tmp, &uiter))) {
-+		qgroup = u64_to_ptr(unode->aux);
-+		qgroup->rfer += sign * num_bytes;
-+		qgroup->rfer_cmpr += sign * num_bytes;
-+		qgroup->excl += sign * num_bytes;
-+		if (sign < 0)
-+			WARN_ON(qgroup->excl < num_bytes);
-+		qgroup->excl_cmpr += sign * num_bytes;
-+		qgroup_dirty(fs_info, qgroup);
-+
-+		/* Add any parents of the parents */
-+		list_for_each_entry(glist, &qgroup->groups, next_group) {
-+			ret = ulist_add(tmp, glist->group->qgroupid,
-+					ptr_to_u64(glist->group), GFP_ATOMIC);
-+			if (ret < 0)
-+				goto out;
-+		}
-+	}
-+out:
-+	return ret;
-+}
-+
-+
-+/*
-+ * Quick path for updating qgroup with only excl refs.
-+ *
-+ * In that case, just update all parent will be enough.
-+ * Or we needs to do a full rescan.
-+ * Caller should also hold fs_info->qgroup_lock.
-+ *
-+ * Return 0 for quick update, return >0 for need to full rescan
-+ * and mark INCONSISTENT flag.
-+ * Return < 0 for other error.
-+ */
-+static int quick_update_accounting(struct btrfs_fs_info *fs_info,
-+				   struct ulist *tmp, u64 src, u64 dst,
-+				   int sign)
-+{
-+	struct btrfs_qgroup *qgroup;
-+	int ret = 1;
-+	int err = 0;
-+
-+	qgroup = find_qgroup_rb(fs_info, src);
-+	if (!qgroup)
-+		goto out;
-+	if (qgroup->excl == qgroup->rfer) {
-+		ret = 0;
-+		err = __qgroup_excl_accounting(fs_info, tmp, dst,
-+					       qgroup->excl, sign);
-+		if (err < 0) {
-+			ret = err;
-+			goto out;
-+		}
-+	}
-+out:
-+	if (ret)
-+		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-+	return ret;
-+}
-+
- int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 			      struct btrfs_fs_info *fs_info, u64 src, u64 dst)
- {
-@@ -1009,8 +1109,13 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup *parent;
- 	struct btrfs_qgroup *member;
- 	struct btrfs_qgroup_list *list;
-+	struct ulist *tmp;
- 	int ret = 0;
- 
-+	tmp = ulist_alloc(GFP_NOFS);
-+	if (!tmp)
-+		return -ENOMEM;
-+
- 	/* Check the level of src and dst first */
- 	if (btrfs_qgroup_level(src) >= btrfs_qgroup_level(dst))
- 		return -EINVAL;
-@@ -1048,9 +1153,15 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	ret = add_relation_rb(quota_root->fs_info, src, dst);
-+	if (ret < 0) {
-+		spin_unlock(&fs_info->qgroup_lock);
-+		goto out;
-+	}
-+	ret = quick_update_accounting(fs_info, tmp, src, dst, 1);
- 	spin_unlock(&fs_info->qgroup_lock);
- out:
- 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+	ulist_free(tmp);
- 	return ret;
- }
- 
-@@ -1061,9 +1172,14 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup *parent;
- 	struct btrfs_qgroup *member;
- 	struct btrfs_qgroup_list *list;
-+	struct ulist *tmp;
- 	int ret = 0;
- 	int err;
- 
-+	tmp = ulist_alloc(GFP_NOFS);
-+	if (!tmp)
-+		return -ENOMEM;
-+
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+@@ -967,6 +967,7 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 	fs_info->pending_quota_state = 0;
  	quota_root = fs_info->quota_root;
- 	if (!quota_root) {
-@@ -1093,9 +1209,11 @@ exist:
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	del_relation_rb(fs_info, src, dst);
-+	ret = quick_update_accounting(fs_info, tmp, src, dst, -1);
+ 	fs_info->quota_root = NULL;
++	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_ON;
  	spin_unlock(&fs_info->qgroup_lock);
- out:
- 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+	ulist_free(tmp);
- 	return ret;
- }
  
-@@ -1377,19 +1495,10 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--/*
-- * The easy accounting, if we are adding/removing the only ref for an extent
-- * then this qgroup and all of the parent qgroups get their refrence and
-- * exclusive counts adjusted.
-- */
- static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 				  struct btrfs_qgroup_operation *oper)
- {
--	struct btrfs_qgroup *qgroup;
- 	struct ulist *tmp;
--	struct btrfs_qgroup_list *glist;
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
- 	int sign = 0;
- 	int ret = 0;
- 
-@@ -1400,9 +1509,7 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 	spin_lock(&fs_info->qgroup_lock);
- 	if (!fs_info->quota_root)
- 		goto out;
--	qgroup = find_qgroup_rb(fs_info, oper->ref_root);
--	if (!qgroup)
--		goto out;
-+
- 	switch (oper->type) {
- 	case BTRFS_QGROUP_OPER_ADD_EXCL:
- 		sign = 1;
-@@ -1413,44 +1520,9 @@ static int qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
- 	default:
- 		ASSERT(0);
- 	}
--	qgroup->rfer += sign * oper->num_bytes;
--	qgroup->rfer_cmpr += sign * oper->num_bytes;
--
--	WARN_ON(sign < 0 && qgroup->excl < oper->num_bytes);
--	qgroup->excl += sign * oper->num_bytes;
--	qgroup->excl_cmpr += sign * oper->num_bytes;
--
--	qgroup_dirty(fs_info, qgroup);
--
--	/* Get all of the parent groups that contain this qgroup */
--	list_for_each_entry(glist, &qgroup->groups, next_group) {
--		ret = ulist_add(tmp, glist->group->qgroupid,
--				ptr_to_u64(glist->group), GFP_ATOMIC);
--		if (ret < 0)
--			goto out;
--	}
--
--	/* Iterate all of the parents and adjust their reference counts */
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(tmp, &uiter))) {
--		qgroup = u64_to_ptr(unode->aux);
--		qgroup->rfer += sign * oper->num_bytes;
--		qgroup->rfer_cmpr += sign * oper->num_bytes;
--		qgroup->excl += sign * oper->num_bytes;
--		if (sign < 0)
--			WARN_ON(qgroup->excl < oper->num_bytes);
--		qgroup->excl_cmpr += sign * oper->num_bytes;
--		qgroup_dirty(fs_info, qgroup);
- 
--		/* Add any parents of the parents */
--		list_for_each_entry(glist, &qgroup->groups, next_group) {
--			ret = ulist_add(tmp, glist->group->qgroupid,
--					ptr_to_u64(glist->group), GFP_ATOMIC);
--			if (ret < 0)
--				goto out;
--		}
--	}
--	ret = 0;
-+	ret = __qgroup_excl_accounting(fs_info, tmp, oper->ref_root,
-+				       oper->num_bytes, sign);
- out:
- 	spin_unlock(&fs_info->qgroup_lock);
- 	ulist_free(tmp);
-@@ -2690,10 +2762,7 @@ out:
- 	ret = update_qgroup_status_item(trans, fs_info, fs_info->quota_root);
- 	if (ret < 0) {
- 		err = ret;
--		btrfs_err(fs_info, "fail to update qgroup status: %d\n",
--			  err);
--		btrfs_abort_transaction(trans, fs_info->quota_root, err);
--		goto done;
-+		btrfs_err(fs_info, "fail to update qgroup status: %d\n", err);
- 	}
- 	btrfs_end_transaction(trans, fs_info->quota_root);
- 
+ 	btrfs_free_qgroup_config(fs_info);
 -- 
 2.3.0
 

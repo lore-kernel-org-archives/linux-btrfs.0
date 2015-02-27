@@ -1,321 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:57819 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752462AbbB1W3m (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 28 Feb 2015 17:29:42 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: ames@cornishes.net, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: incremental send, don't rename a directory too soon
-Date: Sat, 28 Feb 2015 22:29:22 +0000
-Message-Id: <1425162562-777-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1425157237-20113-1-git-send-email-fdmanana@suse.com>
-References: <1425157237-20113-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:44801 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752069AbbB0Rxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Feb 2015 12:53:48 -0500
+Date: Fri, 27 Feb 2015 18:53:46 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Zach Brown <zab@zabbo.net>
+Cc: Anand Jain <Anand.Jain@oracle.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org, wangshilong1991@gmail.com
+Subject: Re: [PATCH] btrfs-progs: per-thread, per-call pretty buffer
+Message-ID: <20150227175346.GJ8720@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20130709202443.GJ18717@lenny.home.zabbo.net>
+ <1373466615-30013-1-git-send-email-dsterba@suse.cz>
+ <5408504C.1050203@oracle.com>
+ <20140904194545.GI15881@lenny.home.zabbo.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140904194545.GI15881@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's one more case where we can't issue a rename operation for a
-directory as soon as we process it. We used to delay directory renames
-only if they have some ancestor directory with a higher inode number
-that got renamed too, but there's another case where we need to delay
-the rename too - when a directory A is renamed to the old name of a
-directory B but that directory B has its rename delayed because it
-has now (in the send root) an ancestor with a higher inode number that
-was renamed. If we don't delay the directory rename in this case, the
-receiving end of the send stream will attempt to rename A to the old
-name of B before B got renamed to its new name, which results in a
-"directory not empty" error. So fix this by delaying directory renames
-for this case too.
+On Thu, Sep 04, 2014 at 12:45:45PM -0700, Zach Brown wrote:
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -71,13 +71,17 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+>  int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+>  				 int super_offset);
+>  
+> -int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
+> -#define pretty_size(size) 						\
+> -	({								\
+> -		static __thread char _str[24];				\
+> -		(void)pretty_size_snprintf((size), _str, sizeof(_str));	\
+> -		_str;							\
+> -	})
+> +/*
+> + * It's annoying that gcc hasn't yet figured out how to learn about
+> + * formats added by register_printf_specifier().  If that were the case
+> + * we could just add some %P type and be done with it.  Some day..
+> + *
+> + *   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47781
+> + */
+> +float pretty_float(u64 size);
+> +char *pretty_suffix(u64 size);
+> +#define PF "%.2f%s"
+> +#define PA(x) pretty_float(x), pretty_suffix(x)
 
-Steps to reproduce:
+So I've crawled back to that patch and I'm not all happy to update every
+use of pretty_size and the printf string. The user-defined printf format
+handlers are not an option.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+My proposal that would avoid that:
 
-  $ mkdir /mnt/a
-  $ mkdir /mnt/b
-  $ mkdir /mnt/c
-  $ touch /mnt/a/file
+- predefine a static array of N strings where the pretty numbers would
+  fit, eg 32 bytes as is now
+- pretty_size will:
+  - grab the first unused slot
+  - fill it with the string
+  - increase index to the array
+  - wrap at N
+  - return pointer to the prev entry
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+Normally we're using at most 2 pretty_size calls per printf, so if we
+make eg. N = 10, we're relatively safe.
 
-  $ mv /mnt/c /mnt/x
-  $ mv /mnt/a /mnt/x/y
-  $ mv /mnt/b /mnt/a
-
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-
-  $ btrfs send /mnt/snap1 -f /tmp/1.send
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.send
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt2
-  $ btrfs receive /mnt2 -f /tmp/1.send
-  $ btrfs receive /mnt2 -f /tmp/2.send
-  ERROR: rename b -> a failed. Directory not empty
-
-A test case for xfstests follows soon.
-
-Reported-by: Ames Cornish <ames@cornishes.net>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Skip btree searches if rbtree of waiting dir moves is empty.
-
- fs/btrfs/send.c | 171 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 156 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index fe58572..d6033f5 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -230,6 +230,7 @@ struct pending_dir_move {
- 	u64 parent_ino;
- 	u64 ino;
- 	u64 gen;
-+	bool is_orphan;
- 	struct list_head update_refs;
- };
- 
-@@ -2984,7 +2985,8 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 				u64 ino_gen,
- 				u64 parent_ino,
- 				struct list_head *new_refs,
--				struct list_head *deleted_refs)
-+				struct list_head *deleted_refs,
-+				const bool is_orphan)
- {
- 	struct rb_node **p = &sctx->pending_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -2999,6 +3001,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 	pm->parent_ino = parent_ino;
- 	pm->ino = ino;
- 	pm->gen = ino_gen;
-+	pm->is_orphan = is_orphan;
- 	INIT_LIST_HEAD(&pm->list);
- 	INIT_LIST_HEAD(&pm->update_refs);
- 	RB_CLEAR_NODE(&pm->node);
-@@ -3131,16 +3134,20 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 	rmdir_ino = dm->rmdir_ino;
- 	free_waiting_dir_move(sctx, dm);
- 
--	ret = get_first_ref(sctx->parent_root, pm->ino,
--			    &parent_ino, &parent_gen, name);
--	if (ret < 0)
--		goto out;
--
--	ret = get_cur_path(sctx, parent_ino, parent_gen,
--			   from_path);
--	if (ret < 0)
--		goto out;
--	ret = fs_path_add_path(from_path, name);
-+	if (pm->is_orphan) {
-+		ret = gen_unique_name(sctx, pm->ino,
-+				      pm->gen, from_path);
-+	} else {
-+		ret = get_first_ref(sctx->parent_root, pm->ino,
-+				    &parent_ino, &parent_gen, name);
-+		if (ret < 0)
-+			goto out;
-+		ret = get_cur_path(sctx, parent_ino, parent_gen,
-+				   from_path);
-+		if (ret < 0)
-+			goto out;
-+		ret = fs_path_add_path(from_path, name);
-+	}
- 	if (ret < 0)
- 		goto out;
- 
-@@ -3150,7 +3157,8 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 		LIST_HEAD(deleted_refs);
- 		ASSERT(ancestor > BTRFS_FIRST_FREE_OBJECTID);
- 		ret = add_pending_dir_move(sctx, pm->ino, pm->gen, ancestor,
--					   &pm->update_refs, &deleted_refs);
-+					   &pm->update_refs, &deleted_refs,
-+					   pm->is_orphan);
- 		if (ret < 0)
- 			goto out;
- 		if (rmdir_ino) {
-@@ -3283,6 +3291,127 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * We might need to delay a directory rename even when no ancestor directory
-+ * (in the send root) with a higher inode number than ours (sctx->cur_ino) was
-+ * renamed. This happens when we rename a directory to the old name (the name
-+ * in the parent root) of some other unrelated directory that got its rename
-+ * delayed due to some ancestor with higher number that got renamed.
-+ *
-+ * Example:
-+ *
-+ * Parent snapshot:
-+ * .                                       (ino 256)
-+ * |---- a/                                (ino 257)
-+ * |     |---- file                        (ino 260)
-+ * |
-+ * |---- b/                                (ino 258)
-+ * |---- c/                                (ino 259)
-+ *
-+ * Send snapshot:
-+ * .                                       (ino 256)
-+ * |---- a/                                (ino 258)
-+ * |---- x/                                (ino 259)
-+ *       |---- y/                          (ino 257)
-+ *             |----- file                 (ino 260)
-+ *
-+ * Here we can not rename 258 from 'b' to 'a' without the rename of inode 257
-+ * from 'a' to 'x/y' happening first, which in turn depends on the rename of
-+ * inode 259 from 'c' to 'x'. So the order of rename commands the send stream
-+ * must issue is:
-+ *
-+ * 1 - rename 259 from 'c' to 'x'
-+ * 2 - rename 257 from 'a' to 'x/y'
-+ * 3 - rename 258 from 'b' to 'a'
-+ *
-+ * Returns 1 if the rename of sctx->cur_ino needs to be delayed, 0 if it can
-+ * be done right away and < 0 on error.
-+ */
-+static int wait_for_dest_dir_move(struct send_ctx *sctx,
-+				  struct recorded_ref *parent_ref,
-+				  const bool is_orphan)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_key di_key;
-+	struct btrfs_dir_item *di;
-+	u64 left_gen;
-+	u64 right_gen;
-+	int ret = 0;
-+
-+	if (RB_EMPTY_ROOT(&sctx->waiting_dir_moves))
-+		return 0;
-+
-+	path = alloc_path_for_send();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = parent_ref->dir;
-+	key.type = BTRFS_DIR_ITEM_KEY;
-+	key.offset = btrfs_name_hash(parent_ref->name, parent_ref->name_len);
-+
-+	ret = btrfs_search_slot(NULL, sctx->parent_root, &key, path, 0, 0);
-+	if (ret < 0) {
-+		goto out;
-+	} else if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	di = btrfs_match_dir_item_name(sctx->parent_root, path,
-+				       parent_ref->name, parent_ref->name_len);
-+	if (!di) {
-+		ret = 0;
-+		goto out;
-+	}
-+	/*
-+	 * di_key.objectid has the number of the inode that has a dentry in the
-+	 * parent directory with the same name that sctx->cur_ino is being
-+	 * renamed to. We need to check if that inode is in the send root as
-+	 * well and if it is currently marked as an inode with a pending rename,
-+	 * if it is, we need to delay the rename of sctx->cur_ino as well, so
-+	 * that it happens after that other inode is renamed.
-+	 */
-+	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &di_key);
-+	if (di_key.type != BTRFS_INODE_ITEM_KEY) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	ret = get_inode_info(sctx->parent_root, di_key.objectid, NULL,
-+			     &left_gen, NULL, NULL, NULL, NULL);
-+	if (ret < 0)
-+		goto out;
-+	ret = get_inode_info(sctx->send_root, di_key.objectid, NULL,
-+			     &right_gen, NULL, NULL, NULL, NULL);
-+	if (ret < 0) {
-+		if (ret == -ENOENT)
-+			ret = 0;
-+		goto out;
-+	}
-+
-+	/* Different inode, no need to delay the rename of sctx->cur_ino */
-+	if (right_gen != left_gen) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	if (is_waiting_for_move(sctx, di_key.objectid)) {
-+		ret = add_pending_dir_move(sctx,
-+					   sctx->cur_ino,
-+					   sctx->cur_inode_gen,
-+					   di_key.objectid,
-+					   &sctx->new_refs,
-+					   &sctx->deleted_refs,
-+					   is_orphan);
-+		if (!ret)
-+			ret = 1;
-+	}
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static int wait_for_parent_move(struct send_ctx *sctx,
- 				struct recorded_ref *parent_ref)
- {
-@@ -3349,7 +3478,8 @@ out:
- 					   sctx->cur_inode_gen,
- 					   ino,
- 					   &sctx->new_refs,
--					   &sctx->deleted_refs);
-+					   &sctx->deleted_refs,
-+					   false);
- 		if (!ret)
- 			ret = 1;
- 	}
-@@ -3372,6 +3502,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 	int did_overwrite = 0;
- 	int is_orphan = 0;
- 	u64 last_dir_ino_rm = 0;
-+	bool can_rename = true;
- 
- verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 
-@@ -3490,12 +3621,22 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			}
- 		}
- 
-+		if (S_ISDIR(sctx->cur_inode_mode) && sctx->parent_root) {
-+			ret = wait_for_dest_dir_move(sctx, cur, is_orphan);
-+			if (ret < 0)
-+				goto out;
-+			if (ret == 1) {
-+				can_rename = false;
-+				*pending_move = 1;
-+			}
-+		}
-+
- 		/*
- 		 * link/move the ref to the new place. If we have an orphan
- 		 * inode, move it and update valid_path. If not, link or move
- 		 * it depending on the inode mode.
- 		 */
--		if (is_orphan) {
-+		if (is_orphan && can_rename) {
- 			ret = send_rename(sctx, valid_path, cur->full_path);
- 			if (ret < 0)
- 				goto out;
-@@ -3503,7 +3644,7 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			ret = fs_path_copy(valid_path, cur->full_path);
- 			if (ret < 0)
- 				goto out;
--		} else {
-+		} else if (can_rename) {
- 			if (S_ISDIR(sctx->cur_inode_mode)) {
- 				/*
- 				 * Dirs can't be linked, so move it. For moved
--- 
-2.1.3
-
+We can keep the easy %s + pretty_size, I really find it convenient to
+write it that way.

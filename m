@@ -1,40 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36951 "EHLO mx2.suse.de"
+Received: from imap.thunk.org ([74.207.234.97]:38948 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752748AbbBZRqS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Feb 2015 12:46:18 -0500
-Date: Thu, 26 Feb 2015 18:46:16 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: "'David Sterba'" <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        clm@fb.com
-Subject: Re: [PULL] [PATCH 00/11] Cleanups for 4.1
-Message-ID: <20150226174615.GA8720@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1424880058.git.dsterba@suse.cz>
- <009a01d05165$2112c790$633856b0$@cn.fujitsu.com>
+	id S1753643AbbB0AEP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Feb 2015 19:04:15 -0500
+Date: Thu, 26 Feb 2015 19:04:09 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
+Cc: Eric Sandeen <sandeen@redhat.com>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        XFS Developers <xfs@oss.sgi.com>, linux-man@vger.kernel.org,
+        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux API <linux-api@vger.kernel.org>
+Subject: Re: Documenting MS_LAZYTIME
+Message-ID: <20150227000409.GC17174@thunk.org>
+References: <CAHO5Pa0k7QkV_6BDjwTVxa7LV9tFyN9nGFFcSvOC6HYO08wfrw@mail.gmail.com>
+ <54E7578E.4090809@redhat.com>
+ <20150221025636.GB7922@thunk.org>
+ <54EEDE23.6080009@gmail.com>
+ <20150226133113.GD11217@thunk.org>
+ <54EF2161.90607@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <009a01d05165$2112c790$633856b0$@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54EF2161.90607@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 26, 2015 at 09:39:57AM +0800, Zhao Lei wrote:
-> I like these cleanups.
+On Thu, Feb 26, 2015 at 02:36:33PM +0100, Michael Kerrisk (man-pages) wrote:
 > 
-> But it cause following build warnings:
->   fs/btrfs/volumes.c: In function ‘__btrfs_map_block’:
->   fs/btrfs/volumes.c:5206: warning: unused variable ‘tmp’
-> 
->   fs/btrfs/free-space-cache.c: In function ‘recalculate_thresholds’:
->   fs/btrfs/free-space-cache.c:1527: warning: comparison of distinct pointer types lacks a cast
-> 
-> And little checkpatch notice:
->   ERROR: "foo* bar" should be "foo *bar"
->   #41: FILE: fs/btrfs/sysfs.h:70:
->   +static inline struct kobj_attribute* attr_to_btrfs_attr(struct attribute *attr)
-> In [PATCH 09/11].
-> 
-> Could you fix it?
+>     The disadvantage of MS_STRICTATIME | MS_LAZYTIME is that
+>     in the case of a system crash, the atime and mtime fields
+>     on disk might be out of date by at most 24 hours.
 
-Will do.
+I'd change to "The disadvantage of MS_LAZYTIME is that..."  and
+perhaps move that so it's clear it applies to any use of MS_LAZYTIME
+has this as a downside.
+
+Does that make sense?
+
+						- Ted

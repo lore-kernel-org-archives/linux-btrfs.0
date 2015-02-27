@@ -1,72 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35835 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14543 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755197AbbB0IYd (ORCPT
+	with ESMTP id S1755018AbbB0IYc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Feb 2015 03:24:33 -0500
+	Fri, 27 Feb 2015 03:24:32 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8NcIX019762
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2015 16:23:38 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8NbtB019758
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2015 16:23:37 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/7] btrfs: Check qgroup level in kernel qgroup assign.
-Date: Fri, 27 Feb 2015 16:24:22 +0800
-Message-ID: <1425025468-29749-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 0/7] Qgroup status flag fix and semi-automatic qgroup update on relationship assign
+Date: Fri, 27 Feb 2015 16:24:21 +0800
+Message-ID: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although we have qgroup level check in btrfs-progs, it's not enough
-since other programe may still call ioctl directly not using
-btrfs-progs. For example, systemd.
+This patchset will do the following bug fix mostly on incorrect flags.
+1) INCONSISTENT flag never cleared bug
+2) RESCANNING flag never cleared unless umount.
 
-But it's btrfs-progs to be blame since we don't provide a
-full-function(like subvolume create things) btrfs library with enough
-check, and only rely on kernel ioctl.
+Also add 2 qgroup level related checks:
+1) Kernel check on qgroup assign to ensure dst's level is higher than
+src.
+2) Restrict qgroup id under 1<<48, to ensure qgroup id won't have level
+higher than 1.
 
-So Add level checks in kernel too.
+At last, add semi-automatic qgroup info update on relationship assign.
+The automatic part only happens when all extents of src are exclusive.
+If not, it will set INCONSISTENT flag and return >0 to info user land
+progs to do rescan.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h  | 6 ++++++
- fs/btrfs/qgroup.c | 4 ++++
- 2 files changed, 10 insertions(+)
+Dongsheng Yang (1):
+  btrfs: qgroup: clear STATUS_FLAG_ON in disabling quota.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0b18070..cbaf1a4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1056,6 +1056,12 @@ struct btrfs_block_group_item {
- 	__le64 flags;
- } __attribute__ ((__packed__));
- 
-+#define BTRFS_QGROUP_LEVEL_SHIFT		48
-+static inline u64 btrfs_qgroup_level(u64 qgroupid)
-+{
-+	return qgroupid >> BTRFS_QGROUP_LEVEL_SHIFT;
-+}
-+
- /*
-  * is subvolume quota turned on?
-  */
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 48b60db..523e5b2 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1010,6 +1010,10 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup_list *list;
- 	int ret = 0;
- 
-+	/* Check the level of src and dst first */
-+	if (btrfs_qgroup_level(src) >= btrfs_qgroup_level(dst))
-+		return -EINVAL;
-+
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
- 	quota_root = fs_info->quota_root;
- 	if (!quota_root) {
+Qu Wenruo (6):
+  btrfs: Check qgroup level in kernel qgroup assign.
+  btrfs: Don't allow subvolid >= (1 << BTRFS_QGROUP_LEVEL_SHIFT) to be  
+      created
+  btrfs: qgroup: Fix dead judgement on qgroup_rescan_leaf() return
+    value.
+  btrfs: Update btrfs qgroup status item when rescan is done.
+  btrfs: quota: Automatically update related qgroups or mark
+    INCONSISTENT     flags when assigning/deleting a qgroup relations.
+  btrfs: quota: Update quota tree after qgroup relationship change.
+
+ fs/btrfs/ctree.h  |   9 ++-
+ fs/btrfs/ioctl.c  |  12 ++++
+ fs/btrfs/qgroup.c | 203 ++++++++++++++++++++++++++++++++++++++++--------------
+ 3 files changed, 170 insertions(+), 54 deletions(-)
+
 -- 
 2.3.0
 

@@ -1,55 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41417 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35835 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750822AbbB0BVz convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1755199AbbB0IYe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Feb 2015 20:21:55 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-References: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com> <1424920823-12176-2-git-send-email-zhaolei@cn.fujitsu.com> <20150226222901.GB8720@twin.jikos.cz>
-In-Reply-To: <20150226222901.GB8720@twin.jikos.cz>
-Subject: RE: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
-Date: Fri, 27 Feb 2015 09:21:43 +0800
-Message-ID: <00d101d0522b$befc6df0$3cf549d0$@cn.fujitsu.com>
+	Fri, 27 Feb 2015 03:24:34 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t1R8Ne1e019770
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Feb 2015 16:23:40 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 3/7] btrfs: qgroup: Fix dead judgement on qgroup_rescan_leaf() return value.
+Date: Fri, 27 Feb 2015 16:24:24 +0800
+Message-ID: <1425025468-29749-4-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Sterba
+Old qgroup_rescan_leaf() comment indicates ret == 2 as complete and
+cleared INCONSISTENT flag.
 
-* From: David Sterba [mailto:dsterba@suse.cz]
-> Sent: Friday, February 27, 2015 6:29 AM
-> To: Zhaolei
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
-> 
-> On Thu, Feb 26, 2015 at 11:20:23AM +0800, Zhaolei wrote:
-> > --- a/fs/btrfs/transaction.c
-> > +++ b/fs/btrfs/transaction.c
-> > @@ -2068,8 +2068,12 @@ int btrfs_commit_transaction(struct
-> > btrfs_trans_handle *trans,
-> >
-> >  	kmem_cache_free(btrfs_trans_handle_cachep, trans);
-> >
-> > -	if (current != root->fs_info->transaction_kthread)
-> > +	if (current != root->fs_info->transaction_kthread) {
-> >  		btrfs_run_delayed_iputs(root);
-> 
-> Using a mutex for this kind of synchronization is not entirely correct though it
-> works.
-> 
-rw sem is best way I thought which was choosed from 
-mutex, rw_sem, and wait_queue, although the function name is not
-self documented...
-Do you have some suggestion for this kind of synchronization?
+This is not true since it will never return 2, and inside it no codes
+will clear INCONSISTENT flag.
+The flag clearance is done in btrfs_qgroup_rescan_work().
+This caused the bug that INCONSISTENT flag is never cleared.
 
-Thanks
-Zhaolei
+So change the comment and fix the dead judgment.
 
-> > +		/* make sure that all running delayed iput are done */
-> > +		down_write(&root->fs_info->delayed_iput_sem);
-> > +		up_write(&root->fs_info->delayed_iput_sem);
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 523e5b2..a48a590 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2518,7 +2518,7 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
+ 
+ /*
+  * returns < 0 on error, 0 when more leafs are to be scanned.
+- * returns 1 when done, 2 when done and FLAG_INCONSISTENT was cleared.
++ * returns 1 when done.
+  */
+ static int
+ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+@@ -2665,7 +2665,7 @@ out:
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+ 	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 
+-	if (err == 2 &&
++	if (err > 0 &&
+ 	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
+ 		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 	} else if (err < 0) {
+@@ -2675,7 +2675,7 @@ out:
+ 
+ 	if (err >= 0) {
+ 		btrfs_info(fs_info, "qgroup scan completed%s",
+-			err == 2 ? " (inconsistency flag cleared)" : "");
++			err > 0 ? " (inconsistency flag cleared)" : "");
+ 	} else {
+ 		btrfs_err(fs_info, "qgroup scan failed with %d", err);
+ 	}
+-- 
+2.3.0
 

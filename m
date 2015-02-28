@@ -1,103 +1,219 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:52339 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751229AbbBYJP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Feb 2015 04:15:56 -0500
-Date: Wed, 25 Feb 2015 10:15:49 +0100 (CET)
-From: =?ISO-8859-15?Q?Luk=E1=A8_Czerner?= <lczerner@redhat.com>
-To: Dave Chinner <david@fromorbit.com>
-cc: Eric Sandeen <sandeen@redhat.com>, Filipe Manana <fdmanana@suse.com>,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] fstests: generic test for directory fsync after adding
- hard links
-In-Reply-To: <20150225000625.GB18360@dastard>
-Message-ID: <alpine.LFD.2.00.1502251011130.2212@localhost.localdomain>
-References: <1424370551-18884-1-git-send-email-fdmanana@suse.com> <1424820589-3593-1-git-send-email-fdmanana@suse.com> <54ED0BD5.3040504@redhat.com> <20150225000625.GB18360@dastard>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Received: from victor.provo.novell.com ([137.65.250.26]:60162 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751220AbbB1VFX (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Sat, 28 Feb 2015 16:05:23 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: btrfs test for incremental send with directory renames
+Date: Sat, 28 Feb 2015 21:04:50 +0000
+Message-Id: <1425157490-24776-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 25 Feb 2015, Dave Chinner wrote:
+Test for incremental send where the difference between the parent and
+child snapshots is that a directory A was renamed and a directory B was
+renamed to the name directory A had before (in the parent snapshot),
+but directory A's rename must happen before some other directory C is
+renamed.
 
-> Date: Wed, 25 Feb 2015 11:06:25 +1100
-> From: Dave Chinner <david@fromorbit.com>
-> To: Eric Sandeen <sandeen@redhat.com>
-> Cc: Filipe Manana <fdmanana@suse.com>, fstests@vger.kernel.org,
->     linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH v3] fstests: generic test for directory fsync after adding
->      hard links
-> 
-> On Tue, Feb 24, 2015 at 05:40:05PM -0600, Eric Sandeen wrote:
-> > On 2/24/15 5:29 PM, Filipe Manana wrote:
-> ....
-> > > diff --git a/tests/generic/060 b/tests/generic/060
-> > > new file mode 100755
-> > > index 0000000..0d459fa
-> > > --- /dev/null
-> > > +++ b/tests/generic/060
-> > > @@ -0,0 +1,175 @@
-> > > +#! /bin/bash
-> > > +# FS QA Test No. 060
-> > > +#
-> > > +# This test is motivated by an fsync issue discovered in btrfs.
-> > > +# The issue was that after adding a new hard link to an existing file (one that
-> > > +# was created in a past transaction) and fsync'ing the parent directory of the
-> > > +# new hard link, after the fsync log replay the file's inode link count did not
-> > > +# get its link count incremented, while the new directory entry was visible.
-> > > +# Also, unlike xfs and ext4, new files under the directory we fsync were not
-> > > +# being written to the fsync log, nor were any child directories and new files
-> > > +# and links under the children directories. So this test verifies too that
-> > > +# btrfs has the same behaviour as xfs and ext3/4.
-> > > +#
-> > > +# The btrfs issue was fixed by the following linux kernel patch:
-> > > +#
-> > > +#  Btrfs: fix metadata inconsistencies after directory fsync
-> > 
-> > 
-> > I still would like to know *what this test does* - not some narrative about
-> > btrfs's troubled past.  ;)
-> 
-> Right, the description in the test is supposed to be a consise
-> description of what the test does.  It is parsed by lsqa.pl to
-> inform the reader of what the test exercises and that's why we
-> actually care about the quality of the description.
+This issue was fixed by the following linux kernel btrfs patch:
 
-Right, but if the test was written specifically to address a bug
-found in the code I'd love to see the commit id, or name preferably
-directly in the test description or at least in the commit
-description. It's very useful information to have and often we
-forget to include it.
+  Btrfs: incremental send, don't rename a directory too soon
 
-Thanks!
--Lukas
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/083     | 159 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/083.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 162 insertions(+)
+ create mode 100755 tests/btrfs/083
+ create mode 100644 tests/btrfs/083.out
 
+diff --git a/tests/btrfs/083 b/tests/btrfs/083
+new file mode 100755
+index 0000000..e4b6767
+--- /dev/null
++++ b/tests/btrfs/083
+@@ -0,0 +1,159 @@
++#! /bin/bash
++# FS QA Test No. btrfs/083
++#
++# Test for incremental send where the difference between the parent and child
++# snapshots is that a directory A was renamed and a directory B was renamed to
++# the name directory A had before (in the parent snapshot), but directory A's
++# rename must happen before some other directory C is renamed.
++#
++# This issue was fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: incremental send, don't rename a directory too soon
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	rm -fr $send_files_dir
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_fssum
++_need_to_be_root
++
++send_files_dir=$TEST_DIR/btrfs-test-$seq
++
++rm -f $seqres.full
++rm -fr $send_files_dir
++mkdir $send_files_dir
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++mkdir $SCRATCH_MNT/a
++mkdir $SCRATCH_MNT/b
++mkdir $SCRATCH_MNT/c
++touch $SCRATCH_MNT/a/file
++
++mkdir $SCRATCH_MNT/d
++mkdir $SCRATCH_MNT/e
++touch $SCRATCH_MNT/e/file2
++mkdir $SCRATCH_MNT/f
++
++# Filesystem looks like:
++#
++# .                                       (ino 256)
++# |---- a/                                (ino 257)
++# |     |---- file                        (ino 260)
++# |
++# |---- b/                                (ino 258)
++# |---- c/                                (ino 259)
++# |---- d/                                (ino 261)
++# |---- e/                                (ino 262)
++# |     |--- file2                        (ino 263)
++# |
++# |---- f/                                (ino 264)
++#
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++
++# Now make inode 257 a child of inode 259 and rename inode 258 to the name that
++# inode 257 had before. When the incremental send processes inode 257, it can't
++# do the rename immediately because inode 259 must be renamed first, so inode's
++# 257 rename is delayed and happens after the rename for inode 259 is done.
++# Since send processes inodes by ascending order of their number, inode 258
++# can't be renamed before inode 257 is renamed and therefore must be delayed
++# as well. So the send stream must issue rename commands in the following order:
++#
++# 1 - rename inode 259 ('c' -> 'x')
++# 2 - rename inode 257 ('a' -> 'x/y')
++# 3 - rename inode 258 ('b' -> 'a')
++#
++# Before the fix mentioned above, the send stream attempted to rename inode 258
++# before inode 257 was renamed, resulting in a client error mentioning
++# 'directory not empty'.
++#
++# Same logic applies to 'd', 'e' and 'f', but the difference is that in the
++# second snapshot 'e' is associated to an inode with a lower inode number than
++# in the first snapshot.
++#
++mv $SCRATCH_MNT/c $SCRATCH_MNT/x
++mv $SCRATCH_MNT/a $SCRATCH_MNT/x/y
++mv $SCRATCH_MNT/b $SCRATCH_MNT/a
++
++mv $SCRATCH_MNT/f $SCRATCH_MNT/f2
++mv $SCRATCH_MNT/e $SCRATCH_MNT/f2/e2
++mv $SCRATCH_MNT/d $SCRATCH_MNT/e
++
++# Filesystem now looks like:
++#
++#
++# .                                       (ino 256)
++# |---- a/                                (ino 258)
++# |---- x/                                (ino 259)
++# |     |---- y/                          (ino 257)
++# |           |----- file                 (ino 260)
++# |
++# |---- e/                                (ino 261)
++# |---- f2/                               (ino 264)
++# |     |----- e2/                        (ino 262)
++#              |---- file2                (ino 263)
++
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++
++run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
++	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
++
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $send_files_dir/2.snap
++
++# Now recreate the filesystem by receiving both send streams and verify we get
++# the same content that the original filesystem had.
++_scratch_unmount
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
++run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
++run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
++
++echo "Silence is golden"
++
++status=0
++exit
+diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
+new file mode 100644
+index 0000000..0beba30
+--- /dev/null
++++ b/tests/btrfs/083.out
+@@ -0,0 +1,2 @@
++QA output created by 083
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index fd2fa76..fe82a9c 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -85,3 +85,4 @@
+ 080 auto snapshot
+ 081 auto quick clone
+ 082 auto quick remount
++083 auto quick send
+-- 
+2.1.3
 
-> 
-> > Could you please add that line or two, and feel free to keep all the detail about
-> > the btrfs-specific bug later?  We're getting a lot of these tests, and a
-> > short description of what a test does is just How We Do It(tm).  It saves having to 
-> > read a lot of bash code just to get some idea of what is under test.
-> > 
-> > i.e. like this, or whatever is accurate:
-> > 
-> > # Test that link counts remain correct after fsyncing a parent directory
-> > # containing hardlinks, and subsequent log recovery
-> #
-> > # <insert fascinating btrfs story here>
-> 
-> The fascinating btrfs story belongs in the commit message, not
-> the test itself.  If people need to know what btrfs commit the test
-> exercises, the history, motivations and commentary on the code, then
-> they can look it up in the git history.
-> 
-> > Please just do this; it'll save people time, down the line, if/when
-> > this test fails in the future, or needs to be maintained by someone
-> > else.
-> 
-> Precisely.
-> 
-> Cheers,
-> 
-> Dave.
-> 

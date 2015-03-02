@@ -1,883 +1,284 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp08.au.ibm.com ([202.81.31.141]:59456 "EHLO
-	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752265AbbCARVn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Mar 2015 12:21:43 -0500
-Received: from /spool/local
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 2 Mar 2015 03:21:40 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: fstests@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
-        chandan@mykolab.com
-Subject: [PATCH] btrfs/052: Fix test case to work on 64K block size.
-Date: Sun,  1 Mar 2015 22:50:09 +0530
-Message-Id: <1425230409-22366-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from ud10.udmedia.de ([194.117.254.50]:42520 "EHLO
+	mail.ud10.udmedia.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752518AbbCBLZv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 06:25:51 -0500
+Date: Mon, 2 Mar 2015 12:25:47 +0100
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: Re: WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693
+ btrfs_destroy_inode+0x278/0x2a0()
+Message-ID: <20150302112547.GA345@x4>
+References: <20150220100934.GA343@x4>
+ <20150224122901.GC343@x4>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150224122901.GC343@x4>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The test case passes file offsets which don't align with 64K block size. This
-causes btrfs_ioctl_clone() to return with -EINVAL. Fix this by using offsets
-which are multiples of 64k.
+On 2015.02.24 at 13:29 +0100, Markus Trippelsdorf wrote:
+> On 2015.02.20 at 11:09 +0100, Markus Trippelsdorf wrote:
+> > 
+> > I get the following warnings during Firefox LTO build. lto1-wpa-stream
+> > outputs the final object files in parallel and therefore stresses the
+> > filessystem.
+> > These warnings started with the git merge above.
+> > 
+> > The disk is a conventional drive:
+> > 
+> > [    2.438132] scsi 1:0:0:0: Direct-Access     ATA      ST2000DM001-1CH1 CC29 PQ: 0 ANSI: 5
+> > [    2.438308] sd 1:0:0:0: [sda] 3907029168 512-byte logical blocks: (2.00 TB/1.81 TiB)
+> > [    2.438310] sd 1:0:0:0: [sda] 4096-byte physical blocks
+> > 
+> > /dev/sda2      btrfs     1.9T  905G  946G  49% /var
+> > /dev/sda2 on /var type btrfs (rw,relatime,compress=lzo,noacl,space_cache)
+> > 
+> > 
+> > [ 4155.708579] ------------[ cut here ]------------
+> > [ 4155.708590] WARNING: CPU: 1 PID: 8850 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> > [ 4155.708593] CPU: 1 PID: 8850 Comm: lto1-wpa-stream Not tainted 3.19.0-08975-g3d883483dc0a-dirty #101
+> > [ 4155.708594] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> > [ 4155.708595]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> > [ 4155.708597]  ffffffff8106d2d2 ffff8800dad9bb78 ffff88018554ccc0 ffff880215e2e000
+> > [ 4155.708599]  ffff880215f23000 0000000000000000 ffffffff8121b6f8 0000000000000000
+> > [ 4155.708601] Call Trace:
+> > [ 4155.708606]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> > [ 4155.708609]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> > [ 4155.708611]  [<ffffffff8121b6f8>] ? btrfs_destroy_inode+0x278/0x2a0
+> > [ 4155.708614]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> > [ 4155.708615]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> > [ 4155.708618]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> > [ 4155.708621]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> > [ 4155.708623]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> > [ 4155.708625]  [<ffffffff810e3241>] ? try_to_free_pages+0x1e1/0x320
+> > [ 4155.708626]  [<ffffffff810daa82>] ? __alloc_pages_nodemask+0x382/0x680
+> > [ 4155.708629]  [<ffffffff810f597d>] ? handle_mm_fault+0xbbd/0xe60
+> > [ 4155.708631]  [<ffffffff81092e15>] ? put_prev_task_fair+0x75/0x320
+> > [ 4155.708632]  [<ffffffff810903b0>] ? __dequeue_entity+0x30/0x40
+> > [ 4155.708633]  [<ffffffff81094975>] ? pick_next_task_fair+0x415/0x480
+> > [ 4155.708636]  [<ffffffff81064144>] ? __do_page_fault+0x104/0x3a0
+> > [ 4155.708637]  [<ffffffff8168fb77>] ? __schedule+0x257/0x860
+> > [ 4155.708639]  [<ffffffff8169518f>] ? page_fault+0x1f/0x30
+> > [ 4155.708640] ---[ end trace 265993ee076d84aa ]---
+> > [ 4155.708641] ------------[ cut here ]------------
+> > [ 4155.708643] WARNING: CPU: 1 PID: 8850 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> > [ 4155.708644] CPU: 1 PID: 8850 Comm: lto1-wpa-stream Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> > [ 4155.708645] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> > [ 4155.708645]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> > [ 4155.708647]  ffffffff8106d2d2 ffff8800dad9bb78 ffff88018554ccc0 ffff880215e2e000
+> > [ 4155.708648]  ffff880215f23000 0000000000000000 ffffffff8121b672 0000000000000000
+> > [ 4155.708649] Call Trace:
+> > [ 4155.708651]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> > [ 4155.708652]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> > [ 4155.708654]  [<ffffffff8121b672>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> > [ 4155.708655]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> > [ 4155.708656]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> > [ 4155.708658]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> > [ 4155.708659]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> > [ 4155.708661]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> > [ 4155.708662]  [<ffffffff810e3241>] ? try_to_free_pages+0x1e1/0x320
+> > [ 4155.708664]  [<ffffffff810daa82>] ? __alloc_pages_nodemask+0x382/0x680
+> > [ 4155.708665]  [<ffffffff810f597d>] ? handle_mm_fault+0xbbd/0xe60
+> > [ 4155.708667]  [<ffffffff81092e15>] ? put_prev_task_fair+0x75/0x320
+> > [ 4155.708668]  [<ffffffff810903b0>] ? __dequeue_entity+0x30/0x40
+> > [ 4155.708669]  [<ffffffff81094975>] ? pick_next_task_fair+0x415/0x480
+> > [ 4155.708670]  [<ffffffff81064144>] ? __do_page_fault+0x104/0x3a0
+> > [ 4155.708672]  [<ffffffff8168fb77>] ? __schedule+0x257/0x860
+> > [ 4155.708673]  [<ffffffff8169518f>] ? page_fault+0x1f/0x30
+> > [ 4155.708674] ---[ end trace 265993ee076d84ab ]---
+> > [ 4156.021127] ------------[ cut here ]------------
+> > [ 4156.021136] WARNING: CPU: 3 PID: 35 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> > [ 4156.021139] CPU: 3 PID: 35 Comm: kswapd0 Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> > [ 4156.021140] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> > [ 4156.021141]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> > [ 4156.021143]  ffffffff8106d2d2 ffff8802160dfcb8 ffff88006b07a690 ffff880215e2e000
+> > [ 4156.021145]  ffff880215f23000 0000000000000000 ffffffff8121b6f8 0000000000000000
+> > [ 4156.021146] Call Trace:
+> > [ 4156.021151]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> > [ 4156.021154]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> > [ 4156.021156]  [<ffffffff8121b6f8>] ? btrfs_destroy_inode+0x278/0x2a0
+> > [ 4156.021159]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> > [ 4156.021160]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> > [ 4156.021163]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> > [ 4156.021166]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> > [ 4156.021168]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> > [ 4156.021169]  [<ffffffff810e3698>] ? kswapd+0x318/0x6c0
+> > [ 4156.021171]  [<ffffffff810e3380>] ? try_to_free_pages+0x320/0x320
+> > [ 4156.021173]  [<ffffffff81084c3c>] ? kthread+0xbc/0xe0
+> > [ 4156.021175]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> > [ 4156.021177]  [<ffffffff81693bec>] ? ret_from_fork+0x7c/0xb0
+> > [ 4156.021178]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> > [ 4156.021179] ---[ end trace 265993ee076d84ac ]---
+> > [ 4156.021180] ------------[ cut here ]------------
+> > [ 4156.021182] WARNING: CPU: 3 PID: 35 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> > [ 4156.021183] CPU: 3 PID: 35 Comm: kswapd0 Tainted: G        W       3.19.0-08975-g3d883483dc0a-dirty #101
+> > [ 4156.021184] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> > [ 4156.021184]  0000000000000000 ffffffff81999aad ffffffff8168d303 0000000000000000
+> > [ 4156.021186]  ffffffff8106d2d2 ffff8802160dfcb8 ffff88006b07a690 ffff880215e2e000
+> > [ 4156.021187]  ffff880215f23000 0000000000000000 ffffffff8121b672 0000000000000000
+> > [ 4156.021188] Call Trace:
+> > [ 4156.021190]  [<ffffffff8168d303>] ? dump_stack+0x40/0x50
+> > [ 4156.021191]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> > [ 4156.021192]  [<ffffffff8121b672>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> > [ 4156.021194]  [<ffffffff81129381>] ? dispose_list+0x41/0x60
+> > [ 4156.021195]  [<ffffffff81129669>] ? prune_icache_sb+0x49/0x60
+> > [ 4156.021197]  [<ffffffff8111205a>] ? super_cache_scan+0x13a/0x1a0
+> > [ 4156.021198]  [<ffffffff810e0a1b>] ? shrink_slab.part.52.constprop.62+0x19b/0x240
+> > [ 4156.021200]  [<ffffffff810e3049>] ? shrink_zone+0x89/0xa0
+> > [ 4156.021201]  [<ffffffff810e3698>] ? kswapd+0x318/0x6c0
+> > [ 4156.021203]  [<ffffffff810e3380>] ? try_to_free_pages+0x320/0x320
+> > [ 4156.021204]  [<ffffffff81084c3c>] ? kthread+0xbc/0xe0
+> > [ 4156.021205]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> > [ 4156.021207]  [<ffffffff81693bec>] ? ret_from_fork+0x7c/0xb0
+> > [ 4156.021208]  [<ffffffff81084b80>] ? __kthread_parkme+0x80/0x80
+> > [ 4156.021209] ---[ end trace 265993ee076d84ad ]---
+> 
+> Also happens when I remove directories:
+> 
+> [83159.023857] ------------[ cut here ]------------
+> [83159.023865] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> [83159.023868] CPU: 2 PID: 32343 Comm: rm Not tainted 4.0.0-rc1-dirty #104
+> [83159.023869] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [83159.023870]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> [83159.023872]  ffffffff8106d2d2 0000000000000000 ffff880008dd8560 ffff880215805800
+> [83159.023873]  ffff880169477eb8 ffff880008dd8560 ffffffff8121bab8 ffff880100675000
+> [83159.023874] Call Trace:
+> [83159.023878]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> [83159.023881]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [83159.023882]  [<ffffffff8121bab8>] ? btrfs_destroy_inode+0x278/0x2a0
+> [83159.023885]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> [83159.023887]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> [83159.023889]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> [83159.023891]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> [83159.023892] ---[ end trace 3b7c45c6e46fe8db ]---
+> [83159.023892] ------------[ cut here ]------------
+> [83159.023894] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> [83159.023895] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+> [83159.023896] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [83159.023897]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> [83159.023898]  ffffffff8106d2d2 0000000000000000 ffff880008dd8560 ffff880215805800
+> [83159.023899]  ffff880169477eb8 ffff880008dd8560 ffffffff8121ba32 ffff880100675000
+> [83159.023900] Call Trace:
+> [83159.023902]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> [83159.023903]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [83159.023905]  [<ffffffff8121ba32>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> [83159.023906]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> [83159.023907]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> [83159.023909]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> [83159.023910]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> [83159.023911] ---[ end trace 3b7c45c6e46fe8dc ]---
+> [83159.038708] ------------[ cut here ]------------
+> [83159.038716] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> [83159.038718] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+> [83159.038719] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [83159.038720]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> [83159.038722]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+> [83159.038723]  ffff880169477eb8 ffff88005756edf0 ffffffff8121bab8 ffff880100675000
+> [83159.038725] Call Trace:
+> [83159.038728]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> [83159.038731]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [83159.038732]  [<ffffffff8121bab8>] ? btrfs_destroy_inode+0x278/0x2a0
+> [83159.038735]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> [83159.038737]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> [83159.038740]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> [83159.038742]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> [83159.038743] ---[ end trace 3b7c45c6e46fe8dd ]---
+> [83159.038744] ------------[ cut here ]------------
+> [83159.038745] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> [83159.038746] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+> [83159.038747] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> [83159.038747]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> [83159.038749]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+> [83159.038750]  ffff880169477eb8 ffff88005756edf0 ffffffff8121ba32 ffff880100675000
+> [83159.038751] Call Trace:
+> [83159.038753]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> [83159.038754]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> [83159.038755]  [<ffffffff8121ba32>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> [83159.038757]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> [83159.038758]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> [83159.038760]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> [83159.038761]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> [83159.038762] ---[ end trace 3b7c45c6e46fe8de ]---
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- tests/btrfs/052     |  71 ++++----
- tests/btrfs/052.out | 468 ++++++++++++++++++++++++++--------------------------
- 2 files changed, 272 insertions(+), 267 deletions(-)
+Unfortunately the issue isn't 100% reproducible, so I unfortunately
+cannot bisect.
 
-diff --git a/tests/btrfs/052 b/tests/btrfs/052
-index c75193d..462f9ce 100755
---- a/tests/btrfs/052
-+++ b/tests/btrfs/052
-@@ -59,70 +59,75 @@ test_btrfs_clone_same_file()
- 	_scratch_mkfs >/dev/null 2>&1
- 	_scratch_mount $MOUNT_OPTIONS
- 
--	# Create a file with 5 extents, 4 of 8Kb each and 1 of 64Kb.
--	$XFS_IO_PROG -f -c "pwrite -S 0x01 -b 8192 0 8192" $SCRATCH_MNT/foo \
--		| _filter_xfs_io
-+	# Create a file with 5 extents, 4 of 128Kb each and 1 of 1024Kb.
-+	$XFS_IO_PROG -f -c "pwrite -S 0x01 -b 131072 0 131072" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io
- 	sync
--	$XFS_IO_PROG -c "pwrite -S 0x02 -b 8192 8192 8192" $SCRATCH_MNT/foo \
--		| _filter_xfs_io
-+
-+	$XFS_IO_PROG -c "pwrite -S 0x02 -b 131072 131072 131072" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io
- 	sync
--	$XFS_IO_PROG -c "pwrite -S 0x03 -b 8192 16384 8192" $SCRATCH_MNT/foo \
--		| _filter_xfs_io
-+
-+	$XFS_IO_PROG -c "pwrite -S 0x03 -b 131072 262144 131072" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io
- 	sync
--	$XFS_IO_PROG -c "pwrite -S 0x04 -b 8192 24576 8192" $SCRATCH_MNT/foo \
--		| _filter_xfs_io
-+
-+	$XFS_IO_PROG -c "pwrite -S 0x04 -b 131072 393216 131072" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io
- 	sync
--	$XFS_IO_PROG -c "pwrite -S 0x05 -b 65536 32768 65536" $SCRATCH_MNT/foo \
--		| _filter_xfs_io
-+
-+	$XFS_IO_PROG -c "pwrite -S 0x05 -b 131072 524288 1048576" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io
- 	sync
- 
- 	# Digest of initial content.
- 	md5sum $SCRATCH_MNT/foo | _filter_scratch
- 
- 	# Same source and target ranges - must fail.
--	$CLONER_PROG -s 8192 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+	$CLONER_PROG -s 131072 -d 131072 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
- 	# Check file content didn't change.
- 	md5sum $SCRATCH_MNT/foo | _filter_scratch
- 
- 	# Intersection between source and target ranges - must fail too.
--	$CLONER_PROG -s 4096 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+	$CLONER_PROG -s 65536 -d 131072 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
- 	# Check file content didn't change.
- 	md5sum $SCRATCH_MNT/foo | _filter_scratch
- 
- 	# Clone an entire extent from a higher range to a lower range.
--	$CLONER_PROG -s 24576 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+	$CLONER_PROG -s 393216 -d 0 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
- 
--	# Check entire file, the 8Kb block at offset 0 now has the same content
--	# as the 8Kb block at offset 24576.
-+	# Check entire file, the 128Kb block at offset 0 now has the same content
-+	# as the 128Kb block at offset 393216.
- 	od -t x1 $SCRATCH_MNT/foo
- 
- 	# Clone an entire extent from a lower range to a higher range.
--	$CLONER_PROG -s 8192 -d 16384 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+	$CLONER_PROG -s 131072 -d 262144 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
- 
--	# Check entire file, the 8Kb block at offset 0 now has the same content
--	# as the 8Kb block at offset 24576, and the 8Kb block at offset 16384
--	# now has the same content as the 8Kb block at offset 8192.
-+	# Check entire file, the 128Kb block at offset 0 now has the same content
-+	# as the 128Kb block at offset 393216, and the 128Kb block at offset 262144
-+	# now has the same content as the 128Kb block at offset 131072.
- 	od -t x1 $SCRATCH_MNT/foo
- 
- 	# Now clone 1 extent and an half into the file range starting at offset
--	# 65536. So we get the second half of the extent at offset 16384 and the
--	# whole extent at 24576 cloned into the middle of the 64Kb extent that
--	# starts at file offset 32768. This makes the clone ioctl process more
--	# extent items from the b+tree and forces a split of the large 64Kb
--	# extent at the end of the file.
--	$CLONER_PROG -s 20480 -d 65536 -l 12288 $SCRATCH_MNT/foo \
-+	# 1048576. So we get the second half of the extent at offset 262144 and
-+	# the whole extent at 393216 cloned into the middle of the 1024Kb extent
-+	# that starts at file offset 524288. This makes the clone ioctl process
-+	# more extent items from the b+tree and forces a split of the large
-+	# 1024Kb extent at the end of the file.
-+	$CLONER_PROG -s 327680 -d 1048576 -l 196608 $SCRATCH_MNT/foo \
- 		$SCRATCH_MNT/foo
- 
- 	# Check entire file. Besides the previous changes, we now should have
--	# 4096 bytes with the value 0x02 at file offset 65536, and 8192 bytes
--	# with value 0x04 at the file offset 69632. The ranges [32768, 65536[
--	# and [77824, 98304[ should remain with all bytes having the value 0x05.
-+	# 65536 bytes with the value 0x02 at file offset 1048576, and 131072
-+	# bytes with value 0x04 at the file offset 1114112. The ranges
-+	# [524288, 1048576[ and [1245184, 1572864[ should remain with all bytes
-+	# having the value 0x05.
- 	od -t x1 $SCRATCH_MNT/foo
- 
--	# Now update 8Kb of data at offset 0. The extent at this position is a
--	# clone of the extent at offset 24576. Check that writing to this offset
--	# doesn't change data at offset 24576.
--	$XFS_IO_PROG -c "pwrite -S 0xff -b 8192 0 8192" $SCRATCH_MNT/foo \
-+	# Now update 128Kb of data at offset 0. The extent at this position is a
-+	# clone of the extent at offset 393216. Check that writing to this
-+	# offset doesn't change data at offset 393216.
-+	$XFS_IO_PROG -c "pwrite -S 0xff -b 131072 0 131072" $SCRATCH_MNT/foo \
- 		| _filter_xfs_io
- 	od -t x1 $SCRATCH_MNT/foo
- 
-diff --git a/tests/btrfs/052.out b/tests/btrfs/052.out
-index 53a1868..d5c11ac 100644
---- a/tests/btrfs/052.out
-+++ b/tests/btrfs/052.out
-@@ -1,499 +1,499 @@
- QA output created by 052
- Testing with a cow file (default)
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- Testing with a nocow file (-O nodatacow)
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- Testing with a cow file and lzo compression
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- Testing with a cow file and zlib compression
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- Testing with a nocow file and lzo compression
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- Testing with a nocow file and zlib compression
--wrote 8192/8192 bytes at offset 0
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 8192
-+wrote 131072/131072 bytes at offset 131072
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 16384
-+wrote 131072/131072 bytes at offset 262144
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 8192/8192 bytes at offset 24576
-+wrote 131072/131072 bytes at offset 393216
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes at offset 32768
-+wrote 1048576/1048576 bytes at offset 524288
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- clone failed: Invalid argument
--5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
--wrote 8192/8192 bytes at offset 0
-+6000000
-+wrote 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
- 0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
- *
--0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
- *
--0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
- *
--0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
- *
--0300000
-+6000000
+Another example:
+...
+Mar  2 06:58:24 x4 kernel: BTRFS info (device sdb3): disk space caching is enabled
+Mar  2 06:58:25 x4 kernel: microcode: CPU0: new patch_level=0x010000db
+Mar  2 06:58:25 x4 kernel: microcode: CPU1: new patch_level=0x010000db
+Mar  2 06:58:25 x4 kernel: microcode: CPU2: new patch_level=0x010000db
+Mar  2 06:58:25 x4 kernel: microcode: CPU3: new patch_level=0x010000db
+Mar  2 06:58:26 x4 kernel: Adding 4095996k swap on /dev/sda1.  Priority:-1 extents:1 across:4095996k
+Mar  2 09:09:58 x4 kernel: BTRFS warning (device sda2): block group 885866364928 has wrong amount of free space
+Mar  2 09:09:58 x4 kernel: BTRFS warning (device sda2): failed to load free space cache for block group 885866364928, rebuild it now
+Mar  2 09:20:02 x4 kernel: ------------[ cut here ]------------
+Mar  2 09:20:02 x4 kernel: WARNING: CPU: 0 PID: 14596 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+Mar  2 09:20:02 x4 kernel: CPU: 0 PID: 14596 Comm: rm Not tainted 4.0.0-rc1-00151-ga38ecbbd0be0-dirty #110
+Mar  2 09:20:02 x4 kernel: Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+Mar  2 09:20:02 x4 kernel: 0000000000000000 ffffffff8199e119 ffffffff8169214e 0000000000000000
+Mar  2 09:20:02 x4 kernel: ffffffff8106c4f2 0000000000000000 ffff8801095b8910 ffff880216a6d000
+Mar  2 09:20:02 x4 kernel: ffff88007060beb8 ffff8801095b8910 ffffffff8121a3b8 ffff88019db09000
+Mar  2 09:20:02 x4 kernel: Call Trace:
+Mar  2 09:20:02 x4 kernel: [<ffffffff8169214e>] ? dump_stack+0x40/0x50
+Mar  2 09:20:02 x4 kernel: [<ffffffff8106c4f2>] ? warn_slowpath_common+0x72/0xc0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8121a3b8>] ? btrfs_destroy_inode+0x278/0x2a0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8111e9e7>] ? do_unlinkat+0x127/0x300
+Mar  2 09:20:02 x4 kernel: [<ffffffff81082dd4>] ? task_work_run+0xb4/0x100
+Mar  2 09:20:02 x4 kernel: [<ffffffff8103aad5>] ? do_notify_resume+0x55/0x80
+Mar  2 09:20:02 x4 kernel: [<ffffffff81698a92>] ? system_call_fastpath+0x12/0x17
+Mar  2 09:20:02 x4 kernel: ---[ end trace de951903f2a71b04 ]---
+Mar  2 09:20:02 x4 kernel: ------------[ cut here ]------------
+Mar  2 09:20:02 x4 kernel: WARNING: CPU: 0 PID: 14596 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+Mar  2 09:20:02 x4 kernel: CPU: 0 PID: 14596 Comm: rm Tainted: G        W       4.0.0-rc1-00151-ga38ecbbd0be0-dirty #110
+Mar  2 09:20:02 x4 kernel: Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+Mar  2 09:20:02 x4 kernel: 0000000000000000 ffffffff8199e119 ffffffff8169214e 0000000000000000
+Mar  2 09:20:02 x4 kernel: ffffffff8106c4f2 0000000000000000 ffff8801095b8910 ffff880216a6d000
+Mar  2 09:20:02 x4 kernel: ffff88007060beb8 ffff8801095b8910 ffffffff8121a332 ffff88019db09000
+Mar  2 09:20:02 x4 kernel: Call Trace:
+Mar  2 09:20:02 x4 kernel: [<ffffffff8169214e>] ? dump_stack+0x40/0x50
+Mar  2 09:20:02 x4 kernel: [<ffffffff8106c4f2>] ? warn_slowpath_common+0x72/0xc0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8121a332>] ? btrfs_destroy_inode+0x1f2/0x2a0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8111e9e7>] ? do_unlinkat+0x127/0x300
+Mar  2 09:20:02 x4 kernel: [<ffffffff81082dd4>] ? task_work_run+0xb4/0x100
+Mar  2 09:20:02 x4 kernel: [<ffffffff8103aad5>] ? do_notify_resume+0x55/0x80
+Mar  2 09:20:02 x4 kernel: [<ffffffff81698a92>] ? system_call_fastpath+0x12/0x17
+Mar  2 09:20:02 x4 kernel: ---[ end trace de951903f2a71b05 ]---
+Mar  2 09:20:02 x4 kernel: ------------[ cut here ]------------
+Mar  2 09:20:02 x4 kernel: WARNING: CPU: 0 PID: 14596 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+Mar  2 09:20:02 x4 kernel: CPU: 0 PID: 14596 Comm: rm Tainted: G        W       4.0.0-rc1-00151-ga38ecbbd0be0-dirty #110
+Mar  2 09:20:02 x4 kernel: Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+Mar  2 09:20:02 x4 kernel: 0000000000000000 ffffffff8199e119 ffffffff8169214e 0000000000000000
+Mar  2 09:20:02 x4 kernel: ffffffff8106c4f2 0000000000000000 ffff88007fda01b0 ffff880216a6d000
+Mar  2 09:20:02 x4 kernel: ffff88007060beb8 ffff88007fda01b0 ffffffff8121a3b8 ffff88019db09000
+Mar  2 09:20:02 x4 kernel: Call Trace:
+Mar  2 09:20:02 x4 kernel: [<ffffffff8169214e>] ? dump_stack+0x40/0x50
+Mar  2 09:20:02 x4 kernel: [<ffffffff8106c4f2>] ? warn_slowpath_common+0x72/0xc0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8121a3b8>] ? btrfs_destroy_inode+0x278/0x2a0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8111e9e7>] ? do_unlinkat+0x127/0x300
+Mar  2 09:20:02 x4 kernel: [<ffffffff81082dd4>] ? task_work_run+0xb4/0x100
+Mar  2 09:20:02 x4 kernel: [<ffffffff8103aad5>] ? do_notify_resume+0x55/0x80
+Mar  2 09:20:02 x4 kernel: [<ffffffff81698a92>] ? system_call_fastpath+0x12/0x17
+Mar  2 09:20:02 x4 kernel: ---[ end trace de951903f2a71b06 ]---
+Mar  2 09:20:02 x4 kernel: ------------[ cut here ]------------
+Mar  2 09:20:02 x4 kernel: WARNING: CPU: 0 PID: 14596 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+Mar  2 09:20:02 x4 kernel: CPU: 0 PID: 14596 Comm: rm Tainted: G        W       4.0.0-rc1-00151-ga38ecbbd0be0-dirty #110
+Mar  2 09:20:02 x4 kernel: Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+Mar  2 09:20:02 x4 kernel: 0000000000000000 ffffffff8199e119 ffffffff8169214e 0000000000000000
+Mar  2 09:20:02 x4 kernel: ffffffff8106c4f2 0000000000000000 ffff88007fda01b0 ffff880216a6d000
+Mar  2 09:20:02 x4 kernel: ffff88007060beb8 ffff88007fda01b0 ffffffff8121a332 ffff88019db09000
+Mar  2 09:20:02 x4 kernel: Call Trace:
+Mar  2 09:20:02 x4 kernel: [<ffffffff8169214e>] ? dump_stack+0x40/0x50
+Mar  2 09:20:02 x4 kernel: [<ffffffff8106c4f2>] ? warn_slowpath_common+0x72/0xc0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8121a332>] ? btrfs_destroy_inode+0x1f2/0x2a0
+Mar  2 09:20:02 x4 kernel: [<ffffffff8111e9e7>] ? do_unlinkat+0x127/0x300
+Mar  2 09:20:02 x4 kernel: [<ffffffff81082dd4>] ? task_work_run+0xb4/0x100
+Mar  2 09:20:02 x4 kernel: [<ffffffff8103aad5>] ? do_notify_resume+0x55/0x80
+Mar  2 09:20:02 x4 kernel: [<ffffffff81698a92>] ? system_call_fastpath+0x12/0x17
+Mar  2 09:20:02 x4 kernel: ---[ end trace de951903f2a71b07 ]---
+
 -- 
-2.1.0
-
+Markus

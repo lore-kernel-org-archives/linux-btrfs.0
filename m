@@ -1,112 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21650 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751483AbbCBMjA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 07:39:00 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t22CbuGM014541
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Mar 2015 20:37:56 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Support busy loop of write and delete
-Date: Mon, 2 Mar 2015 20:37:38 +0800
-Message-ID: <654d16c0ce0f8aca28590f3f58ad11e8d5430d97.1425299741.git.zhaolei@cn.fujitsu.com>
+Received: from ud10.udmedia.de ([194.117.254.50]:39181 "EHLO
+	mail.ud10.udmedia.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754305AbbCBN3f (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 08:29:35 -0500
+Date: Mon, 2 Mar 2015 14:29:33 +0100
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: Re: WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693
+ btrfs_destroy_inode+0x278/0x2a0()
+Message-ID: <20150302132933.GA347@x4>
+References: <20150220100934.GA343@x4>
+ <20150224122901.GC343@x4>
+ <20150302112547.GA345@x4>
+ <CAL3q7H6LPNt4zqrt9DFigJhc=gaNRew5VrKQGaP5o_h-5X1eRw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H6LPNt4zqrt9DFigJhc=gaNRew5VrKQGaP5o_h-5X1eRw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On 2015.03.02 at 12:07 +0000, Filipe David Manana wrote:
+> >> [83159.038708] ------------[ cut here ]------------
+> >> [83159.038716] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8693 btrfs_destroy_inode+0x278/0x2a0()
+> >> [83159.038718] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+> >> [83159.038719] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> >> [83159.038720]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> >> [83159.038722]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+> >> [83159.038723]  ffff880169477eb8 ffff88005756edf0 ffffffff8121bab8 ffff880100675000
+> >> [83159.038725] Call Trace:
+> >> [83159.038728]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> >> [83159.038731]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> >> [83159.038732]  [<ffffffff8121bab8>] ? btrfs_destroy_inode+0x278/0x2a0
+> >> [83159.038735]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> >> [83159.038737]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> >> [83159.038740]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> >> [83159.038742]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> >> [83159.038743] ---[ end trace 3b7c45c6e46fe8dd ]---
+> >> [83159.038744] ------------[ cut here ]------------
+> >> [83159.038745] WARNING: CPU: 2 PID: 32343 at fs/btrfs/inode.c:8694 btrfs_destroy_inode+0x1f2/0x2a0()
+> >> [83159.038746] CPU: 2 PID: 32343 Comm: rm Tainted: G        W       4.0.0-rc1-dirty #104
+> >> [83159.038747] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> >> [83159.038747]  0000000000000000 ffffffff8199990f ffffffff8168d723 0000000000000000
+> >> [83159.038749]  ffffffff8106d2d2 0000000000000000 ffff88005756edf0 ffff880215805800
+> >> [83159.038750]  ffff880169477eb8 ffff88005756edf0 ffffffff8121ba32 ffff880100675000
+> >> [83159.038751] Call Trace:
+> >> [83159.038753]  [<ffffffff8168d723>] ? dump_stack+0x40/0x50
+> >> [83159.038754]  [<ffffffff8106d2d2>] ? warn_slowpath_common+0x72/0xc0
+> >> [83159.038755]  [<ffffffff8121ba32>] ? btrfs_destroy_inode+0x1f2/0x2a0
+> >> [83159.038757]  [<ffffffff8111f747>] ? do_unlinkat+0x1a7/0x2e0
+> >> [83159.038758]  [<ffffffff81083974>] ? task_work_run+0xb4/0x100
+> >> [83159.038760]  [<ffffffff8103b9a9>] ? do_notify_resume+0x69/0x80
+> >> [83159.038761]  [<ffffffff81694092>] ? system_call_fastpath+0x12/0x17
+> >> [83159.038762] ---[ end trace 3b7c45c6e46fe8de ]---
+> >
+> > Unfortunately the issue isn't 100% reproducible, so I unfortunately
+> > cannot bisect.
+> 
+> You probably don't need to bisect. The warning is related to the
+> outstanding_extents counter being != 0:
+> 
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/inode.c?id=refs/tags/v4.0-rc1#n8693
+> 
+> The only change in 4.0 that changes updates to that counter is:
+> 
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=3e05bde8c3c2dd761da4d52944a087907955a53c
+> 
+> So that's likely the change you would find with a bisect.
 
-Reproduce:
- while true; do
-   dd if=/dev/zero of=/mnt/btrfs/file count=[75% fs_size]
-   rm /mnt/btrfs/file
- done
- Then we can see above loop failed on NO_SPACE.
+OK, thank you. I will revert the commit and see if it fixes the issue.
 
-It it long-term problem since very beginning, because delayed-iput
-after rm are not run.
-
-We already have commit_transaction() in alloc_space code, but it is
-not triggered in above case.
-This patch trigger commit_transaction() to run delayed-iput and
-reflash pinned-space to to make write success.
-
-It is based on previous fix of delayed-iput in commit_transaction(),
-need to be applied on top of:
-btrfs: Fix NO_SPACE bug caused by delayed-iput
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 24 +++++++++++++-----------
- 1 file changed, 13 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6c19033..6c1e211 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3599,13 +3599,13 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 used;
--	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
-+	int ret = 0, need_commit = 2, have_pinned_space, alloc_chunk = 1;
- 
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = ALIGN(bytes, root->sectorsize);
- 
- 	if (btrfs_is_free_space_inode(inode)) {
--		committed = 1;
-+		need_commit = 0;
- 		ASSERT(current->journal_info);
- 	}
- 
-@@ -3655,8 +3655,10 @@ alloc:
- 			if (ret < 0) {
- 				if (ret != -ENOSPC)
- 					return ret;
--				else
-+				else {
-+					have_pinned_space = 1;
- 					goto commit_trans;
-+				}
- 			}
- 
- 			if (!data_sinfo)
-@@ -3670,23 +3672,23 @@ alloc:
- 		 * allocation, and no removed chunk in current transaction,
- 		 * don't bother committing the transaction.
- 		 */
--		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
--					   used + bytes -
--					   data_sinfo->total_bytes) < 0)
--			have_pinned_space = 0;
-+		have_pinned_space = percpu_counter_compare(
-+			&data_sinfo->total_bytes_pinned,
-+			used + bytes - data_sinfo->total_bytes);
- 		spin_unlock(&data_sinfo->lock);
- 
- 		/* commit the current transaction and try again */
- commit_trans:
--		if (!committed &&
-+		if (need_commit &&
- 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
--			committed = 1;
-+			need_commit--;
- 
- 			trans = btrfs_join_transaction(root);
- 			if (IS_ERR(trans))
- 				return PTR_ERR(trans);
--			if (have_pinned_space ||
--			    trans->transaction->have_free_bgs) {
-+			if (have_pinned_space >= 0 ||
-+			    trans->transaction->have_free_bgs ||
-+			    need_commit > 0) {
- 				ret = btrfs_commit_transaction(trans, root);
- 				if (ret)
- 					return ret;
 -- 
-1.8.5.1
-
+Markus

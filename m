@@ -1,51 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33171 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751077AbbBEUbb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Feb 2015 15:31:31 -0500
-Message-ID: <54D3D31D.40802@redhat.com>
-Date: Thu, 05 Feb 2015 14:31:25 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:47191 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751612AbbCBAnI convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Mar 2015 19:43:08 -0500
+Message-ID: <54F3B21A.8080602@cn.fujitsu.com>
+Date: Mon, 2 Mar 2015 08:43:06 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: allow CFLAGS specification in new build
-Content-Type: text/plain; charset=utf-8
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check valid
+ root/sudo privilege
+References: <1423462312-4239-1-git-send-email-quwenruo@cn.fujitsu.com> <20150210133055.GA28877@twin.jikos.cz> <54DAA252.1090207@cn.fujitsu.com> <20150227161144.GE8720@twin.jikos.cz>
+In-Reply-To: <20150227161144.GE8720@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Disclaimer: I am not an auto$FOO expert by any means.
+> On Wed, Feb 11, 2015 at 08:29:06AM +0800, Qu Wenruo wrote:
+>>
+>> -------- Original Message --------
+>> Subject: Re: [PATCH] btrfs-progs: fsck-test: Add check_sudo to check
+>> valid root/sudo privilege
+>> From: David Sterba <dsterba@suse.cz>
+>> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Date: 2015年02月10日 21:30
+>>> On Mon, Feb 09, 2015 at 02:11:52PM +0800, Qu Wenruo wrote:
+>>>> Although fsck-test/012 uses sudo, it uses 'sudo -n', which won't prompt
+>>>> user to input password and will return 1 if no valid credential is
+>>>> found.
+>>>>
+>>>> And this makes test result quite annoying since it fails to mount and
+>>>> still continue, which will always fail.
+>>>>
+>>>> This patch introduced the new check_sudo() to check sudo before calling
+>>>> $sudo. This function will check "sudo -v -n" to get the credential.
+>>>> And if it fails, then the test will not be run.
+>>> This logic is fine, but the setup fails for me even if typing the
+>>> password is not required. I think the 'sudo -v' check is wrong as it
+>>> tries to refresh the credentials.
+>>>
+>>>     $ sudo -v -n
+>>>     sudo: a password is required
+>>>
+>>> while
+>>>
+>>>     $ sudo -n /bin/true
+>>>
+>>> works.
+>> Err, this seems strange.
+>> I think the bug is in sudo itself.
+>
+> Or the the way sudo is configured in /etc/sudoers.
+>
+>> BTW, what's the version of your sudo?
+>> Mine works fine even no need for password:
+>> $ sudo -v -n
+>> No error....
+>>
+>> My sudo version is 1.8.11p2
+>
+> 1.8.10p3
+>
+> I don't know how to fix it so it works for both of us.
+>
+Hmm, what about using the following priority to setup sudo in 
+setup_root_helper()?
 
-But I could find no way to specify additional CFLAGS, and I think
-that this is because they are hard-coded in configure.ac.
+UID==0
+"sudo -v -n" if it works << For newer sudo
+"sudo -n" if it works << For your version or older
 
-The below works for me, but I don't know if it's the right solution...
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
-
-diff --git a/Makefile.in b/Makefile.in
-index 93b6a3c..4a36f6a 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -12,6 +12,7 @@ DISABLE_BTRFSCONVERT = @DISABLE_BTRFSCONVERT@
- 
- # Non-static compilation flags
- CFLAGS = @CFLAGS@ \
-+	 -g -O1 \
- 	 -include config.h -Wall \
- 	 -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES \
- 	 -D_XOPEN_SOURCE=700  \
-diff --git a/configure.ac b/configure.ac
-index cbad099..f6ebb7d 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -8,8 +8,6 @@ LIBBTRFS_MAJOR=0
- LIBBTRFS_MINOR=1
- LIBBTRFS_PATCHLEVEL=1
- 
--CFLAGS="-g -O1"
--
- AC_PREREQ([2.60])
- 
- AC_CONFIG_AUX_DIR([config])
-
+Thanks,
+Qu

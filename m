@@ -1,66 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:7290 "EHLO mail.synology.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751478AbbCBMWr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Mar 2015 07:22:47 -0500
-Received: from mail-ig0-f175.google.com (mail-ig0-f175.google.com [209.85.213.175])
-	(Authenticated sender: robbieko@synology.com)
-	by mail.synology.com (Postfix) with ESMTPSA id 452595D002D0
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Mar 2015 20:22:37 +0800 (CST)
-Received: by igjz20 with SMTP id z20so16550713igj.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2015 04:22:40 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:21650 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751483AbbCBMjA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 07:39:00 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t22CbuGM014541
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Mar 2015 20:37:56 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Support busy loop of write and delete
+Date: Mon, 2 Mar 2015 20:37:38 +0800
+Message-ID: <654d16c0ce0f8aca28590f3f58ad11e8d5430d97.1425299741.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Date: Mon, 2 Mar 2015 20:22:40 +0800
-Message-ID: <CAJiZgco09Busd5DkXrqo4hL7u_t=g0NkN+54Q8eu0jgY7j8nEQ@mail.gmail.com>
-Subject: Btrfs Send/Receive "no such file or directory" bug
-From: Robbie Ko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-I have been testing btrfs send/receive recently.
-I got an error "rename failed: no such file or directory" on receive side.
-The followings are simple reproduced steps and related information,
-Is there any  idea about what this might be or how to fix it?
+Reproduce:
+ while true; do
+   dd if=/dev/zero of=/mnt/btrfs/file count=[75% fs_size]
+   rm /mnt/btrfs/file
+ done
+ Then we can see above loop failed on NO_SPACE.
 
-uanme -a
-Linux ubuntu 4.0.0-rc1-custom #2 SMP Fri Feb 27 22:20:12 CST 2015
-x86_64 x86_64 x86_64 GNU/Linux
-btrfs --version
-Btrfs v3.14.1
+It it long-term problem since very beginning, because delayed-iput
+after rm are not run.
 
- Steps to reproduce:
+We already have commit_transaction() in alloc_space code, but it is
+not triggered in above case.
+This patch trigger commit_transaction() to run delayed-iput and
+reflash pinned-space to to make write success.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+It is based on previous fix of delayed-iput in commit_transaction(),
+need to be applied on top of:
+btrfs: Fix NO_SPACE bug caused by delayed-iput
 
-  $ mkdir -p /mnt/data/n1/n2/p1/p2
-  $ mkdir /mnt/data/n4
-  $ mkdir -p /mnt/data/p1/p2
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 24 +++++++++++++-----------
+ 1 file changed, 13 insertions(+), 11 deletions(-)
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6c19033..6c1e211 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3599,13 +3599,13 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 used;
+-	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
++	int ret = 0, need_commit = 2, have_pinned_space, alloc_chunk = 1;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
+ 
+ 	if (btrfs_is_free_space_inode(inode)) {
+-		committed = 1;
++		need_commit = 0;
+ 		ASSERT(current->journal_info);
+ 	}
+ 
+@@ -3655,8 +3655,10 @@ alloc:
+ 			if (ret < 0) {
+ 				if (ret != -ENOSPC)
+ 					return ret;
+-				else
++				else {
++					have_pinned_space = 1;
+ 					goto commit_trans;
++				}
+ 			}
+ 
+ 			if (!data_sinfo)
+@@ -3670,23 +3672,23 @@ alloc:
+ 		 * allocation, and no removed chunk in current transaction,
+ 		 * don't bother committing the transaction.
+ 		 */
+-		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+-					   used + bytes -
+-					   data_sinfo->total_bytes) < 0)
+-			have_pinned_space = 0;
++		have_pinned_space = percpu_counter_compare(
++			&data_sinfo->total_bytes_pinned,
++			used + bytes - data_sinfo->total_bytes);
+ 		spin_unlock(&data_sinfo->lock);
+ 
+ 		/* commit the current transaction and try again */
+ commit_trans:
+-		if (!committed &&
++		if (need_commit &&
+ 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
+-			committed = 1;
++			need_commit--;
+ 
+ 			trans = btrfs_join_transaction(root);
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
+-			if (have_pinned_space ||
+-			    trans->transaction->have_free_bgs) {
++			if (have_pinned_space >= 0 ||
++			    trans->transaction->have_free_bgs ||
++			    need_commit > 0) {
+ 				ret = btrfs_commit_transaction(trans, root);
+ 				if (ret)
+ 					return ret;
+-- 
+1.8.5.1
 
-  $ mv /mnt/data/p1/p2 /mnt/data
-  $ mv /mnt/data/n1/n2/p1/p2 /mnt/data/p1
-  $ mv /mnt/data/p2 /mnt/data/n1/n2/p1
-  $ mv /mnt/data/n1/n2 /mnt/data/p1
-  $ mv /mnt/data/p1 /mnt/data/n4
-  $ mv /mnt/data/n4/p1/n2/p1 /mnt/data
-
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-
-  $ btrfs send /mnt/snap1 -f /tmp/1.send
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.send
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt2
-  $ btrfs receive /mnt2 -f /tmp/1.send
-  $ btrfs receive /mnt2 -f /tmp/2.send
-  ERROR: rename data/p1/p2 -> data/n4/p1/p2 failed. no such file or directory
-
-  Thanks.
-
-  Robbie Ko

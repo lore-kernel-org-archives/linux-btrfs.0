@@ -1,28 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f47.google.com ([209.85.192.47]:35460 "EHLO
-	mail-qg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751232AbbC1VeY (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28934 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932205AbbCBWFj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Mar 2015 17:34:24 -0400
-Received: by qgh3 with SMTP id 3so144885790qgh.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2015 14:34:23 -0700 (PDT)
+	Mon, 2 Mar 2015 17:05:39 -0500
+Message-ID: <54F4DEAC.9000307@fb.com>
+Date: Mon, 2 Mar 2015 17:05:32 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-From: Ames Cornish <ames@cornishes.net>
-Date: Sat, 28 Mar 2015 14:34:02 -0700
-Message-ID: <CAP6pX27aRSaht0a1UEur0Y-UPdDdx9wCKpD+R3jcBHQoyoXp3Q@mail.gmail.com>
-Subject: Buttersink 0.6.2 - sync over ssh
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/9] btrfs: qgroup: move WARN_ON() to the correct location.
+References: <1423563803-8996-1-git-send-email-yangds.fnst@cn.fujitsu.com> <1423563803-8996-3-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563803-8996-3-git-send-email-yangds.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've just released version 0.6.2 of buttersink.  It now supports
-syncing snapshots between a local btrfs and a local or remote btrfs
-over ssh, as well as syncing with S3 buckets.
+On 02/10/2015 05:23 AM, Dongsheng Yang wrote:
+> In function qgroup_excl_accounting(), we need to WARN when
+> qg->excl is less than what we want to free, same to child
+> and parents. But currently, for parent qgroup, the WARN_ON()
+> is located after freeing qg->excl. It will WARN out even we
+> free it normally.
+>
+> This patch move this WARN_ON() before freeing qg->excl.
+>
+> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-The utility is on PyPi as "buttersink", and the GitHub page is here:
-  https://github.com/AmesCornish/buttersink.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-Thanks in advance for any feedback!
+Thanks,
 
--- Ames
+Josef

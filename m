@@ -1,84 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:40731 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753926AbbCBQD4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 11:03:56 -0500
-Received: by labgd6 with SMTP id gd6so31325203lab.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2015 08:03:54 -0800 (PST)
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:61827 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754525AbbCBRrA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Mar 2015 12:47:00 -0500
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t22HjlxZ012827
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Mar 2015 09:46:59 -0800
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1svsp50t33-3
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2015 09:46:59 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix ASSERT(list_empty(&cur_trans->dirty_bgs_list)
+Date: Mon, 2 Mar 2015 12:46:55 -0500
+Message-ID: <1425318415-322-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAJiZgco09Busd5DkXrqo4hL7u_t=g0NkN+54Q8eu0jgY7j8nEQ@mail.gmail.com>
-References: <CAJiZgco09Busd5DkXrqo4hL7u_t=g0NkN+54Q8eu0jgY7j8nEQ@mail.gmail.com>
-Date: Mon, 2 Mar 2015 16:03:54 +0000
-Message-ID: <CAL3q7H6vVzv5caoaLuy1m=v-rVEHfGrmGaB4vXbz=zfe76L37w@mail.gmail.com>
-Subject: Re: Btrfs Send/Receive "no such file or directory" bug
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Robbie Ko <robbieko@synology.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 2, 2015 at 12:22 PM, Robbie Ko <robbieko@synology.com> wrote:
-> Hi,
->
-> I have been testing btrfs send/receive recently.
-> I got an error "rename failed: no such file or directory" on receive side.
-> The followings are simple reproduced steps and related information,
-> Is there any  idea about what this might be or how to fix it?
->
-> uanme -a
-> Linux ubuntu 4.0.0-rc1-custom #2 SMP Fri Feb 27 22:20:12 CST 2015
-> x86_64 x86_64 x86_64 GNU/Linux
-> btrfs --version
-> Btrfs v3.14.1
->
->  Steps to reproduce:
->
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
->
->   $ mkdir -p /mnt/data/n1/n2/p1/p2
->   $ mkdir /mnt/data/n4
->   $ mkdir -p /mnt/data/p1/p2
->
->   $ btrfs subvolume snapshot -r /mnt /mnt/snap1
->
->   $ mv /mnt/data/p1/p2 /mnt/data
->   $ mv /mnt/data/n1/n2/p1/p2 /mnt/data/p1
->   $ mv /mnt/data/p2 /mnt/data/n1/n2/p1
->   $ mv /mnt/data/n1/n2 /mnt/data/p1
->   $ mv /mnt/data/p1 /mnt/data/n4
->   $ mv /mnt/data/n4/p1/n2/p1 /mnt/data
->
->   $ btrfs subvolume snapshot -r /mnt /mnt/snap2
->
->   $ btrfs send /mnt/snap1 -f /tmp/1.send
->   $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.send
->
->   $ mkfs.btrfs -f /dev/sdc
->   $ mount /dev/sdc /mnt2
->   $ btrfs receive /mnt2 -f /tmp/1.send
->   $ btrfs receive /mnt2 -f /tmp/2.send
->   ERROR: rename data/p1/p2 -> data/n4/p1/p2 failed. no such file or directory
+Dave could hit this assert consistently running btrfs/078.  This is because
+when we update the block groups we could truncate the free space, which would
+try to delete the csums for that range and dirty the csum root.  For this to
+happen we have to have already written out the csum root so it's kind of hard to
+hit this case.  This patch fixes this by changing the logic to only write the
+dirty block groups if the dirty_cowonly_roots list is empty.  This will get us
+the same effect as before since we add the extent root last, and will cover the
+case that we dirty some other root again but not the extent root.  Thanks,
 
-Thanks for reporting this with an example.
-I'll take a look at it.
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/transaction.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
->
->   Thanks.
->
->   Robbie Ko
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 038fcf6..a7a413f 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1023,16 +1023,22 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+ 	u64 old_root_bytenr;
+ 	u64 old_root_used;
+ 	struct btrfs_root *tree_root = root->fs_info->tree_root;
+-	bool extent_root = (root->objectid == BTRFS_EXTENT_TREE_OBJECTID);
++	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
+ 	old_root_used = btrfs_root_used(&root->root_item);
+ 	btrfs_write_dirty_block_groups(trans, root);
+ 
+ 	while (1) {
+ 		old_root_bytenr = btrfs_root_bytenr(&root->root_item);
++
++		/*
++		 * We can only break out if our root matches the root item and
++		 * we either have more roots to process or we have no more roots
++		 * to process and there are no empty bgs.
++		 */
+ 		if (old_root_bytenr == root->node->start &&
+ 		    old_root_used == btrfs_root_used(&root->root_item) &&
+-		    (!extent_root ||
++		    (!list_empty(&fs_info->dirty_cowonly_roots) ||
+ 		     list_empty(&trans->transaction->dirty_bgs)))
+ 			break;
+ 
+@@ -1044,7 +1050,7 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+ 			return ret;
+ 
+ 		old_root_used = btrfs_root_used(&root->root_item);
+-		if (extent_root) {
++		if (list_empty(&fs_info->dirty_cowonly_roots)) {
+ 			ret = btrfs_write_dirty_block_groups(trans, root);
+ 			if (ret)
+ 				return ret;
 -- 
-Filipe David Manana,
+1.8.3.1
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

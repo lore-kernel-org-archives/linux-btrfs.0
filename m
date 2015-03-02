@@ -1,78 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:27964 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752099AbbCEOAG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Mar 2015 09:00:06 -0500
-Date: Thu, 5 Mar 2015 08:59:57 -0500
-From: Chris Mason <clm@fb.com>
-Subject: Re: [PATCH V2] Btrfs: catch transaction abortion after waiting for
- it
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Message-ID: <1425563997.740.0@mail.thefacebook.com>
-In-Reply-To: <1425551805-7314-1-git-send-email-bo.li.liu@oracle.com>
-References: <1425545307-3721-1-git-send-email-bo.li.liu@oracle.com>
-	<1425551805-7314-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:53785 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755928AbbCEO4M (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 5 Mar 2015 09:56:12 -0500
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/2] Btrfs: send, add missing check for dead clone root
+Date: Mon,  2 Mar 2015 20:53:52 +0000
+Message-Id: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+After we locked the root's root item, a concurrent snapshot deletion
+call might have set the dead flag on it. So check if the dead flag
+is set and abort if it is, just like we do for the parent root.
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-On Thu, Mar 5, 2015 at 5:36 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> This problem is uncovered by a test case: 
-> http://patchwork.ozlabs.org/patch/244297.
-> 
-> Fsync() can report success when it actually doesn't.  When we
-> have several threads running fsync() at the same tiem and in one 
-> fsync() we
-> get a transaction abortion due to some problems(in the test case it's 
-> disk
-> failures), and other fsync()s may return successfully which makes 
-> userspace
-> programs think that data is now safely flushed into disk.
-> 
-> It's because that after fsyncs() fail btrfs_sync_log() due to disk 
-> failures,
-> they get to try btrfs_commit_transaction() where it finds that there 
-> is
-> already a transaction being committed, and they'll just call 
-> wait_for_commit()
-> and return.  Note that we actually check "trans->aborted" in 
-> btrfs_end_transaction,
-> but it's likely that the error message is still not yet throwed out 
-> and only after
-> wait_for_commit() we're sure whether the transaction is committed 
-> successfully.
-> 
-> This add the necessary check and it now passes the test.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> v2: Use a more generic title since it's not only for fsync, but for 
-> others.
-> 
->  fs/btrfs/transaction.c | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 7e80f32..bd7ea86 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1814,6 +1814,9 @@ int btrfs_commit_transaction(struct 
-> btrfs_trans_handle *trans,
-> 
->  		wait_for_commit(root, cur_trans);
-> 
-> +		if (unlikely(ACCESS_ONCE(cur_trans->aborted)))
-> +			ret = cur_trans->aborted;
-> +
-
-Thanks Liu, but why are we using ACCESS_ONCE here?
-
--chris
-
-
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index d6033f5..6ec28f1 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5855,7 +5855,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			clone_sources_to_rollback = i + 1;
+ 			spin_lock(&clone_root->root_item_lock);
+ 			clone_root->send_in_progress++;
+-			if (!btrfs_root_readonly(clone_root)) {
++			if (!btrfs_root_readonly(clone_root) ||
++			    btrfs_root_dead(clone_root)) {
+ 				spin_unlock(&clone_root->root_item_lock);
+ 				srcu_read_unlock(&fs_info->subvol_srcu, index);
+ 				ret = -EPERM;
+-- 
+2.1.3
 

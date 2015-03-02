@@ -1,41 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53785 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38413 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755928AbbCEO4M (ORCPT
+	by vger.kernel.org with ESMTP id S1756127AbbCEO4M (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
 	Thu, 5 Mar 2015 09:56:12 -0500
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2] Btrfs: send, add missing check for dead clone root
-Date: Mon,  2 Mar 2015 20:53:52 +0000
-Message-Id: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2] Btrfs: send, don't leave without decrementing clone root's send_progress
+Date: Mon,  2 Mar 2015 20:53:53 +0000
+Message-Id: <1425329633-5059-2-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
+References: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After we locked the root's root item, a concurrent snapshot deletion
-call might have set the dead flag on it. So check if the dead flag
-is set and abort if it is, just like we do for the parent root.
+If the clone root was not readonly or the dead flag was set on it, we were
+leaving without decrementing the root's send_progress counter (and before
+we just incremented it). If a concurrent snapshot deletion was in progress
+and ended up being aborted, it would be impossible to later attempt to
+delete again the snapshot, since the root's send_in_progress counter could
+never go back to 0.
+
+We were also setting clone_sources_to_rollback to i + 1 too early - if we
+bailed out because the clone root we got is not readonly or flagged as dead
+we ended up later derreferencing a null pointer because we didn't assign
+the clone root to sctx->clone_roots[i].root:
+
+		for (i = 0; sctx && i < clone_sources_to_rollback; i++)
+			btrfs_root_dec_send_in_progress(
+					sctx->clone_roots[i].root);
+
+So just don't increment the send_in_progress counter if the root is readonly
+or flagged as dead.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/send.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d6033f5..6ec28f1 100644
+index 6ec28f1..571de5a 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -5855,7 +5855,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 			clone_sources_to_rollback = i + 1;
+@@ -5852,9 +5852,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 				ret = PTR_ERR(clone_root);
+ 				goto out;
+ 			}
+-			clone_sources_to_rollback = i + 1;
  			spin_lock(&clone_root->root_item_lock);
- 			clone_root->send_in_progress++;
--			if (!btrfs_root_readonly(clone_root)) {
-+			if (!btrfs_root_readonly(clone_root) ||
-+			    btrfs_root_dead(clone_root)) {
+-			clone_root->send_in_progress++;
+ 			if (!btrfs_root_readonly(clone_root) ||
+ 			    btrfs_root_dead(clone_root)) {
  				spin_unlock(&clone_root->root_item_lock);
- 				srcu_read_unlock(&fs_info->subvol_srcu, index);
+@@ -5862,10 +5860,12 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
  				ret = -EPERM;
+ 				goto out;
+ 			}
++			clone_root->send_in_progress++;
+ 			spin_unlock(&clone_root->root_item_lock);
+ 			srcu_read_unlock(&fs_info->subvol_srcu, index);
+ 
+ 			sctx->clone_roots[i].root = clone_root;
++			clone_sources_to_rollback = i + 1;
+ 		}
+ 		vfree(clone_sources_tmp);
+ 		clone_sources_tmp = NULL;
 -- 
 2.1.3
 

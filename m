@@ -1,154 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 162-144-52-249.unifiedlayer.com ([162.144.52.249]:54395 "EHLO
-	cl65.servermonkeys.com" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1751690AbbCCDsF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 22:48:05 -0500
-Received: from [204.187.101.237] (port=60186 helo=zenith.richgannon.net)
-	by cl65.servermonkeys.com with esmtpa (Exim 4.85)
-	(envelope-from <rich@richgannon.net>)
-	id 1YScnd-0008Kt-I3
-	for linux-btrfs@vger.kernel.org; Tue, 03 Mar 2015 02:43:09 +0000
-Message-ID: <54F51FB8.5080704@richgannon.net>
-Date: Mon, 02 Mar 2015 21:43:04 -0500
-From: Rich Gannon <rich@richgannon.net>
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:46229 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752042AbbCCGCD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 01:02:03 -0500
+Received: by wggy19 with SMTP id y19so37714099wgg.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2015 22:02:01 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: rsync causes kernel oops
-Content-Type: text/plain; charset=utf-8; format=flowed
+Date: Tue, 3 Mar 2015 07:02:01 +0100
+Message-ID: <CADurGxwyW0=BvyBC27qbGDZHn0ANdDARjvpsTwWN1Qpiiw2P8w@mail.gmail.com>
+Subject: Regression: kernel 4.0.0-rc1 - soft lockups
+From: Marcel Ritter <ritter.marcel@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is on a Dell Poweredge 2650 with dual Xeons.  Running Gentoo x86.  
-Kernel 3.18.7 with GRSecurity patches (gentoo's hardened-sources).  
-btrfs-progs version 3.18.2
+Hi,
 
-I originally had the drives setup as raid5 with kernel 3.19 and no 
-GRSecurity patches (and tried 4.0-rc1)., but kept having these issues so 
-I balanced the system to raid10 and this did not help. That's when I 
-switched to 3.18.7 kernel as it's been running fine on all of my x86_64 
-Gentoo systems in various raid1, 5, and single arrays.
+yesterday I did a kernel update on my btrfs test system (Ubuntu
+14.04.2) from custom-build kernel 3.19-rc6 to 4.0.0-rc1.
 
-This is the trace I get in dmesg whenever I try to run rsync from the 
-local server or remote server that touches any Btrfs filesystem:
+Almost instantly after starting my test script, the system got stuck
+with soft lockups (the machine was running the very same test for
+weeks on the old kernel without problems,
+basically doing massive streaming i/o on a raid6 btrfs volume):
 
-[  167.008334]  sdb: unknown partition table
-[  176.930717]  sdb: unknown partition table
-[  177.319257]  sdb: unknown partition table
-[  177.473818] BTRFS: device label secure devid 1 transid 7581 /dev/dm-0
-[  189.894615]  sdc: unknown partition table
-[  190.266313]  sdc: unknown partition table
-[  190.408711] BTRFS: device label secure devid 2 transid 7581 /dev/dm-1
-[  203.946583]  sdd: unknown partition table
-[  204.312035]  sdd: unknown partition table
-[  204.544243] BTRFS: device label secure devid 3 transid 7581 /dev/dm-2
-[  217.446332]  sde: unknown partition table
-[  227.263168]  sde: unknown partition table
-[  227.652513]  sde: unknown partition table
-[  227.836720] BTRFS: device label secure devid 4 transid 7581 /dev/dm-3
-[  247.868115] BTRFS info (device dm-3): enabling auto defrag
-[  247.868121] BTRFS info (device dm-3): disk space caching is enabled
-[  247.868123] BTRFS: has skinny extents
-[  319.495462] PAX: size overflow detected in function __do_readpage 
-fs/btrfs/extent_io.c:2967 cicus.740_242 max, count: 1
-[  319.495471] CPU: 0 PID: 3600 Comm: rsync Not tainted 
-3.18.7-hardened-r1 #1
-[  319.495473] Hardware name: Dell Computer Corporation PowerEdge 
-2650             /0D4921, BIOS A21 10/05/2006
-[  319.495476]  00001000 0046b116 c1ef799b 000ec30f c1ee6dd4 c1ef798d 
-c1ef78ee 00000b97
-[  319.495484]  c1ef799b 00001000 001e6dc9 c1ef799b 00000000 00001000 
-00000000 00000000
-[  319.495491]  0c000000 0000262b 00000000 ed905bac 00000000 00000000 
-00000000 f4eff168
-[  319.495499] Call Trace:
-[  319.495511]  [<0046b116>] ? dump_stack+0x3e/0x4e
-[  319.495518]  [<000ec30f>] ? report_size_overflow+0x29/0x33
-[  319.495524]  [<001e6dc9>] ? __do_readpage+0xa01/0xa08
-[  319.495530]  [<0000262b>] ? prot_inuse+0xcb/0x100
-[  319.495536]  [<00020001>] ? mce_chrdev_read+0x13d/0x46a
-[  319.495542]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  319.495546]  [<001e71bb>] ? __extent_readpages.constprop.45+0x302/0x31c
-[  319.495550]  [<001e8592>] ? extent_readpages+0x13a/0x14b
-[  319.495554]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  319.495558]  [<00637465>] ? 0x637465
-[  319.495562]  [<000200da>] ? mce_chrdev_read+0x216/0x46a
-[  319.495565]  [<00637465>] ? 0x637465
-[  319.495569]  [<001c4d80>] ? btrfs_readpages+0x20/0x25
-[  319.495572]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  319.495576]  [<001c4d60>] ? btrfs_set_page_dirty+0x5/0x5
-[  319.495582]  [<000b44dc>] ? __do_page_cache_readahead+0x172/0x1e7
-[  319.495586]  [<000b485c>] ? page_cache_sync_readahead+0x38/0x4e
-[  319.495590]  [<000ad119>] ? generic_file_read_iter+0x47b/0x6a8
-[  319.495595]  [<000caf66>] ? handle_mm_fault+0x44e/0xfb7
-[  319.495602]  [<00030357>] ? __do_page_fault+0x367/0x69e
-[  319.495607]  [<000e6cf9>] ? new_sync_read+0x6c/0x93
-[  319.495611]  [<000e6c8d>] ? do_sync_readv_writev+0x84/0x84
-[  319.495614]  [<000e777e>] ? vfs_read+0xe9/0x1b5
-[  319.495618]  [<0046f5ff>] ? restore_all_pax+0x7/0x7
-[  319.495622]  [<000e7e62>] ? SyS_read+0x41/0x81
-[  319.495625]  [<0046f5e4>] ? syscall_call+0x7/0x7
-[  319.495631]  [<0046007b>] ? rpc_kill_sb+0x61/0x67
-[  324.282761] PAX: size overflow detected in function __do_readpage 
-fs/btrfs/extent_io.c:2967 cicus.740_242 max, count: 1
-[  324.282769] CPU: 1 PID: 3632 Comm: rsync Not tainted 
-3.18.7-hardened-r1 #1
-[  324.282772] Hardware name: Dell Computer Corporation PowerEdge 
-2650             /0D4921, BIOS A21 10/05/2006
-[  324.282774]  00001000 0046b116 c1ef799b 000ec30f c1ee6dd4 c1ef798d 
-c1ef78ee 00000b97
-[  324.282782]  c1ef799b 00001000 001e6dc9 c1ef799b 00000000 00001000 
-00000000 00000000
-[  324.282789]  00000000 00000000 001e64d0 ed9816ac 00000000 00000000 
-00000000 f4fb1780
-[  324.282796] Call Trace:
-[  324.282810]  [<0046b116>] ? dump_stack+0x3e/0x4e
-[  324.282816]  [<000ec30f>] ? report_size_overflow+0x29/0x33
-[  324.282822]  [<001e6dc9>] ? __do_readpage+0xa01/0xa08
-[  324.282826]  [<001e64d0>] ? __do_readpage+0x108/0xa08
-[  324.282832]  [<00020001>] ? mce_chrdev_read+0x13d/0x46a
-[  324.282838]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  324.282844]  [<000be619>] ? __mod_zone_page_state+0x38/0x3c
-[  324.282848]  [<001e71bb>] ? __extent_readpages.constprop.45+0x302/0x31c
-[  324.282852]  [<001e8592>] ? extent_readpages+0x13a/0x14b
-[  324.282856]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  324.282861]  [<000041e0>] ? do_simd_coprocessor_error+0x3/0xa
-[  324.282866]  [<000ef9d8>] ? generic_permission+0xc8/0x186
-[  324.282871]  [<000fdb69>] ? __d_lookup+0x63/0x174
-[  324.282875]  [<001c4d80>] ? btrfs_readpages+0x20/0x25
-[  324.282878]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
-[  324.282882]  [<001c4d60>] ? btrfs_set_page_dirty+0x5/0x5
-[  324.282888]  [<000b44dc>] ? __do_page_cache_readahead+0x172/0x1e7
-[  324.282892]  [<000b485c>] ? page_cache_sync_readahead+0x38/0x4e
-[  324.282896]  [<000ad119>] ? generic_file_read_iter+0x47b/0x6a8
-[  324.282901]  [<00014d69>] ? x86_event_sysfs_show+0x12b/0x185
-[  324.282906]  [<000081a0>] ? quirk_intel_irqbalance+0x50/0xb1
-[  324.282911]  [<000e6cf9>] ? new_sync_read+0x6c/0x93
-[  324.282915]  [<000e6c8d>] ? do_sync_readv_writev+0x84/0x84
-[  324.282918]  [<000e777e>] ? vfs_read+0xe9/0x1b5
-[  324.282922]  [<000e7e62>] ? SyS_read+0x41/0x81
-[  324.282926]  [<0046f5e4>] ? syscall_call+0x7/0x7
+I found 2 types of messages in the logs:
+
+one btrfs related:
+
+[34165.540004] INFO: rcu_sched detected stalls on CPUs/tasks: { 3 7}
+(detected by 6, t=6990777 jiffies, g=67455, c=67454, q=0)
+[34165.540004] Task dump for CPU 3:
+[34165.540004] mount           D ffff8803ed266000     0 15156  15110 0x00000000
+[34165.540004]  0000000000000158 0000000000000014 ffff8803ecc13718
+ffff8803ecc136d8
+[34165.540004]  ffffffff8106075a 0000000000000000 0000000000000002
+0000000000000000
+[34165.540004]  00000000ecc13728 ffff8803eb603128 0000000000000000
+0000000000000000
+[34165.540004] Call Trace:
+[34165.540004]  [<ffffffff8106075a>] ? __do_page_fault+0x2fa/0x440
+[34165.540004]  [<ffffffff810608d1>] ? do_page_fault+0x31/0x70
+[34165.540004]  [<ffffffff81792778>] ? page_fault+0x28/0x30
+[34165.540004]  [<ffffffff810ae2ce>] ? pick_next_task_fair+0x53e/0x880
+[34165.540004]  [<ffffffff810ae2ce>] ? pick_next_task_fair+0x53e/0x880
+[34165.540004]  [<ffffffff8109707c>] ? dequeue_task+0x5c/0x80
+[34165.540004]  [<ffffffff8178b9a3>] ? __schedule+0xf3/0x960
+[34165.540004]  [<ffffffff8178c247>] ? schedule+0x37/0x90
+[34165.540004]  [<ffffffffa0896375>] ?
+btrfs_start_ordered_extent+0xd5/0x110 [btrfs]
+[34165.540004]  [<ffffffff810b3cb0>] ? prepare_to_wait_event+0x110/0x110
+[34165.540004]  [<ffffffffa0896884>] ?
+btrfs_wait_ordered_range+0xc4/0x120 [btrfs]
+[34165.540004]  [<ffffffffa08c0c18>] ?
+__btrfs_write_out_cache+0x378/0x470 [btrfs]
+[34165.540004]  [<ffffffffa08c104a>] ? btrfs_write_out_cache+0x9a/0x100 [btrfs]
+[34165.540004]  [<ffffffffa086af79>] ?
+btrfs_write_dirty_block_groups+0x159/0x560 [btrfs]
+[34165.540004]  [<ffffffffa08f2aa6>] ? commit_cowonly_roots+0x18d/0x2a4 [btrfs]
+[34165.540004]  [<ffffffffa087bd31>] ?
+btrfs_commit_transaction+0x521/0xa50 [btrfs]
+[34165.540004]  [<ffffffffa08a3fbe>] ? btrfs_create_uuid_tree+0x5e/0x110 [btrfs]
+[34165.540004]  [<ffffffffa087963f>] ? open_ctree+0x1dff/0x2200 [btrfs]
+[34165.540004]  [<ffffffffa084f7ce>] ? btrfs_mount+0x75e/0x8f0 [btrfs]
+[34165.540004]  [<ffffffff811ecbf9>] ? mount_fs+0x39/0x180
+[34165.540004]  [<ffffffff81192405>] ? __alloc_percpu+0x15/0x20
+[34165.540004]  [<ffffffff812082bb>] ? vfs_kern_mount+0x6b/0x120
+[34165.540004]  [<ffffffff8120afe4>] ? do_mount+0x204/0xb30
+[34165.540004]  [<ffffffff8120bc0b>] ? SyS_mount+0x8b/0xe0
+[34165.540004]  [<ffffffff817905ed>] ? system_call_fastpath+0x16/0x1b
+[34165.540004] Task dump for CPU 7:
+[34165.540004] kworker/u16:1   R  running task        0 14518      2 0x00000008
+[34165.540004] Workqueue: btrfs-freespace-write
+btrfs_freespace_write_helper [btrfs]
+[34165.540004]  0000000000000200 ffff8803eac6fdf8 ffffffffa08ac242
+ffff8803eac6fe48
+[34165.540004]  ffffffff8108b64f 00000000f1091400 0000000000000000
+ffff8803eca58000
+[34165.540004]  ffff8803ea9ed3c0 ffff8803f1091418 ffff8803f1091400
+ffff8803eca58000
+[34165.540004] Call Trace:
+[34165.540004]  [<ffffffffa08ac242>] ?
+btrfs_freespace_write_helper+0x12/0x20 [btrfs]
+[34165.540004]  [<ffffffff8108b64f>] ? process_one_work+0x14f/0x420
+[34165.540004]  [<ffffffff8108be08>] ? worker_thread+0x118/0x510
+[34165.540004]  [<ffffffff8108bcf0>] ? rescuer_thread+0x3d0/0x3d0
+[34165.540004]  [<ffffffff81091212>] ? kthread+0xd2/0xf0
+[34165.540004]  [<ffffffff81091140>] ? kthread_create_on_node+0x180/0x180
+[34165.540004]  [<ffffffff8179053c>] ? ret_from_fork+0x7c/0xb0
+[34165.540004]  [<ffffffff81091140>] ? kthread_create_on_node+0x180/0x180
 
 
+and one general (related to "native_flush_tlb_other":
 
-The filesystem is on 4 SCSI drives and encrypted using LUKS/dm-crypt.  
-Never had any issues before with the encryption, so I don't think that's 
-the issue.
+[34152.604004] NMI watchdog: BUG: soft lockup - CPU#6 stuck for 23s!
+[rs:main Q:Reg:490]
+[34152.604004] Modules linked in: btrfs(E) xor(E) radeon(E) ttm(E)
+drm_kms_helper(E) kvm(E) drm(E) raid6_pq(E) i2c_algo_bit(E) ipmi_si
+(E) amd64_edac_mod(E) serio_raw(E) hpilo(E) hpwdt(E) edac_core(E)
+shpchp(E) k8temp(E) mac_hid(E) edac_mce_amd(E) nfsd(E) auth_rpcgss(E
+) nfs_acl(E) nfs(E) lockd(E) grace(E) sunrpc(E) fscache(E) lp(E)
+parport(E) hpsa(E) pata_acpi(E) hid_generic(E) psmouse(E) usbhid(E) b
+nx2(E) cciss(E) hid(E) pata_amd(E)
+[34152.604004] CPU: 6 PID: 490 Comm: rs:main Q:Reg Tainted: G      D W
+  EL  4.0.0-rc1-custom #1
+[34152.604004] Hardware name: HP ProLiant DL585 G2   , BIOS A07 05/02/2011
+[34152.604004] task: ffff8803eecd9910 ti: ffff8803ecb30000 task.ti:
+ffff8803ecb30000
+[34152.604004] RIP: 0010:[<ffffffff810f1e3a>]  [<ffffffff810f1e3a>]
+smp_call_function_many+0x20a/0x270
+[34152.604004] RSP: 0018:ffff8803ecb33cf8  EFLAGS: 00000202
+[34152.604004] RAX: 0000000000000000 RBX: ffffffff81cdd140 RCX: ffff8803ffc19700
+[34152.604004] RDX: 0000000000000000 RSI: 0000000000000100 RDI: 0000000000000000
+[34152.604004] RBP: ffff8803ecb33d38 R08: ffff8803ffd961c8 R09: 0000000000000004
+[34152.604004] R10: 0000000000000004 R11: 0000000000000246 R12: 0000000000000000
+[34152.604004] R13: ffff880300000040 R14: ffff8803ecb33ca0 R15: ffff8803ecb33ca8
+[34152.604004] FS:  00007f9cf6dae700(0000) GS:ffff8803ffd80000(0000)
+knlGS:0000000000000000
+[34152.672920] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[34152.672920] CR2: 00007f9ce80091a8 CR3: 00000003e50fe000 CR4: 00000000000007e0
+[34152.672920] Stack:
+[34152.672920]  00000001ecb33de8 0000000000016180 00007f9cf0024fff
+ffff8803eb726900
+[34152.672920]  ffff8803eb726bd0 00007f9cf0025000 00007f9cf0021000
+0000000000000004
+[34152.672920]  ffff8803ecb33d68 ffffffff8106722e ffff8803ecb33d68
+ffff8803eb726900
+[34152.672920] Call Trace:
+[34152.672920]  [<ffffffff8106722e>] native_flush_tlb_others+0x2e/0x30
+[34152.672920]  [<ffffffff81067354>] flush_tlb_mm_range+0x64/0x170
+[34152.672920]  [<ffffffff8119e66e>] tlb_flush_mmu_tlbonly+0x7e/0xe0
+[34152.672920]  [<ffffffff8119eed4>] tlb_finish_mmu+0x14/0x50
+[34152.672920]  [<ffffffff811a0cea>] zap_page_range+0xca/0x100
+[34152.672920]  [<ffffffff811b3993>] SyS_madvise+0x363/0x790
+[34152.672920]  [<ffffffff817905ed>] system_call_fastpath+0x16/0x1b
+[34152.672920] Code: 9d 5c 2b 00 3b 05 7b b2 c2 00 89 c2 0f 8d 83 fe
+ff ff 48 98 49 8b 4d 00 48 03 0c c5 40 b1 d1 81 f6 41 18 01 74 cb
+ 0f 1f 00 f3 90 <f6> 41 18 01 75 f8 eb be 0f b6 4d c4 4c 89 fa 4c 89 f6 44 89 ef
 
-supernova ~ # btrfs fi df /backup/
-Data, RAID10: total=358.00GiB, used=357.84GiB
-System, RAID10: total=64.00MiB, used=80.00KiB
-Metadata, RAID10: total=1.00GiB, used=539.89MiB
-supernova ~ # btrfs fi show /backup/
-Label: 'secure'  uuid: 580defd3-c4d5-4ecc-b75b-852d26e81287
-         Total devices 4 FS bytes used 358.37GiB
-         devid    1 size 279.39GiB used 179.53GiB path /dev/mapper/1
-         devid    2 size 279.39GiB used 179.53GiB path /dev/mapper/2
-         devid    3 size 279.39GiB used 179.53GiB path /dev/mapper/3
-         devid    4 size 279.39GiB used 179.53GiB path /dev/mapper/4
+So I'm not totally sure if this is a btrfs problem, or something else
+got broken in 4.0.0-rc1.
 
-Btrfs v3.18.2
+Maybe someone can have a look.
 
-Any ideas to solve this?  What other information will help?
+If you need more information just let me know.
 
-Thanks,
-Rich
+Bye,
+   Marcel

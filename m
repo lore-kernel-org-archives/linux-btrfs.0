@@ -1,35 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46002 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754139AbbCBWDe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Mar 2015 17:03:34 -0500
-Message-ID: <54F4DE2F.3030200@fb.com>
-Date: Mon, 2 Mar 2015 17:03:27 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:42261 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752819AbbCCLDJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 06:03:09 -0500
+Date: Tue, 3 Mar 2015 19:02:58 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix ASSERT(list_empty(&cur_trans->dirty_bgs_list)
+Message-ID: <20150303110257.GA18292@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1425318415-322-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 7/7] btrfs: quota: Update quota tree after qgroup relationship
- change.
-References: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com> <1425025468-29749-8-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1425025468-29749-8-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1425318415-322-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/27/2015 03:24 AM, Qu Wenruo wrote:
-> Previous patch modified the in memory struct but it's not written in
-> quota tree until next commit.
-> So user will still get old data using "btrfs qgroup show" after
-> assign/remove.
->
-> This patch will call btrfs_run_qgroups in assign ioctl so it will be
-> updated to in memory quota trees and user will get up-to-date results.
->
+On Mon, Mar 02, 2015 at 12:46:55PM -0500, Josef Bacik wrote:
+> Dave could hit this assert consistently running btrfs/078.  This is because
+> when we update the block groups we could truncate the free space, which would
+> try to delete the csums for that range and dirty the csum root.  For this to
+> happen we have to have already written out the csum root so it's kind of hard to
+> hit this case.  This patch fixes this by changing the logic to only write the
+> dirty block groups if the dirty_cowonly_roots list is empty.  This will get us
+> the same effect as before since we add the extent root last, and will cover the
+> case that we dirty some other root again but not the extent root.  Thanks,
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Free space inode is NODATASUM, so its searching csum tree in
+__btrfs_free_extent() is really unnecessary, by skipping that, csum tree
+won't be inserted into dirty_cowonly_roots list again, so it also passed btrfs/078,
+at least on my box.
 
 Thanks,
 
-Josef
+-liubo
 
+> 
+> Reported-by: David Sterba <dsterba@suse.cz>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/transaction.c | 12 +++++++++---
+>  1 file changed, 9 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 038fcf6..a7a413f 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1023,16 +1023,22 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+>  	u64 old_root_bytenr;
+>  	u64 old_root_used;
+>  	struct btrfs_root *tree_root = root->fs_info->tree_root;
+> -	bool extent_root = (root->objectid == BTRFS_EXTENT_TREE_OBJECTID);
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+>  
+>  	old_root_used = btrfs_root_used(&root->root_item);
+>  	btrfs_write_dirty_block_groups(trans, root);
+>  
+>  	while (1) {
+>  		old_root_bytenr = btrfs_root_bytenr(&root->root_item);
+> +
+> +		/*
+> +		 * We can only break out if our root matches the root item and
+> +		 * we either have more roots to process or we have no more roots
+> +		 * to process and there are no empty bgs.
+> +		 */
+>  		if (old_root_bytenr == root->node->start &&
+>  		    old_root_used == btrfs_root_used(&root->root_item) &&
+> -		    (!extent_root ||
+> +		    (!list_empty(&fs_info->dirty_cowonly_roots) ||
+>  		     list_empty(&trans->transaction->dirty_bgs)))
+>  			break;
+>  
+> @@ -1044,7 +1050,7 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+>  			return ret;
+>  
+>  		old_root_used = btrfs_root_used(&root->root_item);
+> -		if (extent_root) {
+> +		if (list_empty(&fs_info->dirty_cowonly_roots)) {
+>  			ret = btrfs_write_dirty_block_groups(trans, root);
+>  			if (ret)
+>  				return ret;
+> -- 
+> 1.8.3.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

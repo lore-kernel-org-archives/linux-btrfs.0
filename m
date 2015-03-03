@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42261 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:42896 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752819AbbCCLDJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 06:03:09 -0500
-Date: Tue, 3 Mar 2015 19:02:58 +0800
+	with ESMTP id S1756409AbbCCLEO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 06:04:14 -0500
+Date: Tue, 3 Mar 2015 19:04:06 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Josef Bacik <jbacik@fb.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: fix ASSERT(list_empty(&cur_trans->dirty_bgs_list)
-Message-ID: <20150303110257.GA18292@localhost.localdomain>
+Message-ID: <20150303110406.GB18292@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1425318415-322-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -27,10 +27,7 @@ On Mon, Mar 02, 2015 at 12:46:55PM -0500, Josef Bacik wrote:
 > the same effect as before since we add the extent root last, and will cover the
 > case that we dirty some other root again but not the extent root.  Thanks,
 
-Free space inode is NODATASUM, so its searching csum tree in
-__btrfs_free_extent() is really unnecessary, by skipping that, csum tree
-won't be inserted into dirty_cowonly_roots list again, so it also passed btrfs/078,
-at least on my box.
+Btw, in the title, s/dirty_bgs_list/dirty_bgs/  ;-)
 
 Thanks,
 

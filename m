@@ -1,63 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-relay2.uniserve.net ([216.210.109.132]:60787 "EHLO
-	smtp-relay2.uniserve.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752799AbbCaPqq convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 11:46:46 -0400
-Message-ID: <20150331084645.20213yj2sck8yn39@webmail.uniserve.com>
-Date: Tue, 31 Mar 2015 08:46:45 -0700
-From: Dave Stevens <geek@uniserve.com>
-To: =?utf-8?b?QW5kcsOpLVNlYmFzdGlhbg==?= Liebe <andre@lianse.eu>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: the wiki?
-References: <20150330190020.32372vcndqt5ldbo@webmail.uniserve.com>
- <551A5F95.9050500@lianse.eu>
-In-Reply-To: <551A5F95.9050500@lianse.eu>
+Received: from mxf5.bahnhof.se ([213.80.101.29]:54439 "EHLO mxf5.bahnhof.se"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753642AbbCCL5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Mar 2015 06:57:45 -0500
+Received: from localhost (mxf5.local [127.0.0.1])
+	by mxf5-reinject (Postfix) with ESMTP id 6D2FF95CA7A
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Mar 2015 12:57:43 +0100 (CET)
+Received: from mxf5.bahnhof.se ([127.0.0.1])
+	by localhost (mxf5.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id BL0bj+cd0jCb for <linux-btrfs@vger.kernel.org>;
+	Tue,  3 Mar 2015 12:57:37 +0100 (CET)
+Received: from miria.naju.se (h-219-91.a163.priv.bahnhof.se [85.24.219.91])
+	by mxf5.bahnhof.se (Postfix) with ESMTP id 0692295CA72
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Mar 2015 12:57:36 +0100 (CET)
+Received: from sebban (helo=localhost)
+	by miria.naju.se with local-esmtp (Exim 4.80)
+	(envelope-from <sebth@naju.se>)
+	id 1YSlSC-0002yg-Gl
+	for linux-btrfs@vger.kernel.org; Tue, 03 Mar 2015 12:57:36 +0100
+Date: Tue, 3 Mar 2015 12:57:36 +0100 (CET)
+From: Sebastian Thorarensen <sebth@naju.se>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: btrfs-convert: Allow setting nodesize
+In-Reply-To: <2f1ccb99432d65ebd1500f685e53ec98bdc259e7.1425382454.git.sebth@naju.se>
+Message-ID: <alpine.DEB.2.02.1503031249060.3687@miria.naju.se>
+References: <2f1ccb99432d65ebd1500f685e53ec98bdc259e7.1425382454.git.sebth@naju.se>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8;
- DelSp="Yes";
- format="flowed"
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting André-Sebastian Liebe <andre@lianse.eu>:
-
-> Hi Dave,
->
-> you should forward your question directly to kernel.org webmaster
-> <webmaster@kernel.org>. They are using mediawiki in a multisite
-> environment for all kernel.org related wikis.
->
-> regards,
-> André
-
-Thanks!
-
-Dave
-
->
-> On 03/31/2015 04:00 AM, Dave Stevens wrote:
->> I've been reading the wiki to help sort out an issue and learn more
->> about RAID. I wanted to download it to my local drive to read offlibe
->> and that facility sseems to not be there. I checked the mediawiki
->> version in the source and it is an LTS version for which support ends
->> in two months. Are there plans to migrate the content to a newer vesion?
->>
->> Dave
->>
->>
->
->
-
-
+This patch passes `make test', and I have also tested the patched
+btrfs-convert on populated ext4 filesystems and reverting back again,
+without errors; but note that I have very little experience with ext2/3/4
+and btrfs, so there is a large possibility that I have missed something.
+I'm also a bit unsure if my implementation of `ext2_alloc_block_range' is
+the best way to find continuous blocks.
 
 -- 
-"As long as politics is the shadow cast on society by big business,
-the attenuation of the shadow will not change the substance."
-
--- John Dewey
-
-
-
-
+Sebastian Thorarensen

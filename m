@@ -1,305 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:40684 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752042AbbCCLPU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 06:15:20 -0500
+Received: from cn.fujitsu.com ([59.151.112.132]:14567 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754952AbbCCLRF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 06:17:05 -0500
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH] fstest: btrfs: add a test for quota number when deleting a subvol.
+Date: Tue, 3 Mar 2015 19:13:30 +0800
+Message-ID: <1425381210-13661-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <54EEB798.1070105@cn.fujitsu.com>
+References: <54EEB798.1070105@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20150303004104.GA30093@localhost.localdomain>
-References: <1424980377-8060-1-git-send-email-fdmanana@suse.com>
-	<1425200918-16739-1-git-send-email-fdmanana@suse.com>
-	<20150303004104.GA30093@localhost.localdomain>
-Date: Tue, 3 Mar 2015 11:15:17 +0000
-Message-ID: <CAL3q7H5eETLdSmvsdgazkND2oR+NrA3LPheZUjdQvg1ghayObg@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix data loss in the fast fsync path
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        stable@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 3, 2015 at 12:41 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Sun, Mar 01, 2015 at 09:08:38AM +0000, Filipe Manana wrote:
->> When using the fast file fsync code path we can miss the fact that new
->> writes happened since the last file fsync and therefore return without
->> waiting for the IO to finish and write the new extents to the fsync log.
->>
->> Here's an example scenario where the fsync will miss the fact that new
->> file data exists that wasn't yet durably persisted:
->>
->> 1. fs_info->last_trans_committed == N - 1 and current transaction is
->>    transaction N (fs_info->generation == N);
->>
->> 2. do a buffered write;
->>
->> 3. fsync our inode, this clears our inode's full sync flag, starts
->>    an ordered extent and waits for it to complete - when it completes
->>    at btrfs_finish_ordered_io(), the inode's last_trans is set to the
->>    value N (via btrfs_update_inode_fallback -> btrfs_update_inode ->
->>    btrfs_set_inode_last_trans);
->>
->> 4. transaction N is committed, so fs_info->last_trans_committed is now
->>    set to the value N and fs_info->generation remains with the value N;
->>
->> 5. do another buffered write, when this happens btrfs_file_write_iter
->>    sets our inode's last_trans to the value N + 1 (that is
->>    fs_info->generation + 1 == N + 1);
->>
->> 6. transaction N + 1 is started and fs_info->generation now has the
->>    value N + 1;
->>
->> 7. transaction N + 1 is committed, so fs_info->last_trans_committed
->>    is set to the value N + 1;
->>
->> 8. fsync our inode - because it doesn't have the full sync flag set,
->>    we only start the ordered extent, we don't wait for it to complete
->>    (only in a later phase) therefore its last_trans field has the
->>    value N + 1 set previously by btrfs_file_write_iter(), and so we
->>    have:
->>
->>        inode->last_trans <= fs_info->last_trans_committed
->>            (N + 1)              (N + 1)
->>
->>    Which made us not log the last buffered write and exit the fsync
->>    handler immediately, returning success (0) to user space and resulting
->>    in data loss after a crash.
->>
->> This can actually be triggered deterministically and the following excerpt
->> from a testcase I made for xfstests triggers the issue. It moves a dummy
->> file across directories and then fsyncs the old parent directory - this
->> is just to trigger a transaction commit, so moving files around isn't
->> directly related to the issue but it was chosen because running 'sync' for
->> example does more than just committing the current transaction, as it
->> flushes/waits for all file data to be persisted. The issue can also happen
->> at random periods, since the transaction kthread periodicaly commits the
->> current transaction (about every 30 seconds by default).
->> The body of the test is:
->>
->>   _scratch_mkfs >> $seqres.full 2>&1
->>   _init_flakey
->>   _mount_flakey
->>
->>   # Create our main test file 'foo', the one we check for data loss.
->>   # By doing an fsync against our file, it makes btrfs clear the 'needs_full_sync'
->>   # bit from its flags (btrfs inode specific flags).
->>   $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 8K" \
->>                   -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
->>
->>   # Now create one other file and 2 directories. We will move this second file
->>   # from one directory to the other later because it forces btrfs to commit its
->>   # currently open transaction if we fsync the old parent directory. This is
->>   # necessary to trigger the data loss bug that affected btrfs.
->>   mkdir $SCRATCH_MNT/testdir_1
->>   touch $SCRATCH_MNT/testdir_1/bar
->>   mkdir $SCRATCH_MNT/testdir_2
->>
->>   # Make sure everything is durably persisted.
->>   sync
->>
->>   # Write more 8Kb of data to our file.
->>   $XFS_IO_PROG -c "pwrite -S 0xbb 8K 8K" $SCRATCH_MNT/foo | _filter_xfs_io
->>
->>   # Move our 'bar' file into a new directory.
->>   mv $SCRATCH_MNT/testdir_1/bar $SCRATCH_MNT/testdir_2/bar
->>
->>   # Fsync our first directory. Because it had a file moved into some other
->>   # directory, this made btrfs commit the currently open transaction. This is
->>   # a condition necessary to trigger the data loss bug.
->>   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir_1
->>
->>   # Now fsync our main test file. If the fsync succeeds, we expect the 8Kb of
->>   # data we wrote previously to be persisted and available if a crash happens.
->>   # This did not happen with btrfs, because of the transaction commit that
->>   # happened when we fsynced the parent directory.
->>   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
->>
->>   # Simulate a crash/power loss.
->>   _load_flakey_table $FLAKEY_DROP_WRITES
->>   _unmount_flakey
->>
->>   _load_flakey_table $FLAKEY_ALLOW_WRITES
->>   _mount_flakey
->>
->>   # Now check that all data we wrote before are available.
->>   echo "File content after log replay:"
->>   od -t x1 $SCRATCH_MNT/foo
->>
->>   status=0
->>   exit
->>
->> The expected golden output for the test, which is what we get with this
->> fix applied (or when running against ext3/4 and xfs), is:
->>
->>   wrote 8192/8192 bytes at offset 0
->>   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->>   wrote 8192/8192 bytes at offset 8192
->>   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->>   File content after log replay:
->>   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->>   *
->>   0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
->>   *
->>   0040000
->>
->> Without this fix applied, the output shows the test file does not have
->> the second 8Kb extent that we successfully fsynced:
->>
->>   wrote 8192/8192 bytes at offset 0
->>   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->>   wrote 8192/8192 bytes at offset 8192
->>   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->>   File content after log replay:
->>   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->>   *
->>   0020000
->>
->> So fix this by skipping the fsync only if we're doing a full sync and
->> if the inode's last_trans is <= fs_info->last_trans_committed, or if
->> the inode is already in the log. Also remove setting the inode's
->> last_trans in btrfs_file_write_iter since it's useless/unreliable.
->>
->> A test case for xfstests will be sent soon.
->>
->> CC: <stable@vger.kernel.org>
->> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
->> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->> ---
->>
->> V2: Removed dead assignment of inode->last_trans in btrfs_file_write_iter
->>     (and the respective comment) since it's useless now. Added stable to
->>     cc because it's a data loss fix.
->>
->>  fs/btrfs/file.c | 45 ++++++++++++++++++++++++++++-----------------
->>  1 file changed, 28 insertions(+), 17 deletions(-)
->>
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index 2bd72cd..b7334c9 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -1811,22 +1811,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->>       mutex_unlock(&inode->i_mutex);
->>
->>       /*
->> -      * we want to make sure fsync finds this change
->> -      * but we haven't joined a transaction running right now.
->> -      *
->> -      * Later on, someone is sure to update the inode and get the
->> -      * real transid recorded.
->> -      *
->> -      * We set last_trans now to the fs_info generation + 1,
->> -      * this will either be one more than the running transaction
->> -      * or the generation used for the next transaction if there isn't
->> -      * one running right now.
->> -      *
->>        * We also have to set last_sub_trans to the current log transid,
->>        * otherwise subsequent syncs to a file that's been synced in this
->>        * transaction will appear to have already occured.
->>        */
->> -     BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
->
-> By thinking twice about it, how about setting ->last_trans with (-1ULL)?
->
-> So the benefit is that if new writes have already finished its endio where
-> calling btrfs_set_inode_last_trans() to set ->last_trans with a transid
-> at that age, we may get a win for skipping log part if someone else has
-> updated ->last_trans_committed.
->
-> By limiting it to 'full_sync' case we lose the above opportunity.
+This regression is introduced by two commits:
 
-That still won't work.
+e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
+1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
 
-Imagine the following the scenario:
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+---
+ tests/btrfs/084     | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/084.out |  3 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 88 insertions(+)
+ create mode 100755 tests/btrfs/084
+ create mode 100644 tests/btrfs/084.out
 
-1) do 2 buffered writes to 2 different ranges of the inode - the
-inode's last_trans is set to (u64)-1;
-
-2) writepages is called against the first range only (either the VM
-called it due to memory pressure or a ranged fsync like msync for
-example);
-
-3) the ordered extent started by the previous writepages calls
-completes and sets inode->last_trans to N (N == current transaction
-id/generation);
-
-4) transaction N commits;
-
-5) fsync the file (either whole range or a range covering only the
-second dirty range) - this will bail out since last_trans ==
-last_trans_committed, not logging the second dirty range.
-
-thanks
-
-
->
-> Thanks,
->
-> -liubo
->>       BTRFS_I(inode)->last_sub_trans = root->log_transid;
->>       if (num_written > 0) {
->>               err = generic_write_sync(file, pos, num_written);
->> @@ -1971,14 +1959,37 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
->>       }
->>
->>       /*
->> -      * if the last transaction that changed this file was before
->> -      * the current transaction, we can bail out now without any
->> -      * syncing
->> +      * If the last transaction that changed this file was before the current
->> +      * transaction and we have the full sync flag set in our inode, we can
->> +      * bail out now without any syncing.
->> +      *
->> +      * Note that we can't bail out if the full sync flag isn't set. This is
->> +      * because when the full sync flag is set we start all ordered extents
->> +      * and wait for them to fully complete - when they complete they update
->> +      * the inode's last_trans field through:
->> +      *
->> +      *     btrfs_finish_ordered_io() ->
->> +      *         btrfs_update_inode_fallback() ->
->> +      *             btrfs_update_inode() ->
->> +      *                 btrfs_set_inode_last_trans()
->> +      *
->> +      * So we are sure that last_trans is up to date and can do this check to
->> +      * bail out safely. For the fast path, when the full sync flag is not
->> +      * set in our inode, we can not do it because we start only our ordered
->> +      * extents and don't wait for them to complete (that is when
->> +      * btrfs_finish_ordered_io runs), so here at this point their last_trans
->> +      * value might be less than or equals to fs_info->last_trans_committed,
->> +      * and setting a speculative last_trans for an inode when a buffered
->> +      * write is made (such as fs_info->generation + 1 for example) would not
->> +      * be reliable since after setting the value and before fsync is called
->> +      * any number of transactions can start and commit (transaction kthread
->> +      * commits the current transaction periodically), and a transaction
->> +      * commit does not start nor waits for ordered extents to complete.
->>        */
->>       smp_mb();
->>       if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
->> -         BTRFS_I(inode)->last_trans <=
->> -         root->fs_info->last_trans_committed) {
->> +         (full_sync && BTRFS_I(inode)->last_trans <=
->> +          root->fs_info->last_trans_committed)) {
->>               BTRFS_I(inode)->last_trans = 0;
->>
->>               /*
->> --
->> 2.1.3
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/tests/btrfs/084 b/tests/btrfs/084
+new file mode 100755
+index 0000000..7b7c7ac
+--- /dev/null
++++ b/tests/btrfs/084
+@@ -0,0 +1,84 @@
++#! /bin/bash
++# FS QA Test No. 084
++#
++# This is a case for the regression introduced by
++#
++# e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
++# 1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mount
++
++$XFS_IO_PROG -f -d -c "pwrite 0 8K" $SCRATCH_MNT/foo 2>&1 > /dev/null
++
++_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++
++units=`_btrfs_qgroup_units`
++orig_result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
++
++_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
++
++_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++timeout=100
++# There is a background thread doing the clean work
++for ((i=0; i<$timeout; i++))
++do
++	result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
++	if (($orig_result != $result))
++	then
++		break
++	fi
++	sleep 1
++done
++
++$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG '/[0-9]/ {print $2" "$3}'
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/084.out b/tests/btrfs/084.out
+new file mode 100644
+index 0000000..7bf6dbf
+--- /dev/null
++++ b/tests/btrfs/084.out
+@@ -0,0 +1,3 @@
++QA output created by 084
++24576 24576
++0 0
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index fe82a9c..1be7392 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -86,3 +86,4 @@
+ 081 auto quick clone
+ 082 auto quick remount
+ 083 auto quick send
++084 qgroup
 -- 
-Filipe David Manana,
+1.8.4.2
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

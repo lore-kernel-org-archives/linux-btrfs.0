@@ -1,263 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24151 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753960AbbCCAl0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 19:41:26 -0500
-Date: Tue, 3 Mar 2015 08:41:05 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: fix data loss in the fast fsync path
-Message-ID: <20150303004104.GA30093@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1424980377-8060-1-git-send-email-fdmanana@suse.com>
- <1425200918-16739-1-git-send-email-fdmanana@suse.com>
+Received: from 162-144-52-249.unifiedlayer.com ([162.144.52.249]:54395 "EHLO
+	cl65.servermonkeys.com" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S1751690AbbCCDsF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2015 22:48:05 -0500
+Received: from [204.187.101.237] (port=60186 helo=zenith.richgannon.net)
+	by cl65.servermonkeys.com with esmtpa (Exim 4.85)
+	(envelope-from <rich@richgannon.net>)
+	id 1YScnd-0008Kt-I3
+	for linux-btrfs@vger.kernel.org; Tue, 03 Mar 2015 02:43:09 +0000
+Message-ID: <54F51FB8.5080704@richgannon.net>
+Date: Mon, 02 Mar 2015 21:43:04 -0500
+From: Rich Gannon <rich@richgannon.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1425200918-16739-1-git-send-email-fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: rsync causes kernel oops
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 01, 2015 at 09:08:38AM +0000, Filipe Manana wrote:
-> When using the fast file fsync code path we can miss the fact that new
-> writes happened since the last file fsync and therefore return without
-> waiting for the IO to finish and write the new extents to the fsync log.
-> 
-> Here's an example scenario where the fsync will miss the fact that new
-> file data exists that wasn't yet durably persisted:
-> 
-> 1. fs_info->last_trans_committed == N - 1 and current transaction is
->    transaction N (fs_info->generation == N);
-> 
-> 2. do a buffered write;
-> 
-> 3. fsync our inode, this clears our inode's full sync flag, starts
->    an ordered extent and waits for it to complete - when it completes
->    at btrfs_finish_ordered_io(), the inode's last_trans is set to the
->    value N (via btrfs_update_inode_fallback -> btrfs_update_inode ->
->    btrfs_set_inode_last_trans);
-> 
-> 4. transaction N is committed, so fs_info->last_trans_committed is now
->    set to the value N and fs_info->generation remains with the value N;
-> 
-> 5. do another buffered write, when this happens btrfs_file_write_iter
->    sets our inode's last_trans to the value N + 1 (that is
->    fs_info->generation + 1 == N + 1);
-> 
-> 6. transaction N + 1 is started and fs_info->generation now has the
->    value N + 1;
-> 
-> 7. transaction N + 1 is committed, so fs_info->last_trans_committed
->    is set to the value N + 1;
-> 
-> 8. fsync our inode - because it doesn't have the full sync flag set,
->    we only start the ordered extent, we don't wait for it to complete
->    (only in a later phase) therefore its last_trans field has the
->    value N + 1 set previously by btrfs_file_write_iter(), and so we
->    have:
-> 
->        inode->last_trans <= fs_info->last_trans_committed
->            (N + 1)              (N + 1)
-> 
->    Which made us not log the last buffered write and exit the fsync
->    handler immediately, returning success (0) to user space and resulting
->    in data loss after a crash.
-> 
-> This can actually be triggered deterministically and the following excerpt
-> from a testcase I made for xfstests triggers the issue. It moves a dummy
-> file across directories and then fsyncs the old parent directory - this
-> is just to trigger a transaction commit, so moving files around isn't
-> directly related to the issue but it was chosen because running 'sync' for
-> example does more than just committing the current transaction, as it
-> flushes/waits for all file data to be persisted. The issue can also happen
-> at random periods, since the transaction kthread periodicaly commits the
-> current transaction (about every 30 seconds by default).
-> The body of the test is:
-> 
->   _scratch_mkfs >> $seqres.full 2>&1
->   _init_flakey
->   _mount_flakey
-> 
->   # Create our main test file 'foo', the one we check for data loss.
->   # By doing an fsync against our file, it makes btrfs clear the 'needs_full_sync'
->   # bit from its flags (btrfs inode specific flags).
->   $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 8K" \
->                   -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Now create one other file and 2 directories. We will move this second file
->   # from one directory to the other later because it forces btrfs to commit its
->   # currently open transaction if we fsync the old parent directory. This is
->   # necessary to trigger the data loss bug that affected btrfs.
->   mkdir $SCRATCH_MNT/testdir_1
->   touch $SCRATCH_MNT/testdir_1/bar
->   mkdir $SCRATCH_MNT/testdir_2
-> 
->   # Make sure everything is durably persisted.
->   sync
-> 
->   # Write more 8Kb of data to our file.
->   $XFS_IO_PROG -c "pwrite -S 0xbb 8K 8K" $SCRATCH_MNT/foo | _filter_xfs_io
-> 
->   # Move our 'bar' file into a new directory.
->   mv $SCRATCH_MNT/testdir_1/bar $SCRATCH_MNT/testdir_2/bar
-> 
->   # Fsync our first directory. Because it had a file moved into some other
->   # directory, this made btrfs commit the currently open transaction. This is
->   # a condition necessary to trigger the data loss bug.
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir_1
-> 
->   # Now fsync our main test file. If the fsync succeeds, we expect the 8Kb of
->   # data we wrote previously to be persisted and available if a crash happens.
->   # This did not happen with btrfs, because of the transaction commit that
->   # happened when we fsynced the parent directory.
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-> 
->   # Simulate a crash/power loss.
->   _load_flakey_table $FLAKEY_DROP_WRITES
->   _unmount_flakey
-> 
->   _load_flakey_table $FLAKEY_ALLOW_WRITES
->   _mount_flakey
-> 
->   # Now check that all data we wrote before are available.
->   echo "File content after log replay:"
->   od -t x1 $SCRATCH_MNT/foo
-> 
->   status=0
->   exit
-> 
-> The expected golden output for the test, which is what we get with this
-> fix applied (or when running against ext3/4 and xfs), is:
-> 
->   wrote 8192/8192 bytes at offset 0
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   wrote 8192/8192 bytes at offset 8192
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   File content after log replay:
->   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->   *
->   0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
->   *
->   0040000
-> 
-> Without this fix applied, the output shows the test file does not have
-> the second 8Kb extent that we successfully fsynced:
-> 
->   wrote 8192/8192 bytes at offset 0
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   wrote 8192/8192 bytes at offset 8192
->   XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->   File content after log replay:
->   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
->   *
->   0020000
-> 
-> So fix this by skipping the fsync only if we're doing a full sync and
-> if the inode's last_trans is <= fs_info->last_trans_committed, or if
-> the inode is already in the log. Also remove setting the inode's
-> last_trans in btrfs_file_write_iter since it's useless/unreliable.
-> 
-> A test case for xfstests will be sent soon.
-> 
-> CC: <stable@vger.kernel.org>
-> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Removed dead assignment of inode->last_trans in btrfs_file_write_iter
->     (and the respective comment) since it's useless now. Added stable to
->     cc because it's a data loss fix.
-> 
->  fs/btrfs/file.c | 45 ++++++++++++++++++++++++++++-----------------
->  1 file changed, 28 insertions(+), 17 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 2bd72cd..b7334c9 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1811,22 +1811,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->  	mutex_unlock(&inode->i_mutex);
->  
->  	/*
-> -	 * we want to make sure fsync finds this change
-> -	 * but we haven't joined a transaction running right now.
-> -	 *
-> -	 * Later on, someone is sure to update the inode and get the
-> -	 * real transid recorded.
-> -	 *
-> -	 * We set last_trans now to the fs_info generation + 1,
-> -	 * this will either be one more than the running transaction
-> -	 * or the generation used for the next transaction if there isn't
-> -	 * one running right now.
-> -	 *
->  	 * We also have to set last_sub_trans to the current log transid,
->  	 * otherwise subsequent syncs to a file that's been synced in this
->  	 * transaction will appear to have already occured.
->  	 */
-> -	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
+This is on a Dell Poweredge 2650 with dual Xeons.  Running Gentoo x86.  
+Kernel 3.18.7 with GRSecurity patches (gentoo's hardened-sources).  
+btrfs-progs version 3.18.2
 
-By thinking twice about it, how about setting ->last_trans with (-1ULL)?
+I originally had the drives setup as raid5 with kernel 3.19 and no 
+GRSecurity patches (and tried 4.0-rc1)., but kept having these issues so 
+I balanced the system to raid10 and this did not help. That's when I 
+switched to 3.18.7 kernel as it's been running fine on all of my x86_64 
+Gentoo systems in various raid1, 5, and single arrays.
 
-So the benefit is that if new writes have already finished its endio where
-calling btrfs_set_inode_last_trans() to set ->last_trans with a transid
-at that age, we may get a win for skipping log part if someone else has
-updated ->last_trans_committed.
+This is the trace I get in dmesg whenever I try to run rsync from the 
+local server or remote server that touches any Btrfs filesystem:
 
-By limiting it to 'full_sync' case we lose the above opportunity.
+[  167.008334]  sdb: unknown partition table
+[  176.930717]  sdb: unknown partition table
+[  177.319257]  sdb: unknown partition table
+[  177.473818] BTRFS: device label secure devid 1 transid 7581 /dev/dm-0
+[  189.894615]  sdc: unknown partition table
+[  190.266313]  sdc: unknown partition table
+[  190.408711] BTRFS: device label secure devid 2 transid 7581 /dev/dm-1
+[  203.946583]  sdd: unknown partition table
+[  204.312035]  sdd: unknown partition table
+[  204.544243] BTRFS: device label secure devid 3 transid 7581 /dev/dm-2
+[  217.446332]  sde: unknown partition table
+[  227.263168]  sde: unknown partition table
+[  227.652513]  sde: unknown partition table
+[  227.836720] BTRFS: device label secure devid 4 transid 7581 /dev/dm-3
+[  247.868115] BTRFS info (device dm-3): enabling auto defrag
+[  247.868121] BTRFS info (device dm-3): disk space caching is enabled
+[  247.868123] BTRFS: has skinny extents
+[  319.495462] PAX: size overflow detected in function __do_readpage 
+fs/btrfs/extent_io.c:2967 cicus.740_242 max, count: 1
+[  319.495471] CPU: 0 PID: 3600 Comm: rsync Not tainted 
+3.18.7-hardened-r1 #1
+[  319.495473] Hardware name: Dell Computer Corporation PowerEdge 
+2650             /0D4921, BIOS A21 10/05/2006
+[  319.495476]  00001000 0046b116 c1ef799b 000ec30f c1ee6dd4 c1ef798d 
+c1ef78ee 00000b97
+[  319.495484]  c1ef799b 00001000 001e6dc9 c1ef799b 00000000 00001000 
+00000000 00000000
+[  319.495491]  0c000000 0000262b 00000000 ed905bac 00000000 00000000 
+00000000 f4eff168
+[  319.495499] Call Trace:
+[  319.495511]  [<0046b116>] ? dump_stack+0x3e/0x4e
+[  319.495518]  [<000ec30f>] ? report_size_overflow+0x29/0x33
+[  319.495524]  [<001e6dc9>] ? __do_readpage+0xa01/0xa08
+[  319.495530]  [<0000262b>] ? prot_inuse+0xcb/0x100
+[  319.495536]  [<00020001>] ? mce_chrdev_read+0x13d/0x46a
+[  319.495542]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  319.495546]  [<001e71bb>] ? __extent_readpages.constprop.45+0x302/0x31c
+[  319.495550]  [<001e8592>] ? extent_readpages+0x13a/0x14b
+[  319.495554]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  319.495558]  [<00637465>] ? 0x637465
+[  319.495562]  [<000200da>] ? mce_chrdev_read+0x216/0x46a
+[  319.495565]  [<00637465>] ? 0x637465
+[  319.495569]  [<001c4d80>] ? btrfs_readpages+0x20/0x25
+[  319.495572]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  319.495576]  [<001c4d60>] ? btrfs_set_page_dirty+0x5/0x5
+[  319.495582]  [<000b44dc>] ? __do_page_cache_readahead+0x172/0x1e7
+[  319.495586]  [<000b485c>] ? page_cache_sync_readahead+0x38/0x4e
+[  319.495590]  [<000ad119>] ? generic_file_read_iter+0x47b/0x6a8
+[  319.495595]  [<000caf66>] ? handle_mm_fault+0x44e/0xfb7
+[  319.495602]  [<00030357>] ? __do_page_fault+0x367/0x69e
+[  319.495607]  [<000e6cf9>] ? new_sync_read+0x6c/0x93
+[  319.495611]  [<000e6c8d>] ? do_sync_readv_writev+0x84/0x84
+[  319.495614]  [<000e777e>] ? vfs_read+0xe9/0x1b5
+[  319.495618]  [<0046f5ff>] ? restore_all_pax+0x7/0x7
+[  319.495622]  [<000e7e62>] ? SyS_read+0x41/0x81
+[  319.495625]  [<0046f5e4>] ? syscall_call+0x7/0x7
+[  319.495631]  [<0046007b>] ? rpc_kill_sb+0x61/0x67
+[  324.282761] PAX: size overflow detected in function __do_readpage 
+fs/btrfs/extent_io.c:2967 cicus.740_242 max, count: 1
+[  324.282769] CPU: 1 PID: 3632 Comm: rsync Not tainted 
+3.18.7-hardened-r1 #1
+[  324.282772] Hardware name: Dell Computer Corporation PowerEdge 
+2650             /0D4921, BIOS A21 10/05/2006
+[  324.282774]  00001000 0046b116 c1ef799b 000ec30f c1ee6dd4 c1ef798d 
+c1ef78ee 00000b97
+[  324.282782]  c1ef799b 00001000 001e6dc9 c1ef799b 00000000 00001000 
+00000000 00000000
+[  324.282789]  00000000 00000000 001e64d0 ed9816ac 00000000 00000000 
+00000000 f4fb1780
+[  324.282796] Call Trace:
+[  324.282810]  [<0046b116>] ? dump_stack+0x3e/0x4e
+[  324.282816]  [<000ec30f>] ? report_size_overflow+0x29/0x33
+[  324.282822]  [<001e6dc9>] ? __do_readpage+0xa01/0xa08
+[  324.282826]  [<001e64d0>] ? __do_readpage+0x108/0xa08
+[  324.282832]  [<00020001>] ? mce_chrdev_read+0x13d/0x46a
+[  324.282838]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  324.282844]  [<000be619>] ? __mod_zone_page_state+0x38/0x3c
+[  324.282848]  [<001e71bb>] ? __extent_readpages.constprop.45+0x302/0x31c
+[  324.282852]  [<001e8592>] ? extent_readpages+0x13a/0x14b
+[  324.282856]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  324.282861]  [<000041e0>] ? do_simd_coprocessor_error+0x3/0xa
+[  324.282866]  [<000ef9d8>] ? generic_permission+0xc8/0x186
+[  324.282871]  [<000fdb69>] ? __d_lookup+0x63/0x174
+[  324.282875]  [<001c4d80>] ? btrfs_readpages+0x20/0x25
+[  324.282878]  [<001c7edc>] ? btrfs_writepage_start_hook+0xb9/0xb9
+[  324.282882]  [<001c4d60>] ? btrfs_set_page_dirty+0x5/0x5
+[  324.282888]  [<000b44dc>] ? __do_page_cache_readahead+0x172/0x1e7
+[  324.282892]  [<000b485c>] ? page_cache_sync_readahead+0x38/0x4e
+[  324.282896]  [<000ad119>] ? generic_file_read_iter+0x47b/0x6a8
+[  324.282901]  [<00014d69>] ? x86_event_sysfs_show+0x12b/0x185
+[  324.282906]  [<000081a0>] ? quirk_intel_irqbalance+0x50/0xb1
+[  324.282911]  [<000e6cf9>] ? new_sync_read+0x6c/0x93
+[  324.282915]  [<000e6c8d>] ? do_sync_readv_writev+0x84/0x84
+[  324.282918]  [<000e777e>] ? vfs_read+0xe9/0x1b5
+[  324.282922]  [<000e7e62>] ? SyS_read+0x41/0x81
+[  324.282926]  [<0046f5e4>] ? syscall_call+0x7/0x7
+
+
+
+The filesystem is on 4 SCSI drives and encrypted using LUKS/dm-crypt.  
+Never had any issues before with the encryption, so I don't think that's 
+the issue.
+
+supernova ~ # btrfs fi df /backup/
+Data, RAID10: total=358.00GiB, used=357.84GiB
+System, RAID10: total=64.00MiB, used=80.00KiB
+Metadata, RAID10: total=1.00GiB, used=539.89MiB
+supernova ~ # btrfs fi show /backup/
+Label: 'secure'  uuid: 580defd3-c4d5-4ecc-b75b-852d26e81287
+         Total devices 4 FS bytes used 358.37GiB
+         devid    1 size 279.39GiB used 179.53GiB path /dev/mapper/1
+         devid    2 size 279.39GiB used 179.53GiB path /dev/mapper/2
+         devid    3 size 279.39GiB used 179.53GiB path /dev/mapper/3
+         devid    4 size 279.39GiB used 179.53GiB path /dev/mapper/4
+
+Btrfs v3.18.2
+
+Any ideas to solve this?  What other information will help?
 
 Thanks,
-
--liubo
->  	BTRFS_I(inode)->last_sub_trans = root->log_transid;
->  	if (num_written > 0) {
->  		err = generic_write_sync(file, pos, num_written);
-> @@ -1971,14 +1959,37 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
->  	}
->  
->  	/*
-> -	 * if the last transaction that changed this file was before
-> -	 * the current transaction, we can bail out now without any
-> -	 * syncing
-> +	 * If the last transaction that changed this file was before the current
-> +	 * transaction and we have the full sync flag set in our inode, we can
-> +	 * bail out now without any syncing.
-> +	 *
-> +	 * Note that we can't bail out if the full sync flag isn't set. This is
-> +	 * because when the full sync flag is set we start all ordered extents
-> +	 * and wait for them to fully complete - when they complete they update
-> +	 * the inode's last_trans field through:
-> +	 *
-> +	 *     btrfs_finish_ordered_io() ->
-> +	 *         btrfs_update_inode_fallback() ->
-> +	 *             btrfs_update_inode() ->
-> +	 *                 btrfs_set_inode_last_trans()
-> +	 *
-> +	 * So we are sure that last_trans is up to date and can do this check to
-> +	 * bail out safely. For the fast path, when the full sync flag is not
-> +	 * set in our inode, we can not do it because we start only our ordered
-> +	 * extents and don't wait for them to complete (that is when
-> +	 * btrfs_finish_ordered_io runs), so here at this point their last_trans
-> +	 * value might be less than or equals to fs_info->last_trans_committed,
-> +	 * and setting a speculative last_trans for an inode when a buffered
-> +	 * write is made (such as fs_info->generation + 1 for example) would not
-> +	 * be reliable since after setting the value and before fsync is called
-> +	 * any number of transactions can start and commit (transaction kthread
-> +	 * commits the current transaction periodically), and a transaction
-> +	 * commit does not start nor waits for ordered extents to complete.
->  	 */
->  	smp_mb();
->  	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
-> -	    BTRFS_I(inode)->last_trans <=
-> -	    root->fs_info->last_trans_committed) {
-> +	    (full_sync && BTRFS_I(inode)->last_trans <=
-> +	     root->fs_info->last_trans_committed)) {
->  		BTRFS_I(inode)->last_trans = 0;
->  
->  		/*
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Rich

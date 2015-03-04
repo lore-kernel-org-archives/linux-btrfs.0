@@ -1,48 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41389 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757114AbbCCUU6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Mar 2015 15:20:58 -0500
-Date: Tue, 3 Mar 2015 12:20:57 -0800
-From: Mark Fasheh <mfasheh@suse.de>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: qgroup: fix a wrong parameter of no_quota.
-Message-ID: <20150303202057.GU21790@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1423563845-9103-1-git-send-email-yangds.fnst@cn.fujitsu.com> <1423563845-9103-4-git-send-email-yangds.fnst@cn.fujitsu.com> <54DDC62D.4070206@cn.fujitsu.com> <54EEB798.1070105@cn.fujitsu.com> <54F5988C.4020905@cn.fujitsu.com> <54F5BE84.7090202@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:50200 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752805AbbCDBuj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 20:50:39 -0500
+Message-ID: <54F66418.3030102@cn.fujitsu.com>
+Date: Wed, 4 Mar 2015 09:47:04 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <54F5BE84.7090202@fb.com>
+To: Josef Bacik <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/4] Btrfs: qgroup: part-2: bug fixes for qgroup reservation.
+References: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 03, 2015 at 09:00:36AM -0500, Josef Bacik wrote:
-> On 03/03/2015 06:18 AM, Dongsheng Yang wrote:
->> On 02/26/2015 02:05 PM, Dongsheng Yang wrote:
->>> Wait a minute, this patch seems not working well in accounting quota
->>> number when
->>> deleting data shared by different subvolumes.
->>>
->>> I will investigate more about it and send a V2 out.
->> I have sent a fstest
->>   [PATCH] fstest: btrfs: add a test for quota number when deleting a
->> subvol.
->> for this problem I was trying to solve in this patch.
->>
->> Please consider reverting the two commits introduced the problem:
->>
->> e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
->> 1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
->>
+On 02/10/2015 06:23 PM, Dongsheng Yang wrote:
+> Hi all,
+> 	This is part2 for qgroup. It is based on
+> 	[PATCH 0/9] Btrfs: qgroup: part-1: bug fixes.
 >
-> We aren't reverting these two commits, what we had was worse before than it 
-> is now.  We need to figure out why this is resulting in problems and fix 
-> that rather than throwing out a whole bunch of work.  Thanks,
+> [1/4] is reviewed-by Josef.
+>
+> [2/4] - [4/4] are trying to solve a problem in qgroup reservation.
+> It would be weired I introduce a may_use in 2/4 and delete it in 4/4.
+>
+> Yes, I am glad to rebase and squash them, here I am keeping this history
+> of the problem for reviewing. I have explained the problem and sent the
+> [2/4] out. Josef give me a looks good at that time. But in the later, I
+> found another problem and solved it with [4/4]. So they are trying to
+> solve different problems at different timing. When the all patches are
+> reviewed by you guys, I am okey to squash them if you request.
 
-Agreed, reverting these would re-introduce far more problems than it would
-solve.
-	--Mark
+Hi, any comment on this patchset?
 
---
-Mark Fasheh
+Thanx
+>
+> Thanx.
+>
+> Dongsheng Yang (4):
+>    Btrfs: qgroup: free reserved in exceeding quota.
+>    Btrfs: qgroup: Introduce a may_use to account
+>      space_info->bytes_may_use.
+>    Btrfs: qgroup, Account data space in more proper timings.
+>    btrfs: qgroup: do a reservation in a higher level.
+>
+>   fs/btrfs/ctree.h       |  2 +-
+>   fs/btrfs/extent-tree.c | 25 +++++++++++--------------
+>   fs/btrfs/file.c        | 13 ++-----------
+>   fs/btrfs/inode.c       |  3 ++-
+>   fs/btrfs/qgroup.c      | 10 ++++------
+>   fs/btrfs/relocation.c  |  2 +-
+>   6 files changed, 21 insertions(+), 34 deletions(-)
+>
+

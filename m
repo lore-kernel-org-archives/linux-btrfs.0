@@ -1,57 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50200 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31825 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752805AbbCDBuj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 20:50:39 -0500
-Message-ID: <54F66418.3030102@cn.fujitsu.com>
-Date: Wed, 4 Mar 2015 09:47:04 +0800
+	with ESMTP id S1754484AbbCDBxT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Mar 2015 20:53:19 -0500
+Message-ID: <54F664B9.1090803@cn.fujitsu.com>
+Date: Wed, 4 Mar 2015 09:49:45 +0800
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fb.com>
 CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/4] Btrfs: qgroup: part-2: bug fixes for qgroup reservation.
-References: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <1423563828-9053-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Subject: Re: [RFC PATCH 0/7] Btrfs: qgroup: part-4: Add type to btrfs qgroup.
+References: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1423563862-9151-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/10/2015 06:23 PM, Dongsheng Yang wrote:
+On 02/10/2015 06:24 PM, Dongsheng Yang wrote:
 > Hi all,
-> 	This is part2 for qgroup. It is based on
-> 	[PATCH 0/9] Btrfs: qgroup: part-1: bug fixes.
+> 	This patchset is based on [Btrfs: qgroup: part-3: bug fixes.]
 >
-> [1/4] is reviewed-by Josef.
+> I am introducing a type to qgroup, then we can get the numbers what we
+> only care about.
 >
-> [2/4] - [4/4] are trying to solve a problem in qgroup reservation.
-> It would be weired I introduce a may_use in 2/4 and delete it in 4/4.
->
-> Yes, I am glad to rebase and squash them, here I am keeping this history
-> of the problem for reviewing. I have explained the problem and sent the
-> [2/4] out. Josef give me a looks good at that time. But in the later, I
-> found another problem and solved it with [4/4]. So they are trying to
-> solve different problems at different timing. When the all patches are
-> reviewed by you guys, I am okey to squash them if you request.
+> Easy way to get the code for testing:
+> 	btrfs: https://yangdongsheng@github.com/yangdongsheng/linux.git qgroup_type
+>    btrfs-progs: https://yangdongsheng@github.com/yangdongsheng/btrfs-progs.git qgroup_type
+> with the patches applied in this series, both in btrfs and btrfs-progs:
 
-Hi, any comment on this patchset?
+Any comment on this patchset?
+I think it's a good enhancement for qgroup.
 
 Thanx
 >
-> Thanx.
+> [root@atest-guest linux_btrfs]# mkfs.btrfs -O qgroup-type /dev/sdc -f
+> Btrfs v3.18-76-ga900a61
+> See http://btrfs.wiki.kernel.org for more information.
 >
-> Dongsheng Yang (4):
->    Btrfs: qgroup: free reserved in exceeding quota.
->    Btrfs: qgroup: Introduce a may_use to account
->      space_info->bytes_may_use.
->    Btrfs: qgroup, Account data space in more proper timings.
->    btrfs: qgroup: do a reservation in a higher level.
+> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+> Turning ON incompat feature 'skinny-metadata': reduced-size metadata extent refs
+> Turning ON incompat feature 'qgroup-type': create qgroup in different type
+> fs created label (null) on /dev/sdc
+> 	nodesize 16384 leafsize 16384 sectorsize 4096 size 10.00GiB
+> [root@atest-guest linux_btrfs]# mount /dev/sdc  /mnt/
+> [root@atest-guest linux_btrfs]# btrfs quota enable /mnt
+> [root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child type
+> --------         ----         ----     --------     -------- ------  ----- ----
+> 0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> [root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child type
+> --------         ----         ----     --------     -------- ------  ----- ----
+> 0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> 0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data <--- default type is mixed.
+> [root@atest-guest linux_btrfs]# btrfs sub create --qgroup-type data /mnt/sub1
+> Create subvolume '/mnt/sub1'
+> Set qgroup arguments:
+> 	qgroup type: data
+> [root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child type
+> --------         ----         ----     --------     -------- ------  ----- ----
+> 0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> 0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> 0/258           0.00B        0.00B        0.00B        0.00B ---     ---   data     	 <--- create a data qgroup
+> [root@atest-guest linux_btrfs]# btrfs qgroup limit -e 5M 0/258 /mnt
+> [root@atest-guest linux_btrfs]# btrfs qgroup show -prce /mnt
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child type
+> --------         ----         ----     --------     -------- ------  ----- ----
+> 0/5          16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> 0/257        16.00KiB     16.00KiB        0.00B        0.00B ---     ---   metadata,data
+> 0/258           0.00B        0.00B        0.00B      5.00MiB ---     ---   data
+> [root@atest-guest linux_btrfs]# dd if=/dev/zero of=/mnt/sub1/data bs=1024
+> dd: error writing \u2018/mnt/sub1/data\u2019: Disk quota exceeded
+> 5121+0 records in
+> 5120+0 records out
+> 5242880 bytes (5.2 MB) copied, 0.0218646 s, 240 MB/s
+> [root@atest-guest linux_btrfs]# sync
+> [root@atest-guest linux_btrfs]# ll /mnt/sub1/data
+> -rw-r--r--. 1 root root 5242880 Feb 10 16:17 /mnt/sub1/data
+> [root@atest-guest linux_btrfs]# btrfs qgroup show -prce --raw /mnt
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child type
+> --------         ----         ----     --------     -------- ------  ----- ----
+> 0/5             16384        16384            0            0 ---     ---   metadata,data
+> 0/257           16384        16384            0            0 ---     ---   metadata,data
+> 0/258         5242880      5242880            0      5242880 ---     ---   data   	<--- excl == max_excl == data_size == 5M == 5242880
 >
->   fs/btrfs/ctree.h       |  2 +-
->   fs/btrfs/extent-tree.c | 25 +++++++++++--------------
->   fs/btrfs/file.c        | 13 ++-----------
->   fs/btrfs/inode.c       |  3 ++-
->   fs/btrfs/qgroup.c      | 10 ++++------
->   fs/btrfs/relocation.c  |  2 +-
->   6 files changed, 21 insertions(+), 34 deletions(-)
+> Dongsheng Yang (7):
+>    Btrfs: qgroup: Add type to btrfs_qgroup.
+>    btrfs: qgroup: apply type to the recording and accounting.
+>    btrfs: qgroup: Apply type to btrfs_qgroup_inherit().
+>    btrfs: qgroup: Apply qgroup type to qgroup creating.
+>    btrfs: qgroup: Apply qgroup type to subvol creating.
+>    btrfs: qgroup: apply type to quota rescan.
+>    btrfs: qgroup: fix a bug when type of parent is different with
+>      child's.
+>
+>   fs/btrfs/ctree.h              |  10 ++-
+>   fs/btrfs/extent-tree.c        |  48 ++++++-----
+>   fs/btrfs/ioctl.c              |  49 ++++++++---
+>   fs/btrfs/qgroup.c             | 186 ++++++++++++++++++++++++++++--------------
+>   fs/btrfs/qgroup.h             |  29 ++++++-
+>   fs/btrfs/tests/qgroup-tests.c |  19 +++--
+>   fs/btrfs/transaction.c        |  13 +--
+>   include/uapi/linux/btrfs.h    |   1 +
+>   8 files changed, 246 insertions(+), 109 deletions(-)
 >
 

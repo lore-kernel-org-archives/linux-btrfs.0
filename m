@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:45876 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932668AbbCDSm1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Mar 2015 13:42:27 -0500
+	with ESMTP id S932647AbbCDSmZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Mar 2015 13:42:25 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t24IfWi0016424
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Mar 2015 02:41:32 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t24IfUxC016414
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Mar 2015 02:41:30 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 6/6] btrfs: Remove unused err = 0 line for raid_rmw_end_io()
-Date: Thu, 5 Mar 2015 02:41:12 +0800
-Message-ID: <b06c3a67e588c422ed49024c1a10a42c5a917b5b.1425494151.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 3/6] btrfs: use rbio->nr_pages to reduce calculation
+Date: Thu, 5 Mar 2015 02:41:09 +0800
+Message-ID: <5db9b6000de9f8aebf8a1abfe87cf35d358dcf9b.1425494151.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <86557aad51883ada25ace853f10d1474e8db048e.1425494151.git.zhaolei@cn.fujitsu.com>
 References: <86557aad51883ada25ace853f10d1474e8db048e.1425494151.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -21,23 +21,121 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
+We can use rbio->stripe_npages to reduce unnecessary calculation in
+many code place.
+
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/raid56.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/raid56.c | 19 +++++++------------
+ 1 file changed, 7 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 2285e78..c087870 100644
+index 645bc37..0d902ac 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1464,7 +1464,6 @@ static void raid_rmw_end_io(struct bio *bio, int err)
- 	if (!atomic_dec_and_test(&rbio->stripes_pending))
- 		return;
+@@ -1172,7 +1172,6 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ {
+ 	struct btrfs_bio *bbio = rbio->bbio;
+ 	void *pointers[rbio->real_stripes];
+-	int stripe_len = rbio->stripe_len;
+ 	int nr_data = rbio->nr_data;
+ 	int stripe;
+ 	int pagenr;
+@@ -1180,7 +1179,6 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 	int q_stripe = -1;
+ 	struct bio_list bio_list;
+ 	struct bio *bio;
+-	int pages_per_stripe = stripe_len >> PAGE_CACHE_SHIFT;
+ 	int ret;
  
--	err = 0;
- 	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
- 		goto cleanup;
+ 	bio_list_init(&bio_list);
+@@ -1223,7 +1221,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 	else
+ 		clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
  
+-	for (pagenr = 0; pagenr < pages_per_stripe; pagenr++) {
++	for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 		struct page *p;
+ 		/* first collect one page from each data stripe */
+ 		for (stripe = 0; stripe < nr_data; stripe++) {
+@@ -1265,7 +1263,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 	 * everything else.
+ 	 */
+ 	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
+-		for (pagenr = 0; pagenr < pages_per_stripe; pagenr++) {
++		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 			struct page *page;
+ 			if (stripe < rbio->nr_data) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 1);
+@@ -1289,7 +1287,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 		if (!bbio->tgtdev_map[stripe])
+ 			continue;
+ 
+-		for (pagenr = 0; pagenr < pages_per_stripe; pagenr++) {
++		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 			struct page *page;
+ 			if (stripe < rbio->nr_data) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 1);
+@@ -1505,7 +1503,6 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ 	int bios_to_read = 0;
+ 	struct bio_list bio_list;
+ 	int ret;
+-	int nr_pages = DIV_ROUND_UP(rbio->stripe_len, PAGE_CACHE_SIZE);
+ 	int pagenr;
+ 	int stripe;
+ 	struct bio *bio;
+@@ -1524,7 +1521,7 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ 	 * stripe
+ 	 */
+ 	for (stripe = 0; stripe < rbio->nr_data; stripe++) {
+-		for (pagenr = 0; pagenr < nr_pages; pagenr++) {
++		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 			struct page *page;
+ 			/*
+ 			 * we want to find all the pages missing from
+@@ -1801,7 +1798,6 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 	int pagenr, stripe;
+ 	void **pointers;
+ 	int faila = -1, failb = -1;
+-	int nr_pages = DIV_ROUND_UP(rbio->stripe_len, PAGE_CACHE_SIZE);
+ 	struct page *page;
+ 	int err;
+ 	int i;
+@@ -1824,7 +1820,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 
+ 	index_rbio_pages(rbio);
+ 
+-	for (pagenr = 0; pagenr < nr_pages; pagenr++) {
++	for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 		/*
+ 		 * Now we just use bitmap to mark the horizontal stripes in
+ 		 * which we have data when doing parity scrub.
+@@ -1934,7 +1930,7 @@ pstripe:
+ 		 * other endio functions will fiddle the uptodate bits
+ 		 */
+ 		if (rbio->operation == BTRFS_RBIO_WRITE) {
+-			for (i = 0;  i < nr_pages; i++) {
++			for (i = 0;  i < rbio->stripe_npages; i++) {
+ 				if (faila != -1) {
+ 					page = rbio_stripe_page(rbio, faila, i);
+ 					SetPageUptodate(page);
+@@ -2027,7 +2023,6 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	int bios_to_read = 0;
+ 	struct bio_list bio_list;
+ 	int ret;
+-	int nr_pages = DIV_ROUND_UP(rbio->stripe_len, PAGE_CACHE_SIZE);
+ 	int pagenr;
+ 	int stripe;
+ 	struct bio *bio;
+@@ -2051,7 +2046,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 			continue;
+ 		}
+ 
+-		for (pagenr = 0; pagenr < nr_pages; pagenr++) {
++		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+ 			struct page *p;
+ 
+ 			/*
 -- 
 1.8.5.1
 

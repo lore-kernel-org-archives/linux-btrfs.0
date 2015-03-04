@@ -1,105 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:40183 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932666AbbCDSm0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Mar 2015 13:42:26 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t24IfWNf016421
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Mar 2015 02:41:32 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 5/6] btrfs: Use raid_write_end_io for scrub
-Date: Thu, 5 Mar 2015 02:41:11 +0800
-Message-ID: <43e89ebcab7349a011fa24474695ee6720813410.1425494151.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <86557aad51883ada25ace853f10d1474e8db048e.1425494151.git.zhaolei@cn.fujitsu.com>
-References: <86557aad51883ada25ace853f10d1474e8db048e.1425494151.git.zhaolei@cn.fujitsu.com>
+Received: from 162-144-52-249.unifiedlayer.com ([162.144.52.249]:37292 "EHLO
+	cl65.servermonkeys.com" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S1750750AbbCDUyP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Mar 2015 15:54:15 -0500
+Message-ID: <54F770F3.30909@richgannon.net>
+Date: Wed, 04 Mar 2015 15:54:11 -0500
+From: Rich Gannon <rich@richgannon.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: bo.li.liu@oracle.com
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: rsync causes kernel oops
+References: <4rlpa6pkab6a7pjvpdi76xrl.1425364136955@email.android.com> <20150303064437.GD30093@localhost.localdomain>
+In-Reply-To: <20150303064437.GD30093@localhost.localdomain>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+Liu,
 
-No need to create additional end_io function for scrub, it can use
-existing raid_write_end_io() instead.
+I was able to use 3.18.1 to compile the revised 3.18.8 kernel with 
+GRSecurity and your patch.
 
-This patch also fixed some wrong comments.
+I ran "emerge --sync" and it immediately returned "Killed".
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/raid56.c | 36 ++++++++----------------------------
- 1 file changed, 8 insertions(+), 28 deletions(-)
+Here's a link to the full dmesg output:
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 0a40d07..2285e78 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -897,6 +897,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, int err, int uptodate)
- static void raid_write_end_io(struct bio *bio, int err)
- {
- 	struct btrfs_raid_bio *rbio = bio->bi_private;
-+	int max_errors;
- 
- 	if (err)
- 		fail_bio_stripe(rbio, bio);
-@@ -906,10 +907,13 @@ static void raid_write_end_io(struct bio *bio, int err)
- 	if (!atomic_dec_and_test(&rbio->stripes_pending))
- 		return;
- 
--	err = 0;
-+	/* OK, we have wrote all the stripes we need to. */
-+	if (rbio->operation == BTRFS_RBIO_PARITY_SCRUB)
-+		max_errors = 0;
-+	else
-+		max_errors = rbio->bbio->max_errors;
- 
--	/* OK, we have read all the stripes we need to. */
--	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
-+	if (atomic_read(&rbio->error) > max_errors)
- 		err = -EIO;
- 
- 	rbio_orig_end_io(rbio, err, 0);
-@@ -2276,30 +2280,6 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
- 	return 0;
- }
- 
--/*
-- * end io function used by finish_rmw.  When we finally
-- * get here, we've written a full stripe
-- */
--static void raid_write_parity_end_io(struct bio *bio, int err)
--{
--	struct btrfs_raid_bio *rbio = bio->bi_private;
--
--	if (err)
--		fail_bio_stripe(rbio, bio);
--
--	bio_put(bio);
--
--	if (!atomic_dec_and_test(&rbio->stripes_pending))
--		return;
--
--	err = 0;
--
--	if (atomic_read(&rbio->error))
--		err = -EIO;
--
--	rbio_orig_end_io(rbio, err, 0);
--}
--
- static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 					 int need_check)
- {
-@@ -2452,7 +2432,7 @@ submit_write:
- 			break;
- 
- 		bio->bi_private = rbio;
--		bio->bi_end_io = raid_write_parity_end_io;
-+		bio->bi_end_io = raid_write_end_io;
- 		BUG_ON(!test_bit(BIO_UPTODATE, &bio->bi_flags));
- 		submit_bio(WRITE, bio);
- 	}
--- 
-1.8.5.1
+http://richgannon.net/btrfs.dmesg.txt
+
+Again, this may be unrelated completely to the RAID-10 filesystem as the 
+filesystem that emerge should be using (/usr/portage) is on a seperate 
+Btrfs filesystem on a separate partition.
+
+Rich
+
+On 03/03/2015 01:44 AM, Liu Bo wrote:
+> On Tue, Mar 03, 2015 at 01:28:56AM -0500, Rich Gannon wrote:
+>>      
+>>
+>> I should also mention that this is repeatable 100% of the time on this server (only 32-bit box I have) and once the trace pops up in dmesg, the filesystem will not unmount. It just hangs any process trying to unmount it. I can not even reboot/shutdown gracefully.
+> Could you please try this and post the dmesg log if you can compile your own kernel?
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 29850d4..148def3 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2964,6 +2964,9 @@ static int __do_readpage(struct extent_io_tree
+> *tree,
+>   			memset(userpage + pg_offset, 0, iosize);
+>   			flush_dcache_page(page);
+>   			kunmap_atomic(userpage);
+> +
+> +			printk(KERN_ERR "FINDING MEEEEEEEE! cur=%llu iosize=%d sum=%llu end=%llu last_byte=%llu\n", cur, (int)iosize, (cur+iosize-1), end, last_byte);
+> +
+>   			set_extent_uptodate(tree, cur, cur + iosize - 1,
+>   					    &cached, GFP_NOFS);
+>   			if (!parent_locked)
+>
+> Thanks,
+>
+> -liubo
 

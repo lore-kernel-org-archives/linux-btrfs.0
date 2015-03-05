@@ -1,103 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46518 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753486AbbCEKGn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Mar 2015 05:06:43 -0500
-Date: Thu, 5 Mar 2015 18:06:34 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from mail-pa0-f47.google.com ([209.85.220.47]:44873 "EHLO
+	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932247AbbCEKPC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Mar 2015 05:15:02 -0500
+Received: by padet14 with SMTP id et14so17516805pad.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Mar 2015 02:15:02 -0800 (PST)
+Date: Thu, 5 Mar 2015 18:13:54 +0800
+From: Eryu Guan <guaneryu@gmail.com>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: rsync vs. extent-same:  this time with lock debugging (still
- v3.18.8)
-Message-ID: <20150305100633.GC4147@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20150305025628.GA1593@hungrycats.org>
+Subject: Re: btrfs oops while mounting fuzzed btrfs image
+Message-ID: <20150305101354.GC17015@dhcp-13-216.nay.redhat.com>
+References: <20150305070933.GB17015@dhcp-13-216.nay.redhat.com>
+ <20150305094611.GA4147@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150305025628.GA1593@hungrycats.org>
+In-Reply-To: <20150305094611.GA4147@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 04, 2015 at 09:56:28PM -0500, Zygo Blaxell wrote:
-> rsync seems to get stuck just by reading the same file that extent-same is
-> acting upon.
+On Thu, Mar 05, 2015 at 05:46:12PM +0800, Liu Bo wrote:
+> On Thu, Mar 05, 2015 at 03:09:33PM +0800, Eryu Guan wrote:
+> > Hi,
+> > 
+> > I was testing btrfs with fsfuzzer and encountered a divide error on
+> > mount, kernel version 3.19 and 4.0-rc1.
+> > 
+> > I found a similar bug on kernel bugzilla
+> > 
+> > https://bugzilla.kernel.org/show_bug.cgi?id=88611
+> > 
+> > Please find the fuzzed btrfs image in the buzilla, and the following
+> > command will reproduce:
+> > 
+> > mount -o loop btrfs.img /mnt/btrfs
+> 
+> A divide by 0 oops.
+> 
+> My printk shows that a raid56 chunk has a negative map->length, so we need to find out
+> how fsfuzzer made that.  Can you share your script so that we can
+> reproduce the oops?
 
-Better to give the whole output of dmesg and 'echo w > /proc/sysrq-trigger', we're unable to tell what blocks lock_extent() from the below log messages.
+You can download fsfuzzer from here:
+
+http://people.redhat.com/sgrubb/files/fsfuzzer-0.7.tar.gz
+
+What it does is simply writing random garbage to the first 10% of the
+fs image. You can take a look at fsfuzz and mangle.c
 
 Thanks,
-
--liubo
-
+Eryu
 > 
-> Mar  4 21:35:08 sneezy kernel: [89798.758960] INFO: task rsync:7425 blocked for more than 1800 seconds.
-> Mar  4 21:35:08 sneezy kernel: [89798.759007]       Tainted: G        W      3.18.8-zb64+ #1
-> Mar  4 21:35:08 sneezy kernel: [89798.759048] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Mar  4 21:35:08 sneezy kernel: [89798.759121] rsync           D 0000000000000000     0  7425   7423 0x00000000
-> Mar  4 21:35:08 sneezy kernel: [89798.759129]  ffff88005afaf988 0000000000000096 0000000000000286 ffff8800036c1000
-> Mar  4 21:35:08 sneezy kernel: [89798.759135]  00000000001e0880 ffffffff81e452d0 ffff88005afaffd8 00000000001e0880
-> Mar  4 21:35:08 sneezy kernel: [89798.759141]  ffff88024dac9000 ffff8800036c1000 ffff88005afaf8b8 0000000000000000
-> Mar  4 21:35:08 sneezy kernel: [89798.759147] Call Trace:
-> Mar  4 21:35:08 sneezy kernel: [89798.759158]  [<ffffffff810211fd>] ? native_sched_clock+0x2d/0xb0
-> Mar  4 21:35:08 sneezy kernel: [89798.759164]  [<ffffffff810c61fe>] ? put_lock_stats.isra.18+0xe/0x30
-> Mar  4 21:35:08 sneezy kernel: [89798.759170]  [<ffffffff810c638d>] ? lock_release_holdtime.part.19+0x16d/0x220
-> Mar  4 21:35:08 sneezy kernel: [89798.759176]  [<ffffffff813bb208>] ? lock_extent_bits+0x1a8/0x200
-> Mar  4 21:35:08 sneezy kernel: [89798.759182]  [<ffffffff818b1989>] schedule+0x29/0x70
-> Mar  4 21:35:08 sneezy kernel: [89798.759187]  [<ffffffff813bb20d>] lock_extent_bits+0x1ad/0x200
-> Mar  4 21:35:08 sneezy kernel: [89798.759192]  [<ffffffff810bd940>] ? __wake_up_sync+0x20/0x20
-> Mar  4 21:35:08 sneezy kernel: [89798.759197]  [<ffffffff813bb273>] lock_extent+0x13/0x20
-> Mar  4 21:35:08 sneezy kernel: [89798.759202]  [<ffffffff813be1ec>] __extent_readpages.constprop.37+0x21c/0x2c0
-> Mar  4 21:35:08 sneezy kernel: [89798.759208]  [<ffffffff813a0fe0>] ? btrfs_direct_IO+0x360/0x360
-> Mar  4 21:35:08 sneezy kernel: [89798.759213]  [<ffffffff813bf619>] extent_readpages+0x179/0x1c0
-> Mar  4 21:35:08 sneezy kernel: [89798.759217]  [<ffffffff813a0fe0>] ? btrfs_direct_IO+0x360/0x360
-> Mar  4 21:35:08 sneezy kernel: [89798.759224]  [<ffffffff8139f57f>] btrfs_readpages+0x1f/0x30
-> Mar  4 21:35:08 sneezy kernel: [89798.759229]  [<ffffffff811aa0e7>] __do_page_cache_readahead+0x207/0x2a0
-> Mar  4 21:35:08 sneezy kernel: [89798.759233]  [<ffffffff811a9fb0>] ? __do_page_cache_readahead+0xd0/0x2a0
-> Mar  4 21:35:08 sneezy kernel: [89798.759239]  [<ffffffff811aa262>] ondemand_readahead+0xe2/0x320
-> Mar  4 21:35:08 sneezy kernel: [89798.759243]  [<ffffffff811aa300>] ? ondemand_readahead+0x180/0x320
-> Mar  4 21:35:08 sneezy kernel: [89798.759248]  [<ffffffff811aa5d1>] page_cache_sync_readahead+0x31/0x50
-> Mar  4 21:35:08 sneezy kernel: [89798.759253]  [<ffffffff8119d3fc>] generic_file_read_iter+0x50c/0x620
-> Mar  4 21:35:08 sneezy kernel: [89798.759259]  [<ffffffff818b7d71>] ? _raw_spin_unlock_irq+0x41/0x70
-> Mar  4 21:35:08 sneezy kernel: [89798.759264]  [<ffffffff81219c1e>] new_sync_read+0x7e/0xb0
-> Mar  4 21:35:08 sneezy kernel: [89798.759270]  [<ffffffff8121a3d7>] vfs_read+0x97/0x180
-> Mar  4 21:35:08 sneezy kernel: [89798.759275]  [<ffffffff8121afbd>] SyS_read+0x4d/0xc0
-> Mar  4 21:35:08 sneezy kernel: [89798.759280]  [<ffffffff818b8c2d>] system_call_fastpath+0x16/0x1b
-> Mar  4 21:35:08 sneezy kernel: [89798.759284] no locks held by rsync/7425.
-> Mar  4 21:35:08 sneezy kernel: [89798.759290] INFO: task btrsame:23612 blocked for more than 1800 seconds.
-> Mar  4 21:35:08 sneezy kernel: [89798.759329]       Tainted: G        W      3.18.8-zb64+ #1
-> Mar  4 21:35:08 sneezy kernel: [89798.759367] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Mar  4 21:35:08 sneezy kernel: [89798.759437] btrsame         D 0000000000000000     0 23612  27339 0x00000000
-> Mar  4 21:35:08 sneezy kernel: [89798.759443]  ffff880003c2bc18 0000000000000096 ffffffff82927070 ffff88000a881000
-> Mar  4 21:35:08 sneezy kernel: [89798.759449]  00000000001e0880 00000000ffffffff ffff880003c2bfd8 00000000001e0880
-> Mar  4 21:35:08 sneezy kernel: [89798.759455]  ffff880014765000 ffff88000a881000 ffff880003c2bb58 ffffffff810a6621
-> Mar  4 21:35:08 sneezy kernel: [89798.759461] Call Trace:
-> Mar  4 21:35:08 sneezy kernel: [89798.759467]  [<ffffffff810a6621>] ? preempt_count_sub+0x51/0x60
-> Mar  4 21:35:08 sneezy kernel: [89798.759471]  [<ffffffff818b2390>] ? bit_wait+0x60/0x60
-> Mar  4 21:35:08 sneezy kernel: [89798.759475]  [<ffffffff810c90a9>] ? mark_held_locks+0x79/0xb0
-> Mar  4 21:35:08 sneezy kernel: [89798.759481]  [<ffffffff81102c1d>] ? ktime_get+0x10d/0x150
-> Mar  4 21:35:08 sneezy kernel: [89798.759486]  [<ffffffff81020bf9>] ? read_tsc+0x9/0x10
-> Mar  4 21:35:08 sneezy kernel: [89798.759490]  [<ffffffff81102bbc>] ? ktime_get+0xac/0x150
-> Mar  4 21:35:08 sneezy kernel: [89798.759496]  [<ffffffff8114e713>] ? __delayacct_blkio_start+0x23/0x30
-> Mar  4 21:35:08 sneezy kernel: [89798.759500]  [<ffffffff818b2390>] ? bit_wait+0x60/0x60
-> Mar  4 21:35:08 sneezy kernel: [89798.759504]  [<ffffffff818b1989>] schedule+0x29/0x70
-> Mar  4 21:35:08 sneezy kernel: [89798.759508]  [<ffffffff818b1cb8>] io_schedule+0x98/0x100
-> Mar  4 21:35:08 sneezy kernel: [89798.759512]  [<ffffffff818b23c4>] bit_wait_io+0x34/0x60
-> Mar  4 21:35:08 sneezy kernel: [89798.759517]  [<ffffffff818b224b>] __wait_on_bit_lock+0x4b/0xb0
-> Mar  4 21:35:08 sneezy kernel: [89798.759521]  [<ffffffff8119b791>] ? find_get_entry+0x81/0xe0
-> Mar  4 21:35:08 sneezy kernel: [89798.759526]  [<ffffffff8119b586>] __lock_page+0xa6/0xb0
-> Mar  4 21:35:08 sneezy kernel: [89798.759530]  [<ffffffff810bd980>] ? autoremove_wake_function+0x40/0x40
-> Mar  4 21:35:08 sneezy kernel: [89798.759535]  [<ffffffff8119c0e8>] pagecache_get_page+0x168/0x1a0
-> Mar  4 21:35:08 sneezy kernel: [89798.759540]  [<ffffffff813d0d4d>] extent_same_get_page+0x2d/0xc0
-> Mar  4 21:35:08 sneezy kernel: [89798.759545]  [<ffffffff813d7e79>] btrfs_ioctl+0x2729/0x2930
-> Mar  4 21:35:08 sneezy kernel: [89798.759550]  [<ffffffff810c61fe>] ? put_lock_stats.isra.18+0xe/0x30
-> Mar  4 21:35:08 sneezy kernel: [89798.759556]  [<ffffffff811c9d2e>] ? might_fault+0x5e/0xc0
-> Mar  4 21:35:08 sneezy kernel: [89798.759562]  [<ffffffff8122e940>] do_vfs_ioctl+0x2f0/0x510
-> Mar  4 21:35:08 sneezy kernel: [89798.759567]  [<ffffffff818b8c59>] ? sysret_check+0x22/0x5d
-> Mar  4 21:35:08 sneezy kernel: [89798.759571]  [<ffffffff8122ebe1>] SyS_ioctl+0x81/0xa0
-> Mar  4 21:35:08 sneezy kernel: [89798.759576]  [<ffffffff818b8c2d>] system_call_fastpath+0x16/0x1b
-> Mar  4 21:35:08 sneezy kernel: [89798.759580] 3 locks held by btrsame/23612:
-> Mar  4 21:35:08 sneezy kernel: [89798.759582]  #0:  (sb_writers#8){.+.+.+}, at: [<ffffffff8123d0a8>] mnt_want_write_file+0x28/0x60
-> Mar  4 21:35:08 sneezy kernel: [89798.759593]  #1:  (&sb->s_type->i_mutex_key#12/1){+.+.+.}, at: [<ffffffff813d7aa5>] btrfs_ioctl+0x2355/0x2930
-> Mar  4 21:35:08 sneezy kernel: [89798.759604]  #2:  (&sb->s_type->i_mutex_key#12/2){+.+.+.}, at: [<ffffffff813d7bf1>] btrfs_ioctl+0x24a1/0x2930
+> Thanks,
 > 
-
-
+> -liubo
+> 
+> > 
+> > Thanks,
+> > Eryu Guan
+> > 
+> > [  309.200469] loop: module loaded
+> > [  309.372689] BTRFS: device fsid 1c0ed5d6-550d-4010-b1b4-ce1828270713 devid 1 transid 4 /dev/loop0
+> > [  309.384037] BTRFS: super block crcs don't match, older mkfs detected
+> > [  309.385449] BTRFS info (device loop0): disk space caching is enabled
+> > [  309.390429] divide error: 0000 [#1] SMP
+> > [  309.390791] Modules linked in: loop btrfs xor raid6_pq ppdev parport_pc i2c_piix4 parport virtio_balloon pcspkr i2c_core serio_raw xfs sd_mod ata_generic pata_acpi virtio_pci virtio virtio_ring floppy ata_piix libata 8139too 8139cp mii
+> > [  309.391373] CPU: 2 PID: 1855 Comm: mount Not tainted 3.19.0 #15
+> > [  309.391373] Hardware name: Red Hat KVM, BIOS 0.5.1 01/01/2007
+> > [  309.391373] task: ffff880035068d70 ti: ffff8800360f0000 task.ti: ffff8800360f0000
+> > [  309.391373] RIP: 0010:[<ffffffffa03073a6>]  [<ffffffffa03073a6>] __btrfs_map_block+0x176/0x1180 [btrfs]
+> > [  309.391373] RSP: 0018:ffff8800360f38f8  EFLAGS: 00010206
+> > [  309.391373] RAX: 0000000000020000 RBX: 0000000000020000 RCX: 000000d9000000a9
+> > [  309.391373] RDX: 0000000000000000 RSI: 00000000c1400000 RDI: ffffffff8f018100
+> > [  309.391373] RBP: ffff8800360f39e8 R08: 0000000000000000 R09: 0000000000000001
+> > [  309.391373] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000020000
+> > [  309.391373] R13: ffff8802157e56c0 R14: 0000000000020000 R15: 000000008f018100
+> > [  309.391373] FS:  00007fcf592eb880(0000) GS:ffff88021fd00000(0000) knlGS:0000000000000000
+> > [  309.391373] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> > [  309.391373] CR2: 00007f9e367fc034 CR3: 0000000035e6e000 CR4: 00000000000006e0
+> > [  309.391373] Stack:
+> > [  309.391373]  0000000000001000 ffff880212fc6a68 0000000000000000 ffff880211a98040
+> > [  309.391373]  ffff8800360f3928 ffffffff812eb7be ffff8800360f3988 ffffffffa0300a82
+> > [  309.391373]  ffff8800360f3a50 ffff880035e7f000 0000000000000000 ffff880035e7ff60
+> > [  309.391373] Call Trace:
+> > [  309.391373]  [<ffffffff812eb7be>] ? bio_add_page+0x5e/0x70
+> > [  309.391373]  [<ffffffffa0300a82>] ? submit_extent_page.isra.34+0xe2/0x1d0 [btrfs]
+> > [  309.406845]  [<ffffffffa0302a20>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
+> > [  309.406845]  [<ffffffffa030d8d6>] btrfs_map_bio+0x96/0x550 [btrfs]
+> > [  309.406845]  [<ffffffff811d10b1>] ? kmem_cache_alloc+0x1a1/0x220
+> > [  309.406845]  [<ffffffffa02d9fca>] btree_submit_bio_hook+0x5a/0x100 [btrfs]
+> > [  309.406845]  [<ffffffffa02fcc38>] submit_one_bio+0x68/0xa0 [btrfs]
+> > [  309.406845]  [<ffffffffa0304ab0>] read_extent_buffer_pages+0x270/0x330 [btrfs]
+> > [  309.406845]  [<ffffffffa02d7120>] ? free_root_pointers+0x60/0x60 [btrfs]
+> > [  309.406845]  [<ffffffffa02d8393>] btree_read_extent_buffer_pages.constprop.52+0xb3/0x120 [btrfs]
+> > [  309.406845]  [<ffffffffa02da270>] read_tree_block+0x40/0x70 [btrfs]
+> > [  309.406845]  [<ffffffffa02ddcdc>] open_ctree+0x143c/0x2140 [btrfs]
+> > [  309.406845]  [<ffffffffa02b333e>] btrfs_mount+0x76e/0x900 [btrfs]
+> > [  309.406845]  [<ffffffff81197604>] ? pcpu_alloc+0x364/0x680
+> > [  309.406845]  [<ffffffff811f2e09>] mount_fs+0x39/0x1b0
+> > [  309.406845]  [<ffffffff81197955>] ? __alloc_percpu+0x15/0x20
+> > [  309.406845]  [<ffffffff8120ea0b>] vfs_kern_mount+0x6b/0x110
+> > [  309.406845]  [<ffffffff812117fc>] do_mount+0x22c/0xb60
+> > [  309.406845]  [<ffffffff811926e6>] ? memdup_user+0x46/0x80
+> > [  309.406845]  [<ffffffff81212472>] SyS_mount+0xa2/0x110
+> > [  309.406845]  [<ffffffff816b76e9>] system_call_fastpath+0x12/0x17
+> > [  309.406845] Code: 23 10 00 00 48 81 c4 c8 00 00 00 5b 41 5c 41 5d 41 5e 41 5f 5d c3 45 89 c8 31 d2 41 29 c0 48 89 d8 4d 63 c0 4c 0f af c7 45 89 c2 <49> f7 f2 4c 0f af c0 f7 c1 f8 01 00 00 4c 89 85 70 ff ff ff 0f
+> > [  309.406845] RIP  [<ffffffffa03073a6>] __btrfs_map_block+0x176/0x1180 [btrfs]
+> > [  309.406845]  RSP <ffff8800360f38f8>
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,71 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:38413 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756127AbbCEO4M (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 5 Mar 2015 09:56:12 -0500
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] Btrfs: send, don't leave without decrementing clone root's send_progress
-Date: Mon,  2 Mar 2015 20:53:53 +0000
-Message-Id: <1425329633-5059-2-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
-References: <1425329633-5059-1-git-send-email-fdmanana@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:48531 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752766AbbCFLnC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Mar 2015 06:43:02 -0500
+Date: Fri, 6 Mar 2015 19:42:46 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2] Btrfs: catch transaction abortion after waiting for it
+Message-ID: <20150306114245.GA18885@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1425545307-3721-1-git-send-email-bo.li.liu@oracle.com>
+ <1425551805-7314-1-git-send-email-bo.li.liu@oracle.com>
+ <1425563997.740.0@mail.thefacebook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1425563997.740.0@mail.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the clone root was not readonly or the dead flag was set on it, we were
-leaving without decrementing the root's send_progress counter (and before
-we just incremented it). If a concurrent snapshot deletion was in progress
-and ended up being aborted, it would be impossible to later attempt to
-delete again the snapshot, since the root's send_in_progress counter could
-never go back to 0.
+On Thu, Mar 05, 2015 at 08:59:57AM -0500, Chris Mason wrote:
+> 
+> 
+> On Thu, Mar 5, 2015 at 5:36 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> >This problem is uncovered by a test case:
+> >http://patchwork.ozlabs.org/patch/244297.
+> >
+> >Fsync() can report success when it actually doesn't.  When we
+> >have several threads running fsync() at the same tiem and in one
+> >fsync() we
+> >get a transaction abortion due to some problems(in the test case
+> >it's disk
+> >failures), and other fsync()s may return successfully which makes
+> >userspace
+> >programs think that data is now safely flushed into disk.
+> >
+> >It's because that after fsyncs() fail btrfs_sync_log() due to disk
+> >failures,
+> >they get to try btrfs_commit_transaction() where it finds that
+> >there is
+> >already a transaction being committed, and they'll just call
+> >wait_for_commit()
+> >and return.  Note that we actually check "trans->aborted" in
+> >btrfs_end_transaction,
+> >but it's likely that the error message is still not yet throwed
+> >out and only after
+> >wait_for_commit() we're sure whether the transaction is committed
+> >successfully.
+> >
+> >This add the necessary check and it now passes the test.
+> >
+> >Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> >---
+> >v2: Use a more generic title since it's not only for fsync, but
+> >for others.
+> >
+> > fs/btrfs/transaction.c | 3 +++
+> > 1 file changed, 3 insertions(+)
+> >
+> >diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> >index 7e80f32..bd7ea86 100644
+> >--- a/fs/btrfs/transaction.c
+> >+++ b/fs/btrfs/transaction.c
+> >@@ -1814,6 +1814,9 @@ int btrfs_commit_transaction(struct
+> >btrfs_trans_handle *trans,
+> >
+> > 		wait_for_commit(root, cur_trans);
+> >
+> >+		if (unlikely(ACCESS_ONCE(cur_trans->aborted)))
+> >+			ret = cur_trans->aborted;
+> >+
+> 
+> Thanks Liu, but why are we using ACCESS_ONCE here?
 
-We were also setting clone_sources_to_rollback to i + 1 too early - if we
-bailed out because the clone root we got is not readonly or flagged as dead
-we ended up later derreferencing a null pointer because we didn't assign
-the clone root to sctx->clone_roots[i].root:
+It should be not necessary, I just copied it from the first check in btrfs_commit_transaction(),
+not insisting in using it.
 
-		for (i = 0; sctx && i < clone_sources_to_rollback; i++)
-			btrfs_root_dec_send_in_progress(
-					sctx->clone_roots[i].root);
+Thanks,
 
-So just don't increment the send_in_progress counter if the root is readonly
-or flagged as dead.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6ec28f1..571de5a 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5852,9 +5852,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 				ret = PTR_ERR(clone_root);
- 				goto out;
- 			}
--			clone_sources_to_rollback = i + 1;
- 			spin_lock(&clone_root->root_item_lock);
--			clone_root->send_in_progress++;
- 			if (!btrfs_root_readonly(clone_root) ||
- 			    btrfs_root_dead(clone_root)) {
- 				spin_unlock(&clone_root->root_item_lock);
-@@ -5862,10 +5860,12 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 				ret = -EPERM;
- 				goto out;
- 			}
-+			clone_root->send_in_progress++;
- 			spin_unlock(&clone_root->root_item_lock);
- 			srcu_read_unlock(&fs_info->subvol_srcu, index);
- 
- 			sctx->clone_roots[i].root = clone_root;
-+			clone_sources_to_rollback = i + 1;
- 		}
- 		vfree(clone_sources_tmp);
- 		clone_sources_tmp = NULL;
--- 
-2.1.3
-
+-liubo

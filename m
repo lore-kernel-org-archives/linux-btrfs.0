@@ -1,87 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f180.google.com ([209.85.223.180]:33384 "EHLO
-	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753954AbbCFBEU convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Mar 2015 20:04:20 -0500
-Received: by iecar1 with SMTP id ar1so81743572iec.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Mar 2015 17:04:20 -0800 (PST)
+Received: from neo-zeon.de ([173.228.7.145]:32909 "EHLO neo-zeon.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750892AbbCFBdg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Mar 2015 20:33:36 -0500
+Received: from [192.168.75.170] ([97.64.124.16])
+	(authenticated bits=0)
+	by neo-zeon.de (8.14.9/8.14.9) with ESMTP id t261IS2W052268
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Mar 2015 17:18:29 -0800 (PST)
+	(envelope-from cam@neo-zeon.de)
+Message-ID: <54F9005D.5070107@neo-zeon.de>
+Date: Thu, 05 Mar 2015 17:18:21 -0800
+From: Cameron Berkenpas <cam@neo-zeon.de>
 MIME-Version: 1.0
-In-Reply-To: <CAB3_QuJVGezacw-yYqbfr2LHzF_Em4k1XFys02KMHemh1-sMsw@mail.gmail.com>
-References: <CAB3_QuJVGezacw-yYqbfr2LHzF_Em4k1XFys02KMHemh1-sMsw@mail.gmail.com>
-From: Paul Harvey <csirac2@gmail.com>
-Date: Fri, 6 Mar 2015 12:03:59 +1100
-Message-ID: <CAB3_QuJaTv_vt-eSaCyrLfmT3kfGFjJPgRJYkYwgh9JZ9KRO=Q@mail.gmail.com>
-Subject: Re: unstable atimes on empty dirs in read-only snapshots which were
- subvol parents
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: System crash while scrubbing on 3.18.x
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Apparently in my haste, forgot to include any information in my email.
-This is also in the URL to the gist of my test script:
+Hello,
 
-btrfs v3.17
-Linux 3.16.0-4-amd64 #1 SMP Debian 3.16.7-ckt4-3 (2015-02-03) x86_64 GNU/Linux
+Sorry for the long email...
 
-# mount: /dev/loop2 mounted on /tmp/tmp.FkcW7fRde7.
-# Showing mount:
-# /tmp/tmp.1fbwCCdeNM on /tmp/tmp.FkcW7fRde7 type btrfs (rw,noatime,space_cache)
-# Create subvolume '/tmp/tmp.FkcW7fRde7/subvol'
-# mkdir: created directory ‘/tmp/tmp.FkcW7fRde7/snapshots’
-# mkdir: created directory ‘/tmp/tmp.FkcW7fRde7/empty_dir’
-# Create a readonly snapshot of '/tmp/tmp.FkcW7fRde7' in
-'/tmp/tmp.FkcW7fRde7/snapshots/1'
-# Testing that the subvol dir has stable atime on original parent FS:
-# Testing that '/tmp/tmp.FkcW7fRde7/subvol' has repeatable atime of
-#         2015-03-06T11:09:40+1100...
-# 1:      2015-03-06T11:09:40+1100
-# 2:      2015-03-06T11:09:40+1100
-#         PASS /tmp/tmp.FkcW7fRde7/subvol atime is stable :)
-# Testing that a normal empty dir has stable atime on the snapshot:
-# Testing that '/tmp/tmp.FkcW7fRde7/snapshots/1/empty_dir' has
-repeatable atime of
-#         2015-03-06T11:09:40+1100...
-# 1:      2015-03-06T11:09:40+1100
-# 2:      2015-03-06T11:09:40+1100
-#         PASS /tmp/tmp.FkcW7fRde7/snapshots/1/empty_dir atime is stable :)
-# Testing that the subvol dir has stable atime on snapshot of parent FS:
-# Testing that '/tmp/tmp.FkcW7fRde7/snapshots/1/subvol' has repeatable atime of
-#         2015-03-06T11:09:48+1100...
-# 1:      2015-03-06T11:09:50+1100
-# 2:      2015-03-06T11:09:52+1100
-#         FAIL /tmp/tmp.FkcW7fRde7/snapshots/1/subvol atime is unstable :(
-# './btrfs-atime-bug.sh nocleanup' not specified so cleaning up our mess:
-# umount: /tmp/tmp.FkcW7fRde7 unmounted
-# rmdir: removing directory, ‘/tmp/tmp.FkcW7fRde7’
-# removed ‘/tmp/tmp.1fbwCCdeNM’
+I've found my system locks up when scrubbing with 3.18.x, but not with 
+3.17.8 across 2 systems.
 
-On 6 March 2015 at 11:29, Paul Harvey <csirac2@gmail.com> wrote:
-> Hi there,
->
-> Apologies for not confirming on a much more recent kernel, if anyone
-> could please try my test script for me on a newer kernel that would be
-> very much appreciated.
->
-> I'm working on reproducible builds, and part of this workflow involves
-> tar archiving parts of read-only btrfs snapshots. Problem is, some of
-> these tar archives are different from run to run when they capture an
-> empty directory that happened to be a subvol parent on the original
-> FS: the atimes on these empty dirs are always returning the current
-> time - which is not the case with an ordinary empty directory created
-> with mkdir; it's also not the same behaviour on the original FS (tar
-> archives are reproducible if we use the original FS rather than the
-> read-only snapshot). This all happens regardless of mounting noatime.
->
-> Perhaps this verbiage is convoluted, I'm writing this in a hurry with
-> limited internet connectivity - I have a reproducible test case here
-> at https://gist.github.com/csirac2/c2b5b2b9d0193b3c08a8
->
-> Again, I understand this is a pretty old kernel and perhaps this is
-> fixed by now, I'll try a more recent kernel with more assertive bug
-> report next week if nobody has time to try out my test case.
->
-> Cheers
->
-> --
-> Paul Harvey
+I have the following BTRFS partitions on system 1:
+/  (128GiB, 49GiB used on SSD)
+/home (4.2TiB, 624GB used on HDD RAID volume)
+
+I have the following BTRFS partitions on system 2:
+/ (196GiB, 17GiB used on HDD RAID volume)
+/home (7.1TiB, 2.9TiB used on HDD RAID volume)
+
+My OS is Netrunner 15 (which 98% Kubuntu) on system 1, and up-to-date 
+debian testing on system 2.
+
+I've never encountered a lock up while scrubbing /. Just with /home.
+
+The systems never lock up immediately, but takes some time. VERY rarely 
+I'll see the lockup when the scrub is at <100GiB completed. Typically it 
+happens somewhere between 200-350GiB. A few times it's gone beyond 
+500GiB. This is probably why I've never encountered the issue with /, 
+it's just not big enough on either system.
+
+Both systems were otherwise idle while performing the scrubs that 
+crashed the systems.
+
+/home is on a partition on a RAID10 volume on a 3ware 9740-4i controller 
+with 4x 3TB disks on system 1. On system 2, it's the same controller but 
+with 4x 4TB disks (and / on system 2 is a partition on the same RAID 
+volume rather than a separate disk). Both systems have 32GiB memory, and 
+the otherwise the hardware is pretty different between the systems (AMD 
+Vs. Intel, etc).
+
+I suspect that the RAID controller probably isn't relevant. Both arrays 
+and their drives are healthy.
+
+I've also encountered the issue on a freshly formatted filesystem with 
+my data copied from a backup on system 1.
+
+I've tried tried scrubbing with btrfs-progs 3.17 (installed from the 
+distribution repos on both systems), and btrfs-progs from git (using tag 
+v3.18.x). Neither version made a difference.
+
+In case this is helpful to anyone, here's how I've discovered the issue:
+I decided to test btrfs with bcache on system 1 to see if the stability 
+had improved since I'd tried bcache+btrfs about a year ago. I backed up 
+/home on system 1 and then freshly formatted it and set it to use 
+bcache. I was running Linux 3.18.8 and encountered the problem that I've 
+described above. I assumed the bcache+btrfs combination was still broken 
+so I formatted the system again (this time still using btrfs, but 
+without bcache) and copied all my files back. I encountered the same 
+issue without bcache. Realizing the issue wasn't bcache related, I did 
+ANOTHER format, this time back to bcache+btrfs.
+
+ From here in my testing, I found that system 2 (which has no bcache) 
+also crashed when scrubbing with Linux 3.18.8. I decided to try 3.17.8 
+on system 1 (since 3.18.8 seemed to be the common denominator between 
+the 2 systems), found that fixed the issue, and then downgraded system 2 
+to use 3.17.8 as well, which also fixed the issue there.
+
+(Note: At one point I also tried Linux 3.18.7 and 3.18.5, however, those 
+kernels are affected by the scrub/crash issue as well.)
+
+I found something else interesting when I tested against Linux 3.19.0. 
+With 3.19.0, the bcache system always crashes fairly early in the scrub 
+(<100GiB), but the non-bcache system has no issues. This suggests my 
+problem with 3.19.0 is a bcache+btrfs issue (or simply an issue with 
+bcache).
+
+I'm not sure if bcache is relevant to the BTRFS devs at this point, but 
+I thought I'd put that there for anyone who might find that information 
+useful.
+
+To summarize:
+I've tested with 2 systems, and scrubbing caused crashes occurred on 
+both with Linux 3.18.8, but not with 3.17.8 for both systems
+I've tested 1 system with and without bcache, and bcache made no 
+difference between Linux 3.17.8 and 3.18.8.
+I've tested with 3.19.0, and I crash when scrubbing on the bcache 
+system, but not the non-bcache system.
+
+Thanks!
+
+-Cameron
+
+

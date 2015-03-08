@@ -1,64 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f178.google.com ([209.85.220.178]:55616 "EHLO
-	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752998AbbCHRnu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Mar 2015 13:43:50 -0400
-Received: by mail-vc0-f178.google.com with SMTP id id10so8393946vcb.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Mar 2015 10:43:49 -0700 (PDT)
+Received: from port-92-195-88-32.dynamic.qsc.de ([92.195.88.32]:48917 "EHLO
+	richtercloud.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751750AbbCHUAy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Mar 2015 16:00:54 -0400
+Received: from [192.168.178.21] (unknown [92.195.88.32])
+	by richtercloud.de (Postfix) with ESMTPSA id 3F21282894
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Mar 2015 20:00:42 +0000 (UTC)
+Message-ID: <54FCAA65.8090901@richtercloud.de>
+Date: Sun, 08 Mar 2015 21:00:37 +0100
+From: Karl-Philipp Richter <richter@richtercloud.de>
 MIME-Version: 1.0
-Date: Sun, 8 Mar 2015 11:43:49 -0600
-Message-ID: <CAHu5UDn5rtL0-YwT52fxb8vkM7ikhjjE1hcCrC-V1PD-ua5UhA@mail.gmail.com>
-Subject: Clone or Backup Filesystem with compression and dedup
-From: dave <db.tone@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Setting `compression`  on subvolume causes `BTRFS error (device sda5):
+ error inheriting props for ino [inode] (root 419): -28`
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="RGoUAoo19EWrcXSFm3xhXHQnAkIjBphJH"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--RGoUAoo19EWrcXSFm3xhXHQnAkIjBphJH
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-I've searched the wiki and the web looking for possible answers to
-this question and haven't found information that addresses this use
-case specifically.  I would greatly appreciate your help or pointing
-me in the right direction.
+Hi,
+Setting the `compression` property on a subvolume on Linux 4.0-rc2 with
+btrfs-progs 3.18.2 causes the error `BTRFS error (device sda5): error
+inheriting props for ino [inode] (root 419): -28` to be logged to
+`/var/log/syslog` (where `[inode]` is a number). I assume that setting
+compression on a subvolume (with `btrfs property`) with a value which
+differs from the parent volume is supported and that otherwise `btrfs
+property` would have failed.
 
-Thanks in advance!
+Any help or pointers are appreciated.
 
-Dave
+Best regards,
+Kalle
 
 
-Use case:
+--RGoUAoo19EWrcXSFm3xhXHQnAkIjBphJH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-I have a 5TB single drive btrfs filesystem.  The filesystem is using
-compression and deduplication (used bedup with size threshold of
-~200kB resulting in 10s of thousands of deduplicated files).  The
-space savings is fantastic!
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-I have 2 blank 5TB drives to be used as a rotating offline backup,
-connecting to the computer once every few weeks and syncing the
-new/changed data.  The data is mostly static, slowly growing with
-ocassional changes.
+iQEcBAEBAgAGBQJU/KplAAoJEGadKJ8eJ7ZGLdUIAMCicSmV8kVb33QVJ6z/VT01
+7dQJV106qEC74VJyw4Zdc/Tq51GfLtz8GCWNU//YcAtAyqE2FjGbKj8jfTccGgmB
+1R75WJVMrkqPsMH+B/U7id5fxE6zxr44BuQylBpfJ4amK47ppBA18PKTwvfcm5bP
+awyxPm613j7VRvrl8XMo/deoU5AKqEKH/EXguOoxacDrhbVht72ZXBPxYnoXjPE+
+7f1gDi5riT5FLU7olvV5goGb6zHiHWa7Lppd4nyJNqZzWN8mC//270e3OB6gp8Dr
+B/5Wr4jqwv42Vgdqq1cqfYkw5cc/H+T9MyIG6rxpaJbsRUfUMhSuwgNz2uUgXD0=
+=9ISs
+-----END PGP SIGNATURE-----
 
-What is the best way to:
-
-1) make an initial clone of the filesystem, keeping the compression
-and deduplication of the source filesystem?
-
-2) make periodic syncronizations of the source filesystem to the
-backup filesystem, again maintaining the compression and deduplication
-of the filesystem?
-
-I know that I can make a new empty btrfs filesystem then rsync and
-bedup, but the file-level copy and bedup processes are very resource
-heavy and time consuming.
-
-I've also considered adding a blank drive to the source filesystem as
-a raid mirror then breaking the mirror, but this seems like a brutal,
-unintended use of btrfs raid/redundancy..
-
-For many years I've used the rsync approach with XFS drives in
-rotation, but now that I'm using (and enjoying) the much more
-efficient storage of btrfs with compression and dedup I'm hoping there
-is a more advanced method for making and maintaining backups.
-
-Thank you!
+--RGoUAoo19EWrcXSFm3xhXHQnAkIjBphJH--

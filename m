@@ -1,54 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20631 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752192AbbCIRKb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:31 -0400
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mail-wi0-f175.google.com ([209.85.212.175]:41796 "EHLO
+	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750918AbbCIXp1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 19:45:27 -0400
+Received: by wiwl15 with SMTP id l15so26082898wiw.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2015 16:45:25 -0700 (PDT)
+Received: from [192.168.2.7] (ipbcc33db6.dynamic.kabel-deutschland.de. [188.195.61.182])
+        by mx.google.com with ESMTPSA id bx3sm30356501wjc.21.2015.03.09.16.45.24
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 09 Mar 2015 16:45:25 -0700 (PDT)
+Message-ID: <54FE3093.3020902@gmail.com>
+Date: Tue, 10 Mar 2015 00:45:23 +0100
+From: Sven Witterstein <sven.witterstein@gmail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 04/26] Btrfs: sysfs: fix, kobject pointer clean up needed after kobject release
-Date: Tue, 10 Mar 2015 06:38:22 +0800
-Message-Id: <1425940724-7744-5-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
-References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
+Subject: Raid10 performance issues during copy and balance, only half the
+ spindles used for reading data
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+Hello,
 
-The sysfs clean up self test like in the below code fails, since
-fs_info->device_dir_kobject still points to its stale kobject.
-Reseting this pointer will help to fix this.
+I have used btrfs and zfs for some years and feel pretty confident about 
+their administration - and both with ther snaps and subvols saved me 
+quite often.
 
-open_ctree()
-{
+I had to grow my 4x250GB Raid10-Backup-Array to a 6x500GB raid10-backup 
+array - the slower half of 4 1TB 2.5" Spinpoint M8's. were to be 
+enhanced with the slowest quarter of 2 2TB 2.5" spinpoint M9T's.
 
-ret = btrfs_sysfs_add_one(fs_info);
-::
-+       btrfs_sysfs_remove_one(fs_info);
-+       ret = btrfs_sysfs_add_one(fs_info);
-+       if (ret) {
-+               pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
-+               goto fail_block_groups;
-+       }
+During balance or copies, the second image of the stripeset A + B | A' + 
+B' is never used, thus throwing away about 40% of performance, e.g. it 
+NEVER used A' + B' to read from even if 50% of the needed assembled data 
+could have been read from there..., so 2 disks were maxed out, the other 
+writing at about 40% their I/O capacity.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/sysfs.c | 1 +
- 1 file changed, 1 insertion(+)
+Also when rsyncing to ssd raid0 zpool (just for testing, the ssd-pool is 
+the working pool, the zfs and btrfs disk pools are for backup) - only 3 
+disks of 6 are read from.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index adfac3e..15fead2 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -525,6 +525,7 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- 	btrfs_kobj_rm_device(fs_info, NULL);
- 	kobject_del(fs_info->device_dir_kobj);
- 	kobject_put(fs_info->device_dir_kobj);
-+	fs_info->device_dir_kobj = NULL;
- 	addrm_unknown_feature_attrs(fs_info, false);
- 	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
- 	__btrfs_sysfs_remove_one(fs_info);
--- 
-2.0.0.153.g79dcccc
+As opposed, a properly set up mdadm "far or offset" + xfs and zfs itself 
+use all spindles (devices) to read from and net data is delivered twice 
+as fast.
 
+I would love to see btrfs trying harder to deliver data - it slips my 
+mind whether it is a missing feature in btrfs raid10 right now or a bug 
+in the 3.16 lines of kernel I am using (mint rebecca on my workstation).
+
+If anybody knows about it, or I am missing something (-m=raid10 
+-d=raid10 was OK I hope when rebalancing?)
+I'd like to be enlightened (when I googled it was always stated that 
+btrfs would read from all spindles, but it's not the case for me...)
+
+Sven.

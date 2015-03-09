@@ -1,41 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38316 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750830AbbCIPio (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Mar 2015 11:38:44 -0400
-Date: Mon, 9 Mar 2015 16:38:41 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        bo.li.liu@oracle.com, Eryu Guan <guaneryu@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs oops while mounting fuzzed btrfs image
-Message-ID: <20150309153841.GF5841@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20150305070933.GB17015@dhcp-13-216.nay.redhat.com>
- <20150305094611.GA4147@localhost.localdomain>
- <20150305101354.GC17015@dhcp-13-216.nay.redhat.com>
- <20150305102701.GE4147@localhost.localdomain>
- <54F90937.70309@cn.fujitsu.com>
- <20150306100113.GA26485@mew>
+Received: from mail-yk0-f182.google.com ([209.85.160.182]:36029 "EHLO
+	mail-yk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932375AbbCIQoH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 12:44:07 -0400
+Received: by ykp9 with SMTP id 9so4052435ykp.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2015 09:44:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150306100113.GA26485@mew>
+In-Reply-To: <1425905102.1178.27.camel@gmx.de>
+References: <1425556080.32673.11.camel@gmx.de>
+	<pan$387dc$a5a9554$54f0b365$e45c3f38@cox.net>
+	<1425905102.1178.27.camel@gmx.de>
+Date: Mon, 9 Mar 2015 10:44:06 -0600
+Message-ID: <CAJCQCtRkDbsYHGZ4ZmzSa99W5L-BfsDF1jE6YmqiMAxJUT+pbQ@mail.gmail.com>
+Subject: Re: Lock-ups, assertion failure in btrfsck, scrub reporting super=4
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 06, 2015 at 02:01:13AM -0800, Omar Sandoval wrote:
-> +
-> +		if (ret && btrfs_super_generation(disk_sb) < 10) {
-> +			printk(KERN_WARNING "btrfs: super block crcs don't match, older mkfs detected\n");
-> +			ret = 0;
-> +		}
+Maybe try btrfs-progs-3.19rc3? You have the data backed up, and progs
+3.18.2 fails so it seems worth a shot.
 
-> I'm not sure that this is exactly what's happening with Eryu's image,
-> but it's definitely an issue. I also don't know whether it's safe to get
-> rid of that special case. It looks like it's needed for btrfs-progs
-> before v3.12 (November 2013). Chris? David?
 
-We might remove the special case in the future. The superblock checks
-were enhanced so the low generation number does not let an otherwise
-heavily damaged superblock.
+Chris Murphy

@@ -1,88 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38871 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:48020 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750968AbbCILCv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Mar 2015 07:02:51 -0400
+	id S1752550AbbCILd2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Mar 2015 07:33:28 -0400
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: jeromepoulin@gmail.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: convert, add option to disable progress
-Date: Mon,  9 Mar 2015 12:02:47 +0100
-Message-Id: <1425898967-5972-1-git-send-email-dsterba@suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: quwenruo@cn.fujitsu.com, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: tests, clean up scripts
+Date: Mon,  9 Mar 2015 12:33:25 +0100
+Message-Id: <1425900805-11010-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With progress turned on by default we should be able to disable it
-as well.
+Rename variables, use caps, call true by full path, add quotation to
+variables and a few wording fixes.
 
-Reported-by: Jérôme Poulin <jeromepoulin@gmail.com>
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- Documentation/btrfs-convert.txt |  2 ++
- btrfs-convert.c                 | 14 +++++++++++++-
- 2 files changed, 15 insertions(+), 1 deletion(-)
+ tests/common                                 | 43 ++++++++++++++--------------
+ tests/fsck-tests/012-leaf-corruption/test.sh | 10 +++----
+ 2 files changed, 27 insertions(+), 26 deletions(-)
 
-diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
-index 170919706e71..6a9e1de0bf6f 100644
---- a/Documentation/btrfs-convert.txt
-+++ b/Documentation/btrfs-convert.txt
-@@ -31,6 +31,8 @@ set filesystem label during conversion.
- use label from the converted filesystem.
- -p::
- Show progress of conversion, on by default.
-+--no-progress::
-+Disable detailed progress and show only the main phases of conversion.
+diff --git a/tests/common b/tests/common
+index ccdadd5f248e..a35d438efe8f 100644
+--- a/tests/common
++++ b/tests/common
+@@ -57,26 +57,26 @@ check_all_images()
+ # some tests need to mount the recovered image and do verifications call
+ # 'setup_root_helper' and then check for have_root_helper == 1 if the test
+ # needs to fail otherwise; using sudo by default for now
+-_sudo=
+-need_validate=-1
+-export _sudo
+-export need_validate
++SUDO_HELPER=
++NEED_SUDO_VALIDATE=unknown
++export SUDO_HELPER
++export NEED_SUDO_VALIDATE
+ root_helper()
+ {
+ 	if [ $UID -eq 0 ]; then
+-		$*
++		"$@"
+ 	else
+-		if [ $need_validate -eq 1 ]; then
+-			sudo -v -n &> /dev/null || \
+-				_not_run "Need validate sudo credential"
+-			sudo -n $*
+-		elif [ $need_validate -eq 0 ]; then
+-			sudo -n true  &> /dev/null || \
+-				_not_run "Need validate sudo user setting"
+-			sudo -n $*
++		if [ "$NEED_SUDO_VALIDATE" = 'yes' ]; then
++			sudo -v -n &>/dev/null || \
++				_not_run "Need to validate sudo credentials"
++			sudo -n "$@"
++		elif [ "$NEED_SUDO_VALIDATE" = 'no' ]; then
++			sudo -n /bin/true &> /dev/null || \
++				_not_run "Need to validate sudo user settings"
++			sudo -n "$@"
+ 		else
+ 			# should not happen
+-			_not_run "Need validate root privilege"
++			_not_run "Need to validate root privileges"
+ 		fi
+ 	fi
+ }
+@@ -86,15 +86,16 @@ setup_root_helper()
+ 	if [ $UID -eq 0 ]; then
+ 		return
+ 	fi
+-	# Test for old sudo or special setting, which makes sudo -v fails even
+-	# user is set NOPASSWD
+-	sudo -n true &> /dev/null && need_validate=0
++
++	# Test for old sudo or special settings, which make sudo -v fail even
++	# if user setting is NOPASSWD
++	sudo -n /bin/true &>/dev/null && NEED_SUDO_VALIDATE=no
  
- EXIT STATUS
- -----------
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 730fead4a86c..6a0668a4e572 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -29,6 +29,7 @@
- #include <unistd.h>
- #include <uuid/uuid.h>
- #include <linux/limits.h>
-+#include <getopt.h>
+ 	# Newer sudo or default sudo setting
+-	sudo -v -n &> /dev/null && need_validate=1
++	sudo -v -n &>/dev/null && NEED_SUDO_VALIDATE=yes
  
- #include "ctree.h"
- #include "disk-io.h"
-@@ -2767,6 +2768,7 @@ static void print_usage(void)
- 	printf("\t-l LABEL     set filesystem label\n");
- 	printf("\t-L           use label from converted fs\n");
- 	printf("\t-p           show converting progress (default)\n");
-+	printf("\t--no-progress  show only overview, not the detailed progress\n");
+-	if [ $need_validate -eq -1 ]; then
+-		_not_run "Need validate root privilege"
++	if [ "$NEED_SUDO_VALIDATE" = 'yes' ]; then
++		_not_run "Need to validate root privileges"
+ 	fi
+-	_sudo=root_helper
++	SUDO_HELPER=root_helper
+ }
+diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
+index 5873e3fb42e3..8f82fd164d1d 100755
+--- a/tests/fsck-tests/012-leaf-corruption/test.sh
++++ b/tests/fsck-tests/012-leaf-corruption/test.sh
+@@ -55,20 +55,20 @@ check_inode()
+ 	name=$5
+ 
+ 	# Check whether the inode exists
+-	exists=$($_sudo find $path -inum $ino)
++	exists=$($SUDO_HELPER find $path -inum $ino)
+ 	if [ -z "$exists" ]; then
+ 		_fail "inode $ino not recovered correctly"
+ 	fi
+ 
+ 	# Check inode type
+-	found_mode=$(printf "%o" 0x$($_sudo stat $exists -c %f))
++	found_mode=$(printf "%o" 0x$($SUDO_HELPER stat $exists -c %f))
+ 	if [ $found_mode -ne $mode ]; then
+ 		echo "$found_mode"
+ 		_fail "inode $ino modes not recovered"
+ 	fi
+ 
+ 	# Check inode size
+-	found_size=$($_sudo stat $exists -c %s)
++	found_size=$($SUDO_HELPER stat $exists -c %s)
+ 	if [ $mode -ne 41700 -a $found_size -ne $size ]; then
+ 		_fail "inode $ino size not recovered correctly"
+ 	fi
+@@ -90,7 +90,7 @@ check_leaf_corrupt_no_data_ext()
+ 		TEST_MNT="$(pwd)/tmp"
+ 	fi
+ 	mkdir -p $TEST_MNT || _fail "failed to create mount point"
+-	$_sudo mount $image -o ro $TEST_MNT
++	$SUDO_HELPER mount $image -o ro $TEST_MNT
+ 
+ 	i=0
+ 	while [ $i -lt ${#leaf_no_data_ext_list[@]} ]; do
+@@ -102,7 +102,7 @@ check_leaf_corrupt_no_data_ext()
+ 			    ${leaf_no_data_ext_list[i + 4]}
+ 			    ((i+=4))
+ 	done
+-	$_sudo umount $TEST_MNT
++	$SUDO_HELPER umount $TEST_MNT
  }
  
- int main(int argc, char *argv[])
-@@ -2783,7 +2785,14 @@ int main(int argc, char *argv[])
- 	char *fslabel = NULL;
- 
- 	while(1) {
--		int c = getopt(argc, argv, "dinrl:Lp");
-+		int long_index;
-+		enum { GETOPT_VAL_NO_PROGRESS = 256 };
-+		static const struct option long_options[] = {
-+			{ "no-progress", no_argument, NULL, GETOPT_VAL_IEC},
-+			{ NULL, 0, NULL, 0 }
-+		};
-+		int c = getopt_long(argc, argv, "dinrl:Lp", long_options,
-+				&long_index);
- 		if (c < 0)
- 			break;
- 		switch(c) {
-@@ -2815,6 +2824,9 @@ int main(int argc, char *argv[])
- 			case 'p':
- 				progress = 1;
- 				break;
-+			case GETOPT_VAL_NO_PROGRESS:
-+				progress = 0;
-+				break;
- 			default:
- 				print_usage();
- 				return 1;
+ setup_root_helper
 -- 
 2.1.3
 

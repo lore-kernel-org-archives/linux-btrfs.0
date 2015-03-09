@@ -1,176 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10927 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751781AbbCBDnw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Mar 2015 22:43:52 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs-progs: fsck-test: Add check_sudo to check valid root/sudo privilege
-Date: Mon, 2 Mar 2015 11:41:50 +0800
-Message-ID: <1425267710-416-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:38871 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750968AbbCILCv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Mar 2015 07:02:51 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: jeromepoulin@gmail.com, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: convert, add option to disable progress
+Date: Mon,  9 Mar 2015 12:02:47 +0100
+Message-Id: <1425898967-5972-1-git-send-email-dsterba@suse.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although fsck-test/012 uses sudo, it uses 'sudo -n', which won't prompt
-user to input password and will return 1 if no valid credential is
-found.
+With progress turned on by default we should be able to disable it
+as well.
 
-And this makes test result quite annoying since it fails to mount and
-still continue, which will always fail.
-
-This patch will check 'sudo -v -n' and 'sudo -n true' to determine
-whether sudo works fine in different version/settings, since in some
-setting/version, 'sudo -v -n' will fail even the user is set NOPASSWD.
-
-Also, remove the 'have_root_helper' variant, since there is a
-possibility that sudo credential will timeout during the test and
-'have_root_helper' won't help to detect such problem.
-New '_sudo' command will do credential check if needed to avoid such
-problem.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reported-by: Jérôme Poulin <jeromepoulin@gmail.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-v2:
-  Add support for old sudo.
-  Remove 'have_root_helper' variant
-  Integrate 'check_root' into root_helper function.
+ Documentation/btrfs-convert.txt |  2 ++
+ btrfs-convert.c                 | 14 +++++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
 
-Cc: David Sterba <dsterba@suse.cz>
-Since I can't reproduce the NOPASSWD setting with 'sudo -v -n' failure,
-so only UID==0 and need_validate==1 case, would you please test the
-need_validate==0 case? 
----
- tests/common                                 | 50 ++++++++++++++++++++++++----
- tests/fsck-tests/012-leaf-corruption/test.sh | 14 +++-----
- 2 files changed, 48 insertions(+), 16 deletions(-)
-
-diff --git a/tests/common b/tests/common
-index d7d2e9b..ccdadd5 100644
---- a/tests/common
-+++ b/tests/common
-@@ -9,6 +9,12 @@ _fail()
- 	exit 1
+diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
+index 170919706e71..6a9e1de0bf6f 100644
+--- a/Documentation/btrfs-convert.txt
++++ b/Documentation/btrfs-convert.txt
+@@ -31,6 +31,8 @@ set filesystem label during conversion.
+ use label from the converted filesystem.
+ -p::
+ Show progress of conversion, on by default.
++--no-progress::
++Disable detailed progress and show only the main phases of conversion.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 730fead4a86c..6a0668a4e572 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -29,6 +29,7 @@
+ #include <unistd.h>
+ #include <uuid/uuid.h>
+ #include <linux/limits.h>
++#include <getopt.h>
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -2767,6 +2768,7 @@ static void print_usage(void)
+ 	printf("\t-l LABEL     set filesystem label\n");
+ 	printf("\t-L           use label from converted fs\n");
+ 	printf("\t-p           show converting progress (default)\n");
++	printf("\t--no-progress  show only overview, not the detailed progress\n");
  }
  
-+_not_run()
-+{
-+	echo "    [NOTRUN] $*"
-+	exit 0
-+}
-+
- run_check()
- {
- 	echo "############### $@" >> $RESULT 2>&1
-@@ -51,14 +57,44 @@ check_all_images()
- # some tests need to mount the recovered image and do verifications call
- # 'setup_root_helper' and then check for have_root_helper == 1 if the test
- # needs to fail otherwise; using sudo by default for now
--sudo=
--have_root_helper=0
--export sudo
--export have_root_helper
-+_sudo=
-+need_validate=-1
-+export _sudo
-+export need_validate
-+root_helper()
-+{
-+	if [ $UID -eq 0 ]; then
-+		$*
-+	else
-+		if [ $need_validate -eq 1 ]; then
-+			sudo -v -n &> /dev/null || \
-+				_not_run "Need validate sudo credential"
-+			sudo -n $*
-+		elif [ $need_validate -eq 0 ]; then
-+			sudo -n true  &> /dev/null || \
-+				_not_run "Need validate sudo user setting"
-+			sudo -n $*
-+		else
-+			# should not happen
-+			_not_run "Need validate root privilege"
-+		fi
-+	fi
-+}
-+
- setup_root_helper()
- {
--	if [ $UID != 0 ]; then
--		sudo="sudo --non-interactive"
-+	if [ $UID -eq 0 ]; then
-+		return
-+	fi
-+	# Test for old sudo or special setting, which makes sudo -v fails even
-+	# user is set NOPASSWD
-+	sudo -n true &> /dev/null && need_validate=0
-+
-+	# Newer sudo or default sudo setting
-+	sudo -v -n &> /dev/null && need_validate=1
-+
-+	if [ $need_validate -eq -1 ]; then
-+		_not_run "Need validate root privilege"
- 	fi
--	have_root_helper=1
-+	_sudo=root_helper
- }
-diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
-index 896f717..5873e3f 100755
---- a/tests/fsck-tests/012-leaf-corruption/test.sh
-+++ b/tests/fsck-tests/012-leaf-corruption/test.sh
-@@ -55,20 +55,20 @@ check_inode()
- 	name=$5
+ int main(int argc, char *argv[])
+@@ -2783,7 +2785,14 @@ int main(int argc, char *argv[])
+ 	char *fslabel = NULL;
  
- 	# Check whether the inode exists
--	exists=$($sudo find $path -inum $ino)
-+	exists=$($_sudo find $path -inum $ino)
- 	if [ -z "$exists" ]; then
- 		_fail "inode $ino not recovered correctly"
- 	fi
- 
- 	# Check inode type
--	found_mode=$(printf "%o" 0x$($sudo stat $exists -c %f))
-+	found_mode=$(printf "%o" 0x$($_sudo stat $exists -c %f))
- 	if [ $found_mode -ne $mode ]; then
- 		echo "$found_mode"
- 		_fail "inode $ino modes not recovered"
- 	fi
- 
- 	# Check inode size
--	found_size=$($sudo stat $exists -c %s)
-+	found_size=$($_sudo stat $exists -c %s)
- 	if [ $mode -ne 41700 -a $found_size -ne $size ]; then
- 		_fail "inode $ino size not recovered correctly"
- 	fi
-@@ -85,16 +85,12 @@ check_inode()
- check_leaf_corrupt_no_data_ext()
- {
- 	image=$1
--	if [ $have_root_helper -ne 1 ]; then
--		echo "     [NOTRUN] root privileges needed to verify recovery"
--		exit 0
--	fi
- 	if [ -z $TEST_MNT ]; then
- 		echo "\$TEST_MNT not set, use $(pwd)/tmp as fallback"
- 		TEST_MNT="$(pwd)/tmp"
- 	fi
- 	mkdir -p $TEST_MNT || _fail "failed to create mount point"
--	$sudo mount $image -o ro $TEST_MNT
-+	$_sudo mount $image -o ro $TEST_MNT
- 
- 	i=0
- 	while [ $i -lt ${#leaf_no_data_ext_list[@]} ]; do
-@@ -106,7 +102,7 @@ check_leaf_corrupt_no_data_ext()
- 			    ${leaf_no_data_ext_list[i + 4]}
- 			    ((i+=4))
- 	done
--	$sudo umount $TEST_MNT
-+	$_sudo umount $TEST_MNT
- }
- 
- setup_root_helper
+ 	while(1) {
+-		int c = getopt(argc, argv, "dinrl:Lp");
++		int long_index;
++		enum { GETOPT_VAL_NO_PROGRESS = 256 };
++		static const struct option long_options[] = {
++			{ "no-progress", no_argument, NULL, GETOPT_VAL_IEC},
++			{ NULL, 0, NULL, 0 }
++		};
++		int c = getopt_long(argc, argv, "dinrl:Lp", long_options,
++				&long_index);
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -2815,6 +2824,9 @@ int main(int argc, char *argv[])
+ 			case 'p':
+ 				progress = 1;
+ 				break;
++			case GETOPT_VAL_NO_PROGRESS:
++				progress = 0;
++				break;
+ 			default:
+ 				print_usage();
+ 				return 1;
 -- 
-2.3.0
+2.1.3
 

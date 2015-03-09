@@ -1,129 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20839 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753395AbbCIRKq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:46 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:19937 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751193AbbCIRK1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:27 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 16/26] Btrfs: sysfs btrfs_kobj_rm_device() pass fs_devices instead of fs_info
-Date: Tue, 10 Mar 2015 06:38:34 +0800
-Message-Id: <1425940724-7744-17-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
-References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 00/26 v4] provide framework so that sysfs attributs from the fs_devices can be added
+Date: Tue, 10 Mar 2015 06:38:18 +0800
+Message-Id: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-since btrfs_kobj_rm_device() does nothing with fs_info
+This patch set will provide a framework and help to create attributes
+from the structure btrfs_fs_devices which are available even before
+fs_info is created. So by moving the parent kobject super_kobj from
+fs_info to btrfs_fs_devices, it will help to create attributes
+from the btrfs_fs_devices as well.
+    
+Just to note, this does not change any of the existing btrfs sysfs
+external kobject names and its attributes and not even the life
+cycle of them. Changes are internal only. And to ensure the same,
+this path has been tested with various device operations and,
+checking and comparing the sysfs kobjects and attributes with
+sysfs kobject and attributes with out this patch, and they remain
+same. These test cases are added to the progs as test-btrfs-devmgt.sh,
+its patch is below as well.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/sysfs.c       | 12 ++++++------
- fs/btrfs/sysfs.h       |  2 +-
- fs/btrfs/volumes.c     |  4 ++--
- 4 files changed, 10 insertions(+), 10 deletions(-)
+v3->v4:
+  . reorders the patches
+  . accepts Dave comment
+  . needed stale device clean up, introduced patch..
+	520353e Btrfs: free the stale device
+  . added cleanups to the patch to support seeding in the patch..
+	e311d0a Btrfs: sysfs: support seed devices in the sysfs layout v3
+  . added support to show replacing target on the sysfs in the patch..
+	e210d55 Btrfs: sysfs: add support to show replacing target in the sysfs
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 2acc0aa..124b60f 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -592,7 +592,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	mutex_unlock(&uuid_mutex);
- 
- 	/* replace the sysfs entry */
--	btrfs_kobj_rm_device(fs_info, src_device);
-+	btrfs_kobj_rm_device(fs_info->fs_devices, src_device);
- 	btrfs_kobj_add_device(fs_info->fs_devices, tgt_device);
- 	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
- 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 76afc96..5055809 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -555,7 +555,7 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- 	addrm_unknown_feature_attrs(fs_info, false);
- 	sysfs_remove_group(&fs_info->fs_devices->super_kobj, &btrfs_feature_attr_group);
- 	sysfs_remove_files(&fs_info->fs_devices->super_kobj, btrfs_attrs);
--	btrfs_kobj_rm_device(fs_info, NULL);
-+	btrfs_kobj_rm_device(fs_info->fs_devices, NULL);
- 	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
- }
- 
-@@ -636,20 +636,20 @@ static void init_feature_attrs(void)
- 
- /* when one_device is NULL, it removes all device links */
- 
--int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-+int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devices,
- 		struct btrfs_device *one_device)
- {
- 	struct hd_struct *disk;
- 	struct kobject *disk_kobj;
- 
--	if (!fs_info->fs_devices->device_dir_kobj)
-+	if (!fs_devices->device_dir_kobj)
- 		return -EINVAL;
- 
- 	if (one_device && one_device->bdev) {
- 		disk = one_device->bdev->bd_part;
- 		disk_kobj = &part_to_dev(disk)->kobj;
- 
--		sysfs_remove_link(fs_info->fs_devices->device_dir_kobj,
-+		sysfs_remove_link(fs_devices->device_dir_kobj,
- 						disk_kobj->name);
- 	}
- 
-@@ -657,13 +657,13 @@ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
- 		return 0;
- 
- 	list_for_each_entry(one_device,
--			&fs_info->fs_devices->devices, dev_list) {
-+			&fs_devices->devices, dev_list) {
- 		if (!one_device->bdev)
- 			continue;
- 		disk = one_device->bdev->bd_part;
- 		disk_kobj = &part_to_dev(disk)->kobj;
- 
--		sysfs_remove_link(fs_info->fs_devices->device_dir_kobj,
-+		sysfs_remove_link(fs_devices->device_dir_kobj,
- 						disk_kobj->name);
- 	}
- 
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index eeb86a8..3938ac1 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -72,6 +72,6 @@ extern struct kobj_type space_info_ktype;
- extern struct kobj_type btrfs_raid_ktype;
- int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
- 		struct btrfs_device *one_device);
--int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-+int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devices,
-                 struct btrfs_device *one_device);
- #endif /* _BTRFS_SYSFS_H_ */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ee318af..549f978 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1701,7 +1701,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	if (device->bdev) {
- 		device->fs_devices->open_devices--;
- 		/* remove sysfs entry */
--		btrfs_kobj_rm_device(root->fs_info, device);
-+		btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
- 	}
- 
- 	call_rcu(&device->rcu, free_device);
-@@ -2285,7 +2285,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- error_trans:
- 	btrfs_end_transaction(trans, root);
- 	rcu_string_free(device->name);
--	btrfs_kobj_rm_device(root->fs_info, device);
-+	btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
- 	kfree(device);
- error:
- 	blkdev_put(bdev, FMODE_EXCL);
+v2->v3:
+  . added missing signed-off
+  . Dave comment
+  . there isn't v2 for individual patch, I marked individual patch v3
+    where necessary
+v1->v2:
+  . adds fresh set of patches from 12 to 24 to support seed fsids
+  on btrfs sysfs layout and the related frame work changes
+  . the patches 1 to 12 has no changes from the previous submit
+
+
+Anand Jain (26):
+  Btrfs: sysfs: fix, btrfs_release_super_kobj() should to clean up the
+    kobject data
+  Btrfs: sysfs: fix, fs_info kobject_unregister has init_completion()
+    twice
+  Btrfs: sysfs: fix, undo sysfs device links
+  Btrfs: sysfs: fix, kobject pointer clean up needed after kobject
+    release
+  Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
+  Btrfs: sysfs: reorder the kobject creations
+  Btrfs: sysfs: rename __btrfs_sysfs_remove_one to
+    btrfs_sysfs_remove_fsid
+  Btrfs: sysfs: introduce function btrfs_sysfs_add_fsid() to create
+    sysfs fsid
+  Btrfs: sysfs: let default_attrs be separate from the kset
+  Btrfs: sysfs: separate device kobject and its attribute creation
+  Btrfs: sysfs: move super_kobj and device_dir_kobj from fs_info to
+    btrfs_fs_devices
+  Btrfs: introduce btrfs_get_fs_uuids to get fs_uuids v2
+  Btrfs: sysfs: add pointer to access fs_info from fs_devices v2
+  Btrfs: sysfs: provide framework to remove all fsid sysfs kobject v2
+  Btrfs: sysfs btrfs_kobj_add_device() pass fs_devices instead of
+    fs_info
+  Btrfs: sysfs btrfs_kobj_rm_device() pass fs_devices instead of fs_info
+  Btrfs: sysfs: make btrfs_sysfs_add_fsid() non static
+  Btrfs: sysfs: make btrfs_sysfs_add_device() non static
+  Btrfs: sysfs: btrfs_sysfs_remove_fsid() make it non static
+  Btrfs: sysfs: separate kobject and attribute creation
+  Btrfs: sysfs: add support to add parent for fsid
+  Btrfs: sysfs: don't fail seeding for the sake of sysfs kobject issue
+    v2
+  Btrfs: free the stale device
+  Btrfs: sysfs: add support to show replacing target in the sysfs
+  Btrfs: sysfs: support seed devices in the sysfs layout v3
+  Btrfs: create sys/fs/btrfs/fsid when scanned instead of when mounted
+
+ fs/btrfs/ctree.h       |   7 +-
+ fs/btrfs/dev-replace.c |   7 +-
+ fs/btrfs/disk-io.c     |  26 ++++-
+ fs/btrfs/sysfs.c       | 266 +++++++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/sysfs.h       |  15 ++-
+ fs/btrfs/volumes.c     |  99 +++++++++++++++---
+ fs/btrfs/volumes.h     |   9 ++
+ 7 files changed, 345 insertions(+), 84 deletions(-)
+
 -- 
 2.0.0.153.g79dcccc
 

@@ -1,90 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:50242 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751161AbbCIMpF convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 08:45:05 -0400
-Message-ID: <1425905102.1178.27.camel@gmx.de>
-Subject: Re: Lock-ups, assertion failure  in btrfsck, scrub reporting super=4
-From: Tobias Getzner <tobias.getzner@gmx.de>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Date: Mon, 09 Mar 2015 13:45:02 +0100
-In-Reply-To: <pan$387dc$a5a9554$54f0b365$e45c3f38@cox.net>
-References: <1425556080.32673.11.camel@gmx.de>
-	 <pan$387dc$a5a9554$54f0b365$e45c3f38@cox.net>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:37149 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751596AbbCIOyA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 10:54:00 -0400
+Received: by widem10 with SMTP id em10so6607457wid.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2015 07:53:59 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H41AVqn9xK+Dwo+AjSYpjsEH9wWG+nbCxio6+oL_0TBfA@mail.gmail.com>
+References: <CADurGxyF6g5Z+HNMry+q=b_oCKv1a6StDvp6pL20z=twK0BMHQ@mail.gmail.com>
+	<CAL3q7H41AVqn9xK+Dwo+AjSYpjsEH9wWG+nbCxio6+oL_0TBfA@mail.gmail.com>
+Date: Mon, 9 Mar 2015 15:53:59 +0100
+Message-ID: <CADurGxw7ppm0_4beqBu=3JDJszg6_01kqdjma5OE3PbDk_roYQ@mail.gmail.com>
+Subject: Re: Status: converting raid levels
+From: Marcel Ritter <ritter.marcel@gmail.com>
+To: fdmanana@gmail.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fr, 2015-03-06 at 00:10 +0000, Duncan wrote:
-> Tobias Getzner posted on Thu, 05 Mar 2015 12:48:00 +0100 as excerpted:
-> 
-> > I booted back into the graphical system, and when not running Firefox, I
-> > did not get any immediate lock-ups anymore.
-> > 
-> > I’d welcome any advice on how to proceed, i.e., in how to resolve the
-> > lock-ups, and, if possible, in fixing potential problems with the
-> > file-system.
-> 
-> I'll let a dev answer that side of things but a couple comments, for what 
-> they are worth...
-> 
-> 1) The firefox issue is likely related to the sqlite database files it 
-> uses.  Database random-rewrite-pattern files are always a challenge for 
-> cow-based filesystems such as btrfs, tho with small ones like those 
-> firefox typically uses, the btrfs autodefrag mount option can help.
+Hi,
 
-Thanks, I usually mount with autodefrag as well. Also, I had the
-Firefox sqlite databases set to NOCOW, which might or might not be
-involved in triggering this bug.
+I tried to revert the mentioned patch set (kernel 4.0.0-rc2).
 
-> Meanwhile, the problem file is likely in your firefox profile.  You could 
-> try starting with a clean firefox profile and see if the problem 
-> disappears, and if so, bisect the profile to see what file it is and 
-> delete it or restore it from backup.
+Starting a new re-balance with this kernel, while running my I/O test
+(big dd write) on the same btrfs volume (14 disks) resulted in "cpu stuck"
+messages - system was unusable just a few seconds later.
 
-I guessed the same, so I moved my old profile aside and made a fresh
-copy (no reflinking) of the old one. Indeed this was fruitful, because
-the machine would no longer predictably lock up after starting Firefox.
+With a plain 4.0.0-rc2 kernel the rebalance at least does finish
+without crashing/hanging the system, but - on the downside - it
+does not change the raid layout of the btrfs volume :-(
 
-However, after a while I figured I would «rm -r» the old (somehow
-corrupted) profile folder, and this command then immediately froze the
-machine. To my dismay, when I rebooted, the lock-up would now not only
-trigger when starting Firefox with the old profile, but instead a
-soft-lockup would predictably trigger when lauching zsh, most likely
-when it sourced some rc file (the zsh binary itself is on another,
-uncorrupted partition).
+Any other ideas?
 
-Again, here’s today’s kernel logs with some back-traces from btrfs.
-While the logs I posted in the previous message were when running
-kernel 3.19 and 3.18.6, these logs are with 3.19.1.
-
-    http://a.pomf.se/xmmpgw.xz
-
-Since I need the machine for work, I decided to create a new btrfs FS
-on a spare partition and copy over all the data (since the scrub had
-indicated no problems with the data, except super=4). I noticed that
-even just mounting the old partition would cause a «kernel bug at
-ctree.h:2498». This is not in the logs because I had booted into a
-rescue system to copy the files (3.16.3 kernel). The back-trace however
-seems to be the same which follows «kernel BUG at
-fs/btrfs/ctree.h:2501» in my logs.
-
-Luckily, I could mount the old partition read-only and all the files
-could be rsynced to the new FS just fine.
-
-For now I still have the corrupted file-system lying around, so if some
-additional information from there could be helpful in fixing this
-issue, let me know. I won’t be able to keep it around for too long
-though, since the spare partition I’m using now is a bit restricted in
-space.
-
-Apart from the corruption issue as such, it might be helpful if the
-assertion failure in btrfsck I posted could give some informative
-output as to what’s happening.
-
-Best regards,
-Tobias
-
-
+2015-03-07 10:39 GMT+01:00 Filipe David Manana <fdmanana@gmail.com>:
+> On Fri, Mar 6, 2015 at 10:22 AM, Marcel Ritter <ritter.marcel@gmail.com> wrote:
+>> Hi,
+>>
+>> please, can someone comment on the current status of raid level migration?
+>> (kernel 4.0.0-rc2, btrfs-progs 3.19-rc2)
+>>
+>> I just started testing this feature, and it doesn't seem to work:
+>>
+>> Starting with Raid1:
+>>
+>> root@thunder[ ~/btrfs-progs ]# ./btrfs fi df /tmp/m
+>> Data, RAID1: total=3.00GiB, used=512.00KiB
+>> Data, single: total=8.00MiB, used=0.00B
+>> System, RAID1: total=8.00MiB, used=16.00KiB
+>> System, single: total=4.00MiB, used=0.00B
+>> Metadata, RAID1: total=1.00GiB, used=112.00KiB
+>> Metadata, single: total=8.00MiB, used=0.00B
+>> GlobalReserve, single: total=16.00MiB, used=0.00B
+>>
+>> Converting to Raid10:
+>>
+>> root@thunder[ ~/btrfs-progs ]# ./btrfs balance start -dconvert=raid10
+>> -mconvert=raid10 /tmp/m/
+>> Done, had to relocate 9 out of 9 chunks
+>>
+>> Still Raid1 ...:
+>>
+>> root@thunder[ ~/btrfs-progs ]# ./btrfs fi df /tmp/m
+>> Data, RAID1: total=35.00GiB, used=31.49GiB
+>> System, RAID1: total=32.00MiB, used=16.00KiB
+>> Metadata, RAID1: total=1.00GiB, used=33.86MiB
+>> GlobalReserve, single: total=16.00MiB, used=0.00B
+>>
+>> I also tried conversion of raid6 - but it did not work either
+>> (according to btrfs fi df output).
+>>
+>> Did I miss something, or is it a bug?
+>
+> Seems like the regression Holger found due to a patch added to 4.0:
+>
+> http://www.spinics.net/lists/linux-btrfs/msg42084.html
+>
+> (he mentions a 3.18.x kernel, but that's because he builds his own
+> kernels with patches backported)
+>
+>>
+>> Bye,
+>>     Marcel
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+> --
+> Filipe David Manana,
+>
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."

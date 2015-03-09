@@ -1,62 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20860 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:20839 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753378AbbCIRKr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:47 -0400
+	with ESMTP id S1753395AbbCIRKq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:46 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 14/26] Btrfs: sysfs: provide framework to remove all fsid sysfs kobject v2
-Date: Tue, 10 Mar 2015 06:38:32 +0800
-Message-Id: <1425940724-7744-15-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 16/26] Btrfs: sysfs btrfs_kobj_rm_device() pass fs_devices instead of fs_info
+Date: Tue, 10 Mar 2015 06:38:34 +0800
+Message-Id: <1425940724-7744-17-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-just a helper function to clean up the sysfs fsid kobjects
+since btrfs_kobj_rm_device() does nothing with fs_info
 
-v2: update commit
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
+ fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/sysfs.c       | 12 ++++++------
+ fs/btrfs/sysfs.h       |  2 +-
+ fs/btrfs/volumes.c     |  4 ++--
+ 4 files changed, 10 insertions(+), 10 deletions(-)
 
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 2acc0aa..124b60f 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -592,7 +592,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	mutex_unlock(&uuid_mutex);
+ 
+ 	/* replace the sysfs entry */
+-	btrfs_kobj_rm_device(fs_info, src_device);
++	btrfs_kobj_rm_device(fs_info->fs_devices, src_device);
+ 	btrfs_kobj_add_device(fs_info->fs_devices, tgt_device);
+ 	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
+ 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 95d6257..a8ee136 100644
+index 76afc96..5055809 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -515,7 +515,7 @@ static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
- 	return 0;
+@@ -555,7 +555,7 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ 	addrm_unknown_feature_attrs(fs_info, false);
+ 	sysfs_remove_group(&fs_info->fs_devices->super_kobj, &btrfs_feature_attr_group);
+ 	sysfs_remove_files(&fs_info->fs_devices->super_kobj, btrfs_attrs);
+-	btrfs_kobj_rm_device(fs_info, NULL);
++	btrfs_kobj_rm_device(fs_info->fs_devices, NULL);
+ 	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
  }
  
--static void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
-+static void __btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
- {
- 	if (fs_devs->device_dir_kobj) {
- 		kobject_del(fs_devs->device_dir_kobj);
-@@ -528,6 +528,21 @@ static void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
- 	wait_for_completion(&fs_devs->kobj_unregister);
- }
+@@ -636,20 +636,20 @@ static void init_feature_attrs(void)
  
-+/* when fs_devs is NULL it will remove all fsid kobject */
-+static void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
-+{
-+	struct list_head *fs_uuids = btrfs_get_fs_uuids();
-+
-+	if (fs_devs) {
-+		__btrfs_sysfs_remove_fsid(fs_devs);
-+		return;
-+	}
-+
-+	list_for_each_entry(fs_devs, fs_uuids, list) {
-+		__btrfs_sysfs_remove_fsid(fs_devs);
-+	}
-+}
-+
- void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ /* when one_device is NULL, it removes all device links */
+ 
+-int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
++int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devices,
+ 		struct btrfs_device *one_device)
  {
- 	btrfs_reset_fs_info_ptr(fs_info);
+ 	struct hd_struct *disk;
+ 	struct kobject *disk_kobj;
+ 
+-	if (!fs_info->fs_devices->device_dir_kobj)
++	if (!fs_devices->device_dir_kobj)
+ 		return -EINVAL;
+ 
+ 	if (one_device && one_device->bdev) {
+ 		disk = one_device->bdev->bd_part;
+ 		disk_kobj = &part_to_dev(disk)->kobj;
+ 
+-		sysfs_remove_link(fs_info->fs_devices->device_dir_kobj,
++		sysfs_remove_link(fs_devices->device_dir_kobj,
+ 						disk_kobj->name);
+ 	}
+ 
+@@ -657,13 +657,13 @@ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
+ 		return 0;
+ 
+ 	list_for_each_entry(one_device,
+-			&fs_info->fs_devices->devices, dev_list) {
++			&fs_devices->devices, dev_list) {
+ 		if (!one_device->bdev)
+ 			continue;
+ 		disk = one_device->bdev->bd_part;
+ 		disk_kobj = &part_to_dev(disk)->kobj;
+ 
+-		sysfs_remove_link(fs_info->fs_devices->device_dir_kobj,
++		sysfs_remove_link(fs_devices->device_dir_kobj,
+ 						disk_kobj->name);
+ 	}
+ 
+diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+index eeb86a8..3938ac1 100644
+--- a/fs/btrfs/sysfs.h
++++ b/fs/btrfs/sysfs.h
+@@ -72,6 +72,6 @@ extern struct kobj_type space_info_ktype;
+ extern struct kobj_type btrfs_raid_ktype;
+ int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
+ 		struct btrfs_device *one_device);
+-int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
++int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devices,
+                 struct btrfs_device *one_device);
+ #endif /* _BTRFS_SYSFS_H_ */
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ee318af..549f978 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1701,7 +1701,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	if (device->bdev) {
+ 		device->fs_devices->open_devices--;
+ 		/* remove sysfs entry */
+-		btrfs_kobj_rm_device(root->fs_info, device);
++		btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
+ 	}
+ 
+ 	call_rcu(&device->rcu, free_device);
+@@ -2285,7 +2285,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ error_trans:
+ 	btrfs_end_transaction(trans, root);
+ 	rcu_string_free(device->name);
+-	btrfs_kobj_rm_device(root->fs_info, device);
++	btrfs_kobj_rm_device(root->fs_info->fs_devices, device);
+ 	kfree(device);
+ error:
+ 	blkdev_put(bdev, FMODE_EXCL);
 -- 
 2.0.0.153.g79dcccc
 

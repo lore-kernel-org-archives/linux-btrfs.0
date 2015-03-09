@@ -1,232 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.mathematik.uni-freiburg.de ([132.230.30.5]:40209 "EHLO
-	email.mathematik.uni-freiburg.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751343AbbCHUGV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 8 Mar 2015 16:06:21 -0400
-To: linux-btrfs@vger.kernel.org
-Reply-To: ziegler@uni-freiburg.de
-Subject: kernel BUG at fs/btrfs/root-tree.c
-Message-ID: <20150308202315.742696@ziegler>
-Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="742696.742696"
-From: Martin Ziegler <ziegler@email.mathematik.uni-freiburg.de>
-Date: Sun, 08 Mar 2015 20:23:25 +0100
+Received: from cn.fujitsu.com ([59.151.112.132]:5848 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751170AbbCIAsJ convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Mar 2015 20:48:09 -0400
+Message-ID: <54FCEDC9.7000104@cn.fujitsu.com>
+Date: Mon, 9 Mar 2015 08:48:09 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@redhat.com>, Omar Sandoval <osandov@osandov.com>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>
+CC: <bo.li.liu@oracle.com>, Eryu Guan <guaneryu@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs oops while mounting fuzzed btrfs image
+References: <20150305070933.GB17015@dhcp-13-216.nay.redhat.com> <20150305094611.GA4147@localhost.localdomain> <20150305101354.GC17015@dhcp-13-216.nay.redhat.com> <20150305102701.GE4147@localhost.localdomain> <54F90937.70309@cn.fujitsu.com> <20150306100113.GA26485@mew> <54F9CBBD.9080206@redhat.com>
+In-Reply-To: <54F9CBBD.9080206@redhat.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---742696.742696
-Content-Disposition: inline
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: 8bit
 
-For no apparent reason I cannot longer mount my RAID1-pair of
-500GB-disks read/write. If I do this, the kernel crashes invariably a
-few seconds after the first read attempt. The syslog contains always:
+-------- Original Message  --------
+Subject: Re: btrfs oops while mounting fuzzed btrfs image
+From: Eric Sandeen <sandeen@redhat.com>
+To: Omar Sandoval <osandov@osandov.com>, Qu Wenruo 
+<quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>, David Sterba 
+<dsterba@suse.cz>
+Date: 2015年03月06日 23:46
 
+> On 3/6/15 4:01 AM, Omar Sandoval wrote:
+>
+>> Hi, Qu,
+>>
+>> I'm not seeing that in the code I'm looking at :( In fsfuzz:447, I see
+>> the mangle executable called with an offset starting at 0, which would
+>> mean that the superblock isn't safe.
+>
+> (Semi-wild guess follows):
+>
+> He may be using a hacked version of mangle which I had been using for
+> btrfsck testing; I had neutered it a lot because if I let it hit the front
+> of the filesystem, there was no hope at all for the repair, ever.
+>
+> Qu, if you're using it for fsck testing, I'd eventually make the mangling
+> more severe, and go back to the upstream version of mangle.c.
+>
+> (I keep meaning to make mangle.c and fsfuzzer in general more flexible
+> and useful, but for now I just have local hacks, sorry).
+>
+> -Eric
 
-  kernel: BTRFS critical (device sdc): unable to update root key 5 132 0
-  kernel: ------------[ cut here ]------------
-  kernel: kernel BUG at fs/btrfs/root-tree.c:160!
-  kernel: invalid opcode: 0000 [#1] SMP
+Understood.
 
-Fortunately I can mount the disks read-only without problems.
-(So I will not try "btrfs check" before I have copied the disks.)
+Thanks,
+Qu
 
-"btrfs scrub" works and found no errors
-"btrfs rescue super-recover" works but does not help.
-"mount -o recovery" does not help
-
-This happens with all kernels I tried: 3.16, 3.16.7-ctk7, 3.18.9,
-3.19.1, 4.0-rc2
-
-Regards,
-
-Martin
-
-PS: I attach the relevant part of syslog.
-
-
---742696.742696
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename="syslog"
-Content-Transfer-Encoding: base64
-
-TWFyICA4IDE0OjIxOjIyIHplcnR6IGtlcm5lbDogQnRyZnMgbG9hZGVkCk1hciAgOCAxNDoyMToy
-MiB6ZXJ0eiBrZXJuZWw6IEJUUkZTOiBkZXZpY2UgbGFiZWwgcmFpZDFfMjAxMzA5MTkgZGV2aWQg
-MiB0cmFuc2lkIDc2MzQgL2Rldi9zZGIKTWFyICA4IDE0OjIxOjI0IHplcnR6IGtlcm5lbDogc2Nz
-aSA3OjA6MDowOiBEaXJlY3QtQWNjZXNzICAgICBUT1NISUJBICBFeHRlcm5hbCBVU0IgMy4wIDAy
-MDEgUFE6IDAgQU5TSTogNgpNYXIgIDggMTQ6MjE6MjQgemVydHoga2VybmVsOiBzZCA3OjA6MDow
-OiBBdHRhY2hlZCBzY3NpIGdlbmVyaWMgc2czIHR5cGUgMApNYXIgIDggMTQ6MjE6MjQgemVydHog
-a2VybmVsOiBzZCA3OjA6MDowOiBbc2RjXSA5NzY3NzMxNjQgNTEyLWJ5dGUgbG9naWNhbCBibG9j
-a3M6ICg1MDAgR0IvNDY1IEdpQikKTWFyICA4IDE0OjIxOjI0IHplcnR6IGtlcm5lbDogc2QgNzow
-OjA6MDogW3NkY10gV3JpdGUgUHJvdGVjdCBpcyBvZmYKTWFyICA4IDE0OjIxOjI0IHplcnR6IGtl
-cm5lbDogc2QgNzowOjA6MDogW3NkY10gTW9kZSBTZW5zZTogMmYgMDAgMDAgMDAKTWFyICA4IDE0
-OjIxOjI0IHplcnR6IGtlcm5lbDogc2QgNzowOjA6MDogW3NkY10gV3JpdGUgY2FjaGU6IGRpc2Fi
-bGVkLCByZWFkIGNhY2hlOiBlbmFibGVkLCBkb2Vzbid0IHN1cHBvcnQgRFBPIG9yIEZVQQpNYXIg
-IDggMTQ6MjE6MjQgemVydHoga2VybmVsOiBzZCA3OjA6MDowOiBbc2RjXSBBdHRhY2hlZCBTQ1NJ
-IGRpc2sKTWFyICA4IDE0OjIxOjI0IHplcnR6IGtlcm5lbDogQlRSRlM6IGRldmljZSBsYWJlbCBy
-YWlkMV8yMDEzMDkxOSBkZXZpZCAxIHRyYW5zaWQgNzYzNCAvZGV2L3NkYwoKLi4uLi4uLi4uLi4K
-CgpNYXIgIDggMTQ6Mjg6MzQgemVydHoga2VybmVsOiBCVFJGUyBpbmZvIChkZXZpY2Ugc2RjKTog
-ZW5hYmxpbmcgYXV0byByZWNvdmVyeQpNYXIgIDggMTQ6Mjg6MzQgemVydHoga2VybmVsOiBCVFJG
-UyBpbmZvIChkZXZpY2Ugc2RjKTogZGlzayBzcGFjZSBjYWNoaW5nIGlzIGVuYWJsZWQKTWFyICA4
-IDE0OjI4OjM0IHplcnR6IGtlcm5lbDogQlRSRlM6IGhhcyBza2lubnkgZXh0ZW50cwpNYXIgIDgg
-MTQ6Mjg6MzQgemVydHoga2VybmVsOiBCVFJGUzogYmRldiAvZGV2L3NkYyBlcnJzOiB3ciA0NjM0
-MTEsIHJkIDM2OTIwMiwgZmx1c2ggMCwgY29ycnVwdCA5MjA4MSwgZ2VuIDQ1MgpNYXIgIDggMTQ6
-Mjg6MzQgemVydHoga2VybmVsOiBCVFJGUzogYmRldiAvZGV2L3NkYiBlcnJzOiB3ciAzNTIxOSwg
-cmQgMCwgZmx1c2ggMTIsIGNvcnJ1cHQgMCwgZ2VuIDE0OQoKLi4uLi4uLi4uLi4KCk1hciAgOCAx
-NDo0MTowOSB6ZXJ0eiBrZXJuZWw6IEJUUkZTIGluZm8gKGRldmljZSBzZGMpOiBlbmFibGluZyBp
-bm9kZSBtYXAgY2FjaGluZwpNYXIgIDggMTQ6NDE6MDkgemVydHoga2VybmVsOiBCVFJGUyBpbmZv
-IChkZXZpY2Ugc2RjKTogZGlzayBzcGFjZSBjYWNoaW5nIGlzIGVuYWJsZWQKTWFyICA4IDE0OjQx
-OjA5IHplcnR6IGtlcm5lbDogQlRSRlM6IGhhcyBza2lubnkgZXh0ZW50cwpNYXIgIDggMTQ6NDE6
-MDkgemVydHoga2VybmVsOiBCVFJGUzogYmRldiAvZGV2L3NkYyBlcnJzOiB3ciA0NjM0MTEsIHJk
-IDM2OTIwMiwgZmx1c2ggMCwgY29ycnVwdCA5MjA4MSwgZ2VuIDQ1MgpNYXIgIDggMTQ6NDE6MDkg
-emVydHoga2VybmVsOiBCVFJGUzogYmRldiAvZGV2L3NkYiBlcnJzOiB3ciAzNTIxOSwgcmQgMCwg
-Zmx1c2ggMTIsIGNvcnJ1cHQgMCwgZ2VuIDE0OQoKLi4uLi4uLi4uLi4KCk1hciAgOCAxNDo0MTo1
-MCB6ZXJ0eiBrZXJuZWw6IEJUUkZTIGluZm8gKGRldmljZSBzZGMpOiBsZWFmIDY0NzYzMjgzODY1
-NiB0b3RhbCBwdHJzIDM1IGZyZWUgc3BhY2UgMTM2NQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2Vy
-bmVsOiAJaXRlbSAwIGtleSAoMjU2IDEgMCkgaXRlbW9mZiAzODM1IGl0ZW1zaXplIDE2MApNYXIg
-IDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJCWlub2RlIGdlbmVyYXRpb24gMyBzaXplIDMzNCBt
-b2RlIDQwNzU1Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDEga2V5ICgyNTYg
-MTIgMjU2KSBpdGVtb2ZmIDM4MjMgaXRlbXNpemUgMTIKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtl
-cm5lbDogCWl0ZW0gMiBrZXkgKDI1NiA4NCAzNzI4OTkwNTYpIGl0ZW1vZmYgMzc3NyBpdGVtc2l6
-ZSA0NgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJCWRpciBvaWQgMTExMyB0eXBlIDIK
-TWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCWl0ZW0gMyBrZXkgKDI1NiA4NCAxMjA0Nzc1
-MDU4KSBpdGVtb2ZmIDM3MzEgaXRlbXNpemUgNDYKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5l
-bDogCQlkaXIgb2lkIDExMjMgdHlwZSAyCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlp
-dGVtIDQga2V5ICgyNTYgODQgMTczOTM1MTI2MykgaXRlbW9mZiAzNjg3IGl0ZW1zaXplIDQ0Ck1h
-ciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAkJZGlyIG9pZCAyNjAgdHlwZSAxCk1hciAgOCAx
-NDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDUga2V5ICgyNTYgODQgMjI1NTU1MDE1NCkgaXRl
-bW9mZiAzNjQxIGl0ZW1zaXplIDQ2Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAkJZGly
-IG9pZCAxMTExIHR5cGUgMgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSA2IGtl
-eSAoMjU2IDg0IDIzNTUzODA0MzIpIGl0ZW1vZmYgMzYwNCBpdGVtc2l6ZSAzNwpNYXIgIDggMTQ6
-NDE6NTAgemVydHoga2VybmVsOiAJCWRpciBvaWQgMTA1MiB0eXBlIDIKTWFyICA4IDE0OjQxOjUw
-IHplcnR6IGtlcm5lbDogCWl0ZW0gNyBrZXkgKDI1NiA4NCAyNDAzNzY3MzM2KSBpdGVtb2ZmIDM1
-NjkgaXRlbXNpemUgMzUKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCQlkaXIgb2lkIDYz
-NSB0eXBlIDIKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCWl0ZW0gOCBrZXkgKDI1NiA4
-NCAyNDExNjg3MzI3KSBpdGVtb2ZmIDM1MjMgaXRlbXNpemUgNDYKTWFyICA4IDE0OjQxOjUwIHpl
-cnR6IGtlcm5lbDogCQlkaXIgb2lkIDExMTAgdHlwZSAyCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBr
-ZXJuZWw6IAlpdGVtIDkga2V5ICgyNTYgODQgMjk4ODc5NDA3MCkgaXRlbW9mZiAzNDc3IGl0ZW1z
-aXplIDQ2Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAkJZGlyIG9pZCAxMDk0IHR5cGUg
-MgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSAxMCBrZXkgKDI1NiA4NCAzMTAx
-NzY3MDk2KSBpdGVtb2ZmIDM0NDIgaXRlbXNpemUgMzUKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtl
-cm5lbDogCQlkaXIgb2lkIDEwNjAgdHlwZSAyCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6
-IAlpdGVtIDExIGtleSAoMjU2IDg0IDMyNzMwMDIyMjcpIGl0ZW1vZmYgMzQwNCBpdGVtc2l6ZSAz
-OApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJCWRpciBvaWQgMTA5MyB0eXBlIDIKTWFy
-ICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCWl0ZW0gMTIga2V5ICgyNTYgODQgMzYyMjQ0ODk4
-NCkgaXRlbW9mZiAzMzY5IGl0ZW1zaXplIDM1Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6
-IAkJZGlyIG9pZCAyNTggdHlwZSAyCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVt
-IDEzIGtleSAoMjU2IDg0IDM3MjczMzMxMDQpIGl0ZW1vZmYgMzMzMiBpdGVtc2l6ZSAzNwpNYXIg
-IDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJCWRpciBvaWQgNjM2IHR5cGUgMgpNYXIgIDggMTQ6
-NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSAxNCBrZXkgKDI1NiA4NCAzNzg0NTcxNjE0KSBpdGVt
-b2ZmIDMyODIgaXRlbXNpemUgNTAKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCQlkaXIg
-b2lkIDExMjIgdHlwZSAyCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDE1IGtl
-eSAoMjU2IDg0IDM5NTE2NDYyNDgpIGl0ZW1vZmYgMzIzNiBpdGVtc2l6ZSA0NgpNYXIgIDggMTQ6
-NDE6NTAgemVydHoga2VybmVsOiAJCWRpciBvaWQgMTA2MiB0eXBlIDIKTWFyICA4IDE0OjQxOjUw
-IHplcnR6IGtlcm5lbDogCWl0ZW0gMTYga2V5ICgyNTYgOTYgMikgaXRlbW9mZiAzMjAxIGl0ZW1z
-aXplIDM1Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDE3IGtleSAoMjU2IDk2
-IDkpIGl0ZW1vZmYgMzE2NiBpdGVtc2l6ZSAzNQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVs
-OiAJaXRlbSAxOCBrZXkgKDI1NiA5NiAxMCkgaXRlbW9mZiAzMTI5IGl0ZW1zaXplIDM3Ck1hciAg
-OCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDE5IGtleSAoMjU2IDk2IDE3KSBpdGVtb2Zm
-IDMwOTIgaXRlbXNpemUgMzcKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCWl0ZW0gMjAg
-a2V5ICgyNTYgOTYgMjIpIGl0ZW1vZmYgMzA1NyBpdGVtc2l6ZSAzNQpNYXIgIDggMTQ6NDE6NTAg
-emVydHoga2VybmVsOiAJaXRlbSAyMSBrZXkgKDI1NiA5NiAyMykgaXRlbW9mZiAzMDExIGl0ZW1z
-aXplIDQ2Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDIyIGtleSAoMjU2IDk2
-IDI1KSBpdGVtb2ZmIDI5NzMgaXRlbXNpemUgMzgKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5l
-bDogCWl0ZW0gMjMga2V5ICgyNTYgOTYgMjcpIGl0ZW1vZmYgMjkyNyBpdGVtc2l6ZSA0NgpNYXIg
-IDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSAyNCBrZXkgKDI1NiA5NiAzMSkgaXRlbW9m
-ZiAyODgxIGl0ZW1zaXplIDQ2Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDI1
-IGtleSAoMjU2IDk2IDMzKSBpdGVtb2ZmIDI4MzUgaXRlbXNpemUgNDYKTWFyICA4IDE0OjQxOjUw
-IHplcnR6IGtlcm5lbDogCWl0ZW0gMjYga2V5ICgyNTYgOTYgMzUpIGl0ZW1vZmYgMjc4OSBpdGVt
-c2l6ZSA0NgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSAyNyBrZXkgKDI1NiA5
-NiAzNikgaXRlbW9mZiAyNzQ1IGl0ZW1zaXplIDQ0Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJu
-ZWw6IAlpdGVtIDI4IGtleSAoMjU2IDk2IDM4KSBpdGVtb2ZmIDI2OTUgaXRlbXNpemUgNTAKTWFy
-ICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogCWl0ZW0gMjkga2V5ICgyNTYgOTYgMzkpIGl0ZW1v
-ZmYgMjY0OSBpdGVtc2l6ZSA0NgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAJaXRlbSAz
-MCBrZXkgKDI2MCAxIDApIGl0ZW1vZmYgMjQ4OSBpdGVtc2l6ZSAxNjAKTWFyICA4IDE0OjQxOjUw
-IHplcnR6IGtlcm5lbDogCQlpbm9kZSBnZW5lcmF0aW9uIDc0NDUgc2l6ZSAzIG1vZGUgMTAwNjQ0
-Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDMxIGtleSAoMjYwIDEyIDI1Nikg
-aXRlbW9mZiAyNDY1IGl0ZW1zaXplIDI0Ck1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlp
-dGVtIDMyIGtleSAoMjYwIDEwOCAwKSBpdGVtb2ZmIDI0NDEgaXRlbXNpemUgMjQKTWFyICA4IDE0
-OjQxOjUwIHplcnR6IGtlcm5lbDogCQlpbmxpbmUgZXh0ZW50IGRhdGEgc2l6ZSAzCk1hciAgOCAx
-NDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IAlpdGVtIDMzIGtleSAoMTg0NDY3NDQwNzM3MDk1NTE2MDQg
-MSAwKSBpdGVtb2ZmIDIyODEgaXRlbXNpemUgMTYwCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJu
-ZWw6IAkJaW5vZGUgZ2VuZXJhdGlvbiAwIHNpemUgMCBtb2RlIDEwMDYwMApNYXIgIDggMTQ6NDE6
-NTAgemVydHoga2VybmVsOiAJaXRlbSAzNCBrZXkgKDE4NDQ2NzQ0MDczNzA5NTUxNjA1IDAgMCkg
-aXRlbW9mZiAyMjQwIGl0ZW1zaXplIDQxCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IEJU
-UkZTIGNyaXRpY2FsIChkZXZpY2Ugc2RjKTogdW5hYmxlIHRvIHVwZGF0ZSByb290IGtleSA1IDEz
-MiAwCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IC0tLS0tLS0tLS0tLVsgY3V0IGhlcmUg
-XS0tLS0tLS0tLS0tLQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBrZXJuZWwgQlVHIGF0
-IGZzL2J0cmZzL3Jvb3QtdHJlZS5jOjE2MCEKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDog
-aW52YWxpZCBvcGNvZGU6IDAwMDAgWyMxXSBTTVAKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5l
-bDogTW9kdWxlcyBsaW5rZWQgaW46IHVzYmxwIGJ0cmZzIHhvciB6bGliX2RlZmxhdGUgcmFpZDZf
-cHEgc2cgdWFzIHVzYl9zdG9yYWdlIGN0ciBjY20gbmZfbG9nX2lwdjQgbmZfbG9nX2NvbW1vbiB4
-dF9MT0cgaXB0X1JFSkVDVCBuZl9yZWplY3RfaXB2NCB4dF90Y3B1ZHAgbmZfY29ubnRyYWNrX2lw
-djQgbmZfZGVmcmFnX2lwdjQgeHRfc3RhdGUgbmZfY29ubnRyYWNrIGlwdGFibGVfZmlsdGVyIGlw
-X3RhYmxlcyB4X3RhYmxlcyBhcmM0IGl3bGR2bSBzbmRfaGRhX2NvZGVjX2NvbmV4YW50IHNuZF9o
-ZGFfY29kZWNfZ2VuZXJpYyBtYWM4MDIxMSBhZXNuaV9pbnRlbCBzbmRfaGRhX2ludGVsIGl3bHdp
-ZmkgYWVzX3g4Nl82NCBzbmRfaGRhX2NvbnRyb2xsZXIgY2ZnODAyMTEgc25kX2hkYV9jb2RlYyBl
-aGNpX3BjaSBnbHVlX2hlbHBlciBscncgc25kX3BjbV9vc3MgZ2YxMjhtdWwgc25kX21peGVyX29z
-cyBhYmxrX2hlbHBlciBzbmRfcGNtIGNyeXB0ZCBzbmRfdGltZXIgZWhjaV9oY2QgdXNiY29yZSB1
-c2JfY29tbW9uIFtsYXN0IHVubG9hZGVkOiBwcHNfY29yZV0KTWFyICA4IDE0OjQxOjUwIHplcnR6
-IGtlcm5lbDogQ1BVOiAxIFBJRDogOTE5NSBDb21tOiBidHJmcy10cmFuc2FjdGkgVGFpbnRlZDog
-RyAgICAgVSAgICAgICAgICA0LjAuMC1yYzItMDAzNDMtZzY0OThmNDMgIzc3Ck1hciAgOCAxNDo0
-MTo1MCB6ZXJ0eiBrZXJuZWw6IEhhcmR3YXJlIG5hbWU6IExFTk9WTyA0MzQ5V0s3LzQzNDlXSzcs
-IEJJT1MgNk1FVDgxV1cgKDEuNDEgKSAxMC8yNi8yMDEwCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBr
-ZXJuZWw6IHRhc2s6IGZmZmY4ODAwOGZkYTA3ZDAgdGk6IGZmZmY4ODAxMzM0ZTAwMDAgdGFzay50
-aTogZmZmZjg4MDEzMzRlMDAwMApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBSSVA6IDAw
-MTA6WzxmZmZmZmZmZmEwNDk1OWI5Pl0gIFs8ZmZmZmZmZmZhMDQ5NTliOT5dIGJ0cmZzX3VwZGF0
-ZV9yb290KzB4ODgvMHgxZTAgW2J0cmZzXQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBS
-U1A6IDAwMTg6ZmZmZjg4MDEzMzRlM2QyOCAgRUZMQUdTOiAwMDAxMDI5MgpNYXIgIDggMTQ6NDE6
-NTAgemVydHoga2VybmVsOiBSQVg6IDAwMDAwMDAwMDAwMDAwM2UgUkJYOiAwMDAwMDAwMDAwMDAw
-MDAxIFJDWDogMDAwMDAwMDAwMDAwMDAwNwpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBS
-RFg6IDAwMDAwMDAwMDAwMDUzNTMgUlNJOiAwMDAwMDAwMDAwMDAwMjQ2IFJESTogZmZmZjg4MDEz
-N2M4ZDBlMApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBSQlA6IGZmZmY4ODAwNjZkZDkw
-OTAgUjA4OiAwMDAwMDAwMDAwMDAwMDAwIFIwOTogMDAwMDAwMDAwMDAwMDAwMApNYXIgIDggMTQ6
-NDE6NTAgemVydHoga2VybmVsOiBSMTA6IDAwMDAwMDAwMDAwMDAwMDEgUjExOiAwMDAwMDAwMDAw
-YWFhYWFhIFIxMjogZmZmZjg4MDA5MjI5MDgwMApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVs
-OiBSMTM6IGZmZmY4ODAwNjZkYzgwYjAgUjE0OiBmZmZmODgwMDkyMmY0MWRmIFIxNTogZmZmZjg4
-MDA5MjJmNDAyOApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBGUzogIDAwMDAwMDAwMDAw
-MDAwMDAoMDAwMCkgR1M6ZmZmZjg4MDEzN2M4MDAwMCgwMDAwKSBrbmxHUzowMDAwMDAwMDAwMDAw
-MDAwCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IENTOiAgMDAxMCBEUzogMDAwMCBFUzog
-MDAwMCBDUjA6IDAwMDAwMDAwODAwNTAwM2IKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDog
-Q1IyOiAwMDAwN2ZkZjMwMjM0MDk0IENSMzogMDAwMDAwMDAwMTVhMzAwMCBDUjQ6IDAwMDAwMDAw
-MDAwMDA3ZTAKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogU3RhY2s6Ck1hciAgOCAxNDo0
-MTo1MCB6ZXJ0eiBrZXJuZWw6IDAwMDAwMDAwMDAwMDAwMDAgZmZmZmZmZmY4MTE4OGIzZCBmZmZm
-ZmZmZjgxMTg4NjI2IDAwMDAwMDAwMDAwMDAwMDAKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5l
-bDogZmZmZjg4MDEyNTRlMWNlMCBmZmZmODgwMDY2ZGM4MGIwIGZmZmY4ODAwOTIwMWMwMDAgZmZm
-Zjg4MDA5MjAxYzA2OApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAwMDAwMDAwMDAwMDAw
-MDAxIGZmZmY4ODAwOTIyZjQwMDAgMDAwMDAwMDAwMDAwMDAwMSBmZmZmZmZmZmEwNGZhZTZkCk1h
-ciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IENhbGwgVHJhY2U6Ck1hciAgOCAxNDo0MTo1MCB6
-ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmY4MTE4OGIzZD5dID8gcmFkaXhfdHJlZV9nYW5nX2xvb2t1
-cF90YWcrMHhhOS8weGJkCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmY4
-MTE4ODYyNj5dID8gcmFkaXhfdHJlZV90YWdfY2xlYXIrMHg4Yy8weGViCk1hciAgOCAxNDo0MTo1
-MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmZhMDRmYWU2ZD5dID8gY29tbWl0X2ZzX3Jvb3RzLmlz
-cmEuMTgrMHgxMGIvMHgxM2EgW2J0cmZzXQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBb
-PGZmZmZmZmZmYTA0OTNhODk+XSA/IGJ0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHgxNzQvMHgxODcg
-W2J0cmZzXQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBbPGZmZmZmZmZmYTA0YTEyYzE+
-XSA/IGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbisweDQwMy8weDhkNSBbYnRyZnNdCk1hciAgOCAx
-NDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmZhMDRhMWFmOD5dID8gc3RhcnRfdHJhbnNh
-Y3Rpb24rMHgzNjUvMHg0ODYgW2J0cmZzXQpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBb
-PGZmZmZmZmZmYTA0OWQ3ODM+XSA/IHRyYW5zYWN0aW9uX2t0aHJlYWQrMHhlMS8weDE5OCBbYnRy
-ZnNdCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmZhMDQ5ZDZhMj5dID8g
-YnRyZnNfY2xlYW51cF90cmFuc2FjdGlvbisweDM4Zi8weDM4ZiBbYnRyZnNdCk1hciAgOCAxNDo0
-MTo1MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZmZmZmZmY4MTA0YTAyMD5dID8ga3RocmVhZCsweGFiLzB4
-YjMKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogWzxmZmZmZmZmZjgxMDQwMDAwPl0gPyBn
-ZXRfc2lnbmFsKzB4MmUwLzB4NGNlCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJuZWw6IFs8ZmZm
-ZmZmZmY4MTA0OWY3NT5dID8gX19rdGhyZWFkX3BhcmttZSsweDVkLzB4NWQKTWFyICA4IDE0OjQx
-OjUwIHplcnR6IGtlcm5lbDogWzxmZmZmZmZmZjgxM2Q1Y2M4Pl0gPyByZXRfZnJvbV9mb3JrKzB4
-NTgvMHg5MApNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiBbPGZmZmZmZmZmODEwNDlmNzU+
-XSA/IF9fa3RocmVhZF9wYXJrbWUrMHg1ZC8weDVkCk1hciAgOCAxNDo0MTo1MCB6ZXJ0eiBrZXJu
-ZWw6IENvZGU6IDAwIDRjIDg5IGU3IGU4IDIyIGYyIGZmIGZmIDQxIDBmIGI2IDRlIDA4IDQ5IDhi
-IGJjIDI0IGYwIDAxIDAwIDAwIDQ4IGM3IGM2IGVmIGVkIDRmIGEwIDRkIDhiIDQ2IDA5IDQ5IDhi
-IDE2IDMxIGMwIGU4IGM1IDkzIGZlIGZmIDwwZj4gMGIgOGIgNTUgNDAgNDggOGIgNDUgMDAgODkg
-ZDYgNDggODkgYzcgODkgNTQgMjQgMGMgNDggODkgMDQKTWFyICA4IDE0OjQxOjUwIHplcnR6IGtl
-cm5lbDogUklQICBbPGZmZmZmZmZmYTA0OTU5Yjk+XSBidHJmc191cGRhdGVfcm9vdCsweDg4LzB4
-MWUwIFtidHJmc10KTWFyICA4IDE0OjQxOjUwIHplcnR6IGtlcm5lbDogUlNQIDxmZmZmODgwMTMz
-NGUzZDI4PgpNYXIgIDggMTQ6NDE6NTAgemVydHoga2VybmVsOiAtLS1bIGVuZCB0cmFjZSBiMzM0
-YzJiMjM2MWViMzk0IF0tLS0K
-
---742696.742696--
-
+>
+>> (Btw, that line also indicates that
+>> we potentially write to the entire file system image, not just the
+>> beginning. My understanding from mangle.c is that up to 10% of the file
+>> contents are modified, not the first 10% of the file by length. Someone
+>> please correct me if I'm wrong!).
+>>
+>> Indeed, Eryu's dmesg shows:
+>>
+>> [  309.384037] BTRFS: super block crcs don't match, older mkfs detected
+>>
+>> This commit is relevant:
+>>
+>> ----
+>> commit 667e7d94a1683661cff5fe9a0fa0d7f8fdd2c007
+>> Author: Chris Mason <chris.mason@fusionio.com>
+>> Date:   Tue May 7 11:00:13 2013 -0400
+>>
+>>      Btrfs: allow superblock mismatch from older mkfs
+>>
+>>      We've added new checks to make sure the super block crc is correct
+>>      during mount.  A fresh filesystem from an older mkfs won't have the
+>>      crc set.  This adds a warning when it finds a newly created filesystem
+>>      but doesn't fail the mount.
+>>
+>>      Signed-off-by: Chris Mason <chris.mason@fusionio.com>
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index bc423f7e..4e9ebe1 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -383,6 +383,11 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+>>
+>>   		if (memcmp(raw_disk_sb, result, csum_size))
+>>   			ret = 1;
+>> +
+>> +		if (ret && btrfs_super_generation(disk_sb) < 10) {
+>> +			printk(KERN_WARNING "btrfs: super block crcs don't match, older mkfs detected\n");
+>> +			ret = 0;
+>> +		}
+>>   	}
+>>
+>>   	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+>> ----
+>>
+>> So, it looks like the super block is corrupted, but we ignore it because
+>> this is a fresh filesystem. I can easily trigger a related panic with
+>> this:
+>>
+>> ----
+>> while true; do
+>> 	dd if=/dev/urandom of=btrfs.img bs=1M count=16
+>> 	mkfs.btrfs btrfs.img
+>> 	dd if=/dev/urandom of=btrfs.img bs=1 seek=$((64 * 1024 + 88)) count=8 conv=notrunc
+>> 	mount -o loop btrfs.img /mnt && umount /mnt
+>> done
+>> ----
+>>
+>> I'm not sure that this is exactly what's happening with Eryu's image,
+>> but it's definitely an issue. I also don't know whether it's safe to get
+>> rid of that special case. It looks like it's needed for btrfs-progs
+>> before v3.12 (November 2013). Chris? David?
+>>
+>> Thanks!
+>>
+>

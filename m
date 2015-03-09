@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20616 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751778AbbCIRKa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:30 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:19987 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751193AbbCIRK3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:29 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 05/26] Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
-Date: Tue, 10 Mar 2015 06:38:23 +0800
-Message-Id: <1425940724-7744-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 02/26] Btrfs: sysfs: fix, fs_info kobject_unregister has init_completion() twice
+Date: Tue, 10 Mar 2015 06:38:20 +0800
+Message-Id: <1425940724-7744-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,36 +16,27 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-Since the failure code in the btrfs_sysfs_add_one() can
-call btrfs_sysfs_remove_one() even before device_dir_kobj
-has been created we need to check if its null.
+kobject_unregister is to handle the release of the kobject,
+its completion init is being called in btrfs_sysfs_add_one(),
+so we don't have to do the same in the open_ctree() again.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 15fead2..506f7e4 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -522,10 +522,12 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- 		kobject_del(fs_info->space_info_kobj);
- 		kobject_put(fs_info->space_info_kobj);
- 	}
--	btrfs_kobj_rm_device(fs_info, NULL);
--	kobject_del(fs_info->device_dir_kobj);
--	kobject_put(fs_info->device_dir_kobj);
--	fs_info->device_dir_kobj = NULL;
-+	if (fs_info->device_dir_kobj) {
-+		btrfs_kobj_rm_device(fs_info, NULL);
-+		kobject_del(fs_info->device_dir_kobj);
-+		kobject_put(fs_info->device_dir_kobj);
-+		fs_info->device_dir_kobj = NULL;
-+	}
- 	addrm_unknown_feature_attrs(fs_info, false);
- 	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
- 	__btrfs_sysfs_remove_one(fs_info);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8c63419..0cd6550 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2238,7 +2238,6 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	seqlock_init(&fs_info->profiles_lock);
+ 
+-	init_completion(&fs_info->kobj_unregister);
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
+ 	INIT_LIST_HEAD(&fs_info->space_info);
+ 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
 -- 
 2.0.0.153.g79dcccc
 

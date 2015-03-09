@@ -1,100 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20132 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:20280 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753128AbbCIRKm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:42 -0400
+	with ESMTP id S1753128AbbCIRKv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2015 13:10:51 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 13/26] Btrfs: sysfs: add pointer to access fs_info from fs_devices v2
-Date: Tue, 10 Mar 2015 06:38:31 +0800
-Message-Id: <1425940724-7744-14-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 20/26] Btrfs: sysfs: separate kobject and attribute creation
+Date: Tue, 10 Mar 2015 06:38:38 +0800
+Message-Id: <1425940724-7744-21-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
-
-adds fs_info pointer with struct btrfs_fs_devices.
-
-v2: Fix a bug:d update fs_info pointer in open_seed_devices()
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c   |  4 ++++
- fs/btrfs/volumes.c | 18 ++++++++++++++++++
- fs/btrfs/volumes.h |  3 +++
- 3 files changed, 25 insertions(+)
+ fs/btrfs/disk-io.c | 18 +++++++++++++++++-
+ fs/btrfs/sysfs.c   | 15 ++-------------
+ 2 files changed, 19 insertions(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0cd6550..4b7f3b8 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2785,10 +2785,22 @@ retry_root_backup:
+ 
+ 	btrfs_close_extra_devices(fs_info, fs_devices, 1);
+ 
++	ret = btrfs_sysfs_add_fsid(fs_devices, NULL);
++	if (ret) {
++		pr_err("BTRFS: failed to init sysfs fsid interface: %d\n", ret);
++		goto fail_block_groups;
++	}
++
++	ret = btrfs_sysfs_add_device(fs_devices);
++	if (ret) {
++		pr_err("BTRFS: failed to init sysfs device interface: %d\n", ret);
++		goto fail_fsdev_sysfs;
++	}
++
+ 	ret = btrfs_sysfs_add_one(fs_info);
+ 	if (ret) {
+ 		pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
+-		goto fail_block_groups;
++		goto fail_fsdev_sysfs;
+ 	}
+ 
+ 	ret = btrfs_init_space_info(fs_info);
+@@ -3002,6 +3014,9 @@ fail_cleaner:
+ fail_sysfs:
+ 	btrfs_sysfs_remove_one(fs_info);
+ 
++fail_fsdev_sysfs:
++	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
++
+ fail_block_groups:
+ 	btrfs_put_block_group_cache(fs_info);
+ 	btrfs_free_block_groups(fs_info);
+@@ -3679,6 +3694,7 @@ void close_ctree(struct btrfs_root *root)
+ 	}
+ 
+ 	btrfs_sysfs_remove_one(fs_info);
++	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+ 
+ 	btrfs_free_fs_roots(fs_info);
+ 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index ac15fbb..95d6257 100644
+index 1d34538..be5342f 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -530,6 +530,8 @@ static void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
+@@ -556,7 +556,6 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+ 	sysfs_remove_group(&fs_info->fs_devices->super_kobj, &btrfs_feature_attr_group);
+ 	sysfs_remove_files(&fs_info->fs_devices->super_kobj, btrfs_attrs);
+ 	btrfs_kobj_rm_device(fs_info->fs_devices, NULL);
+-	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+ }
  
- void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- {
-+	btrfs_reset_fs_info_ptr(fs_info);
-+
- 	if (fs_info->space_info_kobj) {
- 		sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
- 		kobject_del(fs_info->space_info_kobj);
-@@ -729,6 +731,8 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- 	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
- 	struct kobject *super_kobj = &fs_devs->super_kobj;
+ const char * const btrfs_feature_set_names[3] = {
+@@ -688,10 +687,6 @@ int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
+ 	int error = 0;
+ 	struct btrfs_device *dev;
  
-+	btrfs_set_fs_info_ptr(fs_info);
-+
- 	error = btrfs_sysfs_add_fsid(fs_devs, NULL);
- 	if (error)
+-	error = btrfs_sysfs_add_device(fs_devices);
+-	if (error)
+-		return error;
+-
+ 	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
+ 		struct hd_struct *disk;
+ 		struct kobject *disk_kobj;
+@@ -747,19 +742,13 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
+ 
+ 	btrfs_set_fs_info_ptr(fs_info);
+ 
+-	error = btrfs_sysfs_add_fsid(fs_devs, NULL);
+-	if (error)
+-		return error;
+-
+ 	error = btrfs_kobj_add_device(fs_devs, NULL);
+-	if (error) {
+-		btrfs_sysfs_remove_fsid(fs_devs);
++	if (error)
  		return error;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c1b1038..033e56a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6688,3 +6688,21 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+-	}
+ 
+ 	error = sysfs_create_files(super_kobj, btrfs_attrs);
+ 	if (error) {
+-		btrfs_sysfs_remove_fsid(fs_devs);
++		btrfs_kobj_rm_device(fs_devs, NULL);
+ 		return error;
  	}
- 	unlock_chunks(root);
- }
-+
-+void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	while (fs_devices) {
-+		fs_devices->fs_info = fs_info;
-+		fs_devices = fs_devices->seed;
-+	}
-+}
-+
-+void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	while (fs_devices) {
-+		fs_devices->fs_info = NULL;
-+		fs_devices = fs_devices->seed;
-+	}
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d4586ac..e6514c7 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -254,6 +254,7 @@ struct btrfs_fs_devices {
- 	 */
- 	int rotating;
  
-+	struct btrfs_fs_info *fs_info;
- 	/* sysfs kobjects */
- 	struct kobject super_kobj;
- 	struct kobject *device_dir_kobj;
-@@ -540,5 +541,7 @@ static inline void unlock_chunks(struct btrfs_root *root)
- }
- 
- struct list_head *btrfs_get_fs_uuids(void);
-+void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
-+void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- 
- #endif
 -- 
 2.0.0.153.g79dcccc
 

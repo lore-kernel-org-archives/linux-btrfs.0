@@ -1,38 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39834 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751738AbbCLCwI (ORCPT
+Received: from mail-pd0-f177.google.com ([209.85.192.177]:39932 "EHLO
+	mail-pd0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751136AbbCLEkV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Mar 2015 22:52:08 -0400
-Message-ID: <5500FF4C.2020702@oracle.com>
-Date: Wed, 11 Mar 2015 22:51:56 -0400
-From: Sasha Levin <sasha.levin@oracle.com>
+	Thu, 12 Mar 2015 00:40:21 -0400
+Received: by pdbft15 with SMTP id ft15so16880982pdb.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2015 21:40:20 -0700 (PDT)
+Date: Wed, 11 Mar 2015 21:40:17 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 0/3] btrfs: ENOMEM bugfixes
+Message-ID: <20150312044017.GA7693@mew>
+References: <cover.1424773781.git.osandov@osandov.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        LKML <linux-kernel@vger.kernel.org>, Dave Jones <davej@redhat.com>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        Michal Hocko <mhocko@suse.cz>
-Subject: Re: btrfs: kernel BUG at fs/btrfs/extent_io.c:676!
-References: <543B35D3.6050509@oracle.com> <1413268312.2971.1@mail.thefacebook.com>
-In-Reply-To: <1413268312.2971.1@mail.thefacebook.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1424773781.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/14/2014 02:31 AM, Chris Mason wrote:
-> On Sun, Oct 12, 2014 at 10:15 PM, Sasha Levin <sasha.levin@oracle.com> wrote:
->> Ping?
->>
->> This BUG_ON()ing due to GFP_ATOMIC allocation failure is really silly :(
+On Tue, Feb 24, 2015 at 02:47:03AM -0800, Omar Sandoval wrote:
+> Hi, everyone,
 > 
-> Agreed, I have a patch for this in testing.  It didn't make my first pull but I'll get it fixed up.
+> This patch series fixes a few bugs that occur under low memory conditions.
+> These were exposed by a change in behavior of GFP_NOFS allocations in 3.19-rc7,
+> by commit 9879de7373fc ("mm: page_alloc: embed OOM killing naturally into
+> allocation slowpath"). While the mm people sort that out, we can fix these
+> issues, which are bugs no matter what the outcome there is.
+> 
+> Here's a quick script which reproduces these bugs. With the patches applied, the
+> filesystem will drop into read-only mode instead of blowing up.
+> 
+> ----
+> #!/bin/sh
+> 
+> cgcreate -g memory:enomem
+> MEM=$((64 * 1024 * 1024))
+> echo $MEM > /sys/fs/cgroup/memory/enomem/memory.limit_in_bytes
+> 
+> cgexec -g memory:enomem ~/xfstests/ltp/fsstress -p128 -n999999999 -d /mnt/test &
+> trap "killall fsstress; exit 0" SIGINT SIGTERM
+> 
+> while true; do
+> 	cgexec -g memory:enomem python -c '
+> l = []
+> while True:
+>     l.append(0)'
+> done
+> ----
+> 
+> Version 2 rebases on top of 4.0-rc1, has a simpler fix for the
+> alloc_extent_buffer race, expands the commit messages to mention changed
+> comments, and adds Liu Bo's Reviewed-by.
+> 
+> Thanks!
+> 
+> Omar Sandoval (3):
+>   btrfs: handle ENOMEM in btrfs_alloc_tree_block
+>   btrfs: fix race on ENOMEM in alloc_extent_buffer
+>   btrfs: check io_ctl_prepare_pages return in __btrfs_write_out_cache
+> 
+>  fs/btrfs/extent-tree.c      | 41 ++++++++++++++++++++++++++++-------------
+>  fs/btrfs/extent_io.c        |  3 ++-
+>  fs/btrfs/free-space-cache.c | 10 ++++++----
+>  3 files changed, 36 insertions(+), 18 deletions(-)
+> -- 
+> 2.3.0
+> 
 
-I've re-enabled fs testing after the discussion at LSF/MM (but mostly
-due to Michal's patch), and this issue came right back up.
+Ping. For anyone following along, it looks like commit cc87317726f8
+("mm: page_alloc: revert inadvertent !__GFP_FS retry behavior change")
+reverted the commit that exposed these bugs. Josef said he was okay with
+taking these, will they make it to an upcoming -rc soon?
 
-Any updates?
-
-
-Thanks,
-Sasha
+Thanks!
+-- 
+Omar

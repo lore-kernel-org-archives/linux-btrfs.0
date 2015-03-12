@@ -1,37 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56141 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56533 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754502AbbCLRZP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Mar 2015 13:25:15 -0400
-Date: Thu, 12 Mar 2015 18:25:13 +0100
+	id S1161025AbbCLReQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Mar 2015 13:34:16 -0400
+Date: Thu, 12 Mar 2015 18:34:15 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <guaneryu@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
+        Eryu Guan <guaneryu@gmail.com>
 Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
-Message-ID: <20150312172513.GD20767@twin.jikos.cz>
+Message-ID: <20150312173414.GE20767@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com>
+ <550127E1.4050606@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <550127E1.4050606@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 12, 2015 at 01:40:47PM +0800, Liu Bo wrote:
-> This reverts commit 667e7d94a1683661cff5fe9a0fa0d7f8fdd2c007.
-> 
-> This was used to make sure that a fresh btrfs from an older mkfs.btrfs,
-> and it also allows us to mount a buggy btrfs if this btrfs has the right
-> superblock head part but has something wrong with chunk tree part[1], and
-> after that we can hit BUG_ON()s set in the code to prevent something
-> impossible.
-> 
-> Since David has gave us "Btrfs progs v3.19-rc2", just remove the check,
-> if anyone who wants to make a fresh btrfs, please use the latest one.
+On Thu, Mar 12, 2015 at 01:45:05PM +0800, Qu Wenruo wrote:
+> I sent such patch some time ago but was rejected by Chris,
+> hopes this time it can be accepted.
 
-I think the fixed progs are out long enough and the combination of
-really old progs + really new kernel is very uncommon and we don't need
-to care about that anymore.
+http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg34937.html
 
-However, please do not do it as a revert, it's a normal patch although
-it effectively reverts some other patch.
+I'm OK with removing the special case now because there are additional
+supreblock checks merged (3.19) that were motivated by your previous
+attempt to remove it.
+
+o btrfs: add more checks to btrfs_read_sys_array
+o btrfs: cleanup, rename a few variables in btrfs_read_sys_array
+o btrfs: add checks for sys_chunk_array sizes
+o btrfs: more superblock checks, lower bounds on devices and sectorsize/nodesize
+
+

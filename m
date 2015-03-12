@@ -1,105 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:40867 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:43969 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932232AbbCLPQn (ORCPT
+	by vger.kernel.org with ESMTP id S932198AbbCLPhR (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Mar 2015 11:16:43 -0400
+	Thu, 12 Mar 2015 11:37:17 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: incremental send, clear name from cache after orphanization
-Date: Thu, 12 Mar 2015 15:16:20 +0000
-Message-Id: <1426173380-25396-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: add missing inode item update in fallocate()
+Date: Thu, 12 Mar 2015 15:36:58 +0000
+Message-Id: <1426174618-929-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a directory's reference ends up being orphanized, because the inode
-currently being processed has a new path that matches that directory's
-path, make sure we evict the name of the directory from the name cache.
-This is because there might be descendent inodes (either directories or
-regular files) that will be orphanized later too, and therefore the
-orphan name of the ancestor must be used, otherwise we send issue rename
-operations with a wrong path in the send stream.
+If we fallocate(), without the keep size flag, into an area already covered
+by an extent previously fallocated, we were updating the inode's i_size but
+we weren't updating the inode item in the fs/subvol tree. A following umount
++ mount would result in a loss of the inode's size (and an fsync would miss
+too the fact that the inode changed).
 
 Reproducer:
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+  $ mkfs.btrfs -f /dev/sdd
+  $ mount /dev/sdd /mnt
+  $ fallocate -n -l 1M /mnt/foobar
+  $ fallocate -l 512K /mnt/foobar
+  $ umount /mnt
+  $ mount /dev/sdd /mnt
+  $ od -t x1 /mnt/foobar
+  0000000
 
-  $ mkdir -p /mnt/data/n1/n2/p1/p2
-  $ mkdir /mnt/data/n4
-  $ mkdir -p /mnt/data/p1/p2
+The expected result is:
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+  $ od -t x1 /mnt/foobar
+  0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  *
+  2000000
 
-  $ mv /mnt/data/p1/p2 /mnt/data
-  $ mv /mnt/data/n1/n2/p1/p2 /mnt/data/p1
-  $ mv /mnt/data/p2 /mnt/data/n1/n2/p1
-  $ mv /mnt/data/n1/n2 /mnt/data/p1
-  $ mv /mnt/data/p1 /mnt/data/n4
-  $ mv /mnt/data/n4/p1/n2/p1 /mnt/data
+A test case for fstests follows soon.
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-
-  $ btrfs send /mnt/snap1 -f /tmp/1.send
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.send
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt2
-  $ btrfs receive /mnt2 -f /tmp/1.send
-  $ btrfs receive /mnt2 -f /tmp/2.send
-  ERROR: rename data/p1/p2 -> data/n4/p1/p2 failed. no such file or directory
-
-Directories data/p1 (inode 263) and data/p1/p2 (inode 264) in the parent
-snapshot are both orphanized during the incremental send, and as soon as
-data/p1 is orphanized, we must make sure that when orphanizing data/p1/p2
-we use a source path of o263-6-o/p2 for the rename operation instead of
-the old path data/p1/p2 (the one before the orphanization of inode 263).
-
-A test case for xfstests follows soon.
-
-Reported-by: Robbie Ko <robbieko@synology.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ fs/btrfs/file.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-This is a re-send, since my git send-email seems to have failed earlier
-today.
-
- fs/btrfs/send.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 571de5a..00cb924 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3610,10 +3610,27 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			if (ret < 0)
- 				goto out;
- 			if (ret) {
-+				struct name_cache_entry *nce;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8f256b1..fb4bd79 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2677,13 +2677,10 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 							1 << inode->i_blkbits,
+ 							offset + len,
+ 							&alloc_hint);
+-
+-			if (ret < 0) {
+-				free_extent_map(em);
+-				break;
+-			}
+ 		} else if (actual_end > inode->i_size &&
+ 			   !(mode & FALLOC_FL_KEEP_SIZE)) {
++			struct btrfs_trans_handle *trans;
 +
- 				ret = orphanize_inode(sctx, ow_inode, ow_gen,
- 						cur->full_path);
- 				if (ret < 0)
- 					goto out;
-+				/*
-+				 * Make sure we clear our orphanized inode's
-+				 * name from the name cache. This is because the
-+				 * inode ow_inode might be an ancestor of some
-+				 * other inode that will be orphanized as well
-+				 * later and has an inode number greater than
-+				 * sctx->send_progress. We need to prevent
-+				 * future name lookups from using the old name
-+				 * and get instead the orphan name.
-+				 */
-+				nce = name_cache_search(sctx, ow_inode, ow_gen);
-+				if (nce) {
-+					name_cache_delete(sctx, nce);
-+					kfree(nce);
-+				}
- 			} else {
- 				ret = send_unlink(sctx, cur->full_path);
- 				if (ret < 0)
+ 			/*
+ 			 * We didn't need to allocate any more space, but we
+ 			 * still extended the size of the file so we need to
+@@ -2692,8 +2689,22 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			inode->i_ctime = CURRENT_TIME;
+ 			i_size_write(inode, actual_end);
+ 			btrfs_ordered_update_i_size(inode, actual_end, NULL);
++			/* 1 unit for inode item */
++			trans = btrfs_start_transaction(root, 1);
++			if (IS_ERR(trans)) {
++				ret = PTR_ERR(trans);
++			} else {
++				ret = btrfs_update_inode(trans, root, inode);
++				if (ret)
++					btrfs_end_transaction(trans, root);
++				else
++					ret = btrfs_end_transaction(trans,
++								    root);
++			}
+ 		}
+ 		free_extent_map(em);
++		if (ret < 0)
++			break;
+ 
+ 		cur_offset = last_byte;
+ 		if (cur_offset >= alloc_end) {
 -- 
 2.1.3
 

@@ -1,101 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47046 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752806AbbCLMHv (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Mar 2015 08:07:51 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: robbieko@synology.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: incremental send, clear name from cache after orphanization
-Date: Sun,  8 Mar 2015 17:48:25 +0000
-Message-Id: <1425836905-26109-1-git-send-email-fdmanana@suse.com>
+Received: from mail-lb0-f172.google.com ([209.85.217.172]:46436 "EHLO
+	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753958AbbCLMi6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Mar 2015 08:38:58 -0400
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1425973594-31936-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1425973594-31936-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Thu, 12 Mar 2015 12:38:56 +0000
+Message-ID: <CAL3q7H54-k-MEZnNzZn8Pyc6YH3okp+LUrncbMR=Kq6q5_xd7w@mail.gmail.com>
+Subject: Re: [PATCH] fstest: btrfs/083: Test for incorrect exclusive refernce
+ number after file clone.
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        fstests@vger.kernel.org, Josef Bacik <jbacik@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a directory's reference ends up being orphanized, because the inode
-currently being processed has a new path that matches that directory's
-path, make sure we evict the name of the directory from the name cache.
-This is because there might be descendent inodes (either directories or
-regular files) that will be orphanized later too, and therefore the
-orphan name of the ancestor must be used, otherwise we send issue rename
-operations with a wrong path in the send stream.
+On Tue, Mar 10, 2015 at 7:46 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> [Problem]
+> Since commit fcebe4562dec83b3f8d308 ("Btrfs: rework qgroup accounting"),
+> quota data update is delayed after delayed_ref calculation, and lacks
+> correct protection to detect root reference which shouldn't be counted
+> in current sequence number but already written into extent backref.
+>
+> This makes exclusive reference not decreased correctly and give incorrect
+> result.
+>
+> [Test procedure]
+> 1. Create a btrfs with 3 subvolumes, quota enabled and rescanned.
+> 2. Create a file in 1st subvolume
+> 3. Clone the file to 2nd and 3rd subvolume
+> 4. Sync the fs to reflect the changes in qgroup.
+> 5. Check the qgroup data
+>
+> [Expected result]
+> None of the subvolume has exclusive reference to the file.
+>
+> [Actual result]
+> The first subvolume still have exclusive reference to the file.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  tests/btrfs/083     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/083.out |  5 ++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 82 insertions(+)
+>  create mode 100755 tests/btrfs/083
+>  create mode 100644 tests/btrfs/083.out
+>
+> diff --git a/tests/btrfs/083 b/tests/btrfs/083
+> new file mode 100755
+> index 0000000..17fd30b
+> --- /dev/null
+> +++ b/tests/btrfs/083
+> @@ -0,0 +1,76 @@
+> +#! /bin/bash
+> +# FS QA Test No. 083
+> +#
+> +# Test for incorrect exclusive reference count after cloning file
+> +# between subvolumes.
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2015 Fujitsu. All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +    rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_need_to_be_root
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_require_cp_reflink
+> +
+> +run_check _scratch_mkfs "--nodesize 4096"
 
-Reproducer:
+--nodesize 65536
+Otherwise the test fails (unnecessarily) on platforms with a page size > 4Kb.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+> +
+> +# inode cache will also take space in fs tree, disable them to get consistent
+> +# result.
+> +run_check _scratch_mount "-o noinode_cache"
 
-  $ mkdir -p /mnt/data/n1/n2/p1/p2
-  $ mkdir /mnt/data/n4
-  $ mkdir -p /mnt/data/p1/p2
+-o noinode_cache, unlike -o inode_cache, is still a relatively new
+mount option (early 2014). Won't the test fail on older kernels that
+don't recognize this mount option?
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+> +
+> +_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv1
+> +_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
+> +_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
+> +
+> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
+> +_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+> +
+> +dd if=/dev/zero of=$SCRATCH_MNT/subv1/file1 bs=4K count=64 &> /dev/null
 
-  $ mv /mnt/data/p1/p2 /mnt/data
-  $ mv /mnt/data/n1/n2/p1/p2 /mnt/data/p1
-  $ mv /mnt/data/p2 /mnt/data/n1/n2/p1
-  $ mv /mnt/data/n1/n2 /mnt/data/p1
-  $ mv /mnt/data/p1 /mnt/data/n4
-  $ mv /mnt/data/n4/p1/n2/p1 /mnt/data
+Why ignore dd failures? Normally we want the output (specially errors)
+to be matched against the golden output.
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+> +cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv2/file1
+> +cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv3/file1
+> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
 
-  $ btrfs send /mnt/snap1 -f /tmp/1.send
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/2.send
+Plain old 'sync' should work here as well.
 
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt2
-  $ btrfs receive /mnt2 -f /tmp/1.send
-  $ btrfs receive /mnt2 -f /tmp/2.send
-  ERROR: rename data/p1/p2 -> data/n4/p1/p2 failed. no such file or directory
+thanks Qu
 
-Directories data/p1 (inode 263) and data/p1/p2 (inode 264) in the parent
-snapshot are both orphanized during the incremental send, and as soon as
-data/p1 is orphanized, we must make sure that when orphanizing data/p1/p2
-we use a source path of o263-6-o/p2 for the rename operation instead of
-the old path data/p1/p2 (the one before the orphanization of inode 263).
+> +
+> +units=`_btrfs_qgroup_units`
+> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
+> +       | $AWK_PROG '{print $2" "$3}'
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
+> new file mode 100644
+> index 0000000..359b4a0
+> --- /dev/null
+> +++ b/tests/btrfs/083.out
+> @@ -0,0 +1,5 @@
+> +QA output created by 083
+> +4096 4096
+> +266240 4096
+> +266240 4096
+> +266240 4096
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index fd2fa76..04d5d67 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -85,3 +85,4 @@
+>  080 auto snapshot
+>  081 auto quick clone
+>  082 auto quick remount
+> +083 auto quick qgroup
+> --
+> 2.3.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-A test case for xfstests follows soon.
 
-Reported-by: Robbie Ko <robbieko@synology.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 571de5a..00cb924 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3610,10 +3610,27 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			if (ret < 0)
- 				goto out;
- 			if (ret) {
-+				struct name_cache_entry *nce;
-+
- 				ret = orphanize_inode(sctx, ow_inode, ow_gen,
- 						cur->full_path);
- 				if (ret < 0)
- 					goto out;
-+				/*
-+				 * Make sure we clear our orphanized inode's
-+				 * name from the name cache. This is because the
-+				 * inode ow_inode might be an ancestor of some
-+				 * other inode that will be orphanized as well
-+				 * later and has an inode number greater than
-+				 * sctx->send_progress. We need to prevent
-+				 * future name lookups from using the old name
-+				 * and get instead the orphan name.
-+				 */
-+				nce = name_cache_search(sctx, ow_inode, ow_gen);
-+				if (nce) {
-+					name_cache_delete(sctx, nce);
-+					kfree(nce);
-+				}
- 			} else {
- 				ret = send_unlink(sctx, cur->full_path);
- 				if (ret < 0)
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,51 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:35106 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:47356 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754311AbbCLMKf (ORCPT
+	by vger.kernel.org with ESMTP id S1754613AbbCLPjQ (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 12 Mar 2015 08:10:35 -0400
+	Thu, 12 Mar 2015 11:39:16 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test for btrfs incremental send/receive
-Date: Sun,  8 Mar 2015 17:51:30 +0000
-Message-Id: <1425837090-27069-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fallocate
+Date: Thu, 12 Mar 2015 15:38:56 +0000
+Message-Id: <1426174736-982-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test for incremental send where the difference between the parent and
-send snapshots is that for a subtree with the same path in both snapshots
-(p1/p2), the root directories were swapped.
+Test extent pre-allocation (using fallocate) into a region that already has a
+pre-allocated extent that ends beyond the file's size. Verify that if the fs
+is unmounted immediately after, the file's size and content are not lost.
 
-This issue was fixed by the following linux kernel btrfs patch:
-
-  Btrfs: incremental send, clear name from cache after orphanization
+This is motivated by a minor issue found in btrfs where the second fallocate
+wouldn't update the inode's i_size on disk, fixed by the following btrfs
+patch: "Btrfs: add missing inode item update in fallocate()".
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/084     | 132 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/084.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 135 insertions(+)
- create mode 100755 tests/btrfs/084
- create mode 100644 tests/btrfs/084.out
+ tests/generic/071     | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/071.out |  9 ++++++
+ tests/generic/group   |  1 +
+ 3 files changed, 89 insertions(+)
+ create mode 100755 tests/generic/071
+ create mode 100644 tests/generic/071.out
 
-diff --git a/tests/btrfs/084 b/tests/btrfs/084
+diff --git a/tests/generic/071 b/tests/generic/071
 new file mode 100755
-index 0000000..a9e26be
+index 0000000..7aaaed7
 --- /dev/null
-+++ b/tests/btrfs/084
-@@ -0,0 +1,132 @@
++++ b/tests/generic/071
+@@ -0,0 +1,79 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/084
++# FS QA Test No. 071
 +#
-+# Test for incremental send where the difference between the parent and send
-+# snapshots is that for a subtree with the same path in both snapshots (p1/p2),
-+# the root directories were swapped.
-+#
-+# This issue was fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: incremental send, clear name from cache after orphanization
++# Test extent pre-allocation (using fallocate) into a region that already has a
++# pre-allocated extent that ends beyond the file's size. Verify that if the fs
++# is unmounted immediately after, the file's size and content are not lost.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -70,121 +66,82 @@ index 0000000..a9e26be
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
++here=`pwd`
 +tmp=/tmp/$$
 +status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+	rm -fr $send_files_dir
 +	rm -f $tmp.*
 +}
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
 +
 +# real QA test starts here
-+_supported_fs btrfs
++_supported_fs generic
 +_supported_os Linux
-+_require_scratch
-+_require_fssum
 +_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
++_require_scratch
++_require_xfs_io_command "falloc"
 +
 +rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
 +
-+_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mkfs >> $seqres.full 2>&1
 +_scratch_mount
 +
-+mkdir -p $SCRATCH_MNT/data/n1/n2/p1/p2
-+mkdir $SCRATCH_MNT/data/n4
-+mkdir -p $SCRATCH_MNT/data/p1/p2
++# Create our test file with a pre-allocated extent that doesn't increase the
++# file's size.
++$XFS_IO_PROG -f -c "falloc -k 0 1M" $SCRATCH_MNT/foo
 +
-+# Filesystem looks like:
-+#
-+# .                                       (ino 256)
-+# |---- data                              (ino 257)
-+#         |---- n1/                       (ino 258)
-+#         |     |---- n2/                 (ino 259)
-+#         |           |---- p1/           (ino 260)
-+#         |                 |---- p2/     (ino 261)
-+#         |
-+#         |---- n4/                       (ino 262)
-+#         |---- p1/                       (ino 263)
-+#               |---- p2/                 (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++# Write some data to our file.
++$XFS_IO_PROG -c "pwrite -S 0xaa 0 256K" $SCRATCH_MNT/foo | _filter_xfs_io
 +
-+# Now move directories around such that for the subtrees with the path "p1/p2"
-+# we end up swapping the parents, that is, inode 263 becomes the parent of
-+# inode 261 and inode 260 becomes the parent of inode 264. This makes the send
-+# stream orphanize the inodes 263 and 264, and we want to verify the respective
-+# rename operations don't fail, that they don't use incorrect paths.
-+mv $SCRATCH_MNT/data/p1/p2 $SCRATCH_MNT/data
-+mv $SCRATCH_MNT/data/n1/n2/p1/p2 $SCRATCH_MNT/data/p1
-+mv $SCRATCH_MNT/data/p2 $SCRATCH_MNT/data/n1/n2/p1
-+mv $SCRATCH_MNT/data/n1/n2 $SCRATCH_MNT/data/p1
-+mv $SCRATCH_MNT/data/p1 $SCRATCH_MNT/data/n4
-+mv $SCRATCH_MNT/data/n4/p1/n2/p1 $SCRATCH_MNT/data
++# Now call fallocate again, but allowing it to increase the file's size and
++# cover a range that is entirely covered by the extent that we previously
++# pre-allocated.
++$XFS_IO_PROG -c "falloc 0 512K" $SCRATCH_MNT/foo
 +
-+# Filesystem now looks like:
-+#
-+# .                                       (ino 256)
-+# |---- data                              (ino 257)
-+#         |---- n1/                       (ino 258)
-+#         |---- n4/                       (ino 262)
-+#         |     |---- p1/                 (ino 263)
-+#         |           |---- n2/           (ino 259)
-+#         |           |---- p2/           (ino 261)
-+#         |
-+#         |---- p1/                       (ino 260)
-+#               |---- p2/                 (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++# Now ummount and mount again the fs. After this we expect the file's size to
++# be 512Kb.
++_scratch_remount
 +
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
++# Now check that all data we wrote before are available and the file size is
++# 512Kb.
++echo "File content after remount:"
++od -t x1 $SCRATCH_MNT/foo
 +
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/084.out b/tests/btrfs/084.out
+diff --git a/tests/generic/071.out b/tests/generic/071.out
 new file mode 100644
-index 0000000..022f013
+index 0000000..c12fd00
 --- /dev/null
-+++ b/tests/btrfs/084.out
-@@ -0,0 +1,2 @@
-+QA output created by 084
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fe82a9c..8f8dd42 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -86,3 +86,4 @@
- 081 auto quick clone
- 082 auto quick remount
- 083 auto quick send
-+084 auto quick send
++++ b/tests/generic/071.out
+@@ -0,0 +1,9 @@
++QA output created by 071
++wrote 262144/262144 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after remount:
++0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++2000000
+diff --git a/tests/generic/group b/tests/generic/group
+index 05cc6a9..b4e5cc6 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -73,6 +73,7 @@
+ 068 other auto freeze dangerous stress
+ 069 rw udf auto quick
+ 070 attr udf auto quick stress
++071 auto quick prealloc
+ 074 rw udf auto
+ 075 rw udf auto quick
+ 076 metadata rw udf auto quick stress
 -- 
 2.1.3
 

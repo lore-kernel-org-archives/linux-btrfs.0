@@ -1,52 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54982 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751639AbbCKNXr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Mar 2015 09:23:47 -0400
-Date: Wed, 11 Mar 2015 14:23:44 +0100
-From: David Sterba <dsterba@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:51282 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751268AbbCLFk5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Mar 2015 01:40:57 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 3.19
-Message-ID: <20150311132344.GB20767@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
+Date: Thu, 12 Mar 2015 13:40:47 +0800
+Message-Id: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This reverts commit 667e7d94a1683661cff5fe9a0fa0d7f8fdd2c007.
 
-btrfs-progs 3.19 have been released. The major change is in the build system, I
-hope all the issues with the switch to autotools have been fixed. More detailed
-instructions how to do adjust the build are in the -rc announcements [1].
+This was used to make sure that a fresh btrfs from an older mkfs.btrfs,
+and it also allows us to mount a buggy btrfs if this btrfs has the right
+superblock head part but has something wrong with chunk tree part[1], and
+after that we can hit BUG_ON()s set in the code to prevent something
+impossible.
 
-The next version is going to follow the kernel scheme and will be 4.x based.
+Since David has gave us "Btrfs progs v3.19-rc2", just remove the check,
+if anyone who wants to make a fresh btrfs, please use the latest one.
 
-Besides core fixes and cleanups there are some user-visible changes:
+[1]: http://www.spinics.net/lists/linux-btrfs/msg42358.html
 
-- btrfs-image
-  - restore can now run in parallel threads
-  - fixed restore of multiple image from multiple devices onto a single dev
-  - introduced metadump v2
-- check
-  - make --init-csum-tree and --init-extent-tree work together
-- find-new
-  - option to search through all metadata even if a root was already found
-- convert
-  - show progress by default, can be turned off
-- corrupt-block
-  - option to work on a specific root
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-- bash completion script for all subcommands
+Conflicts:
+	fs/btrfs/disk-io.c
+---
+ fs/btrfs/disk-io.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-Thanks.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 41b320e..f63aacf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -418,12 +418,6 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+ 
+ 		if (memcmp(raw_disk_sb, result, csum_size))
+ 			ret = 1;
+-
+-		if (ret && btrfs_super_generation(disk_sb) < 10) {
+-			printk(KERN_WARNING
+-				"BTRFS: super block crcs don't match, older mkfs detected\n");
+-			ret = 0;
+-		}
+ 	}
+ 
+ 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+-- 
+1.8.1.4
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-
-[1]
-rc1: http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg41369.html
-rc2: http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg41399.html
-rc3: http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg42140.html

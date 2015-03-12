@@ -1,35 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51467 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750872AbbCJTKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Mar 2015 15:10:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YVPXY-00063B-Dz
-	for linux-btrfs@vger.kernel.org; Tue, 10 Mar 2015 20:10:04 +0100
-Received: from 197.253.187.81.in-addr.arpa ([81.187.253.197])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2015 20:10:04 +0100
-Received: from richardm by 197.253.187.81.in-addr.arpa with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2015 20:10:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Richard Melville <richardm@cellularity.co.uk>
-Subject: "some devices missing" after scrub and btrfs upgrade.
-Date: Tue, 10 Mar 2015 19:03:31 +0000 (UTC)
-Message-ID: <loom.20150310T194713-251@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from aserp1040.oracle.com ([141.146.126.69]:39834 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751738AbbCLCwI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Mar 2015 22:52:08 -0400
+Message-ID: <5500FF4C.2020702@oracle.com>
+Date: Wed, 11 Mar 2015 22:51:56 -0400
+From: Sasha Levin <sasha.levin@oracle.com>
+MIME-Version: 1.0
+To: Chris Mason <clm@fb.com>
+CC: jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        LKML <linux-kernel@vger.kernel.org>, Dave Jones <davej@redhat.com>,
+        "linux-mm@kvack.org" <linux-mm@kvack.org>,
+        Michal Hocko <mhocko@suse.cz>
+Subject: Re: btrfs: kernel BUG at fs/btrfs/extent_io.c:676!
+References: <543B35D3.6050509@oracle.com> <1413268312.2971.1@mail.thefacebook.com>
+In-Reply-To: <1413268312.2971.1@mail.thefacebook.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm looking for advice on the best way to proceed.  I have a two-disk raid 1 
-btrfs root file system into which the box boots.  The file system became 
-corrupted to the point where I was unable to boot into it.  Using my rescue 
-system I ran scrub which seemed to sort out the problem.  I can now boot into 
-the raid and the data appears to be intact.  I have now upgraded to kernel 
-version 3.19.1 with the accompanying latest btrfs-progs.  Even though the 
-data still appears to be accessible, when I run "btrfs fi show" only one disk 
-is listed along with the message "some devices missing". 
+On 10/14/2014 02:31 AM, Chris Mason wrote:
+> On Sun, Oct 12, 2014 at 10:15 PM, Sasha Levin <sasha.levin@oracle.com> wrote:
+>> Ping?
+>>
+>> This BUG_ON()ing due to GFP_ATOMIC allocation failure is really silly :(
+> 
+> Agreed, I have a patch for this in testing.  It didn't make my first pull but I'll get it fixed up.
 
+I've re-enabled fs testing after the discussion at LSF/MM (but mostly
+due to Michal's patch), and this issue came right back up.
+
+Any updates?
+
+
+Thanks,
+Sasha

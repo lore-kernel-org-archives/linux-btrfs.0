@@ -1,94 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58921 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754018AbbCMB66 convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23994 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751661AbbCMGYo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Mar 2015 21:58:58 -0400
-Message-ID: <55024460.3040706@cn.fujitsu.com>
-Date: Fri, 13 Mar 2015 09:58:56 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, <fdmanana@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <fstests@vger.kernel.org>
-Subject: Re: [PATCH] fstest: btrfs/083: Test for incorrect exclusive refernce
- number after file clone.
-References: <1425973594-31936-1-git-send-email-quwenruo@cn.fujitsu.com> <CAL3q7H54-k-MEZnNzZn8Pyc6YH3okp+LUrncbMR=Kq6q5_xd7w@mail.gmail.com> <55018B3C.6070104@fb.com> <5502374C.8050607@cn.fujitsu.com>
-In-Reply-To: <5502374C.8050607@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	Fri, 13 Mar 2015 02:24:44 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t2D6OhJq029511
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2015 06:24:44 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id t2D6Ogmi026063
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2015 06:24:43 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t2D6Ogxx020429
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2015 06:24:42 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix comp_oper to get right order
+Date: Fri, 13 Mar 2015 14:24:38 +0800
+Message-Id: <1426227878-29928-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Case (oper1->seq > oper2->seq) should differ with case (oper1->seq < oper2->seq).
 
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+This typo was hiden in a big patch, so we need to work harder on review.
 
--------- Original Message  --------
-Subject: Re: [PATCH] fstest: btrfs/083: Test for incorrect exclusive 
-refernce number after file clone.
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: Josef Bacik <jbacik@fb.com>, fdmanana@gmail.com
-Date: 2015年03月13日 09:03
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->
->
-> -------- Original Message  --------
-> Subject: Re: [PATCH] fstest: btrfs/083: Test for incorrect exclusive
-> refernce number after file clone.
-> From: Josef Bacik <jbacik@fb.com>
-> To: <fdmanana@gmail.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2015年03月12日 20:49
->
->> On 03/12/2015 08:38 AM, Filipe David Manana wrote:
->>> On Tue, Mar 10, 2015 at 7:46 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> wrote:
->>>> [Problem]
->>>> Since commit fcebe4562dec83b3f8d308 ("Btrfs: rework qgroup
->>>> accounting"),
->>>> quota data update is delayed after delayed_ref calculation, and lacks
->>>> correct protection to detect root reference which shouldn't be counted
->>>> in current sequence number but already written into extent backref.
->>>>
->>>> This makes exclusive reference not decreased correctly and give
->>>> incorrect
->>>> result.
->>>>
->>>> [Test procedure]
->>>> 1. Create a btrfs with 3 subvolumes, quota enabled and rescanned.
->>>> 2. Create a file in 1st subvolume
->>>> 3. Clone the file to 2nd and 3rd subvolume
->>>> 4. Sync the fs to reflect the changes in qgroup.
->>>> 5. Check the qgroup data
->>>>
->>>> [Expected result]
->>>> None of the subvolume has exclusive reference to the file.
->>>>
->>>> [Actual result]
->>>> The first subvolume still have exclusive reference to the file.
-[snip]
-> Thanks,
->>
->> Josef
-BTW, I'm somewhat worried about how to fix the problem.
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 97159a8..058c79e 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1259,7 +1259,7 @@ static int comp_oper(struct btrfs_qgroup_operation *oper1,
+ 	if (oper1->seq < oper2->seq)
+ 		return -1;
+ 	if (oper1->seq > oper2->seq)
+-		return -1;
++		return 1;
+ 	if (oper1->ref_root < oper2->ref_root)
+ 		return -1;
+ 	if (oper1->ref_root > oper2->ref_root)
+-- 
+1.8.1.4
 
-Two method comes to me, but neither seems perfect.
-1) Change qgroup counters update timing.
-Just change the actual qgroup update timing from current 
-btrfs_delayed_qgroup_accouting() to btrfs_qgroup_record_ref().
-
-Although it seems we can get accurate old/new_roots, but delayed tree 
-block refs can be ordered/merged, causing data ref is run before its 
-tree block, causing btrfs_find_all_roots() always return 0 root.
-
-So this method needs extra modification on delayed refs.
-
-2) Do "oper-replay" in qgroup codes.
-We can do things like log replay in qgroup operations, and do some black 
-magic to calculate the correct old/new_roots number even we can only see 
-the final result backrefs.
-
-But I didn't see a good algorithm to do this, and the complexity may 
-cause even more bugs.
-
-Any ideas?
-
-Thanks,
-Qu

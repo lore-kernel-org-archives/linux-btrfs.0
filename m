@@ -1,117 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25621 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750767AbbCNQlr (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:51512 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750963AbbCNQyC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Mar 2015 12:41:47 -0400
-Date: Sun, 15 Mar 2015 00:41:40 +0800
+	Sat, 14 Mar 2015 12:54:02 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: add missing inode item update in fallocate()
-Message-ID: <20150314164139.GA5248@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1426174618-929-1-git-send-email-fdmanana@suse.com>
- <1426202593-20067-1-git-send-email-fdmanana@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426202593-20067-1-git-send-email-fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: <stable@vger.kernel.org>
+Subject: [PATCH v2] Btrfs: fix comp_oper to get right order
+Date: Sun, 15 Mar 2015 00:53:53 +0800
+Message-Id: <1426352033-18071-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 12, 2015 at 11:23:13PM +0000, Filipe Manana wrote:
-> If we fallocate(), without the keep size flag, into an area already covered
-> by an extent previously fallocated, we were updating the inode's i_size but
-> we weren't updating the inode item in the fs/subvol tree. A following umount
-> + mount would result in a loss of the inode's size (and an fsync would miss
-> too the fact that the inode changed).
-> 
-> Reproducer:
-> 
->   $ mkfs.btrfs -f /dev/sdd
->   $ mount /dev/sdd /mnt
->   $ fallocate -n -l 1M /mnt/foobar
->   $ fallocate -l 512K /mnt/foobar
->   $ umount /mnt
->   $ mount /dev/sdd /mnt
->   $ od -t x1 /mnt/foobar
->   0000000
-> 
-> The expected result is:
-> 
->   $ od -t x1 /mnt/foobar
->   0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
->   *
->   2000000
-> 
-> A test case for fstests follows soon.
+Case (oper1->seq > oper2->seq) should differ with case (oper1->seq < oper2->seq).
 
-Looks good.
+Cc: <stable@vger.kernel.org> #linux-3.18.y and afterwards
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+---
+v2: add "cc stable".
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Update the inode's sizes and ctime while holding a transaction
->     open.
-> 
->  fs/btrfs/file.c | 29 ++++++++++++++++++++---------
->  1 file changed, 20 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 8f256b1..c261ff0 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2677,23 +2677,34 @@ static long btrfs_fallocate(struct file *file, int mode,
->  							1 << inode->i_blkbits,
->  							offset + len,
->  							&alloc_hint);
-> -
-> -			if (ret < 0) {
-> -				free_extent_map(em);
-> -				break;
-> -			}
->  		} else if (actual_end > inode->i_size &&
->  			   !(mode & FALLOC_FL_KEEP_SIZE)) {
-> +			struct btrfs_trans_handle *trans;
-> +
->  			/*
->  			 * We didn't need to allocate any more space, but we
->  			 * still extended the size of the file so we need to
-> -			 * update i_size.
-> +			 * update i_size and the inode item.
->  			 */
-> -			inode->i_ctime = CURRENT_TIME;
-> -			i_size_write(inode, actual_end);
-> -			btrfs_ordered_update_i_size(inode, actual_end, NULL);
-> +			trans = btrfs_start_transaction(root, 1);
-> +			if (IS_ERR(trans)) {
-> +				ret = PTR_ERR(trans);
-> +			} else {
-> +				inode->i_ctime = CURRENT_TIME;
-> +				i_size_write(inode, actual_end);
-> +				btrfs_ordered_update_i_size(inode, actual_end,
-> +							    NULL);
-> +				ret = btrfs_update_inode(trans, root, inode);
-> +				if (ret)
-> +					btrfs_end_transaction(trans, root);
-> +				else
-> +					ret = btrfs_end_transaction(trans,
-> +								    root);
-> +			}
->  		}
->  		free_extent_map(em);
-> +		if (ret < 0)
-> +			break;
->  
->  		cur_offset = last_byte;
->  		if (cur_offset >= alloc_end) {
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 97159a8..058c79e 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1259,7 +1259,7 @@ static int comp_oper(struct btrfs_qgroup_operation *oper1,
+ 	if (oper1->seq < oper2->seq)
+ 		return -1;
+ 	if (oper1->seq > oper2->seq)
+-		return -1;
++		return 1;
+ 	if (oper1->ref_root < oper2->ref_root)
+ 		return -1;
+ 	if (oper1->ref_root > oper2->ref_root)
+-- 
+1.8.1.4
+

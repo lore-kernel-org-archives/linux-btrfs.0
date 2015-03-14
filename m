@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51512 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750963AbbCNQyC (ORCPT
+Received: from mail-qc0-f171.google.com ([209.85.216.171]:33894 "EHLO
+	mail-qc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750997AbbCNReX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Mar 2015 12:54:02 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: <stable@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: fix comp_oper to get right order
-Date: Sun, 15 Mar 2015 00:53:53 +0800
-Message-Id: <1426352033-18071-1-git-send-email-bo.li.liu@oracle.com>
+	Sat, 14 Mar 2015 13:34:23 -0400
+Received: by qcaz10 with SMTP id z10so13252119qca.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2015 10:34:22 -0700 (PDT)
+Message-ID: <5504711C.1050500@gmail.com>
+Date: Sat, 14 Mar 2015 13:34:20 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: Robert White <rwhite@pobox.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Any Arguments for/against --bind mounts?
+References: <5503AA56.4050407@pobox.com>
+In-Reply-To: <5503AA56.4050407@pobox.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Case (oper1->seq > oper2->seq) should differ with case (oper1->seq < oper2->seq).
-
-Cc: <stable@vger.kernel.org> #linux-3.18.y and afterwards
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
----
-v2: add "cc stable".
-
- fs/btrfs/qgroup.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 97159a8..058c79e 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1259,7 +1259,7 @@ static int comp_oper(struct btrfs_qgroup_operation *oper1,
- 	if (oper1->seq < oper2->seq)
- 		return -1;
- 	if (oper1->seq > oper2->seq)
--		return -1;
-+		return 1;
- 	if (oper1->ref_root < oper2->ref_root)
- 		return -1;
- 	if (oper1->ref_root > oper2->ref_root)
--- 
-1.8.1.4
+On 2015-03-13 23:26, Robert White wrote:
+> Is there any practical reason to prefer bind mounts or separately
+> mounting a subvolume?
+> 
+> e.g. assuming /locationA and /locationB are arbitrarily far apart in the
+> file system tree, is there any reason to prefer one of the following
+> over the other
+> 
+> mount -t btrfs -o subvolume=/thing /dev/sdN1 /locationA
+> mount --bind /locationA /locationB
+> 
+> vs.
+> 
+> mount -t btrfs -o subvolume=/thing /dev/sdN1 /locationA
+> mount -t btrfs -o subvolume=/thing /dev/sdN1 /locationB
+> 
+> Are both equally efficient and whatnot?
+Internally, they're actually identical.
 

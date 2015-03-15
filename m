@@ -1,92 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:49845 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751281AbbCNSga convert rfc822-to-8bit (ORCPT
+Received: from mail-we0-f171.google.com ([74.125.82.171]:36602 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750806AbbCOBaP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Mar 2015 14:36:30 -0400
+	Sat, 14 Mar 2015 21:30:15 -0400
+Received: by wetk59 with SMTP id k59so15492851wet.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2015 18:30:13 -0700 (PDT)
+Received: from [192.168.2.7] (ipbcc33db6.dynamic.kabel-deutschland.de. [188.195.61.182])
+        by mx.google.com with ESMTPSA id fm10sm9092469wib.7.2015.03.14.18.30.12
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 14 Mar 2015 18:30:13 -0700 (PDT)
+Message-ID: <5504E0A3.3040908@gmail.com>
+Date: Sun, 15 Mar 2015 02:30:11 +0100
+From: Sven Witterstein <sven.witterstein@gmail.com>
 MIME-Version: 1.0
-Message-ID: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46>
-From: peer.loz@gmx.net
 To: linux-btrfs@vger.kernel.org
-Subject: Is it safe or useful to use NOCOW flag and autodefrag mount option
- at same time?
-Content-Type: text/plain; charset=UTF-8
-Date: Sat, 14 Mar 2015 19:36:28 +0100
+Subject: Re: Raid10 performance issues during copy and balance, only half
+ the spindles used for reading data
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-first of all a great thank you to all developers and contributors. The
-Btrfs filesystem ist a great filesystem!
- 
-Following common recommendations [1], I use these mount options on my
-main developing machine: noatime,autodefrag. This is desktop machine and
-it works well so far. Now, I'm also going to install several KVM virtual
-machines on this system. I want to use qcow2 files stored on SSD with a
-btrfs on it. In order to avoid bad performance with the VMs, I want to
-disable the Copy-On-Write mechanism on the storage directory of my VM
-images as for example described in [2].
- 
-My question now is: Is it safe to use the autodefrag mount option and to
-disable CoW for single directories which contain VM files at the same
-time? Is it even useful or may it harm?
+Hi Duncan,
 
-Thank you very much for insights and comments in advance.
+thank you for that explanation
 
-Best regards,
-jploz
+> The existing algorithm is a very simple even/odd PID-based algorithm.
+> Thus, single-thread testing will indeed always read from the same side of
+> the pair-mirror (since btrfs raid1 and raid10 are pair-mirrored, no N-way-
+> mirroring available yet, tho it's the next new feature on the raid roadmap
+> now that raid56 is essentially code-complete altho not yet well bug-
+> flushed, with 3.19).  With a reasonably balanced mix of even/odd-PID
+> readers, however, you should indeed get reasonable balanced read activity.
 
+OK, that is really no good design for production:
+eveness/oddity of PIDs is not related (not a good criterion to predict) to what PIDs
+will request I/O from the pool at a given time.
 
-As requested in the wiki basic information about my fresh setup attached:
-uname -a
-Linux hostname 3.16.0-4-686-pae #1 SMP Debian 3.16.7-ckt7-1 (2015-03-01) i686 GNU/Linux
+In Raid10 (N0.. to come) probably all read requests from all PIDs need to be queued and
+spread across the available number of redundant stripesets
+(or simple mirrors, if the "striped mirrors" layout 1+0 à la zfs is used or were possible)
+Would apply for pure-ssd pool as well, though some fancy "near/far/seek time"
+considerations are obsoleted
+Something like that...
 
-btrfs --version
-Btrfs v3.17
+Probably an option-parameter in analogy to (single-spindle pre-ssd ideas for the I/O scheduler) like
 
-btrfs fi show
-Label: none  uuid: cc6492e7-a7a7-43f9-bba2-a1abe8635d36
-	Total devices 1 FS bytes used 4.00GiB
-	devid    1 size 210.00GiB used 8.02GiB path /dev/sdb2
+elevator=cfq
+(for btrfs="try to balance reads between devices by common read queue" resp "max out all resources and distribute fairly to requesting apps")
+(optimum for large reads (and parallel several of them such as balance / send/receive/copy/tar with the pool and the same time to external backup...)
 
-Label: 'DataHddBtr'  uuid: aa3f41c0-5a60-4fd7-9365-8c99284e032c
-	Total devices 1 FS bytes used 384.00KiB
-	devid    1 size 480.00GiB used 2.04GiB path /dev/sda1
+elevator=noop (assign by even/odd, current behavior (testing)
 
-Btrfs v3.17
+elevator=jumpy (e.g. assign a read to the stripeset which has the smallest number of other reads on it, every rand x
+secs switch stripeset if number of "customers" on other 1..N redundant stripesets has decreased
+(similar to core switching of a long-running process in kernel)
+(optimised for smaller r/w operations such as many users accessing a central server)
+etc..
 
-mount | grep btrfs
-/dev/sdb2 on / type btrfs (rw,noatime,ssd,space_cache,autodefrag)
-/dev/sda1 on /data/btr type btrfs (rw,noatime,space_cache,autodefrag)
+would bring room to experiment in the years till 2020 as you outlined and to review,
+whether mdadms raid10 near/far/offset should be considered when most future storage will be non-rotary...
+Some kind of self-optimzing should also be included, i.e. if the filesystem new,
+how much is to be read, it could know if it made sense to try different methods
+and find the fastest, such as gparteds' block size adapting...
+Again, it would be interessting if the impact on non-rotary storage would be insignificant
 
-btrfs fi df /
-Data, single: total=7.01GiB, used=3.89GiB
-System, single: total=4.00MiB, used=16.00KiB
-Metadata, single: total=1.01GiB, used=114.39MiB
-GlobalReserve, single: total=48.00MiB, used=0.00B
-
-btrfs fi df /data/btr/
-Data, single: total=8.00MiB, used=256.00KiB
-System, DUP: total=8.00MiB, used=16.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=1.00GiB, used=112.00KiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=16.00MiB, used=0.00B
-
-dmesg | grep -i btrfs
-[    2.693408] Btrfs loaded
-[    2.756178] BTRFS: device fsid cc6492e7-a7a7-43f9-bba2-a1abe8635d36 devid 1 transid 393 /dev/sdb2
-[    2.756843] BTRFS: device label DataHddBtr devid 1 transid 9 /dev/sda1
-[    2.775447] BTRFS info (device sdb2): disk space caching is enabled
-[    2.779944] BTRFS: detected SSD devices, enabling SSD mode
-[    3.430997] BTRFS info (device sdb2): enabling auto defrag
-[    3.431002] BTRFS info (device sdb2): disk space caching is enabled
-[    3.548937] BTRFS info (device sda1): enabling auto defrag
-[    3.548939] BTRFS info (device sda1): disk space caching is enabled
-[  183.341398] BTRFS info (device sda1): enabling auto defrag
-[  183.341403] BTRFS info (device sda1): disk space caching is enabled
+In my use case it's a simple rsync or cp -a or nemo/nautilus
+copying between zfs and btrfs pools. Those are single-threaded I guess
+and I understand in btrfs there is not such a ton of z_read - processess that
+probably account for the "flying" zfs-reads on 6disk raidz2 or 3x2 or 2x3
+vdev layout compared to btrfs reads.
 
 
-References:
-[1] https://btrfs.wiki.kernel.org/index.php/Gotchas
-[2] https://wiki.archlinux.org/index.php/Btrfs#Copy-On-Write_.28CoW.29
+I still find it strange, that also a balance also only uses half the spindles,
+but it is explainable when the same logic is used as for any other reading from
+the array. At least the scrub reads all data and not only one copy ;-)
+
+Interesting enough, all my other btrfses are single-SSD for operating system with auto-snap to be able to revert...
+and one is a 2-disk raid 0 for throw away data, so I never had a setup that would expose this behaviour...
+
+Goodbye,
+
+Sven.
+

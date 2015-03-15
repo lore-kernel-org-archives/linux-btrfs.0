@@ -1,86 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:36602 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750806AbbCOBaP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Mar 2015 21:30:15 -0400
-Received: by wetk59 with SMTP id k59so15492851wet.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Mar 2015 18:30:13 -0700 (PDT)
-Received: from [192.168.2.7] (ipbcc33db6.dynamic.kabel-deutschland.de. [188.195.61.182])
-        by mx.google.com with ESMTPSA id fm10sm9092469wib.7.2015.03.14.18.30.12
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 14 Mar 2015 18:30:13 -0700 (PDT)
-Message-ID: <5504E0A3.3040908@gmail.com>
-Date: Sun, 15 Mar 2015 02:30:11 +0100
-From: Sven Witterstein <sven.witterstein@gmail.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:37854 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750848AbbCODfw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Mar 2015 23:35:52 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YWzLB-0002jD-GV
+	for linux-btrfs@vger.kernel.org; Sun, 15 Mar 2015 04:35:49 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Mar 2015 04:35:49 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Mar 2015 04:35:49 +0100
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Raid10 performance issues during copy and balance, only half
  the spindles used for reading data
-Content-Type: text/plain; charset=utf-8; format=flowed
+Date: Sun, 15 Mar 2015 03:35:34 +0000 (UTC)
+Message-ID: <pan$eb9d8$64fc2106$58d9b21f$dfb3c40f@cox.net>
+References: <5504E0A3.3040908@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Duncan,
+Sven Witterstein posted on Sun, 15 Mar 2015 02:30:11 +0100 as excerpted:
 
-thank you for that explanation
+> Probably an option-parameter in analogy to (single-spindle pre-ssd ideas
+> for the I/O scheduler) like
+> 
+> elevator=cfq (for btrfs="try to balance reads [...]
+> 
+> elevator=noop (assign by even/odd, current behavior (testing)
+> 
+> elevator=jumpy (every rand x secs switch stripeset [...]
+> 
+> would bring room to experiment in the years till 2020 as you outlined
+> and to review,
 
-> The existing algorithm is a very simple even/odd PID-based algorithm.
-> Thus, single-thread testing will indeed always read from the same side of
-> the pair-mirror (since btrfs raid1 and raid10 are pair-mirrored, no N-way-
-> mirroring available yet, tho it's the next new feature on the raid roadmap
-> now that raid56 is essentially code-complete altho not yet well bug-
-> flushed, with 3.19).  With a reasonably balanced mix of even/odd-PID
-> readers, however, you should indeed get reasonable balanced read activity.
+The problem is, btrfs is what I've seen referred to as a target-rich 
+environment, way more stuff to do than time to do it... at least 
+reasonably correctly, anyway.
 
-OK, that is really no good design for production:
-eveness/oddity of PIDs is not related (not a good criterion to predict) to what PIDs
-will request I/O from the pool at a given time.
+This in fact might be what eventually happens, and OK, 2020 is very 
+possibly pessimistic, but if there's no time to code it as other things 
+are taking priority or it'd simply complex enough it'll take several 
+hundreds of manhours to get it coded, and predictably a good portion of 
+that again to review it, commit it, chase down all the immediate bugs, 
+and get them fixed, then there's no time to code it.
 
-In Raid10 (N0.. to come) probably all read requests from all PIDs need to be queued and
-spread across the available number of redundant stripesets
-(or simple mirrors, if the "striped mirrors" layout 1+0 à la zfs is used or were possible)
-Would apply for pure-ssd pool as well, though some fancy "near/far/seek time"
-considerations are obsoleted
-Something like that...
+Which is exactly the problem with your proposal.  It's on the list, but 
+so are several hundred other things... .  Well, that, and the 
+programmer's adage about premature optimization.  But it's true, why 
+spend several hundred hours optimizing this, and then have to throw the 
+work away because when you go to add N-way-mirroring you discover some 
+unforeseen angle makes your optimization a pessimisation now, or worse, 
+discover you've cut off an avenue of better optimization that now won't 
+be done because it's not worth spending that several hundred hours of 
+development again.
 
-Probably an option-parameter in analogy to (single-spindle pre-ssd ideas for the I/O scheduler) like
+Which is the beauty of the simplicity of the even/odd scheme.  It's so 
+dead simple it's both easily demonstrated workable and hard to get wrong 
+in terms of bugs, even if it's clearly not production-suitable.
 
-elevator=cfq
-(for btrfs="try to balance reads between devices by common read queue" resp "max out all resources and distribute fairly to requesting apps")
-(optimum for large reads (and parallel several of them such as balance / send/receive/copy/tar with the pool and the same time to external backup...)
+Meanwhile, as I've said, other than raw breakage bugs this is one of the 
+clearest demonstrations that btrfs really is /not/ a mature filesystem, 
+despite the removal of all the dire warnings about it potentially eating 
+your baby (data, that is) possibly leading some to the conclusion it's 
+mature/stable/ready-for-production-use, because as you said this is 
+clearly not production-suitable; it's clearly test-suitable.
 
-elevator=noop (assign by even/odd, current behavior (testing)
+> Interesting enough, all my other btrfses are single-SSD for operating
+> system with auto-snap to be able to revert...
+> and one is a 2-disk raid 0 for throw away data, so I never had a setup
+> that would expose this behaviour...
 
-elevator=jumpy (e.g. assign a read to the stripeset which has the smallest number of other reads on it, every rand x
-secs switch stripeset if number of "customers" on other 1..N redundant stripesets has decreased
-(similar to core switching of a long-running process in kernel)
-(optimised for smaller r/w operations such as many users accessing a central server)
-etc..
+I do hope you're reasonably thinning down those snapshots over time.  
+Btrfs has a scalability issue when it comes to too many snapshots, and 
+while they're instant to create as it's simply saving a bit of extra 
+metadata, they're **NOT** instant to delete or to otherwise work with, 
+once you get several hundred of them going.
 
-would bring room to experiment in the years till 2020 as you outlined and to review,
-whether mdadms raid10 near/far/offset should be considered when most future storage will be non-rotary...
-Some kind of self-optimzing should also be included, i.e. if the filesystem new,
-how much is to be read, it could know if it made sense to try different methods
-and find the fastest, such as gparteds' block size adapting...
-Again, it would be interessting if the impact on non-rotary storage would be insignificant
+Fortunately, it's easy enough to cut back a bit on the creation if 
+necessary, so there's time to delete them too, and then to thin down to 
+under say 300 or less per subvolume (and that's with original 
+snapshotting at say half-hour intervals or more frequently!).  Say keep 
+six hours of half-hour, then thin to hourly.  Keep the remainder of 24 
+hours (18 hours) at hourly, and thin to say six-hourly... and so on.  It 
+really is reasonably easy to keep it well under three-hundred snapshots 
+per subvolume, even with half-hourly snapshotting, originally.
 
-In my use case it's a simple rsync or cp -a or nemo/nautilus
-copying between zfs and btrfs pools. Those are single-threaded I guess
-and I understand in btrfs there is not such a ton of z_read - processess that
-probably account for the "flying" zfs-reads on 6disk raidz2 or 3x2 or 2x3
-vdev layout compared to btrfs reads.
+Also fortunately, should you really have to go back a full year, in 
+practice, you're not normally going to care much about the individual 
+hour and often not even the individual day.  Often, simply getting a 
+snapshot from the correct week, or correct quarter, is enough, and it's a 
+LOT easier to pick out when you've been doing proper thinning.
 
+And if you're snapshotting multiple subvolumes per filesystem, try to 
+keep total snapshots to a couple thousand or so if at all possible, and 
+if you can get away with under a thousand total, do it. Because once you 
+get into the thousands of snapshots, there's reports and reports of 
+people complaining about how poorly btrfs scales when trying to do any 
+filesystem maintenance at all, even on SSD.
 
-I still find it strange, that also a balance also only uses half the spindles,
-but it is explainable when the same logic is used as for any other reading from
-the array. At least the scrub reads all data and not only one copy ;-)
+Which is actually one of the things the devs have been spending major 
+time on.  Scaling isn't good yet, but it's MUCH better than it was... 
+basically unworkable at times.  Of course that's why snapshot-aware-
+defrag is disabled ATM as well -- it was simply unworkable, and the 
+thought was, better to let defrag work on the current copy and going 
+forward, even if it breaks references and forces duplication of the 
+defragged blocks, than to not have it working at all.
 
-Interesting enough, all my other btrfses are single-SSD for operating system with auto-snap to be able to revert...
-and one is a 2-disk raid 0 for throw away data, so I never had a setup that would expose this behaviour...
+And FWIW, quotas are another scaling issue.  But they've always been 
+bugged and not worked entirely correctly anyway, and as such, the 
+recommendation has always been to disable then on btrfs unless you really 
+need them, and if you really need them, better use a more mature 
+filesystem where they work reliably, because you simply can't count on 
+quotas actually working on btrfs.  Again, there has been major work 
+invested here and it's getting better, but there's still corner-cases due 
+to subvolume deletion where the quota math still simply doesn't work.  So 
+while quotas are a scaling issue, it's not a major one, since quotas have 
+to date never worked correctly anyway, so few actually use them.
 
-Goodbye,
-
-Sven.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

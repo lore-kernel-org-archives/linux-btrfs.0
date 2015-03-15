@@ -1,131 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37854 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750848AbbCODfw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Mar 2015 23:35:52 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YWzLB-0002jD-GV
-	for linux-btrfs@vger.kernel.org; Sun, 15 Mar 2015 04:35:49 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Mar 2015 04:35:49 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Mar 2015 04:35:49 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Raid10 performance issues during copy and balance, only half
- the spindles used for reading data
-Date: Sun, 15 Mar 2015 03:35:34 +0000 (UTC)
-Message-ID: <pan$eb9d8$64fc2106$58d9b21f$dfb3c40f@cox.net>
-References: <5504E0A3.3040908@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-pd0-f176.google.com ([209.85.192.176]:33505 "EHLO
+	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751786AbbCOJJv convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Mar 2015 05:09:51 -0400
+Received: by pdnc3 with SMTP id c3so28247277pdn.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Mar 2015 02:09:50 -0700 (PDT)
+Subject: Re: Is it safe or useful to use NOCOW flag and autodefrag mount option at same time?
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
+Content-Type: text/plain; charset=us-ascii
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46>
+Date: Sun, 15 Mar 2015 17:09:43 +0800
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <C879D0AA-018D-4C52-94F8-37D322F8DCD4@gmail.com>
+References: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46>
+To: peer.loz@gmx.net
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sven Witterstein posted on Sun, 15 Mar 2015 02:30:11 +0100 as excerpted:
+Hello,
 
-> Probably an option-parameter in analogy to (single-spindle pre-ssd ideas
-> for the I/O scheduler) like
 > 
-> elevator=cfq (for btrfs="try to balance reads [...]
+> Hi,
+> first of all a great thank you to all developers and contributors. The
+> Btrfs filesystem ist a great filesystem!
 > 
-> elevator=noop (assign by even/odd, current behavior (testing)
+> Following common recommendations [1], I use these mount options on my
+> main developing machine: noatime,autodefrag. This is desktop machine and
+> it works well so far. Now, I'm also going to install several KVM virtual
+> machines on this system. I want to use qcow2 files stored on SSD with a
+> btrfs on it. In order to avoid bad performance with the VMs, I want to
+> disable the Copy-On-Write mechanism on the storage directory of my VM
+> images as for example described in [2].
 > 
-> elevator=jumpy (every rand x secs switch stripeset [...]
+> My question now is: Is it safe to use the autodefrag mount option and to
+> disable CoW for single directories which contain VM files at the same
+> time? Is it even useful or may it harm?
 > 
-> would bring room to experiment in the years till 2020 as you outlined
-> and to review,
+> Thank you very much for insights and comments in advance.
 
-The problem is, btrfs is what I've seen referred to as a target-rich 
-environment, way more stuff to do than time to do it... at least 
-reasonably correctly, anyway.
+Btrfs use COW feautr to do defrag, acutally there was bug in the past
+(nocow and defrag)..
 
-This in fact might be what eventually happens, and OK, 2020 is very 
-possibly pessimistic, but if there's no time to code it as other things 
-are taking priority or it'd simply complex enough it'll take several 
-hundreds of manhours to get it coded, and predictably a good portion of 
-that again to review it, commit it, chase down all the immediate bugs, 
-and get them fixed, then there's no time to code it.
+But make sure your kernel include following commit:
+http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=47059d930f0e002ff851beea87d738146804726d
 
-Which is exactly the problem with your proposal.  It's on the list, but 
-so are several hundred other things... .  Well, that, and the 
-programmer's adage about premature optimization.  But it's true, why 
-spend several hundred hours optimizing this, and then have to throw the 
-work away because when you go to add N-way-mirroring you discover some 
-unforeseen angle makes your optimization a pessimisation now, or worse, 
-discover you've cut off an avenue of better optimization that now won't 
-be done because it's not worth spending that several hundred hours of 
-development again.
+With above commit, i think autodefrag should work well with nocow.
 
-Which is the beauty of the simplicity of the even/odd scheme.  It's so 
-dead simple it's both easily demonstrated workable and hard to get wrong 
-in terms of bugs, even if it's clearly not production-suitable.
+Best regards,
+Wang Shilong
 
-Meanwhile, as I've said, other than raw breakage bugs this is one of the 
-clearest demonstrations that btrfs really is /not/ a mature filesystem, 
-despite the removal of all the dire warnings about it potentially eating 
-your baby (data, that is) possibly leading some to the conclusion it's 
-mature/stable/ready-for-production-use, because as you said this is 
-clearly not production-suitable; it's clearly test-suitable.
+> 
+> Best regards,
+> jploz
+> 
+> 
+> As requested in the wiki basic information about my fresh setup attached:
+> uname -a
+> Linux hostname 3.16.0-4-686-pae #1 SMP Debian 3.16.7-ckt7-1 (2015-03-01) i686 GNU/Linux
+> 
+> btrfs --version
+> Btrfs v3.17
+> 
+> btrfs fi show
+> Label: none  uuid: cc6492e7-a7a7-43f9-bba2-a1abe8635d36
+> 	Total devices 1 FS bytes used 4.00GiB
+> 	devid    1 size 210.00GiB used 8.02GiB path /dev/sdb2
+> 
+> Label: 'DataHddBtr'  uuid: aa3f41c0-5a60-4fd7-9365-8c99284e032c
+> 	Total devices 1 FS bytes used 384.00KiB
+> 	devid    1 size 480.00GiB used 2.04GiB path /dev/sda1
+> 
+> Btrfs v3.17
+> 
+> mount | grep btrfs
+> /dev/sdb2 on / type btrfs (rw,noatime,ssd,space_cache,autodefrag)
+> /dev/sda1 on /data/btr type btrfs (rw,noatime,space_cache,autodefrag)
+> 
+> btrfs fi df /
+> Data, single: total=7.01GiB, used=3.89GiB
+> System, single: total=4.00MiB, used=16.00KiB
+> Metadata, single: total=1.01GiB, used=114.39MiB
+> GlobalReserve, single: total=48.00MiB, used=0.00B
+> 
+> btrfs fi df /data/btr/
+> Data, single: total=8.00MiB, used=256.00KiB
+> System, DUP: total=8.00MiB, used=16.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, DUP: total=1.00GiB, used=112.00KiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> 
+> dmesg | grep -i btrfs
+> [    2.693408] Btrfs loaded
+> [    2.756178] BTRFS: device fsid cc6492e7-a7a7-43f9-bba2-a1abe8635d36 devid 1 transid 393 /dev/sdb2
+> [    2.756843] BTRFS: device label DataHddBtr devid 1 transid 9 /dev/sda1
+> [    2.775447] BTRFS info (device sdb2): disk space caching is enabled
+> [    2.779944] BTRFS: detected SSD devices, enabling SSD mode
+> [    3.430997] BTRFS info (device sdb2): enabling auto defrag
+> [    3.431002] BTRFS info (device sdb2): disk space caching is enabled
+> [    3.548937] BTRFS info (device sda1): enabling auto defrag
+> [    3.548939] BTRFS info (device sda1): disk space caching is enabled
+> [  183.341398] BTRFS info (device sda1): enabling auto defrag
+> [  183.341403] BTRFS info (device sda1): disk space caching is enabled
+> 
+> 
+> References:
+> [1] https://btrfs.wiki.kernel.org/index.php/Gotchas
+> [2] https://wiki.archlinux.org/index.php/Btrfs#Copy-On-Write_.28CoW.29
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-> Interesting enough, all my other btrfses are single-SSD for operating
-> system with auto-snap to be able to revert...
-> and one is a 2-disk raid 0 for throw away data, so I never had a setup
-> that would expose this behaviour...
-
-I do hope you're reasonably thinning down those snapshots over time.  
-Btrfs has a scalability issue when it comes to too many snapshots, and 
-while they're instant to create as it's simply saving a bit of extra 
-metadata, they're **NOT** instant to delete or to otherwise work with, 
-once you get several hundred of them going.
-
-Fortunately, it's easy enough to cut back a bit on the creation if 
-necessary, so there's time to delete them too, and then to thin down to 
-under say 300 or less per subvolume (and that's with original 
-snapshotting at say half-hour intervals or more frequently!).  Say keep 
-six hours of half-hour, then thin to hourly.  Keep the remainder of 24 
-hours (18 hours) at hourly, and thin to say six-hourly... and so on.  It 
-really is reasonably easy to keep it well under three-hundred snapshots 
-per subvolume, even with half-hourly snapshotting, originally.
-
-Also fortunately, should you really have to go back a full year, in 
-practice, you're not normally going to care much about the individual 
-hour and often not even the individual day.  Often, simply getting a 
-snapshot from the correct week, or correct quarter, is enough, and it's a 
-LOT easier to pick out when you've been doing proper thinning.
-
-And if you're snapshotting multiple subvolumes per filesystem, try to 
-keep total snapshots to a couple thousand or so if at all possible, and 
-if you can get away with under a thousand total, do it. Because once you 
-get into the thousands of snapshots, there's reports and reports of 
-people complaining about how poorly btrfs scales when trying to do any 
-filesystem maintenance at all, even on SSD.
-
-Which is actually one of the things the devs have been spending major 
-time on.  Scaling isn't good yet, but it's MUCH better than it was... 
-basically unworkable at times.  Of course that's why snapshot-aware-
-defrag is disabled ATM as well -- it was simply unworkable, and the 
-thought was, better to let defrag work on the current copy and going 
-forward, even if it breaks references and forces duplication of the 
-defragged blocks, than to not have it working at all.
-
-And FWIW, quotas are another scaling issue.  But they've always been 
-bugged and not worked entirely correctly anyway, and as such, the 
-recommendation has always been to disable then on btrfs unless you really 
-need them, and if you really need them, better use a more mature 
-filesystem where they work reliably, because you simply can't count on 
-quotas actually working on btrfs.  Again, there has been major work 
-invested here and it's getting better, but there's still corner-cases due 
-to subvolume deletion where the quota math still simply doesn't work.  So 
-while quotas are a scaling issue, it's not a major one, since quotas have 
-to date never worked correctly anyway, so few actually use them.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Best Regards,
+Wang Shilong
 

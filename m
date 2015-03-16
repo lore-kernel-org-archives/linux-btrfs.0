@@ -1,44 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53156 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933241AbbCPQZf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 12:25:35 -0400
-Date: Mon, 16 Mar 2015 17:25:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, Eryu Guan <guaneryu@gmail.com>
-Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
-Message-ID: <20150316162534.GO20767@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com>
- <550127E1.4050606@cn.fujitsu.com>
- <20150312173414.GE20767@twin.jikos.cz>
- <20150312201508.GB10724@localhost.localdomain>
+Received: from zeniv.linux.org.uk ([195.92.253.2]:33842 "EHLO
+	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753688AbbCPRgb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Mar 2015 13:36:31 -0400
+Date: Mon, 16 Mar 2015 17:36:05 +0000
+From: Al Viro <viro@ZenIV.linux.org.uk>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        osd-dev@open-osd.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
+        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com,
+        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
+        Yan Zheng <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
+        Steve French <sfrench@samba.org>, Boaz Harrosh <ooo@electrozaur.com>,
+        Benny Halevy <bhalevy@primarydata.com>, Jan Kara <jack@suse.cz>,
+        "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Changman Lee <cm224.lee@samsung.com>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Steven Whitehouse <swhiteho@redhat.com>,
+        Dave Kleikamp <shaggy@kernel.org>, Oleg Drokin <oleg.drokin@intel.com>,
+        Trond Myklebust <trond.myklebust@primarydata.com>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
+        Eric Van Hensbergen <ericvh@gmail.com>,
+        Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
+        Dave Chinner <david@fromorbit.com>
+Subject: Re: [RFC PATCH 1/5] new helper: iov_iter_rw()
+Message-ID: <20150316173605.GX29656@ZenIV.linux.org.uk>
+References: <cover.1426502566.git.osandov@osandov.com>
+ <34dc78b262546e9343e0ed872232a97f5eaa5f15.1426502566.git.osandov@osandov.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150312201508.GB10724@localhost.localdomain>
+In-Reply-To: <34dc78b262546e9343e0ed872232a97f5eaa5f15.1426502566.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 13, 2015 at 04:15:08AM +0800, Liu Bo wrote:
-> On Thu, Mar 12, 2015 at 06:34:15PM +0100, David Sterba wrote:
-> > On Thu, Mar 12, 2015 at 01:45:05PM +0800, Qu Wenruo wrote:
-> > > I sent such patch some time ago but was rejected by Chris,
-> > > hopes this time it can be accepted.
-> > 
-> > http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg34937.html
-> > 
-> > I'm OK with removing the special case now because there are additional
-> > supreblock checks merged (3.19) that were motivated by your previous
-> > attempt to remove it.
-> 
-> So David, are you going to take the above patch instead?
-> 
-> I'm okay with that since they're exactly same, but it'd be good that
-> Qu has its commit log updated.
+On Mon, Mar 16, 2015 at 04:33:49AM -0700, Omar Sandoval wrote:
+> Get either READ or WRITE out of iter->type.
 
-Although Qu's patch was first and should be normally applied in case
-more patches doing the same thing, the changelog reasoning is IMHO not
-all fine, so I'm inclined to take your patch if you refine the subject,
-and drop the "Conflicts:". Thanks.
+Umm...  
+
+> + * Get one of READ or WRITE out of iter->type without any other flags OR'd in
+> + * with it.
+> + */
+> +static inline int iov_iter_rw(const struct iov_iter *i)
+> +{
+> +	return i->type & RW_MASK;
+> +}
+
+TBH, I would turn that into a macro.  Reason: indirect includes.
+
+How about
+
+#define iov_iter_rw(i) ((0 ? (struct iov_iter *)0 : (i))->type & RW_MASK)
+
+Should do you all the type safety of inline function and avoids the need
+to include fs.h in uio.h; _users_ of iov_iter_rw() obviously still need
+fs.h, but such places always used to...

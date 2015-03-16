@@ -1,97 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:33973 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932261AbbCPSPf (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16816 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933155AbbCPUaz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 14:15:35 -0400
-Date: Mon, 16 Mar 2015 18:15:21 +0000
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
-        osd-dev@open-osd.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
-        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
-        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com,
-        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        Yan Zheng <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
-        Steve French <sfrench@samba.org>, Boaz Harrosh <ooo@electrozaur.com>,
-        Benny Halevy <bhalevy@primarydata.com>, Jan Kara <jack@suse.cz>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Changman Lee <cm224.lee@samsung.com>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Steven Whitehouse <swhiteho@redhat.com>,
-        Dave Kleikamp <shaggy@kernel.org>, Oleg Drokin <oleg.drokin@intel.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
-        Eric Van Hensbergen <ericvh@gmail.com>,
-        Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
-        Dave Chinner <david@fromorbit.com>
-Subject: Re: [RFC PATCH 0/5] Remove rw parameter from direct_IO()
-Message-ID: <20150316181521.GY29656@ZenIV.linux.org.uk>
-References: <cover.1426502566.git.osandov@osandov.com>
+	Mon, 16 Mar 2015 16:30:55 -0400
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t2GKRXvl017229
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 13:30:54 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1t65a1g8fv-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 13:30:54 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix merge delalloc logic V2
+Date: Mon, 16 Mar 2015 16:30:50 -0400
+Message-ID: <1426537850-24861-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 16, 2015 at 04:33:48AM -0700, Omar Sandoval wrote:
-> Hi,
-> 
-> Al, here's some cleanup that you mentioned back in December that I got
-> around to (https://lkml.org/lkml/2014/12/15/28).
-> 
-> In summary, the rw parameter to a_ops->direct_IO() is redundant with
-> .type in struct iov_iter. Additionally, rw is inconsistently checked for
-> being a WRITE; some filesystems do rw == WRITE, others do rw & WRITE,
-> and others do both within the same function :) The distinction is that
-> swapout may OR in the ITER_BVEC flag in the rw passed to ->direct_IO(),
-> so the two are not equivalent (although this really only happens for
-> swap-over-NFS, but it's scary nonetheless). After looking through all of
-> these, it definitely looks like every check means for ANY write, not
-> just non-kernel writes.
-> 
-> So, the solution presented here is:
-> 
-> - Add a helper, iov_iter_rw(), which always returns either READ or
->   WRITE, no ITER_.* or REQ_.* nonsense mixed in. For consistency, the
->   return value is always checked for equality
+My patch to properly count outstanding extents wrt MAX_EXTENT_SIZE introduced a
+regression when joining two large areas.  We need to take into account both
+sides of the merge to figure out if we're good with our current
+outstanding_extents count or if we need to drop it.  For example if you merge
+two slightly larger than MAX_EXTENT size extents the accounting would
+incorrectly think we needed 4 outstanding extents when in fact we'd only need 3.
+Thanks,
 
-TBH, I'm not sure I like such calling conventions, but I guess we can
-live with that.
+Reported-by: Markus Trippelsdorf <markus@trippelsdorf.de>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2: fixed another corner case where we join two large ranges
 
-> I decided to squish all of the filesystems together in patch 4 to avoid
-> inundating the mailing lists with 20+ mostly two-line patches, but I can
-> split those out if that's any better. Additionally, patch 1 pulls fs.h
-> into uio.h, which seems undesirable.
+ fs/btrfs/inode.c | 31 ++++++++++++++++++++++++++-----
+ 1 file changed, 26 insertions(+), 5 deletions(-)
 
-... and easily avoided if you use a macro instead of inline, without losing
-type safety or getting double evaluation, etc.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 91a87f5..af4a492 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1591,8 +1591,10 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ 	if (!(other->state & EXTENT_DELALLOC))
+ 		return;
+ 
+-	old_size = other->end - other->start + 1;
+-	new_size = old_size + (new->end - new->start + 1);
++	if (new->start > other->start)
++		new_size = new->end - other->start + 1;
++	else
++		new_size = other->end - new->start + 1;
+ 
+ 	/* we're not bigger than the max, unreserve the space and go */
+ 	if (new_size <= BTRFS_MAX_EXTENT_SIZE) {
+@@ -1603,13 +1605,32 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ 	}
+ 
+ 	/*
+-	 * If we grew by another max_extent, just return, we want to keep that
+-	 * reserved amount.
++	 * We have to add up either side to figure out how many extents were
++	 * accounted for before we merged into one big extent.  If the number of
++	 * extents we accounted for is <= the amount we need for the new range
++	 * then we can return, otherwise drop.  Think of it like this
++	 *
++	 * [ 4k][MAX_SIZE]
++	 *
++	 * So we've grown the extent by a MAX_SIZE extent, this would mean we
++	 * need 2 outstanding extents, on one side we have 1 and the other side
++	 * we have 1 so they are == and we can return.  But in this case
++	 *
++	 * [MAX_SIZE+4k][MAX_SIZE+4k]
++	 *
++	 * Each range on their own accounts for 2 extents, but merged together
++	 * they are only 3 extents worth of accounting, so we need to drop in
++	 * this case.
+ 	 */
++	old_size = other->end - other->start + 1;
+ 	num_extents = div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
+ 				BTRFS_MAX_EXTENT_SIZE);
++	old_size = new->end - new->start + 1;
++	num_extents += div64_u64(old_size + BTRFS_MAX_EXTENT_SIZE - 1,
++				 BTRFS_MAX_EXTENT_SIZE);
++
+ 	if (div64_u64(new_size + BTRFS_MAX_EXTENT_SIZE - 1,
+-		      BTRFS_MAX_EXTENT_SIZE) > num_extents)
++		      BTRFS_MAX_EXTENT_SIZE) >= num_extents)
+ 		return;
+ 
+ 	spin_lock(&BTRFS_I(inode)->lock);
+-- 
+1.9.3
 
-Look: 0 ? (struct T *)0 : (x) always evaluates to x.  Now look at 6.5.15p3 in
-C99: the second and the third arguments are both pointers, so we are left with
-p3.4 (both arguments are pointers to qualified or unqualified versions of
-compatible types), p3.5 (one operand is a pointer and another null pointer
-constant) and p3.6 (one operand is a pointer to an object or incomplete type,
-and the other is a pointer to qualified or unqualied version of void.
-
-The first variant means that x is a pointer to qualified or unqualified
-struct T; the type of result is, per 6.5.15p6, the same as that of x.
-
-The second variant means that x is a null pointer constant ((struct T *)0 isn't
-one) and result is a null pointer to T.
-
-The third one means that x is a pointer to qualified or unqualified void.
-The type of result is the same as that of x.
-
-Now note that your variant is no better wrt type safety; worse, actually, since
-it does accept any pointer to void.  (0 ? (struct iov_iter *)0 : (x))->type
-will reject those.  And we obviously don't have double evaluation here either.

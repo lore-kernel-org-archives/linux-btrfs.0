@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:35857 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753799AbbCPLfS (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:36643 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751430AbbCPLfF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 07:35:18 -0400
-Received: by padcy3 with SMTP id cy3so62547081pad.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 04:35:16 -0700 (PDT)
+	Mon, 16 Mar 2015 07:35:05 -0400
+Received: by padcy3 with SMTP id cy3so62542539pad.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 04:35:04 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
@@ -35,187 +35,93 @@ Cc: linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
         Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
         Dave Chinner <david@fromorbit.com>,
         Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH 3/5] Remove rw from dax_{do_,}io()
-Date: Mon, 16 Mar 2015 04:33:51 -0700
-Message-Id: <e883c902cc6d3861454a5f456788bed214c57bcf.1426502566.git.osandov@osandov.com>
-In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
-References: <cover.1426502566.git.osandov@osandov.com>
-In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
-References: <cover.1426502566.git.osandov@osandov.com>
+Subject: [RFC PATCH 0/5] Remove rw parameter from direct_IO()
+Date: Mon, 16 Mar 2015 04:33:48 -0700
+Message-Id: <cover.1426502566.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-And use iov_iter_rw() instead.
+Hi,
 
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/dax.c           | 27 +++++++++++++--------------
- fs/ext2/inode.c    |  4 ++--
- fs/ext4/indirect.c |  4 ++--
- fs/ext4/inode.c    |  2 +-
- include/linux/fs.h |  4 ++--
- 5 files changed, 20 insertions(+), 21 deletions(-)
+Al, here's some cleanup that you mentioned back in December that I got
+around to (https://lkml.org/lkml/2014/12/15/28).
 
-diff --git a/fs/dax.c b/fs/dax.c
-index ed1619e..a278469 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -98,9 +98,9 @@ static bool buffer_size_valid(struct buffer_head *bh)
- 	return bh->b_state != 0;
- }
- 
--static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
--			loff_t start, loff_t end, get_block_t get_block,
--			struct buffer_head *bh)
-+static ssize_t dax_io(struct inode *inode, struct iov_iter *iter,
-+		      loff_t start, loff_t end, get_block_t get_block,
-+		      struct buffer_head *bh)
- {
- 	ssize_t retval = 0;
- 	loff_t pos = start;
-@@ -109,7 +109,7 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
- 	void *addr;
- 	bool hole = false;
- 
--	if (rw != WRITE)
-+	if (iov_iter_rw(iter) != WRITE)
- 		end = min(end, i_size_read(inode));
- 
- 	while (pos < end) {
-@@ -124,7 +124,7 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
- 				bh->b_size = PAGE_ALIGN(end - pos);
- 				bh->b_state = 0;
- 				retval = get_block(inode, block, bh,
--								rw == WRITE);
-+						   iov_iter_rw(iter) == WRITE);
- 				if (retval)
- 					break;
- 				if (!buffer_size_valid(bh))
-@@ -137,7 +137,7 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
- 				bh->b_size -= done;
- 			}
- 
--			hole = (rw != WRITE) && !buffer_written(bh);
-+			hole = iov_iter_rw(iter) != WRITE && !buffer_written(bh);
- 			if (hole) {
- 				addr = NULL;
- 				size = bh->b_size - first;
-@@ -154,7 +154,7 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
- 			max = min(pos + size, end);
- 		}
- 
--		if (rw == WRITE)
-+		if (iov_iter_rw(iter) == WRITE)
- 			len = copy_from_iter(addr, max - pos, iter);
- 		else if (!hole)
- 			len = copy_to_iter(addr, max - pos, iter);
-@@ -173,7 +173,6 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
- 
- /**
-  * dax_do_io - Perform I/O to a DAX file
-- * @rw: READ to read or WRITE to write
-  * @iocb: The control block for this I/O
-  * @inode: The file which the I/O is directed at
-  * @iter: The addresses to do I/O from or to
-@@ -189,9 +188,9 @@ static ssize_t dax_io(int rw, struct inode *inode, struct iov_iter *iter,
-  * As with do_blockdev_direct_IO(), we increment i_dio_count while the I/O
-  * is in progress.
-  */
--ssize_t dax_do_io(int rw, struct kiocb *iocb, struct inode *inode,
--			struct iov_iter *iter, loff_t pos,
--			get_block_t get_block, dio_iodone_t end_io, int flags)
-+ssize_t dax_do_io(struct kiocb *iocb, struct inode *inode,
-+		  struct iov_iter *iter, loff_t pos, get_block_t get_block,
-+		  dio_iodone_t end_io, int flags)
- {
- 	struct buffer_head bh;
- 	ssize_t retval = -EINVAL;
-@@ -199,7 +198,7 @@ ssize_t dax_do_io(int rw, struct kiocb *iocb, struct inode *inode,
- 
- 	memset(&bh, 0, sizeof(bh));
- 
--	if ((flags & DIO_LOCKING) && (rw == READ)) {
-+	if ((flags & DIO_LOCKING) && iov_iter_rw(iter) == READ) {
- 		struct address_space *mapping = inode->i_mapping;
- 		mutex_lock(&inode->i_mutex);
- 		retval = filemap_write_and_wait_range(mapping, pos, end - 1);
-@@ -212,9 +211,9 @@ ssize_t dax_do_io(int rw, struct kiocb *iocb, struct inode *inode,
- 	/* Protects against truncate */
- 	atomic_inc(&inode->i_dio_count);
- 
--	retval = dax_io(rw, inode, iter, pos, end, get_block, &bh);
-+	retval = dax_io(inode, iter, pos, end, get_block, &bh);
- 
--	if ((flags & DIO_LOCKING) && (rw == READ))
-+	if ((flags & DIO_LOCKING) && iov_iter_rw(iter) == READ)
- 		mutex_unlock(&inode->i_mutex);
- 
- 	if ((retval > 0) && end_io)
-diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
-index 00979a6..cf95bda 100644
---- a/fs/ext2/inode.c
-+++ b/fs/ext2/inode.c
-@@ -861,8 +861,8 @@ ext2_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
- 	ssize_t ret;
- 
- 	if (IS_DAX(inode))
--		ret = dax_do_io(rw, iocb, inode, iter, offset, ext2_get_block,
--				NULL, DIO_LOCKING);
-+		ret = dax_do_io(iocb, inode, iter, offset, ext2_get_block, NULL,
-+				DIO_LOCKING);
- 	else
- 		ret = blockdev_direct_IO(iocb, inode, iter, offset,
- 					 ext2_get_block);
-diff --git a/fs/ext4/indirect.c b/fs/ext4/indirect.c
-index 57135a7..86e8765 100644
---- a/fs/ext4/indirect.c
-+++ b/fs/ext4/indirect.c
-@@ -690,7 +690,7 @@ retry:
- 			goto locked;
- 		}
- 		if (IS_DAX(inode))
--			ret = dax_do_io(rw, iocb, inode, iter, offset,
-+			ret = dax_do_io(iocb, inode, iter, offset,
- 					ext4_get_block, NULL, 0);
- 		else
- 			ret = __blockdev_direct_IO(iocb, inode,
-@@ -701,7 +701,7 @@ retry:
- 	} else {
- locked:
- 		if (IS_DAX(inode))
--			ret = dax_do_io(rw, iocb, inode, iter, offset,
-+			ret = dax_do_io(iocb, inode, iter, offset,
- 					ext4_get_block, NULL, DIO_LOCKING);
- 		else
- 			ret = blockdev_direct_IO(iocb, inode, iter, offset,
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 81f8f10..094cc4a 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -3035,7 +3035,7 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
- 		dio_flags = DIO_LOCKING;
- 	}
- 	if (IS_DAX(inode))
--		ret = dax_do_io(rw, iocb, inode, iter, offset, get_block_func,
-+		ret = dax_do_io(iocb, inode, iter, offset, get_block_func,
- 				ext4_end_io_dio, dio_flags);
- 	else
- 		ret = __blockdev_direct_IO(iocb, inode,
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index ba1b580..8fcda74 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2591,8 +2591,8 @@ extern loff_t fixed_size_llseek(struct file *file, loff_t offset,
- extern int generic_file_open(struct inode * inode, struct file * filp);
- extern int nonseekable_open(struct inode * inode, struct file * filp);
- 
--ssize_t dax_do_io(int rw, struct kiocb *, struct inode *, struct iov_iter *,
--		loff_t, get_block_t, dio_iodone_t, int flags);
-+ssize_t dax_do_io(struct kiocb *, struct inode *, struct iov_iter *, loff_t,
-+		  get_block_t, dio_iodone_t, int flags);
- int dax_clear_blocks(struct inode *, sector_t block, long size);
- int dax_zero_page_range(struct inode *, loff_t from, unsigned len, get_block_t);
- int dax_truncate_page(struct inode *, loff_t from, get_block_t);
+In summary, the rw parameter to a_ops->direct_IO() is redundant with
+.type in struct iov_iter. Additionally, rw is inconsistently checked for
+being a WRITE; some filesystems do rw == WRITE, others do rw & WRITE,
+and others do both within the same function :) The distinction is that
+swapout may OR in the ITER_BVEC flag in the rw passed to ->direct_IO(),
+so the two are not equivalent (although this really only happens for
+swap-over-NFS, but it's scary nonetheless). After looking through all of
+these, it definitely looks like every check means for ANY write, not
+just non-kernel writes.
+
+So, the solution presented here is:
+
+- Add a helper, iov_iter_rw(), which always returns either READ or
+  WRITE, no ITER_.* or REQ_.* nonsense mixed in. For consistency, the
+  return value is always checked for equality
+- Get rid of all uses of rw in any implementations of direct_IO,
+  starting with the generic code
+- Nuke the actual parameter and update the documentation
+
+I decided to squish all of the filesystems together in patch 4 to avoid
+inundating the mailing lists with 20+ mostly two-line patches, but I can
+split those out if that's any better. Additionally, patch 1 pulls fs.h
+into uio.h, which seems undesirable.
+
+These were mostly just compile tested, with a couple of direct I/O
+xfstests run on btrfs as quick sanity check, so getting some more eyes
+on is probably a good thing. They should apply on top of v4.0-rc4.
+Please comment away.
+
+Thank you,
+
+Omar Sandoval (5):
+  new helper: iov_iter_rw()
+  Remove rw from {,__,do_}blockdev_direct_IO()
+  Remove rw from dax_{do_,}io()
+  direct_IO: use iov_iter_rw() instead of rw everywhere
+  direct_IO: remove rw from a_ops->direct_IO()
+
+ Documentation/filesystems/Locking          |  2 +-
+ Documentation/filesystems/vfs.txt          |  2 +-
+ drivers/staging/lustre/lustre/llite/rw26.c | 22 ++++++++---------
+ fs/9p/vfs_addr.c                           |  2 +-
+ fs/affs/file.c                             |  9 +++----
+ fs/block_dev.c                             |  8 +++---
+ fs/btrfs/inode.c                           | 24 +++++++++---------
+ fs/ceph/addr.c                             |  3 +--
+ fs/cifs/file.c                             |  3 +--
+ fs/dax.c                                   | 27 ++++++++++-----------
+ fs/direct-io.c                             | 39 ++++++++++++++----------------
+ fs/exofs/inode.c                           |  4 +--
+ fs/ext2/inode.c                            | 11 ++++-----
+ fs/ext3/inode.c                            | 14 +++++------
+ fs/ext4/ext4.h                             |  4 +--
+ fs/ext4/indirect.c                         | 25 ++++++++++---------
+ fs/ext4/inode.c                            | 28 ++++++++++-----------
+ fs/f2fs/data.c                             | 22 ++++++++---------
+ fs/fat/inode.c                             |  9 +++----
+ fs/fuse/file.c                             | 16 ++++++------
+ fs/gfs2/aops.c                             | 16 ++++++------
+ fs/hfs/inode.c                             |  8 +++---
+ fs/hfsplus/inode.c                         |  9 +++----
+ fs/jfs/inode.c                             |  8 +++---
+ fs/nfs/direct.c                            |  4 +--
+ fs/nilfs2/inode.c                          | 10 +++-----
+ fs/ocfs2/aops.c                            | 22 +++++++----------
+ fs/reiserfs/inode.c                        |  8 +++---
+ fs/udf/file.c                              |  3 +--
+ fs/udf/inode.c                             |  7 +++---
+ fs/xfs/xfs_aops.c                          | 12 ++++-----
+ include/linux/fs.h                         | 24 +++++++++---------
+ include/linux/nfs_fs.h                     |  2 +-
+ include/linux/uio.h                        | 10 ++++++++
+ mm/filemap.c                               |  4 +--
+ mm/page_io.c                               |  4 +--
+ 36 files changed, 206 insertions(+), 219 deletions(-)
+
 -- 
 2.3.3
 

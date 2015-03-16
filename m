@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:33346 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753752AbbCPLfP (ORCPT
+Received: from mail-pd0-f172.google.com ([209.85.192.172]:32949 "EHLO
+	mail-pd0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753784AbbCPLfS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 07:35:15 -0400
-Received: by pagr17 with SMTP id r17so62570636pag.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 04:35:14 -0700 (PDT)
+	Mon, 16 Mar 2015 07:35:18 -0400
+Received: by pdnc3 with SMTP id c3so56074731pdn.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 04:35:18 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
@@ -35,9 +35,9 @@ Cc: linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
         Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
         Dave Chinner <david@fromorbit.com>,
         Omar Sandoval <osandov@osandov.com>
-Subject: [RFC PATCH 2/5] Remove rw from {,__,do_}blockdev_direct_IO()
-Date: Mon, 16 Mar 2015 04:33:50 -0700
-Message-Id: <16009f67c954bb645848d55d75a2601023604055.1426502566.git.osandov@osandov.com>
+Subject: [RFC PATCH 4/5] direct_IO: use iov_iter_rw() instead of rw everywhere
+Date: Mon, 16 Mar 2015 04:33:52 -0700
+Message-Id: <16b2a270e560277f4a43c4eaf04bbc2bc825c28d.1426502566.git.osandov@osandov.com>
 In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
 References: <cover.1426502566.git.osandov@osandov.com>
 In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
@@ -45,477 +45,608 @@ References: <cover.1426502566.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Most filesystems call through to these at some point, so we'll start
-here.
+The rw parameter to direct_IO is redundant with iov_iter->type, and
+treated slightly differently just about everywhere it's used: some users
+do rw & WRITE, and others do rw == WRITE where they should be doing a
+bitwise check. Simplify this with the new iov_iter_rw() helper, which
+always returns either READ or WRITE.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/affs/file.c      |  2 +-
- fs/block_dev.c      |  5 ++---
- fs/btrfs/inode.c    |  8 ++++----
- fs/direct-io.c      | 39 ++++++++++++++++++---------------------
- fs/ext2/inode.c     |  2 +-
- fs/ext3/inode.c     |  2 +-
- fs/ext4/indirect.c  | 11 ++++++-----
- fs/ext4/inode.c     |  2 +-
- fs/f2fs/data.c      |  2 +-
- fs/fat/inode.c      |  2 +-
- fs/gfs2/aops.c      |  5 ++---
- fs/hfs/inode.c      |  2 +-
- fs/hfsplus/inode.c  |  3 +--
- fs/jfs/inode.c      |  2 +-
- fs/nilfs2/inode.c   |  3 +--
- fs/ocfs2/aops.c     | 16 +++++++---------
- fs/reiserfs/inode.c |  2 +-
- fs/udf/inode.c      |  2 +-
- fs/xfs/xfs_aops.c   |  9 ++++-----
- include/linux/fs.h  | 22 ++++++++++++----------
- 20 files changed, 67 insertions(+), 74 deletions(-)
+ drivers/staging/lustre/lustre/llite/rw26.c | 18 +++++++++---------
+ fs/affs/file.c                             |  4 ++--
+ fs/btrfs/inode.c                           | 12 ++++++------
+ fs/ext2/inode.c                            |  2 +-
+ fs/ext3/inode.c                            |  8 ++++----
+ fs/ext4/ext4.h                             |  4 ++--
+ fs/ext4/indirect.c                         | 10 +++++-----
+ fs/ext4/inode.c                            | 20 ++++++++++----------
+ fs/f2fs/data.c                             | 16 ++++++++--------
+ fs/fat/inode.c                             |  4 ++--
+ fs/fuse/file.c                             | 13 +++++++------
+ fs/gfs2/aops.c                             |  7 +++----
+ fs/hfs/inode.c                             |  2 +-
+ fs/hfsplus/inode.c                         |  2 +-
+ fs/jfs/inode.c                             |  2 +-
+ fs/nfs/direct.c                            |  2 +-
+ fs/nilfs2/inode.c                          |  4 ++--
+ fs/ocfs2/aops.c                            |  2 +-
+ fs/reiserfs/inode.c                        |  2 +-
+ fs/udf/inode.c                             |  2 +-
+ fs/xfs/xfs_aops.c                          |  2 +-
+ 21 files changed, 69 insertions(+), 69 deletions(-)
 
-diff --git a/fs/affs/file.c b/fs/affs/file.c
-index d2468bf..f3028aa 100644
---- a/fs/affs/file.c
-+++ b/fs/affs/file.c
-@@ -405,7 +405,7 @@ affs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
- 			return 0;
- 	}
+diff --git a/drivers/staging/lustre/lustre/llite/rw26.c b/drivers/staging/lustre/lustre/llite/rw26.c
+index 2f21304..3aa9de6 100644
+--- a/drivers/staging/lustre/lustre/llite/rw26.c
++++ b/drivers/staging/lustre/lustre/llite/rw26.c
+@@ -399,7 +399,7 @@ static ssize_t ll_direct_IO_26(int rw, struct kiocb *iocb,
+ 	 *    size changing by concurrent truncates and writes.
+ 	 * 1. Need inode mutex to operate transient pages.
+ 	 */
+-	if (rw == READ)
++	if (iov_iter_rw(iter) == READ)
+ 		mutex_lock(&inode->i_mutex);
  
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, affs_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, affs_get_block);
- 	if (ret < 0 && (rw & WRITE))
- 		affs_write_failed(mapping, offset + count);
- 	return ret;
-diff --git a/fs/block_dev.c b/fs/block_dev.c
-index 975266b..e3a3125 100644
---- a/fs/block_dev.c
-+++ b/fs/block_dev.c
-@@ -153,9 +153,8 @@ blkdev_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
+ 	LASSERT(obj->cob_transient_pages == 0);
+@@ -408,7 +408,7 @@ static ssize_t ll_direct_IO_26(int rw, struct kiocb *iocb,
+ 		size_t offs;
  
--	return __blockdev_direct_IO(rw, iocb, inode, I_BDEV(inode), iter,
--				    offset, blkdev_get_block,
--				    NULL, NULL, 0);
-+	return __blockdev_direct_IO(iocb, inode, I_BDEV(inode), iter, offset,
-+				    blkdev_get_block, NULL, NULL, 0);
- }
- 
- int __sync_blockdev(struct block_device *bdev, int wait)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index da828cf..d6413f4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8119,10 +8119,10 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
- 		wakeup = false;
- 	}
- 
--	ret = __blockdev_direct_IO(rw, iocb, inode,
--			BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
--			iter, offset, btrfs_get_blocks_direct, NULL,
--			btrfs_submit_direct, flags);
-+	ret = __blockdev_direct_IO(iocb, inode,
-+				   BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
-+				   iter, offset, btrfs_get_blocks_direct, NULL,
-+				   btrfs_submit_direct, flags);
- 	if (rw & WRITE) {
- 		if (ret < 0 && ret != -EIOCBQUEUED)
- 			btrfs_delalloc_release_space(inode, count);
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index e181b6b..02a87d9 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -1094,10 +1094,10 @@ static inline int drop_refcount(struct dio *dio)
-  * for the whole file.
-  */
- static inline ssize_t
--do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
--	struct block_device *bdev, struct iov_iter *iter, loff_t offset, 
--	get_block_t get_block, dio_iodone_t end_io,
--	dio_submit_t submit_io,	int flags)
-+do_blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
-+		      struct block_device *bdev, struct iov_iter *iter,
-+		      loff_t offset, get_block_t get_block, dio_iodone_t end_io,
-+		      dio_submit_t submit_io, int flags)
- {
- 	unsigned i_blkbits = ACCESS_ONCE(inode->i_blkbits);
- 	unsigned blkbits = i_blkbits;
-@@ -1111,9 +1111,6 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	struct blk_plug plug;
- 	unsigned long align = offset | iov_iter_alignment(iter);
- 
--	if (rw & WRITE)
--		rw = WRITE_ODIRECT;
--
- 	/*
- 	 * Avoid references to bdev if not absolutely needed to give
- 	 * the early prefetch in the caller enough time.
-@@ -1128,7 +1125,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	}
- 
- 	/* watch out for a 0 len io from a tricksy fs */
--	if (rw == READ && !iov_iter_count(iter))
-+	if (iov_iter_rw(iter) == READ && !iov_iter_count(iter))
- 		return 0;
- 
- 	dio = kmem_cache_alloc(dio_cache, GFP_KERNEL);
-@@ -1144,7 +1141,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 
- 	dio->flags = flags;
- 	if (dio->flags & DIO_LOCKING) {
+ 		count = min_t(size_t, iov_iter_count(iter), size);
 -		if (rw == READ) {
 +		if (iov_iter_rw(iter) == READ) {
- 			struct address_space *mapping =
- 					iocb->ki_filp->f_mapping;
+ 			if (file_offset >= i_size_read(inode))
+ 				break;
+ 			if (file_offset + count > i_size_read(inode))
+@@ -418,11 +418,11 @@ static ssize_t ll_direct_IO_26(int rw, struct kiocb *iocb,
+ 		result = iov_iter_get_pages_alloc(iter, &pages, count, &offs);
+ 		if (likely(result > 0)) {
+ 			int n = DIV_ROUND_UP(result + offs, PAGE_SIZE);
+-			result = ll_direct_IO_26_seg(env, io, rw, inode,
+-						     file->f_mapping,
+-						     result, file_offset,
+-						     pages, n);
+-			ll_free_user_pages(pages, n, rw==READ);
++			result = ll_direct_IO_26_seg(env, io, iov_iter_rw(iter),
++						     inode, file->f_mapping,
++						     result, file_offset, pages,
++						     n);
++			ll_free_user_pages(pages, n, iov_iter_rw(iter) == READ);
+ 		}
+ 		if (unlikely(result <= 0)) {
+ 			/* If we can't allocate a large enough buffer
+@@ -449,11 +449,11 @@ static ssize_t ll_direct_IO_26(int rw, struct kiocb *iocb,
+ 	}
+ out:
+ 	LASSERT(obj->cob_transient_pages == 0);
+-	if (rw == READ)
++	if (iov_iter_rw(iter) == READ)
+ 		mutex_unlock(&inode->i_mutex);
  
-@@ -1170,19 +1167,19 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	if (is_sync_kiocb(iocb))
- 		dio->is_async = false;
- 	else if (!(dio->flags & DIO_ASYNC_EXTEND) &&
--            (rw & WRITE) && end > i_size_read(inode))
-+		 iov_iter_rw(iter) == WRITE && end > i_size_read(inode))
- 		dio->is_async = false;
- 	else
- 		dio->is_async = true;
+ 	if (tot_bytes > 0) {
+-		if (rw == WRITE) {
++		if (iov_iter_rw(iter) == WRITE) {
+ 			struct lov_stripe_md *lsm;
  
- 	dio->inode = inode;
--	dio->rw = rw;
-+	dio->rw = iov_iter_rw(iter) == WRITE ? WRITE_ODIRECT : READ;
+ 			lsm = ccc_inode_lsm_get(inode);
+diff --git a/fs/affs/file.c b/fs/affs/file.c
+index f3028aa..0314acd 100644
+--- a/fs/affs/file.c
++++ b/fs/affs/file.c
+@@ -398,7 +398,7 @@ affs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	size_t count = iov_iter_count(iter);
+ 	ssize_t ret;
  
- 	/*
- 	 * For AIO O_(D)SYNC writes we need to defer completions to a workqueue
- 	 * so that we can call ->fsync.
- 	 */
--	if (dio->is_async && (rw & WRITE) &&
-+	if (dio->is_async && iov_iter_rw(iter) == WRITE &&
- 	    ((iocb->ki_filp->f_flags & O_DSYNC) ||
- 	     IS_SYNC(iocb->ki_filp->f_mapping->host))) {
- 		retval = dio_set_defer_completion(dio);
-@@ -1275,7 +1272,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	 * we can let i_mutex go now that its achieved its purpose
- 	 * of protecting us from looking up uninitialized blocks.
- 	 */
--	if (rw == READ && (dio->flags & DIO_LOCKING))
-+	if (iov_iter_rw(iter) == READ && (dio->flags & DIO_LOCKING))
- 		mutex_unlock(&dio->inode->i_mutex);
+-	if (rw == WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		loff_t size = offset + count;
  
- 	/*
-@@ -1287,7 +1284,7 @@ do_blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	 */
- 	BUG_ON(retval == -EIOCBQUEUED);
- 	if (dio->is_async && retval == 0 && dio->result &&
--	    (rw == READ || dio->result == count))
-+	    (iov_iter_rw(iter) == READ || dio->result == count))
- 		retval = -EIOCBQUEUED;
- 	else
- 		dio_await_completion(dio);
-@@ -1301,11 +1298,11 @@ out:
- 	return retval;
+ 		if (AFFS_I(inode)->mmu_private < size)
+@@ -406,7 +406,7 @@ affs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	}
+ 
+ 	ret = blockdev_direct_IO(iocb, inode, iter, offset, affs_get_block);
+-	if (ret < 0 && (rw & WRITE))
++	if (ret < 0 && iov_iter_rw(iter) == WRITE)
+ 		affs_write_failed(mapping, offset + count);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d6413f4..5c17f61 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8037,8 +8037,8 @@ free_ordered:
+ 	bio_endio(dio_bio, ret);
  }
  
--ssize_t
--__blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
--	struct block_device *bdev, struct iov_iter *iter, loff_t offset,
--	get_block_t get_block, dio_iodone_t end_io,
--	dio_submit_t submit_io,	int flags)
-+ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
-+			     struct block_device *bdev, struct iov_iter *iter,
-+			     loff_t offset, get_block_t get_block,
-+			     dio_iodone_t end_io, dio_submit_t submit_io,
-+			     int flags)
+-static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *iocb,
+-			const struct iov_iter *iter, loff_t offset)
++static ssize_t check_direct_IO(struct btrfs_root *root, struct kiocb *iocb,
++			       const struct iov_iter *iter, loff_t offset)
  {
+ 	int seg;
+ 	int i;
+@@ -8052,7 +8052,7 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
+ 		goto out;
+ 
+ 	/* If this is a write we don't need to check anymore */
+-	if (rw & WRITE)
++	if (iov_iter_rw(iter) == WRITE)
+ 		return 0;
  	/*
- 	 * The block device state is needed in the end to finally
-@@ -1319,8 +1316,8 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	prefetch(bdev->bd_queue);
- 	prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
+ 	 * Check to make sure we don't have duplicate iov_base's in this
+@@ -8081,7 +8081,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 	bool relock = false;
+ 	ssize_t ret;
  
--	return do_blockdev_direct_IO(rw, iocb, inode, bdev, iter, offset,
--				     get_block, end_io, submit_io, flags);
-+	return do_blockdev_direct_IO(iocb, inode, bdev, iter, offset, get_block,
-+				     end_io, submit_io, flags);
- }
+-	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iter, offset))
++	if (check_direct_IO(BTRFS_I(inode)->root, iocb, iter, offset))
+ 		return 0;
  
- EXPORT_SYMBOL(__blockdev_direct_IO);
+ 	atomic_inc(&inode->i_dio_count);
+@@ -8099,7 +8099,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 		filemap_fdatawrite_range(inode->i_mapping, offset,
+ 					 offset + count - 1);
+ 
+-	if (rw & WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		/*
+ 		 * If the write DIO is beyond the EOF, we need update
+ 		 * the isize, but it is protected by i_mutex. So we can
+@@ -8123,7 +8123,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 				   BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
+ 				   iter, offset, btrfs_get_blocks_direct, NULL,
+ 				   btrfs_submit_direct, flags);
+-	if (rw & WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		if (ret < 0 && ret != -EIOCBQUEUED)
+ 			btrfs_delalloc_release_space(inode, count);
+ 		else if (ret >= 0 && (size_t)ret < count)
 diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
-index 6434bc0..00979a6 100644
+index cf95bda..d59d21f 100644
 --- a/fs/ext2/inode.c
 +++ b/fs/ext2/inode.c
-@@ -864,7 +864,7 @@ ext2_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
- 		ret = dax_do_io(rw, iocb, inode, iter, offset, ext2_get_block,
- 				NULL, DIO_LOCKING);
+@@ -866,7 +866,7 @@ ext2_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
  	else
--		ret = blockdev_direct_IO(rw, iocb, inode, iter, offset,
-+		ret = blockdev_direct_IO(iocb, inode, iter, offset,
+ 		ret = blockdev_direct_IO(iocb, inode, iter, offset,
  					 ext2_get_block);
- 	if (ret < 0 && (rw & WRITE))
+-	if (ret < 0 && (rw & WRITE))
++	if (ret < 0 && iov_iter_rw(iter) == WRITE)
  		ext2_write_failed(mapping, offset + count);
+ 	return ret;
+ }
 diff --git a/fs/ext3/inode.c b/fs/ext3/inode.c
-index 2c6ccc4..28bba7d 100644
+index 28bba7d..8832f2d 100644
 --- a/fs/ext3/inode.c
 +++ b/fs/ext3/inode.c
-@@ -1856,7 +1856,7 @@ static ssize_t ext3_direct_IO(int rw, struct kiocb *iocb,
+@@ -1832,9 +1832,9 @@ static ssize_t ext3_direct_IO(int rw, struct kiocb *iocb,
+ 	size_t count = iov_iter_count(iter);
+ 	int retries = 0;
+ 
+-	trace_ext3_direct_IO_enter(inode, offset, count, rw);
++	trace_ext3_direct_IO_enter(inode, offset, count, iov_iter_rw(iter));
+ 
+-	if (rw == WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		loff_t final_size = offset + count;
+ 
+ 		if (final_size > inode->i_size) {
+@@ -1861,7 +1861,7 @@ retry:
+ 	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && ret < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
+ 
+@@ -1908,7 +1908,7 @@ retry:
+ 			ret = err;
+ 	}
+ out:
+-	trace_ext3_direct_IO_exit(inode, offset, count, rw, ret);
++	trace_ext3_direct_IO_exit(inode, offset, count, iov_iter_rw(iter), ret);
+ 	return ret;
+ }
+ 
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index f63c3d5..2031c99 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -2152,8 +2152,8 @@ extern void ext4_da_update_reserve_space(struct inode *inode,
+ /* indirect.c */
+ extern int ext4_ind_map_blocks(handle_t *handle, struct inode *inode,
+ 				struct ext4_map_blocks *map, int flags);
+-extern ssize_t ext4_ind_direct_IO(int rw, struct kiocb *iocb,
+-				struct iov_iter *iter, loff_t offset);
++extern ssize_t ext4_ind_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
++				  loff_t offset);
+ extern int ext4_ind_calc_metadata_amount(struct inode *inode, sector_t lblock);
+ extern int ext4_ind_trans_blocks(struct inode *inode, int nrblocks);
+ extern void ext4_ind_truncate(handle_t *, struct inode *inode);
+diff --git a/fs/ext4/indirect.c b/fs/ext4/indirect.c
+index 86e8765..e249aee 100644
+--- a/fs/ext4/indirect.c
++++ b/fs/ext4/indirect.c
+@@ -642,8 +642,8 @@ out:
+  * crashes then stale disk data _may_ be exposed inside the file. But current
+  * VFS code falls back into buffered path in that case so we are safe.
+  */
+-ssize_t ext4_ind_direct_IO(int rw, struct kiocb *iocb,
+-			   struct iov_iter *iter, loff_t offset)
++ssize_t ext4_ind_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
++			   loff_t offset)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file->f_mapping->host;
+@@ -654,7 +654,7 @@ ssize_t ext4_ind_direct_IO(int rw, struct kiocb *iocb,
+ 	size_t count = iov_iter_count(iter);
+ 	int retries = 0;
+ 
+-	if (rw == WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		loff_t final_size = offset + count;
+ 
+ 		if (final_size > inode->i_size) {
+@@ -676,7 +676,7 @@ ssize_t ext4_ind_direct_IO(int rw, struct kiocb *iocb,
  	}
  
  retry:
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, ext3_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, ext3_get_block);
- 	/*
- 	 * In case of error extending write may have instantiated a few
- 	 * blocks outside i_size. Trim these off again.
-diff --git a/fs/ext4/indirect.c b/fs/ext4/indirect.c
-index 45fe924..57135a7 100644
---- a/fs/ext4/indirect.c
-+++ b/fs/ext4/indirect.c
-@@ -693,9 +693,10 @@ retry:
- 			ret = dax_do_io(rw, iocb, inode, iter, offset,
- 					ext4_get_block, NULL, 0);
- 		else
--			ret = __blockdev_direct_IO(rw, iocb, inode,
--					inode->i_sb->s_bdev, iter, offset,
--					ext4_get_block, NULL, NULL, 0);
-+			ret = __blockdev_direct_IO(iocb, inode,
-+						   inode->i_sb->s_bdev, iter,
-+						   offset, ext4_get_block, NULL,
-+						   NULL, 0);
- 		inode_dio_done(inode);
- 	} else {
- locked:
-@@ -703,8 +704,8 @@ locked:
- 			ret = dax_do_io(rw, iocb, inode, iter, offset,
- 					ext4_get_block, NULL, DIO_LOCKING);
- 		else
--			ret = blockdev_direct_IO(rw, iocb, inode, iter,
--					offset, ext4_get_block);
-+			ret = blockdev_direct_IO(iocb, inode, iter, offset,
-+						 ext4_get_block);
+-	if (rw == READ && ext4_should_dioread_nolock(inode)) {
++	if (iov_iter_rw(iter) == READ && ext4_should_dioread_nolock(inode)) {
+ 		/*
+ 		 * Nolock dioread optimization may be dynamically disabled
+ 		 * via ext4_inode_block_unlocked_dio(). Check inode's state
+@@ -707,7 +707,7 @@ locked:
+ 			ret = blockdev_direct_IO(iocb, inode, iter, offset,
+ 						 ext4_get_block);
  
- 		if (unlikely((rw & WRITE) && ret < 0)) {
+-		if (unlikely((rw & WRITE) && ret < 0)) {
++		if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
  			loff_t isize = i_size_read(inode);
+ 			loff_t end = offset + count;
+ 
 diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 5cb9a21..81f8f10 100644
+index 094cc4a..1e63c19 100644
 --- a/fs/ext4/inode.c
 +++ b/fs/ext4/inode.c
-@@ -3038,7 +3038,7 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
- 		ret = dax_do_io(rw, iocb, inode, iter, offset, get_block_func,
- 				ext4_end_io_dio, dio_flags);
+@@ -2953,8 +2953,8 @@ static void ext4_end_io_dio(struct kiocb *iocb, loff_t offset,
+  * if the machine crashes during the write.
+  *
+  */
+-static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
+-			      struct iov_iter *iter, loff_t offset)
++static ssize_t ext4_ext_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
++				  loff_t offset)
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file->f_mapping->host;
+@@ -2967,8 +2967,8 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
+ 	ext4_io_end_t *io_end = NULL;
+ 
+ 	/* Use the old path for reads and writes beyond i_size. */
+-	if (rw != WRITE || final_size > inode->i_size)
+-		return ext4_ind_direct_IO(rw, iocb, iter, offset);
++	if (iov_iter_rw(iter) != WRITE || final_size > inode->i_size)
++		return ext4_ind_direct_IO(iocb, iter, offset);
+ 
+ 	BUG_ON(iocb->private == NULL);
+ 
+@@ -2977,7 +2977,7 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
+ 	 * conversion. This also disallows race between truncate() and
+ 	 * overwrite DIO as i_dio_count needs to be incremented under i_mutex.
+ 	 */
+-	if (rw == WRITE)
++	if (iov_iter_rw(iter) == WRITE)
+ 		atomic_inc(&inode->i_dio_count);
+ 
+ 	/* If we do a overwrite dio, i_mutex locking can be released */
+@@ -3079,7 +3079,7 @@ static ssize_t ext4_ext_direct_IO(int rw, struct kiocb *iocb,
+ 	}
+ 
+ retake_lock:
+-	if (rw == WRITE)
++	if (iov_iter_rw(iter) == WRITE)
+ 		inode_dio_done(inode);
+ 	/* take i_mutex locking again if we do a ovewrite dio */
+ 	if (overwrite) {
+@@ -3108,12 +3108,12 @@ static ssize_t ext4_direct_IO(int rw, struct kiocb *iocb,
+ 	if (ext4_has_inline_data(inode))
+ 		return 0;
+ 
+-	trace_ext4_direct_IO_enter(inode, offset, count, rw);
++	trace_ext4_direct_IO_enter(inode, offset, count, iov_iter_rw(iter));
+ 	if (ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS))
+-		ret = ext4_ext_direct_IO(rw, iocb, iter, offset);
++		ret = ext4_ext_direct_IO(iocb, iter, offset);
  	else
--		ret = __blockdev_direct_IO(rw, iocb, inode,
-+		ret = __blockdev_direct_IO(iocb, inode,
- 					   inode->i_sb->s_bdev, iter, offset,
- 					   get_block_func,
- 					   ext4_end_io_dio, NULL, dio_flags);
+-		ret = ext4_ind_direct_IO(rw, iocb, iter, offset);
+-	trace_ext4_direct_IO_exit(inode, offset, count, rw, ret);
++		ret = ext4_ind_direct_IO(iocb, iter, offset);
++	trace_ext4_direct_IO_exit(inode, offset, count, iov_iter_rw(iter), ret);
+ 	return ret;
+ }
+ 
 diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
-index 985ed02..d2addce 100644
+index d2addce..9c8f0c0 100644
 --- a/fs/f2fs/data.c
 +++ b/fs/f2fs/data.c
-@@ -1159,7 +1159,7 @@ static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb,
- 	if (rw & WRITE)
+@@ -1118,12 +1118,12 @@ static int f2fs_write_end(struct file *file,
+ 	return copied;
+ }
+ 
+-static int check_direct_IO(struct inode *inode, int rw,
+-		struct iov_iter *iter, loff_t offset)
++static int check_direct_IO(struct inode *inode, struct iov_iter *iter,
++			   loff_t offset)
+ {
+ 	unsigned blocksize_mask = inode->i_sb->s_blocksize - 1;
+ 
+-	if (rw == READ)
++	if (iov_iter_rw(iter) == READ)
+ 		return 0;
+ 
+ 	if (offset & blocksize_mask)
+@@ -1151,19 +1151,19 @@ static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb,
+ 			return err;
+ 	}
+ 
+-	if (check_direct_IO(inode, rw, iter, offset))
++	if (check_direct_IO(inode, iter, offset))
+ 		return 0;
+ 
+-	trace_f2fs_direct_IO_enter(inode, offset, count, rw);
++	trace_f2fs_direct_IO_enter(inode, offset, count, iov_iter_rw(iter));
+ 
+-	if (rw & WRITE)
++	if (iov_iter_rw(iter) == WRITE)
  		__allocate_data_blocks(inode, offset, count);
  
--	err = blockdev_direct_IO(rw, iocb, inode, iter, offset, get_data_block);
-+	err = blockdev_direct_IO(iocb, inode, iter, offset, get_data_block);
- 	if (err < 0 && (rw & WRITE))
+ 	err = blockdev_direct_IO(iocb, inode, iter, offset, get_data_block);
+-	if (err < 0 && (rw & WRITE))
++	if (err < 0 && iov_iter_rw(iter) == WRITE)
  		f2fs_write_failed(mapping, offset + count);
  
+-	trace_f2fs_direct_IO_exit(inode, offset, count, rw, err);
++	trace_f2fs_direct_IO_exit(inode, offset, count, iov_iter_rw(iter), err);
+ 
+ 	return err;
+ }
 diff --git a/fs/fat/inode.c b/fs/fat/inode.c
-index 497c7c5..a969a34 100644
+index a969a34..cfc3461 100644
 --- a/fs/fat/inode.c
 +++ b/fs/fat/inode.c
-@@ -275,7 +275,7 @@ static ssize_t fat_direct_IO(int rw, struct kiocb *iocb,
- 	 * FAT need to use the DIO_LOCKING for avoiding the race
+@@ -256,7 +256,7 @@ static ssize_t fat_direct_IO(int rw, struct kiocb *iocb,
+ 	size_t count = iov_iter_count(iter);
+ 	ssize_t ret;
+ 
+-	if (rw == WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		/*
+ 		 * FIXME: blockdev_direct_IO() doesn't use ->write_begin(),
+ 		 * so we need to update the ->mmu_private to block boundary.
+@@ -276,7 +276,7 @@ static ssize_t fat_direct_IO(int rw, struct kiocb *iocb,
  	 * condition of fat_get_block() and ->truncate().
  	 */
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, fat_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, fat_get_block);
- 	if (ret < 0 && (rw & WRITE))
+ 	ret = blockdev_direct_IO(iocb, inode, iter, offset, fat_get_block);
+-	if (ret < 0 && (rw & WRITE))
++	if (ret < 0 && iov_iter_rw(iter) == WRITE)
  		fat_write_failed(mapping, offset + count);
  
+ 	return ret;
+diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+index c01ec3b..d9679d4 100644
+--- a/fs/fuse/file.c
++++ b/fs/fuse/file.c
+@@ -2815,11 +2815,11 @@ fuse_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	inode = file->f_mapping->host;
+ 	i_size = i_size_read(inode);
+ 
+-	if ((rw == READ) && (offset > i_size))
++	if ((iov_iter_rw(iter) == READ) && (offset > i_size))
+ 		return 0;
+ 
+ 	/* optimization for short read */
+-	if (async_dio && rw != WRITE && offset + count > i_size) {
++	if (async_dio && iov_iter_rw(iter) != WRITE && offset + count > i_size) {
+ 		if (offset >= i_size)
+ 			return 0;
+ 		count = min_t(loff_t, count, fuse_round_up(i_size - offset));
+@@ -2834,7 +2834,7 @@ fuse_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	io->bytes = -1;
+ 	io->size = 0;
+ 	io->offset = offset;
+-	io->write = (rw == WRITE);
++	io->write = (iov_iter_rw(iter) == WRITE);
+ 	io->err = 0;
+ 	io->file = file;
+ 	/*
+@@ -2849,10 +2849,11 @@ fuse_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	 * to wait on real async I/O requests, so we must submit this request
+ 	 * synchronously.
+ 	 */
+-	if (!is_sync_kiocb(iocb) && (offset + count > i_size) && rw == WRITE)
++	if (!is_sync_kiocb(iocb) && (offset + count > i_size) &&
++	    iov_iter_rw(iter) == WRITE)
+ 		io->async = false;
+ 
+-	if (rw == WRITE)
++	if (iov_iter_rw(iter) == WRITE)
+ 		ret = __fuse_direct_write(io, iter, &pos);
+ 	else
+ 		ret = __fuse_direct_read(io, iter, &pos);
+@@ -2869,7 +2870,7 @@ fuse_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 		kfree(io);
+ 	}
+ 
+-	if (rw == WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		if (ret > 0)
+ 			fuse_write_update_size(inode, pos);
+ 		else if (ret < 0 && offset + count > i_size)
 diff --git a/fs/gfs2/aops.c b/fs/gfs2/aops.c
-index 4ad4f94..fc691f2 100644
+index fc691f2..4544200 100644
 --- a/fs/gfs2/aops.c
 +++ b/fs/gfs2/aops.c
-@@ -1095,9 +1095,8 @@ static ssize_t gfs2_direct_IO(int rw, struct kiocb *iocb,
+@@ -1016,13 +1016,12 @@ out:
+ /**
+  * gfs2_ok_for_dio - check that dio is valid on this file
+  * @ip: The inode
+- * @rw: READ or WRITE
+  * @offset: The offset at which we are reading or writing
+  *
+  * Returns: 0 (to ignore the i/o request and thus fall back to buffered i/o)
+  *          1 (to accept the i/o request)
+  */
+-static int gfs2_ok_for_dio(struct gfs2_inode *ip, int rw, loff_t offset)
++static int gfs2_ok_for_dio(struct gfs2_inode *ip, loff_t offset)
+ {
+ 	/*
+ 	 * Should we return an error here? I can't see that O_DIRECT for
+@@ -1061,7 +1060,7 @@ static ssize_t gfs2_direct_IO(int rw, struct kiocb *iocb,
+ 	rv = gfs2_glock_nq(&gh);
+ 	if (rv)
+ 		return rv;
+-	rv = gfs2_ok_for_dio(ip, rw, offset);
++	rv = gfs2_ok_for_dio(ip, offset);
+ 	if (rv != 1)
+ 		goto out; /* dio not valid, fall back to buffered i/o */
+ 
+@@ -1091,7 +1090,7 @@ static ssize_t gfs2_direct_IO(int rw, struct kiocb *iocb,
+ 		rv = filemap_write_and_wait_range(mapping, lstart, end);
+ 		if (rv)
+ 			goto out;
+-		if (rw == WRITE)
++		if (iov_iter_rw(iter) == WRITE)
  			truncate_inode_pages_range(mapping, lstart, end);
  	}
  
--	rv = __blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev,
--				  iter, offset,
--				  gfs2_get_block_direct, NULL, NULL, 0);
-+	rv = __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev, iter,
-+				  offset, gfs2_get_block_direct, NULL, NULL, 0);
- out:
- 	gfs2_glock_dq(&gh);
- 	gfs2_holder_uninit(&gh);
 diff --git a/fs/hfs/inode.c b/fs/hfs/inode.c
-index d0929bc..d367253 100644
+index d367253..754d31f 100644
 --- a/fs/hfs/inode.c
 +++ b/fs/hfs/inode.c
-@@ -133,7 +133,7 @@ static ssize_t hfs_direct_IO(int rw, struct kiocb *iocb,
- 	size_t count = iov_iter_count(iter);
- 	ssize_t ret;
- 
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, hfs_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, hfs_get_block);
- 
- 	/*
+@@ -139,7 +139,7 @@ static ssize_t hfs_direct_IO(int rw, struct kiocb *iocb,
  	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && ret < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
+ 
 diff --git a/fs/hfsplus/inode.c b/fs/hfsplus/inode.c
-index 0cf786f..a7ec37d 100644
+index a7ec37d..fb0e914 100644
 --- a/fs/hfsplus/inode.c
 +++ b/fs/hfsplus/inode.c
-@@ -131,8 +131,7 @@ static ssize_t hfsplus_direct_IO(int rw, struct kiocb *iocb,
- 	size_t count = iov_iter_count(iter);
- 	ssize_t ret;
- 
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, 
--				 hfsplus_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, hfsplus_get_block);
- 
- 	/*
+@@ -137,7 +137,7 @@ static ssize_t hfsplus_direct_IO(int rw, struct kiocb *iocb,
  	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && ret < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
+ 
 diff --git a/fs/jfs/inode.c b/fs/jfs/inode.c
-index bd3df1c..88271ac 100644
+index 88271ac..62a2e39 100644
 --- a/fs/jfs/inode.c
 +++ b/fs/jfs/inode.c
-@@ -339,7 +339,7 @@ static ssize_t jfs_direct_IO(int rw, struct kiocb *iocb,
- 	size_t count = iov_iter_count(iter);
- 	ssize_t ret;
- 
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, jfs_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, jfs_get_block);
- 
- 	/*
+@@ -345,7 +345,7 @@ static ssize_t jfs_direct_IO(int rw, struct kiocb *iocb,
  	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && ret < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
+ 
+diff --git a/fs/nfs/direct.c b/fs/nfs/direct.c
+index e907c8c..541dcc0 100644
+--- a/fs/nfs/direct.c
++++ b/fs/nfs/direct.c
+@@ -267,7 +267,7 @@ ssize_t nfs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter, loff_t
+ #else
+ 	VM_BUG_ON(iocb->ki_nbytes != PAGE_SIZE);
+ 
+-	if (rw == READ)
++	if (iov_iter_rw(iter) == READ)
+ 		return nfs_file_direct_read(iocb, iter, pos);
+ 	return nfs_file_direct_write(iocb, iter, pos);
+ #endif /* CONFIG_NFS_SWAP */
 diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
-index 8b59695..76587c3 100644
+index 76587c3..10c2e39 100644
 --- a/fs/nilfs2/inode.c
 +++ b/fs/nilfs2/inode.c
-@@ -318,8 +318,7 @@ nilfs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+@@ -314,7 +314,7 @@ nilfs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
+ 	size_t count = iov_iter_count(iter);
+ 	ssize_t size;
+ 
+-	if (rw == WRITE)
++	if (iov_iter_rw(iter) == WRITE)
  		return 0;
  
  	/* Needs synchronization with the cleaner */
--	size = blockdev_direct_IO(rw, iocb, inode, iter, offset,
--				  nilfs_get_block);
-+	size = blockdev_direct_IO(iocb, inode, iter, offset, nilfs_get_block);
- 
- 	/*
+@@ -324,7 +324,7 @@ nilfs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
  	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && size < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && size < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
+ 
 diff --git a/fs/ocfs2/aops.c b/fs/ocfs2/aops.c
-index 44db180..162a2a8 100644
+index 162a2a8..a4a1b9a 100644
 --- a/fs/ocfs2/aops.c
 +++ b/fs/ocfs2/aops.c
-@@ -737,10 +737,9 @@ static ssize_t ocfs2_direct_IO_write(struct kiocb *iocb,
- 		di_bh = NULL;
- 	}
- 
--	written = __blockdev_direct_IO(WRITE, iocb, inode, inode->i_sb->s_bdev,
--			iter, offset,
--			ocfs2_direct_IO_get_blocks,
--			ocfs2_dio_end_io, NULL, 0);
-+	written = __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev, iter,
-+				       offset, ocfs2_direct_IO_get_blocks,
-+				       ocfs2_dio_end_io, NULL, 0);
- 	if (unlikely(written < 0)) {
- 		loff_t i_size = i_size_read(inode);
- 
-@@ -843,11 +842,10 @@ static ssize_t ocfs2_direct_IO(int rw,
+@@ -841,7 +841,7 @@ static ssize_t ocfs2_direct_IO(int rw,
+ 	if (i_size_read(inode) <= offset && !full_coherency)
  		return 0;
  
- 	if (rw == READ)
--		return __blockdev_direct_IO(rw, iocb, inode,
--				    inode->i_sb->s_bdev,
--				    iter, offset,
--				    ocfs2_direct_IO_get_blocks,
--				    ocfs2_dio_end_io, NULL, 0);
-+		return __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev,
-+					    iter, offset,
-+					    ocfs2_direct_IO_get_blocks,
-+					    ocfs2_dio_end_io, NULL, 0);
- 	else
- 		return ocfs2_direct_IO_write(iocb, iter, offset);
- }
+-	if (rw == READ)
++	if (iov_iter_rw(iter) == READ)
+ 		return __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev,
+ 					    iter, offset,
+ 					    ocfs2_direct_IO_get_blocks,
 diff --git a/fs/reiserfs/inode.c b/fs/reiserfs/inode.c
-index e72401e..254e800 100644
+index 254e800..6d253da 100644
 --- a/fs/reiserfs/inode.c
 +++ b/fs/reiserfs/inode.c
-@@ -3286,7 +3286,7 @@ static ssize_t reiserfs_direct_IO(int rw, struct kiocb *iocb,
- 	size_t count = iov_iter_count(iter);
- 	ssize_t ret;
+@@ -3293,7 +3293,7 @@ static ssize_t reiserfs_direct_IO(int rw, struct kiocb *iocb,
+ 	 * In case of error extending write may have instantiated a few
+ 	 * blocks outside i_size. Trim these off again.
+ 	 */
+-	if (unlikely((rw & WRITE) && ret < 0)) {
++	if (unlikely(iov_iter_rw(iter) == WRITE && ret < 0)) {
+ 		loff_t isize = i_size_read(inode);
+ 		loff_t end = offset + count;
  
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset,
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset,
- 				 reiserfs_get_blocks_direct_io);
- 
- 	/*
 diff --git a/fs/udf/inode.c b/fs/udf/inode.c
-index a445d59..bcb0082 100644
+index bcb0082..91e7e1c 100644
 --- a/fs/udf/inode.c
 +++ b/fs/udf/inode.c
-@@ -225,7 +225,7 @@ static ssize_t udf_direct_IO(int rw, struct kiocb *iocb,
- 	size_t count = iov_iter_count(iter);
+@@ -226,7 +226,7 @@ static ssize_t udf_direct_IO(int rw, struct kiocb *iocb,
  	ssize_t ret;
  
--	ret = blockdev_direct_IO(rw, iocb, inode, iter, offset, udf_get_block);
-+	ret = blockdev_direct_IO(iocb, inode, iter, offset, udf_get_block);
- 	if (unlikely(ret < 0 && (rw & WRITE)))
+ 	ret = blockdev_direct_IO(iocb, inode, iter, offset, udf_get_block);
+-	if (unlikely(ret < 0 && (rw & WRITE)))
++	if (unlikely(ret < 0 && iov_iter_rw(iter) == WRITE))
  		udf_write_failed(mapping, offset + count);
  	return ret;
+ }
 diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
-index 3a9b7a1..fdb1353 100644
+index fdb1353..fd6e6f5 100644
 --- a/fs/xfs/xfs_aops.c
 +++ b/fs/xfs/xfs_aops.c
-@@ -1505,14 +1505,13 @@ xfs_vm_direct_IO(
+@@ -1504,7 +1504,7 @@ xfs_vm_direct_IO(
+ 	struct inode		*inode = iocb->ki_filp->f_mapping->host;
  	struct block_device	*bdev = xfs_find_bdev_for_inode(inode);
  
- 	if (rw & WRITE) {
--		return __blockdev_direct_IO(rw, iocb, inode, bdev, iter,
--					    offset, xfs_get_blocks_direct,
-+		return __blockdev_direct_IO(iocb, inode, bdev, iter, offset,
-+					    xfs_get_blocks_direct,
+-	if (rw & WRITE) {
++	if (iov_iter_rw(iter) == WRITE) {
+ 		return __blockdev_direct_IO(iocb, inode, bdev, iter, offset,
+ 					    xfs_get_blocks_direct,
  					    xfs_end_io_direct_write, NULL,
- 					    DIO_ASYNC_EXTEND);
- 	}
--	return __blockdev_direct_IO(rw, iocb, inode, bdev, iter,
--				    offset, xfs_get_blocks_direct,
--				    NULL, NULL, 0);
-+	return __blockdev_direct_IO(iocb, inode, bdev, iter, offset,
-+				    xfs_get_blocks_direct, NULL, NULL, 0);
- }
- 
- /*
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index b4d71b5..ba1b580 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2616,16 +2616,18 @@ enum {
- 
- void dio_end_io(struct bio *bio, int error);
- 
--ssize_t __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
--	struct block_device *bdev, struct iov_iter *iter, loff_t offset,
--	get_block_t get_block, dio_iodone_t end_io,
--	dio_submit_t submit_io,	int flags);
--
--static inline ssize_t blockdev_direct_IO(int rw, struct kiocb *iocb,
--		struct inode *inode, struct iov_iter *iter, loff_t offset,
--		get_block_t get_block)
--{
--	return __blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev, iter,
-+ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
-+			     struct block_device *bdev, struct iov_iter *iter,
-+			     loff_t offset, get_block_t get_block,
-+			     dio_iodone_t end_io, dio_submit_t submit_io,
-+			     int flags);
-+
-+static inline ssize_t blockdev_direct_IO(struct kiocb *iocb,
-+					 struct inode *inode,
-+					 struct iov_iter *iter, loff_t offset,
-+					 get_block_t get_block)
-+{
-+	return __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev, iter,
- 				    offset, get_block, NULL, NULL,
- 				    DIO_LOCKING | DIO_SKIP_HOLES);
- }
 -- 
 2.3.3
 

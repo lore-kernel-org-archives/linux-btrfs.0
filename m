@@ -1,189 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37336 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750844AbbCPHW4 (ORCPT
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:33828 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753677AbbCPLfN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 03:22:56 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstest: btrfs/083: Test for incorrect exclusive refernce number after file clone.
-Date: Mon, 16 Mar 2015 15:22:55 +0800
-Message-ID: <1426490575-20955-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 16 Mar 2015 07:35:13 -0400
+Received: by pdbni2 with SMTP id ni2so56102036pdb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 04:35:12 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-cifs@vger.kernel.org, osd-dev@open-osd.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
+        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com
+Cc: linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
+        "Yan Zheng" <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
+        Steve French <sfrench@samba.org>, Boaz Harrosh <ooo@electrozaur.com>,
+        Benny Halevy <bhalevy@primarydata.com>, Jan Kara <jack@suse.cz>,
+        "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Changman Lee <cm224.lee@samsung.com>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Steven Whitehouse <swhiteho@redhat.com>,
+        Dave Kleikamp <shaggy@kernel.org>, Oleg Drokin <oleg.drokin@intel.com>,
+        Trond Myklebust <trond.myklebust@primarydata.com>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
+        Eric Van Hensbergen <ericvh@gmail.com>,
+        Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
+        Dave Chinner <david@fromorbit.com>,
+        Omar Sandoval <osandov@osandov.com>
+Subject: [RFC PATCH 1/5] new helper: iov_iter_rw()
+Date: Mon, 16 Mar 2015 04:33:49 -0700
+Message-Id: <34dc78b262546e9343e0ed872232a97f5eaa5f15.1426502566.git.osandov@osandov.com>
+In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
+References: <cover.1426502566.git.osandov@osandov.com>
+In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
+References: <cover.1426502566.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Problem]
-Since commit fcebe4562dec83b3f8d308 ("Btrfs: rework qgroup accounting"),
-quota data update is delayed after delayed_ref calculation, and lacks
-correct protection to detect root reference which shouldn't be counted
-in current sequence number but already written into extent backref.
+Get either READ or WRITE out of iter->type.
 
-This makes exclusive reference not decreased correctly and give incorrect
-result.
-
-[Test procedure]
-1. Create a btrfs with 3 subvolumes, quota enabled and rescanned.
-2. Create a file in 1st subvolume
-3. Clone the file to 2nd and 3rd subvolume
-4. Sync the fs to reflect the changes in qgroup.
-5. Check the qgroup data
-
-[Expected result]
-None of the subvolume has exclusive reference to the file.
-
-[Actual result]
-The first subvolume still have exclusive reference to the file.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
-changelog:
-v2:
-   Redirect error output of dd to seqres.full for debug in case dd
-   failed.
-v3:
-   Add support and check for old kernel which doesn't support
-   noinode_cache mount option.
-   Change nodesize to 64K to support arch whose page size can be larger
-   than 4K.
----
- tests/btrfs/083     | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/083.out |   5 +++
- tests/btrfs/group   |   1 +
- 3 files changed, 109 insertions(+)
- create mode 100755 tests/btrfs/083
- create mode 100644 tests/btrfs/083.out
+ include/linux/uio.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/tests/btrfs/083 b/tests/btrfs/083
-new file mode 100755
-index 0000000..da9b92e
---- /dev/null
-+++ b/tests/btrfs/083
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 083
-+#
-+# Test for incorrect exclusive reference count after cloning file
-+# between subvolumes.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
+diff --git a/include/linux/uio.h b/include/linux/uio.h
+index 7188029..87a47b3 100644
+--- a/include/linux/uio.h
++++ b/include/linux/uio.h
+@@ -10,6 +10,7 @@
+ #define __LINUX_UIO_H
+ 
+ #include <linux/kernel.h>
++#include <linux/fs.h>
+ #include <uapi/linux/uio.h>
+ 
+ struct page;
+@@ -111,6 +112,15 @@ static inline bool iter_is_iovec(struct iov_iter *i)
+ }
+ 
+ /*
++ * Get one of READ or WRITE out of iter->type without any other flags OR'd in
++ * with it.
++ */
++static inline int iov_iter_rw(const struct iov_iter *i)
 +{
-+    rm -f $tmp.*
++	return i->type & RW_MASK;
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_cp_reflink
-+
-+rm -f $seqres.full
-+
-+# use largest node/leaf size (64K) to allow the test to be run on arch with
-+# page size > 4k.
-+NODESIZE=65536
-+SUPPORT_NOINODE_CACHE="yes"
-+
-+run_check _scratch_mkfs "--nodesize $NODESIZE"
-+
-+# inode cache will also take space in fs tree, disable them to get consistent
-+# result.
-+# discard error output since we will check return value manually.
-+_scratch_mount "-o noinode_cache" 2> /dev/null
-+
-+# Check for old kernel which doesn't support 'noinode_cache' mount option
-+if [ $? -ne 0 ]
-+then
-+	support_noinode_cache="no"
-+	run_check _scratch_mount
-+fi
-+
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv1
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+
-+# if we don't support noinode_cache mount option, then we should double check
-+# whether inode cache is enabled before executing the real test payload.
-+if [ $SUPPORT_NOINODE_CACHE == "no" ]; then
-+	EMPTY_SIZE=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | \
-+		$SED_PROG -n '/[0-9]/p' | $AWK_PROG '{print $2}' | head -n1`
-+	if [ $EMPTY_SIZE != $NODESIZE ]; then
-+		_notrun "Kernel doesn't support to disable inode cache"
-+	fi
-+fi
-+
-+dd if=/dev/zero of=$SCRATCH_MNT/subv1/file1 bs=4K count=64 2>> $seqres.full
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv2/file1
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv3/file1
-+
-+# Current btrfs use tree search ioctl to show quota, which will only show info
-+# in commit tree. So need to sync to update the qgroup commit tree.
-+sync
-+
-+units=`_btrfs_qgroup_units`
-+$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
-+	$AWK_PROG '{print $2" "$3}'
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
-new file mode 100644
-index 0000000..479966a
---- /dev/null
-+++ b/tests/btrfs/083.out
-@@ -0,0 +1,5 @@
-+QA output created by 083
-+65536 65536
-+327680 65536
-+327680 65536
-+327680 65536
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fd2fa76..04d5d67 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -85,3 +85,4 @@
- 080 auto snapshot
- 081 auto quick clone
- 082 auto quick remount
-+083 auto quick qgroup
++/*
+  * Cap the iov_iter by given limit; note that the second argument is
+  * *not* the new size - it's upper limit for such.  Passing it a value
+  * greater than the amount of data in iov_iter is fine - it'll just do
 -- 
-1.8.3.1
+2.3.3
 

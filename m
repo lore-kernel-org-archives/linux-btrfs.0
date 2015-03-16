@@ -1,34 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51457 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:53156 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933115AbbCPQJN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 12:09:13 -0400
-Date: Mon, 16 Mar 2015 17:09:11 +0100
+	id S933241AbbCPQZf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Mar 2015 12:25:35 -0400
+Date: Mon, 16 Mar 2015 17:25:34 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: account for the correct number of extents for
- delalloc reservations
-Message-ID: <20150316160911.GN20767@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, Eryu Guan <guaneryu@gmail.com>
+Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
+Message-ID: <20150316162534.GO20767@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1426273943-27013-1-git-send-email-jbacik@fb.com>
+References: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com>
+ <550127E1.4050606@cn.fujitsu.com>
+ <20150312173414.GE20767@twin.jikos.cz>
+ <20150312201508.GB10724@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426273943-27013-1-git-send-email-jbacik@fb.com>
+In-Reply-To: <20150312201508.GB10724@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 13, 2015 at 03:12:23PM -0400, Josef Bacik wrote:
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5136,7 +5136,11 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
->  	num_bytes = ALIGN(num_bytes, root->sectorsize);
->  
->  	spin_lock(&BTRFS_I(inode)->lock);
-> -	BTRFS_I(inode)->outstanding_extents++;
-> +	nr_extents = (unsigned)div64_u64(num_bytes +
-> +					 BTRFS_MAX_EXTENT_SIZE - 1,
-> +					 BTRFS_MAX_EXTENT_SIZE);
+On Fri, Mar 13, 2015 at 04:15:08AM +0800, Liu Bo wrote:
+> On Thu, Mar 12, 2015 at 06:34:15PM +0100, David Sterba wrote:
+> > On Thu, Mar 12, 2015 at 01:45:05PM +0800, Qu Wenruo wrote:
+> > > I sent such patch some time ago but was rejected by Chris,
+> > > hopes this time it can be accepted.
+> > 
+> > http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg34937.html
+> > 
+> > I'm OK with removing the special case now because there are additional
+> > supreblock checks merged (3.19) that were motivated by your previous
+> > attempt to remove it.
+> 
+> So David, are you going to take the above patch instead?
+> 
+> I'm okay with that since they're exactly same, but it'd be good that
+> Qu has its commit log updated.
 
-Use div_u64 as BTRFS_MAX_EXTENT_SIZE is a u32, and you can drop the
-typecast.
+Although Qu's patch was first and should be normally applied in case
+more patches doing the same thing, the changelog reasoning is IMHO not
+all fine, so I'm inclined to take your patch if you refine the subject,
+and drop the "Conflicts:". Thanks.

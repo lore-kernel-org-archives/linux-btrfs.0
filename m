@@ -1,183 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23854 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750736AbbCPGCh (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:39886 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752080AbbCPLzV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 02:02:37 -0400
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-To: <eguan@redhat.com>, <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] fstest: btrfs: add a test for quota number when deleting a subvol.
-Date: Mon, 16 Mar 2015 13:58:54 +0800
-Message-ID: <1426485534-15014-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-In-Reply-To: <550664EC.7090705@cn.fujitsu.com>
-References: <550664EC.7090705@cn.fujitsu.com>
+	Mon, 16 Mar 2015 07:55:21 -0400
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: peer.loz@gmx.net
+Subject: Re: Is it safe or useful to use NOCOW flag and autodefrag mount option at same time?
+Date: Mon, 16 Mar 2015 22:46:11 +1100
+Cc: linux-btrfs@vger.kernel.org
+References: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46>
+In-Reply-To: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201503162246.12052.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This regression is introduced by two commits:
+On Sun, 15 Mar 2015, peer.loz@gmx.net wrote:
+> Following common recommendations [1], I use these mount options on my
+> main developing machine: noatime,autodefrag. This is desktop machine and
+> it works well so far. Now, I'm also going to install several KVM virtual
+> machines on this system. I want to use qcow2 files stored on SSD with a
+> btrfs on it. In order to avoid bad performance with the VMs, I want to
+> disable the Copy-On-Write mechanism on the storage directory of my VM
+> images as for example described in [2].
 
-e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
-1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
+Why do you expect a great performance benefit from that?
 
-Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
----
-changlog:
-	v1:
-	1. Fix lots of coding style problems pointed by Eryu.
-	2. Add more description for the regression.
+As there is no real seek time SSDs probably won't give you much benefit from 
+defragmenting.  As for disabling CoW, that will reduce the number of writes 
+(as you don't need to write the metadata all the way up the tree) and improve 
+performance, but not as much as on spinning media where you need to do seeks 
+for all that.
 
- tests/btrfs/083     | 118 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/083.out |   3 ++
- tests/btrfs/group   |   1 +
- 3 files changed, 122 insertions(+)
- create mode 100755 tests/btrfs/083
- create mode 100644 tests/btrfs/083.out
+Finally having checksums on everything to give the possibility of recognising 
+corrupt data is a really good feature and something that you want on your VM 
+images.
 
-diff --git a/tests/btrfs/083 b/tests/btrfs/083
-new file mode 100755
-index 0000000..a5e85e3
---- /dev/null
-+++ b/tests/btrfs/083
-@@ -0,0 +1,118 @@
-+#! /bin/bash
-+# FS QA Test No. 083
-+#
-+# This is a case for the regression introduced by
-+#
-+# e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
-+# 1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
-+#
-+# The problem is shown as below:
-+#	$ btrfs sub create /mnt/sub
-+#	Create subvolume '/mnt/sub'
-+#	$ fallocate -l 1M /mnt/sub/data
-+#	$ btrfs quota enable /mnt
-+#	$ sync
-+#	$ btrfs qgroup show --raw /mnt
-+#	qgroupid         rfer         excl
-+#	--------         ----         ----
-+#	0/5             16384        16384
-+#	0/257         1064960      1064960
-+#	$ btrfs sub dele /mnt/sub
-+#	Delete subvolume (no-commit): '/mnt/sub'
-+#
-+#	... ...                    		<------------Wait for the cleaner_kthread, about 30s.
-+#	$ btrfs qgroup show --raw /mnt
-+#	qgroupid         rfer         excl
-+#	--------         ----         ----
-+#	0/5             16384        16384
-+#	0/257         1048576      1048576	<-----------sub 0/257 is deleted, but the quota numbers are not 0.
-+#
-+#
-+# What we are expecting is:
-+#	$ btrfs qgroup show --raw /mnt
-+#	$ qgroupid         rfer         excl
-+#	--------         ----         ----
-+#	0/5             16384        16384
-+#	0/257               0            0
-+#
-+# Currently, just revert these two commits mentioned above, we
-+# can get the expected result. But there are some more things
-+# we need to consider.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+$XFS_IO_PROG -f -d -c "pwrite 0 8K" $SCRATCH_MNT/foo 2>&1 > /dev/null
-+
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+
-+units=`_btrfs_qgroup_units`
-+orig_result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
-+
-+_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
-+
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-+
-+timeout=100
-+# There is a background thread doing the clean work
-+for ((i=0; i<$timeout; i++)); do
-+	result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
-+	if (($orig_result != $result)); then
-+		break
-+	fi
-+	sleep 1
-+done
-+
-+$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG '/[0-9]/ {print $2" "$3}'
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
-new file mode 100644
-index 0000000..e73797e
---- /dev/null
-+++ b/tests/btrfs/083.out
-@@ -0,0 +1,3 @@
-+QA output created by 083
-+24576 24576
-+0 0
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fd2fa76..e98a154 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -85,3 +85,4 @@
- 080 auto snapshot
- 081 auto quick clone
- 082 auto quick remount
-+083 auto qgroup
+So far I have never even tried disabling CoW or using auto defragment.  All of 
+my BTRFS filesystems have either low performance or run on SSD.
+
 -- 
-1.8.4.2
-
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

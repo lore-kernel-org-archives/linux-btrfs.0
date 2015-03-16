@@ -1,224 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2552 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:23854 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750736AbbCPFvO (ORCPT
+	with ESMTP id S1750736AbbCPGCh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 01:51:14 -0400
-Message-ID: <55066E71.3000402@cn.fujitsu.com>
-Date: Mon, 16 Mar 2015 13:47:29 +0800
+	Mon, 16 Mar 2015 02:02:37 -0400
 From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+To: <eguan@redhat.com>, <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] fstest: btrfs: add a test for quota number when deleting a subvol.
+Date: Mon, 16 Mar 2015 13:58:54 +0800
+Message-ID: <1426485534-15014-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <550664EC.7090705@cn.fujitsu.com>
+References: <550664EC.7090705@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Eryu Guan <eguan@redhat.com>
-CC: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] fstest: btrfs: add a test for quota number when deleting
- a subvol.
-References: <54EEB798.1070105@cn.fujitsu.com> <1425381210-13661-1-git-send-email-yangds.fnst@cn.fujitsu.com> <20150306050600.GQ16974@dhcp-13-216.nay.redhat.com> <550664EC.7090705@cn.fujitsu.com> <20150316053337.GA23302@dhcp-13-216.nay.redhat.com>
-In-Reply-To: <20150316053337.GA23302@dhcp-13-216.nay.redhat.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/16/2015 01:33 PM, Eryu Guan wrote:
-> On Mon, Mar 16, 2015 at 01:06:52PM +0800, Dongsheng Yang wrote:
->> Hi Guan,  sorry for the late.
->>
->> On 03/06/2015 01:06 PM, Eryu Guan wrote:
->>> On Tue, Mar 03, 2015 at 07:13:30PM +0800, Dongsheng Yang wrote:
->>>> This regression is introduced by two commits:
->>>>
->>>> e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
->>>> 1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
-> [snip]
->
->>>> +_cleanup()
->>>> +{
->>>> +    cd /
->>>> +    rm -f $tmp.*
->>> Better to use a tab not 4 spaces, maybe "new" should be updated too (in
->>> another patch)
->> Thanx, will send another patch for "./new".
-> Just FYI, I've already sent out the fix, please see
->
-> http://www.spinics.net/lists/fstests/msg01073.html
-Great!! Thanx for your information. But I found some other 4 spaces in 
-new, I am not sure
-whether we also need to replace them with tab or not as shown below.
+This regression is introduced by two commits:
 
-Thanx
+e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
+1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
 
-commit 931340c0c5599ae2c6714df16c796ea24240a5a7
-Author: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Date:   Mon Mar 16 01:15:53 2015 -0400
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+---
+changlog:
+	v1:
+	1. Fix lots of coding style problems pointed by Eryu.
+	2. Add more description for the regression.
 
-     new: replace 4 spaces with a tab.
+ tests/btrfs/083     | 118 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/083.out |   3 ++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 122 insertions(+)
+ create mode 100755 tests/btrfs/083
+ create mode 100644 tests/btrfs/083.out
 
-     Sugguested-by: Eryu Guan <eguan@redhat.com>
-     Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-
-diff --git a/new b/new
-index 86f9075..f94daed 100755
---- a/new
-+++ b/new
-@@ -29,15 +29,15 @@ trap "rm -f /tmp/$$.; exit" 0 1 2 3 15
-
-  _cleanup()
-  {
--    :
-+       :
-  }
-
-  SRC_GROUPS=`find tests -not -path tests -type d -printf "%f "`
-  usage()
-  {
--    echo "Usage $0 test_dir"
--    echo "Available dirs are: $SRC_GROUPS"
--    exit
-+       echo "Usage $0 test_dir"
-+       echo "Available dirs are: $SRC_GROUPS"
-+       exit
-  }
-
-  [ $# -eq 0 ] && usage
-@@ -46,8 +46,8 @@ shift
-
-  if [ ! -f $tdir/group ]
-  then
--    echo "Creating the $tdir/group index ..."
--    cat <<'End-of-File' >$tdir/group
-+       echo "Creating the $tdir/group index ..."
-+       cat <<'End-of-File' >$tdir/group
-  # QA groups control
-  #
-  # define groups and default group owners
-@@ -65,15 +65,15 @@ fi
-
-  if [ ! -w $tdir/group ]
-  then
--    chmod u+w $tdir/group
--    echo "Warning: making the index file \"$tdir/group\" writeable"
-+       chmod u+w $tdir/group
-+       echo "Warning: making the index file \"$tdir/group\" writeable"
-  fi
-
-  if make
-  then
--    :
-+       :
-  else
--    echo "Warning: make failed -- some tests may be missing"
-+       echo "Warning: make failed -- some tests may be missing"
-  fi
-
-  i=0
-@@ -83,16 +83,16 @@ eof=1
-
-  for found in `cat $tdir/group | $AWK_PROG '{ print $1 }'`
-  do
--    line=$((line+1))
--    if [ -z "$found" ] || [ "$found" == "#" ];then
-+       line=$((line+1))
-+       if [ -z "$found" ] || [ "$found" == "#" ];then
-         continue
--    fi
--    i=$((i+1))
--    id=`printf "%03d" $i`
--    if [ "$id" != "$found" ];then
-+       fi
-+       i=$((i+1))
-+       id=`printf "%03d" $i`
-+       if [ "$id" != "$found" ];then
-         eof=0
-         break
--    fi
-+       fi
-  done
-  if [ $eof -eq 1 ]; then
-     line=$((line+1))
-@@ -104,9 +104,9 @@ echo "Next test is $id"
-
-  if [ -f $tdir/$id ]
-  then
--    echo "Error: test $id already exists!"
--    _cleanup
--    exit 1
-+       echo "Error: test $id already exists!"
-+       _cleanup
-+       exit 1
-  fi
-
-  echo -n "Creating skeletal script for you to edit ..."
-@@ -148,8 +148,8 @@ trap "_cleanup; exit \\\$status" 0 1 2 3 15
-
-  _cleanup()
-  {
--    cd /
--    rm -f \$tmp.*
-+       cd /
-+       rm -f \$tmp.*
-  }
-
-  # get standard environment, filters and checks
-@@ -184,39 +184,39 @@ ${EDITOR-vi} $tdir/$id
-  if [ $# -eq 0 ]
-  then
-
--    while true
--    do
-+       while true
-+       do
-         echo -n "Add to group(s) [other] (? for list): "
-         read ans
-         [ -z "$ans" ] && ans=other
-         if [ "X$ans" = "X?" ]
-         then
--           for d in $SRC_GROUPS; do
-+               for d in $SRC_GROUPS; do
-                 l=$(sed -n < tests/$d/group \
--                   -e 's/#.*//' \
--                   -e 's/$/ /' \
--                   -e 's;\(^[0-9][0-9][0-9]\)\(.*$\);\2;p')
-+                       -e 's/#.*//' \
-+                       -e 's/$/ /' \
-+                       -e 's;\(^[0-9][0-9][0-9]\)\(.*$\);\2;p')
-                 grpl="$grpl $l"
--           done
--           lst=`for word in $grpl; do echo $word; done | sort| uniq `
--           echo $lst
-+               done
-+               lst=`for word in $grpl; do echo $word; done | sort| uniq `
-+               echo $lst
-         else
--           break
-+               break
-         fi
--    done
-+       done
-  else
--    # expert mode, groups are on the command line
--    #
--    for g in $*
--    do
-+       # expert mode, groups are on the command line
-+       #
-+       for g in $*
-+       do
-         if grep "^$g[   ]" $tdir/group >/dev/null
-         then
--           :
-+               :
-         else
--           echo "Warning: group \"$g\" not defined in $tdir/group"
-+               echo "Warning: group \"$g\" not defined in $tdir/group"
-         fi
--    done
--    ans="$*"
-+       done
-+       ans="$*"
-  fi
-
->
-> Thanks,
-> Eryu Guan
-> .
->
+diff --git a/tests/btrfs/083 b/tests/btrfs/083
+new file mode 100755
+index 0000000..a5e85e3
+--- /dev/null
++++ b/tests/btrfs/083
+@@ -0,0 +1,118 @@
++#! /bin/bash
++# FS QA Test No. 083
++#
++# This is a case for the regression introduced by
++#
++# e339a6b0 (Btrfs: __btrfs_mod_ref should always use no_quota)
++# 1152651a (btrfs: qgroup: account shared subtrees during snapshot delete)
++#
++# The problem is shown as below:
++#	$ btrfs sub create /mnt/sub
++#	Create subvolume '/mnt/sub'
++#	$ fallocate -l 1M /mnt/sub/data
++#	$ btrfs quota enable /mnt
++#	$ sync
++#	$ btrfs qgroup show --raw /mnt
++#	qgroupid         rfer         excl
++#	--------         ----         ----
++#	0/5             16384        16384
++#	0/257         1064960      1064960
++#	$ btrfs sub dele /mnt/sub
++#	Delete subvolume (no-commit): '/mnt/sub'
++#
++#	... ...                    		<------------Wait for the cleaner_kthread, about 30s.
++#	$ btrfs qgroup show --raw /mnt
++#	qgroupid         rfer         excl
++#	--------         ----         ----
++#	0/5             16384        16384
++#	0/257         1048576      1048576	<-----------sub 0/257 is deleted, but the quota numbers are not 0.
++#
++#
++# What we are expecting is:
++#	$ btrfs qgroup show --raw /mnt
++#	$ qgroupid         rfer         excl
++#	--------         ----         ----
++#	0/5             16384        16384
++#	0/257               0            0
++#
++# Currently, just revert these two commits mentioned above, we
++# can get the expected result. But there are some more things
++# we need to consider.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++$XFS_IO_PROG -f -d -c "pwrite 0 8K" $SCRATCH_MNT/foo 2>&1 > /dev/null
++
++_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++
++units=`_btrfs_qgroup_units`
++orig_result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
++
++_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
++
++_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++timeout=100
++# There is a background thread doing the clean work
++for ((i=0; i<$timeout; i++)); do
++	result=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG 'NR==NF {print $3}'`
++	if (($orig_result != $result)); then
++		break
++	fi
++	sleep 1
++done
++
++$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $AWK_PROG '/[0-9]/ {print $2" "$3}'
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
+new file mode 100644
+index 0000000..e73797e
+--- /dev/null
++++ b/tests/btrfs/083.out
+@@ -0,0 +1,3 @@
++QA output created by 083
++24576 24576
++0 0
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index fd2fa76..e98a154 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -85,3 +85,4 @@
+ 080 auto snapshot
+ 081 auto quick clone
+ 082 auto quick remount
++083 auto qgroup
+-- 
+1.8.4.2
 

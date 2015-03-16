@@ -1,58 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:35900 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754686AbbCPN4R (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 09:56:17 -0400
-Received: by igbue6 with SMTP id ue6so42180937igb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 06:56:16 -0700 (PDT)
-Message-ID: <5506E0FB.6090006@gmail.com>
-Date: Mon, 16 Mar 2015 09:56:11 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from neo-zeon.de ([173.228.7.145]:32544 "EHLO neo-zeon.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933043AbbCPRTx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Mar 2015 13:19:53 -0400
+Message-ID: <550710AE.4040803@neo-zeon.de>
+Date: Mon, 16 Mar 2015 10:19:42 -0700
+From: Cameron Berkenpas <cam@neo-zeon.de>
 MIME-Version: 1.0
-To: russell@coker.com.au, peer.loz@gmx.net
+To: bo.li.liu@oracle.com
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: Is it safe or useful to use NOCOW flag and autodefrag mount option
- at same time?
-References: <trinity-2997a6a9-13e0-4df6-ae13-0d944bd2f0b1-1426358188246@3capp-gmx-bs46> <201503162246.12052.russell@coker.com.au>
-In-Reply-To: <201503162246.12052.russell@coker.com.au>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: Re: System crash while scrubbing on 3.18.x
+References: <54F9005D.5070107@neo-zeon.de> <20150306123054.GB18885@localhost.localdomain> <54FA081A.8010501@neo-zeon.de>
+In-Reply-To: <54FA081A.8010501@neo-zeon.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-03-16 07:46, Russell Coker wrote:
-> On Sun, 15 Mar 2015, peer.loz@gmx.net wrote:
->> Following common recommendations [1], I use these mount options on my
->> main developing machine: noatime,autodefrag. This is desktop machine and
->> it works well so far. Now, I'm also going to install several KVM virtual
->> machines on this system. I want to use qcow2 files stored on SSD with a
->> btrfs on it. In order to avoid bad performance with the VMs, I want to
->> disable the Copy-On-Write mechanism on the storage directory of my VM
->> images as for example described in [2].
->
-> Why do you expect a great performance benefit from that?
->
-> As there is no real seek time SSDs probably won't give you much benefit from
-> defragmenting.  As for disabling CoW, that will reduce the number of writes
-> (as you don't need to write the metadata all the way up the tree) and improve
-> performance, but not as much as on spinning media where you need to do seeks
-> for all that.
->
-> Finally having checksums on everything to give the possibility of recognising
-> corrupt data is a really good feature and something that you want on your VM
-> images.
->
-> So far I have never even tried disabling CoW or using auto defragment.  All of
-> my BTRFS filesystems have either low performance or run on SSD.
->
-Personally, I've found that autodefrag _does_ provide a small 
-performance improvement on SSD's, because reading one larg extent takes 
-less time than reading multiple small ones.  The caveat here is you want 
-to make sure that at least the 'ssd' mount option is set as well, and 
-run fstrim on a roughly weekly basis.
+Minor update:
 
-NOCOW however is a Bad Idea (TM) on most 'consumer grade' SSD's, as it 
-reduces the effectiveness of many of the wear-leveling algorithms used 
-on them.  On Enterprise quality SSD's (and recent Intel SSD's) though, 
-it shouldn't be as much of an issue as they are much smarter, and the 
-good ones even have built in ECC's to catch data corruption.
+I've now tested 4.0-rc4 on systems. Both systems lockup during a scrub.
+
+I've also tested a laptop with 4.0-rc4 and I have no issues. It could be 
+that I "only" have 221GB on it, that it's an SSD, and/or the lack of a 
+3ware controller.
+
+Within the next few days, I hope to have the time to test on a btrfs 
+RAID1 system I have (btrfs RAID) as well.
+
+-Cameron
+
+On 03/06/2015 12:03 PM, Cameron Berkenpas wrote:
+> Hello,
+>
+> I should have mentioned this earlier. I get absolutely nothing in the 
+> logs. I can't look at dmesg either as the system is completely 
+> unresponsive.
+>
+> On 03/06/2015 04:30 AM, Liu Bo wrote:
+>> On Thu, Mar 05, 2015 at 05:18:21PM -0800, Cameron Berkenpas wrote:
+>>> Hello,
+>>>
+>>> Sorry for the long email...
+>>>
+>>> I've found my system locks up when scrubbing with 3.18.x, but not
+>>> with 3.17.8 across 2 systems.
+>>>
+>>> I have the following BTRFS partitions on system 1:
+>>> /  (128GiB, 49GiB used on SSD)
+>>> /home (4.2TiB, 624GB used on HDD RAID volume)
+>>>
+>>> I have the following BTRFS partitions on system 2:
+>>> / (196GiB, 17GiB used on HDD RAID volume)
+>>> /home (7.1TiB, 2.9TiB used on HDD RAID volume)
+>>>
+>>> My OS is Netrunner 15 (which 98% Kubuntu) on system 1, and
+>>> up-to-date debian testing on system 2.
+>>>
+>>> I've never encountered a lock up while scrubbing /. Just with /home.
+>>>
+>>> The systems never lock up immediately, but takes some time. VERY
+>>> rarely I'll see the lockup when the scrub is at <100GiB completed.
+>>> Typically it happens somewhere between 200-350GiB. A few times it's
+>>> gone beyond 500GiB. This is probably why I've never encountered the
+>>> issue with /, it's just not big enough on either system.
+>>>
+>>> Both systems were otherwise idle while performing the scrubs that
+>>> crashed the systems.
+>>>
+>>> /home is on a partition on a RAID10 volume on a 3ware 9740-4i
+>>> controller with 4x 3TB disks on system 1. On system 2, it's the same
+>>> controller but with 4x 4TB disks (and / on system 2 is a partition
+>>> on the same RAID volume rather than a separate disk). Both systems
+>>> have 32GiB memory, and the otherwise the hardware is pretty
+>>> different between the systems (AMD Vs. Intel, etc).
+>>>
+>>> I suspect that the RAID controller probably isn't relevant. Both
+>>> arrays and their drives are healthy.
+>>>
+>>> I've also encountered the issue on a freshly formatted filesystem
+>>> with my data copied from a backup on system 1.
+>>>
+>>> I've tried tried scrubbing with btrfs-progs 3.17 (installed from the
+>>> distribution repos on both systems), and btrfs-progs from git (using
+>>> tag v3.18.x). Neither version made a difference.
+>>>
+>>> In case this is helpful to anyone, here's how I've discovered the 
+>>> issue:
+>>> I decided to test btrfs with bcache on system 1 to see if the
+>>> stability had improved since I'd tried bcache+btrfs about a year
+>>> ago. I backed up /home on system 1 and then freshly formatted it and
+>>> set it to use bcache. I was running Linux 3.18.8 and encountered the
+>>> problem that I've described above. I assumed the bcache+btrfs
+>>> combination was still broken so I formatted the system again (this
+>>> time still using btrfs, but without bcache) and copied all my files
+>>> back. I encountered the same issue without bcache. Realizing the
+>>> issue wasn't bcache related, I did ANOTHER format, this time back to
+>>> bcache+btrfs.
+>>>
+>>>  From here in my testing, I found that system 2 (which has no bcache)
+>>> also crashed when scrubbing with Linux 3.18.8. I decided to try
+>>> 3.17.8 on system 1 (since 3.18.8 seemed to be the common denominator
+>>> between the 2 systems), found that fixed the issue, and then
+>>> downgraded system 2 to use 3.17.8 as well, which also fixed the
+>>> issue there.
+>>>
+>>> (Note: At one point I also tried Linux 3.18.7 and 3.18.5, however,
+>>> those kernels are affected by the scrub/crash issue as well.)
+>>>
+>>> I found something else interesting when I tested against Linux
+>>> 3.19.0. With 3.19.0, the bcache system always crashes fairly early
+>>> in the scrub (<100GiB), but the non-bcache system has no issues.
+>>> This suggests my problem with 3.19.0 is a bcache+btrfs issue (or
+>>> simply an issue with bcache).
+>>>
+>>> I'm not sure if bcache is relevant to the BTRFS devs at this point,
+>>> but I thought I'd put that there for anyone who might find that
+>>> information useful.
+>>>
+>>> To summarize:
+>>> I've tested with 2 systems, and scrubbing caused crashes occurred on
+>>> both with Linux 3.18.8, but not with 3.17.8 for both systems
+>>> I've tested 1 system with and without bcache, and bcache made no
+>>> difference between Linux 3.17.8 and 3.18.8.
+>>> I've tested with 3.19.0, and I crash when scrubbing on the bcache
+>>> system, but not the non-bcache system.
+>> Better to have some stacks about the scrub crash.
+>>
+>> Thanks,
+>>
+>> -liubo
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

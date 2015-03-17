@@ -1,37 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37995 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752788AbbCQKL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Mar 2015 06:11:57 -0400
-Date: Tue, 17 Mar 2015 11:11:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: Remove the check for old-style mkfs
-Message-ID: <20150317101156.GT20767@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20150316162534.GO20767@twin.jikos.cz>
- <1426574056-2978-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:33801 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753990AbbCQKSi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Mar 2015 06:18:38 -0400
+Received: by pacwe9 with SMTP id we9so5823351pac.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2015 03:18:37 -0700 (PDT)
+Date: Tue, 17 Mar 2015 03:18:35 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-cifs@vger.kernel.org, osd-dev@open-osd.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
+        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com,
+        linux-kernel@vger.kernel.org
+Subject: Re: [RFC PATCH 1/5] new helper: iov_iter_rw()
+Message-ID: <20150317101835.GA31649@mew>
+References: <cover.1426502566.git.osandov@osandov.com>
+ <34dc78b262546e9343e0ed872232a97f5eaa5f15.1426502566.git.osandov@osandov.com>
+ <20150316173605.GX29656@ZenIV.linux.org.uk>
+ <20150317093151.GS20767@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426574056-2978-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <20150317093151.GS20767@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 17, 2015 at 02:34:16PM +0800, Liu Bo wrote:
-> This was used to make sure that a fresh btrfs from an older mkfs.btrfs,
-> but it also allows us to mount a buggy btrfs if this btrfs has the right
-> superblock head part but has something wrong with chunk tree part[1], and
-> after that we can hit BUG_ON()s set in the code to prevent something
-> impossible.
+On Tue, Mar 17, 2015 at 10:31:51AM +0100, David Sterba wrote:
+> On Mon, Mar 16, 2015 at 05:36:05PM +0000, Al Viro wrote:
+> > On Mon, Mar 16, 2015 at 04:33:49AM -0700, Omar Sandoval wrote:
+> > > Get either READ or WRITE out of iter->type.
+> > 
+> > Umm...  
+> > 
+> > > + * Get one of READ or WRITE out of iter->type without any other flags OR'd in
+> > > + * with it.
+> > > + */
+> > > +static inline int iov_iter_rw(const struct iov_iter *i)
+> > > +{
+> > > +	return i->type & RW_MASK;
+> > > +}
+> > 
+> > TBH, I would turn that into a macro.  Reason: indirect includes.
 > 
-> Since David has released "Btrfs progs v3.19-rc2", just remove the check,
-> if anyone who wants to make a fresh btrfs, please use the latest one.
+> Agreed, but the proposed define is rather cryptic and I was not able to
+> understand the meaning on the first glance.
 > 
-> [1]: http://www.spinics.net/lists/linux-btrfs/msg42358.html
+> > #define iov_iter_rw(i) ((0 ? (struct iov_iter *)0 : (i))->type & RW_MASK)
 > 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> This worked for me, does not compile with anything else than
+> 'struct iov_iter*' as i:
+> 
+> #define iov_iter_rw(i)	({			\
+> 	struct iov_iter __iter = *(i);		\
+> 	(i)->type & RW_MASK;			\
+> 	})
+> 
+> The assignment is optimized out.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+[-cc individual fs maintainers to avoid all of these email bounces,
+should've looked a bit closer at that get_maintainer.pl output...]
 
-Thanks.
+I agree that this is a bit more readable, but it evaluates i twice.
+That's an easy fix, just do __iter.type instead of (i)->type, but
+there's still the possibility of someone passing in something called
+__iter as i, and the fix for that tends to be "add more underscores". At
+the very least, Al's macro could probably use a comment explaining
+what's going on there, though.
+
+-- 
+Omar

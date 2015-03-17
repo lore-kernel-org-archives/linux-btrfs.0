@@ -1,56 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28477 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750933AbbCQCld convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:47635 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751144AbbCQGe3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 22:41:33 -0400
-Message-ID: <55079458.1010209@cn.fujitsu.com>
-Date: Tue, 17 Mar 2015 10:41:28 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
-        <linux-btrfs@vger.kernel.org>, Eryu Guan <guaneryu@gmail.com>
-Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
-References: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com> <550127E1.4050606@cn.fujitsu.com> <20150312173414.GE20767@twin.jikos.cz> <20150312201508.GB10724@localhost.localdomain> <20150316162534.GO20767@twin.jikos.cz>
+	Tue, 17 Mar 2015 02:34:29 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] Btrfs: Remove the check for old-style mkfs
+Date: Tue, 17 Mar 2015 14:34:16 +0800
+Message-Id: <1426574056-2978-1-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <20150316162534.GO20767@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+References: <20150316162534.GO20767@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This was used to make sure that a fresh btrfs from an older mkfs.btrfs,
+but it also allows us to mount a buggy btrfs if this btrfs has the right
+superblock head part but has something wrong with chunk tree part[1], and
+after that we can hit BUG_ON()s set in the code to prevent something
+impossible.
 
+Since David has released "Btrfs progs v3.19-rc2", just remove the check,
+if anyone who wants to make a fresh btrfs, please use the latest one.
 
--------- Original Message  --------
-Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older 
-mkfs"
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Date: 2015年03月17日 00:25
+[1]: http://www.spinics.net/lists/linux-btrfs/msg42358.html
 
-> On Fri, Mar 13, 2015 at 04:15:08AM +0800, Liu Bo wrote:
->> On Thu, Mar 12, 2015 at 06:34:15PM +0100, David Sterba wrote:
->>> On Thu, Mar 12, 2015 at 01:45:05PM +0800, Qu Wenruo wrote:
->>>> I sent such patch some time ago but was rejected by Chris,
->>>> hopes this time it can be accepted.
->>>
->>> http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg34937.html
->>>
->>> I'm OK with removing the special case now because there are additional
->>> supreblock checks merged (3.19) that were motivated by your previous
->>> attempt to remove it.
->>
->> So David, are you going to take the above patch instead?
->>
->> I'm okay with that since they're exactly same, but it'd be good that
->> Qu has its commit log updated.
->
-> Although Qu's patch was first and should be normally applied in case
-> more patches doing the same thing, the changelog reasoning is IMHO not
-> all fine, so I'm inclined to take your patch if you refine the subject,
-> and drop the "Conflicts:". Thanks.
->
-I'm completely OK with picking Liu's patch, since his patch is submitted 
-at a much more appropriate time than mine.
-My patch is somewhat too early.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v2: Refine the patch subject.
 
-Thanks,
-Qu
+ fs/btrfs/disk-io.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 41b320e..f63aacf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -418,12 +418,6 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+ 
+ 		if (memcmp(raw_disk_sb, result, csum_size))
+ 			ret = 1;
+-
+-		if (ret && btrfs_super_generation(disk_sb) < 10) {
+-			printk(KERN_WARNING
+-				"BTRFS: super block crcs don't match, older mkfs detected\n");
+-			ret = 0;
+-		}
+ 	}
+ 
+ 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+-- 
+1.8.1.4
+

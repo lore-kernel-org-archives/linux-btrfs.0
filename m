@@ -1,269 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59448 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932607AbbCPVlj (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:28477 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750933AbbCQCld convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Mar 2015 17:41:39 -0400
-Received: from pps.filterd (m0044008 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t2GLelEJ014221
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 14:41:39 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1t66r7r2w4-12
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Mar 2015 14:41:39 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: add sanity test for outstanding_extents accounting
-Date: Mon, 16 Mar 2015 17:41:01 -0400
-Message-ID: <1426542061-32175-1-git-send-email-jbacik@fb.com>
+	Mon, 16 Mar 2015 22:41:33 -0400
+Message-ID: <55079458.1010209@cn.fujitsu.com>
+Date: Tue, 17 Mar 2015 10:41:28 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
+        <linux-btrfs@vger.kernel.org>, Eryu Guan <guaneryu@gmail.com>
+Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older mkfs"
+References: <1426138847-10851-1-git-send-email-bo.li.liu@oracle.com> <550127E1.4050606@cn.fujitsu.com> <20150312173414.GE20767@twin.jikos.cz> <20150312201508.GB10724@localhost.localdomain> <20150316162534.GO20767@twin.jikos.cz>
+In-Reply-To: <20150316162534.GO20767@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I introduced a regression wrt outstanding_extents accounting.  These are tricky
-areas that aren't easily covered by xfstests as we could change MAX_EXTENT_SIZE
-at any time.  So add sanity tests to cover the various conditions that are
-tricky in order to make sure we don't introduce regressions in the future.
+
+
+-------- Original Message  --------
+Subject: Re: [PATCH] Revert "Btrfs: allow superblock mismatch from older 
+mkfs"
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Date: 2015年03月17日 00:25
+
+> On Fri, Mar 13, 2015 at 04:15:08AM +0800, Liu Bo wrote:
+>> On Thu, Mar 12, 2015 at 06:34:15PM +0100, David Sterba wrote:
+>>> On Thu, Mar 12, 2015 at 01:45:05PM +0800, Qu Wenruo wrote:
+>>>> I sent such patch some time ago but was rejected by Chris,
+>>>> hopes this time it can be accepted.
+>>>
+>>> http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg34937.html
+>>>
+>>> I'm OK with removing the special case now because there are additional
+>>> supreblock checks merged (3.19) that were motivated by your previous
+>>> attempt to remove it.
+>>
+>> So David, are you going to take the above patch instead?
+>>
+>> I'm okay with that since they're exactly same, but it'd be good that
+>> Qu has its commit log updated.
+>
+> Although Qu's patch was first and should be normally applied in case
+> more patches doing the same thing, the changelog reasoning is IMHO not
+> all fine, so I'm inclined to take your patch if you refine the subject,
+> and drop the "Conflicts:". Thanks.
+>
+I'm completely OK with picking Liu's patch, since his patch is submitted 
+at a much more appropriate time than mine.
+My patch is somewhat too early.
+
 Thanks,
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/ctree.h             |   3 +
- fs/btrfs/inode.c             |  15 ++++
- fs/btrfs/tests/inode-tests.c | 160 ++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 177 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a0c90a3..5bd721a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3910,6 +3910,9 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
- 				    loff_t actual_len, u64 *alloc_hint);
- int btrfs_inode_check_errors(struct inode *inode);
- extern const struct dentry_operations btrfs_dentry_operations;
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+void btrfs_test_inode_set_ops(struct inode *inode);
-+#endif
- 
- /* ioctl.c */
- long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index af4a492..156d0f5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -108,6 +108,13 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 
- static int btrfs_dirty_inode(struct inode *inode);
- 
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+void btrfs_test_inode_set_ops(struct inode *inode)
-+{
-+	BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
-+}
-+#endif
-+
- static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
- 				     struct inode *inode,  struct inode *dir,
- 				     const struct qstr *qstr)
-@@ -1707,6 +1714,10 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
- 
-+		/* For sanity tests */
-+		if (btrfs_test_is_dummy_root(root))
-+			return;
-+
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, len,
- 				     root->fs_info->delalloc_batch);
- 		spin_lock(&BTRFS_I(inode)->lock);
-@@ -1762,6 +1773,10 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 		    root != root->fs_info->tree_root)
- 			btrfs_delalloc_release_metadata(inode, len);
- 
-+		/* For sanity tests. */
-+		if (btrfs_test_is_dummy_root(root))
-+			return;
-+
- 		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
- 		    && do_list && !(state->state & EXTENT_NORESERVE))
- 			btrfs_free_reserved_data_space(inode, len);
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index a116b55..e31c376 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -911,6 +911,160 @@ out:
- 	return ret;
- }
- 
-+static int test_extent_accounting(void)
-+{
-+	struct inode *inode = NULL;
-+	struct btrfs_root *root = NULL;
-+	int ret = -ENOMEM;
-+
-+	inode = btrfs_new_test_inode();
-+	if (!inode) {
-+		test_msg("Couldn't allocate inode\n");
-+		return ret;
-+	}
-+
-+	root = btrfs_alloc_dummy_root();
-+	if (IS_ERR(root)) {
-+		test_msg("Couldn't allocate root\n");
-+		goto out;
-+	}
-+
-+	root->fs_info = btrfs_alloc_dummy_fs_info();
-+	if (!root->fs_info) {
-+		test_msg("Couldn't allocate dummy fs info\n");
-+		goto out;
-+	}
-+
-+	BTRFS_I(inode)->root = root;
-+	btrfs_test_inode_set_ops(inode);
-+
-+	/* [BTRFS_MAX_EXTENT_SIZE] */
-+	BTRFS_I(inode)->outstanding_extents++;
-+	ret = btrfs_set_extent_delalloc(inode, 0, BTRFS_MAX_EXTENT_SIZE - 1,
-+					NULL);
-+	if (ret) {
-+		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 1) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 1, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/* [BTRFS_MAX_EXTENT_SIZE][4k] */
-+	BTRFS_I(inode)->outstanding_extents++;
-+	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE,
-+					BTRFS_MAX_EXTENT_SIZE + 4095, NULL);
-+	if (ret) {
-+		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 2) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 2, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/* [BTRFS_MAX_EXTENT_SIZE/2][4K HOLE][the rest] */
-+	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree,
-+			       BTRFS_MAX_EXTENT_SIZE >> 1,
-+			       (BTRFS_MAX_EXTENT_SIZE >> 1) + 4095,
-+			       EXTENT_DELALLOC | EXTENT_DIRTY |
-+			       EXTENT_UPTODATE | EXTENT_DO_ACCOUNTING, 0, 0,
-+			       NULL, GFP_NOFS);
-+	if (ret) {
-+		test_msg("clear_extent_bit returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 2) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 2, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/* [BTRFS_MAX_EXTENT_SIZE][4K] */
-+	BTRFS_I(inode)->outstanding_extents++;
-+	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE >> 1,
-+					(BTRFS_MAX_EXTENT_SIZE >> 1) + 4095,
-+					NULL);
-+	if (ret) {
-+		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 2) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 2, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/*
-+	 * [BTRFS_MAX_EXTENT_SIZE+4K][4K HOLE][BTRFS_MAX_EXTENT_SIZE+4K]
-+	 *
-+	 * I'm artificially adding 2 to outstanding_extents because in the
-+	 * buffered IO case we'd add things up as we go, but I don't feel like
-+	 * doing that here, this isn't the interesting case we want to test.
-+	 */
-+	BTRFS_I(inode)->outstanding_extents += 2;
-+	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE + 8192,
-+					(BTRFS_MAX_EXTENT_SIZE << 1) + 12287,
-+					NULL);
-+	if (ret) {
-+		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 4) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 4, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/* [BTRFS_MAX_EXTENT_SIZE+4k][4k][BTRFS_MAX_EXTENT_SIZE+4k] */
-+	BTRFS_I(inode)->outstanding_extents++;
-+	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE+4096,
-+					BTRFS_MAX_EXTENT_SIZE+8191, NULL);
-+	if (ret) {
-+		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents != 3) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 3, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+
-+	/* Empty */
-+	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
-+			       EXTENT_DIRTY | EXTENT_DELALLOC |
-+			       EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
-+	if (ret) {
-+		test_msg("clear_extent_bit returned %d\n", ret);
-+		goto out;
-+	}
-+	if (BTRFS_I(inode)->outstanding_extents) {
-+		ret = -EINVAL;
-+		test_msg("Miscount, wanted 0, got %u\n",
-+			 BTRFS_I(inode)->outstanding_extents);
-+		goto out;
-+	}
-+	ret = 0;
-+out:
-+	if (ret)
-+		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
-+				 EXTENT_DIRTY | EXTENT_DELALLOC |
-+				 EXTENT_DO_ACCOUNTING | EXTENT_UPTODATE, 0, 0,
-+				 NULL, GFP_NOFS);
-+	iput(inode);
-+	btrfs_free_dummy_root(root);
-+	return ret;
-+}
-+
- int btrfs_test_inodes(void)
- {
- 	int ret;
-@@ -924,5 +1078,9 @@ int btrfs_test_inodes(void)
- 	if (ret)
- 		return ret;
- 	test_msg("Running hole first btrfs_get_extent test\n");
--	return test_hole_first();
-+	ret = test_hole_first();
-+	if (ret)
-+		return ret;
-+	test_msg("Running outstanding_extents tests\n");
-+	return test_extent_accounting();
- }
--- 
-1.9.3
-
+Qu

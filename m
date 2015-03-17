@@ -1,79 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:35672 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751478AbbCQHNK (ORCPT
+Received: from mail.synology.com ([59.124.41.242]:17765 "EHLO
+	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754348AbbCQI62 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Mar 2015 03:13:10 -0400
-Received: by pabyw6 with SMTP id yw6so1460412pab.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2015 00:13:10 -0700 (PDT)
-Date: Tue, 17 Mar 2015 00:13:07 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] Btrfs: Remove the check for old-style mkfs
-Message-ID: <20150317071307.GA17951@mew>
-References: <20150316162534.GO20767@twin.jikos.cz>
- <1426574056-2978-1-git-send-email-bo.li.liu@oracle.com>
+	Tue, 17 Mar 2015 04:58:28 -0400
+Received: from mail-ie0-f171.google.com (mail-ie0-f171.google.com [209.85.223.171])
+	(Authenticated sender: robbieko@synology.com)
+	by mail.synology.com (Postfix) with ESMTPSA id A1A08A723C7
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2015 16:58:14 +0800 (CST)
+Received: by ieclw3 with SMTP id lw3so3994371iec.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2015 01:58:19 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426574056-2978-1-git-send-email-bo.li.liu@oracle.com>
+Date: Tue, 17 Mar 2015 16:58:19 +0800
+Message-ID: <CAJiZgcoWzBtqNQo54GCAw=WH1BtMm2wdScJeTjyJWeypeep=Bw@mail.gmail.com>
+Subject: Btrfs Send/Receive "WARN_ON Cannot allocate memory" And "no such file
+ or directory" error
+From: Robbie Ko <robbieko@synology.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 17, 2015 at 02:34:16PM +0800, Liu Bo wrote:
-> This was used to make sure that a fresh btrfs from an older mkfs.btrfs,
-> but it also allows us to mount a buggy btrfs if this btrfs has the right
-> superblock head part but has something wrong with chunk tree part[1], and
-> after that we can hit BUG_ON()s set in the code to prevent something
-> impossible.
-> 
-> Since David has released "Btrfs progs v3.19-rc2", just remove the check,
-> if anyone who wants to make a fresh btrfs, please use the latest one.
-> 
-> [1]: http://www.spinics.net/lists/linux-btrfs/msg42358.html
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Hi,
 
-# mount -o loop btrfs.img /mnt/test
-# dmesg | tail
-[   28.582698] BTRFS: device fsid 1c0ed5d6-550d-4010-b1b4-ce1828270713 devid 1 transid 4 /dev/loop0
-[   28.598365] BTRFS: superblock checksum mismatch
-[   28.617205] BTRFS: open_ctree failed
+I have been testing btrfs send/receive recently.
+I got an error "send ioctl failed with -12: Cannot allocate memory" on
+send side.
+WARN_ON happened on "len > PATH_MAX" in fs_path_ensure_buf.
 
-Looks good to me.
+I got an error "rename failed: no such file or directory" on receive side.
+The followings are simple reproduced steps and related information,
+Is there any  idea about what this might be or how to fix it?
 
-Reviewed-by: Omar Sandoval <osandov@osandov.com>
+uanme -a
+Linux ubuntu 4.0.0-rc1-custom #2 SMP Fri Feb 27 22:20:12 CST 2015
+x86_64 x86_64 x86_64 GNU/Linux
+btrfs --version
+Btrfs v3.14.1
 
-> ---
-> v2: Refine the patch subject.
-> 
->  fs/btrfs/disk-io.c | 6 ------
->  1 file changed, 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 41b320e..f63aacf 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -418,12 +418,6 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
->  
->  		if (memcmp(raw_disk_sb, result, csum_size))
->  			ret = 1;
-> -
-> -		if (ret && btrfs_super_generation(disk_sb) < 10) {
-> -			printk(KERN_WARNING
-> -				"BTRFS: super block crcs don't match, older mkfs detected\n");
-> -			ret = 0;
-> -		}
->  	}
->  
->  	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
-> -- 
-> 1.8.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ Steps to reproduce:
 
--- 
-Omar
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt2
+
+$ mkdir /mnt/data
+$ mkdir /mnt/data/n1
+$ mkdir /mnt/data/n1/n2
+$ mkdir /mnt/data/n4
+$ mkdir /mnt/data/n1/n2/p1
+$ mkdir /mnt/data/n1/n2/p1/p2
+$ mkdir /mnt/data/t6
+$ mkdir /mnt/data/t7
+$ mkdir -p /mnt/data/t5/t7
+$ mkdir /mnt/data/t2
+$ mkdir /mnt/data/t4
+$ mkdir -p /mnt/data/t1/t3
+$ mkdir /mnt/data/p1
+$ mv /mnt/data/t1 /mnt/data/p1
+$ mkdir -p /mnt/data/p1/p2
+$ mv /mnt/data/t4 /mnt/data/p1/p2/t1
+$ mv /mnt/data/t5 /mnt/data/n4/t5
+$ mv /mnt/data/n1/n2/p1/p2 /mnt/data/n4/t5/p2
+$ mv /mnt/data/t7 /mnt/data/n4/t5/p2/t7
+$ mv /mnt/data/t2 /mnt/data/n4/t1
+$ mv /mnt/data/p1 /mnt/data/n4/t5/p2/p1
+$ mv /mnt/data/n1/n2 /mnt/data/n4/t5/p2/p1/p2/n2
+$ mv /mnt/data/n4/t5/p2/p1/p2/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1
+$ mv /mnt/data/n4/t5/t7 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7
+$ mv /mnt/data/n4/t5/p2/p1/t1/t3 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3
+$ mv /mnt/data/n4/t5/p2/p1/p2/n2/p1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1
+$ mv /mnt/data/t6 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3/t5
+$ mv /mnt/data/n4/t5/p2/p1/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3/t1
+$ mv /mnt/data/n1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/n1
+
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+
+$ mv /mnt/data/n4/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/t1
+$ mv /mnt/data/n4/t5/p2/p1/p2/n2/t1 /mnt/data/n4/
+$ mv /mnt/data/n4/t5/p2/p1/p2/n2 /mnt/data/n4/t1/n2
+$ mv /mnt/data/n4/t1/t7/p1 /mnt/data/n4/t1/n2/p1
+$ mv /mnt/data/n4/t1/t3/t1 /mnt/data/n4/t1/n2/t1
+$ mv /mnt/data/n4/t1/t3 /mnt/data/n4/t1/n2/t1/t3
+$ mv /mnt/data/n4/t5/p2/p1/p2 /mnt/data/n4/t1/n2/p1/p2
+$ mv /mnt/data/n4/t1/t7 /mnt/data/n4/t1/n2/p1/t7
+$ mv /mnt/data/n4/t5/p2/p1 /mnt/data/n4/t1/n2/p1/p2/p1
+$ mv /mnt/data/n4/t1/n2/t1/t3/t5 /mnt/data/n4/t1/n2/p1/p2/t5
+$ mv /mnt/data/n4/t5 /mnt/data/n4/t1/n2/p1/p2/p1/t5
+$ mv /mnt/data/n4/t1/n2/p1/p2/p1/t5/p2 /mnt/data/n4/t1/n2/p1/p2/p1/p2
+$ mv /mnt/data/n4/t1/n2/p1/p2/p1/p2/t7 /mnt/data/n4/t1/t7
+
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+
+  $ btrfs send /mnt/snap1 | btrfs receive /mnt2
+  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive -vv /mnt2
+ERROR: send ioctl failed with -12: Cannot allocate memory
+rename data/n4/t5/p2/p1/p2 -> o272-10-0
+rename data/n4/t5/p2/p1/p2/n2/t1/t7 -> o266-9-0
+ERROR: rename data/n4/t5/p2/p1/p2/n2/t1/t7 -> o266-9-0 failed. No such
+file or directory
+
+It seems that "data/n4/t5/p2/p1/p2" had been renamed but the file path
+had not been updated to
+"o272-10-0".
+Thus it makes the next rename failed.
+
+Thanks.
+robbieko

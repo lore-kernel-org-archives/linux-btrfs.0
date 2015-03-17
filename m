@@ -1,130 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f175.google.com ([209.85.217.175]:35750 "EHLO
-	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753901AbbCQPhs (ORCPT
+Received: from zeniv.linux.org.uk ([195.92.253.2]:39303 "EHLO
+	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752044AbbCQSVo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Mar 2015 11:37:48 -0400
-Received: by lbcgn8 with SMTP id gn8so9905525lbc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2015 08:37:47 -0700 (PDT)
+	Tue, 17 Mar 2015 14:21:44 -0400
+Date: Tue, 17 Mar 2015 18:19:15 +0000
+From: Al Viro <viro@ZenIV.linux.org.uk>
+To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        osd-dev@open-osd.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
+        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com,
+        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, Yan Zheng <zyan@redhat.com>,
+        Sage Weil <sage@redhat.com>, Steve French <sfrench@samba.org>,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Benny Halevy <bhalevy@primarydata.com>, Jan Kara <jack@suse.cz>,
+        "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Changman Lee <cm224.lee@samsung.com>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Steven Whitehouse <swhiteho@redhat.com>,
+        Dave Kleikamp <shaggy@kernel.org>, Oleg Drokin <oleg.drokin@intel.com>,
+        Trond Myklebust <trond.myklebust@primarydata.com>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
+        Eric Van Hensbergen <ericvh@gmail.com>,
+        Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
+        Dave Chinner <david@fromorbit.com>
+Subject: Re: [RFC PATCH 1/5] new helper: iov_iter_rw()
+Message-ID: <20150317181910.GK29656@ZenIV.linux.org.uk>
+References: <cover.1426502566.git.osandov@osandov.com>
+ <34dc78b262546e9343e0ed872232a97f5eaa5f15.1426502566.git.osandov@osandov.com>
+ <20150316173605.GX29656@ZenIV.linux.org.uk>
+ <20150317093151.GS20767@twin.jikos.cz>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1426604663-7663-1-git-send-email-jbacik@fb.com>
-References: <1426604663-7663-1-git-send-email-jbacik@fb.com>
-Date: Tue, 17 Mar 2015 15:37:46 +0000
-Message-ID: <CAL3q7H6bSau3LxUeptu=+5A9Qy7t3yi84iX_5+bYLnO_ubBgig@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix outstanding_extents accounting in DIO
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150317093151.GS20767@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 17, 2015 at 3:04 PM, Josef Bacik <jbacik@fb.com> wrote:
-> We are keeping track of how many extents we need to reserve properly based on
-> the amount we want to write, but we were still incrementing outstanding_extents
-> if we wrote less than what we requested.  We need to fix this logic to only do
-> this if we request less than MAX_EXTENT_SIZE or if we write less than
-> MAX_EXTENT_SIZE when we request an amount larger than MAX_EXTENT_SIZE.  This
-> fixes the problem Filipe reported with generic/300.  Thanks,
->
-> Reported-by: Filipe Manana <fdmanana@suse.com>
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+On Tue, Mar 17, 2015 at 10:31:51AM +0100, David Sterba wrote:
 
-I hate to be the bringer of bad news, but this still causes the
-warnings for the modified fstests/generic/300 everytime I run it.
+> Agreed, but the proposed define is rather cryptic and I was not able to
+> understand the meaning on the first glance.
+> 
+> > #define iov_iter_rw(i) ((0 ? (struct iov_iter *)0 : (i))->type & RW_MASK)
+> 
+> This worked for me, does not compile with anything else than
+> 'struct iov_iter*' as i:
+> 
+> #define iov_iter_rw(i)	({			\
+> 	struct iov_iter __iter = *(i);		\
+> 	(i)->type & RW_MASK;			\
+> 	})
+> 
+> The assignment is optimized out.
 
-I have all your recent patches dealing with fixing the accounting of
-outstanding_extents applied:
+... and you are getting
+	a) use of rather lousy gccism when plain C would do
+	b) double evaluation since you've got it wrong (should've been
+__iter.type & RW_MASK, if you do it that way).  As it is, if argument has
+any side effects, your variant will trigger those twice - even if the
+destination of the assignment is never used, the side effects remain.
 
-$ git log --author='Josef Bacik' --pretty=oneline
-4bfbd94312a4dc464f1827ca03faccb8da8f2aaf Btrfs: account merges properly
-e0037ac670a4e462166f3ec28e691f8595fca607 Btrfs: fix merge delalloc logic
-f46e5f2aebc726ed0dad860c3769a9bf63b0ea81 Btrfs: fix
-outstanding_extents accounting in DIO
-53f6e7d09b796371074ada19e452b7566682fe2f Btrfs: account for the
-correct number of extents for delalloc reservations
-b8c3ce1cfa5a5f7f6fe71b8f6ac4f601e7ccdf1f Btrfs: remove extra
-run_delayed_refs in update_cowonly_root
-(...)
-
-Also, with the new fix for the merges of buffered extents ("Btrfs:
-account merges properly") I get the assertion triggered again:
-
-[13382.732589] BTRFS: assertion failed:
-BTRFS_I(inode)->outstanding_extents >= num_extents, file:
-fs/btrfs/extent-tree.c, line: 4983
-[13382.735759] ------------[ cut here ]------------
-[13382.736031] kernel BUG at fs/btrfs/ctree.h:4013!
-[13382.736031] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
-(...)
-[13382.736031]  [<ffffffffa03be666>] drop_outstanding_extent+0x3d/0x6d [btrfs]
-
-For this fio job (more stressful then the previous simple fio job):
-
-[global]
-ioengine=sync
-direct=0
-bssplit=130M/100
-fallocate=none
-filename=foobar
-
-[job1]
-numjobs=1
-size=4G
-rw=randwrite
-time_based
-runtime=60
-
-
-
-> ---
->  fs/btrfs/inode.c | 19 ++++++++++++++++++-
->  1 file changed, 18 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 156d0f5..f6d2c56 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7387,7 +7387,24 @@ unlock:
->                 if (start + len > i_size_read(inode))
->                         i_size_write(inode, start + len);
->
-> -               if (len < orig_len) {
-> +               /*
-> +                * direct_io can send down chunks > BTRFS_MAX_EXTENT_SIZE, so we
-> +                * don't want to jack up outstanding_extents if we're just
-> +                * allocating the largest extent we can for a range that we've
-> +                * already reserved the approriate number of outstanding_extents
-> +                * for.
-> +                *
-> +                * So if orig_len <= BTRFS_MAX_EXTENT_SIZE and our allocated len
-> +                * is less than orig_len then we know we're going to end up with
-> +                * more extents than we reserved.
-> +                *
-> +                * If orig_len > BTRFS_MAX_EXTENT_SIZE but we weren't able to
-> +                * allocate a BTRFS_MAX_EXTENT_SIZE extent then we know we have
-> +                * to add another outstanding extent.
-> +                */
-> +               if (len < orig_len &&
-> +                   (orig_len <= BTRFS_MAX_EXTENT_SIZE ||
-> +                    len < BTRFS_MAX_EXTENT_SIZE)) {
->                         spin_lock(&BTRFS_I(inode)->lock);
->                         BTRFS_I(inode)->outstanding_extents++;
->                         spin_unlock(&BTRFS_I(inode)->lock);
-> --
-> 1.8.3.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+I agree that it could use /* use ?: for typechecking */, but let's not go into
+({...}) land unless we absolutely have to.

@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54221 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56305 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755819AbbCRNKM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Mar 2015 09:10:12 -0400
-Date: Wed, 18 Mar 2015 14:10:10 +0100
+	id S1756053AbbCRNkC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Mar 2015 09:40:02 -0400
+Date: Wed, 18 Mar 2015 14:40:00 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Sebastian Thorarensen <sebth@naju.se>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs-progs: btrfs-convert: Allow setting nodesize
-Message-ID: <20150318131009.GX20767@suse.cz>
+Message-ID: <20150318134000.GY20767@suse.cz>
 Reply-To: dsterba@suse.cz
 References: <2f1ccb99432d65ebd1500f685e53ec98bdc259e7.1425382454.git.sebth@naju.se>
- <alpine.DEB.2.02.1503031249060.3687@miria.naju.se>
- <20150316173439.GQ20767@twin.jikos.cz>
- <alpine.DEB.2.02.1503180239540.3687@miria.naju.se>
+ <20150316172800.GP20767@twin.jikos.cz>
+ <alpine.DEB.2.02.1503180257380.3687@miria.naju.se>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <alpine.DEB.2.02.1503180239540.3687@miria.naju.se>
+In-Reply-To: <alpine.DEB.2.02.1503180257380.3687@miria.naju.se>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 18, 2015 at 02:57:31AM +0100, Sebastian Thorarensen wrote:
+On Wed, Mar 18, 2015 at 03:12:28AM +0100, Sebastian Thorarensen wrote:
 > On Mon, 16 Mar 2015, David Sterba wrote:
-> > I think it's right, however I'm not sure if there are any guarantees
-> > about the range alignment. Btrfs should be fine with 4k (ie. sectorsize
-> > which is PAGE_SIZE) alignment for a node, but this could lead to some
-> > pathological layout and I'm not 100% sure the exact nodesize alignment
-> > is not required somewhere.
+> > > +static int ext2_free_block_range(ext2_filsys fs, u64 block, int num)
+> > > +{
+> > > +	BUG_ON(block != (blk_t)block);
+> >
+> > What's the purpose of this? Some kind of overflow check?
 > 
-> Ah, I didn't think of that. Yes, ext2_alloc_block_range can allocate
-> unaligned (with respect to nodesize) ranges.
+> ext2_free_block contains the same check, so I put one in
+> ext2_free_block_range for consistency. I assumed it was an overflow check
+> as blk_t is u32.
+
+Ok, keep it there so we don't forget. A better error handling is
+desirable though.
+
+> > Otherwise looks good. If you're going to resend, please split the patch
+> > into one logical change per patch:
+> > 
+> > 1) generic and preparatory changes, like moving the check_node to
+> > utils.c, moving the mkfs default leaf size
+> > 
+> > 2) the changes to convert, ie. most of this patch minus 1 and 3
+> > 
+> > 3) the tests
 > 
-> I made a test with a conversion that resulted in unaligned blocks[], and
-> neither btrfs check nor scrub complained on the converted filesystem, but
-> I will do some research to find out whether blocks[] must be aligned or
-> not.
+> Thanks for the review! Will resend with the fixes when I know whether
+> blocks[] must be aligned to nodesize or not.
 
-Thanks for the test.
-
-So far I haven't found any requirements for the exact nodesize alignment
-for metadata blocsk, I think it's safe.
-
-Given that the node allocation is opencoded inside convert, we can easily
-add a fallback to request a bit larger range and satisfy the alignment.
-This would leave the small unallocatable ranges behind and outside of
-the btrfs' sight.
-
-I'm fine with current code for first implementation.
+As mentioned in the other mail, current implementation is fine.

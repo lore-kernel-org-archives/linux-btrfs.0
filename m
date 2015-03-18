@@ -1,88 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16436 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933729AbbCROVz (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:60623 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933348AbbCROXw convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Mar 2015 10:21:55 -0400
-Date: Wed, 18 Mar 2015 22:21:33 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 2/3] btrfs: fix race on ENOMEM in alloc_extent_buffer
-Message-ID: <20150318142132.GA31530@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <cover.1424773781.git.osandov@osandov.com>
- <bb30d69d671243192fb08002b31375e55afe9644.1424773781.git.osandov@osandov.com>
+	Wed, 18 Mar 2015 10:23:52 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: number of hardlinks for directory in ls -lid always 1?
+Date: Wed, 18 Mar 2015 15:23:50 +0100
+Message-ID: <7757761.93uGJVH8dW@merkaba>
+In-Reply-To: <20150318135230.GA20767@twin.jikos.cz>
+References: <9389540.MYekrP2a8Q@merkaba> <1929370.YSr7hGqtmM@merkaba> <20150318135230.GA20767@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bb30d69d671243192fb08002b31375e55afe9644.1424773781.git.osandov@osandov.com>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 24, 2015 at 02:47:05AM -0800, Omar Sandoval wrote:
-> Consider the following interleaving of overlapping calls to
-> alloc_extent_buffer:
+Am Mittwoch, 18. März 2015, 14:52:30 schrieb David Sterba:
+> On Wed, Mar 18, 2015 at 02:31:43PM +0100, Martin Steigerwald wrote:
+> > Am Dienstag, 17. März 2015, 17:07:17 schrieb David Sterba:
+> > > On Tue, Mar 17, 2015 at 02:33:30PM +0100, Martin Steigerwald wrote:
+> > > > On BTRFS I see
+> > > > 
+> > > > martin@merkaba:~> ls -lid /usr/local
+> > > > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local
+> > > > martin@merkaba:~> ls -lid /usr/local/.
+> > > > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local/.
+> > > > martin@merkaba:~> ls -lid /usr/local/bin/..
+> > > > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local/bin/..
+> > > > 
+> > > > On other filesystems like Ext4 I see the actual number of
+> > > > hardlinks to
+> > > > the directory.
+> > > > 
+> > > > Is this intended behaviour of BTRFS or a bug?
+> > > 
+> > > Intended behaviour, this has been asked in the past, I don't have
+> > > the
+> > > link sorry, try searching the mailinglist archives.
 > 
-> Call 1:
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/14634
 > 
-> - Successfully allocates a few pages with find_or_create_page
-> - find_or_create_page fails, goto free_eb
-> - Unlocks the allocated pages
+> "Directories always have a link count of 1 in btrfs.  This tells find
+> not to use the link count as the count of subdirectories in the
+> directory."
 > 
-> Call 2:
-> - Calls find_or_create_page and gets a page in call 1's extent_buffer
-> - Finds that the page is already associated with an extent_buffer
-> - Grabs a reference to the half-written extent_buffer and calls
->   mark_extent_buffer_accessed on it
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/29906
 > 
-> mark_extent_buffer_accessed will then try to call mark_page_accessed on
-> a null page and panic.
-> 
-> The fix is to decrement the reference count on the half-written
-> extent_buffer before unlocking the pages so call 2 won't use it. We
-> should also set exists = NULL in the case that we don't use exists to
-> avoid accidentally returning a freed extent_buffer in an error case.
+> "As I understand it, inferring the number of directory entries from
+> st_nlink is an optimization that isn't universally valid. If that
+> count is 1, it must be considered invalid, and programs that don't
+> handle this correctly are broken.  Coreutils handle this, at least..."
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Okay, thanks. That was before I subscribed to BTRFS mailinglist so not in 
+local mail archive.
 
-> 
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> ---
->  fs/btrfs/extent_io.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index c7233ff..7ecfae0 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -4867,6 +4867,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
->  				mark_extent_buffer_accessed(exists, p);
->  				goto free_eb;
->  			}
-> +			exists = NULL;
->  
->  			/*
->  			 * Do this so attach doesn't complain and we need to
-> @@ -4930,12 +4931,12 @@ again:
->  	return eb;
->  
->  free_eb:
-> +	WARN_ON(!atomic_dec_and_test(&eb->refs));
->  	for (i = 0; i < num_pages; i++) {
->  		if (eb->pages[i])
->  			unlock_page(eb->pages[i]);
->  	}
->  
-> -	WARN_ON(!atomic_dec_and_test(&eb->refs));
->  	btrfs_release_extent_buffer(eb);
->  	return exists;
->  }
-> -- 
-> 2.3.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It explains that having a correct hardlink number for directory is not 
+mandatory, but it doesn´t explain why BTRFS always has 1 in there instead 
+of the actual count of hardlinks. Is this an performance optimization for 
+BTRFS or are there any other reasons why BTRFS does it this way?
+
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

@@ -1,36 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:33363 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754735AbbCRPgS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Mar 2015 11:36:18 -0400
-Received: by wixw10 with SMTP id w10so65905606wix.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2015 08:36:17 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:35891 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751474AbbCRP76 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Mar 2015 11:59:58 -0400
+Date: Wed, 18 Mar 2015 16:59:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
+Message-ID: <20150318155956.GC20767@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1424920823-12176-1-git-send-email-zhaolei@cn.fujitsu.com>
+ <1424920823-12176-2-git-send-email-zhaolei@cn.fujitsu.com>
+ <20150226222901.GB8720@twin.jikos.cz>
+ <00d101d0522b$befc6df0$3cf549d0$@cn.fujitsu.com>
 MIME-Version: 1.0
-Date: Wed, 18 Mar 2015 16:36:17 +0100
-Message-ID: <CAC-qVGA-F=8pNcp+zRvQqd5=ag67Ykb2BVYLzLb1Wtp7zqYW0Q@mail.gmail.com>
-Subject: Is btrfs filesystem resize synchronous?
-From: =?UTF-8?Q?Zolt=C3=A1n_Halassy?= <cf0hay@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <00d101d0522b$befc6df0$3cf549d0$@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is it safe to use do something like this:
+On Fri, Feb 27, 2015 at 09:21:43AM +0800, Zhao Lei wrote:
+> Hi, David Sterba
+> 
+> * From: David Sterba [mailto:dsterba@suse.cz]
+> > Sent: Friday, February 27, 2015 6:29 AM
+> > To: Zhaolei
+> > Cc: linux-btrfs@vger.kernel.org
+> > Subject: Re: [PATCH 1/1] btrfs: Fix NO_SPACE bug caused by delayed-iput
+> > 
+> > On Thu, Feb 26, 2015 at 11:20:23AM +0800, Zhaolei wrote:
+> > > --- a/fs/btrfs/transaction.c
+> > > +++ b/fs/btrfs/transaction.c
+> > > @@ -2068,8 +2068,12 @@ int btrfs_commit_transaction(struct
+> > > btrfs_trans_handle *trans,
+> > >
+> > >  	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+> > >
+> > > -	if (current != root->fs_info->transaction_kthread)
+> > > +	if (current != root->fs_info->transaction_kthread) {
+> > >  		btrfs_run_delayed_iputs(root);
+> > 
+> > Using a mutex for this kind of synchronization is not entirely correct though it
+> > works.
+> > 
+> rw sem is best way I thought which was choosed from 
+> mutex, rw_sem, and wait_queue, although the function name is not
+> self documented...
+> Do you have some suggestion for this kind of synchronization?
 
-# btrfs filesystem resize 100m /mnt/something && lvreduce -f -L100M
-/dev/somevg/somelv
-
-as in, when the first command exits with 0 status, is the filesystem
-already resized? I mean, it's 100% sure the FS driver will not touch
-any blocks beyond the requested size after the resize successfully
-returned? I guess the utility just signals some ioctl to the mounted
-filesystem, but I wonder if the ioctl only returns successfully when
-it finished the task.
-
-Sorry if this is a noise, I didn't find anything about this in the
-user documentation, and it is not obvious for me. I read somewhere,
-the FS driver does not check for missing blocks at the end of the
-device during mount (eg, when the device is smaller than the reported
-size in the superblock), and will simply throw io errors when tries to
-access those blocks. This made me ask the question above.
+No better ideas at the moment, please proceed.

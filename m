@@ -1,70 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:35722 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752212AbbCRXBL (ORCPT
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:35844 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752389AbbCRXWX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Mar 2015 19:01:11 -0400
-Received: by pabyw6 with SMTP id yw6so56025528pab.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2015 16:01:10 -0700 (PDT)
+	Wed, 18 Mar 2015 19:22:23 -0400
+Received: by padcy3 with SMTP id cy3so56389088pad.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2015 16:22:23 -0700 (PDT)
 Subject: Re: syntax for deleting subvolumes?
-To: Hugo Mills <hugo@carfax.org.uk>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Murphy <lists@colorremedies.com>
 references: <5509E34F.6010504@graphitesystems.com>
  <CAJCQCtSmV63H4OnEgv2ZXSFq4s8npEGmDxUBDO5dHb7pmoC0zw@mail.gmail.com>
- <5509F08E.6070702@graphitesystems.com> <20150318215512.GC31762@carfax.org.uk>
+ <5509F08E.6070702@graphitesystems.com>
+ <CAJCQCtQU=KzNqY=MTdqET5-J2JpDrS+O9EE50o9aXbRCJHU+xQ@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: K Richard Pixley <rpixley@graphitesystems.com>
-message-id: <550A03B3.8020005@graphitesystems.com>
-Date: Wed, 18 Mar 2015 16:01:07 -0700
+message-id: <550A08AC.7070506@graphitesystems.com>
+Date: Wed, 18 Mar 2015 16:22:20 -0700
 mime-version: 1.0
-in-reply-to: <20150318215512.GC31762@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+in-reply-to: <CAJCQCtQU=KzNqY=MTdqET5-J2JpDrS+O9EE50o9aXbRCJHU+xQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/18/15 14:55 , Hugo Mills wrote:
-> On Wed, Mar 18, 2015 at 02:39:26PM -0700, K Richard Pixley wrote:
->> On 3/18/15 14:06 , Chris Murphy wrote:
->>> The Fedora/RHEL/CentOS installer creates two subvolumes: root and
->>> home. If you check out fstab, those subvolumes are mounted at /
->>> and /home. Therefore the top level subvolume (id 5) is not mounted
->>> by default, so there's no way to delete subvolumes in the top
->>> level.
+On 3/18/15 15:15 , Chris Murphy wrote:
+> On Wed, Mar 18, 2015 at 3:39 PM, K Richard Pixley
+> <rpixley@graphitesystems.com> wrote:
+>
 >> Ah!  Thank you.  That's the piece I was missing.
 >>
 >> IMO, someone needs to take a clue-by-four to the heads of the
->> Fedora/RHEL/CentOS installer folks.  I see no reason for this with
->> btrfs.
->     Actually, it's the recommended approach.
+>> Fedora/RHEL/CentOS installer folks.  I see no reason for this with btrfs.
+> Other than the technical reasons Hugo mentions regarding nesting...
 >
->     We've found over time that nesting subvolumes inside each other is,
-> in general, more trouble than it's worth. It makes it harder to do
-> things like take snapshots and then replace the original with a
-> snapshot (e.g. rollback to an earlier state).
+> The problem with the "install normally to top level with Linux FHS"
+> approach like Ubuntu and openSUSE follow now, is that snapshots then
+> have to go in the mounted path. This arguably exposes old binaries in
+> that mounted path and is a possible security risk. There are some ways
+> to mitigate that, but better when it's simply not in the mounted path,
+> sorta like a chroot.
 >
->     Arranging the subvolumes with the top level (subvolid=0) as nothing
-> but a store for subvolumes means that you don't get the subvolumes
-> tangled up with each other, so it's much easier to manage them in
-> general.
+> It's also a better way to organize stateless systems. Myriad trees
+> that can be used to form a stateless system existing "out of tree" and
+> mounted either by path or subvolid is more sane (or at least less
+> madness inducing) than alternatives. See under "what we propose" for
+> the subvol naming convention:
+> http://0pointer.net/blog/revisiting-how-we-put-together-linux-systems.html
 >
->     There's a few cases where nesting subvolumes is helpful, but that's
-> more to do with preventing snapshots being taken of some pieces of the
-> filesystem.
-Yes, I understand about the flat arrangement.  It's been that way for 
-years now.
+> This is also compatible with delivery of such systems with a btrfs seed device.
+I see.  Thanks for the education.
 
-My complaint is a) about multiple subvols and b) about an unnecessary 
-and redundant subvol for the top level file system.
+I'm not sure what I think about the possible security risk, but I hear 
+the concern.
 
-The redundancy should be obvious.  And the problem with multiple subvols 
-is that they aren't needed and make snapshotting an entire system more 
-difficult than it needs to be.  I want to be able to snapshot and 
-chroot.  The traditional reason for partitioning a disk was to isolate 
-errors and to firewall "out of space" usage.  Neither of those really 
-apply to btrfs as far as I can see.
+Most of the uses I have for btrfs involve fairly dynamic use of 
+snapshots, typically by non-root users. That's what brought me to btrfs 
+in the first place and continues to be the biggest driver for me.
 
-I would much rather the installer simply create a single file system and 
-mount the partition directly rather than through a superfluous subvol.  
-I've never seen it done any other way as you might guess from my 
-confusion above.
+Because of this, the top level file system would need to be mounted 
+pretty much constantly, which essentially removes any benefit from the 
+redundant top level subvol.  It's just a nuisance for my applications.  
+And most of my applications try very hard to avoid mounting the 
+snapshots.  That takes too much time and isn't reentrant.
+
+It seems to me that it depends on whether you think of snapshots as a 
+system admin sort of facility or as a user facility.  As a system admin 
+facility, you're probably right.  But as a user level facility, I want 
+to be able to snapshot before making a change to a tree full of source 
+code and (re)building it all over again.  I may want to keep my new 
+build, but I may want to flush it and return to known good state.  It's 
+pretty easy to open that facility up to non-root users but the easiest 
+way to do that that I've found is to use a single file system on root 
+mounted directly.  For an individual user, this can easily save hours 
+and hundreds of gigabytes.  For automated build systems, it can mean a 
+few orders of magnitude difference in typical build times.
+
+It's not clear to me yet how to set machines up this way from kickstart, 
+which makes this scheme look like an impediment, rather than a feature.  
+But maybe all I need is an easy way to shut it off and get the more 
+familiar arrangement.
 
 --rich

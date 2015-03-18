@@ -1,77 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42560 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754099AbbCRBr1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Mar 2015 21:47:27 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YY34v-0001V5-CX
-	for linux-btrfs@vger.kernel.org; Wed, 18 Mar 2015 02:47:25 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2015 02:47:25 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Mar 2015 02:47:25 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: System crash while scrubbing on 3.18.x
-Date: Wed, 18 Mar 2015 01:47:19 +0000 (UTC)
-Message-ID: <pan$ee953$8d560135$1af2f61a$27f52825@cox.net>
-References: <54F9005D.5070107@neo-zeon.de>
-	<20150306123054.GB18885@localhost.localdomain>
-	<54FA081A.8010501@neo-zeon.de> <550710AE.4040803@neo-zeon.de>
-	<550863B2.2060609@neo-zeon.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:33287 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755158AbbCRNbp convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Mar 2015 09:31:45 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: number of hardlinks for directory in ls -lid always 1?
+Date: Wed, 18 Mar 2015 14:31:43 +0100
+Message-ID: <1929370.YSr7hGqtmM@merkaba>
+In-Reply-To: <20150317160717.GU20767@twin.jikos.cz>
+References: <9389540.MYekrP2a8Q@merkaba> <20150317160717.GU20767@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cameron Berkenpas posted on Tue, 17 Mar 2015 10:26:10 -0700 as excerpted:
-
-> I've figured out at least part of the issue.
+Am Dienstag, 17. März 2015, 17:07:17 schrieb David Sterba:
+> On Tue, Mar 17, 2015 at 02:33:30PM +0100, Martin Steigerwald wrote:
+> > On BTRFS I see
+> > 
+> > martin@merkaba:~> ls -lid /usr/local
+> > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local
+> > martin@merkaba:~> ls -lid /usr/local/.
+> > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local/.
+> > martin@merkaba:~> ls -lid /usr/local/bin/..
+> > 27138 drwxrwsr-x 1 root staff 62 Aug 15  2014 /usr/local/bin/..
+> > 
+> > On other filesystems like Ext4 I see the actual number of hardlinks to
+> > the directory.
+> > 
+> > Is this intended behaviour of BTRFS or a bug?
 > 
-> I had blk-mq enabled by default (SCSI_MQ_DEFAULT=y). I've since set
-> SCSI_MQ_DEFAULT=n, and now I'm completely stable with 4.0-rc4, 3.18.9,
-> and presumably all the others. This is on both the bcache and non-bcache
-> systems.
-> 
-> All of my systems with btrfs and SCSI_MQ_DEFAULT=y are stable unless
-> they're using a 3ware 9750 controller (which I believe is the 3w-sas
-> driver from the top of my head). So either there's a bug with
-> blk-mq+3w-sas+btrfs, or just blk-mq+3w-sas. I suspect the latter, but if
-> I can find the time, I'll try to test with another filesystem.
-> 
-> I suspect other controllers/drivers could be affected as well.
-> 
-> Are any btrfs devs interested in me looking into this further?
-> 
-> As a side note, in spite of all the crashes I've had through out my
-> testing etc, bcache+btrfs hasn't given me any issues like I've seen in
-> the past. This is just a few weeks worth of testing, but it seems
-> there's at least some sort of basic stability with bcache+btrfs now.
+> Intended behaviour, this has been asked in the past, I don't have the
+> link sorry, try searching the mailinglist archives.
 
-Wow.  Thanks!
+I did, yet I didn´t find anything.
 
-I'm not a dev so won't attempt to answer whether they have further 
-interest or not, but thanks for keeping with this until you found the 
-scsi-mq and 32-sas connection and reported it.  It'll very possibly be of 
-use to someone else later, and meanwhile, that's one less instability-
-mystery hanging over btrfs alone, now, which surely lets all regulars 
-here rest easier. =:^)
+Any idea on what words except "hardlinks", "hard links", "number", "ls -l" 
+I can throw at Baloo fulltext search on BTRFS mailing list folder in 
+KMail? 
 
-And that despite all the crashes during testing, bcache+btrfs didn't 
-demonstrate any filesystem instabilities, demonstrates how far both of 
-those components has come, each on its own and working together, as 
-well.  I know we get bcache+btrfs questions from time to time and the 
-stability here even under repeated crashes triggered by unrelated factors 
-is something I'm sure many will find reassuring. =:^)
+I also tried various search terms with Startpage.
 
-So thanks, again! =:^)
-
+Thanks,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

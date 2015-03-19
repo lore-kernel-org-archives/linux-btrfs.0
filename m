@@ -1,49 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36692 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60952 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755074AbbCSN0d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Mar 2015 09:26:33 -0400
-Date: Thu, 19 Mar 2015 14:26:31 +0100
+	id S1753523AbbCSRtv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Mar 2015 13:49:51 -0400
+Date: Thu, 19 Mar 2015 18:49:50 +0100
 From: David Sterba <dsterba@suse.cz>
-To: =?iso-8859-1?Q?Zolt=E1n?= Halassy <cf0hay@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Is btrfs filesystem resize synchronous?
-Message-ID: <20150319132631.GF20767@twin.jikos.cz>
+Subject: Re: [PATCH 1/7] btrfs: Check qgroup level in kernel qgroup assign.
+Message-ID: <20150319174950.GG20767@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CAC-qVGA-F=8pNcp+zRvQqd5=ag67Ykb2BVYLzLb1Wtp7zqYW0Q@mail.gmail.com>
+References: <1425025468-29749-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1425025468-29749-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CAC-qVGA-F=8pNcp+zRvQqd5=ag67Ykb2BVYLzLb1Wtp7zqYW0Q@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1425025468-29749-2-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 18, 2015 at 04:36:17PM +0100, Zoltán Halassy wrote:
-> Is it safe to use do something like this:
+On Fri, Feb 27, 2015 at 04:24:22PM +0800, Qu Wenruo wrote:
+> Although we have qgroup level check in btrfs-progs, it's not enough
+> since other programe may still call ioctl directly not using
+> btrfs-progs. For example, systemd.
 > 
-> # btrfs filesystem resize 100m /mnt/something && lvreduce -f -L100M
-> /dev/somevg/somelv
+> But it's btrfs-progs to be blame since we don't provide a
+> full-function(like subvolume create things) btrfs library with enough
+> check, and only rely on kernel ioctl.
 > 
-> as in, when the first command exits with 0 status, is the filesystem
-> already resized? I mean, it's 100% sure the FS driver will not touch
-> any blocks beyond the requested size after the resize successfully
-> returned?
+> So Add level checks in kernel too.
 
-Yes.
-
-> I guess the utility just signals some ioctl to the mounted
-> filesystem, but I wonder if the ioctl only returns successfully when
-> it finished the task.
-
-Yes, the ioctl starts a transaction and waits until it's committed, so
-the new filesystem size is permanent at the time the ioctl returns.
-
-> Sorry if this is a noise, I didn't find anything about this in the
-> user documentation, and it is not obvious for me. I read somewhere,
-> the FS driver does not check for missing blocks at the end of the
-> device during mount (eg, when the device is smaller than the reported
-> size in the superblock), and will simply throw io errors when tries to
-> access those blocks. This made me ask the question above.
-
-That's a bit different question.  If the block device is smaller than
-the filesystem expects, then the out of bounds read attempts happen,
-though this could/should be checked at the mount time.
+The checks should be duplicated in kernel if they are part of the qgroup
+naming/numbering protocol. The library interface would help programmers
+to get it right but as there's a direct interface via the ioctls, the
+checks have to be there regardless.

@@ -1,51 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41734 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750823AbbCTEeZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 00:34:25 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YYodY-00040f-V2
-	for linux-btrfs@vger.kernel.org; Fri, 20 Mar 2015 05:34:20 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 05:34:20 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 05:34:20 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: nube trying to backup my systems
-Date: Fri, 20 Mar 2015 04:34:15 +0000 (UTC)
-Message-ID: <pan$e1cc0$a6e97544$c3eaa670$f3bcb382@cox.net>
-References: <550B5C63.6010401@comcast.net>
-	<CAJCQCtRj6MWc=YzvEepjiZTQYrN7CKbO0EivotZNjS218Gz56Q@mail.gmail.com>
-	<550B7CAC.6030005@comcast.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:36774 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751646AbbCTKF0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Mar 2015 06:05:26 -0400
+Message-ID: <550BF081.3030502@oracle.com>
+Date: Fri, 20 Mar 2015 18:03:45 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/26 v4] provide framework so that sysfs attributs from
+ the fs_devices can be added
+References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com> <20150319185858.GI20767@twin.jikos.cz>
+In-Reply-To: <20150319185858.GI20767@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-don fisher posted on Thu, 19 Mar 2015 18:49:32 -0700 as excerpted:
 
-> Any thoughts on stability of the IDs across boots?
 
-Btrfs subvolIDs are a property of the btrfs and thus stable across boots.
+V5 has been sent out with the kobject_move patch,
+kindly use v5.
 
-(They're actually the root-tree ID, with ID=5 the main root tree for the 
-entire filesystem, various other low-digit IDs being the root trees for 
-various sets of filesystem metadata like the chunk tree and the free-
-space tree, and IDs above 256 being subvolumes, with snapshots being a 
-particular type of subvolume and thus having IDs above 256 as well.  Were 
-these numbers to randomly change, therefore, btrfs would be in a world of 
-hurt as it couldn't find various critical root trees it needs to parse in 
-ordered to function!  So rest assured, if those numbers start changing 
-and it's not because you deliberately decided to put a different subvolume 
-there and forgot to change your fstab, it's a serious bug in btrfs!)
+Thanks, Anand
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On 03/20/2015 02:58 AM, David Sterba wrote:
+> On Tue, Mar 10, 2015 at 06:38:18AM +0800, Anand Jain wrote:
+>> This patch set will provide a framework and help to create attributes
+>> from the structure btrfs_fs_devices which are available even before
+>> fs_info is created. So by moving the parent kobject super_kobj from
+>> fs_info to btrfs_fs_devices, it will help to create attributes
+>> from the btrfs_fs_devices as well.
+>
+> FYI, I'm going to test this patchset and prepare a pull for Chris if
+> everything goes fine.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

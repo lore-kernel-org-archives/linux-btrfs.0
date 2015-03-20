@@ -1,76 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f45.google.com ([209.85.213.45]:33465 "EHLO
-	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751314AbbCTDEn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Mar 2015 23:04:43 -0400
-Received: by yhpt93 with SMTP id t93so34254634yhp.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2015 20:04:42 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <550B8732.5000302@comcast.net>
-References: <550B5C63.6010401@comcast.net>
-	<CAJCQCtRj6MWc=YzvEepjiZTQYrN7CKbO0EivotZNjS218Gz56Q@mail.gmail.com>
-	<550B7CAC.6030005@comcast.net>
-	<CAJCQCtTO89u8203U+Oc_eyUbEDrT4YZU8xf1gG6omGWS0ehhSQ@mail.gmail.com>
-	<550B8732.5000302@comcast.net>
-Date: Thu, 19 Mar 2015 21:04:42 -0600
-Message-ID: <CAJCQCtScEOoxXioAT3eotyMfwObbCJiV5yK47m0PmYV8M9Fn5A@mail.gmail.com>
-Subject: Re: nube trying to backup my systems
-From: Chris Murphy <lists@colorremedies.com>
-To: don fisher <hdf3@comcast.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:41216 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750764AbbCTESp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Mar 2015 00:18:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YYoOS-00064n-0t
+	for linux-btrfs@vger.kernel.org; Fri, 20 Mar 2015 05:18:44 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 05:18:43 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 05:18:43 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: syntax for deleting subvolumes?
+Date: Fri, 20 Mar 2015 04:18:38 +0000 (UTC)
+Message-ID: <pan$e3d8c$58030454$dbd36547$e1e1c7cd@cox.net>
+References: <5509E34F.6010504@graphitesystems.com>
+	<CAJCQCtSmV63H4OnEgv2ZXSFq4s8npEGmDxUBDO5dHb7pmoC0zw@mail.gmail.com>
+	<5509F08E.6070702@graphitesystems.com>
+	<CAJCQCtQU=KzNqY=MTdqET5-J2JpDrS+O9EE50o9aXbRCJHU+xQ@mail.gmail.com>
+	<550A08AC.7070506@graphitesystems.com>
+	<CAJCQCtSrR7tOQMkbKdk5y2FJ7J2nYNAAjowRnic2O13wa3d1PA@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 19, 2015 at 8:34 PM, don fisher <hdf3@comcast.net> wrote:
+Chris Murphy posted on Thu, 19 Mar 2015 13:09:06 -0600 as excerpted:
 
-> Thanks. I will try that. How does the mount distinguish between /srv and
-> /usr11/srv if the subvol=srv is the same for both? It appears to work, for
-> when I do a df the sizes are different. I guess it can tell from the UUID of
-> / as opposed to that of /usr11.
+> Erkki's cp --reflink idea is a good one. I've often wondered if it's a
+> good idea, and possible, to eventually make --reflink the default
+> behavior with Btrfs copies (I think some things probably first need
+> enhancement like the cross subvolume stuff, because otherwise cp could
+> fail inexplicably).
 
-Yes, by fs volume UUID, it can differentiate between two subvolumes
-with the same name. But also by /dev/ if you use mount directly. A
-given volume can only have on srv subvolume. It could also have
-srv/srv and srv/srv/srv but it'll only have one of each of those.
+If cp --reflink=auto was the default, it'd "just work", making a reflink 
+where possible, falling back to a normal copy where not possible to 
+reflink.
 
-I missed that one completely.
->
-> /dev/sdc2       20972544   6117628  14641012  30% /srv
-> /dev/sdb2       20972544   9492892  11112580  47% /usr11/srv
->
-> I would still like to know why we need to mount the subvolumes at all.
-
-That's openSUSE's design for snapshots and rollbacks with snapper. For
-your backup purpose, you can just mount the top level and not mount
-the subvolumes individually, and your rsync will work fine. It will
-copy the right files to the right subvolumes by virtue of them being
-treated like directories. It's just that rsync can't create subvolumes
-(yet) so if you want an exact duplicate of an openSUSE install, you
-have to create the subvolumes in advance of rsync.
-
-> tried to dismount one of the subvolumes mounted on / and got a:
->
-> umount: /var/log: target is busy
-
-Can't tell you what's going on. Reproduce this error and provide the
-current output from df and mount at the time.
-
->
-> message, so could not test to /var/log access without a mount. It is easy to
-> access /usr11/var/log without it being mounted. Again, why mount it?
-
-Because the snapshots of root have an empty /var/log. To facilitate
-rollback, the static /etc/fstab always mounts these subvolumes in case
-the root is a rolled back snapshot.
-
- I
-> understood mounting partitions, because that was the only access. But the
-> appears to be two access channels here.
-
-Yes they are effectively bind mounts. You don't need to do this with
-your backup.
+However, I'd be wary of such a change, because admins are used to cp 
+creating a separate copy which may well be intended as a backup, guarding 
+against I/O errors on the original.  Btrfs does do checksum checking to 
+ensure validity, but if that fails, do you really want it failing for 
+BOTH copies, including the one the admin made specifically to AVOID such 
+a problem, because he knows the file is likely to be open at the time of 
+a crash or some such and did a cp to have a backup, just in case?  I know 
+as an admin, *I* wouldn't like such behavior.  Far better to simply have 
+the option there should I deliberately invoke it, but not invoke it by 
+default, in ordered to avoid unhappy surprises!
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

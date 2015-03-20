@@ -1,906 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:34239 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751036AbbCSSPx (ORCPT
+Received: from mail-pd0-f170.google.com ([209.85.192.170]:35459 "EHLO
+	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750914AbbCTFAJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Mar 2015 14:15:53 -0400
+	Fri, 20 Mar 2015 01:00:09 -0400
+Received: by pdbop1 with SMTP id op1so97519230pdb.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2015 22:00:09 -0700 (PDT)
+Received: from localhost ([128.199.137.77])
+        by mx.google.com with ESMTPSA id ce1sm5726851pdb.34.2015.03.19.22.00.07
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 19 Mar 2015 22:00:08 -0700 (PDT)
+Date: Fri, 20 Mar 2015 12:59:01 +0800
+From: Eryu Guan <guaneryu@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: WARNING at fs/btrfs/super.c:260 __btrfs_abort_transaction
+Message-ID: <20150320045900.GA16812@dhcp-13-216.nay.redhat.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1425230409-22366-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1425230409-22366-1-git-send-email-chandan@linux.vnet.ibm.com>
-Date: Thu, 19 Mar 2015 18:15:52 +0000
-Message-ID: <CAL3q7H5kBoYxR65oFO25wYZpEePivaR3ZYax0KS0bCt3fNtMgg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs/052: Fix test case to work on 64K block size.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        chandan@mykolab.com
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 1, 2015 at 5:20 PM, Chandan Rajendra
-<chandan@linux.vnet.ibm.com> wrote:
-> The test case passes file offsets which don't align with 64K block size. This
-> causes btrfs_ioctl_clone() to return with -EINVAL. Fix this by using offsets
-> which are multiples of 64k.
->
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+Hi all,
 
-Thanks for this.
+Filling a dm/lvm snapshot triggered this btrfs WARNING, kernel is 4.0-rc3+
 
-> ---
->  tests/btrfs/052     |  71 ++++----
->  tests/btrfs/052.out | 468 ++++++++++++++++++++++++++--------------------------
->  2 files changed, 272 insertions(+), 267 deletions(-)
->
-> diff --git a/tests/btrfs/052 b/tests/btrfs/052
-> index c75193d..462f9ce 100755
-> --- a/tests/btrfs/052
-> +++ b/tests/btrfs/052
-> @@ -59,70 +59,75 @@ test_btrfs_clone_same_file()
->         _scratch_mkfs >/dev/null 2>&1
->         _scratch_mount $MOUNT_OPTIONS
->
-> -       # Create a file with 5 extents, 4 of 8Kb each and 1 of 64Kb.
-> -       $XFS_IO_PROG -f -c "pwrite -S 0x01 -b 8192 0 8192" $SCRATCH_MNT/foo \
-> -               | _filter_xfs_io
-> +       # Create a file with 5 extents, 4 of 128Kb each and 1 of 1024Kb.
-> +       $XFS_IO_PROG -f -c "pwrite -S 0x01 -b 131072 0 131072" \
-> +                    $SCRATCH_MNT/foo | _filter_xfs_io
->         sync
-> -       $XFS_IO_PROG -c "pwrite -S 0x02 -b 8192 8192 8192" $SCRATCH_MNT/foo \
-> -               | _filter_xfs_io
-> +
-> +       $XFS_IO_PROG -c "pwrite -S 0x02 -b 131072 131072 131072" \
-> +                    $SCRATCH_MNT/foo | _filter_xfs_io
->         sync
-> -       $XFS_IO_PROG -c "pwrite -S 0x03 -b 8192 16384 8192" $SCRATCH_MNT/foo \
-> -               | _filter_xfs_io
-> +
-> +       $XFS_IO_PROG -c "pwrite -S 0x03 -b 131072 262144 131072" \
-> +                    $SCRATCH_MNT/foo | _filter_xfs_io
->         sync
-> -       $XFS_IO_PROG -c "pwrite -S 0x04 -b 8192 24576 8192" $SCRATCH_MNT/foo \
-> -               | _filter_xfs_io
-> +
-> +       $XFS_IO_PROG -c "pwrite -S 0x04 -b 131072 393216 131072" \
-> +                    $SCRATCH_MNT/foo | _filter_xfs_io
->         sync
-> -       $XFS_IO_PROG -c "pwrite -S 0x05 -b 65536 32768 65536" $SCRATCH_MNT/foo \
-> -               | _filter_xfs_io
-> +
-> +       $XFS_IO_PROG -c "pwrite -S 0x05 -b 131072 524288 1048576" \
-> +                    $SCRATCH_MNT/foo | _filter_xfs_io
->         sync
->
->         # Digest of initial content.
->         md5sum $SCRATCH_MNT/foo | _filter_scratch
->
->         # Same source and target ranges - must fail.
-> -       $CLONER_PROG -s 8192 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> +       $CLONER_PROG -s 131072 -d 131072 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
->         # Check file content didn't change.
->         md5sum $SCRATCH_MNT/foo | _filter_scratch
->
->         # Intersection between source and target ranges - must fail too.
-> -       $CLONER_PROG -s 4096 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> +       $CLONER_PROG -s 65536 -d 131072 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
->         # Check file content didn't change.
->         md5sum $SCRATCH_MNT/foo | _filter_scratch
->
->         # Clone an entire extent from a higher range to a lower range.
-> -       $CLONER_PROG -s 24576 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> +       $CLONER_PROG -s 393216 -d 0 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
->
-> -       # Check entire file, the 8Kb block at offset 0 now has the same content
-> -       # as the 8Kb block at offset 24576.
-> +       # Check entire file, the 128Kb block at offset 0 now has the same content
-> +       # as the 128Kb block at offset 393216.
->         od -t x1 $SCRATCH_MNT/foo
->
->         # Clone an entire extent from a lower range to a higher range.
-> -       $CLONER_PROG -s 8192 -d 16384 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> +       $CLONER_PROG -s 131072 -d 262144 -l 131072 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
->
-> -       # Check entire file, the 8Kb block at offset 0 now has the same content
-> -       # as the 8Kb block at offset 24576, and the 8Kb block at offset 16384
-> -       # now has the same content as the 8Kb block at offset 8192.
-> +       # Check entire file, the 128Kb block at offset 0 now has the same content
-> +       # as the 128Kb block at offset 393216, and the 128Kb block at offset 262144
-> +       # now has the same content as the 128Kb block at offset 131072.
->         od -t x1 $SCRATCH_MNT/foo
->
->         # Now clone 1 extent and an half into the file range starting at offset
-> -       # 65536. So we get the second half of the extent at offset 16384 and the
-> -       # whole extent at 24576 cloned into the middle of the 64Kb extent that
-> -       # starts at file offset 32768. This makes the clone ioctl process more
-> -       # extent items from the b+tree and forces a split of the large 64Kb
-> -       # extent at the end of the file.
-> -       $CLONER_PROG -s 20480 -d 65536 -l 12288 $SCRATCH_MNT/foo \
-> +       # 1048576. So we get the second half of the extent at offset 262144 and
-> +       # the whole extent at 393216 cloned into the middle of the 1024Kb extent
-> +       # that starts at file offset 524288. This makes the clone ioctl process
-> +       # more extent items from the b+tree and forces a split of the large
-> +       # 1024Kb extent at the end of the file.
-> +       $CLONER_PROG -s 327680 -d 1048576 -l 196608 $SCRATCH_MNT/foo \
->                 $SCRATCH_MNT/foo
->
->         # Check entire file. Besides the previous changes, we now should have
-> -       # 4096 bytes with the value 0x02 at file offset 65536, and 8192 bytes
-> -       # with value 0x04 at the file offset 69632. The ranges [32768, 65536[
-> -       # and [77824, 98304[ should remain with all bytes having the value 0x05.
-> +       # 65536 bytes with the value 0x02 at file offset 1048576, and 131072
-> +       # bytes with value 0x04 at the file offset 1114112. The ranges
-> +       # [524288, 1048576[ and [1245184, 1572864[ should remain with all bytes
-> +       # having the value 0x05.
->         od -t x1 $SCRATCH_MNT/foo
->
-> -       # Now update 8Kb of data at offset 0. The extent at this position is a
-> -       # clone of the extent at offset 24576. Check that writing to this offset
-> -       # doesn't change data at offset 24576.
-> -       $XFS_IO_PROG -c "pwrite -S 0xff -b 8192 0 8192" $SCRATCH_MNT/foo \
-> +       # Now update 128Kb of data at offset 0. The extent at this position is a
-> +       # clone of the extent at offset 393216. Check that writing to this
-> +       # offset doesn't change data at offset 393216.
-> +       $XFS_IO_PROG -c "pwrite -S 0xff -b 131072 0 131072" $SCRATCH_MNT/foo \
->                 | _filter_xfs_io
->         od -t x1 $SCRATCH_MNT/foo
->
-> diff --git a/tests/btrfs/052.out b/tests/btrfs/052.out
-> index 53a1868..d5c11ac 100644
-> --- a/tests/btrfs/052.out
-> +++ b/tests/btrfs/052.out
-> @@ -1,499 +1,499 @@
->  QA output created by 052
->  Testing with a cow file (default)
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  Testing with a nocow file (-O nodatacow)
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  Testing with a cow file and lzo compression
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  Testing with a cow file and zlib compression
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  Testing with a nocow file and lzo compression
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  Testing with a nocow file and zlib compression
-> -wrote 8192/8192 bytes at offset 0
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 8192
-> +wrote 131072/131072 bytes at offset 131072
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 16384
-> +wrote 131072/131072 bytes at offset 262144
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 8192/8192 bytes at offset 24576
-> +wrote 131072/131072 bytes at offset 393216
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 65536/65536 bytes at offset 32768
-> +wrote 1048576/1048576 bytes at offset 524288
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  clone failed: Invalid argument
-> -5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-> +4717a9cbd3150f6fd998927e8057860f  SCRATCH_MNT/foo
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-> +1000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> -wrote 8192/8192 bytes at offset 0
-> +6000000
-> +wrote 131072/131072 bytes at offset 0
->  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
->  0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
->  *
-> -0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +0400000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +1400000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +2000000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> +4000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
->  *
-> -0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-> +4200000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
->  *
-> -0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-> +4600000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
->  *
-> -0300000
-> +6000000
-> --
-> 2.1.0
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm working a xfstests case but this simple script could reproduce
+
+--- cut ---
+#!/bin/bash
+dev=/dev/sda5
+mnt=/mnt/test
+vgname=testvg
+lvname=testlv
+snap=snap
+
+vgcreate -f $vgname $dev
+lvcreate -L 256M -n $lvname $vgname
+
+mkfs -t btrfs /dev/mapper/$vgname-$lvname
+
+lvcreate -s -L 4M -n $snap $vgname/$lvname
+
+mount /dev/mapper/$vgname-snap $mnt
+
+dd if=/dev/zero of=$mnt/testfile bs=1M count=5
+umount $mnt >/dev/null 2>&1
+
+vgremove -f $vgname
+pvremove -f $dev
+--- cut ---
+
+The same script can trigger warning on ext4 too, I'll file another bug
+report to ext4 list.
+
+Thanks,
+Eryu Guan
 
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+[150646.284481] device-mapper: snapshots: Invalidating snapshot: Unable to allocate exception.
+[150646.292271] btrfs_dev_stat_print_on_error: 1028 callbacks suppressed
+[150646.294338] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+[150646.296578] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
+[150646.299203] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
+[150646.302141] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 4, rd 0, flush 0, corrupt 0, gen 0
+[150646.303165] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 5, rd 0, flush 0, corrupt 0, gen 0
+[150646.304364] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 6, rd 0, flush 0, corrupt 0, gen 0
+[150646.305474] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 7, rd 0, flush 0, corrupt 0, gen 0
+[150646.308789] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 8, rd 0, flush 0, corrupt 0, gen 0
+[150646.310997] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 9, rd 0, flush 0, corrupt 0, gen 0
+[150646.312739] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 10, rd 0, flush 0, corrupt 0, gen 0
+[150646.331472] BTRFS: error (device dm-3) in btrfs_commit_transaction:2019: errno=-5 IO failure (Error while writing out transaction)
+[150646.334251] BTRFS info (device dm-3): forced readonly
+[150646.335365] BTRFS warning (device dm-3): Skipping commit of aborted transaction.
+[150646.336955] ------------[ cut here ]------------
+[150646.338003] WARNING: CPU: 3 PID: 19036 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x54/0x130 [btrfs]()
+[150646.340094] Modules linked in: arc4 md4 nls_utf8 cifs rpcsec_gss_krb5 nfsv4 dns_resolver nfs fscache nfsd auth_rpcgss nfs_acl lockd grace sunrpc ext4 mbcache jbd2 btrfs xor raid6_pq dm_snapshot dm_bufio dm_mod ppdev parport_pc i2c_piix4 parport i2c_core pcspkr serio_raw acpi_cpufreq xfs sd_mod ata_generic pata_acpi 8139too ata_piix 8139cp libata mii virtio_pci virtio virtio_ring floppy
+[150646.345100] CPU: 3 PID: 19036 Comm: umount Tainted: G        W       4.0.0-rc3+ #16
+[150646.345748] Hardware name: Red Hat KVM, BIOS 0.5.1 01/01/2007
+[150646.346254]  0000000000000000 00000000bc933968 ffff8800358c7b98 ffffffff816c1fda
+[150646.346937]  0000000000000000 ffff8800358c7bf0 ffff8800358c7bd8 ffffffff81077f1a
+[150646.347630]  ffff8800358c7c28 ffff88003570c000 ffff8800d8a24800 00000000fffffffb
+[150646.348334] Call Trace:
+[150646.348561]  [<ffffffff816c1fda>] dump_stack+0x45/0x57
+[150646.349036]  [<ffffffff81077f1a>] warn_slowpath_common+0x8a/0xc0
+[150646.349544]  [<ffffffff81077fa5>] warn_slowpath_fmt+0x55/0x70
+[150646.350070]  [<ffffffffa02bf4e4>] __btrfs_abort_transaction+0x54/0x130 [btrfs]
+[150646.350702]  [<ffffffffa02ed9c4>] cleanup_transaction+0x84/0x2d0 [btrfs]
+[150646.351295]  [<ffffffffa02bf1d5>] ? btrfs_printk+0x95/0x110 [btrfs]
+[150646.351845]  [<ffffffff810bb4d0>] ? prepare_to_wait_event+0xf0/0xf0
+[150646.352399]  [<ffffffff810baf28>] ? __wake_up+0x48/0x60
+[150646.352866]  [<ffffffffa02ee761>] btrfs_commit_transaction+0x2c1/0xa50 [btrfs]
+[150646.353500]  [<ffffffffa02b9c49>] btrfs_sync_fs+0x59/0x110 [btrfs]
+[150646.354064]  [<ffffffff81227aa2>] sync_filesystem+0x82/0xb0
+[150646.354542]  [<ffffffff811f79c4>] generic_shutdown_super+0x34/0x100
+[150646.355102]  [<ffffffff811f7d46>] kill_anon_super+0x16/0x30
+[150646.355581]  [<ffffffffa02bf038>] btrfs_kill_super+0x18/0x120 [btrfs]
+[150646.356158]  [<ffffffff811f8129>] deactivate_locked_super+0x49/0x80
+[150646.356703]  [<ffffffff811f875e>] deactivate_super+0x4e/0x70
+[150646.357210]  [<ffffffff81215b33>] cleanup_mnt+0x43/0x90
+[150646.357659]  [<ffffffff8111cb26>] ? __audit_syscall_exit+0x1e6/0x280
+[150646.358230]  [<ffffffff81215bd2>] __cleanup_mnt+0x12/0x20
+[150646.358703]  [<ffffffff810957b7>] task_work_run+0xb7/0xf0
+[150646.359190]  [<ffffffff81014c6d>] do_notify_resume+0x8d/0xa0
+[150646.359677]  [<ffffffff816c96e3>] int_signal+0x12/0x17
+[150646.360148] ---[ end trace 3134000b65e864ce ]---
+[150646.360549] BTRFS: error (device dm-3) in cleanup_transaction:1678: errno=-5 IO failure
+[150646.361254] BTRFS info (device dm-3): delayed_refs has NO entry
+[150646.755585] BTRFS info (device sda5): disk space caching is enabled

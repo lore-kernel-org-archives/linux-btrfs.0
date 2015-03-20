@@ -1,41 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36774 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751646AbbCTKF0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 06:05:26 -0400
-Message-ID: <550BF081.3030502@oracle.com>
-Date: Fri, 20 Mar 2015 18:03:45 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59287 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751604AbbCTKow (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Mar 2015 06:44:52 -0400
+Date: Fri, 20 Mar 2015 11:44:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: Martin Steigerwald <martin@lichtvoll.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: number of hardlinks for directory in ls -lid always 1?
+Message-ID: <20150320104450.GJ20767@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <9389540.MYekrP2a8Q@merkaba>
+ <1929370.YSr7hGqtmM@merkaba>
+ <20150318135230.GA20767@twin.jikos.cz>
+ <7757761.93uGJVH8dW@merkaba>
+ <20150319132139.GE20767@twin.jikos.cz>
+ <CAL3q7H7A349PzQ=z+YGHukWNfG_Y8EyChZV6Tr944gYsgPf-_Q@mail.gmail.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/26 v4] provide framework so that sysfs attributs from
- the fs_devices can be added
-References: <1425940724-7744-1-git-send-email-anand.jain@oracle.com> <20150319185858.GI20767@twin.jikos.cz>
-In-Reply-To: <20150319185858.GI20767@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <CAL3q7H7A349PzQ=z+YGHukWNfG_Y8EyChZV6Tr944gYsgPf-_Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Mar 19, 2015 at 09:47:15PM +0000, Filipe David Manana wrote:
+> On Thu, Mar 19, 2015 at 1:21 PM, David Sterba <dsterba@suse.cz> wrote:
+> > On Wed, Mar 18, 2015 at 03:23:50PM +0100, Martin Steigerwald wrote:
+> >> It explains that having a correct hardlink number for directory is not
+> >> mandatory, but it doesn´t explain why BTRFS always has 1 in there instead
+> >> of the actual count of hardlinks. Is this an performance optimization for
+> >> BTRFS or are there any other reasons why BTRFS does it this way?
+> >
+> > I believe it's for performance reasons. New inodes do not update the
+> > parent directory metadata wrt link counts, compared to other filesystems
+> > that do that.
+> 
+> Weird. Because creating a new inode implies adding the dentry to the
+> parent directory, which implies updating the directory's i_size.
 
-
-V5 has been sent out with the kobject_move patch,
-kindly use v5.
-
-Thanks, Anand
-
-On 03/20/2015 02:58 AM, David Sterba wrote:
-> On Tue, Mar 10, 2015 at 06:38:18AM +0800, Anand Jain wrote:
->> This patch set will provide a framework and help to create attributes
->> from the structure btrfs_fs_devices which are available even before
->> fs_info is created. So by moving the parent kobject super_kobj from
->> fs_info to btrfs_fs_devices, it will help to create attributes
->> from the btrfs_fs_devices as well.
->
-> FYI, I'm going to test this patchset and prepare a pull for Chris if
-> everything goes fine.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Ah right, sorry, I've missed that.

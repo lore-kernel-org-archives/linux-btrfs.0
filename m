@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36591 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751791AbbCTKEf (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:36347 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751907AbbCTKEg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 06:04:35 -0400
+	Fri, 20 Mar 2015 06:04:36 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 22/27] Btrfs: sysfs: add support to add parent for fsid
-Date: Fri, 20 Mar 2015 18:01:37 +0800
-Message-Id: <1426845702-6298-23-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 23/27] Btrfs: sysfs: don't fail seeding for the sake of sysfs kobject issue
+Date: Fri, 20 Mar 2015 18:01:38 +0800
+Message-Id: <1426845702-6298-24-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1426845702-6298-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -17,30 +17,24 @@ References: <1426845702-6298-1-git-send-email-anand.jain@oracle.com>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-To support seed sysfs layout and represent seed fsid under
-the sprout we need the facility to create fsid under the
-specified parent.
-
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index be5342f..51e2fae 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -729,8 +729,8 @@ int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 549f978..58232bc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2249,7 +2249,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 						root->fs_info->fsid);
+ 		if (kobject_rename(&root->fs_info->fs_devices->super_kobj,
+ 								fsid_buf))
+-			goto error_trans;
++			pr_warn("BTRFS: sysfs: failed to create fsid for sprout\n");
+ 	}
  
- 	init_completion(&fs_devs->kobj_unregister);
- 	fs_devs->super_kobj.kset = btrfs_kset;
--	error = kobject_init_and_add(&fs_devs->super_kobj, &btrfs_ktype, NULL,
--				     "%pU", fs_devs->fsid);
-+	error = kobject_init_and_add(&fs_devs->super_kobj,
-+				&btrfs_ktype, parent, "%pU", fs_devs->fsid);
- 	return error;
- }
- 
+ 	root->fs_info->num_tolerated_disk_barrier_failures =
 -- 
 2.0.0.153.g79dcccc
 

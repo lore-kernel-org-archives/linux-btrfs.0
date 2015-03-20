@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:50920 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:33987 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752122AbbCTPsO (ORCPT
+	by vger.kernel.org with ESMTP id S1751182AbbCTQn0 (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 20 Mar 2015 11:48:14 -0400
+	Fri, 20 Mar 2015 12:43:26 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v5] Btrfs: fix metadata inconsistencies after directory fsync
-Date: Fri, 20 Mar 2015 15:47:37 +0000
-Message-Id: <1426866457-21600-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v6] Btrfs: fix metadata inconsistencies after directory fsync
+Date: Fri, 20 Mar 2015 16:42:23 +0000
+Message-Id: <1426869743-6877-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 References: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -214,29 +214,33 @@ V5: Fixed a lockdep splat complaining about possible deadlock/circular lock
     dependency while running with a concurrent rename, added more comments and
     dealt with the case where a dentry refers to another root (subvol/snapshot).
 
- fs/btrfs/btrfs_inode.h |  13 ++-
+V6: Added unstaged changes missing in v5. Re-worded a comment.
+
+ fs/btrfs/btrfs_inode.h |  14 ++-
+ fs/btrfs/file.c        |   2 +
  fs/btrfs/transaction.h |   2 +
- fs/btrfs/tree-log.c    | 243 +++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tree-log.c    | 245 +++++++++++++++++++++++++++++++++++++++++++++++--
  fs/btrfs/tree-log.h    |   2 +
- 4 files changed, 250 insertions(+), 10 deletions(-)
+ 5 files changed, 255 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index de5e4f2..53f0a3d 100644
+index de5e4f2..0ef5cc1 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
-@@ -66,7 +66,10 @@ struct btrfs_inode {
+@@ -66,7 +66,11 @@ struct btrfs_inode {
  	 */
  	struct btrfs_key location;
  
 -	/* Lock for counters */
 +	/*
-+	 * Lock for counters, btrfs_inode_in_log() and
-+	 * btrfs_set_inode_last_trans().
++	 * Lock for counters and all fields used to determine if the inode is in
++	 * the log or not (last_trans, last_sub_trans, last_log_commit,
++	 * logged_trans).
 +	 */
  	spinlock_t lock;
  
  	/* the extent_tree has caches of all the extent mappings to disk */
-@@ -250,6 +253,9 @@ static inline bool btrfs_is_free_space_inode(struct inode *inode)
+@@ -250,6 +254,9 @@ static inline bool btrfs_is_free_space_inode(struct inode *inode)
  
  static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
  {
@@ -246,7 +250,7 @@ index de5e4f2..53f0a3d 100644
  	if (BTRFS_I(inode)->logged_trans == generation &&
  	    BTRFS_I(inode)->last_sub_trans <=
  	    BTRFS_I(inode)->last_log_commit &&
-@@ -263,9 +269,10 @@ static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
+@@ -263,9 +270,10 @@ static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
  		 */
  		smp_mb();
  		if (list_empty(&BTRFS_I(inode)->extent_tree.modified_extents))
@@ -259,6 +263,20 @@ index de5e4f2..53f0a3d 100644
  }
  
  #define BTRFS_DIO_ORIG_BIO_SUBMITTED	0x1
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e8edaf4..309dd57 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1815,7 +1815,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	 * otherwise subsequent syncs to a file that's been synced in this
+ 	 * transaction will appear to have already occured.
+ 	 */
++	spin_lock(&BTRFS_I(inode)->lock);
+ 	BTRFS_I(inode)->last_sub_trans = root->log_transid;
++	spin_unlock(&BTRFS_I(inode)->lock);
+ 	if (num_written > 0) {
+ 		err = generic_write_sync(file, pos, num_written);
+ 		if (err < 0)
 diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
 index 937050a..96b189b 100644
 --- a/fs/btrfs/transaction.h
@@ -276,7 +294,7 @@ index 937050a..96b189b 100644
  
  int btrfs_end_transaction(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3182122..7e482e5 100644
+index 3182122..d78f1de 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
 @@ -492,11 +492,19 @@ insert:
@@ -384,7 +402,7 @@ index 3182122..7e482e5 100644
  	} else {
  		struct btrfs_inode_item *item;
  
-@@ -4372,7 +4415,8 @@ log_extents:
+@@ -4372,15 +4415,18 @@ log_extents:
  	}
  
  	if (inode_only == LOG_INODE_ALL && S_ISDIR(inode->i_mode)) {
@@ -394,7 +412,17 @@ index 3182122..7e482e5 100644
  		if (ret) {
  			err = ret;
  			goto out_unlock;
-@@ -4467,6 +4511,183 @@ out:
+ 		}
+ 	}
+ 
++	spin_lock(&BTRFS_I(inode)->lock);
+ 	BTRFS_I(inode)->logged_trans = trans->transid;
+ 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->last_sub_trans;
++	spin_unlock(&BTRFS_I(inode)->lock);
+ out_unlock:
+ 	if (unlikely(err))
+ 		btrfs_put_logged_extents(&logged_list);
+@@ -4467,6 +4513,183 @@ out:
  	return ret;
  }
  
@@ -578,7 +606,7 @@ index 3182122..7e482e5 100644
  /*
   * helper function around btrfs_log_inode to make sure newly created
   * parent directories also end up in the log.  A minimal inode and backref
-@@ -4489,6 +4710,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4489,6 +4712,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  	const struct dentry * const first_parent = parent;
  	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
  				 last_committed);
@@ -587,7 +615,7 @@ index 3182122..7e482e5 100644
  
  	sb = inode->i_sb;
  
-@@ -4544,6 +4767,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4544,6 +4769,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		goto end_trans;
  	}
  
@@ -597,7 +625,7 @@ index 3182122..7e482e5 100644
  	while (1) {
  		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
  			break;
-@@ -4580,7 +4806,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4580,7 +4808,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		dput(old_parent);
  		old_parent = parent;
  	}

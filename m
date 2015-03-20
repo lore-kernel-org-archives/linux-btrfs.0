@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:33987 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:52877 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751182AbbCTQn0 (ORCPT
+	by vger.kernel.org with ESMTP id S1751645AbbCTRUD (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 20 Mar 2015 12:43:26 -0400
+	Fri, 20 Mar 2015 13:20:03 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
 Subject: [PATCH v6] Btrfs: fix metadata inconsistencies after directory fsync
-Date: Fri, 20 Mar 2015 16:42:23 +0000
-Message-Id: <1426869743-6877-1-git-send-email-fdmanana@suse.com>
+Date: Fri, 20 Mar 2015 17:19:46 +0000
+Message-Id: <1426871986-16125-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 References: <1424370386-18790-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -219,9 +219,9 @@ V6: Added unstaged changes missing in v5. Re-worded a comment.
  fs/btrfs/btrfs_inode.h |  14 ++-
  fs/btrfs/file.c        |   2 +
  fs/btrfs/transaction.h |   2 +
- fs/btrfs/tree-log.c    | 245 +++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tree-log.c    | 243 +++++++++++++++++++++++++++++++++++++++++++++++--
  fs/btrfs/tree-log.h    |   2 +
- 5 files changed, 255 insertions(+), 10 deletions(-)
+ 5 files changed, 253 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
 index de5e4f2..0ef5cc1 100644
@@ -294,7 +294,7 @@ index 937050a..96b189b 100644
  
  int btrfs_end_transaction(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3182122..d78f1de 100644
+index 3182122..2fd95a7 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
 @@ -492,11 +492,19 @@ insert:
@@ -422,7 +422,7 @@ index 3182122..d78f1de 100644
  out_unlock:
  	if (unlikely(err))
  		btrfs_put_logged_extents(&logged_list);
-@@ -4467,6 +4513,183 @@ out:
+@@ -4467,6 +4513,181 @@ out:
  	return ret;
  }
  
@@ -552,9 +552,7 @@ index 3182122..d78f1de 100644
 +				goto next_dir_inode;
 +			}
 +
-+			if (btrfs_inode_in_log(di_inode, trans->transid) ||
-+			    (BTRFS_I(di_inode)->last_trans < trans->transid &&
-+			     type != BTRFS_FT_DIR)) {
++			if (btrfs_inode_in_log(di_inode, trans->transid)) {
 +				iput(di_inode);
 +				continue;
 +			}
@@ -606,7 +604,7 @@ index 3182122..d78f1de 100644
  /*
   * helper function around btrfs_log_inode to make sure newly created
   * parent directories also end up in the log.  A minimal inode and backref
-@@ -4489,6 +4712,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4489,6 +4710,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  	const struct dentry * const first_parent = parent;
  	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
  				 last_committed);
@@ -615,7 +613,7 @@ index 3182122..d78f1de 100644
  
  	sb = inode->i_sb;
  
-@@ -4544,6 +4769,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4544,6 +4767,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		goto end_trans;
  	}
  
@@ -625,7 +623,7 @@ index 3182122..d78f1de 100644
  	while (1) {
  		if (!parent || !parent->d_inode || sb != parent->d_inode->i_sb)
  			break;
-@@ -4580,7 +4808,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+@@ -4580,7 +4806,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
  		dput(old_parent);
  		old_parent = parent;
  	}

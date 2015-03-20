@@ -1,41 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:34455 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752541AbbCYTC6 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20239 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750967AbbCTOix (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 15:02:58 -0400
-Received: by wibg7 with SMTP id g7so140235wib.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2015 12:02:57 -0700 (PDT)
-Message-ID: <5513077A.4000004@gmail.com>
-Date: Wed, 25 Mar 2015 20:07:38 +0100
-From: Goffredo Baroncelli <kreijack@gmail.com>
-Reply-To: kreijack@inwind.it
+	Fri, 20 Mar 2015 10:38:53 -0400
+Date: Fri, 20 Mar 2015 17:38:40 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: fdmanana@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: Btrfs: make fsync work after cloning into a file
+Message-ID: <20150320143840.GC5108@mwanda>
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2][BTRFS-PROGS] Improve output of mkfs.btrfs command
-References: <1418847252-14184-1-git-send-email-kreijack@inwind.it> <20150323234623.GQ20767@twin.jikos.cz>
-In-Reply-To: <20150323234623.GQ20767@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-03-24 00:46, David Sterba wrote:
-> FYI, I've added the following patches to 3.19 queue
-> 
->  * btrfs-progs: return the fsid from make_btrfs()
->  * btrfs-progs: add strdup in btrfs_add_to_fsid() to track the device path
->  * btrfs-progs: add verbose option to btrfs_add_to_fsid()
->  * btrfs-progs: add -v and -q switches in the mkfs.btrfs man page
->  * btrfs-progs: add -v -q switches to mkfs.btrfs
-> 
-> ie. the patch that adds the the summary is not there yet but I'm planning to
-> add it as well with some modifications. If that turns out to be too different
-> from your proposal, I'm going to send it for comments.
-> 
-Ok, many thanks
-Goffredo
+Hello Filipe Manana,
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+The patch 7ffbb598a059: "Btrfs: make fsync work after cloning into a
+file" from Jun 9, 2014, leads to the following static checker warning:
+
+	fs/btrfs/inode.c:6602 btrfs_get_extent()
+	warn: we tested 'create' before and it was 'false'
+
+fs/btrfs/inode.c
+  6589  
+  6590                  if (new_inline)
+                            ^^^^^^^^^^
+This implies that "create == 0".
+
+  6591                          goto out;
+  6592  
+  6593                  size = btrfs_file_extent_inline_len(leaf, path->slots[0], item);
+  6594                  extent_offset = page_offset(page) + pg_offset - extent_start;
+  6595                  copy_size = min_t(u64, PAGE_CACHE_SIZE - pg_offset,
+  6596                                  size - extent_offset);
+  6597                  em->start = extent_start + extent_offset;
+  6598                  em->len = ALIGN(copy_size, root->sectorsize);
+  6599                  em->orig_block_len = em->len;
+  6600                  em->orig_start = em->start;
+  6601                  ptr = btrfs_file_extent_inline_start(item) + extent_offset;
+  6602                  if (create == 0 && !PageUptodate(page)) {
+                            ^^^^^^^^^^^
+No need to check here.
+
+  6603                          if (btrfs_file_extent_compression(leaf, item) !=
+  6604                              BTRFS_COMPRESS_NONE) {
+  6605                                  ret = uncompress_inline(path, inode, page,
+  6606                                                          pg_offset,
+  6607                                                          extent_offset, item);
+  6608                                  if (ret) {
+  6609                                          err = ret;
+  6610                                          goto out;
+  6611                                  }
+  6612                          } else {
+  6613                                  map = kmap(page);
+  6614                                  read_extent_buffer(leaf, map + pg_offset, ptr,
+  6615                                                     copy_size);
+  6616                                  if (pg_offset + copy_size < PAGE_CACHE_SIZE) {
+  6617                                          memset(map + pg_offset + copy_size, 0,
+  6618                                                 PAGE_CACHE_SIZE - pg_offset -
+  6619                                                 copy_size);
+  6620                                  }
+  6621                                  kunmap(page);
+  6622                          }
+  6623                          flush_dcache_page(page);
+  6624                  } else if (create && PageUptodate(page)) {
+                                   ^^^^^^
+Or here.
+
+  6625                          BUG();
+  6626                          if (!trans) {
+
+regards,
+dan carpenter

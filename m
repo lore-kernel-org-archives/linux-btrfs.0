@@ -1,68 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51510 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751138AbbCaVuO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 17:50:14 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Yd42u-0005yG-NE
-	for linux-btrfs@vger.kernel.org; Tue, 31 Mar 2015 23:50:04 +0200
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 23:50:04 +0200
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 23:50:04 +0200
+Received: from userp1040.oracle.com ([156.151.31.81]:36329 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751349AbbCTKEE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Mar 2015 06:04:04 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
-Date: Tue, 31 Mar 2015 23:48:18 +0200
-Message-ID: <2ahrub-586.ln1@hurikhan77.spdns.de>
-References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com> <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com> <CAJCQCtQ9PCv5pNMapQabLBKHOS86B+zavcKsQOiR2Q9qOrxv6g@mail.gmail.com> <b5hrub-586.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Cc: dsterba@suse.cz
+Subject: [PATCH 00/27 V5] provide framework so that sysfs attributs from the fs_devices can be added
+Date: Fri, 20 Mar 2015 18:01:15 +0800
+Message-Id: <1426845702-6298-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow <hurikhan77@gmail.com> schrieb:
+This patch set will provide a framework and help to create attributes
+from the structure btrfs_fs_devices which are available even before
+fs_info is created. So by moving the parent kobject super_kobj from
+fs_info to btrfs_fs_devices, it will help to create attributes
+from the btrfs_fs_devices as well.
+    
+Just to note, patch 01 to 26 does not change any of the existing btrfs
+sysfs external kobject names and its attributes and not even the life
+cycle of them. Changes are internal only. And to ensure the same,
+this path has been tested with various device operations and,
+checking and comparing the sysfs kobjects and attributes with
+sysfs kobject and attributes with out this patch, and they remain
+same. The test script test-btrfs-devmgt.sh can be found in the ml.
+Patch 27, makes two kobjects fsid and devices to be created during
+the device scan, however their attributes will continue to be created
+at the mount as original.
 
-> Chris Murphy <lists@colorremedies.com> schrieb:
-> 
->> On Tue, Mar 31, 2015 at 2:09 PM, Chris Murphy <lists@colorremedies.com>
->> wrote:
->> 
->>> Well you have to rule that out before anyone on this list can really
->>> help. Try booting Fedora 21 install media, and using smartctl -x on
->>> the drive.
->> 
->> While you're at it, try to mount the Btrfs volume in question normally
->> and report kernel messages. If mount fails, try it with -o recovery
->> mount option, and also report kernel messages and whether that fails.
-> 
-> I had this happen, too, lately. It's quite often happening after an
-> unclean shutdown (which currently quite often happend to me due to the
-> xorg intel driver having GPU freezes). SysRq+W shows that the mount
-> process is locked somewhere in the btrfs code path and won't quit if
-> Ctrl+C'd...
-> 
-> Only way to fix it was to btrfs-zero-log. But it still took some reboots
-> from initramfs until it successfully mounted again (I could mount it in
-> initramfs right after zero-log but upon reboot it hung again though at a
-> different stage probably).
-> 
-> So I guess there's some race on the one hand (happens from time to time
-> non- related to fixing it with zero-log), and a deadlock on the other hand
-> after some unclean shutdowns (more or less random).
-> 
-> My setup is 3-device btrfs-mraid1-draid0 on bcache. Bcache wasn't involved
-> in the backtrace of SysRq+W, however. Apparently I don't have a screenshot
-> of it because my smart phone is currently fried...
+v4->v5:
+  . add kobject_move patch 01/27
+  . commit corrections where necessary
+  . the individual patch version is not updated and I am maintaining
+    the patch set version as v5.
 
-BTW: I tried all kernels from current 3.19.x back to 3.18.0 which still live 
-on my boot partition - each with the same result and very similar backtrace 
-(SysRq+W)...
+v3->v4:
+  . reorders the patches
+  . accepts Dave comment
+  . needed stale device clean up, introduced patch..
+	520353e Btrfs: free the stale device
+  . added cleanups to the patch to support seeding in the patch..
+	e311d0a Btrfs: sysfs: support seed devices in the sysfs layout v3
+  . added support to show replacing target on the sysfs in the patch..
+	e210d55 Btrfs: sysfs: add support to show replacing target in the sysfs
+
+v2->v3:
+  . added missing signed-off
+  . Dave comment
+  . there isn't v2 for individual patch, I marked individual patch v3
+    where necessary
+v1->v2:
+  . adds fresh set of patches from 12 to 24 to support seed fsids
+  on btrfs sysfs layout and the related frame work changes
+  . the patches 1 to 12 has no changes from the previous submit
+
+
+Anand Jain (27):
+  export symbol kobject_move()
+  Btrfs: sysfs: fix, btrfs_release_super_kobj() should to clean up the
+    kobject data
+  Btrfs: sysfs: fix, fs_info kobject_unregister has init_completion()
+    twice
+  Btrfs: sysfs: fix, undo sysfs device links
+  Btrfs: sysfs: fix, kobject pointer clean up needed after kobject
+    release
+  Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
+  Btrfs: sysfs: reorder the kobject creations
+  Btrfs: sysfs: rename __btrfs_sysfs_remove_one to
+    btrfs_sysfs_remove_fsid
+  Btrfs: sysfs: introduce function btrfs_sysfs_add_fsid() to create
+    sysfs fsid
+  Btrfs: sysfs: let default_attrs be separate from the kset
+  Btrfs: sysfs: separate device kobject and its attribute creation
+  Btrfs: sysfs: move super_kobj and device_dir_kobj from fs_info to
+    btrfs_fs_devices
+  Btrfs: introduce btrfs_get_fs_uuids to get fs_uuids
+  Btrfs: sysfs: add pointer to access fs_info from fs_devices
+  Btrfs: sysfs: provide framework to remove all fsid sysfs kobject
+  Btrfs: sysfs btrfs_kobj_add_device() pass fs_devices instead of
+    fs_info
+  Btrfs: sysfs btrfs_kobj_rm_device() pass fs_devices instead of fs_info
+  Btrfs: sysfs: make btrfs_sysfs_add_fsid() non static
+  Btrfs: sysfs: make btrfs_sysfs_add_device() non static
+  Btrfs: sysfs: btrfs_sysfs_remove_fsid() make it non static
+  Btrfs: sysfs: separate kobject and attribute creation
+  Btrfs: sysfs: add support to add parent for fsid
+  Btrfs: sysfs: don't fail seeding for the sake of sysfs kobject issue
+  Btrfs: free the stale device
+  Btrfs: sysfs: add support to show replacing target in the sysfs
+  Btrfs: sysfs: support seed devices in the sysfs layout
+  Btrfs: create sys/fs/btrfs/fsid when scanned instead of when mounted
+
+ fs/btrfs/ctree.h       |   7 +-
+ fs/btrfs/dev-replace.c |   7 +-
+ fs/btrfs/disk-io.c     |  26 ++++-
+ fs/btrfs/sysfs.c       | 266 +++++++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/sysfs.h       |  15 ++-
+ fs/btrfs/volumes.c     |  99 +++++++++++++++---
+ fs/btrfs/volumes.h     |   9 ++
+ lib/kobject.c          |   1 +
+ 8 files changed, 346 insertions(+), 84 deletions(-)
 
 -- 
-Replies to list only preferred.
+2.0.0.153.g79dcccc
 

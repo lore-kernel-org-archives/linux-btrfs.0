@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36.italiaonline.it ([212.48.25.164]:60587 "EHLO libero.it"
+Received: from smtp-36.italiaonline.it ([212.48.25.164]:39226 "EHLO libero.it"
 	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750950AbbCTTSU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 15:18:20 -0400
-Message-ID: <550C7387.3060907@inwind.it>
-Date: Fri, 20 Mar 2015 20:22:47 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
+	id S1750994AbbCTTid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Mar 2015 15:38:33 -0400
+Message-ID: <550C7655.10907@libero.it>
+Date: Fri, 20 Mar 2015 20:34:45 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
 To: systemd-devel@lists.freedesktop.org
@@ -62,6 +62,10 @@ I think that a "cp --reflink" is slower than a snapshot, because all the metadat
 
 [2] http://comments.gmane.org/gmane.comp.file-systems.btrfs/30119
 [3] "btrfs find-new" and "btrfs send" do that
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>

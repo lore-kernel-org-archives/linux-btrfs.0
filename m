@@ -1,62 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f44.google.com ([209.85.213.44]:35969 "EHLO
-	mail-yh0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750994AbbCUAIm (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43168 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751115AbbCUDRO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 20:08:42 -0400
-Received: by yhjf44 with SMTP id f44so46896240yhj.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 17:08:42 -0700 (PDT)
+	Fri, 20 Mar 2015 23:17:14 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: syntax for deleting subvolumes?
+Date: Sat, 21 Mar 2015 03:17:07 +0000
+Cc: linux-btrfs@vger.kernel.org
+References: <5509E34F.6010504@graphitesystems.com> <CAJCQCtSrR7tOQMkbKdk5y2FJ7J2nYNAAjowRnic2O13wa3d1PA@mail.gmail.com> <pan$e3d8c$58030454$dbd36547$e1e1c7cd@cox.net>
+In-Reply-To: <pan$e3d8c$58030454$dbd36547$e1e1c7cd@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <550C7655.10907@libero.it>
-References: <CAJCQCtRFUMAeyjLxADKLVaHA0wqQBY_tbyZoJJ6Hze7AeeTa_w@mail.gmail.com>
-	<550C7655.10907@libero.it>
-Date: Fri, 20 Mar 2015 18:08:41 -0600
-Message-ID: <CAJCQCtRFnCm=ug4Byd=A+mT+CrUPrrGW_T+SzYaD+mLc6wypOA@mail.gmail.com>
-Subject: Re: [systemd-devel] systemd and nested Btrfs subvolumes
-From: Chris Murphy <lists@colorremedies.com>
-To: kreijack@inwind.it
-Cc: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201503210317.07435.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 20, 2015 at 1:34 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
-> Hi Chris,
-> On 2015-03-20 02:27, Chris Murphy wrote:
->> Short version:
->> ------------------
->>   Instead of machinectl clone using btrfs snapshots, or even needing
->> to store things in a var/lib/machines Btrfs subvolume, does it meet
->> the requirements for Btrfs optimization to do this with cp -a
->> --reflink instead?
->>
->> Why? Nested subvolumes are confusing. And nested subvolumes are
->> excluded from snapshots. Subvolume B inside of Subvolume A, will not
->> be snapshot or rolled back, if I snapshot Subvolume A and subsequently
->> rollback to the snapshot of A.
->
-> Personally I prefer this kind of behavior. Each subvolumes may have its life cycle so a rollback on a volume doesn't means that the other also need it.
+On Fri, 20 Mar 2015 04:18:38 AM Duncan wrote:
+> If cp --reflink=auto was the default, it'd "just work", making a reflink 
+> where possible, falling back to a normal copy where not possible to 
+> reflink.
+> 
+> However, I'd be wary of such a change, because admins are used to cp 
+> creating a separate copy which may well be intended as a backup, guarding 
+> against I/O errors on the original.  Btrfs does do checksum checking to 
+> ensure validity, but if that fails, do you really want it failing for 
+> BOTH copies, including the one the admin made specifically to AVOID such 
 
-Sure but now it's missing if you do a rollback, or if you mount any
-different root tree, so immediately special handling is needed.
+If you have a second copy on the same filesystem then an error on any of the 
+metadata that is a parent will corrupt both.  EG if you have 2 copies under 
+your home directory then a directory error for /, /home, or /home/$USER will 
+make both copies unavailable.
 
-If machines is a subvolume at the top level, it can always be mounted
-at /var/lib/machines regardless of which root is used.
+Also any errors on superblocks or other essential filesystem metadata risks 
+losing both copies.
 
-I also think this is more consistent with
-http://0pointer.net/blog/revisiting-how-we-put-together-linux-systems.html
-specifically the section "What We Propose" when it comes to the
-location and naming convention for Btrfs subvolumes.
+If BTRFS was to adopt something equivalent to the ZFS "copies=" feature then 
+the sysadmin could specify that certain subtrees would have extra copies of 
+data AND each metadata block would have 1 more copy than the data blocks it 
+refers to.
 
-
-> I think that a "cp --reflink" is slower than a snapshot, because all the metadata still have to be copied. Another disadvantage, is that a snapshot and its parent could be "easily" [3] compared; the same would be not true if a cp --reflink is used.
-
-If it's containers themselves being snapshot, then /var/lib/machines
-isn't really what needs to be snapshot, it's the individual containers
-themselves that belong in a subvolume so they can be individually
-snapshot/cloned.
+In conclusion I think that the ZFS copies= feature is the correct solution to 
+this problem.  Until/unless the BFTRFS developers copy that design concept the 
+thing to do if you want backups on the same storage hardware is to copy the 
+data to a filesystem on a different partition - the NetApp research shows that 
+disk read errors tend to be correlated by location on disk.
 
 -- 
-Chris Murphy
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

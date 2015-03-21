@@ -1,45 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43193 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751411AbbCUDUn (ORCPT
+Received: from mail-qc0-f178.google.com ([209.85.216.178]:33787 "EHLO
+	mail-qc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751349AbbCUM0b (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 23:20:43 -0400
-Received: from athena.localnet (ns-local [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 2AA5BEB9E
-	for <linux-btrfs@vger.kernel.org>; Sat, 21 Mar 2015 14:20:41 +1100 (AEDT)
-From: Russell Coker <russell@coker.com.au>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: syntax for deleting subvolumes?
-Date: Sat, 21 Mar 2015 03:20:39 +0000
-References: <5509E34F.6010504@graphitesystems.com> <550A08AC.7070506@graphitesystems.com> <m49y4mtfoai.fsf@coffee.modeemi.fi>
-In-Reply-To: <m49y4mtfoai.fsf@coffee.modeemi.fi>
+	Sat, 21 Mar 2015 08:26:31 -0400
+Received: by qcbjx9 with SMTP id jx9so74752201qcb.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Mar 2015 05:26:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201503210320.39413.russell@coker.com.au>
+Date: Sat, 21 Mar 2015 13:26:30 +0100
+Message-ID: <CAH4oapfmnuN=NwE5yuC68oqojak2uHesgJQtuHritYx4HiOvOw@mail.gmail.com>
+Subject: Error: btrfs check --repair --init-csum-tree --init-extent-tree
+From: Pavol Cupka <pavol.cupka@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 19 Mar 2015 07:18:29 AM Erkki Seppala wrote:
-> > But as a user level facility, I want to be able to snapshot before
-> > making a change to a tree full of source code and (re)building it all
-> > over again.  I may want to keep my new build, but I may want to flush
-> > it and return to known good state.
-> 
-> You may want to check out cp --reflink=always (different from cp
-> --link), which creates copy-on-write copy of the data. It isn't quite as
-> fast as snapshots to create, but it's still plenty fast and without the
-> downsides of subvolumes.
+When running btrfs check on a RAID1 system using btrfs-progs v3.19-rc2
+and running the 4.0.0-rc4 linux kernel. I get this:
 
-In which situations is --reflink=always expected to fail on BTRFS?
+btrfs check --repair --init-csum-tree --init-extent-tree /dev/sda1
+...
+...
+Incorrect local backref count on 2019737948160 parent 2541793873920
+owner 0 offset 0 found 1 wanted 0 back 0x624dece0
+backpointer mismatch on [2019737948160 4096]
+ref mismatch on [2019737952256 4096] extent item 0, found 5
+adding new data backref on 2019737952256 root 271 owner 615 offset 0 found 1
+adding new data backref on 2019737952256 parent 2935248711680 owner 0
+offset 0 found 1
+adding new data backref on 2019737952256 parent 3289312481280 owner 0
+offset 0 found 1
+ctree.c:1595: leaf_space_used: Assertion `data_len < 0` failed.
+btrfs[0x43324d]
+btrfs[0x43380c]
+btrfs(btrfs_leaf_free_space+0x24)[0x434f64]
+btrfs(btrfs_check_leaf+0xa5)[0x435065]
+btrfs[0x435432]
+btrfs(btrfs_search_slot+0x305)[0x437025]
+btrfs(btrfs_insert_empty_items+0x8a)[0x4384aa]
+btrfs[0x43ebe9]
+btrfs[0x43edb7]
+btrfs(btrfs_inc_extent_ref+0xf1)[0x440151]
+btrfs[0x40b512]
+btrfs[0x412fe5]
+btrfs(cmd_check+0x77d)[0x426afd]
+btrfs(main+0x82)[0x413742]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f9078031a65]
+btrfs[0x413843]
 
-I recently needed to move /home on one system to a subvol (instead of being in 
-the root subvol) and used cp --reflink=always which gave a few errors when 
-running with BTRFS on kernel 3.16.7-ckt7-1.  I was in a hurry and didn't try 
-to track down the caue, I just ran it again with --reflink=auto which gave no 
-errors and completed very quickly (obviously the files which couldn't be 
-reflinked were small).
+is someone from the devs interested on debuging this?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Let me know
+Pavol

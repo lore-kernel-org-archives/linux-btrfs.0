@@ -1,52 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43168 "EHLO
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43193 "EHLO
 	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751115AbbCUDRO (ORCPT
+	with ESMTP id S1751411AbbCUDUn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 23:17:14 -0400
+	Fri, 20 Mar 2015 23:20:43 -0400
+Received: from athena.localnet (ns-local [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 2AA5BEB9E
+	for <linux-btrfs@vger.kernel.org>; Sat, 21 Mar 2015 14:20:41 +1100 (AEDT)
 From: Russell Coker <russell@coker.com.au>
-To: Duncan <1i5t5.duncan@cox.net>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: syntax for deleting subvolumes?
-Date: Sat, 21 Mar 2015 03:17:07 +0000
-Cc: linux-btrfs@vger.kernel.org
-References: <5509E34F.6010504@graphitesystems.com> <CAJCQCtSrR7tOQMkbKdk5y2FJ7J2nYNAAjowRnic2O13wa3d1PA@mail.gmail.com> <pan$e3d8c$58030454$dbd36547$e1e1c7cd@cox.net>
-In-Reply-To: <pan$e3d8c$58030454$dbd36547$e1e1c7cd@cox.net>
+Date: Sat, 21 Mar 2015 03:20:39 +0000
+References: <5509E34F.6010504@graphitesystems.com> <550A08AC.7070506@graphitesystems.com> <m49y4mtfoai.fsf@coffee.modeemi.fi>
+In-Reply-To: <m49y4mtfoai.fsf@coffee.modeemi.fi>
 MIME-Version: 1.0
 Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201503210317.07435.russell@coker.com.au>
+  charset="iso-8859-1"
+Message-Id: <201503210320.39413.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 20 Mar 2015 04:18:38 AM Duncan wrote:
-> If cp --reflink=auto was the default, it'd "just work", making a reflink 
-> where possible, falling back to a normal copy where not possible to 
-> reflink.
+On Thu, 19 Mar 2015 07:18:29 AM Erkki Seppala wrote:
+> > But as a user level facility, I want to be able to snapshot before
+> > making a change to a tree full of source code and (re)building it all
+> > over again.  I may want to keep my new build, but I may want to flush
+> > it and return to known good state.
 > 
-> However, I'd be wary of such a change, because admins are used to cp 
-> creating a separate copy which may well be intended as a backup, guarding 
-> against I/O errors on the original.  Btrfs does do checksum checking to 
-> ensure validity, but if that fails, do you really want it failing for 
-> BOTH copies, including the one the admin made specifically to AVOID such 
+> You may want to check out cp --reflink=always (different from cp
+> --link), which creates copy-on-write copy of the data. It isn't quite as
+> fast as snapshots to create, but it's still plenty fast and without the
+> downsides of subvolumes.
 
-If you have a second copy on the same filesystem then an error on any of the 
-metadata that is a parent will corrupt both.  EG if you have 2 copies under 
-your home directory then a directory error for /, /home, or /home/$USER will 
-make both copies unavailable.
+In which situations is --reflink=always expected to fail on BTRFS?
 
-Also any errors on superblocks or other essential filesystem metadata risks 
-losing both copies.
-
-If BTRFS was to adopt something equivalent to the ZFS "copies=" feature then 
-the sysadmin could specify that certain subtrees would have extra copies of 
-data AND each metadata block would have 1 more copy than the data blocks it 
-refers to.
-
-In conclusion I think that the ZFS copies= feature is the correct solution to 
-this problem.  Until/unless the BFTRFS developers copy that design concept the 
-thing to do if you want backups on the same storage hardware is to copy the 
-data to a filesystem on a different partition - the NetApp research shows that 
-disk read errors tend to be correlated by location on disk.
+I recently needed to move /home on one system to a subvol (instead of being in 
+the root subvol) and used cp --reflink=always which gave a few errors when 
+running with BTRFS on kernel 3.16.7-ckt7-1.  I was in a hurry and didn't try 
+to track down the caue, I just ran it again with --reflink=auto which gave no 
+errors and completed very quickly (obviously the files which couldn't be 
+reflinked were small).
 
 -- 
 My Main Blog         http://etbe.coker.com.au/

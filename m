@@ -1,30 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bl2on0119.outbound.protection.outlook.com ([65.55.169.119]:65056
-	"EHLO na01-bl2-obe.outbound.protection.outlook.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751874AbbCYAAd convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:36797 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751326AbbCVILG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Mar 2015 20:00:33 -0400
-From: "Kline, Matthew" <matthew.kline@flukenetworks.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: btrfs balance fails with no space errors (despite having plenty)
-Date: Tue, 24 Mar 2015 23:45:44 +0000
-Message-ID: <E8C63C11EA3FB04DBDFEDECEFD927FD1140C1E88@US-EVT-EXM04-P.global.tektronix.net>
-References: <E8C63C11EA3FB04DBDFEDECEFD927FD1140C1E31@US-EVT-EXM04-P.global.tektronix.net>
- <20150325040321.361abf2f@natsu>
- <E8C63C11EA3FB04DBDFEDECEFD927FD1140C1E65@US-EVT-EXM04-P.global.tektronix.net>
- <20150324231435.GN31762@carfax.org.uk>
-In-Reply-To: <20150324231435.GN31762@carfax.org.uk>
-Content-Type: text/plain; charset="us-ascii"
+	Sun, 22 Mar 2015 04:11:06 -0400
+Received: by wgra20 with SMTP id a20so122241444wgr.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Mar 2015 01:11:05 -0700 (PDT)
+Received: from [192.168.0.2] (gev44-1-78-228-108-65.fbx.proxad.net. [78.228.108.65])
+        by mx.google.com with ESMTPSA id cn10sm5564775wib.15.2015.03.22.01.11.04
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 22 Mar 2015 01:11:04 -0700 (PDT)
+Message-ID: <550E7917.5030602@gmail.com>
+Date: Sun, 22 Mar 2015 09:11:03 +0100
+From: Marc Cousin <cousinmarc@gmail.com>
 MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: snapshot destruction making IO extremely slow
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->  Sorry to be the bearer of bad news.
+Hi,
 
->  Hugo.
+I've noticed this problem for a while (I started to use snapper a while ago): while destroying snapshots, it's almost impossible to do IO on the volume.
 
-Thanks for the prompt response! It's annoying, but copying to and from an external hard drive while I eat dinner isn't the end of the world.
+There is almost no IO active on this volume (it is made of sdb,sdc and sdd).
 
-Thanks again,
-Matt
+
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           1,77    0,00   13,24    0,00    0,00   84,99
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0,88    0,00   13,03    0,25    0,00   85,84
+
+Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sda               0,00     1,00    4,00    2,00     0,08     0,01    30,67     0,01    1,67    0,00    5,00   1,67   1,00
+sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+
+(sda isn't into this btrfs filesystem)
+
+The btrfs cleaner is 100% active:
+
+ 1501 root      20   0       0      0      0 R 100,0  0,0   9:10.40 [btrfs-cleaner]    
+
+As soon as it terminates its job, the filesystem becomes usable again. But while waiting it is extremely unresponsive. Any program doing a write there hangs.
+
+Some more information: the 3 disks are 2.7TB, the raid is RAID1
+
+# btrfs fi df /mnt/btrfs
+Data, RAID1: total=3.18TiB, used=3.14TiB
+System, RAID1: total=32.00MiB, used=480.00KiB
+Metadata, RAID1: total=6.00GiB, used=4.32GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+What is "funny" is that the filesystem seems to be working again when there is some IO activity and btrfs-cleaner gets to a lower cpu usage (around 70%).
+
+By the way, there are quite a few snapshots there:
+
+# btrfs subvolume  list /mnt/btrfs | wc -l
+142
+
+and I think snapper tries to destroy around 10 of them on one go.
+
+I can do whatever test you want, as long as I keep the data on my disks :)
+
+Regards,
+
+Marc

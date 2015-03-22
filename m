@@ -1,55 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f178.google.com ([209.85.216.178]:33787 "EHLO
-	mail-qc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751349AbbCUM0b (ORCPT
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:33797 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751632AbbCVIXz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 Mar 2015 08:26:31 -0400
-Received: by qcbjx9 with SMTP id jx9so74752201qcb.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 Mar 2015 05:26:30 -0700 (PDT)
+	Sun, 22 Mar 2015 04:23:55 -0400
+Received: by wgs2 with SMTP id 2so15513064wgs.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Mar 2015 01:23:54 -0700 (PDT)
+Received: from [192.168.0.2] (gev44-1-78-228-108-65.fbx.proxad.net. [78.228.108.65])
+        by mx.google.com with ESMTPSA id hd10sm5691494wib.7.2015.03.22.01.23.53
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 22 Mar 2015 01:23:54 -0700 (PDT)
+Message-ID: <550E7C19.6040607@gmail.com>
+Date: Sun, 22 Mar 2015 09:23:53 +0100
+From: Marc Cousin <cousinmarc@gmail.com>
 MIME-Version: 1.0
-Date: Sat, 21 Mar 2015 13:26:30 +0100
-Message-ID: <CAH4oapfmnuN=NwE5yuC68oqojak2uHesgJQtuHritYx4HiOvOw@mail.gmail.com>
-Subject: Error: btrfs check --repair --init-csum-tree --init-extent-tree
-From: Pavol Cupka <pavol.cupka@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: snapshot destruction making IO extremely slow
+References: <550E7917.5030602@gmail.com>
+In-Reply-To: <550E7917.5030602@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running btrfs check on a RAID1 system using btrfs-progs v3.19-rc2
-and running the 4.0.0-rc4 linux kernel. I get this:
-
-btrfs check --repair --init-csum-tree --init-extent-tree /dev/sda1
-...
-...
-Incorrect local backref count on 2019737948160 parent 2541793873920
-owner 0 offset 0 found 1 wanted 0 back 0x624dece0
-backpointer mismatch on [2019737948160 4096]
-ref mismatch on [2019737952256 4096] extent item 0, found 5
-adding new data backref on 2019737952256 root 271 owner 615 offset 0 found 1
-adding new data backref on 2019737952256 parent 2935248711680 owner 0
-offset 0 found 1
-adding new data backref on 2019737952256 parent 3289312481280 owner 0
-offset 0 found 1
-ctree.c:1595: leaf_space_used: Assertion `data_len < 0` failed.
-btrfs[0x43324d]
-btrfs[0x43380c]
-btrfs(btrfs_leaf_free_space+0x24)[0x434f64]
-btrfs(btrfs_check_leaf+0xa5)[0x435065]
-btrfs[0x435432]
-btrfs(btrfs_search_slot+0x305)[0x437025]
-btrfs(btrfs_insert_empty_items+0x8a)[0x4384aa]
-btrfs[0x43ebe9]
-btrfs[0x43edb7]
-btrfs(btrfs_inc_extent_ref+0xf1)[0x440151]
-btrfs[0x40b512]
-btrfs[0x412fe5]
-btrfs(cmd_check+0x77d)[0x426afd]
-btrfs(main+0x82)[0x413742]
-/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f9078031a65]
-btrfs[0x413843]
-
-is someone from the devs interested on debuging this?
-
-Let me know
-Pavol
+On 22/03/2015 09:11, Marc Cousin wrote:
+> Hi,
+>
+> I've noticed this problem for a while (I started to use snapper a while ago): while destroying snapshots, it's almost impossible to do IO on the volume.
+>
+> There is almost no IO active on this volume (it is made of sdb,sdc and sdd).
+>
+>
+>
+> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+> sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+>
+> avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+>             1,77    0,00   13,24    0,00    0,00   84,99
+>
+> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+> sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+>
+> avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+>             0,88    0,00   13,03    0,25    0,00   85,84
+>
+> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+> sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sda               0,00     1,00    4,00    2,00     0,08     0,01    30,67     0,01    1,67    0,00    5,00   1,67   1,00
+> sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+> sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+>
+> (sda isn't into this btrfs filesystem)
+>
+> The btrfs cleaner is 100% active:
+>
+>   1501 root      20   0       0      0      0 R 100,0  0,0   9:10.40 [btrfs-cleaner]
+>
+> As soon as it terminates its job, the filesystem becomes usable again. But while waiting it is extremely unresponsive. Any program doing a write there hangs.
+>
+> Some more information: the 3 disks are 2.7TB, the raid is RAID1
+>
+> # btrfs fi df /mnt/btrfs
+> Data, RAID1: total=3.18TiB, used=3.14TiB
+> System, RAID1: total=32.00MiB, used=480.00KiB
+> Metadata, RAID1: total=6.00GiB, used=4.32GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+>
+> What is "funny" is that the filesystem seems to be working again when there is some IO activity and btrfs-cleaner gets to a lower cpu usage (around 70%).
+>
+> By the way, there are quite a few snapshots there:
+>
+> # btrfs subvolume  list /mnt/btrfs | wc -l
+> 142
+>
+> and I think snapper tries to destroy around 10 of them on one go.
+>
+> I can do whatever test you want, as long as I keep the data on my disks :)
+>
+> Regards,
+>
+> Marc
+>
+I forgot the obvious. Kernel 3.19.2 (from archlinux). :)

@@ -1,35 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:41403 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751727AbbCUTvK (ORCPT
+Received: from mezzanine.sirena.org.uk ([106.187.55.193]:52303 "EHLO
+	mezzanine.sirena.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751771AbbCWFAT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 Mar 2015 15:51:10 -0400
-Date: Sat, 21 Mar 2015 12:27:44 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Petr Bena <benapetr@gmail.com>
-Cc: Roman Mamedov <rm@romanrm.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: New tool to recursive compress / decompress of files
-Message-ID: <20150321192744.GO31311@merlins.org>
-References: <CA+4EQ5cL53dS5k8fPNauT1fPGaYXjKBSzo7jTt1nz5p=w+c_SQ@mail.gmail.com> <20150321232225.5f7e997e@natsu> <CA+4EQ5fmYejgGf5yN0Qw7O9O43jPb6-f-RCVGXRopjA6-p2_2Q@mail.gmail.com> <CA+4EQ5cO3hR17RYTdHB8ZYn+OQHd9fEnyTWLgNPNcqRnzkRNOQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CA+4EQ5cO3hR17RYTdHB8ZYn+OQHd9fEnyTWLgNPNcqRnzkRNOQ@mail.gmail.com>
+	Mon, 23 Mar 2015 01:00:19 -0400
+From: Mark Brown <broonie@kernel.org>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Mark Brown <broonie@kernel.org>
+Date: Sun, 22 Mar 2015 16:46:15 +0000
+Message-Id: <1427042775-8258-1-git-send-email-broonie@kernel.org>
+Subject: [PATCH] btrfs: Fix implicit inclusion of linux/uio.h
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 21, 2015 at 07:26:41PM +0100, Petr Bena wrote:
-> There is a dozen of cases where you want to just compress some folders
-> in your system, but you don't want to compress whole device, would you
-> create a subvolume for each of them?
- 
-Actually with the previous reply you got, I'm not sure there is any case at
-all.
+The btrfs inode.c relies on implicit inclusion of linux/uio.h for
+definitions of struct iov_iter and iov_iter_alignment() which breaks the
+current ARM allmodconfig build where that implicit inclusion does not
+happen.  Add an explicit include to fix that.
 
-Compression makes your filesystem faster and is transparent to you.
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ fs/btrfs/inode.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Marc
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 37dc84c..9e4a634 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -29,6 +29,7 @@
+ #include <linux/backing-dev.h>
+ #include <linux/mpage.h>
+ #include <linux/swap.h>
++#include <linux/uio.h>
+ #include <linux/writeback.h>
+ #include <linux/statfs.h>
+ #include <linux/compat.h>
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+2.1.4
+

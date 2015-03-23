@@ -1,28 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51042 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:43720 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752700AbbCWQAJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 12:00:09 -0400
-Date: Mon, 23 Mar 2015 17:00:07 +0100
+	id S1751980AbbCWXiF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Mar 2015 19:38:05 -0400
+Date: Tue, 24 Mar 2015 00:38:03 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Sebastian Thorarensen <sebth@naju.se>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/4] btrfs-progs: btrfs-convert: Allow setting nodesize
-Message-ID: <20150323160007.GO20767@twin.jikos.cz>
+Subject: Re: [PATCH 0/7] btrfs-progs: qgroup related enhance.
+Message-ID: <20150323233803.GP20767@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1426812639.git.sebth@naju.se>
+References: <1425025599-30048-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1426812639.git.sebth@naju.se>
+In-Reply-To: <1425025599-30048-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 20, 2015 at 02:09:45AM +0100, Sebastian Thorarensen wrote:
-> Changes since v1:
->  * Split patch into smaller patches
->  * btrfs-convert and mkfs now shares check_node_or_leaf_size
->  * Rebased onto latest v3.19.x
+On Fri, Feb 27, 2015 at 04:26:32PM +0800, Qu Wenruo wrote:
+> Qu Wenruo (7):
+>   btrfs-progs: Update qgroup status flags and replace qgroup
+>     level/subvid     calculation with inline function.
+>   btrfs-progs: Allow btrfs-debug-tree to print human readable qgroup    
+>     status flag.
+>   btrfs-progs: Move parse_qgroupid() to utils.c
+>   btrfs-progs: Allow parse_qgroupid() to resolve subvolume path into    
+>     qgroupid.
+>   btrfs-progs: Add stack get/set functions for btrfs_qgroup_status_item.
+>   btrfs-progs: Print warning message if qgroup data is inconsistent.
 
-Thanks! Minor changes: I've fixed build failure of mkfs, added btrfs_
-prefix to the function (as it's now in utils.c) and added the remaining
-nodesizes to tests. Queued for 3.19.1.
+All of the above merged.
+
+>   btrfs-progs: Schedule quota rescan if qgroup assign caused    
+>     inconsistence.
+
+The rescan can be a long running operation and touches a lot of
+metadata, so I'd rather avoid starting the rescan automatically. Right
+now the user may start rescan manually, or please add an commandline
+option (eg. --rescan) to do the rescan in one go with the 'assign'
+command. Thanks.

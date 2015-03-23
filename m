@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14842 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13205 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753123AbbCWMfU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 08:35:20 -0400
-Date: Mon, 23 Mar 2015 08:35:13 -0400
+	by vger.kernel.org with ESMTP id S1752298AbbCWMf6 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Mar 2015 08:35:58 -0400
+Date: Mon, 23 Mar 2015 08:32:43 -0400
 From: Chris Mason <clm@fb.com>
-Subject: Re: BTRFS: unable to add free space :-17
-To: Tomasz Chmielewski <tch@virtall.com>
+Subject: Re: Linux 4.0.0-rc5 - [ 1851.858652] BTRFS: error (device sda1) in
+ cleanup_transaction:1686: errno=-17 Object already exists
+To: =?iso-8859-1?q?Torbj=F8rn?= <lists@skagestad.org>
 CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <1427114113.5707.1@mail.thefacebook.com>
-In-Reply-To: <d1161c0c22333dfe9b77144aa18779b1@admin.virtall.com>
-References: <d1161c0c22333dfe9b77144aa18779b1@admin.virtall.com>
+Message-ID: <1427113963.5707.0@mail.thefacebook.com>
+In-Reply-To: <550FEC73.9010507@skagestad.org>
+References: <550FEC73.9010507@skagestad.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,106 +20,44 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On Mon, Mar 23, 2015 at 8:19 AM, Tomasz Chmielewski <tch@virtall.com> 
-wrote:
-> Got this with 4.0.0-rc5 when doing a degraded mount:
+On Mon, Mar 23, 2015 at 6:35 AM, Torbjørn <lists@skagestad.org> wrote:
+> Hi,
 > 
-> Mar 23 13:09:22 server1 kernel: [  665.197957] BTRFS info (device 
-> sdb4): allowing degraded mounts
-> Mar 23 13:09:22 server1 kernel: [  665.198030] BTRFS info (device 
-> sdb4): disk space caching is enabled
-> Mar 23 13:09:22 server1 kernel: [  665.213163] BTRFS warning (device 
-> sdb4): devid 2 missing
-> Mar 23 13:09:22 server1 kernel: [  665.260077] BTRFS: bdev (null) 
-> errs: wr 1, rd 1, flush 0, corrupt 0, gen 0
-> Mar 23 13:10:01 server1 kernel: [  704.310874] ------------[ cut here 
-> ]------------
-> Mar 23 13:10:01 server1 kernel: [  704.310936] WARNING: CPU: 1 PID: 
-> 4706 at fs/btrfs/free-space-cache.c:1349 tree_insert_offset+0x7d/0xc3 
-> [btrfs]()
-> Mar 23 13:10:01 server1 kernel: [  704.310989] Modules linked in: 
-> ipv6 cpufreq_stats cpufreq_powersave cpufreq_conservative btrfs xor 
-> raid6_pq zlib_deflate ext3 jbd loop 8250_fintek i2c_i801 parport_pc 
-> tpm_infineon tpm_tis tpm lpc_ich ehci_pci ehci_hcd mfd_core i2c_core 
-> parport pcspkr acpi_cpufreq button video ext4 crc16 jbd2 mbcache 
-> raid1 sg sd_mod ahci libahci libata scsi_mod r8169 mii
-> Mar 23 13:10:01 server1 kernel: [  704.312632] CPU: 1 PID: 4706 Comm: 
-> btrfs-transacti Not tainted 4.0.0-rc5 #1
-> Mar 23 13:10:01 server1 kernel: [  704.312680] Hardware name: System 
-> manufacturer System Product Name/P8H67-M PRO, BIOS 1106 10/17/2011
-> Mar 23 13:10:01 server1 kernel: [  704.312732]  0000000000000009 
-> ffff880819917c18 ffffffff813c2f57 ffff88083fa4d801
-> Mar 23 13:10:01 server1 kernel: [  704.312928]  0000000000000000 
-> ffff880819917c58 ffffffff8103b031 ffff880036eb9540
-> Mar 23 13:10:01 server1 kernel: [  704.313124]  ffffffffa03126f6 
-> 00000000ffffffef ffff880036eb9540 000001dd651b4000
-> Mar 23 13:10:01 server1 kernel: [  704.313321] Call Trace:
-> Mar 23 13:10:01 server1 kernel: [  704.313394]  [<ffffffff813c2f57>] 
-> dump_stack+0x45/0x57
-> Mar 23 13:10:01 server1 kernel: [  704.313469]  [<ffffffff8103b031>] 
-> warn_slowpath_common+0x97/0xb1
-> Mar 23 13:10:01 server1 kernel: [  704.313551]  [<ffffffffa03126f6>] 
-> ? tree_insert_offset+0x7d/0xc3 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.313627]  [<ffffffff8103b060>] 
-> warn_slowpath_null+0x15/0x17
-> Mar 23 13:10:01 server1 kernel: [  704.313707]  [<ffffffffa03126f6>] 
-> tree_insert_offset+0x7d/0xc3 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.313788]  [<ffffffffa0313142>] 
-> link_free_space+0x27/0x3c [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.313868]  [<ffffffffa03143cb>] 
-> __btrfs_add_free_space+0x354/0x39d [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.313952]  [<ffffffffa02f2864>] 
-> ? free_extent_state.part.29+0x34/0x39 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314062]  [<ffffffffa02f2864>] 
-> ? free_extent_state.part.29+0x34/0x39 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314170]  [<ffffffffa02c16b4>] 
-> ? block_group_cache_tree_search+0x8e/0xbd [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314279]  [<ffffffffa02c5518>] 
-> unpin_extent_range.isra.78+0xa6/0x199 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314387]  [<ffffffffa02c9aa2>] 
-> btrfs_finish_extent_commit+0xcb/0xea [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314497]  [<ffffffffa02dbc57>] 
-> btrfs_commit_transaction+0x850/0x9e1 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314606]  [<ffffffffa02d9bf0>] 
-> transaction_kthread+0xef/0x1c3 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314687]  [<ffffffffa02d9b01>] 
-> ? open_ctree+0x1d47/0x1d47 [btrfs]
-> Mar 23 13:10:01 server1 kernel: [  704.314763]  [<ffffffff810501a3>] 
-> kthread+0xcd/0xd5
-> Mar 23 13:10:01 server1 kernel: [  704.314836]  [<ffffffff810500d6>] 
-> ? kthread_freezable_should_stop+0x43/0x43
-> Mar 23 13:10:01 server1 kernel: [  704.314913]  [<ffffffff813c7848>] 
-> ret_from_fork+0x58/0x90
-> Mar 23 13:10:01 server1 kernel: [  704.314987]  [<ffffffff810500d6>] 
-> ? kthread_freezable_should_stop+0x43/0x43
-> Mar 23 13:10:01 server1 kernel: [  704.315063] ---[ end trace 
-> 695f505b58a81c8d ]---
-> Mar 23 13:10:01 server1 kernel: [  704.315135] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:10:33 server1 kernel: [  736.510895] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:11:03 server1 kernel: [  765.780069] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:11:13 server1 kernel: [  776.030671] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:12:39 server1 kernel: [  861.791031] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:13:29 server1 kernel: [  911.761852] BTRFS: unable to add 
-> free space :-17
-> Mar 23 13:13:53 server1 kernel: [  936.124674] BTRFS: unable to add 
-> free space :-17
+> After upgrading to 4.0.0-rc5 from 4.0.0-rc4 I see "Object already 
+> exists" after reboot.
+> The fs is forced read only.
+> The error does not disappear after additional reboots.
+> 
+> mount|grep sda1
+> /dev/sda1 on / type btrfs 
+> (rw,noatime,compress=lzo,space_cache,subvol=@)
+> /dev/sda1 on /home type btrfs 
+> (rw,noatime,compress=lzo,space_cache,subvol=@home)
+> /dev/sda1 on /mnt/volumes type btrfs 
+> (rw,noatime,compress=lzo,space_cache)
+> 
+> Label: 'root'  uuid: 6a681300-faef-4195-a1b3-6699c7a5aa5e
+>     Total devices 2 FS bytes used 66.87GiB
+>     devid    1 size 298.09GiB used 124.03GiB path /dev/sda1
+>     devid    2 size 298.09GiB used 124.03GiB path /dev/sdd1
+> 
+> btrfs-progs v3.19
+> 
+> Any additional info I can provide? Tests you want me to run?
 
-Do you get this every time, even after going back to rc4?
+Are you seeing this consistently with every boot?
 
-It should be caused by this commit, but I really don't get how.  I'll 
-dig deeper, but if you can trigger this consistently I'd love to hear 
-if reverting this commit helps.
+If so, can you please revert this one:
 
 commit ea526d18990018f224e5734748975bea1824545f
 Author: Josef Bacik <jbacik@fb.com>
 Date:   Fri Mar 13 16:40:45 2015 -0400
 
     Btrfs: fix ASSERT(list_empty(&cur_trans->dirty_bgs_list)
+
+Anything special about your workload
+
+-chris
 
 
 

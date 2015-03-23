@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:21147 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752095AbbCWIKk (ORCPT
+	with ESMTP id S1752141AbbCWIKp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 04:10:40 -0400
+	Mon, 23 Mar 2015 04:10:45 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89ZWn012327
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:35 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89eYQ012353
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:40 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 RESEND 01/11] btrfs: qgroup: Cleanup open-coded old/new_refcnt update and read.
-Date: Mon, 23 Mar 2015 16:08:27 +0800
-Message-ID: <1427098117-25152-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 07/11] btrfs: qgroup: save and pass old_roots ulist to btrfs_qgroup_record_ref().
+Date: Mon, 23 Mar 2015 16:08:33 +0800
+Message-ID: <1427098117-25152-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,192 +19,145 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use inline functions to do such things, to improve readability.
+For possible shared extent accounting case, call btrfs_find_all_roots()
+before we write backref data into extent tree to find exactly how many
+roots is referring the extent as old_roots.
+
+And pass it to btrfs_qgroup_record_ref() for later operations.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Acked-by: David Sterba <dsterba@suse.cz>
 ---
-v2:
-  Change nameing to btrfs_qgroup_(update|get)_(old|new)_refcnt.
-  Not use centeral qgroup_(get|update)_refcnt function, direct code into
-  corresponding functions.
-  Fix a forgot-to-replace bug.
----
- fs/btrfs/qgroup.c | 95 +++++++++++++++++++++++++++++++------------------------
- 1 file changed, 54 insertions(+), 41 deletions(-)
+ fs/btrfs/extent-tree.c | 42 +++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 37 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 97159a8..6e7735d 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -84,11 +84,42 @@ struct btrfs_qgroup {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e73c1fa..e3e7509 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -36,6 +36,8 @@
+ #include "math.h"
+ #include "sysfs.h"
+ #include "qgroup.h"
++#include "ulist.h"
++#include "backref.h"
  
- 	/*
- 	 * temp variables for accounting operations
-+	 * Refer to qgroup_shared_accouting() for details.
- 	 */
- 	u64 old_refcnt;
- 	u64 new_refcnt;
- };
+ #undef SCRAMBLE_DELAYED_REFS
  
-+static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->old_refcnt < seq)
-+		qg->old_refcnt = seq;
-+	qg->old_refcnt += mod;
-+}
+@@ -1976,11 +1978,13 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *item;
+ 	struct btrfs_key key;
++	struct ulist *old_roots = NULL;
+ 	u64 bytenr = node->bytenr;
+ 	u64 num_bytes = node->num_bytes;
+ 	u64 refs;
+ 	int ret;
+ 	int no_quota = node->no_quota;
++	int need_to_free_old_roots = 0;
+ 	enum btrfs_qgroup_operation_type type = BTRFS_QGROUP_OPER_ADD_EXCL;
+ 
+ 	path = btrfs_alloc_path();
+@@ -1990,6 +1994,14 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	if (!is_fstree(root_objectid) || !root->fs_info->quota_enabled)
+ 		no_quota = 1;
+ 
++	if (!no_quota) {
++		need_to_free_old_roots = 1;
++		ret = btrfs_find_all_roots(trans, fs_info, node, bytenr,
++					   node->seq, &old_roots, 1);
++		if (ret < 0)
++			goto out;
++	}
 +
-+static void btrfs_qgroup_update_new_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->new_refcnt < seq)
-+		qg->new_refcnt = seq;
-+	qg->new_refcnt += mod;
-+}
-+
-+static inline u64 btrfs_qgroup_get_old_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->old_refcnt < seq)
-+		return 0;
-+	return qg->old_refcnt - seq;
-+}
-+
-+static inline u64 btrfs_qgroup_get_new_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->new_refcnt < seq)
-+		return 0;
-+	return qg->new_refcnt - seq;
-+}
-+
- /*
-  * glue structure to represent the relations between qgroups.
-  */
-@@ -1497,6 +1528,7 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 		ULIST_ITER_INIT(&tmp_uiter);
- 		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
- 			struct btrfs_qgroup_list *glist;
-+			int mod;
+ 	path->reada = 1;
+ 	path->leave_spinning = 1;
+ 	/* this will setup the path even if it fails to insert the back ref */
+@@ -2013,9 +2025,11 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 			type = BTRFS_QGROUP_OPER_ADD_SHARED;
+ 		btrfs_release_path(path);
  
- 			qg = u64_to_ptr(tmp_unode->aux);
- 			/*
-@@ -1508,20 +1540,15 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 			 * upper level qgroups in order to determine exclusive
- 			 * counts.
- 			 *
--			 * For rescan we want to set old_refcnt to seq so our
--			 * exclusive calculations end up correct.
-+			 * For rescan none of the extent is recorded before so
-+			 * we just don't add old_refcnt.
- 			 */
- 			if (rescan)
--				qg->old_refcnt = seq;
--			else if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
--
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
-+				mod = 0;
- 			else
--				qg->new_refcnt++;
-+				mod = 1;
-+			btrfs_qgroup_update_old_refcnt(qg, seq, mod);
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 			list_for_each_entry(glist, &qg->groups, next_group) {
- 				ret = ulist_add(qgroups, glist->group->qgroupid,
- 						ptr_to_u64(glist->group),
-@@ -1615,14 +1642,8 @@ next:
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (qg->old_refcnt < seq)
--			qg->old_refcnt = seq + 1;
--		else
--			qg->old_refcnt++;
--		if (qg->new_refcnt < seq)
--			qg->new_refcnt = seq + 1;
--		else
--			qg->new_refcnt++;
-+		btrfs_qgroup_update_old_refcnt(qg, seq, 1);
-+		btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(qgroups, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1663,17 +1684,10 @@ static int qgroup_calc_new_refcnt(struct btrfs_fs_info *fs_info,
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED) {
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
--			else
--				qg->new_refcnt++;
--		} else {
--			if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
--		}
-+		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED)
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
-+		else
-+			btrfs_qgroup_update_old_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(tmp, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1706,11 +1720,14 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		bool dirty = false;
- 
- 		qg = u64_to_ptr(unode->aux);
-+		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
-+		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
-+
- 		/*
- 		 * Wasn't referenced before but is now, add to the reference
- 		 * counters.
- 		 */
--		if (qg->old_refcnt <= seq && qg->new_refcnt > seq) {
-+		if (cur_old_count == 0 && cur_new_count > 0) {
- 			qg->rfer += num_bytes;
- 			qg->rfer_cmpr += num_bytes;
- 			dirty = true;
-@@ -1720,21 +1737,12 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		 * Was referenced before but isn't now, subtract from the
- 		 * reference counters.
- 		 */
--		if (qg->old_refcnt > seq && qg->new_refcnt <= seq) {
-+		if (cur_old_count > 0 && cur_new_count == 0) {
- 			qg->rfer -= num_bytes;
- 			qg->rfer_cmpr -= num_bytes;
- 			dirty = true;
- 		}
- 
--		if (qg->old_refcnt < seq)
--			cur_old_count = 0;
--		else
--			cur_old_count = qg->old_refcnt - seq;
--		if (qg->new_refcnt < seq)
--			cur_new_count = 0;
--		else
--			cur_new_count = qg->new_refcnt - seq;
--
- 		/*
- 		 * If our refcount was the same as the roots previously but our
- 		 * new count isn't the same as the number of roots now then we
-@@ -1932,6 +1940,11 @@ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
- 		new_roots = old_roots;
- 		old_roots++;
+-		ret = btrfs_qgroup_record_ref(trans, fs_info, NULL,
++		ret = btrfs_qgroup_record_ref(trans, fs_info, old_roots,
+ 					      root_objectid, bytenr, num_bytes,
+ 					      node->seq, type, 0);
++		if (!ret)
++			need_to_free_old_roots = 0;
+ 		goto out;
  	}
+ 
+@@ -2038,11 +2052,13 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	btrfs_release_path(path);
+ 
+ 	if (!no_quota) {
+-		ret = btrfs_qgroup_record_ref(trans, fs_info, NULL,
++		ret = btrfs_qgroup_record_ref(trans, fs_info, old_roots,
+ 					      root_objectid, bytenr, num_bytes,
+ 					      node->seq, type, 0);
+ 		if (ret)
+ 			goto out;
++		else
++			need_to_free_old_roots = 0;
+ 	}
+ 
+ 	path->reada = 1;
+@@ -2054,6 +2070,8 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, root, ret);
+ out:
++	if (need_to_free_old_roots)
++		ulist_free(old_roots);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+@@ -5797,12 +5815,14 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+ 	struct btrfs_extent_inline_ref *iref;
++	struct ulist *old_roots = NULL;
+ 	int ret;
+ 	int is_data;
+ 	int extent_slot = 0;
+ 	int found_extent = 0;
+ 	int num_to_del = 1;
+ 	int no_quota = node->no_quota;
++	int need_to_free_old_roots = 0;
+ 	u32 item_size;
+ 	u64 refs;
+ 	u64 bytenr = node->bytenr;
+@@ -5819,6 +5839,14 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
++	if (!no_quota) {
++		need_to_free_old_roots = 1;
++		ret = btrfs_find_all_roots(trans, root->fs_info, node, bytenr,
++					   node->seq, &old_roots, 1);
++		if (ret < 0)
++			goto out;
++	}
 +
-+	/*
-+	 * Bump qgroup_seq to avoid seq overlap
-+	 * XXX: This makes qgroup_seq mismatch with oper->seq.
-+	 */
- 	fs_info->qgroup_seq += old_roots + 1;
+ 	path->reada = 1;
+ 	path->leave_spinning = 1;
  
+@@ -6059,11 +6087,15 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		    type == BTRFS_QGROUP_OPER_SUB_SHARED)
+ 			mod_seq = 1;
  
+-		ret = btrfs_qgroup_record_ref(trans, info, NULL, root_objectid,
+-					      bytenr, num_bytes, node->seq,
+-					      type, mod_seq);
++		ret = btrfs_qgroup_record_ref(trans, info, old_roots,
++					      root_objectid, bytenr, num_bytes,
++					      node->seq, type, mod_seq);
++		if (!ret)
++			need_to_free_old_roots = 0;
+ 	}
+ out:
++	if (need_to_free_old_roots)
++		ulist_free(old_roots);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
 2.3.3
 

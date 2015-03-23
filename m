@@ -1,68 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:40036 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751873AbbCWMSe (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 23 Mar 2015 08:18:34 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix log tree corruption when fs mounted with -o discard
-Date: Mon, 23 Mar 2015 12:17:18 +0000
-Message-Id: <1427113038-1961-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:30798 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752585AbbCWMgz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Mar 2015 08:36:55 -0400
+Date: Mon, 23 Mar 2015 08:36:47 -0400
+From: Chris Mason <clm@fb.com>
+Subject: Re: Recursive subvolume snapshots and deletion?
+To: Lennart Poettering <mzerqung@0pointer.de>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <1427114207.5707.2@mail.thefacebook.com>
+In-Reply-To: <20150323045718.GE19498@gardel-login>
+References: <20150323045718.GE19498@gardel-login>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While committing a transaction we free the log roots before we write the
-new super block. Freeing the log roots implies marking the disk location
-of every node/leaf (metadata extent) as pinned before the new super block
-is written. This is to prevent the disk location of log metadata extents
-from being reused before the new super block is written, otherwise we
-would have a corrupted log tree if before the new super block is written
-a crash/reboot happens and the location of any log tree metadata extent
-ended up being reused and rewritten.
+On Mon, Mar 23, 2015 at 12:57 AM, Lennart Poettering 
+<mzerqung@0pointer.de> wrote:
+> Heya!
+> 
+> So what's the story on recursive btrfs snapshotting and snapshot
+> removal? Since a while systemd has now by default creating btrfs
+> subvolumes for /var/lib/machines for example. Now, if that code is run
+> inside a container, and the container itself already is stored in a
+> subvolume we end up with a subvolume inside a subvolume, which
+> currently breaks snapshotting and deletion of the outer container
+> subvolume.
+> 
+> What's the plan regarding recursive versions of the operations? Any
+> plan to add this? We could work around this in userspace, of course,
+> but it would not be atomic, and I'd much prefer if the kernel could do
+> this on its own!
 
-Even though we pinned the log tree's metadata extents, we were issuing a
-discard against them if the fs was mounted with the -o discard option,
-resulting in corruption of the log tree if a crash/reboot happened before
-writing the new super block - the next time the fs was mounted, during
-the log replay process we would find nodes/leafs of the log btree with
-a content full of zeroes, causing the process to fail and require the
-use of the tool btrfs-zero-log to wipeout the log tree (and all data
-previously fsynced becoming lost forever).
+Hi Lennart,
 
-Fix this by not doing a discard when pinning an extent. The discard will
-be done later when it's safe (after the new super block is committed) at
-extent-tree.c:btrfs_finish_extent_commit().
+I've got a patch to btrfs-progs that can do the recursive snapshotting, 
+let me clean it up and submit to Dave.  For recursive deletion I think 
+the same method can be used.
 
-Fixes: e688b7252f78 (Btrfs: fix extent pinning bugs in the tree log)
-CC: <stable@vger.kernel.org>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+-chris
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f183b4c..cd8b99c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6940,14 +6940,13 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
- 		return -ENOSPC;
- 	}
- 
--	if (btrfs_test_opt(root, DISCARD))
--		ret = btrfs_discard_extent(root, start, len, NULL);
--
- 	if (pin)
- 		pin_down_extent(root, cache, start, len, 1);
- 	else {
- 		btrfs_add_free_space(cache, start, len);
- 		btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, delalloc);
-+		if (btrfs_test_opt(root, DISCARD))
-+			ret = btrfs_discard_extent(root, start, len, NULL);
- 	}
- 	btrfs_put_block_group(cache);
- 
--- 
-2.1.3
+
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:57975 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752095AbbCWIKq (ORCPT
+	with ESMTP id S1752151AbbCWIKr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 04:10:46 -0400
+	Mon, 23 Mar 2015 04:10:47 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89dAs012347
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:39 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89hIL012364
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:43 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH 06/11] btrfs: qgroup: Add needed parameter and member for qgroup.
-Date: Mon, 23 Mar 2015 16:08:32 +0800
-Message-ID: <1427098117-25152-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 10/11] btrfs: qgroup-tests: Add old_roots ulist to allow qgroup test pass.
+Date: Mon, 23 Mar 2015 16:08:36 +0800
+Message-ID: <1427098117-25152-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,243 +19,119 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the following member for struct btrfs_qgroup_operation:
-  'old_roots' ulist
-    Records rootfs found before the delayed ref operation.
+Since new qgroup design need to get old_roots before calling
+btrfs_qgroup_record_ref(), modify qgroup test to follow the new routine.
 
-  'new_roots' ulist
-    Records rootfs found after the delayed ref operation.
-
-Add the following parameters for btrfs_qgroup_record_ref():
-  'old_roots' ulist
-    Records rootfs found before the delayed ref operation.
-    Caller of btrfs_qgroup_record_ref() should get the old_roots ulist
-    before writing extent tree and pass it to qgroup_record_ref() if it
-    may cause a shared extent accounting operation.
-
-  'node_seq' u64
-    Sequence number of the correspoding delayed ref node.
-    Used to search delayed refs to find correct reference roots.
-
-This patch just adds the member and parameters, no real behavior changes.
+And of course, without this modification, it won't pass the qgroup
+multi-ref test.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c        | 33 ++++++++++++++++++---------------
- fs/btrfs/qgroup.c             | 13 +++++++++++--
- fs/btrfs/qgroup.h             |  7 +++++--
- fs/btrfs/tests/qgroup-tests.c | 10 +++++-----
- 4 files changed, 39 insertions(+), 24 deletions(-)
+ fs/btrfs/backref.c            | 10 ++++++++++
+ fs/btrfs/tests/qgroup-tests.c | 32 +++++++++++++++++++++++++++-----
+ 2 files changed, 37 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 89cb363..e73c1fa 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2013,8 +2013,9 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			type = BTRFS_QGROUP_OPER_ADD_SHARED;
- 		btrfs_release_path(path);
- 
--		ret = btrfs_qgroup_record_ref(trans, fs_info, root_objectid,
--					      bytenr, num_bytes, type, 0);
-+		ret = btrfs_qgroup_record_ref(trans, fs_info, NULL,
-+					      root_objectid, bytenr, num_bytes,
-+					      node->seq, type, 0);
- 		goto out;
- 	}
- 
-@@ -2037,8 +2038,9 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	btrfs_release_path(path);
- 
- 	if (!no_quota) {
--		ret = btrfs_qgroup_record_ref(trans, fs_info, root_objectid,
--					      bytenr, num_bytes, type, 0);
-+		ret = btrfs_qgroup_record_ref(trans, fs_info, NULL,
-+					      root_objectid, bytenr, num_bytes,
-+					      node->seq, type, 0);
- 		if (ret)
- 			goto out;
- 	}
-@@ -6057,9 +6059,9 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		    type == BTRFS_QGROUP_OPER_SUB_SHARED)
- 			mod_seq = 1;
- 
--		ret = btrfs_qgroup_record_ref(trans, info, root_objectid,
--					      bytenr, num_bytes, type,
--					      mod_seq);
-+		ret = btrfs_qgroup_record_ref(trans, info, NULL, root_objectid,
-+					      bytenr, num_bytes, node->seq,
-+					      type, mod_seq);
- 	}
- out:
- 	btrfs_free_path(path);
-@@ -6997,8 +6999,8 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	btrfs_free_path(path);
- 
- 	/* Always set parent to 0 here since its exclusive anyway. */
--	ret = btrfs_qgroup_record_ref(trans, fs_info, root_objectid,
--				      ins->objectid, ins->offset,
-+	ret = btrfs_qgroup_record_ref(trans, fs_info, NULL, root_objectid,
-+				      ins->objectid, ins->offset, 0,
- 				      BTRFS_QGROUP_OPER_ADD_EXCL, 0);
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index e33a003..58d87ab 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1017,7 +1017,17 @@ again:
  	if (ret)
- 		return ret;
-@@ -7085,8 +7087,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 	btrfs_free_path(path);
+ 		goto out;
  
- 	if (!no_quota) {
--		ret = btrfs_qgroup_record_ref(trans, fs_info, root_objectid,
--					      ins->objectid, num_bytes,
-+		ret = btrfs_qgroup_record_ref(trans, fs_info, NULL,
-+					      root_objectid, ins->objectid,
-+					      num_bytes, 0,
- 					      BTRFS_QGROUP_OPER_ADD_EXCL, 0);
- 		if (ret)
- 			return ret;
-@@ -7463,8 +7466,8 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
- 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
++	/*
++	 * For sanity tests, all parents are 0, causing different roots
++	 * referring to one extent merged into one root.
++	 * So skip such search in sanity tests
++	 */
++#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
++	if (!trans || (trans && likely(trans->type != __TRANS_DUMMY)))
++		__merge_refs(&prefs, 2);
++#else
+ 	__merge_refs(&prefs, 2);
++#endif
  
- 		ret = btrfs_qgroup_record_ref(trans, root->fs_info,
--					      root->objectid,
--					      bytenr, num_bytes,
-+					      NULL, root->objectid,
-+					      bytenr, num_bytes, 0,
- 					      BTRFS_QGROUP_OPER_SUB_SUBTREE, 0);
- 		if (ret)
- 			return ret;
-@@ -7611,9 +7614,9 @@ walk_down:
- 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
- 
- 			ret = btrfs_qgroup_record_ref(trans, root->fs_info,
--						root->objectid,
-+						NULL, root->objectid,
- 						child_bytenr,
--						root->nodesize,
-+						root->nodesize, 0,
- 						BTRFS_QGROUP_OPER_SUB_SUBTREE,
- 						0);
- 			if (ret)
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 9a94494..b82c43c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1335,9 +1335,13 @@ static int insert_qgroup_oper(struct btrfs_fs_info *fs_info,
-  * Record a quota operation for processing later on.
-  * @trans: the transaction we are adding the delayed op to.
-  * @fs_info: the fs_info for this fs.
-+ * @old_roots: roots referring the extent before the delayed_ref operation.
-+ *	       Only used for shared extents accounting.
-  * @ref_root: the root of the reference we are acting on,
-  * @bytenr: the bytenr we are acting on.
-  * @num_bytes: the number of bytes in the reference.
-+ * @node_seq: sequence number of corresponding ref_node.
-+ *	      Only used for shared extents accounting.
-  * @type: the type of operation this is.
-  * @mod_seq: do we need to get a sequence number for looking up roots.
-  *
-@@ -1348,8 +1352,9 @@ static int insert_qgroup_oper(struct btrfs_fs_info *fs_info,
-  * MUST BE HOLDING THE REF LOCK.
-  */
- int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
--			    struct btrfs_fs_info *fs_info, u64 ref_root,
--			    u64 bytenr, u64 num_bytes,
-+			    struct btrfs_fs_info *fs_info,
-+			    struct ulist *old_roots, u64 ref_root,
-+			    u64 bytenr, u64 num_bytes, u64 node_seq,
- 			    enum btrfs_qgroup_operation_type type, int mod_seq)
- {
- 	struct btrfs_qgroup_operation *oper;
-@@ -1366,6 +1371,8 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
- 	oper->bytenr = bytenr;
- 	oper->num_bytes = num_bytes;
- 	oper->type = type;
-+	oper->new_roots = NULL;
-+	oper->old_roots = old_roots;
- 	oper->seq = atomic_inc_return(&fs_info->qgroup_op_seq);
- 	INIT_LIST_HEAD(&oper->elem.list);
- 	oper->elem.seq = 0;
-@@ -2135,6 +2142,8 @@ int btrfs_delayed_qgroup_accounting(struct btrfs_trans_handle *trans,
- 		rb_erase(&oper->n, &fs_info->qgroup_op_tree);
- 		spin_unlock(&fs_info->qgroup_op_lock);
- 		btrfs_put_tree_mod_seq(fs_info, &oper->elem);
-+		ulist_free(oper->old_roots);
-+		ulist_free(oper->new_roots);
- 		kfree(oper);
- 	}
- 	return ret;
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 18cc68c..264b498 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -56,6 +56,8 @@ struct btrfs_qgroup_operation {
- 	struct seq_list elem;
- 	struct rb_node n;
- 	struct list_head list;
-+	struct ulist *old_roots;
-+	struct ulist *new_roots;
- };
- 
- int btrfs_quota_enable(struct btrfs_trans_handle *trans,
-@@ -81,8 +83,9 @@ int btrfs_read_qgroup_config(struct btrfs_fs_info *fs_info);
- void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
- struct btrfs_delayed_extent_op;
- int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
--			    struct btrfs_fs_info *fs_info, u64 ref_root,
--			    u64 bytenr, u64 num_bytes,
-+			    struct btrfs_fs_info *fs_info,
-+			    struct ulist *old_roots, u64 ref_root,
-+			    u64 bytenr, u64 num_bytes, u64 node_seq,
- 			    enum btrfs_qgroup_operation_type type,
- 			    int mod_seq);
- int btrfs_delayed_qgroup_accounting(struct btrfs_trans_handle *trans,
+ 	while (!list_empty(&prefs)) {
+ 		ref = list_first_entry(&prefs, struct __prelim_ref, list);
 diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
-index 73f299e..c97c5f8 100644
+index c97c5f8..967a185 100644
 --- a/fs/btrfs/tests/qgroup-tests.c
 +++ b/fs/btrfs/tests/qgroup-tests.c
-@@ -238,7 +238,7 @@ static int test_no_shared_qgroup(struct btrfs_root *root)
- 		return ret;
+@@ -21,6 +21,7 @@
+ #include "../transaction.h"
+ #include "../disk-io.h"
+ #include "../qgroup.h"
++#include "../backref.h"
+ 
+ static void init_dummy_trans(struct btrfs_trans_handle *trans)
+ {
+@@ -294,6 +295,7 @@ static int test_multiple_refs(struct btrfs_root *root)
+ {
+ 	struct btrfs_trans_handle trans;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct ulist *old_roots = NULL;
+ 	int ret;
+ 
+ 	init_dummy_trans(&trans);
+@@ -329,16 +331,27 @@ static int test_multiple_refs(struct btrfs_root *root)
+ 		return -EINVAL;
  	}
  
--	ret = btrfs_qgroup_record_ref(&trans, fs_info, 5, 4096, 4096,
-+	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 5, 4096, 4096, 0,
- 				      BTRFS_QGROUP_OPER_ADD_EXCL, 0);
++	/* Get correct old ref counts before writing tree backref */
++	ret = btrfs_find_all_roots(&trans, fs_info, NULL, 4096, 0, &old_roots, 1);
++	if (ret < 0) {
++		ulist_free(old_roots);
++		return ret;
++	}
++
+ 	ret = add_tree_ref(root, 4096, 4096, 0, 256);
+-	if (ret)
++	if (ret) {
++		ulist_free(old_roots);
+ 		return ret;
++	}
+ 
+-	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 256, 4096, 4096, 0,
+-				      BTRFS_QGROUP_OPER_ADD_SHARED, 0);
++	ret = btrfs_qgroup_record_ref(&trans, fs_info, old_roots, 256, 4096,
++				      4096, 0, BTRFS_QGROUP_OPER_ADD_SHARED, 0);
  	if (ret) {
- 		test_msg("Couldn't add space to a qgroup %d\n", ret);
-@@ -264,7 +264,7 @@ static int test_no_shared_qgroup(struct btrfs_root *root)
- 	if (ret)
+ 		test_msg("Qgroup record ref failed %d\n", ret);
++		ulist_free(old_roots);
+ 		return ret;
+ 	}
++	old_roots = NULL;
+ 
+ 	ret = btrfs_delayed_qgroup_accounting(&trans, fs_info);
+ 	if (ret) {
+@@ -356,16 +369,25 @@ static int test_multiple_refs(struct btrfs_root *root)
  		return -EINVAL;
+ 	}
  
--	ret = btrfs_qgroup_record_ref(&trans, fs_info, 5, 4096, 4096,
-+	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 5, 4096, 4096, 0,
- 				      BTRFS_QGROUP_OPER_SUB_EXCL, 0);
- 	if (ret) {
- 		test_msg("Couldn't remove space from the qgroup %d\n", ret);
-@@ -311,7 +311,7 @@ static int test_multiple_refs(struct btrfs_root *root)
++	/* Get correct old ref counts before writing tree backref */
++	ret = btrfs_find_all_roots(&trans, fs_info, NULL, 4096, 0, &old_roots, 1);
++	if (ret < 0) {
++		ulist_free(old_roots);
++		return ret;
++	}
++
+ 	ret = remove_extent_ref(root, 4096, 4096, 0, 256);
  	if (ret)
  		return ret;
  
--	ret = btrfs_qgroup_record_ref(&trans, fs_info, 5, 4096, 4096,
-+	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 5, 4096, 4096, 0,
- 				      BTRFS_QGROUP_OPER_ADD_EXCL, 0);
+-	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 256, 4096, 4096, 0,
+-				      BTRFS_QGROUP_OPER_SUB_SHARED, 0);
++	ret = btrfs_qgroup_record_ref(&trans, fs_info, old_roots, 256, 4096,
++				      4096, 0, BTRFS_QGROUP_OPER_SUB_SHARED, 0);
  	if (ret) {
- 		test_msg("Couldn't add space to a qgroup %d\n", ret);
-@@ -333,7 +333,7 @@ static int test_multiple_refs(struct btrfs_root *root)
- 	if (ret)
- 		return ret;
- 
--	ret = btrfs_qgroup_record_ref(&trans, fs_info, 256, 4096, 4096,
-+	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 256, 4096, 4096, 0,
- 				      BTRFS_QGROUP_OPER_ADD_SHARED, 0);
- 	if (ret) {
++		ulist_free(old_roots);
  		test_msg("Qgroup record ref failed %d\n", ret);
-@@ -360,7 +360,7 @@ static int test_multiple_refs(struct btrfs_root *root)
- 	if (ret)
  		return ret;
+ 	}
++	old_roots = NULL;
  
--	ret = btrfs_qgroup_record_ref(&trans, fs_info, 256, 4096, 4096,
-+	ret = btrfs_qgroup_record_ref(&trans, fs_info, NULL, 256, 4096, 4096, 0,
- 				      BTRFS_QGROUP_OPER_SUB_SHARED, 0);
+ 	ret = btrfs_delayed_qgroup_accounting(&trans, fs_info);
  	if (ret) {
- 		test_msg("Qgroup record ref failed %d\n", ret);
 -- 
 2.3.3
 

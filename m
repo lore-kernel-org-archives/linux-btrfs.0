@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14022 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21147 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752100AbbCWIKs (ORCPT
+	with ESMTP id S1752139AbbCWIKr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 04:10:48 -0400
+	Mon, 23 Mar 2015 04:10:47 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89iVF012370
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:44 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2N89gPH012359
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 16:09:42 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH 11/11] btrfs: qgroup: Cleanup the unneeded codes.
-Date: Mon, 23 Mar 2015 16:08:37 +0800
-Message-ID: <1427098117-25152-12-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 09/11] btrfs: qgroup: Use oper->old/new_roots to update refcnt.
+Date: Mon, 23 Mar 2015 16:08:35 +0800
+Message-ID: <1427098117-25152-10-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1427098117-25152-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,284 +19,359 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup the unneeded codes only for special cases.
-Since the new, more generic but simpler codes are already here, use
-them.
+1) Use accurate old/new_roots in btrfs_qgroup_operation.
+Old implement uses find_all_roots() to get a roots referring to given
+bytenr.
+But the problem is, at the timing of btrfs_delayed_qgroup_accounting(),
+it's too late and we can only get final result of all delayed_ref
+operations.
+
+Thanks to previous patches, we have old_roots which restored the correct
+roots got from calling find_all_roots() before we write backref to
+extent tree and skip the current running ref_node.
+And new_roots is got from calling find_all_roots() just after we write
+backref to extent tree.
+
+So we have accurate results than the old implement.
+
+2) Use same routine to handle old/new_refcnt.
+The old routine uses different routine for old/new_refcnt update, which
+is a duplication of codes and takes extra time to maintain.
+
+3) No more special case for rescan.
+Old implement adds some special case for rescan, but now we don't need
+them anymore.
+Just set old_roots to NULL should allow rescan to get correct result.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-It feels so good just pressing 'd' in vim!!!
----
- fs/btrfs/qgroup.c | 249 ------------------------------------------------------
- 1 file changed, 249 deletions(-)
+ fs/btrfs/qgroup.c | 210 ++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 115 insertions(+), 95 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 16240e6..88abd13 100644
+index 4ad4106..16240e6 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1564,222 +1564,6 @@ static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
- 	return 0;
+@@ -84,7 +84,7 @@ struct btrfs_qgroup {
+ 
+ 	/*
+ 	 * temp variables for accounting operations
+-	 * Refer to qgroup_shared_accouting() for details.
++	 * Refer to qgroup_shared_accounting() for details.
+ 	 */
+ 	u64 old_refcnt;
+ 	u64 new_refcnt;
+@@ -1501,10 +1501,69 @@ out:
+ 	return ret;
  }
  
--static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
--				  u64 root_to_skip, struct ulist *tmp,
--				  struct ulist *roots, struct ulist *qgroups,
--				  u64 seq, int *old_roots, int rescan)
--{
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
--	struct ulist_node *tmp_unode;
--	struct ulist_iterator tmp_uiter;
--	struct btrfs_qgroup *qg;
--	int ret;
--
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(roots, &uiter))) {
--		/* We don't count our current root here */
--		if (unode->val == root_to_skip)
--			continue;
--		qg = find_qgroup_rb(fs_info, unode->val);
--		if (!qg)
--			continue;
--		/*
--		 * We could have a pending removal of this same ref so we may
--		 * not have actually found our ref root when doing
--		 * btrfs_find_all_roots, so we need to keep track of how many
--		 * old roots we find in case we removed ours and added a
--		 * different one at the same time.  I don't think this could
--		 * happen in practice but that sort of thinking leads to pain
--		 * and suffering and to the dark side.
--		 */
--		(*old_roots)++;
--
--		ulist_reinit(tmp);
--		ret = ulist_add(qgroups, qg->qgroupid, ptr_to_u64(qg),
--				GFP_ATOMIC);
--		if (ret < 0)
--			return ret;
--		ret = ulist_add(tmp, qg->qgroupid, ptr_to_u64(qg), GFP_ATOMIC);
--		if (ret < 0)
--			return ret;
--		ULIST_ITER_INIT(&tmp_uiter);
--		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
--			struct btrfs_qgroup_list *glist;
--			int mod;
--
--			qg = u64_to_ptr(tmp_unode->aux);
--			/*
--			 * We use this sequence number to keep from having to
--			 * run the whole list and 0 out the refcnt every time.
--			 * We basically use sequnce as the known 0 count and
--			 * then add 1 everytime we see a qgroup.  This is how we
--			 * get how many of the roots actually point up to the
--			 * upper level qgroups in order to determine exclusive
--			 * counts.
--			 *
--			 * For rescan none of the extent is recorded before so
--			 * we just don't add old_refcnt.
--			 */
--			if (rescan)
--				mod = 0;
--			else
--				mod = 1;
--			btrfs_qgroup_update_old_refcnt(qg, seq, mod);
--			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
--			list_for_each_entry(glist, &qg->groups, next_group) {
--				ret = ulist_add(qgroups, glist->group->qgroupid,
--						ptr_to_u64(glist->group),
--						GFP_ATOMIC);
--				if (ret < 0)
--					return ret;
--				ret = ulist_add(tmp, glist->group->qgroupid,
--						ptr_to_u64(glist->group),
--						GFP_ATOMIC);
--				if (ret < 0)
--					return ret;
--			}
--		}
--	}
--	return 0;
--}
--
--/*
-- * We need to walk forward in our operation tree and account for any roots that
-- * were deleted after we made this operation.
-- */
--static int qgroup_account_deleted_refs(struct btrfs_fs_info *fs_info,
--				       struct btrfs_qgroup_operation *oper,
--				       struct ulist *tmp,
--				       struct ulist *qgroups, u64 seq,
--				       int *old_roots)
--{
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
--	struct btrfs_qgroup *qg;
--	struct btrfs_qgroup_operation *tmp_oper;
--	struct rb_node *n;
--	int ret;
--
--	ulist_reinit(tmp);
--
--	/*
--	 * We only walk forward in the tree since we're only interested in
--	 * removals that happened _after_  our operation.
--	 */
--	spin_lock(&fs_info->qgroup_op_lock);
--	n = rb_next(&oper->n);
--	spin_unlock(&fs_info->qgroup_op_lock);
--	if (!n)
--		return 0;
--	tmp_oper = rb_entry(n, struct btrfs_qgroup_operation, n);
--	while (tmp_oper->bytenr == oper->bytenr) {
--		/*
--		 * If it's not a removal we don't care, additions work out
--		 * properly with our refcnt tracking.
--		 */
--		if (tmp_oper->type != BTRFS_QGROUP_OPER_SUB_SHARED &&
--		    tmp_oper->type != BTRFS_QGROUP_OPER_SUB_EXCL)
--			goto next;
--		qg = find_qgroup_rb(fs_info, tmp_oper->ref_root);
--		if (!qg)
--			goto next;
--		ret = ulist_add(qgroups, qg->qgroupid, ptr_to_u64(qg),
--				GFP_ATOMIC);
--		if (ret) {
--			if (ret < 0)
--				return ret;
--			/*
--			 * We only want to increase old_roots if this qgroup is
--			 * not already in the list of qgroups.  If it is already
--			 * there then that means it must have been re-added or
--			 * the delete will be discarded because we had an
--			 * existing ref that we haven't looked up yet.  In this
--			 * case we don't want to increase old_roots.  So if ret
--			 * == 1 then we know that this is the first time we've
--			 * seen this qgroup and we can bump the old_roots.
--			 */
--			(*old_roots)++;
--			ret = ulist_add(tmp, qg->qgroupid, ptr_to_u64(qg),
--					GFP_ATOMIC);
--			if (ret < 0)
--				return ret;
--		}
--next:
--		spin_lock(&fs_info->qgroup_op_lock);
--		n = rb_next(&tmp_oper->n);
--		spin_unlock(&fs_info->qgroup_op_lock);
--		if (!n)
--			break;
--		tmp_oper = rb_entry(n, struct btrfs_qgroup_operation, n);
--	}
--
--	/* Ok now process the qgroups we found */
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(tmp, &uiter))) {
--		struct btrfs_qgroup_list *glist;
--
--		qg = u64_to_ptr(unode->aux);
--		btrfs_qgroup_update_old_refcnt(qg, seq, 1);
--		btrfs_qgroup_update_new_refcnt(qg, seq, 1);
--		list_for_each_entry(glist, &qg->groups, next_group) {
--			ret = ulist_add(qgroups, glist->group->qgroupid,
--					ptr_to_u64(glist->group), GFP_ATOMIC);
--			if (ret < 0)
--				return ret;
--			ret = ulist_add(tmp, glist->group->qgroupid,
--					ptr_to_u64(glist->group), GFP_ATOMIC);
--			if (ret < 0)
--				return ret;
--		}
--	}
--	return 0;
--}
--
--/* Add refcnt for the newly added reference. */
--static int qgroup_calc_new_refcnt(struct btrfs_fs_info *fs_info,
--				  struct btrfs_qgroup_operation *oper,
--				  struct btrfs_qgroup *qgroup,
--				  struct ulist *tmp, struct ulist *qgroups,
--				  u64 seq)
--{
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
--	struct btrfs_qgroup *qg;
--	int ret;
--
--	ulist_reinit(tmp);
--	ret = ulist_add(qgroups, qgroup->qgroupid, ptr_to_u64(qgroup),
--			GFP_ATOMIC);
--	if (ret < 0)
--		return ret;
--	ret = ulist_add(tmp, qgroup->qgroupid, ptr_to_u64(qgroup),
--			GFP_ATOMIC);
--	if (ret < 0)
--		return ret;
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(tmp, &uiter))) {
--		struct btrfs_qgroup_list *glist;
--
--		qg = u64_to_ptr(unode->aux);
--		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED)
--			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
--		else
--			btrfs_qgroup_update_old_refcnt(qg, seq, 1);
--		list_for_each_entry(glist, &qg->groups, next_group) {
--			ret = ulist_add(tmp, glist->group->qgroupid,
--					ptr_to_u64(glist->group), GFP_ATOMIC);
--			if (ret < 0)
--				return ret;
--			ret = ulist_add(qgroups, glist->group->qgroupid,
--					ptr_to_u64(glist->group), GFP_ATOMIC);
--			if (ret < 0)
--				return ret;
--		}
--	}
--	return 0;
--}
--
++
++#define UPDATE_NEW	0
++#define UPDATE_OLD	1
  /*
+  * Walk all of the roots that pointed to our bytenr and adjust their refcnts as
+  * properly.
+  */
++static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
++				struct ulist *roots,
++				struct ulist *tmp,
++				struct ulist *qgroups,
++				u64 seq, int update_old)
++{
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++	struct ulist_node *tmp_unode;
++	struct ulist_iterator tmp_uiter;
++	struct btrfs_qgroup *qg;
++	int ret;
++
++	if (!roots)
++		return 0;
++
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(roots, &uiter))) {
++		qg = find_qgroup_rb(fs_info, unode->val);
++		if (!qg)
++			continue;
++
++		ulist_reinit(tmp);
++		ret = ulist_add(qgroups, qg->qgroupid, ptr_to_u64(qg),
++				GFP_ATOMIC);
++		if (ret < 0)
++			return ret;
++		ret = ulist_add(tmp, qg->qgroupid, ptr_to_u64(qg), GFP_ATOMIC);
++		if (ret < 0)
++			return ret;
++		ULIST_ITER_INIT(&tmp_uiter);
++		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
++			struct btrfs_qgroup_list *glist;
++
++			qg = u64_to_ptr(tmp_unode->aux);
++			if (update_old)
++				btrfs_qgroup_update_old_refcnt(qg, seq, 1);
++			else
++				btrfs_qgroup_update_new_refcnt(qg, seq, 1);
++			list_for_each_entry(glist, &qg->groups, next_group) {
++				ret = ulist_add(qgroups, glist->group->qgroupid,
++						ptr_to_u64(glist->group),
++						GFP_ATOMIC);
++				if (ret < 0)
++					return ret;
++				ret = ulist_add(tmp, glist->group->qgroupid,
++						ptr_to_u64(glist->group),
++						GFP_ATOMIC);
++				if (ret < 0)
++					return ret;
++			}
++		}
++	}
++	return 0;
++}
++
+ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
+ 				  u64 root_to_skip, struct ulist *tmp,
+ 				  struct ulist *roots, struct ulist *qgroups,
+@@ -1725,14 +1784,20 @@ static int qgroup_calc_new_refcnt(struct btrfs_fs_info *fs_info,
   * This adjusts the counters for all referenced qgroups if need be.
   */
-@@ -1858,39 +1642,6 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- }
+ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
+-				  u64 root_to_skip, u64 num_bytes,
+-				  struct ulist *qgroups, u64 seq,
+-				  int old_roots, int new_roots, int rescan)
++				  struct ulist *qgroups,
++				  struct ulist *old_root_list,
++				  struct ulist *new_root_list,
++				  u64 num_bytes, u64 seq)
+ {
+ 	struct ulist_node *unode;
+ 	struct ulist_iterator uiter;
+ 	struct btrfs_qgroup *qg;
+ 	u64 cur_new_count, cur_old_count;
++	u64 old_roots = 0;
++	u64 new_roots = new_root_list->nnodes;
++
++	if (old_root_list)
++		old_roots = old_root_list->nnodes;
  
- /*
-- * If we removed a data extent and there were other references for that bytenr
-- * then we need to lookup all referenced roots to make sure we still don't
-- * reference this bytenr.  If we do then we can just discard this operation.
-- */
--static int check_existing_refs(struct btrfs_trans_handle *trans,
--			       struct btrfs_fs_info *fs_info,
--			       struct btrfs_qgroup_operation *oper)
--{
--	struct ulist *roots = NULL;
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
--	int ret = 0;
--
--	ret = btrfs_find_all_roots(trans, fs_info, NULL, oper->bytenr,
--				   oper->elem.seq, &roots, 0);
--	if (ret < 0)
--		return ret;
--	ret = 0;
--
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(roots, &uiter))) {
--		if (unode->val == oper->ref_root) {
--			ret = 1;
--			break;
--		}
--	}
--	ulist_free(roots);
--	btrfs_put_tree_mod_seq(fs_info, &oper->elem);
--
--	return ret;
--}
--
--/*
-  * If we share a reference across multiple roots then we may need to adjust
-  * various qgroups referenced and exclusive counters.  The basic premise is this
+ 	ULIST_ITER_INIT(&uiter);
+ 	while ((unode = ulist_next(qgroups, &uiter))) {
+@@ -1836,19 +1901,12 @@ static int check_existing_refs(struct btrfs_trans_handle *trans,
+  * jack this sequence up by the number of roots we found each time in order to
+  * make sure we don't have any overlap.
   *
+- * 2) We first search all the roots that reference the area _except_ the root
+- * we're acting on currently.  This makes up the old_refcnt of all the qgroups
+- * before.
+- *
+- * 3) We walk all of the qgroups referenced by the root we are currently acting
+- * on, and will either adjust old_refcnt in the case of a removal or the
+- * new_refcnt in the case of an addition.
+- *
+- * 4) Finally we walk all the qgroups that are referenced by this range
+- * including the root we are acting on currently.  We will adjust the counters
+- * based on the number of roots we had and will have after this operation.
++ * 2) We have oper->old_roots and oper->new_roots, indicating the roots
++ * referring the extent before/after the delayed operation.
++ * So just update old/new_refcnt if one root is in old/new_roots.
+  *
+- * Take this example as an illustration
++ * 3) When updating one root in old/new_roots, we also needs to update all its
++ * parents.
+  *
+  *			[qgroup 1/0]
+  *		     /         |          \
+@@ -1856,36 +1914,41 @@ static int check_existing_refs(struct btrfs_trans_handle *trans,
+  *		   \          |            /
+  *		  [	   extent	    ]
+  *
+- * Say we are adding a reference that is covered by qg 0/0.  The first step
+- * would give a refcnt of 1 to qg 0/1 and 0/2 and a refcnt of 2 to qg 1/0 with
+- * old_roots being 2.  Because it is adding new_roots will be 1.  We then go
+- * through qg 0/0 which will get the new_refcnt set to 1 and add 1 to qg 1/0's
+- * new_refcnt, bringing it to 3.  We then walk through all of the qgroups, we
+- * notice that the old refcnt for qg 0/0 < the new refcnt, so we added a
+- * reference and thus must add the size to the referenced bytes.  Everything
+- * else is the same so nothing else changes.
++ * Say we are adding a reference that is newly covered by qg 0/0.
++ * What we have in oper->old/new_roots:
++ * oper->old_roots = {0/1, 0/2}, nnodes = 2
++ * oper->new_roots = {0/0, 0/1, 0/2}, nnodes = 3
++ *
++ * Old refcnt update:
++ * 1) qg 0/1: 0->1, qg 1/0: 0->1  2)qg 0/2: 0->1, qg 1/0: 1->2
++ *
++ * New refcnt update:
++ * 1) qg 0/0: 0->1, qg 1/0: 0->1  2)qg 0/1: 0->1, qg 1/0: 1->2
++ * 3) qg 0/2: 0->1, qg 1/0: 2->3
++ *
++ * Accounting update:
++ * 1) qg 0/0, old 0, new 1, old_roots 2, new_roots 3.
++ * new > old, add rfer. new < new_roots, no add excl.
++ *
++ * 2) qg 0/1 ~ 0/2 , old 1, new 1, old_roots 2, new_roots 3.
++ * new == old, no add rfer. new < new_roots, no add excl.
++ *
++ * 3) qg 1/0, old 2, new 3, old_roots 2, new_roots 3.
++ * new > old, add rfer. new == new_roots, add excl
++ *
++ * See full judgements in qgroup_adjust_counters().
+  */
+ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_qgroup_operation *oper)
+ {
+-	struct ulist *roots = NULL;
+ 	struct ulist *qgroups, *tmp;
+ 	struct btrfs_qgroup *qgroup;
+-	struct seq_list elem = {};
+ 	u64 seq;
+-	int old_roots = 0;
+-	int new_roots = 0;
++	u64 old_roots = 0;
++	u64 new_roots = oper->new_roots->nnodes;
+ 	int ret = 0;
+ 
+-	if (oper->elem.seq) {
+-		ret = check_existing_refs(trans, fs_info, oper);
+-		if (ret < 0)
+-			return ret;
+-		if (ret)
+-			return 0;
+-	}
+-
+ 	qgroups = ulist_alloc(GFP_NOFS);
+ 	if (!qgroups)
+ 		return -ENOMEM;
+@@ -1896,15 +1959,6 @@ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 	}
+ 
+-	btrfs_get_tree_mod_seq(fs_info, &elem);
+-	ret = btrfs_find_all_roots(trans, fs_info, NULL, oper->bytenr, elem.seq,
+-				   &roots, 0);
+-	btrfs_put_tree_mod_seq(fs_info, &elem);
+-	if (ret < 0) {
+-		ulist_free(qgroups);
+-		ulist_free(tmp);
+-		return ret;
+-	}
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	qgroup = find_qgroup_rb(fs_info, oper->ref_root);
+ 	if (!qgroup)
+@@ -1912,71 +1966,38 @@ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
+ 	seq = fs_info->qgroup_seq;
+ 
+ 	/*
+-	 * So roots is the list of all the roots currently pointing at the
+-	 * bytenr, including the ref we are adding if we are adding, or not if
+-	 * we are removing a ref.  So we pass in the ref_root to skip that root
+-	 * in our calculations.  We set old_refnct and new_refcnt cause who the
+-	 * hell knows what everything looked like before, and it doesn't matter
+-	 * except...
+-	 */
+-	ret = qgroup_calc_old_refcnt(fs_info, oper->ref_root, tmp, roots, qgroups,
+-				     seq, &old_roots, 0);
+-	if (ret < 0)
+-		goto out;
+-
+-	/*
+-	 * Now adjust the refcounts of the qgroups that care about this
+-	 * reference, either the old_count in the case of removal or new_count
+-	 * in the case of an addition.
++	 * Update old refcnts, since we have oper->old_roots, just use them
+ 	 */
+-	ret = qgroup_calc_new_refcnt(fs_info, oper, qgroup, tmp, qgroups,
+-				     seq);
++	ret = qgroup_update_refcnt(fs_info, oper->old_roots, tmp, qgroups, seq,
++				   UPDATE_OLD);
+ 	if (ret < 0)
+ 		goto out;
+ 
+ 	/*
+-	 * ...in the case of removals.  If we had a removal before we got around
+-	 * to processing this operation then we need to find that guy and count
+-	 * his references as if they really existed so we don't end up screwing
+-	 * up the exclusive counts.  Then whenever we go to process the delete
+-	 * everything will be grand and we can account for whatever exclusive
+-	 * changes need to be made there.  We also have to pass in old_roots so
+-	 * we have an accurate count of the roots as it pertains to this
+-	 * operations view of the world.
++	 * Update new refcnts, since we have oper->new_roots, just use them
+ 	 */
+-	ret = qgroup_account_deleted_refs(fs_info, oper, tmp, qgroups, seq,
+-					  &old_roots);
++	ret = qgroup_update_refcnt(fs_info, oper->new_roots, tmp, qgroups, seq,
++				   UPDATE_NEW);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	/*
+-	 * We are adding our root, need to adjust up the number of roots,
+-	 * otherwise old_roots is the number of roots we want.
+-	 */
+-	if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED) {
+-		new_roots = old_roots + 1;
+-	} else {
+-		new_roots = old_roots;
+-		old_roots++;
+-	}
+-
++	if (oper->old_roots)
++		old_roots = oper->old_roots->nnodes;
+ 	/*
+ 	 * Bump qgroup_seq to avoid seq overlap
+ 	 * XXX: This makes qgroup_seq mismatch with oper->seq.
+ 	 */
+-	fs_info->qgroup_seq += old_roots + 1;
+-
++	fs_info->qgroup_seq += max(old_roots, new_roots) + 1;
+ 
+ 	/*
+ 	 * And now the magic happens, bless Arne for having a pretty elegant
+ 	 * solution for this.
+ 	 */
+-	qgroup_adjust_counters(fs_info, oper->ref_root, oper->num_bytes,
+-			       qgroups, seq, old_roots, new_roots, 0);
++	qgroup_adjust_counters(fs_info, qgroups, oper->old_roots,
++			       oper->new_roots, oper->num_bytes, seq);
+ out:
+ 	spin_unlock(&fs_info->qgroup_lock);
+ 	ulist_free(qgroups);
+-	ulist_free(roots);
+ 	ulist_free(tmp);
+ 	return ret;
+ }
+@@ -2559,7 +2580,6 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 	struct seq_list tree_mod_seq_elem = {};
+ 	u64 num_bytes;
+ 	u64 seq;
+-	int new_roots;
+ 	int slot;
+ 	int ret;
+ 
+@@ -2618,17 +2638,17 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 		seq = fs_info->qgroup_seq;
+ 		fs_info->qgroup_seq += roots->nnodes + 1; /* max refcnt */
+ 
+-		new_roots = 0;
+-		ret = qgroup_calc_old_refcnt(fs_info, 0, tmp, roots, qgroups,
+-					     seq, &new_roots, 1);
++		/* For rescan, we only need to update new refcnt */
++		ret = qgroup_update_refcnt(fs_info, roots, tmp, qgroups, seq,
++					   UPDATE_NEW);
+ 		if (ret < 0) {
+ 			spin_unlock(&fs_info->qgroup_lock);
+ 			ulist_free(roots);
+ 			goto out;
+ 		}
+ 
+-		ret = qgroup_adjust_counters(fs_info, 0, num_bytes, qgroups,
+-					     seq, 0, new_roots, 1);
++		ret = qgroup_adjust_counters(fs_info, qgroups, NULL, roots,
++					     num_bytes, seq);
+ 		if (ret < 0) {
+ 			spin_unlock(&fs_info->qgroup_lock);
+ 			ulist_free(roots);
 -- 
 2.3.3
 

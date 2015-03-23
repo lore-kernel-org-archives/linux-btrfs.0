@@ -1,58 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f42.google.com ([209.85.213.42]:32878 "EHLO
-	mail-yh0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751766AbbCWF1Y (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:40716 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752089AbbCWIZh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 01:27:24 -0400
-Received: by yhpt93 with SMTP id t93so63635990yhp.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Mar 2015 22:27:23 -0700 (PDT)
+	Mon, 23 Mar 2015 04:25:37 -0400
+Message-ID: <550FCD9C.1000706@oracle.com>
+Date: Mon, 23 Mar 2015 16:23:56 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20150323045314.GD19498@gardel-login>
-References: <CAJCQCtRFUMAeyjLxADKLVaHA0wqQBY_tbyZoJJ6Hze7AeeTa_w@mail.gmail.com>
-	<550C7655.10907@libero.it>
-	<CAJCQCtRFnCm=ug4Byd=A+mT+CrUPrrGW_T+SzYaD+mLc6wypOA@mail.gmail.com>
-	<20150323045314.GD19498@gardel-login>
-Date: Sun, 22 Mar 2015 23:27:22 -0600
-Message-ID: <CAJCQCtSw=+=+LF9MCP6hsHQ1yew_Q=J4bWGy=tv3Ugz+rSHLrw@mail.gmail.com>
-Subject: Re: [systemd-devel] systemd and nested Btrfs subvolumes
-From: Chris Murphy <lists@colorremedies.com>
-To: Lennart Poettering <mzerqung@0pointer.de>
-Cc: kreijack@inwind.it,
-        systemd Mailing List <systemd-devel@lists.freedesktop.org>,
+To: "G. Richard Bellamy" <rbellamy@pteradigm.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Upgrade to 3.19.2 Kernel fails to boot
+References: <CADw2B2Nxr5PPSaVWpQWxg0ZaXYSpOTye_pMU1HbjCHif8q9_LQ@mail.gmail.com>
+In-Reply-To: <CADw2B2Nxr5PPSaVWpQWxg0ZaXYSpOTye_pMU1HbjCHif8q9_LQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 22, 2015 at 10:53 PM, Lennart Poettering
-<mzerqung@0pointer.de> wrote:
-> On Fri, 20.03.15 18:08, Chris Murphy (lists@colorremedies.com) wrote:
->
->> Sure but now it's missing if you do a rollback, or if you mount any
->> different root tree, so immediately special handling is needed.
->>
->> If machines is a subvolume at the top level, it can always be mounted
->> at /var/lib/machines regardless of which root is used.
->>
->> I also think this is more consistent with
->> http://0pointer.net/blog/revisiting-how-we-put-together-linux-systems.html
->> specifically the section "What We Propose" when it comes to the
->> location and naming convention for Btrfs subvolumes.
->
-> containers are recursively stackable, hence having toplevel subvolumes
-> doesn't work, since the containers should be able to have
-> subcontainers of their own...
->
-> Also, it kinda defeats the whole point of btrfs' subvolume concept,
-> where subvolumes are little more than special directories.
 
-They're much more than that, they're a separate fs tree. They're maybe
-something between a completely separate filesystem volume, and a
-directory. They each have their own inodes, so it's possible (if not
-likely) that on a Btrfs volume an inode will point to multiple files
-in different subvolumes.
+Do you still have the problem ? Can you pls confirm on the latest btrfs 
+? Since I am fixing the devices part of the btrfs, I am bit nervous.
 
-http://marc.info/?l=linux-btrfs&m=137462926329422&w=2
+Thanks,  Anand
 
--- 
-Chris Murphy
+On 03/20/2015 07:06 AM, G. Richard Bellamy wrote:
+> When I upgrade to the 3.19.2 Kernel I get a deadlocked boot:
+> INFO: task mount:302 blocked for more than 120 seconds.
+> INFO: task btrfs-transacti:329 blocked for more than 120 seconds.
+>
+> I have an LTS Kernel at 3.14.35 that also fails to boot with the same behavior.
+>
+> My 3.18.6 works just fine.
+>
+> -rb
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

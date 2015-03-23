@@ -1,72 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:48998 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752106AbbCWOIB (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 23 Mar 2015 10:08:01 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
-Subject: [PATCH v2] Btrfs: fix log tree corruption when fs mounted with -o discard
-Date: Mon, 23 Mar 2015 14:07:40 +0000
-Message-Id: <1427119660-31959-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1427113038-1961-1-git-send-email-fdmanana@suse.com>
-References: <1427113038-1961-1-git-send-email-fdmanana@suse.com>
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:35178 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752423AbbCWRgM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Mar 2015 13:36:12 -0400
+From: Tom Van Braeckel <tomvanbraeckel@gmail.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Tom Van Braeckel <tomvanbraeckel@gmail.com>,
+        Martin Kepplinger <martink@posteo.de>
+Subject: [PATCH] btrfs: explicitly set control file's private_data
+Date: Mon, 23 Mar 2015 18:34:13 +0100
+Message-Id: <1427132053-410-1-git-send-email-tomvanbraeckel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While committing a transaction we free the log roots before we write the
-new super block. Freeing the log roots implies marking the disk location
-of every node/leaf (metadata extent) as pinned before the new super block
-is written. This is to prevent the disk location of log metadata extents
-from being reused before the new super block is written, otherwise we
-would have a corrupted log tree if before the new super block is written
-a crash/reboot happens and the location of any log tree metadata extent
-ended up being reused and rewritten.
+The private_data member of the Btrfs control device file
+(/dev/btrfs-control) is used to hold the current transaction and needs
+to be initialized to NULL to signify that no transaction is in progress.
 
-Even though we pinned the log tree's metadata extents, we were issuing a
-discard against them if the fs was mounted with the -o discard option,
-resulting in corruption of the log tree if a crash/reboot happened before
-writing the new super block - the next time the fs was mounted, during
-the log replay process we would find nodes/leafs of the log btree with
-a content full of zeroes, causing the process to fail and require the
-use of the tool btrfs-zero-log to wipeout the log tree (and all data
-previously fsynced becoming lost forever).
+We explicitly set the control file's private_data to NULL to be
+independent of whatever value the misc subsystem initializes it to.
 
-Fix this by not doing a discard when pinning an extent. The discard will
-be done later when it's safe (after the new super block is committed) at
-extent-tree.c:btrfs_finish_extent_commit().
+Backstory:
+----------
 
-Fixes: e688b7252f78 (Btrfs: fix extent pinning bugs in the tree log)
-CC: <stable@vger.kernel.org>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+The misc subsystem (which is used by /dev/btrfs-control) initializes
+a file's private_data to point to the misc device when a driver has
+registered a custom open file operation and initializes it to NULL
+when a custom open file operation has *not* been provided.
+
+This subtle quirk is confusing, to the point where kernel code registers
+*empty* file open operations to have private_data point to the misc
+device structure.
+
+And it leads to bugs, where the addition or removal of a custom open
+file operation surprisingly changes the initial contents of a file's
+private_data structure.
+
+To simplify things in the misc subsystem, a patch [1] has been proposed
+to *always* set private_data to point to the misc device instead of
+only doing this when a custom open file operation has been registered.
+
+But before we can fix this in the misc subsystem itself, we need to
+modify the (few) drivers that rely on this very subtle behavior.
+
+[1] https://lkml.org/lkml/2014/12/4/939
+
+Signed-off-by: Martin Kepplinger <martink@posteo.de>
+Signed-off-by: Tom Van Braeckel <tomvanbraeckel@gmail.com>
 ---
+ fs/btrfs/super.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-V2: Do the discard before returning the space to the free space cache,
-    just to make sure no one gets it while/before doing the discard.
-
- fs/btrfs/extent-tree.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f183b4c..74cf0d3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6940,12 +6940,11 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
- 		return -ENOSPC;
- 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 05fef19..3cfb5ee 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1908,6 +1908,16 @@ static struct file_system_type btrfs_fs_type = {
+ };
+ MODULE_ALIAS_FS("btrfs");
  
--	if (btrfs_test_opt(root, DISCARD))
--		ret = btrfs_discard_extent(root, start, len, NULL);
--
- 	if (pin)
- 		pin_down_extent(root, cache, start, len, 1);
- 	else {
-+		if (btrfs_test_opt(root, DISCARD))
-+			ret = btrfs_discard_extent(root, start, len, NULL);
- 		btrfs_add_free_space(cache, start, len);
- 		btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, delalloc);
- 	}
++static int btrfs_control_open(struct inode *inode, struct file *file)
++{
++	/* The control file's private_data is used to hold the
++	 * transaction when it is started and is used to keep
++	 * track of whether a transaction is already in progress.
++	 */
++	file->private_data = NULL;
++	return 0;
++}
++
+ /*
+  * used by btrfsctl to scan devices when no FS is mounted
+  */
+@@ -2009,6 +2019,7 @@ static const struct super_operations btrfs_super_ops = {
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {
++	.open = btrfs_control_open,
+ 	.unlocked_ioctl	 = btrfs_control_ioctl,
+ 	.compat_ioctl = btrfs_control_ioctl,
+ 	.owner	 = THIS_MODULE,
 -- 
-2.1.3
+2.1.0
 

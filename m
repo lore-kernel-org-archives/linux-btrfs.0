@@ -1,159 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:45215 "EHLO
-	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753018AbbCWP3l (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 11:29:41 -0400
-Message-ID: <55103155.3040202@skagestad.org>
-Date: Mon, 23 Mar 2015 16:29:25 +0100
-From: =?UTF-8?B?VG9yYmrDuHJu?= <lists@skagestad.org>
+Received: from mail.virtall.com ([178.63.195.102]:56149 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752205AbbCWPdm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Mar 2015 11:33:42 -0400
 MIME-Version: 1.0
-To: =?UTF-8?B?VG9yYmrDuHJu?= <lists@skagestad.org>, Chris Mason <clm@fb.com>
-CC: fdmanana@gmail.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Linux 4.0.0-rc5 - [ 1851.858652] BTRFS: error (device sda1) in
- cleanup_transaction:1686: errno=-17 Object already exists
-References: <550FEC73.9010507@skagestad.org>	<CAL3q7H5E3ftp+02frB2Q3N+pt-wQmLS+1TWgYobqXZg=pu0O0A@mail.gmail.com>	<55100CE5.5020602@itpas.no> <1427118454.5707.5@mail.thefacebook.com> <55101A35.6020406@skagestad.org>
-In-Reply-To: <55101A35.6020406@skagestad.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Tue, 24 Mar 2015 00:33:40 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS: unable to add free space :-17
+In-Reply-To: <1427118518.5707.6@mail.thefacebook.com>
+References: <d1161c0c22333dfe9b77144aa18779b1@admin.virtall.com>
+ <1427114113.5707.1@mail.thefacebook.com>
+ <1427118518.5707.6@mail.thefacebook.com>
+Message-ID: <8b9f49986eddfa7f74ac71c38617fb4d@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/23/2015 02:50 PM, Torbjørn wrote:
-> On 23. mars 2015 14:47, Chris Mason wrote:
->> On Mon, Mar 23, 2015 at 8:53 AM, Torbjørn Skagestad 
->> <torbjorn@itpas.no> wrote:
->>> On 23. mars 2015 13:36, Filipe David Manana wrote:
->>>> On Mon, Mar 23, 2015 at 10:35 AM, Torbjørn <lists@skagestad.org> 
->>>> wrote:
->>>>> Hi,
->>>>>
->>>>> After upgrading to 4.0.0-rc5 from 4.0.0-rc4 I see "Object already 
->>>>> exists"
->>>>> after reboot.
->>>>> The fs is forced read only.
->>>>> The error does not disappear after additional reboots.
->>>> If you go back to 4.0.0-rc4, does the error still happens?
->>>
->>> As mentioned in the email to Chris:
->>> I will try to boot with 4.0.0-rc4 as soon as I get physical access, 
->>> and also revert ea526d18990018f224e5734748975bea1824545f.
->>
->> In order to revert ea526d1899, you need to revert this one first:
->>
->> commit dcdf7f6ddba006f3482ebee73dfa6b75aec5f07b
->> Author: Josef Bacik <jbacik@fb.com>
->> Date:   Mon Mar 2 16:37:31 2015 -0500
->>
->>    Btrfs: prepare block group cache before writing
->>
->>
->> This second commit relies on the first one, things won't work right 
->> with only one gone.
->>
->> -chris
->>
->>
->>
-> Thanks,
->
-> I would most likely have missed that.
->
-> -- 
-> Torbjørn
+On 2015-03-23 22:48, Chris Mason wrote:
+> On Mon, Mar 23, 2015 at 8:35 AM, Chris Mason <clm@fb.com> wrote:
+>> 
+>> 
+>> On Mon, Mar 23, 2015 at 8:19 AM, Tomasz Chmielewski <tch@virtall.com> 
+>> wrote:
+>>> Got this with 4.0.0-rc5 when doing a degraded mount:
+>> Do you get this every time, even after going back to rc4?
 
-Hi,
+Actually, I didn't try yet (going back to 4.0.0-rc4).
 
-Reboot with rc-4 did not fix anything. The same "errno=-17 Object 
-already exists" was still present.
-Reboot with 3.19.0 failed and went straight to initramfs/busybox.
-btrfs-zero-log from busybox allowed boot to 3.19.0
-Reboot to 4.0.0-rc4 without problems.
+Shortly after, it errored with:
 
-touch tmp.file
-sync
-btrfs fi sync
-No issues
-Building a new rc-5 with reverts, also no issues.
-
-git log --oneline |head -n 3
-dc68208 Revert "Btrfs: fix ASSERT(list_empty(&cur_trans->dirty_bgs_list)"
-f84bf90 Revert "Btrfs: prepare block group cache before writing"
-bc465aa Linux 4.0-rc5
-
-make clean;make -j9 deb-pkg
-
-Reboot into 4.0.0-rc5 with reverts
-Same warning and read only fs.
-
-[Mon Mar 23 16:07:42 2015] Btrfs loaded
-[Mon Mar 23 16:07:42 2015] BTRFS: device label root devid 2 transid 
-1881030 /dev/sdd1
-[Mon Mar 23 16:07:42 2015] BTRFS: device label root devid 1 transid 
-1881030 /dev/sda1
-[Mon Mar 23 16:07:42 2015] BTRFS info (device sda1): disk space caching 
-is enabled
-[Mon Mar 23 16:07:44 2015] init: ureadahead main process (373) 
-terminated with status 5
-[Mon Mar 23 16:07:45 2015] BTRFS info (device sda1): disk space caching 
-is enabled
-[Mon Mar 23 16:07:45 2015] BTRFS warning (device sda1): block group 
-19356712960 has wrong amount of free space
-[Mon Mar 23 16:07:45 2015] BTRFS warning (device sda1): failed to load 
-free space cache for block group 19356712960, rebuild it now
-[Mon Mar 23 16:07:45 2015] BTRFS warning (device sda1): block group 
-20430454784 has wrong amount of free space
-[Mon Mar 23 16:07:45 2015] BTRFS warning (device sda1): failed to load 
-free space cache for block group 20430454784, rebuild it now
-[Mon Mar 23 16:07:49 2015] ------------[ cut here ]------------
-[Mon Mar 23 16:07:49 2015] WARNING: CPU: 2 PID: 207 at 
-fs/btrfs/super.c:260 __btrfs_abort_transaction+0x54/0x130 [btrfs]()
-[Mon Mar 23 16:07:49 2015] BTRFS: Transaction aborted (error -17)
-[Mon Mar 23 16:07:49 2015] Modules linked in: btrfs raid10 raid456 
-async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq 
-raid0 multipath linear raid1 hid_generic usbhid hid psmouse e1000e ahci 
-libahci ptp mpt2sas pps_core raid_class scsi_transport_sas
-[Mon Mar 23 16:07:49 2015] CPU: 2 PID: 207 Comm: kworker/u16:7 Not 
-tainted 4.0.0-rc5+ #98
-[Mon Mar 23 16:07:49 2015] Hardware name: To be filled by O.E.M. To be 
-filled by O.E.M./P8B-X series, BIOS 2107 05/04/2012
-[Mon Mar 23 16:07:49 2015] Workqueue: btrfs-extent-refs 
-btrfs_extent_refs_helper [btrfs]
-[Mon Mar 23 16:07:49 2015]  ffffffffc0583832 ffff88041a3fbc28 
-ffffffff8176aaed 0000000000003b5a
-[Mon Mar 23 16:07:49 2015]  ffff88041a3fbc78 ffff88041a3fbc68 
-ffffffff8107a0ea 0000000000000000
-[Mon Mar 23 16:07:49 2015]  ffff88041c9a9210 ffff880418e17800 
-00000000ffffffef ffffffffc05820d0
-[Mon Mar 23 16:07:49 2015] Call Trace:
-[Mon Mar 23 16:07:49 2015]  [<ffffffff8176aaed>] dump_stack+0x45/0x57
-[Mon Mar 23 16:07:49 2015]  [<ffffffff8107a0ea>] 
-warn_slowpath_common+0x8a/0xc0
-[Mon Mar 23 16:07:49 2015]  [<ffffffff8107a166>] warn_slowpath_fmt+0x46/0x50
-[Mon Mar 23 16:07:49 2015]  [<ffffffffc04d5c84>] 
-__btrfs_abort_transaction+0x54/0x130 [btrfs]
-[Mon Mar 23 16:07:49 2015]  [<ffffffffc04f2c0c>] 
-btrfs_run_delayed_refs.part.65+0x12c/0x2a0 [btrfs]
-[Mon Mar 23 16:07:49 2015]  [<ffffffffc04f2e28>] 
-delayed_ref_async_start+0x88/0xa0 [btrfs]
-[Mon Mar 23 16:07:49 2015]  [<ffffffffc0534182>] 
-normal_work_helper+0xc2/0x2b0 [btrfs]
-[Mon Mar 23 16:07:49 2015]  [<ffffffffc05345a2>] 
-btrfs_extent_refs_helper+0x12/0x20 [btrfs]
-[Mon Mar 23 16:07:49 2015]  [<ffffffff8109326f>] 
-process_one_work+0x14f/0x420
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81093a28>] worker_thread+0x118/0x510
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81093910>] ? 
-rescuer_thread+0x3d0/0x3d0
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81098ea2>] kthread+0xd2/0xf0
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81098dd0>] ? 
-kthread_create_on_node+0x180/0x180
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81772518>] ret_from_fork+0x58/0x90
-[Mon Mar 23 16:07:49 2015]  [<ffffffff81098dd0>] ? 
-kthread_create_on_node+0x180/0x180
-[Mon Mar 23 16:07:49 2015] ---[ end trace 4cc557b601889d6c ]---
-[Mon Mar 23 16:07:49 2015] BTRFS: error (device sda1) in 
+[ 4450.519046] ------------[ cut here ]------------
+[ 4450.519066] WARNING: CPU: 4 PID: 4734 at fs/btrfs/super.c:260 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]()
+[ 4450.519081] BTRFS: Transaction aborted (error -17)
+[ 4450.519082] Modules linked in: ipv6 cpufreq_stats cpufreq_powersave 
+cpufreq_conservative btrfs xor raid6_pq zlib_deflate ext3 jbd loop 
+tpm_infineon tpm_tis i2c_i801 parport_pc parport 8250_fintek lpc_ich 
+pcspkr tpm video button acpi_cpufreq i2c_core mfd_core ehci_pci ehci_hcd 
+ext4 crc16 jbd2 mbcache raid1 sg sd_mod ahci libahci libata scsi_mod 
+r8169 mii
+[ 4450.519157] CPU: 4 PID: 4734 Comm: kworker/u16:5 Not tainted 
+4.0.0-rc5 #1
+[ 4450.519167] Hardware name: System manufacturer System Product 
+Name/P8H67-M PRO, BIOS 1106 10/17/2011
+[ 4450.519190] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper 
+[btrfs]
+[ 4450.519201]  0000000000000009 ffff88074e0a7c58 ffffffff813c2f57 
+0000000000000000
+[ 4450.519215]  ffff88074e0a7ca8 ffff88074e0a7c98 ffffffff8103b031 
+ffff8807b2638e68
+[ 4450.519255]  ffffffffa02b6356 00000000ffffffef ffff88081bb7e000 
+ffff880701ba3210
+[ 4450.519323] Call Trace:
+[ 4450.519357]  [<ffffffff813c2f57>] dump_stack+0x45/0x57
+[ 4450.519394]  [<ffffffff8103b031>] warn_slowpath_common+0x97/0xb1
+[ 4450.519434]  [<ffffffffa02b6356>] ? 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]
+[ 4450.519501]  [<ffffffff8103b0df>] warn_slowpath_fmt+0x41/0x43
+[ 4450.519540]  [<ffffffffa02b6356>] 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]
+[ 4450.519610]  [<ffffffffa02cd6d7>] btrfs_run_delayed_refs+0x90/0x21b 
+[btrfs]
+[ 4450.519653]  [<ffffffffa02cda60>] delayed_ref_async_start+0x37/0x76 
+[btrfs]
+[ 4450.519699]  [<ffffffffa0302c67>] normal_work_helper+0xb5/0x16a 
+[btrfs]
+[ 4450.519742]  [<ffffffffa0302e28>] btrfs_extent_refs_helper+0xd/0xf 
+[btrfs]
+[ 4450.519782]  [<ffffffff8104c16d>] process_one_work+0x187/0x2b2
+[ 4450.519819]  [<ffffffff8104c503>] worker_thread+0x241/0x33e
+[ 4450.519856]  [<ffffffff8104c2c2>] ? process_scheduled_works+0x2a/0x2a
+[ 4450.519894]  [<ffffffff810501a3>] kthread+0xcd/0xd5
+[ 4450.519930]  [<ffffffff810500d6>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[ 4450.519969]  [<ffffffff813c7848>] ret_from_fork+0x58/0x90
+[ 4450.520005]  [<ffffffff810500d6>] ? 
+kthread_freezable_should_stop+0x43/0x43
+[ 4450.520044] ---[ end trace 1aff120928ea0fd5 ]---
+[ 4450.520079] BTRFS: error (device sdb4) in 
 btrfs_run_delayed_refs:2790: errno=-17 Object already exists
-[Mon Mar 23 16:07:49 2015] BTRFS info (device sda1): forced readonly
+[ 4450.520148] BTRFS info (device sdb4): forced readonly
+[ 4450.641829] BTRFS: error (device sdb4) in 
+btrfs_run_delayed_refs:2790: errno=-17 Object already exists
 
---
-Torbjørn
+
+
+After reboot to 4.0.0-rc5, I didn't see "unable to add free space :-17" 
+anymore. However, it went again to "forced readonly" some time later.
+
+I'll try going to 4.0.0-rc4 now.
+
+-- 
+Tomasz Chmielewski
+http://www.sslrack.com
+

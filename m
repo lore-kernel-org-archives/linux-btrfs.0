@@ -1,38 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57729 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752249AbbCXOqb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Mar 2015 10:46:31 -0400
-Date: Tue, 24 Mar 2015 15:46:29 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Eryu Guan <guaneryu@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: WARNING at fs/btrfs/super.c:260 __btrfs_abort_transaction
-Message-ID: <20150324144629.GW20767@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20150320045900.GA16812@dhcp-13-216.nay.redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150320045900.GA16812@dhcp-13-216.nay.redhat.com>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:36353 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752261AbbCXPgP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Mar 2015 11:36:15 -0400
+From: Tom Van Braeckel <tomvanbraeckel@gmail.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Tom Van Braeckel <tomvanbraeckel@gmail.com>,
+        Martin Kepplinger <martink@posteo.de>
+Subject: [PATCH v2] btrfs: explicitly set control file's private_data
+Date: Tue, 24 Mar 2015 16:35:49 +0100
+Message-Id: <1427211349-8621-1-git-send-email-tomvanbraeckel@gmail.com>
+In-Reply-To: <20150324140155.GU20767@twin.jikos.cz>
+References: <20150324140155.GU20767@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 20, 2015 at 12:59:01PM +0800, Eryu Guan wrote:
-> Filling a dm/lvm snapshot triggered this btrfs WARNING, kernel is 4.0-rc3+
+The private_data member of the Btrfs control device file
+(/dev/btrfs-control) is used to hold the current transaction and needs
+to be initialized to NULL to signify that no transaction is in progress.
 
-It's an EIO because the underlying storage does not want to write the
-data.
+We explicitly set the control file's private_data to NULL to be
+independent of whatever value the misc subsystem initializes it to.
 
-> The same script can trigger warning on ext4 too, I'll file another bug
-> report to ext4 list.
+Backstory:
+----------
 
-So it's likely caused by dm/lvm.
+The misc subsystem (which is used by /dev/btrfs-control) initializes
+a file's private_data to point to the misc device when a driver has
+registered a custom open file operation and initializes it to NULL
+when a custom open file operation has *not* been provided.
 
-> [150646.284481] device-mapper: snapshots: Invalidating snapshot: Unable to allocate exception.
-...
-> [150646.312739] BTRFS: bdev /dev/mapper/vg_081-snap_081 errs: wr 10, rd 0, flush 0, corrupt 0, gen 0
-> [150646.331472] BTRFS: error (device dm-3) in btrfs_commit_transaction:2019: errno=-5 IO failure (Error while writing out transaction)
-> [150646.334251] BTRFS info (device dm-3): forced readonly
-> [150646.335365] BTRFS warning (device dm-3): Skipping commit of aborted transaction.
+This subtle quirk is confusing, to the point where kernel code registers
+*empty* file open operations to have private_data point to the misc
+device structure.
 
-And this is the standard behaviour of the filesystem in such case.
+And it leads to bugs, where the addition or removal of a custom open
+file operation surprisingly changes the initial contents of a file's
+private_data structure.
+
+To simplify things in the misc subsystem, a patch [1] has been proposed
+to *always* set private_data to point to the misc device instead of
+only doing this when a custom open file operation has been registered.
+
+But before we can fix this in the misc subsystem itself, we need to
+modify the (few) drivers that rely on this very subtle behavior.
+
+[1] https://lkml.org/lkml/2014/12/4/939
+
+Signed-off-by: Martin Kepplinger <martink@posteo.de>
+Signed-off-by: Tom Van Braeckel <tomvanbraeckel@gmail.com>
+---
+ fs/btrfs/super.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 05fef19..3c30195 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1908,6 +1908,17 @@ static struct file_system_type btrfs_fs_type = {
+ };
+ MODULE_ALIAS_FS("btrfs");
+ 
++static int btrfs_control_open(struct inode *inode, struct file *file)
++{
++	/*
++	 * The control file's private_data is used to hold the
++	 * transaction when it is started and is used to keep
++	 * track of whether a transaction is already in progress.
++	 */
++	file->private_data = NULL;
++	return 0;
++}
++
+ /*
+  * used by btrfsctl to scan devices when no FS is mounted
+  */
+@@ -2009,6 +2020,7 @@ static const struct super_operations btrfs_super_ops = {
+ };
+ 
+ static const struct file_operations btrfs_ctl_fops = {
++	.open = btrfs_control_open,
+ 	.unlocked_ioctl	 = btrfs_control_ioctl,
+ 	.compat_ioctl = btrfs_control_ioctl,
+ 	.owner	 = THIS_MODULE,
+-- 
+2.1.0
+

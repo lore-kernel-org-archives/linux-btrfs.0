@@ -1,33 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44107 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52726 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751999AbbCWXwB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 19:52:01 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 33B91ADBF
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2015 23:52:00 +0000 (UTC)
-Date: Tue, 24 Mar 2015 00:51:59 +0100
+	id S1752536AbbCXNnE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Mar 2015 09:43:04 -0400
+Date: Tue, 24 Mar 2015 14:43:01 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: cleanup orphans while looking up default subvolume
-Message-ID: <20150323235159.GR20767@twin.jikos.cz>
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix implicit inclusion of linux/uio.h
+Message-ID: <20150324134301.GT20767@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <550C60A1.9000708@suse.com>
+References: <1427042775-8258-1-git-send-email-broonie@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <550C60A1.9000708@suse.com>
+In-Reply-To: <1427042775-8258-1-git-send-email-broonie@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 20, 2015 at 02:02:09PM -0400, Jeff Mahoney wrote:
-> Orphans in the fs tree are cleaned up via open_ctree and subvolume
-> orphans are cleaned via btrfs_lookup_dentry -- except when a default
-> subvolume is in use.  The name for the default subvolume uses a manual
-> lookup that doesn't trigger orphan cleanup and needs to trigger it
-> manually as well. This doesn't apply to the remount case since the
-> subvolumes are cleaned up by walking the root radix tree.
+On Sun, Mar 22, 2015 at 04:46:15PM +0000, Mark Brown wrote:
+> The btrfs inode.c relies on implicit inclusion of linux/uio.h for
+> definitions of struct iov_iter and iov_iter_alignment() which breaks the
+> current ARM allmodconfig build where that implicit inclusion does not
+> happen.  Add an explicit include to fix that.
 > 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> Signed-off-by: Mark Brown <broonie@kernel.org>
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Acked-by: David Sterba <dsterba@suse.cz>

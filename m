@@ -1,96 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39154 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752098AbbCXC5f convert rfc822-to-8bit (ORCPT
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:57235 "EHLO
+	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750811AbbCXEAd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Mar 2015 22:57:35 -0400
-Message-ID: <5510D29A.9060903@cn.fujitsu.com>
-Date: Tue, 24 Mar 2015 10:57:30 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Tue, 24 Mar 2015 00:00:33 -0400
+Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
+	by mailout.nyi.internal (Postfix) with ESMTP id 6E74D2018D
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2015 00:00:30 -0400 (EDT)
+Message-Id: <1427169632.2878415.244369134.44ED7B24@webmail.messagingengine.com>
+From: Chris Severance <linuxkernel.severach@spamgourmet.com>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-To: Pavol Cupka <pavol.cupka@gmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Error: btrfs check --repair --init-csum-tree --init-extent-tree
-References: <CAH4oapfmnuN=NwE5yuC68oqojak2uHesgJQtuHritYx4HiOvOw@mail.gmail.com>
-In-Reply-To: <CAH4oapfmnuN=NwE5yuC68oqojak2uHesgJQtuHritYx4HiOvOw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
+Subject: Btrfs RAID 1 Very poor file re read cache
+Date: Tue, 24 Mar 2015 00:00:32 -0400
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+System:
 
+Thinkserver TS140 E3-1225, 32GB ECC RAM, LSI9211-8i (IT unraid), 2 WD xe
+SAS as mdraid-raid1-ext4, 2 WD xe SAS as btrfs-raid1
 
--------- Original Message  --------
-Subject: Error: btrfs check --repair --init-csum-tree --init-extent-tree
-From: Pavol Cupka <pavol.cupka@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2015年03月21日 20:26
+Linux xyzzy 3.19.2-1-ARCH #1 SMP PREEMPT Wed Mar 18 16:21:02 CET 2015
+x86_64 GNU/Linux
 
-> When running btrfs check on a RAID1 system using btrfs-progs v3.19-rc2
-> and running the 4.0.0-rc4 linux kernel. I get this:
->
-> btrfs check --repair --init-csum-tree --init-extent-tree /dev/sda1
-Before btrfs-progs v3.19-rc3(Yes, there is rc3 now), --init-extent-tree 
-can't work with --init-csum-tree properly. Although not the error your 
-reported...
+btrfs-progs v3.19
 
-It's recommended to use v3.19-rc3 to test, since it contains the fix for 
---init-csum-tree with --init-extent-tree.
-(Commit: 25db1dd11de2f25 "btrfs-progs: Make csum tree rebuild works with 
-extent tree rebuild.")
+btrfs fi: partition already removed, created with mkfs.btrfs -m raid1 -d
+raid1 -L sdmdata /dev/sdc /dev/sdd
 
-BTW, it's *HIGHLY* recommended to do a dd backup of your filesystem 
-before using such repair.
+dmesg: (not a problem with crashing)
 
-If v3.19-rc3 fixes it, that's good and nothing need to be done more.
-But if not, please continue reading...
-> ...
-> ...
-> Incorrect local backref count on 2019737948160 parent 2541793873920
-> owner 0 offset 0 found 1 wanted 0 back 0x624dece0
-> backpointer mismatch on [2019737948160 4096]
-> ref mismatch on [2019737952256 4096] extent item 0, found 5
-> adding new data backref on 2019737952256 root 271 owner 615 offset 0 found 1
-> adding new data backref on 2019737952256 parent 2935248711680 owner 0
-> offset 0 found 1
-> adding new data backref on 2019737952256 parent 3289312481280 owner 0
-> offset 0 found 1
-> ctree.c:1595: leaf_space_used: Assertion `data_len < 0` failed.
-This one seems strange, not sure what's the cause, but possible leaf 
-header corruption? (but why no csum error?)
+Problem:
 
-If your fs is not huge and don't contain important info, would you 
-please provide a compressed image of your fs?
-I'm afraid btrfs-image dump won't work in this case, so binary dump(dd) 
-would be quite nice to debug the case.
+Very poor file reread cache. The database I use organizes both data and
+keys in a single file as a btree. This means that each successive record
+is located randomly around the file. Reading from first to last
+generates a lot of seeks.
 
-If fs is too large or contains personal info, you can also try 
-btrfs-debug-tree to only dump metadata. (although output maybe large and 
-still need compression).
+On btrfs the speed is consistent throughout the whole file as it is on
+any system with too little memory for an effective cache. Every reread
+runs at the same slow and consistent speed.
 
-Thanks,
-Qu
-> btrfs[0x43324d]
-> btrfs[0x43380c]
-> btrfs(btrfs_leaf_free_space+0x24)[0x434f64]
-> btrfs(btrfs_check_leaf+0xa5)[0x435065]
-> btrfs[0x435432]
-> btrfs(btrfs_search_slot+0x305)[0x437025]
-> btrfs(btrfs_insert_empty_items+0x8a)[0x4384aa]
-> btrfs[0x43ebe9]
-> btrfs[0x43edb7]
-> btrfs(btrfs_inc_extent_ref+0xf1)[0x440151]
-> btrfs[0x40b512]
-> btrfs[0x412fe5]
-> btrfs(cmd_check+0x77d)[0x426afd]
-> btrfs(main+0x82)[0x413742]
-> /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f9078031a65]
-> btrfs[0x413843]
->
-> is someone from the devs interested on debuging this?
->
-> Let me know
-> Pavol
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+So I unmount btrfs, quick zero the drives, mkfs.ext4, mount, and unpack
+the same data and run the same test on the same drives.
+
+On ext4 (and xfs from other testing) the first time I read through the
+whole file it starts slow as it seeks around to uncached data and
+speeds up as more of the file is found in the cache. It is very fast by
+the end. Once in the cache I can read the file over and over super
+fast. The ext4 read cache is mitigating the time cost from the poor
+arrangement of the file.
+
+I'm the only user on this test system so nothing is clearing my 32GB.

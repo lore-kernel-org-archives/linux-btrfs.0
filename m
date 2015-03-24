@@ -1,77 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mxf2.bahnhof.se ([213.80.101.26]:64828 "EHLO mxf2.bahnhof.se"
+Received: from cantor2.suse.de ([195.135.220.15]:46042 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751128AbbCTBLi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Mar 2015 21:11:38 -0400
-Received: from localhost (mxf2.local [127.0.0.1])
-	by mxf2-reinject (Postfix) with ESMTP id AF11E1E9490
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 02:11:36 +0100 (CET)
-Received: from mxf2.bahnhof.se ([127.0.0.1])
-	by localhost (mxf2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 376QkI2GRt-e for <linux-btrfs@vger.kernel.org>;
-	Fri, 20 Mar 2015 02:11:30 +0100 (CET)
-Received: from miria.naju.se (h-219-91.a163.priv.bahnhof.se [85.24.219.91])
-	by mxf2.bahnhof.se (Postfix) with ESMTP id 309211E944F
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 02:11:30 +0100 (CET)
-Received: from sebban (helo=localhost)
-	by miria.naju.se with local-esmtp (Exim 4.80)
-	(envelope-from <sebth@naju.se>)
-	id 1YYlTF-0006zd-V8
-	for linux-btrfs@vger.kernel.org; Fri, 20 Mar 2015 02:11:30 +0100
-Date: Fri, 20 Mar 2015 02:11:29 +0100 (CET)
-From: Sebastian Thorarensen <sebth@naju.se>
+	id S1753192AbbCXSQ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Mar 2015 14:16:58 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 06012AC77
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2015 18:16:57 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/4] btrfs-progs: Add nodesize test for btrfs-convert
-In-Reply-To: <cover.1426812639.git.sebth@naju.se>
-Message-ID: <5280bf63aa02e4e0c08e70f842e3566693d6a20c.1426812639.git.sebth@naju.se>
-References: <cover.1426812639.git.sebth@naju.se>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: convert, add long options for all short options
+Date: Tue, 24 Mar 2015 19:16:56 +0100
+Message-Id: <1427221016-28178-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-convert-tests now test both 4096 and 16384 nodesizes.
-
-Signed-off-by: Sebastian Thorarensen <sebth@naju.se>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- tests/convert-tests.sh |   15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ Documentation/btrfs-convert.txt | 21 +++++++++++----------
+ btrfs-convert.c                 | 27 ++++++++++++++++++---------
+ 2 files changed, 29 insertions(+), 19 deletions(-)
 
-diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
-index 6094287..3d912f3 100644
---- a/tests/convert-tests.sh
-+++ b/tests/convert-tests.sh
-@@ -16,7 +16,8 @@ rm -f convert-tests-results.txt
+diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
+index 89b2fbd978e2..8b3f05b40ace 100644
+--- a/Documentation/btrfs-convert.txt
++++ b/Documentation/btrfs-convert.txt
+@@ -17,23 +17,24 @@ named 'ext2_saved' as file image.
  
- test(){
- 	echo "    [TEST]   $1"
--	shift
-+	nodesize=$2
-+	shift 2
- 	echo "creating ext image with: $*" >> convert-tests-results.txt
- 	# 256MB is the smallest acceptable btrfs image.
- 	rm -f $here/test.img >> convert-tests-results.txt 2>&1 \
-@@ -25,13 +26,17 @@ test(){
- 		|| _fail "could not create test image file"
- 	$* -F $here/test.img >> convert-tests-results.txt 2>&1 \
- 		|| _fail "filesystem create failed"
--	$here/btrfs-convert $here/test.img >> convert-tests-results.txt 2>&1 \
-+	$here/btrfs-convert -N "$nodesize" $here/test.img \
-+			>> convert-tests-results.txt 2>&1 \
- 		|| _fail "btrfs-convert failed"
- 	$here/btrfs check $here/test.img >> convert-tests-results.txt 2>&1 \
- 		|| _fail "btrfs check detected errors"
+ OPTIONS
+ -------
+--d::
+-Disable data checksum.
+--i::
++-d|--no-datasum::
++Disable data checksum calculations and set NODATASUM file flag. This can speed
++up the conversion.
++-i|--no-xattr::
+ Ignore xattrs and ACLs.
+--n::
+-Disable packing of small files.
+--N <SIZE>::
++-n|--no-inline::
++Disable inlining of small files to metadata blocks.
++-N|--nodesize <SIZE>::
+ Set filesystem nodesize, the tree block size in which btrfs stores data.
+ The default value is 16KB (16384) or the page size, whichever is bigger.
+ Must be a multiple of the sectorsize, but not larger than 65536.
+--r::
++-r|--rollback::
+ Roll back to ext2fs.
+--l <LABEL>::
++-l|--label <LABEL>::
+ set filesystem label during conversion.
+--L::
++-L|--copy-label::
+ use label from the converted filesystem.
+--p::
++-p|--progress::
+ Show progress of conversion, on by default.
+ --no-progress::
+ Disable detailed progress and show only the main phases of conversion.
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index ff8a959f6fa1..4dc33b3c03a4 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2800,15 +2800,16 @@ fail:
+ static void print_usage(void)
+ {
+ 	printf("usage: btrfs-convert [options] device\n");
+-	printf("\t-d             disable data checksum\n");
+-	printf("\t-i             ignore xattrs and ACLs\n");
+-	printf("\t-n             disable packing of small files\n");
+-	printf("\t-N SIZE        set filesystem nodesize\n");
+-	printf("\t-r             roll back to ext2fs\n");
+-	printf("\t-l LABEL       set filesystem label\n");
+-	printf("\t-L             use label from converted fs\n");
+-	printf("\t-p             show converting progress (default)\n");
+-	printf("\t--no-progress  show only overview, not the detailed progress\n");
++	printf("options:\n");
++	printf("\t-d|--no-datasum        disable data checksum, sets NODATASUM\n");
++	printf("\t-i|--no-xattr          ignore xattrs and ACLs\n");
++	printf("\t-n|--no-inline         disable inlining of small files to metadata\n");
++	printf("\t-N|--nodesize SIZE     set filesystem metadata nodesize\n");
++	printf("\t-r|--rollback          roll back to ext2fs\n");
++	printf("\t-l|--label LABEL       set filesystem label\n");
++	printf("\t-L|--copy-label        use label from converted filesystem\n");
++	printf("\t-p|--progress          show converting progress (default)\n");
++	printf("\t--no-progress          show only overview, not the detailed progress\n");
  }
  
- # btrfs-convert requires 4k blocksize.
--test "ext2" mke2fs -b 4096
--test "ext3" mke2fs -j -b 4096
--test "ext4" mke2fs -t ext4 -b 4096
-+test "ext2 4k nodesize" 4096 mke2fs -b 4096
-+test "ext3 4k nodesize" 4096 mke2fs -j -b 4096
-+test "ext4 4k nodesize" 4096 mke2fs -t ext4 -b 4096
-+test "ext2 16k nodesize" 16384 mke2fs -b 4096
-+test "ext3 16k nodesize" 16384 mke2fs -j -b 4096
-+test "ext4 16k nodesize" 16384 mke2fs -t ext4 -b 4096
+ int main(int argc, char *argv[])
+@@ -2832,6 +2833,14 @@ int main(int argc, char *argv[])
+ 		static const struct option long_options[] = {
+ 			{ "no-progress", no_argument, NULL,
+ 				GETOPT_VAL_NO_PROGRESS },
++			{ "no-datasum", no_argument, NULL, 'd' },
++			{ "no-inline", no_argument, NULL, 'n' },
++			{ "no-xattr", no_argument, NULL, 'i' },
++			{ "rollback", no_argument, NULL, 'r' },
++			{ "progress", no_argument, NULL, 'p' },
++			{ "label", required_argument, NULL, 'l' },
++			{ "copy-label", no_argument, NULL, 'L' },
++			{ "nodesize", required_argument, NULL, 'N' },
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 		int c = getopt_long(argc, argv, "dinN:rl:Lp", long_options,
 -- 
-1.7.10.4
+2.1.3
+

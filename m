@@ -1,110 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46042 "EHLO mx2.suse.de"
+Received: from smtp.gentoo.org ([140.211.166.183]:41207 "EHLO smtp.gentoo.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753192AbbCXSQ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Mar 2015 14:16:58 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 06012AC77
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2015 18:16:57 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+	id S1752698AbbCYAzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Mar 2015 20:55:46 -0400
+Received: from naomi.gilbertsystems.net (d192-24-148-25.try.wideopenwest.com [24.192.25.148])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: floppym)
+	by smtp.gentoo.org (Postfix) with ESMTPSA id 824FE3408A3
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2015 00:55:45 +0000 (UTC)
+From: Mike Gilbert <floppym@gentoo.org>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: convert, add long options for all short options
-Date: Tue, 24 Mar 2015 19:16:56 +0100
-Message-Id: <1427221016-28178-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: Fix autoconf handling of --enable-convert
+Date: Tue, 24 Mar 2015 20:55:41 -0400
+Message-Id: <1427244941-3896-1-git-send-email-floppym@gentoo.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- Documentation/btrfs-convert.txt | 21 +++++++++++----------
- btrfs-convert.c                 | 27 ++++++++++++++++++---------
- 2 files changed, 29 insertions(+), 19 deletions(-)
+AC_ARG_ENABLE(convert) sets $enable_convert, not $enable_btrfsconvert.
 
-diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
-index 89b2fbd978e2..8b3f05b40ace 100644
---- a/Documentation/btrfs-convert.txt
-+++ b/Documentation/btrfs-convert.txt
-@@ -17,23 +17,24 @@ named 'ext2_saved' as file image.
+Signed-off-by: Mike Gilbert <floppym@gentoo.org>
+---
+ configure.ac | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 0692d5a..1171ed7 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -94,13 +94,13 @@ fi
  
- OPTIONS
- -------
---d::
--Disable data checksum.
---i::
-+-d|--no-datasum::
-+Disable data checksum calculations and set NODATASUM file flag. This can speed
-+up the conversion.
-+-i|--no-xattr::
- Ignore xattrs and ACLs.
---n::
--Disable packing of small files.
---N <SIZE>::
-+-n|--no-inline::
-+Disable inlining of small files to metadata blocks.
-+-N|--nodesize <SIZE>::
- Set filesystem nodesize, the tree block size in which btrfs stores data.
- The default value is 16KB (16384) or the page size, whichever is bigger.
- Must be a multiple of the sectorsize, but not larger than 65536.
---r::
-+-r|--rollback::
- Roll back to ext2fs.
---l <LABEL>::
-+-l|--label <LABEL>::
- set filesystem label during conversion.
---L::
-+-L|--copy-label::
- use label from the converted filesystem.
---p::
-+-p|--progress::
- Show progress of conversion, on by default.
- --no-progress::
- Disable detailed progress and show only the main phases of conversion.
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index ff8a959f6fa1..4dc33b3c03a4 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2800,15 +2800,16 @@ fail:
- static void print_usage(void)
- {
- 	printf("usage: btrfs-convert [options] device\n");
--	printf("\t-d             disable data checksum\n");
--	printf("\t-i             ignore xattrs and ACLs\n");
--	printf("\t-n             disable packing of small files\n");
--	printf("\t-N SIZE        set filesystem nodesize\n");
--	printf("\t-r             roll back to ext2fs\n");
--	printf("\t-l LABEL       set filesystem label\n");
--	printf("\t-L             use label from converted fs\n");
--	printf("\t-p             show converting progress (default)\n");
--	printf("\t--no-progress  show only overview, not the detailed progress\n");
-+	printf("options:\n");
-+	printf("\t-d|--no-datasum        disable data checksum, sets NODATASUM\n");
-+	printf("\t-i|--no-xattr          ignore xattrs and ACLs\n");
-+	printf("\t-n|--no-inline         disable inlining of small files to metadata\n");
-+	printf("\t-N|--nodesize SIZE     set filesystem metadata nodesize\n");
-+	printf("\t-r|--rollback          roll back to ext2fs\n");
-+	printf("\t-l|--label LABEL       set filesystem label\n");
-+	printf("\t-L|--copy-label        use label from converted filesystem\n");
-+	printf("\t-p|--progress          show converting progress (default)\n");
-+	printf("\t--no-progress          show only overview, not the detailed progress\n");
- }
+ AC_ARG_ENABLE([convert],
+ 	      AS_HELP_STRING([--disable-convert], [do not build btrfs-convert]),
+-  [], [enable_btrfsconvert=yes]
++  [], [enable_convert=yes]
+ )
  
- int main(int argc, char *argv[])
-@@ -2832,6 +2833,14 @@ int main(int argc, char *argv[])
- 		static const struct option long_options[] = {
- 			{ "no-progress", no_argument, NULL,
- 				GETOPT_VAL_NO_PROGRESS },
-+			{ "no-datasum", no_argument, NULL, 'd' },
-+			{ "no-inline", no_argument, NULL, 'n' },
-+			{ "no-xattr", no_argument, NULL, 'i' },
-+			{ "rollback", no_argument, NULL, 'r' },
-+			{ "progress", no_argument, NULL, 'p' },
-+			{ "label", required_argument, NULL, 'l' },
-+			{ "copy-label", no_argument, NULL, 'L' },
-+			{ "nodesize", required_argument, NULL, 'N' },
- 			{ NULL, 0, NULL, 0 }
- 		};
- 		int c = getopt_long(argc, argv, "dinN:rl:Lp", long_options,
+-AS_IF([test "x$enable_btrfsconvert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
++AS_IF([test "x$enable_convert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
+ AC_SUBST([DISABLE_BTRFSCONVERT])
+ 
+-if test "x$enable_btrfsconvert" = xyes; then
++if test "x$enable_convert" = xyes; then
+ 	PKG_CHECK_MODULES(EXT2FS, [ext2fs])
+ 	PKG_CHECK_MODULES(COM_ERR, [com_err])
+ fi
+@@ -163,7 +163,7 @@ AC_MSG_RESULT([
+ 
+ 	documentaton:      ${enable_documentation}
+ 	backtrace support: ${enable_backtrace}
+-	btrfs-convert:     ${enable_btrfsconvert}
++	btrfs-convert:     ${enable_convert}
+ 
+ 	Type 'make' to compile.
+ ])
 -- 
-2.1.3
+2.3.3
 

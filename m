@@ -1,104 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:36797 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751326AbbCVILG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Mar 2015 04:11:06 -0400
-Received: by wgra20 with SMTP id a20so122241444wgr.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Mar 2015 01:11:05 -0700 (PDT)
-Received: from [192.168.0.2] (gev44-1-78-228-108-65.fbx.proxad.net. [78.228.108.65])
-        by mx.google.com with ESMTPSA id cn10sm5564775wib.15.2015.03.22.01.11.04
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sun, 22 Mar 2015 01:11:04 -0700 (PDT)
-Message-ID: <550E7917.5030602@gmail.com>
-Date: Sun, 22 Mar 2015 09:11:03 +0100
-From: Marc Cousin <cousinmarc@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34851 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752263AbbCYBTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Mar 2015 21:19:39 -0400
+Date: Wed, 25 Mar 2015 02:19:37 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Marc Cousin <cousinmarc@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: snapshot destruction making IO extremely slow
+Message-ID: <20150325011937.GB20767@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <550E7917.5030602@gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: snapshot destruction making IO extremely slow
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <550E7917.5030602@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Mar 22, 2015 at 09:11:03AM +0100, Marc Cousin wrote:
+> I've noticed this problem for a while (I started to use snapper a
+> while ago): while destroying snapshots, it's almost impossible to do
+> IO on the volume.
 
-I've noticed this problem for a while (I started to use snapper a while ago): while destroying snapshots, it's almost impossible to do IO on the volume.
+The snapshots get cleaned in the background, which usuall touches lots
+of data (depending on the "age" of the extents, IOW the level of sharing
+among the live and deleted snapshots).
 
-There is almost no IO active on this volume (it is made of sdb,sdc and sdd).
+The slowdown is caused due to contention on the metadata (locking,
+readig from disk, scattered blocks, lots of seeking).
 
+Snapper might add to that if you have
 
+EMPTY_PRE_POST_CLEANUP="yes"
 
-Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
-sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+as it reads the pre/post snapshots and deletes them if the diff is
+empty. This adds some IO stress.
 
-avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-           1,77    0,00   13,24    0,00    0,00   84,99
+> The btrfs cleaner is 100% active:
+> 
+>  1501 root      20   0       0      0      0 R 100,0  0,0   9:10.40 [btrfs-cleaner]    
 
-Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
-sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sda               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+That points to the snapshot cleaning, but the cleaner thread does more
+than that. It may also process delayed file deletion and work scheduled
+if 'autodefrag' is on.
 
-avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-           0,88    0,00   13,03    0,25    0,00   85,84
+> As soon as it terminates its job, the filesystem becomes usable again.
+> But while waiting it is extremely unresponsive. Any program doing a
+> write there hangs.
+> 
+> Some more information: the 3 disks are 2.7TB, the raid is RAID1
+> 
+> # btrfs fi df /mnt/btrfs
+> Data, RAID1: total=3.18TiB, used=3.14TiB
+> System, RAID1: total=32.00MiB, used=480.00KiB
+> Metadata, RAID1: total=6.00GiB, used=4.32GiB
 
-Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
-sdb               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sda               0,00     1,00    4,00    2,00     0,08     0,01    30,67     0,01    1,67    0,00    5,00   1,67   1,00
-sdd               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdc               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sde               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-0              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-1              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-2              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-dm-3              0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
-sdg               0,00     0,00    0,00    0,00     0,00     0,00     0,00     0,00    0,00    0,00    0,00   0,00   0,00
+Space looks ok, enough data and metadata so it's not affected by low
+space conditions.
 
-(sda isn't into this btrfs filesystem)
+> What is "funny" is that the filesystem seems to be working again when
+> there is some IO activity and btrfs-cleaner gets to a lower cpu usage
+> (around 70%).
 
-The btrfs cleaner is 100% active:
+Possibly a behaviour caused by scheduling (both cpu and io), the other
+process gets a slice and slows down cleaner that hogs the system.
 
- 1501 root      20   0       0      0      0 R 100,0  0,0   9:10.40 [btrfs-cleaner]    
+> By the way, there are quite a few snapshots there:
+> 
+> # btrfs subvolume  list /mnt/btrfs | wc -l
+> 142
+> 
+> and I think snapper tries to destroy around 10 of them on one go.
 
-As soon as it terminates its job, the filesystem becomes usable again. But while waiting it is extremely unresponsive. Any program doing a write there hangs.
+The snapshots get cleaned in the order of deletion, and if there is some
+amount of sharing, the metadata blocks are probably cached. So it may
+actually help to delete them in a group.
 
-Some more information: the 3 disks are 2.7TB, the raid is RAID1
+> I can do whatever test you want, as long as I keep the data on my disks :)
 
-# btrfs fi df /mnt/btrfs
-Data, RAID1: total=3.18TiB, used=3.14TiB
-System, RAID1: total=32.00MiB, used=480.00KiB
-Metadata, RAID1: total=6.00GiB, used=4.32GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+So far it looks like effects of filesystem aging in the presence of
+snapshots. Right now, I think we could try to somehow adjust the io
+scheduling priority in case the cleaner processes the deleted
+subvolumes, but this is unfortunatelly done in an asynchronous manner
+and the metadata are read by other threads so this could be fairly
+intrusive patch.
 
-
-What is "funny" is that the filesystem seems to be working again when there is some IO activity and btrfs-cleaner gets to a lower cpu usage (around 70%).
-
-By the way, there are quite a few snapshots there:
-
-# btrfs subvolume  list /mnt/btrfs | wc -l
-142
-
-and I think snapper tries to destroy around 10 of them on one go.
-
-I can do whatever test you want, as long as I keep the data on my disks :)
-
-Regards,
-
-Marc
+Or, introduce an interface that would set the subvolume cleaning
+behaviour, eg. only if idle, or normal or immediate. The dead and
+uncleaned subvolumes pin the space so we cannot make it 'idle' by
+default.

@@ -1,37 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45154 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751344AbbCYRk6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 13:40:58 -0400
-Date: Wed, 25 Mar 2015 18:40:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove empty block groups automatically V3
-Message-ID: <20150325174056.GJ20767@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-la0-f52.google.com ([209.85.215.52]:33741 "EHLO
+	mail-la0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751413AbbCYXpb convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Mar 2015 19:45:31 -0400
+Received: by labto5 with SMTP id to5so32910366lab.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2015 16:45:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Anand Patil <anand.prabhakar.patil@gmail.com>
+Date: Wed, 25 Mar 2015 16:45:09 -0700
+Message-ID: <CAFzWkZGytSfhvx8zts=pwBseua-Hdpp+ZXmDPNLrpwJqhiaU_A@mail.gmail.com>
+Subject: Metadata about to fill up, how to make it bigger next time?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+Hi everyone,
 
-On Thu, Sep 18, 2014 at 11:20:02AM -0400, Josef Bacik wrote:
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1764,6 +1764,7 @@ static int cleaner_kthread(void *arg)
->  		}
->  
->  		btrfs_run_delayed_iputs(root);
-> +		btrfs_delete_unused_bgs(root->fs_info);
->  		again = btrfs_clean_one_deleted_snapshot(root);
->  		mutex_unlock(&root->fs_info->cleaner_mutex);
+I have a BTRFS filesystem on a 1TB block device, kernel 3.16.2+, tools
+v3.14_pre20140414. There are many (several thousand) subvolumes,
+folders and small files.
 
-any reason to put the dirty bg deletion before snapshot cleaning? If the
-snapshot unpins some old data there is higher chance to remove some bgs
-after that.
+When I run btrfs fi df /path/to/fs, I see:
 
-This is not a problem as the cleaner loop may be triggered for other
-reasons (iputs, autodefrag, more than one snapshot in the queue) but
-still would make more sense to do it after the deletion. Thanks.
+Data, single: total=53.01GiB, used=51.79GiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=16.00GiB, used=14.72GiB
+
+I have already done "btrfs balance start -dusage 50" and "btrfs
+balance start -musage 50".
+
+
+My most pressing question is, does that metadata line really mean that
+the filesystem is going to become unusable soon?
+
+If so, do I really need to migrate the data to a new filesystem with a
+much bigger metadata allowance, or is there an easier way? For
+example, can I migrate the metadata and leave the data in place?
+
+Assuming I need to do some kind of migration, my next question is how
+do I size the metadata on the new filesystem? The btrfs faq says
+
+"No, the value passed to mkfs.btrfs -n SIZE cannot be changed once the
+filesystem is created. A backup/restore is needed.
+Note, that this will likely never be implemented because it would
+require major updates to the core functionality. "
+
+man mkfs.btrfs says of the '-n' option:
+
+       -n, --nodesize size
+              -l,  --leafsize  size  Specify  the  nodesize,  the tree
+block size in which btrfs
+              stores data. The default value is the page size. Must be
+a multiple of the sector‐
+              size,  but  not larger than 65536. Leafsize always
+equals nodesize and the options
+              are aliases.
+
+The relationship between that and the 'Metadata' line in btrfs fi df
+is not clear to me.
+
+Thanks in advance for any help,
+Anand

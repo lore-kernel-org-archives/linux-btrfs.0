@@ -1,55 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gardel.0pointer.net ([85.214.157.71]:49265 "EHLO
-	gardel.0pointer.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751146AbbCYLVu (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37778 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752175AbbCYPEP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 07:21:50 -0400
-Date: Wed, 25 Mar 2015 12:21:47 +0100
-From: Lennart Poettering <lennart@poettering.net>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Recursive subvolume snapshots and deletion?
-Message-ID: <20150325112147.GB21533@gardel-login>
-References: <20150323045718.GE19498@gardel-login>
- <1427114207.5707.2@mail.thefacebook.com>
+	Wed, 25 Mar 2015 11:04:15 -0400
+Date: Wed, 25 Mar 2015 23:04:06 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Chengyu Song <csong84@gatech.edu>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs: incorrect handling for
+ fiemap_fill_next_extent return
+Message-ID: <20150325150405.GB4796@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1427235176-19381-1-git-send-email-csong84@gatech.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1427114207.5707.2@mail.thefacebook.com>
+In-Reply-To: <1427235176-19381-1-git-send-email-csong84@gatech.edu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 23.03.15 08:36, Chris Mason (clm@fb.com) wrote:
+On Tue, Mar 24, 2015 at 06:12:56PM -0400, Chengyu Song wrote:
+> fiemap_fill_next_extent returns 0 on success, -errno on error, 1 if this was
+> the last extent that will fit in user array. If 1 is returned, the return
+> value may eventually returned to user space, which should not happen, according
+> to manpage of ioctl.
 
-> On Mon, Mar 23, 2015 at 12:57 AM, Lennart Poettering <mzerqung@0pointer.de>
-> wrote:
-> >Heya!
-> >
-> >So what's the story on recursive btrfs snapshotting and snapshot
-> >removal? Since a while systemd has now by default creating btrfs
-> >subvolumes for /var/lib/machines for example. Now, if that code is run
-> >inside a container, and the container itself already is stored in a
-> >subvolume we end up with a subvolume inside a subvolume, which
-> >currently breaks snapshotting and deletion of the outer container
-> >subvolume.
-> >
-> >What's the plan regarding recursive versions of the operations? Any
-> >plan to add this? We could work around this in userspace, of course,
-> >but it would not be atomic, and I'd much prefer if the kernel could do
-> >this on its own!
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
 > 
-> Hi Lennart,
+> Signed-off-by: Chengyu Song <csong84@gatech.edu>
+> ---
+>  fs/btrfs/extent_io.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
 > 
-> I've got a patch to btrfs-progs that can do the recursive snapshotting, let
-> me clean it up and submit to Dave.  For recursive deletion I think the same
-> method can be used.
-
-OK, so this means you want this to be solved in userspace, hence in a
-non-atomic fashion?
-
-What precisely will your code do? Enumerate the subvolumes and simply
-snapshot all subvolumes below the desired path? Or anything smarter?
-
-Lennart
-
--- 
-Lennart Poettering, Red Hat
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index d688cfe..782f3bc 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4514,8 +4514,11 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+>  		}
+>  		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
+>  					      em_len, flags);
+> -		if (ret)
+> +		if (ret) {
+> +			if (ret == 1)
+> +				ret = 0;
+>  			goto out_free;
+> +		}
+>  	}
+>  out_free:
+>  	free_extent_map(em);
+> -- 
+> 2.1.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,44 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:36108 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752801AbbCYBaw (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:40435 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751172AbbCYDjq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Mar 2015 21:30:52 -0400
-Received: by igbud6 with SMTP id ud6so88740224igb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2015 18:30:52 -0700 (PDT)
+	Tue, 24 Mar 2015 23:39:46 -0400
+In-Reply-To: <20150324231435.GN31762@carfax.org.uk>
+References: <E8C63C11EA3FB04DBDFEDECEFD927FD1140C1E31@US-EVT-EXM04-P.global.tektronix.net> <20150325040321.361abf2f@natsu> <E8C63C11EA3FB04DBDFEDECEFD927FD1140C1E65@US-EVT-EXM04-P.global.tektronix.net> <20150324231435.GN31762@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <20150323232212.GL31762@carfax.org.uk>
-References: <meq6hm$lbh$1@ger.gmane.org>
-	<20150323232212.GL31762@carfax.org.uk>
-Date: Tue, 24 Mar 2015 21:30:52 -0400
-Message-ID: <CAGfcS_=6iHH+4T6CH8ag6MSf2N5n37pE6USSOjDTv=BMmFHQaw@mail.gmail.com>
-Subject: Re: btrfs dedup - available or experimental? Or yet to be?
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Hugo Mills <hugo@carfax.org.uk>, Martin <m_btrfs@ml1.co.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+ charset=UTF-8
+Subject: Re: btrfs balance fails with no space errors (despite having plenty)
+From: Russell Coker <russell@coker.com.au>
+Date: Wed, 25 Mar 2015 14:39:38 +1100
+To: Hugo Mills <hugo@carfax.org.uk>,
+        "Kline, Matthew" <matthew.kline@flukenetworks.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <A8460D29-9B8D-46FC-B858-A00F38D27088@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 23, 2015 at 7:22 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Mon, Mar 23, 2015 at 11:10:46PM +0000, Martin wrote:
->> As titled:
->>
->>
->> Does btrfs have dedup (on raid1 multiple disks) that can be enabled?
->
->    The current state of play is on the wiki:
->
-> https://btrfs.wiki.kernel.org/index.php/Deduplication
->
+I've been having ongoing issues with balance failing with no space errors in spite of having plenty. Strangely it seems to most often happen from cron jobs, when a cron job fails I can count on a manual balance succeeding.
 
-I hadn't realized that bedup was deprecated.
-
-This seems unfortunate since it seemed to be a lot smarter about
-detecting what has and hasn't already been scanned, and it also
-supported defragmenting files while de-duplicating them.
-
-I'll give duperemove a shot.   I just packaged it on Gentoo.
-
---
-Rich
+I'm running the latest Debian/Jessie kernel.
+-- 
+Sent from my Samsung Galaxy Note 3 with K-9 Mail.

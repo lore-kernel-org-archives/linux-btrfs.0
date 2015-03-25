@@ -1,103 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f179.google.com ([209.85.223.179]:33715 "EHLO
-	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751043AbbCTPKD (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:30067 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753297AbbCYSH0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Mar 2015 11:10:03 -0400
-Received: by iecvj10 with SMTP id vj10so95164738iec.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2015 08:10:02 -0700 (PDT)
+	Wed, 25 Mar 2015 14:07:26 -0400
+Date: Wed, 25 Mar 2015 14:05:34 -0400
+From: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH 1/4] btrfs: add missing barriers before waitqueue_active
+To: David Sterba <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1427306734.28930.1@mail.thefacebook.com>
+In-Reply-To: <17483cf32d53059bb3e6aa1662fe2f35727829bc.1424795734.git.dsterba@suse.cz>
+References: <cover.1424795734.git.dsterba@suse.cz>
+	<17483cf32d53059bb3e6aa1662fe2f35727829bc.1424795734.git.dsterba@suse.cz>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20150320143840.GC5108@mwanda>
-References: <20150320143840.GC5108@mwanda>
-Date: Fri, 20 Mar 2015 15:10:02 +0000
-Message-ID: <CAL3q7H65R=oNy3AHZFsZZEmyAXvO4eDMVhiScT_a375sn0x=QA@mail.gmail.com>
-Subject: Re: Btrfs: make fsync work after cloning into a file
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 20, 2015 at 2:38 PM, Dan Carpenter <dan.carpenter@oracle.com> wrote:
-> Hello Filipe Manana,
->
-> The patch 7ffbb598a059: "Btrfs: make fsync work after cloning into a
-> file" from Jun 9, 2014, leads to the following static checker warning:
->
->         fs/btrfs/inode.c:6602 btrfs_get_extent()
->         warn: we tested 'create' before and it was 'false'
->
-> fs/btrfs/inode.c
->   6589
->   6590                  if (new_inline)
->                             ^^^^^^^^^^
-> This implies that "create == 0".
->
->   6591                          goto out;
->   6592
->   6593                  size = btrfs_file_extent_inline_len(leaf, path->slots[0], item);
->   6594                  extent_offset = page_offset(page) + pg_offset - extent_start;
->   6595                  copy_size = min_t(u64, PAGE_CACHE_SIZE - pg_offset,
->   6596                                  size - extent_offset);
->   6597                  em->start = extent_start + extent_offset;
->   6598                  em->len = ALIGN(copy_size, root->sectorsize);
->   6599                  em->orig_block_len = em->len;
->   6600                  em->orig_start = em->start;
->   6601                  ptr = btrfs_file_extent_inline_start(item) + extent_offset;
->   6602                  if (create == 0 && !PageUptodate(page)) {
->                             ^^^^^^^^^^^
-> No need to check here.
->
->   6603                          if (btrfs_file_extent_compression(leaf, item) !=
->   6604                              BTRFS_COMPRESS_NONE) {
->   6605                                  ret = uncompress_inline(path, inode, page,
->   6606                                                          pg_offset,
->   6607                                                          extent_offset, item);
->   6608                                  if (ret) {
->   6609                                          err = ret;
->   6610                                          goto out;
->   6611                                  }
->   6612                          } else {
->   6613                                  map = kmap(page);
->   6614                                  read_extent_buffer(leaf, map + pg_offset, ptr,
->   6615                                                     copy_size);
->   6616                                  if (pg_offset + copy_size < PAGE_CACHE_SIZE) {
->   6617                                          memset(map + pg_offset + copy_size, 0,
->   6618                                                 PAGE_CACHE_SIZE - pg_offset -
->   6619                                                 copy_size);
->   6620                                  }
->   6621                                  kunmap(page);
->   6622                          }
->   6623                          flush_dcache_page(page);
->   6624                  } else if (create && PageUptodate(page)) {
->                                    ^^^^^^
-> Or here.
->
->   6625                          BUG();
->   6626                          if (!trans) {
+On Tue, Feb 24, 2015 at 11:51 AM, David Sterba <dsterba@suse.cz> wrote:
+> The waitqueue might miss a wakeup due to memory ordering issues, the
+> explicit barrier is required unless there's an implicit one.
 
-Hi,
+Thanks for going through these Dave, a few comments below:
 
-Valid warning, but the change mentioned above didn't add or update
-that logic (only stored the result of "!page || create" into a local
-variable named "new_inline").
-The logic with the unnecessary checks for "create" was added in 2007,
-commit 179e29e488cc (Btrfs: Fix a number of inline extent problems
-that Yan Zheng reported.).
+> 
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>  fs/btrfs/dev-replace.c |  9 ++++++++-
+>  fs/btrfs/raid56.c      | 17 ++++++++++++-----
+>  fs/btrfs/transaction.c |  5 ++++-
+>  fs/btrfs/tree-log.c    |  8 ++++++++
+>  4 files changed, 32 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 5ec03d999c37..30b8668396e0 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -451,6 +451,10 @@ static void btrfs_rm_dev_replace_blocked(struct 
+> btrfs_fs_info *fs_info)
+>  static void btrfs_rm_dev_replace_unblocked(struct btrfs_fs_info 
+> *fs_info)
+>  {
+>  	clear_bit(BTRFS_FS_STATE_DEV_REPLACING, &fs_info->fs_state);
+> +	/*
+> +	 * Make sure counter is updated before we wake up waiters.
+> +	 */
+> +	smp_mb();
+>  	if (waitqueue_active(&fs_info->replace_wait))
+>  		wake_up(&fs_info->replace_wait);
 
-thanks
+This one isn't performance critical, lets just use wake_up directly.
 
->
-> regards,
-> dan carpenter
+> 
+>  }
+> @@ -916,7 +920,10 @@ void btrfs_bio_counter_inc_noblocked(struct 
+> btrfs_fs_info *fs_info)
+>  void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
+>  {
+>  	percpu_counter_sub(&fs_info->bio_counter, amount);
+> -
+> +	/*
+> +	 * Make sure counter is updated before we wake up waiters.
+> +	 */
+> +	smp_mb();
+>  	if (waitqueue_active(&fs_info->replace_wait))
+>  		wake_up(&fs_info->replace_wait);
+>  }
+
+This is performance critical.  Can we do it only when a replace is 
+actually running?
+
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 5264858ed768..b460e193f324 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -809,11 +809,18 @@ static noinline void unlock_stripe(struct 
+> btrfs_raid_bio *rbio)
+>  			}
+> 
+>  			goto done_nolock;
+> -		} else  if (waitqueue_active(&h->wait)) {
+> -			spin_unlock(&rbio->bio_list_lock);
+> -			spin_unlock_irqrestore(&h->lock, flags);
+> -			wake_up(&h->wait);
+> -			goto done_nolock;
+> +		} else {
+> +			/*
+> +			 * Make sure counter is updated before we wake up
+> +			 * waiters.
+> +			 */
+> +			smp_mb();
+> +			if (waitqueue_active(&h->wait)) {
+> +				spin_unlock(&rbio->bio_list_lock);
+> +				spin_unlock_irqrestore(&h->lock, flags);
+> +				wake_up(&h->wait);
+> +				goto done_nolock;
+> +			}
+>  		}
+>  	}
+>  done:
+
+This one is already protected by the h->lock, we can't miss wakeups.
+
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 038fcf6051e0..90ba0c3c3d0d 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -90,8 +90,11 @@ static void clear_btree_io_tree(struct 
+> extent_io_tree *tree)
+>  		/*
+>  		 * btree io trees aren't supposed to have tasks waiting for
+>  		 * changes in the flags of extent states ever.
+> +		 *
+> +		 * Barrier required to make sure counter is updated before we
+> +		 * wake up waiters.
+>  		 */
+> -		ASSERT(!waitqueue_active(&state->wq));
+> +		ASSERT(({ smp_mb(); !waitqueue_active(&state->wq); }));
+>  		free_extent_state(state);
+>  		if (need_resched()) {
+>  			spin_unlock(&tree->lock);
+
+Maybe just one before the while loop?  This shouldn't be changing once 
+clear_btree_io_tree is called
+
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index f96996a1b70c..121df0fe5128 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -2739,6 +2739,10 @@ out_wake_log_root:
+>  	atomic_set(&log_root_tree->log_commit[index2], 0);
+>  	mutex_unlock(&log_root_tree->log_mutex);
+> 
+> +	/*
+> +	 * Make sure counter is updated before we wake up waiters.
+> +	 */
+> +	smp_mb();
+>  	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
+>  		wake_up(&log_root_tree->log_commit_wait[index2]);
+>  out:
+
+this one is protected by the log tree mutex
+
+> 
+> @@ -2750,6 +2754,10 @@ out:
+>  	atomic_set(&root->log_commit[index1], 0);
+>  	mutex_unlock(&root->log_mutex);
+> 
+> +	/*
+> +	 * Make sure counter is updated before we wake up waiters.
+> +	 */
+> +	smp_mb();
+>  	if (waitqueue_active(&root->log_commit_wait[index1]))
+>  		wake_up(&root->log_commit_wait[index1]);
+>  	return ret;
+
+This one we still need, but you'll get the barrier for free from 
+mutex_unlock
+
+-chris
 
 
 
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

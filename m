@@ -1,50 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:40615 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750698AbbCYEUZ (ORCPT
+Received: from mail-yh0-f48.google.com ([209.85.213.48]:34525 "EHLO
+	mail-yh0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750884AbbCYFZF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 00:20:25 -0400
-In-Reply-To: <20150322173849.GG31762@carfax.org.uk>
-References: <CAAkAgPhF5GF5tq0Pck-dju-m7qf62LV8FobUHS2z6ibMwwUn2g@mail.gmail.com> <20150322173849.GG31762@carfax.org.uk>
+	Wed, 25 Mar 2015 01:25:05 -0400
+Received: by yhch68 with SMTP id h68so6951405yhc.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2015 22:25:04 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: btrfs fstrim status (RAID5)
-From: Russell Coker <russell@coker.com.au>
-Date: Wed, 25 Mar 2015 15:20:13 +1100
-To: Hugo Mills <hugo@carfax.org.uk>, scruffters <scruffters@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Message-ID: <B16BDB3D-9548-4B95-9F9D-E32885AD327E@coker.com.au>
+In-Reply-To: <20150323211334.GA11155@ret.masoncoding.com>
+References: <CAJCQCtSmjNVWZaqKr_NcOnpRbSn8mzfutz5jeTDrk=qAT-Z2Vw@mail.gmail.com>
+	<20150323211334.GA11155@ret.masoncoding.com>
+Date: Tue, 24 Mar 2015 23:25:04 -0600
+Message-ID: <CAJCQCtRypOUTDcaftuQWCrHqH3mvkWe9bLZUvDva3bcEuRnjTw@mail.gmail.com>
+Subject: Re: kvm bug, guest I/O blk device errors when qcow2 backing file is
+ on Btrfs
+From: Chris Murphy <lists@colorremedies.com>
+To: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Debian/Wheezy userspace can't be expected to work as well as desired with a 3.19 kernel.
+It seems like it may not be a kernel bug. I've been able to reproduce,
+and not reproduce it, with kernel 3.18.9, varying in some other factor
+(Fedora 21, vs Fedora 20 live installs).
 
-Wheezy with BTRFS single or RAID1-1 works reasonably well as long as you have lots of free space, balance it regularly, and configure it not to resume a balance on reboot.
+The short version,
 
-Debian/Jessie works well with BTRFS single or RAID-1 without any issues. But don't use RAID 5/6. Jessie userspace should work well with 3.19 and 4.0 kernels.
+With these, the problem does not reproduce:
+libvirt-* 1.1.3.9
+qemu-* 1.6.1
 
-On March 23, 2015 4:38:49 AM GMT+11:00, Hugo Mills <hugo@carfax.org.uk> wrote:
->On Sun, Mar 22, 2015 at 05:30:59PM +0000, scruffters wrote:
->> Hello list,
->> 
->> I wondered if anybody could advise on the status of using fstrim with
->> BTRFS. The motivation for me is to finally try using SSD's in a R5
->> style configuration with some way of running maintenance overnight to
->> maintain performance...
->[snip]
->> My kernel is 3.2.0-4 (Debian Wheezy).
->
->   Then you shouldn't use btrfs RAID-5 at all, and probably shouldn't
->be using btrfs.
->
->   For parity RAID, 3.19 or later is what you should be using, as it
->supports recovery and rebuild. You can get those kernels from the
->Debian experimental repo. If you're not using parity RAID, then the
->last few kernels have been OK, but keeping up with the latest version
->is still a reasonably good idea.
->
->   Hugo.
+With these, the problem does reproduce:
+libvirt-* 1.2.9.1
+qemu-* 2.1.2
 
--- 
-Sent from my Samsung Galaxy Note 3 with K-9 Mail.
+I've updated the bug with the details of versions and the exact qemu
+command for the reproducing and non-reproducing cases.
+https://bugzilla.redhat.com/show_bug.cgi?id=1204569
+
+
+
+Chris Murphy

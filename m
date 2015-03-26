@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32644 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50136 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750764AbbCZBmN (ORCPT
+	with ESMTP id S1751673AbbCZDBE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 21:42:13 -0400
+	Wed, 25 Mar 2015 23:01:04 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2Q1esEf017801
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Mar 2015 09:40:54 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t2Q2KNtG021315
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Mar 2015 10:20:24 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Doc: Add warning and note on btrfs-convert.
-Date: Thu, 26 Mar 2015 09:39:51 +0800
-Message-ID: <1427333991-14349-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: Doc: Add warning and note on btrfs-convert.
+Date: Thu, 26 Mar 2015 10:19:24 +0800
+Message-ID: <1427336364-18161-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,7 +25,11 @@ Add a warning on the limitations.
 Also add a note for users who decides to go on with btrfs and don't need
 the rollback ability.
 
+Reported-by: Vytautas D <vytdau@gmail.com>
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2: Add reporters.
 ---
  Documentation/btrfs-convert.txt | 9 +++++++++
  1 file changed, 9 insertions(+)

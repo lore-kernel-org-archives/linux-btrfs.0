@@ -1,143 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47689 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:33000 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752225AbbCYS0o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Mar 2015 14:26:44 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, william.douglas@intel.com, David Sterba <dsterba@suse.cz>,
-        <stable@vger.kernel.org>
-Subject: [PATCH] btrfs: don't accept bare namespace as a valid xattr
-Date: Wed, 25 Mar 2015 19:26:41 +0100
-Message-Id: <1427308001-17757-1-git-send-email-dsterba@suse.cz>
+	id S1750873AbbCZDYU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Mar 2015 23:24:20 -0400
+Received: from int-mx14.intmail.prod.int.phx2.redhat.com (int-mx14.intmail.prod.int.phx2.redhat.com [10.5.11.27])
+	by mx1.redhat.com (Postfix) with ESMTPS id 19DE82BCD7C
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Mar 2015 03:24:20 +0000 (UTC)
+Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx14.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id t2Q3OI6O002494
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2015 23:24:19 -0400
+Message-ID: <55137BE2.80603@redhat.com>
+Date: Wed, 25 Mar 2015 22:24:18 -0500
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: I think "btrfs: fix leak of path in btrfs_find_item" broke stable
+ trees ...
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Due to insufficient check in btrfs_is_valid_xattr, this unexpectedly
-works:
+Looks like "btrfs: fix leak of path in btrfs_find_item" got sent
+to stable trees, but in my testing, it causes deadlocks on mount:
 
- $ touch file
- $ setfattr -n user. -v 1 file
- $ getfattr -d file
-user.="1"
+[23379.359246] mount           D 0000000000000000     0 22541  22274 0x00000080
+[23379.366326]  ffff8803ebadf6c8 0000000000000086 ffff88027ff10230 0000000000013680
+[23379.373770]  0000000000013680 ffff8803ebadffd8 ffff8803ebadc010 0000000000013680
+[23379.381208]  ffff8803ebadffd8 0000000000013680 ffff880261c78b60 ffff8802140a0b60
+[23379.388648] Call Trace:
+[23379.391106]  [<ffffffff816182b9>] schedule+0x29/0x70
+[23379.396091]  [<ffffffffa06b82f5>] btrfs_tree_lock+0xb5/0x290 [btrfs]
+[23379.402444]  [<ffffffff8109b470>] ? wake_up_bit+0x40/0x40
+[23379.407855]  [<ffffffffa064f7a5>] ? generic_bin_search+0xf5/0x180 [btrfs]
+[23379.414643]  [<ffffffffa065041b>] btrfs_lock_root_node+0x3b/0x50 [btrfs]
+[23379.421345]  [<ffffffffa065936b>] btrfs_search_slot+0x63b/0x800 [btrfs]
+[23379.427956]  [<ffffffffa064fa49>] ? btrfs_set_path_blocking+0x39/0x80 [btrfs]
+[23379.435088]  [<ffffffffa0659ede>] btrfs_insert_empty_items+0x7e/0xe0 [btrfs]
+[23379.442125]  [<ffffffffa065051a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+[23379.448655]  [<ffffffffa06b8989>] btrfs_insert_orphan_item+0x69/0x90 [btrfs]
+[23379.455696]  [<ffffffffa06ba938>] insert_orphan_item+0x68/0x90 [btrfs]
+[23379.462251]  [<ffffffffa06bf772>] replay_one_buffer+0x372/0x380 [btrfs]
+[23379.468878]  [<ffffffffa069a4c1>] ? mark_extent_buffer_accessed+0x51/0x70 [btrfs]
+[23379.476372]  [<ffffffffa06ba54b>] walk_up_log_tree+0x1cb/0x250 [btrfs]
+[23379.482910]  [<ffffffffa06ba68f>] walk_log_tree+0xbf/0x1b0 [btrfs]
+[23379.489098]  [<ffffffffa06bd51c>] btrfs_recover_log_trees+0x1ec/0x4c0 [btrfs]
+...
 
-ie. the missing attribute name after the namespace.
+I could hit this by running ./check generic/015  generic/039 in fstests,
+with a SCRATCH_DEV_POOL defined (not sure it matters, it's just what I
+have...)
 
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=94291
-Reported-by: William Douglas <william.douglas@intel.com>
-CC: <stable@vger.kernel.org> # 2.6.29+
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/xattr.c | 53 +++++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 39 insertions(+), 14 deletions(-)
+This fixes it, though I'm not totally sure why.  Refcounts?
 
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 883b93623bc5..45ea704be030 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -364,22 +364,42 @@ const struct xattr_handler *btrfs_xattr_handlers[] = {
- /*
-  * Check if the attribute is in a supported namespace.
-  *
-- * This applied after the check for the synthetic attributes in the system
-+ * This is applied after the check for the synthetic attributes in the system
-  * namespace.
-  */
--static bool btrfs_is_valid_xattr(const char *name)
-+static int btrfs_is_valid_xattr(const char *name)
- {
--	return !strncmp(name, XATTR_SECURITY_PREFIX,
--			XATTR_SECURITY_PREFIX_LEN) ||
--	       !strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN) ||
--	       !strncmp(name, XATTR_TRUSTED_PREFIX, XATTR_TRUSTED_PREFIX_LEN) ||
--	       !strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN) ||
--		!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
-+	int len = strlen(name);
-+	int prefixlen = 0;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 906934e..d37e6d1 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1265,11 +1265,11 @@ static int insert_orphan_item(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_find_item(root, path, BTRFS_ORPHAN_OBJECTID,
+ 			offset, BTRFS_ORPHAN_ITEM_KEY, NULL);
++	btrfs_free_path(path);
 +
-+	if (!strncmp(name, XATTR_SECURITY_PREFIX,
-+			XATTR_SECURITY_PREFIX_LEN))
-+		prefixlen = XATTR_SECURITY_PREFIX_LEN;
-+	else if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
-+		prefixlen = XATTR_SYSTEM_PREFIX_LEN;
-+	else if (!strncmp(name, XATTR_TRUSTED_PREFIX, XATTR_TRUSTED_PREFIX_LEN))
-+		prefixlen = XATTR_TRUSTED_PREFIX_LEN;
-+	else if (!strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN))
-+		prefixlen = XATTR_USER_PREFIX_LEN;
-+	else if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
-+		prefixlen = XATTR_BTRFS_PREFIX_LEN;
-+	else
-+		return -EOPNOTSUPP;
-+
-+	/*
-+	 * The name cannot consist of just prefix
-+	 */
-+	if (len <= prefixlen)
-+		return -EINVAL;
-+
-+	return 0;
+ 	if (ret > 0)
+ 		ret = btrfs_insert_orphan_item(trans, root, offset);
+ 
+-	btrfs_free_path(path);
+-
+ 	return ret;
  }
  
- ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
- 		       void *buffer, size_t size)
- {
-+	int ret;
-+
- 	/*
- 	 * If this is a request for a synthetic attribute in the system.*
- 	 * namespace use the generic infrastructure to resolve a handler
-@@ -388,8 +408,9 @@ ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
- 	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
- 		return generic_getxattr(dentry, name, buffer, size);
- 
--	if (!btrfs_is_valid_xattr(name))
--		return -EOPNOTSUPP;
-+	ret = btrfs_is_valid_xattr(name);
-+	if (ret)
-+		return ret;
- 	return __btrfs_getxattr(dentry->d_inode, name, buffer, size);
- }
- 
-@@ -397,6 +418,7 @@ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 		   size_t size, int flags)
- {
- 	struct btrfs_root *root = BTRFS_I(dentry->d_inode)->root;
-+	int ret;
- 
- 	/*
- 	 * The permission on security.* and system.* is not checked
-@@ -413,8 +435,9 @@ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
- 		return generic_setxattr(dentry, name, value, size, flags);
- 
--	if (!btrfs_is_valid_xattr(name))
--		return -EOPNOTSUPP;
-+	ret = btrfs_is_valid_xattr(name);
-+	if (ret)
-+		return ret;
- 
- 	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
- 		return btrfs_set_prop(dentry->d_inode, name,
-@@ -430,6 +453,7 @@ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- int btrfs_removexattr(struct dentry *dentry, const char *name)
- {
- 	struct btrfs_root *root = BTRFS_I(dentry->d_inode)->root;
-+	int ret;
- 
- 	/*
- 	 * The permission on security.* and system.* is not checked
-@@ -446,8 +470,9 @@ int btrfs_removexattr(struct dentry *dentry, const char *name)
- 	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
- 		return generic_removexattr(dentry, name);
- 
--	if (!btrfs_is_valid_xattr(name))
--		return -EOPNOTSUPP;
-+	ret = btrfs_is_valid_xattr(name);
-+	if (ret)
-+		return ret;
- 
- 	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
- 		return btrfs_set_prop(dentry->d_inode, name,
--- 
-1.8.4.5
 
+but it never likely showed up upstream, because 
+
+9c4f61f btrfs: simplify insert_orphan_item
+
+made the whole path alloc/free go away.
+
+-Eric

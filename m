@@ -1,59 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:41207 "EHLO smtp.gentoo.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752698AbbCYAzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Mar 2015 20:55:46 -0400
-Received: from naomi.gilbertsystems.net (d192-24-148-25.try.wideopenwest.com [24.192.25.148])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: floppym)
-	by smtp.gentoo.org (Postfix) with ESMTPSA id 824FE3408A3
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2015 00:55:45 +0000 (UTC)
-From: Mike Gilbert <floppym@gentoo.org>
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:35029 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752415AbbC0V7O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Mar 2015 17:59:14 -0400
+Received: by pdbop1 with SMTP id op1so108606137pdb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2015 14:59:14 -0700 (PDT)
+From: Zach Brown <zab@zabbo.net>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Fix autoconf handling of --enable-convert
-Date: Tue, 24 Mar 2015 20:55:41 -0400
-Message-Id: <1427244941-3896-1-git-send-email-floppym@gentoo.org>
+Cc: Harald Hoyer <harald@redhat.com>
+Subject: [PATCH] btrfs-progs: silence fake fsck
+Date: Fri, 27 Mar 2015 14:58:43 -0700
+Message-Id: <1427493523-13424-1-git-send-email-zab@zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-AC_ARG_ENABLE(convert) sets $enable_convert, not $enable_btrfsconvert.
+Harald suggested that we remove the message from the fake fsck.btrfs
+that some distros run at boot:
 
-Signed-off-by: Mike Gilbert <floppym@gentoo.org>
+  https://bugzilla.redhat.com/show_bug.cgi?id=1206502
+
+"This output does not add anything, but is a disturbing element of
+booting up a system. It's the only message I get, when starting my
+system, before gdm is started."
+
+I'm inclined to agree.
+
+This makes the tiniest change to remove the message that's output for an
+auto invocation.  My guess is that it was just copied from the xfs
+fsck.xfs and that no one actually cares about it.
+
+Signed-off-by: Zach Brown <zab@zabbo.net>
 ---
- configure.ac | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fsck.btrfs | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/configure.ac b/configure.ac
-index 0692d5a..1171ed7 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -94,13 +94,13 @@ fi
- 
- AC_ARG_ENABLE([convert],
- 	      AS_HELP_STRING([--disable-convert], [do not build btrfs-convert]),
--  [], [enable_btrfsconvert=yes]
-+  [], [enable_convert=yes]
- )
- 
--AS_IF([test "x$enable_btrfsconvert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
-+AS_IF([test "x$enable_convert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
- AC_SUBST([DISABLE_BTRFSCONVERT])
- 
--if test "x$enable_btrfsconvert" = xyes; then
-+if test "x$enable_convert" = xyes; then
- 	PKG_CHECK_MODULES(EXT2FS, [ext2fs])
- 	PKG_CHECK_MODULES(COM_ERR, [com_err])
+diff --git a/fsck.btrfs b/fsck.btrfs
+index e90043a..f056a7f 100755
+--- a/fsck.btrfs
++++ b/fsck.btrfs
+@@ -31,9 +31,7 @@ if [ ! -e $DEV ]; then
+ 	echo "$0: $DEV does not exist"
+ 	exit 8
  fi
-@@ -163,7 +163,7 @@ AC_MSG_RESULT([
- 
- 	documentaton:      ${enable_documentation}
- 	backtrace support: ${enable_backtrace}
--	btrfs-convert:     ${enable_btrfsconvert}
-+	btrfs-convert:     ${enable_convert}
- 
- 	Type 'make' to compile.
- ])
+-if $AUTO; then
+-	echo "$0: BTRFS file system."
+-else
++if [ "$AUTO" == "false" ]; then
+ 	echo "If you wish to check the consistency of a BTRFS filesystem or"
+ 	echo "repair a damaged filesystem, see btrfs(8) subcommand 'check'."
+ fi
 -- 
-2.3.3
+2.1.0
 

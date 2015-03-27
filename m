@@ -1,263 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:51821 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751325AbbC0Sbb (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 27 Mar 2015 14:31:31 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test for btrfs send after complex directory hierarchy changes
-Date: Fri, 27 Mar 2015 18:31:08 +0000
-Message-Id: <1427481068-27414-1-git-send-email-fdmanana@suse.com>
+Received: from sandeen.net ([63.231.237.45]:43135 "EHLO sandeen.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751882AbbC0Uoo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Mar 2015 16:44:44 -0400
+Message-ID: <5515C13B.9070806@sandeen.net>
+Date: Fri, 27 Mar 2015 15:44:43 -0500
+From: Eric Sandeen <sandeen@sandeen.net>
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@redhat.com>, fstests@vger.kernel.org
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH V2] fstests: fix _filter_mkfs regression on btrfs
+References: <551441CA.9050109@redhat.com>
+In-Reply-To: <551441CA.9050109@redhat.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test a very complex scenario for a btrfs incremental send operation where a
-large directory hierarchy had many subtrees moved between parent directories,
-preserving the names of some directories and inverting the parent-child
-relationship between some directories (a child in the parent snapshot became
-a parent, in the send snapshot, of the directory that is its parent in the
-parent snapshot).
+commit:
 
-This test made the incremental send fail with -ENOMEM because it entered an
-infinite loop when building path strings that are used as operands of the
-rename operations issued in the send stream.
-This issue was fixed by the following linux kernel btrfs patch:
+5e8b9e6 btrfs: add regression test for remount with thread_pool resized
 
-   Btrfs: incremental send, don't delay directory renames unnecessarily
+did weird things to _filter_mkfs; aside from broken indentation,
+it also short-circuited the default non-xfs behavior, which was to
+emit a default block & inode size.  And that was all because btrfs/082
+was using _filter_mkfs & not redirecting output away as per normal.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Granted, it's not super clear that _filter_mkfs serves this rather
+unique purpose, but anyway...
+
+And, while having this default seems to be of questionable value,
+not emitting *anything* led to this on btrfs:
+
+    +./tests/generic/204: line 76: space / (isize + dbsize): division by 0 (error token is ")")
+
+because those variables don't get set for btrfs, thanks to the
+above commit.
+
+So take out the use of _filter_mkfs in btrfs/082, and take out the
+munging of _filter_mkfs which broke generic/204, and get things back
+to something semi-sane.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- tests/btrfs/085     | 199 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/085.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 202 insertions(+)
- create mode 100755 tests/btrfs/085
- create mode 100644 tests/btrfs/085.out
 
-diff --git a/tests/btrfs/085 b/tests/btrfs/085
-new file mode 100755
-index 0000000..c90ea9b
---- /dev/null
-+++ b/tests/btrfs/085
-@@ -0,0 +1,199 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/085
-+#
-+# Test a very complex scenario for a btrfs incremental send operation where a
-+# large directory hierarchy had many subtrees moved between parent directories,
-+# preserving the names of some directories and inverting the parent-child
-+# relationship between some directories (a child in the parent snapshot became
-+# a parent, in the send snapshot, of the directory that is its parent in the
-+# parent snapshot).
-+#
-+# This test made the incremental send fail with -ENOMEM because it entered an
-+# infinite loop when building path strings that are used as operands of the
-+# rename operations issued in the send stream.
-+# This issue was fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: incremental send, don't delay directory renames unnecessarily
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	rm -fr $send_files_dir
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_fssum
-+_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+mkdir $SCRATCH_MNT/data
-+mkdir $SCRATCH_MNT/data/n1
-+mkdir $SCRATCH_MNT/data/n1/n2
-+mkdir $SCRATCH_MNT/data/n4
-+mkdir $SCRATCH_MNT/data/n1/n2/p1
-+mkdir $SCRATCH_MNT/data/n1/n2/p1/p2
-+mkdir $SCRATCH_MNT/data/t6
-+mkdir $SCRATCH_MNT/data/t7
-+mkdir -p $SCRATCH_MNT/data/t5/t7
-+mkdir $SCRATCH_MNT/data/t2
-+mkdir $SCRATCH_MNT/data/t4
-+mkdir -p $SCRATCH_MNT/data/t1/t3
-+mkdir $SCRATCH_MNT/data/p1
-+mv $SCRATCH_MNT/data/t1 $SCRATCH_MNT/data/p1
-+mkdir -p $SCRATCH_MNT/data/p1/p2
-+mv $SCRATCH_MNT/data/t4 $SCRATCH_MNT/data/p1/p2/t1
-+mv $SCRATCH_MNT/data/t5 $SCRATCH_MNT/data/n4/t5
-+mv $SCRATCH_MNT/data/n1/n2/p1/p2 $SCRATCH_MNT/data/n4/t5/p2
-+mv $SCRATCH_MNT/data/t7 $SCRATCH_MNT/data/n4/t5/p2/t7
-+mv $SCRATCH_MNT/data/t2 $SCRATCH_MNT/data/n4/t1
-+mv $SCRATCH_MNT/data/p1 $SCRATCH_MNT/data/n4/t5/p2/p1
-+mv $SCRATCH_MNT/data/n1/n2 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1
-+mv $SCRATCH_MNT/data/n4/t5/t7 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1/t3 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/p1 \
-+	$SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1
-+mv $SCRATCH_MNT/data/t6 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t5
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t1
-+mv $SCRATCH_MNT/data/n1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/n1
-+
-+# Filesystem looks like:
-+#
-+# .                                                             (ino 256)
-+# |--- data/                                                    (ino 257)
-+#        |--- n4/                                               (ino 260)
-+#             |--- t1/                                          (ino 267)
-+#             |--- t5/                                          (ino 265)
-+#                  |--- p2/                                     (ino 262)
-+#                       |--- p1/                                (ino 271)
-+#                       |    |--- p2/                           (ino 272)
-+#                       |         |--- n2/                      (ino 259)
-+#                       |              |--- t1/                 (ino 268)
-+#                       |                   |--- t3/            (ino 270)
-+#                       |                   |    |--- t1/       (ino 269)
-+#                       |                   |    |--- t5/       (ino 263)
-+#                       |                   |
-+#                       |                   |--- t7/            (ino 266)
-+#                       |                        |--- p1/       (ino 261)
-+#                       |                             |--- n1   (ino 258)
-+#                       |
-+#                       |--- t7/                                (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+
-+# The following sequence of directory renames resulted in an infinite path build
-+# loop when attempting to build the path for inode 266. This is because the
-+# inode's new parent, inode 261, was part of a circular dependency of delayed
-+# rename operations. This circular dependency should jave never been built (it
-+# happened due to a bug), and was the following:
-+#
-+#   ino 272 <- ino 261 <- ino 259 <- ino 268 <- ino 267 <- ino 261
-+#
-+# Where the notation "X <- Y" means that rename of inode X is delayed to happen
-+# after the rename of inode Y.
-+
-+mv $SCRATCH_MNT/data/n4/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/t1
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1 $SCRATCH_MNT/data/n4/
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2 $SCRATCH_MNT/data/n4/t1/n2
-+mv $SCRATCH_MNT/data/n4/t1/t7/p1 $SCRATCH_MNT/data/n4/t1/n2/p1
-+mv $SCRATCH_MNT/data/n4/t1/t3/t1 $SCRATCH_MNT/data/n4/t1/n2/t1
-+mv $SCRATCH_MNT/data/n4/t1/t3 $SCRATCH_MNT/data/n4/t1/n2/t1/t3
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2 $SCRATCH_MNT/data/n4/t1/n2/p1/p2
-+mv $SCRATCH_MNT/data/n4/t1/t7 $SCRATCH_MNT/data/n4/t1/n2/p1/t7
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1
-+mv $SCRATCH_MNT/data/n4/t1/n2/t1/t3/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/t5
-+mv $SCRATCH_MNT/data/n4/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5
-+mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5/p2 \
-+	$SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2
-+mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2/t7 $SCRATCH_MNT/data/n4/t1/t7
-+
-+# Filesystem now looks like:
-+#
-+# .                                                   (ino 256)
-+# |--- data                                           (ino 257)
-+#        |--- n4/                                     (ino 260)
-+#             |--- t1/                                (ino 268)
-+#                  |--- n2/                           (ino 259)
-+#                  |    |--- p1/                      (ino 261)
-+#                  |    |    |--- n1/                 (ino 258)
-+#                  |    |    |--- p2/                 (ino 272)
-+#                  |    |    |    |--- p1/            (ino 271)
-+#                  |    |    |    |    |--- p2/       (ino 262)
-+#                  |    |    |    |    |--- t5/       (ino 265)
-+#                  |    |    |    |
-+#                  |    |    |    |--- t5/            (ino 263)
-+#                  |    |    |
-+#                  |    |    |--- t1/                 (ino 267)
-+#                  |    |    |--- t7/                 (ino 266)
-+#                  |    |
-+#                  |    |--- t1/                      (ino 269)
-+#                  |         |--- t3/                 (ino 270)
-+#                  |
-+#                  |--- t7/                           (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/085.out b/tests/btrfs/085.out
-new file mode 100644
-index 0000000..76aef1a
---- /dev/null
-+++ b/tests/btrfs/085.out
-@@ -0,0 +1,2 @@
-+QA output created by 085
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 8f8dd42..81d462f 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -87,3 +87,4 @@
- 082 auto quick remount
- 083 auto quick send
- 084 auto quick send
-+085 auto quick send
--- 
-2.1.3
+V2: truncate seqres.full on first write, thanks Eryu!
+
+diff --git a/common/filter b/common/filter
+index 71ef2e2..05dbae6 100644
+--- a/common/filter
++++ b/common/filter
+@@ -137,10 +137,6 @@ _filter_mkfs()
+     case $FSTYP in
+     xfs)
+ 	;;
+-	btrfs)
+-	sed -e "/Performing full device TRIM/d" \
+-		-e "/Turning ON incompat feature/d"
+-	return ;;
+     *)
+ 	cat - >/dev/null
+ 	perl -e 'print STDERR "dbsize=4096\nisize=256\n"'
+
+diff --git a/tests/btrfs/082 b/tests/btrfs/082
+index dd3c87e..1324d27 100755
+--- a/tests/btrfs/082
++++ b/tests/btrfs/082
+@@ -55,7 +55,7 @@ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+ 
+-_scratch_mkfs |& _filter_mkfs
++_scratch_mkfs >$seqres.full 2>&1
+ 
+ _scratch_mount "-o thread_pool=6"
+ _scratch_mount "-o remount,thread_pool=10"
+
+diff --git a/tests/generic/204 b/tests/generic/204
+index d6bb094..13069d8 100755
+--- a/tests/generic/204
++++ b/tests/generic/204
+@@ -60,6 +60,7 @@ _scratch_mkfs_sized $SIZE $dbsize 2> /dev/null \
+ 		| _filter_mkfs 2> $tmp.mkfs > /dev/null
+ _scratch_mount
+ 
++# Source $tmp.mkfs to get geometry
+ . $tmp.mkfs
+ 
+ # fix the reserve block pool to a known size so that the enospc calculations
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe fstests" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
 

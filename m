@@ -1,67 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:32967 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751840AbbC0Dfl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Mar 2015 23:35:41 -0400
-Received: by pdnc3 with SMTP id c3so83116203pdn.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Mar 2015 20:35:41 -0700 (PDT)
-Date: Fri, 27 Mar 2015 11:34:32 +0800
-From: Eryu Guan <guaneryu@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: Chris Mason <clm@fb.com>, fdmanana@gmail.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: I think "btrfs: fix leak of path in btrfs_find_item" broke
- stable trees ...
-Message-ID: <20150327033432.GB16812@dhcp-13-216.nay.redhat.com>
-References: <55137BE2.80603@redhat.com>
- <CAL3q7H4fYq4K2rAT401QKSYKjRyaZwHDVSg6YZ0P=XU_31fLFQ@mail.gmail.com>
- <5514137E.6080804@redhat.com>
- <1427381284.28930.5@mail.thefacebook.com>
- <55143DD7.2020608@redhat.com>
+Received: from cantor2.suse.de ([195.135.220.15]:45416 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750931AbbC0QoR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Mar 2015 12:44:17 -0400
+Date: Fri, 27 Mar 2015 17:44:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: nick <xerofoify@gmail.com>
+Cc: clm@fb.com, jbacik@fb.com, paulmck@linux.vnet.ibm.com,
+        josh@joshtriplett.org, rostedt@goodmis.org,
+        mathieu.desnoyers@efficios.com, laijs@cn.fujitsu.com,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: How to do Header Dependency  Check Properly for Kernel Patch
+Message-ID: <20150327164405.GA5758@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <55149A03.4040807@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55143DD7.2020608@redhat.com>
+In-Reply-To: <55149A03.4040807@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 26, 2015 at 12:11:51PM -0500, Eric Sandeen wrote:
-> On 3/26/15 9:48 AM, Chris Mason wrote:
-> > On Thu, Mar 26, 2015 at 10:11 AM, Eric Sandeen <sandeen@redhat.com> wrote:
-> 
-> ...
-> 
-> >>>>  9c4f61f btrfs: simplify insert_orphan_item
-> >>>>
-> >>>>  made the whole path alloc/free go away.
-> >>
-> >> so I think there's no need for my patch; may as well just send the above to stable
-> >> and fix it that way, as long as 9c4f61f is deemed safe & correct, I think.
-> > 
-> > Nice catch, thanks Eric. 9c4f61f looks fine for stable to me, but
-> > since he's already testing on stable, I talked Eric into giving it a
-> > pass through xfstests before I send it up.
-> > 
-> > -chris
-> 
-> ./check -g auto on 3.19-stable-ish seems fine-ish.  Certainly no worse w/ the patch added :)
-> 
-> Failures: btrfs/010 btrfs/017 btrfs/078 generic/015 generic/039 generic/040 generic/041 generic/065 generic/066 generic/071 generic/204
-> Failed 11 of 202 tests
+On Thu, Mar 26, 2015 at 07:45:07PM -0400, nick wrote:
+> I have a patch for moving over the rcu-string header file for btrfs to
+> the standard include headers in include/linux
+> as you stated this on a to do on the brtfs to do page for the
+> project's wiki page.
 
-Just FYI.
+The wiki page states that the task is already assigned
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Move_rcu_string_out_of_btrfs_to_lib.2F
 
-I think generic/204 is a test case issue, _filter_mkfs failed to print
-isize and dbsize for btrfs and test failed because of divide by zero
-error.
+besides that there were 8 iterations of the patchset, acked by the
+respective people.
 
---- /dev/fd/63	2015-03-25 12:17:05.987107715 -0400
-+++ results/generic/204.out.bad		      2015-03-25 12:17:05.423101244 -0400
-@@ -1,2 +1,3 @@
- QA output created by 204
- +./tests/generic/204: line 76: space / (isize + dbsize): division by 0 (error token is ")")
-  *** done
+http://thread.gmane.org/gmane.linux.kernel/1862689
 
-I'm working a patch for fstests.
+> index de5e4f2..df8e981 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -15,11 +15,13 @@
+>   * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+>   * Boston, MA 021110-1307, USA.
+>   */
+> +#pragma once
+>  
+>  #ifndef __BTRFS_I__
+>  #define __BTRFS_I__
 
-Eryu
+the pragmas are not used in kernel AFAIK, the ifndef right below the
+line serves the exact purpose.

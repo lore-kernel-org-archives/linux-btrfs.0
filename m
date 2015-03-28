@@ -1,79 +1,260 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:38833 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750876AbbC1Lho (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:36631 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752748AbbC1Lyy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Mar 2015 07:37:44 -0400
+	Sat, 28 Mar 2015 07:54:54 -0400
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <74abba0fe653d9ac27bfe4f14ae3e8f65b5b7317.1427539655.git.osandov@osandov.com>
-References: <74abba0fe653d9ac27bfe4f14ae3e8f65b5b7317.1427539655.git.osandov@osandov.com>
-Date: Sat, 28 Mar 2015 11:37:43 +0000
-Message-ID: <CAL3q7H7oHbftmpnnMVt0EFWzS_etc--n2bRP9C0Vuzayr4CKgg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: unlock i_mutex after attempting to delete
- subvolume during send
+In-Reply-To: <7a5ac15c7ec2019aec97d6caa2fd98cc591ded95.1426497160.git.zhaolei@cn.fujitsu.com>
+References: <7a5ac15c7ec2019aec97d6caa2fd98cc591ded95.1426497160.git.zhaolei@cn.fujitsu.com>
+Date: Sat, 28 Mar 2015 11:54:53 +0000
+Message-ID: <CAL3q7H7+NyWNnJmAwjsWzsm0pSU5VBV9QBXz5UhjBBpy7Tu45A@mail.gmail.com>
+Subject: Re: [PATCH v2] fix "utility required warning" with empty utility name
 From: Filipe David Manana <fdmanana@gmail.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Zhaolei <zhaolei@cn.fujitsu.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 28, 2015 at 11:02 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> Whenever the check for a send in progress introduced in commit
-> 521e0546c970 (btrfs: protect snapshots from deleting during send) is
-> hit, we return without unlocking inode->i_mutex. This is easy to see
-> with lockdep enabled:
+On Mon, Mar 16, 2015 at 9:14 AM, Zhaolei <zhaolei@cn.fujitsu.com> wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
 >
-> [  +0.000059] ================================================
-> [  +0.000028] [ BUG: lock held when returning to user space! ]
-> [  +0.000029] 4.0.0-rc5-00096-g3c435c1 #93 Not tainted
-> [  +0.000026] ------------------------------------------------
-> [  +0.000029] btrfs/211 is leaving the kernel with locks still held!
-> [  +0.000029] 1 lock held by btrfs/211:
-> [  +0.000023]  #0:  (&type->i_mutex_dir_key){+.+.+.}, at: [<ffffffff8135b8df>] btrfs_ioctl_snap_destroy+0x2df/0x7a0
+> In generic/019, if we hadn't install fio, we will get following output:
+>  FSTYP         -- btrfs
+>  PLATFORM      -- Linux/x86_64 lenovo 4.0.0-rc3_HEAD_9eccca0843205f87c00404b663188b88eb248051_
+>  MKFS_OPTIONS  -- /dev/sda6
+>  MOUNT_OPTIONS -- -o context=system_u:object_r:nfs_t:s0 /dev/sda6 /var/ltf/tester/scratch_mnt
 >
-> Make sure we unlock it in the error path.
+>  generic/019      [not run]  utility required, skipped this test <- *
+>  Not run: generic/019
+>  Passed all 0 tests
 >
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Thanks, should go to stable in my opinion.
-
-
+> When fio is not installed, "$FIO_PROG" is set to blank, and
+> _require_fio() call _require_command() with none arguments.
+>
+> This patch fixed all misuse of _require_command(), add 2nd argument
+> to let _require_command() output right message, and add quotes to
+> first argument to avoid argument shifting.
+>
+> Changelog v1->v2:
+>  Fix all misuse of _require_command(), suggested-by:
+>  Eryu Guan <eguan@redhat.com>
+>
+> Suggested-by: Eryu Guan <eguan@redhat.com>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 > ---
->  fs/btrfs/ioctl.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  common/defrag   | 2 +-
+>  common/rc       | 6 +++---
+>  tests/btrfs/003 | 2 +-
+>  tests/btrfs/004 | 2 +-
+>  tests/btrfs/011 | 2 +-
+>  tests/btrfs/012 | 6 +++---
+>  tests/btrfs/079 | 2 +-
+>  tests/ext4/004  | 4 ++--
+>  tests/xfs/094   | 2 +-
+>  tests/xfs/103   | 2 +-
+>  tests/xfs/122   | 2 +-
+>  tests/xfs/195   | 2 +-
+>  12 files changed, 17 insertions(+), 17 deletions(-)
 >
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 74609b9..9fde01f 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2403,7 +2403,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
->                         "Attempt to delete subvolume %llu during send",
->                         dest->root_key.objectid);
->                 err = -EPERM;
-> -               goto out_dput;
-> +               goto out_unlock_inode;
->         }
+> diff --git a/common/defrag b/common/defrag
+> index f5e36fb..f923dc0 100644
+> --- a/common/defrag
+> +++ b/common/defrag
+> @@ -37,7 +37,7 @@ _require_defrag()
+>         ;;
+>      esac
 >
->         d_invalidate(dentry);
-> @@ -2498,6 +2498,7 @@ out_up_write:
->                                 root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
->                 spin_unlock(&dest->root_item_lock);
->         }
-> +out_unlock_inode:
->         mutex_unlock(&inode->i_mutex);
->         if (!err) {
->                 shrink_dcache_sb(root->fs_info->sb);
+> -    _require_command $DEFRAG_PROG
+> +    _require_command "$DEFRAG_PROG" defragment
+
+So with this change one can no longer run the test btrfs/005:
+
+btrfs/005 96s ... [not run] /home/fdmanana/git/hub/btrfs-progs/btrfs
+filesystem defragment utility required, skipped this test
+
+The DEFRAG_PROG value is never an empty string when FSTYP is btrfs,
+and this change makes _require_command think "btrfs filesystem
+defragment" is the name of the program instead of just "btrfs".
+
+>      _require_xfs_io_command "fiemap"
+>  }
+>
+> diff --git a/common/rc b/common/rc
+> index 1ed9df5..c1a50f2 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -1299,7 +1299,7 @@ _require_dm_flakey()
+>  {
+>      # require SCRATCH_DEV to be a valid block device
+>      _require_block_device $SCRATCH_DEV
+> -    _require_command $DMSETUP_PROG
+> +    _require_command "$DMSETUP_PROG" dmsetup
+>
+>      modprobe dm-flakey >/dev/null 2>&1
+>      $DMSETUP_PROG targets | grep flakey >/dev/null 2>&1
+> @@ -2289,7 +2289,7 @@ _require_deletable_scratch_dev_pool()
+>  _require_btrfs()
+>  {
+>         cmd=$1
+> -       _require_command $BTRFS_UTIL_PROG btrfs
+> +       _require_command "$BTRFS_UTIL_PROG" btrfs
+>         if [ -z "$1" ]; then
+>                 return 1;
+>         fi
+> @@ -2302,7 +2302,7 @@ _require_fio()
+>  {
+>         job=$1
+>
+> -       _require_command $FIO_PROG
+> +       _require_command "$FIO_PROG" fio
+>         if [ -z "$1" ]; then
+>                 return 1;
+>         fi
+> diff --git a/tests/btrfs/003 b/tests/btrfs/003
+> index d559f8e..9b60ea5 100755
+> --- a/tests/btrfs/003
+> +++ b/tests/btrfs/003
+> @@ -51,7 +51,7 @@ _supported_os Linux
+>  _require_scratch
+>  _require_scratch_dev_pool 4
+>  _require_deletable_scratch_dev_pool
+> -_require_command $WIPEFS_PROG
+> +_require_command "$WIPEFS_PROG" wipefs
+>
+>  rm -f $seqres.full
+>
+> diff --git a/tests/btrfs/004 b/tests/btrfs/004
+> index 1d5b816..b548914 100755
+> --- a/tests/btrfs/004
+> +++ b/tests/btrfs/004
+> @@ -53,7 +53,7 @@ _supported_os Linux
+>  _require_scratch
+>  _require_no_large_scratch_dev
+>  _require_btrfs inspect-internal
+> -_require_command "/usr/sbin/filefrag"
+> +_require_command "/usr/sbin/filefrag" filefrag
+>
+>  rm -f $seqres.full
+>
+> diff --git a/tests/btrfs/011 b/tests/btrfs/011
+> index 0207057..f4f2fbe 100755
+> --- a/tests/btrfs/011
+> +++ b/tests/btrfs/011
+> @@ -63,7 +63,7 @@ _need_to_be_root
+>  _supported_fs btrfs
+>  _require_scratch_nocheck
+>  _require_scratch_dev_pool 4
+> -_require_command $BTRFS_SHOW_SUPER_PROG btrfs-show-super
+> +_require_command "$BTRFS_SHOW_SUPER_PROG" btrfs-show-super
+>
+>  rm -f $seqres.full
+>  rm -f $tmp.tmp
+> diff --git a/tests/btrfs/012 b/tests/btrfs/012
+> index 9e3f991..d513759 100755
+> --- a/tests/btrfs/012
+> +++ b/tests/btrfs/012
+> @@ -57,9 +57,9 @@ _require_scratch_nocheck
+>  BTRFS_CONVERT_PROG="`set_prog_path btrfs-convert`"
+>  E2FSCK_PROG="`set_prog_path e2fsck`"
+>
+> -_require_command $BTRFS_CONVERT_PROG btrfs-convert
+> -_require_command $MKFS_EXT4_PROG mkfs.ext4
+> -_require_command $E2FSCK_PROG e2fsck
+> +_require_command "$BTRFS_CONVERT_PROG" btrfs-convert
+> +_require_command "$MKFS_EXT4_PROG" mkfs.ext4
+> +_require_command "$E2FSCK_PROG" e2fsck
+>
+>  rm -f $seqres.full
+>
+> diff --git a/tests/btrfs/079 b/tests/btrfs/079
+> index 202d3e6..4f59ff9 100755
+> --- a/tests/btrfs/079
+> +++ b/tests/btrfs/079
+> @@ -61,7 +61,7 @@ _require_scratch
+>  _need_to_be_root
+>  # Since xfs_io's fiemap always use SYNC flag and can't be unset,
+>  # we must use filefrag to call fiemap without SYNC flag.
+> -_require_command "/usr/sbin/filefrag"
+> +_require_command "/usr/sbin/filefrag" filefrag
+>  _require_xfs_io_command "falloc"
+>
+>  filesize=$((10 * 1024 * 1024 * 1024)) #10G size
+> diff --git a/tests/ext4/004 b/tests/ext4/004
+> index 68f02b6..595cd7c 100755
+> --- a/tests/ext4/004
+> +++ b/tests/ext4/004
+> @@ -72,8 +72,8 @@ _supported_os Linux
+>  _require_test
+>  _require_scratch
+>
+> -_require_command $DUMP_PROG
+> -_require_command $RESTORE_PROG
+> +_require_command "$DUMP_PROG" dump
+> +_require_command "$RESTORE_PROG" restore
+>
+>  rm -f $seqres.full
+>  echo "Silence is golden"
+> diff --git a/tests/xfs/094 b/tests/xfs/094
+> index cb27559..cee42d6 100755
+> --- a/tests/xfs/094
+> +++ b/tests/xfs/094
+> @@ -46,7 +46,7 @@ _supported_fs xfs
+>  _supported_os IRIX Linux
+>  _require_realtime
+>  _require_scratch
+> -_require_command $XFS_IO_PROG xfs_io
+> +_require_command "$XFS_IO_PROG" xfs_io
+>
+>  _filter_realtime_flag()
+>  {
+> diff --git a/tests/xfs/103 b/tests/xfs/103
+> index 113f643..cbe884f 100755
+> --- a/tests/xfs/103
+> +++ b/tests/xfs/103
+> @@ -66,7 +66,7 @@ _filter_noymlinks_flag()
+>  # real QA test starts here
+>  _supported_os Linux IRIX
+>  _supported_fs xfs
+> -_require_command $XFS_IO_PROG xfs_io
+> +_require_command "$XFS_IO_PROG" xfs_io
+>  _require_scratch
+>
+>  _create_scratch
+> diff --git a/tests/xfs/122 b/tests/xfs/122
+> index 8f1d5b4..682ffb4 100755
+> --- a/tests/xfs/122
+> +++ b/tests/xfs/122
+> @@ -39,7 +39,7 @@ trap "rm -f $tmp.*; exit \$status" 0 1 2 3 15
+>  # real QA test starts here
+>  _supported_fs xfs
+>  _supported_os Linux
+> -_require_command $INDENT_PROG "indent"
+> +_require_command "$INDENT_PROG" indent
+>
+>  # filter out known changes to xfs type sizes
+>  _type_size_filter()
+> diff --git a/tests/xfs/195 b/tests/xfs/195
+> index 76f130e..21fcb00 100755
+> --- a/tests/xfs/195
+> +++ b/tests/xfs/195
+> @@ -65,7 +65,7 @@ _supported_os Linux
+>
+>  _require_test
+>  _require_user
+> -_require_command $XFSDUMP_PROG xfsdump
+> +_require_command "$XFSDUMP_PROG" xfsdump
+>
+>  echo "Preparing subtree"
+>  mkdir $TEST_DIR/d
 > --
-> 2.3.4
+> 1.8.5.1
 >
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

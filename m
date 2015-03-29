@@ -1,38 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:34263 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752418AbbC2Tk5 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Mar 2015 15:40:57 -0400
-Received: by igcau2 with SMTP id au2so60352481igc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 12:40:57 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1427656526.2251.8.camel@miceliux.com>
-References: <1427656526.2251.8.camel@miceliux.com>
-Date: Sun, 29 Mar 2015 13:40:56 -0600
-Message-ID: <CAJCQCtQLPj2n=jO+s3z28_SdYL1mz97FBntK-0YLYn112EKBNg@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:46144 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752418AbbC2UEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Mar 2015 16:04:22 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YcJRP-0008UW-H2
+	for linux-btrfs@vger.kernel.org; Sun, 29 Mar 2015 22:04:15 +0200
+Received: from pd953e9c2.dip0.t-ipconnect.de ([217.83.233.194])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 22:04:15 +0200
+Received: from holger.hoffstaette by pd953e9c2.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 22:04:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
 Subject: Re: Cannot convert to raid1
-From: Chris Murphy <lists@colorremedies.com>
-To: Juan Orti Alcaine <juan.orti@miceliux.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Sun, 29 Mar 2015 20:04:09 +0000 (UTC)
+Message-ID: <pan.2015.03.29.20.04.09@googlemail.com>
+References: <1427656526.2251.8.camel@miceliux.com>
+	<CAJCQCtQLPj2n=jO+s3z28_SdYL1mz97FBntK-0YLYn112EKBNg@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 29, 2015 at 1:15 PM, Juan Orti Alcaine
-<juan.orti@miceliux.com> wrote:
+On Sun, 29 Mar 2015 13:40:56 -0600, Chris Murphy wrote:
 
-> The filesystem was created with one device, and I have added two more
-> devices afterwards. To convert it to raid1, I have used:
->
-> # btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/btrfs_raid1
+> On Sun, Mar 29, 2015 at 1:15 PM, Juan Orti Alcaine
+> <juan.orti@miceliux.com> wrote:
+> 
+>> The filesystem was created with one device, and I have added two more
+>> devices afterwards. To convert it to raid1, I have used:
+>>
+>> # btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/btrfs_raid1
+> 
+>> The balance process has finished, but if I check my filesystem, it
+>> shows up as single
+> 
+> Yeah, I'm kinda stumped. The only thing I'm thinking is if you're
+> absolutely sure it's mounted at /mnt/btrfs_raid1 – because I've made
+> this mistake before. (Oops.)
 
-> The balance process has finished, but if I check my filesystem, it
-> shows up as single
+Nope, known bug in 4.0-rc:
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/43117
 
-Yeah, I'm kinda stumped. The only thing I'm thinking is if you're
-absolutely sure it's mounted at /mnt/btrfs_raid1 – because I've made
-this mistake before. (Oops.)
+..nag, nag..
 
--- 
-Chris Murphy
+-h
+

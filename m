@@ -1,163 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:43144 "EHLO
-	mailgw01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752403AbbC2RyL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Mar 2015 13:54:11 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw01.dd24.net (Postfix) with ESMTP id 25E595FAF0
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:54:10 +0000 (UTC)
-Received: from mailgw01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id u2lVBLQ3sqQS for <linux-btrfs@vger.kernel.org>;
-	Sun, 29 Mar 2015 17:54:08 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-188-174-180-118.dynamic.mnet-online.de [188.174.180.118])
+Received: from mx2.miceliux.com ([37.247.55.143]:57699 "EHLO mx2.miceliux.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752360AbbC2TU7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Mar 2015 15:20:59 -0400
+Received: from mx1.miceliux.com (unknown [188.164.129.75])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: relay)
+	by mx2.miceliux.com (Postfix) with ESMTPSA id DF932181AFC
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 21:15:30 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+	by mx1.miceliux.com (Postfix) with ESMTP id ECAC364DDA
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 21:15:29 +0200 (CEST)
+Received: from mx1.miceliux.com ([127.0.0.1])
+	by localhost (mx1.miceliux.com [127.0.0.1]) (amavisd-new, port 10028)
+	with ESMTP id bsDrc7sLhbog for <linux-btrfs@vger.kernel.org>;
+	Sun, 29 Mar 2015 21:15:28 +0200 (CEST)
+Received: from xenon.lan (unknown [IPv6:2001:470:7950:10:f66d:4ff:fe61:abb4])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mailgw01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:54:08 +0000 (UTC)
-Message-ID: <1427651647.4878.3.camel@scientia.net>
-Subject: Re: btrfs dedup - available or experimental? Or yet to be?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Sun, 29 Mar 2015 19:54:07 +0200
-In-Reply-To: <enflub-up7.ln1@hurikhan77.spdns.de>
-References: <meq6hm$lbh$1@ger.gmane.org>
-	 <20150323232212.GL31762@carfax.org.uk>
-	 <CAGfcS_=6iHH+4T6CH8ag6MSf2N5n37pE6USSOjDTv=BMmFHQaw@mail.gmail.com>
-	 <mf2701$d5k$1@ger.gmane.org>
-	 <CAGfcS_k=__EfJssYt9Ra77uAtW6PfqV1fqAX03VfJiPi_T5TBQ@mail.gmail.com>
-	 <d35lub-tec.ln1@hurikhan77.spdns.de>
-	 <CAGfcS_nG3gt=copDrWS9TEmZ-dn6WD+HODU1SyxNVvbBqLXQ0A@mail.gmail.com>
-	 <enflub-up7.ln1@hurikhan77.spdns.de>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-kn2mHZTV7gQQjSgW0Vai"
+	(Authenticated sender: juan.orti@miceliux.com)
+	by mx1.miceliux.com (Postfix) with ESMTPSA id B0FC564DD8
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 21:15:28 +0200 (CEST)
+Message-ID: <1427656526.2251.8.camel@miceliux.com>
+Subject: Cannot convert to raid1
+From: Juan Orti Alcaine <juan.orti@miceliux.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Sun, 29 Mar 2015 21:15:26 +0200
+Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello, I'm experiencing problems while balancing a filesystem to 
+raid1. The versions I'm using are: 
+kernel-4.0.0-0.rc5.git1.3.fc22.x86_64
+btrfs-progs-3.19.1-1.fc22.x86_64
 
---=-kn2mHZTV7gQQjSgW0Vai
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+The filesystem was created with one device, and I have added two more 
+devices afterwards. To convert it to raid1, I have used:
 
-On Sun, 2015-03-29 at 16:44 +0200, Kai Krakow wrote:=20
-> Yes, the chosen "default" is probably not the best for this kind of utili=
-ty.=20
-> But I suppose it follows the principle of least surprise. At least every=
-=20
-> utility I'm daily using (like find) follows this default route.
-But the default with all these tools is that they operate on the file
-hierarchy and per default don't care about filesystems at all - or at
-least not in their original meaning.
+# btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/btrfs_raid1
 
-dedup is IMHO however a more filesystem internal centric operation...
-more like defragmentation ore tune2fs.
+The balance process has finished, but if I check my filesystem, it 
+shows up as single
 
+# btrfs fi show /mnt/btrfs_raid1
+Label: 'btrfs_raid1'  uuid: cd7d4b6d-fa6b-4e2e-8b53-116d25ccdf4e
+        Total devices 3 FS bytes used 1.19TiB
+        devid    1 size 1.81TiB used 410.06GiB path /dev/sdb2
+        devid    2 size 1.81TiB used 410.00GiB path /dev/sdc2
+        devid    3 size 1.81TiB used 410.00GiB path /dev/sdd2
 
-Cheers.
+btrfs-progs v3.19.1
 
---=-kn2mHZTV7gQQjSgW0Vai
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+# btrfs fi df /mnt/btrfs_raid1
+Data, single: total=1.19TiB, used=1.19TiB
+System, DUP: total=32.00MiB, used=176.00KiB
+Metadata, DUP: total=5.00GiB, used=3.73GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDMyOTE3NTQw
-OFowTwYJKoZIhvcNAQkEMUIEQH5d8e8DXAiD0jWlNKDr6G7x7Ah8kUBeH+Utr7UNwdwSnpRQ6m+c
-Lev8t+UJBIsA3KFaPPEYGJoaaHpo/r4Ll3MwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAA4uYgpPL9oHgM/gTUmk3ZjLp8woIh
-kIDYejZgGe2SRTmCHl/R7Ig4nkPrw/UhXBbnHCw7Dobvo4rwsPukXsal0Aad+jJyCPfOBRuuLItk
-xLgypzEEmIrAaY0vH7BPEudHAoVaXStDgGAIe9m3ay1fsiTkuxPyw7EZVGZz4lDpS4V/kgtCp0vE
-Yjh5qNsR2bIwYxeOMysVcIeDpBKzPXZwPQeZ/JgS0bbADwt2xSA19aTsYgnFOM6G8u5r7U9hZQOz
-60Uj5Gxgccay6kKTCAtcX9TXT3qjEVIP6RVuFQ12bXitfVBtFpJW+CZvvLmDKpMXMjoUVtJaAZQ+
-eUhQEujDAAAAAAAA
+# btrfs fi usage /mnt/btrfs_raid1
+Overall:
+    Device size:                   5.44TiB
+    Device allocated:              1.20TiB
+    Device unallocated:            4.24TiB
+    Device missing:                  0.00B
+    Used:                          1.20TiB
+    Free (estimated):              4.24TiB      (min: 2.12TiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,single: Size:1.19TiB, Used:1.19TiB
+   /dev/sdb2     406.00GiB
+   /dev/sdc2     405.00GiB
+   /dev/sdd2     409.00GiB
+
+Metadata,DUP: Size:5.00GiB, Used:3.73GiB
+   /dev/sdb2       4.00GiB
+   /dev/sdc2       5.00GiB
+   /dev/sdd2       1.00GiB
+
+System,DUP: Size:32.00MiB, Used:176.00KiB
+   /dev/sdb2      64.00MiB
+
+Unallocated:
+   /dev/sdb2       1.41TiB
+   /dev/sdc2       1.41TiB
+   /dev/sdd2       1.41TiB
 
 
---=-kn2mHZTV7gQQjSgW0Vai--
+-- 
+Juan Orti
+https://miceliux.com
+
+GPG key: https://miceliux.com/pub/pubkey.asc
+GPG fingerprint: 61F0 8272 6882 BCA6 3A35  88F6 B630 4B72 DEEB D08B
 

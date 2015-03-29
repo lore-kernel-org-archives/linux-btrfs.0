@@ -1,62 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:43070 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:43144 "EHLO
 	mailgw01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752235AbbC2RvS (ORCPT
+	with ESMTP id S1752403AbbC2RyL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Mar 2015 13:51:18 -0400
+	Sun, 29 Mar 2015 13:54:11 -0400
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw01.dd24.net (Postfix) with ESMTP id 700735FB33
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:51:16 +0000 (UTC)
+	by mailgw01.dd24.net (Postfix) with ESMTP id 25E595FAF0
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:54:10 +0000 (UTC)
 Received: from mailgw01.dd24.net ([192.168.1.35])
 	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id 2yEWG1ZI0k6c for <linux-btrfs@vger.kernel.org>;
-	Sun, 29 Mar 2015 17:51:14 +0000 (UTC)
+	with ESMTP id u2lVBLQ3sqQS for <linux-btrfs@vger.kernel.org>;
+	Sun, 29 Mar 2015 17:54:08 +0000 (UTC)
 Received: from heisenberg.fritz.box (ppp-188-174-180-118.dynamic.mnet-online.de [188.174.180.118])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
 	by mailgw01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:51:14 +0000 (UTC)
-Message-ID: <1427651474.4878.1.camel@scientia.net>
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Mar 2015 17:54:08 +0000 (UTC)
+Message-ID: <1427651647.4878.3.camel@scientia.net>
 Subject: Re: btrfs dedup - available or experimental? Or yet to be?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Sun, 29 Mar 2015 19:51:14 +0200
-In-Reply-To: <d35lub-tec.ln1@hurikhan77.spdns.de>
+Date: Sun, 29 Mar 2015 19:54:07 +0200
+In-Reply-To: <enflub-up7.ln1@hurikhan77.spdns.de>
 References: <meq6hm$lbh$1@ger.gmane.org>
 	 <20150323232212.GL31762@carfax.org.uk>
 	 <CAGfcS_=6iHH+4T6CH8ag6MSf2N5n37pE6USSOjDTv=BMmFHQaw@mail.gmail.com>
 	 <mf2701$d5k$1@ger.gmane.org>
 	 <CAGfcS_k=__EfJssYt9Ra77uAtW6PfqV1fqAX03VfJiPi_T5TBQ@mail.gmail.com>
 	 <d35lub-tec.ln1@hurikhan77.spdns.de>
+	 <CAGfcS_nG3gt=copDrWS9TEmZ-dn6WD+HODU1SyxNVvbBqLXQ0A@mail.gmail.com>
+	 <enflub-up7.ln1@hurikhan77.spdns.de>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-dFrvw7v4Otzm2X//NrdV"
+	boundary="=-kn2mHZTV7gQQjSgW0Vai"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-dFrvw7v4Otzm2X//NrdV
+--=-kn2mHZTV7gQQjSgW0Vai
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-03-29 at 13:43 +0200, Kai Krakow wrote:=20
-> Concluding that: duperemove should probably not try to become smart about=
+On Sun, 2015-03-29 at 16:44 +0200, Kai Krakow wrote:=20
+> Yes, the chosen "default" is probably not the best for this kind of utili=
+ty.=20
+> But I suppose it follows the principle of least surprise. At least every=
 =20
-> filesystem boundaries. It should either cross them or not as it is now - =
-the=20
-> option is left to the user (as is the task to supply proper cmdline=20
-> arguments with that).
-Couldn't it per default simply cross boundaries just within the same
-btrfs fs (i.e. amongst all it's subvolumes), since this seems to be the
-natural choice users want in most cases,... and via --no-xdev option or
-something like that it would be allowed to pass boundaries?
+> utility I'm daily using (like find) follows this default route.
+But the default with all these tools is that they operate on the file
+hierarchy and per default don't care about filesystems at all - or at
+least not in their original meaning.
+
+dedup is IMHO however a more filesystem internal centric operation...
+more like defragmentation ore tune2fs.
 
 
-Cheers,
-Chris.
+Cheers.
 
---=-dFrvw7v4Otzm2X//NrdV
+--=-kn2mHZTV7gQQjSgW0Vai
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -143,19 +145,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDMyOTE3NTEx
-NFowTwYJKoZIhvcNAQkEMUIEQDxwOgVT7D4oFq3pqyehaoSiNLGMMJ5iVGgfn3UUGA3RSFGfhBod
-0968B6SX2lhE5vwVm31P/goD9PwDK0RvJvAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDMyOTE3NTQw
+OFowTwYJKoZIhvcNAQkEMUIEQH5d8e8DXAiD0jWlNKDr6G7x7Ah8kUBeH+Utr7UNwdwSnpRQ6m+c
+Lev8t+UJBIsA3KFaPPEYGJoaaHpo/r4Ll3MwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC7IHgMLlChn8Is2IToR9mbF21CVirZ
-8lgeHEgGGNMOApea05ogYd3KUHX2Fg83t2aN1caWZR0lvZfaiItEx0TizIEGgW8Qdf9fqdmRQqOo
-LXVEC+oLYBlh+0F8UP+DkYOB6sHxDqALgJKNQfqf/+3+hVGo8mQq4aGnitkggjTNC1b8gofEjlQS
-uOHh3qzsTKSQiy9AiWLmXGf0Z7lU05flzUKWR6wSJgW8iO2QE+ndq5Wv0AQHMRFgaZm1EaQRVjao
-wQMDtB+8mwFoVBSmJQOsSxjeMfyuaNSzBWHLyhLY/MeOqwucQLm70tEW/IFbpTyZyLJC51PSg8c3
-ReR+klgXAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAA4uYgpPL9oHgM/gTUmk3ZjLp8woIh
+kIDYejZgGe2SRTmCHl/R7Ig4nkPrw/UhXBbnHCw7Dobvo4rwsPukXsal0Aad+jJyCPfOBRuuLItk
+xLgypzEEmIrAaY0vH7BPEudHAoVaXStDgGAIe9m3ay1fsiTkuxPyw7EZVGZz4lDpS4V/kgtCp0vE
+Yjh5qNsR2bIwYxeOMysVcIeDpBKzPXZwPQeZ/JgS0bbADwt2xSA19aTsYgnFOM6G8u5r7U9hZQOz
+60Uj5Gxgccay6kKTCAtcX9TXT3qjEVIP6RVuFQ12bXitfVBtFpJW+CZvvLmDKpMXMjoUVtJaAZQ+
+eUhQEujDAAAAAAAA
 
 
---=-dFrvw7v4Otzm2X//NrdV--
+--=-kn2mHZTV7gQQjSgW0Vai--
 

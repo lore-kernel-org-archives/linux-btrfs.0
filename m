@@ -1,59 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57985 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752851AbbC3TLL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 15:11:11 -0400
-Message-ID: <55199FCA.9040503@suse.com>
-Date: Mon, 30 Mar 2015 15:11:06 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org
-Subject: [PATCH] xfstests: generic: test for discard properly discarding unused
- extents
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:58737 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753360AbbC3XFX (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 30 Mar 2015 19:05:23 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] fstests: test for btrfs cloning of zero length ranges
+Date: Tue, 31 Mar 2015 00:04:58 +0100
+Message-Id: <1427756698-21338-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1427736284-29469-1-git-send-email-fdmanana@suse.com>
+References: <1427736284-29469-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This tests tests four conditions where discard can potentially not
-discard unused extents completely.
+Test cloning a file range with a length of zero into a destination offset
+greater than zero.
 
-We test, with -o discard and with fstrim, scenarios of removing many
-relatively small files and removing several large files.
+This made btrfs create an extent state record with a start offset greater than
+the end offset, resulting in chaos such as an infinite loop when evicting an
+inode.
 
-The important part of the two scenarios is that the large files must be
-large enough to span a blockgroup alone. It's possible for an
-entire block group to be emptied and dropped without an opportunity to
-discard individual extents as would happen with smaller files.
+This issue was fixed by the following linux kernel patch:
 
-The test confirms the discards have occured by using a sparse file
-mounted via loopback to punch holes and then check how many blocks
-are still allocated within the file.
+   Btrfs: fix inode eviction infinite loop after cloning into it
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/326     | 164 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/326.out |   5 ++
- tests/generic/group   |   1 +
- 3 files changed, 170 insertions(+)
- create mode 100644 tests/generic/326
- create mode 100644 tests/generic/326.out
 
-diff --git a/tests/generic/326 b/tests/generic/326
-new file mode 100644
-index 0000000..923a27f
+V2: Use an offset of 64Kb so that the test can run on platforms with any
+    page size. In btrfs the fs block size must be a multiple of the page
+    size, so a 4Kb offset would make the test fail on machines with a
+    page size > 4Kb because the clone ioctl only accepts offsets and lengths
+    that are multiples of the block size.
+
+ tests/btrfs/086     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/086.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 80 insertions(+)
+ create mode 100755 tests/btrfs/086
+ create mode 100644 tests/btrfs/086.out
+
+diff --git a/tests/btrfs/086 b/tests/btrfs/086
+new file mode 100755
+index 0000000..77c8da6
 --- /dev/null
-+++ b/tests/generic/326
-@@ -0,0 +1,164 @@
++++ b/tests/btrfs/086
+@@ -0,0 +1,77 @@
 +#! /bin/bash
-+# FSQA Test No. 326
++# FS QA Test No. btrfs/086
 +#
-+# This test uses a loopback mount with PUNCH_HOLE support to test
-+# whether discard operations are working as expected.
++# Test cloning a file range with a length of zero into a destination offset
++# greater than zero.
 +#
-+# It tests both -odiscard and fstrim.
++# This made btrfs create an extent state record with a start offset greater than
++# the end offset, resulting in chaos such as an infinite loop when evicting an
++# inode.
 +#
-+# Copyright (C) 2015 SUSE. All Rights Reserved.
-+# Author: Jeff Mahoney <jeffm@suse.com>
++# This issue was fixed by the following linux kernel patch:
++#
++#   Btrfs: fix inode eviction infinite loop after cloning into it
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -78,12 +89,9 @@ index 0000000..923a27f
 +status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
-+loopdev=
-+tmpdir=
 +_cleanup()
 +{
-+	[ -n "$tmpdir" ] && umount $tmpdir
-+	[ -n "$loopdev" ] && losetup -d $loopdev
++	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
@@ -91,147 +99,49 @@ index 0000000..923a27f
 +. ./common/filter
 +
 +# real QA test starts here
-+_need_to_be_root
-+_supported_fs generic
++_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_fstrim
++_require_cloner
++_need_to_be_root
 +
 +rm -f $seqres.full
 +
-+_scratch_mkfs &>> $seqres.full
-+_require_fs_space $SCRATCH_MNT $(( 10 * 1024 * 1024 ))
++_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
 +
-+test_discard()
-+{
-+	discard=$1
-+	files=$2
++touch $SCRATCH_MNT/foo
++touch $SCRATCH_MNT/bar
 +
-+	tmpfile=$SCRATCH_MNT/testfs.img.$$
-+	tmpdir=$SCRATCH_MNT/testdir.$$
-+	mkdir -p $tmpdir || _fail "!!! failed to create temp mount dir"
-+
-+	# Create a sparse file to host the file system
-+	dd if=/dev/zero of=$tmpfile bs=1M count=1 seek=10240 &> $seqres.full \
-+		|| _fail "!!! failed to create fs image file"
-+
-+	opts=""
-+	if [ "$discard" = "discard" ]; then
-+		opts="-o discard"
-+	fi
-+	losetup -f $tmpfile
-+	loopdev=$(losetup -j $tmpfile|awk -F: '{print $1}')
-+	_mkfs_dev $loopdev &> $seqres.full
-+	$MOUNT_PROG $opts $loopdev $tmpdir \
-+		|| _fail "!!! failed to loopback mount"
-+
-+	if [ "$files" = "large" ]; then
-+		# Create files larger than 1GB so each one occupies
-+		# more than one block group
-+		for n in $(seq 1 8); do
-+			dd if=/dev/zero of=$tmpdir/file$n bs=1M count=1200 \
-+				&> $seqres.full
-+		done
-+	else
-+		# Create up to 40k files sized 32k-1GB.
-+		mkdir -p $tmpdir/testdir
-+		for ((i = 1; i <= 40000; i++)); do
-+			SIZE=$(( $((1024*1024*1024)) / $(( $RANDOM + 1 )) ))
-+			$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 $SIZE" \
-+				$tmpdir/testdir/"${prefix}_$i" &> /dev/null
-+			if [ $? -ne 0 ]; then
-+				echo "Failed creating file ${prefix}_$i" \
-+					>>$seqres.full
-+				break
-+			fi
-+		done
-+	fi
-+
-+	sync
-+	OSIZE="$(du -k $tmpfile|awk '{print $1}')"
-+	du -k $tmpfile >> $seqres.full
-+
-+	if [ "$files" = "large" ]; then
-+		rm $tmpdir/file?
-+	else
-+		rm -rf $tmpdir/testdir
-+	fi
-+
-+	# Ensure everything's actually on the hosted file system
-+	if [ "$FSTYP" = "btrfs" ]; then
-+		_run_btrfs_util_prog filesystem sync $tmpdir
-+	fi
-+	sync
-+	sync
-+	if [ "$discard" = "trim" ]; then
-+		$FSTRIM_PROG $tmpdir
-+	fi
-+
-+	$UMOUNT_PROG $tmpdir
-+	rmdir $tmpdir
-+	tmpdir=
-+
-+	# Sync the backing file system to ensure the hole punches have
-+	# happened and we can trust the result.
-+	if [ "$FSTYP" = "btrfs" ]; then
-+		_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-+	fi
-+	sync
-+	sync
-+
-+	NSIZE="$(du -k $tmpfile|awk '{print $1}')"
-+	du -k $tmpfile >> $seqres.full
-+
-+	# Going from ~ 10GB to 50MB is a good enough test to account for
-+	# metadata remaining on different file systems.
-+	if [ "$NSIZE" -gt $(( 50 * 1024 )) ]; then
-+		_fail "TRIM failed: before rm ${OSIZE}kB, after rm ${NSIZE}kB"
-+	fi
-+	rm $tmpfile
-+	losetup -d $loopdev
-+	loopdev=
-+}
-+
-+
-+echo "Testing with -odiscard, many small files"
-+test_discard discard many
-+
-+echo "Testing with -odiscard, several large files"
-+test_discard discard large
-+
-+echo "Testing with fstrim, many small files"
-+test_discard trim many
-+
-+echo "Testing with fstrim, several large files"
-+test_discard trim large
++# Now attempt to clone foo into bar. Because we pass a length of zero, the
++# clone ioctl will adjust the length to match the size of the file foo (minus
++# the source offset which is zero) - because the adjusted length value is
++# zero, it made btrfs create an extent state record for file bar with a start
++# offset (64k) greater then its end offset (64k - 1), which is something never
++# supposed to happen and for example it made inode eviction enter an infinite
++# loop that dumped a warning trace on each iteration.
++$CLONER_PROG -s 0 -d 65536 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++echo "bar file size after clone operation: $(stat -c %s $SCRATCH_MNT/bar)"
 +
 +status=0
 +exit
-diff --git a/tests/generic/326.out b/tests/generic/326.out
+diff --git a/tests/btrfs/086.out b/tests/btrfs/086.out
 new file mode 100644
-index 0000000..37b0f2c
+index 0000000..1ae87ba
 --- /dev/null
-+++ b/tests/generic/326.out
-@@ -0,0 +1,5 @@
-+QA output created by 084
-+Testing with -odiscard, many small files
-+Testing with -odiscard, several large files
-+Testing with fstrim, many small files
-+Testing with fstrim, several large files
-diff --git a/tests/generic/group b/tests/generic/group
-index d56d3ce..75e17fa 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -183,3 +183,4 @@
- 323 auto aio stress
- 324 auto fsr quick
- 325 auto quick data log
-+326 auto metadata
++++ b/tests/btrfs/086.out
+@@ -0,0 +1,2 @@
++QA output created by 086
++bar file size after clone operation: 0
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 81d462f..92bc0f9 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -88,3 +88,4 @@
+ 083 auto quick send
+ 084 auto quick send
+ 085 auto quick send
++086 auto quick clone
 -- 
-1.8.5.6
+2.1.3
 
-
--- 
-Jeff Mahoney
-SUSE Labs

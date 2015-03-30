@@ -1,59 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bh-25.webhostbox.net ([208.91.199.152]:55330 "EHLO
-	bh-25.webhostbox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751936AbbC3DYY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Mar 2015 23:24:24 -0400
-Received: from mailnull by bh-25.webhostbox.net with sa-checked (Exim 4.82)
-	(envelope-from <linux@roeck-us.net>)
-	id 1YcQJL-0040QU-7C
-	for linux-btrfs@vger.kernel.org; Mon, 30 Mar 2015 03:24:23 +0000
-Date: Sun, 29 Mar 2015 20:24:13 -0700
-From: Guenter Roeck <linux@roeck-us.net>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH] fs: btrfs: Add missing include file
-Message-ID: <20150330032413.GA26566@roeck-us.net>
-References: <1426237126-9700-1-git-send-email-linux@roeck-us.net>
+Received: from cantor2.suse.de ([195.135.220.15]:57546 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751953AbbC3NAF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 09:00:05 -0400
+Date: Mon, 30 Mar 2015 14:59:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: unlock i_mutex after attempting to delete
+ subvolume during send
+Message-ID: <20150330125946.GE32051@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <74abba0fe653d9ac27bfe4f14ae3e8f65b5b7317.1427539655.git.osandov@osandov.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1426237126-9700-1-git-send-email-linux@roeck-us.net>
+In-Reply-To: <74abba0fe653d9ac27bfe4f14ae3e8f65b5b7317.1427539655.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 13, 2015 at 01:58:46AM -0700, Guenter Roeck wrote:
-> Building alpha:allmodconfig fails with
+On Sat, Mar 28, 2015 at 04:02:06AM -0700, Omar Sandoval wrote:
+> Whenever the check for a send in progress introduced in commit
+> 521e0546c970 (btrfs: protect snapshots from deleting during send) is
+> hit, we return without unlocking inode->i_mutex. This is easy to see
+> with lockdep enabled:
 > 
-> fs/btrfs/inode.c: In function 'check_direct_IO':
-> fs/btrfs/inode.c:8050:2: error: implicit declaration of function 'iov_iter_alignment'
+> [  +0.000059] ================================================
+> [  +0.000028] [ BUG: lock held when returning to user space! ]
+> [  +0.000029] 4.0.0-rc5-00096-g3c435c1 #93 Not tainted
+> [  +0.000026] ------------------------------------------------
+> [  +0.000029] btrfs/211 is leaving the kernel with locks still held!
+> [  +0.000029] 1 lock held by btrfs/211:
+> [  +0.000023]  #0:  (&type->i_mutex_dir_key){+.+.+.}, at: [<ffffffff8135b8df>] btrfs_ioctl_snap_destroy+0x2df/0x7a0
 > 
-> due to a missing include file.
+> Make sure we unlock it in the error path.
 > 
-> Fixes: 3737c63e1fb0 ("fs: move struct kiocb to fs.h")
-> Cc: Christoph Hellwig <hch@lst.de>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> ---
+> Signed-off-by: Omar Sandoval <osandov@osandov.com>
 
-This problem still affects the following builds as of today.
-
-alpha:allmodconfig
-i386:allyesconfig
-i386:allmodconfig
-m68k:allmodconfig
-mips:allmodconfig
-xtensa:allmodconfig
-
-and thus probabably many other allmodconfig builds which I don't try to build.
-
-This is getting really annoying, and prevents us from finding and fixing
-other build problems.
-
-It has been more than two weeks since I submitted the patch. This suggests 
-that the patch got lost otr that the Powers That Be don't care. Which one
-is it ?
-
-Should I request to revert 3737c63e1fb0 instead ?
-
-Guenter
+Reviewed-by: David Sterba <dsterba@suse.cz>

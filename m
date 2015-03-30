@@ -1,65 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54045 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:56479 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751792AbbC3J7i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 05:59:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YcWTV-00020Z-HJ
-	for linux-btrfs@vger.kernel.org; Mon, 30 Mar 2015 11:59:17 +0200
-Received: from p4ff58186.dip0.t-ipconnect.de ([79.245.129.134])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 11:59:17 +0200
-Received: from holger.hoffstaette by p4ff58186.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 11:59:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Cannot convert to raid1
-Date: Mon, 30 Mar 2015 09:59:10 +0000 (UTC)
-Message-ID: <pan.2015.03.30.09.59.10@googlemail.com>
-References: <1427656526.2251.8.camel@miceliux.com>
-	<CAJCQCtQLPj2n=jO+s3z28_SdYL1mz97FBntK-0YLYn112EKBNg@mail.gmail.com>
-	<pan.2015.03.29.20.04.09@googlemail.com>
-	<a713705efd7fb91a19f773253c34b426@miceliux.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1751953AbbC3May (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 08:30:54 -0400
+Date: Mon, 30 Mar 2015 14:30:34 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
+        Timo Kokkonen <timo.kokkonen@offcode.fi>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: prevent deletion of mounted subvolumes
+Message-ID: <20150330123034.GB32051@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 30 Mar 2015 08:16:44 +0200, Juan Orti Alcaine wrote:
+On Mon, Mar 30, 2015 at 02:02:17AM -0700, Omar Sandoval wrote:
+> Before commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
+> d_invalidate() could return -EBUSY when a dentry for a directory had
+> more than one reference to it. This is what prevented a mounted
+> subvolume from being deleted, as struct vfsmount holds a reference to
+> the subvolume dentry. However, that commit removed that case, and later
+> commits in that patch series removed the return code from d_invalidate()
+> completely, so we don't get that check for free anymore. So, reintroduce
+> it in btrfs_ioctl_snap_destroy().
 
-> El 2015-03-29 22:04, Holger Hoffstätte escribió:
->> On Sun, 29 Mar 2015 13:40:56 -0600, Chris Murphy wrote:
->> 
->>> On Sun, Mar 29, 2015 at 1:15 PM, Juan Orti Alcaine
->>> <juan.orti@miceliux.com> wrote:
->>> 
->>>> The filesystem was created with one device, and I have added two more
->>>> devices afterwards. To convert it to raid1, I have used:
->>>> 
->>>> # btrfs balance start -dconvert=raid1 -mconvert=raid1 
->>>> /mnt/btrfs_raid1
->>> 
->>>> The balance process has finished, but if I check my filesystem, it
->>>> shows up as single
->>> 
->>> Yeah, I'm kinda stumped. The only thing I'm thinking is if you're
->>> absolutely sure it's mounted at /mnt/btrfs_raid1 – because I've made
->>> this mistake before. (Oops.)
->> 
->> Nope, known bug in 4.0-rc:
->> http://thread.gmane.org/gmane.comp.file-systems.btrfs/43117
-> 
-> 
-> Do you know if the fix is going to do it for 4.0 final?
-> Thank you.
+> This applies to 4.0-rc6. To be honest, I'm not sure that this is the most
+> correct fix for this bug, but it's equivalent to the pre-3.18 behavior and it's
+> the best that I could come up with. Thoughts?
 
-No idea, sorry. So far I don't see anything in Chris' trees.
-I maintain my own kernel (for btrfs and some other extensions) and
-just skipped that particular commit for now.
+> +	spin_lock(&dentry->d_lock);
+> +	err = dentry->d_lockref.count > 1 ? -EBUSY : 0;
+> +	spin_unlock(&dentry->d_lock);
 
--h
+The fix restores the original behaviour, but I don't think opencoding and
+using internals is fine. Either there should be a vfs api for that or
+there's an existing one that can be used instead.
 
+The bug here seems defined up to the point that we're trying to delete a
+subvolume that's a mountpoint. My next guess is that a check
+
+	if (d_mountpoint(&dentry)) { ... }
+
+could work.

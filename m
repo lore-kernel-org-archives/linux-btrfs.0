@@ -1,61 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41760 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752665AbbC3Qak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 12:30:40 -0400
-Message-ID: <55197A2B.1070104@suse.com>
-Date: Mon, 30 Mar 2015 12:30:35 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: fstests@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] xfstests: btrfs: test for orphan item cleanup
-References: <55130547.6090907@suse.com>
-In-Reply-To: <55130547.6090907@suse.com>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:48683 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752633AbbC3RZn (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 30 Mar 2015 13:25:43 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: test for btrfs cloning of zero length ranges
+Date: Mon, 30 Mar 2015 18:24:44 +0100
+Message-Id: <1427736284-29469-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test tests three conditions where orphan items need to be cleaned up:
-1) Default subvolume is fs tree root (mkfs default)
-2) Default subvolume has been set explicitly to another subvolume (set-default)
-3) Looking up a subvolume during a traversal
+Test cloning a file range with a length of zero into a destination offset
+greater than zero.
 
-In the kernel, these three cases use separate mechanisms to look up
-the subvolumes. There was a bug in the kernel where case #2 wasn't getting
-handled and so orphan items would never be cleaned up if the default
-subvolume was explicitly set. This issue was fixed with the upstream commit:
-btrfs: cleanup orphans while looking up default subvolume.
+This made btrfs create an extent state record with a start offset greater than
+the end offset, resulting in chaos such as an infinite loop when evicting an
+inode.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+This issue was fixed by the following linux kernel patch:
+
+   Btrfs: fix inode eviction infinite loop after cloning into it
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/083     | 161 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/083.out |   4 ++
- tests/btrfs/group   |   1 +
- 3 files changed, 166 insertions(+)
- create mode 100755 tests/btrfs/083
- create mode 100644 tests/btrfs/083.out
+ tests/btrfs/086     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/086.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 80 insertions(+)
+ create mode 100755 tests/btrfs/086
+ create mode 100644 tests/btrfs/086.out
 
-diff --git a/tests/btrfs/083 b/tests/btrfs/083
+diff --git a/tests/btrfs/086 b/tests/btrfs/086
 new file mode 100755
-index 0000000..27dca21
+index 0000000..d7dd715
 --- /dev/null
-+++ b/tests/btrfs/083
-@@ -0,0 +1,161 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/083
++++ b/tests/btrfs/086
+@@ -0,0 +1,77 @@
++#! /bin/bash
++# FS QA Test No. btrfs/086
 +#
-+# Tests to ensure that orphan items are properly created and cleaned up
-+# on next mount.
++# Test cloning a file range with a length of zero into a destination offset
++# greater than zero.
 +#
-+# There are three cases where orphan items may be cleaned up:
-+# 1) Default subvolume is fs tree root (mkfs default)
-+# 2) Default subvolume is explicitly created subvolume
-+#    (i.e. btrfs subvol set-default)
-+# 3) Non-default subvolume lookup
++# This made btrfs create an extent state record with a start offset greater than
++# the end offset, resulting in chaos such as an infinite loop when evicting an
++# inode.
++#
++# This issue was fixed by the following linux kernel patch:
++#
++#   Btrfs: fix inode eviction infinite loop after cloning into it
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015 SUSE.  All Rights Reserved.
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -69,7 +69,6 @@ index 0000000..27dca21
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
 +#-----------------------------------------------------------------------
 +#
 +
@@ -77,152 +76,63 @@ index 0000000..27dca21
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
-+here=`pwd`
 +tmp=/tmp/$$
 +status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+    _cleanup_flakey
-+    rm -f $tmp.*
++	rm -f $tmp.*
 +}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
 +
 +# real QA test starts here
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_dm_flakey
++_require_cloner
 +_need_to_be_root
-+
-+BTRFS_DEBUG_TREE_PROG="`set_prog_path btrfs-debug-tree`"
-+_require_command "$BTRFS_DEBUG_TREE_PROG" btrfs-debug-tree
 +
 +rm -f $seqres.full
 +
-+has_orphan_item()
-+{
-+	INO=$1
-+	if $BTRFS_DEBUG_TREE_PROG $SCRATCH_DEV | \
-+		grep -q "key (ORPHAN ORPHAN_ITEM $INO)"; then
-+		return 0
-+	fi
-+	return 1
-+}
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
 +
-+test_orphan()
-+{
-+	PRECMD=$1
-+	SUB=0
++touch $SCRATCH_MNT/foo
++touch $SCRATCH_MNT/bar
 +
-+	_scratch_mkfs >> $seqres.full 2>&1
-+	_init_flakey
-+
-+	_mount_flakey
-+
-+	$PRECMD
-+
-+	TESTPATH=$SCRATCH_MNT/testdir/testfile
-+	DIR=$(dirname $TESTPATH)
-+
-+	[ -d "$DIR" ] || mkdir -p $DIR
-+
-+	SIZE=$(( 1024 * 1024 ))
-+	run_check dd if=/dev/zero of=$TESTPATH bs=$SIZE count=1
-+
-+	INO=$(stat -c %i $TESTPATH)
-+
-+	# Orphan item won't be created if the file doesn't make it to disk
-+	sync
-+
-+	# Open and delete the file
-+	exec 27<$TESTPATH
-+	rm -f $TESTPATH
-+
-+	# Ensure the unlink (and orphan item creation) hits the disk
-+	sync
-+
-+	# Turn off writes before closing so the orphan item will be left behind
-+	_load_flakey_table $FLAKEY_DROP_WRITES
-+
-+	# Close the file so we can umount
-+	exec 27>&-
-+
-+	# Orphan item should be on disk if operating correctly
-+	_unmount_flakey
-+	_load_flakey_table $FLAKEY_ALLOW_WRITES
-+	if ! has_orphan_item $INO; then
-+		echo "ERROR: No orphan item found after umount."
-+		return
-+	fi
-+	_mount_flakey
-+
-+	# If $DIR is a subvolume, this will cause a lookup and orphan cleanup
-+	(cd $DIR; true)
-+
-+	# Orphan item will be cleaned up during mount but won't be on
-+	# disk until there's a sync.
-+	sync
-+
-+	_unmount_flakey
-+	if has_orphan_item $INO; then
-+		echo "ERROR: Orphan item found after successful mount/sync."
-+	fi
-+	_cleanup_flakey
-+}
-+
-+new_subvolume()
-+{
-+	_run_btrfs_util_prog subvol create $SCRATCH_MNT/testdir
-+}
-+
-+new_default()
-+{
-+	new_subvolume
-+	SUB=$($BTRFS_UTIL_PROG subvol list $SCRATCH_MNT |awk '{print $2}')
-+	_run_btrfs_util_prog subvol set-default $SUB $SCRATCH_MNT
-+
-+	_unmount_flakey
-+	_mount_flakey
-+}
-+
-+echo "Testing with fs root as default subvolume"
-+test_orphan true
-+
-+echo "Testing with explicit default subvolume"
-+test_orphan new_default
-+
-+echo "Testing with orphan on non-default subvolume"
-+test_orphan new_subvolume
++# Now attempt to clone foo into bar. Because we pass a length of zero, the
++# clone ioctl will adjust the length to match the size of the file foo (minus
++# the source offset which is zero) - because the adjusted length value is
++# zero, it made btrfs create an extent state record for file bar with a start
++# offset (4096) greater then its end offset (4095), which is something never
++# supposed to happen and for example it made inode eviction enter an infinite
++# loop that dumped a warning trace on each iteration.
++$CLONER_PROG -s 0 -d 4096 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++echo "bar file size after clone operation: $(stat -c %s $SCRATCH_MNT/bar)"
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
+diff --git a/tests/btrfs/086.out b/tests/btrfs/086.out
 new file mode 100644
-index 0000000..e9403c1
+index 0000000..1ae87ba
 --- /dev/null
-+++ b/tests/btrfs/083.out
-@@ -0,0 +1,4 @@
-+QA output created by 083
-+Testing with fs root as default subvolume
-+Testing with explicit default subvolume
-+Testing with orphan on non-default subvolume
++++ b/tests/btrfs/086.out
+@@ -0,0 +1,2 @@
++QA output created by 086
++bar file size after clone operation: 0
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fd2fa76..c48fc0c 100644
+index 81d462f..92bc0f9 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -85,3 +85,4 @@
- 080 auto snapshot
- 081 auto quick clone
- 082 auto quick remount
-+083 auto quick metadata subvol
+@@ -88,3 +88,4 @@
+ 083 auto quick send
+ 084 auto quick send
+ 085 auto quick send
++086 auto quick clone
 -- 
-1.8.5.6
-
+2.1.3
 

@@ -1,100 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:33528 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752932AbbC3TV1 (ORCPT
+Received: from mail-pd0-f173.google.com ([209.85.192.173]:36494 "EHLO
+	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753068AbbC3T7x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 15:21:27 -0400
-Received: by pacgg7 with SMTP id gg7so46624224pac.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 12:21:27 -0700 (PDT)
-Date: Mon, 30 Mar 2015 12:21:25 -0700
+	Mon, 30 Mar 2015 15:59:53 -0400
+Received: by pdcp1 with SMTP id p1so94135326pdc.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 12:59:52 -0700 (PDT)
+Date: Mon, 30 Mar 2015 12:59:51 -0700
 From: Omar Sandoval <osandov@osandov.com>
 To: Filipe Manana <fdmanana@suse.com>
 Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix inode eviction infinite loop after cloning
- into it
-Message-ID: <20150330192125.GA20842@mew.cs.washington.edu>
-References: <1427736239-29416-1-git-send-email-fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: fix inode eviction infinite loop after
+ extent_same ioctl
+Message-ID: <20150330195951.GA7440@mew.dhcp4.washington.edu>
+References: <1427736407-29521-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1427736239-29416-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1427736407-29521-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 30, 2015 at 06:23:59PM +0100, Filipe Manana wrote:
-> If we attempt to clone a 0 length region into a file we can end up
-> inserting a range in the inode's extent_io tree with a start offset
-> that is greater then the end offset, which triggers immediately the
-> following warning:
+On Mon, Mar 30, 2015 at 06:26:47PM +0100, Filipe Manana wrote:
+> If we pass a length of 0 to the extent_same ioctl, we end up locking an
+> extent range with a start offset greater then its end offset (if the
+> destination file's offset is greater than zero). This results in a warning
+> from extent_io.c:insert_state through the following call chain:
 > 
-> [ 3914.619057] WARNING: CPU: 17 PID: 4199 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
-> [ 3914.620886] BTRFS: end < start 4095 4096
-> (...)
-> [ 3914.638093] Call Trace:
-> [ 3914.638636]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
-> [ 3914.639620]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
-> [ 3914.640789]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
-> [ 3914.642041]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
-> [ 3914.643236]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
-> [ 3914.644441]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
-> [ 3914.645711]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
-> [ 3914.646914]  [<ffffffff8142b2fb>] ? _raw_spin_unlock+0x28/0x33
-> [ 3914.648058]  [<ffffffffa03cbac4>] ? test_range_bit+0xcc/0xde [btrfs]
-> [ 3914.650105]  [<ffffffffa03cb3c3>] lock_extent+0x13/0x15 [btrfs]
-> [ 3914.651361]  [<ffffffffa03db39e>] lock_extent_range+0x3d/0xcd [btrfs]
-> [ 3914.652761]  [<ffffffffa03de1fe>] btrfs_ioctl_clone+0x278/0x388 [btrfs]
-> [ 3914.654128]  [<ffffffff811226dd>] ? might_fault+0x58/0xb5
-> [ 3914.655320]  [<ffffffffa03e0909>] btrfs_ioctl+0xb51/0x2195 [btrfs]
-> (...)
-> [ 3914.669271] ---[ end trace 14843d3e2e622fc1 ]---
+>   btrfs_extent_same()
+>     btrfs_double_lock()
+>       lock_extent_range()
+>         lock_extent(inode->io_tree, offset, offset + len - 1)
+>           lock_extent_bits()
+>             __set_extent_bit()
+>               insert_state()
+>                 --> WARN_ON(end < start)
 > 
-> This later makes the inode eviction handler enter an infinite loop that
-> keeps dumping the following warning over and over:
-> 
-> [ 3915.117629] WARNING: CPU: 22 PID: 4228 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
-> [ 3915.119913] BTRFS: end < start 4095 4096
-> (...)
-> [ 3915.137394] Call Trace:
-> [ 3915.137913]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
-> [ 3915.139154]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
-> [ 3915.140316]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
-> [ 3915.141505]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
-> [ 3915.142709]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
-> [ 3915.143849]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
-> [ 3915.145120]  [<ffffffffa038c1e3>] ? btrfs_kill_super+0x17/0x23 [btrfs]
-> [ 3915.146352]  [<ffffffff811548f6>] ? deactivate_locked_super+0x3b/0x50
-> [ 3915.147565]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
-> [ 3915.148785]  [<ffffffff8142b7e2>] ? _raw_write_unlock+0x28/0x33
-> [ 3915.149931]  [<ffffffffa03bc325>] btrfs_evict_inode+0x196/0x482 [btrfs]
-> [ 3915.151154]  [<ffffffff81168904>] evict+0xa0/0x148
-> [ 3915.152094]  [<ffffffff811689e5>] dispose_list+0x39/0x43
-> [ 3915.153081]  [<ffffffff81169564>] evict_inodes+0xdc/0xeb
-> [ 3915.154062]  [<ffffffff81154418>] generic_shutdown_super+0x49/0xef
-> [ 3915.155193]  [<ffffffff811546d1>] kill_anon_super+0x13/0x1e
-> [ 3915.156274]  [<ffffffffa038c1e3>] btrfs_kill_super+0x17/0x23 [btrfs]
-> (...)
-> [ 3915.167404] ---[ end trace 14843d3e2e622fc2 ]---
-> 
-> So just bail out of the clone ioctl if the length of the region to clone
-> is zero, without locking any extent range, in order to prevent this issue
-> (same behaviour as a pwrite with a 0 length for example).
-> 
-> This is trivial to reproduce. For example, the steps for the test I just
-> made for fstests:
-> 
->   mkfs.btrfs -f SCRATCH_DEV
->   mount SCRATCH_DEV $SCRATCH_MNT
-> 
->   touch $SCRATCH_MNT/foo
->   touch $SCRATCH_MNT/bar
-> 
->   $CLONER_PROG -s 0 -d 4096 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
->   umount $SCRATCH_MNT
-> 
-> A test case for fstests follows soon.
+> This leads to an infinite loop when evicting the inode. This is the same
+> problem that my previous patch titled
+> "Btrfs: fix inode eviction infinite loop after cloning into it" addressed
+> but for the extent_same ioctl instead of the clone ioctl.
 > 
 > CC: <stable@vger.kernel.org>
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 Reviewed-by: Omar Sandoval <osandov@osandov.com>
+
+Reproduced with https://github.com/markfasheh/duperemove/blob/master/btrfs-extent-same.c
+
+./btrfs-extent-same 0 foo 4096 bar 4096
 
 -- 
 Omar

@@ -1,236 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58007 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752895AbbC3TMW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 15:12:22 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B2277ABB1
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 19:12:20 +0000 (UTC)
-Message-ID: <5519A011.8090501@suse.com>
-Date: Mon, 30 Mar 2015 15:12:17 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:33528 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752932AbbC3TV1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 15:21:27 -0400
+Received: by pacgg7 with SMTP id gg7so46624224pac.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 12:21:27 -0700 (PDT)
+Date: Mon, 30 Mar 2015 12:21:25 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix inode eviction infinite loop after cloning
+ into it
+Message-ID: <20150330192125.GA20842@mew.cs.washington.edu>
+References: <1427736239-29416-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: iterate over unused chunk space in FITRIM
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1427736239-29416-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The combination of mkfs.btrfs discarding the entire block device and the
-old behavior of block groups being retained forever made iterating over
-the block groups on disk for FITRIM an easy optimization. If there wasn't
-a block group describing the space, btrfs had never written to it.
-
-Since we now clean up block groups automatically as they become empty,
-iterating over block groups is no longer sufficient to discard unused space.
-
-This patch iterates over the unused chunk space and discards it.  We
-block out device add/remove/replace operations for the duration, but
-relax the chunk lock in between discards to allow the file system
-to perform allocations and function normally.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c     | 45 +++++++++++++++++++------------
- fs/btrfs/volumes.h     |  3 +++
- 3 files changed, 104 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8b353ad..0bf45b8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9707,10 +9707,62 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- 	return unpin_extent_range(root, start, end, false);
- }
- 
-+/*
-+ * It used to be that old block groups would be left around forever. so
-+ * iterating over them would be enough to trim unused space.  Since we
-+ * now automatically remove them, we also need to iterate over unallocated
-+ * space.  We block out device add/removes while this is running but allow
-+ * chunks to be allocated between discards to not hold up writes longer
-+ * than necessary.
-+ */
-+static int btrfs_trim_free_extents(struct btrfs_trans_handle *trans,
-+				   struct btrfs_device *device,
-+				   u64 minlen, u64 *trimmed)
-+{
-+	u64 start = 0, len = 0;
-+	int ret;
-+
-+	*trimmed = 0;
-+
-+	/* Not writeable = nothing to do. */
-+	if (!device->writeable)
-+		return 0;
-+
-+	/* No free space = nothing to do. */
-+	if (device->total_bytes <= device->bytes_used)
-+		return 0;
-+
-+	ret = 0;
-+
-+	while (1) {
-+		ret = find_free_dev_extent_start(trans, device, minlen, start,
-+						 &start, &len);
-+		if (ret) {
-+			if (ret == -ENOSPC)
-+				ret = 0;
-+			break;
-+		}
-+
-+		ret = btrfs_issue_discard(device->bdev, start, len);
-+
-+		if (ret)
-+			break;
-+
-+		start += len;
-+		*trimmed += len;
-+		cond_resched();
-+	}
-+
-+	return ret;
-+}
-+
- int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_group_cache *cache = NULL;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_device *device;
-+	struct list_head *devices;
- 	u64 group_trimmed;
- 	u64 start;
- 	u64 end;
-@@ -9765,6 +9817,27 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
- 		cache = next_block_group(fs_info->tree_root, cache);
- 	}
- 
-+	/*
-+	 * Get a handle on the current transaction so we can
-+	 * see pending extents.  We won't actually dirty anything.
-+	 */
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	lock_chunks(root);
-+	devices = &root->fs_info->fs_devices->alloc_list;
-+	list_for_each_entry(device, devices, dev_alloc_list) {
-+		ret = btrfs_trim_free_extents(trans, device, range->minlen,
-+					      &group_trimmed);
-+		if (ret)
-+			break;
-+
-+		trimmed += group_trimmed;
-+	}
-+	unlock_chunks(root);
-+	btrfs_end_transaction(trans, root);
-+
- 	range->len = trimmed;
- 	return ret;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8222f6f..2f4ce7f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1089,12 +1089,13 @@ again:
- 
- 
- /*
-- * find_free_dev_extent - find free space in the specified device
-- * @device:	the device which we search the free space in
-- * @num_bytes:	the size of the free space that we need
-- * @start:	store the start of the free space.
-- * @len:	the size of the free space. that we find, or the size of the max
-- * 		free space if we don't find suitable free space
-+ * find_free_dev_extent_start - find free space in the specified device
-+ * @device:	  the device which we search the free space in
-+ * @num_bytes:	  the size of the free space that we need
-+ * @search_start: the position from which to begin the search
-+ * @start:	  store the start of the free space.
-+ * @len:	  the size of the free space. that we find, or the size
-+ *		  of the max free space if we don't find suitable free space
-  *
-  * this uses a pretty simple search, the expectation is that it is
-  * called very infrequently and that a given device has a small number
-@@ -1108,9 +1109,9 @@ again:
-  * But if we don't find suitable free space, it is used to store the size of
-  * the max free space.
-  */
--int find_free_dev_extent(struct btrfs_trans_handle *trans,
--			 struct btrfs_device *device, u64 num_bytes,
--			 u64 *start, u64 *len)
-+int find_free_dev_extent_start(struct btrfs_trans_handle *trans,
-+			       struct btrfs_device *device, u64 num_bytes,
-+			       u64 search_start, u64 *start, u64 *len)
- {
- 	struct btrfs_key key;
- 	struct btrfs_root *root = device->dev_root;
-@@ -1120,19 +1121,11 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 	u64 max_hole_start;
- 	u64 max_hole_size;
- 	u64 extent_end;
--	u64 search_start;
- 	u64 search_end = device->total_bytes;
- 	int ret;
- 	int slot;
- 	struct extent_buffer *l;
- 
--	/* FIXME use last free of some kind */
--
--	/* we don't want to overwrite the superblock on the drive,
--	 * so we make sure to start at an offset of at least 1MB
--	 */
--	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
--
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-@@ -1260,6 +1253,24 @@ out:
- 	return ret;
- }
- 
-+int find_free_dev_extent(struct btrfs_trans_handle *trans,
-+			 struct btrfs_device *device, u64 num_bytes,
-+			 u64 *start, u64 *len)
-+{
-+	struct btrfs_root *root = device->dev_root;
-+	u64 search_start;
-+
-+	/* FIXME use last free of some kind */
-+
-+	/*
-+	 * we don't want to overwrite the superblock on the drive,
-+	 * so we make sure to start at an offset of at least 1MB
-+	 */
-+	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
-+	return find_free_dev_extent_start(trans, device, num_bytes,
-+					  search_start, start, len);
-+}
-+
- static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
- 			  struct btrfs_device *device,
- 			  u64 start, u64 *dev_extent_len)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 83069de..c9a7ea9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -450,6 +450,9 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
- int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
- int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
- int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
-+int find_free_dev_extent_start(struct btrfs_trans_handle *trans,
-+			 struct btrfs_device *device, u64 num_bytes,
-+			 u64 search_start, u64 *start, u64 *max_avail);
- int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			 struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *max_avail);
--- 
-1.8.5.6
-
+On Mon, Mar 30, 2015 at 06:23:59PM +0100, Filipe Manana wrote:
+> If we attempt to clone a 0 length region into a file we can end up
+> inserting a range in the inode's extent_io tree with a start offset
+> that is greater then the end offset, which triggers immediately the
+> following warning:
+> 
+> [ 3914.619057] WARNING: CPU: 17 PID: 4199 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
+> [ 3914.620886] BTRFS: end < start 4095 4096
+> (...)
+> [ 3914.638093] Call Trace:
+> [ 3914.638636]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
+> [ 3914.639620]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
+> [ 3914.640789]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
+> [ 3914.642041]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
+> [ 3914.643236]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
+> [ 3914.644441]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
+> [ 3914.645711]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
+> [ 3914.646914]  [<ffffffff8142b2fb>] ? _raw_spin_unlock+0x28/0x33
+> [ 3914.648058]  [<ffffffffa03cbac4>] ? test_range_bit+0xcc/0xde [btrfs]
+> [ 3914.650105]  [<ffffffffa03cb3c3>] lock_extent+0x13/0x15 [btrfs]
+> [ 3914.651361]  [<ffffffffa03db39e>] lock_extent_range+0x3d/0xcd [btrfs]
+> [ 3914.652761]  [<ffffffffa03de1fe>] btrfs_ioctl_clone+0x278/0x388 [btrfs]
+> [ 3914.654128]  [<ffffffff811226dd>] ? might_fault+0x58/0xb5
+> [ 3914.655320]  [<ffffffffa03e0909>] btrfs_ioctl+0xb51/0x2195 [btrfs]
+> (...)
+> [ 3914.669271] ---[ end trace 14843d3e2e622fc1 ]---
+> 
+> This later makes the inode eviction handler enter an infinite loop that
+> keeps dumping the following warning over and over:
+> 
+> [ 3915.117629] WARNING: CPU: 22 PID: 4228 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
+> [ 3915.119913] BTRFS: end < start 4095 4096
+> (...)
+> [ 3915.137394] Call Trace:
+> [ 3915.137913]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
+> [ 3915.139154]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
+> [ 3915.140316]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
+> [ 3915.141505]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
+> [ 3915.142709]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
+> [ 3915.143849]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
+> [ 3915.145120]  [<ffffffffa038c1e3>] ? btrfs_kill_super+0x17/0x23 [btrfs]
+> [ 3915.146352]  [<ffffffff811548f6>] ? deactivate_locked_super+0x3b/0x50
+> [ 3915.147565]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
+> [ 3915.148785]  [<ffffffff8142b7e2>] ? _raw_write_unlock+0x28/0x33
+> [ 3915.149931]  [<ffffffffa03bc325>] btrfs_evict_inode+0x196/0x482 [btrfs]
+> [ 3915.151154]  [<ffffffff81168904>] evict+0xa0/0x148
+> [ 3915.152094]  [<ffffffff811689e5>] dispose_list+0x39/0x43
+> [ 3915.153081]  [<ffffffff81169564>] evict_inodes+0xdc/0xeb
+> [ 3915.154062]  [<ffffffff81154418>] generic_shutdown_super+0x49/0xef
+> [ 3915.155193]  [<ffffffff811546d1>] kill_anon_super+0x13/0x1e
+> [ 3915.156274]  [<ffffffffa038c1e3>] btrfs_kill_super+0x17/0x23 [btrfs]
+> (...)
+> [ 3915.167404] ---[ end trace 14843d3e2e622fc2 ]---
+> 
+> So just bail out of the clone ioctl if the length of the region to clone
+> is zero, without locking any extent range, in order to prevent this issue
+> (same behaviour as a pwrite with a 0 length for example).
+> 
+> This is trivial to reproduce. For example, the steps for the test I just
+> made for fstests:
+> 
+>   mkfs.btrfs -f SCRATCH_DEV
+>   mount SCRATCH_DEV $SCRATCH_MNT
+> 
+>   touch $SCRATCH_MNT/foo
+>   touch $SCRATCH_MNT/bar
+> 
+>   $CLONER_PROG -s 0 -d 4096 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+>   umount $SCRATCH_MNT
+> 
+> A test case for fstests follows soon.
+> 
+> CC: <stable@vger.kernel.org>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Omar Sandoval <osandov@osandov.com>
 
 -- 
-Jeff Mahoney
-SUSE Labs
+Omar

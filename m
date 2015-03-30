@@ -1,123 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:37189 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752057AbbC1M2z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Mar 2015 08:28:55 -0400
+Received: from cantor2.suse.de ([195.135.220.15]:41760 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752665AbbC3Qak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 12:30:40 -0400
+Message-ID: <55197A2B.1070104@suse.com>
+Date: Mon, 30 Mar 2015 12:30:35 -0400
+From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <5515C13B.9070806@sandeen.net>
-References: <551441CA.9050109@redhat.com>
-	<5515C13B.9070806@sandeen.net>
-Date: Sat, 28 Mar 2015 12:28:54 +0000
-Message-ID: <CAL3q7H5+yQwwvtz8E6SEx6zrX8Ho90uGrqez0JU_VO6ByU=-Ng@mail.gmail.com>
-Subject: Re: [PATCH V2] fstests: fix _filter_mkfs regression on btrfs
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Eric Sandeen <sandeen@sandeen.net>
-Cc: Eric Sandeen <sandeen@redhat.com>, fstests@vger.kernel.org,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: fstests@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2] xfstests: btrfs: test for orphan item cleanup
+References: <55130547.6090907@suse.com>
+In-Reply-To: <55130547.6090907@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 27, 2015 at 8:44 PM, Eric Sandeen <sandeen@sandeen.net> wrote:
-> commit:
->
-> 5e8b9e6 btrfs: add regression test for remount with thread_pool resized
->
-> did weird things to _filter_mkfs; aside from broken indentation,
-> it also short-circuited the default non-xfs behavior, which was to
-> emit a default block & inode size.  And that was all because btrfs/082
-> was using _filter_mkfs & not redirecting output away as per normal.
->
-> Granted, it's not super clear that _filter_mkfs serves this rather
-> unique purpose, but anyway...
->
-> And, while having this default seems to be of questionable value,
-> not emitting *anything* led to this on btrfs:
->
->     +./tests/generic/204: line 76: space / (isize + dbsize): division by 0 (error token is ")")
->
-> because those variables don't get set for btrfs, thanks to the
-> above commit.
->
-> So take out the use of _filter_mkfs in btrfs/082, and take out the
-> munging of _filter_mkfs which broke generic/204, and get things back
-> to something semi-sane.
->
-> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+This test tests three conditions where orphan items need to be cleaned up:
+1) Default subvolume is fs tree root (mkfs default)
+2) Default subvolume has been set explicitly to another subvolume (set-default)
+3) Looking up a subvolume during a traversal
 
-Tested-by: Filipe Manana <fdmanana@suse.com>
+In the kernel, these three cases use separate mechanisms to look up
+the subvolumes. There was a bug in the kernel where case #2 wasn't getting
+handled and so orphan items would never be cleaned up if the default
+subvolume was explicitly set. This issue was fixed with the upstream commit:
+btrfs: cleanup orphans while looking up default subvolume.
+
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ tests/btrfs/083     | 161 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/083.out |   4 ++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 166 insertions(+)
+ create mode 100755 tests/btrfs/083
+ create mode 100644 tests/btrfs/083.out
 
-Thanks, I had reported this recently as well [1].
-
-[1] http://www.spinics.net/lists/linux-btrfs/msg42117.html
-
-> ---
->
-> V2: truncate seqres.full on first write, thanks Eryu!
->
-> diff --git a/common/filter b/common/filter
-> index 71ef2e2..05dbae6 100644
-> --- a/common/filter
-> +++ b/common/filter
-> @@ -137,10 +137,6 @@ _filter_mkfs()
->      case $FSTYP in
->      xfs)
->         ;;
-> -       btrfs)
-> -       sed -e "/Performing full device TRIM/d" \
-> -               -e "/Turning ON incompat feature/d"
-> -       return ;;
->      *)
->         cat - >/dev/null
->         perl -e 'print STDERR "dbsize=4096\nisize=256\n"'
->
-> diff --git a/tests/btrfs/082 b/tests/btrfs/082
-> index dd3c87e..1324d27 100755
-> --- a/tests/btrfs/082
-> +++ b/tests/btrfs/082
-> @@ -55,7 +55,7 @@ _supported_fs btrfs
->  _supported_os Linux
->  _require_scratch
->
-> -_scratch_mkfs |& _filter_mkfs
-> +_scratch_mkfs >$seqres.full 2>&1
->
->  _scratch_mount "-o thread_pool=6"
->  _scratch_mount "-o remount,thread_pool=10"
->
-> diff --git a/tests/generic/204 b/tests/generic/204
-> index d6bb094..13069d8 100755
-> --- a/tests/generic/204
-> +++ b/tests/generic/204
-> @@ -60,6 +60,7 @@ _scratch_mkfs_sized $SIZE $dbsize 2> /dev/null \
->                 | _filter_mkfs 2> $tmp.mkfs > /dev/null
->  _scratch_mount
->
-> +# Source $tmp.mkfs to get geometry
->  . $tmp.mkfs
->
->  # fix the reserve block pool to a known size so that the enospc calculations
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/tests/btrfs/083 b/tests/btrfs/083
+new file mode 100755
+index 0000000..27dca21
+--- /dev/null
++++ b/tests/btrfs/083
+@@ -0,0 +1,161 @@
++#!/bin/bash
++# FS QA Test No. btrfs/083
++#
++# Tests to ensure that orphan items are properly created and cleaned up
++# on next mount.
++#
++# There are three cases where orphan items may be cleaned up:
++# 1) Default subvolume is fs tree root (mkfs default)
++# 2) Default subvolume is explicitly created subvolume
++#    (i.e. btrfs subvol set-default)
++# 3) Non-default subvolume lookup
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 SUSE.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    _cleanup_flakey
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_dm_flakey
++_need_to_be_root
++
++BTRFS_DEBUG_TREE_PROG="`set_prog_path btrfs-debug-tree`"
++_require_command "$BTRFS_DEBUG_TREE_PROG" btrfs-debug-tree
++
++rm -f $seqres.full
++
++has_orphan_item()
++{
++	INO=$1
++	if $BTRFS_DEBUG_TREE_PROG $SCRATCH_DEV | \
++		grep -q "key (ORPHAN ORPHAN_ITEM $INO)"; then
++		return 0
++	fi
++	return 1
++}
++
++test_orphan()
++{
++	PRECMD=$1
++	SUB=0
++
++	_scratch_mkfs >> $seqres.full 2>&1
++	_init_flakey
++
++	_mount_flakey
++
++	$PRECMD
++
++	TESTPATH=$SCRATCH_MNT/testdir/testfile
++	DIR=$(dirname $TESTPATH)
++
++	[ -d "$DIR" ] || mkdir -p $DIR
++
++	SIZE=$(( 1024 * 1024 ))
++	run_check dd if=/dev/zero of=$TESTPATH bs=$SIZE count=1
++
++	INO=$(stat -c %i $TESTPATH)
++
++	# Orphan item won't be created if the file doesn't make it to disk
++	sync
++
++	# Open and delete the file
++	exec 27<$TESTPATH
++	rm -f $TESTPATH
++
++	# Ensure the unlink (and orphan item creation) hits the disk
++	sync
++
++	# Turn off writes before closing so the orphan item will be left behind
++	_load_flakey_table $FLAKEY_DROP_WRITES
++
++	# Close the file so we can umount
++	exec 27>&-
++
++	# Orphan item should be on disk if operating correctly
++	_unmount_flakey
++	_load_flakey_table $FLAKEY_ALLOW_WRITES
++	if ! has_orphan_item $INO; then
++		echo "ERROR: No orphan item found after umount."
++		return
++	fi
++	_mount_flakey
++
++	# If $DIR is a subvolume, this will cause a lookup and orphan cleanup
++	(cd $DIR; true)
++
++	# Orphan item will be cleaned up during mount but won't be on
++	# disk until there's a sync.
++	sync
++
++	_unmount_flakey
++	if has_orphan_item $INO; then
++		echo "ERROR: Orphan item found after successful mount/sync."
++	fi
++	_cleanup_flakey
++}
++
++new_subvolume()
++{
++	_run_btrfs_util_prog subvol create $SCRATCH_MNT/testdir
++}
++
++new_default()
++{
++	new_subvolume
++	SUB=$($BTRFS_UTIL_PROG subvol list $SCRATCH_MNT |awk '{print $2}')
++	_run_btrfs_util_prog subvol set-default $SUB $SCRATCH_MNT
++
++	_unmount_flakey
++	_mount_flakey
++}
++
++echo "Testing with fs root as default subvolume"
++test_orphan true
++
++echo "Testing with explicit default subvolume"
++test_orphan new_default
++
++echo "Testing with orphan on non-default subvolume"
++test_orphan new_subvolume
++
++status=0
++exit
+diff --git a/tests/btrfs/083.out b/tests/btrfs/083.out
+new file mode 100644
+index 0000000..e9403c1
+--- /dev/null
++++ b/tests/btrfs/083.out
+@@ -0,0 +1,4 @@
++QA output created by 083
++Testing with fs root as default subvolume
++Testing with explicit default subvolume
++Testing with orphan on non-default subvolume
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index fd2fa76..c48fc0c 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -85,3 +85,4 @@
+ 080 auto snapshot
+ 081 auto quick clone
+ 082 auto quick remount
++083 auto quick metadata subvol
 -- 
-Filipe David Manana,
+1.8.5.6
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+

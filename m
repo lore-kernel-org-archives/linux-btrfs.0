@@ -1,49 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay107.isp.belgacom.be ([195.238.20.134]:39592 "EHLO
-	mailrelay107.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753077AbbC3U2r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 16:28:47 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: [RFC 1/1 linux-next] Btrfs: avoid using NULL compressed_pages in  insert_inline_extent()
-Date: Mon, 30 Mar 2015 22:28:40 +0200
-Message-Id: <1427747320-18667-1-git-send-email-fabf@skynet.be>
+Received: from plane.gmane.org ([80.91.229.3]:47873 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753621AbbC3U7R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 16:59:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YcgmB-0006Ot-OB
+	for linux-btrfs@vger.kernel.org; Mon, 30 Mar 2015 22:59:15 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 22:59:15 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 22:59:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: ERROR: error removing the device '/dev/sdXN' - Inappropriate ioctl
+ for device
+Date: Mon, 30 Mar 2015 21:59:05 +0100
+Message-ID: <mfcdep$d97$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-insert_inline_extent() checked for compressed_pages to be NULL then
-it accessed it under compress_type != BTRFS_COMPRESS_NONE.
-This patch adds BUG() when compress_size != 0, compress_type !=
-BTRFS_COMPRESS_NONE and compresses_pages == 0.
+Help welcomed...
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
- fs/btrfs/inode.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 686331f..95e0c29 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -149,8 +149,12 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
- 	size_t cur_size = size;
- 	unsigned long offset;
- 
--	if (compressed_size && compressed_pages)
--		cur_size = compressed_size;
-+	if (compressed_size) {
-+		if (compressed_pages)
-+			cur_size = compressed_size;
-+		else if (compress_type != BTRFS_COMPRESS_NONE)
-+			BUG();
-+	}
- 
- 	inode_add_bytes(inode, size);
- 
--- 
-1.9.1
+Trying to delete one device from a btrfs raid1 across 3 devices gives
+for my example:
+
+
+btrfs device delete /dev/sdf5 /mnt/data2
+
+ERROR: error removing the device '/dev/sdf5' - Inappropriate ioctl for
+device
+
+
+That part of the filesystem is:
+
+Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
+        Total devices 3 FS bytes used 192.45GiB
+        devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
+        devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
+        devid    3 size 206.47GiB used 206.47GiB path /dev/sdf5
+
+
+All on: 3.14.10-gentoo
+
+
+Before I do a mega-yank-up to the 3.18 kernel, is the above a known
+problem or am I missing something?
+
+
+(Device delete needed due to that device throwing sector errors :-( )
+
+Thanks,
+Martin
 

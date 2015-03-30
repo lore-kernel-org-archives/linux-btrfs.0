@@ -1,50 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56479 "EHLO mx2.suse.de"
+Received: from know-smtprelay-omc-1.server.virginmedia.net ([80.0.253.65]:40511
+	"EHLO know-smtprelay-omc-1.server.virginmedia.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751953AbbC3May (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 08:30:54 -0400
-Date: Mon, 30 Mar 2015 14:30:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        "Eric W. Biederman" <ebiederm@xmission.com>,
-        Timo Kokkonen <timo.kokkonen@offcode.fi>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: prevent deletion of mounted subvolumes
-Message-ID: <20150330123034.GB32051@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
+	id S1752980AbbC3OU7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Mar 2015 10:20:59 -0400
+Message-ID: <551959D6.8020409@timedicer.co.uk>
+Date: Mon, 30 Mar 2015 15:12:38 +0100
+From: Dominic Raferd <dominic@timedicer.co.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Subject: duperemove minimal space saving on compressed volume?
+Content-Type: text/plain; charset=iso-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 30, 2015 at 02:02:17AM -0700, Omar Sandoval wrote:
-> Before commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
-> d_invalidate() could return -EBUSY when a dentry for a directory had
-> more than one reference to it. This is what prevented a mounted
-> subvolume from being deleted, as struct vfsmount holds a reference to
-> the subvolume dentry. However, that commit removed that case, and later
-> commits in that patch series removed the return code from d_invalidate()
-> completely, so we don't get that check for free anymore. So, reintroduce
-> it in btrfs_ioctl_snap_destroy().
+I am using 3.19.3 kernel, v3.19-rc2 btrfs-progs and v0.09-1 duperemove.
 
-> This applies to 4.0-rc6. To be honest, I'm not sure that this is the most
-> correct fix for this bug, but it's equivalent to the pre-3.18 behavior and it's
-> the best that I could come up with. Thoughts?
+I have a btrfs lzo-compressed /home volume and I ran
 
-> +	spin_lock(&dentry->d_lock);
-> +	err = dentry->d_lockref.count > 1 ? -EBUSY : 0;
-> +	spin_unlock(&dentry->d_lock);
+duperemove -rdhv /home
 
-The fix restores the original behaviour, but I don't think opencoding and
-using internals is fine. Either there should be a vfs api for that or
-there's an existing one that can be used instead.
+It took over a day (no problem for me, it was a quiet time and it's a vm 
+on so-so underlying hardware), and it reported lots of matched extents. 
+Just the last few lines (file names removed) were:
 
-The bug here seems defined up to the point that we're trying to delete a
-subvolume that's a mountpoint. My next guess is that a check
+Dedupe 59 extents with target: (0.0, 208.0M), "/home/..."
+...
+Dedupe 1 extents with target: (0.0, 224.8M), "/home/..."
+...
+Dedupe 1 extents with target: (0.0, 225.4M), "/home/..."
+...
+Dedupe 1 extents with target: (0.0, 1.5G), "/home/..."
+Kernel processed data (excludes target files): 43.0G
+Comparison of extent info shows a net change in shared extents of: 128.0K
 
-	if (d_mountpoint(&dentry)) { ... }
-
-could work.
+ From `btrfs fi usage` before/after reporting of estimated free space I 
+think I gained about 1G space (not 128K). But even this is a minimal 
+gain compared with the reported 43G (which relates much more closely IMO 
+to the actual shared extents found by duperemove). Why is the actual 
+space gain (128K? 1G?) so small compared to the total of shared extents 
+(43G maybe)?

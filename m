@@ -1,53 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay107.isp.belgacom.be ([195.238.20.134]:17219 "EHLO
-	mailrelay107.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753911AbbC3UVS (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:30959 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752012AbbC3VVP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 16:21:18 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1 linux-next] Btrfs: use BTRFS_COMPRESS_NONE instead of 0
-Date: Mon, 30 Mar 2015 22:21:11 +0200
-Message-Id: <1427746872-17086-1-git-send-email-fabf@skynet.be>
+	Mon, 30 Mar 2015 17:21:15 -0400
+Date: Mon, 30 Mar 2015 17:21:07 -0400
+From: Chris Mason <clm@fb.com>
+Subject: Re: WARNING at fs/btrfs/super.c:260 __btrfs_abort_transaction
+ (error -17)
+To: Sophie Dexter <Just4pLeisure@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Message-ID: <1427750467.17204.1@mail.thefacebook.com>
+In-Reply-To: <mfbl7d$fsr$1@ger.gmane.org>
+References: <CAPmwjs9EVi-vY7FEfm+U-CYuxMms2iB-0i6mMLShdJMO6pGYjQ@mail.gmail.com>
+	<merpmk$m16$1@ger.gmane.org> <1427218499.30561.0@mail.thefacebook.com>
+	<meso51$cst$1@ger.gmane.org> <mfbl7d$fsr$1@ger.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cow_file_range_inline() was called with 0 instead of
-actual definition.
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
- fs/btrfs/inode.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 686331f..f626519 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -524,7 +524,8 @@ cont:
- 			 * to make an uncompressed inline extent.
- 			 */
- 			ret = cow_file_range_inline(root, inode, start, end,
--						    0, 0, NULL);
-+						    0, BTRFS_COMPRESS_NONE,
-+						    NULL);
- 		} else {
- 			/* try making a compressed inline extent */
- 			ret = cow_file_range_inline(root, inode, start, end,
-@@ -943,8 +944,8 @@ static noinline int cow_file_range(struct inode *inode,
- 
- 	if (start == 0) {
- 		/* lets try to make an inline extent */
--		ret = cow_file_range_inline(root, inode, start, end, 0, 0,
--					    NULL);
-+		ret = cow_file_range_inline(root, inode, start, end, 0,
-+					    BTRFS_COMPRESS_NONE, NULL);
- 		if (ret == 0) {
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
- 				     EXTENT_LOCKED | EXTENT_DELALLOC |
--- 
-1.9.1
+On Mon, Mar 30, 2015 at 10:05 AM, Sophie Dexter 
+<Just4pLeisure@gmail.com> wrote:
+>> On 24/03/15 17:34, Chris Mason wrote:
+>>> You have great timing, there are two reports of a very similar abort
+>>> with 4.0-rc5, but your report makes it clear these are not a 
+>>> regression
+>>> from 4.0-rc4.
+>>> 
+>>> Are you able to run btrfsck on this filesystem?  I'd like to check 
+>>> for
+>>> metadata inconsistencies.
+>>> 
+>>> -chris
+>>> 
+>> Hi Chris,
+>> 
+>> Haha, great timing is the secret of good comedy lol
+>> 
+>> OpenWrt has only very recently signed off the 3.18 kernel as the 
+>> default
+>> kernel for my router, I was using a build with 3.14 when I converted 
+>> my
+>> disk and saw the same problem :!: I may have posted something I 
+>> haven't
+>> repeated here in the OpenWrt ticket I opened:
+>> 
+>> https://dev.openwrt.org/ticket/19216
+>> 
+>> I previously checked and scrubbed the disk when the problem first
+>> occurred and happily no problems were found then. Although, I had to 
+>> use
+>> another computer because btrfs check doesn't complete on my router, 
+>> the
+>> process is killed due to lack of memory (btrfs invoked oom-killer) 
+>> :-(
+>> Should I start another topic for this or just accept that that 
+>> problem
+>> is due to a lack of memory?
+>> 
+>> I have just run btrfs check again using (yet another) laptop and I 
+>> think
+>> everything is still OK:
+>> 
+>> # btrfs check /dev/sdb1
+>> Checking filesystem on /dev/sdb1
+>> UUID: ########-####-####-####-############
+>> checking extents
+>> checking free space cache
+>> checking fs roots
+>> checking csums
+>> checking root refs
+>> found 930516788539 bytes used err is 0
+>> total csum bytes: 1234353920
+>> total tree bytes: 1458515968
+>> total fs tree bytes: 54571008
+>> total extent tree bytes: 66936832
+>> btree space waste bytes: 73372568
+>> file data blocks allocated: 1264250781696
+>>   referenced 1264250781696
+>> Btrfs v3.14.1
+>> # uname -a
+>> Linux ######-########-#### 3.16.0-31-generic #43-Ubuntu SMP Tue Mar 
+>> 10
+>> 17:37:36 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>> 
+>> Kind regards,
+>> Sophie x
+>> 
+>> 
+> I want to continue to use BTRFS as far as possible and have moved 
+> this disk to a Raspberry Pi now because of the problems I encountered 
+> with it when it was plugged into my router. I'd rather do this than 
+> convert back to ext3/4. I'm using Open Media Vault on my Paspberry Pi 
+> and, fingers crossed, haven't had any problems over the weekend.
+> 
+> I can only guess, given it's inability to complete a btrfs check, 
+> that a router doesn't have enough memory for BTRFS. I'm happy to move 
+> my disk back to my router to try things out and help develop BTRFS 
+> for small computers, but for now at least it has a new home.
+
+I have an image that can reproduce this bug, and I'm trying to figure 
+out where we've gone wrong.  Hopefully end of day tomorrow I'll have 
+more ideas, but its a run time error related to extent management.  
+Since the FS check is clean, the FS itself isn't corrupt.
+
+-chris
+
+
 

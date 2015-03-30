@@ -1,98 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43813 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752903AbbC3OGH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 10:06:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YcaKD-00049o-Kl
-	for linux-btrfs@vger.kernel.org; Mon, 30 Mar 2015 16:05:57 +0200
-Received: from 214.102.200.146.dyn.plus.net ([146.200.102.214])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 16:05:57 +0200
-Received: from Just4pLeisure by 214.102.200.146.dyn.plus.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 16:05:57 +0200
+Received: from victor.provo.novell.com ([137.65.250.26]:34535 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753090AbbC3RYa (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 30 Mar 2015 13:24:30 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: Sophie Dexter <Just4pLeisure@gmail.com>
-Subject: Re: WARNING at fs/btrfs/super.c:260 __btrfs_abort_transaction (error
- -17)
-Date: Mon, 30 Mar 2015 15:05:05 +0100
-Message-ID: <mfbl7d$fsr$1@ger.gmane.org>
-References: <CAPmwjs9EVi-vY7FEfm+U-CYuxMms2iB-0i6mMLShdJMO6pGYjQ@mail.gmail.com>	<merpmk$m16$1@ger.gmane.org> <1427218499.30561.0@mail.thefacebook.com> <meso51$cst$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-In-Reply-To: <meso51$cst$1@ger.gmane.org>
+Cc: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix inode eviction infinite loop after cloning into it
+Date: Mon, 30 Mar 2015 18:23:59 +0100
+Message-Id: <1427736239-29416-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On 24/03/15 17:34, Chris Mason wrote:
->> You have great timing, there are two reports of a very similar abort
->> with 4.0-rc5, but your report makes it clear these are not a regression
->> from 4.0-rc4.
->>
->> Are you able to run btrfsck on this filesystem?  I'd like to check for
->> metadata inconsistencies.
->>
->> -chris
->>
-> Hi Chris,
->
-> Haha, great timing is the secret of good comedy lol
->
-> OpenWrt has only very recently signed off the 3.18 kernel as the default
-> kernel for my router, I was using a build with 3.14 when I converted my
-> disk and saw the same problem :!: I may have posted something I haven't
-> repeated here in the OpenWrt ticket I opened:
->
-> https://dev.openwrt.org/ticket/19216
->
-> I previously checked and scrubbed the disk when the problem first
-> occurred and happily no problems were found then. Although, I had to use
-> another computer because btrfs check doesn't complete on my router, the
-> process is killed due to lack of memory (btrfs invoked oom-killer) :-(
-> Should I start another topic for this or just accept that that problem
-> is due to a lack of memory?
->
-> I have just run btrfs check again using (yet another) laptop and I think
-> everything is still OK:
->
-> # btrfs check /dev/sdb1
-> Checking filesystem on /dev/sdb1
-> UUID: ########-####-####-####-############
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 930516788539 bytes used err is 0
-> total csum bytes: 1234353920
-> total tree bytes: 1458515968
-> total fs tree bytes: 54571008
-> total extent tree bytes: 66936832
-> btree space waste bytes: 73372568
-> file data blocks allocated: 1264250781696
->   referenced 1264250781696
-> Btrfs v3.14.1
-> # uname -a
-> Linux ######-########-#### 3.16.0-31-generic #43-Ubuntu SMP Tue Mar 10
-> 17:37:36 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
->
-> Kind regards,
-> Sophie x
->
->
-I want to continue to use BTRFS as far as possible and have moved this 
-disk to a Raspberry Pi now because of the problems I encountered with it 
-when it was plugged into my router. I'd rather do this than convert back 
-to ext3/4. I'm using Open Media Vault on my Paspberry Pi and, fingers 
-crossed, haven't had any problems over the weekend.
+If we attempt to clone a 0 length region into a file we can end up
+inserting a range in the inode's extent_io tree with a start offset
+that is greater then the end offset, which triggers immediately the
+following warning:
 
-I can only guess, given it's inability to complete a btrfs check, that a 
-router doesn't have enough memory for BTRFS. I'm happy to move my disk 
-back to my router to try things out and help develop BTRFS for small 
-computers, but for now at least it has a new home.
+[ 3914.619057] WARNING: CPU: 17 PID: 4199 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
+[ 3914.620886] BTRFS: end < start 4095 4096
+(...)
+[ 3914.638093] Call Trace:
+[ 3914.638636]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
+[ 3914.639620]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
+[ 3914.640789]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
+[ 3914.642041]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
+[ 3914.643236]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
+[ 3914.644441]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
+[ 3914.645711]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
+[ 3914.646914]  [<ffffffff8142b2fb>] ? _raw_spin_unlock+0x28/0x33
+[ 3914.648058]  [<ffffffffa03cbac4>] ? test_range_bit+0xcc/0xde [btrfs]
+[ 3914.650105]  [<ffffffffa03cb3c3>] lock_extent+0x13/0x15 [btrfs]
+[ 3914.651361]  [<ffffffffa03db39e>] lock_extent_range+0x3d/0xcd [btrfs]
+[ 3914.652761]  [<ffffffffa03de1fe>] btrfs_ioctl_clone+0x278/0x388 [btrfs]
+[ 3914.654128]  [<ffffffff811226dd>] ? might_fault+0x58/0xb5
+[ 3914.655320]  [<ffffffffa03e0909>] btrfs_ioctl+0xb51/0x2195 [btrfs]
+(...)
+[ 3914.669271] ---[ end trace 14843d3e2e622fc1 ]---
 
-Sophie x
+This later makes the inode eviction handler enter an infinite loop that
+keeps dumping the following warning over and over:
+
+[ 3915.117629] WARNING: CPU: 22 PID: 4228 at fs/btrfs/extent_io.c:435 insert_state+0x4b/0x10b [btrfs]()
+[ 3915.119913] BTRFS: end < start 4095 4096
+(...)
+[ 3915.137394] Call Trace:
+[ 3915.137913]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
+[ 3915.139154]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
+[ 3915.140316]  [<ffffffffa03ca44f>] ? insert_state+0x4b/0x10b [btrfs]
+[ 3915.141505]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
+[ 3915.142709]  [<ffffffffa03ca44f>] insert_state+0x4b/0x10b [btrfs]
+[ 3915.143849]  [<ffffffffa03ca729>] __set_extent_bit+0x107/0x3f4 [btrfs]
+[ 3915.145120]  [<ffffffffa038c1e3>] ? btrfs_kill_super+0x17/0x23 [btrfs]
+[ 3915.146352]  [<ffffffff811548f6>] ? deactivate_locked_super+0x3b/0x50
+[ 3915.147565]  [<ffffffffa03cb256>] lock_extent_bits+0x65/0x1bf [btrfs]
+[ 3915.148785]  [<ffffffff8142b7e2>] ? _raw_write_unlock+0x28/0x33
+[ 3915.149931]  [<ffffffffa03bc325>] btrfs_evict_inode+0x196/0x482 [btrfs]
+[ 3915.151154]  [<ffffffff81168904>] evict+0xa0/0x148
+[ 3915.152094]  [<ffffffff811689e5>] dispose_list+0x39/0x43
+[ 3915.153081]  [<ffffffff81169564>] evict_inodes+0xdc/0xeb
+[ 3915.154062]  [<ffffffff81154418>] generic_shutdown_super+0x49/0xef
+[ 3915.155193]  [<ffffffff811546d1>] kill_anon_super+0x13/0x1e
+[ 3915.156274]  [<ffffffffa038c1e3>] btrfs_kill_super+0x17/0x23 [btrfs]
+(...)
+[ 3915.167404] ---[ end trace 14843d3e2e622fc2 ]---
+
+So just bail out of the clone ioctl if the length of the region to clone
+is zero, without locking any extent range, in order to prevent this issue
+(same behaviour as a pwrite with a 0 length for example).
+
+This is trivial to reproduce. For example, the steps for the test I just
+made for fstests:
+
+  mkfs.btrfs -f SCRATCH_DEV
+  mount SCRATCH_DEV $SCRATCH_MNT
+
+  touch $SCRATCH_MNT/foo
+  touch $SCRATCH_MNT/bar
+
+  $CLONER_PROG -s 0 -d 4096 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+  umount $SCRATCH_MNT
+
+A test case for fstests follows soon.
+
+CC: <stable@vger.kernel.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ioctl.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d49fe8a..4c32350 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3626,6 +3626,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	if (off + len == src->i_size)
+ 		len = ALIGN(src->i_size, bs) - off;
+ 
++	if (len == 0) {
++		ret = 0;
++		goto out_unlock;
++	}
++
+ 	/* verify the end result is block aligned */
+ 	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||
+ 	    !IS_ALIGNED(destoff, bs))
+-- 
+2.1.3
 

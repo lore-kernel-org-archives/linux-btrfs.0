@@ -1,33 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f179.google.com ([209.85.214.179]:36000 "EHLO
-	mail-ob0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751802AbbC0O7D (ORCPT
+Received: from smtp-relay1.uniserve.net ([216.210.109.131]:56511 "EHLO
+	smtp-relay1.uniserve.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753930AbbCaCPR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Mar 2015 10:59:03 -0400
-Received: by obbld8 with SMTP id ld8so21050491obb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Mar 2015 07:59:03 -0700 (PDT)
+	Mon, 30 Mar 2015 22:15:17 -0400
+Received: from webapp1.uniserve.ca ([204.239.42.114])
+	by smtp-relay1.uniserve.net with esmtp (Exim 4.72)
+	(envelope-from <geek@uniserve.com>)
+	id 1YclTY-0000YZ-DI
+	for linux-btrfs@vger.kernel.org; Mon, 30 Mar 2015 19:00:20 -0700
+Message-ID: <20150330190020.32372vcndqt5ldbo@webmail.uniserve.com>
+Date: Mon, 30 Mar 2015 19:00:20 -0700
+From: Dave Stevens <geek@uniserve.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: the wiki?
 MIME-Version: 1.0
-From: harshad shirwadkar <harshadshirwadkar@gmail.com>
-Date: Fri, 27 Mar 2015 10:58:42 -0400
-Message-ID: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
-Subject: [GSoC 2015] Btrfs content based storage
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+ charset=ISO-8859-1;
+ DelSp="Yes";
+ format="flowed"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello All,
+I've been reading the wiki to help sort out an issue and learn more  
+about RAID. I wanted to download it to my local drive to read offlibe  
+and that facility sseems to not be there. I checked the mediawiki  
+version in the source and it is an LTS version for which support ends  
+in two months. Are there plans to migrate the content to a newer vesion?
 
-I am a CS graduate student from Carnegie Mellon University. I am
-hoping to build the feature - "Content based storage mode" under
-Google Summer of Code 2015. This project has also been listed as an
-idea on BTRFS ideas page. However, I have not found a mentor yet, and
-without a mentor I can not participate in the program. Please let me
-know if anybody is interested in mentoring this project. Here is a
-link to my proposal:
-
-http://harshadjs.github.io/2015/03/27/Fedora-BTRFS-Content-Storage-Mode/
+Dave
 
 
-Thanks,
-Harshad.
+-- 
+"As long as politics is the shadow cast on society by big business,
+the attenuation of the shadow will not change the substance."
+
+-- John Dewey
+
+
+
+
+

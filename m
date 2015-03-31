@@ -1,40 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:36251 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753010AbbC3Wrb (ORCPT
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:52309 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753353AbbCaIiX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Mar 2015 18:47:31 -0400
-Received: by igbud6 with SMTP id ud6so3021390igb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 15:47:31 -0700 (PDT)
+	Tue, 31 Mar 2015 04:38:23 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id C4664AC00D0
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 17:27:14 +0900 (JST)
+Message-ID: <551A5A2F.6010609@jp.fujitsu.com>
+Date: Tue, 31 Mar 2015 17:26:23 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <B7F2379062E32745A8651FBDB20F64594CD80D3D@Server.waterlogic.com.au>
-References: <CAJCQCtSmjNVWZaqKr_NcOnpRbSn8mzfutz5jeTDrk=qAT-Z2Vw@mail.gmail.com>
-	<20150323211334.GA11155@ret.masoncoding.com>
-	<CAJCQCtRRtOoTUNAwyN56615y_uOyCLwXG13KWy=g1CCiDrH=BA@mail.gmail.com>
-	<B7F2379062E32745A8651FBDB20F64594CD80D3D@Server.waterlogic.com.au>
-Date: Mon, 30 Mar 2015 16:47:31 -0600
-Message-ID: <CAJCQCtSH=dFFPVUacBb+9Mb7+wk1ErLu86BpV88C5cVgsKmb-A@mail.gmail.com>
-Subject: Re: kvm bug, guest I/O blk device errors when qcow2 backing file is
- on Btrfs
-From: Chris Murphy <chris@colorremedies.com>
-To: Paul Jones <paul@pauljones.id.au>
-Cc: Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Zhaolei <zhaolei@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: wait for delayed iputs on no space
+References: <cover.1427450911.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <cover.1427450911.git.zhaolei@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Small update. I've done a strace of the qemu process, filtering for
-pwrite,pwritev while the guest experiences these I/O errors and posted
-it to the bug. Kevin Wolf looked at it and says
- https://bugzilla.redhat.com/show_bug.cgi?id=1204569#c20
+On 2015/03/27 19:21, Zhaolei wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> This is another fix of no_space case.
+> 
+> All patchs for fix no_space bug are available at fix_no_space
+> branch on:
+>    git://github.com/zhaoleidd/btrfs
 
-> There is one single failing pwritev() call in it:
-> 3091  <... pwritev resumed> )           = -1 EEXIST (File exists)
-> Now EEXIST is not an error code that makes any sense for a pwritev() call, but a
-> quick search on the internet suggests that btrfs does indeed use this error code
-> if something goes wrong internally. You should probably mention this error code
-> in your linux-btrfs thread, perhaps it gives the btrfs developers a hint.
+I tested in the environment that applied the following patch to
+'fix_no_space' branch.
+ - Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
 
+It works fine to me. Thanks.
 
+Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-Chris Murphy
+> 
+> Any suggestions are welcome.
+> 
+> Zhao Lei (1):
+>    btrfs: wait for delayed iputs on no space
+> 
+>   fs/btrfs/extent-tree.c | 3 +++
+>   1 file changed, 3 insertions(+)
+> 
+

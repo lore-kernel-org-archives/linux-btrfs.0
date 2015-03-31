@@ -1,138 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:39901 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:49011 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754363AbbCaPIC (ORCPT
+	by vger.kernel.org with ESMTP id S1751457AbbCaTTG (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 31 Mar 2015 11:08:02 -0400
+	Tue, 31 Mar 2015 15:19:06 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix range cloning when same inode used as source and destination
-Date: Tue, 31 Mar 2015 14:56:46 +0100
-Message-Id: <1427810206-23103-1-git-send-email-fdmanana@suse.com>
+Cc: jeffm@suse.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: add debugfs file to test transaction aborts
+Date: Tue, 31 Mar 2015 20:18:44 +0100
+Message-Id: <1427829524-23946-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While searching for extents to clone we might find one where we only use
-a part of it coming from its tail. If our destination inode is the same
-the source inode, we end up removing the tail part of the extent item and
-insert after a new one that point to the same extent with an adjusted
-key file offset and data offset. After this we search for the next extent
-item in the fs/subvol tree with a key that has an offset incremented by
-one. But this second search leaves us at the new extent item we inserted
-previously, and since that extent item has a non-zero data offset, it
-it can make us call btrfs_drop_extents with an empty range (start == end)
-which causes the following warning:
+At the moment we can not reliably and deterministically test that the
+transaction abortion code works as expected. For example in the past [1]
+we had an issue where that code returned the pinned extents to the free
+space caches allowing fstrim to perform a discard against the physical
+locations of the extents, and worse, when the fs was mounted with the
+option -o discard it explicitly did a discard on each pinned extent.
+This resulted in filesystem corruption, leaving the fs unmountable.
 
-[23978.537119] WARNING: CPU: 6 PID: 16251 at fs/btrfs/file.c:550 btrfs_drop_extent_cache+0x43/0x385 [btrfs]()
-(...)
-[23978.557266] Call Trace:
-[23978.557978]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
-[23978.559191]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
-[23978.560699]  [<ffffffffa047f0ea>] ? btrfs_drop_extent_cache+0x43/0x385 [btrfs]
-[23978.562389]  [<ffffffff8104544d>] warn_slowpath_null+0x1a/0x1c
-[23978.563613]  [<ffffffffa047f0ea>] btrfs_drop_extent_cache+0x43/0x385 [btrfs]
-[23978.565103]  [<ffffffff810e3a18>] ? time_hardirqs_off+0x15/0x28
-[23978.566294]  [<ffffffff81079ff8>] ? trace_hardirqs_off+0xd/0xf
-[23978.567438]  [<ffffffffa047f73d>] __btrfs_drop_extents+0x6b/0x9e1 [btrfs]
-[23978.568702]  [<ffffffff8107c03f>] ? trace_hardirqs_on+0xd/0xf
-[23978.569763]  [<ffffffff811441c0>] ? ____cache_alloc+0x69/0x2eb
-[23978.570817]  [<ffffffff81142269>] ? virt_to_head_page+0x9/0x36
-[23978.571872]  [<ffffffff81143c15>] ? cache_alloc_debugcheck_after.isra.42+0x16c/0x1cb
-[23978.573466]  [<ffffffff811420d5>] ? kmemleak_alloc_recursive.constprop.52+0x16/0x18
-[23978.574962]  [<ffffffffa0480d07>] btrfs_drop_extents+0x66/0x7f [btrfs]
-[23978.576179]  [<ffffffffa049aa35>] btrfs_clone+0x516/0xaf5 [btrfs]
-[23978.577311]  [<ffffffffa04983dc>] ? lock_extent_range+0x7b/0xcd [btrfs]
-[23978.578520]  [<ffffffffa049b2a2>] btrfs_ioctl_clone+0x28e/0x39f [btrfs]
-[23978.580282]  [<ffffffffa049d9ae>] btrfs_ioctl+0xb51/0x219a [btrfs]
-(...)
-[23978.591887] ---[ end trace 988ec2a653d03ed3 ]---
+This patch adds a debugfs file named abort_transaction, which has a
+default value of 0, can only be written by someone with root privileges
+and when a non-zero value is written to it, it makes all subsequent
+transaction commits fail at the very end (right before writing the new
+superblock), which results in a transaction abortion.
+This way we can for example write a deterministic fstest for commit [1]
+which looks like:
 
-Then we attempt to insert a new extent item with a key that already
-exists, which makes btrfs_insert_empty_item return -EEXIST resulting in
-abortion of the current transaction:
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_btrfs_debugfs "abort_transaction"
+  _need_to_be_root
 
-[23978.594355] WARNING: CPU: 6 PID: 16251 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x52/0x114 [btrfs]()
-(...)
-[23978.622589] Call Trace:
-[23978.623181]  [<ffffffff81425fd9>] dump_stack+0x4c/0x65
-[23978.624359]  [<ffffffff81045390>] warn_slowpath_common+0xa1/0xbb
-[23978.625573]  [<ffffffffa044ab6c>] ? __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[23978.626971]  [<ffffffff810453f0>] warn_slowpath_fmt+0x46/0x48
-[23978.628003]  [<ffffffff8108a6c8>] ? vprintk_default+0x1d/0x1f
-[23978.629138]  [<ffffffffa044ab6c>] __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[23978.630528]  [<ffffffffa049ad1b>] btrfs_clone+0x7fc/0xaf5 [btrfs]
-[23978.631635]  [<ffffffffa04983dc>] ? lock_extent_range+0x7b/0xcd [btrfs]
-[23978.632886]  [<ffffffffa049b2a2>] btrfs_ioctl_clone+0x28e/0x39f [btrfs]
-[23978.634119]  [<ffffffffa049d9ae>] btrfs_ioctl+0xb51/0x219a [btrfs]
-(...)
-[23978.647714] ---[ end trace 988ec2a653d03ed4 ]---
+  rm -f $seqres.full
 
-This is wrong because we should not process the extent item that we just
-inserted previously, and instead process the extent item that follows it
-in the tree
+  # We will abort a btrfs transaction later, which always produces a warning in
+  # dmesg. We do not want the test to fail because of this.
+  _disable_dmesg_check
 
-For example for the test case I wrote for fstests:
+  _scratch_mkfs >>$seqres.full 2>&1
+  _scratch_mount "-o discard"
+  _require_batched_discard $SCRATCH_MNT
 
-   bs=$((64 * 1024))
-   mkfs.btrfs -f -l $bs -O ^no-holes /dev/sdc
-   mount /dev/sdc /mnt
+  # Create a file and commit the current transaction.
+  echo -n "hello" > $SCRATCH_MNT/foo
+  sync
 
-   xfs_io -f -c "pwrite -S 0xaa $(($bs * 2)) $(($bs * 2))" /mnt/foo
+  # Now update the file, which forces a COW operation of the fs root, adding
+  # the old root location to the pinned extents list.
+  echo -n " world" >> $SCRATCH_MNT/foo
 
-   $CLONER_PROG -s $((3 * $bs)) -d $((267 * $bs)) -l 0 /mnt/foo /mnt/foo
-   $CLONER_PROG -s $((217 * $bs)) -d $((95 * $bs)) -l 0 /mnt/foo /mnt/foo
+  # Now abort the current transaction, unmount the fs, mount it again and verify
+  # we can open the file and read its content (which should match what it had
+  # when the last transaction committed successfully). Btrfs used to issue a
+  # discard operation on the extents in the pinned extents list, resulting in
+  # corruption of metadata and data, and used too to return the pinned extents
+  # to the free space caches, allowing future fstrim operations to perform a
+  # discard operation against the pinned exents.
+  echo 1 > $BTRFS_DEBUG_FS/abort_transaction
+  sync
+  echo 0 > $BTRFS_DEBUG_FS/abort_transaction
+  $FSTRIM_PROG $SCRATCH_MNT
 
-The second clone call fails with -EEXIST, because when we process the
-first extent item (offset 262144), we drop part of it (counting from the
-end) and then insert a new extent item with a key greater then the key we
-found. The next time we search the tree we search for a key with offset
-262144 + 1, which leaves us at the new extent item we have just inserted
-but we think it refers to an extent that we need to clone.
+  _scratch_unmount
+  _scratch_mount
+  echo "File content after transaction abort + remount: $(cat $SCRATCH_MNT/foo)"
 
-Fix this by ensuring the next search key uses an offset corresponding to
-the offset of the key we found previously plus the data length of the
-corresponding extent item. This ensures we skip new extent items that we
-inserted and works for the case of implicit holes too (NO_HOLES feature).
+The test's expected output is:
 
-A test case for fstests follows soon.
+  File content after transaction abort + remount: hello
+
+With patch [1] reverted the test fails with:
+
+  btrfs/088 2s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad)
+      --- tests/btrfs/088.out	2015-03-31 19:31:17.558436298 +0100
+      +++ /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad	2015-03-31 19:58:12.741403640 +0100
+      @@ -1,2 +1,8 @@
+       QA output created by 088
+      -File content after transaction abort + remount: hello
+      +mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+      +       missing codepage or helper program, or other error
+      +       In some cases useful info is found in syslog - try
+      +       dmesg | tail  or so
+      +
+      ...
+      (Run 'diff -u tests/btrfs/088.out /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad'  to see the entire diff)
+  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.full)
+
+  $ cat /home/fdmanana/git/hub/xfstests/results//btrfs/088.full
+  (...)
+  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
+  *** fsck.btrfs output ***
+  Check tree block failed, want=29573120, have=0
+  Check tree block failed, want=29573120, have=0
+  Check tree block failed, want=29573120, have=0
+  Check tree block failed, want=29573120, have=0
+  Check tree block failed, want=29573120, have=0
+  read block failed check_tree_block
+  Couldn't read tree root
+  Couldn't open file system
+  *** end fsck.btrfs output
+
+[1] commit 678886bdc637 ("Btrfs: fix fs corruption on transaction abort
+                          if device supports discard")
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 09a566a..869e39d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3205,6 +3205,8 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 	key.offset = off;
+If there are no objections to the feature/interface, I will submit a test
+for fstests.
+
+ fs/btrfs/sysfs.c       | 11 +++++++++++
+ fs/btrfs/sysfs.h       |  2 ++
+ fs/btrfs/transaction.c |  9 +++++++++
+ 3 files changed, 22 insertions(+)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 94edb0a..4b10f3b 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -666,6 +666,7 @@ static struct dentry *btrfs_debugfs_root_dentry;
  
- 	while (1) {
-+		u64 next_key_min_offset;
+ /* Debugging tunables and exported data */
+ u64 btrfs_debugfs_test;
++static u32 btrfs_debugfs_abort_transaction;
+ 
+ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
+ {
+@@ -719,10 +720,20 @@ static int btrfs_init_debugfs(void)
+ 
+ 	debugfs_create_u64("test", S_IRUGO | S_IWUGO, btrfs_debugfs_root_dentry,
+ 			&btrfs_debugfs_test);
 +
- 		/*
- 		 * note the key will change type as we walk through the
- 		 * tree.
-@@ -3285,7 +3287,7 @@ process_slot:
- 			} else if (key.offset >= off + len) {
- 				break;
- 			}
--
-+			next_key_min_offset = key.offset + datal;
- 			size = btrfs_item_size_nr(leaf, slot);
- 			read_extent_buffer(leaf, buf,
- 					   btrfs_item_ptr_offset(leaf, slot),
-@@ -3500,7 +3502,7 @@ process_slot:
- 				break;
- 		}
- 		btrfs_release_path(path);
--		key.offset++;
-+		key.offset = next_key_min_offset;
- 	}
- 	ret = 0;
++	debugfs_create_bool("abort_transaction",
++			    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH,
++			    btrfs_debugfs_root_dentry,
++			    &btrfs_debugfs_abort_transaction);
+ #endif
+ 	return 0;
+ }
  
++bool debugfs_abort_transaction(void)
++{
++	return btrfs_debugfs_abort_transaction != 0;
++}
++
+ int btrfs_init_sysfs(void)
+ {
+ 	int ret;
+diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+index f7dd298..517dbb3 100644
+--- a/fs/btrfs/sysfs.h
++++ b/fs/btrfs/sysfs.h
+@@ -74,4 +74,6 @@ int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
+ 		struct btrfs_device *one_device);
+ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
+                 struct btrfs_device *one_device);
++
++bool debugfs_abort_transaction(void);
+ #endif /* _BTRFS_SYSFS_H_ */
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 5d8cff8..f514ff9 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -32,6 +32,7 @@
+ #include "volumes.h"
+ #include "dev-replace.h"
+ #include "qgroup.h"
++#include "sysfs.h"
+ 
+ #define BTRFS_ROOT_TRANS_TAG 0
+ 
+@@ -2029,6 +2030,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto scrub_continue;
+ 	}
+ 
++	if (unlikely(debugfs_abort_transaction())) {
++		btrfs_warn(root->fs_info,
++			   "Aborting transaction due to debugfs request.");
++		mutex_unlock(&root->fs_info->tree_log_mutex);
++		ret = -EIO;
++		goto scrub_continue;
++	}
++
+ 	ret = write_ctree_super(trans, root, 0);
+ 	if (ret) {
+ 		mutex_unlock(&root->fs_info->tree_log_mutex);
 -- 
 2.1.3
 

@@ -1,54 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:65507 "EHLO
-	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752082AbbCaFfJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 01:35:09 -0400
-Received: from mail-ie0-f169.google.com (mail-ie0-f169.google.com [209.85.223.169])
-	(Authenticated sender: robbieko@synology.com)
-	by mail.synology.com (Postfix) with ESMTPSA id 20C75688440
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 13:34:56 +0800 (CST)
-Received: by iedm5 with SMTP id m5so7430712ied.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Mar 2015 22:35:02 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150331031917.GA31032@mew.dhcp4.washington.edu>
-References: <CAJiZgcqMPRk-Zr1V0rOz00HX4q6Lzs=iaT8iwSvKw5n4+f=4WQ@mail.gmail.com>
-	<20150331031917.GA31032@mew.dhcp4.washington.edu>
-Date: Tue, 31 Mar 2015 13:35:02 +0800
-Message-ID: <CAJiZgcqy1FzKCwsoO2+-=7c_3OTE-59=10-opkYqKhtTgxnvqQ@mail.gmail.com>
-Subject: Re: Btrfs Send/Receive "utime" error And "WARN_ON Cannot allocate memory"
-From: Robbie Ko <robbieko@synology.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:47766 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751413AbbCaICH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Mar 2015 04:02:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ycr7T-0007RD-WF
+	for linux-btrfs@vger.kernel.org; Tue, 31 Mar 2015 10:01:56 +0200
+Received: from eseye.plus.com ([80.229.36.238])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 10:01:55 +0200
+Received: from Just4pLeisure by eseye.plus.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 10:01:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: Sophie Dexter <Just4pLeisure@gmail.com>
+Subject: Re: WARNING at fs/btrfs/super.c:260 __btrfs_abort_transaction (error
+ -17)
+Date: Tue, 31 Mar 2015 09:01:14 +0100
+Message-ID: <mfdk96$ghq$1@ger.gmane.org>
+References: <CAPmwjs9EVi-vY7FEfm+U-CYuxMms2iB-0i6mMLShdJMO6pGYjQ@mail.gmail.com>	<merpmk$m16$1@ger.gmane.org> <1427218499.30561.0@mail.thefacebook.com>	<meso51$cst$1@ger.gmane.org> <mfbl7d$fsr$1@ger.gmane.org> <1427750467.17204.1@mail.thefacebook.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <1427750467.17204.1@mail.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2015-03-31 11:19 GMT+08:00 Omar Sandoval <osandov@osandov.com>:
-> On Tue, Mar 31, 2015 at 11:06:10AM +0800, Robbie Ko wrote:
->> Hi,
->>
->> I have  testing btrfs send/receive recently.
->>
->> I got an error "send ioctl failed with -12: Cannot allocate memory" on
->> send side.
->> WARN_ON happened on "len > PATH_MAX" in fs_path_ensure_buf.
->>
->> I got an error "utime failed: No such file or directory" on receive side.
->> The followings are simple reproduced steps and related information.
->>
->> I have applied the following patch in the url :
->> https://patchwork.kernel.org/patch/6113581/.
->> However, it did not fix the problem.
->>
->> Is there any  idea about what this might be or how to fix it?
+On 30/03/2015 22:21, Chris Mason wrote:
 >
-> [Bah, gave Gmail a chance to do plaintext and it blew it. Back to Mutt.]
 >
-> Have you applied https://patchwork.kernel.org/patch/5996271/ as well?
+> On Mon, Mar 30, 2015 at 10:05 AM, Sophie Dexter
+> <Just4pLeisure@gmail.com> wrote:
+>>> On 24/03/15 17:34, Chris Mason wrote:
+>>>> You have great timing, there are two reports of a very similar abort
+>>>> with 4.0-rc5, but your report makes it clear these are not a regression
+>>>> from 4.0-rc4.
+>>>>
+>>>> Are you able to run btrfsck on this filesystem?  I'd like to check for
+>>>> metadata inconsistencies.
+>>>>
+>>>> -chris
+>>>>
+>>> Hi Chris,
+>>>
+>>> Haha, great timing is the secret of good comedy lol
+>>>
+>>> OpenWrt has only very recently signed off the 3.18 kernel as the default
+>>> kernel for my router, I was using a build with 3.14 when I converted my
+>>> disk and saw the same problem :!: I may have posted something I haven't
+>>> repeated here in the OpenWrt ticket I opened:
+>>>
+>>> https://dev.openwrt.org/ticket/19216
+>>>
+>>> I previously checked and scrubbed the disk when the problem first
+>>> occurred and happily no problems were found then. Although, I had to use
+>>> another computer because btrfs check doesn't complete on my router, the
+>>> process is killed due to lack of memory (btrfs invoked oom-killer) :-(
+>>> Should I start another topic for this or just accept that that problem
+>>> is due to a lack of memory?
+>>>
+>>> I have just run btrfs check again using (yet another) laptop and I think
+>>> everything is still OK:
+>>>
+>>> # btrfs check /dev/sdb1
+>>> Checking filesystem on /dev/sdb1
+>>> UUID: ########-####-####-####-############
+>>> checking extents
+>>> checking free space cache
+>>> checking fs roots
+>>> checking csums
+>>> checking root refs
+>>> found 930516788539 bytes used err is 0
+>>> total csum bytes: 1234353920
+>>> total tree bytes: 1458515968
+>>> total fs tree bytes: 54571008
+>>> total extent tree bytes: 66936832
+>>> btree space waste bytes: 73372568
+>>> file data blocks allocated: 1264250781696
+>>>   referenced 1264250781696
+>>> Btrfs v3.14.1
+>>> # uname -a
+>>> Linux ######-########-#### 3.16.0-31-generic #43-Ubuntu SMP Tue Mar 10
+>>> 17:37:36 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>>>
+>>> Kind regards,
+>>> Sophie x
+>>>
+>>>
+>> I want to continue to use BTRFS as far as possible and have moved this
+>> disk to a Raspberry Pi now because of the problems I encountered with
+>> it when it was plugged into my router. I'd rather do this than convert
+>> back to ext3/4. I'm using Open Media Vault on my Paspberry Pi and,
+>> fingers crossed, haven't had any problems over the weekend.
+>>
+>> I can only guess, given it's inability to complete a btrfs check, that
+>> a router doesn't have enough memory for BTRFS. I'm happy to move my
+>> disk back to my router to try things out and help develop BTRFS for
+>> small computers, but for now at least it has a new home.
+>
+> I have an image that can reproduce this bug, and I'm trying to figure
+> out where we've gone wrong.  Hopefully end of day tomorrow I'll have
+> more ideas, but its a run time error related to extent management. Since
+> the FS check is clean, the FS itself isn't corrupt.
+>
+> -chris
+>
+Hi Chris,
 
-Yes, I have applied.
+That sounds promising. I'll try my disk on my router again when you have 
+something you want to test on a wider audience.
 
->
-> --
-> Omar
+Sophie x
+

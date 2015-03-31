@@ -1,72 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:42765 "EHLO
-	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750930AbbCaTSa (ORCPT
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:34942 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754978AbbCaUJg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 15:18:30 -0400
-Message-ID: <551AF2FF.6020708@skagestad.org>
-Date: Tue, 31 Mar 2015 21:18:23 +0200
-From: =?UTF-8?B?VG9yYmrDuHJu?= <lists@skagestad.org>
+	Tue, 31 Mar 2015 16:09:36 -0400
+Received: by igcau2 with SMTP id au2so29071811igc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 13:09:35 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: fdmanana@gmail.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Linux 4.0.0-rc5 - [ 1851.858652] BTRFS: error (device sda1) in
- cleanup_transaction:1686: errno=-17 Object already exists
-References: <550FEC73.9010507@skagestad.org>	<CAL3q7H5E3ftp+02frB2Q3N+pt-wQmLS+1TWgYobqXZg=pu0O0A@mail.gmail.com>	<55100CE5.5020602@itpas.no> <1427118454.5707.5@mail.thefacebook.com>	<55101A35.6020406@skagestad.org> <55103155.3040202@skagestad.org>	<55198AF9.7090403@skagestad.org> <1427825525.24929.0@mail.thefacebook.com>
-In-Reply-To: <1427825525.24929.0@mail.thefacebook.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
+References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
+Date: Tue, 31 Mar 2015 14:09:35 -0600
+Message-ID: <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
+Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
+From: Chris Murphy <lists@colorremedies.com>
+To: Martin Langhoff <martin.langhoff@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/31/2015 08:12 PM, Chris Mason wrote:
+On Tue, Mar 31, 2015 at 12:55 PM, Martin Langhoff
+<martin.langhoff@gmail.com> wrote:
+> Hi BTRFS folks,
 >
+> one of my dev boxes is a Thinkpad x220, with a single hybrid
+> (HDD+Flash) disk, running F21 with BTRFS partitions for /home and / .
 >
-> On Mon, Mar 30, 2015 at 1:42 PM, Torbjørn <lists@skagestad.org> wrote:
->> Hi,
->>
->> Just a follow up on this report.
->>
->> The file system in question is a raid1 across 2x320G old Western 
->> Digital WD3200KS.
->> I janked them out of the server to run a fsck on another computer 
->> (after a proper shutdown).
->>
->> One of the disks did not get properly detected on the secondary 
->> computer.
->> Hopefully the fsck of the single disk is still of some value to you.
->>
->> As you can see, there are several issues with the fs.
->> The system has occasionally had hard reboots.
->>
->> The fs does not have any real value for me. Everything worth anything 
->> is backed up.
->> I'll keep the drive around in case it's of any value for some devs.
->>
->> As noted before: this (corrupted) fs only get errors when booting 
->> into 4.0-rc5. With 4.0-rc4 or earlier it works as if nothing is wrong.
->
-> This is really strange because we also have reports from v3.19 stable 
-> kernels, but none of the btrfs patches between rc4 and rc5 were tagged 
-> for stable.
->
-> Can I convince you to hammer a bit more on rc4?  I'd like to make sure 
-> it really was a regression introdcued in rc5.
->
-> -chris
->
->
->
->
-Perhaps I was a bit unclear. The error is triggered when booting into 
-rc5. If I reset and try to start up rc4 or earlier, it is still there. 
-After zero-log I can boot into rc4.
+> After losing power (ran out of battery, possibly while trying to
+> hibernate) -- the system will not boot. The initrd breaks out to a
+> shell where I find that the partition holding / is failing to mount.
 
-I already did a fresh reinstall to alternative drives. I did not want to 
-have the corrupted fs as root.
+There should be a reference to an rdsosreport.txt in /run/... so find
+a way to get that posted somewhere.
 
-I'm not sure I can get the second disk in the raid1 to work. It was head 
-crashing when trying to attach it for fsck. If I somehow get it back 
-online I can do some more testing. Anything in particular?
+>  - kernel is 3.1.9-200.fc21
 
---
-Torbjørn
+This is probably 3.18.9, which is the current F21 kernel.
+
+>A failure of the
+> HDD cannot be ruled out, low power conditions, cheap consumer part...
+
+Well you have to rule that out before anyone on this list can really
+help. Try booting Fedora 21 install media, and using smartctl -x on
+the drive.
+
+
+-- 
+Chris Murphy

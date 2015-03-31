@@ -1,66 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58737 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:59810 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753360AbbC3XFX (ORCPT
+	by vger.kernel.org with ESMTP id S1754692AbbCaPLd (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 30 Mar 2015 19:05:23 -0400
+	Tue, 31 Mar 2015 11:11:33 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: test for btrfs cloning of zero length ranges
-Date: Tue, 31 Mar 2015 00:04:58 +0100
-Message-Id: <1427756698-21338-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1427736284-29469-1-git-send-email-fdmanana@suse.com>
-References: <1427736284-29469-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] fstests: regression test for btrfs file range cloning
+Date: Tue, 31 Mar 2015 16:10:56 +0100
+Message-Id: <1427814656-23227-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test cloning a file range with a length of zero into a destination offset
-greater than zero.
+Test btrfs file range cloning with the same file as a source and
+destination.
 
-This made btrfs create an extent state record with a start offset greater than
-the end offset, resulting in chaos such as an infinite loop when evicting an
-inode.
+This tests a specific scenario where the extent layout of the file
+confused the clone ioctl implementation making it return -EEXIST to
+userspace. This issue was fixed by the following linux kernel patch:
 
-This issue was fixed by the following linux kernel patch:
-
-   Btrfs: fix inode eviction infinite loop after cloning into it
+   Btrfs: fix range cloning when same inode used as source and destination
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ tests/btrfs/087     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/087.out |  35 ++++++++++++++++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 138 insertions(+)
+ create mode 100755 tests/btrfs/087
+ create mode 100644 tests/btrfs/087.out
 
-V2: Use an offset of 64Kb so that the test can run on platforms with any
-    page size. In btrfs the fs block size must be a multiple of the page
-    size, so a 4Kb offset would make the test fail on machines with a
-    page size > 4Kb because the clone ioctl only accepts offsets and lengths
-    that are multiples of the block size.
-
- tests/btrfs/086     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/086.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 80 insertions(+)
- create mode 100755 tests/btrfs/086
- create mode 100644 tests/btrfs/086.out
-
-diff --git a/tests/btrfs/086 b/tests/btrfs/086
+diff --git a/tests/btrfs/087 b/tests/btrfs/087
 new file mode 100755
-index 0000000..77c8da6
+index 0000000..0a5deb7
 --- /dev/null
-+++ b/tests/btrfs/086
-@@ -0,0 +1,77 @@
++++ b/tests/btrfs/087
+@@ -0,0 +1,102 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/086
++# FS QA Test No. btrfs/087
 +#
-+# Test cloning a file range with a length of zero into a destination offset
-+# greater than zero.
++# Test btrfs file range cloning with the same file as a source and destination.
 +#
-+# This made btrfs create an extent state record with a start offset greater than
-+# the end offset, resulting in chaos such as an infinite loop when evicting an
-+# inode.
-+#
++# This tests a specific scenario where the extent layout of the file confused
++# the clone ioctl implementation making it return -EEXIST to userspace.
 +# This issue was fixed by the following linux kernel patch:
 +#
-+#   Btrfs: fix inode eviction infinite loop after cloning into it
++#    Btrfs: fix range cloning when same inode used as source and destination
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -107,41 +93,102 @@ index 0000000..77c8da6
 +
 +rm -f $seqres.full
 +
-+_scratch_mkfs >>$seqres.full 2>&1
++# Create a file with an extent layout that confused the btrfs clone ioctl
++# implementation. The first extent item that is cloned by the second call
++# to the cloner program will have only a trailing part of it referenced by
++# a new extent item, since the source offset starts in the middle of that
++# extent. This confused the clone ioctl because after inserting this new
++# extent item it would immediately after process it again thinking it
++# corresponded to an extent that existed before - this made it attempt to
++# insert a duplicated extent item pointing to the same extent again, which
++# made it return an -EEXIST error to userspace and turn the filesystem to
++# readonly mode (since the current transaction got aborted).
++test_clone()
++{
++	local bs=$1
++
++	$XFS_IO_PROG -f -c "pwrite -S 0xaa $(($bs * 2)) $(($bs * 2))" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++
++	$CLONER_PROG -s $((3 * $bs)) -d $((267 * $bs)) -l 0 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/foo
++	$CLONER_PROG -s $((217 * $bs)) -d $((95 * $bs)) -l 0 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/foo
++
++	echo "File content after clone operations:"
++	od -t x1 $SCRATCH_MNT/foo
++}
++
++# Make sure the test passes offsets and lengths to the btrfs clone ioctl that
++# are multiples of the fs block size. Currently the block size on btrfs must
++# be a multiple of the page size, so use a 64Kb fs block size in order to be
++# able to test on every platform supported by linux.
++bs=$((64 * 1024))
++
++echo "Testing without the no-holes feature"
++_scratch_mkfs "-O ^no-holes -l $bs" >>$seqres.full 2>&1
 +_scratch_mount
++test_clone $bs
++_check_scratch_fs
 +
-+touch $SCRATCH_MNT/foo
-+touch $SCRATCH_MNT/bar
-+
-+# Now attempt to clone foo into bar. Because we pass a length of zero, the
-+# clone ioctl will adjust the length to match the size of the file foo (minus
-+# the source offset which is zero) - because the adjusted length value is
-+# zero, it made btrfs create an extent state record for file bar with a start
-+# offset (64k) greater then its end offset (64k - 1), which is something never
-+# supposed to happen and for example it made inode eviction enter an infinite
-+# loop that dumped a warning trace on each iteration.
-+$CLONER_PROG -s 0 -d 65536 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+echo "bar file size after clone operation: $(stat -c %s $SCRATCH_MNT/bar)"
++echo "Testing with the no-holes feature"
++_scratch_unmount
++_scratch_mkfs "-O no-holes -l $bs" >>$seqres.full 2>&1
++_scratch_mount
++test_clone $bs
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/086.out b/tests/btrfs/086.out
+diff --git a/tests/btrfs/087.out b/tests/btrfs/087.out
 new file mode 100644
-index 0000000..1ae87ba
+index 0000000..5ddede2
 --- /dev/null
-+++ b/tests/btrfs/086.out
-@@ -0,0 +1,2 @@
-+QA output created by 086
-+bar file size after clone operation: 0
++++ b/tests/btrfs/087.out
+@@ -0,0 +1,35 @@
++QA output created by 087
++Testing without the no-holes feature
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after clone operations:
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0400000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++44200000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++44400000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++102600000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++103000000
++Testing with the no-holes feature
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after clone operations:
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0400000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++44200000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++44400000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++102600000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++103000000
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 81d462f..92bc0f9 100644
+index 92bc0f9..b6b9157 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -88,3 +88,4 @@
- 083 auto quick send
+@@ -89,3 +89,4 @@
  084 auto quick send
  085 auto quick send
-+086 auto quick clone
+ 086 auto quick clone
++087 auto quick clone
 -- 
 2.1.3
 

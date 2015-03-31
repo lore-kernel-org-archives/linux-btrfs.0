@@ -1,278 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:39268 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751344AbbCaXMD (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 31 Mar 2015 19:12:03 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:34157 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751668AbbCaXp4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Mar 2015 19:45:56 -0400
+Received: by pactp5 with SMTP id tp5so34064429pac.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 16:45:56 -0700 (PDT)
+Received: from lenny.home.zabbo.net (c-24-22-122-160.hsd1.or.comcast.net. [24.22.122.160])
+        by mx.google.com with ESMTPSA id o4sm96027pdh.6.2015.03.31.16.45.55
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Tue, 31 Mar 2015 16:45:55 -0700 (PDT)
+Date: Tue, 31 Mar 2015 16:45:53 -0700
+From: Zach Brown <zab@zabbo.net>
 To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: add debugfs file to test transaction aborts
-Date: Wed,  1 Apr 2015 00:11:37 +0100
-Message-Id: <1427843497-7733-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1427829524-23946-1-git-send-email-fdmanana@suse.com>
-References: <1427829524-23946-1-git-send-email-fdmanana@suse.com>
+Subject: readdir tree/page lock inversion
+Message-ID: <20150331234553.GA20542@lenny.home.zabbo.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At the moment we can not reliably and deterministically test that the
-transaction abortion code works as expected. For example in the past [1]
-we had an issue where that code returned the pinned extents to the free
-space caches allowing fstrim to perform a discard against the physical
-locations of the extents, and worse, when the fs was mounted with the
-option -o discard it explicitly did a discard on each pinned extent.
-This resulted in filesystem corruption, leaving the fs unmountable.
+We've known for eons that it's not great that readdir holds tree locks
+while calling mkwrite by way of dir_emit().  I fiddled around and found
+a reliable if goofy deadlock reproducer.  It typically takes a few
+seconds on modest hardware here (single package, dual core/ht, single
+spindle.)
 
-This patch adds a debugfs file named abort_transaction, which has a default
-default value of an empty string, can only be written by someone with root
-privileges and when a string is written to it, it makes sure all subsequent
-transaction commits fail at the very end (right before writing the new
-superblock) if that string matches the label of the filesystem.
-This way we can for example write a deterministic fstest for commit [1]
-which looks like:
+I made a quick attempt at refactoring readdir to stage entries in a
+locally allocated page before releasing the locks and emitting them but
+unfortunately my eyeballs fell out and one of the cats ran off with
+them.  Maybe someone else will have more luck.
 
-  _require_btrfs_debugfs()
-  {
-      if [ -d /sys/kernel/debug/btrfs ]; then
-          BTRFS_DEBUG_FS=/sys/kernel/debug/btrfs
-      elif [ -d /debug/btrfs ]; then
-          BTRFS_DEBUG_FS=/debug
-      else
-          _notrun "btrfs debugfs not available"
-      fi
+- z
 
-      if [ ! -z $1 ]; then
-          if [ ! -e $BTRFS_DEBUG_FS/$1 ]; then
-              _notrun "btrfs debugfs path $1 not available"
-          fi
-      fi
-  }
+#define _GNU_SOURCE
+#include <dirent.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/mman.h>
 
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_btrfs_debugfs "abort_transaction"
-  _need_to_be_root
+#define LEN 300
+static char junk[LEN];
 
-  rm -f $seqres.full
+int main(int argc, char **argv)
+{
+	int dir_fd;
+	void *ptr;
+	pid_t pid;
+	int fd;
+	int ret;
 
-  # We will abort a btrfs transaction later, which always produces a warning in
-  # dmesg. We do not want the test to fail because of this.
-  _disable_dmesg_check
-  fslabel="btrfs_fstest_$seq"
-  _scratch_mkfs -L $fslabel >>$seqres.full 2>&1
-  _scratch_mount "-o discard"
-  _require_batched_discard $SCRATCH_MNT
+	/* create our own convenient dir and file for convenience */
+	fd = open("./file", O_RDWR | O_CREAT, 0644);
+	if (fd < 0) {
+		perror("open file");
+		exit(1);
+	}
 
-  # Create a file and commit the current transaction.
-  echo -n "hello" > $SCRATCH_MNT/foo
-  sync
+	if (mkdir("./dir", 0755)) {
+		perror("mkdir");
+		exit(1);
+	}
 
-  # Now update the file, which forces a COW operation of the fs root, adding
-  # the old root location to the pinned extents list.
-  echo -n " world" >> $SCRATCH_MNT/foo
+	dir_fd = open("./dir", O_RDONLY);
+	if (dir_fd < 0) {
+		perror("open dir");
+		exit(1);
+	}
 
-  # Now abort the current transaction, unmount the fs, mount it again and verify
-  # we can open the file and read its content (which should match what it had
-  # when the last transaction committed successfully). Btrfs used to issue a
-  # discard operation on the extents in the pinned extents list, resulting in
-  # corruption of metadata and data, and used too to return the pinned extents
-  # to the free space caches, allowing future fstrim operations to perform a
-  # discard operation against the pinned exents.
-  echo -n "$fslabel" > $BTRFS_DEBUG_FS/abort_transaction
-  sync
-  echo > $BTRFS_DEBUG_FS/abort_transaction
-  $FSTRIM_PROG $SCRATCH_MNT
+	pid = fork();
+	if (pid < 0) {
+		perror("fork");
+		exit(1);
+	}
 
-  _scratch_unmount
-  _scratch_mount
-  echo "File content after transaction abort + remount: $(cat $SCRATCH_MNT/foo)"
+	if (!pid) {
+		/* first child spins modifying entries in the dir */
+		if (chdir("./dir")) {
+			perror("chdir");
+			exit(1);
+		}
 
-The test's expected output is:
+		for (;;) {
+			if (link("../file", "./link")) {
+				perror("link");
+				exit(1);
+			}
+			if (unlink("./link")) {
+				perror("link");
+				exit(1);
+			}
+		}
+	}
 
-  File content after transaction abort + remount: hello
+	pid = fork();
+	if (pid < 0) {
+		perror("fork");
+		exit(1);
+	}
 
-With patch [1] reverted the test fails with:
+	if (!pid) {
+		/* second child spins reading entries into mapped file */
+		ret = write(fd, junk, LEN);
+		if (ret != LEN) {
+			perror("write");
+			exit(1);
+		}
 
-  btrfs/088 2s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad)
-      --- tests/btrfs/088.out	2015-03-31 19:31:17.558436298 +0100
-      +++ /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad	2015-03-31 19:58:12.741403640 +0100
-      @@ -1,2 +1,8 @@
-       QA output created by 088
-      -File content after transaction abort + remount: hello
-      +mount: wrong fs type, bad option, bad superblock on /dev/sdc,
-      +       missing codepage or helper program, or other error
-      +       In some cases useful info is found in syslog - try
-      +       dmesg | tail  or so
-      +
-      ...
-      (Run 'diff -u tests/btrfs/088.out /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad'  to see the entire diff)
-  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.full)
+		ptr = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED,
+			   fd, 0);
+		if (ptr == MAP_FAILED) {
+			perror("mmap");
+			exit(1);
+		}
 
-  $ cat /home/fdmanana/git/hub/xfstests/results//btrfs/088.full
-  (...)
-  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
-  *** fsck.btrfs output ***
-  Check tree block failed, want=29573120, have=0
-  Check tree block failed, want=29573120, have=0
-  Check tree block failed, want=29573120, have=0
-  Check tree block failed, want=29573120, have=0
-  Check tree block failed, want=29573120, have=0
-  read block failed check_tree_block
-  Couldn't read tree root
-  Couldn't open file system
-  *** end fsck.btrfs output
+		for(;;) {
+			if (posix_fadvise(fd, 0, 4096, POSIX_FADV_DONTNEED)) {
+				perror("fadvise");
+				exit(1);
+			}
 
-With this feature we can also get a fstest for the issue fixed by the patch
-that fixes log tree corruption when the fs is mounted with -o discard [2].
+			if (lseek(dir_fd, 0, SEEK_SET)) {
+				perror("lseek");
+				exit(1);
+			}
 
-  "Btrfs: fix log tree corruption when fs mounted with -o discard"
+			ret = syscall(SYS_getdents, dir_fd, ptr, LEN);
+			if (ret <= 0) {
+				perror("getdents");
+				exit(1);
+			}
+		}
+	}
 
-[1] commit 678886bdc637 ("Btrfs: fix fs corruption on transaction abort
-                          if device supports discard")
-[2] "Btrfs: fix log tree corruption when fs mounted with -o discard"
+	/* and the parent spins doing a system-wide sync */
+	while (1)
+		sync();
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Allow this to select by label which filesystem will have its transaction
-    aborted. The previous version made a transaction abort for every mounted
-    btrfs filesystem. It was not a problem in my test vm since only the devices
-    used by fstests were using a btrfs filesystem (everything else was ext4).
-
- fs/btrfs/sysfs.c       | 61 ++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/sysfs.h       |  2 ++
- fs/btrfs/transaction.c |  9 ++++++++
- 3 files changed, 70 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 94edb0a..30cb7a5 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -666,6 +666,7 @@ static struct dentry *btrfs_debugfs_root_dentry;
- 
- /* Debugging tunables and exported data */
- u64 btrfs_debugfs_test;
-+static char btrfs_debugfs_label_trans_abort[BTRFS_LABEL_SIZE] = { 0 };
- 
- int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- {
-@@ -710,19 +711,75 @@ failure:
- 	return error;
- }
- 
-+static ssize_t read_fs_label(struct file *file, char __user *user_buf,
-+			     size_t count, loff_t *ppos)
-+{
-+	char *label = file->private_data;
-+
-+	return simple_read_from_buffer(user_buf, count, ppos,
-+				       label, strlen(label));
-+}
-+
-+static ssize_t write_fs_label(struct file *file, const char __user *user_buf,
-+			      size_t count, loff_t *ppos)
-+{
-+	char buf[BTRFS_LABEL_SIZE];
-+	size_t buf_size;
-+	char *label = file->private_data;
-+
-+	memset(buf, 0, BTRFS_LABEL_SIZE);
-+	buf_size = min(count, sizeof(buf) - 1);
-+	if (copy_from_user(buf, user_buf, buf_size))
-+		return -EFAULT;
-+	if (count > 0 && buf[count - 1] == '\n')
-+		buf[count - 1] = '\0';
-+	memcpy(label, buf, BTRFS_LABEL_SIZE);
-+	return count;
-+}
-+
-+static const struct file_operations fops_fs_label = {
-+	.read =		read_fs_label,
-+	.write =	write_fs_label,
-+	.open =		simple_open,
-+	.llseek =	default_llseek,
-+};
-+
- static int btrfs_init_debugfs(void)
- {
- #ifdef CONFIG_DEBUG_FS
-+	struct dentry *dentry;
-+
- 	btrfs_debugfs_root_dentry = debugfs_create_dir("btrfs", NULL);
- 	if (!btrfs_debugfs_root_dentry)
- 		return -ENOMEM;
- 
--	debugfs_create_u64("test", S_IRUGO | S_IWUGO, btrfs_debugfs_root_dentry,
--			&btrfs_debugfs_test);
-+	dentry = debugfs_create_u64("test", S_IRUGO | S_IWUGO,
-+				    btrfs_debugfs_root_dentry,
-+				    &btrfs_debugfs_test);
-+	if (!dentry)
-+		return -ENOMEM;
-+
-+	dentry = debugfs_create_file("abort_transaction",
-+				     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH,
-+				     btrfs_debugfs_root_dentry,
-+				     btrfs_debugfs_label_trans_abort,
-+				     &fops_fs_label);
-+	if (!dentry) {
-+		debugfs_remove_recursive(btrfs_debugfs_root_dentry);
-+		return -ENOMEM;
-+	}
- #endif
- 	return 0;
- }
- 
-+bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info)
-+{
-+	if (!btrfs_debugfs_label_trans_abort[0])
-+		return false;
-+	return strcmp(fs_info->super_copy->label,
-+		      btrfs_debugfs_label_trans_abort) == 0;
-+}
-+
- int btrfs_init_sysfs(void)
- {
- 	int ret;
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index f7dd298..1faf0b5 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -74,4 +74,6 @@ int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
- 		struct btrfs_device *one_device);
- int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-                 struct btrfs_device *one_device);
-+
-+bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info);
- #endif /* _BTRFS_SYSFS_H_ */
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5d8cff8..8bf47cd 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -32,6 +32,7 @@
- #include "volumes.h"
- #include "dev-replace.h"
- #include "qgroup.h"
-+#include "sysfs.h"
- 
- #define BTRFS_ROOT_TRANS_TAG 0
- 
-@@ -2029,6 +2030,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		goto scrub_continue;
- 	}
- 
-+	if (unlikely(debugfs_abort_transaction(root->fs_info))) {
-+		btrfs_warn(root->fs_info,
-+			   "Aborting transaction due to debugfs request.");
-+		mutex_unlock(&root->fs_info->tree_log_mutex);
-+		ret = -EIO;
-+		goto scrub_continue;
-+	}
-+
- 	ret = write_ctree_super(trans, root, 0);
- 	if (ret) {
- 		mutex_unlock(&root->fs_info->tree_log_mutex);
--- 
-2.1.3
-
+	return 0;
+}

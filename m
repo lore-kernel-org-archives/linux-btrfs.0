@@ -1,48 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:52309 "EHLO
-	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753353AbbCaIiX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 04:38:23 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id C4664AC00D0
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 17:27:14 +0900 (JST)
-Message-ID: <551A5A2F.6010609@jp.fujitsu.com>
-Date: Tue, 31 Mar 2015 17:26:23 +0900
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56850 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755707AbbCaRFT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Mar 2015 13:05:19 -0400
+Date: Tue, 31 Mar 2015 19:05:16 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Marc Cousin <cousinmarc@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: snapshot destruction making IO extremely slow
+Message-ID: <20150331170516.GD6821@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <550E7917.5030602@gmail.com>
+ <20150325011937.GB20767@twin.jikos.cz>
+ <55129428.7090508@gmail.com>
+ <20150330142532.GI32051@suse.cz>
+ <55196740.1000705@gmail.com>
 MIME-Version: 1.0
-To: Zhaolei <zhaolei@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: wait for delayed iputs on no space
-References: <cover.1427450911.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1427450911.git.zhaolei@cn.fujitsu.com>
-Content-Type: text/plain; charset=iso-2022-jp
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55196740.1000705@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015/03/27 19:21, Zhaolei wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Mon, Mar 30, 2015 at 05:09:52PM +0200, Marc Cousin wrote:
+> > So it would be good to sample the active threads and see where it's
+> > spending the time. It could be the somewhere in the rb-tree representing
+> > extents, but that's a guess.
+> > 
+> I just need to be told how to do that :)
 > 
-> This is another fix of no_space case.
-> 
-> All patchs for fix no_space bug are available at fix_no_space
-> branch on:
->    git://github.com/zhaoleidd/btrfs
+> Something like a perf top ?
 
-I tested in the environment that applied the following patch to
-'fix_no_space' branch.
- - Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole
+for i in `pgrep btrfs`; do
+        ps $i
+	sudo cat /proc/$i/stack 2>/dev/null
+done
 
-It works fine to me. Thanks.
-
-Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-
-> 
-> Any suggestions are welcome.
-> 
-> Zhao Lei (1):
->    btrfs: wait for delayed iputs on no space
-> 
->   fs/btrfs/extent-tree.c | 3 +++
->   1 file changed, 3 insertions(+)
-> 
-
+and capture samples every second.

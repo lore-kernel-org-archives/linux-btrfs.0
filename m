@@ -1,63 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57087 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752172AbbCaXjC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 19:39:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Yd5kI-0008Iz-LX
-	for linux-btrfs@vger.kernel.org; Wed, 01 Apr 2015 01:38:58 +0200
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 01:38:58 +0200
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 01:38:58 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:34560 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751138AbbCaXyk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Mar 2015 19:54:40 -0400
+Received: by wgbdm7 with SMTP id dm7so36067373wgb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 16:54:38 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
+References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
+ <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
+From: Martin Langhoff <martin.langhoff@gmail.com>
+Date: Tue, 31 Mar 2015 19:54:18 -0400
+Message-ID: <CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
 Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
-Date: Wed, 01 Apr 2015 01:38:35 +0200
-Message-ID: <ronrub-mln.ln1@hurikhan77.spdns.de>
-References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com> <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com> <CAJCQCtQ9PCv5pNMapQabLBKHOS86B+zavcKsQOiR2Q9qOrxv6g@mail.gmail.com> <b5hrub-586.ln1@hurikhan77.spdns.de> <CAJCQCtRn4sjDV1skkpJBjwjfXr18F502Q9G6p_4ZdRg27J4bXg@mail.gmail.com> <CAJCQCtRZuUvmYnZh1_UV7nEkT4rFZprzhs3qfFx1yQCJYBOJ0w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy <lists@colorremedies.com> schrieb:
+On Tue, Mar 31, 2015 at 4:09 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> There should be a reference to an rdsosreport.txt in /run/... so find
+> a way to get that posted somewhere.
 
-> On Tue, Mar 31, 2015 at 4:15 PM, Chris Murphy <lists@colorremedies.com>
-> wrote:
-> 
->> The i915 regression right now is really annoying. With a Samsung 840
->> EVO I've  had inexplicable and non-deterministic boot failures.
-> 
-> Clarification: the boot failures happen following the i915 panic and
-> subsequent forced power off.
+I'll try, but it truly says nothing of interest from a block device /
+btrfs PoV. I have ample background debugging boot issues, disk
+corruption, etc from years of work w OLPC.
 
-Yeah I thought that, too, because after hitting "reset" it looked like one 
-hard disk didn't appear in dmesg and thus btrfs didn't mount (btrfs-raid). 
-So I turned the machine off completely because I had similar issues with 
-i915 freezes and strange boot issues during the following boot before. It 
-looks like the GPU is not necessarily completely reset when hitting the 
-reset button. But that's another story.
+>>  - kernel is 3.1.9-200.fc21
+>
+> This is probably 3.18.9, which is the current F21 kernel.
 
-In my case the hard disk was there - I didn't just scan hard enough through 
-the huge pile of logs. I had to btrfs-zero-log, wrote "reboot" into the 
-rescue shell, kernel came back, mount still locking up and sitting there 
-until systemd decided to throw me to emergency after 5 minutes of waiting or 
-so. I've rebooted again, machine came up. This was a few reboots after the 
-machine was powered off, so I'd rule any GPU freeze artifacts out here. I 
-just needed multiple reboots to arrange myself with my dracut/systemd combo 
-super hero voodoo abilities (read: I cumbersome tried everything until one 
-thing worked while swearing at my innocent monitor, well sort of, it's 
-powered by the GPU).
+Correct, thanks. I typo'd that.
 
-On every reboot it felt like bcache was replaying cache transactions - but I 
-think this is by design (read: bcache is always dirty, even after a clean 
-shutdown, if using write-back mode) and not part of the problem.
+>>A failure of the
+>> HDD cannot be ruled out, low power conditions, cheap consumer part...
+>
+> Well you have to rule that out before anyone on this list can really
+> help. Try booting Fedora 21 install media, and using smartctl -x on
+> the drive.
 
+That's a good idea! I was referring to something else -- I guess what
+I'm trying to say is: I'm not sure if this scrambled disk partition is
+a btrfs/kernel bug, or the cheap HDD lied about flushing a write to
+disk.
+
+cheers,
+
+
+m
 -- 
-Replies to list only preferred.
-
+ martin.langhoff@gmail.com
+ -  ask interesting questions
+ - don't get distracted with shiny stuff  - working code first
+ ~ http://docs.moodle.org/en/User:Martin_Langhoff

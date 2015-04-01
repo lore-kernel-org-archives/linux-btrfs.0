@@ -1,131 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:55273 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752285AbbDAJ6V (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Wed, 1 Apr 2015 05:58:21 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from plane.gmane.org ([80.91.229.3]:35634 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750848AbbDAKyl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Apr 2015 06:54:41 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YdGIA-0001jq-Ua
+	for linux-btrfs@vger.kernel.org; Wed, 01 Apr 2015 12:54:39 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 12:54:33 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 12:54:33 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: ying.huang@intel.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: avoid syncing log in the fast fsync path when not necessary
-Date: Wed,  1 Apr 2015 02:00:43 +0100
-Message-Id: <1427850043-27603-1-git-send-email-fdmanana@suse.com>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: ERROR: error removing the device '/dev/sdXN' - Inappropriate
+ ioctl for device
+Date: Wed, 01 Apr 2015 11:54:21 +0100
+Message-ID: <mfgiot$3ck$1@ger.gmane.org>
+References: <mfcdep$d97$1@ger.gmane.org> <20150331173756.GF6821@twin.jikos.cz> <mfeo14$sib$1@ger.gmane.org> <551B98FF.8070000@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <551B98FF.8070000@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 3a8b36f37806 ("Btrfs: fix data loss in the fast fsync path") added
-a performance regression for that causes an unnecessary sync of the log
-trees (fs/subvol and root log trees) when 2 consecutive fsyncs are done
-against a file, without no writes or any metadata updates to the inode in
-between them and if a transaction is committed before the second fsync is
-called.
+On 01/04/15 08:06, Anand Jain wrote:
+> 
+>>>> btrfs device delete /dev/sdf5 /mnt/data2
+>>>>
+>>>> ERROR: error removing the device '/dev/sdf5' - Inappropriate ioctl for
+>>>> device
+> 
+>  very strange. 'btrfs fi show -m' shows btrfs fs(s) that are mounted.
 
-Huang Ying reported this to lkml (https://lkml.org/lkml/2015/3/18/99)
-after a test sysbench test that measured a -62% decrease of file io
-requests per second for that tests' workload.
+Looks like my /dev/sdf isn't responding with anything useful at all... A
+firmware crash?... (This is for a 256GB SSD.)
 
-The test is:
 
-  echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-  echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
-  echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
-  echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
-  mkfs -t btrfs /dev/sda2
-  mount -t btrfs /dev/sda2 /fs/sda2
-  cd /fs/sda2
-  for ((i = 0; i < 1024; i++)); do fallocate -l 67108864 testfile.$i; done
-  sysbench --test=fileio --max-requests=0 --num-threads=4 --max-time=600 \
-    --file-test-mode=rndwr --file-total-size=68719476736 --file-io-mode=sync \
-    --file-num=1024 run
+# btrfs fi show -m
 
-A test on kvm guest, running a debug kernel gave me the following results:
+[...]
 
-Without 3a8b36f378060d:             16.01 reqs/sec
-With 3a8b36f378060d:                 3.39 reqs/sec
-With 3a8b36f378060d and this patch: 16.04 reqs/sec
+Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
+        Total devices 3 FS bytes used 159.31GiB
+        devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
+        devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
+        devid    3 size 206.47GiB used 206.47GiB path /dev/sdf5
 
-Reported-by: Huang Ying <ying.huang@intel.com>
-Tested-by: Huang, Ying <ying.huang@intel.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/file.c         |  9 ++++++---
- fs/btrfs/ordered-data.c | 14 ++++++++++++++
- fs/btrfs/ordered-data.h |  3 +++
- 3 files changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 309dd57..379275c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1878,6 +1878,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	struct btrfs_log_ctx ctx;
- 	int ret = 0;
- 	bool full_sync = 0;
-+	const u64 len = end - start + 1;
- 
- 	trace_btrfs_sync_file(file, datasync);
- 
-@@ -1906,7 +1907,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		 * all extents are persisted and the respective file extent
- 		 * items are in the fs/subvol btree.
- 		 */
--		ret = btrfs_wait_ordered_range(inode, start, end - start + 1);
-+		ret = btrfs_wait_ordered_range(inode, start, len);
- 	} else {
- 		/*
- 		 * Start any new ordered operations before starting to log the
-@@ -1978,8 +1979,10 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 */
- 	smp_mb();
- 	if (btrfs_inode_in_log(inode, root->fs_info->generation) ||
--	    (full_sync && BTRFS_I(inode)->last_trans <=
--	     root->fs_info->last_trans_committed)) {
-+	    (BTRFS_I(inode)->last_trans <=
-+	     root->fs_info->last_trans_committed &&
-+	     (full_sync ||
-+	      !btrfs_have_ordered_extents_in_range(inode, start, len)))) {
- 		/*
- 		 * We'v had everything committed since the last time we were
- 		 * modified so clear this flag in case it was set for whatever
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 157cc54..72b6f0d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -838,6 +838,20 @@ out:
- 	return entry;
- }
- 
-+bool btrfs_have_ordered_extents_in_range(struct inode *inode,
-+					 u64 file_offset,
-+					 u64 len)
-+{
-+	struct btrfs_ordered_extent *oe;
-+
-+	oe = btrfs_lookup_ordered_range(inode, file_offset, len);
-+	if (oe) {
-+		btrfs_put_ordered_extent(oe);
-+		return true;
-+	}
-+	return false;
-+}
-+
- /*
-  * lookup and return any extent before 'file_offset'.  NULL is returned
-  * if none is found
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index e96cd4c..9ba7209 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -191,6 +191,9 @@ btrfs_lookup_first_ordered_extent(struct inode * inode, u64 file_offset);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
- 							u64 file_offset,
- 							u64 len);
-+bool btrfs_have_ordered_extents_in_range(struct inode *inode,
-+					 u64 file_offset,
-+					 u64 len);
- int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 				struct btrfs_ordered_extent *ordered);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
--- 
-2.1.3
+btrfs-progs v3.19.1
+
+
+
+# smartctl -i /dev/sdf
+smartctl 6.3 2014-07-26 r3976 [x86_64-linux-3.14.10-gentoo_s03a_11]
+(local build)
+Copyright (C) 2002-14, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               /7:0:0:0
+Product:
+Compliance:           SPC-5
+User Capacity:        600,332,565,813,390,450 bytes [600 PB]
+Logical block size:   774843950 bytes
+scsiModePageOffset: response length too short, resp_len=47 offset=50
+bd_len=46
+scsiModePageOffset: response length too short, resp_len=47 offset=50
+bd_len=46
+>> Terminate command early due to bad response to IEC mode page
+A mandatory SMART command failed: exiting. To continue, add one or more
+'-T permissive' options.
+
+
+
+And btrfs is still running ok so far... I'll be swapping that device at
+the weekend. (First chance I have for a Sunday shutdown. :-( )
+
+
+Still... For administering btrfs, it is a little disturbing not to be
+able to remove/delete a device unless that device is both mounted and
+working...
+
+Or is that where the "missing" option comes in?
+
+
+
+Comments welcomed,
+
+Thanks,
+Martin
+
+
+
+
 

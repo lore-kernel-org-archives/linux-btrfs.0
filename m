@@ -1,48 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 254.102.124.202.static.netspeed.net.nz ([202.124.102.254]:54439
-	"EHLO mx.anathoth.net" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752944AbbDACFJ (ORCPT
+Received: from out02.mta.xmission.com ([166.70.13.232]:60898 "EHLO
+	out02.mta.xmission.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752893AbbDAD6z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 22:05:09 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mx.anathoth.net (Postfix) with ESMTP id B4BB6C3C3A
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2015 14:59:47 +1300 (NZDT)
-Received: from en-gedi (139.20.225.49.dyn.cust.vf.net.nz [49.225.20.139])
-	(Authenticated sender: matt@mattgrant.net.nz)
-	by mx.anathoth.net (Postfix) with ESMTPSA id E70ACC3C3D
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2015 14:59:40 +1300 (NZDT)
-Message-ID: <1427853689.3942.9.camel@mattgrant.net.nz>
-Subject: Python pybtrfs df wrapper script to report btrfs metadata, block,
- space in df compatible output
-From: Matt Grant <matt@mattgrant.net.nz>
-To: linux-btrfs@vger.kernel.org
-Date: Wed, 01 Apr 2015 15:01:29 +1300
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Tue, 31 Mar 2015 23:58:55 -0400
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: Omar Sandoval <osandov@osandov.com>
+Cc: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        Timo Kokkonen <timo.kokkonen@offcode.fi>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+References: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
+	<20150330123034.GB32051@suse.cz>
+	<20150330184135.GA27227@mew.dhcp4.washington.edu>
+Date: Tue, 31 Mar 2015 22:54:55 -0500
+In-Reply-To: <20150330184135.GA27227@mew.dhcp4.washington.edu> (Omar
+	Sandoval's message of "Mon, 30 Mar 2015 11:41:35 -0700")
+Message-ID: <87k2xwv6y8.fsf@x220.int.ebiederm.org>
+MIME-Version: 1.0
+Content-Type: text/plain
+Subject: Re: [PATCH] Btrfs: prevent deletion of mounted subvolumes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+Omar Sandoval <osandov@osandov.com> writes:
 
-Use this at work.  Releasing to list to prompt design of output that is
-100% df format compatible for automated reporting and graphing.
+> On Mon, Mar 30, 2015 at 02:30:34PM +0200, David Sterba wrote:
+>> On Mon, Mar 30, 2015 at 02:02:17AM -0700, Omar Sandoval wrote:
+>> > Before commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
+>> > d_invalidate() could return -EBUSY when a dentry for a directory had
+>> > more than one reference to it. This is what prevented a mounted
+>> > subvolume from being deleted, as struct vfsmount holds a reference to
+>> > the subvolume dentry. However, that commit removed that case, and later
+>> > commits in that patch series removed the return code from d_invalidate()
+>> > completely, so we don't get that check for free anymore. So, reintroduce
+>> > it in btrfs_ioctl_snap_destroy().
+>> 
+>> > This applies to 4.0-rc6. To be honest, I'm not sure that this is the most
+>> > correct fix for this bug, but it's equivalent to the pre-3.18 behavior and it's
+>> > the best that I could come up with. Thoughts?
+>> 
+>> > +	spin_lock(&dentry->d_lock);
+>> > +	err = dentry->d_lockref.count > 1 ? -EBUSY : 0;
+>> > +	spin_unlock(&dentry->d_lock);
+>> 
+>> The fix restores the original behaviour, but I don't think opencoding and
+>> using internals is fine. Either there should be a vfs api for that or
+>> there's an existing one that can be used instead.
 
-This is so BTRFS space statistics acn bre reported back to existing
-graphing tool chains that many of you would have in place.  Quite useful
-for munin, hint, hint :-)
+I have a problem with restoring the original behavior as is.
 
-URL for github is:
+In some sense it re-introduces the security issue that the d_invalidate
+changes were built to fix.
 
-https://github.com/grantma/pybtrfs.git
+Any user in the system can create a user namespace, create a mount
+namespace and keep any subvolume pinned forever.  Which at the very
+least could make a very nice DOS attack.  I am not familiar enough with
+how people use subvolumes and 
 
-There is also a shell script there that can be called from cron.
+So let me ask.  How can userspace not know that a subvolume that they
+want to delete is already mounted?
 
-Please get back to me if you have any questions.
+I can see having something like is_local_mount_root and denying the
+subvolume destruction if the mount that is pinning it is in your local
+mount namespace.  
 
-Standard not warranted disclaimers apply to the code.  Its GPLv3
-licensed.
 
-Best Regards,
+>> The bug here seems defined up to the point that we're trying to delete a
+>> subvolume that's a mountpoint. My next guess is that a check
+>> 
+>> 	if (d_mountpoint(&dentry)) { ... }
+>> 
+>> could work.
+>
+> That was my first instinct as well, but d_mountpoint() is true for
+> dentries that have a filesystem mounted on them (e.g., after mount
+> /dev/sda1 /mnt, the dentry for "/mnt"), not the dentry that is mounted.
+>
+> I poked around the mount code for awhile and couldn't come up with
+> anything using the existing interface. Mounting subvolumes bubbles down
+> to mount_subtree(), which doesn't really leave any traces of which
+> subvolume is mounted except for the dentry in struct vfsmount.
+>
+> (As far as I can tell, under the covers subvolume deletion is more or
+> less equivalent to an rm -rf, and we obviously don't do anything to stop
+> users from doing that on the root of their mounted filesystem, but it
+> appears that users expect the original behavior.)
+>
+> Here's an idea: mark mount root dentries as such in the VFS and check it
+> in the Btrfs code. Adding fsdevel ML for comments
+> (https://lkml.org/lkml/2015/3/30/125 is the original message).
 
-Matt Grant
+Marking root dentries is needed to fix the bug that you can escape
+the limitations of loopback mounts with a carefully placed rename.
 
+I have a patch cooking that marks mountpoints and tracks all of the
+mounts on a dentry.  So except for the possibility of stepping on each
+others toes I have no objections.
+
+Eric
+
+> ----
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 74609b9..8a0933d 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2384,6 +2384,11 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+>  		goto out_dput;
+>  	}
+>  
+> +	if (d_is_mount_root(dentry)) {
+> +		err = -EBUSY;
+> +		goto out_dput;
+> +	}
+> +
+>  	mutex_lock(&inode->i_mutex);
+>  
+>  	/*
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 82ef140..a28ca15 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -920,6 +920,10 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
+>  		return ERR_CAST(root);
+>  	}
+>  
+> +	spin_lock(&root->d_lock);
+> +	root->d_flags |= DCACHE_MOUNT_ROOT;
+> +	spin_unlock(&root->d_lock);
+> +
+>  	mnt->mnt.mnt_root = root;
+>  	mnt->mnt.mnt_sb = root->d_sb;
+>  	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
+> @@ -1017,6 +1021,8 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+>  
+>  static void cleanup_mnt(struct mount *mnt)
+>  {
+> +	struct dentry *root = mnt->mnt.mnt_root;
+> +
+>  	/*
+>  	 * This probably indicates that somebody messed
+>  	 * up a mnt_want/drop_write() pair.  If this
+> @@ -1031,7 +1037,10 @@ static void cleanup_mnt(struct mount *mnt)
+>  	if (unlikely(mnt->mnt_pins.first))
+>  		mnt_pin_kill(mnt);
+>  	fsnotify_vfsmount_delete(&mnt->mnt);
+> -	dput(mnt->mnt.mnt_root);
+> +	spin_lock(&root->d_lock);
+> +	root->d_flags &= ~DCACHE_MOUNT_ROOT;
+> +	spin_unlock(&root->d_lock);
+> +	dput(root);
+>  	deactivate_super(mnt->mnt.mnt_sb);
+>  	mnt_free_id(mnt);
+>  	call_rcu(&mnt->mnt_rcu, delayed_free_vfsmnt);
+> diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+> index d835879..d974ab8 100644
+> --- a/include/linux/dcache.h
+> +++ b/include/linux/dcache.h
+> @@ -225,6 +225,7 @@ struct dentry_operations {
+>  
+>  #define DCACHE_MAY_FREE			0x00800000
+>  #define DCACHE_FALLTHRU			0x01000000 /* Fall through to lower layer */
+> +#define DCACHE_MOUNT_ROOT		0x02000000 /* is the root of a mount */
+>  
+>  extern seqlock_t rename_lock;
+>  
+> @@ -401,6 +402,16 @@ static inline bool d_mountpoint(const struct dentry *dentry)
+>  	return dentry->d_flags & DCACHE_MOUNTED;
+>  }
+>  
+> +static inline bool d_is_mount_root(const struct dentry *dentry)
+> +{
+> +	bool ret;
+> +
+> +	spin_lock(&dentry->d_lock);
+> +	ret = dentry->d_flags & DCACHE_MOUNT_ROOT;
+> +	spin_unlock(&dentry->d_lock);
+> +	return ret;
+> +}
+> +
+>  /*
+>   * Directory cache entry type accessor functions.
+>   */
+> ----

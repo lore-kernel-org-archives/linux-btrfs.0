@@ -1,40 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:36040 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753568AbbDATsW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 15:48:22 -0400
-Received: by iedm5 with SMTP id m5so52597305ied.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 12:48:21 -0700 (PDT)
+Received: from mail-ig0-f169.google.com ([209.85.213.169]:33198 "EHLO
+	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752799AbbDAUOu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 16:14:50 -0400
+Received: by ignm3 with SMTP id m3so37850360ign.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 13:14:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <551B951A.2030606@oracle.com>
-References: <CADw2B2Nxr5PPSaVWpQWxg0ZaXYSpOTye_pMU1HbjCHif8q9_LQ@mail.gmail.com>
-	<550FCD9C.1000706@oracle.com>
-	<CAGfcS_miW0=6A7a5PAQZcseCbS1KDpTPM7woKTosMjnAB3C3Cw@mail.gmail.com>
-	<CAGfcS_nmUyBMZyrr_9pzvKxVFMJVfsmPb3DM83aaxCSUTj-2NA@mail.gmail.com>
-	<551104B9.2010105@oracle.com>
-	<CAGfcS_nc03H7ekvHBjZF7wEp2wFXuCXPA4Ar09mte4-+jOQKUA@mail.gmail.com>
-	<551B951A.2030606@oracle.com>
-Date: Wed, 1 Apr 2015 15:48:20 -0400
-Message-ID: <CAGfcS_kYpMo-VNp8cSCbzihPsEDzxCnG_V3WrkgqYc6i6gOsTg@mail.gmail.com>
-Subject: Re: Upgrade to 3.19.2 Kernel fails to boot
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: "G. Richard Bellamy" <rbellamy@pteradigm.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CACPiFCKQBcNepbEZMZUpqkhiv=SsfyS+Y_35SU-zpT01+gOr9g@mail.gmail.com>
+References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
+	<CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
+	<CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
+	<CAJCQCtRy4gzXYqHeoqdtv+Q-3Js7pthXMPa5X_gGHbSynktbBQ@mail.gmail.com>
+	<CACPiFCKKb6SGZubGRMka3JmvFvtC64PxQ5PpJ6VR56gKcjXwdA@mail.gmail.com>
+	<CAJCQCtSDSW3ZB5LE=Y5AJgWWgP=Lo6XFXTGZMLVQMwd36QQNMA@mail.gmail.com>
+	<CACPiFCKx7G3pYdSs_MBne5Z6XP+zbgQK_iaNWvMQPs76R=VQNg@mail.gmail.com>
+	<CAJCQCtShxpMC10QXJ8=rQCa2SaZ56d4kwH2riL4mEChCC-WvHg@mail.gmail.com>
+	<CACPiFCL7L=U3jfV1oU9th+siGb8qcdqU4WHUOCOBnzo=N5MCGA@mail.gmail.com>
+	<CAJCQCtTqDRwrvZHKMgx0hHjNnZh9pcen9xcw1=PV2nLMiU_jag@mail.gmail.com>
+	<CACPiFCLE0T208BPhkzCRpwfSz7gRpZD=9eCdrZp1mTRXzJsqJg@mail.gmail.com>
+	<CAJCQCtR+3JiC4Vsb0gn19xe_Kd8atYUn99BBinfZn=4W7a7xDg@mail.gmail.com>
+	<CACPiFCKQBcNepbEZMZUpqkhiv=SsfyS+Y_35SU-zpT01+gOr9g@mail.gmail.com>
+Date: Wed, 1 Apr 2015 14:14:49 -0600
+Message-ID: <CAJCQCtTU=fu5NVGPhw6nqyULUWVhhsJDfXJUs5rX-jWO0TC4yg@mail.gmail.com>
+Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
+From: Chris Murphy <lists@colorremedies.com>
+To: Martin Langhoff <martin.langhoff@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 1, 2015 at 2:50 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
+On Wed, Apr 1, 2015 at 1:23 PM, Martin Langhoff
+<martin.langhoff@gmail.com> wrote:
+> On Wed, Apr 1, 2015 at 2:54 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> Re-run the btrfs check. The error is still there even after a --repair.
 >
-> Eric found something like this and has a fix with in the email.
-> Sub: "I think "btrfs: fix leak of path in btrfs_find_item" broke stable
-> trees ..."
+> Bingo! You are right the error persists.
 >
+> It has no effect on my use of the system right now. Is anyone
+> interested in debugging this further?
 
-I don't mind trying this patch if the maintainers recommend it.  I'm
-still getting panics every few days and 3.18.10 won't mount my root
-filesystem, so I've been running on 3.18.8.
+400 errors, nbytes wrong, isn't repaired by current btrfs check
+https://bugzilla.kernel.org/show_bug.cgi?id=90071
 
---
-Rich
+What's interesting in that bug report that I'd forgotten about?
+
+># btrfs inspect inode 804 /mnt/root
+>/mnt/root/etc/shadow-
+
+Different inode number, but the shadow file is affected. In every
+single case I've had now (about 1/2 dozen) with this errors 400
+message, it's involved the shadow file. I have no idea what's going on
+between Btrfs and the shadow file, but something seems to be. Or it's
+quite a coincidence.
+
+
+
+
+-- 
+Chris Murphy

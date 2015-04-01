@@ -1,43 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37583 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751910AbbDABj2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 21:39:28 -0400
-Date: Tue, 31 Mar 2015 21:39:21 -0400
-From: Chris Mason <clm@fb.com>
-Subject: Re: readdir tree/page lock inversion
-To: Zach Brown <zab@zabbo.net>
-CC: <linux-btrfs@vger.kernel.org>
-Message-ID: <1427852361.24929.2@mail.thefacebook.com>
-In-Reply-To: <20150331234553.GA20542@lenny.home.zabbo.net>
-References: <20150331234553.GA20542@lenny.home.zabbo.net>
+Received: from userp1040.oracle.com ([156.151.31.81]:48512 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752128AbbDAGni (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 02:43:38 -0400
+Message-ID: <551B9333.8070805@oracle.com>
+Date: Wed, 01 Apr 2015 14:41:55 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org
+CC: jeffm@suse.com
+Subject: Re: [PATCH v2] Btrfs: add debugfs file to test transaction aborts
+References: <1427829524-23946-1-git-send-email-fdmanana@suse.com> <1427843497-7733-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1427843497-7733-1-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 31, 2015 at 7:45 PM, Zach Brown <zab@zabbo.net> wrote:
-> We've known for eons that it's not great that readdir holds tree locks
-> while calling mkwrite by way of dir_emit().  I fiddled around and 
-> found
-> a reliable if goofy deadlock reproducer.  It typically takes a few
-> seconds on modest hardware here (single package, dual core/ht, single
-> spindle.)
-> 
-> I made a quick attempt at refactoring readdir to stage entries in a
-> locally allocated page before releasing the locks and emitting them 
-> but
-> unfortunately my eyeballs fell out and one of the cats ran off with
-> them.  Maybe someone else will have more luck.
-
-Ok, copying into a temporary page (or just a temp extent buffer) really 
-is the best way.  Basically copy out the extent buffer right after the 
-btrfs_search_slot and then process the local copy.
-
-I'll take a look for the merge window.
-
--chris
 
 
+> +bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info)
+> +{
+> +	if (!btrfs_debugfs_label_trans_abort[0])
+> +		return false;
+> +	return strcmp(fs_info->super_copy->label,
+> +		      btrfs_debugfs_label_trans_abort) == 0;
+> +}
+> +
 
+  label is not mandatory to be present.
+
+  did I missing something ?
+
+Thanks, Anand

@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:33198 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752799AbbDAUOu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 16:14:50 -0400
-Received: by ignm3 with SMTP id m3so37850360ign.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 13:14:50 -0700 (PDT)
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:35858 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751374AbbDAUVT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 16:21:19 -0400
+Received: by igbud6 with SMTP id ud6so59064963igb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 13:21:19 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CACPiFCKQBcNepbEZMZUpqkhiv=SsfyS+Y_35SU-zpT01+gOr9g@mail.gmail.com>
+In-Reply-To: <CAJCQCtTU=fu5NVGPhw6nqyULUWVhhsJDfXJUs5rX-jWO0TC4yg@mail.gmail.com>
 References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
 	<CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
 	<CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
@@ -20,43 +20,26 @@ References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
 	<CACPiFCLE0T208BPhkzCRpwfSz7gRpZD=9eCdrZp1mTRXzJsqJg@mail.gmail.com>
 	<CAJCQCtR+3JiC4Vsb0gn19xe_Kd8atYUn99BBinfZn=4W7a7xDg@mail.gmail.com>
 	<CACPiFCKQBcNepbEZMZUpqkhiv=SsfyS+Y_35SU-zpT01+gOr9g@mail.gmail.com>
-Date: Wed, 1 Apr 2015 14:14:49 -0600
-Message-ID: <CAJCQCtTU=fu5NVGPhw6nqyULUWVhhsJDfXJUs5rX-jWO0TC4yg@mail.gmail.com>
+	<CAJCQCtTU=fu5NVGPhw6nqyULUWVhhsJDfXJUs5rX-jWO0TC4yg@mail.gmail.com>
+Date: Wed, 1 Apr 2015 14:21:19 -0600
+Message-ID: <CAJCQCtR+QkVrsGsKHKCqVmGgW5ww6g0mgsTjuqd7iScxZaD75g@mail.gmail.com>
 Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
 From: Chris Murphy <lists@colorremedies.com>
-To: Martin Langhoff <martin.langhoff@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+Cc: Martin Langhoff <martin.langhoff@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 1, 2015 at 1:23 PM, Martin Langhoff
-<martin.langhoff@gmail.com> wrote:
-> On Wed, Apr 1, 2015 at 2:54 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> Re-run the btrfs check. The error is still there even after a --repair.
->
-> Bingo! You are right the error persists.
->
-> It has no effect on my use of the system right now. Is anyone
-> interested in debugging this further?
+Related bugs:
 
-400 errors, nbytes wrong, isn't repaired by current btrfs check
-https://bugzilla.kernel.org/show_bug.cgi?id=90071
+https://bugzilla.kernel.org/show_bug.cgi?id=68411
+https://bugzilla.redhat.com/show_bug.cgi?id=1037963
 
-What's interesting in that bug report that I'd forgotten about?
+The RHBZ one also mentioned the shadow file.
 
-># btrfs inspect inode 804 /mnt/root
->/mnt/root/etc/shadow-
+Anyway, it seems to be a somewhat known problem, but it's just not
+known yet what causes it.
 
-Different inode number, but the shadow file is affected. In every
-single case I've had now (about 1/2 dozen) with this errors 400
-message, it's involved the shadow file. I have no idea what's going on
-between Btrfs and the shadow file, but something seems to be. Or it's
-quite a coincidence.
-
-
-
-
--- 
 Chris Murphy

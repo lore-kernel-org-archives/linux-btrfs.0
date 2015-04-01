@@ -1,96 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:45340 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752048AbbDAPmE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 11:42:04 -0400
-Date: Wed, 1 Apr 2015 15:42:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Andy Smith <andy@strugglers.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Is this normal? Should I use scrub?
-Message-ID: <20150401154202.GD32078@carfax.org.uk>
-References: <20150401151114.GR4327@bitfolk.com>
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:38521 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752220AbbDAPmh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 11:42:37 -0400
+Received: by wibgn9 with SMTP id gn9so71792286wib.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 08:42:36 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="7DO5AaGCk89r4vaK"
-In-Reply-To: <20150401151114.GR4327@bitfolk.com>
+In-Reply-To: <CAJCQCtRy4gzXYqHeoqdtv+Q-3Js7pthXMPa5X_gGHbSynktbBQ@mail.gmail.com>
+References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
+ <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
+ <CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com> <CAJCQCtRy4gzXYqHeoqdtv+Q-3Js7pthXMPa5X_gGHbSynktbBQ@mail.gmail.com>
+From: Martin Langhoff <martin.langhoff@gmail.com>
+Date: Wed, 1 Apr 2015 11:42:16 -0400
+Message-ID: <CACPiFCKKb6SGZubGRMka3JmvFvtC64PxQ5PpJ6VR56gKcjXwdA@mail.gmail.com>
+Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Chris, list,
 
---7DO5AaGCk89r4vaK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+thanks for your debugging ideas so far. Now this gets interesting. I
+booted off a LiveUSB disk, and it just mounted sysroot. WTH?
 
-   Hi, Andy,
+See below. Perhaps the newer kernel (in latest F21) has regressed in
+handling some kinds of errors during mount, or the dracut/systemd
+mounting process is less resilient than mounting under a fully booted
+system?
 
-On Wed, Apr 01, 2015 at 03:11:14PM +0000, Andy Smith wrote:
-> I have a 6 device RAID-1 filesystem:
 
-[snip tale of a filesystem with out of data data on one copy of the RAID]
+[root@localhost liveuser]# uname -a
+Linux localhost 3.17.4-301.fc21.x86_64 #1 SMP Thu Nov 27 19:09:10 UTC
+2014 x86_64 x86_64 x86_64 GNU/Linux
 
-> I have now got a new enclosure and put this system back together
-> with all six devices. I was not expecting this filesystem to mount
-> without assistance on boot because of /dev/sdk being "stale"
-> compared to the other devices. I suppose this incorrect view is a
-> holdover from my experience with mdadm.
-> 
-> Anyway, I booted it and /srv/tank was mounted automatically with all
-> six devices.  I got a bunch of these messages as soon as it was
-> mounted:
-> 
->     http://pastie.org/private/2ghahjwtzlcm6hwp66hkg
-> 
-> There's lots more of it but it's all like that. That paste is from
-> the end of the log and there haven't been any more such message
-> since, so that's about 20 minutes (the times are in GMT).
-> 
-> Is that normal output indicating that btrfs is repairing the
-> "staleness" of sdk from the other copy?
+## Before booting into liveUSB, I made a copy of
+## rdsosreport.txt in the /home partition
+## which is a separate btrfs fs, and seems
+## to not be affected by the problem at all
+[root@localhost liveuser]# mkdir /myhome
+[root@localhost liveuser]# mkdir /mysysroot
+[root@localhost liveuser]# mount /dev/sda2 /myhome
+[root@localhost liveuser]# ls /myhome
+home  rdsosreport.txt
 
-   Yes, exactly. That output you pasted looks pretty much exactly like
-what I'd expect to see in the situation described above. You might
-also expect to see some checksum errors corrected in the data, as well
-as the metadata messages you're getting.
+[root@localhost liveuser]# fpaste < /myhome/rdsosreport.txt
+Uploading (93.4KiB)...
+http://ur1.ca/k2zue -> http://paste.fedoraproject.org/205971/01928142
 
-> I seem to be able to use the filesystem and a cursory inspection
-> isn't turning up anything that I can't read or that seems
-> corrupted. I will now run checksums against my last good backup.
-> 
-> Should I run a scrub as well?
+#### Strange, on first book from live USB F21 image, it just mounts
+## (I tried about half a dozen cold boots earlier -- all resulting in
+##  the same initramfs/dracut/systemd emergency shell...)
+[root@localhost liveuser]# mount /dev/sda6 /mysysroot
 
-   Yes. The output you've had so far will be just the pieces that the
-FS has tried to read, and where, as a result, it's been able to detect
-the out-of-date data. A scrub will check and fix everything.
+Apr 01 11:26:51 localhost kernel: BTRFS info (device sda6): disk space
+caching is enabled
+Apr 01 11:26:56 localhost kernel: BTRFS: checking UUID tree
+Apr 01 11:26:56 localhost kernel: SELinux: initialized (dev sda6, type
+btrfs), uses xattr
 
-   Hugo.
+[root@localhost liveuser]# ls /mysysroot
+root
+[root@localhost liveuser]# ls /mysysroot/root
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root
+run  sbin  srv  sys  sysroot  tmp  usr  var
 
+[root@localhost liveuser]# umount /dev/sda6
+[root@localhost liveuser]# btrfs check /dev/sda6
+Checking filesystem on /dev/sda6
+UUID: 94637b35-a294-4be2-aa47-82c52d6d53ef
+checking extents
+checking free space cache
+checking fs roots
+root 256 inode 39841 errors 400, nbytes wrong
+found 7747100703 bytes used err is 1
+total csum bytes: 11912932
+total tree bytes: 476725248
+total fs tree bytes: 434733056
+total extent tree bytes: 22986752
+btree space waste bytes: 83962424
+file data blocks allocated: 30820143104
+ referenced 11997040640
+Btrfs v3.17
+
+[root@localhost liveuser]# btrfs check --repair /dev/sda6
+enabling repair mode
+Fixed 0 roots.
+Checking filesystem on /dev/sda6
+UUID: 94637b35-a294-4be2-aa47-82c52d6d53ef
+checking extents
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 256 inode 39841 errors 400, nbytes wrong
+found 7747100703 bytes used err is 1
+total csum bytes: 11912932
+total tree bytes: 476725248
+total fs tree bytes: 434733056
+total extent tree bytes: 22986752
+btree space waste bytes: 83962424
+file data blocks allocated: 30820143104
+ referenced 11997040640
+Btrfs v3.17
+
+
+
+EOM
+
+cheers,
+
+
+
+martin
 -- 
-Hugo Mills             | My karma has run over my dogma.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: 65E74AC0          |
-
---7DO5AaGCk89r4vaK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVHBHJAAoJEFheFHXiqx3klJ4P/iwuiXnsWM+4S568jf7XqqZe
-iEqQTp7n8Vlh3DerW6riIW+DoBfhBe7r1wNUkV5lu2VohSVuOEUIa9U1FKr+TxIj
-FS2oFIz7Y0Y+KhImpj6Ow8qy+ew4N/EghMzu3l/W48DFarkgG1byVSBeDJ2/fjvb
-+jyEqcV6NNS+VgrCoyiTa8R4TjAIfnO1M1XaZPjxqo3ZIAEk8EbwzRIc7y8yQYJN
-ubd0V+WKDlyt/IsjVxqTs+x//1lY5QwGJO3iLk7nNt6PKUZW/pNSOSql7ojYCJyD
-y5YFr9bNRU8Lknj7UFWapnKfNRkhTS+0uUWfKpGmXAFQA9Uqyu00LUxwdxrVdV7X
-HujHA/UNzbSVvM3NuJA0e8W/etWpdG29G/aqxUIS3fGXtC1CwD5JftQtcKV9fHnW
-gBziWPxuaIY33fD4kcV+NZ0tIdUf72jMrd2YGZRD9/ECcAWueFdbDDIvWd3DfZgZ
-23Mgc2lRjdFNOODQ5OvynasZbn6PF/xodZIhB9UVPAxBFCxkSTg3EOvc7whV//hY
-hU9UapwtdcPIArE91RvCHQlh8lPyJ/b0o0BHjUIlq36kGF1v3YoIRl9OpW2nh1gM
-+kDlo16LIsHyvvr2KGgRIWZDvt8buDZnYEJbmxsv/ti5eGl9zZzKWwcYJ0eVGLRI
-TM6hAKkyyJXJKd2dhKM7
-=i4nk
------END PGP SIGNATURE-----
-
---7DO5AaGCk89r4vaK--
+ martin.langhoff@gmail.com
+ -  ask interesting questions
+ - don't get distracted with shiny stuff  - working code first
+ ~ http://docs.moodle.org/en/User:Martin_Langhoff

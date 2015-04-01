@@ -1,230 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62923 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753003AbbDAHZ1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 03:25:27 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t317OKgO008086
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Apr 2015 15:24:20 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs: delayed-ref: Cleanup the unneeded functions.
-Date: Wed, 1 Apr 2015 15:25:20 +0800
-Message-ID: <1427873120-440-4-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1427873120-440-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1427873120-440-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-ig0-f170.google.com ([209.85.213.170]:34483 "EHLO
+	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750726AbbDAIdq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 04:33:46 -0400
+Received: by igcau2 with SMTP id au2so27269884igc.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 01:33:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <551B9333.8070805@oracle.com>
+References: <1427829524-23946-1-git-send-email-fdmanana@suse.com>
+	<1427843497-7733-1-git-send-email-fdmanana@suse.com>
+	<551B9333.8070805@oracle.com>
+Date: Wed, 1 Apr 2015 09:33:45 +0100
+Message-ID: <CAL3q7H7y=WGa-XBp8GTggZw2vbpfh_kjwnqx+ybBTW_jF2Qd9w@mail.gmail.com>
+Subject: Re: [PATCH v2] Btrfs: add debugfs file to test transaction aborts
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: Filipe Manana <fdmanana@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup the rb_tree merge/insert/update functions, since now we use list
-instead of rb_tree now.
+On Wed, Apr 1, 2015 at 7:41 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
+>
+>
+>> +bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info)
+>> +{
+>> +       if (!btrfs_debugfs_label_trans_abort[0])
+>> +               return false;
+>> +       return strcmp(fs_info->super_copy->label,
+>> +                     btrfs_debugfs_label_trans_abort) == 0;
+>> +}
+>> +
+>
+>
+>  label is not mandatory to be present.
+>
+>  did I missing something ?
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/delayed-ref.c | 174 -------------------------------------------------
- 1 file changed, 174 deletions(-)
+Yes. It's intentional.
+This is for testing purposes only, not for users.
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 14bd476..4fff260 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -84,87 +84,6 @@ static int comp_data_refs(struct btrfs_delayed_data_ref *ref2,
- 	return 0;
- }
- 
--/*
-- * entries in the rb tree are ordered by the byte number of the extent,
-- * type of the delayed backrefs and content of delayed backrefs.
-- */
--static int comp_entry(struct btrfs_delayed_ref_node *ref2,
--		      struct btrfs_delayed_ref_node *ref1,
--		      bool compare_seq)
--{
--	if (ref1->bytenr < ref2->bytenr)
--		return -1;
--	if (ref1->bytenr > ref2->bytenr)
--		return 1;
--	if (ref1->is_head && ref2->is_head)
--		return 0;
--	if (ref2->is_head)
--		return -1;
--	if (ref1->is_head)
--		return 1;
--	if (ref1->type < ref2->type)
--		return -1;
--	if (ref1->type > ref2->type)
--		return 1;
--	if (ref1->no_quota > ref2->no_quota)
--		return 1;
--	if (ref1->no_quota < ref2->no_quota)
--		return -1;
--	/* merging of sequenced refs is not allowed */
--	if (compare_seq) {
--		if (ref1->seq < ref2->seq)
--			return -1;
--		if (ref1->seq > ref2->seq)
--			return 1;
--	}
--	if (ref1->type == BTRFS_TREE_BLOCK_REF_KEY ||
--	    ref1->type == BTRFS_SHARED_BLOCK_REF_KEY) {
--		return comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref2),
--				      btrfs_delayed_node_to_tree_ref(ref1),
--				      ref1->type);
--	} else if (ref1->type == BTRFS_EXTENT_DATA_REF_KEY ||
--		   ref1->type == BTRFS_SHARED_DATA_REF_KEY) {
--		return comp_data_refs(btrfs_delayed_node_to_data_ref(ref2),
--				      btrfs_delayed_node_to_data_ref(ref1));
--	}
--	BUG();
--	return 0;
--}
--
--/*
-- * insert a new ref into the rbtree.  This returns any existing refs
-- * for the same (bytenr,parent) tuple, or NULL if the new node was properly
-- * inserted.
-- */
--static struct btrfs_delayed_ref_node *tree_insert(struct rb_root *root,
--						  struct rb_node *node)
--{
--	struct rb_node **p = &root->rb_node;
--	struct rb_node *parent_node = NULL;
--	struct btrfs_delayed_ref_node *entry;
--	struct btrfs_delayed_ref_node *ins;
--	int cmp;
--
--	ins = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
--	while (*p) {
--		parent_node = *p;
--		entry = rb_entry(parent_node, struct btrfs_delayed_ref_node,
--				 rb_node);
--
--		cmp = comp_entry(entry, ins, 1);
--		if (cmp < 0)
--			p = &(*p)->rb_left;
--		else if (cmp > 0)
--			p = &(*p)->rb_right;
--		else
--			return entry;
--	}
--
--	rb_link_node(node, parent_node, p);
--	rb_insert_color(node, root);
--	return NULL;
--}
--
- /* insert a new ref to head ref rbtree */
- static struct btrfs_delayed_ref_head *htree_insert(struct rb_root *root,
- 						   struct rb_node *node)
-@@ -277,57 +196,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
- 		trans->delayed_ref_updates--;
- }
- 
--static int merge_ref(struct btrfs_trans_handle *trans,
--		     struct btrfs_delayed_ref_root *delayed_refs,
--		     struct btrfs_delayed_ref_head *head,
--		     struct btrfs_delayed_ref_node *ref, u64 seq)
--{
--	struct rb_node *node;
--	int mod = 0;
--	int done = 0;
--
--	node = rb_next(&ref->rb_node);
--	while (!done && node) {
--		struct btrfs_delayed_ref_node *next;
--
--		next = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
--		node = rb_next(node);
--		if (seq && next->seq >= seq)
--			break;
--		if (comp_entry(ref, next, 0))
--			continue;
--
--		if (ref->action == next->action) {
--			mod = next->ref_mod;
--		} else {
--			if (ref->ref_mod < next->ref_mod) {
--				struct btrfs_delayed_ref_node *tmp;
--
--				tmp = ref;
--				ref = next;
--				next = tmp;
--				done = 1;
--			}
--			mod = -next->ref_mod;
--		}
--
--		drop_delayed_ref(trans, delayed_refs, head, next);
--		ref->ref_mod += mod;
--		if (ref->ref_mod == 0) {
--			drop_delayed_ref(trans, delayed_refs, head, ref);
--			done = 1;
--		} else {
--			/*
--			 * You can't have multiples of the same ref on a tree
--			 * block.
--			 */
--			WARN_ON(ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
--				ref->type == BTRFS_SHARED_BLOCK_REF_KEY);
--		}
--	}
--	return done;
--}
--
- int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
- 			    struct btrfs_delayed_ref_root *delayed_refs,
- 			    u64 seq)
-@@ -401,48 +269,6 @@ again:
- }
- 
- /*
-- * helper function to update an extent delayed ref in the
-- * rbtree.  existing and update must both have the same
-- * bytenr and parent
-- *
-- * This may free existing if the update cancels out whatever
-- * operation it was doing.
-- */
--static noinline void
--update_existing_ref(struct btrfs_trans_handle *trans,
--		    struct btrfs_delayed_ref_root *delayed_refs,
--		    struct btrfs_delayed_ref_head *head,
--		    struct btrfs_delayed_ref_node *existing,
--		    struct btrfs_delayed_ref_node *update)
--{
--	if (update->action != existing->action) {
--		/*
--		 * this is effectively undoing either an add or a
--		 * drop.  We decrement the ref_mod, and if it goes
--		 * down to zero we just delete the entry without
--		 * every changing the extent allocation tree.
--		 */
--		existing->ref_mod--;
--		if (existing->ref_mod == 0)
--			drop_delayed_ref(trans, delayed_refs, head, existing);
--		else
--			WARN_ON(existing->type == BTRFS_TREE_BLOCK_REF_KEY ||
--				existing->type == BTRFS_SHARED_BLOCK_REF_KEY);
--	} else {
--		WARN_ON(existing->type == BTRFS_TREE_BLOCK_REF_KEY ||
--			existing->type == BTRFS_SHARED_BLOCK_REF_KEY);
--		/*
--		 * the action on the existing ref matches
--		 * the action on the ref we're trying to add.
--		 * Bump the ref_mod by one so the backref that
--		 * is eventually added/removed has the correct
--		 * reference count
--		 */
--		existing->ref_mod += update->ref_mod;
--	}
--}
--
--/*
-  * Helper to insert the ref_node to the tail or merge with tail.
-  *
-  * Return 0 for insert.
+thanks
+
+>
+> Thanks, Anand
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.3.4
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

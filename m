@@ -1,118 +1,284 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23277 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750994AbbDGIKs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 04:10:48 -0400
-Message-ID: <55239094.2010109@oracle.com>
-Date: Tue, 07 Apr 2015 16:08:52 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:41480 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751429AbbDASoh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Apr 2015 14:44:37 -0400
+Date: Wed, 1 Apr 2015 14:44:34 -0400
+From: Brian Foster <bfoster@redhat.com>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org
+Subject: Re: [PATCH] xfstests: generic: test for discard properly discarding
+ unused extents
+Message-ID: <20150401184434.GG4756@bfoster.bfoster>
+References: <55199FCA.9040503@suse.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/27 V5] provide framework so that sysfs attributs from
- the fs_devices can be added
-In-Reply-To: <1426845702-6298-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55199FCA.9040503@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1426845702-6298-1-git-send-email-anand.jain@oracle.com>
 
+On Mon, Mar 30, 2015 at 03:11:06PM -0400, Jeff Mahoney wrote:
+> This tests tests four conditions where discard can potentially not
+> discard unused extents completely.
+> 
+> We test, with -o discard and with fstrim, scenarios of removing many
+> relatively small files and removing several large files.
+> 
+> The important part of the two scenarios is that the large files must be
+> large enough to span a blockgroup alone. It's possible for an
+> entire block group to be emptied and dropped without an opportunity to
+> discard individual extents as would happen with smaller files.
+> 
+> The test confirms the discards have occured by using a sparse file
+> mounted via loopback to punch holes and then check how many blocks
+> are still allocated within the file.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
 
-Hi Dave,
+The code looks mostly Ok to me, a few notes below. Those aside, this is
+a longish test. It takes me about 8 minutes to run on my typical low end
+vm.
 
-  Can I check if this patch set is lined up for the integration branch ?
-  Any comments ?
+Is the 1GB block group magic value mutable in any way, or is it a
+hardcoded thing (for btrfs I presume)? It would be nice if we could
+shrink that a bit. If not, perhaps there are some other ways to reduce
+the runtime...
 
-Thanks, Anand
+- Is there any reason a single discard or trim test instance must be all
+large or small files? In other words, is there something that this
+wouldn't catch if the 10GB were 50% filled with large files and %50 with
+small files? That would allow us to trim the maximum on the range of
+small file creation and only have two invocations instead of four.
 
-On 03/20/2015 06:01 PM, Anand Jain wrote:
-> This patch set will provide a framework and help to create attributes
-> from the structure btrfs_fs_devices which are available even before
-> fs_info is created. So by moving the parent kobject super_kobj from
-> fs_info to btrfs_fs_devices, it will help to create attributes
-> from the btrfs_fs_devices as well.
->
-> Just to note, patch 01 to 26 does not change any of the existing btrfs
-> sysfs external kobject names and its attributes and not even the life
-> cycle of them. Changes are internal only. And to ensure the same,
-> this path has been tested with various device operations and,
-> checking and comparing the sysfs kobjects and attributes with
-> sysfs kobject and attributes with out this patch, and they remain
-> same. The test script test-btrfs-devmgt.sh can be found in the ml.
-> Patch 27, makes two kobjects fsid and devices to be created during
-> the device scan, however their attributes will continue to be created
-> at the mount as original.
->
-> v4->v5:
->    . add kobject_move patch 01/27
->    . commit corrections where necessary
->    . the individual patch version is not updated and I am maintaining
->      the patch set version as v5.
->
-> v3->v4:
->    . reorders the patches
->    . accepts Dave comment
->    . needed stale device clean up, introduced patch..
-> 	520353e Btrfs: free the stale device
->    . added cleanups to the patch to support seeding in the patch..
-> 	e311d0a Btrfs: sysfs: support seed devices in the sysfs layout v3
->    . added support to show replacing target on the sysfs in the patch..
-> 	e210d55 Btrfs: sysfs: add support to show replacing target in the sysfs
->
-> v2->v3:
->    . added missing signed-off
->    . Dave comment
->    . there isn't v2 for individual patch, I marked individual patch v3
->      where necessary
-> v1->v2:
->    . adds fresh set of patches from 12 to 24 to support seed fsids
->    on btrfs sysfs layout and the related frame work changes
->    . the patches 1 to 12 has no changes from the previous submit
->
->
-> Anand Jain (27):
->    export symbol kobject_move()
->    Btrfs: sysfs: fix, btrfs_release_super_kobj() should to clean up the
->      kobject data
->    Btrfs: sysfs: fix, fs_info kobject_unregister has init_completion()
->      twice
->    Btrfs: sysfs: fix, undo sysfs device links
->    Btrfs: sysfs: fix, kobject pointer clean up needed after kobject
->      release
->    Btrfc: sysfs: fix, check if device_dir_kobj is init before destroy
->    Btrfs: sysfs: reorder the kobject creations
->    Btrfs: sysfs: rename __btrfs_sysfs_remove_one to
->      btrfs_sysfs_remove_fsid
->    Btrfs: sysfs: introduce function btrfs_sysfs_add_fsid() to create
->      sysfs fsid
->    Btrfs: sysfs: let default_attrs be separate from the kset
->    Btrfs: sysfs: separate device kobject and its attribute creation
->    Btrfs: sysfs: move super_kobj and device_dir_kobj from fs_info to
->      btrfs_fs_devices
->    Btrfs: introduce btrfs_get_fs_uuids to get fs_uuids
->    Btrfs: sysfs: add pointer to access fs_info from fs_devices
->    Btrfs: sysfs: provide framework to remove all fsid sysfs kobject
->    Btrfs: sysfs btrfs_kobj_add_device() pass fs_devices instead of
->      fs_info
->    Btrfs: sysfs btrfs_kobj_rm_device() pass fs_devices instead of fs_info
->    Btrfs: sysfs: make btrfs_sysfs_add_fsid() non static
->    Btrfs: sysfs: make btrfs_sysfs_add_device() non static
->    Btrfs: sysfs: btrfs_sysfs_remove_fsid() make it non static
->    Btrfs: sysfs: separate kobject and attribute creation
->    Btrfs: sysfs: add support to add parent for fsid
->    Btrfs: sysfs: don't fail seeding for the sake of sysfs kobject issue
->    Btrfs: free the stale device
->    Btrfs: sysfs: add support to show replacing target in the sysfs
->    Btrfs: sysfs: support seed devices in the sysfs layout
->    Btrfs: create sys/fs/btrfs/fsid when scanned instead of when mounted
->
->   fs/btrfs/ctree.h       |   7 +-
->   fs/btrfs/dev-replace.c |   7 +-
->   fs/btrfs/disk-io.c     |  26 ++++-
->   fs/btrfs/sysfs.c       | 266 +++++++++++++++++++++++++++++++++++++++----------
->   fs/btrfs/sysfs.h       |  15 ++-
->   fs/btrfs/volumes.c     |  99 +++++++++++++++---
->   fs/btrfs/volumes.h     |   9 ++
->   lib/kobject.c          |   1 +
->   8 files changed, 346 insertions(+), 84 deletions(-)
->
+- If the 1GB thing is in fact a btrfs thing, could we make the core test
+a bit more size agnostic (e.g., perhaps pass the file count/size
+values as parameters) and then scale the parameters up exclusively for
+btrfs? For example, set defaults of fssize=1G, largefile=100MB,
+smallfile=[512b-5MB] or something of that nature and override them to
+the 10GB, 1GB, 32k-... values for btrfs? That way we don't need to write
+as much data for fs' where it might not be necessary.
+
+>  tests/generic/326     | 164 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/326.out |   5 ++
+>  tests/generic/group   |   1 +
+>  3 files changed, 170 insertions(+)
+>  create mode 100644 tests/generic/326
+>  create mode 100644 tests/generic/326.out
+> 
+> diff --git a/tests/generic/326 b/tests/generic/326
+> new file mode 100644
+> index 0000000..923a27f
+> --- /dev/null
+> +++ b/tests/generic/326
+> @@ -0,0 +1,164 @@
+> +#! /bin/bash
+> +# FSQA Test No. 326
+> +#
+> +# This test uses a loopback mount with PUNCH_HOLE support to test
+> +# whether discard operations are working as expected.
+> +#
+> +# It tests both -odiscard and fstrim.
+> +#
+> +# Copyright (C) 2015 SUSE. All Rights Reserved.
+> +# Author: Jeff Mahoney <jeffm@suse.com>
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +loopdev=
+> +tmpdir=
+> +_cleanup()
+> +{
+> +	[ -n "$tmpdir" ] && umount $tmpdir
+> +	[ -n "$loopdev" ] && losetup -d $loopdev
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_need_to_be_root
+> +_supported_fs generic
+> +_supported_os Linux
+> +_require_scratch
+> +_require_fstrim
+> +
+> +rm -f $seqres.full
+> +
+> +_scratch_mkfs &>> $seqres.full
+> +_require_fs_space $SCRATCH_MNT $(( 10 * 1024 * 1024 ))
+> +_scratch_mount
+> +
+> +test_discard()
+> +{
+> +	discard=$1
+> +	files=$2
+> +
+> +	tmpfile=$SCRATCH_MNT/testfs.img.$$
+> +	tmpdir=$SCRATCH_MNT/testdir.$$
+> +	mkdir -p $tmpdir || _fail "!!! failed to create temp mount dir"
+> +
+> +	# Create a sparse file to host the file system
+> +	dd if=/dev/zero of=$tmpfile bs=1M count=1 seek=10240 &> $seqres.full \
+> +		|| _fail "!!! failed to create fs image file"
+
+xfs_io -c "truncate ..." ?
+
+> +
+> +	opts=""
+> +	if [ "$discard" = "discard" ]; then
+> +		opts="-o discard"
+> +	fi
+> +	losetup -f $tmpfile
+> +	loopdev=$(losetup -j $tmpfile|awk -F: '{print $1}')
+> +	_mkfs_dev $loopdev &> $seqres.full
+> +	$MOUNT_PROG $opts $loopdev $tmpdir \
+> +		|| _fail "!!! failed to loopback mount"
+> +
+> +	if [ "$files" = "large" ]; then
+> +		# Create files larger than 1GB so each one occupies
+> +		# more than one block group
+> +		for n in $(seq 1 8); do
+> +			dd if=/dev/zero of=$tmpdir/file$n bs=1M count=1200 \
+> +				&> $seqres.full
+> +		done
+> +	else
+> +		# Create up to 40k files sized 32k-1GB.
+> +		mkdir -p $tmpdir/testdir
+> +		for ((i = 1; i <= 40000; i++)); do
+> +			SIZE=$(( $((1024*1024*1024)) / $(( $RANDOM + 1 )) ))
+> +			$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 $SIZE" \
+> +				$tmpdir/testdir/"${prefix}_$i" &> /dev/null
+> +			if [ $? -ne 0 ]; then
+> +				echo "Failed creating file ${prefix}_$i" \
+
+${prefix} doesn't evaluate to anything in my run of this test. $seq
+perhaps?
+
+> +					>>$seqres.full
+> +				break
+> +			fi
+> +		done
+> +	fi
+> +
+> +	sync
+> +	OSIZE="$(du -k $tmpfile|awk '{print $1}')"
+> +	du -k $tmpfile >> $seqres.full
+> +
+> +	if [ "$files" = "large" ]; then
+> +		rm $tmpdir/file?
+> +	else
+> +		rm -rf $tmpdir/testdir
+> +	fi
+> +
+> +	# Ensure everything's actually on the hosted file system
+> +	if [ "$FSTYP" = "btrfs" ]; then
+> +		_run_btrfs_util_prog filesystem sync $tmpdir
+> +	fi
+> +	sync
+> +	sync
+
+Any reason for the double syncs?
+
+> +	if [ "$discard" = "trim" ]; then
+> +		$FSTRIM_PROG $tmpdir
+> +	fi
+> +
+> +	$UMOUNT_PROG $tmpdir
+> +	rmdir $tmpdir
+> +	tmpdir=
+> +
+> +	# Sync the backing file system to ensure the hole punches have
+> +	# happened and we can trust the result.
+> +	if [ "$FSTYP" = "btrfs" ]; then
+> +		_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+> +	fi
+> +	sync
+> +	sync
+> +
+> +	NSIZE="$(du -k $tmpfile|awk '{print $1}')"
+> +	du -k $tmpfile >> $seqres.full
+> +
+> +	# Going from ~ 10GB to 50MB is a good enough test to account for
+> +	# metadata remaining on different file systems.
+> +	if [ "$NSIZE" -gt $(( 50 * 1024 )) ]; then
+> +		_fail "TRIM failed: before rm ${OSIZE}kB, after rm ${NSIZE}kB"
+> +	fi
+> +	rm $tmpfile
+> +	losetup -d $loopdev
+> +	loopdev=
+> +}
+> +
+> +
+> +echo "Testing with -odiscard, many small files"
+> +test_discard discard many
+> +
+> +echo "Testing with -odiscard, several large files"
+> +test_discard discard large
+> +
+> +echo "Testing with fstrim, many small files"
+> +test_discard trim many
+> +
+> +echo "Testing with fstrim, several large files"
+> +test_discard trim large
+> +
+> +status=0
+> +exit
+> diff --git a/tests/generic/326.out b/tests/generic/326.out
+> new file mode 100644
+> index 0000000..37b0f2c
+> --- /dev/null
+> +++ b/tests/generic/326.out
+> @@ -0,0 +1,5 @@
+> +QA output created by 084
+
+326
+
+Brian
+
+> +Testing with -odiscard, many small files
+> +Testing with -odiscard, several large files
+> +Testing with fstrim, many small files
+> +Testing with fstrim, several large files
+> diff --git a/tests/generic/group b/tests/generic/group
+> index d56d3ce..75e17fa 100644
+> --- a/tests/generic/group
+> +++ b/tests/generic/group
+> @@ -183,3 +183,4 @@
+>  323 auto aio stress
+>  324 auto fsr quick
+>  325 auto quick data log
+> +326 auto metadata
+> -- 
+> 1.8.5.6
+> 
+> 
+> -- 
+> Jeff Mahoney
+> SUSE Labs
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

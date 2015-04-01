@@ -1,95 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37268 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751030AbbDANP2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 09:15:28 -0400
-Message-ID: <551BEF67.3040305@oracle.com>
-Date: Wed, 01 Apr 2015 21:15:19 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from bitfolk.com ([85.119.80.223]:58740 "EHLO mail.bitfolk.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752278AbbDAP3u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Apr 2015 11:29:50 -0400
+Received: from andy by mail.bitfolk.com with local (Exim 4.72)
+	(envelope-from <andy@strugglers.net>)
+	id 1YdKIU-0006Cg-IZ
+	for linux-btrfs@vger.kernel.org; Wed, 01 Apr 2015 15:11:14 +0000
+Date: Wed, 1 Apr 2015 15:11:14 +0000
+From: Andy Smith <andy@strugglers.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Is this normal? Should I use scrub?
+Message-ID: <20150401151114.GR4327@bitfolk.com>
 MIME-Version: 1.0
-To: Martin <m_btrfs@ml1.co.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: ERROR: error removing the device '/dev/sdXN' - Inappropriate
- ioctl for device
-References: <mfcdep$d97$1@ger.gmane.org> <20150331173756.GF6821@twin.jikos.cz> <mfeo14$sib$1@ger.gmane.org> <551B98FF.8070000@oracle.com> <mfgiot$3ck$1@ger.gmane.org>
-In-Reply-To: <mfgiot$3ck$1@ger.gmane.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
+I have a 6 device RAID-1 filesystem:
 
-  Looks like an option to use devid to delete a device would
-  have mitigated the issue.  Also the error reported is no
-  where near the reality. Will fix them.
+$ sudo btrfs fi df /srv/tank
+Data, RAID1: total=1.24TiB, used=1.24TiB
+System, RAID1: total=32.00MiB, used=184.00KiB
+Metadata, RAID1: total=3.00GiB, used=1.65GiB
+unknown, single: total=512.00MiB, used=0.00
+$ sudo btrfs fi sh /srv/tank
+Label: 'tank'  uuid: 472ee2b3-4dc3-4fc1-80bc-5ba967069ceb
+        Total devices 6 FS bytes used 1.24TiB
+        devid    2 size 1.82TiB used 384.03GiB path /dev/sdh
+        devid    3 size 1.82TiB used 383.00GiB path /dev/sdg
+        devid    4 size 1.82TiB used 384.00GiB path /dev/sdf
+        devid    5 size 2.73TiB used 1.13TiB path /dev/sdk
+        devid    6 size 1.82TiB used 121.00GiB path /dev/sdj
+        devid    7 size 2.73TiB used 116.00GiB path /dev/sde
 
-  Thanks for reporting.
+Btrfs v3.14.2
 
-Anand
+All of these devices are in an external eSATA enclosure.
 
+A few days ago (I believe) something went wrong with the enclosure
+hardware and the SCSI bus kept getting reset over and over. At one
+point three of the six devices were kicked out and the filesystem
+was left running (read-only) on three devices.
 
-On 04/01/2015 06:54 PM, Martin wrote:
-> On 01/04/15 08:06, Anand Jain wrote:
->>
->>>>> btrfs device delete /dev/sdf5 /mnt/data2
->>>>>
->>>>> ERROR: error removing the device '/dev/sdf5' - Inappropriate ioctl for
->>>>> device
->>
->>   very strange. 'btrfs fi show -m' shows btrfs fs(s) that are mounted.
->
-> Looks like my /dev/sdf isn't responding with anything useful at all... A
-> firmware crash?... (This is for a 256GB SSD.)
->
->
-> # btrfs fi show -m
->
-> [...]
->
-> Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
->          Total devices 3 FS bytes used 159.31GiB
->          devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
->          devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
->          devid    3 size 206.47GiB used 206.47GiB path /dev/sdf5
->
->
-> btrfs-progs v3.19.1
->
->
->
-> # smartctl -i /dev/sdf
-> smartctl 6.3 2014-07-26 r3976 [x86_64-linux-3.14.10-gentoo_s03a_11]
-> (local build)
-> Copyright (C) 2002-14, Bruce Allen, Christian Franke, www.smartmontools.org
->
-> === START OF INFORMATION SECTION ===
-> Vendor:               /7:0:0:0
-> Product:
-> Compliance:           SPC-5
-> User Capacity:        600,332,565,813,390,450 bytes [600 PB]
-> Logical block size:   774843950 bytes
-> scsiModePageOffset: response length too short, resp_len=47 offset=50
-> bd_len=46
-> scsiModePageOffset: response length too short, resp_len=47 offset=50
-> bd_len=46
->>> Terminate command early due to bad response to IEC mode page
-> A mandatory SMART command failed: exiting. To continue, add one or more
-> '-T permissive' options.
->
->
->
-> And btrfs is still running ok so far... I'll be swapping that device at
-> the weekend. (First chance I have for a Sunday shutdown. :-( )
->
->
-> Still... For administering btrfs, it is a little disturbing not to be
-> able to remove/delete a device unless that device is both mounted and
-> working...
->
-> Or is that where the "missing" option comes in?
->
->
->
-> Comments welcomed,
->
-> Thanks,
-> Martin
+Through some trial and error I determined that the enclosure was
+taking exception to one of the devices, and by removing it I was
+able to get things up and running with five devices, writeable,
+mounted in degraded mode. /dev/sdk is the device that was kept out
+of the filesystem.
+
+I do not believe that there is anything wrong with /dev/sdk as I put
+it in another system and was able to read it entirely, do SMART long
+tests on it, etc.
+
+I wasn't able to prove it is a hardware problem until I took the
+enclosure out of service as it's the only enclosure I had. So that's
+a task for later.
+
+I have now got a new enclosure and put this system back together
+with all six devices. I was not expecting this filesystem to mount
+without assistance on boot because of /dev/sdk being "stale"
+compared to the other devices. I suppose this incorrect view is a
+holdover from my experience with mdadm.
+
+Anyway, I booted it and /srv/tank was mounted automatically with all
+six devices.  I got a bunch of these messages as soon as it was
+mounted:
+
+    http://pastie.org/private/2ghahjwtzlcm6hwp66hkg
+
+There's lots more of it but it's all like that. That paste is from
+the end of the log and there haven't been any more such message
+since, so that's about 20 minutes (the times are in GMT).
+
+Is that normal output indicating that btrfs is repairing the
+"staleness" of sdk from the other copy?
+
+I seem to be able to use the filesystem and a cursory inspection
+isn't turning up anything that I can't read or that seems
+corrupted. I will now run checksums against my last good backup.
+
+Should I run a scrub as well?
+
+Cheers,
+Andy

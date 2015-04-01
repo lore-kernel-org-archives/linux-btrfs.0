@@ -1,54 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:35042 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751092AbbDABdP (ORCPT
+Received: from 254.102.124.202.static.netspeed.net.nz ([202.124.102.254]:54439
+	"EHLO mx.anathoth.net" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752944AbbDACFJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Mar 2015 21:33:15 -0400
-Received: by igcau2 with SMTP id au2so35386035igc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Mar 2015 18:33:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
-References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
-	<CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
-	<CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
-Date: Tue, 31 Mar 2015 19:33:14 -0600
-Message-ID: <CAJCQCtRy4gzXYqHeoqdtv+Q-3Js7pthXMPa5X_gGHbSynktbBQ@mail.gmail.com>
-Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
-From: Chris Murphy <lists@colorremedies.com>
-To: Martin Langhoff <martin.langhoff@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Tue, 31 Mar 2015 22:05:09 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx.anathoth.net (Postfix) with ESMTP id B4BB6C3C3A
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2015 14:59:47 +1300 (NZDT)
+Received: from en-gedi (139.20.225.49.dyn.cust.vf.net.nz [49.225.20.139])
+	(Authenticated sender: matt@mattgrant.net.nz)
+	by mx.anathoth.net (Postfix) with ESMTPSA id E70ACC3C3D
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Apr 2015 14:59:40 +1300 (NZDT)
+Message-ID: <1427853689.3942.9.camel@mattgrant.net.nz>
+Subject: Python pybtrfs df wrapper script to report btrfs metadata, block,
+ space in df compatible output
+From: Matt Grant <matt@mattgrant.net.nz>
+To: linux-btrfs@vger.kernel.org
+Date: Wed, 01 Apr 2015 15:01:29 +1300
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 31, 2015 at 5:54 PM, Martin Langhoff
-<martin.langhoff@gmail.com> wrote:
-> On Tue, Mar 31, 2015 at 4:09 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> There should be a reference to an rdsosreport.txt in /run/... so find
->> a way to get that posted somewhere.
->
-> I'll try, but it truly says nothing of interest from a block device /
-> btrfs PoV. I have ample background debugging boot issues, disk
-> corruption, etc from years of work w OLPC.
+Hi!
 
-If there is no reference in this dracut shell to rdsosreport.txt, then use:
-journalctl -b -l -o short-monotonic
+Use this at work.  Releasing to list to prompt design of output that is
+100% df format compatible for automated reporting and graphing.
 
-You can mount anything at /sysroot including the boot partition if you
-want, or a USB stick. The usual directories aren't available in the
-initramfs before switchroot happens.
+This is so BTRFS space statistics acn bre reported back to existing
+graphing tool chains that many of you would have in place.  Quite useful
+for munin, hint, hint :-)
 
+URL for github is:
 
-> That's a good idea! I was referring to something else -- I guess what
-> I'm trying to say is: I'm not sure if this scrambled disk partition is
-> a btrfs/kernel bug, or the cheap HDD lied about flushing a write to
-> disk.
+https://github.com/grantma/pybtrfs.git
 
-This is the realm of both esoteric knowledge and an active area of
-research how to get reliable information about "what happened when the
-power cut out." So you're not the only one not sure.
+There is also a shell script there that can be called from cron.
 
+Please get back to me if you have any questions.
 
--- 
-Chris Murphy
+Standard not warranted disclaimers apply to the code.  Its GPLv3
+licensed.
+
+Best Regards,
+
+Matt Grant
+

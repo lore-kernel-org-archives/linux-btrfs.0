@@ -1,55 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:36835 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750849AbbDAR0z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 13:26:55 -0400
-Received: by wgra20 with SMTP id a20so60856817wgr.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 10:26:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSDSW3ZB5LE=Y5AJgWWgP=Lo6XFXTGZMLVQMwd36QQNMA@mail.gmail.com>
-References: <CACPiFCJwQTsVcU2CJpSMyGyL1jsEQooMvOHooZriM70SsmGgVA@mail.gmail.com>
- <CAJCQCtTVAkJM6JE68a8vopKZqaSwfXCL9Bp8mGx-pDqny-h9ZQ@mail.gmail.com>
- <CACPiFCLDa8iSfWt=rggAEHpEh==MH95rzasLmDC175pFfMCrkQ@mail.gmail.com>
- <CAJCQCtRy4gzXYqHeoqdtv+Q-3Js7pthXMPa5X_gGHbSynktbBQ@mail.gmail.com>
- <CACPiFCKKb6SGZubGRMka3JmvFvtC64PxQ5PpJ6VR56gKcjXwdA@mail.gmail.com> <CAJCQCtSDSW3ZB5LE=Y5AJgWWgP=Lo6XFXTGZMLVQMwd36QQNMA@mail.gmail.com>
-From: Martin Langhoff <martin.langhoff@gmail.com>
-Date: Wed, 1 Apr 2015 13:26:33 -0400
-Message-ID: <CACPiFCKx7G3pYdSs_MBne5Z6XP+zbgQK_iaNWvMQPs76R=VQNg@mail.gmail.com>
-Subject: Re: F21 fails to mount root part, btrfs check: Couldn't open file system
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:38884 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752945AbbDAR2y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Apr 2015 13:28:54 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YdMRW-00083v-3p
+	for linux-btrfs@vger.kernel.org; Wed, 01 Apr 2015 19:28:42 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 19:28:42 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2015 19:28:42 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: ERROR: error removing the device '/dev/sdXN' - Inappropriate
+ ioctl for device
+Date: Wed, 01 Apr 2015 18:28:23 +0100
+Message-ID: <mfh9rn$2if$1@ger.gmane.org>
+References: <mfcdep$d97$1@ger.gmane.org> <20150331173756.GF6821@twin.jikos.cz> <mfeo14$sib$1@ger.gmane.org> <551B98FF.8070000@oracle.com> <mfgiot$3ck$1@ger.gmane.org> <551BEF67.3040305@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <551BEF67.3040305@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 1, 2015 at 1:03 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> mount /dev/sda6 /mnt
-> btrfs inspect-internal inode-resolve 39841 /mnt
+Anand,
 
-on the booted system...
-# uname -a
-Linux tp-martin.remote-learner.net 3.18.9-200.fc21.x86_64 #1 SMP Mon
-Mar 9 15:10:50 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-# btrfs inspect-internal inode-resolve 39841 /
-//etc/shadow-
-# diff -u /etc/shadow{,-}
---- /etc/shadow 2015-03-04 02:26:59.478255332 -0500
-+++ /etc/shadow-        2015-03-04 02:26:59.000000000 -0500
-@@ -42,4 +42,3 @@
- systemd-timesync:!!:16498::::::
- systemd-network:!!:16498::::::
- systemd-resolve:!!:16498::::::
--systemd-bus-proxy:!!:16498::::::
+Thanks for picking up.
 
-Bizarre.
+The devid option sounds good.
 
-cheers,
+
+Thanks,
+Martin
 
 
 
-m
--- 
- martin.langhoff@gmail.com
- -  ask interesting questions
- - don't get distracted with shiny stuff  - working code first
- ~ http://docs.moodle.org/en/User:Martin_Langhoff
+On 01/04/15 14:15, Anand Jain wrote:
+> 
+> 
+>  Looks like an option to use devid to delete a device would
+>  have mitigated the issue.  Also the error reported is no
+>  where near the reality. Will fix them.
+> 
+>  Thanks for reporting.
+> 
+> Anand
+> 
+> 
+> On 04/01/2015 06:54 PM, Martin wrote:
+>> On 01/04/15 08:06, Anand Jain wrote:
+>>>
+>>>>>> btrfs device delete /dev/sdf5 /mnt/data2
+>>>>>>
+>>>>>> ERROR: error removing the device '/dev/sdf5' - Inappropriate ioctl
+>>>>>> for
+>>>>>> device
+>>>
+>>>   very strange. 'btrfs fi show -m' shows btrfs fs(s) that are mounted.
+>>
+>> Looks like my /dev/sdf isn't responding with anything useful at all... A
+>> firmware crash?... (This is for a 256GB SSD.)
+>>
+>>
+>> # btrfs fi show -m
+>>
+>> [...]
+>>
+>> Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
+>>          Total devices 3 FS bytes used 159.31GiB
+>>          devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
+>>          devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
+>>          devid    3 size 206.47GiB used 206.47GiB path /dev/sdf5
+>>
+>>
+>> btrfs-progs v3.19.1
+>>
+>>
+>>
+>> # smartctl -i /dev/sdf
+>> smartctl 6.3 2014-07-26 r3976 [x86_64-linux-3.14.10-gentoo_s03a_11]
+>> (local build)
+>> Copyright (C) 2002-14, Bruce Allen, Christian Franke,
+>> www.smartmontools.org
+>>
+>> === START OF INFORMATION SECTION ===
+>> Vendor:               /7:0:0:0
+>> Product:
+>> Compliance:           SPC-5
+>> User Capacity:        600,332,565,813,390,450 bytes [600 PB]
+>> Logical block size:   774843950 bytes
+>> scsiModePageOffset: response length too short, resp_len=47 offset=50
+>> bd_len=46
+>> scsiModePageOffset: response length too short, resp_len=47 offset=50
+>> bd_len=46
+>>>> Terminate command early due to bad response to IEC mode page
+>> A mandatory SMART command failed: exiting. To continue, add one or more
+>> '-T permissive' options.
+>>
+>>
+>>
+>> And btrfs is still running ok so far... I'll be swapping that device at
+>> the weekend. (First chance I have for a Sunday shutdown. :-( )
+>>
+>>
+>> Still... For administering btrfs, it is a little disturbing not to be
+>> able to remove/delete a device unless that device is both mounted and
+>> working...
+>>
+>> Or is that where the "missing" option comes in?
+>>
+>>
+>>
+>> Comments welcomed,
+>>
+>> Thanks,
+>> Martin
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+

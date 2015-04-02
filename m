@@ -1,82 +1,267 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:35952 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751690AbbDAWMG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Apr 2015 18:12:06 -0400
-Date: Thu, 2 Apr 2015 09:12:02 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Brian Foster <bfoster@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org
-Subject: Re: [PATCH] xfstests: generic: test for discard properly discarding
- unused extents
-Message-ID: <20150401221202.GE28621@dastard>
-References: <55199FCA.9040503@suse.com>
- <20150401184434.GG4756@bfoster.bfoster>
- <551C4073.8010201@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <551C4073.8010201@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:36610 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751210AbbDBKtJ (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 2 Apr 2015 06:49:09 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH RESEND] fstests: test for btrfs send after complex directory hierarchy changes
+Date: Thu,  2 Apr 2015 11:48:46 +0100
+Message-Id: <1427971726-13160-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 01, 2015 at 03:01:07PM -0400, Jeff Mahoney wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> On 4/1/15 2:44 PM, Brian Foster wrote:
-> > On Mon, Mar 30, 2015 at 03:11:06PM -0400, Jeff Mahoney wrote:
-> >> This tests tests four conditions where discard can potentially 
-> >> not discard unused extents completely.
-> >> 
-> >> We test, with -o discard and with fstrim, scenarios of removing 
-> >> many relatively small files and removing several large files.
-> >> 
-> >> The important part of the two scenarios is that the large files 
-> >> must be large enough to span a blockgroup alone. It's possible 
-> >> for an entire block group to be emptied and dropped without an 
-> >> opportunity to discard individual extents as would happen with 
-> >> smaller files.
-> >> 
-> >> The test confirms the discards have occured by using a sparse 
-> >> file mounted via loopback to punch holes and then check how many 
-> >> blocks are still allocated within the file.
-> >> 
-> >> Signed-off-by: Jeff Mahoney <jeffm@suse.com> ---
-> > 
-> > The code looks mostly Ok to me, a few notes below. Those aside, 
-> > this is a longish test. It takes me about 8 minutes to run on my 
-> > typical low end vm.
-> 
-> My test hardware is a 16 core / 16 GB RAM machine using a commodity
-> SSD. It ran pretty quickly.
+Test a very complex scenario for a btrfs incremental send operation where a
+large directory hierarchy had many subtrees moved between parent directories,
+preserving the names of some directories and inverting the parent-child
+relationship between some directories (a child in the parent snapshot became
+a parent, in the send snapshot, of the directory that is its parent in the
+parent snapshot).
 
-Yup, I have a test VM like that, too. However, like many other
-people, I also have small VMs that share single spindles with other
-test VMs, so we need to cater for them, too.
+This test made the incremental send fail with -ENOMEM because it entered an
+infinite loop when building path strings that are used as operands of the
+rename operations issued in the send stream.
+This issue was fixed by the following linux kernel btrfs patch:
 
-> >> +	if [ "$FSTYP" = "btrfs" ]; then
-> >> +		_run_btrfs_util_prog filesystem sync $tmpdir
-> >> +  fi
-> >> +	sync
-> >> +	sync
-> > 
-> > Any reason for the double syncs?
-> 
-> Superstition? IIRC, at one point in what is probably the ancient past,
-> btrfs needed two syncs to be safe. I kept running into false failures
-> without both a sync and the btrfs filesystem sync, so I just hit the
-> "no really, just do it" button.
+   Btrfs: incremental send, don't delay directory renames unnecessarily
 
-Urk. If btrfs requires two sync passes to really sync data/metadata,
-then that's a bug that needs to be fixed. Let's not encode
-superstition or work around bugs that really should be fixed in the
-test code....
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-Cheers,
+Rebased against latest master branch, which implied changing the test
+number. No changes otherwise.
 
-Dave.
+ tests/btrfs/087     | 199 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/087.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 202 insertions(+)
+ create mode 100644 tests/btrfs/087
+ create mode 100644 tests/btrfs/087.out
+
+diff --git a/tests/btrfs/087 b/tests/btrfs/087
+new file mode 100644
+index 0000000..b8ee3e1
+--- /dev/null
++++ b/tests/btrfs/087
+@@ -0,0 +1,199 @@
++#! /bin/bash
++# FS QA Test No. btrfs/087
++#
++# Test a very complex scenario for a btrfs incremental send operation where a
++# large directory hierarchy had many subtrees moved between parent directories,
++# preserving the names of some directories and inverting the parent-child
++# relationship between some directories (a child in the parent snapshot became
++# a parent, in the send snapshot, of the directory that is its parent in the
++# parent snapshot).
++#
++# This test made the incremental send fail with -ENOMEM because it entered an
++# infinite loop when building path strings that are used as operands of the
++# rename operations issued in the send stream.
++# This issue was fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: incremental send, don't delay directory renames unnecessarily
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	rm -fr $send_files_dir
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_fssum
++_need_to_be_root
++
++send_files_dir=$TEST_DIR/btrfs-test-$seq
++
++rm -f $seqres.full
++rm -fr $send_files_dir
++mkdir $send_files_dir
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++mkdir $SCRATCH_MNT/data
++mkdir $SCRATCH_MNT/data/n1
++mkdir $SCRATCH_MNT/data/n1/n2
++mkdir $SCRATCH_MNT/data/n4
++mkdir $SCRATCH_MNT/data/n1/n2/p1
++mkdir $SCRATCH_MNT/data/n1/n2/p1/p2
++mkdir $SCRATCH_MNT/data/t6
++mkdir $SCRATCH_MNT/data/t7
++mkdir -p $SCRATCH_MNT/data/t5/t7
++mkdir $SCRATCH_MNT/data/t2
++mkdir $SCRATCH_MNT/data/t4
++mkdir -p $SCRATCH_MNT/data/t1/t3
++mkdir $SCRATCH_MNT/data/p1
++mv $SCRATCH_MNT/data/t1 $SCRATCH_MNT/data/p1
++mkdir -p $SCRATCH_MNT/data/p1/p2
++mv $SCRATCH_MNT/data/t4 $SCRATCH_MNT/data/p1/p2/t1
++mv $SCRATCH_MNT/data/t5 $SCRATCH_MNT/data/n4/t5
++mv $SCRATCH_MNT/data/n1/n2/p1/p2 $SCRATCH_MNT/data/n4/t5/p2
++mv $SCRATCH_MNT/data/t7 $SCRATCH_MNT/data/n4/t5/p2/t7
++mv $SCRATCH_MNT/data/t2 $SCRATCH_MNT/data/n4/t1
++mv $SCRATCH_MNT/data/p1 $SCRATCH_MNT/data/n4/t5/p2/p1
++mv $SCRATCH_MNT/data/n1/n2 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1
++mv $SCRATCH_MNT/data/n4/t5/t7 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1/t3 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/p1 \
++	$SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1
++mv $SCRATCH_MNT/data/t6 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t5
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t1
++mv $SCRATCH_MNT/data/n1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/n1
++
++# Filesystem looks like:
++#
++# .                                                             (ino 256)
++# |--- data/                                                    (ino 257)
++#        |--- n4/                                               (ino 260)
++#             |--- t1/                                          (ino 267)
++#             |--- t5/                                          (ino 265)
++#                  |--- p2/                                     (ino 262)
++#                       |--- p1/                                (ino 271)
++#                       |    |--- p2/                           (ino 272)
++#                       |         |--- n2/                      (ino 259)
++#                       |              |--- t1/                 (ino 268)
++#                       |                   |--- t3/            (ino 270)
++#                       |                   |    |--- t1/       (ino 269)
++#                       |                   |    |--- t5/       (ino 263)
++#                       |                   |
++#                       |                   |--- t7/            (ino 266)
++#                       |                        |--- p1/       (ino 261)
++#                       |                             |--- n1   (ino 258)
++#                       |
++#                       |--- t7/                                (ino 264)
++#
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++
++# The following sequence of directory renames resulted in an infinite path build
++# loop when attempting to build the path for inode 266. This is because the
++# inode's new parent, inode 261, was part of a circular dependency of delayed
++# rename operations. This circular dependency should jave never been built (it
++# happened due to a bug), and was the following:
++#
++#   ino 272 <- ino 261 <- ino 259 <- ino 268 <- ino 267 <- ino 261
++#
++# Where the notation "X <- Y" means that rename of inode X is delayed to happen
++# after the rename of inode Y.
++
++mv $SCRATCH_MNT/data/n4/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/t1
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1 $SCRATCH_MNT/data/n4/
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2 $SCRATCH_MNT/data/n4/t1/n2
++mv $SCRATCH_MNT/data/n4/t1/t7/p1 $SCRATCH_MNT/data/n4/t1/n2/p1
++mv $SCRATCH_MNT/data/n4/t1/t3/t1 $SCRATCH_MNT/data/n4/t1/n2/t1
++mv $SCRATCH_MNT/data/n4/t1/t3 $SCRATCH_MNT/data/n4/t1/n2/t1/t3
++mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2 $SCRATCH_MNT/data/n4/t1/n2/p1/p2
++mv $SCRATCH_MNT/data/n4/t1/t7 $SCRATCH_MNT/data/n4/t1/n2/p1/t7
++mv $SCRATCH_MNT/data/n4/t5/p2/p1 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1
++mv $SCRATCH_MNT/data/n4/t1/n2/t1/t3/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/t5
++mv $SCRATCH_MNT/data/n4/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5
++mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5/p2 \
++	$SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2
++mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2/t7 $SCRATCH_MNT/data/n4/t1/t7
++
++# Filesystem now looks like:
++#
++# .                                                   (ino 256)
++# |--- data                                           (ino 257)
++#        |--- n4/                                     (ino 260)
++#             |--- t1/                                (ino 268)
++#                  |--- n2/                           (ino 259)
++#                  |    |--- p1/                      (ino 261)
++#                  |    |    |--- n1/                 (ino 258)
++#                  |    |    |--- p2/                 (ino 272)
++#                  |    |    |    |--- p1/            (ino 271)
++#                  |    |    |    |    |--- p2/       (ino 262)
++#                  |    |    |    |    |--- t5/       (ino 265)
++#                  |    |    |    |
++#                  |    |    |    |--- t5/            (ino 263)
++#                  |    |    |
++#                  |    |    |--- t1/                 (ino 267)
++#                  |    |    |--- t7/                 (ino 266)
++#                  |    |
++#                  |    |--- t1/                      (ino 269)
++#                  |         |--- t3/                 (ino 270)
++#                  |
++#                  |--- t7/                           (ino 264)
++#
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++
++run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
++	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
++
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $send_files_dir/2.snap
++
++# Now recreate the filesystem by receiving both send streams and verify we get
++# the same content that the original filesystem had.
++_scratch_unmount
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
++run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
++run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/087.out b/tests/btrfs/087.out
+new file mode 100644
+index 0000000..e84c64c
+--- /dev/null
++++ b/tests/btrfs/087.out
+@@ -0,0 +1,2 @@
++QA output created by 087
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e9c15af..4bed1db 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -89,3 +89,4 @@
+ 084 auto quick send
+ 085 auto quick metadata subvol
+ 086 auto quick clone
++087 auto quick send
 -- 
-Dave Chinner
-david@fromorbit.com
+2.1.3
+

@@ -1,52 +1,309 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43686 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752976AbbDBRbu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Apr 2015 13:31:50 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ydiy3-0007i8-Qc
-	for linux-btrfs@vger.kernel.org; Thu, 02 Apr 2015 19:31:47 +0200
-Received: from p4ff588ee.dip0.t-ipconnect.de ([79.245.136.238])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2015 19:31:47 +0200
-Received: from holger.hoffstaette by p4ff588ee.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2015 19:31:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: [PATCH v2] Btrfs: fix range cloning when same inode used as
- source and destination
-Date: Thu, 2 Apr 2015 17:31:42 +0000 (UTC)
-Message-ID: <pan.2015.04.02.17.31.42@googlemail.com>
-References: <1427810206-23103-1-git-send-email-fdmanana@suse.com>
-	<1427995511-13028-1-git-send-email-fdmanana@suse.com>
-Mime-Version: 1.0
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:34377 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752203AbbDBRcB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Apr 2015 13:32:01 -0400
+Received: by igcau2 with SMTP id au2so52971670igc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2015 10:32:00 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1427843497-7733-1-git-send-email-fdmanana@suse.com>
+References: <1427829524-23946-1-git-send-email-fdmanana@suse.com>
+	<1427843497-7733-1-git-send-email-fdmanana@suse.com>
+Date: Thu, 2 Apr 2015 18:32:00 +0100
+Message-ID: <CAL3q7H5bRSTja0_C4e=pjE84HY6G7-r5mVkHRDyiRhSjW+5yAw@mail.gmail.com>
+Subject: Re: [PATCH v2] Btrfs: add debugfs file to test transaction aborts
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Filipe Manana <fdmanana@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Apr 1, 2015 at 12:11 AM, Filipe Manana <fdmanana@suse.com> wrote:
+> At the moment we can not reliably and deterministically test that the
+> transaction abortion code works as expected. For example in the past [1]
+> we had an issue where that code returned the pinned extents to the free
+> space caches allowing fstrim to perform a discard against the physical
+> locations of the extents, and worse, when the fs was mounted with the
+> option -o discard it explicitly did a discard on each pinned extent.
+> This resulted in filesystem corruption, leaving the fs unmountable.
+>
+> This patch adds a debugfs file named abort_transaction, which has a default
+> default value of an empty string, can only be written by someone with root
+> privileges and when a string is written to it, it makes sure all subsequent
+> transaction commits fail at the very end (right before writing the new
+> superblock) if that string matches the label of the filesystem.
+> This way we can for example write a deterministic fstest for commit [1]
+> which looks like:
+>
+>   _require_btrfs_debugfs()
+>   {
+>       if [ -d /sys/kernel/debug/btrfs ]; then
+>           BTRFS_DEBUG_FS=/sys/kernel/debug/btrfs
+>       elif [ -d /debug/btrfs ]; then
+>           BTRFS_DEBUG_FS=/debug
+>       else
+>           _notrun "btrfs debugfs not available"
+>       fi
+>
+>       if [ ! -z $1 ]; then
+>           if [ ! -e $BTRFS_DEBUG_FS/$1 ]; then
+>               _notrun "btrfs debugfs path $1 not available"
+>           fi
+>       fi
+>   }
+>
+>   _supported_fs btrfs
+>   _supported_os Linux
+>   _require_scratch
+>   _require_btrfs_debugfs "abort_transaction"
+>   _need_to_be_root
+>
+>   rm -f $seqres.full
+>
+>   # We will abort a btrfs transaction later, which always produces a warning in
+>   # dmesg. We do not want the test to fail because of this.
+>   _disable_dmesg_check
+>   fslabel="btrfs_fstest_$seq"
+>   _scratch_mkfs -L $fslabel >>$seqres.full 2>&1
+>   _scratch_mount "-o discard"
+>   _require_batched_discard $SCRATCH_MNT
+>
+>   # Create a file and commit the current transaction.
+>   echo -n "hello" > $SCRATCH_MNT/foo
+>   sync
+>
+>   # Now update the file, which forces a COW operation of the fs root, adding
+>   # the old root location to the pinned extents list.
+>   echo -n " world" >> $SCRATCH_MNT/foo
+>
+>   # Now abort the current transaction, unmount the fs, mount it again and verify
+>   # we can open the file and read its content (which should match what it had
+>   # when the last transaction committed successfully). Btrfs used to issue a
+>   # discard operation on the extents in the pinned extents list, resulting in
+>   # corruption of metadata and data, and used too to return the pinned extents
+>   # to the free space caches, allowing future fstrim operations to perform a
+>   # discard operation against the pinned exents.
+>   echo -n "$fslabel" > $BTRFS_DEBUG_FS/abort_transaction
+>   sync
+>   echo > $BTRFS_DEBUG_FS/abort_transaction
+>   $FSTRIM_PROG $SCRATCH_MNT
+>
+>   _scratch_unmount
+>   _scratch_mount
+>   echo "File content after transaction abort + remount: $(cat $SCRATCH_MNT/foo)"
+>
+> The test's expected output is:
+>
+>   File content after transaction abort + remount: hello
+>
+> With patch [1] reverted the test fails with:
+>
+>   btrfs/088 2s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad)
+>       --- tests/btrfs/088.out   2015-03-31 19:31:17.558436298 +0100
+>       +++ /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad    2015-03-31 19:58:12.741403640 +0100
+>       @@ -1,2 +1,8 @@
+>        QA output created by 088
+>       -File content after transaction abort + remount: hello
+>       +mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>       +       missing codepage or helper program, or other error
+>       +       In some cases useful info is found in syslog - try
+>       +       dmesg | tail  or so
+>       +
+>       ...
+>       (Run 'diff -u tests/btrfs/088.out /home/fdmanana/git/hub/xfstests/results//btrfs/088.out.bad'  to see the entire diff)
+>   _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent (see /home/fdmanana/git/hub/xfstests/results//btrfs/088.full)
+>
+>   $ cat /home/fdmanana/git/hub/xfstests/results//btrfs/088.full
+>   (...)
+>   _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
+>   *** fsck.btrfs output ***
+>   Check tree block failed, want=29573120, have=0
+>   Check tree block failed, want=29573120, have=0
+>   Check tree block failed, want=29573120, have=0
+>   Check tree block failed, want=29573120, have=0
+>   Check tree block failed, want=29573120, have=0
+>   read block failed check_tree_block
+>   Couldn't read tree root
+>   Couldn't open file system
+>   *** end fsck.btrfs output
+>
+> With this feature we can also get a fstest for the issue fixed by the patch
+> that fixes log tree corruption when the fs is mounted with -o discard [2].
+>
+>   "Btrfs: fix log tree corruption when fs mounted with -o discard"
+>
+> [1] commit 678886bdc637 ("Btrfs: fix fs corruption on transaction abort
+>                           if device supports discard")
+> [2] "Btrfs: fix log tree corruption when fs mounted with -o discard"
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-On Thu, 02 Apr 2015 18:25:11 +0100, Filipe Manana wrote:
+I'll revise this later, so please don't consider this version (nor v1).
+Want to make this more flexible and with a different layout to allow
+later for triggering other events for testing purposes.
 
-> V2: Fixed a warning about potentially uninitialized variable. David
->     got this warning on a 4.5.1 gcc, but I didn't on a 4.9.2 gcc
->     however.
+For testing the specific transaction abortion issue, I figured out a
+different way to do it using the existing error injection mechanism in
+the kernel (test: https://patchwork.kernel.org/patch/6150501/).
 
-I was *just* about to post this warning, since I saw it only a minute ago!
+Thanks.
 
-I assume you mean:
+> ---
+>
+> V2: Allow this to select by label which filesystem will have its transaction
+>     aborted. The previous version made a transaction abort for every mounted
+>     btrfs filesystem. It was not a problem in my test vm since only the devices
+>     used by fstests were using a btrfs filesystem (everything else was ext4).
+>
+>  fs/btrfs/sysfs.c       | 61 ++++++++++++++++++++++++++++++++++++++++++++++++--
+>  fs/btrfs/sysfs.h       |  2 ++
+>  fs/btrfs/transaction.c |  9 ++++++++
+>  3 files changed, 70 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 94edb0a..30cb7a5 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -666,6 +666,7 @@ static struct dentry *btrfs_debugfs_root_dentry;
+>
+>  /* Debugging tunables and exported data */
+>  u64 btrfs_debugfs_test;
+> +static char btrfs_debugfs_label_trans_abort[BTRFS_LABEL_SIZE] = { 0 };
+>
+>  int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
+>  {
+> @@ -710,19 +711,75 @@ failure:
+>         return error;
+>  }
+>
+> +static ssize_t read_fs_label(struct file *file, char __user *user_buf,
+> +                            size_t count, loff_t *ppos)
+> +{
+> +       char *label = file->private_data;
+> +
+> +       return simple_read_from_buffer(user_buf, count, ppos,
+> +                                      label, strlen(label));
+> +}
+> +
+> +static ssize_t write_fs_label(struct file *file, const char __user *user_buf,
+> +                             size_t count, loff_t *ppos)
+> +{
+> +       char buf[BTRFS_LABEL_SIZE];
+> +       size_t buf_size;
+> +       char *label = file->private_data;
+> +
+> +       memset(buf, 0, BTRFS_LABEL_SIZE);
+> +       buf_size = min(count, sizeof(buf) - 1);
+> +       if (copy_from_user(buf, user_buf, buf_size))
+> +               return -EFAULT;
+> +       if (count > 0 && buf[count - 1] == '\n')
+> +               buf[count - 1] = '\0';
+> +       memcpy(label, buf, BTRFS_LABEL_SIZE);
+> +       return count;
+> +}
+> +
+> +static const struct file_operations fops_fs_label = {
+> +       .read =         read_fs_label,
+> +       .write =        write_fs_label,
+> +       .open =         simple_open,
+> +       .llseek =       default_llseek,
+> +};
+> +
+>  static int btrfs_init_debugfs(void)
+>  {
+>  #ifdef CONFIG_DEBUG_FS
+> +       struct dentry *dentry;
+> +
+>         btrfs_debugfs_root_dentry = debugfs_create_dir("btrfs", NULL);
+>         if (!btrfs_debugfs_root_dentry)
+>                 return -ENOMEM;
+>
+> -       debugfs_create_u64("test", S_IRUGO | S_IWUGO, btrfs_debugfs_root_dentry,
+> -                       &btrfs_debugfs_test);
+> +       dentry = debugfs_create_u64("test", S_IRUGO | S_IWUGO,
+> +                                   btrfs_debugfs_root_dentry,
+> +                                   &btrfs_debugfs_test);
+> +       if (!dentry)
+> +               return -ENOMEM;
+> +
+> +       dentry = debugfs_create_file("abort_transaction",
+> +                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH,
+> +                                    btrfs_debugfs_root_dentry,
+> +                                    btrfs_debugfs_label_trans_abort,
+> +                                    &fops_fs_label);
+> +       if (!dentry) {
+> +               debugfs_remove_recursive(btrfs_debugfs_root_dentry);
+> +               return -ENOMEM;
+> +       }
+>  #endif
+>         return 0;
+>  }
+>
+> +bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info)
+> +{
+> +       if (!btrfs_debugfs_label_trans_abort[0])
+> +               return false;
+> +       return strcmp(fs_info->super_copy->label,
+> +                     btrfs_debugfs_label_trans_abort) == 0;
+> +}
+> +
+>  int btrfs_init_sysfs(void)
+>  {
+>         int ret;
+> diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+> index f7dd298..1faf0b5 100644
+> --- a/fs/btrfs/sysfs.h
+> +++ b/fs/btrfs/sysfs.h
+> @@ -74,4 +74,6 @@ int btrfs_kobj_add_device(struct btrfs_fs_info *fs_info,
+>                 struct btrfs_device *one_device);
+>  int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
+>                  struct btrfs_device *one_device);
+> +
+> +bool debugfs_abort_transaction(struct btrfs_fs_info *fs_info);
+>  #endif /* _BTRFS_SYSFS_H_ */
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 5d8cff8..8bf47cd 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -32,6 +32,7 @@
+>  #include "volumes.h"
+>  #include "dev-replace.h"
+>  #include "qgroup.h"
+> +#include "sysfs.h"
+>
+>  #define BTRFS_ROOT_TRANS_TAG 0
+>
+> @@ -2029,6 +2030,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>                 goto scrub_continue;
+>         }
+>
+> +       if (unlikely(debugfs_abort_transaction(root->fs_info))) {
+> +               btrfs_warn(root->fs_info,
+> +                          "Aborting transaction due to debugfs request.");
+> +               mutex_unlock(&root->fs_info->tree_log_mutex);
+> +               ret = -EIO;
+> +               goto scrub_continue;
+> +       }
+> +
+>         ret = write_ctree_super(trans, root, 0);
+>         if (ret) {
+>                 mutex_unlock(&root->fs_info->tree_log_mutex);
+> --
+> 2.1.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-fs/btrfs/ioctl.c: In function 'btrfs_clone':
-fs/btrfs/ioctl.c:3531:14: warning: 'next_key_min_offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
-   key.offset = next_key_min_offset;
-              ^
 
-..and this is with 4.9.2 here.
 
-Anyway..thanks for being faster :)
+-- 
+Filipe David Manana,
 
-Holger
-
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

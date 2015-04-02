@@ -1,51 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:60204 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:60451 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753202AbbDNUEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Apr 2015 16:04:21 -0400
-Date: Tue, 14 Apr 2015 13:04:18 -0700
-From: Zach Brown <zab@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: "J. Bruce Fields" <bfields@fieldses.org>,
-        Anna Schumaker <Anna.Schumaker@netapp.com>,
-        Jeff Layton <jlayton@poochiereds.net>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-scsi@vger.kernel.org
-Subject: Re: [PATCH RFC 1/3] vfs: add copy_file_range syscall and vfs helper
-Message-ID: <20150414200418.GA24660@lenny.home.zabbo.net>
-References: <20150411000208.GA20949@lenny.home.zabbo.net>
- <CAHQdGtSaaPHbvtBM3yVGtAFpEAP8ZquYvErknq_rCoCCK+W2bA@mail.gmail.com>
- <20150411090402.67d22d02@tlielax.poochiereds.net>
- <20150414165344.GA21421@infradead.org>
- <552D4B5D.3090904@Netapp.com>
- <20150414181911.GA2080@fieldses.org>
- <20150414182241.GB23129@lenny.home.zabbo.net>
- <20150414182906.GB2080@fieldses.org>
- <20150414185408.GC23129@lenny.home.zabbo.net>
- <20150414192325.GB20599@infradead.org>
+	id S1752505AbbDBP0S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Apr 2015 11:26:18 -0400
+Date: Thu, 2 Apr 2015 17:26:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chen Hanxiao <chenhanxiao@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs doc: emphasis that only mounted device works
+ for btrfs device stats
+Message-ID: <20150402152617.GL6821@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1427874777-11871-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150414192325.GB20599@infradead.org>
+In-Reply-To: <1427874777-11871-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 14, 2015 at 12:23:25PM -0700, Christoph Hellwig wrote:
-> On Tue, Apr 14, 2015 at 11:54:08AM -0700, Zach Brown wrote:
-> > Is this relying on btrfs range cloning being atomic?  It certainly
-> > doesn't look atomic.  It can modify items across an arbitrarily large
-> > number of leaf blocks.  It can make the changes across multiple
-> > transactions which could introduce partial modification on reboot after
-> > crashes.  It can fail (the dynamic duo: enomem, eio) and leave the
-> > desintation partially modified.
-> 
-> I didn't mean atomic in the failure atomic sense, but in the sense of
-> being atomic vs other writes, similar to how Posix specifies it for
-> writes vs other writes.  Guess I need to express this intent better.
+On Wed, Apr 01, 2015 at 03:52:57AM -0400, Chen Hanxiao wrote:
+> We provided format <path>|<device> in command line.
+> But btrfs device stats doesn't work if device is not mounted.
 
-Ah, right, OK.
-
-- z
+Although that's right, the dev stats are easy to implement in userspace.
+Applied, as it reflects current state.

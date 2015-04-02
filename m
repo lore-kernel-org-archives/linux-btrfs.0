@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58856 "EHLO mx2.suse.de"
+Received: from mxout1.rambler.ru ([81.19.67.203]:54625 "EHLO mxout1.rambler.ru"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753085AbbDBPC2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Apr 2015 11:02:28 -0400
-Date: Thu, 2 Apr 2015 17:02:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: David Sterba <dsterba@suse.cz>,
-        "Eric W. Biederman" <ebiederm@xmission.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, Timo Kokkonen <timo.kokkonen@offcode.fi>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: prevent deletion of mounted subvolumes
-Message-ID: <20150402150225.GJ6821@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
- <20150330123034.GB32051@suse.cz>
- <20150330184135.GA27227@mew.dhcp4.washington.edu>
- <87k2xwv6y8.fsf@x220.int.ebiederm.org>
- <20150401070328.GA27048@mew>
- <20150401112242.GG6821@suse.cz>
- <20150402034954.GA25368@mew.Belkin>
+	id S1751193AbbDBTt3 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Apr 2015 15:49:29 -0400
+Received: from saddam4.rambler.ru (saddam4.rambler.ru [10.32.16.4])
+	by mxout1.rambler.ru (Postfix) with ESMTP id C8E1AC2CC3A
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2015 22:41:00 +0300 (MSK)
+Received: from localhost.localdomain (localhost [127.0.0.1])
+	by saddam4.rambler.ru (Postfix) with ESMTP id B40889561C2
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Apr 2015 22:41:00 +0300 (MSK)
+From: =?koi8-r?B?7cnIwcnMIOzFzdbJzg==?= <mihal@rambler.ru>
+To: linux-btrfs@vger.kernel.org
+Reply-To: =?koi8-r?B?7cnIwcnMIOzFzdbJzg==?= <mihal@rambler.ru>
+Subject: btrfszero-log fs_image to developers
+Date: Thu, 2 Apr 2015 22:41:00 +0300
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+Message-Id: <1428003660.670888.5667.20379@mail.rambler.ru>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150402034954.GA25368@mew.Belkin>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 01, 2015 at 08:49:54PM -0700, Omar Sandoval wrote:
-> Hm, yeah, that's unfortunate, thanks for pointing that out. It looks
-> like we can get the subvolume ID reliably:
-> 
-> ----
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 05fef19..a74ddb3 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1024,6 +1024,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
->  	struct btrfs_root *root = info->tree_root;
->  	char *compress_type;
->  
-> +	seq_printf(seq, ",subvolid=%llu",
-> +		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
 
-yes, subvolid is reliable, but not very friendly from users' POV. I'd
-like to see subvol=/path there. Possibly we can have both.
+Hello!
+As say in this page https://btrfs.wiki.kernel.org/index.php/Btrfs-zero-log 
+I send output data of 
+#btrfs-image -c 9 -t 8 /dev/mapper/root /tmp/fs_image
+to developers.
+File link: https://onedrive.live.com/redir?resid=31ECDF5D805029B7!403759&authkey=!AMWoAxWRnpVkJY4&ithint=file%2c
+
+Additional informaion:
+[lm@mothership ~]$ uname -a
+Linux mothership 3.19.2-1-ARCH #1 SMP PREEMPT Wed Mar 18 16:21:02 CET 2015 x86_64 GNU/Linux
+[lm@mothership ~]$ btrfs --version
+btrfs-progs v3.19
+[lm@mothership ~]$ btrfs fi show
+ERROR: could not open /dev/sdb3
+ERROR: could not open /dev/sdb4
+btrfs-progs v3.19
+[lm@mothership ~]$ btrfs fi df /
+Data, single: total=18.01GiB, used=16.25GiB
+System, DUP: total=8.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=1.00GiB, used=448.55MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=160.00MiB, used=0.00B
+
+p.s. After hard reset root partition did not mount with BTRFS: open_ctree failed error.
+p.p.s. partition /dev/sdb3 has been fixed by #btrfs-zero-log /dev/sdb3
+--
+Best regards,
+Mikhail Lemhzhin

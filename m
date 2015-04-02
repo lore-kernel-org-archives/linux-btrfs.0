@@ -1,67 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36610 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:39554 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751210AbbDBKtJ (ORCPT
+	by vger.kernel.org with ESMTP id S1752626AbbDBKuY (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 2 Apr 2015 06:49:09 -0400
+	Thu, 2 Apr 2015 06:50:24 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH RESEND] fstests: test for btrfs send after complex directory hierarchy changes
-Date: Thu,  2 Apr 2015 11:48:46 +0100
-Message-Id: <1427971726-13160-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] fstests: regression test for btrfs file range cloning
+Date: Thu,  2 Apr 2015 11:49:29 +0100
+Message-Id: <1427971769-13224-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1427481068-27414-1-git-send-email-fdmanana@suse.com>
+References: <1427481068-27414-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test a very complex scenario for a btrfs incremental send operation where a
-large directory hierarchy had many subtrees moved between parent directories,
-preserving the names of some directories and inverting the parent-child
-relationship between some directories (a child in the parent snapshot became
-a parent, in the send snapshot, of the directory that is its parent in the
-parent snapshot).
+Test btrfs file range cloning with the same file as a source and
+destination.
 
-This test made the incremental send fail with -ENOMEM because it entered an
-infinite loop when building path strings that are used as operands of the
-rename operations issued in the send stream.
-This issue was fixed by the following linux kernel btrfs patch:
+This tests a specific scenario where the extent layout of the file
+confused the clone ioctl implementation making it return -EEXIST to
+userspace. This issue was fixed by the following linux kernel patch:
 
-   Btrfs: incremental send, don't delay directory renames unnecessarily
+   Btrfs: fix range cloning when same inode used as source and destination
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-Rebased against latest master branch, which implied changing the test
-number. No changes otherwise.
+V2: Rebased against latest master, which implied changing the test's number,
+    and added steps to test for the case where different source and destination
+    files are used, just to verify if produces exactly the same result as the
+    case where the same file is used as source and destination.
 
- tests/btrfs/087     | 199 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/087.out |   2 +
+ tests/btrfs/088     | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/088.out |  20 +++++++++
  tests/btrfs/group   |   1 +
- 3 files changed, 202 insertions(+)
- create mode 100644 tests/btrfs/087
- create mode 100644 tests/btrfs/087.out
+ 3 files changed, 141 insertions(+)
+ create mode 100755 tests/btrfs/088
+ create mode 100644 tests/btrfs/088.out
 
-diff --git a/tests/btrfs/087 b/tests/btrfs/087
-new file mode 100644
-index 0000000..b8ee3e1
+diff --git a/tests/btrfs/088 b/tests/btrfs/088
+new file mode 100755
+index 0000000..ac0a459
 --- /dev/null
-+++ b/tests/btrfs/087
-@@ -0,0 +1,199 @@
++++ b/tests/btrfs/088
+@@ -0,0 +1,120 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/087
++# FS QA Test No. btrfs/088
 +#
-+# Test a very complex scenario for a btrfs incremental send operation where a
-+# large directory hierarchy had many subtrees moved between parent directories,
-+# preserving the names of some directories and inverting the parent-child
-+# relationship between some directories (a child in the parent snapshot became
-+# a parent, in the send snapshot, of the directory that is its parent in the
-+# parent snapshot).
++# Test btrfs file range cloning with the same file as a source and destination.
 +#
-+# This test made the incremental send fail with -ENOMEM because it entered an
-+# infinite loop when building path strings that are used as operands of the
-+# rename operations issued in the send stream.
-+# This issue was fixed by the following linux kernel btrfs patch:
++# This tests a specific scenario where the extent layout of the file confused
++# the clone ioctl implementation making it return -EEXIST to userspace.
++# This issue was fixed by the following linux kernel patch:
 +#
-+#   Btrfs: incremental send, don't delay directory renames unnecessarily
++#    Btrfs: fix range cloning when same inode used as source and destination
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
@@ -92,7 +85,6 @@ index 0000000..b8ee3e1
 +
 +_cleanup()
 +{
-+	rm -fr $send_files_dir
 +	rm -f $tmp.*
 +}
 +
@@ -104,164 +96,110 @@ index 0000000..b8ee3e1
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_fssum
++_require_cloner
 +_need_to_be_root
 +
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
 +rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
 +
-+_scratch_mkfs >>$seqres.full 2>&1
++# Create a file with an extent layout that confused the btrfs clone ioctl
++# implementation. The first extent item that is cloned by the second call
++# to the cloner program will have only a trailing part of it referenced by
++# a new extent item, since the source offset starts in the middle of that
++# extent. This confused the clone ioctl because after inserting this new
++# extent item it would immediately after process it again thinking it
++# corresponded to an extent that existed before - this made it attempt to
++# insert a duplicated extent item pointing to the same extent again, which
++# made it return an -EEXIST error to userspace and turn the filesystem to
++# readonly mode (since the current transaction got aborted).
++test_clone()
++{
++	local bs=$1
++
++	$XFS_IO_PROG -f -c "pwrite -S 0xaa $((2 * $bs)) $((2 * $bs))" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++
++	$CLONER_PROG -s $((3 * $bs)) -d $((267 * $bs)) -l 0 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/foo
++	$CLONER_PROG -s $((217 * $bs)) -d $((95 * $bs)) -l 0 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/foo
++
++	echo "File digest after clone operations using same file as source and destination"
++	md5sum $SCRATCH_MNT/foo | _filter_scratch
++
++	# Test cloning using different source and destination files for the
++	# same exact data - it must produce the exact same result as the case
++	# before.
++	$XFS_IO_PROG -f -c "pwrite -S 0xaa $((2 * $bs)) $((2 * $bs))" \
++		$SCRATCH_MNT/a | _filter_xfs_io
++	cp $SCRATCH_MNT/a $SCRATCH_MNT/b
++
++	$CLONER_PROG -s $((3 * $bs)) -d $((267 * $bs)) -l 0 $SCRATCH_MNT/a \
++		$SCRATCH_MNT/b
++
++	cp $SCRATCH_MNT/b $SCRATCH_MNT/foo2
++	$CLONER_PROG -s $((217 * $bs)) -d $((95 * $bs)) -l 0 $SCRATCH_MNT/b \
++		$SCRATCH_MNT/foo2
++
++	echo "File digest after clone operations using different files as source and destination"
++	md5sum $SCRATCH_MNT/foo2 | _filter_scratch
++
++}
++
++# Make sure the test passes offsets and lengths to the btrfs clone ioctl that
++# are multiples of the fs block size. Currently the block size on btrfs must
++# be a multiple of the page size, so use a 64Kb fs block size in order to be
++# able to test on every platform supported by linux.
++bs=$((64 * 1024))
++
++echo "Testing without the no-holes feature"
++_scratch_mkfs "-O ^no-holes -l $bs" >>$seqres.full 2>&1
 +_scratch_mount
++test_clone $bs
++_check_scratch_fs
 +
-+mkdir $SCRATCH_MNT/data
-+mkdir $SCRATCH_MNT/data/n1
-+mkdir $SCRATCH_MNT/data/n1/n2
-+mkdir $SCRATCH_MNT/data/n4
-+mkdir $SCRATCH_MNT/data/n1/n2/p1
-+mkdir $SCRATCH_MNT/data/n1/n2/p1/p2
-+mkdir $SCRATCH_MNT/data/t6
-+mkdir $SCRATCH_MNT/data/t7
-+mkdir -p $SCRATCH_MNT/data/t5/t7
-+mkdir $SCRATCH_MNT/data/t2
-+mkdir $SCRATCH_MNT/data/t4
-+mkdir -p $SCRATCH_MNT/data/t1/t3
-+mkdir $SCRATCH_MNT/data/p1
-+mv $SCRATCH_MNT/data/t1 $SCRATCH_MNT/data/p1
-+mkdir -p $SCRATCH_MNT/data/p1/p2
-+mv $SCRATCH_MNT/data/t4 $SCRATCH_MNT/data/p1/p2/t1
-+mv $SCRATCH_MNT/data/t5 $SCRATCH_MNT/data/n4/t5
-+mv $SCRATCH_MNT/data/n1/n2/p1/p2 $SCRATCH_MNT/data/n4/t5/p2
-+mv $SCRATCH_MNT/data/t7 $SCRATCH_MNT/data/n4/t5/p2/t7
-+mv $SCRATCH_MNT/data/t2 $SCRATCH_MNT/data/n4/t1
-+mv $SCRATCH_MNT/data/p1 $SCRATCH_MNT/data/n4/t5/p2/p1
-+mv $SCRATCH_MNT/data/n1/n2 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1
-+mv $SCRATCH_MNT/data/n4/t5/t7 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1/t3 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/p1 \
-+	$SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1
-+mv $SCRATCH_MNT/data/t6 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t5
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t3/t1
-+mv $SCRATCH_MNT/data/n1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/n1
-+
-+# Filesystem looks like:
-+#
-+# .                                                             (ino 256)
-+# |--- data/                                                    (ino 257)
-+#        |--- n4/                                               (ino 260)
-+#             |--- t1/                                          (ino 267)
-+#             |--- t5/                                          (ino 265)
-+#                  |--- p2/                                     (ino 262)
-+#                       |--- p1/                                (ino 271)
-+#                       |    |--- p2/                           (ino 272)
-+#                       |         |--- n2/                      (ino 259)
-+#                       |              |--- t1/                 (ino 268)
-+#                       |                   |--- t3/            (ino 270)
-+#                       |                   |    |--- t1/       (ino 269)
-+#                       |                   |    |--- t5/       (ino 263)
-+#                       |                   |
-+#                       |                   |--- t7/            (ino 266)
-+#                       |                        |--- p1/       (ino 261)
-+#                       |                             |--- n1   (ino 258)
-+#                       |
-+#                       |--- t7/                                (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+
-+# The following sequence of directory renames resulted in an infinite path build
-+# loop when attempting to build the path for inode 266. This is because the
-+# inode's new parent, inode 261, was part of a circular dependency of delayed
-+# rename operations. This circular dependency should jave never been built (it
-+# happened due to a bug), and was the following:
-+#
-+#   ino 272 <- ino 261 <- ino 259 <- ino 268 <- ino 267 <- ino 261
-+#
-+# Where the notation "X <- Y" means that rename of inode X is delayed to happen
-+# after the rename of inode Y.
-+
-+mv $SCRATCH_MNT/data/n4/t1 $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/t1
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2/t1 $SCRATCH_MNT/data/n4/
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2/n2 $SCRATCH_MNT/data/n4/t1/n2
-+mv $SCRATCH_MNT/data/n4/t1/t7/p1 $SCRATCH_MNT/data/n4/t1/n2/p1
-+mv $SCRATCH_MNT/data/n4/t1/t3/t1 $SCRATCH_MNT/data/n4/t1/n2/t1
-+mv $SCRATCH_MNT/data/n4/t1/t3 $SCRATCH_MNT/data/n4/t1/n2/t1/t3
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1/p2 $SCRATCH_MNT/data/n4/t1/n2/p1/p2
-+mv $SCRATCH_MNT/data/n4/t1/t7 $SCRATCH_MNT/data/n4/t1/n2/p1/t7
-+mv $SCRATCH_MNT/data/n4/t5/p2/p1 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1
-+mv $SCRATCH_MNT/data/n4/t1/n2/t1/t3/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/t5
-+mv $SCRATCH_MNT/data/n4/t5 $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5
-+mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/t5/p2 \
-+	$SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2
-+mv $SCRATCH_MNT/data/n4/t1/n2/p1/p2/p1/p2/t7 $SCRATCH_MNT/data/n4/t1/t7
-+
-+# Filesystem now looks like:
-+#
-+# .                                                   (ino 256)
-+# |--- data                                           (ino 257)
-+#        |--- n4/                                     (ino 260)
-+#             |--- t1/                                (ino 268)
-+#                  |--- n2/                           (ino 259)
-+#                  |    |--- p1/                      (ino 261)
-+#                  |    |    |--- n1/                 (ino 258)
-+#                  |    |    |--- p2/                 (ino 272)
-+#                  |    |    |    |--- p1/            (ino 271)
-+#                  |    |    |    |    |--- p2/       (ino 262)
-+#                  |    |    |    |    |--- t5/       (ino 265)
-+#                  |    |    |    |
-+#                  |    |    |    |--- t5/            (ino 263)
-+#                  |    |    |
-+#                  |    |    |--- t1/                 (ino 267)
-+#                  |    |    |--- t7/                 (ino 266)
-+#                  |    |
-+#                  |    |--- t1/                      (ino 269)
-+#                  |         |--- t3/                 (ino 270)
-+#                  |
-+#                  |--- t7/                           (ino 264)
-+#
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same content that the original filesystem had.
++echo -e "\nTesting with the no-holes feature"
 +_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mkfs "-O no-holes -l $bs" >>$seqres.full 2>&1
 +_scratch_mount
++test_clone $bs
 +
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
-+
-+echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/087.out b/tests/btrfs/087.out
+diff --git a/tests/btrfs/088.out b/tests/btrfs/088.out
 new file mode 100644
-index 0000000..e84c64c
+index 0000000..50f49d7
 --- /dev/null
-+++ b/tests/btrfs/087.out
-@@ -0,0 +1,2 @@
-+QA output created by 087
-+Silence is golden
++++ b/tests/btrfs/088.out
+@@ -0,0 +1,20 @@
++QA output created by 088
++Testing without the no-holes feature
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digest after clone operations using same file as source and destination
++cc3cc722ad761bd10488a0f1232ead19  SCRATCH_MNT/foo
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digest after clone operations using different files as source and destination
++cc3cc722ad761bd10488a0f1232ead19  SCRATCH_MNT/foo2
++
++Testing with the no-holes feature
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digest after clone operations using same file as source and destination
++cc3cc722ad761bd10488a0f1232ead19  SCRATCH_MNT/foo
++wrote 131072/131072 bytes at offset 131072
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digest after clone operations using different files as source and destination
++cc3cc722ad761bd10488a0f1232ead19  SCRATCH_MNT/foo2
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e9c15af..4bed1db 100644
+index 4bed1db..73ef2ea 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -89,3 +89,4 @@
- 084 auto quick send
+@@ -90,3 +90,4 @@
  085 auto quick metadata subvol
  086 auto quick clone
-+087 auto quick send
+ 087 auto quick send
++088 auto quick clone
 -- 
 2.1.3
 

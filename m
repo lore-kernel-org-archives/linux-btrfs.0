@@ -1,66 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14978 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34768 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751327AbbDCHD1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 03:03:27 -0400
+	with ESMTP id S1751335AbbDCHZV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 03:25:21 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3372J5h001976
-	for <linux-btrfs@vger.kernel.org>; Fri, 3 Apr 2015 15:02:20 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t337OC9C003097
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Apr 2015 15:24:14 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 6/6] btrfs-progs: convert-tests: Add check for converted btrfs with regular file extent.
-Date: Fri, 3 Apr 2015 15:01:17 +0800
-Message-ID: <1428044477-18485-7-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1428044477-18485-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1428044477-18485-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4] btrfs-progs: Doc: Add warning and note on btrfs-convert.
+Date: Fri, 3 Apr 2015 15:23:13 +0800
+Message-ID: <1428045793-11511-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for previous patch "btrfs-progs: convert: Make
-ext*_image file obey datacsum setting."
+Although btrfs-convert can rollback converted btrfs, it still has some
+limitation to ensure rollback.
 
+Add a warning on the limitations.
+
+Also add a note for users who decides to go on with btrfs and don't need
+the rollback ability.
+
+Reported-by: Vytautas D <vytdau@gmail.com>
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/convert-tests.sh | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+v2:
+  Add reporter tags
+v3:
+  Remove 'btrfs fi defrag' from commands that may disable rollback
+  ability.
+  Add a little explain to make the warning more reasonable.
+v4:
+  Some gramma changes. Thanks Ducan and Roman.
+---
+ Documentation/btrfs-convert.txt | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
-index 7652a6c..42cbeb6 100644
---- a/tests/convert-tests.sh
-+++ b/tests/convert-tests.sh
-@@ -9,7 +9,6 @@ unset LANG
- LANG=C
- SCRIPT_DIR=$(dirname $(realpath $0))
- TOP=$(realpath $SCRIPT_DIR/../)
--TEST_DEV=${TEST_DEV:-}
- TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
- RESULTS="$TOP/tests/convert-tests-results.txt"
- IMAGE="$TOP/tests/test.img"
-@@ -18,6 +17,8 @@ source $TOP/tests/common
+diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
+index 8b3f05b..09510fa 100644
+--- a/Documentation/btrfs-convert.txt
++++ b/Documentation/btrfs-convert.txt
+@@ -15,6 +15,15 @@ DESCRIPTION
+ and the original filesystem image is accessible as from separate subvolume
+ named 'ext2_saved' as file image.
  
- rm -f $RESULTS
- 
-+setup_root_helper
++WARNING: If one hopes to rollback to ext2/3/4, they should not execute
++*btrfs balance* command on converted btrfs, since it will change the extent
++layout and make *btrfs-convert* unable to rollback.
 +
- convert_test() {
- 	echo "    [TEST]   $1"
- 	nodesize=$2
-@@ -27,6 +28,13 @@ convert_test() {
- 	run_check rm -f $IMAGE
- 	run_check truncate -s 256M $IMAGE
- 	run_check $* -F $IMAGE
++NOTE: If one is satisfied with converted btrfs, and not longer wants to
++rollback to ext2/3/4, it is highly recommended to remove 'ext2_saved' subvolume
++and execute *btrfs filesystem defragment* and *btrfs balance* command on the
++converted btrfs.
 +
-+	# create a file to check btrfs-convert can convert regular file
-+	# correct
-+	run_check $SUDO_HELPER mount $IMAGE $TEST_MNT
-+	run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/test bs=$nodesize \
-+		count=1 1>/dev/null 2>&1
-+	run_check $SUDO_HELPER umount $TEST_MNT
- 	run_check $TOP/btrfs-convert -N "$nodesize" $IMAGE
- 	run_check $TOP/btrfs check $IMAGE
- }
+ OPTIONS
+ -------
+ -d|--no-datasum::
 -- 
 2.3.5
 

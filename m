@@ -1,82 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57404 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751173AbbDCJ5I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 Apr 2015 05:57:08 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YdyLT-0006z4-Dr
-	for linux-btrfs@vger.kernel.org; Fri, 03 Apr 2015 11:56:59 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 11:56:59 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 11:56:59 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH v3] btrfs-progs: Doc: Add warning and note on
- btrfs-convert.
-Date: Fri, 3 Apr 2015 09:56:48 +0000 (UTC)
-Message-ID: <pan$d3473$5acd4d32$9b1eb3cc$28bf977f@cox.net>
-References: <1428024075-10211-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<pan$c078e$9a53acee$d6e24908$3d5c7666@cox.net>
-	<551E3C06.9040305@cn.fujitsu.com> <20150403121656.35782bda@natsu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:32856 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752561AbbDCBX1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Apr 2015 21:23:27 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t331MK08013770
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Apr 2015 09:22:20 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v3] btrfs-progs: Doc: Add warning and note on btrfs-convert.
+Date: Fri, 3 Apr 2015 09:21:15 +0800
+Message-ID: <1428024075-10211-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Fri, 03 Apr 2015 12:16:56 +0500 as excerpted:
+Although btrfs-convert can rollback converted btrfs, it still has some
+limitation to ensure rollback.
 
-> On Fri, 3 Apr 2015 15:06:46 +0800 Qu Wenruo <quwenruo@cn.fujitsu.com>
-> wrote:
-> 
->> >> +WARNING: If one hopes to rollback to ext2/3/4, he or she should not
->> >> execute
-> 
-> It also seems a bit awkward to spell out "he or she", if you want to
-> refer to a user without specifying the gender, in software documentation
-> it's more common to use "they":
-> https://en.wikipedia.org/wiki/Singular_they
+Add a warning on the limitations.
 
-Tho as the link notes, "singular they" has been and remains somewhat 
-controversial.
+Also add a note for users who decides to go on with btrfs and don't need
+the rollback ability.
 
-While "singular they" is accepted as correct (and as the link points out, 
-has been used by certain professional writers in some instances for 
-centuries, so it's not new!), so is "he or she", with both being 
-generally agreed to be slightly awkward attempts at political 
-correctness, for those uncomfortable with the arguably more traditional 
-masculine second-person-generic when referring to a human, feminine when 
-personifying an animal or inanimate object.
+Reported-by: Vytautas D <vytdau@gmail.com>
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2:
+  Add reporter tags
+v3:
+  Remove 'btrfs fi defrag' from commands that may disable rollback
+  ability.
+  Add a little explain to make the warning more reasonable.
+---
+ Documentation/btrfs-convert.txt | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-An individual's choice of usage will depend on how politically correct 
-and inclusive their (usage in point) intent is, vs how traditional they 
-intend to be.
-
-So either usage would have been fine here in a modern context, as would  
-the more traditional "he" in a traditional context, since the individual 
-is assumed to be a person not an object.
-
-The ones that really bother me, however, are the ones that arguably 
-inappropriately use a feminine second-person singular when obviously 
-referring to a (gender-unknown) person, not an object.  That's in-your-
-face political correctness to the point of extremism, partly because it 
-triggers a reparse, since the reader is then left to figure out whether 
-the intent was really specifically human female or an inanimate object, 
-where they had thought human generic or male, previously, and when the 
-traditional usage doesn't match, the extreme in-your-face politically 
-correct assertiveness of the deliberate female choice over singular-they, 
-appropriate he/she form, or traditional gender-unknown but assumed human 
-masculine, is jarring, to say the least.  I understand why some people 
-make that choice and respect that they have the right to choose it, but 
-still resent that they don't have at least minimal respect for my need as 
-a reader to read without jarringly forced reparse.
-
+diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
+index 8b3f05b..b57af73 100644
+--- a/Documentation/btrfs-convert.txt
++++ b/Documentation/btrfs-convert.txt
+@@ -15,6 +15,16 @@ DESCRIPTION
+ and the original filesystem image is accessible as from separate subvolume
+ named 'ext2_saved' as file image.
+ 
++WARNING: If one hopes to rollback to ext2/3/4, he or she should not execute
++*btrfs balance* command on converted btrfs.
++Since it will change the extent layout and make *btrfs-convert* unable to
++rollback.
++
++NOTE: If one is satisfied with converted btrfs, and not longer wants to
++rollback to ext2/3/4, it is highly recommended to remove 'ext2_saved' subvolume
++and execute *btrfs filesystem defragment* and *btrfs balance* command on the
++converted btrfs.
++
+ OPTIONS
+ -------
+ -d|--no-datasum::
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.3.5
 

@@ -1,37 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33666 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752623AbbDBPpv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Apr 2015 11:45:51 -0400
-Date: Thu, 2 Apr 2015 17:45:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: convert: Make ext*_image file obey
- datacsum setting.
-Message-ID: <20150402154550.GN6821@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1427941296-19502-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:30705 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752005AbbDCAml convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Apr 2015 20:42:41 -0400
+Message-ID: <551DE1EB.5000507@cn.fujitsu.com>
+Date: Fri, 3 Apr 2015 08:42:19 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1427941296-19502-1-git-send-email-quwenruo@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] btrfs-progs: convert-test: Add test for converting
+ ext* with regular file extent.
+References: <1427941296-19502-1-git-send-email-quwenruo@cn.fujitsu.com> <1427941296-19502-2-git-send-email-quwenruo@cn.fujitsu.com> <20150402154540.GM6821@twin.jikos.cz>
+In-Reply-To: <20150402154540.GM6821@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 02, 2015 at 10:21:35AM +0800, Qu Wenruo wrote:
-> Before this patch, ext*_image is always set NODATACSUM inode flag.
-> However btrfs-convert will set normal file with DATACUSM flag by
-> default, and generate checksum for regular file extent.
-> 
-> Now, a regular file extent is shared by a btrfs file inode with DATACSUM
-> and ext*_image with NODATACSUM, and it has checksum in csum tree.
-> This will cause btrfsck complain about odd checksum, since ext*_image is
-> set NODATACSUM but has checksum generated from regular file extent.
-> 
-> This patch makes convert completely obey datacsum setting, meaning
-> btrfs-convert will generate csum for every file extent by default.
-> 
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Applied, thanks.
+
+-------- Original Message  --------
+Subject: Re: [PATCH 2/2] btrfs-progs: convert-test: Add test for 
+converting ext* with regular file extent.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年04月02日 23:45
+
+> On Thu, Apr 02, 2015 at 10:21:36AM +0800, Qu Wenruo wrote:
+>> Before previous patch, btrfs-convert will result fsck complain if there
+>> is any regular file extent in newly converted btrfs.
+>>
+>> Add test case for it.
+>
+> Please separate the changes that update generic code and the test
+> itself.
+OK, I'll update it soon.
+>
+>> +script_dir=$(dirname $(realpath $0))
+>> +top=$(realpath $script_dir/../)
+>
+> Please use upper case names.
+Some fsck-tests use lower case names, I'll update them too.
+
+Thanks,
+Qu
+>
+>> +TEST_DEV=${TEST_DEV:-}
+>> +TEST_MNT=${TEST_MNT:-$top/tests/mnt}
+>> +RESULT="$top/tests/convert-tests-results.txt"
+>
+> RESULTS
+>
+>> +IMAGE="$script_dir/test.img"
+>>
+>> -_fail()
+>> -{
+>> -	echo "$*" | tee -a convert-tests-results.txt
+>> -	exit 1
+>> -}
+>> +source $top/tests/common
+>> +export top
+>> +export RESULT
+>> +# For comprehensive convert test which needs write something into ext*
+>> +export TEST_MNT
+>> +export LANG
+>> +
+>> +rm -f $RESULT
+>> +mkdir -p $TEST_MNT || _fail "unable to create mount point on $TEST_MNT"
+>> +
+>> +# test reply on btrfs-convert
+>> +check_prereq btrfs-convert
+>> +check_prereq btrfs
+>>
+>> -rm -f convert-tests-results.txt
+>>
+>> -test(){
+>> +convert_test(){
+>>   	echo "    [TEST]   $1"
+>>   	nodesize=$2
+>>   	shift 2
+>> -	echo "creating ext image with: $*" >> convert-tests-results.txt
+>> +	echo "creating ext image with: $*" >> $RESULT
+>>   	# 256MB is the smallest acceptable btrfs image.
+>> -	rm -f $here/test.img >> convert-tests-results.txt 2>&1 \
+>> +	rm -f $IMAGE >> $RESULT 2>&1 \
+>>   		|| _fail "could not remove test image file"
+>> -	truncate -s 256M $here/test.img >> convert-tests-results.txt 2>&1 \
+>> +	truncate -s 256M $IMAGE >> $RESULT 2>&1 \
+>>   		|| _fail "could not create test image file"
+>> -	$* -F $here/test.img >> convert-tests-results.txt 2>&1 \
+>> +	$* -F $IMAGE >> $RESULT 2>&1 \
+>>   		|| _fail "filesystem create failed"
+>> -	$here/btrfs-convert -N "$nodesize" $here/test.img \
+>> -			>> convert-tests-results.txt 2>&1 \
+>> +
+>> +	# write a file with regular file extent
+>> +	$SUDO_HELPER mount $IMAGE $TEST_MNT
+>> +	$SUDO_HELPER dd if=/dev/zero bs=$nodesize count=4 of=$TEST_MNT/test \
+>> +		1>/dev/null 2>&1
+>> +	$SUDO_HELPER umount $TEST_MNT
+>> +
+>> +	# do convert test
+>> +	$top/btrfs-convert -N "$nodesize" $script_dir/test.img \
+>
+> $IMAGE instead of "$script_dir/test.img"
+>
+>> +			>> $RESULT 2>&1 \
+>>   		|| _fail "btrfs-convert failed"
+>> -	$here/btrfs check $here/test.img >> convert-tests-results.txt 2>&1 \
+>
+> same here
+>
+>> +	$top/btrfs check $script_dir/test.img >> $RESULT 2>&1 \
+>
+> and here
+>
+>>   		|| _fail "btrfs check detected errors"
+>
+> Thanks.
+>

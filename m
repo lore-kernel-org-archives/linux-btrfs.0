@@ -1,207 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4433 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1031390AbbD2CbW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Apr 2015 22:31:22 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3T2U5O6018312
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2015 10:30:05 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 04/18] btrfs: qgroup: Cleanup open-coded old/new_refcnt update and read.
-Date: Wed, 29 Apr 2015 10:28:57 +0800
-Message-ID: <1430274551-9277-5-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:48332 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751635AbbDCF4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Apr 2015 01:56:04 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YduaG-0003S8-4m
+	for linux-btrfs@vger.kernel.org; Fri, 03 Apr 2015 07:56:00 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 07:56:00 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 07:56:00 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH v3] btrfs-progs: Doc: Add warning and note on
+ btrfs-convert.
+Date: Fri, 3 Apr 2015 05:55:54 +0000 (UTC)
+Message-ID: <pan$c078e$9a53acee$d6e24908$3d5c7666@cox.net>
+References: <1428024075-10211-1-git-send-email-quwenruo@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use inline functions to do such things, to improve readability.
+Qu Wenruo posted on Fri, 03 Apr 2015 09:21:15 +0800 as excerpted:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Acked-by: David Sterba <dsterba@suse.cz>
----
-v2:
-  None
----
- fs/btrfs/qgroup.c | 95 +++++++++++++++++++++++++++++++------------------------
- 1 file changed, 54 insertions(+), 41 deletions(-)
+> +WARNING: If one hopes to rollback to ext2/3/4, he or she should not execute
+> +*btrfs balance* command on converted btrfs.
+> +Since it will change the extent layout and make *btrfs-convert* unable to
+> +rollback.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 058c79e..9625644 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -84,11 +84,42 @@ struct btrfs_qgroup {
- 
- 	/*
- 	 * temp variables for accounting operations
-+	 * Refer to qgroup_shared_accouting() for details.
- 	 */
- 	u64 old_refcnt;
- 	u64 new_refcnt;
- };
- 
-+static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->old_refcnt < seq)
-+		qg->old_refcnt = seq;
-+	qg->old_refcnt += mod;
-+}
-+
-+static void btrfs_qgroup_update_new_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->new_refcnt < seq)
-+		qg->new_refcnt = seq;
-+	qg->new_refcnt += mod;
-+}
-+
-+static inline u64 btrfs_qgroup_get_old_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->old_refcnt < seq)
-+		return 0;
-+	return qg->old_refcnt - seq;
-+}
-+
-+static inline u64 btrfs_qgroup_get_new_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->new_refcnt < seq)
-+		return 0;
-+	return qg->new_refcnt - seq;
-+}
-+
- /*
-  * glue structure to represent the relations between qgroups.
-  */
-@@ -1497,6 +1528,7 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 		ULIST_ITER_INIT(&tmp_uiter);
- 		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
- 			struct btrfs_qgroup_list *glist;
-+			int mod;
- 
- 			qg = u64_to_ptr(tmp_unode->aux);
- 			/*
-@@ -1508,20 +1540,15 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 			 * upper level qgroups in order to determine exclusive
- 			 * counts.
- 			 *
--			 * For rescan we want to set old_refcnt to seq so our
--			 * exclusive calculations end up correct.
-+			 * For rescan none of the extent is recorded before so
-+			 * we just don't add old_refcnt.
- 			 */
- 			if (rescan)
--				qg->old_refcnt = seq;
--			else if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
--
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
-+				mod = 0;
- 			else
--				qg->new_refcnt++;
-+				mod = 1;
-+			btrfs_qgroup_update_old_refcnt(qg, seq, mod);
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 			list_for_each_entry(glist, &qg->groups, next_group) {
- 				ret = ulist_add(qgroups, glist->group->qgroupid,
- 						ptr_to_u64(glist->group),
-@@ -1615,14 +1642,8 @@ next:
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (qg->old_refcnt < seq)
--			qg->old_refcnt = seq + 1;
--		else
--			qg->old_refcnt++;
--		if (qg->new_refcnt < seq)
--			qg->new_refcnt = seq + 1;
--		else
--			qg->new_refcnt++;
-+		btrfs_qgroup_update_old_refcnt(qg, seq, 1);
-+		btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(qgroups, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1663,17 +1684,10 @@ static int qgroup_calc_new_refcnt(struct btrfs_fs_info *fs_info,
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED) {
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
--			else
--				qg->new_refcnt++;
--		} else {
--			if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
--		}
-+		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED)
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
-+		else
-+			btrfs_qgroup_update_old_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(tmp, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1706,11 +1720,14 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		bool dirty = false;
- 
- 		qg = u64_to_ptr(unode->aux);
-+		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
-+		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
-+
- 		/*
- 		 * Wasn't referenced before but is now, add to the reference
- 		 * counters.
- 		 */
--		if (qg->old_refcnt <= seq && qg->new_refcnt > seq) {
-+		if (cur_old_count == 0 && cur_new_count > 0) {
- 			qg->rfer += num_bytes;
- 			qg->rfer_cmpr += num_bytes;
- 			dirty = true;
-@@ -1720,21 +1737,12 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		 * Was referenced before but isn't now, subtract from the
- 		 * reference counters.
- 		 */
--		if (qg->old_refcnt > seq && qg->new_refcnt <= seq) {
-+		if (cur_old_count > 0 && cur_new_count == 0) {
- 			qg->rfer -= num_bytes;
- 			qg->rfer_cmpr -= num_bytes;
- 			dirty = true;
- 		}
- 
--		if (qg->old_refcnt < seq)
--			cur_old_count = 0;
--		else
--			cur_old_count = qg->old_refcnt - seq;
--		if (qg->new_refcnt < seq)
--			cur_new_count = 0;
--		else
--			cur_new_count = qg->new_refcnt - seq;
--
- 		/*
- 		 * If our refcount was the same as the roots previously but our
- 		 * new count isn't the same as the number of roots now then we
-@@ -1932,6 +1940,11 @@ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
- 		new_roots = old_roots;
- 		old_roots++;
- 	}
-+
-+	/*
-+	 * Bump qgroup_seq to avoid seq overlap
-+	 * XXX: This makes qgroup_seq mismatch with oper->seq.
-+	 */
- 	fs_info->qgroup_seq += old_roots + 1;
- 
- 
+Because "since" is subordinating and the sentence doesn't contain what
+it is subordinated to as that's explained in the previous sentence,
+"Since it will..." introduces a sentence fragment.
+
+Possible correction 1, combine the sentences:  Either simply eliminate
+the period following the previous sentence, or convert it to a comma,
+either way combining the sentences into one.
+
+Possible correction 2, eliminate the subordinator:  Eliminate "Since"
+and begin the second sentence with "A balance..." (replacing "it").
+
+Possible correction 3, reorder and edit, something like this:
+
++WARNING: Do not execute a *btrfs balance" on a converted btrfs until you
++are sure you will not rollback, as a balance changes the extent layout
++and prevents btrfs-convert from successfully rolling back to ext2/3/4.
+
 -- 
-2.3.6
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

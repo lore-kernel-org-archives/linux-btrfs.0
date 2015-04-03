@@ -1,155 +1,247 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45621 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62161 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751695AbbDBCXk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 22:23:40 -0400
+	with ESMTP id S1751139AbbDCHDZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 03:03:25 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t322MXmS018150
-	for <linux-btrfs@vger.kernel.org>; Thu, 2 Apr 2015 10:22:33 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3372EDK001958
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Apr 2015 15:02:14 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] btrfs-progs: convert: Make ext*_image file obey datacsum setting.
-Date: Thu, 2 Apr 2015 10:21:35 +0800
-Message-ID: <1427941296-19502-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 1/6] btrfs-progs: test-frame: Update variant names
+Date: Fri, 3 Apr 2015 15:01:12 +0800
+Message-ID: <1428044477-18485-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1428044477-18485-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1428044477-18485-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this patch, ext*_image is always set NODATACSUM inode flag.
-However btrfs-convert will set normal file with DATACUSM flag by
-default, and generate checksum for regular file extent.
+Use upper case variant name for the following variants:
+1) top -> TOP
+2) script_dir -> SCRIPT_DIR
 
-Now, a regular file extent is shared by a btrfs file inode with DATACSUM
-and ext*_image with NODATACSUM, and it has checksum in csum tree.
-This will cause btrfsck complain about odd checksum, since ext*_image is
-set NODATACSUM but has checksum generated from regular file extent.
+And change the following variant name:
+1) RESULT -> RESULTS
 
-This patch makes convert completely obey datacsum setting, meaning
-btrfs-convert will generate csum for every file extent by default.
-
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 30 ++++++++++++++++++++----------
- 1 file changed, 20 insertions(+), 10 deletions(-)
+ tests/common                                     | 20 ++++++++++----------
+ tests/fsck-tests.sh                              | 24 ++++++++++++------------
+ tests/fsck-tests/006-bad-root-items/test.sh      |  6 +++---
+ tests/fsck-tests/012-leaf-corruption/test.sh     |  4 ++--
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh | 16 ++++++++--------
+ 5 files changed, 35 insertions(+), 35 deletions(-)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 4dc33b3..d742307 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -1161,7 +1161,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root, u64 objectid,
- 				   struct btrfs_inode_item *inode,
- 				   u64 start_byte, u64 end_byte,
--				   ext2_filsys ext2_fs)
-+				   ext2_filsys ext2_fs, int datacsum)
+diff --git a/tests/common b/tests/common
+index 91a73e1..94cf913 100644
+--- a/tests/common
++++ b/tests/common
+@@ -5,7 +5,7 @@
+ 
+ _fail()
  {
- 	u32 blocksize = ext2_fs->blocksize;
- 	u32 block = start_byte / blocksize;
-@@ -1176,7 +1176,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
- 		.disk_block	= 0,
- 		.num_blocks	= 0,
- 		.boundary	= (u64)-1,
--		.checksum 	= 0,
-+		.checksum	= datacsum,
- 		.errcode	= 0,
- 	};
- 	for (; start_byte < end_byte; block++, start_byte += blocksize) {
-@@ -1191,7 +1191,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
- 	if (data.num_blocks > 0) {
- 		ret = record_file_blocks(trans, root, objectid, inode,
- 					 data.first_block, data.disk_block,
--					 data.num_blocks, 0);
-+					 data.num_blocks, datacsum);
- 		if (ret)
- 			goto fail;
- 		data.first_block += data.num_blocks;
-@@ -1199,7 +1199,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
- 	if (last_block > data.first_block) {
- 		ret = record_file_blocks(trans, root, objectid, inode,
- 					 data.first_block, 0, last_block -
--					 data.first_block, 0);
-+					 data.first_block, datacsum);
- 		if (ret)
- 			goto fail;
- 	}
-@@ -1210,7 +1210,7 @@ fail:
-  * Create the ext2fs image file.
-  */
- static int create_ext2_image(struct btrfs_root *root, ext2_filsys ext2_fs,
--			     const char *name)
-+			     const char *name, int datacsum)
+-	echo "$*" | tee -a $RESULT
++	echo "$*" | tee -a $RESULTS
+ 	exit 1
+ }
+ 
+@@ -17,13 +17,13 @@ _not_run()
+ 
+ run_check()
  {
- 	int ret;
- 	struct btrfs_key key;
-@@ -1231,11 +1231,14 @@ static int create_ext2_image(struct btrfs_root *root, ext2_filsys ext2_fs,
- 	u64 last_byte;
- 	u64 first_free;
- 	u64 total_bytes;
-+	u64 flags = BTRFS_INODE_READONLY;
- 	u32 sectorsize = root->sectorsize;
+-	echo "############### $@" >> $RESULT 2>&1
+-	"$@" >> $RESULT 2>&1 || _fail "failed: $@"
++	echo "############### $@" >> $RESULTS 2>&1
++	"$@" >> $RESULTS 2>&1 || _fail "failed: $@"
+ }
  
- 	total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	first_free =  BTRFS_SUPER_INFO_OFFSET + sectorsize * 2 - 1;
- 	first_free &= ~((u64)sectorsize - 1);
-+	if (!datacsum)
-+		flags |= BTRFS_INODE_NODATASUM;
+ check_prereq()
+ {
+-	if ! [ -f $top/$1 ]; then
++	if ! [ -f $TOP/$1 ]; then
+ 		_fail "Failed prerequisities: $1";
+ 	fi
+ }
+@@ -31,12 +31,12 @@ check_prereq()
+ check_image()
+ {
+ 	image=$1
+-	echo "testing image $(basename $image)" >> $RESULT
+-	$top/btrfs check $image >> $RESULT 2>&1
++	echo "testing image $(basename $image)" >> $RESULTS
++	$TOP/btrfs check $image >> $RESULTS 2>&1
+ 	[ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
  
- 	memset(&btrfs_inode, 0, sizeof(btrfs_inode));
- 	btrfs_set_stack_inode_generation(&btrfs_inode, 1);
-@@ -1243,8 +1246,7 @@ static int create_ext2_image(struct btrfs_root *root, ext2_filsys ext2_fs,
- 	btrfs_set_stack_inode_nlink(&btrfs_inode, 1);
- 	btrfs_set_stack_inode_nbytes(&btrfs_inode, 0);
- 	btrfs_set_stack_inode_mode(&btrfs_inode, S_IFREG | 0400);
--	btrfs_set_stack_inode_flags(&btrfs_inode, BTRFS_INODE_NODATASUM |
--				    BTRFS_INODE_READONLY);
-+	btrfs_set_stack_inode_flags(&btrfs_inode,  flags);
- 	btrfs_init_path(&path);
- 	trans = btrfs_start_transaction(root, 1);
- 	BUG_ON(!trans);
-@@ -1271,6 +1273,12 @@ static int create_ext2_image(struct btrfs_root *root, ext2_filsys ext2_fs,
- 					       key.objectid, sectorsize);
- 		if (ret)
- 			goto fail;
-+		if (datacsum) {
-+			ret = csum_disk_extent(trans, root, key.objectid,
-+					       sectorsize);
-+			if (ret)
-+				goto fail;
-+		}
- 	}
+-	run_check $top/btrfs check --repair $image
+-	run_check $top/btrfs check $image
++	run_check $TOP/btrfs check --repair $image
++	run_check $TOP/btrfs check $image
+ }
  
- 	while(1) {
-@@ -1323,7 +1331,8 @@ next:
- 		if (bytenr > last_byte) {
- 			ret = create_image_file_range(trans, root, objectid,
- 						      &btrfs_inode, last_byte,
--						      bytenr, ext2_fs);
-+						      bytenr, ext2_fs,
-+						      datacsum);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -1346,7 +1355,8 @@ next:
- 	if (total_bytes > last_byte) {
- 		ret = create_image_file_range(trans, root, objectid,
- 					      &btrfs_inode, last_byte,
--					      total_bytes, ext2_fs);
-+					      total_bytes, ext2_fs,
-+					      datacsum);
- 		if (ret)
- 			goto fail;
- 	}
-@@ -2374,7 +2384,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 		fprintf(stderr, "unable to create subvol\n");
- 		goto fail;
- 	}
--	ret = create_ext2_image(ext2_root, ext2_fs, "image");
-+	ret = create_ext2_image(ext2_root, ext2_fs, "image", datacsum);
- 	if (ret) {
- 		fprintf(stderr, "error during create_ext2_image %d\n", ret);
- 		goto fail;
+ check_all_images()
+@@ -44,8 +44,8 @@ check_all_images()
+ 	dir=$1
+ 	for i in $(find $dir -iname '*.img')
+ 	do
+-		echo "extracting image $(basename $i)" >> $RESULT
+-		$top/btrfs-image -r $i $i.restored || \
++		echo "extracting image $(basename $i)" >> $RESULTS
++		$TOP/btrfs-image -r $i $i.restored || \
+ 			_fail "failed to extract image $i"
+ 
+ 		check_image $i.restored
+diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
+index 54bd353..046b33d 100755
+--- a/tests/fsck-tests.sh
++++ b/tests/fsck-tests.sh
+@@ -5,25 +5,25 @@
+ # It's GPL, same as everything else in this tree.
+ #
+ 
+-unset top
++unset TOP
+ unset LANG
+ LANG=C
+-script_dir=$(dirname $(realpath $0))
+-top=$(realpath $script_dir/../)
++SCRIPT_DIR=$(dirname $(realpath $0))
++TOP=$(realpath $SCRIPT_DIR/../)
+ TEST_DEV=${TEST_DEV:-}
+-TEST_MNT=${TEST_MNT:-$top/tests/mnt}
+-RESULT="$top/tests/fsck-tests-results.txt"
++TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
++RESULTS="$TOP/tests/fsck-tests-results.txt"
+ 
+-source $top/tests/common
++source $TOP/tests/common
+ 
+-# Allow child test to use $top and $RESULT
+-export top
+-export RESULT
++# Allow child test to use $TOP and $RESULTS
++export TOP
++export RESULTS
+ # For custom script needs to verfiy recovery
+ export TEST_MNT
+ export LANG
+ 
+-rm -f $RESULT
++rm -f $RESULTS
+ mkdir -p $TEST_MNT || _fail "unable to create mount point on $TEST_MNT"
+ 
+ # test rely on corrupting blocks tool
+@@ -44,7 +44,7 @@ check_prereq btrfs
+ #    This is for case btrfs-image can't dump or case needs extra
+ #    check/verify
+ 
+-for i in $(find $top/tests/fsck-tests -maxdepth 1 -mindepth 1 -type d | sort)
++for i in $(find $TOP/tests/fsck-tests -maxdepth 1 -mindepth 1 -type d | sort)
+ do
+ 	echo "    [TEST]   $(basename $i)"
+ 	cd $i
+@@ -58,5 +58,5 @@ do
+ 		# Type 1
+ 		check_all_images `pwd`
+ 	fi
+-	cd $top
++	cd $TOP
+ done
+diff --git a/tests/fsck-tests/006-bad-root-items/test.sh b/tests/fsck-tests/006-bad-root-items/test.sh
+index 2c0e1c6..bfbfcfc 100755
+--- a/tests/fsck-tests/006-bad-root-items/test.sh
++++ b/tests/fsck-tests/006-bad-root-items/test.sh
+@@ -1,13 +1,13 @@
+ #!/bin/bash
+ 
+-source $top/tests/common
++source $TOP/tests/common
+ 
+-echo "extracting image default_case.tar.xz" >> $RESULT
++echo "extracting image default_case.tar.xz" >> $RESULTS
+ tar xJf default_case.tar.xz || \
+ 	_fail "failed to extract default_case.tar.xz"
+ check_image test.img
+ 
+-echo "extracting image skinny_case.tar.xz" >> $RESULT
++echo "extracting image skinny_case.tar.xz" >> $RESULTS
+ tar xJf skinny_case.tar.xz || \
+ 	_fail "failed to extract skinny_case.tar.xz"
+ check_image test.img
+diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
+index 8f82fd1..fe5c226 100755
+--- a/tests/fsck-tests/012-leaf-corruption/test.sh
++++ b/tests/fsck-tests/012-leaf-corruption/test.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ 
+-source $top/tests/common
++source $TOP/tests/common
+ 
+ # Check file list for leaf corruption, no regular/preallocated
+ # file extent case.
+@@ -34,7 +34,7 @@ leaf_no_data_ext_list=(
+ generate_leaf_corrupt_no_data_ext()
+ {
+ 	dest=$1
+-	echo "generating leaf_corrupt_no_data_ext.btrfs-image" >> $RESULT
++	echo "generating leaf_corrupt_no_data_ext.btrfs-image" >> $RESULTS
+ 	tar xJf ./no_data_extent.tar.xz || \
+ 		_fail "failed to extract leaf_corrupt_no_data_ext.btrfs-image"
+ 	btrfs-image -r test.img.btrfs-image $dest || \
+diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+index 0542c27..cde97db 100755
+--- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
++++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ 
+-source $top/tests/common
++source $TOP/tests/common
+ 
+ if [ -z $TEST_DEV ]; then
+ 	echo "    [NOTRUN] extent tree rebuild, need TEST_DEV variant"
+@@ -16,32 +16,32 @@ fi
+ test_extent_tree_rebuild()
+ {
+ 	echo "     [TEST]    extent tree rebuild"
+-	$top/mkfs.btrfs -f $TEST_DEV >> /dev/null 2>&1 || _fail "fail to mkfs"
++	$TOP/mkfs.btrfs -f $TEST_DEV >> /dev/null 2>&1 || _fail "fail to mkfs"
+ 
+ 	run_check mount $TEST_DEV $TEST_MNT
+ 	cp -aR /lib/modules/`uname -r`/ $TEST_MNT 2>&1
+ 
+ 	for i in `seq 1 100`;do
+-		$top/btrfs sub snapshot $TEST_MNT \
++		$TOP/btrfs sub snapshot $TEST_MNT \
+ 			$TEST_MNT/snapaaaaaaa_$i >& /dev/null
+ 	done
+ 	run_check umount $TEST_DEV
+ 
+ 	# get extent root bytenr
+-	extent_root_bytenr=`$top/btrfs-debug-tree -r $TEST_DEV | \
++	extent_root_bytenr=`$TOP/btrfs-debug-tree -r $TEST_DEV | \
+ 			    grep extent | awk '{print $7}'`
+ 	if [ -z $extent_root_bytenr ];then
+ 		_fail "fail to get extent root bytenr"
+ 	fi
+ 
+ 	# corrupt extent root node block
+-	run_check $top/btrfs-corrupt-block -l $extent_root_bytenr \
++	run_check $TOP/btrfs-corrupt-block -l $extent_root_bytenr \
+ 		-b 4096 $TEST_DEV
+ 
+-	$top/btrfs check $TEST_DEV >& /dev/null && \
++	$TOP/btrfs check $TEST_DEV >& /dev/null && \
+ 			_fail "btrfs check should detect failure"
+-	run_check $top/btrfs check --init-extent-tree $TEST_DEV
+-	run_check $top/btrfs check $TEST_DEV
++	run_check $TOP/btrfs check --init-extent-tree $TEST_DEV
++	run_check $TOP/btrfs check $TEST_DEV
+ }
+ 
+ test_extent_tree_rebuild
 -- 
-2.3.4
+2.3.5
 

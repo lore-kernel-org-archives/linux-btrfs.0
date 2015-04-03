@@ -1,39 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40621 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752036AbbDCS2l (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 14:28:41 -0400
-Date: Fri, 3 Apr 2015 11:28:25 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Ric Wheeler <ricwheeler@gmail.com>
-Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-        device-mapper development <dm-devel@redhat.com>,
-        linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+Received: from mailrelay108.isp.belgacom.be ([195.238.20.135]:17181 "EHLO
+	mailrelay108.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752087AbbDCTul (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Apr 2015 15:50:41 -0400
+From: Fabian Frederick <fabf@skynet.be>
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org
-Subject: LPC2015: File and Storage Systems uconf
-Message-ID: <20150403182825.GA11030@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: [PATCH V2 linux-next] Btrfs: use BTRFS_COMPRESS_NONE instead of 0
+Date: Fri,  3 Apr 2015 21:50:34 +0200
+Message-Id: <1428090634-21126-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+cow_file_range_inline() was called with 0 instead of actual definition.
 
-Linux Plumbers is coming up in just four months!  I would like for there to be
-a file & storage miniconf at this year's LPC, so I've started assembling a plan
-for what we might discuss.  As a starting point, I've filled the planning page
-with the topics that didn't achieve any sort of resolution at LSF/MM:
+btrfs_finish_ordered_io() initialized compress_type with 0 as well.
+(Thanks to David Sterba for suggesting this update).
 
-http://wiki.linuxplumbersconf.org/2015:file_and_storage_systems
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
 
-There are undoubtedly things that I missed in my initial list, and it would be
-very helpful to figure out who's going.
+V2: also replace 0 in btrfs_finish_ordered_io()
 
-If you'd like to visit Seattle in mid-August (I promise it probably won't be
-raining!) and/or have a topic that you'd like to talk about that I missed,
-I'd appreciate it if you wrote it into the wiki page.
+ fs/btrfs/inode.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5b6fbae..2f064d7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -524,7 +524,8 @@ cont:
+ 			 * to make an uncompressed inline extent.
+ 			 */
+ 			ret = cow_file_range_inline(root, inode, start, end,
+-						    0, 0, NULL);
++						    0, BTRFS_COMPRESS_NONE,
++						    NULL);
+ 		} else {
+ 			/* try making a compressed inline extent */
+ 			ret = cow_file_range_inline(root, inode, start, end,
+@@ -943,8 +944,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 
+ 	if (start == 0) {
+ 		/* lets try to make an inline extent */
+-		ret = cow_file_range_inline(root, inode, start, end, 0, 0,
+-					    NULL);
++		ret = cow_file_range_inline(root, inode, start, end, 0,
++					    BTRFS_COMPRESS_NONE, NULL);
+ 		if (ret == 0) {
+ 			extent_clear_unlock_delalloc(inode, start, end, NULL,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+@@ -2793,7 +2794,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_state *cached_state = NULL;
+ 	struct new_sa_defrag_extent *new = NULL;
+-	int compress_type = 0;
++	int compress_type = BTRFS_COMPRESS_NONE;
+ 	int ret = 0;
+ 	u64 logical_len = ordered_extent->len;
+ 	bool nolock;
+-- 
+1.9.1
 
---Darrick

@@ -1,54 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from asuka.romanrm.net ([128.199.93.76]:32796 "EHLO
-	asuka.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751306AbbDCHRB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 03:17:01 -0400
-Date: Fri, 3 Apr 2015 12:16:56 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:53396 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753352AbbDCIdb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Apr 2015 04:33:31 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ydx2f-0002ks-Ps
+	for linux-btrfs@vger.kernel.org; Fri, 03 Apr 2015 10:33:30 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 10:33:29 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 10:33:29 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH v3] btrfs-progs: Doc: Add warning and note on
  btrfs-convert.
-Message-ID: <20150403121656.35782bda@natsu>
-In-Reply-To: <551E3C06.9040305@cn.fujitsu.com>
+Date: Fri, 3 Apr 2015 08:33:23 +0000 (UTC)
+Message-ID: <pan$e0c2f$781ca278$7c4e0058$da80a306@cox.net>
 References: <1428024075-10211-1-git-send-email-quwenruo@cn.fujitsu.com>
 	<pan$c078e$9a53acee$d6e24908$3d5c7666@cox.net>
 	<551E3C06.9040305@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/.NMA6/ThWVmqZkmfhBWVJbB"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/.NMA6/ThWVmqZkmfhBWVJbB
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Qu Wenruo posted on Fri, 03 Apr 2015 15:06:46 +0800 as excerpted:
 
-On Fri, 3 Apr 2015 15:06:46 +0800
-Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> It seems my English is really poor... :(
 
-> >> +WARNING: If one hopes to rollback to ext2/3/4, he or she should not e=
-xecute
+I think the usual response is "Better than my Chinese!" =:^)
 
-It also seems a bit awkward to spell out "he or she", if you want to refer =
-to
-a user without specifying the gender, in software documentation it's more
-common to use "they": https://en.wikipedia.org/wiki/Singular_they
+Seriously, tho, it's better than many native English speakers/writers as 
+well, good enough I'd not guess different were it not for the name and 
+the cn hint in your email address.  Meanwhile, while it was a sentence 
+fragment, in less formal settings (such as this list) it would have 
+passed more or less unnoticed, particularly since the meaning was so 
+obvious that not even a word needed changed, only a bit of punctuation.
 
---=20
-With respect,
-Roman
+In more formal setting such as btrfs documentation, however, a sentence 
+fragment of that sort will trigger the reader's misparse detector, thus 
+causing them to pause and go back and reread, slower, to see where their 
+natural parsing went wrong.  As such, it brings attention to something 
+that would otherwise be fairly minor.  So better to fix it now and not 
+have all those people stumbling over it later. =:^)
 
---Sig_/.NMA6/ThWVmqZkmfhBWVJbB
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlUePmgACgkQTLKSvz+PZwgxHwCeIZBlLeJ8BpXMsrHNu9wCnT1d
-8msAn2nG7kkv+29oBqzVPyd5q0gG7Mnj
-=iuuL
------END PGP SIGNATURE-----
-
---Sig_/.NMA6/ThWVmqZkmfhBWVJbB--

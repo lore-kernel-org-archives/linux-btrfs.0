@@ -1,66 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:36242 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752766AbbDBSD1 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Apr 2015 14:03:27 -0400
-Received: by iedm5 with SMTP id m5so75315628ied.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Apr 2015 11:03:27 -0700 (PDT)
+Received: from userp1040.oracle.com ([156.151.31.81]:40621 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752036AbbDCS2l (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 14:28:41 -0400
+Date: Fri, 3 Apr 2015 11:28:25 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Ric Wheeler <ricwheeler@gmail.com>
+Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>,
+        linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: LPC2015: File and Storage Systems uconf
+Message-ID: <20150403182825.GA11030@birch.djwong.org>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <pan.2015.04.02.17.31.42@googlemail.com>
-References: <1427810206-23103-1-git-send-email-fdmanana@suse.com>
-	<1427995511-13028-1-git-send-email-fdmanana@suse.com>
-	<pan.2015.04.02.17.31.42@googlemail.com>
-Date: Thu, 2 Apr 2015 19:03:27 +0100
-Message-ID: <CAL3q7H6p4S7f72krzV6dTUYxKzOvx8AYOkhdx76_PSLKq-VfKQ@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix range cloning when same inode used as
- source and destination
-From: Filipe David Manana <fdmanana@gmail.com>
-To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 2, 2015 at 6:31 PM, Holger Hoffstätte
-<holger.hoffstaette@googlemail.com> wrote:
->
-> On Thu, 02 Apr 2015 18:25:11 +0100, Filipe Manana wrote:
->
->> V2: Fixed a warning about potentially uninitialized variable. David
->>     got this warning on a 4.5.1 gcc, but I didn't on a 4.9.2 gcc
->>     however.
->
-> I was *just* about to post this warning, since I saw it only a minute ago!
->
-> I assume you mean:
->
-> fs/btrfs/ioctl.c: In function 'btrfs_clone':
-> fs/btrfs/ioctl.c:3531:14: warning: 'next_key_min_offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
->    key.offset = next_key_min_offset;
->               ^
->
-> ..and this is with 4.9.2 here.
->
-> Anyway..thanks for being faster :)
+Hi everyone,
 
-Yes, that was it.
-Thanks.
+Linux Plumbers is coming up in just four months!  I would like for there to be
+a file & storage miniconf at this year's LPC, so I've started assembling a plan
+for what we might discuss.  As a starting point, I've filled the planning page
+with the topics that didn't achieve any sort of resolution at LSF/MM:
 
->
-> Holger
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+http://wiki.linuxplumbersconf.org/2015:file_and_storage_systems
 
+There are undoubtedly things that I missed in my initial list, and it would be
+very helpful to figure out who's going.
 
+If you'd like to visit Seattle in mid-August (I promise it probably won't be
+raining!) and/or have a topic that you'd like to talk about that I missed,
+I'd appreciate it if you wrote it into the wiki page.
 
--- 
-Filipe David Manana,
+Thanks,
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+--Darrick

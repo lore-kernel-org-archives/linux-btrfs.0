@@ -1,36 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f175.google.com ([209.85.214.175]:33981 "EHLO
-	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751472AbbDCUHj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 16:07:39 -0400
-Received: by obbgh1 with SMTP id gh1so175691051obb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 13:07:38 -0700 (PDT)
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:33210 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751913AbbDCVIj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 17:08:39 -0400
+Received: by pdbnk13 with SMTP id nk13so52406958pdb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 14:08:38 -0700 (PDT)
+Date: Fri, 3 Apr 2015 14:08:37 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, "Eric W. Biederman" <ebiederm@xmission.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        Timo Kokkonen <timo.kokkonen@offcode.fi>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: prevent deletion of mounted subvolumes
+Message-ID: <20150403210837.GA13535@mew.dhcp4.washington.edu>
+References: <64e28e67cbab0a2cd97411b848911414a743d83f.1427705646.git.osandov@osandov.com>
+ <20150330123034.GB32051@suse.cz>
+ <20150330184135.GA27227@mew.dhcp4.washington.edu>
+ <87k2xwv6y8.fsf@x220.int.ebiederm.org>
+ <20150401070328.GA27048@mew>
+ <20150401112242.GG6821@suse.cz>
+ <20150402034954.GA25368@mew.Belkin>
+ <20150402150225.GJ6821@twin.jikos.cz>
 MIME-Version: 1.0
-Date: Fri, 3 Apr 2015 13:07:37 -0700
-Message-ID: <CADw2B2NDTqOXQdh+xBTfk3=MfYJUtGAvQ-B4RaADA4XXJ30OZw@mail.gmail.com>
-Subject: mlocate/updatedb and btrfs subvolume mounts
-From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150402150225.GJ6821@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've just noticed that I'm having issues with finding files using
-"locate" when those files are on btrfs subvolume mounts.
+On Thu, Apr 02, 2015 at 05:02:25PM +0200, David Sterba wrote:
+> On Wed, Apr 01, 2015 at 08:49:54PM -0700, Omar Sandoval wrote:
+> > Hm, yeah, that's unfortunate, thanks for pointing that out. It looks
+> > like we can get the subvolume ID reliably:
+> > 
+> > ----
+> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> > index 05fef19..a74ddb3 100644
+> > --- a/fs/btrfs/super.c
+> > +++ b/fs/btrfs/super.c
+> > @@ -1024,6 +1024,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+> >  	struct btrfs_root *root = info->tree_root;
+> >  	char *compress_type;
+> >  
+> > +	seq_printf(seq, ",subvolid=%llu",
+> > +		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
+> 
+> yes, subvolid is reliable, but not very friendly from users' POV. I'd
+> like to see subvol=/path there. Possibly we can have both.
 
-The issue is that updatedb cannot discern the difference between a
-btrfs bind mount and btrfs subvolume [1][2]. This generally means that
-if you're using btrfs subvolume mounts and updatedb at the same time,
-and you want to index those subvolumes, you'll need to set
-PRUNE_BIND_MOUNTS to 0 or "no". And then deal with all the cruft that
-causes.
+So are you saying that we should try to fix the bug in userspace by
+first getting subvol/subvolid in /proc/mounts, or do you want to keep
+that a separate issue? Just asking because you didn't comment on the
+kernel-side fix. Here's a concrete implementation of what I'm talking
+about: https://github.com/osandov/linux/tree/btrfs-delete-mounted-subvol.
 
->From the bug above, you can see that the RedHat dev Michal Sekletar is
-out of ideas. I'm not sure if he's reached out here or not... and if
-not, he might welcome some help from the folks on this list.
-
-Regrads,
-Richard
-
-[1] https://bugzilla.redhat.com/show_bug.cgi?id=906591#c3
-[2] http://www.spinics.net/lists/linux-btrfs/msg42510.html
+-- 
+Omar

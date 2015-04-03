@@ -1,67 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay108.isp.belgacom.be ([195.238.20.135]:17181 "EHLO
-	mailrelay108.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752087AbbDCTul (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 Apr 2015 15:50:41 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH V2 linux-next] Btrfs: use BTRFS_COMPRESS_NONE instead of 0
-Date: Fri,  3 Apr 2015 21:50:34 +0200
-Message-Id: <1428090634-21126-1-git-send-email-fabf@skynet.be>
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:37921 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752169AbbDCUVu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 16:21:50 -0400
+Received: by igbqf9 with SMTP id qf9so101528421igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 13:21:50 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20150403182825.GA11030@birch.djwong.org>
+References: <20150403182825.GA11030@birch.djwong.org>
+Date: Fri, 3 Apr 2015 14:21:49 -0600
+Message-ID: <CAJCQCtR76kVMv1Zx3VZWR=10zRWZ8yxeXUbj3o3Q1Ydt5dibhQ@mail.gmail.com>
+Subject: Re: LPC2015: File and Storage Systems uconf
+From: Chris Murphy <lists@colorremedies.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cow_file_range_inline() was called with 0 instead of actual definition.
+On Fri, Apr 3, 2015 at 12:28 PM, Darrick J. Wong
+<darrick.wong@oracle.com> wrote:
 
-btrfs_finish_ordered_io() initialized compress_type with 0 as well.
-(Thanks to David Sterba for suggesting this update).
+> http://wiki.linuxplumbersconf.org/2015:file_and_storage_systems
+"userspace interactions with ongoing work in the filesystem and IO stack"
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
+I'm finding some weird [1] behaviors with Btrfs multiple device
+volumes in gnome-shell. The 2012 status report on Btrfs and
+gnome/nautilus integration [2] was that developers needed more
+reliable information from the kernel. Since that time a bunch of sysfs
+and vfs work has been done, including Btrfs related work, yet I have
+no idea if this meets the requirements for the DE's to convey the
+information and behaviors they want to the user.
 
-V2: also replace 0 in btrfs_finish_ordered_io()
+I'm not sure who the relevant DE stake holders are, but it might be a
+good idea to track some of them down. There is a 2010 open udisks RFE
+[3] for Btrfs support that's most likely the ultimate source of the
+various other bugs, which aren't bugs insofar as udisks just needs to
+know more about Btrfs behavior, but I also don't know if all the DE's
+use udisks or something else.
 
- fs/btrfs/inode.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5b6fbae..2f064d7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -524,7 +524,8 @@ cont:
- 			 * to make an uncompressed inline extent.
- 			 */
- 			ret = cow_file_range_inline(root, inode, start, end,
--						    0, 0, NULL);
-+						    0, BTRFS_COMPRESS_NONE,
-+						    NULL);
- 		} else {
- 			/* try making a compressed inline extent */
- 			ret = cow_file_range_inline(root, inode, start, end,
-@@ -943,8 +944,8 @@ static noinline int cow_file_range(struct inode *inode,
- 
- 	if (start == 0) {
- 		/* lets try to make an inline extent */
--		ret = cow_file_range_inline(root, inode, start, end, 0, 0,
--					    NULL);
-+		ret = cow_file_range_inline(root, inode, start, end, 0,
-+					    BTRFS_COMPRESS_NONE, NULL);
- 		if (ret == 0) {
- 			extent_clear_unlock_delalloc(inode, start, end, NULL,
- 				     EXTENT_LOCKED | EXTENT_DELALLOC |
-@@ -2793,7 +2794,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct extent_state *cached_state = NULL;
- 	struct new_sa_defrag_extent *new = NULL;
--	int compress_type = 0;
-+	int compress_type = BTRFS_COMPRESS_NONE;
- 	int ret = 0;
- 	u64 logical_len = ordered_extent->len;
- 	bool nolock;
--- 
-1.9.1
+Chris Murphy
 
+
+[1]
+https://bugzilla.gnome.org/show_bug.cgi?id=746769
+[2]
+https://bugzilla.gnome.org/show_bug.cgi?id=608204#c7
+[3]
+https://bugs.freedesktop.org/show_bug.cgi?id=26258

@@ -1,120 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f44.google.com ([74.125.82.44]:34296 "EHLO
-	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751032AbbDCXgN convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Apr 2015 19:36:13 -0400
-Received: by wgbdm7 with SMTP id dm7so121179348wgb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Apr 2015 16:36:12 -0700 (PDT)
+Received: from mail.virtall.com ([178.63.195.102]:48974 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751491AbbDDBz5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Apr 2015 21:55:57 -0400
+Received: from mailext.virtall.com (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP id EB4D556A976
+	for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2015 03:55:54 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: 3.19.3: fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4c/0x10e  [btrfs]()
 MIME-Version: 1.0
-Date: Fri, 3 Apr 2015 16:36:11 -0700
-Message-ID: <CAKgsxVRfn8v3ubrwonm-UXgBRg7Mz=90_DSOwzpeyVTTP-JQ8g@mail.gmail.com>
-Subject: Btrfs ENOSPC issue
-From: Justin Maggard <jmaggard10@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 04 Apr 2015 10:55:54 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+Message-ID: <6f897a1668c402fef084382bcda34fc7@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Got this one for some reason; this fs did not have any issues before:
 
-We're hitting a consistently reproducible ENOSPC condition with a
-simple test case:
 
-# truncate -s 1T btrfs.fs
-# mkfs.btrfs btrfs.fs
-# mount btrfs.fs /mnt/
-# fallocate -l 1021G /mnt/fallocate
-# btrfs fi sync /mnt/
-# dd if=/dev/zero of=/mnt/dd bs=1G
-# btrfs fi sync /mnt/
-# rm /mnt/fallocate
-# btrfs fi sync /mnt/
-# fallocate -l 20G /mnt/fallocate
-fallocate: /mnt/fallocate: fallocate failed: No space left on device
+[64343.060291] perf interrupt took too long (2544 > 2500), lowering 
+kernel.perf_event_max_sample_rate to 50000
+[67344.630449] ------------[ cut here ]------------
+[67344.630509] WARNING: CPU: 3 PID: 21885 at fs/btrfs/super.c:260 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]()
+[67344.630626] BTRFS: Transaction aborted (error -22)
+[67344.630627] Modules linked in: xt_nat xt_tcpudp ipt_MASQUERADE 
+nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 
+nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables tun 
+cpufreq_conservative cpufreq_powersave cpufreq_stats ipv6 btrfs xor 
+raid6_pq zlib_deflate coretemp hwmon loop parport_pc parport 8250_fintek 
+tpm_infineon tpm_tis tpm pcspkr i2c_i801 i2c_core battery video ehci_pci 
+ehci_hcd lpc_ich mfd_core button acpi_cpufreq ext4 crc16 jbd2 mbcache 
+raid1 sg sd_mod ahci libahci r8169 mii libata scsi_mod
+[67344.631027] CPU: 3 PID: 21885 Comm: btrfs Not tainted 3.19.3 #1
+[67344.631074] Hardware name: System manufacturer System Product 
+Name/P8H77-M PRO, BIOS 1101 02/04/2013
+[67344.631164]  0000000000000009 ffff8800ab38b928 ffffffff813bd016 
+ffff88081facd801
+[67344.631253]  ffff8800ab38b978 ffff8800ab38b968 ffffffff8103b025 
+0000000000000000
+[67344.631342]  ffffffffa029235e 00000000ffffffea ffff880042a59800 
+ffff8807f1e7dd10
+[67344.631431] Call Trace:
+[67344.631477]  [<ffffffff813bd016>] dump_stack+0x45/0x57
+[67344.631525]  [<ffffffff8103b025>] warn_slowpath_common+0x97/0xb1
+[67344.631575]  [<ffffffffa029235e>] ? 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]
+[67344.631663]  [<ffffffff8103b0d3>] warn_slowpath_fmt+0x41/0x43
+[67344.631713]  [<ffffffffa029235e>] 
+__btrfs_abort_transaction+0x4c/0x10e [btrfs]
+[67344.632914]  [<ffffffffa02b658c>] create_pending_snapshot+0x6a3/0x6e4 
+[btrfs]
+[67344.632967]  [<ffffffffa029f93b>] ? 
+block_rsv_release_bytes.isra.54+0xb0/0xc1 [btrfs]
+[67344.633060]  [<ffffffffa02b6633>] create_pending_snapshots+0x66/0x89 
+[btrfs]
+[67344.633114]  [<ffffffffa02b78c4>] 
+btrfs_commit_transaction+0x44f/0x9bb [btrfs]
+[67344.633208]  [<ffffffffa02e03f4>] btrfs_mksubvol.isra.61+0x2eb/0x418 
+[btrfs]
+[67344.633257]  [<ffffffff81065b9d>] ? add_wait_queue+0x44/0x44
+[67344.633310]  [<ffffffffa02e0670>] 
+btrfs_ioctl_snap_create_transid+0x14f/0x180 [btrfs]
+[67344.633404]  [<ffffffffa02e07d4>] 
+btrfs_ioctl_snap_create_v2+0xc7/0x112 [btrfs]
+[67344.633497]  [<ffffffffa02e43a3>] btrfs_ioctl+0x6cc/0x22f5 [btrfs]
+[67344.633545]  [<ffffffff810d8bc5>] ? handle_mm_fault+0x452/0x9fc
+[67344.633594]  [<ffffffff8117870f>] ? avc_has_perm+0x2e/0xf7
+[67344.633641]  [<ffffffff811119cf>] do_vfs_ioctl+0x418/0x460
+[67344.633688]  [<ffffffff81111a65>] SyS_ioctl+0x4e/0x7d
+[67344.633735]  [<ffffffff81031c5b>] ? do_page_fault+0xc/0x11
+[67344.633782]  [<ffffffff813c19f2>] system_call_fastpath+0x12/0x17
+[67344.633829] ---[ end trace ea2b25b59548e150 ]---
+[67344.633875] BTRFS: error (device sdb5) in 
+create_pending_snapshot:1392: errno=-22 unknown
+[67344.633964] BTRFS info (device sdb5): forced readonly
+[67344.634010] BTRFS warning (device sdb5): Skipping commit of aborted 
+transaction.
+[67344.634098] BTRFS: error (device sdb5) in cleanup_transaction:1670: 
+errno=-22 unknown
+[67344.634186] BTRFS info (device sdb5): delayed_refs has NO entry
 
-I continue to get ENOSPC even after unmount / mount.
 
-Here we have 1022GB free as reported by df, yet we can't allocate
-20GB.  I tried the integration-4.1 tree, which had the same results.
-I also added Zhao Lei's ENOSPC most recent patchset from today, but it
-didn't seem to help.
 
-So it appears that when allocating the first chunk,
-find_free_dev_extent() finds a huge hole, and allocates a portion of
-that free 1022GB.  Real chunk allocation is delayed until transaction
-submit and does not insert the DEV_EXTENT item into the device tree
-immediately, so transaction->pending_chunks is used to record pending
-chunks.
+-- 
+Tomasz Chmielewski
+http://www.sslrack.com
 
-When it comes to the next chunk allocation, find_free_dev_extent()
-detects the same huge hole, but contains_pending_extent() returns true
-and sets hole_size to 0.  This means we skip our one and only huge
-free space hole and try to search for some other free space holes.
-
-The problem occurs when there is not enough space for chunk allocation
-if we skip that huge hole, and find_free_dev_extent() eventually
-returns –ENOSPC.
-
-The following patch makes it work for me, but I certainly may have
-missed some subtleties in how btrfs allocation works; so if something
-is incorrect here, I'd appreciate feedback.  If this is the proper way
-to go about fixing it, I can whip up a proper patch and post it to the
-list.
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a73acf4..d056448 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1053,7 +1053,7 @@ out:
-
- static int contains_pending_extent(struct btrfs_trans_handle *trans,
-                                   struct btrfs_device *device,
--                                  u64 *start, u64 len)
-+                                  u64 *start, u64 *len)
- {
-        struct extent_map *em;
-        struct list_head *search_list = &trans->transaction->pending_chunks;
-@@ -1068,12 +1068,16 @@ again:
-                for (i = 0; i < map->num_stripes; i++) {
-                        if (map->stripes[i].dev != device)
-                                continue;
--                       if (map->stripes[i].physical >= *start + len ||
-+                       if (map->stripes[i].physical >= *start + *len ||
-                            map->stripes[i].physical + em->orig_block_len <=
-                            *start)
-                                continue;
-                        *start = map->stripes[i].physical +
-                                em->orig_block_len;
-+                       if (*len > em->orig_block_len)
-+                               *len -= em->orig_block_len;
-+                       else
-+                               *len = 0;
-                        ret = 1;
-                }
-        }
-@@ -1191,10 +1195,9 @@ again:
-                         * Have to check before we set max_hole_start, otherwise
-                         * we could end up sending back this offset anyway.
-                         */
--                       if (contains_pending_extent(trans, device,
--                                                   &search_start,
--                                                   hole_size))
--                               hole_size = 0;
-+                       contains_pending_extent(trans, device,
-+                                               &search_start,
-+                                               &hole_size);
-
-                        if (hole_size > max_hole_size) {
-                                max_hole_start = search_start;
-@@ -1239,7 +1242,7 @@ next:
-                max_hole_size = hole_size;
-        }
-
--       if (contains_pending_extent(trans, device, &search_start, hole_size)) {
-+       if (contains_pending_extent(trans, device, &search_start, &hole_size)) {
-                btrfs_release_path(path);
-                goto again;
-        }
-
-Thanks,
--Justin

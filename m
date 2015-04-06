@@ -1,51 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:39974 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752080AbbDEQ3G (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Apr 2015 12:29:06 -0400
-Date: Sun, 5 Apr 2015 17:27:59 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
-        osd-dev@open-osd.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        fuse-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        jfs-discussion@lists.sourceforge.net, HPDD-discuss@ml01.01.org,
-        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
-        v9fs-developer@lists.sourceforge.net, xfs@oss.sgi.com,
-        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        Yan Zheng <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
-        Steve French <sfrench@samba.org>, Boaz Harrosh <ooo@electrozaur.com>,
-        Benny Halevy <bhalevy@primarydata.com>, Jan Kara <jack@suse.cz>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Changman Lee <cm224.lee@samsung.com>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Steven Whitehouse <swhiteho@redhat.com>,
-        Dave Kleikamp <shaggy@kernel.org>, Oleg Drokin <oleg.drokin@intel.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
-        Eric Van Hensbergen <ericvh@gmail.com>,
-        Ron Minnich <rminnich@sandia.gov>, Latchesar Ionkov <lucho@ionkov.net>,
-        Dave Chinner <david@fromorbit.com>
-Subject: Re: [RFC PATCH 0/5] Remove rw parameter from direct_IO()
-Message-ID: <20150405162758.GI889@ZenIV.linux.org.uk>
-References: <cover.1426502566.git.osandov@osandov.com>
+Received: from youngberry.canonical.com ([91.189.89.112]:44568 "EHLO
+	youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751948AbbDFI6G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2015 04:58:06 -0400
+Date: Mon, 6 Apr 2015 09:58:02 +0100
+From: Luis Henriques <luis.henriques@canonical.com>
+To: Chris Mason <clm@fb.com>
+Cc: stable <stable@vger.kernel.org>, Btrfs <linux-btrfs@vger.kernel.org>,
+        Eric Sandeen <sandeen@redhat.com>
+Subject: Re: Please add 9c4f61f01d269815bb7c37be3ede59c5587747c6 to stable
+Message-ID: <20150406085802.GA29053@charon.olymp>
+References: <1427984267.10670.0@mail.thefacebook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1426502566.git.osandov@osandov.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1427984267.10670.0@mail.thefacebook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 16, 2015 at 04:33:48AM -0700, Omar Sandoval wrote:
-> Hi,
+On Thu, Apr 02, 2015 at 10:17:47AM -0400, Chris Mason wrote:
+> Hi stable friends,
 > 
-> Al, here's some cleanup that you mentioned back in December that I got
-> around to (https://lkml.org/lkml/2014/12/15/28).
+> Can you please backport this one to 3.19.y.  It fixes a bug introduced by:
+> 
+> 381cf6587f8a8a8e981bc0c1aaaa8859b51dc756, which was tagged for stable 3.14+
+> 
+> The symptoms of the bug are deadlocks during log reply after a crash.  The
+> patch wasn't intentionally fixing the deadlock, which is why we missed it
+> when tagging fixes.
+> 
+> Please put this commit everywhere you've cherry-picked
+> 381cf6587f8a8a8e981bc0c1aaaa8859b51dc756
+> 
 
-Applied.  See #for-next
+Thank you, I'll queue this fix for the 3.16 kernel.
+
+Cheers,
+--
+Luís
+
+> commit 9c4f61f01d269815bb7c37be3ede59c5587747c6
+> Author: David Sterba <dsterba@suse.cz>
+> Date:   Fri Jan 2 19:12:57 2015 +0100
+> 
+>    btrfs: simplify insert_orphan_item
+> 
+>    We can search and add the orphan item in one go,
+>    btrfs_insert_orphan_item will find out if the item already exists.
+> 
+>    Signed-off-by: David Sterba <dsterba@suse.cz>
+> 
+> -chris
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe stable" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

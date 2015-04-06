@@ -1,80 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:33333 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751829AbbDFKNq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2015 06:13:46 -0400
-Date: Mon, 6 Apr 2015 10:13:38 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Pavel Volkov <sailor@lists.xtsubasa.org>
-Cc: Russell Coker <russell@coker.com.au>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs hangs 3.19-10
-Message-ID: <20150406101338.GF13864@carfax.org.uk>
-References: <CAGqmi74e_U5-UVUy+MHbxc2f-38pRyjK1Zo0Up-V9ndFpv-bXA@mail.gmail.com>
- <20150404130047.GC13864@carfax.org.uk>
- <pan$bf795$4bdcf130$e29eb18a$9b854964@cox.net>
- <201504050330.47299.russell@coker.com.au>
- <20150405100417.GE13864@carfax.org.uk>
- <2f6a9ac9-0684-4b9a-982e-031286be398e@lists.xtsubasa.org>
+Received: from extern.sonoring.de ([212.23.155.200]:57227 "EHLO
+	cmail.imagmbh.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751829AbbDFLqo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2015 07:46:44 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by cmail.imagmbh.de (Postfix) with ESMTP id CB3DBB4BF7
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Apr 2015 13:40:45 +0200 (CEST)
+Received: from cipher1 ([10.1.33.12])
+	by localhost (cmail.imagmbh.de [10.1.33.15]) (amavisd-new, port 10028)
+	with ESMTP id SUYIG1ZXGanB for <linux-btrfs@vger.kernel.org>;
+	Mon,  6 Apr 2015 13:40:45 +0200 (CEST)
+Received: from cmail.imagmbh.de ([127.0.0.1])
+	by localhost (cmail.imagmbh.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Etokw-dO6Atp for <linux-btrfs@vger.kernel.org>;
+	Mon,  6 Apr 2015 13:40:36 +0200 (CEST)
+Received: from malu-aspire-v3-771.localnet (b2b-94-79-178-150.unitymedia.biz [94.79.178.150])
+	(Authenticated sender: martin.h.ludwig@imagmbh.de)
+	by cmail.imagmbh.de (Postfix) with ESMTPSA id 829AFB4BF7
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Apr 2015 13:40:36 +0200 (CEST)
+From: Martin <develop@imagmbh.de>
+To: linux-btrfs@vger.kernel.org
+Subject: recover corrupt BTRFS
+Date: Mon, 06 Apr 2015 13:40:37 +0200
+Message-ID: <10997785.A11jaNpIP8@malu-aspire-v3-771>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Zi0sgQQBxRFxMTsj"
-In-Reply-To: <2f6a9ac9-0684-4b9a-982e-031286be398e@lists.xtsubasa.org>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello!
 
---Zi0sgQQBxRFxMTsj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I have to recover a corrupt btrfs. The size is approx 4.5 TB. The fs became 
+corrupt by failure of a hardware-raid. The BTRFS was created using the 
+"compress"-option.
 
-On Mon, Apr 06, 2015 at 10:40:03AM +0300, Pavel Volkov wrote:
-> On Sunday, April 5, 2015 1:04:17 PM MSK, Hugo Mills wrote:
-> >   That's these, I think:
-> >
-> >#define BTRFS_FEATURE_INCOMPAT_BIG_METADATA     (1ULL << 5)
-> >#define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF    (1ULL << 6)
-> >
-> >so it's definitely -O^extref. I don't see where big_metadata comes
-> >from, though. That's not a -O option. Try with -O^extref and see where
-> >that gets you. (Also, don't mount the FS on a newer kernel -- it may
-> >be setting big metadata automatically, although it probably shouldn't
-> >do).
-> 
-> By the way, is there any way to see which options are enabled on a
-> local filesystem without having to try mounting it with old kernel
-> and checking dmesg?
+For the restore-process I made an image, btrfs-progs are version 3.19, kernel 
+3.19.2-1, 64 bit.
 
-   btrfs-show-super is the tool for that.
+The 0. superblock was corrupt (bad magic superblock), copy 1 and copy 2 seem 
+do be ok (checksum OK, same generation).
 
-   Hugo.
+First I did a "btrfs-select-super -s 1 /dev/vg0/opt" with the result:
+bytenr mismatch, want=448577536, have=448512000
+using SB copy 1, bytenr 67108864
 
--- 
-Hugo Mills             | Great oxymorons of the world, no. 4:
-hugo@... carfax.org.uk | Future Perfect
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+Mount with
+mount -o ro,recovery /dev/vg0/opt /1/
+fails with some
+BTRFS (device dm-2): bad tree block start 21086208 21020672
+and finaly
+BTRFS: Failed to read block groups: -5
+BTRFS: open_ctree failed
 
---Zi0sgQQBxRFxMTsj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+btrfs check /dev/vg0/opt yields thousands of  "bytenr mismatch, want=..., 
+have=..."
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+btrfs check --repair /dev/vg0/opt obvious yields to the same "bytenr mismatch, 
+want=..., have=..."
+and then fails with some
+Failed to find [344853970944, 168, 16384]
+btrfs unable to find ref byte nr 344853970944 parent 0 root 2  owner 1 offset 0
+and then
+btrfs unable to find ref byte nr 30736384 parent 0 root 1  owner 0 offset 1
+extent-tree.c:1730: write_one_cache_group: Assertion `ret` failed.
 
-iQIcBAEBAgAGBQJVIlxRAAoJEFheFHXiqx3ksUwP/iK8/vOlzmLb2z3Vb2/SpyVe
-BmYw82r6CY4iPqcQPFE2uDUnCaOWZ4PE00MsOKcx6Spfa8sSIDdHw0ZBEidiYRBT
-NiLqj62n58Z96UNYynDnfA9eI+CuAP9aOGc9nXWv7gi6gDjT0P7LBTQd1r7TJjEa
-pbeWJAiMrO1q4hl3Q99SjnetXWIhXefEYQHpBeo17ISBVdTIMBxM/oBjS5FX+n3f
-caXePG18MDaUVFD4rLCjFT76cPBp/pwpyjfMJKCHS5HaYn2IKTS7I5/hXTDcr0qB
-0dftoK/2DECw0EGNZVLv7+dd24COqGqJIiRNddTT5pZkxkBA9HWW7c0b8mzSXh9u
-TqxGiYVVrKxxTogyV/5fJz0zCsmDYYq1Y4Y7zuEC/Vf9fOeRLtziJ0c13YFQqYUB
-86hJLvbT6wMU9JS3acZWHTVYdISkkaDXrxryeOwCFBGAS7j0n1PKygKvI783kCpi
-YdtSy2Srs/SY9IX0vssTlOixaVPH7cYNsCKn4dfLyK+431mCqYbq4VV0ScFIEInD
-isRF82JLnIFMARJqYoF/1NA3fU0BDkrl4nUlEXop0UiEZudRAGRavsCfnWkMYvfR
-sQpR/wVnZS69I4mb8/g8H9yVOTsByt1z/hc8Iy3mhBGKFGX45o/f4fVWURTv3GDy
-2y5ecXznPpekKzLq2wxg
-=n9Nv
------END PGP SIGNATURE-----
+mounting fails as feard (BTRFS: Failed to read block groups: -5, BTRFS: 
+open_ctree failed).
 
---Zi0sgQQBxRFxMTsj--
+My next try was a "btrfs check --init-csum-tree /dev/vg0/opt" but that fails 
+with "extent-tree.c:2698: alloc_reserved_tree_block: Assertion `ret` failed."
+
+Next try: "btrfs check --init-extent-tree /dev/vg0/opt" but it also fails: 
+"transaction.h:39: btrfs_start_transaction: Assertion `fs_info-
+>running_transaction` failed."
+
+"btrfs rescue chunk-recover /dev/vg0/opt" fails with a core dump.
+
+"btrfs restore -v /dev/vg0/opt /1/test/" fails with "Error searching -5"
+
+"btrfs restore -v -i /dev/vg0/opt /1/test/" restores most files but while small 
+files were OK (size smaller some k), nearly all larger files are corrupt.
+
+I did a "btrfs-find-root /dev/vg0/opt" with the result
+Superblock thinks the generation is 160096
+Superblock thinks the level is 1
+Found tree root at 30670848 gen 160096 level 1
+Well block 29900800(gen: 160095 level: 1) seems good, but generation/level 
+doesn't match, want gen: 160096 level: 1
+Well block 4243456(gen: 3 level: 0) seems good, but generation/level doesn't 
+match, want gen: 160096 level: 1
+Well block 4194304(gen: 2 level: 0) seems good, but generation/level doesn't 
+match, want gen: 160096 level: 1
+
+So I did also a
+btrfs restore -v -t 30670848 -i /dev/vg0/opt /1/test/
+btrfs restore -v -t 29900800 -i /dev/vg0/opt /1/test/
+btrfs restore -v -t 4194304 -i /dev/vg0/opt /1/test/
+btrfs restore -v -t 160096 -i /dev/vg0/opt /1/test/
+
+The 1. and the 2. one yield to the corrupt larger files, the 3. and the 4. one 
+yield to
+"
+parent transid verify failed on 4194304 wanted 160096 found 2
+parent transid verify failed on 4194304 wanted 160096 found 2
+Ignoring transid failure
+Reached the end of the tree searching the directory
+"
+and
+"
+checksum verify failed on 160096 found CD40BDC4 wanted 00000000
+checksum verify failed on 160096 found CD40BDC4 wanted 00000000
+bytenr mismatch, want=160096, have=0
+Couldn't read tree root
+Could not open root, trying backup super
+"
+
+I am so confused because nearly all (older and newer) small files are OK but 
+nearly all (older and newer) larger files are corrupt. I never did a "btrfs 
+balance" etc. on the filesystem.
+
+Are there any options to recover the data?
+
+Thanks
+
+Martin
+
+
+
+

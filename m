@@ -1,194 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8264 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753045AbbDGJGv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 05:06:51 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH v3 RESEND 2/2] fstests: btrfs/089: Test for incorrect exclusive refernce number after file clone.
-Date: Tue, 7 Apr 2015 17:04:42 +0800
-Message-ID: <1428397482-13658-2-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:35857 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752886AbbDGJZu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 05:25:50 -0400
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
 In-Reply-To: <1428397482-13658-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1428397482-13658-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Date: Tue, 7 Apr 2015 10:25:49 +0100
+Message-ID: <CAL3q7H5xTcsJ0kqNjnuc+_iTA=CpdR7TCzcwJj9vWyoKuwh3Fg@mail.gmail.com>
+Subject: Re: [PATCH RESEND 1/2] fstests: btrfs/088: Check return value of
+ "btrfs filesystem show" command executed on umounted device.
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        fstests@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Problem]
-Since commit fcebe4562dec83b3f8d308 ("Btrfs: rework qgroup accounting"),
-quota data update is delayed after delayed_ref calculation, and lacks
-correct protection to detect root reference which shouldn't be counted
-in current sequence number but already written into extent backref.
+On Tue, Apr 7, 2015 at 10:04 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> The return value should always be 0 if no problem happens, but
+> "btrfs filesystem show" executed on umounted device will always return 1
+> even there is no problem.
+>
+> This testcase just checks it.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> Rebased to latest fstests.
+> 087 is taken by Filipe's test case "fstests: test for btrfs transaction
+> abortion on device with discard support", so take 088.
 
-This makes exclusive reference not decreased correctly and give incorrect
-result.
+And I just sent some days ago tests numbered 088 and 089.
+You should probably remove the number you assign to the tests from the
+patch subject, Dave often renumbers them and it adds no value to the
+subject.
 
-[Test procedure]
-1. Create a btrfs with 3 subvolumes, quota enabled and rescanned.
-2. Create a file in 1st subvolume
-3. Clone the file to 2nd and 3rd subvolume
-4. Sync the fs to reflect the changes in qgroup.
-5. Check the qgroup data
+> ---
+>  tests/btrfs/088     | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/088.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 74 insertions(+)
+>  create mode 100644 tests/btrfs/088
+>  create mode 100644 tests/btrfs/088.out
+>
+> diff --git a/tests/btrfs/088 b/tests/btrfs/088
+> new file mode 100644
+> index 0000000..768d2bf
+> --- /dev/null
+> +++ b/tests/btrfs/088
+> @@ -0,0 +1,71 @@
+> +#! /bin/bash
+> +# FS QA Test No. btrfs/088
+> +#
+> +# Check return value of "btrfs filesystem show" command executed on
+> +# umounted device.
+> +# It should return 0 if nothing wrong happens.
+> +#
+> +# Regression in v3.18 btrfs-progs and fixed by the following patch:
+> +#
+> +#    btrfs-progs: Fix wrong return value when executing 'fi show' on
+> +#    umounted device.
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2015 Fujitsu, Inc.  All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +    cd /
+> +    rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter.btrfs
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_require_scratch_dev_pool
 
-[Expected result]
-None of the subvolume has exclusive reference to the file.
+Do we really need a device pool here, isn't a single device fs enough?
+If it needs a multiple devices fs, it would be a good idea to explain
+why in a comment and mention the need for it in the test description.
 
-[Actual result]
-The first subvolume still have exclusive reference to the file.
+Otherwise looks good to me.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-changelog:
-v2:
-   Redirect error output of dd to seqres.full for debug in case dd
-   failed.
-v3:
-   Add support and check for old kernel which doesn't support
-   noinode_cache mount option.
-   Change nodesize to 64K to support arch whose page size can be larger
-   than 4K.
-RESEND:
-   Rebase to latest xfstests.
----
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/btrfs/089     | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out |   5 +++
- tests/btrfs/group   |   1 +
- 3 files changed, 109 insertions(+)
- create mode 100755 tests/btrfs/089
- create mode 100644 tests/btrfs/089.out
+Thanks
 
-diff --git a/tests/btrfs/089 b/tests/btrfs/089
-new file mode 100755
-index 0000000..2f1adac
---- /dev/null
-+++ b/tests/btrfs/089
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 089
-+#
-+# Test for incorrect exclusive reference count after cloning file
-+# between subvolumes.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_cp_reflink
-+
-+rm -f $seqres.full
-+
-+# use largest node/leaf size (64K) to allow the test to be run on arch with
-+# page size > 4k.
-+NODESIZE=65536
-+SUPPORT_NOINODE_CACHE="yes"
-+
-+run_check _scratch_mkfs "--nodesize $NODESIZE"
-+
-+# inode cache will also take space in fs tree, disable them to get consistent
-+# result.
-+# discard error output since we will check return value manually.
-+_scratch_mount "-o noinode_cache" 2> /dev/null
-+
-+# Check for old kernel which doesn't support 'noinode_cache' mount option
-+if [ $? -ne 0 ]
-+then
-+	support_noinode_cache="no"
-+	run_check _scratch_mount
-+fi
-+
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv1
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+
-+# if we don't support noinode_cache mount option, then we should double check
-+# whether inode cache is enabled before executing the real test payload.
-+if [ $SUPPORT_NOINODE_CACHE == "no" ]; then
-+	EMPTY_SIZE=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | \
-+		$SED_PROG -n '/[0-9]/p' | $AWK_PROG '{print $2}' | head -n1`
-+	if [ $EMPTY_SIZE != $NODESIZE ]; then
-+		_notrun "Kernel doesn't support to disable inode cache"
-+	fi
-+fi
-+
-+dd if=/dev/zero of=$SCRATCH_MNT/subv1/file1 bs=4K count=64 2>> $seqres.full
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv2/file1
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv3/file1
-+
-+# Current btrfs use tree search ioctl to show quota, which will only show info
-+# in commit tree. So need to sync to update the qgroup commit tree.
-+sync
-+
-+units=`_btrfs_qgroup_units`
-+$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
-+	$AWK_PROG '{print $2" "$3}'
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
-new file mode 100644
-index 0000000..09a1077
---- /dev/null
-+++ b/tests/btrfs/089.out
-@@ -0,0 +1,5 @@
-+QA output created by 089
-+65536 65536
-+327680 65536
-+327680 65536
-+327680 65536
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a053d14..82f6fe6 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -90,3 +90,4 @@
- 085 auto quick metadata subvol
- 086 auto quick clone
- 088 auto quick
-+089 auto quick qgroup
+> +
+> +rm -f $seqres.full
+> +
+> +FIRST_POOL_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
+> +TOTAL_DEVS=`echo $SCRATCH_DEV_POOL | wc -w`
+> +
+> +_scratch_pool_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+> +
+> +_run_btrfs_util_prog filesystem show $FIRST_POOL_DEV | \
+> +       _filter_btrfs_filesystem_show $TOTAL_DEVS
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/088.out b/tests/btrfs/088.out
+> new file mode 100644
+> index 0000000..c24480a
+> --- /dev/null
+> +++ b/tests/btrfs/088.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 088
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index e9c15af..a053d14 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -89,3 +89,4 @@
+>  084 auto quick send
+>  085 auto quick metadata subvol
+>  086 auto quick clone
+> +088 auto quick
+> --
+> 2.3.5
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.3.5
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,110 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41077 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751162AbbDGLlh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Apr 2015 07:41:37 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YfRss-0004nu-7R
-	for linux-btrfs@vger.kernel.org; Tue, 07 Apr 2015 13:41:34 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2015 13:41:34 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2015 13:41:34 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: ERROR: error removing the device '/dev/sdXN' - Inappropriate
- ioctl for device
-Date: Tue, 07 Apr 2015 12:41:21 +0100
-Message-ID: <mg0fp1$ep4$1@ger.gmane.org>
-References: <mfcdep$d97$1@ger.gmane.org> <20150331173756.GF6821@twin.jikos.cz> <mfeo14$sib$1@ger.gmane.org> <551B98FF.8070000@oracle.com> <mfgiot$3ck$1@ger.gmane.org> <551BEF67.3040305@oracle.com> <mfh9rn$2if$1@ger.gmane.org> <55228ADB.3000404@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-In-Reply-To: <55228ADB.3000404@oracle.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:39650 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755127AbbDGN6e (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 09:58:34 -0400
+From: Russell Coker <russell@coker.com.au>
+To: arnaud gaboury <arnaud.gaboury@gmail.com>
+Subject: Re: btrfs subvolume & default subvolume
+Date: Tue, 7 Apr 2015 13:58:29 +0000
+Cc: linux-btrfs@vger.kernel.org
+References: <CAK1hC9skBYrM7nPyU-2mCuey6VkFOGMUCi0umYduX3ePNJ2mpg@mail.gmail.com> <CAK1hC9tBAvqOhGLGcX=1Ls2QwtaB6fe6Wzf89vH4=Y+kvxHR_Q@mail.gmail.com>
+In-Reply-To: <CAK1hC9tBAvqOhGLGcX=1Ls2QwtaB6fe6Wzf89vH4=Y+kvxHR_Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201504071358.29442.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/04/15 14:32, Anand Jain wrote:
-> btrfs fi show -d
+On Tue, 7 Apr 2015 10:58:28 AM arnaud gaboury wrote:
+> After more reading, it seems to me creating a top root subvolume is
+> the right thing to do:
+> # btrfs subvolume create root
+> # btrfs subvolume create root/var
+> # btrfs subvolume create root/home
+> 
+> Am I right?
 
+A filesystem is designed to support arbitrary names for files, directories, and 
+in the case of BTRFS subvolumes.
 
-That gives:
+You might ask whether /var/log is a good place for log files, it's generally 
+regarded that "yes" is the correct answer to that question, but it's not a 
+question for filesystem developers.
 
-# btrfs fi show -d
-warning, device 3 is missing
-warning devid 3 not found already
-warning, device 3 is missing
-warning devid 3 not found already
-Label: 'btrfs_root'  uuid: 92452e9a-2775-45c4-922c-f01b2afd51c2
-        Total devices 3 FS bytes used 30.94GiB
-        devid    1 size 24.00GiB used 24.00GiB path /dev/sda4
-        devid    2 size 24.00GiB used 24.00GiB path /dev/sdc4
-        devid    3 size 24.00GiB used 24.00GiB path /dev/sde4
+I like to have / in the root subvolume so all subvolumes are available by 
+default.  I have /var etc in the same subvolume so I can make an atomic 
+snapshot of all such data.  It's not the one true answer, but it works for me 
+and will work for other people.
 
-Label: 'btrfs_data'  uuid: d1b96638-be89-4291-8a40-f2f2e1dc5223
-        Total devices 3 FS bytes used 95.74GiB
-        devid    1 size 87.24GiB used 86.48GiB path /dev/sda5
-        devid    2 size 87.24GiB used 87.24GiB path /dev/sdc5
-        devid    3 size 87.24GiB used 87.24GiB path /dev/sde5
+The main thing is to have all data that needs to be atomically snapshotted on 
+the same subvolume.
 
-Label: 'btrfs_root2'  uuid: 62603ce8-c333-4ca7-92f7-f8bdd712ab37
-        Total devices 3 FS bytes used 151.60MiB
-        devid    1 size 24.00GiB used 24.00GiB path /dev/sdb4
-        devid    2 size 24.00GiB used 24.00GiB path /dev/sdd4
-        *** Some devices missing
-
-Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
-        Total devices 3 FS bytes used 159.34GiB
-        devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
-        devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
-        *** Some devices missing
-
-btrfs-progs v3.19.1
-
-
-And without the "-d":
-
-# btrfs fi show
-Label: 'btrfs_root'  uuid: 92452e9a-2775-45c4-922c-f01b2afd51c2
-        Total devices 3 FS bytes used 30.94GiB
-        devid    1 size 24.00GiB used 24.00GiB path /dev/sda4
-        devid    2 size 24.00GiB used 24.00GiB path /dev/sdc4
-        devid    3 size 24.00GiB used 24.00GiB path /dev/sde4
-
-Label: 'btrfs_data'  uuid: d1b96638-be89-4291-8a40-f2f2e1dc5223
-        Total devices 3 FS bytes used 95.74GiB
-        devid    1 size 87.24GiB used 86.48GiB path /dev/sda5
-        devid    2 size 87.24GiB used 87.24GiB path /dev/sdc5
-        devid    3 size 87.24GiB used 87.24GiB path /dev/sde5
-
-Label: 'btrfs_root2'  uuid: 62603ce8-c333-4ca7-92f7-f8bdd712ab37
-        Total devices 3 FS bytes used 151.60MiB
-        devid    1 size 24.00GiB used 24.00GiB path /dev/sdb4
-        devid    2 size 24.00GiB used 24.00GiB path /dev/sdd4
-        devid    3 size 24.00GiB used 24.00GiB path /dev/sdf4
-
-Label: 'btrfs_data2'  uuid: 3aaee716-b98b-4c86-ba5a-53456994f152
-        Total devices 3 FS bytes used 159.34GiB
-        devid    1 size 206.47GiB used 206.02GiB path /dev/sdb5
-        devid    2 size 206.47GiB used 206.47GiB path /dev/sdd5
-        devid    3 size 206.47GiB used 206.47GiB path /dev/sdf5
-
-btrfs-progs v3.19.1
-
-
-Interestingly, all the log messages about /dev/sdf are now no longer
-being repeated.
-
-(And nope, not had a chance to swap that disk yet!)
-
-
-Hence, should I do a "btrfs device delete missing /mnt/data2"?
-
-Cheers,
-Martin
-
-
-
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

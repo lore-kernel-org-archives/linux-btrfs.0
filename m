@@ -1,147 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54067 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755785AbbDGOUc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 10:20:32 -0400
-Date: Tue, 7 Apr 2015 14:20:30 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:39863 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752961AbbDGOhw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 10:37:52 -0400
+From: Russell Coker <russell@coker.com.au>
 To: arnaud gaboury <arnaud.gaboury@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs subvolume & default subvolume
-Message-ID: <20150407142030.GK13864@carfax.org.uk>
-References: <CAK1hC9skBYrM7nPyU-2mCuey6VkFOGMUCi0umYduX3ePNJ2mpg@mail.gmail.com>
- <CAK1hC9tBAvqOhGLGcX=1Ls2QwtaB6fe6Wzf89vH4=Y+kvxHR_Q@mail.gmail.com>
- <20150407110354.GH13864@carfax.org.uk>
- <CAK1hC9vDQ4j3CZ=7T30-Sg+Q8FYFOzntgmz57WMWRU5WELpDnA@mail.gmail.com>
+Date: Tue, 7 Apr 2015 14:37:46 +0000
+Cc: linux-btrfs@vger.kernel.org
+References: <CAK1hC9skBYrM7nPyU-2mCuey6VkFOGMUCi0umYduX3ePNJ2mpg@mail.gmail.com> <201504071358.29442.russell@coker.com.au> <CAK1hC9uUdBhS92RdVsxvbGY4L5bEXq7-5nNa6m-=XVkC-CLoUQ@mail.gmail.com>
+In-Reply-To: <CAK1hC9uUdBhS92RdVsxvbGY4L5bEXq7-5nNa6m-=XVkC-CLoUQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="QxIEt88oQPsT6QmF"
-In-Reply-To: <CAK1hC9vDQ4j3CZ=7T30-Sg+Q8FYFOzntgmz57WMWRU5WELpDnA@mail.gmail.com>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201504071437.46807.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, 7 Apr 2015 02:03:04 PM arnaud gaboury wrote:
+> Would you mind give the return of # btrfs subvolume list and $ cat
+> /etc/fstab ? It would help me. TY
 
---QxIEt88oQPsT6QmF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+ID 262 gen 1579103 top level 5 path mysql                                                                                                                                                                               
+ID 263 gen 1179578 top level 5 path var/spool/squid                                                                                                                                                                     
+ID 264 gen 1579262 top level 5 path xenstore                                                                                                                                                                            
+ID 265 gen 1579262 top level 5 path mailstore                                                                                                                                                                           
+ID 269 gen 1578978 top level 5 path xenswap                                                                                                                                                                             
+ID 318 gen 1569545 top level 5 path webstore                                                                                                                                                                            
+ID 328 gen 1574457 top level 262 path mysql/backup                                                                                                                                                                      
+ID 329 gen 1569555 top level 264 path xenstore/backup                                                                                                                                                                   
+ID 330 gen 1574457 top level 265 path mailstore/backup                                                                                                                                                                  
+ID 331 gen 1569555 top level 318 path webstore/backup                                                                                                                                                                   
+ID 618 gen 1569546 top level 5 path webdata                                                                                                                                                                             
+ID 657 gen 1569555 top level 618 path webdata/backup                                                                                                                                                                    
+ID 1456 gen 1569541 top level 5 path backup                                                                                                                                                                             
+ID 1621 gen 1556937 top level 330 path mailstore/backup/2015-04-01                                                                                                                                                      
+ID 1622 gen 1556938 top level 328 path mysql/backup/2015-04-01                                                                                                                                                          
+ID 1623 gen 1559462 top level 330 path mailstore/backup/2015-04-02                                                                                                                                                      
+ID 1624 gen 1559463 top level 328 path mysql/backup/2015-04-02                                                                                                                                                          
+ID 1625 gen 1564402 top level 330 path mailstore/backup/2015-04-03                                                                                                                                                      
+ID 1626 gen 1564403 top level 328 path mysql/backup/2015-04-03                                                                                                                                                          
+ID 1627 gen 1566974 top level 330 path mailstore/backup/2015-04-04                                                                                                                                                      
+ID 1628 gen 1566975 top level 328 path mysql/backup/2015-04-04                                                                                                                                                          
+ID 1629 gen 1569540 top level 330 path mailstore/backup/2015-04-05                                                                                                                                                      
+ID 1630 gen 1569543 top level 1456 path backup/2015-04-05                                                                                                                                                               
+ID 1631 gen 1569542 top level 328 path mysql/backup/2015-04-05                                                                                                                                                          
+ID 1632 gen 1569544 top level 329 path xenstore/backup/2015-04-05                                                                                                                                                       
+ID 1633 gen 1569545 top level 331 path webstore/backup/2015-04-05                                                                                                                                                       
+ID 1634 gen 1569546 top level 657 path webdata/backup/2015-04-05                                                                                                                                                        
+ID 1635 gen 1571975 top level 330 path mailstore/backup/2015-04-06                                                                                                                                                      
+ID 1636 gen 1571976 top level 328 path mysql/backup/2015-04-06                                                                                                                                                          
+ID 1638 gen 1574447 top level 330 path mailstore/backup/2015-04-07                                                                                                                                                      
+ID 1639 gen 1574448 top level 328 path mysql/backup/2015-04-07
 
-On Tue, Apr 07, 2015 at 01:08:59PM +0200, arnaud gaboury wrote:
-> On Tue, Apr 7, 2015 at 1:03 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > On Tue, Apr 07, 2015 at 12:58:28PM +0200, arnaud gaboury wrote:
-[snip]
-> >> After more reading, it seems to me creating a top root subvolume is
-> >> the right thing to do:
-> >> # btrfs subvolume create root
-> >> # btrfs subvolume create root/var
-> >> # btrfs subvolume create root/home
-> >>
-> >> Am I right?
-> >
-> >    Not how I'd recommend doing it. I'd say:
-> >
-> > # btrfs sub crea root
-> > # btrfs sub crea var
-> > # btrfs sub crea home
-> >
-> >    Then fstab:
-> >
-> > LABEL=3Dmyfs    /      btrfs    subvol=3Droot         0 0
-> > LABEL=3Dmyfs    /var   btrfs    subvol=3Dvar          0 0
-> > LABEL=3Dmyfs    /home  btrfs    subvol=3Dhome         0 0
-> >
-> >    And finally, add this to your kernel command line in the bootloader
-> > to specify how to mount root:
-> >
-> > rootflags=3Dsubvol=3Droot
-> >
-> >    Hugo.
->=20
-> Thank you Hugo. May you please tell why your recommendation is better
-> than my settings, if I thereafter make root as the default sub-volume?
-> I changed the root name to active and avoid any confusion:
+Above is from one of my servers.  I've recently changed my backup naming 
+scheme from $SUBVOL/backup to backup-$SUBVOL but haven't done it to that 
+server yet.
 
-   Well, keeping the subvolumes separate from each other, rather than
-nested, makes it a bit easier to do things like replace one subvolume
-with an earlier snapshot. If you nest them, then your recovery process
-=66rom (say) a screwed-up / looks a bit like this:
+ID 259 gen 394029 top level 5 path home                                                                                                                                                                            
+ID 542 gen 389407 top level 5 path backup                                                                                                                                                                               
+ID 2143 gen 393962 top level 5 path backup-home                                                                                                                                                                         
+ID 4946 gen 394029 top level 5 path chroot                                                                                                                                                                              
+ID 5609 gen 391938 top level 2143 path backup-home/2015-04-01                                                                                                                                                           
+ID 5610 gen 391939 top level 2143 path backup-home/2015-04-01:00:00                                                                                                                                                     
+ID 5611 gen 391984 top level 2143 path backup-home/2015-04-01:04:00                                                                                                                                                     
+ID 5612 gen 392151 top level 2143 path backup-home/2015-04-03:02:00                                                                                                                                                     
+ID 5613 gen 392252 top level 2143 path backup-home/2015-04-03:15:00                                                                                                                                                     
+ID 5614 gen 392408 top level 2143 path backup-home/2015-04-04:04:00                                                                                                                                                     
+ID 5615 gen 392543 top level 2143 path backup-home/2015-04-05                                                                                                                                                           
+ID 5616 gen 392544 top level 2143 path backup-home/2015-04-05:00:00                                                                                                                                                     
+ID 5617 gen 392620 top level 2143 path backup-home/2015-04-05:02:00                                                                                                                                                     
+ID 5618 gen 392700 top level 2143 path backup-home/2015-04-05:14:00                                                                                                                                                     
+ID 5619 gen 392779 top level 2143 path backup-home/2015-04-05:15:00                                                                                                                                                     
+ID 5620 gen 392859 top level 2143 path backup-home/2015-04-05:20:00                                                                                                                                                     
+ID 5621 gen 392966 top level 2143 path backup-home/2015-04-05:21:00                                                                                                                                                     
+ID 5622 gen 393086 top level 2143 path backup-home/2015-04-06:15:00                                                                                                                                                     
+ID 5623 gen 393191 top level 2143 path backup-home/2015-04-06:19:00                                                                                                                                                     
+ID 5624 gen 393315 top level 2143 path backup-home/2015-04-07:13:00                                                                                                                                                     
+ID 5625 gen 393419 top level 2143 path backup-home/2015-04-07:14:00                                                                                                                                                     
+ID 5626 gen 393526 top level 2143 path backup-home/2015-04-07:15:00                                                                                                                                                     
+ID 5627 gen 393645 top level 2143 path backup-home/2015-04-07:16:00                                                                                                                                                     
+ID 5628 gen 393756 top level 2143 path backup-home/2015-04-07:17:00                                                                                                                                                     
+ID 5629 gen 393847 top level 2143 path backup-home/2015-04-07:23:00                                                                                                                                                     
+ID 5630 gen 393960 top level 2143 path backup-home/2015-04-08:00:00                                                                                                                                                     
+ID 5631 gen 393961 top level 2143 path backup-home/2015-04-08
 
-# mount -o subvolid=3D0 /dev/sda1 /media/btrfs
-# mv /media/btrfs/root /media/btrfs/old-root
-# btrfs sub snap /media/btrfs/old-root/snapshots/last-root /media/btrfs/root
-# btrfs sub snap /media/btrfs/old-root/var /media/btrfs/root/var
-# btrfs sub snap /media/btrfs/old-root/home /media/btrfs/root/home
-# btrfs sub set-default $n /media/btrfs
-# umount /media/btrfs
+Above is from one of my workstations.
 
-   If you don't nest them, and don't use set-default, then the same
-recovery process would look like this:
+In both cases the BTRFS filesystem in question was mounted as root.
 
-# mount -o subvolid=3D0 /dev/sda1 /media/btrfs
-# mv /media/btrfs/root /media/btrfs/old-root
-# mv /media/btrfs/snapshots/last-root /media/btrfs/root
-# umount /media/btrfs
+In both cases I grepped out the backups prior to this month, hundreds of extra 
+lines would have made things less clear.
 
-   (This also explains why I wouldn't use set-default, but instead
-mount / using a subvol=3D<path> option).
-
-   Now, for making the snapshots in the first place, with nested
-subvolumes, your snapshot script looks a bit like this:
-
-# btrfs sub snap / /snapshots/last-root
-
-and with the approach I'd recommend, it looks like this:
-
-# mount -o subvolid=3D0 /dev/sda1 /media/btrfs
-# btrfs sub snap /media/btrfs/root /media/btrfs/snapshots/last-root
-# umount /media/btrfs
-
-which is a little more complex, but the approach is precisely similar
-to the recovery process: mount the top level of the FS on
-/media/btrfs, manipulate the subvolumes, and then unmount. This keeps
-the management of subvolumes a completely separate concern from the
-structure of the filesystem tree.
-
-   Hugo.
-
-> # btrfs subvolume list .
-> ID 260 gen 17 top level 5 path active
-> ID 261 gen 15 top level 260 path active/home
-> ID 262 gen 16 top level 260 path active/var
-> ID 263 gen 17 top level 260 path active/etc
->=20
-> # btrfs subvolume set-default 260 .
->=20
-> In this way, I will not need any kernel command line.
->=20
-> >
-
---=20
-Hugo Mills             | Vote early, vote often
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---QxIEt88oQPsT6QmF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVI+euAAoJEFheFHXiqx3kTm0QAKpyfYagLf0sXiTNJg4yf4Ca
-Qos3c7lggjmfkJfKvfySsFw2tsL8m+L8UlxnhYV2zeXBpCVNpbbkqrZW1YAV4Ts4
-Jw/QxADwvgtPaKdLZKEOv8dwizA1hqghTgBqqFZxs0L6nT3qqfxvs1CK1sSe5Xj6
-Em9W3hkXrJdyKa+BzLT6nn9zpIfcsdz6CEe4G+Zxh3NAq1YhNrzerhdg4+FMOGx8
-Re2afPQOZYeBKVZSdkhmHMQ6Cr6ikMm7PJpDiYuRCyEP4jI+ICcoNtX7g/rHLUOq
-ZUq6h9pSTXjOVG67q3FLYvOIR0J39FWTKeYed9cEba3eCPCB1Dc9CxdLQcvLDrp2
-D+LgSq71MvuQh/UVBb/GjnyOi5T6Qd5zm99QfIzt/IC0eQt53mzT77m5eazgFPtx
-OFk6SmDnMA7pnoea3M9XwpmGXWhPLaTB+5TLEgpOus316rG+oAiaXkM2r0YUY7Oh
-zbYgpAqxee+0JoKBo8YjgDuWCZAzMoDdMqJYJRq8bnb+Bd4Mqb6RMaWXN3KPPrmy
-rZOCH7vKNhjCc6/JOMkmwjCag17pBREw1U0HA1EwDzSdRbTKgp29Jfgo6TSjAwUA
-jnK2pLRyJqDjGo9JLaioqbY/zn3+lTGxtwneccuG9qPVZEFAFwQk2/Ca4XaMc1ZW
-Q4JcqYycKckl75xKf4e7
-=wZm9
------END PGP SIGNATURE-----
-
---QxIEt88oQPsT6QmF--
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

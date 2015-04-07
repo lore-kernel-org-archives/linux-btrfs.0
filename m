@@ -1,71 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:58598 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751033AbbDGTyT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 15:54:19 -0400
-Date: Tue, 7 Apr 2015 19:54:17 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Jim Mills <jmills007@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Are attachments allowed?
-Message-ID: <20150407195417.GM13864@carfax.org.uk>
-References: <CAPoxMrmAt3WWUbUxYBs0fFmAjVc06jzy=nW8u6E1w1fKmTjVaw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="rf72Gf+bfLC8kxKs"
-In-Reply-To: <CAPoxMrmAt3WWUbUxYBs0fFmAjVc06jzy=nW8u6E1w1fKmTjVaw@mail.gmail.com>
+Received: from mailout3.samsung.com ([203.254.224.33]:17153 "EHLO
+	mailout3.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752093AbbDGX5O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 19:57:14 -0400
+Received: from epcpsbgr4.samsung.com
+ (u144.gpu120.samsung.co.kr [203.254.230.144])
+ by mailout3.samsung.com (Oracle Communications Messaging Server 7.0.5.31.0
+ 64bit (built May  5 2014))
+ with ESMTP id <0NMG00ANONVCPW80@mailout3.samsung.com> for
+ linux-btrfs@vger.kernel.org; Wed, 08 Apr 2015 08:57:12 +0900 (KST)
+Date: Tue, 07 Apr 2015 23:57:11 +0000 (GMT)
+From: =?euc-kr?B?wM7BpL3E?= <js7.in@samsung.com>
+Subject: Re: Re: Porting BTRFS to user space
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Reply-to: js7.in@samsung.com
+MIME-version: 1.0
+Content-type: text/plain; charset=euc-kr
+MIME-version: 1.0
+Message-id: <455311443.534051428451031043.JavaMail.weblogic@epmlwas09b>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thank you for the information.
+I just found that btrfs-progs includes several files that seem modified from btrfs kernel source.
+I am not sure exactly what they are.
+Web pages say libbtrfs is to provide interface for apps that use btrfs.
+Why should there be duplicated codes between kernel and user space?
+Is it an on-going effort to port whole btrfs to user space?
 
---rf72Gf+bfLC8kxKs
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Could you lead me to some more information about libbtrfs or how to port btrfs to user space?
 
-On Tue, Apr 07, 2015 at 03:31:49PM -0400, Jim Mills wrote:
-> Are attachments allowed?
+Thank you,
+Jeongsik
+
+
+------- Original Message -------
+Sender : Austin S Hemmelgarn<ahferroin7@gmail.com> 
+Date   : 2015-04-08 02:50 (GMT+09:00)
+Title  : Re: Porting BTRFS to user space
+
+On 2015-04-06 21:28, ¿Œ¡§Ωƒ wrote:
+> Hello BTRFS developers,
 > 
-> According to this,
-> https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list, they are,
-> but other things I have seen seem to say they are not.
+> I am requesting your opion.
+> 
+> I am planning to design and implement DFS version of BTRFS.
+> Roughly it will be done by
+>     1. Extending current DeviceID to NodeID:DeviceID to support multi-node, and
+>     2. Implementing inter-node data and meta-data access over TCP.
+> Do you think it would be feasible?
+> 
+> For development, I would like to port the kernel code to user space.
+> It could continue to run in user mode or be ported back to kernel space.
+> But I don't know how can I start to porting the kernel code to user space.
+> Is there anyone who can help?
+> 
+> Thanks,
+> JeongsikN?≤Ê?r?y˙Ë?b?¨∂«ßv?^?)ﬁ∫{.n?+??{?⁄ﬂ?)?ÊËw*jg¨±?????/??zπﬁ??2??Ë≠?&?)ﬂ°?∂⁄????h??j:+v???Ÿ•
+> 
+Personally, my suggestion would be to start with a port to FUSE, and
+then start implementing your modifications off of that.  That said, much
+of the code should already be available in userspace through libbtrfs,
+which is packaged with btrfs-progs.
 
-   As far as I'm aware, they are, but must be under 100 kB. Multipart
-HTML messages are definitely not allowed, though. There's a link on
-the page you reference (to [1]), which gives the basic rules on emails
-sent through vger, and that links [2] to a more detailed FAQ on the
-subject.
-
-   Hugo.
-
-[1] http://vger.kernel.org/majordomo-info.html#taboo
-[2] http://www.tux.org/lkml/#s3
-
--- 
-Hugo Mills             | Alert status mauve ocelot: Slight chance of
-hugo@... carfax.org.uk | brimstone. Be prepared to make a nice cup of tea.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---rf72Gf+bfLC8kxKs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVJDXpAAoJEFheFHXiqx3k5ucP/jOD+d++cG2ruHmux4eEKrty
-m8wbUWSi+ssYnRfmoIHMw50l24HTijmJ0RdJHAJ16nOyfkFM1DHU6eeZ08m111QN
-OsckvDKRShuJi9/dL/rCZxSBMH6DAmZPZE9/MSHzMvNO0zsirtYVXL3age5UEbdP
-kWFIpjtXljlDY09DdmLaepcef9eTIxoAiaIVqGTIuh24Znho+hXvSw+VW2yJre8I
-Ju8AVsfIvLQjE4lgoDzZxjFWStetTmoVGYqJHKk4TBnQzl4GXvWAxwXqhS1JLauJ
-7W7AVYe89Yr0Zw+XgcQvpEFbDwFpSdQv18b/YUTKuYm4ZRVFkRn7GJt855ELGhwG
-d7tIVc81pLFfPMPpvehOXDopsWAgS7cC6LO4EXHY65A5JZ0TDF9JVqbjm95uutIg
-YRJbcusJpYttBTquMhkCI2pnuixTk0UX5vB1TlGuLG8jk10LjEfIQAEsYHEgVQQZ
-2z1YLZn59pndfdU172sRVSMemyort2xPbuYvM6xG7OQHH37kJQrvwfZHXQms6VMN
-UEXDXu2yOGxvJjZDOGADouDG5LvfBL73DGC5NOYeLsJqBBzDbPyry4J2X8ZJNAeT
-sCgm0da+wZKMWKLYrFg2FqRYI2Eiq/lyv2OqYL17yCgrsz8JBKuKy+Y4EMhUwSXR
-8DeP3rP9AHVmuSIb4oNk
-=HdUe
------END PGP SIGNATURE-----
-
---rf72Gf+bfLC8kxKs--
+<p>&nbsp;</p><p>&nbsp;</p>ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

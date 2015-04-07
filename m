@@ -1,16 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:32894 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752857AbbDGPAj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 11:00:39 -0400
-Received: by ignm3 with SMTP id m3so11007852ign.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2015 08:00:38 -0700 (PDT)
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:33470 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754791AbbDGPHX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 11:07:23 -0400
+Received: by iebmp1 with SMTP id mp1so49300928ieb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2015 08:07:23 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAK1hC9tBAvqOhGLGcX=1Ls2QwtaB6fe6Wzf89vH4=Y+kvxHR_Q@mail.gmail.com>
+In-Reply-To: <CAK1hC9vDQ4j3CZ=7T30-Sg+Q8FYFOzntgmz57WMWRU5WELpDnA@mail.gmail.com>
 References: <CAK1hC9skBYrM7nPyU-2mCuey6VkFOGMUCi0umYduX3ePNJ2mpg@mail.gmail.com>
 	<CAK1hC9tBAvqOhGLGcX=1Ls2QwtaB6fe6Wzf89vH4=Y+kvxHR_Q@mail.gmail.com>
-Date: Tue, 7 Apr 2015 09:00:36 -0600
-Message-ID: <CAJCQCtQMQJgL2U4X59XJV3X_W6x-mpsO8eXiutQkPXp59R-Tbw@mail.gmail.com>
+	<20150407110354.GH13864@carfax.org.uk>
+	<CAK1hC9vDQ4j3CZ=7T30-Sg+Q8FYFOzntgmz57WMWRU5WELpDnA@mail.gmail.com>
+Date: Tue, 7 Apr 2015 09:07:23 -0600
+Message-ID: <CAJCQCtSogifUMSoc0r8KGLaRaadvzPXBzy+yQ40brCEEUz4WxA@mail.gmail.com>
 Subject: Re: btrfs subvolume & default subvolume
 From: Chris Murphy <lists@colorremedies.com>
 To: arnaud gaboury <arnaud.gaboury@gmail.com>
@@ -19,41 +21,20 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 7, 2015 at 4:58 AM, arnaud gaboury <arnaud.gaboury@gmail.com> wrote:
-> On Tue, Apr 7, 2015 at 11:57 AM, arnaud gaboury
-> <arnaud.gaboury@gmail.com> wrote:
->>
->> I plan to install my OS on a btrfs partition, with some subvolumes.
->> Once the partition has been btrfs formated, I mounted it somewhere, cd
->> and then run <btrfs subvolume create>.
->>
->> I did these two subvolumes for now:
->> # btrfs subvolume list .
->> ID 256 gen 6 top level 5 path var
->> ID 257 gen 7 top level 5 path home
->>
->> Now I am wondering if I need to create the root filesystem partition
->> (/)? If yes, is this correct:
->> # btrfs subvolume create root
->
->
-> After more reading, it seems to me creating a top root subvolume is
-> the right thing to do:
-> # btrfs subvolume create root
-> # btrfs subvolume create root/var
-> # btrfs subvolume create root/home
->
-> Am I right?
+On Tue, Apr 7, 2015 at 5:08 AM, arnaud gaboury <arnaud.gaboury@gmail.com> wrote:
+> May you please tell why your recommendation is better
+> than my settings, if I thereafter make root as the default sub-volume?
 
-It will work. It's not a matter of right or wrong though. If you
-intend to snapshot or rollback, I think it's easier to put all
-subvolumes at the top level, and then use fstab with the subvol= or
-subvolid= mount option to assemble them in the locations you want.
-That way it's easier to keep all the snapshots in the top level, and
-selectively do rollbacks. If you nest the subvolumes, it gets tricky.
-But if you don't plan to do much snapshotting or rollbacks, it's fine
-to nest.
+For what it's worth, the bootloader ignores the default subvolume and
+so does the mount command anytime you use subvol= or subvol=id mount
+options. I don't recommend relying on changing default subvolume to
+something else on any volume used as root, it just gets confusing.
 
+It makes sense for data drives, where you have a main subvolume that
+you pretty much always want to mount by default, and then every so
+often you can mount subvolid=5 to make a snapshot of that subvolume.
+Yet a normal mount would always mount that main subvolume, not the top
+level.
 
 -- 
 Chris Murphy

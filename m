@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58644 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751211AbbD3Qsj (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 30 Apr 2015 12:48:39 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix mutex unlock without prior lock on space cache truncation
-Date: Thu, 30 Apr 2015 17:47:05 +0100
-Message-Id: <1430412425-12876-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:8306 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753402AbbDGOlt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Apr 2015 10:41:49 -0400
+Message-ID: <5523ECA6.3070902@fb.com>
+Date: Tue, 7 Apr 2015 10:41:42 -0400
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Mike Snitzer <snitzer@redhat.com>
+CC: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+        <dm-devel@redhat.com>, <fstests@vger.kernel.org>, <zab@redhat.com>
+Subject: Re: [PATCH 1/3] dm: log writes target V2
+References: <20150319231655.GA6751@lenny.home.zabbo.net> <1426863037-5870-1-git-send-email-jbacik@fb.com> <20150324153338.GA2055@redhat.com>
+In-Reply-To: <20150324153338.GA2055@redhat.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the call to btrfs_truncate_inode_items() failed and we don't have a block
-group, we were unlocking the cache_write_mutex without having locked it (we
-do it only if we have a block group).
+On 03/24/2015 11:33 AM, Mike Snitzer wrote:
+> On Fri, Mar 20 2015 at 10:50am -0400,
+> Josef Bacik <jbacik@fb.com> wrote:
+>
+>> This creates a new target that is meant for file system developers to test file
+>> system integrity at particular points in the life of a file system.  We capture
+>> all write requests and the data and log the requests and the data to a separate
+>> device for later replay.  There is a userspace utility to do this replay.  The
+>> idea behind this is to give file system developers to verify that the file
+>> system is always consistent.  Thanks,
+>>
+>> Signed-off-by: Josef Bacik <jbacik@fb.com>
+>
+> Hey Josef,
+>
+> Nice job with this target, you need to contribute to DM more ;)
+>
+> I've staged your target for the 4.1 merge in linux-dm.git's 'for-next'
+> branch (with a few small fixes for nits/typos).
+>
+> FYI, I'll likely rebase 'for-next' once more for 4.1 given a conflicting
+> 4.0 change to DM core still needs to land upstream (you can see the
+> merge conflict in 'for-next' at the moment).  But that won't impact your
+> target at all (other than changing the 4.1 commit id).
+>
 
-Fixes: 1bbc621ef284 ("Btrfs: allow block group cache writeout
-                      outside critical section in commit")
+Great thanks Mike!
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/free-space-cache.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index c1d1e6d..f1ddccf 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -231,6 +231,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- {
- 	int ret = 0;
- 	struct btrfs_path *path = btrfs_alloc_path();
-+	bool locked = false;
- 
- 	if (!path) {
- 		ret = -ENOMEM;
-@@ -238,6 +239,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- 	}
- 
- 	if (block_group) {
-+		locked = true;
- 		mutex_lock(&trans->transaction->cache_write_mutex);
- 		if (!list_empty(&block_group->io_list)) {
- 			list_del_init(&block_group->io_list);
-@@ -269,18 +271,14 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- 	 */
- 	ret = btrfs_truncate_inode_items(trans, root, inode,
- 					 0, BTRFS_EXTENT_DATA_KEY);
--	if (ret) {
--		mutex_unlock(&trans->transaction->cache_write_mutex);
--		btrfs_abort_transaction(trans, root, ret);
--		return ret;
--	}
-+	if (ret)
-+		goto fail;
- 
- 	ret = btrfs_update_inode(trans, root, inode);
- 
--	if (block_group)
--		mutex_unlock(&trans->transaction->cache_write_mutex);
--
- fail:
-+	if (locked)
-+		mutex_unlock(&trans->transaction->cache_write_mutex);
- 	if (ret)
- 		btrfs_abort_transaction(trans, root, ret);
- 
--- 
-2.1.3
+Josef
 

@@ -1,40 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout2.samsung.com ([203.254.224.25]:64252 "EHLO
-	mailout2.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752916AbbDGB2S (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2015 21:28:18 -0400
-Received: from epcpsbgr4.samsung.com
- (u144.gpu120.samsung.co.kr [203.254.230.144])
- by mailout2.samsung.com (Oracle Communications Messaging Server 7.0.5.31.0
- 64bit (built May  5 2014))
- with ESMTP id <0NME00B4XXF5XY20@mailout2.samsung.com> for
- linux-btrfs@vger.kernel.org; Tue, 07 Apr 2015 10:28:17 +0900 (KST)
-Date: Tue, 07 Apr 2015 01:28:16 +0000 (GMT)
-From: =?euc-kr?B?wM7BpL3E?= <js7.in@samsung.com>
-Subject: Porting BTRFS to user space
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Reply-to: js7.in@samsung.com
-MIME-version: 1.0
-Content-type: text/plain; charset=euc-kr
-MIME-version: 1.0
-Message-id: <759287502.475491428370096552.JavaMail.weblogic@epmlwas09d>
+Received: from cantor2.suse.de ([195.135.220.15]:49328 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753299AbbDGOU2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Apr 2015 10:20:28 -0400
+Date: Tue, 7 Apr 2015 16:20:26 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Fabian Frederick <fabf@skynet.be>
+Cc: linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2 linux-next] Btrfs: use BTRFS_COMPRESS_NONE instead of 0
+Message-ID: <20150407142026.GA25622@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1428090634-21126-1-git-send-email-fabf@skynet.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1428090634-21126-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello BTRFS developers,
+On Fri, Apr 03, 2015 at 09:50:34PM +0200, Fabian Frederick wrote:
+> cow_file_range_inline() was called with 0 instead of actual definition.
+> 
+> btrfs_finish_ordered_io() initialized compress_type with 0 as well.
+> (Thanks to David Sterba for suggesting this update).
+> 
+> Signed-off-by: Fabian Frederick <fabf@skynet.be>
 
-I am requesting your opion.
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-I am planning to design and implement DFS version of BTRFS.
-Roughly it will be done by
-    1. Extending current DeviceID to NodeID:DeviceID to support multi-node, and
-    2. Implementing inter-node data and meta-data access over TCP.
-Do you think it would be feasible?
-
-For development, I would like to port the kernel code to user space.
-I could continue to run in user mode or be ported back to kernel space.
-But I don't know how can I start to porting the kernel code to user space.
-Is there anyone who can help?
-
-Thanks,
-Jeongsikÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Thanks.

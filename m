@@ -1,59 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f45.google.com ([209.85.216.45]:43962 "EHLO
-	mail-vn0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753288AbbDHVzj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 17:55:39 -0400
-Received: by vnbg7 with SMTP id g7so17244700vnb.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 14:55:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150407195417.GM13864@carfax.org.uk>
-References: <CAPoxMrmAt3WWUbUxYBs0fFmAjVc06jzy=nW8u6E1w1fKmTjVaw@mail.gmail.com>
- <20150407195417.GM13864@carfax.org.uk>
-From: Jim Mills <jmills007@gmail.com>
-Date: Wed, 8 Apr 2015 17:55:17 -0400
-Message-ID: <CAPoxMr=tARQfagQf+niOFeFKFxXYchfpsHu-FkOxDV09nHD1ig@mail.gmail.com>
-Subject: Re: Are attachments allowed?
-To: Hugo Mills <hugo@carfax.org.uk>, Jim Mills <jmills007@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mailout4.samsung.com ([203.254.224.34]:60848 "EHLO
+	mailout4.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751476AbbDHX4Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 19:56:25 -0400
+Received: from epcpsbgr2.samsung.com
+ (u142.gpu120.samsung.co.kr [203.254.230.142])
+ by mailout4.samsung.com (Oracle Communications Messaging Server 7.0.5.31.0
+ 64bit (built May  5 2014))
+ with ESMTP id <0NMI007QSIHZ8F70@mailout4.samsung.com> for
+ linux-btrfs@vger.kernel.org; Thu, 09 Apr 2015 08:56:23 +0900 (KST)
+Date: Wed, 08 Apr 2015 23:56:21 +0000 (GMT)
+From: =?euc-kr?B?wM7BpL3E?= <js7.in@samsung.com>
+Subject: Re: Re: Re: Porting BTRFS to user space
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Reply-to: js7.in@samsung.com
+MIME-version: 1.0
+Content-type: text/plain; charset=euc-kr
+MIME-version: 1.0
+Message-id: <1233276516.596701428537380887.JavaMail.weblogic@epmlwas06c>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have read through them, and even checked my attachment (multipart
-MIME), but with only 2 parts, text, and attachment.  It doesn't seem
-to go through.  I checked the size, and it is smaller than 100 kB.
+My goal is to make a "native" DFS, with native as contrast to overlay.
+It's about performance and features.
 
-I did the same email to the test account, autoanswer@vger.kernel.org,
-and I got an answer.  But, when I sent it to this disto, it goes into
-a black whole.
+1. With overlay DFS, overlying system and underlying system do pretty much overlaping tasks:
+        maintain/lookup meta-data, keep data/meta-data consistency, and etc.
+    They are both implementational duplication and performance overhead.
+2. If I overlay some FS over BTRFS, many of the BTRFS features would be hidden: especially COW and snapshot.
+   It means I have to implement them independently if I need them.
+   On the other hand, by embedding distribution layer into BTRFS, all the BTRFS features could be inherited with minimal cost.
+If any of the existing DFS were fine for me, I would have been using it.
 
-I will recheck against the actual expressions in the taboo file next.
---
-Jim Mills (JMills007@gmail.com)
-(856) 448-IPv6(4786)
+Of course I have to deal with all the issues coming from the distribution.
 
+------- Original Message -------
+Sender : Hugo Mills<hugo@carfax.org.uk> 
+Date   : 2015-04-08 21:27 (GMT+09:00)
+Title  : Re: Re: Porting BTRFS to user space
 
-On Tue, Apr 7, 2015 at 3:54 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Apr 07, 2015 at 03:31:49PM -0400, Jim Mills wrote:
->> Are attachments allowed?
->>
->> According to this,
->> https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list, they are,
->> but other things I have seen seem to say they are not.
->
->    As far as I'm aware, they are, but must be under 100 kB. Multipart
-> HTML messages are definitely not allowed, though. There's a link on
-> the page you reference (to [1]), which gives the basic rules on emails
-> sent through vger, and that links [2] to a more detailed FAQ on the
-> subject.
->
->    Hugo.
->
-> [1] http://vger.kernel.org/majordomo-info.html#taboo
-> [2] http://www.tux.org/lkml/#s3
->
-> --
-> Hugo Mills             | Alert status mauve ocelot: Slight chance of
-> hugo@... carfax.org.uk | brimstone. Be prepared to make a nice cup of tea.
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+On Wed, Apr 08, 2015 at 12:03:29PM +0000, ÀÎÁ¤½Ä wrote:
+> Thank you for the advise.
+> I am still wonder why there are same-name files in btrfs(kernel source) and btrfs-progs.
+> They are quite many as follows.
+>     backref.{c, h}
+>     ctree.{c, h}
+>     dir-item.c
+>     disk-io.{c, h}
+>     extent_io.{c, h}
+>     extent-tree.c
+>     file.c
+>     file-item.c
+>     free-space-cashe.{c, h}
+>     hash.h
+>     inode.c
+>     inode-item.c
+>     inode-map.c
+>     print-tree.{c, h}
+>     props.{c, h}
+>     qgroup.{c, h}
+>     root-tree.c
+>     send.h
+>     ulist.{c, h}
+>     uuid-tree.c
+>     volumes.{c, h}
+> 
+> It seems btrfs-progs files have been ported from kernel files.
+> Are they the result of efforts to port btrfs from kernel to user space?
+
+   Kind of. They were copied from kernel space some time ago, but have
+diverged from that point significantly since. There's all kinds of
+extra flags and options in the userspace code that allow it to bypass
+particular kinds of checks for the recovery tools. The kernel
+implementation will have moved on in different ways since, as well.
+
+> Or at least can I utilize the them so that I have to only port the remaining files?
+
+   You'll probably find that a lot of the remainder are to do with the
+interface to the block layer, which I think (without actually knowing
+much about FUSE) you won't need to do much of.
+
+   I have to say, I'm somewhat more concerned about your distributed
+systems design. You haven't mentioned anywhere any of the design
+features that you would have to think about for a distributed
+filesystem. For example, how do you handle concurrent access from
+different machines, node failures, network failures, caching of
+data/metadata, synchronisation of write followed by read (possibly by
+a different node)?
+
+   I would suggest that you're better off spending your effort on
+those issues in your userspace distributed filesystem, and simply
+using btrfs itself as a backing store. This gives you a useful
+separation between the relatively simple underlying "write some bytes
+to permanent storage" layer and the horrible, nasty, complicated
+"manage a distributed data store in a usable way" layer on top of it.
+
+   It's noticeable that pretty much all of the network and distributed
+filesystems that I'm aware of have this kind of architecture: an
+ordinary boring non-distributed filestore running on each storage
+node, and a networking, metadata, caching and management layer on top
+of that to deal with the distributed parts. (NFS, Ceph, Gluster
+certainly work this way. I would be surprised if any of the others out
+there at the moment didn't work like that).
+
+   Hugo.
+
+> ------- Original Message -------
+> Sender : Austin S Hemmelgarn<ahferroin7@gmail.com> 
+> Date   : 2015-04-08 20:37 (GMT+09:00)
+> Title  : Re: Porting BTRFS to user space
+> 
+> On 2015-04-07 19:57, ÀÎÁ¤½Ä wrote:
+> > Thank you for the information.
+> > I just found that btrfs-progs includes several files that seem modified from btrfs kernel source.
+> > I am not sure exactly what they are.
+> > Web pages say libbtrfs is to provide interface for apps that use btrfs.
+> > Why should there be duplicated codes between kernel and user space?
+> > Is it an on-going effort to port whole btrfs to user space?
+> > 
+> > Could you lead me to some more information about libbtrfs or how to port btrfs to user space?
+> > 
+> > Thank you,
+> > Jeongsik
+> > 
+> > 
+> As far as I understand it, the intent is to allow things like btrfs
+> check and btrfs restore to still work even if the kernel doesn't have
+> btrfs support.  From what I can tell, you are the first person to
+> actually be serious about getting BTRFS running in userspace, so there
+> probably isn't much BTRFS specific literature out there.
+> 
+> I would, however suggest looking at the FUSE drivers for ext4 and ZFS,
+> as those are both ported from kernel space, and should give some good
+> examples of where to start.
+> 
+> <p>&nbsp;</p><p>&nbsp;</p>
+
+-- 
+Hugo Mills             | "I lost my leg in 1942. Some bastard stole it in a
+hugo@... carfax.org.uk | pub in Pimlico."
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+<p>&nbsp;</p><p>&nbsp;</p>ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

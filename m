@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:38059 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753666AbbDHNS2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Apr 2015 09:18:28 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 2F1BC40514
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2015 23:13:05 +1000 (AEST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 28074-05 for <linux-btrfs@vger.kernel.org>;
- Wed,  8 Apr 2015 23:13:05 +1000 (AEST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id CD1E740474
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2015 23:13:04 +1000 (AEST)
-From: Chris Samuel <chris@csamuel.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Porting BTRFS to user space
-Date: Wed, 08 Apr 2015 23:13:01 +1000
-Message-ID: <9805000.6VT5HnkAKH@quad>
-In-Reply-To: <20150408122757.GN13864@carfax.org.uk>
-References: <1463140364.591861428494608421.JavaMail.weblogic@epmlwas09b> <20150408122757.GN13864@carfax.org.uk>
+Received: from mail-ob0-f181.google.com ([209.85.214.181]:35427 "EHLO
+	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753525AbbDHNiX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 09:38:23 -0400
+Received: by obbfy7 with SMTP id fy7so137820742obb.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 06:38:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <9805000.6VT5HnkAKH@quad>
+References: <1463140364.591861428494608421.JavaMail.weblogic@epmlwas09b>
+	<20150408122757.GN13864@carfax.org.uk>
+	<9805000.6VT5HnkAKH@quad>
+Date: Wed, 8 Apr 2015 15:38:16 +0200
+Message-ID: <CANXojcwKK+B5qxwSCPZW4ergy0=N62+AQgAySMdj1y2a7oJbKA@mail.gmail.com>
+Subject: Re: Porting BTRFS to user space
+From: Stef Bon <stefbon@gmail.com>
+To: Chris Samuel <chris@csamuel.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 8 Apr 2015 12:27:57 PM Hugo Mills wrote:
+Hi all,
 
-> (NFS, Ceph, Gluster certainly work this way. I would be surprised if
-> any of the others out there at the moment didn't work like that).
+maybe interesting to know,
 
-GPFS has its own underlying filesystem format, you can upgrade the
-format on the fly with mmchfs once all your GPFS nodes are at the
-same minimum version.
+I'm working on a backup service, which uses btrfs for making snapshots.
+The user can assign a folder for backup very easy, and create "rules" per backup
+of what to backup. Right now it works with assigning mimetypes to a backup:
+the files ot these mimetypes will be watched and made a backup of.
 
-Painful IBM URL follows:
+To show the backup of a file and all the versions available it uses FUSE.
+To keep track of the different versions sqlite is used.
 
-http://www-01.ibm.com/support/knowledgecenter/#!/SSFKCN_4.1.0/com.ibm.cluster.gpfs.v4r1.gpfs100.doc/bl1adm_fsmigissues.htm
+I do not have a project page yet, but a message at the kde forum:
 
-All the best,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+https://forum.kde.org/viewtopic.php?f=223&t=125124
 
+and I'm planning to give a presentation at the openSuse meeting at Den
+Hage in may.
+
+This FUSE fs is totally different from what you're looking for, but
+still maybe interesting.
+
+Stef

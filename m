@@ -1,96 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42444 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751203AbbDHHgV convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 03:36:21 -0400
-Message-ID: <5524DA70.4060501@cn.fujitsu.com>
-Date: Wed, 8 Apr 2015 15:36:16 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:35940 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754293AbbDHSH0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 14:07:26 -0400
+Received: by igblo3 with SMTP id lo3so46847502igb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 11:07:26 -0700 (PDT)
 MIME-Version: 1.0
-To: Omar Sandoval <osandov@osandov.com>
-CC: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
-References: <cover.1428471096.git.osandov@osandov.com> <0d43234f1b2c1d35a06e8259ca94c7d976e0a604.1428471096.git.osandov@osandov.com> <5524C556.1040607@cn.fujitsu.com> <20150408071703.GA24891@mew>
-In-Reply-To: <20150408071703.GA24891@mew>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
+References: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
+Date: Wed, 8 Apr 2015 14:07:26 -0400
+Message-ID: <CAPL5yKcemHpLHm1ntBYoM43Zejv86b_WX4Cvk5naAE=vtrmkxg@mail.gmail.com>
+Subject: Re: Recovering BTRFS from bcache failure.
+From: Dan Merillat <dan.merillat@gmail.com>
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Any ideas on where to start with this?  I did flush the cache out to
+disk before I made changes to the bcache configuration, so there
+shouldn't be anything completely missing, just some bits of stale
+metadata.  If I can get the tools to take the closest match and run
+with it it would probably recover nearly everything.
+
+At worst, is there a way to scan the metadata blocks and rebuild from
+found extent-trees?
 
 
--------- Original Message  --------
-Subject: Re: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
-From: Omar Sandoval <osandov@osandov.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年04月08日 15:17
 
-> On Wed, Apr 08, 2015 at 02:06:14PM +0800, Qu Wenruo wrote:
->>
->>
->> -------- Original Message  --------
->> Subject: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
->> From: Omar Sandoval <osandov@osandov.com>
->> To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>, David Sterba
->> <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
->> Date: 2015年04月08日 13:34
->>
->>> Currently, mounting a subvolume with subvolid= takes a different code
->>> path than mounting with subvol=. This isn't really a big deal except for
->>> the fact that mounts done with subvolid= or the default subvolume don't
->>> have a dentry that's connected to the dentry tree like in the subvol=
->>> case. To unify the code paths, when given subvolid= or using the default
->>> subvolume ID, translate it into a subvolume name by walking
->>> ROOT_BACKREFs in the root tree and INODE_REFs in the filesystem trees.
+
+On Tue, Apr 7, 2015 at 11:40 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
+> Bcache failures are nasty, because they leave a mix of old and new
+> data on the disk.  In this case, there was very little dirty data, but
+> of course the tree roots were dirty and out-of-sync.
 >
-> Hi, Qu,
+> fileserver:/usr/src/btrfs-progs# ./btrfs --version
+> Btrfs v3.18.2
 >
->> Oh, this patch is what I have tried long long ago, and want to do the same
->> thing, to show subvolume mount for btrfs.
+> kernel version 3.18
 >
-> Thanks for pointing that out, I didn't come across your post when I was
-> looking around. I figured that someone must have thought of it first :)
+> [  572.573566] BTRFS info (device bcache0): enabling auto recovery
+> [  572.573619] BTRFS info (device bcache0): disk space caching is enabled
+> [  574.266055] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.276952] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277008] BTRFS: failed to read tree root on bcache0
+> [  574.277187] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277356] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277398] BTRFS: failed to read tree root on bcache0
+> [  574.285955] BTRFS (device bcache0): parent transid verify failed on
+> 7567965720576 wanted 613689 found 613694
+> [  574.298741] BTRFS (device bcache0): parent transid verify failed on
+> 7567965720576 wanted 613689 found 610499
+> [  574.298804] BTRFS: failed to read tree root on bcache0
+> [  575.047079] BTRFS (device bcache0): bad tree block start 0 7567954464768
+> [  575.111495] BTRFS (device bcache0): parent transid verify failed on
+> 7567954464768 wanted 613688 found 613685
+> [  575.111559] BTRFS: failed to read tree root on bcache0
+> [  575.121749] BTRFS (device bcache0): bad tree block start 0 7567954214912
+> [  575.131803] BTRFS (device bcache0): parent transid verify failed on
+> 7567954214912 wanted 613687 found 613680
+> [  575.131866] BTRFS: failed to read tree root on bcache0
+> [  575.180101] BTRFS: open_ctree failed
 >
->> But it came to me that, superblock->show_path() is a better method to do it.
->>
->> You can implement btrfs_show_path() to allow mountinfo to get the subvolume
->> name from subvolid, and don't change the mount routine much.
+> all the btrfs tools throw up their hands with similar errors:
+> ileserver:/usr/src/btrfs-progs# btrfs restore /dev/bcache0 -l
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
 >
-> Hm, I don't think that the changes to the mount code would be
-> unwarranted. Having one code path makes it more obvious what's going on.
-> Do you mind elaborating on why you preferred doing it in ->show_path()?
-The story seems to be long.
-
-At that time, I also tried to do the subvolid->path convert and it seems 
-works.
-
-But another problem, IIRC, btrfs losing its security label bug,
-will be triggered more easy if we all go through the "subvol=" routine,
-as that routine will use vfs_mount twice. The second time it will
-definitely lost the security label.
-
-Although the problem is later resolved by handling security label 
-internally, but it drove me not touching the mount routine.
-
-
-Also another problem is, "subvolid=" routine can also happen when the fs 
-is already mounted, so there may be some operations ,like deleting files 
-and dirs, interfere your subvolid->path search codes.
-(During your while loop, there is a race windows between your 
-release_path() and search_slot())
-Resulting a mount failure even nothing goes wrong.
-
-->show_path() method can't avoid above race problem, but the good thing 
-is, even race happens, it won't disturb our mount.
-Just a -EBUSY when showing /proc/self/mountinfo, not a mount failure.
-
-
-Thanks,
-Qu
 >
-> Thanks!
+> fileserver:/usr/src/btrfs-progs# ./btrfsck --repair /dev/bcache0
+> --init-extent-tree
+> enabling repair mode
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Couldn't open file system
 >
->> Thanks,
->> Qu
+> Annoyingly:
+> # ./btrfs-image -c9 -t4 -s -w /dev/bcache0 /tmp/test.out
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Open ctree failed
+> create failed (Success)
 >
+> So I can't even send an image for people to look at.

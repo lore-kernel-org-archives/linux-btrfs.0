@@ -1,178 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:35824 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752083AbbDHSul (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 14:50:41 -0400
-Received: by iggg4 with SMTP id g4so47909667igg.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 11:50:40 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAPL5yKew_pLumUeV7owwX5=Jy+ciqY-+AtGeApo+M-G4LpQurA@mail.gmail.com>
-References: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
-	<CAPL5yKcemHpLHm1ntBYoM43Zejv86b_WX4Cvk5naAE=vtrmkxg@mail.gmail.com>
-	<5525731C.2080709@neo-zeon.de>
-	<CAPL5yKew_pLumUeV7owwX5=Jy+ciqY-+AtGeApo+M-G4LpQurA@mail.gmail.com>
-Date: Wed, 8 Apr 2015 14:50:40 -0400
-Message-ID: <CAPL5yKe0xPp97BopR=buZpKbqHPL0h64mp4bUb7J+YDGnZ+jTw@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:59503 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753749AbbDHTWi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Apr 2015 15:22:38 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YfvYa-0001C0-KN
+	for linux-btrfs@vger.kernel.org; Wed, 08 Apr 2015 21:22:36 +0200
+Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 21:22:36 +0200
+Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 21:22:36 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: Recovering BTRFS from bcache failure.
-From: Dan Merillat <dan.merillat@gmail.com>
-To: Cameron Berkenpas <cam@neo-zeon.de>
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Wed, 08 Apr 2015 21:22:22 +0200
+Message-ID: <eobgvb-j7s.ln1@hurikhan77.spdns.de>
+References: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry I pressed send before I finished my thoughts.
+Dan Merillat <dan.merillat@gmail.com> schrieb:
 
-btrfs restore gets nowhere with any options.  btrfs-recover says the
-superblocks are fine, and chunk recover does nothing after a few hours
-of reading.
+> Bcache failures are nasty, because they leave a mix of old and new
+> data on the disk.  In this case, there was very little dirty data, but
+> of course the tree roots were dirty and out-of-sync.
+> 
+> fileserver:/usr/src/btrfs-progs# ./btrfs --version
+> Btrfs v3.18.2
+> 
+> kernel version 3.18
+> 
+> [  572.573566] BTRFS info (device bcache0): enabling auto recovery
+> [  572.573619] BTRFS info (device bcache0): disk space caching is enabled
+> [  574.266055] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.276952] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277008] BTRFS: failed to read tree root on bcache0
+> [  574.277187] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277356] BTRFS (device bcache0): parent transid verify failed on
+> 7567956930560 wanted 613690 found 613681
+> [  574.277398] BTRFS: failed to read tree root on bcache0
+> [  574.285955] BTRFS (device bcache0): parent transid verify failed on
+> 7567965720576 wanted 613689 found 613694
+> [  574.298741] BTRFS (device bcache0): parent transid verify failed on
+> 7567965720576 wanted 613689 found 610499
+> [  574.298804] BTRFS: failed to read tree root on bcache0
+> [  575.047079] BTRFS (device bcache0): bad tree block start 0
+> [  7567954464768 575.111495] BTRFS (device bcache0): parent transid verify
+> [  failed on
+> 7567954464768 wanted 613688 found 613685
+> [  575.111559] BTRFS: failed to read tree root on bcache0
+> [  575.121749] BTRFS (device bcache0): bad tree block start 0
+> [  7567954214912 575.131803] BTRFS (device bcache0): parent transid verify
+> [  failed on
+> 7567954214912 wanted 613687 found 613680
+> [  575.131866] BTRFS: failed to read tree root on bcache0
+> [  575.180101] BTRFS: open_ctree failed
+> 
+> all the btrfs tools throw up their hands with similar errors:
+> ileserver:/usr/src/btrfs-progs# btrfs restore /dev/bcache0 -l
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Could not open root, trying backup super
+> 
+> 
+> fileserver:/usr/src/btrfs-progs# ./btrfsck --repair /dev/bcache0
+> --init-extent-tree
+> enabling repair mode
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Couldn't setup device tree
+> Couldn't open file system
+> 
+> Annoyingly:
+> # ./btrfs-image -c9 -t4 -s -w /dev/bcache0 /tmp/test.out
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> parent transid verify failed on 7567956930560 wanted 613690 found 613681
+> Ignoring transid failure
+> Couldn't setup extent tree
+> Open ctree failed
+> create failed (Success)
+> 
+> So I can't even send an image for people to look at.
 
-Everything else bails out with the errors I listed above.
+There's always last resort (LAST RESORT!) btrfs-zero-log. It may destroy 
+some of your data, however, and can make things even worse if other repairs 
+could've helped before. So here's some pointers:
 
-On Wed, Apr 8, 2015 at 2:36 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
-> It's a known bug with bcache and enabling discard, it was discarding
-> sections containing data it wanted.  After a reboot bcache refused to
-> accept the cache data, and of course it was dirty because I'm frankly
-> too stupid to breathe sometimes.
->
-> So yes, it's a bcache issue, but that's unresolvable.  I'm trying to
-> rescue the btrfs data that it trashed.
->
->
-> On Wed, Apr 8, 2015 at 2:27 PM, Cameron Berkenpas <cam@neo-zeon.de> wrote:
->> Hello,
->>
->> I had some luck in the past with btrfs restore using the -r option. I don't
->> recall how I determined the roots... Maybe I tried random numbers? I was
->> able to recover nearly all of my data from a bcache related crash from over
->> a year ago.
->>
->> What kind of bcache failure did you see? I've been doing some testing
->> recently and ran into 2 bcache failures. With both of these failures, I had
->> a ' bad btree header at bucket' error message (which is entirely different
->> from the crash I had over a year back). I'm currently trying a different SSD
->> to see if that alleviates the issue. The error makes me think that it's a
->> bcache specific issue that's unrelated to btrfs or possibly (in my case) an
->> issue with the previous SSD.
->>
->> Did you encounter this same error?
->>
->> With my 2 most recent crashes, I didn't try to recover very hard (or even
->> try 'btrfs recover; at all) as I've been taking daily backups. I did try
->> btrfsck, and not only would it fail, it would segfault.
->>
->> -Cameron
->>
->>
->> On 04/08/2015 11:07 AM, Dan Merillat wrote:
->>
->> Any ideas on where to start with this?  I did flush the cache out to
->> disk before I made changes to the bcache configuration, so there
->> shouldn't be anything completely missing, just some bits of stale
->> metadata.  If I can get the tools to take the closest match and run
->> with it it would probably recover nearly everything.
->>
->> At worst, is there a way to scan the metadata blocks and rebuild from
->> found extent-trees?
->>
->>
->>
->>
->> On Tue, Apr 7, 2015 at 11:40 PM, Dan Merillat <dan.merillat@gmail.com>
->> wrote:
->>
->> Bcache failures are nasty, because they leave a mix of old and new
->> data on the disk.  In this case, there was very little dirty data, but
->> of course the tree roots were dirty and out-of-sync.
->>
->> fileserver:/usr/src/btrfs-progs# ./btrfs --version
->> Btrfs v3.18.2
->>
->> kernel version 3.18
->>
->> [  572.573566] BTRFS info (device bcache0): enabling auto recovery
->> [  572.573619] BTRFS info (device bcache0): disk space caching is enabled
->> [  574.266055] BTRFS (device bcache0): parent transid verify failed on
->> 7567956930560 wanted 613690 found 613681
->> [  574.276952] BTRFS (device bcache0): parent transid verify failed on
->> 7567956930560 wanted 613690 found 613681
->> [  574.277008] BTRFS: failed to read tree root on bcache0
->> [  574.277187] BTRFS (device bcache0): parent transid verify failed on
->> 7567956930560 wanted 613690 found 613681
->> [  574.277356] BTRFS (device bcache0): parent transid verify failed on
->> 7567956930560 wanted 613690 found 613681
->> [  574.277398] BTRFS: failed to read tree root on bcache0
->> [  574.285955] BTRFS (device bcache0): parent transid verify failed on
->> 7567965720576 wanted 613689 found 613694
->> [  574.298741] BTRFS (device bcache0): parent transid verify failed on
->> 7567965720576 wanted 613689 found 610499
->> [  574.298804] BTRFS: failed to read tree root on bcache0
->> [  575.047079] BTRFS (device bcache0): bad tree block start 0 7567954464768
->> [  575.111495] BTRFS (device bcache0): parent transid verify failed on
->> 7567954464768 wanted 613688 found 613685
->> [  575.111559] BTRFS: failed to read tree root on bcache0
->> [  575.121749] BTRFS (device bcache0): bad tree block start 0 7567954214912
->> [  575.131803] BTRFS (device bcache0): parent transid verify failed on
->> 7567954214912 wanted 613687 found 613680
->> [  575.131866] BTRFS: failed to read tree root on bcache0
->> [  575.180101] BTRFS: open_ctree failed
->>
->> all the btrfs tools throw up their hands with similar errors:
->> ileserver:/usr/src/btrfs-progs# btrfs restore /dev/bcache0 -l
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> Ignoring transid failure
->> Couldn't setup extent tree
->> Couldn't setup device tree
->> Could not open root, trying backup super
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> Ignoring transid failure
->> Couldn't setup extent tree
->> Couldn't setup device tree
->> Could not open root, trying backup super
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> Ignoring transid failure
->> Couldn't setup extent tree
->> Couldn't setup device tree
->> Could not open root, trying backup super
->>
->>
->> fileserver:/usr/src/btrfs-progs# ./btrfsck --repair /dev/bcache0
->> --init-extent-tree
->> enabling repair mode
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> Ignoring transid failure
->> Couldn't setup extent tree
->> Couldn't setup device tree
->> Couldn't open file system
->>
->> Annoyingly:
->> # ./btrfs-image -c9 -t4 -s -w /dev/bcache0 /tmp/test.out
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> parent transid verify failed on 7567956930560 wanted 613690 found 613681
->> Ignoring transid failure
->> Couldn't setup extent tree
->> Open ctree failed
->> create failed (Success)
->>
->> So I can't even send an image for people to look at.
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
+  * btrfs-find-root: find a working tree-root (no idea how to set it, tho)
+  * mount -o recovery: mount in recovery mode (tries to mount with a working
+    superblock backup)
+  * btrfs restore: command to get files off a broken fs (at least what is
+    readable, no guarantees for sane file contents, tho, I guess)
+
+Its a bit hard to follow the discussion here because posts from Cameron are 
+missing in my NNTP reader (I'm using the gmane gateway to read here). So I'm 
+answering on the first post. Not sure, what you tried until now (except 
+"btrfs restore").
+
+If you don't have time, this is all you can try now. If your data is 
+valuable - well, you have to wait for the experts here. But general opinion 
+here is: If you don't have backups, your data is not valuable by definition, 
+especially if using an unmature fs, or an even more experimental setup like 
+bcache. ;-)
+
+PS: btrfs-zero-log is usually my personal first-resort in case of problems 
+not fixable within a few tries. I got nightly backups to restore from and 
+compare data after zero-log. Thus why I started my answer with it.
+
+-- 
+Replies to list only preferred.
+

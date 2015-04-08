@@ -1,123 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:36673 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751026AbbDHFec (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 01:34:32 -0400
-Received: by pdea3 with SMTP id a3so103445106pde.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Apr 2015 22:34:31 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH 0/3] Btrfs: show subvolume name and ID in /proc/mounts
-Date: Tue,  7 Apr 2015 22:33:59 -0700
-Message-Id: <cover.1428471096.git.osandov@osandov.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:54950 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751132AbbDHGAC convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 02:00:02 -0400
+Message-ID: <5524C3DE.7040705@cn.fujitsu.com>
+Date: Wed, 8 Apr 2015 13:59:58 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+References: <1405933349-6215-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1405933349-6215-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So this is something that has bothered me as a Btrfs user for some time
-and that came up in discussing a separate bug here:
-https://lkml.org/lkml/2015/4/2/447.
+Hi, all.
 
-It turns out that getting the name of a subvolume reliably is a bit
-trickier than it would seem because of how mounting subvolumes by ID is
-implemented. In particular, in that case, the dentry we get for the root
-of the mount is not necessarily attached to the dentry tree, which means
-that the obvious solution of just dumping the dentry does not work. The
-solution I put together makes the tradeoff of churning a bit more code
-in order to avoid implementing this with weird hacks.
+Patch from long long ago.
+Anyone to review/comment/merge it?
 
-Patch 1 is a bug fix that I came across during testing. Because it would
-conflict with merging patch 2, I'm including it here.
-
-Patch 2 is the big one: it makes mounts by subvolid work the same way as
-mounts by subvol name by looking up the name for a subvolid from the
-root backrefs and inode refs. It comes with the added benefit of making
-subvolume mounts share the same codepath regardless of the method.
-
-Patch 3 is really simple thanks to patch 2: the obvious change to
-btrfs_show_options() works now.
-
-This series applies to v4.0-rc7. I've tested it manually and with the
-script below. Thank you!
-
-Omar Sandoval (3):
-  Btrfs: lock superblock before remounting for rw subvol
-  Btrfs: unify subvol= and subvolid= mounting
-  Btrfs: show subvol= and subvolid= in /proc/mounts
-
- fs/btrfs/super.c | 353 ++++++++++++++++++++++++++++++++++++-------------------
- fs/seq_file.c    |   1 +
- 2 files changed, 232 insertions(+), 122 deletions(-)
+Thanks
+Qu
 
 
-Testing script:
+-------- Original Message  --------
+Subject: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Date: 2014年07月21日 17:02
 
-----
-#!/bin/sh
-
-set -e
-
-check_subvol () {
-	NAME="$1"
-	ID="$2"
-
-	# Mount by name.
-	mount -osubvol="$NAME" /dev/vdb /mnt
-	if ! grep vdb /proc/mounts | grep ",subvol=$NAME,subvolid=$ID"; then
-		echo "Failed $NAME" >&2
-		exit 1
-	fi
-	umount /mnt
-
-	# Mount by ID.
-	mount -osubvolid="$ID" /dev/vdb /mnt
-	if ! grep vdb /proc/mounts | grep ",subvol=$NAME,subvolid=$ID"; then
-		echo "Failed $ID" >&2
-		exit 1
-	fi
-	umount /mnt
-}
-
-check_default_subvol () {
-	NAME="$1"
-	ID="$2"
-
-	mount /dev/vdb /mnt
-	if ! grep vdb /proc/mounts | grep ",subvol=$NAME,subvolid=$ID"; then
-		echo "Failed default" >&2
-		exit 1
-	fi
-	umount /mnt
-}
-
-mkfs.btrfs -f /dev/vdb
-mount /dev/vdb /mnt
-btrfs subvolume create /mnt/vol
-btrfs subvolume create /mnt/vol/nestedvol
-mkdir /mnt/dir
-btrfs subvolume create /mnt/dir/dirvol
-btrfs subvolume create /mnt/dir/dirvol/nesteddirvol
-mkdir /mnt/vol/voldir
-btrfs subvolume create /mnt/vol/voldir/voldirvol
-btrfs subvolume list /mnt
-umount /mnt
-
-check_subvol /vol 257
-check_subvol /vol/nestedvol 258
-check_subvol /dir/dirvol 259
-check_subvol /dir/dirvol/nesteddirvol 260
-check_subvol /vol/voldir/voldirvol 261
-
-check_default_subvol / 5
-
-mount /dev/vdb /mnt
-btrfs subvolume set-default 257 /mnt
-umount /mnt
-
-check_default_subvol /vol 257
-----
-
--- 
-2.3.5
-
+> show_path() function in struct super_operations is used to output
+> subtree mount info for mountinfo.
+> Without the implement of show_path() function, user can not found where
+> each subvolume is mounted if using 'subvolid=' mount option.
+> (When mounted with 'subvol=' mount option, vfs is aware of subtree mount
+> and can to the path resolve by vfs itself)
+>
+> With this patch, end users will be able to use findmnt(8) or other
+> programs reading mountinfo to find which btrfs subvolume is mounted.
+>
+> Though we use fs_info->subvol_sem to protect show_path() from subvolume
+> destroying/creating, if user renames/moves the parent non-subvolume
+> dir of a subvolume, it is still possible that concurrency may happen and
+> cause btrfs_search_slot() fails to find the desired key.
+> In that case, we just return -EBUSY and info user to try again since
+> extra locking like locking the whole subvolume tree is too expensive for
+> such usage.
+>
+> Reported-by: Stefan G.Weichinger <lists@xunil.at>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/ctree.h |   2 +
+>   fs/btrfs/ioctl.c |   4 +-
+>   fs/btrfs/super.c | 112 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   3 files changed, 116 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index be91397..63fba05 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3881,6 +3881,8 @@ void btrfs_get_block_group_info(struct list_head *groups_list,
+>   				struct btrfs_ioctl_space_info *space);
+>   void update_ioctl_balance_args(struct btrfs_fs_info *fs_info, int lock,
+>   			       struct btrfs_ioctl_balance_args *bargs);
+> +int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+> +			      u64 tree_id, u64 dirid, char *name);
+>
+>
+>   /* file.c */
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 47aceb4..c2bd6b5 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2218,8 +2218,8 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
+>    * Search INODE_REFs to identify path name of 'dirid' directory
+>    * in a 'tree_id' tree. and sets path name to 'name'.
+>    */
+> -static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+> -				u64 tree_id, u64 dirid, char *name)
+> +int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+> +			      u64 tree_id, u64 dirid, char *name)
+>   {
+>   	struct btrfs_root *root;
+>   	struct btrfs_key key;
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 8e16bca..b5ece81 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1831,6 +1831,117 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+>   	return 0;
+>   }
+>
+> +static char *str_prepend(char *dest, char *src)
+> +{
+> +	memmove(dest + strlen(src), dest, strlen(dest) + 1);
+> +	memcpy(dest, src, strlen(src));
+> +	return dest;
+> +}
+> +
+> +static int alloc_mem_if_needed(char **dest, char *src, int *len)
+> +{
+> +	char *tmp;
+> +
+> +	if (unlikely(strlen(*dest) + strlen(src) > *len)) {
+> +		*len *= 2;
+> +		tmp = krealloc(*dest, *len, GFP_NOFS);
+> +		if (!tmp) {
+> +			return -ENOMEM;
+> +		}
+> +		*dest = tmp;
+> +	}
+> +	return 0;
+> +}
+> +
+> +static int btrfs_show_path(struct seq_file *m, struct dentry *mount_root)
+> +{
+> +	struct inode *inode = mount_root->d_inode;
+> +	struct btrfs_root *subv_root = BTRFS_I(inode)->root;
+> +	struct btrfs_fs_info *fs_info = subv_root->fs_info;
+> +	struct btrfs_root *tree_root = fs_info->tree_root;
+> +	struct btrfs_root_ref *ref;
+> +	struct btrfs_key key;
+> +	struct btrfs_key found_key;
+> +	struct btrfs_path *path = NULL;
+> +	char *name = NULL;
+> +	char *buf = NULL;
+> +	int ret = 0;
+> +	int len;
+> +	u64 dirid = 0;
+> +	u16 namelen;
+> +
+> +	name = kmalloc(PAGE_SIZE, GFP_NOFS);
+> +	len = PAGE_SIZE;
+> +	buf = kmalloc(BTRFS_INO_LOOKUP_PATH_MAX, GFP_NOFS);
+> +	path = btrfs_alloc_path();
+> +	if (!name || !buf || !path) {
+> +		ret = -ENOMEM;
+> +		goto out_free;
+> +	}
+> +	*name = '/';
+> +	*(name + 1) = '\0';
+> +
+> +	key.objectid = subv_root->root_key.objectid;
+> +	key.type = BTRFS_ROOT_BACKREF_KEY;
+> +	key.offset = 0;
+> +	down_read(&fs_info->subvol_sem);
+> +	while (key.objectid != BTRFS_FS_TREE_OBJECTID) {
+> +		ret = btrfs_search_slot_for_read(tree_root, &key, path, 1, 1);
+> +		if (ret < 0)
+> +			goto out;
+> +		if (ret) {
+> +			ret = -ENOENT;
+> +			goto out;
+> +		}
+> +		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
+> +				      path->slots[0]);
+> +		if (found_key.objectid != key.objectid ||
+> +		    found_key.type != BTRFS_ROOT_BACKREF_KEY) {
+> +			ret = -ENOENT;
+> +			goto out;
+> +		}
+> +		/* append the subvol name first */
+> +		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +				     struct btrfs_root_ref);
+> +		dirid = btrfs_root_ref_dirid(path->nodes[0], ref);
+> +		namelen = btrfs_root_ref_name_len(path->nodes[0], ref);
+> +		read_extent_buffer(path->nodes[0], buf,
+> +				   (unsigned long)(ref + 1), namelen);
+> +		*(buf + namelen) = '/';
+> +		*(buf + namelen + 1) = '\0';
+> +		ret = alloc_mem_if_needed(&name, buf, &len);
+> +		if (ret < 0)
+> +			goto out;
+> +		str_prepend(name + 1, buf);
+> +
+> +		/* then append path name inside the subvole */
+> +		ret = btrfs_search_path_in_tree(fs_info, found_key.offset,
+> +						dirid, buf);
+> +		if (ret < 0) {
+> +			if (ret == -ENOENT)
+> +				/* parent dir may be under rename/moving,
+> +				 * info user to try again other than
+> +				 * "No such file or directory" */
+> +				ret = -EBUSY;
+> +			goto out;
+> +		}
+> +		btrfs_release_path(path);
+> +		key.objectid = found_key.offset;
+> +		ret = alloc_mem_if_needed(&name, buf, &len);
+> +		if (ret < 0)
+> +			goto out;
+> +		str_prepend(name + 1, buf);
+> +	}
+> +	seq_puts(m, name);
+> +out:
+> +	up_read(&fs_info->subvol_sem);
+> +out_free:
+> +	btrfs_free_path(path);
+> +	kfree(buf);
+> +	kfree(name);
+> +	return ret;
+> +}
+> +
+>   static const struct super_operations btrfs_super_ops = {
+>   	.drop_inode	= btrfs_drop_inode,
+>   	.evict_inode	= btrfs_evict_inode,
+> @@ -1845,6 +1956,7 @@ static const struct super_operations btrfs_super_ops = {
+>   	.remount_fs	= btrfs_remount,
+>   	.freeze_fs	= btrfs_freeze,
+>   	.unfreeze_fs	= btrfs_unfreeze,
+> +	.show_path	= btrfs_show_path,
+>   };
+>
+>   static const struct file_operations btrfs_ctl_fops = {
+>

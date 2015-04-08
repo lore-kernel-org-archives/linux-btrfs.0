@@ -1,45 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:35427 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753525AbbDHNiX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 09:38:23 -0400
-Received: by obbfy7 with SMTP id fy7so137820742obb.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 06:38:22 -0700 (PDT)
+Received: from mail-vn0-f45.google.com ([209.85.216.45]:43962 "EHLO
+	mail-vn0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753288AbbDHVzj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 17:55:39 -0400
+Received: by vnbg7 with SMTP id g7so17244700vnb.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 14:55:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <9805000.6VT5HnkAKH@quad>
-References: <1463140364.591861428494608421.JavaMail.weblogic@epmlwas09b>
-	<20150408122757.GN13864@carfax.org.uk>
-	<9805000.6VT5HnkAKH@quad>
-Date: Wed, 8 Apr 2015 15:38:16 +0200
-Message-ID: <CANXojcwKK+B5qxwSCPZW4ergy0=N62+AQgAySMdj1y2a7oJbKA@mail.gmail.com>
-Subject: Re: Porting BTRFS to user space
-From: Stef Bon <stefbon@gmail.com>
-To: Chris Samuel <chris@csamuel.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20150407195417.GM13864@carfax.org.uk>
+References: <CAPoxMrmAt3WWUbUxYBs0fFmAjVc06jzy=nW8u6E1w1fKmTjVaw@mail.gmail.com>
+ <20150407195417.GM13864@carfax.org.uk>
+From: Jim Mills <jmills007@gmail.com>
+Date: Wed, 8 Apr 2015 17:55:17 -0400
+Message-ID: <CAPoxMr=tARQfagQf+niOFeFKFxXYchfpsHu-FkOxDV09nHD1ig@mail.gmail.com>
+Subject: Re: Are attachments allowed?
+To: Hugo Mills <hugo@carfax.org.uk>, Jim Mills <jmills007@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+I have read through them, and even checked my attachment (multipart
+MIME), but with only 2 parts, text, and attachment.  It doesn't seem
+to go through.  I checked the size, and it is smaller than 100 kB.
 
-maybe interesting to know,
+I did the same email to the test account, autoanswer@vger.kernel.org,
+and I got an answer.  But, when I sent it to this disto, it goes into
+a black whole.
 
-I'm working on a backup service, which uses btrfs for making snapshots.
-The user can assign a folder for backup very easy, and create "rules" per backup
-of what to backup. Right now it works with assigning mimetypes to a backup:
-the files ot these mimetypes will be watched and made a backup of.
+I will recheck against the actual expressions in the taboo file next.
+--
+Jim Mills (JMills007@gmail.com)
+(856) 448-IPv6(4786)
 
-To show the backup of a file and all the versions available it uses FUSE.
-To keep track of the different versions sqlite is used.
 
-I do not have a project page yet, but a message at the kde forum:
-
-https://forum.kde.org/viewtopic.php?f=223&t=125124
-
-and I'm planning to give a presentation at the openSuse meeting at Den
-Hage in may.
-
-This FUSE fs is totally different from what you're looking for, but
-still maybe interesting.
-
-Stef
+On Tue, Apr 7, 2015 at 3:54 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Tue, Apr 07, 2015 at 03:31:49PM -0400, Jim Mills wrote:
+>> Are attachments allowed?
+>>
+>> According to this,
+>> https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list, they are,
+>> but other things I have seen seem to say they are not.
+>
+>    As far as I'm aware, they are, but must be under 100 kB. Multipart
+> HTML messages are definitely not allowed, though. There's a link on
+> the page you reference (to [1]), which gives the basic rules on emails
+> sent through vger, and that links [2] to a more detailed FAQ on the
+> subject.
+>
+>    Hugo.
+>
+> [1] http://vger.kernel.org/majordomo-info.html#taboo
+> [2] http://www.tux.org/lkml/#s3
+>
+> --
+> Hugo Mills             | Alert status mauve ocelot: Slight chance of
+> hugo@... carfax.org.uk | brimstone. Be prepared to make a nice cup of tea.
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |

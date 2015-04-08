@@ -1,35 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:35940 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754293AbbDHSH0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 14:07:26 -0400
-Received: by igblo3 with SMTP id lo3so46847502igb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 11:07:26 -0700 (PDT)
+Received: from mail-ie0-f179.google.com ([209.85.223.179]:36684 "EHLO
+	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750881AbbDHSgz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 14:36:55 -0400
+Received: by iebrs15 with SMTP id rs15so82072036ieb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Apr 2015 11:36:54 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
+In-Reply-To: <5525731C.2080709@neo-zeon.de>
 References: <CAPL5yKeARUyaM3YiQRmEPvE=4LX2-7gsyyUJDULRnD388vNhxg@mail.gmail.com>
-Date: Wed, 8 Apr 2015 14:07:26 -0400
-Message-ID: <CAPL5yKcemHpLHm1ntBYoM43Zejv86b_WX4Cvk5naAE=vtrmkxg@mail.gmail.com>
+	<CAPL5yKcemHpLHm1ntBYoM43Zejv86b_WX4Cvk5naAE=vtrmkxg@mail.gmail.com>
+	<5525731C.2080709@neo-zeon.de>
+Date: Wed, 8 Apr 2015 14:36:54 -0400
+Message-ID: <CAPL5yKew_pLumUeV7owwX5=Jy+ciqY-+AtGeApo+M-G4LpQurA@mail.gmail.com>
 Subject: Re: Recovering BTRFS from bcache failure.
 From: Dan Merillat <dan.merillat@gmail.com>
-To: BTRFS <linux-btrfs@vger.kernel.org>
+To: Cameron Berkenpas <cam@neo-zeon.de>
+Cc: BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Any ideas on where to start with this?  I did flush the cache out to
-disk before I made changes to the bcache configuration, so there
-shouldn't be anything completely missing, just some bits of stale
-metadata.  If I can get the tools to take the closest match and run
-with it it would probably recover nearly everything.
+It's a known bug with bcache and enabling discard, it was discarding
+sections containing data it wanted.  After a reboot bcache refused to
+accept the cache data, and of course it was dirty because I'm frankly
+too stupid to breathe sometimes.
 
-At worst, is there a way to scan the metadata blocks and rebuild from
-found extent-trees?
-
+So yes, it's a bcache issue, but that's unresolvable.  I'm trying to
+rescue the btrfs data that it trashed.
 
 
-
-On Tue, Apr 7, 2015 at 11:40 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
+On Wed, Apr 8, 2015 at 2:27 PM, Cameron Berkenpas <cam@neo-zeon.de> wrote:
+> Hello,
+>
+> I had some luck in the past with btrfs restore using the -r option. I don't
+> recall how I determined the roots... Maybe I tried random numbers? I was
+> able to recover nearly all of my data from a bcache related crash from over
+> a year ago.
+>
+> What kind of bcache failure did you see? I've been doing some testing
+> recently and ran into 2 bcache failures. With both of these failures, I had
+> a ' bad btree header at bucket' error message (which is entirely different
+> from the crash I had over a year back). I'm currently trying a different SSD
+> to see if that alleviates the issue. The error makes me think that it's a
+> bcache specific issue that's unrelated to btrfs or possibly (in my case) an
+> issue with the previous SSD.
+>
+> Did you encounter this same error?
+>
+> With my 2 most recent crashes, I didn't try to recover very hard (or even
+> try 'btrfs recover; at all) as I've been taking daily backups. I did try
+> btrfsck, and not only would it fail, it would segfault.
+>
+> -Cameron
+>
+>
+> On 04/08/2015 11:07 AM, Dan Merillat wrote:
+>
+> Any ideas on where to start with this?  I did flush the cache out to
+> disk before I made changes to the bcache configuration, so there
+> shouldn't be anything completely missing, just some bits of stale
+> metadata.  If I can get the tools to take the closest match and run
+> with it it would probably recover nearly everything.
+>
+> At worst, is there a way to scan the metadata blocks and rebuild from
+> found extent-trees?
+>
+>
+>
+>
+> On Tue, Apr 7, 2015 at 11:40 PM, Dan Merillat <dan.merillat@gmail.com>
+> wrote:
+>
 > Bcache failures are nasty, because they leave a mix of old and new
 > data on the disk.  In this case, there was very little dirty data, but
 > of course the tree roots were dirty and out-of-sync.
@@ -118,3 +159,10 @@ On Tue, Apr 7, 2015 at 11:40 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
 > create failed (Success)
 >
 > So I can't even send an image for people to look at.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>

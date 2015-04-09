@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4549 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:22081 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751584AbbDIEg0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:36:26 -0400
+	with ESMTP id S1751763AbbDIEgW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:36:22 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t394ZIxx019938
-	for <linux-btrfs@vger.kernel.org>; Thu, 9 Apr 2015 12:35:18 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t394ZCX5019916
+	for <linux-btrfs@vger.kernel.org>; Thu, 9 Apr 2015 12:35:12 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 8/9] btrfs: wait for delayed iputs on no space
-Date: Thu, 9 Apr 2015 12:34:43 +0800
-Message-ID: <4a2f9c8918b1386ef6296d52ee4e331b7099b247.1428554023.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/9] btrfs: fix condition of commit transaction
+Date: Thu, 9 Apr 2015 12:34:36 +0800
+Message-ID: <0e0c79f4cb3429eca37cc30fc6dc9e33495a23dd.1428554023.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
 References: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -21,46 +21,68 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-btrfs will report no_space when we run following write and delete
-file loop:
- # FILE_SIZE_M=[ 75% of fs space ]
- # DEV=[ some dev ]
- # MNT=[ some dir ]
- #
- # mkfs.btrfs -f "$DEV"
- # mount -o nodatacow "$DEV" "$MNT"
- # for ((i = 0; i < 100; i++)); do dd if=/dev/zero of="$MNT"/file0 bs=1M count="$FILE_SIZE_M"; rm -f "$MNT"/file0; done
- #
+Old code bypass commit transaction when we don't have enough
+pinned space, but another case is there exist freed bgs in current
+transction, it have possibility to make alloc_chunk success.
 
-Reason:
- iput() and evict() is run after write pages to block device, if
- write pages work is not finished before next write, the "rm"ed space
- is not freed, and caused above bug.
+This patch modify the condition to:
+if (have_free_bg || have_pinned_space) commit_transaction()
 
-Fix:
- We can add "-o flushoncommit" mount option to avoid above bug, but
- it have performance problem. Actually, we can to wait for on-the-fly
- writes only when no-space happened, it is which this patch do.
+Confirmed above action by printk before and after patch.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/extent-tree.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0572f14..d5ec383 100644
+index 8b353ad..ebeedb4 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3725,6 +3725,9 @@ commit_trans:
- 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
- 			need_commit--;
+@@ -3641,7 +3641,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u64 used;
+-	int ret = 0, committed = 0, alloc_chunk = 1;
++	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
  
-+			if (need_commit > 0)
-+				btrfs_wait_ordered_roots(fs_info, -1);
-+
+ 	/* make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, root->sectorsize);
+@@ -3709,11 +3709,12 @@ alloc:
+ 
+ 		/*
+ 		 * If we don't have enough pinned space to deal with this
+-		 * allocation don't bother committing the transaction.
++		 * allocation, and no removed chunk in current transaction,
++		 * don't bother committing the transaction.
+ 		 */
+ 		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+ 					   bytes) < 0)
+-			committed = 1;
++			have_pinned_space = 0;
+ 		spin_unlock(&data_sinfo->lock);
+ 
+ 		/* commit the current transaction and try again */
+@@ -3725,10 +3726,15 @@ commit_trans:
  			trans = btrfs_join_transaction(root);
  			if (IS_ERR(trans))
  				return PTR_ERR(trans);
+-			ret = btrfs_commit_transaction(trans, root);
+-			if (ret)
+-				return ret;
+-			goto again;
++			if (have_pinned_space ||
++			    trans->transaction->have_free_bgs) {
++				ret = btrfs_commit_transaction(trans, root);
++				if (ret)
++					return ret;
++				goto again;
++			} else {
++				btrfs_end_transaction(trans, root);
++			}
+ 		}
+ 
+ 		trace_btrfs_space_reservation(root->fs_info,
 -- 
 1.8.5.1
 

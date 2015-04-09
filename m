@@ -1,59 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59068 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60333 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753479AbbDIP4c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Apr 2015 11:56:32 -0400
-Date: Thu, 9 Apr 2015 17:56:30 +0200
+	id S1756297AbbDIQK4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Apr 2015 12:10:56 -0400
+Date: Thu, 9 Apr 2015 18:10:54 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs: show subvol= and subvolid= in /proc/mounts
-Message-ID: <20150409155630.GF25622@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Omar Sandoval <osandov@osandov.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
+Message-ID: <20150409161054.GG25622@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1428471096.git.osandov@osandov.com>
- <213f0b6a4cffcc82688894b4edbaeb51f8e71137.1428471096.git.osandov@osandov.com>
+ <0d43234f1b2c1d35a06e8259ca94c7d976e0a604.1428471096.git.osandov@osandov.com>
+ <5524C556.1040607@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <213f0b6a4cffcc82688894b4edbaeb51f8e71137.1428471096.git.osandov@osandov.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <5524C556.1040607@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 07, 2015 at 10:34:02PM -0700, Omar Sandoval wrote:
-> Currently, userspace has no way to know which subvolume is mounted.
-
-Oh, there is a way, 'btrfs inspect-internal rootid /path/to/mount', just
-we'd like to see it in the mount options as well.
-
-> But,
-> now that we're guaranteed to have a meaningful root dentry, we can just
-> export and use seq_dentry() in btrfs_show_options(). The subvolume ID is
-> easy to get, so put that in there, too.
+On Wed, Apr 08, 2015 at 02:06:14PM +0800, Qu Wenruo wrote:
 > 
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> ---
->  fs/btrfs/super.c | 4 ++++
->  fs/seq_file.c    | 1 +
->  2 files changed, 5 insertions(+)
 > 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 5ab9801..5e14bb6 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1193,6 +1193,10 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
->  		seq_puts(seq, ",fatal_errors=panic");
->  	if (info->commit_interval != BTRFS_DEFAULT_COMMIT_INTERVAL)
->  		seq_printf(seq, ",commit=%d", info->commit_interval);
-> +	seq_puts(seq, ",subvol=");
+> -------- Original Message  --------
+> Subject: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
+> From: Omar Sandoval <osandov@osandov.com>
+> To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>, David Sterba 
+> <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+> Date: 2015年04月08日 13:34
+> 
+> > Currently, mounting a subvolume with subvolid= takes a different code
+> > path than mounting with subvol=. This isn't really a big deal except for
+> > the fact that mounts done with subvolid= or the default subvolume don't
+> > have a dentry that's connected to the dentry tree like in the subvol=
+> > case. To unify the code paths, when given subvolid= or using the default
+> > subvolume ID, translate it into a subvolume name by walking
+> > ROOT_BACKREFs in the root tree and INODE_REFs in the filesystem trees.
+> Oh, this patch is what I have tried long long ago, and want to do the 
+> same thing, to show subvolume mount for btrfs.
+> 
+> But it came to me that, superblock->show_path() is a better method to do it.
+> 
+> You can implement btrfs_show_path() to allow mountinfo to get the 
+> subvolume name from subvolid, and don't change the mount routine much.
 
-Please make subvol= the last one, as it can contain any string that
-could be confused with other options. Although nobody would probably
-call their subvolume "name,autodefrag" etc, the way to obtain the full
-path is to either resolve the subvolid, or take the whole text after
-"subvol=" to the end of the line.
+The problem I see with the show_mount approach is related to the
+additional path lookup, memory allocation and locking.
 
-> +	seq_dentry(seq, dentry, " \t\n\\");
-> +	seq_printf(seq, ",subvolid=%llu",
-> +		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
->  	return 0;
+If the mountpoint dentry is the right on ,it's just a simple seq_dentry
+in show_options.
+
+OTOH, your patch takes subvol_sem that will block the callback if
+there's eg. a subvolume being deleted (that takes the write lock). This
+is not a lightweight operation nor an infrequent one. There are more
+write locks to subvol_sem.
+
+I'm not sure if I've ever sent this comment back to you, sorry if not.

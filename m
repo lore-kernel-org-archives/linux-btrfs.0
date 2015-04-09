@@ -1,95 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:59685 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753681AbbDIAyk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Apr 2015 20:54:40 -0400
-Date: Thu, 9 Apr 2015 10:54:23 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Jeff Moyer <jmoyer@redhat.com>
-Cc: linux-kernel@vger.kernel.org, dm-devel@redhat.com,
-        xen-devel@lists.xenproject.org, linux-raid@vger.kernel.org,
-        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-aio@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH 2/2][v2] blk-plug: don't flush nested plug lists
-Message-ID: <20150409005423.GD13731@dastard>
-References: <1428347694-17704-1-git-send-email-jmoyer@redhat.com>
- <1428347694-17704-2-git-send-email-jmoyer@redhat.com>
- <x49wq1nrcoe.fsf_-_@segfault.boston.devel.redhat.com>
- <20150408230203.GG15810@dastard>
+Received: from cn.fujitsu.com ([59.151.112.132]:22126 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750799AbbDIEMl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:12:41 -0400
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+To: <clm@fb.com>, <linux-btrfs@vger.kernel.org>
+CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fill ->last_trans for delayed inode in btrfs_fill_inode.
+Date: Thu, 9 Apr 2015 12:08:43 +0800
+Message-ID: <1428552523-3836-1-git-send-email-yangds.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150408230203.GG15810@dastard>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ Sending again with a trimmed CC list to just the lists. Jeff - cc
-lists that large get blocked by mailing lists... ]
+We need to fill inode when we found a node for it in delayed_nodes_tree.
+But we did not fill the ->last_trans currently, it will cause the test
+of xfstest/generic/311 fail. Scenario of the 311 is shown as below:
 
-On Tue, Apr 07, 2015 at 02:55:13PM -0400, Jeff Moyer wrote:
-> The way the on-stack plugging currently works, each nesting level
-> flushes its own list of I/Os.  This can be less than optimal (read
-> awful) for certain workloads.  For example, consider an application
-> that issues asynchronous O_DIRECT I/Os.  It can send down a bunch of
-> I/Os together in a single io_submit call, only to have each of them
-> dispatched individually down in the bowels of the dirct I/O code.
-> The reason is that there are blk_plug-s instantiated both at the upper
-> call site in do_io_submit and down in do_direct_IO.  The latter will
-> submit as little as 1 I/O at a time (if you have a small enough I/O
-> size) instead of performing the batching that the plugging
-> infrastructure is supposed to provide.
+Problem:
+	(1). test_fd = open(fname, O_RDWR|O_DIRECT)
+	(2). pwrite(test_fd, buf, 4096, 0)
+	(3). close(test_fd)
+	(4). drop_all_caches()	<-------- "echo 3 > /proc/sys/vm/drop_caches"
+	(5). test_fd = open(fname, O_RDWR|O_DIRECT)
+	(6). fsync(test_fd);
+				<-------- we did not get the correct log entry for the file
+Reason:
+	When we re-open this file in (5), we would find a node
+in delayed_nodes_tree and fill the inode we are lookup with the
+information. But the ->last_trans is not filled, then the fsync()
+will check the ->last_trans and found it's 0 then say this inode
+is already in our tree which is commited, not recording the extents
+for it.
 
-I'm wondering what impact this will have on filesystem metadata IO
-that needs to be issued immediately. e.g. we are doing writeback, so
-there is a high level plug in place and we need to page in btree
-blocks to do extent allocation. We do readahead at this point,
-but it looks like this change will prevent the readahead from being
-issued by the unplug in xfs_buf_iosubmit().
+Fix:
+	This patch fill the ->last_trans properly and set the
+runtime_flags if needed in this situation. Then we can get the
+log entries we expected after (6) and generic/311 passed.
 
-So while I can see how this can make your single microbenchmark
-better (because it's only doing concurrent direct IO to the block
-device and hence there are no dependencies between individual IOs),
-I have significant reservations that it's actually a win for
-filesystem-based workloads where we need direct control of flushing
-to minimise IO latency due to IO dependencies...
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/delayed-inode.c |  2 ++
+ fs/btrfs/inode.c         | 21 ++++++++++++---------
+ 2 files changed, 14 insertions(+), 9 deletions(-)
 
-Patches like this one:
-
-https://lkml.org/lkml/2015/3/20/442
-
-show similar real-world workload improvements to your patchset by
-being smarter about using high level plugging to enable cross-file
-merging of IO, but it still relies on the lower layers of plugging
-to resolve latency bubbles caused by IO dependencies in the
-filesystems.
-
-> NOTE TO SUBSYSTEM MAINTAINERS: Before this patch, blk_finish_plug
-> would always flush the plug list.  After this patch, this is only the
-> case for the outer-most plug.  If you require the plug list to be
-> flushed, you should be calling blk_flush_plug(current).  Btrfs and dm
-> maintainers should take a close look at this patch and ensure they get
-> the right behavior in the end.
-
-IOWs, you are saying we need to change all our current unplugs to
-blk_flush_plug(current) to *try* to maintain the same behaviour as
-we currently have? I say *try*, because no instead of just flushing
-the readahead IO on the plug, we'll also flush all the queued data
-writeback IO onthe high level plug. We don't actually want to do
-that; we only want to submit the readahead and not the bulk IO that
-will delay the latency sensitive dependent IOs....
-
-If that is the case, shouldn't you actually be trying to fix the
-specific plugging problem you've identified (i.e. do_direct_IO() is
-flushing far too frequently) rather than making a sweeping
-generalisation that the IO stack plugging infrastructure
-needs fundamental change?
-
-Cheers,
-
-Dave.
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 82f0c7c..9e8b435 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1801,6 +1801,8 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ 	set_nlink(inode, btrfs_stack_inode_nlink(inode_item));
+ 	inode_set_bytes(inode, btrfs_stack_inode_nbytes(inode_item));
+ 	BTRFS_I(inode)->generation = btrfs_stack_inode_generation(inode_item);
++        BTRFS_I(inode)->last_trans = btrfs_stack_inode_transid(inode_item);
++
+ 	inode->i_version = btrfs_stack_inode_sequence(inode_item);
+ 	inode->i_rdev = 0;
+ 	*rdev = btrfs_stack_inode_rdev(inode_item);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d2e732d..b132936 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3628,25 +3628,28 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
+ 	BTRFS_I(inode)->last_trans = btrfs_inode_transid(leaf, inode_item);
+ 
++	inode->i_version = btrfs_inode_sequence(leaf, inode_item);
++	inode->i_generation = BTRFS_I(inode)->generation;
++	inode->i_rdev = 0;
++	rdev = btrfs_inode_rdev(leaf, inode_item);
++
++	BTRFS_I(inode)->index_cnt = (u64)-1;
++	BTRFS_I(inode)->flags = btrfs_inode_flags(leaf, inode_item);
++
++cache_index:
+ 	/*
+ 	 * If we were modified in the current generation and evicted from memory
+ 	 * and then re-read we need to do a full sync since we don't have any
+ 	 * idea about which extents were modified before we were evicted from
+ 	 * cache.
++	 *
++	 * This is required for both inode re-read from disk and delayed inode
++	 * in delayed_nodes_tree.
+ 	 */
+ 	if (BTRFS_I(inode)->last_trans == root->fs_info->generation)
+ 		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			&BTRFS_I(inode)->runtime_flags);
+ 
+-	inode->i_version = btrfs_inode_sequence(leaf, inode_item);
+-	inode->i_generation = BTRFS_I(inode)->generation;
+-	inode->i_rdev = 0;
+-	rdev = btrfs_inode_rdev(leaf, inode_item);
+-
+-	BTRFS_I(inode)->index_cnt = (u64)-1;
+-	BTRFS_I(inode)->flags = btrfs_inode_flags(leaf, inode_item);
+-
+-cache_index:
+ 	path->slots[0]++;
+ 	if (inode->i_nlink != 1 ||
+ 	    path->slots[0] >= btrfs_header_nritems(leaf))
 -- 
-Dave Chinner
-david@fromorbit.com
+1.8.4.2
+

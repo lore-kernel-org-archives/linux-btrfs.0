@@ -1,146 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout4.samsung.com ([203.254.224.34]:60848 "EHLO
-	mailout4.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751476AbbDHX4Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 19:56:25 -0400
-Received: from epcpsbgr2.samsung.com
- (u142.gpu120.samsung.co.kr [203.254.230.142])
- by mailout4.samsung.com (Oracle Communications Messaging Server 7.0.5.31.0
- 64bit (built May  5 2014))
- with ESMTP id <0NMI007QSIHZ8F70@mailout4.samsung.com> for
- linux-btrfs@vger.kernel.org; Thu, 09 Apr 2015 08:56:23 +0900 (KST)
-Date: Wed, 08 Apr 2015 23:56:21 +0000 (GMT)
-From: =?euc-kr?B?wM7BpL3E?= <js7.in@samsung.com>
-Subject: Re: Re: Re: Porting BTRFS to user space
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Reply-to: js7.in@samsung.com
-MIME-version: 1.0
-Content-type: text/plain; charset=euc-kr
-MIME-version: 1.0
-Message-id: <1233276516.596701428537380887.JavaMail.weblogic@epmlwas06c>
+Received: from victor.provo.novell.com ([137.65.250.26]:32973 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753161AbbDIOzh (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 9 Apr 2015 10:55:37 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
+Date: Thu,  9 Apr 2015 15:55:18 +0100
+Message-Id: <1428591318-3624-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My goal is to make a "native" DFS, with native as contrast to overlay.
-It's about performance and features.
+If a directory inode is orphanized, because some inode previously
+processed has a new name that collides with the old name of the current
+inode, we need to check if it needs its rename operation delayed too,
+as its ancestor-descendent relationship with some other inode might
+have been reversed between the parent and send snapshots and therefore
+its rename operation needs to happen after that other inode is renamed.
 
-1. With overlay DFS, overlying system and underlying system do pretty much overlaping tasks:
-        maintain/lookup meta-data, keep data/meta-data consistency, and etc.
-    They are both implementational duplication and performance overhead.
-2. If I overlay some FS over BTRFS, many of the BTRFS features would be hidden: especially COW and snapshot.
-   It means I have to implement them independently if I need them.
-   On the other hand, by embedding distribution layer into BTRFS, all the BTRFS features could be inherited with minimal cost.
-If any of the existing DFS were fine for me, I would have been using it.
+For example, for the following reproducer where this is needed (provided
+by Robbie Ko):
 
-Of course I have to deal with all the issues coming from the distribution.
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt2
 
-------- Original Message -------
-Sender : Hugo Mills<hugo@carfax.org.uk> 
-Date   : 2015-04-08 21:27 (GMT+09:00)
-Title  : Re: Re: Porting BTRFS to user space
+  $ mkdir -p /mnt/data/n1/n2
+  $ mkdir /mnt/data/n4
+  $ mkdir -p /mnt/data/t6/t7
+  $ mkdir /mnt/data/t5
+  $ mkdir /mnt/data/t7
+  $ mkdir /mnt/data/n4/t2
+  $ mkdir /mnt/data/t4
+  $ mkdir /mnt/data/t3
+  $ mv /mnt/data/t7 /mnt/data/n4/t2
+  $ mv /mnt/data/t4 /mnt/data/n4/t2/t7
+  $ mv /mnt/data/t5 /mnt/data/n4/t2/t7/t4
+  $ mv /mnt/data/t6 /mnt/data/n4/t2/t7/t4/t5
+  $ mv /mnt/data/n1/n2 /mnt/data/n4/t2/t7/t4/t5/t6
+  $ mv /mnt/data/n1 /mnt/data/n4/t2/t7/t4/t5/t6
+  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/t7 /mnt/data/n4/t2/t7/t4/t5/t6/n2
+  $ mv /mnt/data/t3 /mnt/data/n4/t2/t7/t4/t5/t6/n2/t7
 
-On Wed, Apr 08, 2015 at 12:03:29PM +0000, ÀÎÁ¤½Ä wrote:
-> Thank you for the advise.
-> I am still wonder why there are same-name files in btrfs(kernel source) and btrfs-progs.
-> They are quite many as follows.
->     backref.{c, h}
->     ctree.{c, h}
->     dir-item.c
->     disk-io.{c, h}
->     extent_io.{c, h}
->     extent-tree.c
->     file.c
->     file-item.c
->     free-space-cashe.{c, h}
->     hash.h
->     inode.c
->     inode-item.c
->     inode-map.c
->     print-tree.{c, h}
->     props.{c, h}
->     qgroup.{c, h}
->     root-tree.c
->     send.h
->     ulist.{c, h}
->     uuid-tree.c
->     volumes.{c, h}
-> 
-> It seems btrfs-progs files have been ported from kernel files.
-> Are they the result of efforts to port btrfs from kernel to user space?
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
 
-   Kind of. They were copied from kernel space some time ago, but have
-diverged from that point significantly since. There's all kinds of
-extra flags and options in the userspace code that allow it to bypass
-particular kinds of checks for the recovery tools. The kernel
-implementation will have moved on in different ways since, as well.
+  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/n1 /mnt/data/n4
+  $ mv /mnt/data/n4/t2 /mnt/data/n4/n1
+  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6/n2 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/n2/t7/t3 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/t7/t4 /mnt/data/n4/n1/t2/t6
+  $ mv /mnt/data/n4/n1/t2/t7 /mnt/data/n4/n1/t2/t3
+  $ mv /mnt/data/n4/n1/t2/n2/t7 /mnt/data/n4/n1/t2
 
-> Or at least can I utilize the them so that I have to only port the remaining files?
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
 
-   You'll probably find that a lot of the remainder are to do with the
-interface to the block layer, which I think (without actually knowing
-much about FUSE) you won't need to do much of.
+  $ btrfs send /mnt/snap1 | btrfs receive /mnt2
+  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive /mnt2
+  ERROR: send ioctl failed with -12: Cannot allocate memory
 
-   I have to say, I'm somewhat more concerned about your distributed
-systems design. You haven't mentioned anywhere any of the design
-features that you would have to think about for a distributed
-filesystem. For example, how do you handle concurrent access from
-different machines, node failures, network failures, caching of
-data/metadata, synchronisation of write followed by read (possibly by
-a different node)?
+Where the parent snapshot directory hierarchy is the following:
 
-   I would suggest that you're better off spending your effort on
-those issues in your userspace distributed filesystem, and simply
-using btrfs itself as a backing store. This gives you a useful
-separation between the relatively simple underlying "write some bytes
-to permanent storage" layer and the horrible, nasty, complicated
-"manage a distributed data store in a usable way" layer on top of it.
+  .                                                        (ino 256)
+  |-- data/                                                (ino 257)
+        |-- n4/                                            (ino 260)
+             |-- t2/                                       (ino 265)
+                  |-- t7/                                  (ino 264)
+                       |-- t4/                             (ino 266)
+                            |-- t5/                        (ino 263)
+                                 |-- t6/                   (ino 261)
+                                      |-- n1/              (ino 258)
+                                      |-- n2/              (ino 259)
+                                           |-- t7/         (ino 262)
+                                                |-- t3/    (ino 267)
 
-   It's noticeable that pretty much all of the network and distributed
-filesystems that I'm aware of have this kind of architecture: an
-ordinary boring non-distributed filestore running on each storage
-node, and a networking, metadata, caching and management layer on top
-of that to deal with the distributed parts. (NFS, Ceph, Gluster
-certainly work this way. I would be surprised if any of the others out
-there at the moment didn't work like that).
+And the send snapshot's directory hierarchy is the following:
 
-   Hugo.
+  .                                                        (ino 256)
+  |-- data/                                                (ino 257)
+        |-- n4/                                            (ino 260)
+             |-- n1/                                       (ino 258)
+                  |-- t2/                                  (ino 265)
+                       |-- n2/                             (ino 259)
+                       |-- t3/                             (ino 267)
+                       |    |-- t7                         (ino 264)
+                       |
+                       |-- t6/                             (ino 261)
+                       |    |-- t4/                        (ino 266)
+                       |         |-- t5/                   (ino 263)
+                       |
+                       |-- t7/                             (ino 262)
 
-> ------- Original Message -------
-> Sender : Austin S Hemmelgarn<ahferroin7@gmail.com> 
-> Date   : 2015-04-08 20:37 (GMT+09:00)
-> Title  : Re: Porting BTRFS to user space
-> 
-> On 2015-04-07 19:57, ÀÎÁ¤½Ä wrote:
-> > Thank you for the information.
-> > I just found that btrfs-progs includes several files that seem modified from btrfs kernel source.
-> > I am not sure exactly what they are.
-> > Web pages say libbtrfs is to provide interface for apps that use btrfs.
-> > Why should there be duplicated codes between kernel and user space?
-> > Is it an on-going effort to port whole btrfs to user space?
-> > 
-> > Could you lead me to some more information about libbtrfs or how to port btrfs to user space?
-> > 
-> > Thank you,
-> > Jeongsik
-> > 
-> > 
-> As far as I understand it, the intent is to allow things like btrfs
-> check and btrfs restore to still work even if the kernel doesn't have
-> btrfs support.  From what I can tell, you are the first person to
-> actually be serious about getting BTRFS running in userspace, so there
-> probably isn't much BTRFS specific literature out there.
-> 
-> I would, however suggest looking at the FUSE drivers for ext4 and ZFS,
-> as those are both ported from kernel space, and should give some good
-> examples of where to start.
-> 
-> <p>&nbsp;</p><p>&nbsp;</p>
+While processing inode 262 we orphanize inode 264 and later attempt
+to rename inode 264 to its new name/location, which resulted in building
+an incorrect destination path string for the rename operation with the
+value "data/n4/t2/t7/t4/t5/t6/n2/t7/t3/t7". This rename operation must
+have been done only after inode 267 is processed and renamed, as the
+ancestor-descendent relationship between inodes 264 and 267 was reversed
+between both snapshots, because otherwise it results in an infinite loop
+when building the path string for inode 264 when we are processing an
+inode with a number larger than 264. That loop is the following:
 
+  start inode 264, send progress of 265 for example
+  parent of 264 -> 267
+  parent of 267 -> 262
+  parent of 262 -> 259
+  parent of 259 -> 261
+  parent of 261 -> 263
+  parent of 263 -> 266
+  parent of 266 -> 264
+    |--> back to first iteration while current path string length
+         is <= PATH_MAX, and fail with -ENOMEM otherwise
+
+So fix this by making the check if we need to delay a directory rename
+regardless of the current inode having been orphanized or not.
+
+A test case for fstests follows soon.
+
+Thanks to Robbie Ko for providing a reproducer for this problem.
+
+Reported-by: Robbie Ko <robbieko@synology.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 56 +++++++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 37 insertions(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 2ed36af..895f1b1 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -243,6 +243,7 @@ struct waiting_dir_move {
+ 	 * after this directory is moved, we can try to rmdir the ino rmdir_ino.
+ 	 */
+ 	u64 rmdir_ino;
++	bool orphanized;
+ };
+ 
+ struct orphan_dir_info {
+@@ -1900,8 +1901,13 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 		goto out;
+ 	}
+ 
+-	/* we know that it is or will be overwritten. check this now */
+-	if (ow_inode < sctx->send_progress)
++	/*
++	 * We know that it is or will be overwritten. Check this now.
++	 * The current inode being processed might have been the one that caused
++	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
++	 * same as sctx->send_progress.
++	 */
++	if (ow_inode <= sctx->send_progress)
+ 		ret = 1;
+ 	else
+ 		ret = 0;
+@@ -2223,6 +2229,8 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 	fs_path_reset(dest);
+ 
+ 	while (!stop && ino != BTRFS_FIRST_FREE_OBJECTID) {
++		struct waiting_dir_move *wdm;
++
+ 		fs_path_reset(name);
+ 
+ 		if (is_waiting_for_rm(sctx, ino)) {
+@@ -2233,7 +2241,11 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 			break;
+ 		}
+ 
+-		if (is_waiting_for_move(sctx, ino)) {
++		wdm = get_waiting_dir_move(sctx, ino);
++		if (wdm && wdm->orphanized) {
++			ret = gen_unique_name(sctx, ino, gen, name);
++			stop = 1;
++		} else if (wdm) {
+ 			ret = get_first_ref(sctx->parent_root, ino,
+ 					    &parent_inode, &parent_gen, name);
+ 		} else {
+@@ -2923,7 +2935,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
+ 	return entry != NULL;
+ }
+ 
+-static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
++static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
+ {
+ 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -2934,6 +2946,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
+ 		return -ENOMEM;
+ 	dm->ino = ino;
+ 	dm->rmdir_ino = 0;
++	dm->orphanized = orphanized;
+ 
+ 	while (*p) {
+ 		parent = *p;
+@@ -3030,7 +3043,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 			goto out;
+ 	}
+ 
+-	ret = add_waiting_dir_move(sctx, pm->ino);
++	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -3385,7 +3398,8 @@ static int is_ancestor(struct btrfs_root *root,
+ }
+ 
+ static int wait_for_parent_move(struct send_ctx *sctx,
+-				struct recorded_ref *parent_ref)
++				struct recorded_ref *parent_ref,
++				const bool is_orphan)
+ {
+ 	int ret = 0;
+ 	u64 ino = parent_ref->dir;
+@@ -3464,7 +3478,7 @@ out:
+ 					   ino,
+ 					   &sctx->new_refs,
+ 					   &sctx->deleted_refs,
+-					   false);
++					   is_orphan);
+ 		if (!ret)
+ 			ret = 1;
+ 	}
+@@ -3633,6 +3647,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 			}
+ 		}
+ 
++		if (S_ISDIR(sctx->cur_inode_mode) && sctx->parent_root &&
++		    can_rename) {
++			ret = wait_for_parent_move(sctx, cur, is_orphan);
++			if (ret < 0)
++				goto out;
++			if (ret == 1) {
++				can_rename = false;
++				*pending_move = 1;
++			}
++		}
++
+ 		/*
+ 		 * link/move the ref to the new place. If we have an orphan
+ 		 * inode, move it and update valid_path. If not, link or move
+@@ -3653,18 +3678,11 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 				 * dirs, we always have one new and one deleted
+ 				 * ref. The deleted ref is ignored later.
+ 				 */
+-				ret = wait_for_parent_move(sctx, cur);
+-				if (ret < 0)
+-					goto out;
+-				if (ret) {
+-					*pending_move = 1;
+-				} else {
+-					ret = send_rename(sctx, valid_path,
+-							  cur->full_path);
+-					if (!ret)
+-						ret = fs_path_copy(valid_path,
+-							       cur->full_path);
+-				}
++				ret = send_rename(sctx, valid_path,
++						  cur->full_path);
++				if (!ret)
++					ret = fs_path_copy(valid_path,
++							   cur->full_path);
+ 				if (ret < 0)
+ 					goto out;
+ 			} else {
 -- 
-Hugo Mills             | "I lost my leg in 1942. Some bastard stole it in a
-hugo@... carfax.org.uk | pub in Pimlico."
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-<p>&nbsp;</p><p>&nbsp;</p>ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+2.1.3
+

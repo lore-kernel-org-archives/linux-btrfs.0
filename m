@@ -1,81 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:55601 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751077AbbD3KgZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Apr 2015 06:36:25 -0400
-Date: Thu, 30 Apr 2015 18:36:23 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] xfstests: btrfs: 020 is bit diverted from its objective
-Message-ID: <20150430103622.GQ17534@dhcp-13-216.nay.redhat.com>
-References: <1430387954-15682-1-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1430387954-15682-1-git-send-email-anand.jain@oracle.com>
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:33453 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753643AbbDIVfb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 17:35:31 -0400
+Received: by paboj16 with SMTP id oj16so406258pab.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2015 14:35:30 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v2 6/6] Btrfs: show subvol= and subvolid= in /proc/mounts
+Date: Thu,  9 Apr 2015 14:34:56 -0700
+Message-Id: <229b56bc5f19138a74e92869c22934224575216f.1428614837.git.osandov@osandov.com>
+In-Reply-To: <cover.1428614837.git.osandov@osandov.com>
+References: <cover.1428614837.git.osandov@osandov.com>
+In-Reply-To: <cover.1428614837.git.osandov@osandov.com>
+References: <cover.1428614837.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 30, 2015 at 05:59:14PM +0800, Anand Jain wrote:
-> Not sure what this test case wanted to achieve by deleting the
-> source device before the replace.
-> 
-> As per the comments the objective of this test case seems to be
-> 
-> ~~~~
-> btrfs device replace test on RO fs
-> 
-> Regression test for commit:
-> bbb651e Btrfs: don't allow the replace procedure on read only filesystems
-> ~~~~~
-> 
-> Also there won't be EIO when you delete a loop device when its
-> still mounted. as shown below.
-> 
-> mount /dev/loop0 /mnt
-> losetup -d /dev/loop0
-> echo $?
-> 0
-> dd if=/dev/zero of=/mnt/tf1 count=1
-> 1+0 records in
-> 1+0 records out
-> 512 bytes (512 B) copied, 0.00192936 s, 265 kB/s
-> cd /mnt
-> sync
-> losetup -a
-> /dev/loop0: [0802]:1291816 (/root/testdev/disk1)
-> 
-> No errors in the dmesg as well.
-> 
-> Instead of further confusing, I am deleting  the delete loop device part
+Now that we're guaranteed to have a meaningful root dentry, we can just
+export seq_dentry() and use it in btrfs_show_options(). The subvolume ID
+is easy to get and can also be useful, so put that in there, too.
 
-Makes sense to me.
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+---
+ fs/btrfs/super.c | 4 ++++
+ fs/seq_file.c    | 1 +
+ 2 files changed, 5 insertions(+)
 
-Reviewed-by: Eryu Guan <eguan@redhat.com>
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 80a8047..f334cc4 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1193,6 +1193,10 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",fatal_errors=panic");
+ 	if (info->commit_interval != BTRFS_DEFAULT_COMMIT_INTERVAL)
+ 		seq_printf(seq, ",commit=%d", info->commit_interval);
++	seq_printf(seq, ",subvolid=%llu",
++		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
++	seq_puts(seq, ",subvol=");
++	seq_dentry(seq, dentry, " \t\n\\");
+ 	return 0;
+ }
+ 
+diff --git a/fs/seq_file.c b/fs/seq_file.c
+index 555f821..52b4927 100644
+--- a/fs/seq_file.c
++++ b/fs/seq_file.c
+@@ -538,6 +538,7 @@ int seq_dentry(struct seq_file *m, struct dentry *dentry, const char *esc)
+ 
+ 	return res;
+ }
++EXPORT_SYMBOL(seq_dentry);
+ 
+ static void *single_start(struct seq_file *p, loff_t *pos)
+ {
+-- 
+2.3.5
 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/btrfs/020 | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/tests/btrfs/020 b/tests/btrfs/020
-> index 84251f3..3752dcf 100755
-> --- a/tests/btrfs/020
-> +++ b/tests/btrfs/020
-> @@ -76,8 +76,6 @@ loop_dev3=`_create_loop_device $fs_img3`
->  _mkfs_dev -m raid1 -d raid1 $loop_dev1 $loop_dev2 >>$seqres.full 2>&1
->  _mount -o ro $loop_dev1 $loop_mnt
->  
-> -# Fail the second device and replace with the third
-> -_destroy_loop_device $loop_dev2
->  $BTRFS_UTIL_PROG replace start -B 2 $loop_dev3 $loop_mnt >>$seqres.full 2>&1 && \
->  _fail "FAIL: Device replaced on RO btrfs"
->  
-> -- 
-> 2.0.0.153.g79dcccc
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

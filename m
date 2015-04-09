@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39822 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932885AbbDIJXO convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 05:23:14 -0400
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20150409174916.5a2efef5@notabene.brown>
-References: <20150409174916.5a2efef5@notabene.brown>
-To: NeilBrown <neilb@suse.de>
-Cc: dhowells@redhat.com, linux-btrfs@vger.kernel.org, linux-cachefs@redhat.com,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH/RFC] fscache/cachefiles versus btrfs
+Received: from cn.fujitsu.com ([59.151.112.132]:34822 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S964799AbbDIJ0O convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 05:26:14 -0400
+Message-ID: <552645AE.4090507@cn.fujitsu.com>
+Date: Thu, 9 Apr 2015 17:26:06 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Thu, 09 Apr 2015 10:23:08 +0100
-Message-ID: <29536.1428571388@warthog.procyon.org.uk>
+To: Piotr Szymaniak <szarpaj@grubelek.pl>
+CC: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: snapshot space use
+References: <201504091039.33442.russell@coker.com.au> <5525CBA1.5000408@cn.fujitsu.com> <20150409090210.GZ9470@wloczykij>
+In-Reply-To: <20150409090210.GZ9470@wloczykij>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-NeilBrown <neilb@suse.de> wrote:
 
->  Is there a better way?  Could a better way be created?  Maybe
->  SEEK_DATA_RELIABLE ??
 
-fiemap() maybe?
+-------- Original Message  --------
+Subject: Re: snapshot space use
+From: Piotr Szymaniak <szarpaj@grubelek.pl>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年04月09日 17:02
 
-> Also, if you do try to use fscache on btrfs with 3.19, then nothing gets
-> cached (as expected) and with a heavy load you can lose a race and get an
-> asserting fail in fscache_enqueue_operation
+> On Thu, Apr 09, 2015 at 08:45:21AM +0800, Qu Wenruo wrote:
+>> *snip*
+>> NOTE: quota is not so stable and has some problem, but should give
+>> you enough info.
+>
+> Those are related to actually using quota or can also hit you when you
+> want to use it just for things like this snapshot space use?
+Using quota has more problems. Like exceeding quota make you unable to 
+delete any file(like a deadlock).
 
-Do you have the patches here applied?
+Your use case, just showing how much space you used, may still hit some 
+unusual problem like inaccurate number or even minus number, with 
+performance drop.
+But overall, it should be OK and meets your need.
 
-	http://git.kernel.org/cgit/linux/kernel/git/dhowells/linux-fs.git/log/?h=fscache-fixes
-
-David
+Thanks,
+Qu
+>
+>
+> Piotr Szymaniak.
+>

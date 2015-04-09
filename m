@@ -1,270 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:32973 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753161AbbDIOzh (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 9 Apr 2015 10:55:37 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
-Date: Thu,  9 Apr 2015 15:55:18 +0100
-Message-Id: <1428591318-3624-1-git-send-email-fdmanana@suse.com>
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:34844 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932744AbbDIQDb convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 12:03:31 -0400
+Received: by wgyo15 with SMTP id o15so114416300wgy.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2015 09:03:30 -0700 (PDT)
+Received: from [192.168.2.3] (p4FF79CD5.dip0.t-ipconnect.de. [79.247.156.213])
+        by mx.google.com with ESMTPSA id a6sm20744217wiy.17.2015.04.09.09.03.29
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 09 Apr 2015 09:03:29 -0700 (PDT)
+Message-ID: <5526A2D0.2030103@lianse.eu>
+Date: Thu, 09 Apr 2015 18:03:28 +0200
+From: =?UTF-8?B?QW5kcsOpLVNlYmFzdGlhbiBMaWViZQ==?= <andre@lianse.eu>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: btrfs filesystem resize <ID>:max not working
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a directory inode is orphanized, because some inode previously
-processed has a new name that collides with the old name of the current
-inode, we need to check if it needs its rename operation delayed too,
-as its ancestor-descendent relationship with some other inode might
-have been reversed between the parent and send snapshots and therefore
-its rename operation needs to happen after that other inode is renamed.
+Hey list,
 
-For example, for the following reproducer where this is needed (provided
-by Robbie Ko):
+I've got a problem with resizing a multi drive filesystem.
+I had a 5 disk array of 4TB drives. Then I added a 5th (6TB) drive to
+the array and replaced one of the 4TB ones with a 6TB drive. As you can
+see in my `btrfs fi sh` output below, my newly added drive (ID=6) has
+the expected size of 5.46TiB, but my replaced drive (ID=4) won't show up
+as 6TB as expected. Neither a `btrfs fi res max /data/pool0` nor a
+`btrfs fi res 4:max /data/pool0` had any effect.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt2
+Any suggestions how to reclaim the 2TB free space of drive 4?
 
-  $ mkdir -p /mnt/data/n1/n2
-  $ mkdir /mnt/data/n4
-  $ mkdir -p /mnt/data/t6/t7
-  $ mkdir /mnt/data/t5
-  $ mkdir /mnt/data/t7
-  $ mkdir /mnt/data/n4/t2
-  $ mkdir /mnt/data/t4
-  $ mkdir /mnt/data/t3
-  $ mv /mnt/data/t7 /mnt/data/n4/t2
-  $ mv /mnt/data/t4 /mnt/data/n4/t2/t7
-  $ mv /mnt/data/t5 /mnt/data/n4/t2/t7/t4
-  $ mv /mnt/data/t6 /mnt/data/n4/t2/t7/t4/t5
-  $ mv /mnt/data/n1/n2 /mnt/data/n4/t2/t7/t4/t5/t6
-  $ mv /mnt/data/n1 /mnt/data/n4/t2/t7/t4/t5/t6
-  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/t7 /mnt/data/n4/t2/t7/t4/t5/t6/n2
-  $ mv /mnt/data/t3 /mnt/data/n4/t2/t7/t4/t5/t6/n2/t7
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+Thanks in advance
 
-  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/n1 /mnt/data/n4
-  $ mv /mnt/data/n4/t2 /mnt/data/n4/n1
-  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6/n2 /mnt/data/n4/n1/t2
-  $ mv /mnt/data/n4/n1/t2/n2/t7/t3 /mnt/data/n4/n1/t2
-  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6 /mnt/data/n4/n1/t2
-  $ mv /mnt/data/n4/n1/t2/t7/t4 /mnt/data/n4/n1/t2/t6
-  $ mv /mnt/data/n4/n1/t2/t7 /mnt/data/n4/n1/t2/t3
-  $ mv /mnt/data/n4/n1/t2/n2/t7 /mnt/data/n4/n1/t2
+André-Sebastian Liebe
 
-  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
 
-  $ btrfs send /mnt/snap1 | btrfs receive /mnt2
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive /mnt2
-  ERROR: send ioctl failed with -12: Cannot allocate memory
+> Kernel:Linux apc01 3.19.2-1-ARCH #1 SMP PREEMPT Wed Mar 18 16:21:02
+CET 2015 x86_64 GNU/Linux
+> btrfs-progs: btrfs-progs v3.19
 
-Where the parent snapshot directory hierarchy is the following:
+My 6 drives used by the apc01_pool (none of them has a partition table)
+Konsole output
+> # hdparm -I /dev/sdb | grep "device size"           
+>        device size with M = 1024*1024:     3815447 MBytes
+>        device size with M = 1000*1000:     4000787 MBytes (4000 GB)
+> # hdparm -I /dev/sdc | grep "device size"  
+>        device size with M = 1024*1024:     3815447 MBytes
+>        device size with M = 1000*1000:     4000787 MBytes (4000 GB)
+> # hdparm -I /dev/sdd | grep "device size"  
+>        device size with M = 1024*1024:     3815447 MBytes
+>        device size with M = 1000*1000:     4000787 MBytes (4000 GB)
+> # hdparm -I /dev/sde | grep "device size"  
+>        device size with M = 1024*1024:     3815447 MBytes
+>        device size with M = 1000*1000:     4000787 MBytes (4000 GB)
+> # hdparm -I /dev/sdf | grep "device size"  
+>        device size with M = 1024*1024:     5723166 MBytes
+>        device size with M = 1000*1000:     6001175 MBytes (6001 GB)
+> # hdparm -I /dev/sdg | grep "device size"  
+>        device size with M = 1024*1024:     5723166 MBytes
+>        device size with M = 1000*1000:     6001175 MBytes (6001 GB)
 
-  .                                                        (ino 256)
-  |-- data/                                                (ino 257)
-        |-- n4/                                            (ino 260)
-             |-- t2/                                       (ino 265)
-                  |-- t7/                                  (ino 264)
-                       |-- t4/                             (ino 266)
-                            |-- t5/                        (ino 263)
-                                 |-- t6/                   (ino 261)
-                                      |-- n1/              (ino 258)
-                                      |-- n2/              (ino 259)
-                                           |-- t7/         (ino 262)
-                                                |-- t3/    (ino 267)
 
-And the send snapshot's directory hierarchy is the following:
+btrfs filesystem:
+Konsole output
+> # btrfs fi sh
+> Label: 'apc01_pool0'  uuid: 066141c6-16ca-4a30-b55c-e606b90ad0fb
+>        Total devices 6 FS bytes used 23.43TiB
+>        devid    1 size 3.64TiB used 3.61TiB path /dev/sdd
+>        devid    2 size 3.64TiB used 3.61TiB path /dev/sdc
+>        devid    3 size 3.64TiB used 3.61TiB path /dev/sde
+>        devid    4 size 3.64TiB used 3.61TiB path /dev/sdg
+>        devid    5 size 3.64TiB used 3.61TiB path /dev/sdb
+>        devid    6 size 5.46TiB used 5.43TiB path /dev/sdf
 
-  .                                                        (ino 256)
-  |-- data/                                                (ino 257)
-        |-- n4/                                            (ino 260)
-             |-- n1/                                       (ino 258)
-                  |-- t2/                                  (ino 265)
-                       |-- n2/                             (ino 259)
-                       |-- t3/                             (ino 267)
-                       |    |-- t7                         (ino 264)
-                       |
-                       |-- t6/                             (ino 261)
-                       |    |-- t4/                        (ino 266)
-                       |         |-- t5/                   (ino 263)
-                       |
-                       |-- t7/                             (ino 262)
 
-While processing inode 262 we orphanize inode 264 and later attempt
-to rename inode 264 to its new name/location, which resulted in building
-an incorrect destination path string for the rename operation with the
-value "data/n4/t2/t7/t4/t5/t6/n2/t7/t3/t7". This rename operation must
-have been done only after inode 267 is processed and renamed, as the
-ancestor-descendent relationship between inodes 264 and 267 was reversed
-between both snapshots, because otherwise it results in an infinite loop
-when building the path string for inode 264 when we are processing an
-inode with a number larger than 264. That loop is the following:
-
-  start inode 264, send progress of 265 for example
-  parent of 264 -> 267
-  parent of 267 -> 262
-  parent of 262 -> 259
-  parent of 259 -> 261
-  parent of 261 -> 263
-  parent of 263 -> 266
-  parent of 266 -> 264
-    |--> back to first iteration while current path string length
-         is <= PATH_MAX, and fail with -ENOMEM otherwise
-
-So fix this by making the check if we need to delay a directory rename
-regardless of the current inode having been orphanized or not.
-
-A test case for fstests follows soon.
-
-Thanks to Robbie Ko for providing a reproducer for this problem.
-
-Reported-by: Robbie Ko <robbieko@synology.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 56 +++++++++++++++++++++++++++++++++++++-------------------
- 1 file changed, 37 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2ed36af..895f1b1 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -243,6 +243,7 @@ struct waiting_dir_move {
- 	 * after this directory is moved, we can try to rmdir the ino rmdir_ino.
- 	 */
- 	u64 rmdir_ino;
-+	bool orphanized;
- };
- 
- struct orphan_dir_info {
-@@ -1900,8 +1901,13 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 		goto out;
- 	}
- 
--	/* we know that it is or will be overwritten. check this now */
--	if (ow_inode < sctx->send_progress)
-+	/*
-+	 * We know that it is or will be overwritten. Check this now.
-+	 * The current inode being processed might have been the one that caused
-+	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
-+	 * same as sctx->send_progress.
-+	 */
-+	if (ow_inode <= sctx->send_progress)
- 		ret = 1;
- 	else
- 		ret = 0;
-@@ -2223,6 +2229,8 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
- 	fs_path_reset(dest);
- 
- 	while (!stop && ino != BTRFS_FIRST_FREE_OBJECTID) {
-+		struct waiting_dir_move *wdm;
-+
- 		fs_path_reset(name);
- 
- 		if (is_waiting_for_rm(sctx, ino)) {
-@@ -2233,7 +2241,11 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
- 			break;
- 		}
- 
--		if (is_waiting_for_move(sctx, ino)) {
-+		wdm = get_waiting_dir_move(sctx, ino);
-+		if (wdm && wdm->orphanized) {
-+			ret = gen_unique_name(sctx, ino, gen, name);
-+			stop = 1;
-+		} else if (wdm) {
- 			ret = get_first_ref(sctx->parent_root, ino,
- 					    &parent_inode, &parent_gen, name);
- 		} else {
-@@ -2923,7 +2935,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
- 	return entry != NULL;
- }
- 
--static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
-+static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
- {
- 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -2934,6 +2946,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
- 		return -ENOMEM;
- 	dm->ino = ino;
- 	dm->rmdir_ino = 0;
-+	dm->orphanized = orphanized;
- 
- 	while (*p) {
- 		parent = *p;
-@@ -3030,7 +3043,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 			goto out;
- 	}
- 
--	ret = add_waiting_dir_move(sctx, pm->ino);
-+	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
- 	if (ret)
- 		goto out;
- 
-@@ -3385,7 +3398,8 @@ static int is_ancestor(struct btrfs_root *root,
- }
- 
- static int wait_for_parent_move(struct send_ctx *sctx,
--				struct recorded_ref *parent_ref)
-+				struct recorded_ref *parent_ref,
-+				const bool is_orphan)
- {
- 	int ret = 0;
- 	u64 ino = parent_ref->dir;
-@@ -3464,7 +3478,7 @@ out:
- 					   ino,
- 					   &sctx->new_refs,
- 					   &sctx->deleted_refs,
--					   false);
-+					   is_orphan);
- 		if (!ret)
- 			ret = 1;
- 	}
-@@ -3633,6 +3647,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			}
- 		}
- 
-+		if (S_ISDIR(sctx->cur_inode_mode) && sctx->parent_root &&
-+		    can_rename) {
-+			ret = wait_for_parent_move(sctx, cur, is_orphan);
-+			if (ret < 0)
-+				goto out;
-+			if (ret == 1) {
-+				can_rename = false;
-+				*pending_move = 1;
-+			}
-+		}
-+
- 		/*
- 		 * link/move the ref to the new place. If we have an orphan
- 		 * inode, move it and update valid_path. If not, link or move
-@@ -3653,18 +3678,11 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 				 * dirs, we always have one new and one deleted
- 				 * ref. The deleted ref is ignored later.
- 				 */
--				ret = wait_for_parent_move(sctx, cur);
--				if (ret < 0)
--					goto out;
--				if (ret) {
--					*pending_move = 1;
--				} else {
--					ret = send_rename(sctx, valid_path,
--							  cur->full_path);
--					if (!ret)
--						ret = fs_path_copy(valid_path,
--							       cur->full_path);
--				}
-+				ret = send_rename(sctx, valid_path,
-+						  cur->full_path);
-+				if (!ret)
-+					ret = fs_path_copy(valid_path,
-+							   cur->full_path);
- 				if (ret < 0)
- 					goto out;
- 			} else {
--- 
-2.1.3
 

@@ -1,81 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2094 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753909AbbDHBsX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 21:48:23 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH v5 2/2] fstests: btrfs: Test for incorrect exclusive refernce number after file clone.
-Date: Wed, 8 Apr 2015 09:46:18 +0800
-Message-ID: <1428457578-19440-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1428457578-19440-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1428457578-19440-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:58766 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755606AbbDIO4w (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 9 Apr 2015 10:56:52 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: test btrfs send after swapping directory names differently
+Date: Thu,  9 Apr 2015 15:56:29 +0100
+Message-Id: <1428591389-3668-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Problem]
-Since commit fcebe4562dec83b3f8d308 ("Btrfs: rework qgroup accounting"),
-quota data update is delayed after delayed_ref calculation, and lacks
-correct protection to detect root reference which shouldn't be counted
-in current sequence number but already written into extent backref.
+Test btrfs incremental send after renaming and moving directories around in a
+way that ends up making a directory have different dentries with the same name
+but pointing to different inodes in the parent and send snapshots, and also
+inverting the ancestor-descendent relationship between one of those inodes and
+some other inode.
 
-This makes exclusive reference not decreased correctly and give incorrect
-result.
+Cases like this made an incremental send enter an infinite lopp when building
+path strings, leading to -ENOMEM errors when the path string reached a length
+of PATH_MAX.
+This issue was fixed by the following linux kernel btrfs patch:
 
-[Test procedure]
-1. Create a btrfs with 3 subvolumes, quota enabled and rescanned.
-2. Create a file in 1st subvolume
-3. Clone the file to 2nd and 3rd subvolume
-4. Sync the fs to reflect the changes in qgroup.
-5. Check the qgroup data
+  Btrfs: incremental send, check if orphanized dir inode needs delayed rename
 
-[Expected result]
-None of the subvolume has exclusive reference to the file.
-
-[Actual result]
-The first subvolume still have exclusive reference to the file.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-changelog:
-v2:
-   Redirect error output of dd to seqres.full for debug in case dd
-   failed.
-v3:
-   Add support and check for old kernel which doesn't support
-   noinode_cache mount option.
-   Change nodesize to 64K to support arch whose page size can be larger
-   than 4K.
-v4:
-   Rebase to latest xfstests.
-v5:
-   Remove test number in commit name and use xfs_io to replace dd.
----
- tests/btrfs/089     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out |   7 ++++
+ tests/btrfs/090     | 186 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/090.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 110 insertions(+)
- create mode 100755 tests/btrfs/089
- create mode 100644 tests/btrfs/089.out
+ 3 files changed, 189 insertions(+)
+ create mode 100755 tests/btrfs/090
+ create mode 100644 tests/btrfs/090.out
 
-diff --git a/tests/btrfs/089 b/tests/btrfs/089
+diff --git a/tests/btrfs/090 b/tests/btrfs/090
 new file mode 100755
-index 0000000..691d2c2
+index 0000000..3eb6f37
 --- /dev/null
-+++ b/tests/btrfs/089
-@@ -0,0 +1,102 @@
++++ b/tests/btrfs/090
+@@ -0,0 +1,186 @@
 +#! /bin/bash
-+# FS QA Test No. 089
++# FS QA Test No. btrfs/090
 +#
-+# Test for incorrect exclusive reference count after cloning file
-+# between subvolumes.
++# Test btrfs incremental send after renaming and moving directories around in a
++# way that ends up making a directory have different dentries with the same name
++# but pointing to different inodes in the parent and send snapshots, and also
++# inverting the ancestor-descendent relationship between one of those inodes and
++# some other inode.
++#
++# Cases like this made an incremental send enter an infinite lopp when building
++# path strings, leading to -ENOMEM errors when the path string reached a length
++# of PATH_MAX.
++# This issue was fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: incremental send, check if orphanized dir inode needs delayed rename
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu. All Rights Reserved.
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -96,14 +80,14 @@ index 0000000..691d2c2
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
-+here=`pwd`
 +tmp=/tmp/$$
 +status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+    rm -f $tmp.*
++	rm -fr $send_files_dir
++	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
@@ -111,87 +95,155 @@ index 0000000..691d2c2
 +. ./common/filter
 +
 +# real QA test starts here
-+
-+_need_to_be_root
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_cp_reflink
++_require_fssum
++_need_to_be_root
++
++send_files_dir=$TEST_DIR/btrfs-test-$seq
 +
 +rm -f $seqres.full
++rm -fr $send_files_dir
++mkdir $send_files_dir
 +
-+# use largest node/leaf size (64K) to allow the test to be run on arch with
-+# page size > 4k.
-+NODESIZE=65536
-+SUPPORT_NOINODE_CACHE="yes"
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
 +
-+run_check _scratch_mkfs "--nodesize $NODESIZE"
++mkdir -p $SCRATCH_MNT/data/n1/n2
++mkdir $SCRATCH_MNT/data/n4
++mkdir -p $SCRATCH_MNT/data/t6/t7
++mkdir $SCRATCH_MNT/data/t5
++mkdir $SCRATCH_MNT/data/t7
++mkdir $SCRATCH_MNT/data/n4/t2
++mkdir $SCRATCH_MNT/data/t4
++mkdir $SCRATCH_MNT/data/t3
++mv $SCRATCH_MNT/data/t7 $SCRATCH_MNT/data/n4/t2
++mv $SCRATCH_MNT/data/t4 $SCRATCH_MNT/data/n4/t2/t7
++mv $SCRATCH_MNT/data/t5 $SCRATCH_MNT/data/n4/t2/t7/t4
++mv $SCRATCH_MNT/data/t6 $SCRATCH_MNT/data/n4/t2/t7/t4/t5
++mv $SCRATCH_MNT/data/n1/n2 $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6
++mv $SCRATCH_MNT/data/n1 $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6
++mv $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6/t7 $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6/n2
++mv $SCRATCH_MNT/data/t3 $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6/n2/t7
 +
-+# inode cache will also take space in fs tree, disable them to get consistent
-+# result.
-+# discard error output since we will check return value manually.
-+_scratch_mount "-o noinode_cache" 2> /dev/null
++# Filesystem looks like:
++#
++# .                                                                   (ino 256)
++# |-- data/                                                           (ino 257)
++#       |-- n4/                                                       (ino 260)
++#            |-- t2/                                                  (ino 265)
++#                 |-- t7/                                             (ino 264)
++#                      |-- t4/                                        (ino 266)
++#                           |-- t5/                                   (ino 263)
++#                                |-- t6/                              (ino 261)
++#                                     |-- n1/                         (ino 258)
++#                                     |-- n2/                         (ino 259)
++#                                          |-- t7/                    (ino 262)
++#                                               |-- t3/               (ino 267)
++#
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+# Check for old kernel which doesn't support 'noinode_cache' mount option
-+if [ $? -ne 0 ]; then
-+	support_noinode_cache="no"
-+	run_check _scratch_mount
-+fi
++# The sequence of directory rename operations below made the btrfs incremental
++# send implementation enter an infinite loop when building path strings. The
++# reason for this was the following:
++#
++# * While processing inode 262 it ended up orphanizing inode 264 (rename it to
++#   "/o264-6-0"). This is because the parent inode 265 has a dentry with name
++#   t7 in the parent snapshot that refers to inode 264, which is ahead of the
++#   current send progress (inode 262) and our inode 262 has the name t7 in
++#   the directory inode 265 in the send snapshot - so in order to rename inode
++#   262 to its new name/location, it orphanizes (renames) 264 before 264 is
++#   processed;
++#
++# * When it processes inode 264 it was not checking if it needed to delay its
++#   rename operation. This was incorrect because in the parent snapshot inode
++#   267 is a descendent of inode 264 and inode 267 is an ancestor of inode 264
++#   in the send snapshot, which means the rename of inode 264 must happen after
++#   inode 267 is renamed in order to avoid the infinite loops when building
++#   path strings that involved inodes 264 and 267;
++#
++# * As a consequence as soon as the send progress moved to inode 265, the
++#   following loop when building a path string for inode 264 happened:
++#
++#     start inode 264, send progress of 265 for example
++#     parent of 264 -> 267
++#     parent of 267 -> 262
++#     parent of 262 -> 259
++#     parent of 259 -> 261
++#     parent of 261 -> 263
++#     parent of 263 -> 266
++#     parent of 266 -> 264
++#       |--> back to first iteration while current path string length
++#            is <= PATH_MAX, and fail with -ENOMEM otherwise
++#
++mv $SCRATCH_MNT/data/n4/t2/t7/t4/t5/t6/n1 $SCRATCH_MNT/data/n4
++mv $SCRATCH_MNT/data/n4/t2 $SCRATCH_MNT/data/n4/n1
++mv $SCRATCH_MNT/data/n4/n1/t2/t7/t4/t5/t6/n2 $SCRATCH_MNT/data/n4/n1/t2
++mv $SCRATCH_MNT/data/n4/n1/t2/n2/t7/t3 $SCRATCH_MNT/data/n4/n1/t2
++mv $SCRATCH_MNT/data/n4/n1/t2/t7/t4/t5/t6 $SCRATCH_MNT/data/n4/n1/t2
++mv $SCRATCH_MNT/data/n4/n1/t2/t7/t4 $SCRATCH_MNT/data/n4/n1/t2/t6
++mv $SCRATCH_MNT/data/n4/n1/t2/t7 $SCRATCH_MNT/data/n4/n1/t2/t3
++mv $SCRATCH_MNT/data/n4/n1/t2/n2/t7 $SCRATCH_MNT/data/n4/n1/t2
 +
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv1
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
-+_run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
++# Filesystem now looks like:
++#
++# .                                                                   (ino 256)
++# |-- data/                                                           (ino 257)
++#       |-- n4/                                                       (ino 260)
++#            |-- n1/                                                  (ino 258)
++#                 |-- t2/                                             (ino 265)
++#                      |-- n2/                                        (ino 259)
++#                      |-- t3/                                        (ino 267)
++#                      |    |-- t7                                    (ino 264)
++#                      |
++#                      |-- t6/                                        (ino 261)
++#                      |    |-- t4/                                   (ino 266)
++#                      |         |-- t5/                              (ino 263)
++#                      |
++#                      |-- t7/                                        (ino 262)
++#
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
++	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
 +
-+# if we don't support noinode_cache mount option, then we should double check
-+# whether inode cache is enabled before executing the real test payload.
-+if [ $SUPPORT_NOINODE_CACHE == "no" ]; then
-+	EMPTY_SIZE=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | \
-+		$SED_PROG -n '/[0-9]/p' | $AWK_PROG '{print $2}' | head -n1`
-+	if [ $EMPTY_SIZE != $NODESIZE ]; then
-+		_notrun "Kernel doesn't support to disable inode cache"
-+	fi
-+fi
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $send_files_dir/2.snap
 +
-+$XFS_IO_PROG -f -c "pwrite 0 256K" $SCRATCH_MNT/subv1/file1 | _filter_xfs_io
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv2/file1
-+cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv3/file1
++# Now recreate the filesystem by receiving both send streams and verify we get
++# the same content that the original filesystem had.
++_scratch_unmount
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
 +
-+# Current btrfs use tree search ioctl to show quota, which will only show info
-+# in commit tree. So need to sync to update the qgroup commit tree.
-+sync
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
++run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
++run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
 +
-+units=`_btrfs_qgroup_units`
-+$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
-+	$AWK_PROG '{print $2" "$3}'
-+
-+# success, all done
++echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
+diff --git a/tests/btrfs/090.out b/tests/btrfs/090.out
 new file mode 100644
-index 0000000..8673f26
+index 0000000..2b5100d
 --- /dev/null
-+++ b/tests/btrfs/089.out
-@@ -0,0 +1,7 @@
-+QA output created by 089
-+wrote 262144/262144 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+65536 65536
-+327680 65536
-+327680 65536
-+327680 65536
++++ b/tests/btrfs/090.out
+@@ -0,0 +1,2 @@
++QA output created by 090
++Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a053d14..82f6fe6 100644
+index 83c8ec2..67d6556 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -90,3 +90,4 @@
- 085 auto quick metadata subvol
- 086 auto quick clone
- 088 auto quick
-+089 auto quick qgroup
+@@ -92,3 +92,4 @@
+ 087 auto quick send
+ 088 auto quick clone
+ 089 auto quick metadata
++090 auto quick send
 -- 
-2.3.5
+2.1.3
 

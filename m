@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:22081 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751767AbbDIEg0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:36:26 -0400
+	with ESMTP id S1751127AbbDIEg1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:36:27 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t394ZHWj019935
-	for <linux-btrfs@vger.kernel.org>; Thu, 9 Apr 2015 12:35:17 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t394ZJqI019941
+	for <linux-btrfs@vger.kernel.org>; Thu, 9 Apr 2015 12:35:19 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 7/9] btrfs: Support busy loop of write and delete
-Date: Thu, 9 Apr 2015 12:34:42 +0800
-Message-ID: <70f644b9b6c3a3a79446ebdb7b9318d57041db01.1428554023.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 9/9] btrfs: cleanup unused alloc_chunk varible
+Date: Thu, 9 Apr 2015 12:34:44 +0800
+Message-ID: <1360b5275dc1fe722c688ab558f2e32ab414a1a3.1428554023.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
 References: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -21,94 +21,36 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Reproduce:
- while true; do
-   dd if=/dev/zero of=/mnt/btrfs/file count=[75% fs_size]
-   rm /mnt/btrfs/file
- done
- Then we can see above loop failed on NO_SPACE.
-
-It it long-term problem since very beginning, because delayed-iput
-after rm are not run.
-
-We already have commit_transaction() in alloc_space code, but it is
-not triggered in above case.
-This patch trigger commit_transaction() to run delayed-iput and
-reflash pinned-space to to make write success.
-
-It is based on previous fix of delayed-iput in commit_transaction(),
-need to be applied on top of:
-btrfs: Fix NO_SPACE bug caused by delayed-iput
+Remove int alloc_chunk in btrfs_check_data_free_space() for not
+necessary.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 24 +++++++++++++-----------
- 1 file changed, 13 insertions(+), 11 deletions(-)
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6fd7dca..0572f14 100644
+index d5ec383..b009987 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3641,13 +3641,13 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+@@ -3641,7 +3641,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
  	struct btrfs_root *root = BTRFS_I(inode)->root;
  	struct btrfs_fs_info *fs_info = root->fs_info;
  	u64 used;
--	int ret = 0, committed = 0, have_pinned_space = 1, alloc_chunk = 1;
-+	int ret = 0, need_commit = 2, have_pinned_space, alloc_chunk = 1;
+-	int ret = 0, need_commit = 2, have_pinned_space, alloc_chunk = 1;
++	int ret = 0, need_commit = 2, have_pinned_space;
  
  	/* make sure bytes are sectorsize aligned */
  	bytes = ALIGN(bytes, root->sectorsize);
- 
- 	if (btrfs_is_free_space_inode(inode)) {
--		committed = 1;
-+		need_commit = 0;
- 		ASSERT(current->journal_info);
- 	}
- 
-@@ -3697,8 +3697,10 @@ alloc:
- 			if (ret < 0) {
- 				if (ret != -ENOSPC)
- 					return ret;
--				else
-+				else {
-+					have_pinned_space = 1;
- 					goto commit_trans;
-+				}
- 			}
- 
- 			if (!data_sinfo)
-@@ -3712,23 +3714,23 @@ alloc:
- 		 * allocation, and no removed chunk in current transaction,
- 		 * don't bother committing the transaction.
+@@ -3669,7 +3669,7 @@ again:
+ 		 * if we don't have enough free bytes in this space then we need
+ 		 * to alloc a new chunk.
  		 */
--		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
--					   used + bytes -
--					   data_sinfo->total_bytes) < 0)
--			have_pinned_space = 0;
-+		have_pinned_space = percpu_counter_compare(
-+			&data_sinfo->total_bytes_pinned,
-+			used + bytes - data_sinfo->total_bytes);
- 		spin_unlock(&data_sinfo->lock);
+-		if (!data_sinfo->full && alloc_chunk) {
++		if (!data_sinfo->full) {
+ 			u64 alloc_target;
  
- 		/* commit the current transaction and try again */
- commit_trans:
--		if (!committed &&
-+		if (need_commit &&
- 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
--			committed = 1;
-+			need_commit--;
- 
- 			trans = btrfs_join_transaction(root);
- 			if (IS_ERR(trans))
- 				return PTR_ERR(trans);
--			if (have_pinned_space ||
--			    trans->transaction->have_free_bgs) {
-+			if (have_pinned_space >= 0 ||
-+			    trans->transaction->have_free_bgs ||
-+			    need_commit > 0) {
- 				ret = btrfs_commit_transaction(trans, root);
- 				if (ret)
- 					return ret;
+ 			data_sinfo->force_alloc = CHUNK_ALLOC_FORCE;
 -- 
 1.8.5.1
 

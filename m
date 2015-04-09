@@ -1,76 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33249 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932736AbbDIQ2u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Apr 2015 12:28:50 -0400
-Date: Thu, 9 Apr 2015 18:28:48 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 2/3] Btrfs: unify subvol= and subvolid= mounting
-Message-ID: <20150409162848.GH25622@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1428471096.git.osandov@osandov.com>
- <0d43234f1b2c1d35a06e8259ca94c7d976e0a604.1428471096.git.osandov@osandov.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:51003 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755485AbbDIQdV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 12:33:21 -0400
+Date: Thu, 9 Apr 2015 16:33:19 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: incremental full file backups to smaller mediums possible?
+Message-ID: <20150409163319.GV13864@carfax.org.uk>
+References: <1428596073.4994.24.camel@scientia.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0d43234f1b2c1d35a06e8259ca94c7d976e0a604.1428471096.git.osandov@osandov.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="gYb7txo4D4wAJl1C"
+In-Reply-To: <1428596073.4994.24.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 07, 2015 at 10:34:01PM -0700, Omar Sandoval wrote:
-> Currently, mounting a subvolume with subvolid= takes a different code
-> path than mounting with subvol=. This isn't really a big deal except for
-> the fact that mounts done with subvolid= or the default subvolume don't
-> have a dentry that's connected to the dentry tree like in the subvol=
-> case. To unify the code paths, when given subvolid= or using the default
-> subvolume ID, translate it into a subvolume name by walking
-> ROOT_BACKREFs in the root tree and INODE_REFs in the filesystem trees.
 
-Can you please split this patches? It's doing several things, but the
-core change will probably be a big one. The mount path is not trivial,
-all the recursions and argument replacements.
+--gYb7txo4D4wAJl1C
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Otherwise, I'm ok with this approach, ie. to set up the dentry at mount
-time.
+On Thu, Apr 09, 2015 at 06:14:33PM +0200, Christoph Anton Mitterer wrote:
+> Hey.
+> 
+> I wondered whether this is possible in btrfs (or could be
+> implemented),... it's in a way similar to send/receive, but AFAIU not
+> fully solvable with that.
+> 
+> What I want to do is making incremental backups of a (btrfs) filesystem
+> to smaller mediums (that is for example: from a big RAID filesystem to
+> many BluRays or similar things).
+> 
+> 
+> Right now I make this as follows:
+> Every time backups should be made, I create a ext4 image which would
+> just fit inside the UDF fs of a BluRay (the ext4 image in turn is
+> dm-crypt encrypted) and copy as many *complete*[0] files from the source
+> filesystem to that image as possible. That image file is then burned to
+> BluRay. I also write an SHA512 sum of the whole image file to the BluRay
+> so that one can check whether it can be still read correctly.
+> Then the process continues with the remaining files.
+> 
+> 
+> The main idea behind writing only complete files to the separate parts
+> of the backup is, that I don't want to have a backup set, where I may
+> get into troubles if just one of the disks fails.
+> 
+> 
+> Obviously, when I would do regularly backups that way, then I'd write
+> each time a big amount of data which hasn't changed at all, which is not
+> just a costly issue, but also quite time consuming.
+> So ideally, I'd want to do just an incremental backup of all the files
+> that have been added/modified + the information of what has been
+> deleted/moved/changed it's properties.
+> 
+> All that already smells quite a lot after making a snapshot at the last
+> backup, and then doing send/receive for the next one.
+> 
+> 
+> Now the problem, though, is, that I don't want to loose the property of
+> working in terms of complete files (and I guess send/recieve does not),
+> i.e. when a big file has just one block changed, I still would like to
+> have the complete file on the next incremental dump (and not just
+> information about the "diff").
+> The only exception is when file metadata changes (i.e. pathname, date,
+> permissions, xattrs, etc.). If *just* one of these changes I wouldn't
+> want to backup the full raw data of the file again.
 
-A few comments below.
+> Any ideas whether and how this could be done / assisted by btrfs?
 
->  /*
-> - * This will strip out the subvol=%s argument for an argument string and add
-> - * subvolid=0 to make sure we get the actual tree root for path walking to the
-> - * subvol we want.
-> + * This will add subvolid=0 to the argument string while removing any subvol=
-> + * and subvolid= arguments to make sure we get the top-level root for path
-> + * walking to the subvol we want.
->   */
->  static char *setup_root_args(char *args)
->  {
-> -	unsigned len = strlen(args) + 2 + 1;
-> -	char *src, *dst, *buf;
-> -
-> -	/*
-> -	 * We need the same args as before, but with this substitution:
-> -	 * s!subvol=[^,]+!subvolid=0!
-> -	 *
-> -	 * Since the replacement string is up to 2 bytes longer than the
-> -	 * original, allocate strlen(args) + 2 + 1 bytes.
-> -	 */
-> +	char *p, *dst, *buf;
+   btrfs sub find-new might be more helpful to you here. That will
+give you the list of changed files; then just feed that list to your
+existing bin-packing algorithm for working out what goes on which
+disks, and you're done.
 
-Fix the coding style.
+   Hugo.
 
->  	root = mount_subtree(mnt, subvol_name);
-> +	mnt = NULL; /* mount_subtree drops our reference on the vfsmount. */
+-- 
+Hugo Mills             | Dullest spy film ever: The Eastbourne Ultimatum
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                       The Thick of It
 
-Put the comment on a separate line.
+--gYb7txo4D4wAJl1C
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> +	if (!IS_ERR(root) && subvol_objectid &&
-> +	    BTRFS_I(root->d_inode)->root->root_key.objectid != subvol_objectid) {
-> +		pr_warn("BTRFS: subvol '%s' does not match subvolid %llu\n",
-> +			subvol_name, subvol_objectid);
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-We should define the precedence of subvolid and subvol if both are set.
-A warning might not be enough.
+iQIcBAEBAgAGBQJVJqnOAAoJEFheFHXiqx3kmDoQALVQnPFUynh8wBG6vVCblgwV
+XE6ugMpBd748DAA/5JDqGycq7fP8Srx5asPQ8SIUVO4NcW+a0zxgE9Ts9ZuJ038w
+SgMoQh6GaTemtMzMdRCQN+fPAR3xwVqM6o3hP6O6/DfMnwCQyNc2zMXW9iO/5iwt
+ASn8ue9S7I5P7qkHyb0IoKq5wi2YaqIF3Qr+aETOIiiNEFBIICjQjvNNnAH7aej7
+RrtPClisA3Ttrzt7hT07IpyzIUukr1MCPRWRWcK4u+8b/jFtrSFe53CJThVBKoBx
+8hrLKDZVdPuM4Leu/3MRcgnp0IkjHjnPUJTOwgtKe69RYdb/L6ZsBJtGwO7iA0AU
+9qeSfCqJkA7tZnGq6Rv09TO54MkZlO0uJ9qrFCbpWEM+4n/EIxNtaPiPU4M6X+zC
+1HRTwH9d0dl+fhGtTyqV48rcK6t8STqmewUIutB3Lmty+va2O81GXg4Z3cc7IekH
+5tF8dFUWrPMUbRfQshXQBc5pc5Fc3a+5teOa03MjDLL0Tk3w6/CHCCMZRRa3UZI7
+PHje8vLg4jJrBVGPh4bSX1BM0FnkM94Uv91oZ5w704abnvHzIksJxF2kgnneRpNt
+ZYayjr4XjTY/0TDOdUtvT0X59w1SEu1RxAXQHZtCA78odGs/Go4zh1BbbLxM4L2t
+/D3e9TsmL9QEu/gqxzF3
+=asDd
+-----END PGP SIGNATURE-----
+
+--gYb7txo4D4wAJl1C--

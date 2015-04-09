@@ -1,57 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36341 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754509AbbDIApY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2015 20:45:24 -0400
-Message-ID: <5525CBA1.5000408@cn.fujitsu.com>
-Date: Thu, 9 Apr 2015 08:45:21 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:59685 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753681AbbDIAyk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Apr 2015 20:54:40 -0400
+Date: Thu, 9 Apr 2015 10:54:23 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Jeff Moyer <jmoyer@redhat.com>
+Cc: linux-kernel@vger.kernel.org, dm-devel@redhat.com,
+        xen-devel@lists.xenproject.org, linux-raid@vger.kernel.org,
+        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-aio@kvack.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH 2/2][v2] blk-plug: don't flush nested plug lists
+Message-ID: <20150409005423.GD13731@dastard>
+References: <1428347694-17704-1-git-send-email-jmoyer@redhat.com>
+ <1428347694-17704-2-git-send-email-jmoyer@redhat.com>
+ <x49wq1nrcoe.fsf_-_@segfault.boston.devel.redhat.com>
+ <20150408230203.GG15810@dastard>
 MIME-Version: 1.0
-To: <russell@coker.com.au>, BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: snapshot space use
-References: <201504091039.33442.russell@coker.com.au>
-In-Reply-To: <201504091039.33442.russell@coker.com.au>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150408230203.GG15810@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+[ Sending again with a trimmed CC list to just the lists. Jeff - cc
+lists that large get blocked by mailing lists... ]
 
-You can use btrfs quota feature to do it.
-Like this:
+On Tue, Apr 07, 2015 at 02:55:13PM -0400, Jeff Moyer wrote:
+> The way the on-stack plugging currently works, each nesting level
+> flushes its own list of I/Os.  This can be less than optimal (read
+> awful) for certain workloads.  For example, consider an application
+> that issues asynchronous O_DIRECT I/Os.  It can send down a bunch of
+> I/Os together in a single io_submit call, only to have each of them
+> dispatched individually down in the bowels of the dirct I/O code.
+> The reason is that there are blk_plug-s instantiated both at the upper
+> call site in do_io_submit and down in do_direct_IO.  The latter will
+> submit as little as 1 I/O at a time (if you have a small enough I/O
+> size) instead of performing the batching that the plugging
+> infrastructure is supposed to provide.
 
-# btrfs quota enable <MNT_POINT>
-# btrfs quota rescan -w <MNT_POINT>
-# btrfs qgroup show -prce <MNT_POINT>
-qgroupid rfer    excl    max_rfer max_excl parent  child
--------- ----    ----    -------- -------- ------  -----
-0/5      2248704 12288   0        0        ---     ---
-0/256    5509120 3272704 0        0        ---     ---
+I'm wondering what impact this will have on filesystem metadata IO
+that needs to be issued immediately. e.g. we are doing writeback, so
+there is a high level plug in place and we need to page in btree
+blocks to do extent allocation. We do readahead at this point,
+but it looks like this change will prevent the readahead from being
+issued by the unplug in xfs_buf_iosubmit().
 
+So while I can see how this can make your single microbenchmark
+better (because it's only doing concurrent direct IO to the block
+device and hence there are no dependencies between individual IOs),
+I have significant reservations that it's actually a win for
+filesystem-based workloads where we need direct control of flushing
+to minimise IO latency due to IO dependencies...
 
-rfer is all the space the subvolume takes.
-excl is the exclusive space the subvolume takes.
+Patches like this one:
 
-You can also refer to 'btrfs-quota'(8) and 'btrfs-qgroup'(8),
-Also the following wiki can help:
-https://btrfs.wiki.kernel.org/index.php/Quota_support
+https://lkml.org/lkml/2015/3/20/442
 
-NOTE: quota is not so stable and has some problem, but should give
-you enough info.
+show similar real-world workload improvements to your patchset by
+being smarter about using high level plugging to enable cross-file
+merging of IO, but it still relies on the lower layers of plugging
+to resolve latency bubbles caused by IO dependencies in the
+filesystems.
 
-Thanks,
-Qu
+> NOTE TO SUBSYSTEM MAINTAINERS: Before this patch, blk_finish_plug
+> would always flush the plug list.  After this patch, this is only the
+> case for the outer-most plug.  If you require the plug list to be
+> flushed, you should be calling blk_flush_plug(current).  Btrfs and dm
+> maintainers should take a close look at this patch and ensure they get
+> the right behavior in the end.
 
-> # zfs list -t snapshot
-> NAME                        USED  AVAIL  REFER  MOUNTPOINT
-> hetz0/be0-mail@2015-03-10  2.88G      -   387G  -
-> hetz0/be0-mail@2015-03-11  1.12G      -   388G  -
-> hetz0/be0-mail@2015-03-12  1.11G      -   388G  -
-> hetz0/be0-mail@2015-03-13  1.19G      -   388G  -
-> hetz0/be0-mail@2015-03-14  1.02G      -   388G  -
-> hetz0/be0-mail@2015-03-15   989M      -   386G  -
->
-> Is there any way to do something similar to the above ZFS command?  It's handy
-> to know which snapshots are taking up the most space, especially when multiple
-> subvols are being snapshotted.
->
+IOWs, you are saying we need to change all our current unplugs to
+blk_flush_plug(current) to *try* to maintain the same behaviour as
+we currently have? I say *try*, because no instead of just flushing
+the readahead IO on the plug, we'll also flush all the queued data
+writeback IO onthe high level plug. We don't actually want to do
+that; we only want to submit the readahead and not the bulk IO that
+will delay the latency sensitive dependent IOs....
+
+If that is the case, shouldn't you actually be trying to fix the
+specific plugging problem you've identified (i.e. do_direct_IO() is
+flushing far too frequently) rather than making a sweeping
+generalisation that the IO stack plugging infrastructure
+needs fundamental change?
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

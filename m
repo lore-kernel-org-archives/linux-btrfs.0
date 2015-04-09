@@ -1,82 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4549 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751784AbbDIEgX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 00:36:23 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t394ZEpX019926
-	for <linux-btrfs@vger.kernel.org>; Thu, 9 Apr 2015 12:35:14 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 4/9] btrfs: Set relative data on clear btrfs_block_group_cache->pinned
-Date: Thu, 9 Apr 2015 12:34:39 +0800
-Message-ID: <208631a31e9a732954024674364f715a54a0433c.1428554023.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
-References: <cover.1428554022.git.zhaolei@cn.fujitsu.com>
+Received: from szxga01-in.huawei.com ([58.251.152.64]:13259 "EHLO
+	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751313AbbDIGZ2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 02:25:28 -0400
+Message-ID: <55261B4D.6060402@huawei.com>
+Date: Thu, 9 Apr 2015 14:25:17 +0800
+From: Miao Xie <miaoxie@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>, <clm@fb.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fill ->last_trans for delayed inode in btrfs_fill_inode.
+References: <1428552523-3836-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+In-Reply-To: <1428552523-3836-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="gbk"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Thu, 09 Apr 2015 12:08:43 +0800, Dongsheng Yang wrote:
+> We need to fill inode when we found a node for it in delayed_nodes_tree.
+> But we did not fill the ->last_trans currently, it will cause the test
+> of xfstest/generic/311 fail. Scenario of the 311 is shown as below:
+> 
+> Problem:
+> 	(1). test_fd = open(fname, O_RDWR|O_DIRECT)
+> 	(2). pwrite(test_fd, buf, 4096, 0)
+> 	(3). close(test_fd)
+> 	(4). drop_all_caches()	<-------- "echo 3 > /proc/sys/vm/drop_caches"
+> 	(5). test_fd = open(fname, O_RDWR|O_DIRECT)
+> 	(6). fsync(test_fd);
+> 				<-------- we did not get the correct log entry for the file
+> Reason:
+> 	When we re-open this file in (5), we would find a node
+> in delayed_nodes_tree and fill the inode we are lookup with the
+> information. But the ->last_trans is not filled, then the fsync()
+> will check the ->last_trans and found it's 0 then say this inode
+> is already in our tree which is commited, not recording the extents
+> for it.
+> 
+> Fix:
+> 	This patch fill the ->last_trans properly and set the
+> runtime_flags if needed in this situation. Then we can get the
+> log entries we expected after (6) and generic/311 passed.
+> 
+> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 
-Bug1:
-  space_info->bytes_readonly was set to very large(negative) value in
-  btrfs_remove_block_group().
+Good catch!
 
-Reason:
-  Current code set block_group_cache->pinned = 0 in btrfs_delete_unused_bgs(),
-  but above space was not counted to space_info->bytes_readonly.
+Reviewed-by: Miao Xie <miaoxie@huawei.com>
 
-  Then in btrfs_remove_block_group():
-    block_group->space_info->bytes_readonly -= block_group->key.offset;
-  We can see following value in trace:
-    btrfs_remove_block_group: pid=2677 comm=btrfs-cleaner WARNING: bytes_readonly=12582912, key.offset=134217728
+> ---
+>  fs/btrfs/delayed-inode.c |  2 ++
+>  fs/btrfs/inode.c         | 21 ++++++++++++---------
+>  2 files changed, 14 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 82f0c7c..9e8b435 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -1801,6 +1801,8 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+>  	set_nlink(inode, btrfs_stack_inode_nlink(inode_item));
+>  	inode_set_bytes(inode, btrfs_stack_inode_nbytes(inode_item));
+>  	BTRFS_I(inode)->generation = btrfs_stack_inode_generation(inode_item);
+> +        BTRFS_I(inode)->last_trans = btrfs_stack_inode_transid(inode_item);
+> +
+>  	inode->i_version = btrfs_stack_inode_sequence(inode_item);
+>  	inode->i_rdev = 0;
+>  	*rdev = btrfs_stack_inode_rdev(inode_item);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index d2e732d..b132936 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3628,25 +3628,28 @@ static void btrfs_read_locked_inode(struct inode *inode)
+>  	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
+>  	BTRFS_I(inode)->last_trans = btrfs_inode_transid(leaf, inode_item);
+>  
+> +	inode->i_version = btrfs_inode_sequence(leaf, inode_item);
+> +	inode->i_generation = BTRFS_I(inode)->generation;
+> +	inode->i_rdev = 0;
+> +	rdev = btrfs_inode_rdev(leaf, inode_item);
+> +
+> +	BTRFS_I(inode)->index_cnt = (u64)-1;
+> +	BTRFS_I(inode)->flags = btrfs_inode_flags(leaf, inode_item);
+> +
+> +cache_index:
+>  	/*
+>  	 * If we were modified in the current generation and evicted from memory
+>  	 * and then re-read we need to do a full sync since we don't have any
+>  	 * idea about which extents were modified before we were evicted from
+>  	 * cache.
+> +	 *
+> +	 * This is required for both inode re-read from disk and delayed inode
+> +	 * in delayed_nodes_tree.
+>  	 */
+>  	if (BTRFS_I(inode)->last_trans == root->fs_info->generation)
+>  		set_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+>  			&BTRFS_I(inode)->runtime_flags);
+>  
+> -	inode->i_version = btrfs_inode_sequence(leaf, inode_item);
+> -	inode->i_generation = BTRFS_I(inode)->generation;
+> -	inode->i_rdev = 0;
+> -	rdev = btrfs_inode_rdev(leaf, inode_item);
+> -
+> -	BTRFS_I(inode)->index_cnt = (u64)-1;
+> -	BTRFS_I(inode)->flags = btrfs_inode_flags(leaf, inode_item);
+> -
+> -cache_index:
+>  	path->slots[0]++;
+>  	if (inode->i_nlink != 1 ||
+>  	    path->slots[0] >= btrfs_header_nritems(leaf))
+> 
 
-Bug2:
-  space_info->total_bytes_pinned grow to value larger than fs size.
-  In a 1.2G fs, we can get following trace log:
-  at first:
-    ZL_DEBUG: add_pinned_bytes: pid=2710 comm=sync change total_bytes_pinned flags=1 869793792 + 95944704 = 965738496
-  after some op:
-    ZL_DEBUG: add_pinned_bytes: pid=2770 comm=sync change total_bytes_pinned flags=1 1780178944 + 95944704 = 1876123648
-  after some op:
-    ZL_DEBUG: add_pinned_bytes: pid=3193 comm=sync change total_bytes_pinned flags=1 2924568576 + 95551488 = 3020120064
-  ...
-
-Reason:
-  Similar to bug1, we also need to adjust space_info->total_bytes_pinned
-  in above code block.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 644468b..e04ea1f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9654,8 +9654,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
- 
- 		/* Reset pinned so btrfs_put_block_group doesn't complain */
-+		spin_lock(&space_info->lock);
-+		spin_lock(&block_group->lock);
-+
-+		space_info->bytes_pinned -= block_group->pinned;
-+		space_info->bytes_readonly += block_group->pinned;
-+		percpu_counter_add(&space_info->total_bytes_pinned,
-+				   -block_group->pinned);
- 		block_group->pinned = 0;
- 
-+		spin_unlock(&block_group->lock);
-+		spin_unlock(&space_info->lock);
-+
- 		/*
- 		 * Btrfs_remove_chunk will abort the transaction if things go
- 		 * horribly wrong.
--- 
-1.8.5.1
 

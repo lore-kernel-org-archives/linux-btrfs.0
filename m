@@ -1,47 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:52705 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754256AbbDIXhz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 19:37:55 -0400
-Date: Thu, 9 Apr 2015 23:37:51 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?utf-8?B?7J247KCV7Iud?= <js7.in@samsung.com>
+Received: from mailout2.samsung.com ([203.254.224.25]:15875 "EHLO
+	mailout2.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753457AbbDJA0e (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2015 20:26:34 -0400
+Received: from epcpsbgr5.samsung.com
+ (u145.gpu120.samsung.co.kr [203.254.230.145])
+ by mailout2.samsung.com (Oracle Communications Messaging Server 7.0.5.31.0
+ 64bit (built May  5 2014))
+ with ESMTP id <0NMK002JREK812B0@mailout2.samsung.com> for
+ linux-btrfs@vger.kernel.org; Fri, 10 Apr 2015 09:26:32 +0900 (KST)
+Date: Fri, 10 Apr 2015 00:26:26 +0000 (GMT)
+From: =?euc-kr?B?wM7BpL3E?= <js7.in@samsung.com>
+Subject: Re: Re: Re: Re: Porting BTRFS to user space
+To: Hugo Mills <hugo@carfax.org.uk>
 Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Re: Re: Porting BTRFS to user space
-Message-ID: <20150409233751.GX13864@carfax.org.uk>
-References: <1233276516.596701428537380887.JavaMail.weblogic@epmlwas06c>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="rPH0Y77Oimr1cvNq"
-In-Reply-To: <1233276516.596701428537380887.JavaMail.weblogic@epmlwas06c>
+Reply-to: js7.in@samsung.com
+MIME-version: 1.0
+Content-type: text/plain; charset=euc-kr
+MIME-version: 1.0
+Message-id: <176622419.680101428625585006.JavaMail.weblogic@epmlwas07d>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Many parts I agree.
+One thing is I don't think it will be easy as much as you feel from my words.
 
---rPH0Y77Oimr1cvNq
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I don't clearly understand the following.
+>> There's no reason that the overlay FS can't use all the fundamental features of the underlying non-cluster FS. You could very easily implement snapshots in the DFS using snapshots in the underlying btrfs... *provided* that you can work out the semantics of snapshots in the DFS in the first place.
 
-On Wed, Apr 08, 2015 at 11:56:20PM +0000, =EC=9D=B8=EC=A0=95=EC=8B=9D wrote:
+Does it mean I will be able to implement snapshot in my DFS more easily using the snapshoting function of underlying FS?
+I guess it may be possible depending on the DFS design, but may limit some design options.
+
+Anyway thank you for your opinion.
+
+
+------- Original Message -------
+Sender : Hugo Mills<hugo@carfax.org.uk> 
+Date   : 2015-04-10 08:37 (GMT+09:00)
+Title  : Re: Re: Re: Porting BTRFS to user space
+
+On Wed, Apr 08, 2015 at 11:56:20PM +0000, ¿Œ¡§Ωƒ wrote:
 > My goal is to make a "native" DFS, with native as contrast to overlay.
 > It's about performance and features.
->=20
-> 1. With overlay DFS, overlying system and underlying system do pretty muc=
-h overlaping tasks:
->         maintain/lookup meta-data, keep data/meta-data consistency, and e=
-tc.
+> 
+> 1. With overlay DFS, overlying system and underlying system do pretty much overlaping tasks:
+>         maintain/lookup meta-data, keep data/meta-data consistency, and etc.
 >     They are both implementational duplication and performance overhead.
 
    Accepted, but the differences in what the underlay and overlay have
 to do are huge.
 
-> 2. If I overlay some FS over BTRFS, many of the BTRFS features would be h=
-idden: especially COW and snapshot.
+> 2. If I overlay some FS over BTRFS, many of the BTRFS features would be hidden: especially COW and snapshot.
 >    It means I have to implement them independently if I need them.
->    On the other hand, by embedding distribution layer into BTRFS, all the=
- BTRFS features could be inherited with minimal cost.
+>    On the other hand, by embedding distribution layer into BTRFS, all the BTRFS features could be inherited with minimal cost.
 
    I don't believe this at all.
 
@@ -52,7 +64,7 @@ btrfs... *provided* that you can work out the semantics of snapshots
 in the DFS in the first place.
 
 > If any of the existing DFS were fine for me, I would have been using it.
->=20
+> 
 > Of course I have to deal with all the issues coming from the distribution.
 
    Here, you dismiss with a single sentence the fundamental
@@ -83,15 +95,13 @@ you need it when you get to that point.
    Hugo.
 
 > ------- Original Message -------
-> Sender : Hugo Mills<hugo@carfax.org.uk>=20
+> Sender : Hugo Mills<hugo@carfax.org.uk> 
 > Date   : 2015-04-08 21:27 (GMT+09:00)
 > Title  : Re: Re: Porting BTRFS to user space
->=20
-> On Wed, Apr 08, 2015 at 12:03:29PM +0000, =EC=9D=B8=EC=A0=95=EC=8B=9D wro=
-te:
+> 
+> On Wed, Apr 08, 2015 at 12:03:29PM +0000, ¿Œ¡§Ωƒ wrote:
 > > Thank you for the advise.
-> > I am still wonder why there are same-name files in btrfs(kernel source)=
- and btrfs-progs.
+> > I am still wonder why there are same-name files in btrfs(kernel source) and btrfs-progs.
 > > They are quite many as follows.
 > >     backref.{c, h}
 > >     ctree.{c, h}
@@ -114,23 +124,22 @@ te:
 > >     ulist.{c, h}
 > >     uuid-tree.c
 > >     volumes.{c, h}
-> >=20
+> > 
 > > It seems btrfs-progs files have been ported from kernel files.
 > > Are they the result of efforts to port btrfs from kernel to user space?
->=20
+> 
 >    Kind of. They were copied from kernel space some time ago, but have
 > diverged from that point significantly since. There's all kinds of
 > extra flags and options in the userspace code that allow it to bypass
 > particular kinds of checks for the recovery tools. The kernel
 > implementation will have moved on in different ways since, as well.
->=20
-> > Or at least can I utilize the them so that I have to only port the rema=
-ining files?
->=20
+> 
+> > Or at least can I utilize the them so that I have to only port the remaining files?
+> 
 >    You'll probably find that a lot of the remainder are to do with the
 > interface to the block layer, which I think (without actually knowing
 > much about FUSE) you won't need to do much of.
->=20
+> 
 >    I have to say, I'm somewhat more concerned about your distributed
 > systems design. You haven't mentioned anywhere any of the design
 > features that you would have to think about for a distributed
@@ -138,14 +147,14 @@ ining files?
 > different machines, node failures, network failures, caching of
 > data/metadata, synchronisation of write followed by read (possibly by
 > a different node)?
->=20
+> 
 >    I would suggest that you're better off spending your effort on
 > those issues in your userspace distributed filesystem, and simply
 > using btrfs itself as a backing store. This gives you a useful
 > separation between the relatively simple underlying "write some bytes
 > to permanent storage" layer and the horrible, nasty, complicated
 > "manage a distributed data store in a usable way" layer on top of it.
->=20
+> 
 >    It's noticeable that pretty much all of the network and distributed
 > filesystems that I'm aware of have this kind of architecture: an
 > ordinary boring non-distributed filestore running on each storage
@@ -153,70 +162,44 @@ ining files?
 > of that to deal with the distributed parts. (NFS, Ceph, Gluster
 > certainly work this way. I would be surprised if any of the others out
 > there at the moment didn't work like that).
->=20
+> 
 >    Hugo.
->=20
+> 
 > > ------- Original Message -------
-> > Sender : Austin S Hemmelgarn<ahferroin7@gmail.com>=20
+> > Sender : Austin S Hemmelgarn<ahferroin7@gmail.com> 
 > > Date   : 2015-04-08 20:37 (GMT+09:00)
 > > Title  : Re: Porting BTRFS to user space
-> >=20
-> > On 2015-04-07 19:57, =EC=9D=B8=EC=A0=95=EC=8B=9D wrote:
+> > 
+> > On 2015-04-07 19:57, ¿Œ¡§Ωƒ wrote:
 > > > Thank you for the information.
-> > > I just found that btrfs-progs includes several files that seem modifi=
-ed from btrfs kernel source.
+> > > I just found that btrfs-progs includes several files that seem modified from btrfs kernel source.
 > > > I am not sure exactly what they are.
-> > > Web pages say libbtrfs is to provide interface for apps that use btrf=
-s.
+> > > Web pages say libbtrfs is to provide interface for apps that use btrfs.
 > > > Why should there be duplicated codes between kernel and user space?
 > > > Is it an on-going effort to port whole btrfs to user space?
-> > >=20
-> > > Could you lead me to some more information about libbtrfs or how to p=
-ort btrfs to user space?
-> > >=20
+> > > 
+> > > Could you lead me to some more information about libbtrfs or how to port btrfs to user space?
+> > > 
 > > > Thank you,
 > > > Jeongsik
-> > >=20
-> > >=20
+> > > 
+> > > 
 > > As far as I understand it, the intent is to allow things like btrfs
 > > check and btrfs restore to still work even if the kernel doesn't have
 > > btrfs support.  From what I can tell, you are the first person to
 > > actually be serious about getting BTRFS running in userspace, so there
 > > probably isn't much BTRFS specific literature out there.
-> >=20
+> > 
 > > I would, however suggest looking at the FUSE drivers for ext4 and ZFS,
 > > as those are both ported from kernel space, and should give some good
 > > examples of where to start.
-> >=20
+> > 
 > > <p>&nbsp;</p><p>&nbsp;</p>
->=20
+> 
 
---=20
+-- 
 Hugo Mills             | Great films about cricket: The Third Man
 hugo@... carfax.org.uk |
 http://carfax.org.uk/  |
 PGP: E2AB1DE4          |
-
---rPH0Y77Oimr1cvNq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIbBAEBAgAGBQJVJw1OAAoJEFheFHXiqx3kn6kP+Kjj0YDhnddIZ76DLOI5BEby
-pSo9MqOcvVMISRjRb8u2yUCnzOkHh4HIJZwFrLhu1TsYhCRH0F/5vScOB5O2JUBt
-+tZ0zMhKs1XiMqGB+kMmq09cg8E7CVyG72qv2en+NoM53liFZyRc/U7z7wwHG88t
-rTloaQwo5WBQfwl8EO/QK3XciTfeM8jwkL2jnNb/HlMnNyvGpqKXA0o2/NAUQWKf
-0gCs0b/y+G/rSp1Cba7IC+EYgcx8/pR+4uStLrFlpKH5xfJ3BHsjFHGrFEjoXbBQ
-sfaufGva11XkWrKu31Gk/DI9UQes17zfSbwUTHBsNxXs/urj7DRybcexYbMmVe0Q
-ZZ92UC0+dbbgAK9ym0yHMVj45OoFnNsr8Eh2wYQVM6HtV388TA+jpiiqHToXL7ek
-cqnRz/fpLeVu+DdKyH/aUk4pGpAdV2lxRp41r18DSWH0i85s3kOcxqaPgIrWZfqK
-yBIvRqOyUZMtOcCGePubm6jB7qTdhsCtaOgX2R9o8YXtC8hs2EHLl1gpJ+cEzrIf
-w6cN8x5FuYNV0XGu3AM/72YomSKR9eI7mZHJyEb+eifMy8QRYiMeqDnrAUysVTrk
-fKDsJRkKBk9f7XdyyC6zl+Ha49lhIf/3NazuWpYJNtKbItN+NOBixDX+2Ul9TN/m
-a5bYBbfOg5XX/u5FF5s=
-=WyNx
------END PGP SIGNATURE-----
-
---rPH0Y77Oimr1cvNq--
+<p>&nbsp;</p><p>&nbsp;</p>ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

@@ -1,50 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:32890 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753965AbbDJHAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Apr 2015 03:00:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YgSv7-00036Z-7y
-	for linux-btrfs@vger.kernel.org; Fri, 10 Apr 2015 09:00:05 +0200
-Received: from 168.159.160.58 ([168.159.160.58])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 09:00:05 +0200
-Received: from toyours_sridhar by 168.159.160.58 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 09:00:05 +0200
-To: linux-btrfs@vger.kernel.org
-From: sri <toyours_sridhar@yahoo.co.in>
-Subject: recreate subvolume (not using btrfs send and receive)
-Date: Fri, 10 Apr 2015 06:50:34 +0000 (UTC)
-Message-ID: <loom.20150410T084317-180@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:58467 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754558AbbDJHzR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Apr 2015 03:55:17 -0400
+Received: from athena.localnet (ns-local [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 68E3EEC4B
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 17:55:11 +1000 (AEST)
+From: Russell Coker <russell@coker.com.au>
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: snapshot space use
+Date: Fri, 10 Apr 2015 07:55:10 +0000
+References: <201504091039.33442.russell@coker.com.au>
+In-Reply-To: <201504091039.33442.russell@coker.com.au>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201504100755.10240.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, 9 Apr 2015 12:39:33 AM Russell Coker wrote:
+> # zfs list -t snapshot
+> NAME                        USED  AVAIL  REFER  MOUNTPOINT
+> hetz0/be0-mail@2015-03-10  2.88G      -   387G  -
+> hetz0/be0-mail@2015-03-11  1.12G      -   388G  -
+> hetz0/be0-mail@2015-03-12  1.11G      -   388G  -
+> hetz0/be0-mail@2015-03-13  1.19G      -   388G  -
+> hetz0/be0-mail@2015-03-14  1.02G      -   388G  -
+> hetz0/be0-mail@2015-03-15   989M      -   386G  -
+> 
+> Is there any way to do something similar to the above ZFS command?  It's
+> handy to know which snapshots are taking up the most space, especially
+> when multiple subvols are being snapshotted.
 
-I looking for a way to collect all metadata and data blocks associated 
-with a subvolume or entire btrfs and recreate the same by dumping all 
-blocks on newly allocated disks and bring the file system back assuming 
-same number of disks are provided.
+Quota isn't really what I want.  What I don't want is to go to all the effort 
+of creating quotas on snapshots (and the risk of using such features) just for 
+the ability to see disk usage IF I want it.  What I want is to have it just 
+work as it does in ZFS.  In the above example I can see that I can free 2.88G 
+of disk space by removing the oldest snapshot, this is useful.
 
-Example is say for ext3/ext4 using the information of used block bit map 
-information in each block group, I can Identify all used blocks of the 
-ext3/ext4 partition and simply copy all blocks.
-Above will contains all metadata + data blocks (only used)
-For a 10 Gb disk and say only 2 gb is used, using above, I can collect all 
-2bg blocks.
+btrfs sub find-new $SNAPSHOT $LASTGEN | 
+awk '{total = total + $7}END{print total}'
 
-Thank I can simply dump those blocks to a destination partition and 
-recreate the partition. 
+The above command gives a total of the lengths of extents that changed in a 
+snapshot.  Of course the total length isn't going to be the total space used 
+(it doesn't count metadata used or space saved through compression), but it 
+does give an idea.  Thanks Hugo for the tip in another thread.
 
-In the same way I am looking something similar for btrfs. 
-
-Could anybody let me know is there a way to do this or something similar I 
-can work it out.
-
-Thanks you.
-
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

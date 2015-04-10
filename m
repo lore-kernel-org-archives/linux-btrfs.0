@@ -1,55 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46879 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751794AbbD3Ad2 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Apr 2015 20:33:28 -0400
-Message-ID: <55417856.5060207@cn.fujitsu.com>
-Date: Thu, 30 Apr 2015 08:33:26 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Fix superblock csum type check.
-References: <1430183163-10870-1-git-send-email-quwenruo@cn.fujitsu.com> <20150429172307.GD4996@twin.jikos.cz>
-In-Reply-To: <20150429172307.GD4996@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mx1.redhat.com ([209.132.183.28]:37976 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756308AbbDJWA7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Apr 2015 18:00:59 -0400
+From: Zach Brown <zab@redhat.com>
+To: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-scsi@vger.kernel.org
+Subject: [PATCH RFC 2/3] x86: add sys_copy_file_range to syscall tables
+Date: Fri, 10 Apr 2015 15:00:35 -0700
+Message-Id: <1428703236-24735-3-git-send-email-zab@redhat.com>
+In-Reply-To: <1428703236-24735-1-git-send-email-zab@redhat.com>
+References: <1428703236-24735-1-git-send-email-zab@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Add sys_copy_file_range to the x86 syscall tables.
 
+Signed-off-by: Zach Brown <zab@redhat.com>
+---
+ arch/x86/syscalls/syscall_32.tbl | 1 +
+ arch/x86/syscalls/syscall_64.tbl | 1 +
+ 2 files changed, 2 insertions(+)
 
--------- Original Message  --------
-Subject: Re: [PATCH] btrfs: Fix superblock csum type check.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年04月30日 01:23
+diff --git a/arch/x86/syscalls/syscall_32.tbl b/arch/x86/syscalls/syscall_32.tbl
+index b3560ec..88d0025 100644
+--- a/arch/x86/syscalls/syscall_32.tbl
++++ b/arch/x86/syscalls/syscall_32.tbl
+@@ -365,3 +365,4 @@
+ 356	i386	memfd_create		sys_memfd_create
+ 357	i386	bpf			sys_bpf
+ 358	i386	execveat		sys_execveat			stub32_execveat
++359	i386	copy_file_range		sys_copy_file_range
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index 8d656fb..81802c5 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -329,6 +329,7 @@
+ 320	common	kexec_file_load		sys_kexec_file_load
+ 321	common	bpf			sys_bpf
+ 322	64	execveat		stub_execveat
++323	common	copy_file_range		sys_copy_file_range
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+-- 
+2.1.0
 
-> On Tue, Apr 28, 2015 at 09:06:03AM +0800, Qu Wenruo wrote:
->> Old csum type check is wrong and can't catch csum_type 1(not supported).
->>
->> Fix it to avoid hostile 0 division.
->>
->> Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->
-> Reviewed-by: David Sterba <dsterba@suse.cz>
->
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -428,7 +428,7 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
->>
->>   	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
->>   		printk(KERN_ERR "BTRFS: unsupported checksum algorithm %u\n",
->> -				csum_type);
->> +		       csum_type);
->
-> Please avoid unrelated changes.
-Thanks for reviewing.
-
-Do I need to send a newer version to discard this format change?
-
-Thanks,
-Qu
->
->>   		ret = 1;
->>   	}

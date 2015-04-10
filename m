@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:32831 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:32890 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752088AbbDJG7I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Apr 2015 02:59:08 -0400
+	id S1753965AbbDJHAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Apr 2015 03:00:07 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YgSuA-0002cH-Et
-	for linux-btrfs@vger.kernel.org; Fri, 10 Apr 2015 08:59:06 +0200
+	id 1YgSv7-00036Z-7y
+	for linux-btrfs@vger.kernel.org; Fri, 10 Apr 2015 09:00:05 +0200
 Received: from 168.159.160.58 ([168.159.160.58])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 08:59:06 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 09:00:05 +0200
 Received: from toyours_sridhar by 168.159.160.58 with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 08:59:06 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 09:00:05 +0200
 To: linux-btrfs@vger.kernel.org
 From: sri <toyours_sridhar@yahoo.co.in>
-Subject: btrfs: identify only used blocks (both metadata and data) of subvolume or entire root partition.
-Date: Fri, 10 Apr 2015 06:58:59 +0000 (UTC)
-Message-ID: <loom.20150410T085749-489@post.gmane.org>
+Subject: recreate subvolume (not using btrfs send and receive)
+Date: Fri, 10 Apr 2015 06:50:34 +0000 (UTC)
+Message-ID: <loom.20150410T084317-180@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -45,4 +45,6 @@ In the same way I am looking something similar for btrfs.
 
 Could anybody let me know is there a way to do this or something similar I 
 can work it out.
+
+Thanks you.
 

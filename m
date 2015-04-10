@@ -1,53 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:58467 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754558AbbDJHzR (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:33020 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932361AbbDJKka (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Apr 2015 03:55:17 -0400
-Received: from athena.localnet (ns-local [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 68E3EEC4B
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 17:55:11 +1000 (AEST)
-From: Russell Coker <russell@coker.com.au>
-To: BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: snapshot space use
-Date: Fri, 10 Apr 2015 07:55:10 +0000
-References: <201504091039.33442.russell@coker.com.au>
-In-Reply-To: <201504091039.33442.russell@coker.com.au>
+	Fri, 10 Apr 2015 06:40:30 -0400
+Date: Fri, 10 Apr 2015 18:40:15 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Russell Coker <russell@coker.com.au>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: du accuracy
+Message-ID: <20150410104015.GB10185@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <201504101125.58088.russell@coker.com.au>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201504100755.10240.russell@coker.com.au>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201504101125.58088.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 9 Apr 2015 12:39:33 AM Russell Coker wrote:
-> # zfs list -t snapshot
-> NAME                        USED  AVAIL  REFER  MOUNTPOINT
-> hetz0/be0-mail@2015-03-10  2.88G      -   387G  -
-> hetz0/be0-mail@2015-03-11  1.12G      -   388G  -
-> hetz0/be0-mail@2015-03-12  1.11G      -   388G  -
-> hetz0/be0-mail@2015-03-13  1.19G      -   388G  -
-> hetz0/be0-mail@2015-03-14  1.02G      -   388G  -
-> hetz0/be0-mail@2015-03-15   989M      -   386G  -
+On Fri, Apr 10, 2015 at 11:25:57AM +1000, Russell Coker wrote:
+> I'm copying an image of a 2G microSD card to a BTRFS filesystem.  The SD card 
+> is from an Android phone and is almost full of Android packages and photos, 
+> there's very little space on the filesystem and what space there is probably 
+> isn't filled with zeros.
 > 
-> Is there any way to do something similar to the above ZFS command?  It's
-> handy to know which snapshots are taking up the most space, especially
-> when multiple subvols are being snapshotted.
+> # ls -l
+> total 888000
+> -rw-r--r--. 1 root root 1043529728 Apr 10 11:20 2gsd
+> 
+> While doing it I run ls commands to see the progress and get output like the 
+> above.  Why is the file size according to ls not matching the total used?
+> 
+> # du -h
+> 886M    .
+> 
+> When I ran du immediately afterwards it also reported that there was less than 
+> 1G used.
+> 
+> # du -h
+> 1.2G    .
+> # du -h
+> 1.2G    .
+> # du -h
+> 1.1G    .
+> # du -h
+> 1.1G    .
+> # du -h
+> 1.1G    .
+> # du -h
+> 1.2G    .
+> # du -h
+> 1.2G    .
+> 
+> Above are some consecutive du runs.  Why does the space used go from 1.2G to 
+> 1.1G before going up again?  The file was created by "cat /dev/sde > 2gsd" so 
+> it definitely wasn't getting smaller.
+> 
+> What's going on here?
 
-Quota isn't really what I want.  What I don't want is to go to all the effort 
-of creating quotas on snapshots (and the risk of using such features) just for 
-the ability to see disk usage IF I want it.  What I want is to have it just 
-work as it does in ZFS.  In the above example I can see that I can free 2.88G 
-of disk space by removing the oldest snapshot, this is useful.
+What's your mount options?  with autodefrag or compression?
 
-btrfs sub find-new $SNAPSHOT $LASTGEN | 
-awk '{total = total + $7}END{print total}'
+Thanks,
 
-The above command gives a total of the lengths of extents that changed in a 
-snapshot.  Of course the total length isn't going to be the total space used 
-(it doesn't count metadata used or space saved through compression), but it 
-does give an idea.  Thanks Hugo for the tip in another thread.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+-liubo
+> 
+> -- 
+> My Main Blog         http://etbe.coker.com.au/
+> My Documents Blog    http://doc.coker.com.au/
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

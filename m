@@ -1,35 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.phunq.net ([184.71.0.62]:41591 "EHLO starbase.phunq.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750807AbbD3NY5 convert rfc822-to-8bit (ORCPT
+Received: from mail-pd0-f176.google.com ([209.85.192.176]:34600 "EHLO
+	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756292AbbDJVUv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Apr 2015 09:24:57 -0400
-From: Daniel Phillips <daniel@phunq.net>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: Filipe Manana <fdmanana@suse.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Tux3 Report: How fast can we =?iso-8859-1?Q?fsync=3F?=
-Date: Thu, 30 Apr 2015 06:25:13 -0700
-MIME-Version: 1.0
-Message-ID: <9702ddae-197e-4c5f-90f9-b7e703b9d13a@phunq.net>
-In-Reply-To: <CAL3q7H5pYi97Z65+5tipjZs+1EfwNZhMXo+bYiAy8xO+5T5x5Q@mail.gmail.com>
-References: <8f886f13-6550-4322-95be-93244ae61045@phunq.net>
- <20150430014616.GZ15810@dastard>
- <81488fcb-b5d5-4761-b8ae-936dce9c1f89@phunq.net> <55420EAC.5040900@suse.com>
- <554213A2.6050607@phunq.net>
- <CAL3q7H5pYi97Z65+5tipjZs+1EfwNZhMXo+bYiAy8xO+5T5x5Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	Fri, 10 Apr 2015 17:20:51 -0400
+Received: by pdbqa5 with SMTP id qa5so34448892pdb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 14:20:50 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Cc: Omar Sandoval <osandov@osandov.com>, stable@vger.kernel.org
+Subject: [PATCH RESEND] btrfs: unlock i_mutex after attempting to delete subvolume during send
+Date: Fri, 10 Apr 2015 14:20:40 -0700
+Message-Id: <00d6e1021fdd56192360d2eb0fb43130f3607fe1.1428700740.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, April 30, 2015 6:19:54 AM PDT, Filipe David Manana wrote:
-> There's a very recent patch to fix that issue:
-> https://patchwork.kernel.org/patch/6261421/
-> It's not really specific to fsync.
->
-> Thanks for reporting it.
+Whenever the check for a send in progress introduced in commit
+521e0546c970 (btrfs: protect snapshots from deleting during send) is
+hit, we return without unlocking inode->i_mutex. This is easy to see
+with lockdep enabled:
 
-Great stuff and keep up the good work!
+[  +0.000059] ================================================
+[  +0.000028] [ BUG: lock held when returning to user space! ]
+[  +0.000029] 4.0.0-rc5-00096-g3c435c1 #93 Not tainted
+[  +0.000026] ------------------------------------------------
+[  +0.000029] btrfs/211 is leaving the kernel with locks still held!
+[  +0.000029] 1 lock held by btrfs/211:
+[  +0.000023]  #0:  (&type->i_mutex_dir_key){+.+.+.}, at: [<ffffffff8135b8df>] btrfs_ioctl_snap_destroy+0x2df/0x7a0
 
-Regards,
+Make sure we unlock it in the error path.
 
-Daniel
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+Cc: stable@vger.kernel.org
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+---
+Just resending this with Filipe's and David's Reviewed-bys and Cc-ing
+stable.
+
+ fs/btrfs/ioctl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 74609b9..9fde01f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2403,7 +2403,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 			"Attempt to delete subvolume %llu during send",
+ 			dest->root_key.objectid);
+ 		err = -EPERM;
+-		goto out_dput;
++		goto out_unlock_inode;
+ 	}
+ 
+ 	d_invalidate(dentry);
+@@ -2498,6 +2498,7 @@ out_up_write:
+ 				root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
+ 		spin_unlock(&dest->root_item_lock);
+ 	}
++out_unlock_inode:
+ 	mutex_unlock(&inode->i_mutex);
+ 	if (!err) {
+ 		shrink_dcache_sb(root->fs_info->sb);
+-- 
+2.3.5
+

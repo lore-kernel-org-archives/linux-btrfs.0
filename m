@@ -1,67 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from shinra.asoshared.com ([65.99.237.192]:37416 "EHLO
-	shinra.asoshared.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755608AbbDKTh1 (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:36844 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752791AbbDKT74 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Apr 2015 15:37:27 -0400
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:36194)
-	by shinra.asoshared.com with esmtpsa (TLSv1.2:AES128-GCM-SHA256:128)
-	(Exim 4.85)
-	(envelope-from <git@nerdoftheherd.com>)
-	id 1Yh0tv-0000Rp-IP
-	for linux-btrfs@vger.kernel.org; Sat, 11 Apr 2015 15:17:07 -0400
-Received: by qku63 with SMTP id 63so91690046qku.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 12:17:07 -0700 (PDT)
+	Sat, 11 Apr 2015 15:59:56 -0400
+Received: by wizk4 with SMTP id k4so31138853wiz.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 12:59:55 -0700 (PDT)
+Received: from ?IPv6:2a02:1812:1980:9b00:79b7:d674:7af4:9c75? ([2a02:1812:1980:9b00:79b7:d674:7af4:9c75])
+        by mx.google.com with ESMTPSA id yr1sm4094282wjc.37.2015.04.11.12.59.54
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 11 Apr 2015 12:59:54 -0700 (PDT)
+Message-ID: <55297D36.8090808@sjeng.org>
+Date: Sat, 11 Apr 2015 21:59:50 +0200
+From: Gian-Carlo Pascutto <gcp@sjeng.org>
 MIME-Version: 1.0
-In-Reply-To: <20150303002720.GA26622@hungrycats.org>
-References: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
-	<20150128125521.GD3641@twin.jikos.cz>
-	<CABJ34CJR=AjAavwct4v9ud_62mSSzd3StivGHqfhNXBjGTuvjA@mail.gmail.com>
-	<CABJ34CJO7rSOOOyxZy=gym7V2dzDtjnFaTXHN1Vcu_+rmaF64w@mail.gmail.com>
-	<20150303002720.GA26622@hungrycats.org>
-Date: Sat, 11 Apr 2015 20:17:07 +0100
-Message-ID: <CABJ34CLq5uvf0WGbo_EJz6Zz2aSxBjsXT6Re8m_Vd+BHuq2VKg@mail.gmail.com>
-Subject: Re: [PATCH 1/1] btrfs: Align EOF length to block in extent_same
-From: Matt Robinson <git@nerdoftheherd.com>
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
-        Josef Bacik <jbacik@fb.com>
-Cc: Matt Robinson <git@nerdoftheherd.com>, linux-btrfs@vger.kernel.org,
-        Mark Fasheh <mfasheh@suse.de>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Big disk space usage difference, even after defrag, on identical
+ data
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
+Linux mozwell 3.19.0-trunk-amd64 #1 SMP Debian 3.19.1-1~exp1
+(2015-03-08) x86_64 GNU/Linux
+btrfs-progs v3.19.1
 
-As David hasn't got back to me I'm guessing that he is too busy with
-other things at present. If anyone else is able to spare the time to
-review my patch and give me feedback that would be very much
-appreciated.
+I have a btrfs volume that's been in use for a week or 2. It has about
+~560G of uncompressible data (video files, tar.xz, git repos, ...) and
+~200G of data that compresses 2:1 with LZO (PostgreSQL db).
 
-Many Thanks,
+It's split into 2 subvolumes:
+ID 257 gen 6550 top level 5 path @db
+ID 258 gen 6590 top level 5 path @large
 
-Matt
+and mounted like this:
+/dev/sdc /srv/db btrfs rw,noatime,compress=lzo,space_cache 0 0
+/dev/sdc /srv/large btrfs rw,noatime,compress=lzo,space_cache 0 0
 
-On 3 March 2015 at 00:27, Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
->
-> I second this.  I've seen the same behavior.
->
-> Clone seems to have evolved a little further than extent-same knows about.
-> e.g. there is code in the extent-same ioctl that tries to avoid doing
-> a clone from within one inode to elsewhere in the same inode; however,
-> the clone ioctl (which extent-same calls) has no such restriction.
->
-> As Matt mentioned, clone_range seems quite happy to accept a partial block
-> at EOF.  cp --reflink would be much harder to use if it did not.
->
-> On Mon, Mar 02, 2015 at 08:59:11PM +0000, Matt Robinson wrote:
-> > Hi David,
-> >
-> > Have you had a chance to look at this?  Am very happy to answer
-> > further questions, adjust my implementation, provide a different kind
-> > of test case, etc.
-> >
-> > Many Thanks,
-> >
-> > Matt
+du -skh /srv
+768G    /srv
+
+df -h
+/dev/sdc        1.4T  754G  641G  55% /srv/db
+/dev/sdc        1.4T  754G  641G  55% /srv/large
+
+btrfs fi df /srv/large
+Data, single: total=808.01GiB, used=749.36GiB
+System, DUP: total=8.00MiB, used=112.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=3.50GiB, used=1.87GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+So that's a bit bigger than perhaps expected (~750G instead of
+~660G+metadata). I thought it might've been related to compress bailing
+out too easily, but I've done a
+btrfs fi defragment -r -v -clzo /srv/db /srv/large
+and this doesn't change anything.
+
+I recently copied this data to a new, bigger disk, and the result looks
+worrying:
+
+mount options:
+/dev/sdd /mnt/large btrfs rw,noatime,compress=lzo,space_cache 0 0
+/dev/sdd /mnt/db btrfs rw,noatime,compress=lzo,space_cache 0 0
+
+btrfs fi df
+Data, single: total=684.00GiB, used=683.00GiB
+System, DUP: total=8.00MiB, used=96.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=3.50GiB, used=2.04GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+df
+/dev/sdd        3.7T  688G  3.0T  19% /mnt/large
+/dev/sdd        3.7T  688G  3.0T  19% /mnt/db
+
+du
+767G    /mnt
+
+That's a 66G difference for the same data with the same compress option.
+The used size here is much more in line with what I'd have expected
+given the nature of the data.
+
+I would think that compression differences or things like fragmentation
+or bookending for modified files shouldn't affect this, because the
+first filesystem has been defragmented/recompressed and didn't shrink.
+
+So what can explain this? Where did the 66G go?
+
+-- 
+GCP

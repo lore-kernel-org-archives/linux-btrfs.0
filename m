@@ -1,86 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52765 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752985AbbDKCOz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Apr 2015 22:14:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ygkwf-0002jB-Bb
-	for linux-btrfs@vger.kernel.org; Sat, 11 Apr 2015 04:14:53 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 04:14:53 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 04:14:53 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs balance {,meta}data to raid5 not working?
-Date: Sat, 11 Apr 2015 02:14:44 +0000 (UTC)
-Message-ID: <pan$577b$aa7780a2$54c1424a$5329065c@cox.net>
-References: <20150410221049.GE9470@wloczykij>
-Mime-Version: 1.0
+Received: from shinra.asoshared.com ([65.99.237.192]:37416 "EHLO
+	shinra.asoshared.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755608AbbDKTh1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 Apr 2015 15:37:27 -0400
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:36194)
+	by shinra.asoshared.com with esmtpsa (TLSv1.2:AES128-GCM-SHA256:128)
+	(Exim 4.85)
+	(envelope-from <git@nerdoftheherd.com>)
+	id 1Yh0tv-0000Rp-IP
+	for linux-btrfs@vger.kernel.org; Sat, 11 Apr 2015 15:17:07 -0400
+Received: by qku63 with SMTP id 63so91690046qku.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 12:17:07 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20150303002720.GA26622@hungrycats.org>
+References: <1422295551-25402-1-git-send-email-git@nerdoftheherd.com>
+	<20150128125521.GD3641@twin.jikos.cz>
+	<CABJ34CJR=AjAavwct4v9ud_62mSSzd3StivGHqfhNXBjGTuvjA@mail.gmail.com>
+	<CABJ34CJO7rSOOOyxZy=gym7V2dzDtjnFaTXHN1Vcu_+rmaF64w@mail.gmail.com>
+	<20150303002720.GA26622@hungrycats.org>
+Date: Sat, 11 Apr 2015 20:17:07 +0100
+Message-ID: <CABJ34CLq5uvf0WGbo_EJz6Zz2aSxBjsXT6Re8m_Vd+BHuq2VKg@mail.gmail.com>
+Subject: Re: [PATCH 1/1] btrfs: Align EOF length to block in extent_same
+From: Matt Robinson <git@nerdoftheherd.com>
+To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
+        Josef Bacik <jbacik@fb.com>
+Cc: Matt Robinson <git@nerdoftheherd.com>, linux-btrfs@vger.kernel.org,
+        Mark Fasheh <mfasheh@suse.de>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Piotr Szymaniak posted on Sat, 11 Apr 2015 00:10:49 +0200 as excerpted:
+Hi All,
 
-> Hi,
-> 
-> I tried today to balance two drive btrfs raid1 to two drive btrfs raid5
-> without luck: [snipped]
+As David hasn't got back to me I'm guessing that he is too busy with
+other things at present. If anyone else is able to spare the time to
+review my patch and give me feedback that would be very much
+appreciated.
 
-> Linux 3.19.3
-> btrfs-progs v3.19.1
+Many Thanks,
 
-Two points:
+Matt
 
-1) There is (was?) a known bug with balance-conversion in (near-)current 
-btrfs.  It was broken for a time, and I'm not sure it is fixed yet.  I'm 
-also not sure whether it was a user-side or kernel-side issue, tho I 
-believe the culprit commit has been traced and posted, so the answer 
-should be on the back-list if nobody else replies here with more specific 
-info.
-
-Which presents a problem, since fully working raid5 support is so new.  
-But for conversion, I /think/ you can use somewhat older versions and do 
-the conversion, then use current versions that better handle problems for 
-actual operation.  If I only knew which part, userspace or kernelspace, 
-you have to use an old version of...
-
-But you could try the latest 4.0-rc7+ kernel and see if it works with 
-that, yet.
-
-2) You specify two drives[1] and an intended conversion to raid5.  
-Normally/traditionally, raid5 needs three devices to function undegraded, 
-altho technically, two-device raid5 is possible; it's just effectively a 
-slow raid1.  There has been some discussion around whether btrfs should 
-enable two-device raid5 or not, but regardless of whether it's actually
-/possible/, why would you /want/ it?
-
-2a) If your intention is to keep it two devices, just continue using 
-raid1, particularly with btrfs where raid1 mode is MUCH more mature and 
-tested than raid5 mode.
-
-2b) If instead your intention was to convert it to raid5 before upgrading 
-it to three devices, just add the third device first, then do the balance-
-conversion.  It'll save quite some time over effectively doing the 
-balance-conversion twice.
-
----
-[1] Disks/drives/devices.  In a modern world of SSDs and virtual devices, 
-a block device may well be neither a disk nor an actual drive. (Does SSD 
-refer to a solid state /device/, or a solid state /drive/; it's certainly 
-not a /disk/?  Either way, a virtual device may not in fact be a drive of 
-any sort at all, while still being a device.)  I guess I'm not alone 
-among experienced users and sysadmins of an earlier era, who find 
-themselves now trying to retrain themselves to use the more accurate 
-generic term in most contexts...
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On 3 March 2015 at 00:27, Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
+>
+> I second this.  I've seen the same behavior.
+>
+> Clone seems to have evolved a little further than extent-same knows about.
+> e.g. there is code in the extent-same ioctl that tries to avoid doing
+> a clone from within one inode to elsewhere in the same inode; however,
+> the clone ioctl (which extent-same calls) has no such restriction.
+>
+> As Matt mentioned, clone_range seems quite happy to accept a partial block
+> at EOF.  cp --reflink would be much harder to use if it did not.
+>
+> On Mon, Mar 02, 2015 at 08:59:11PM +0000, Matt Robinson wrote:
+> > Hi David,
+> >
+> > Have you had a chance to look at this?  Am very happy to answer
+> > further questions, adjust my implementation, provide a different kind
+> > of test case, etc.
+> >
+> > Many Thanks,
+> >
+> > Matt

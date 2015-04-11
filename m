@@ -1,35 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:38807 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753697AbbDKUrf (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:60962 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755892AbbDKUst (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Apr 2015 16:47:35 -0400
-Received: by wiun10 with SMTP id n10so30283869wiu.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 13:47:34 -0700 (PDT)
-Received: from [10.0.2.15] (p3E9EE291.dip0.t-ipconnect.de. [62.158.226.145])
-        by mx.google.com with ESMTPSA id uo6sm4238752wjc.49.2015.04.11.13.47.33
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 11 Apr 2015 13:47:33 -0700 (PDT)
-From: Philip Seeger <p0h0i0l0i0p@gmail.com>
-Message-ID: <55298865.9080401@googlemail.com>
-Date: Sat, 11 Apr 2015 22:47:33 +0200
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
+	Sat, 11 Apr 2015 16:48:49 -0400
+Date: Sat, 11 Apr 2015 20:48:47 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs balance {,meta}data to raid5 not working?
+Message-ID: <20150411204847.GA22084@carfax.org.uk>
 References: <20150410221049.GE9470@wloczykij>
-In-Reply-To: <20150410221049.GE9470@wloczykij>
-Content-Type: text/plain; charset=utf-8; format=flowed
+ <55298865.9080401@googlemail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="pWyiEgJYm5f9v55/"
+In-Reply-To: <55298865.9080401@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A two-drive RAID5? Try 3 drives (btrfs dev add <new-drive> /mountpoint 
-first).
 
+--pWyiEgJYm5f9v55/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 04/11/2015 12:10 AM, Piotr Szymaniak wrote:
- > I tried today to balance two drive btrfs raid1 to two drive btrfs raid5
+On Sat, Apr 11, 2015 at 10:47:33PM +0200, Philip Seeger wrote:
+> A two-drive RAID5? Try 3 drives (btrfs dev add <new-drive>
+> /mountpoint first).
 
+   2-drive RAID-5 should work on btrfs. It's functionally equivalent
+to RAID-1.
+
+   Hugo.
+
+> On 04/11/2015 12:10 AM, Piotr Szymaniak wrote:
+> > I tried today to balance two drive btrfs raid1 to two drive btrfs raid5
+> 
+> 
 
 -- 
-Philip
+Hugo Mills             | The enemy have elected for Death by Powerpoint.
+hugo@... carfax.org.uk | That's what they shall get.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                                   gdb
+
+--pWyiEgJYm5f9v55/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJVKYivAAoJEFheFHXiqx3ko+oP/jb4n9Fz3VYqZG+ZHTWsPiZY
+f1bINQdPS1hUjXdgp1YtpEH5hFCcU82RwTUFYnQ4lqRKDrb+cj/QsAbodLSbUzEU
+AxaZxKO96YKYN1FGKyml0iRXvkLHMJ1eN6OrAH4FcwjHCyAilRtLA7lmD4kIly9T
+k8iIwrhEh7P1Dnvco+RLAtUzk8enIPEU0fAQeMSN1mhbm+rTWqRTxmted4TOerZV
+ZMNgCLmaqDcZ++fCm59OarG5tibTpfqL7OOkYerKQqcJRdhLAX31BYPwvFJUBCzs
+9kND+xCMw/bGAjPon2rsoASKldGKhYs9AQz1aiTCgeRlrgMCBXoxMCcPfyIhiIJ/
+V7u9w1N1pSyItKiLUcb5r8b/xR2n3T9+/8hOhRweZJGT18g7WAPBxmcgmZCaCaNa
+vprrkPCLETsq77fc9a+V6H0Uh+NYMff+ZipSiPXLTnOTdKe1jOxwkKzoRBmt1b/y
+30uqOFgX1Axxj54zZMFn6H08gQsHCxhHQjIGemRaGJTO338V8nyHg/u8gmQVMSG1
+YazHfAgZfeHJiwWMkSk17Z6fBeixnZrDwIfGfo8cCLVQjIqz6skUXznRGatMM8RM
+cfcIWTLgY0Vl17sJL2iaVWvSEBsG4Oza2/W3yYMNrNhL2+2RYW8iEHGtGXRQzCbO
+brfwMuMORlsWr8ISJuRh
+=qf3E
+-----END PGP SIGNATURE-----
+
+--pWyiEgJYm5f9v55/--

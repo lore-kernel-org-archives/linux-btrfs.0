@@ -1,37 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.palepurple.co.uk ([89.16.183.188]:42255 "EHLO
-	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754648AbbDJMDt (ORCPT
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:34039 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750925AbbDLGfZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Apr 2015 08:03:49 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail.palepurple.co.uk (Postfix) with ESMTP id E7C058097
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 13:03:47 +0100 (BST)
-Received: from mail.palepurple.co.uk ([127.0.0.1])
-	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
-	with ESMTP id 4z_BqM75wuN5 for <linux-btrfs@vger.kernel.org>;
-	Fri, 10 Apr 2015 13:03:47 +0100 (BST)
-Received: from [172.30.33.200] (host81-133-46-190.in-addr.btopenworld.com [81.133.46.190])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: david@palepurple.co.uk)
-	by mail.palepurple.co.uk (Postfix) with ESMTPSA id 9F327803C
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Apr 2015 13:03:47 +0100 (BST)
-Message-ID: <5527BC23.5060204@codepoets.co.uk>
-Date: Fri, 10 Apr 2015 13:03:47 +0100
-From: David Goodwin <david@codepoets.co.uk>
+	Sun, 12 Apr 2015 02:35:25 -0400
+Received: by pacyx8 with SMTP id yx8so67445860pac.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 23:35:24 -0700 (PDT)
+Received: from WangdeMacBook-Pro.local ([104.156.239.76])
+        by mx.google.com with ESMTPSA id ef3sm3587628pbc.26.2015.04.11.23.35.22
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 11 Apr 2015 23:35:24 -0700 (PDT)
+Message-ID: <552A1228.4090700@gmail.com>
+Date: Sun, 12 Apr 2015 14:35:20 +0800
+From: Wang Shilong <wangshilong1991@gmail.com>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: testing, testing ...
-Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: [PATCH] Btrfs: fix wrong check for btrfs_force_chunk_alloc()
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just seeing if this works, given a kernel oops report I sent 2 days ago 
-doesn't seem to have appeared yet.
+btrfs_force_chunk_alloc() return 1 for allocation chunk successfully.
+This problem exists since commit c87f08ca4.
 
-(subject: kernel oops - page_alloc.c:1011 [3.16.7-ctk7-1 kernel; 
-btrfs-tools 3.17-1.1] )
+With this patch, we might fix some enospc problems for balances.
 
+Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
+---
+ fs/btrfs/relocation.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-David.
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index d830853..c453464 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4037,7 +4037,7 @@ restart:
+ 	if (trans && progress && err == -ENOSPC) {
+ 		ret = btrfs_force_chunk_alloc(trans, rc->extent_root,
+ 					      rc->block_group->flags);
+-		if (ret == 0) {
++		if (ret == 1) {
+ 			err = 0;
+ 			progress = 0;
+ 			goto restart;
+-- 
+1.7.12.4

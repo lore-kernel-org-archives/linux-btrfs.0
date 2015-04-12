@@ -1,69 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:60962 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755892AbbDKUst (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:42169 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751383AbbDLLMx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Apr 2015 16:48:49 -0400
-Date: Sat, 11 Apr 2015 20:48:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Philip Seeger <p0h0i0l0i0p@gmail.com>
+	Sun, 12 Apr 2015 07:12:53 -0400
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: bo.li.liu@oracle.com
+Subject: Re: du accuracy
+Date: Sun, 12 Apr 2015 21:12:46 +1000
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs balance {,meta}data to raid5 not working?
-Message-ID: <20150411204847.GA22084@carfax.org.uk>
-References: <20150410221049.GE9470@wloczykij>
- <55298865.9080401@googlemail.com>
+References: <201504101125.58088.russell@coker.com.au> <20150410104015.GB10185@localhost.localdomain>
+In-Reply-To: <20150410104015.GB10185@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="pWyiEgJYm5f9v55/"
-In-Reply-To: <55298865.9080401@googlemail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201504122112.47205.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---pWyiEgJYm5f9v55/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Apr 11, 2015 at 10:47:33PM +0200, Philip Seeger wrote:
-> A two-drive RAID5? Try 3 drives (btrfs dev add <new-drive>
-> /mountpoint first).
-
-   2-drive RAID-5 should work on btrfs. It's functionally equivalent
-to RAID-1.
-
-   Hugo.
-
-> On 04/11/2015 12:10 AM, Piotr Szymaniak wrote:
-> > I tried today to balance two drive btrfs raid1 to two drive btrfs raid5
+On Fri, 10 Apr 2015, Liu Bo <bo.li.liu@oracle.com> wrote:
+> > Above are some consecutive du runs.  Why does the space used go from 1.2G
+> > to  1.1G before going up again?  The file was created by "cat /dev/sde >
+> > 2gsd" so it definitely wasn't getting smaller.
+> >
+> > 
+> >
+> > What's going on here?
 > 
-> 
+> What's your mount options?  with autodefrag or compression?
+
+Linux server 3.16.0-4-amd64 #1 SMP Debian 3.16.7-ckt4-2 (2015-01-27) x86_64 
+GNU/Linux
+
+Above is the kernel I'm using, one of the recent ones from Debian/Jessie.
+
+UUID=XXXX /big btrfs skip_balance,relatime,nosuid,nodev 0 0
+
+Above is the /etc/fstab line.
+
+/dev/sdb2 /big btrfs 
+rw,seclabel,nosuid,nodev,relatime,space_cache,skip_balance 0 0
+
+Above is the /proc/mounts line.  I'm not doing anything noteworthy here.  
+
+# du -h tmp|tail -1 ; sleep 10 ; du -h tmp|tail -1 
+1.6G    tmp
+1.4G    tmp
+
+I've just had something similar happen when rsyncing a directory full of files 
+to the server and running du to check on the progress.  It's probably possible 
+that a rename could happen at the wrong time to cause a file to be missed in 
+the du count.  So this could be legit.  But the case described in my previous 
+message concerned a single file that was being extended.
 
 -- 
-Hugo Mills             | The enemy have elected for Death by Powerpoint.
-hugo@... carfax.org.uk | That's what they shall get.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                                   gdb
-
---pWyiEgJYm5f9v55/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVKYivAAoJEFheFHXiqx3ko+oP/jb4n9Fz3VYqZG+ZHTWsPiZY
-f1bINQdPS1hUjXdgp1YtpEH5hFCcU82RwTUFYnQ4lqRKDrb+cj/QsAbodLSbUzEU
-AxaZxKO96YKYN1FGKyml0iRXvkLHMJ1eN6OrAH4FcwjHCyAilRtLA7lmD4kIly9T
-k8iIwrhEh7P1Dnvco+RLAtUzk8enIPEU0fAQeMSN1mhbm+rTWqRTxmted4TOerZV
-ZMNgCLmaqDcZ++fCm59OarG5tibTpfqL7OOkYerKQqcJRdhLAX31BYPwvFJUBCzs
-9kND+xCMw/bGAjPon2rsoASKldGKhYs9AQz1aiTCgeRlrgMCBXoxMCcPfyIhiIJ/
-V7u9w1N1pSyItKiLUcb5r8b/xR2n3T9+/8hOhRweZJGT18g7WAPBxmcgmZCaCaNa
-vprrkPCLETsq77fc9a+V6H0Uh+NYMff+ZipSiPXLTnOTdKe1jOxwkKzoRBmt1b/y
-30uqOFgX1Axxj54zZMFn6H08gQsHCxhHQjIGemRaGJTO338V8nyHg/u8gmQVMSG1
-YazHfAgZfeHJiwWMkSk17Z6fBeixnZrDwIfGfo8cCLVQjIqz6skUXznRGatMM8RM
-cfcIWTLgY0Vl17sJL2iaVWvSEBsG4Oza2/W3yYMNrNhL2+2RYW8iEHGtGXRQzCbO
-brfwMuMORlsWr8ISJuRh
-=qf3E
------END PGP SIGNATURE-----
-
---pWyiEgJYm5f9v55/--
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

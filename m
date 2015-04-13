@@ -1,82 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:44638 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752824AbbDANEc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2015 09:04:32 -0400
-Date: Wed, 1 Apr 2015 13:04:31 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "Wang, Zhiye" <Zhiye.Wang@arcserve.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: How to avoid certain file being defragmented?
-Message-ID: <20150401130431.GC32078@carfax.org.uk>
-References: <6ba9e4a537f64758b41f356d0b2dd387@uslims211.ca.com>
- <f8e2691656584a619920a36fdd47ffbf@uslims211.ca.com>
+Received: from cantor2.suse.de ([195.135.220.15]:49949 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754166AbbDMOrp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Apr 2015 10:47:45 -0400
+Date: Mon, 13 Apr 2015 16:47:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: harshad shirwadkar <harshadshirwadkar@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
+Subject: Re: [GSoC 2015] Btrfs content based storage
+Message-ID: <20150413144743.GL25622@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="bAmEntskrkuBymla"
-In-Reply-To: <f8e2691656584a619920a36fdd47ffbf@uslims211.ca.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Mar 27, 2015 at 10:58:42AM -0400, harshad shirwadkar wrote:
+> I am a CS graduate student from Carnegie Mellon University. I am
+> hoping to build the feature - "Content based storage mode" under
+> Google Summer of Code 2015. This project has also been listed as an
+> idea on BTRFS ideas page. However, I have not found a mentor yet, and
+> without a mentor I can not participate in the program. Please let me
+> know if anybody is interested in mentoring this project. Here is a
+> link to my proposal:
+> 
+> http://harshadjs.github.io/2015/03/27/Fedora-BTRFS-Content-Storage-Mode/
 
---bAmEntskrkuBymla
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This probably has a significant overlap with the in-band dedup work from
+Liu bo [1]. Your proposal expects an interface to look up the data by
+hash which hasn't been implemented afaik.
 
-On Wed, Apr 01, 2015 at 12:42:04PM +0000, Wang, Zhiye wrote:
-> Hello,
-
-> I have some files which I hope their on-disk data can be on fixed
-> location of disk. My understanding is that defragmentation operation
-> can potentially move data blocks of a file.
-
-> So, can I avoid certain file being defragmented in btrfs?=A0
-
-   Simple: Don't defragment it.
-
-   Also, set the file to nodatacow if you're planning on writing to it
-at any point; don't take snapshots or reflink copies of it if that's
-the case. Finally, don't ever run a balance on the FS.
-
-   Alternatively, have a hard think about why you want to bypass the
-filesystem, because it's probably a fairly bad idea. Even most
-bootloaders these days put the data they can't move in the 64k before
-the FS starts, and then have enough code to read the FS through its
-normal data structures.
-
-   If you need some kind of raw(ish) block interface, using a file and
-a loopback device may be more useful.
-
-   Hugo.
-
---=20
-Hugo Mills             | I get nervous when I see words like 'mayhaps' in a
-hugo@... carfax.org.uk | novel, because I fear that just round the corner is
-http://carfax.org.uk/  | lurking 'forsooth'
-PGP: 65E74AC0          |                                      GRRM's UK edi=
-tor
-
---bAmEntskrkuBymla
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVG+zfAAoJEFheFHXiqx3kuL0P/RrcPZst+q8usp6xY85ZBB3t
-B3cztD3EzkVds502+mRUvNsTxJKZ6+sys4inO+z0PmIgt3DCV3mfhYTQ92o9Xe/z
-WLBmeUd111qievcqNL7P5q+EgygrpKyVGHFL5BJXcLG9SbIDK0MuB/oyca+s0ar3
-8WShwkgxg40ZZnUlRlt9RMBiQGoS9XOy9dRmUaSZyDJAKFT62DJ8ZSR1EA80CiFU
-CMZkKYbW4NZMv7Y56LPAaHCSgM70Kfkw6OQ2+zLe4zQtd6d5EEfSpabNxXz/ifCJ
-LkDBb0mp79HEs+k+QzGCRekBJTNg8VVomaURE6TSRi2Xb9+UKcGu6Atu44UGXxK2
-JvMRO5GOKvDIc/0G1r7s8w2L4WAw2hjs6DcDSkMaRoHJrWUMWOUwqYXbaoiaMz62
-fDbxneDqgzfzApo5/NXD7tgackBUowLe4oo95GYxnKP3OFF+kYIt6dEIhWSwzKTD
-oR8obRJHe7iWXr/03/VCNmAxakyDkaj9uHtnvIFgREu1ms5rRZqEYR9NIf2gr5qq
-AWpR/w1UWOObxHLkfNtJNVuzDAGdDCgMakkYTtvmhXBRid4dLElDR78OjivyDduc
-Ca3gfdIYR3vuh09BROzI8dh8TNjwYSGhDLeSCuaHUXlICsj7hFOe6ACYP+JTkKv8
-qOOUgPks16NqAqrPufGc
-=pOp5
------END PGP SIGNATURE-----
-
---bAmEntskrkuBymla--
+[1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/34097 (v10)

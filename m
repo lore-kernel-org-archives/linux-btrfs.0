@@ -1,41 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:41711 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932343AbbDMRam (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:33844 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751773AbbDMVcT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 13:30:42 -0400
-Date: Mon, 13 Apr 2015 10:30:40 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: David Howells <dhowells@redhat.com>
-Cc: Dave Chinner <david@fromorbit.com>, NeilBrown <neilb@suse.de>,
-        linux-btrfs@vger.kernel.org, linux-cachefs@redhat.com,
-        linux-fsdevel@vger.kernel.org, linux-nfs@vger.kernel.org
-Subject: Re: [PATCH/RFC] fscache/cachefiles versus btrfs
-Message-ID: <20150413173040.GA30623@infradead.org>
-References: <20150409235234.GJ13731@dastard>
- <20150409174916.5a2efef5@notabene.brown>
- <29536.1428571388@warthog.procyon.org.uk>
- <9282.1428672496@warthog.procyon.org.uk>
+	Mon, 13 Apr 2015 17:32:19 -0400
+Received: by pacyx8 with SMTP id yx8so114952161pac.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 14:32:18 -0700 (PDT)
+Date: Mon, 13 Apr 2015 14:32:17 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 0/3] btrfs: ENOMEM bugfixes
+Message-ID: <20150413213217.GA4857@mew.cs.washington.edu>
+References: <cover.1424773781.git.osandov@osandov.com>
+ <20150312044017.GA7693@mew>
+ <20150313110430.GG20767@twin.jikos.cz>
+ <20150313194342.GA10097@mew.dhcp4.washington.edu>
+ <20150327210649.GA22047@mew>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9282.1428672496@warthog.procyon.org.uk>
+In-Reply-To: <20150327210649.GA22047@mew>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 10, 2015 at 02:28:16PM +0100, David Howells wrote:
-> Dave Chinner <david@fromorbit.com> wrote:
+On Fri, Mar 27, 2015 at 02:06:49PM -0700, Omar Sandoval wrote:
+> On Fri, Mar 13, 2015 at 12:43:42PM -0700, Omar Sandoval wrote:
+> > On Fri, Mar 13, 2015 at 12:04:30PM +0100, David Sterba wrote:
+> > > On Wed, Mar 11, 2015 at 09:40:17PM -0700, Omar Sandoval wrote:
+> > > > Ping. For anyone following along, it looks like commit cc87317726f8
+> > > > ("mm: page_alloc: revert inadvertent !__GFP_FS retry behavior change")
+> > > > reverted the commit that exposed these bugs. Josef said he was okay with
+> > > > taking these, will they make it to an upcoming -rc soon?
+> > > 
+> > > Upcoming yes, but based on my experience with pushing patches that are
+> > > not really regressions in late rc's it's unlikely for 4.1.
+> > 
+> > Ok, seeing as these bugs are going to be really hard to trigger now that
+> > the old GFP_FS behavior has been restored, I'm fine with waiting for the
+> > next merge window.
+> > 
+> > Thank you!
 > 
-> > SEEK_HOLE/SEEK_DATA is what you want, as they are page cache
-> > coherent, not extent based operations. And, really if you need it to
-> > really be able to find real holes, then a superblock flag might be a
-> > better way of marking filesystems with the required capability.
+> Chris, would you mind taking these for a spin in your integration branch
+> for the next merge window?
 > 
-> Actually, I wonder if what I want is a kernel_read() that returns ENODATA upon
-> encountering a hole at the beginning of the area to be read.
+> Thanks,
+> -- 
+> Omar
 
-NFS READ_PLUS could also make use of this, but someone needs to actually
-implement it.
+Ping.
 
-Until we have that lseek SEEK_HOLE/DATA is the way to go, and the
-horrible ->bmap hack needs to die ASAP, I can't believe you managed to
-sneak that in in the not too distant past.
+-- 
+Omar

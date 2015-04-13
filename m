@@ -1,44 +1,273 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:59239 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751722AbbDMTyU (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:20382 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754309AbbDMTyh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 15:54:20 -0400
-Received: from pps.filterd (m0004060 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t3DJk97n008976
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 12:54:19 -0700
+	Mon, 13 Apr 2015 15:54:37 -0400
+Received: from pps.filterd (m0004346 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t3DJrkIv021022
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 12:54:37 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1trj5hrkgu-16
+	by mx0a-00082601.pphosted.com with ESMTP id 1trhev0c1q-10
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 12:54:19 -0700
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 12:54:37 -0700
 Received: from facebook.com (2401:db00:20:702c:face:0:2f:0)	by
- mx-out.facebook.com (10.212.232.59) with ESMTP	id
- aa0d6072e21611e49c070002c991e86a-79aa62c0 for <linux-btrfs@vger.kernel.org>;
-	Mon, 13 Apr 2015 12:52:49 -0700
+ mx-out.facebook.com (10.212.236.87) with ESMTP	id
+ aa11e82ce21611e498b00002c9521c9e-2aca32c0 for <linux-btrfs@vger.kernel.org>;
+	Mon, 13 Apr 2015 12:52:50 -0700
 From: Chris Mason <clm@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/4] btrfs: reduce block group cache writeout times during commit
-Date: Mon, 13 Apr 2015 12:52:35 -0700
-Message-ID: <1428954759-1304912-1-git-send-email-clm@fb.com>
+Subject: [PATCH 1/4] btrfs: move struct io_ctl into ctree.h and rename it
+Date: Mon, 13 Apr 2015 12:52:36 -0700
+Message-ID: <1428954759-1304912-2-git-send-email-clm@fb.com>
+In-Reply-To: <1428954759-1304912-1-git-send-email-clm@fb.com>
+References: <1428954759-1304912-1-git-send-email-clm@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Large filesystems with lots of block groups can suffer long stalls during
-commit while we create and send down all of the block group caches.  The
-more blocks groups dirtied in a transaction, the longer these stalls can be.
-Some workloads average 10 seconds per commit, but see peak times much higher.
+We'll need to put the io_ctl into the block_group cache struct, so
+name it struct btrfs_io_ctl and move it into ctree.h
 
-The first problem is that we write and wait for each block group cache
-individually, so we aren't keeping the disk pipeline full.  This patch
-set uses the io_ctl struct to start cache IO, and then waits on it in bulk.
+Signed-off-by: Chris Mason <clm@fb.com>
+---
+ fs/btrfs/ctree.h            | 11 +++++++++
+ fs/btrfs/free-space-cache.c | 55 ++++++++++++++++++---------------------------
+ 2 files changed, 33 insertions(+), 33 deletions(-)
 
-The second problem is that we only allow cache writeout while new modifications
-are blocked during the final stage of commit.  This adds some locking
-so that cache writeout can happen very early in the commit, and any block
-groups that are redirtied will be sent down during the final stages.
-
-With both together, average commit stalls are under a second and our overall
-performance is much smoother.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6bf16d5..e305ccd 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1256,6 +1256,17 @@ struct btrfs_caching_control {
+ 	atomic_t count;
+ };
+ 
++struct btrfs_io_ctl {
++	void *cur, *orig;
++	struct page *page;
++	struct page **pages;
++	struct btrfs_root *root;
++	unsigned long size;
++	int index;
++	int num_pages;
++	unsigned check_crcs:1;
++};
++
+ struct btrfs_block_group_cache {
+ 	struct btrfs_key key;
+ 	struct btrfs_block_group_item item;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index c514820..47c2adb 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -271,18 +271,7 @@ static int readahead_cache(struct inode *inode)
+ 	return 0;
+ }
+ 
+-struct io_ctl {
+-	void *cur, *orig;
+-	struct page *page;
+-	struct page **pages;
+-	struct btrfs_root *root;
+-	unsigned long size;
+-	int index;
+-	int num_pages;
+-	unsigned check_crcs:1;
+-};
+-
+-static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
++static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
+ 		       struct btrfs_root *root, int write)
+ {
+ 	int num_pages;
+@@ -298,7 +287,7 @@ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+ 	    (num_pages * sizeof(u32)) >= PAGE_CACHE_SIZE)
+ 		return -ENOSPC;
+ 
+-	memset(io_ctl, 0, sizeof(struct io_ctl));
++	memset(io_ctl, 0, sizeof(struct btrfs_io_ctl));
+ 
+ 	io_ctl->pages = kcalloc(num_pages, sizeof(struct page *), GFP_NOFS);
+ 	if (!io_ctl->pages)
+@@ -311,12 +300,12 @@ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+ 	return 0;
+ }
+ 
+-static void io_ctl_free(struct io_ctl *io_ctl)
++static void io_ctl_free(struct btrfs_io_ctl *io_ctl)
+ {
+ 	kfree(io_ctl->pages);
+ }
+ 
+-static void io_ctl_unmap_page(struct io_ctl *io_ctl)
++static void io_ctl_unmap_page(struct btrfs_io_ctl *io_ctl)
+ {
+ 	if (io_ctl->cur) {
+ 		kunmap(io_ctl->page);
+@@ -325,7 +314,7 @@ static void io_ctl_unmap_page(struct io_ctl *io_ctl)
+ 	}
+ }
+ 
+-static void io_ctl_map_page(struct io_ctl *io_ctl, int clear)
++static void io_ctl_map_page(struct btrfs_io_ctl *io_ctl, int clear)
+ {
+ 	ASSERT(io_ctl->index < io_ctl->num_pages);
+ 	io_ctl->page = io_ctl->pages[io_ctl->index++];
+@@ -336,7 +325,7 @@ static void io_ctl_map_page(struct io_ctl *io_ctl, int clear)
+ 		memset(io_ctl->cur, 0, PAGE_CACHE_SIZE);
+ }
+ 
+-static void io_ctl_drop_pages(struct io_ctl *io_ctl)
++static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
+ {
+ 	int i;
+ 
+@@ -351,7 +340,7 @@ static void io_ctl_drop_pages(struct io_ctl *io_ctl)
+ 	}
+ }
+ 
+-static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct inode *inode,
++static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, struct inode *inode,
+ 				int uptodate)
+ {
+ 	struct page *page;
+@@ -385,7 +374,7 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct inode *inode,
+ 	return 0;
+ }
+ 
+-static void io_ctl_set_generation(struct io_ctl *io_ctl, u64 generation)
++static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ {
+ 	__le64 *val;
+ 
+@@ -408,7 +397,7 @@ static void io_ctl_set_generation(struct io_ctl *io_ctl, u64 generation)
+ 	io_ctl->cur += sizeof(u64);
+ }
+ 
+-static int io_ctl_check_generation(struct io_ctl *io_ctl, u64 generation)
++static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ {
+ 	__le64 *gen;
+ 
+@@ -437,7 +426,7 @@ static int io_ctl_check_generation(struct io_ctl *io_ctl, u64 generation)
+ 	return 0;
+ }
+ 
+-static void io_ctl_set_crc(struct io_ctl *io_ctl, int index)
++static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
+ {
+ 	u32 *tmp;
+ 	u32 crc = ~(u32)0;
+@@ -461,7 +450,7 @@ static void io_ctl_set_crc(struct io_ctl *io_ctl, int index)
+ 	kunmap(io_ctl->pages[0]);
+ }
+ 
+-static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
++static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
+ {
+ 	u32 *tmp, val;
+ 	u32 crc = ~(u32)0;
+@@ -494,7 +483,7 @@ static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
+ 	return 0;
+ }
+ 
+-static int io_ctl_add_entry(struct io_ctl *io_ctl, u64 offset, u64 bytes,
++static int io_ctl_add_entry(struct btrfs_io_ctl *io_ctl, u64 offset, u64 bytes,
+ 			    void *bitmap)
+ {
+ 	struct btrfs_free_space_entry *entry;
+@@ -524,7 +513,7 @@ static int io_ctl_add_entry(struct io_ctl *io_ctl, u64 offset, u64 bytes,
+ 	return 0;
+ }
+ 
+-static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
++static int io_ctl_add_bitmap(struct btrfs_io_ctl *io_ctl, void *bitmap)
+ {
+ 	if (!io_ctl->cur)
+ 		return -ENOSPC;
+@@ -547,7 +536,7 @@ static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
+ 	return 0;
+ }
+ 
+-static void io_ctl_zero_remaining_pages(struct io_ctl *io_ctl)
++static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
+ {
+ 	/*
+ 	 * If we're not on the boundary we know we've modified the page and we
+@@ -564,7 +553,7 @@ static void io_ctl_zero_remaining_pages(struct io_ctl *io_ctl)
+ 	}
+ }
+ 
+-static int io_ctl_read_entry(struct io_ctl *io_ctl,
++static int io_ctl_read_entry(struct btrfs_io_ctl *io_ctl,
+ 			    struct btrfs_free_space *entry, u8 *type)
+ {
+ 	struct btrfs_free_space_entry *e;
+@@ -591,7 +580,7 @@ static int io_ctl_read_entry(struct io_ctl *io_ctl,
+ 	return 0;
+ }
+ 
+-static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
++static int io_ctl_read_bitmap(struct btrfs_io_ctl *io_ctl,
+ 			      struct btrfs_free_space *entry)
+ {
+ 	int ret;
+@@ -650,7 +639,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ {
+ 	struct btrfs_free_space_header *header;
+ 	struct extent_buffer *leaf;
+-	struct io_ctl io_ctl;
++	struct btrfs_io_ctl io_ctl;
+ 	struct btrfs_key key;
+ 	struct btrfs_free_space *e, *n;
+ 	LIST_HEAD(bitmaps);
+@@ -879,7 +868,7 @@ out:
+ }
+ 
+ static noinline_for_stack
+-int write_cache_extent_entries(struct io_ctl *io_ctl,
++int write_cache_extent_entries(struct btrfs_io_ctl *io_ctl,
+ 			      struct btrfs_free_space_ctl *ctl,
+ 			      struct btrfs_block_group_cache *block_group,
+ 			      int *entries, int *bitmaps,
+@@ -1002,7 +991,7 @@ fail:
+ static noinline_for_stack int
+ write_pinned_extent_entries(struct btrfs_root *root,
+ 			    struct btrfs_block_group_cache *block_group,
+-			    struct io_ctl *io_ctl,
++			    struct btrfs_io_ctl *io_ctl,
+ 			    int *entries)
+ {
+ 	u64 start, extent_start, extent_end, len;
+@@ -1052,7 +1041,7 @@ write_pinned_extent_entries(struct btrfs_root *root,
+ }
+ 
+ static noinline_for_stack int
+-write_bitmap_entries(struct io_ctl *io_ctl, struct list_head *bitmap_list)
++write_bitmap_entries(struct btrfs_io_ctl *io_ctl, struct list_head *bitmap_list)
+ {
+ 	struct list_head *pos, *n;
+ 	int ret;
+@@ -1086,7 +1075,7 @@ static int flush_dirty_cache(struct inode *inode)
+ 
+ static void noinline_for_stack
+ cleanup_write_cache_enospc(struct inode *inode,
+-			   struct io_ctl *io_ctl,
++			   struct btrfs_io_ctl *io_ctl,
+ 			   struct extent_state **cached_state,
+ 			   struct list_head *bitmap_list)
+ {
+@@ -1123,7 +1112,7 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 				   struct btrfs_path *path, u64 offset)
+ {
+ 	struct extent_state *cached_state = NULL;
+-	struct io_ctl io_ctl;
++	struct btrfs_io_ctl io_ctl;
+ 	LIST_HEAD(bitmap_list);
+ 	int entries = 0;
+ 	int bitmaps = 0;
+-- 
+1.8.1
 

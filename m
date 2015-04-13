@@ -1,48 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:34039 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750925AbbDLGfZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Apr 2015 02:35:25 -0400
-Received: by pacyx8 with SMTP id yx8so67445860pac.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Apr 2015 23:35:24 -0700 (PDT)
-Received: from WangdeMacBook-Pro.local ([104.156.239.76])
-        by mx.google.com with ESMTPSA id ef3sm3587628pbc.26.2015.04.11.23.35.22
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sat, 11 Apr 2015 23:35:24 -0700 (PDT)
-Message-ID: <552A1228.4090700@gmail.com>
-Date: Sun, 12 Apr 2015 14:35:20 +0800
-From: Wang Shilong <wangshilong1991@gmail.com>
-MIME-Version: 1.0
+Received: from cantor2.suse.de ([195.135.220.15]:46636 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752319AbbDMNtp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Apr 2015 09:49:45 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D036FACBA
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 13:49:43 +0000 (UTC)
+Date: Mon, 13 Apr 2015 15:49:43 +0200
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix wrong check for btrfs_force_chunk_alloc()
-Content-Type: text/plain; charset=GB2312
+Subject: RFC: plan to allow documentation contributions via github
+Message-ID: <20150413134943.GK25622@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_force_chunk_alloc() return 1 for allocation chunk successfully.
-This problem exists since commit c87f08ca4.
+Hi,
 
-With this patch, we might fix some enospc problems for balances.
+plan: I'd like to allow documentation updates through github web interface.
+"patches via mailinglist" will continue to work unchanged.
 
-Signed-off-by: Wang Shilong <wangshilong1991@gmail.com>
----
- fs/btrfs/relocation.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+The current way to clone the git, edit files, send to mailinglist might
+discourage people who are not developers or not used to working with git
+that way.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index d830853..c453464 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4037,7 +4037,7 @@ restart:
- 	if (trans && progress && err == -ENOSPC) {
- 		ret = btrfs_force_chunk_alloc(trans, rc->extent_root,
- 					      rc->block_group->flags);
--		if (ret == 0) {
-+		if (ret == 1) {
- 			err = 0;
- 			progress = 0;
- 			goto restart;
--- 
-1.7.12.4
+There are some issues around the pull request I'm not yet clear how to
+resolve.  I'd like to keep the git history clean so the pull requests
+will not get merged the usual way. I'll probably merge the
+changes/patches manually and then close the request. There shall be a
+branch to serve as a starting point for any new edits, but will be a
+moving target after the pending patches get merged. I hope this will
+work for the browser-only approach, the merging burden is on my side.
+
+In order to get a working 'Preview' for the changes, we'd have to rename
+all .txt files to .asciidoc. Then you get a nice formatting on the
+github site for free.
+
+You can see an example here:
+https://github.com/kdave/btrfs-progs/blob/test-asciidoc/Documentation/btrfs-balance.asciidoc
+
+The documentation is separated from code so we can afford to relax the
+submission rules, though we'll still need the signed-off-by and names
+for the final commits.
+
+Thanks for feedback.

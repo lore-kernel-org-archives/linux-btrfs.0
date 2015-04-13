@@ -1,59 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51639 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752221AbbDMIHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 04:07:14 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YhZOi-0001Ak-Tj
-	for linux-btrfs@vger.kernel.org; Mon, 13 Apr 2015 10:07:12 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 10:07:12 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 10:07:12 +0200
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:33436 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752093AbbDMLcX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Apr 2015 07:32:23 -0400
+Received: by wgin8 with SMTP id n8so77218037wgi.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 04:32:22 -0700 (PDT)
+Message-ID: <552BA941.1000409@sjeng.org>
+Date: Mon, 13 Apr 2015 13:32:17 +0200
+From: Gian-Carlo Pascutto <gcp@sjeng.org>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Big disk space usage difference, even after defrag, on
- identical data
-Date: Mon, 13 Apr 2015 08:07:04 +0000 (UTC)
-Message-ID: <pan$d15c8$d36a323f$6d766df$721d5a29@cox.net>
-References: <55297D36.8090808@sjeng.org>
-	<20150413040436.GB4711@hungrycats.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+CC: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Subject: Re: Big disk space usage difference, even after defrag, on identical
+ data
+References: <55297D36.8090808@sjeng.org> <20150413040436.GB4711@hungrycats.org>
+In-Reply-To: <20150413040436.GB4711@hungrycats.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo Blaxell posted on Mon, 13 Apr 2015 00:04:36 -0400 as excerpted:
+On 13-04-15 06:04, Zygo Blaxell wrote:
 
-> A database ends up maxing out at about a factor of two space usage
-> because it tends to write short uniform-sized bursts of pages randomly,
-> so we get a pattern a bit like bricks in a wall:
+>> I would think that compression differences or things like
+>> fragmentation or bookending for modified files shouldn't affect
+>> this, because the first filesystem has been
+>> defragmented/recompressed and didn't shrink.
+>> 
+>> So what can explain this? Where did the 66G go?
 > 
->         0 MB AA BB CC DD EE FF GG HH II JJ KK 1 MB half the extents 0 MB
->          LL MM NN OO PP QQ RR SS TT UU V 1 MB the other half
-> 
->         0 MB ALLBMMCNNDOOEPPFQQGRRHSSITTJUUKV 1 MB what the file looks
->         like
-> 
-> Fixing this is non-trivial (it may require an incompatible disk format
-> change).  Until this is fixed, the most space-efficient approach seems
-> to be to force compression (so the maximum extent is 128K instead of
-> 1GB) and never defragment database files ever.
+> There are a few places:  the kernel may have decided your files are
+> not compressible and disabled compression on them (some older kernels
+> did this with great enthusiasm);
 
-... Or set the database file nocow at creation, and don't snapshot it, so 
-overwrites are always in-place.  (Btrfs compression and checksumming get 
-turned off with nocow, but as we've seen, compression isn't all that 
-effective on random-rewrite-pattern files anyway, and databases generally 
-have their own data integrity handling, so neither one is a huge loss, 
-and the in-place rewrite makes for better performance and a more 
-predictable steady-state.)
+As stated in the previous mail, this is 3.19.1. Moreover, the data is
+either uniformly compressible or not at all. Lastly, note that the
+*exact same* mount options are being used on *the exact same kernel*
+with *the exact same data*. Getting a different compressible decision
+given the same inputs would point to bugs.
+
+> your files might have preallocated space from the fallocate system
+> call (which disables compression and allocates contiguous space, so
+> defrag will not touch it).
+
+So defrag -clzo or -czlib won't actually re-compress mostly-continuous
+files? That's evil. I have no idea whether PostgreSQL allocates files
+that way, though.
+
+> 'filefrag -v' can tell you if this is happening to your files.
+
+Not sure how to interpret that. Without "-v", I see most of the (DB)
+data has 2-5 extents per Gigabyte. A few have 8192 extents per Gigabyte.
+
+Comparing to the copy that takes 66G less, there every (compressible)
+file has about 8192 extents per Gigabyte, and the others 5 or 6.
+
+So you may be right that some DB files are "wedged" in a format that
+btrfs can't compress. I forced the files to be rewritten (VACUUM FULL)
+and that "fixed" the problem.
+
+> In practice database files take about double the amount of space
+> they appear to because of extent shingling.
+
+This is what I called "bookending" in the original mail, I didn't know
+the correct name, but I understand doing updates can result in N^2/2 or
+thereabouts disk space usage, however:
+
+> Defragmenting the files helps free space temporarily; however, space
+> usage will quickly grow again until it returns to the steady state
+> around 2x the file size.
+
+As stated in the original mail, the filesystem was *freshly
+defragmented* so that can't have been the cause.
+
+> Until this is fixed, the most space-efficient approach seems to be to
+> force compression (so the maximum extent is 128K instead of 1GB)
+
+Would that fix the problem with fallocated() files?
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+GCP
 

@@ -1,111 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:36835 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753640AbbDMOGq (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:52304 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753304AbbDMOHh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 10:06:46 -0400
-Received: by wizk4 with SMTP id k4so74026045wiz.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 07:06:45 -0700 (PDT)
-Received: from ?IPv6:2a02:1812:1980:9b00:d17b:f93c:8b28:5398? ([2a02:1812:1980:9b00:d17b:f93c:8b28:5398])
-        by mx.google.com with ESMTPSA id a6sm11657847wiy.17.2015.04.13.07.06.44
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 13 Apr 2015 07:06:44 -0700 (PDT)
-Message-ID: <552BCD6F.6080509@sjeng.org>
-Date: Mon, 13 Apr 2015 16:06:39 +0200
-From: Gian-Carlo Pascutto <gcp@sjeng.org>
+	Mon, 13 Apr 2015 10:07:37 -0400
+Date: Mon, 13 Apr 2015 14:07:36 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Michael Tharp <gxti@partiallystapled.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Degraded volume silently fails to mount
+Message-ID: <20150413140736.GC22084@carfax.org.uk>
+References: <552BC9CD.6090406@partiallystapled.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Big disk space usage difference, even after defrag, on identical
- data
-References: <55297D36.8090808@sjeng.org> <pan$f11f0$7ca65f9$58551aba$5ec77500@cox.net>
-In-Reply-To: <pan$f11f0$7ca65f9$58551aba$5ec77500@cox.net>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="32u276st3Jlj2kUU"
+In-Reply-To: <552BC9CD.6090406@partiallystapled.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 13-04-15 07:06, Duncan wrote:
 
->> So what can explain this? Where did the 66G go?
-> 
-> Out of curiosity, does a balance on the actively used btrfs help?
-> 
-> You mentioned defrag -v -r -clzo, but didn't use the -f (flush) or -t 
-> (minimum size file) options.  Does adding -f -t1 help?
+--32u276st3Jlj2kUU
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Unfortunately I can no longer try this, see the other reply why. But the
-problem turned out to be some 1G-sized files, written using 3-5 extents,
-that for whatever reason defrag was not touching.
+On Mon, Apr 13, 2015 at 09:51:09AM -0400, Michael Tharp wrote:
+> Hi list,
+>=20
+> I've got a 4 disk raid1 volume that has one failed disk. I have so
+> far been unable to mount it in degraded mode, but the failure is
+> that "mount" silently does nothing.
 
-> You aren't doing btrfs snapshots of either subvolume, are you?
+   Check to see if systemd is unmounting it immediately after
+mount. This seems to be the usual reason for silent failures to mount
+an FS these days.
 
-No :-) I should've mentioned that.
+   Hugo.
 
-> Defrag should force the rewrite of entire files and take care of this, 
-> but obviously it's not returning to "clean" state.  I forgot what the 
-> default minimum file size is if -t isn't set, maybe 128 MiB?  But a -t1 
-> will force it to defrag even small files, and I recall at least one 
-> thread here where the poster said it made all the difference for him, so 
-> try that.  And the -f should force a filesystem sync afterward, so you 
-> know the numbers from any report you run afterward match the final state.
+>  # btrfs fi sh
+> warning devid 2 not found already
+> Label: 'seneca'  uuid: b9da07f5-c0fd-45ad-861b-d1bcad6cbf4c
+> 	Total devices 4 FS bytes used 581.71GiB
+> 	devid    1 size 931.51GiB used 334.02GiB path /dev/mapper/luks-seneca-1
+> 	devid    3 size 931.51GiB used 334.01GiB path /dev/mapper/luks-seneca-3
+> 	devid    4 size 931.51GiB used 334.01GiB path /dev/mapper/luks-seneca-4
+> 	*** Some devices missing
+>=20
+> Btrfs v3.18.1
+>  # mount -t btrfs -o degraded /dev/mapper/luks-seneca-1 /seneca
+>  # echo $?
+> 0
+>  # ls /seneca/
+>  # grep seneca /proc/mounts
+>  # dmesg |tail
+> [   84.955467] BTRFS: device label seneca devid 1 transid 1753 /dev/dm-4
+> [   87.926347] BTRFS: device label seneca devid 4 transid 1753 /dev/dm-5
+> [  107.069109] BTRFS: device label seneca devid 3 transid 1753 /dev/dm-6
+> [  195.267046] BTRFS info (device dm-6): allowing degraded mounts
+> [  195.267094] BTRFS info (device dm-6): disk space caching is enabled
+> [  195.267133] BTRFS: has skinny extents
+> [  195.277615] BTRFS warning (device dm-6): devid 2 missing
+> [  781.160250] BTRFS info (device dm-6): allowing degraded mounts
+> [  781.160270] BTRFS info (device dm-6): disk space caching is enabled
+> [  781.160286] BTRFS: has skinny extents
+>  # uname -a
+> Linux ambrosia.homeslice 3.19.3-200.fc21.x86_64 #1 SMP Thu Mar 26
+> 21:39:42 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>  # btrfs --version
+> Btrfs v3.18.1
+>=20
+>=20
+> Any ideas?
 
-Reading the corresponding manual, the -t explanation says that "any
-extent bigger than this size will be considered already defragged". So I
-guess setting -t1 might've fixed the problem too...but after checking
-the source, I'm not so sure.
+--=20
+Hugo Mills             | What's a Nazg=FBl like you doing in a place like t=
+his?
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                                Ill=
+iad
 
-I didn't find the -t default in the manpages - after browsing through
-the source, the default is in the kernel:
-https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/btrfs/ioctl.c#L1268
-(Not sure what units those are.)
+--32u276st3Jlj2kUU
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-I wonder if this is relevant:
-https://github.com/torvalds/linux/blob/4f671fe2f9523a1ea206f63fe60a7c7b3a56d5c7/fs/btrfs/ioctl.c#L2572
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-This seems to reset the -t flag if compress (-c) is set? This looks a
-bit fishy?
+iQIcBAEBAgAGBQJVK82nAAoJEFheFHXiqx3kraMP/2fHZykTjX9e7nCIQF8r4V7/
+pm08K0YHJunIKoRPCaQLYxbUl5IBVKO3BPQSVaUD5N5zjK6K9RFywGBwX7Rqdcl+
+xmRPftB1vcTXkkaEjBW/HMsjkfTKV/wMRbjtZtaeg816RJTDkkGNZWanpQ/0Rmsx
+zc8vGzz5cYSrMmUkLy8Q1LQlZUuyYykv3Vc85Eaer5aXECgWTBKec8XhXsnI8RLK
+P/t+ICmKya4UKBULorkip6dSfbep+5mfqDSiWFd7BHw0hNnbORIQA1HGgKYoZG/Y
+ay1syhLLdKM+6HJqkPmufqEGG0hQYgHUQswve212BFnm2nyWiPMctyyLUdtdVYIo
+HAQaQAm+qlvK5jXjKdzSHT0ubxYja3Os2A6Ia7MEnGrUxvbCr02XezwpYjQughis
+yHsiTILZXF+c4RarAsBQy/sBEYQ+gc8rVLogiDdqh1m75Bq2p6lGzQhx3pafmCiw
+3D9aQr7Nbd4d/lqJ56BuuwNedbtddfG/E0lklW+dqD8nJrsjXNXjDm/PyQRLHRwk
+GKbFUULSDtnpUmEhtTi7fXFE0STpw7Bf2JIP7DQ/imvb4wAddTmIVhEBhFRY2xsL
+blhUxcxOMOLYWEWCMK0COlIp5UyntLDgD201uhaUvE/2To+/Nvwar+2Qyu0xc9vG
+P//SrvDwBWTC7ohdELVw
+=hecN
+-----END PGP SIGNATURE-----
 
-> Meanwhile, you may consider using the nocow attribute on those database 
-> files.  It will disable compression on them,
-
-I'm using btrfs specifically to get compression, so this isn't an option.
-
-> While initial usage will  be higher due to the lack of compression,
-> as you've discovered, over time, on an actively updated database,
-> compression isn't all that effective anyway.
-
-I don't see why. If you're referring to the additional overhead of
-continuously compressing and decompressing everything - yes, of course.
-But in my case I have a mostly-append workload to a huge amount of
-fairly compressible data that's on magnetic storage, so compression is a
-win in disk space and perhaps even in performance.
-
-I'm well aware of the many caveats in using btrfs for databases -
-they're well documented and although I much appreciate your extended
-explanation, it wasn't new to me.
-
-It turns out that if your dataset isn't update heavy (so it doesn't
-fragment to begin with), or has to be queried via indexed access (i.e.
-mostly via random seeks), the fragmentation doesn't matter much anyway.
-Conversely, btrfs appears to have better sync performance with multiple
-threads, and allows one to disable part of the partial-page-write
-protection logic in the database (full_page_writes=off for PostgreSQL),
-because btrfs is already doing the COW to ensure those can't actually
-happen [1].
-
-The net result is a *boost* from about 40 tps (ext4) to 55 tps (btrfs),
-which certainly is contrary to popular wisdom. Maybe btrfs would fall
-off eventually as fragementation does set in gradually, but given that
-there's an offline defragmentation tool that can run in the background,
-I don't care.
-
-[1] I wouldn't be too surprised if database COW, which consists of
-journal-writing a copy of the data out of band, then rewriting it again
-in the original place, is actually functionally equivalent do disabling
-COW in the database and running btrfs + defrag. Obviously you shouldn't
-keep COW enabled in btrfs *AND* the DB, requiring all data to be copied
-around at least 3 times...which I'm afraid almost everyone does because
-it's the default...
-
--- 
-GCP
+--32u276st3Jlj2kUU--

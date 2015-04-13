@@ -1,73 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40855 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:42198 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750708AbbDMEM5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 00:12:57 -0400
+	id S1750786AbbDMFGo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Apr 2015 01:06:44 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YhVjw-0000mj-6c
-	for linux-btrfs@vger.kernel.org; Mon, 13 Apr 2015 06:12:52 +0200
+	id 1YhWa1-0001lN-QT
+	for linux-btrfs@vger.kernel.org; Mon, 13 Apr 2015 07:06:41 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 06:12:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 07:06:41 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 06:12:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 07:06:41 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mlocate/updatedb and btrfs subvolume mounts
-Date: Mon, 13 Apr 2015 04:12:41 +0000 (UTC)
-Message-ID: <pan$3396c$51a072b0$71501292$8af8c3ee@cox.net>
-References: <CADw2B2NDTqOXQdh+xBTfk3=MfYJUtGAvQ-B4RaADA4XXJ30OZw@mail.gmail.com>
-	<20150412201107.GA4711@hungrycats.org>
+Subject: Re: Big disk space usage difference, even after defrag, on
+ identical data
+Date: Mon, 13 Apr 2015 05:06:36 +0000 (UTC)
+Message-ID: <pan$f11f0$7ca65f9$58551aba$5ec77500@cox.net>
+References: <55297D36.8090808@sjeng.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo Blaxell posted on Sun, 12 Apr 2015 16:11:07 -0400 as excerpted:
+Gian-Carlo Pascutto posted on Sat, 11 Apr 2015 21:59:50 +0200 as
+excerpted:
 
-> Since these are simple binds (not rbinds), they don't see any other
-> filesystems, period.  They do see btrfs subvolumes, though.
+> That's a 66G difference for the same data with the same compress option.
+> The used size here is much more in line with what I'd have expected
+> given the nature of the data.
+> 
+> I would think that compression differences or things like fragmentation
+> or bookending for modified files shouldn't affect this, because the
+> first filesystem has been defragmented/recompressed and didn't shrink.
+> 
+> So what can explain this? Where did the 66G go?
 
-Tho... for systemd users...
+Out of curiosity, does a balance on the actively used btrfs help?
 
-Do note that systemd plays with the kernel's shared-subtree "private" 
-default, switching it to shared for /.  The idea is that this makes 
-containers "just work", since mounts on / get propagated into containers 
-as well.  Unfortunately, the kernel default is private because that's the 
-way the kernel behaved before the shared-subtree feature was introduced, 
-and systemd changed that, breaking a lot of assumptions and scripts, 
-including my backup script, along the way.
+You mentioned defrag -v -r -clzo, but didn't use the -f (flush) or -t 
+(minimum size file) options.  Does adding -f -t1 help?
 
-I don't use subvolumes, but do use a mount --bind of / elsewhere, so I 
-can backup /, ALL of / (including subtrees hidden on the primary mount by 
-overmounts), without any danger of crossing mount-points, since the bind-
-mount was always private.  I've been doing this since well before I 
-switched to either btrfs or systemd, and probably since before the kernel 
-and mount introduced the shared-subtree feature, and it has worked very 
+You aren't doing btrfs snapshots of either subvolume, are you?
+
+I'm not sure this is related to the answer to your question, since you 
+did defrag, but it might be, and it's good to know when dealing with 
+database files on btrfs in any case.
+
+Btrfs is in general a copy-on-write (COW) based filesystem.  Random 
+rewrite pattern files, database and VM image files being prime examples, 
+typically HEAVILY fragment on COW filesystems, since any rewrite forces a 
+copy of the rewritten data block elsewhere.  The often rather large 
+original extents get holes, but remained pinned by the existing data 
+still remaining in them that hasn't been rewritten.  This is analogous to 
+the way databases often rewrite records but leave holes behind that 
+aren't immediately cleaned up, only it's occurring at the filesystem 
+extent level.  Only after all the data in an extent has been rewritten, 
+can the extent itself be unpinned and returned to the free space pool.
+
+Defrag should force the rewrite of entire files and take care of this, 
+but obviously it's not returning to "clean" state.  I forgot what the 
+default minimum file size is if -t isn't set, maybe 128 MiB?  But a -t1 
+will force it to defrag even small files, and I recall at least one 
+thread here where the poster said it made all the difference for him, so 
+try that.  And the -f should force a filesystem sync afterward, so you 
+know the numbers from any report you run afterward match the final state.
+
+Meanwhile, you may consider using the nocow attribute on those database 
+files.  It will disable compression on them, but rewrites should then 
+occur in-place, so you don't get the fragmentation and extent usage holes 
+and duplication that you'd have otherwise.  It'll also disable btrfs 
+checksumming, but mature databases already have their own error detection 
+and correction system, since they don't normally run on filesystems that 
+provide that sort of service like btrfs does.  While initial usage will 
+be higher due to the lack of compression, as you've discovered, over 
+time, on an actively updated database, compression isn't all that 
+effective anyway.  And while usage may be a bit higher at least 
+originally, it should be stable, but for expanding the actual size of the 
+database, anyway.
+
+But there's a couple of caveats to nocow.  First, in ordered to be 
+properly effective, it needs to be set on a file while it's still empty.  
+The most effective way to do this is to set nocow on the empty parent 
+directory, then copy the nocow-target files into it so they inherit the 
+nocow attribute as they are created, before they actually have any data.
+
+The second pertains to btrfs snapshots.  Snapshots lock the existing file 
+in place, effectively making an otherwise nocow file cow1 -- the first 
+write to an existing file block will cow it, but after that, further 
+writes to the same block will rewrite in-place... until the next 
+snapshot, of course.  So try to minimize the number of snapshots done to 
+nocow files, and if you do snapshot them, defrag them once in awhile as 
 well.
-
-But then systemd came around and decided that the "private" default-mount 
-wasn't good enough for systemd, and that it was now going to default to 
-shared.  Of course that broke existing solutions all over the place, but 
-as we know, care to keep from breaking existing solutions isn't a 
-priority, to say the least, with systemd, so...
-
-So I had to add "private" to my / mount options, so mounting the backup 
-partition on /mnt/bk wouldn't cause it to mount on the already bind-
-mounted /mnt/rootbind that I was trying to backup, as well.
-
-Link to a systemd-devel thread describing the change (with a link to the 
-commit) and the systemd-ish way to undo it using a unit file (as opposed 
-to the option I added to the fstab / entry instead).
-
-http://lists.freedesktop.org/archives/systemd-devel/2013-
-February/008558.html
-
-Also see the mount(8) manpage under shared subtree operations, and the 
-kernel documentation file in Documentation/filesystems/sharedsubtree.txt.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

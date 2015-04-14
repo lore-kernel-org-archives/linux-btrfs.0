@@ -1,35 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49949 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754166AbbDMOrp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 10:47:45 -0400
-Date: Mon, 13 Apr 2015 16:47:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: harshad shirwadkar <harshadshirwadkar@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
-Subject: Re: [GSoC 2015] Btrfs content based storage
-Message-ID: <20150413144743.GL25622@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54618 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751664AbbDNHhW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Apr 2015 03:37:22 -0400
+Received: from athena.localnet (ns-local [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 82ADAEC22
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 17:37:18 +1000 (AEST)
+From: Russell Coker <russell@coker.com.au>
+To: linux-btrfs@vger.kernel.org
+Subject: directory defrag
+Date: Tue, 14 Apr 2015 07:37:17 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201504140737.17826.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 27, 2015 at 10:58:42AM -0400, harshad shirwadkar wrote:
-> I am a CS graduate student from Carnegie Mellon University. I am
-> hoping to build the feature - "Content based storage mode" under
-> Google Summer of Code 2015. This project has also been listed as an
-> idea on BTRFS ideas page. However, I have not found a mentor yet, and
-> without a mentor I can not participate in the program. Please let me
-> know if anybody is interested in mentoring this project. Here is a
-> link to my proposal:
-> 
-> http://harshadjs.github.io/2015/03/27/Fedora-BTRFS-Content-Storage-Mode/
+The current defragmentation options seem to only support defragmenting named 
+files/directories or a recursive defragmentation of files and directories.
 
-This probably has a significant overlap with the in-band dedup work from
-Liu bo [1]. Your proposal expects an interface to look up the data by
-hash which hasn't been implemented afaik.
+I'd like to recursively defragment directories.  One of my systems has a large 
+number of large files, the files are write-once and read performance is good 
+enough.  However performance of "ls -al" is often very poor, presumably due to 
+metadata fragmentation.
 
-[1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/34097 (v10)
+The other thing I'd still like is the ability to force all metadata allocation 
+to be from specified disks.  I'd like to have a pair of SSDs for RAID-1 storage 
+of metadata and a set of hard drives for RAID-1 storage of data.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

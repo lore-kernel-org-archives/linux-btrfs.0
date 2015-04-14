@@ -1,33 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40828 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753291AbbDNMxb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Apr 2015 08:53:31 -0400
-Date: Tue, 14 Apr 2015 14:53:29 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Russell Coker <russell@coker.com.au>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: directory defrag
-Message-ID: <20150414125328.GO25622@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201504140737.17826.russell@coker.com.au>
+Received: from mail-ob0-f173.google.com ([209.85.214.173]:35668 "EHLO
+	mail-ob0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753922AbbDNPWL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Apr 2015 11:22:11 -0400
+Received: by obbfy7 with SMTP id fy7so4191996obb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 08:22:10 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201504140737.17826.russell@coker.com.au>
+In-Reply-To: <20150413144743.GL25622@twin.jikos.cz>
+References: <CAD+ocbzxMXNGYKOmUNnVfj297brVsyjQ=vPGs7hJ_9aHNOhdVA@mail.gmail.com>
+ <20150413144743.GL25622@twin.jikos.cz>
+From: harshad shirwadkar <harshadshirwadkar@gmail.com>
+Date: Tue, 14 Apr 2015 11:21:49 -0400
+Message-ID: <CAD+ocbwDR+be-Lf6LmZGrUhVA5D5Ds2q9LV=6xXgdPZ3tfQs4A@mail.gmail.com>
+Subject: Re: [GSoC 2015] Btrfs content based storage
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc: Liu Bo <bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 14, 2015 at 07:37:17AM +0000, Russell Coker wrote:
-> The current defragmentation options seem to only support defragmenting named 
-> files/directories or a recursive defragmentation of files and directories.
-> 
-> I'd like to recursively defragment directories.  One of my systems has a large 
-> number of large files, the files are write-once and read performance is good 
-> enough.  However performance of "ls -al" is often very poor, presumably due to 
-> metadata fragmentation.
+Thanks David and that's true: there will be a large overlap with dedup
+work from Liu Bo. In fact, a few days after I sent the first mail, I
+got in touch with Liu and he agreed upon mentoring. So, I am all set
+now and will start working on the project in May end..
 
-Ie. the directory metadata in the b-tree. That's possible, but not all
-of the code is there. So fare only whole-tree defragmentation is
-implemented, ie. the extent tree or any subvolume tree. We'd have to
-extend the defrag api to take a key range and then use it to span the
-directory key range.
+Best,
+Harshad.
+
+On Mon, Apr 13, 2015 at 10:47 AM, David Sterba <dsterba@suse.cz> wrote:
+> On Fri, Mar 27, 2015 at 10:58:42AM -0400, harshad shirwadkar wrote:
+>> I am a CS graduate student from Carnegie Mellon University. I am
+>> hoping to build the feature - "Content based storage mode" under
+>> Google Summer of Code 2015. This project has also been listed as an
+>> idea on BTRFS ideas page. However, I have not found a mentor yet, and
+>> without a mentor I can not participate in the program. Please let me
+>> know if anybody is interested in mentoring this project. Here is a
+>> link to my proposal:
+>>
+>> http://harshadjs.github.io/2015/03/27/Fedora-BTRFS-Content-Storage-Mode/
+>
+> This probably has a significant overlap with the in-band dedup work from
+> Liu bo [1]. Your proposal expects an interface to look up the data by
+> hash which hasn't been implemented afaik.
+>
+> [1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/34097 (v10)

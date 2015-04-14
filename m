@@ -1,59 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f176.google.com ([209.85.220.176]:33661 "EHLO
-	mail-qk0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750998AbbDUC0Y (ORCPT
+Received: from mail-la0-f51.google.com ([209.85.215.51]:33445 "EHLO
+	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754473AbbDNKo7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 22:26:24 -0400
-Received: by qkx62 with SMTP id 62so199670684qkx.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 19:26:23 -0700 (PDT)
+	Tue, 14 Apr 2015 06:44:59 -0400
+Received: by layy10 with SMTP id y10so4506588lay.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 03:44:58 -0700 (PDT)
+From: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+Subject: [PATCH] btrfs-progs: enforce chroot for btrfs receive
+Date: Tue, 14 Apr 2015 13:44:32 +0300
+Message-Id: <217a387d55b5828a82fadad98dd88a959e7a13ed.1429008167.git.lauri.vosandi@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <5535119E.3050005@redhat.com>
-References: <1429507996-28224-1-git-send-email-xuw2015@gmail.com>
-	<5535119E.3050005@redhat.com>
-Date: Tue, 21 Apr 2015 10:26:23 +0800
-Message-ID: <CAPBX1x+0kHqhWeq91X3f1XV7RR5=GrOjs1c7t7k+P+nyyk2_XQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: fix btrfs quota rescan failed on PPC64 arch
-From: =?UTF-8?B?546L5pet?= <xuw2015@gmail.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for review.
+This patch forces btrfs receive to issue chroot before
+parsing the btrfs stream to confine the process and
+minimize damage that could be done via malicious
+btrfs stream.
 
-On Mon, Apr 20, 2015 at 10:47 PM, Eric Sandeen <sandeen@redhat.com> wrote:
-> On 4/20/15 12:33 AM, xuw2015@gmail.com wrote:
->> From: George Wang <xuw2015@gmail.com>
-<snip>
->> This means the value "_IOW*" will be negative when we store it in the int
->> variables. Such as the "BTRFS_IOC_QGROUP_CREATE", it will be "0x4010942e" on
->> X86_64, but "0x8010942e" on PPC64.
->> Notice that the IOC values are the "unsigned long" type, so we use the
->> "unsigned long" to store it, and this can insure the comparison between the
->> variable and BTRFS_IOC_* valid.
->
-> Looks good - very strange that the manpage states that the interface takes
-> an int.  :(
+Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
+---
+ cmds-receive.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
 
-I think maybe the manpage of ioctl is stale. But int can also work
-except for comparison.
-And fortunately the kernel interface is unsigned int, such as btrfs:
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 44ef27e..8be92ea 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -867,15 +867,17 @@ static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd,
+ 		goto out;
+ 	}
+ 
+-	/*
+-	 * find_mount_root returns a root_path that is a subpath of
+-	 * dest_dir_full_path. Now get the other part of root_path,
+-	 * which is the destination dir relative to root_path.
+-	 */
+-	r->dest_dir_path = dest_dir_full_path + strlen(r->root_path);
+-	while (r->dest_dir_path[0] == '/')
+-		r->dest_dir_path++;
++	if (chroot(dest_dir_full_path)) {
++		ret = -errno;
++		fprintf(stderr,
++			"ERROR: failed to chroot to %s, %s\n",
++			dest_dir_full_path,
++			strerror(-ret));
++		goto out;
++	}
+ 
++	r->root_path = r->dest_dir_path = strdup("/");
++	
+ 	ret = subvol_uuid_search_init(r->mnt_fd, &r->sus);
+ 	if (ret < 0)
+ 		goto out;
+-- 
+1.9.1
 
-5217 long btrfs_ioctl(struct file *file, unsigned int
-5218         cmd, unsigned long arg)
-
->
-> But - an "unsigned int" would be enough, right?  I don't think it needs
-> to be an unsigned long.  *shrug*
-
-unsigned int will be OK. But the btrfs-progs is user space, so the
-ioctl I think it should be
-consistent with the glibc:
-/usr/include/sys/ioctl.h:extern int ioctl (int __fd, unsigned long int
-__request, ...) __THROW;
-unsigned long int is same with unsigned long. So maybe the unsigned
-long will be better?
-
-Thanks,
-George

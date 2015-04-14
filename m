@@ -1,35 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54618 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751664AbbDNHhW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Apr 2015 03:37:22 -0400
-Received: from athena.localnet (ns-local [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 82ADAEC22
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 17:37:18 +1000 (AEST)
-From: Russell Coker <russell@coker.com.au>
-To: linux-btrfs@vger.kernel.org
-Subject: directory defrag
-Date: Tue, 14 Apr 2015 07:37:17 +0000
+Received: from www.humilis.net ([80.100.93.5]:36447 "EHLO panda.humilis.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752498AbbDNIKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Apr 2015 04:10:37 -0400
+Date: Tue, 14 Apr 2015 10:03:04 +0200
+From: Sander <sander@humilis.net>
+To: Russell Coker <russell@coker.com.au>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: directory defrag
+Message-ID: <20150414080304.GA25393@panda>
+Reply-To: sander@humilis.net
+References: <201504140737.17826.russell@coker.com.au>
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201504140737.17826.russell@coker.com.au>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201504140737.17826.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current defragmentation options seem to only support defragmenting named 
-files/directories or a recursive defragmentation of files and directories.
+Russell Coker wrote (ao):
+> The current defragmentation options seem to only support defragmenting
+> named files/directories or a recursive defragmentation of files and
+> directories.
+> 
+> I'd like to recursively defragment directories.
 
-I'd like to recursively defragment directories.  One of my systems has a large 
-number of large files, the files are write-once and read performance is good 
-enough.  However performance of "ls -al" is often very poor, presumably due to 
-metadata fragmentation.
+find / -xdev -type d -execdir btrfs filesystem defrag -c {} +
 
-The other thing I'd still like is the ability to force all metadata allocation 
-to be from specified disks.  I'd like to have a pair of SSDs for RAID-1 storage 
-of metadata and a set of hard drives for RAID-1 storage of data.
+Would that work for you?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+	Sander

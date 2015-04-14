@@ -1,72 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52101 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751339AbbDNEGP convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Apr 2015 00:06:15 -0400
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'Chris Mason'" <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-References: <cover.1428554022.git.zhaolei@cn.fujitsu.com> <4a2f9c8918b1386ef6296d52ee4e331b7099b247.1428554023.git.zhaolei@cn.fujitsu.com> <552BD8C1.3000400@fb.com>
-In-Reply-To: <552BD8C1.3000400@fb.com>
-Subject: RE: [PATCH 8/9] btrfs: wait for delayed iputs on no space
-Date: Tue, 14 Apr 2015 12:06:02 +0800
-Message-ID: <03bd01d07668$52e0e090$f8a2a1b0$@cn.fujitsu.com>
+Received: from moh3-ve2.go2.pl ([193.17.41.86]:35286 "EHLO moh3-ve1.go2.pl"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1753376AbbDNMWL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Apr 2015 08:22:11 -0400
+Received: from moh3-ve1.go2.pl (unknown [10.0.0.157])
+	by moh3-ve1.go2.pl (Postfix) with ESMTP id 23AF1AF697A
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 14:22:01 +0200 (CEST)
+Received: from unknown (unknown [10.0.0.108])
+	by moh3-ve1.go2.pl (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2015 14:22:00 +0200 (CEST)
+Date: Tue, 14 Apr 2015 14:21:49 +0200
+From: Piotr Szymaniak <szarpaj@grubelek.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs balance {,meta}data to raid5 not working?
+Message-ID: <20150414122149.GA2056@wloczykij>
+References: <20150410221049.GE9470@wloczykij>
+ <pan$577b$aa7780a2$54c1424a$5329065c@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="xHFwDpU9dbj6ez1V"
+In-Reply-To: <pan$577b$aa7780a2$54c1424a$5329065c@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris
 
-> -----Original Message-----
-> From: Chris Mason [mailto:clm@fb.com]
-> Sent: Monday, April 13, 2015 10:55 PM
-> To: Zhaolei; linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 8/9] btrfs: wait for delayed iputs on no space
-> 
-> On 04/09/2015 12:34 AM, Zhaolei wrote:
-> > From: Zhao Lei <zhaolei@cn.fujitsu.com>
-> >
-> > btrfs will report no_space when we run following write and delete file
-> > loop:
-> >  # FILE_SIZE_M=[ 75% of fs space ]
-> >  # DEV=[ some dev ]
-> >  # MNT=[ some dir ]
-> >  #
-> >  # mkfs.btrfs -f "$DEV"
-> >  # mount -o nodatacow "$DEV" "$MNT"
-> >  # for ((i = 0; i < 100; i++)); do dd if=/dev/zero of="$MNT"/file0
-> > bs=1M count="$FILE_SIZE_M"; rm -f "$MNT"/file0; done  #
-> >
-> > Reason:
-> >  iput() and evict() is run after write pages to block device, if
-> > write pages work is not finished before next write, the "rm"ed space
-> > is not freed, and caused above bug.
-> >
-> > Fix:
-> >  We can add "-o flushoncommit" mount option to avoid above bug, but
-> > it have performance problem. Actually, we can to wait for on-the-fly
-> > writes only when no-space happened, it is which this patch do.
-> 
-> Can you please change this so we only do this flush if the first commit doesn't
-> free up enough space?  I think this is going to have a performance impact as
-> the FS fills up.
-> 
-btrfs_wait_ordered_roots() can only ensure that all bio are finished,
-and relative iputs are added into delayed_iputs in end_io.
-And we need 2 commit to make free space accessable:
-One for run delayed_iputs(), and another for unpin.
+--xHFwDpU9dbj6ez1V
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It is why I put above line to first commit, to ensure we have
-enough commit operation to make free space accessable.
+On Sat, Apr 11, 2015 at 02:14:44AM +0000, Duncan wrote:
+> But you could try the latest 4.0-rc7+ kernel and see if it works with=20
+> that, yet.
 
-It is only called then the disk is almost full, and have no performance impact
-in most case(disk not full).
-
-Another way is to call btrfs_wait_ordered_roots() after first commit() try,
-but give it addition commit().
-
-Thanks
-Zhaolei
+Will try that.
 
 
+> 2b) If instead your intention was to convert it to raid5 before upgrading=
+=20
+> it to three devices, just add the third device first, then do the balance-
+> conversion.  It'll save quite some time over effectively doing the=20
+> balance-conversion twice.
+
+I want to grow it later to 3 or 4 devices. Now it is still a test setup
+and I want to try convert to raid5 and also check +- time it takes (and
+if it will end OK).
+
+
+Piotr Szymaniak.
+--=20
+ - Zam=C3=B3wi=C5=82e=C5=9B baby-sitterk=C4=99? - chcia=C5=82a wiedzie=C4=
+=87 Maggie.
+  -- Graham Masterton, "Zakl=C4=99ci" (prze=C5=82o=C5=BCy=C5=82 Juliusz Gar=
+ztecki)
+
+--xHFwDpU9dbj6ez1V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJVLQZdAAoJEEMpAov1cw9lBB8P/R/lbfl5YXGXgRhKzx2T1uRM
+KcrYWCm7waOINpEiSzecD/D9JvNZxWaWuCqZW/sYP4XKaSSiYTZtXEl5MyCHiBXO
+cIwTc2cei8ieyA+Zo8SpZ8zU9sz3BzkBTtblUePxmlCPJVzLRYyuvSGSqPN+PS5U
+Fcj2wGzzzvf5tsVjD2J4v1IF1ZVmME7DkPJmANPSwDiesbSYfnT12bV4IAlZi8pL
+wtht2QvBBStu9Tx5zlxKr5SHdoFiO4GAwAXpIjuP0QBUaaERqzjYNJBBUHeifWaZ
++Op9vEpTCrKwj9NgqZUubMRB2vk+QeGKs+4tzR4H+pUAadXebB5v+J45cs78kLpY
+7ldEFMXc2mHRcUTZzJb+RzFYvlArKL5ySekcJhkalgO1Y1WWbi823zi6SfRVMF1v
+8R+zatB1A6hj9sbP0rXWVks9t8Vh4MgeJRXZjx7vZqAEYfIpEpLKI2jKIJYM+5Ya
+RIXxYsVAQ9iZDGCw2/SoPSzW0sQZtg1OSfjo9fg2kvcuRPQQQbv54W/U6KGry2AI
+Dxm1BPe1wDDzZEOMsuyKrqQGLdNwmN6QEQIWjK04s6sabwWx4r6yLj6A2TggK7vg
+oV01Q0VtqtPgKsRzokWDRsxaLnrZWAH3SqCbBcu34fixDJyzIcIb3bBj/FNokmTe
+I4ue2zN6b+VSfc6qUzcW
+=cIEg
+-----END PGP SIGNATURE-----
+
+--xHFwDpU9dbj6ez1V--

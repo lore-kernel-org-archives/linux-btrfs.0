@@ -1,53 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from asuka.romanrm.net ([128.199.93.76]:40617 "EHLO
-	asuka.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750755AbbDPEyk (ORCPT
+Received: from mail-qc0-f181.google.com ([209.85.216.181]:33675 "EHLO
+	mail-qc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751589AbbDPXdt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Apr 2015 00:54:40 -0400
-Date: Thu, 16 Apr 2015 09:54:40 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Matt Grant <matt@mattgrant.net.nz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs-cleaner FS DoS issues
-Message-ID: <20150416095440.4da97eae@natsu>
-In-Reply-To: <20150416014135.6FB5841C60@mx.anathoth.net>
-References: <20150416014135.6FB5841C60@mx.anathoth.net>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/GWF=UD5kCSyuPGzol.eM3Hf"; protocol="application/pgp-signature"
+	Thu, 16 Apr 2015 19:33:49 -0400
+Received: by qcrf4 with SMTP id f4so15599401qcr.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2015 16:33:49 -0700 (PDT)
+Received: from ?IPv6:2001:470:8:414::10? (wolf.welp.gs. [2001:470:8:414::10])
+        by mx.google.com with ESMTPSA id n13sm6742373qkh.8.2015.04.16.16.33.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 16 Apr 2015 16:33:48 -0700 (PDT)
+Message-ID: <553046DA.7090809@gmail.com>
+Date: Thu, 16 Apr 2015 19:33:46 -0400
+From: Dan Merillat <dan.merillat@gmail.com>
+MIME-Version: 1.0
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: have restore set atime/mtime
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/GWF=UD5kCSyuPGzol.eM3Hf
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+The inode is already found, use the data and make restore friendlier.
 
-On Thu, 16 Apr 2015 13:41:21 +1200
-Matt Grant <matt@mattgrant.net.nz> wrote:
+Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
+---
+ cmds-restore.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-> Hi!
->=20
-> When ever I delete a large snapshot this stalls all the processes on my s=
-ystem for 30 minutes plus, kernel v19.2. Btrfs-cleaner is taking 100% CPU w=
-hen completely stalled. Every few minutes its say 99.8% and satall abates a=
-nd=C2=A0 processes/io happen.
+diff --git a/cmds-restore.c b/cmds-restore.c
+index d2fc951..95ac487 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -567,12 +567,22 @@ static int copy_file(struct btrfs_root *root, int
+fd, struct btrfs_key *key,
+ 		fprintf(stderr, "Ran out of memory\n");
+ 		return -ENOMEM;
+ 	}
++	struct timespec times[2];
++	int times_ok=0;
 
-By any chance do you use this on SSD with TRIM enabled?
+ 	ret = btrfs_lookup_inode(NULL, root, path, key, 0);
+ 	if (ret == 0) {
+ 		inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				    struct btrfs_inode_item);
+ 		found_size = btrfs_inode_size(path->nodes[0], inode_item);
++		struct btrfs_timespec bts;
++		read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item,
+atime, &bts);
++		times[0].tv_sec=bts.sec;
++		times[0].tv_nsec=bts.nsec;
++		read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item,
+atime, &bts);
++		times[1].tv_sec=bts.sec;
++		times[1].tv_nsec=bts.nsec;
++		times_ok=1;
+ 	}
+ 	btrfs_release_path(path);
 
---=20
-With respect,
-Roman
+@@ -680,6 +690,8 @@ set_size:
+ 		if (ret)
+ 			return ret;
+ 	}
++	if (times_ok)
++		futimens(fd, times);
+ 	return 0;
+ }
 
---Sig_/GWF=UD5kCSyuPGzol.eM3Hf
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+-- 
+2.1.4
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlUvQJEACgkQTLKSvz+PZwiPNACcChfuCFJpLU70g02wCh4eOzau
-3loAn0iB90A0AJ4WqZVoPqPOUN8TldxC
-=GPXc
------END PGP SIGNATURE-----
-
---Sig_/GWF=UD5kCSyuPGzol.eM3Hf--

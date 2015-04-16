@@ -1,59 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:25587 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S964862AbbDOSdY (ORCPT
+Received: from 254.102.124.202.static.netspeed.net.nz ([202.124.102.254]:45715
+	"EHLO mx.anathoth.net" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751402AbbDPBlk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Apr 2015 14:33:24 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t3FIWeci025433
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2015 11:33:24 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1tsvqb85fr-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2015 11:33:24 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: log entire range for FULL_SYNC
-Date: Wed, 15 Apr 2015 14:33:21 -0400
-Message-ID: <1429122801-3096-1-git-send-email-jbacik@fb.com>
+	Wed, 15 Apr 2015 21:41:40 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx.anathoth.net (Postfix) with ESMTP id 6FB5841C60
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2015 13:41:35 +1200 (NZST)
+Received: from [49.224.132.98] (98.132.224.49.dyn.cust.vf.net.nz [49.224.132.98])
+	(Authenticated sender: matt@mattgrant.net.nz)
+	by mx.anathoth.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2015 13:41:29 +1200 (NZST)
+Date: Thu, 16 Apr 2015 13:41:21 +1200
+Subject: Btrfs-cleaner FS DoS issues
+From: Matt Grant <matt@mattgrant.net.nz>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+Message-Id: <20150416014135.6FB5841C60@mx.anathoth.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My log writes test uncovered a corruption that could happen with fsx'es mmap
-write.  It does an msync(MS_SYNC) after every mmap write, which turns into a
-vfs_fsync_range() for the range we wrote.  However if we've truncated before
-this we will set FULL_SYNC on the inode, so if we've truncated up and then only
-log up to the range we've inlcluded then fsck complains because i_size is > the
-last extent in the flie.  Fix this by making sure we log the entire file and not
-just the range requested.  With this patch we now pass the log writes test.
-Thanks,
+Hi!
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/file.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+When ever I delete a large snapshot this stalls all the processes on my system for 30 minutes plus, kernel v19.2. Btrfs-cleaner is taking 100% CPU when completely stalled. Every few minutes its say 99.8% and satall abates andÂ  processes/io happen.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 23b6e03..46c7227 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1901,8 +1901,13 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		 * start and finish before we start logging the inode, so that
- 		 * all extents are persisted and the respective file extent
- 		 * items are in the fs/subvol btree.
-+		 *
-+		 * We also need to do the whole range, we set FULL_SYNC if we
-+		 * truncated, and we could have some previous version of the
-+		 * inode in the log, so we need to write and log all the things.
- 		 */
--		ret = btrfs_wait_ordered_range(inode, start, end - start + 1);
-+		end = (u64)-1;
-+		ret = btrfs_wait_ordered_range(inode, start, end);
- 	} else {
- 		/*
- 		 * Start any new ordered operations before starting to log the
--- 
-1.8.3.1
+About to lodge a kernel bug about this as it is serious issue.
 
+Could some one look at making the clean up process more sensitive to when the system is idle? MD Raid is very good at this, and it should be possible to set this up.
+
+Best Regards,
+
+Matt Grantÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

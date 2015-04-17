@@ -1,49 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.palepurple.co.uk ([89.16.183.188]:47358 "EHLO
-	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932173AbbDQJ45 (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:35530 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751130AbbDQMcg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 05:56:57 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail.palepurple.co.uk (Postfix) with ESMTP id E6F3D8250
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:56:55 +0100 (BST)
-Received: from mail.palepurple.co.uk ([127.0.0.1])
-	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
-	with ESMTP id WyU_bPjl0zlE for <linux-btrfs@vger.kernel.org>;
-	Fri, 17 Apr 2015 10:56:55 +0100 (BST)
-Received: from [172.30.33.200] (host81-133-46-190.in-addr.btopenworld.com [81.133.46.190])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: david@palepurple.co.uk)
-	by mail.palepurple.co.uk (Postfix) with ESMTPSA id A5118821A
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:56:55 +0100 (BST)
-Message-ID: <5530D8E7.90301@codepoets.co.uk>
-Date: Fri, 17 Apr 2015 10:56:55 +0100
-From: David Goodwin <david@codepoets.co.uk>
+	Fri, 17 Apr 2015 08:32:36 -0400
+Received: by igbyr2 with SMTP id yr2so10112472igb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 05:32:35 -0700 (PDT)
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Mount multiple file system with the same UUID
-References: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
-In-Reply-To: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CADfjVrg=hZNE1x4F3H05Ds_H9WDBjuY2ZPPixuxiUanAd2mOHw@mail.gmail.com>
+References: <553046DA.7090809@gmail.com>
+	<CADfjVrg=hZNE1x4F3H05Ds_H9WDBjuY2ZPPixuxiUanAd2mOHw@mail.gmail.com>
+Date: Fri, 17 Apr 2015 08:32:35 -0400
+Message-ID: <CAPL5yKf7Qb3ogyNf8UoXGLonj-nKPCqQf9UdktbUXthWqBHn_g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: have restore set atime/mtime
+From: Dan Merillat <dan.merillat@gmail.com>
+To: Noah Massey <noah.massey@gmail.com>, BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17/04/15 10:20, WangMike wrote:
-> Dear all,
+On Fri, Apr 17, 2015 at 7:54 AM, Noah Massey <noah.massey@gmail.com> wrote:
+> On Thu, Apr 16, 2015 at 7:33 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
+>> The inode is already found, use the data and make restore friendlier.
+>>
+>> Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
+>> ---
+>>  cmds-restore.c | 12 ++++++++++++
+>>  1 file changed, 12 insertions(+)
+>>
+>> diff --git a/cmds-restore.c b/cmds-restore.c
+>> index d2fc951..95ac487 100644
+>> --- a/cmds-restore.c
+>> +++ b/cmds-restore.c
+>> @@ -567,12 +567,22 @@ static int copy_file(struct btrfs_root *root, int
+>> fd, struct btrfs_key *key,
+>>                 fprintf(stderr, "Ran out of memory\n");
+>>                 return -ENOMEM;
+>>         }
+>> +       struct timespec times[2];
+>> +       int times_ok=0;
+>>
+>>         ret = btrfs_lookup_inode(NULL, root, path, key, 0);
+>>         if (ret == 0) {
+>>                 inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>>                                     struct btrfs_inode_item);
+>>                 found_size = btrfs_inode_size(path->nodes[0], inode_item);
+>> +               struct btrfs_timespec bts;
+>> +               read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item, atime, &bts);
+>> +               times[0].tv_sec=bts.sec;
+>> +               times[0].tv_nsec=bts.nsec;
+>> +               read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item, atime, &bts);
 >
-> We know that one cannot mount multiple btrfs file systems which contain the same UUID (for example, snapshot ).
+> I think you mean 'mtime' here
+
+I absolutely do, whoops.  This is probably a good time to mention how
+much I dislike the fake pointers being used everywhere, coupled with
+the partially-implemented macro magic to get fields out of them.  Is
+there a good reason why btrfs_item_ptr isn't just a type-pun, with the
+understanding that you'll need to copy it to keep it?
+
+>> +       if (times_ok)
+>> +               futimens(fd, times);
 >
-> Is it possible to make use of "mount namespace" achieve that? means, if the btrfs file system in different namespace can contain the same UUID.
->
+> return value isn't checked here.
 
-I've encountered this problem using EC2 EBS volumes.
+What could we do with the error if it occurred?  Restoring times is a
+nice bonus if it works, but if it gets lost while the data was
+restored successfully, that shouldn't be an error condition.  I can
+add a comment to that effect to make it clearer why it's being ignored
+though, or perhaps something like a warn_once if the filesystem being
+restored to doesn't support changing the times.
 
-(the 'ghost image' (AMI) contains btrfs filesystems. This results in all 
-child VMs having EBS volumes sharing the same UUID ... and it's then not 
-being possible to move volumes around.)
-
-I'm interested to know if there's a possible solution, aside hoping you 
-can run mkfs.btrfs on first boot...
-
-David.
+On the subject of errors - is it possible for read_eb_member to fail
+the way I'm using it?  It's defined, but never used anywhere else, so
+I have nothing to compare it to.  My feeling is that if btrfs_item_ptr
+works the data in the structure returned is going to be there, but I'm
+not sure.

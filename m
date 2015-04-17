@@ -1,108 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34216 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752627AbbDQJ4Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 05:56:16 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Yj30R-0006gH-AW
-	for linux-btrfs@vger.kernel.org; Fri, 17 Apr 2015 11:56:15 +0200
-Received: from 168.159.160.54 ([168.159.160.54])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 11:56:15 +0200
-Received: from toyours_sridhar by 168.159.160.54 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 11:56:15 +0200
-To: linux-btrfs@vger.kernel.org
-From: sri <toyours_sridhar@yahoo.co.in>
-Subject: Re: how many chunk trees and extent trees present
-Date: Fri, 17 Apr 2015 09:56:07 +0000 (UTC)
-Message-ID: <loom.20150417T115204-272@post.gmane.org>
-References: <loom.20150417T081705-332@post.gmane.org> <20150417091911.GK22084@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail.palepurple.co.uk ([89.16.183.188]:47358 "EHLO
+	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932173AbbDQJ45 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Apr 2015 05:56:57 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail.palepurple.co.uk (Postfix) with ESMTP id E6F3D8250
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:56:55 +0100 (BST)
+Received: from mail.palepurple.co.uk ([127.0.0.1])
+	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
+	with ESMTP id WyU_bPjl0zlE for <linux-btrfs@vger.kernel.org>;
+	Fri, 17 Apr 2015 10:56:55 +0100 (BST)
+Received: from [172.30.33.200] (host81-133-46-190.in-addr.btopenworld.com [81.133.46.190])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: david@palepurple.co.uk)
+	by mail.palepurple.co.uk (Postfix) with ESMTPSA id A5118821A
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:56:55 +0100 (BST)
+Message-ID: <5530D8E7.90301@codepoets.co.uk>
+Date: Fri, 17 Apr 2015 10:56:55 +0100
+From: David Goodwin <david@codepoets.co.uk>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Mount multiple file system with the same UUID
+References: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
+In-Reply-To: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills <hugo <at> carfax.org.uk> writes:
+On 17/04/15 10:20, WangMike wrote:
+> Dear all,
+>
+> We know that one cannot mount multiple btrfs file systems which contain the same UUID (for example, snapshot ).
+>
+> Is it possible to make use of "mount namespace" achieve that? means, if the btrfs file system in different namespace can contain the same UUID.
+>
 
-> 
-> On Fri, Apr 17, 2015 at 06:24:05AM +0000, sri wrote:
-> > Hi,
-> > I have below queries. Could somebody help me in understanding.
-> > 
-> > 1)
-> > As per my understanding btrfs file system uses one chunk tree and 
-one 
-> > extent tree for entire btrfs disk allocation.
-> > 
-> > Is this correct?
-> 
->    Yes.
-> 
-> > In, some article i read that future there will be more chunk tree/ 
-extent 
-> > tree for single btrfs. Is this true.
-> 
->    I recall, many moons ago, Chris saying that there probably wouldn't
-> be.
-> 
-> > If yes, I would like to know why more than one chunk / extent tree 
-is 
-> > required to represent one btrfs file system.
-> 
->    I think the original idea was that it would reduce lock contention
-> on the tree root.
-> 
-> > 2)
-> > 
-> > Also I would like to know for a subvolume / snapshot , is there a 
-> > provision to ask btrfs , represent all blocks belongs to that 
-> > subvolume/snapshot should handle with a separate chunk tree and 
-extent 
-> > tree?
-> 
->    No.
-> 
-> > I am looking for a way to traverse a subvolume preferably a snapshot 
-and 
-> > identify all disk blocks (extents) allocated for that particular 
-subvolume 
-> > / snapshot.
-> 
->    Do you mean allocated to any file in the subvolume, or do you mean
-> *exclusively* allocated to that subvolume and not shared with any
-> other?
-> 
->    The former is easy -- just walk the file tree, and read the extents
-> for each file. The latter is harder, because you have to look for
-> extents that are not shared, and extents that are only shared within
-> the current subvolume (think reflink copies within a subvol). I think
-> you can do that by counting backrefs, but there may be big race
-> conditions involved on a filesystem that's being written to (because
-> the backrefs aren't created immediately, but delayed for performance
-> reasons).
-> 
->    Note that if all you want is the count of those blocks (rather than
-> the block numbers themselves), then it's already been done with
-> qgroups, and you don't need to write any btrfs code at all.
-> 
->    What exactly are you going to be doing with this information?
-> 
->    Hugo.
-> 
+I've encountered this problem using EC2 EBS volumes.
 
-I am trying a way to get all files and folders of a snapshot volume 
-without making file system level calls (fopen etc..) 
+(the 'ghost image' (AMI) contains btrfs filesystems. This results in all 
+child VMs having EBS volumes sharing the same UUID ... and it's then not 
+being possible to move volumes around.)
 
-I want to write code to understand the corresponding snapshot btree and 
-used related chunk tree and extent tree, and find out for each file 
-(inode) all extent blocks. 
-If I want to backup, I will use above method to traverse snapshot 
-subvolume at disk level and copy all blocks of files/directories.
+I'm interested to know if there's a possible solution, aside hoping you 
+can run mkfs.btrfs on first boot...
 
-Thank you
-sri
-
-
+David.

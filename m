@@ -1,58 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:44660 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:44731 "EHLO
 	mailgw02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751669AbbDQXD2 (ORCPT
+	with ESMTP id S1752179AbbDQXIs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 19:03:28 -0400
+	Fri, 17 Apr 2015 19:08:48 -0400
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw02.dd24.net (Postfix) with ESMTP id 0B95C5FAEB
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 23:03:26 +0000 (UTC)
+	by mailgw02.dd24.net (Postfix) with ESMTP id 3C4D25FAFC
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 23:08:47 +0000 (UTC)
 Received: from mailgw02.dd24.net ([192.168.1.36])
 	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id d2Aby61clJuU for <linux-btrfs@vger.kernel.org>;
-	Fri, 17 Apr 2015 23:03:24 +0000 (UTC)
+	with ESMTP id SrsFg7jIRwZC for <linux-btrfs@vger.kernel.org>;
+	Fri, 17 Apr 2015 23:08:45 +0000 (UTC)
 Received: from heisenberg.fritz.box (ppp-188-174-18-198.dynamic.mnet-online.de [188.174.18.198])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
 	by mailgw02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 23:03:24 +0000 (UTC)
-Message-ID: <1429311803.8371.58.camel@scientia.net>
-Subject: Re: incremental full file backups to smaller mediums possible?
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 23:08:45 +0000 (UTC)
+Message-ID: <1429312124.8371.62.camel@scientia.net>
+Subject: how to clone a btrfs filesystem
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Sat, 18 Apr 2015 01:03:23 +0200
-In-Reply-To: <20150409163319.GV13864@carfax.org.uk>
-References: <1428596073.4994.24.camel@scientia.net>
-	 <20150409163319.GV13864@carfax.org.uk>
+Date: Sat, 18 Apr 2015 01:08:44 +0200
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-tGlVwilxlecreMsGPKyw"
+	boundary="=-y7v5bKiPj8b1u49Jne68"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-tGlVwilxlecreMsGPKyw
+--=-y7v5bKiPj8b1u49Jne68
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, 2015-04-09 at 16:33 +0000, Hugo Mills wrote:=20
->    btrfs sub find-new might be more helpful to you here. That will
-> give you the list of changed files; then just feed that list to your
-> existing bin-packing algorithm for working out what goes on which
-> disks, and you're done.
+Hey.
 
-hmm that sounds interesting, but
-a) it lacks much documentation (how does that with the generations work?
-when is there a new generation? what, if the generation overflows?)
-b) it seems to only show me new files, but not files that have been
-moved, or removed, or when properties have changed.
-c) it seems to work only for one subvolume?
+I've seen that this has been asked some times before, and there are
+stackoverflow/etc. questions on that, but none with a really good
+answer.
+
+How can I best copy one btrfs filesystem (with snapshots and subvolumes)
+into another, especially with keeping the CoW/reflink status of all
+files?
+And ideally incrementally upgrade it later (again with all
+snapshots/subvols, and again not loosing the shared blocks between these
+files).
+
+send/receive apparently also works for just one subvolume,... and
+documentation is quite sparse :-/
+
 
 Cheers,
 Chris.
 
---=-tGlVwilxlecreMsGPKyw
+--=-y7v5bKiPj8b1u49Jne68
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -139,19 +140,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDQxNzIzMDMy
-M1owTwYJKoZIhvcNAQkEMUIEQJywc/QhtGaRvdAUaVXjlYvnucFUMRMynjFs9MODFWuqPkeFgw2J
-BDI5p+LdoKLIPW393I6jxw7LKUcOr4Ui2G8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDQxNzIzMDg0
+NFowTwYJKoZIhvcNAQkEMUIEQNODXyVCOftN4+/UTiB1Pud0r1pMzy6vEECK3tbUYjqQxX5JDZc0
+R46y0ZedDKI50kfu5VN2kF8MY6YBMxdAHYMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCbbSv3k8tUoprCC/zINrhRChA/jA5U
-vG9TfnG8xwPRWNXnqKk6SVzIzxtTr/ieDAIABt3WE1k3e1ajgoS7DGH7Q0cYfQwLiDpn5DnNtUPK
-QBKd/zsoeDmemhGrWpvx9jyyA0lYGHsZz9iL852iKrFQ2zEgD9BO3bU0Rc81CTIj/4uJdrYn9Nju
-+PQW/kcaSp/xT+qxZTE6WrCYUw4Xgrbac3cYWKiwGV4I4wzofM+kDHjNLw92ejUqvlZ/NJQQ8o0v
-FnJ6wBRrIio0SRJMccErwxvi0RWWVeJOFisQjie6AUbZVPfo+JuNbXvKNyHQw8ioWHbODNpXgTiD
-+LxKUDvTAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAEGY53omyFf+aVwgDv4fIfvgfI+Hxc
+GjqO9plL+8fLdJmcyYYCY8SJ854cHdVAJk77qrqDC8sYft37bLD72+J+MlBvttuVUJdqD+msB9T/
+tLA08Fr1QiazLnRxKdjxK4oI3hr5uDzve5wta7kJTgHT41HGBVs98uSJHGjY8kXYr4OZ5n4Plbcy
+Th0owwGfrtkHxyO1NdickVMbAGsyGuofrSEZCxp8QAwIqVHmLyj+6/XeoiEzUebiTn8Sza8d6hhl
+kLvtVM9iUevw+ie6DY/Qdesed3h7LElgRCJTF1KKvSa6NilJ6IAj1ArQuswsp9PlJgXNfT1MhudL
+nLWQ7xg+AAAAAAAA
 
 
---=-tGlVwilxlecreMsGPKyw--
+--=-y7v5bKiPj8b1u49Jne68--
 

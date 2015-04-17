@@ -1,107 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:34697 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750865AbbDQThP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 15:37:15 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <55315041.4070509@fb.com>
-References: <1429289031-1088-1-git-send-email-fdmanana@suse.com>
-	<1429294846-9021-1-git-send-email-fdmanana@suse.com>
-	<55315041.4070509@fb.com>
-Date: Fri, 17 Apr 2015 20:37:14 +0100
-Message-ID: <CAL3q7H5FeE8jPvwTbYR5==AFbPJOsVFTW+qGaAjpeqD4Rq122w@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix data loss after concurrent fsyncs for files
- in the same subvol
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        stable@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from victor.provo.novell.com ([137.65.250.26]:57312 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750865AbbDQTiq (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 17 Apr 2015 15:38:46 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: don't attach unnecessary extents to transaction on fsync
+Date: Fri, 17 Apr 2015 20:38:08 +0100
+Message-Id: <1429299488-9607-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1429289628-2091-1-git-send-email-fdmanana@suse.com>
+References: <1429289628-2091-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 17, 2015 at 7:26 PM, Josef Bacik <jbacik@fb.com> wrote:
-> On 04/17/2015 02:20 PM, Filipe Manana wrote:
->>
->> If we have concurrent fsync calls against files living in the same
->> subvolume,
->> we have some time window where we don't add the collected ordered extents
->> to the running transaction's list of ordered extents and return success to
->> userspace. This can result in data loss if the ordered extents complete
->> after
->> the current transaction commits and a power failure happens after the
->> current
->> transaction commits and before the next one commits.
->>
->> A sequence of steps that lead to this:
->>
->>          CPU 0                                                         CPU
->> 1
->>
->> btrfs_sync_file(inode A)
->> btrfs_sync_file(inode B)
->>    btrfs_log_inode_parent()
->> btrfs_log_inode_parent()
->>
->>      start_log_trans()
->>        lock root->log_mutex
->>        ctx->log_transid = root->log_transid = N
->>        unlock root->log_mutex
->>
->>
->> start_log_trans()
->>                                                               lock
->> root->log_mutex
->>
->> ctx->log_transid = root->log_transid = N
->>                                                               unlock
->> root->log_mutex
->>
->>      btrfs_log_inode()
->> btrfs_log_inode()
->>        btrfs_get_logged_extents()
->> btrfs_get_logged_extents()
->>           --> gets orderede extent A                                ->
->> gets ordered extent B
->>               into local list logged_list
->> into local list logged_list
->>        write items into the log tree                              write
->> items into the log tree
->>        btrfs_submit_logged_extents(&logged_list)
->>          --> splices logged_list into
->>              log_root->logged_list[N % 2]
->>              (N == log_root->log_transid)
->>
->>    btrfs_sync_log()
->>      lock root->log_mutex
->>
->>      atomic_set(&root->log_commit[N % 2], 1)
->>        (N == ctx->log_transid)
->
->
-> Except this can't happen, we have a wait_for_writer() in between here that
-> will wait for CPU 1 to finish doing it's logging since it has already done
-> it's start_log_trans().  Thanks,
+We don't need to attach ordered extents that have completed to the current
+transaction. Doing so only makes us hold memory for longer than necessary
+and delaying the iput of the inode until the transaction is committed (for
+each created ordered extent we do an igrab and then schedule an asynchronous
+iput when the ordered extent's reference count drops to 0), preventing the
+inode from being evictable until the transaction commits.
 
-Right, totally forgot that.
-Thanks for pointing it out Josef.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
->
-> Josef
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+V2: Made the patch independent of my previous one, since that other one
+    was not correct.
 
+ fs/btrfs/ordered-data.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 72b6f0d..6c4f8e7 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -509,7 +509,21 @@ void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
+ 		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
+ 						   &ordered->flags));
+ 
+-		list_add_tail(&ordered->trans_list, &trans->ordered);
++		/*
++		 * If our ordered extent completed it means it updated the
++		 * fs/subvol and csum trees already, so no need to make the
++		 * current transaction's commit wait for it, as we end up
++		 * holding memory unnecessarily and delaying the inode's iput
++		 * until the transaction commit (we schedule an iput for the
++		 * inode when the ordered extent's refcount drops to 0), which
++		 * prevents it from being evictable until the transaction
++		 * commits.
++		 */
++		if (test_bit(BTRFS_ORDERED_COMPLETE, &ordered->flags))
++			btrfs_put_ordered_extent(ordered);
++		else
++			list_add_tail(&ordered->trans_list, &trans->ordered);
++
+ 		spin_lock_irq(&log->log_extents_lock[index]);
+ 	}
+ 	spin_unlock_irq(&log->log_extents_lock[index]);
 -- 
-Filipe David Manana,
+2.1.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

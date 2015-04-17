@@ -1,36 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:36774 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932798AbbDQPEV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 11:04:21 -0400
-Received: by igblo3 with SMTP id lo3so13793223igb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 08:04:19 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <5530D8E7.90301@codepoets.co.uk>
-References: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
-	<5530D8E7.90301@codepoets.co.uk>
-Date: Fri, 17 Apr 2015 09:04:19 -0600
-Message-ID: <CAJCQCtTKxdwNFQU3nvq9Xt-kXkTRSt8JAxsC-J0Tide9Rn7k4g@mail.gmail.com>
-Subject: Re: Mount multiple file system with the same UUID
-From: Chris Murphy <lists@colorremedies.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Received: from victor.provo.novell.com ([137.65.250.26]:51759 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753608AbbDQQr6 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 17 Apr 2015 12:47:58 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix data loss after concurrent fsyncs for files in the same subvol
+Date: Fri, 17 Apr 2015 17:43:51 +0100
+Message-Id: <1429289031-1088-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks like XFS v5 and ext4 checksums include fs UUID throughout the
-filesystem metadata. For XFS changing the UUID has been disabled in
-xfs_admin whereas tune2fs supports changing it (which I'd think could
-take quite a while). Btrfs supports it via seed device + device add +
-removing seed which also can take quite a while.
+If we have concurrent fsync calls against files living in the same subvolume,
+we have some time window where we don't add the collected ordered extents
+to the running transaction's list of ordered extents and return success to
+userspace. This can result in data loss if the ordered extents complete after
+the current transaction commits and a power failure happens after the current
+transaction commits and before the next one commits.
 
-Anyway, three file systems are (or are about to be) affected by this
-so a general purpose solution seems in order.
+A sequence of steps that lead to this:
 
-http://oss.sgi.com/archives/xfs/2015-04/msg00023.html
-http://comments.gmane.org/gmane.comp.file-systems.ext4/44464
-https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Checksums
+        CPU 0                                                         CPU 1
 
-Chris Murphy
+btrfs_sync_file(inode A)                               btrfs_sync_file(inode B)
+  btrfs_log_inode_parent()                               btrfs_log_inode_parent()
+
+    start_log_trans()
+      lock root->log_mutex
+      ctx->log_transid = root->log_transid = N
+      unlock root->log_mutex
+
+                                                           start_log_trans()
+                                                             lock root->log_mutex
+                                                             ctx->log_transid = root->log_transid = N
+                                                             unlock root->log_mutex
+
+    btrfs_log_inode()                                          btrfs_log_inode()
+      btrfs_get_logged_extents()                                 btrfs_get_logged_extents()
+         --> gets orderede extent A                                -> gets ordered extent B
+             into local list logged_list                              into local list logged_list
+      write items into the log tree                              write items into the log tree
+      btrfs_submit_logged_extents(&logged_list)
+        --> splices logged_list into
+            log_root->logged_list[N % 2]
+            (N == log_root->log_transid)
+
+  btrfs_sync_log()
+    lock root->log_mutex
+
+    atomic_set(&root->log_commit[N % 2], 1)
+      (N == ctx->log_transid)
+
+    btrfs_write_marked_extents()
+
+    root->log_transid++
+      --> becomes N + 1
+    log_root->log_transid = root->log_transid
+
+    unlock root->log_mutex
+
+                                                                 btrfs_submit_logged_extents(&logged_list)
+                                                                   --> splices logged_list into
+                                                                       log_root->logged_list[(N + 1) % 2]
+                                                                       (N + 1 == log_root->log_transid)
+
+                                                       btrfs_sync_log()
+                                                         lock root->log_mutex
+
+                                                         atomic_read(&root->log_commit[N % 2]) == 1
+                                                           (N == ctx->log_transid)
+
+                                                           wait on root->log_commit_wait[N % 2]
+                                                           (where N == ctx->log_transid) for
+                                                           atomic_read(&root->log_commit[N % 2] == 0
+                                                           and root->log_transid_committed == N
+
+    btrfs_wait_marked_extents()
+    btrfs_wait_logged_extents()
+      --> adds ordered extents from
+          log_root->logged_list[N % 2] to
+          the trans->ordered list
+          (N == ctx->log_transid)
+    write_ctree_super()
+
+    lock root->log_mutex
+    root->log_transid_committed++;
+      --> becomes N
+    unlock root->log_mutex
+    wake_up(&root->log_commit_wait[N % 2])
+      (N == ctx->log_transid)
+
+  btrfs_sync_file(inode A) returns 0 to userspace
+
+                                                         wakes up from root->log_commit_wait[N % 2]
+                                                         returns 0 from btrfs_sync_log() immediately
+                                                       btrfs_sync_file(inode B) returns 0 to userspace
+
+                        some time later current transaction commit starts
+                          waits for ordered extent A to complete
+                        transaction commit finishes
+
+                        ********* power failure ************
+
+                        ordered extent B completes (updates subvol and csum trees)
+
+Fix this by ensuring that we add the collected ordered extents into the
+current transaction's ordered list if when syncing the log we return early
+because we found our log transaction was already committed or we end up
+waiting for a matching log transaction commit that is ongoing to complete.
+
+CC: <stable@vger.kernel.org>  # 3.18+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ordered-data.c | 3 ++-
+ fs/btrfs/tree-log.c     | 4 ++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 72b6f0d..7005eb7 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -509,7 +509,8 @@ void btrfs_wait_logged_extents(struct btrfs_trans_handle *trans,
+ 		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
+ 						   &ordered->flags));
+ 
+-		list_add_tail(&ordered->trans_list, &trans->ordered);
++		if (list_empty(&ordered->trans_list))
++			list_add_tail(&ordered->trans_list, &trans->ordered);
+ 		spin_lock_irq(&log->log_extents_lock[index]);
+ 	}
+ 	spin_unlock_irq(&log->log_extents_lock[index]);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 2fd95a7..64447b9 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2635,6 +2635,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	log_transid = ctx->log_transid;
+ 	if (root->log_transid_committed >= log_transid) {
+ 		mutex_unlock(&root->log_mutex);
++		if (ctx->log_ret == 0)
++			btrfs_wait_logged_extents(trans, log, log_transid);
+ 		return ctx->log_ret;
+ 	}
+ 
+@@ -2642,6 +2644,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	if (atomic_read(&root->log_commit[index1])) {
+ 		wait_log_commit(trans, root, log_transid);
+ 		mutex_unlock(&root->log_mutex);
++		if (ctx->log_ret == 0)
++			btrfs_wait_logged_extents(trans, log, log_transid);
+ 		return ctx->log_ret;
+ 	}
+ 	ASSERT(log_transid == root->log_transid);
+-- 
+2.1.3
+

@@ -1,78 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:35530 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751130AbbDQMcg (ORCPT
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:36774 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932798AbbDQPEV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Apr 2015 08:32:36 -0400
-Received: by igbyr2 with SMTP id yr2so10112472igb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 05:32:35 -0700 (PDT)
+	Fri, 17 Apr 2015 11:04:21 -0400
+Received: by igblo3 with SMTP id lo3so13793223igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 08:04:19 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CADfjVrg=hZNE1x4F3H05Ds_H9WDBjuY2ZPPixuxiUanAd2mOHw@mail.gmail.com>
-References: <553046DA.7090809@gmail.com>
-	<CADfjVrg=hZNE1x4F3H05Ds_H9WDBjuY2ZPPixuxiUanAd2mOHw@mail.gmail.com>
-Date: Fri, 17 Apr 2015 08:32:35 -0400
-Message-ID: <CAPL5yKf7Qb3ogyNf8UoXGLonj-nKPCqQf9UdktbUXthWqBHn_g@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: have restore set atime/mtime
-From: Dan Merillat <dan.merillat@gmail.com>
-To: Noah Massey <noah.massey@gmail.com>, BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <5530D8E7.90301@codepoets.co.uk>
+References: <SNT150-W75F9A63B7062DE5A608491A1E30@phx.gbl>
+	<5530D8E7.90301@codepoets.co.uk>
+Date: Fri, 17 Apr 2015 09:04:19 -0600
+Message-ID: <CAJCQCtTKxdwNFQU3nvq9Xt-kXkTRSt8JAxsC-J0Tide9Rn7k4g@mail.gmail.com>
+Subject: Re: Mount multiple file system with the same UUID
+From: Chris Murphy <lists@colorremedies.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 17, 2015 at 7:54 AM, Noah Massey <noah.massey@gmail.com> wrote:
-> On Thu, Apr 16, 2015 at 7:33 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
->> The inode is already found, use the data and make restore friendlier.
->>
->> Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
->> ---
->>  cmds-restore.c | 12 ++++++++++++
->>  1 file changed, 12 insertions(+)
->>
->> diff --git a/cmds-restore.c b/cmds-restore.c
->> index d2fc951..95ac487 100644
->> --- a/cmds-restore.c
->> +++ b/cmds-restore.c
->> @@ -567,12 +567,22 @@ static int copy_file(struct btrfs_root *root, int
->> fd, struct btrfs_key *key,
->>                 fprintf(stderr, "Ran out of memory\n");
->>                 return -ENOMEM;
->>         }
->> +       struct timespec times[2];
->> +       int times_ok=0;
->>
->>         ret = btrfs_lookup_inode(NULL, root, path, key, 0);
->>         if (ret == 0) {
->>                 inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
->>                                     struct btrfs_inode_item);
->>                 found_size = btrfs_inode_size(path->nodes[0], inode_item);
->> +               struct btrfs_timespec bts;
->> +               read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item, atime, &bts);
->> +               times[0].tv_sec=bts.sec;
->> +               times[0].tv_nsec=bts.nsec;
->> +               read_eb_member(path->nodes[0], inode_item, struct btrfs_inode_item, atime, &bts);
->
-> I think you mean 'mtime' here
+Looks like XFS v5 and ext4 checksums include fs UUID throughout the
+filesystem metadata. For XFS changing the UUID has been disabled in
+xfs_admin whereas tune2fs supports changing it (which I'd think could
+take quite a while). Btrfs supports it via seed device + device add +
+removing seed which also can take quite a while.
 
-I absolutely do, whoops.  This is probably a good time to mention how
-much I dislike the fake pointers being used everywhere, coupled with
-the partially-implemented macro magic to get fields out of them.  Is
-there a good reason why btrfs_item_ptr isn't just a type-pun, with the
-understanding that you'll need to copy it to keep it?
+Anyway, three file systems are (or are about to be) affected by this
+so a general purpose solution seems in order.
 
->> +       if (times_ok)
->> +               futimens(fd, times);
->
-> return value isn't checked here.
+http://oss.sgi.com/archives/xfs/2015-04/msg00023.html
+http://comments.gmane.org/gmane.comp.file-systems.ext4/44464
+https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Checksums
 
-What could we do with the error if it occurred?  Restoring times is a
-nice bonus if it works, but if it gets lost while the data was
-restored successfully, that shouldn't be an error condition.  I can
-add a comment to that effect to make it clearer why it's being ignored
-though, or perhaps something like a warn_once if the filesystem being
-restored to doesn't support changing the times.
-
-On the subject of errors - is it possible for read_eb_member to fail
-the way I'm using it?  It's defined, but never used anywhere else, so
-I have nothing to compare it to.  My feeling is that if btrfs_item_ptr
-works the data in the structure returned is going to be there, but I'm
-not sure.
+Chris Murphy

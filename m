@@ -1,42 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52098 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755103AbbDGPET (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Apr 2015 11:04:19 -0400
-Date: Tue, 7 Apr 2015 17:04:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs-progs: Doc: Add warning and note on
- btrfs-convert.
-Message-ID: <20150407150416.GB25622@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1428024075-10211-1-git-send-email-quwenruo@cn.fujitsu.com>
- <pan$c078e$9a53acee$d6e24908$3d5c7666@cox.net>
- <551E3C06.9040305@cn.fujitsu.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10758 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753485AbbDQRlV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Apr 2015 13:41:21 -0400
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t3HHV4bL016972
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:41:20 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1tu6anr3k1-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2015 10:41:20 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: check for matchin free space in cache
+Date: Fri, 17 Apr 2015 13:41:16 -0400
+Message-ID: <1429292476-27528-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <551E3C06.9040305@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 03, 2015 at 03:06:46PM +0800, Qu Wenruo wrote:
-> > Qu Wenruo posted on Fri, 03 Apr 2015 09:21:15 +0800 as excerpted:
-> >
-> >> +WARNING: If one hopes to rollback to ext2/3/4, he or she should not execute
-> >> +*btrfs balance* command on converted btrfs.
-> >> +Since it will change the extent layout and make *btrfs-convert* unable to
-> >> +rollback.
-> >
-> > Because "since" is subordinating and the sentence doesn't contain what
-> > it is subordinated to as that's explained in the previous sentence,
-> > "Since it will..." introduces a sentence fragment.
-> Thanks.
-> 
-> It seems my English is really poor... :(
+We have this check in the kernel but not in userspace, which makes fsck fail
+when we wouldn't have a problem in the kernel.  This was meant to catch this
+case because it really isn't good, unfortunately it will require a design change
+to fix in the kernel so in the meantime add this check so we can be sure our
+tests only catch real problems.  Thanks,
 
-Do not worry too much, we need both the technical content and the
-writing style. As you can see there are people to help, the comments
-should not discourage you.  This is similar to the "code" patches, we
-do cleanups. Technical writing is specialization on its own, we do not
-have to be proficient in everything.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ ctree.h            |  1 +
+ extent-tree.c      | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ free-space-cache.c | 11 +++++++++++
+ 3 files changed, 63 insertions(+)
+
+diff --git a/ctree.h b/ctree.h
+index 2042771..10dc838 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -936,6 +936,7 @@ struct btrfs_block_group_cache {
+ 	struct btrfs_block_group_item item;
+ 	struct btrfs_space_info *space_info;
+ 	struct btrfs_free_space_ctl *free_space_ctl;
++	u64 bytes_super;
+ 	u64 pinned;
+ 	u64 flags;
+ 	int cached;
+diff --git a/extent-tree.c b/extent-tree.c
+index e8545ef..c24af6a 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3140,6 +3140,54 @@ error:
+ 	return ret;
+ }
+ 
++static void account_super_bytes(struct btrfs_fs_info *fs_info,
++				struct btrfs_block_group_cache *cache)
++{
++	u64 bytenr;
++	u64 *logical;
++	int stripe_len;
++	int i, nr, ret;
++
++	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
++		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
++		cache->bytes_super += stripe_len;
++	}
++
++	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++		bytenr = btrfs_sb_offset(i);
++		ret = btrfs_rmap_block(&fs_info->mapping_tree,
++				       cache->key.objectid, bytenr,
++				       0, &logical, &nr, &stripe_len);
++		if (ret)
++			return;
++
++		while (nr--) {
++			u64 start, len;
++
++			if (logical[nr] > cache->key.objectid +
++			    cache->key.offset)
++				continue;
++
++			if (logical[nr] + stripe_len <= cache->key.objectid)
++				continue;
++
++			start = logical[nr];
++			if (start < cache->key.objectid) {
++				start = cache->key.objectid;
++				len = (logical[nr] + stripe_len) - start;
++			} else {
++				len = min_t(u64, stripe_len,
++					    cache->key.objectid +
++					    cache->key.offset - start);
++			}
++
++			cache->bytes_super += len;
++		}
++
++		kfree(logical);
++	}
++}
++
+ int btrfs_read_block_groups(struct btrfs_root *root)
+ {
+ 	struct btrfs_path *path;
+@@ -3201,6 +3249,8 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		if (btrfs_chunk_readonly(root, cache->key.objectid))
+ 			cache->ro = 1;
+ 
++		account_super_bytes(info, cache);
++
+ 		ret = update_space_info(info, cache->flags, found_key.offset,
+ 					btrfs_block_group_used(&cache->item),
+ 					&space_info);
+@@ -3242,6 +3292,7 @@ btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_used, u64 type,
+ 	cache->flags = type;
+ 	btrfs_set_block_group_flags(&cache->item, type);
+ 
++	account_super_bytes(fs_info, cache);
+ 	ret = update_space_info(fs_info, cache->flags, size, bytes_used,
+ 				&cache->space_info);
+ 	BUG_ON(ret);
+diff --git a/free-space-cache.c b/free-space-cache.c
+index 99ad420..a836e98 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -428,7 +428,9 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ {
+ 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+ 	struct btrfs_path *path;
++	u64 used = btrfs_block_group_used(&block_group->item);
+ 	int ret = 0;
++	int matched;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -438,6 +440,15 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 				      block_group->key.objectid);
+ 	btrfs_free_path(path);
+ 
++	matched = (ctl->free_space == (block_group->key.offset - used -
++				       block_group->bytes_super));
++	if (!matched) {
++		__btrfs_remove_free_space_cache(ctl);
++		printf("block group %llu has wrong abount of free space",
++		       block_group->key.objectid);
++		ret = -1;
++	}
++
+ 	if (ret < 0) {
+ 		ret = 0;
+ 
+-- 
+1.8.3.1
+

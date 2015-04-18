@@ -1,73 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44633 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:60583 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751820AbbDRIKr (ORCPT
+	with ESMTP id S1751022AbbDRIPA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Apr 2015 04:10:47 -0400
+	Sat, 18 Apr 2015 04:15:00 -0400
 From: Martin Steigerwald <martin@lichtvoll.de>
 To: Christoph Anton Mitterer <calestyo@scientia.net>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: how to clone a btrfs filesystem
-Date: Sat, 18 Apr 2015 10:10:40 +0200
-Message-ID: <1816824.Xy3LLo99sJ@merkaba>
-In-Reply-To: <1429312124.8371.62.camel@scientia.net>
-References: <1429312124.8371.62.camel@scientia.net>
+Subject: Re: incremental full file backups to smaller mediums possible?
+Date: Sat, 18 Apr 2015 10:14:58 +0200
+Message-ID: <1489496.v0bc8xWMtg@merkaba>
+In-Reply-To: <1429311803.8371.58.camel@scientia.net>
+References: <1428596073.4994.24.camel@scientia.net> <20150409163319.GV13864@carfax.org.uk> <1429311803.8371.58.camel@scientia.net>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart11171989.oAo4tFeH8k"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart1522585.72MrBAkc8Z"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart11171989.oAo4tFeH8k
+--nextPart1522585.72MrBAkc8Z
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 
-Am Samstag, 18. April 2015, 01:08:44 schrieb Christoph Anton Mitterer:
-> Hey.
-
-Hi Christoph,
-
-> I've seen that this has been asked some times before, and there are
-> stackoverflow/etc. questions on that, but none with a really good
-> answer.
+Am Samstag, 18. April 2015, 01:03:23 schrieb Christoph Anton Mitterer:
+> On Thu, 2015-04-09 at 16:33 +0000, Hugo Mills wrote:
+> >    btrfs sub find-new might be more helpful to you here. That will
+> >=20
+> > give you the list of changed files; then just feed that list to you=
+r
+> > existing bin-packing algorithm for working out what goes on which
+> > disks, and you're done.
 >=20
-> How can I best copy one btrfs filesystem (with snapshots and subvolum=
-es)
-> into another, especially with keeping the CoW/reflink status of all
-> files?
-> And ideally incrementally upgrade it later (again with all
-> snapshots/subvols, and again not loosing the shared blocks between th=
-ese
-> files).
->=20
-> send/receive apparently also works for just one subvolume,... and
-> documentation is quite sparse :-/
+> hmm that sounds interesting, but
+> a) it lacks much documentation (how does that with the generations wo=
+rk?
+> when is there a new generation? what, if the generation overflows?)
 
-To make it short and simple:
+I have no idea about when there is a new generation. I think it depends=
+ on=20
+the commit intervall.
 
-I am not aware of any out of the box solution for this use case.
+You can see the current generation with:
 
-And I think that is just why you didn=B4t found any.
+merkaba:~> btrfs subvol show / | grep Generation
+        Generation (Gen):       468143
 
-I want to buy a new backup harddisk sometime in the future, and ideally=
-=20
-transfer the contents of the current one with all subvolumes and=20
-snapshots, but I think except for some old backups that I have only the=
-re=20
-and I do not have the sources anymore, I will just start from scratch a=
-nd=20
-let it collect its own snapshots.
+> b) it seems to only show me new files, but not files that have been m=
+oved,
+> or removed, or when properties have changed.
 
-That said, I think it can be scripted. But I am not aware of anyone hav=
-ing=20
-done this. I may be missing something, so maybe someone on the list has=
- a=20
-recommendation.
+It should show renamed or moved files. But yeah, if it does, at least n=
+ot=20
+in a way that shows that a rename or move operation took place.
+
+> c) it seems to work only for one subvolume?
+
+Its per subvolume, I think. Thats why it is under "btrfs subvolume"
 
 Ciao,
 =2D-=20
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---nextPart11171989.oAo4tFeH8k
+--nextPart1522585.72MrBAkc8Z
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 Content-Transfer-Encoding: 7Bit
@@ -75,10 +68,10 @@ Content-Transfer-Encoding: 7Bit
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iEYEABECAAYFAlUyEYUACgkQmRvqrKWZhMfpWQCglpmisp2okK/O8eB9v0gZNvIU
-yuoAni0+hkRqQclO0ppzBneii7cHjYIN
-=r7l4
+iEYEABECAAYFAlUyEoIACgkQmRvqrKWZhMfN/wCgsTO32JGaduNk0Kab312XcD1g
+tLEAoJ/gl5GyOh+0ZjaZNpWOiA5oAKoP
+=yLne
 -----END PGP SIGNATURE-----
 
---nextPart11171989.oAo4tFeH8k--
+--nextPart1522585.72MrBAkc8Z--
 

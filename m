@@ -1,60 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37259 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753514AbbDRQJm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Apr 2015 12:09:42 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YjVJM-00049a-Qo
-	for linux-btrfs@vger.kernel.org; Sat, 18 Apr 2015 18:09:40 +0200
-Received: from ip18864262.dynamic.kabel-deutschland.de ([24.134.66.98])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2015 18:09:40 +0200
-Received: from hurikhan77 by ip18864262.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2015 18:09:40 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: how to clone a btrfs filesystem
-Date: Sat, 18 Apr 2015 18:09:34 +0200
-Message-ID: <u6ca0c-12c.ln1@hurikhan77.spdns.de>
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:33587 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753371AbbDRQUO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 18 Apr 2015 12:20:14 -0400
+Received: by iecrt8 with SMTP id rt8so78974393iec.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2015 09:20:13 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1429312124.8371.62.camel@scientia.net>
 References: <1429312124.8371.62.camel@scientia.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Date: Sat, 18 Apr 2015 10:20:13 -0600
+Message-ID: <CAJCQCtQVjrkfPykDv5H0uC08nPq3KLu+PmV_2suoaambV1Sumw@mail.gmail.com>
+Subject: Re: how to clone a btrfs filesystem
+From: Chris Murphy <lists@colorremedies.com>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer <calestyo@scientia.net> schrieb:
-
+On Fri, Apr 17, 2015 at 5:08 PM, Christoph Anton Mitterer
+<calestyo@scientia.net> wrote:
 > Hey.
-> 
+>
 > I've seen that this has been asked some times before, and there are
 > stackoverflow/etc. questions on that, but none with a really good
 > answer.
-> 
+>
 > How can I best copy one btrfs filesystem (with snapshots and subvolumes)
 > into another, especially with keeping the CoW/reflink status of all
 > files?
 > And ideally incrementally upgrade it later (again with all
 > snapshots/subvols, and again not loosing the shared blocks between these
 > files).
-> 
-> send/receive apparently also works for just one subvolume,... and
-> documentation is quite sparse :-/
 
-You could simply "btrfs device add" the new device, then "btrfs device del" 
-the old device...
+Make the source a seed device, add new device, delete seed. Once that
+completes, unmount, unset btrfs seed, and now the two devices are
+separate fs volumes each with unique UUID. There may still be bugs
+with seed device, it's been maybe 6 months since I last checked.
 
-It won't create a 1:1 clone, if that is your intention. But it will migrate 
-all your data over to the new device (even a bigger/smaller one), keeping 
-shared extents (CoW/reflink status), generation numbers, file system uid, 
-label, each subvolume, etc... And it can be done while the system is 
-running.
-
-It looks like this way fulfills all your requirements. That same way you can 
-later incrementally update it again.
 
 -- 
-Replies to list only preferred.
-
+Chris Murphy

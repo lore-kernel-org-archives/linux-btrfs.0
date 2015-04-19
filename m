@@ -1,73 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f172.google.com ([209.85.214.172]:34700 "EHLO
-	mail-ob0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752580AbbDSNUM convert rfc822-to-8bit (ORCPT
+Received: from smtp5.hushmail.com ([65.39.178.142]:58801 "EHLO
+	smtp5.hushmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750946AbbDSNvM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Apr 2015 09:20:12 -0400
-Received: by obfe9 with SMTP id e9so100161735obf.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 06:20:11 -0700 (PDT)
+	Sun, 19 Apr 2015 09:51:12 -0400
+Received: from smtp5.hushmail.com (localhost [127.0.0.1])
+	by smtp5.hushmail.com (Postfix) with SMTP id 5587E60165
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 13:51:11 +0000 (UTC)
+Received: from smtp.hushmail.com (w8.hushmail.com [65.39.178.52])
+	(using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp5.hushmail.com (Postfix) with ESMTPS
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 13:51:11 +0000 (UTC)
 MIME-Version: 1.0
-Date: Sun, 19 Apr 2015 21:20:11 +0800
-Message-ID: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
-Subject: The FAQ on fsync/O_SYNC
-From: Craig Ringer <craig@2ndquadrant.com>
+Date: Sun, 19 Apr 2015 15:51:10 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Background corrections don't show up in device stats, and have low syslog priority. How do I reliably find out about them?
+From: ivarun_ml@nym.hush.com
+In-Reply-To: <pan.2015.04.17.20.35.59@googlemail.com>
+References: <20150417194609.1192EA03BC@smtp.hushmail.com> <pan.2015.04.17.20.35.59@googlemail.com> 
+Content-Type: text/plain; charset="UTF-8"
+Message-Id: <20150419135111.16D86E042D@smtp.hushmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+On 4/17/2015 at 10:36 PM, "Holger Hoffstaette" <holger.hoffstaette@googlemail.com> wrote:
+>I don't know about the device stats, but at least the log level for
+>read errors was already fixed in a patch series:
+>
+>http://www.spinics.net/lists/linux-btrfs/msg40556.html
+>
+>This was merged into 4.0.
 
-I'm looking into the advisability of running PostgreSQL on BTRFS, and
-after looking at the FAQ there's something I'm hoping you could
-clarify.
+Thanks! Very narrow coincidence that openSUSE tumbleweed was still on 3.19.3 instead of 4.0 when I ran my test :-).
 
-The wiki FAQ says:
+I would still be interested to know whether we can expect the device stats to be updated in the future, or if the syslog will be the best way to look up these numbers. Finding out how many errors there have been of the different kinds per device would be much easier to do through device stats rather than searching the syslog.
 
-"Btrfs does not force all dirty data to disk on every fsync or O_SYNC
-operation, fsync is designed to be fast."
+Regards,
+Ivar Ursin Nikolaisen
 
-Is that wording intended narrowly, to contrast with ext3's nasty habit
-of flushing *all* dirty blocks for the entire file system whenever
-anyone calls fsync() ? Or is it intended broadly, to say that btrfs's
-fsync won't necessarily flush all data blocks (just metadata) ?
-
-Is that statement still true in recent BTRFS versions (3.18, etc)?
-
-
-PostgreSQL (and any other transactional database) absolutely requires
-that there be a system call that will provide a hard guarantee that
-all dirty blocks for a given file are on durable storage. In the case
-of data-integrity-significant metadata operations it has to be able to
-get the same guarantee on metadata too.
-
-The documentation for fsync says that:
-
-       fsync() transfers ("flushes") all modified in-core data of (i.e., modi‐
-       fied  buffer cache pages for) the file referred to by the file descrip‐
-       tor fd to the disk device (or other permanent storage device)  so  that
-       all  changed information can be retrieved even after the system crashed
-       or was rebooted.  This includes writing  through  or  flushing  a  disk
-       cache  if  present.   The call blocks until the device reports that the
-       transfer has completed.  It also flushes metadata  information  associ‐
-       ated with the file (see stat(2)).
-
-
-so I'm hoping that the FAQ writer was just comparing with ext3, and
-that btrfs's fsync() fully flushes all dirty blocks and metadata for a
-file or directory. (I haven't had a chance to do any testing on a
-machine with slow flushes to see yet, or any plug-pull testing).
-
-
-Also on the FAQ:
-
-https://btrfs.wiki.kernel.org/index.php/FAQ#What_are_the_crash_guarantees_of_overwrite-by-rename.3F
-
-it might be a good idea to recommend that applications really should
-fsync() the directory if they want a crash safety guarantee, and that
-doing so (hopefully?) won't flush dirty file blocks, just directory
-metadata.
-
---
- Craig Ringer                   http://www.2ndQuadrant.com/
- PostgreSQL Development, 24x7 Support, Training & Services

@@ -1,78 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59026 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751965AbbDSD4s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Apr 2015 23:56:48 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YjgLd-000880-Q7
-	for linux-btrfs@vger.kernel.org; Sun, 19 Apr 2015 05:56:45 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 05:56:45 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 05:56:45 +0200
+Received: from mail-ob0-f172.google.com ([209.85.214.172]:34700 "EHLO
+	mail-ob0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752580AbbDSNUM convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 Apr 2015 09:20:12 -0400
+Received: by obfe9 with SMTP id e9so100161735obf.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 06:20:11 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 19 Apr 2015 21:20:11 +0800
+Message-ID: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
+Subject: The FAQ on fsync/O_SYNC
+From: Craig Ringer <craig@2ndquadrant.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: how to clone a btrfs filesystem
-Date: Sun, 19 Apr 2015 03:56:40 +0000 (UTC)
-Message-ID: <pan$b5546$9e29a1d1$1032ca34$a50adf64@cox.net>
-References: <1429312124.8371.62.camel@scientia.net>
-	<201504180424.40385.russell@coker.com.au>
-	<1429334269.8371.75.camel@scientia.net>
-	<201504190102.42660.russell@coker.com.au>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Russell Coker posted on Sun, 19 Apr 2015 01:02:42 +1000 as excerpted:
+Hi all
 
->> Some additional questions:
->> a) Can btrfs send change anything(!) on the source fs?
->> b) Can one abort (Ctrl-C) a send and/or receive... and make it continue
->> at the same place were it was stopped?
-> 
-> A yes, B I don't know.
+I'm looking into the advisability of running PostgreSQL on BTRFS, and
+after looking at the FAQ there's something I'm hoping you could
+clarify.
 
-More directly on A, btrfs send creates a read-only snapshot and sends it, 
-so the filesystem isn't changing out from under it as it sends.  So 
-that's what it changes on the source filesystem.  AFAIK, nothing else.
+The wiki FAQ says:
 
-For B, my use-case doesn't include send/receive, so I don't know, 
-directly, either.  But due to the way it works, assuming an aborted send/
-receive doesn't get automatically cleaned up (I simply don't know that, 
-and I'm not bothering to look it up, but it should be documented if it 
-does), it should at minimum be possible to include the aborted version as 
-a parent or reference on each end, such that if any data was sent in the 
-aborted send/receive, it shouldn't have to be sent again, only a metadata 
-reference to it will need to be sent.
+"Btrfs does not force all dirty data to disk on every fsync or O_SYNC
+operation, fsync is designed to be fast."
 
-> Also I'm not personally inclined to trust send/recv at this time.  I
-> don't think it's had a lot of testing.
+Is that wording intended narrowly, to contrast with ext3's nasty habit
+of flushing *all* dirty blocks for the entire file system whenever
+anyone calls fsync() ? Or is it intended broadly, to say that btrfs's
+fsync won't necessarily flush all data blocks (just metadata) ?
 
-Based on posts from people using it here, as well as watching the 
-patches, etc, going by, I'd say that given a send/receive that has 
-completed without error, it should be reliably golden.  There continue to 
-be various corner-case bugs where it doesn't always work, but in that 
-case it should reliably error on one side or the other.
+Is that statement still true in recent BTRFS versions (3.18, etc)?
 
-A very simple example of the type of corner-case that still causes 
-problems, tho this one should work, it's the much more complex ones that 
-sometimes don't, is where the original filesystem had /dir/suba/subb/, 
-but that nesting was reversed to /dir/subb/suba/.  That's the general 
-sort of thing that can still cause problems, altho simple example 
-shouldn't, but obviously, it can only be a problem on later incrementals 
-that reference a parent with a tree that has "gone inside out", so to 
-speak, since the parent send.
 
-But again, if the process works without error on both sides, then the 
-result should be golden, barring of course a serious regression bug.
+PostgreSQL (and any other transactional database) absolutely requires
+that there be a system call that will provide a hard guarantee that
+all dirty blocks for a given file are on durable storage. In the case
+of data-integrity-significant metadata operations it has to be able to
+get the same guarantee on metadata too.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+The documentation for fsync says that:
 
+       fsync() transfers ("flushes") all modified in-core data of (i.e., modi‐
+       fied  buffer cache pages for) the file referred to by the file descrip‐
+       tor fd to the disk device (or other permanent storage device)  so  that
+       all  changed information can be retrieved even after the system crashed
+       or was rebooted.  This includes writing  through  or  flushing  a  disk
+       cache  if  present.   The call blocks until the device reports that the
+       transfer has completed.  It also flushes metadata  information  associ‐
+       ated with the file (see stat(2)).
+
+
+so I'm hoping that the FAQ writer was just comparing with ext3, and
+that btrfs's fsync() fully flushes all dirty blocks and metadata for a
+file or directory. (I haven't had a chance to do any testing on a
+machine with slow flushes to see yet, or any plug-pull testing).
+
+
+Also on the FAQ:
+
+https://btrfs.wiki.kernel.org/index.php/FAQ#What_are_the_crash_guarantees_of_overwrite-by-rename.3F
+
+it might be a good idea to recommend that applications really should
+fsync() the directory if they want a crash safety guarantee, and that
+doing so (hopefully?) won't flush dirty file blocks, just directory
+metadata.
+
+--
+ Craig Ringer                   http://www.2ndQuadrant.com/
+ PostgreSQL Development, 24x7 Support, Training & Services

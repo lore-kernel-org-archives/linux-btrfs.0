@@ -1,68 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26887 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932139AbbDMOf6 (ORCPT
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:37969 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750991AbbDSLqh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 10:35:58 -0400
-From: Anand Jain <anand.jain@oracle.com>
+	Sun, 19 Apr 2015 07:46:37 -0400
+Received: by wiun10 with SMTP id n10so63024014wiu.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 04:46:35 -0700 (PDT)
+From: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/1] Btrfs-progs: fix compile warnings
-Date: Mon, 13 Apr 2015 22:48:54 +0800
-Message-Id: <1428936534-2502-1-git-send-email-anand.jain@oracle.com>
+Cc: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+Subject: [PATCH] btrfs-progs: optionally enforce chroot for btrfs receive
+Date: Sun, 19 Apr 2015 14:46:28 +0300
+Message-Id: <1429443988-16001-1-git-send-email-lauri.vosandi@gmail.com>
+In-Reply-To: <217a387d55b5828a82fadad98dd88a959e7a13ed.1429008167.git.lauri.vosandi@gmail.com>
+References: <217a387d55b5828a82fadad98dd88a959e7a13ed.1429008167.git.lauri.vosandi@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-simple compile time warning fixes.
+This patch forces btrfs receive to issue chroot before
+parsing the btrfs stream using command-line flag -C
+to confine the process and minimize damage that could
+be done via malicious btrfs stream.
 
-cmds-check.c: In function ‘del_file_extent_hole’:
-cmds-check.c:289: warning: ‘prev.len’ may be used uninitialized in this function
-cmds-check.c:289: warning: ‘prev.start’ may be used uninitialized in this function
-cmds-check.c:290: warning: ‘next.len’ may be used uninitialized in this function
-cmds-check.c:290: warning: ‘next.start’ may be used uninitialized in this function
-
-btrfs-calc-size.c: In function ‘print_seek_histogram’:
-btrfs-calc-size.c:221: warning: ‘group_start’ may be used uninitialized in this function
-btrfs-calc-size.c:223: warning: ‘group_end’ may be used uninitialized in this function
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
 ---
- btrfs-calc-size.c | 4 ++--
- cmds-check.c      | 3 +++
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ cmds-receive.c | 38 +++++++++++++++++++++++++++++---------
+ 1 file changed, 29 insertions(+), 9 deletions(-)
 
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-index 1372084..88f92e1 100644
---- a/btrfs-calc-size.c
-+++ b/btrfs-calc-size.c
-@@ -218,9 +218,9 @@ static void print_seek_histogram(struct root_stats *stat)
- 	struct rb_node *n = rb_first(&stat->seek_root);
- 	struct seek *seek;
- 	u64 tick_interval;
--	u64 group_start;
-+	u64 group_start = 0;
- 	u64 group_count = 0;
--	u64 group_end;
-+	u64 group_end = 0;
- 	u64 i;
- 	u64 max_seek = stat->max_seek_len;
- 	int digits = 1;
-diff --git a/cmds-check.c b/cmds-check.c
-index ed8c698..de22185 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -293,6 +293,9 @@ static int del_file_extent_hole(struct rb_root *holes,
- 	int have_next = 0;
- 	int ret = 0;
+diff --git a/cmds-receive.c b/cmds-receive.c
+index a1c72f9..d96eab6 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -61,6 +61,7 @@ struct btrfs_receive
+ 	char *root_path;
+ 	char *dest_dir_path; /* relative to root_path */
+ 	char *full_subvol_path;
++	int dest_dir_chroot;
  
-+	memset(&prev, 0, sizeof(struct file_extent_hole));
-+	memset(&next, 0, sizeof(struct file_extent_hole));
-+
- 	tmp.start = start;
- 	tmp.len = len;
- 	node = rb_search(holes, &tmp, compare_hole_range, NULL);
+ 	struct subvol_info *cur_subvol;
+ 
+@@ -858,14 +859,28 @@ static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd,
+ 		goto out;
+ 	}
+ 
+-	/*
+-	 * find_mount_root returns a root_path that is a subpath of
+-	 * dest_dir_full_path. Now get the other part of root_path,
+-	 * which is the destination dir relative to root_path.
+-	 */
+-	r->dest_dir_path = dest_dir_full_path + strlen(r->root_path);
+-	while (r->dest_dir_path[0] == '/')
+-		r->dest_dir_path++;
++	if (r->dest_dir_chroot) {
++		if (chroot(dest_dir_full_path)) {
++			ret = -errno;
++			fprintf(stderr,
++				"ERROR: failed to chroot to %s, %s\n",
++				dest_dir_full_path,
++				strerror(-ret));
++			goto out;
++		}
++		if(chdir("/")) {
++			ret = -errno;
++			fprintf(stderr,
++				"ERROR: failed to chdir to /, %s\n",
++				strerror(-ret));
++			goto out;
++		}
++		if (g_verbose >= 1) {
++			fprintf(stderr, "chrooted to %s\n",
++				dest_dir_full_path);
++		}
++		r->root_path = r->dest_dir_path = strdup("/");
++	}
+ 
+ 	ret = subvol_uuid_search_init(r->mnt_fd, &r->sus);
+ 	if (ret < 0)
+@@ -930,6 +945,7 @@ int cmd_receive(int argc, char **argv)
+ 	r.mnt_fd = -1;
+ 	r.write_fd = -1;
+ 	r.dest_dir_fd = -1;
++	r.dest_dir_chroot = 0;
+ 
+ 	while (1) {
+ 		int c;
+@@ -938,7 +954,7 @@ int cmd_receive(int argc, char **argv)
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "evf:", long_opts, NULL);
++		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+@@ -952,6 +968,9 @@ int cmd_receive(int argc, char **argv)
+ 		case 'e':
+ 			r.honor_end_cmd = 1;
+ 			break;
++		case 'C':
++			r.dest_dir_chroot = 1;
++			break;
+ 		case 'E':
+ 			max_errors = arg_strtou64(optarg);
+ 			break;
+@@ -1001,6 +1020,7 @@ const char * const cmd_receive_usage[] = {
+ 	"                 in the data stream. Without this option,",
+ 	"                 the receiver terminates only if an error",
+ 	"                 is recognized or on EOF.",
++	"-C               Confine the process to <mount> using chroot",
+ 	"--max-errors <N> Terminate as soon as N errors happened while",
+ 	"                 processing commands from the send stream.",
+ 	"                 Default value is 1. A value of 0 means no limit.",
 -- 
-2.0.0.153.g79dcccc
+1.9.1
 

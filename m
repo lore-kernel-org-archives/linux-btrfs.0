@@ -1,41 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp5.hushmail.com ([65.39.178.142]:58801 "EHLO
-	smtp5.hushmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750946AbbDSNvM (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:35104 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752159AbbDSO2J convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Apr 2015 09:51:12 -0400
-Received: from smtp5.hushmail.com (localhost [127.0.0.1])
-	by smtp5.hushmail.com (Postfix) with SMTP id 5587E60165
-	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 13:51:11 +0000 (UTC)
-Received: from smtp.hushmail.com (w8.hushmail.com [65.39.178.52])
-	(using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp5.hushmail.com (Postfix) with ESMTPS
-	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2015 13:51:11 +0000 (UTC)
+	Sun, 19 Apr 2015 10:28:09 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Craig Ringer <craig@2ndquadrant.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: The FAQ on fsync/O_SYNC
+Date: Sun, 19 Apr 2015 16:28:07 +0200
+Message-ID: <49296740.rPqQP4vAjc@merkaba>
+In-Reply-To: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
+References: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
 MIME-Version: 1.0
-Date: Sun, 19 Apr 2015 15:51:10 +0200
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Background corrections don't show up in device stats, and have low syslog priority. How do I reliably find out about them?
-From: ivarun_ml@nym.hush.com
-In-Reply-To: <pan.2015.04.17.20.35.59@googlemail.com>
-References: <20150417194609.1192EA03BC@smtp.hushmail.com> <pan.2015.04.17.20.35.59@googlemail.com> 
-Content-Type: text/plain; charset="UTF-8"
-Message-Id: <20150419135111.16D86E042D@smtp.hushmail.com>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/17/2015 at 10:36 PM, "Holger Hoffstaette" <holger.hoffstaette@googlemail.com> wrote:
->I don't know about the device stats, but at least the log level for
->read errors was already fixed in a patch series:
->
->http://www.spinics.net/lists/linux-btrfs/msg40556.html
->
->This was merged into 4.0.
+Am Sonntag, 19. April 2015, 21:20:11 schrieb Craig Ringer:
+> Hi all
 
-Thanks! Very narrow coincidence that openSUSE tumbleweed was still on 3.19.3 instead of 4.0 when I ran my test :-).
+Hi Craig,
 
-I would still be interested to know whether we can expect the device stats to be updated in the future, or if the syslog will be the best way to look up these numbers. Finding out how many errors there have been of the different kinds per device would be much easier to do through device stats rather than searching the syslog.
+> I'm looking into the advisability of running PostgreSQL on BTRFS, and
+> after looking at the FAQ there's something I'm hoping you could
+> clarify.
+> 
+> The wiki FAQ says:
+> 
+> "Btrfs does not force all dirty data to disk on every fsync or O_SYNC
+> operation, fsync is designed to be fast."
+> 
+> Is that wording intended narrowly, to contrast with ext3's nasty habit
+> of flushing *all* dirty blocks for the entire file system whenever
+> anyone calls fsync() ? Or is it intended broadly, to say that btrfs's
+> fsync won't necessarily flush all data blocks (just metadata) ?
+> 
+> Is that statement still true in recent BTRFS versions (3.18, etc)?
 
-Regards,
-Ivar Ursin Nikolaisen
+I don´t know, thus leave that for others to answer. I always assumed a 
+strong fsync() guarentee as in "its on disk" with BTRFS. So I am 
+interested in that as well.
 
+But for databases, did you consider the copy on write fragmentation BTRFS 
+will give? Even with autodefrag, afaik it is not recommended to use it for 
+large databases on rotating media at least.
+
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

@@ -1,50 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54982 "EHLO plane.gmane.org"
+Received: from mx1.redhat.com ([209.132.183.28]:57007 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754055AbbDTIPJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 04:15:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Yk6r9-0008VU-Mc
-	for linux-btrfs@vger.kernel.org; Mon, 20 Apr 2015 10:15:03 +0200
-Received: from 78-20-36-53.access.telenet.be ([78.20.36.53])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 10:15:03 +0200
-Received: from gcp by 78-20-36-53.access.telenet.be with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 10:15:03 +0200
-To: linux-btrfs@vger.kernel.org
-From: Gian-Carlo Pascutto <gcp@sjeng.org>
-Subject: Re: The FAQ on fsync/O_SYNC
-Date: Mon, 20 Apr 2015 10:13:47 +0200
-Message-ID: <mh2cfv$7rr$1@ger.gmane.org>
-References: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com> <49296740.rPqQP4vAjc@merkaba> <CAMsr+YH9jC-x57_fVv8N+DuhotYCZAibTE2ELQwN=DgK3qoL9w@mail.gmail.com> <20150420042731.GA20194@hungrycats.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-In-Reply-To: <20150420042731.GA20194@hungrycats.org>
+	id S1754814AbbDTJ2G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Apr 2015 05:28:06 -0400
+From: David Howells <dhowells@redhat.com>
+In-Reply-To: <20150420144956.1f489f67@notabene.brown>
+References: <20150420144956.1f489f67@notabene.brown> <20150409174916.5a2efef5@notabene.brown> <29536.1428571388@warthog.procyon.org.uk> <20150410112431.0e9c337d@notabene.brown>
+To: NeilBrown <neilb@suse.de>
+Cc: dhowells@redhat.com, linux-btrfs@vger.kernel.org, linux-cachefs@redhat.com,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH/RFC] fscache/cachefiles versus btrfs
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Date: Mon, 20 Apr 2015 10:27:57 +0100
+Message-ID: <31056.1429522077@warthog.procyon.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20-04-15 06:27, Zygo Blaxell wrote:
+NeilBrown <neilb@suse.de> wrote:
 
->> I'm curious as to whether +C has any effect on BTRFS's durability, too.
-> 
-> I would expect it to be strictly equal to or worse than the CoW
-> durability.
+> I managed to reproduce the bug, and when I applied your patches I cannot any
+> more.  So it looks like you've fixed it - thanks.
 
-In addition to the stuff pointed out, I've wondered about this:
-PostgreSQL full_page_writes copies 8k pages in order to prevent
-corruption from partial writes. But btrfs has 16k pages by default, so a
-corrupted FS page would corrupt more data than PostgreSQL protects.
+I hope so too.  Now I just hope Linus takes the patches.
 
-Maybe it's not an issue if the underlying HW has 512b/4k sectors, or
-maybe I'm misunderstanding what the respective features assume, but
-unless informed to the contrary I wouldn't be entirely comfortable with
-this.
+> That just leave the bmap issue.  I'll post a patch which causes lseek to be
+> used when the fs says that is OK.
 
-(With CoW enabled, you don't have partial writes, so the point is moot)
+Okay, thanks.
 
--- 
-GCP
-
+David

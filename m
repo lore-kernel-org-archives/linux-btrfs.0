@@ -1,174 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:57329 "EHLO
-	mailgw02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751024AbbDTQcX (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:32868 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751180AbbDTVNG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 12:32:23 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw02.dd24.net (Postfix) with ESMTP id 7E5C15FAC9
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 16:32:21 +0000 (UTC)
-Received: from mailgw02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id smoxdqcXUT9O for <linux-btrfs@vger.kernel.org>;
-	Mon, 20 Apr 2015 16:32:18 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-188-174-18-198.dynamic.mnet-online.de [188.174.18.198])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 16:32:18 +0000 (UTC)
-Message-ID: <1429547537.11806.13.camel@scientia.net>
-Subject: Re: how to clone a btrfs filesystem
-From: Christoph Anton Mitterer <calestyo@scientia.net>
+	Mon, 20 Apr 2015 17:13:06 -0400
+Received: by wiax7 with SMTP id x7so92978964wia.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 14:13:04 -0700 (PDT)
+MIME-Version: 1.0
+Date: Mon, 20 Apr 2015 22:13:04 +0100
+Message-ID: <CAO+szGt_U9PU_Z746O8gj5wYvu-Xw4A6rWNtVFfF9o+wh9_WbA@mail.gmail.com>
+Subject: Kernel BUG at fs/btrfs/ctree.c:3163
+From: Francis McBratney <fmcbra@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Date: Mon, 20 Apr 2015 18:32:17 +0200
-In-Reply-To: <pan$774e3$bc27dda5$8703f13a$d11ec028@cox.net>
-References: <1429312124.8371.62.camel@scientia.net>
-	 <201504180424.40385.russell@coker.com.au>
-	 <1429334269.8371.75.camel@scientia.net>
-	 <201504190102.42660.russell@coker.com.au>
-	 <1429473624.24823.38.camel@scientia.net>
-	 <pan$774e3$bc27dda5$8703f13a$d11ec028@cox.net>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-oK6TdXObQkYZx1aTZPPS"
-Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi folks,
 
---=-oK6TdXObQkYZx1aTZPPS
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Reporting this here too as per the "How do I report bugs and issues?"
+section on the wiki.
 
-On Mon, 2015-04-20 at 05:23 +0000, Duncan wrote:=20
-> Which, given the common developer wisdom about premature optimization,=
-=20
-> can be explained.  But accepting that explanation, one is still stymied=
-=20
-> by the fact that all the previous warnings about btrfs being in heavy=20
-> development, keep good backups and be prepared to use them, etc, are=20
-> being stripped, because btrfs is supposedly ready for normal use now. =
-=20
-> But if it's ready for normal use, why isn't it optimized for normal use,=
-=20
-> then?  And if it's not ready for normal use, why are the warnings=20
-> actually telling people that being prematurely stripped?
-Well I've mentioned it several times already, that the bad state of the
-documentation i.e. what can be expected (e.g. in terms of "Can I
-interrupt a fsck or will this be bad?" and so on), which functionalities
-are considered stable and which not, practical use cases and more
-in-depth (but still abstract, i.e. not at the developer/code level)...
-When should one use nodatacow, which implications does this have.
+I managed to trigger the following BUG_ON() whilst running 'apt purge':-
 
-All these and much more missing documentations are currently one of the
-biggest obstacle in the way of using btrfs.
-And this kind of documentation need to be "definite" i.e. written by
-(main) developers and not "just" list regulars.
+[   85.635305] kernel BUG at fs/btrfs/ctree.c:3163!
+[   85.635350] invalid opcode: 0000 [#1] SMP
+[   85.635398] Modules linked in: nf_nat_irc nf_nat_ftp
+nf_conntrack_irc nf_conntrack_ftp ipt_MASQUERADE
+nf_nat_masquerade_ipv4 iptable_nat nf_nat_ipv4 nf_nat xt_NFLOG
+xt_limit xt_helper xt_tcpudp nf_conntrack_ipv4 nf_defrag_ipv4
+xt_conntrack nf_conntrack iptable_filter ip_tables x_tables
+nfnetlink_log nfnetlink bridge stp llc dummy crct10dif_pclmul
+crc32_pclmul crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64
+glue_helper lrw gf128mul ablk_helper cryptd psmouse serio_raw
+virtio_rng rng_core autofs4
+[   85.635717] CPU: 0 PID: 1365 Comm: apt Not tainted 3.19.5-dt1 #1
+[   85.635795] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
+BIOS rel-1.7.5.1-0-g8936dbb-20141113_115728-nilsson.home.kraxel.org
+04/01/2014
+[   85.635897] task: ffff88002c607530 ti: ffff880028240000 task.ti:
+ffff880028240000
+[   85.635952] RIP: 0010:[<ffffffff812552e1>]  [<ffffffff812552e1>]
+btrfs_set_item_key_safe+0x171/0x180
+[   85.636021] RSP: 0018:ffff880028243a28  EFLAGS: 00010246
+[   85.636071] RAX: 0000000000000000 RBX: ffff88002b291920 RCX: 00000000001a0000
+[   85.636129] RDX: 0000000000000000 RSI: ffff880028243b4e RDI: ffff880028243a47
+[   85.636189] RBP: ffff880028243a36 R08: ffff88002b04f858 R09: ffff880000000000
+[   85.636244] R10: 0000160000000000 R11: 0000000000001000 R12: ffff880028202000
+[   85.636297] R13: 000000000000004f R14: ffff88002b04f7b8 R15: ffff880028243b4e
+[   85.636349] FS:  00007fb76c086740(0000) GS:ffff88002fc00000(0000)
+knlGS:0000000000000000
+[   85.636407] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   85.636455] CR2: 00007fb769471594 CR3: 0000000028344000 CR4: 00000000001406f0
+[   85.636511] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[   85.636564] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+[   85.636603] Stack:
+[   85.636642]  ffff88002800e8c0 39ca880028202000 006c00000000000b
+ca00000000001a00
+[   85.636699]  6c00000000000b39 00000000001a0000 0000000000001000
+ffff88002b04f7b8
+[   85.636757]  ffff88002b291920 000000000019e000 00000000001a0000
+0000000001800000
+[   85.636844] Call Trace:
+[   85.636867]  [<ffffffff8128efb1>] ? __btrfs_drop_extents+0xbe1/0xdb0
+[   85.636867]  [<ffffffff8112782e>] ? set_page_dirty+0xe/0x60
+[   85.636867]  [<ffffffff812b56a4>] ? btrfs_log_changed_extents+0x284/0x5c0
+[   85.636867]  [<ffffffff812590c2>] ? btrfs_insert_empty_items+0x72/0xc0
+[   85.636867]  [<ffffffff812ba08d>] ? btrfs_log_inode+0x78d/0x810
+[   85.636867]  [<ffffffff812ba3a9>] ? btrfs_log_inode_parent+0x1f9/0x570
+[   85.636867]  [<ffffffff811801e5>] ? __sb_start_write+0x45/0xe0
+[   85.636867]  [<ffffffff812bb5eb>] ? btrfs_log_dentry_safe+0x5b/0x80
+[   85.636867]  [<ffffffff81290b73>] ? btrfs_sync_file+0x1d3/0x310
+[   85.636867]  [<ffffffff8115365e>] ? SyS_msync+0x1fe/0x260
+[   85.636867]  [<ffffffff8165988d>] ? system_call_fastpath+0x16/0x1b
+[   85.636867] Code: 7c 24 1f 4c 89 fe 48 89 44 24 28 0f b6 44 24 16
+88 44 24 27 48 8b 44 24 0e 48 89 44 24 1f e8 07 f3 ff ff 85 c0 0f 8f
+41 ff ff ff <0f> 0b 0f 1f 44 00 00 0f 0b 66 0f 1f 44 00 00 0f 1f 44 00
+00 41 00 0f 0b 66 0f 1f 44 00 00 0f 1f 44 00 00 41
+[   85.636867] RIP  [<ffffffff812552e1>] btrfs_set_item_key_safe+0x171/0x180
+[   85.636867]  RSP <ffff880028243a28>
+[   85.637872] ---[ end trace 409d47a41cf477bf ]---
 
+A few seconds later the system froze.  A single corrupt, temporary
+file was left behind according to a manual btrfsck run, which I
+zapped.  I've tried to reproduce but can't, and a very quick scan of
+Google returns a single match, so this may be hard to hit.
 
-Cheers,
-Chris.
+Note: this is vanilla 3.19.5 running on a KVM guest.
 
---=-oK6TdXObQkYZx1aTZPPS
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+And just in case it's helpful:
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDQyMDE2MzIx
-N1owTwYJKoZIhvcNAQkEMUIEQHloylPL7SG8kN+bHC23SKzFk+JSFQSqEI76opdzVbZmd7yC8aKy
-t6nTZ6xbv63R4OJpj2/I52UJkH6ufzCz4rAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB348J+JTTmTnpZyh2FVE+pExaDe6ah
-IZJhdtCoLcle+5DmRbt193mYwUWhRkBHM1W0KNHdnfRfTFPxymjQNntjthh8yCUUWr0JAq7rCHI0
-+YyBdoAq7EDyz3BvGBPXCzw3udwj5ATALLwIDmr7LqPzxf5kFpsCO1r1Bq0W2li3+Ym8O43FFtqO
-4rdMSwChtN55luo6F0JUwCEzR4LrQ9b20UNqtIBi+IKrJCBkG+QsTpMvpPqo1e2vmQZySD3qUjYf
-l156ExnmkRWwkyxmq5nuYGvnNcWIIWdc4sKhx3se9yrqQCqI72bXfavbYRAKUFwP2re6KZwMrSGO
-WoOjSlK5AAAAAAAA
+(#) root@apple:~
+>>> mount |grep vda3
+/dev/vda3 on / type btrfs (rw,nodiratime,relatime,compress=lzo,space_cache)
 
-
---=-oK6TdXObQkYZx1aTZPPS--
-
+--
+Best,
+Francis

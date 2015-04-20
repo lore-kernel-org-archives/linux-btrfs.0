@@ -1,44 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1207.opentransfer.com ([98.130.1.227]:42747 "EHLO
-	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753266AbbDTO3a (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:50420 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753342AbbDTOt4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 10:29:30 -0400
-Message-ID: <55350D48.2020404@friendlyvirus.org>
-Date: Mon, 20 Apr 2015 15:29:28 +0100
-From: =?windows-1252?Q?Miguel_Negr=E3o?=
-	<miguel.negrao-lists@friendlyvirus.org>
+	Mon, 20 Apr 2015 10:49:56 -0400
+Date: Mon, 20 Apr 2015 07:49:28 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        =?iso-8859-1?Q?=22N=E9moz_Saint-Dizier=2C_Olivier=22?=
+	<olivier@onsd.eu>,
+        linux-btrfs@vger.kernel.org
+Message-ID: <20150420144928.GT1258@merlins.org>
+References: <5534D201.7080803@onsd.eu>
+ <20150420102705.GF18187@carfax.org.uk>
 MIME-Version: 1.0
-To: sander@humilis.net
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: corruption in USB harddrive - backup via send/receive - question
-References: <loom.20150416T202016-456@post.gmane.org> <20150420140748.GA26890@panda>
-In-Reply-To: <20150420140748.GA26890@panda>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150420102705.GF18187@carfax.org.uk>
+Subject: Is btrfs on top of bcache stable now?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20-04-2015 15:07, Sander wrote:
-> Miguel Negrão wrote (ao):
->>  - Given that I'm running a laptop and comunicating with the harddrives via
->> USB, is it expected that I will get some corruption from time to time or is
->> this abnormal
-> 
-> Abnormal. I have three Intel ssd's usb connected to an Arndale. Two of
-> them have luks and btrfs raid0 on top, and is used as a home server. The
-> third ssd is plain btrfs, and used for backup archives.
+On Mon, Apr 20, 2015 at 10:27:05AM +0000, Hugo Mills wrote:
+>    See the first issue here: https://btrfs.wiki.kernel.org/index.php/Gotchas
 
-Hi Sander.
+Hi Hugo, looking at the page again, I see 
+"bcache + btrfs does not seem to be stable yet"
+linking to a thread more than 2 years old and btrfs kernels that
+wouldn't be stable without bcache anyway.
 
-Good to know. Indeed I think something's wrong with the enclosure, I
-keep getting some minimal corruption from time to time. I also use btrfs
-over luks.
+I've seen others mention they switched to bcache recently and not seen
+new "it's broken" reports.
 
- I'm considering buying a thunderbolt (I have a macbook pro) to esata
-converter, as bypassing the usb interface might be more stable. I
-imagine esata is better for btrfs then usb, correct ? Anyone here has
-experience with thunderbolt in linux ? My understanding it that if
-connected at boot time, devices should just appear as normal pci devices.
+So, is it ok
+1) to assume bcache and btrfs play ok together now?
+2) remove the warning from that gotchas page?
 
-Best,
-Miguel
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

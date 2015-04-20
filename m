@@ -1,93 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50585 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:46584 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750855AbbDTEuH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 00:50:07 -0400
-Date: Mon, 20 Apr 2015 14:49:56 +1000
-From: NeilBrown <neilb@suse.de>
-To: David Howells <dhowells@redhat.com>
-Cc: linux-btrfs@vger.kernel.org, linux-cachefs@redhat.com,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH/RFC] fscache/cachefiles versus btrfs
-Message-ID: <20150420144956.1f489f67@notabene.brown>
-In-Reply-To: <20150410112431.0e9c337d@notabene.brown>
-References: <20150409174916.5a2efef5@notabene.brown>
-	<29536.1428571388@warthog.procyon.org.uk>
-	<20150410112431.0e9c337d@notabene.brown>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/dVcelSonvmDGq0X=lchLGNa"; protocol="application/pgp-signature"
+	id S1752578AbbDTFXz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Apr 2015 01:23:55 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Yk4BT-0008N6-Q6
+	for linux-btrfs@vger.kernel.org; Mon, 20 Apr 2015 07:23:51 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 07:23:51 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 07:23:51 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: how to clone a btrfs filesystem
+Date: Mon, 20 Apr 2015 05:23:46 +0000 (UTC)
+Message-ID: <pan$774e3$bc27dda5$8703f13a$d11ec028@cox.net>
+References: <1429312124.8371.62.camel@scientia.net>
+	<201504180424.40385.russell@coker.com.au>
+	<1429334269.8371.75.camel@scientia.net>
+	<201504190102.42660.russell@coker.com.au>
+	<1429473624.24823.38.camel@scientia.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/dVcelSonvmDGq0X=lchLGNa
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Christoph Anton Mitterer posted on Sun, 19 Apr 2015 22:00:24 +0200 as
+excerpted:
 
-On Fri, 10 Apr 2015 11:24:31 +1000 NeilBrown <neilb@suse.de> wrote:
+> Most of the time, only one of the two disks shows activity, while the
+> other is reading respectively writing.
+> The CPU isn't really under full load either (not even a single core),...
+> it's rather in the 5-10% utilisation.
+> The resulting transferspeed is about 21,5 MB/s (not MiB).
+> Seems to be pretty low...
 
-> On Thu, 09 Apr 2015 10:23:08 +0100 David Howells <dhowells@redhat.com> wr=
-ote:
->=20
-> > NeilBrown <neilb@suse.de> wrote:
-> >=20
-> > >  Is there a better way?  Could a better way be created?  Maybe
-> > >  SEEK_DATA_RELIABLE ??
-> >=20
-> > fiemap() maybe?
-> >=20
-> > > Also, if you do try to use fscache on btrfs with 3.19, then nothing g=
-ets
-> > > cached (as expected) and with a heavy load you can lose a race and ge=
-t an
-> > > asserting fail in fscache_enqueue_operation
-> >=20
-> > Do you have the patches here applied?
-> >=20
-> > 	http://git.kernel.org/cgit/linux/kernel/git/dhowells/linux-fs.git/log/=
-?h=3Dfscache-fixes
-> >=20
->=20
-> Do I don't.  I had looked through them and while they did seem to be
-> addressing similar sorts of races, nothing seems like an obvious match.
-> I haven't been able to reproduce the BUG_ON myself.  I only have a report
-> of it repeatedly affecting someone else:
->=20
->   https://bugzilla.opensuse.org/show_bug.cgi?id=3D908706
->=20
-> I'll probably have to be happy with fixing usage on btrfs, and hope the o=
-ther
-> bug is fixed already or doesn't become a problem.
+In general, btrfs hasn't really been optimized yet.  One of the more 
+obvious cases of this is the btrfs raid1 mode read case, where the read-
+scheduling algorithm is simple even/odd based on the PID, which means a 
+single read thread will bottleneck on a single device, even if the other 
+one is totally idle.
 
-I managed to reproduce the bug, and when I applied your patches I cannot any
-more.  So it looks like you've fixed it - thanks.
+That's the biggest "forget optimization, 50% utilization is the best-case 
+as we're not yet optimizing" example out there, AFAIK.
 
-That just leave the bmap issue.  I'll post a patch which causes lseek to be
-used when the fs says that is OK.
+Which, given the common developer wisdom about premature optimization, 
+can be explained.  But accepting that explanation, one is still stymied 
+by the fact that all the previous warnings about btrfs being in heavy 
+development, keep good backups and be prepared to use them, etc, are 
+being stripped, because btrfs is supposedly ready for normal use now.  
+But if it's ready for normal use, why isn't it optimized for normal use, 
+then?  And if it's not ready for normal use, why are the warnings 
+actually telling people that being prematurely stripped?
 
-Thanks,
-NeilBrown
+IMO, therefore, a major btrfs development milestone will be when they 
+decide development has stabilized enough that it's time to actually 
+optimize these things for production use, and that doing so is no longer 
+"premature optimization", because the filesystem is mature and its 
+methods stable enough that optimization is no longer premature.  Once 
+/that/ happens, arguably then, and /only/ then, can /real/ discussion 
+start on whether/when btrfs is /truly/ mature and stable.
 
---Sig_/dVcelSonvmDGq0X=lchLGNa
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
+Until that optimization, then, the clear answer is that btrfs is not yet 
+stable, because developers are demonstrating by their failure to 
+optimize, that they don't consider the filesystem mature and stable 
+enough for it yet, such that any major effort at optimization (as opposed 
+to simply taking the opportunity when it presents itself as the most 
+sensible option) is premature.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-iQIVAwUBVTSFdDnsnt1WYoG5AQKb9Q//ZDSe96Txtf7d6U5S89kGEclwSZHtCass
-5WNCDawzeqMObZHDn4/jw0geTRj4NE6tpY74PcpPGAQdCzzy9sEC75+69mVCKgP/
-WvVaH8KBXcWh8X2W1hHzMVsVq8us2J1aP1gS6LvJsBx33ajBZFitCkSIw4QK5jTz
-krpIqrYHxtHshIRqHrv/0bZDcUT/uks6MnIIL7q+g92mBBdJC3xFrlQ+LbgJATdO
-VT6TLbuneHPBZ2CdfZS7LaLbSv9XhgPHg7P7qZqN50ruEmASKdtay35B1aRee+Pz
-00lemeByskVhRTN5zlebRRk187HNm/y073gAcn7ZhfqbMdo0SvJ4n5YEEg17a1bw
-RPClMZW7GpMBFyA3IYUhxipJr4hHNN5vpPJuq47oyZMTFMNpu/8VHIpin3Ow7bJE
-VMrixSz/G4BGR7g9c80JB2VRNzk9+gJR3rXgtBxgEaJLnGNvpHf3ocHIjW5Y4Bpk
-CCjdz8MuNn3fY3b6jjrp87ENRfLjci7bEAAEAIOdgPdLSS7W/E+3qN9Xn+ja7Ubh
-/vvQfscwMAHDciJTy2cmfZjARWACKBkbLov+f3q9uH0BNxG8mA1dRqNg3wVwrR2o
-PB4j3Rd5dVw7kuncySOkPoUKQwtzoViW5Coeu6fmgD7+wreJuTIalGO2mjRFQUjz
-P9+DooGLVfE=
-=KOPe
------END PGP SIGNATURE-----
-
---Sig_/dVcelSonvmDGq0X=lchLGNa--

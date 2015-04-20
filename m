@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59983 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52132 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754724AbbDNPHp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Apr 2015 11:07:45 -0400
-Date: Tue, 14 Apr 2015 17:07:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Omar Sandoval <osandov@osandov.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 4/6] Btrfs: fail on mismatched subvol and subvolid
- mount options
-Message-ID: <20150414150743.GR25622@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1428614837.git.osandov@osandov.com>
- <40c40f7f26acb30eea471b8c7b7bc01cce74be4d.1428614837.git.osandov@osandov.com>
- <55271BD9.7020903@cn.fujitsu.com>
+	id S1754266AbbDTF2q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Apr 2015 01:28:46 -0400
+From: NeilBrown <neilb@suse.de>
+To: David Howells <dhowells@redhat.com>, Chris Mason <clm@fb.com>,
+        Al Viro <viro@ZenIV.linux.org.uk>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Date: Mon, 20 Apr 2015 15:27:52 +1000
+Subject: [PATCH 3/3] btrfs: set FS_SUPPORTS_SEEK_HOLE flag.
+Cc: linux-cachefs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
+        linux-kernel@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Message-ID: <20150420052752.26554.13596.stgit@notabene.brown>
+In-Reply-To: <20150420052558.26554.97143.stgit@notabene.brown>
+References: <20150420052558.26554.97143.stgit@notabene.brown>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55271BD9.7020903@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 10, 2015 at 08:39:53AM +0800, Qu Wenruo wrote:
-> > There's nothing to stop a user from passing both subvol= and subvolid=
-> > to mount, but if they don't refer to the same subvolume, someone is
-> > going to be surprised at some point. Error out on this case, but allow
-> > users to pass in both if they do match (which they could, for example,
-> > get out of /proc/mounts).
-> Not sure should we do this extra check, as later mount options override 
-> previous mount option.
-> 
-> I previous tried to do such thing for mount option like inode/noinode, 
-> but was rejected for that reason.
+This allows fscache to cachefiles in a btrfs filesystem.
 
-Do you have a link to the discussion?
+Signed-off-by: NeilBrown <neilb@suse.de>
+---
+ fs/btrfs/super.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-> So not sure such error-out behavior is OK or not.
-> Maybe only taking the latest subvol/subvolid is a better choice?
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 05fef198ff94..d3c5d2b40f8e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1904,7 +1904,8 @@ static struct file_system_type btrfs_fs_type = {
+ 	.name		= "btrfs",
+ 	.mount		= btrfs_mount,
+ 	.kill_sb	= btrfs_kill_super,
+-	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA,
++	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA |
++			  FS_SUPPORTS_SEEK_HOLE,
+ };
+ MODULE_ALIAS_FS("btrfs");
+ 
 
-If not sure, follow the principle of least surprise. If both subvolid
-and subvol are passed and match then it's IMHO ok, no matter if the
-options match "by accident" or intentionally. Eg. copy&paste from
-/proc/mounts should work.
 
-If the options do not match we can't decide which one is the right one.
-The surprise would come if the user wants one (eg. subvolid) but the
-other one would be applied in the end (subvol).

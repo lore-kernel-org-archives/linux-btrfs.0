@@ -1,44 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50420 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753342AbbDTOt4 (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48084 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754185AbbDTPTp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 10:49:56 -0400
-Date: Mon, 20 Apr 2015 07:49:28 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        =?iso-8859-1?Q?=22N=E9moz_Saint-Dizier=2C_Olivier=22?=
-	<olivier@onsd.eu>,
-        linux-btrfs@vger.kernel.org
-Message-ID: <20150420144928.GT1258@merlins.org>
-References: <5534D201.7080803@onsd.eu>
- <20150420102705.GF18187@carfax.org.uk>
+	Mon, 20 Apr 2015 11:19:45 -0400
+Date: Mon, 20 Apr 2015 11:19:44 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Gian-Carlo Pascutto <gcp@sjeng.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: The FAQ on fsync/O_SYNC
+Message-ID: <20150420151943.GB20194@hungrycats.org>
+References: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
+ <49296740.rPqQP4vAjc@merkaba>
+ <CAMsr+YH9jC-x57_fVv8N+DuhotYCZAibTE2ELQwN=DgK3qoL9w@mail.gmail.com>
+ <20150420042731.GA20194@hungrycats.org>
+ <mh2cfv$7rr$1@ger.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150420102705.GF18187@carfax.org.uk>
-Subject: Is btrfs on top of bcache stable now?
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="wzJLGUyc3ArbnUjN"
+In-Reply-To: <mh2cfv$7rr$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 20, 2015 at 10:27:05AM +0000, Hugo Mills wrote:
->    See the first issue here: https://btrfs.wiki.kernel.org/index.php/Gotchas
 
-Hi Hugo, looking at the page again, I see 
-"bcache + btrfs does not seem to be stable yet"
-linking to a thread more than 2 years old and btrfs kernels that
-wouldn't be stable without bcache anyway.
+--wzJLGUyc3ArbnUjN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I've seen others mention they switched to bcache recently and not seen
-new "it's broken" reports.
+On Mon, Apr 20, 2015 at 10:13:47AM +0200, Gian-Carlo Pascutto wrote:
+> On 20-04-15 06:27, Zygo Blaxell wrote:
+>=20
+> >> I'm curious as to whether +C has any effect on BTRFS's durability, too.
+> >=20
+> > I would expect it to be strictly equal to or worse than the CoW
+> > durability.
+>=20
+> In addition to the stuff pointed out, I've wondered about this:
+> PostgreSQL full_page_writes copies 8k pages in order to prevent
+> corruption from partial writes. But btrfs has 16k pages by default, so a
+> corrupted FS page would corrupt more data than PostgreSQL protects.
 
-So, is it ok
-1) to assume bcache and btrfs play ok together now?
-2) remove the warning from that gotchas page?
+There are multiple page sizes in a btrfs.
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+*Metadata* pages are 16K by default.  Metadata is always CoW in btrfs.
+
+*Data* pages are 4K by default.  AIUI the btrfs code currently heavily
+relies on data page and host CPU page sizes being identical.  I don't
+know what happens on architectures with 8K page sizes--it's been years
+since I booted an Alpha machine.
+
+> Maybe it's not an issue if the underlying HW has 512b/4k sectors, or
+> maybe I'm misunderstanding what the respective features assume, but
+> unless informed to the contrary I wouldn't be entirely comfortable with
+> this.
+
+Usually writes are issued in multiples of 4K pages at a time from
+the kernel, so the underlying sector size only comes into play when
+something interrupts a disk between individual sector writes within
+a page.
+
+full_page_writes should handle no-CoW on btrfs (or any other filesystem)
+just fine.  It's the *other* btrfs bugs you have to worry about.  ;)
+
+> (With CoW enabled, you don't have partial writes, so the point is moot)
+>=20
+> --=20
+> GCP
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--wzJLGUyc3ArbnUjN
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlU1GQ8ACgkQgfmLGlazG5zSGgCgl8kzr4GeM1PH0iRyUh+WjzFq
+h44An2bzgeVU4P+cKV6lhNkjViIU8x8U
+=9mW6
+-----END PGP SIGNATURE-----
+
+--wzJLGUyc3ArbnUjN--

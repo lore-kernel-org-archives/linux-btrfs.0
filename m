@@ -1,65 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:45579 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751610AbbDSMOo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Apr 2015 08:14:44 -0400
-Date: Sun, 19 Apr 2015 17:05:03 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Lauri =?UTF-8?B?VsO1c2FuZGk=?= <lauri.vosandi@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: optionally enforce chroot for btrfs
- receive
-Message-ID: <20150419170503.4d888c04@natsu>
-In-Reply-To: <1429443988-16001-1-git-send-email-lauri.vosandi@gmail.com>
-References: <217a387d55b5828a82fadad98dd88a959e7a13ed.1429008167.git.lauri.vosandi@gmail.com>
-	<1429443988-16001-1-git-send-email-lauri.vosandi@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:38948 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754663AbbDTLee (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Apr 2015 07:34:34 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Yk9yC-0007oD-6V
+	for linux-btrfs@vger.kernel.org; Mon, 20 Apr 2015 13:34:32 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 13:34:32 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2015 13:34:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH] Btrfs-progs: fix typo in btrfs-device.txt
+Date: Mon, 20 Apr 2015 11:34:26 +0000 (UTC)
+Message-ID: <pan$55b14$27e3e801$add05965$e8bc02fc@cox.net>
+References: <1429525889-2843-1-git-send-email-anand.jain@oracle.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/dL=.zZoFKj7/4=IvVCMx_SI"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/dL=.zZoFKj7/4=IvVCMx_SI
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Anand Jain posted on Mon, 20 Apr 2015 18:31:29 +0800 as excerpted:
 
-On Sun, 19 Apr 2015 14:46:28 +0300
-Lauri V=C3=B5sandi <lauri.vosandi@gmail.com> wrote:
-
-> This patch forces btrfs receive to issue chroot before
-> parsing the btrfs stream using command-line flag -C
-> to confine the process and minimize damage that could
-> be done via malicious btrfs stream.
->=20
-> Signed-off-by: Lauri V=C3=B5sandi <lauri.vosandi@gmail.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  cmds-receive.c | 38 +++++++++++++++++++++++++++++---------
->  1 file changed, 29 insertions(+), 9 deletions(-)
+>  Documentation/btrfs-device.txt | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/btrfs-device.txt
+> b/Documentation/btrfs-device.txt index 4bb5ea5..0bc1be3 100644 ---
+> a/Documentation/btrfs-device.txt +++ b/Documentation/btrfs-device.txt @@
+> -53,7 +53,7 @@ run `btrfs-balance`(8) to rebuild the chunks.
+>  See `btrfs-balance`(8) for more details.
+>  
+>  Device add/remove/replace::
+> -Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
+> +Device can be added/removed using `btrfs-delete`(8) subcommand and replaced
+>  using `btrfs-replace`(8).
+>  +
+>  When device is removed or replaced, btrfs will do the chunk rebuild if needed.
 
-No patch versions and changelogs between them?...
+That isn't correct either.  Device can be _added_ using btrfs-delete?  It's
+btrfs device add, tho I'm not sure the appropriate notation for that here
+in ordered to have the manpage work correctly.
 
-By now there are 4 versions of this patch with identical subject and vague
-unclear differences in description and content.
+Maybe:
 
-Usually what you do is label each new one [PATCH v2] (v3, v4) and describe =
-what
-got changed on each iteration.
+ Device add/remove/replace::
+-Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
++Device can be added/removed using add/delete as below and replaced
+ using `btrfs-replace`(8).
 
---=20
-With respect,
-Roman
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---Sig_/dL=.zZoFKj7/4=IvVCMx_SI
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlUzme8ACgkQTLKSvz+PZwgIhQCeLhKPQhEhXB+z3f2tva55pY5s
-QhUAn22TIAC9NAL9nIT3/bxN2vTC+LjM
-=/kKe
------END PGP SIGNATURE-----
-
---Sig_/dL=.zZoFKj7/4=IvVCMx_SI--

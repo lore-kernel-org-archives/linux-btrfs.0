@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9634 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58479 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752521AbbDUGVv (ORCPT
+	with ESMTP id S1751469AbbDUGVs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 02:21:51 -0400
+	Tue, 21 Apr 2015 02:21:48 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KcRA025463
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:38 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KYCR025437
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:35 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 17/18] btrfs: qgroup: Add the ability to skip given qgroup for old/new_roots.
-Date: Tue, 21 Apr 2015 14:21:33 +0800
-Message-ID: <1429597294-11875-18-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 12/18] btrfs: qgroup: Switch rescan to new mechanism.
+Date: Tue, 21 Apr 2015 14:21:28 +0800
+Message-ID: <1429597294-11875-13-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,133 +19,117 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is used by later qgroup fix patches for snapshot.
+Switch rescan to use the new new extent oriented mechanism.
 
-As current snapshot accounting is done by btrfs_qgroup_inherit(), but
-new extent oriented quota mechanism will account extent from
-btrfs_copy_root() and other snapshot things, causing wrong result.
+As rescan is also based on extent, new mechanism is just a perfect match
+for rescan.
 
-So add this ability to handle snapshot accounting.
+With re-designed internal functions, rescan is quite easy, just call
+btrfs_find_all_roots() and then btrfs_qgroup_account_one_extent().
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.h |  8 ++++++++
- fs/btrfs/qgroup.c      |  8 ++++++++
- fs/btrfs/transaction.c |  1 +
- fs/btrfs/transaction.h | 23 +++++++++++++++++++++++
- 4 files changed, 40 insertions(+)
+ fs/btrfs/qgroup.c | 43 +++++++------------------------------------
+ 1 file changed, 7 insertions(+), 36 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 6481de2..07b701c 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -165,6 +165,14 @@ struct btrfs_delayed_ref_root {
- 	int flushing;
- 
- 	u64 run_delayed_start;
-+
-+	/*
-+	 * To make qgroup to skip given root.
-+	 * This is for snapshot, as btrfs_qgroup_inherit() will manully
-+	 * modify counters for snapshot and its source, so we should skip
-+	 * the snapshot in new_root/old_roots or it will get calculated twice
-+	 */
-+	u64 qgroup_to_skip;
- };
- 
- extern struct kmem_cache *btrfs_delayed_ref_head_cachep;
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 01612d7..029a695 100644
+index be5717f..579f94a 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1244,9 +1244,11 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup_extent_record *record;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct rb_node *node;
-+	u64 qgroup_to_skip;
- 	int ret = 0;
+@@ -2877,15 +2877,13 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
+  */
+ static int
+ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+-		   struct btrfs_trans_handle *trans, struct ulist *qgroups,
+-		   struct ulist *tmp, struct extent_buffer *scratch_leaf)
++		   struct btrfs_trans_handle *trans,
++		   struct extent_buffer *scratch_leaf)
+ {
+ 	struct btrfs_key found;
+ 	struct ulist *roots = NULL;
+ 	struct seq_list tree_mod_seq_elem = {};
+ 	u64 num_bytes;
+-	u64 seq;
+-	int new_roots;
+ 	int slot;
+ 	int ret;
  
- 	delayed_refs = &trans->transaction->delayed_refs;
-+	qgroup_to_skip = delayed_refs->qgroup_to_skip;
+@@ -2935,33 +2933,15 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 		else
+ 			num_bytes = found.offset;
  
- 	/*
- 	 * No need to do lock, since this function will only be called in
-@@ -1260,6 +1262,8 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
- 					   &record->old_roots);
+-		ulist_reinit(qgroups);
+ 		ret = btrfs_find_all_roots(NULL, fs_info, found.objectid, 0,
+ 					   &roots);
  		if (ret < 0)
- 			break;
-+		if (qgroup_to_skip)
-+			ulist_del(record->old_roots, qgroup_to_skip, 0);
- 		node = rb_next(node);
+ 			goto out;
+-		spin_lock(&fs_info->qgroup_lock);
+-		seq = fs_info->qgroup_seq;
+-		fs_info->qgroup_seq += roots->nnodes + 1; /* max refcnt */
+-
+-		new_roots = 0;
+-		ret = qgroup_calc_old_refcnt(fs_info, 0, tmp, roots, qgroups,
+-					     seq, &new_roots, 1);
+-		if (ret < 0) {
+-			spin_unlock(&fs_info->qgroup_lock);
+-			ulist_free(roots);
+-			goto out;
+-		}
+-
+-		ret = qgroup_adjust_counters(fs_info, 0, num_bytes, qgroups,
+-					     seq, 0, new_roots, 1);
+-		if (ret < 0) {
+-			spin_unlock(&fs_info->qgroup_lock);
+-			ulist_free(roots);
++		/* For rescan, just pass old_roots as NULL */
++		ret = btrfs_qgroup_account_extent(trans, fs_info,
++				found.objectid, num_bytes, NULL, roots);
++		if (ret < 0)
+ 			goto out;
+-		}
+-		spin_unlock(&fs_info->qgroup_lock);
+-		ulist_free(roots);
  	}
- 	return ret;
-@@ -1552,9 +1556,11 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct ulist *new_roots = NULL;
- 	struct rb_node *node;
-+	u64 qgroup_to_skip;
- 	int ret = 0;
+ out:
+ 	btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+@@ -2975,19 +2955,12 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 						     qgroup_rescan_work);
+ 	struct btrfs_path *path;
+ 	struct btrfs_trans_handle *trans = NULL;
+-	struct ulist *tmp = NULL, *qgroups = NULL;
+ 	struct extent_buffer *scratch_leaf = NULL;
+ 	int err = -ENOMEM;
  
- 	delayed_refs = &trans->transaction->delayed_refs;
-+	qgroup_to_skip = delayed_refs->qgroup_to_skip;
- 	while ((node = rb_first(&delayed_refs->dirty_extent_root))) {
- 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
- 				  node);
-@@ -1569,6 +1575,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
- 					record->bytenr, (u64)-1, &new_roots);
- 			if (ret < 0)
- 				goto cleanup;
-+			if (qgroup_to_skip)
-+				ulist_del(new_roots, qgroup_to_skip, 0);
- 			ret = btrfs_qgroup_account_extent(trans, fs_info,
- 					record->bytenr, record->num_bytes,
- 					record->old_roots, new_roots);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index eaea170..2b50ce4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -230,6 +230,7 @@ loop:
- 	cur_trans->delayed_refs.num_heads = 0;
- 	cur_trans->delayed_refs.flushing = 0;
- 	cur_trans->delayed_refs.run_delayed_start = 0;
-+	cur_trans->delayed_refs.qgroup_to_skip = 0;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		goto out;
+-	qgroups = ulist_alloc(GFP_NOFS);
+-	if (!qgroups)
+-		goto out;
+-	tmp = ulist_alloc(GFP_NOFS);
+-	if (!tmp)
+-		goto out;
+ 	scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
+ 	if (!scratch_leaf)
+ 		goto out;
+@@ -3003,7 +2976,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 			err = -EINTR;
+ 		} else {
+ 			err = qgroup_rescan_leaf(fs_info, path, trans,
+-						 qgroups, tmp, scratch_leaf);
++						 scratch_leaf);
+ 		}
+ 		if (err > 0)
+ 			btrfs_commit_transaction(trans, fs_info->fs_root);
+@@ -3013,8 +2986,6 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  
- 	/*
- 	 * although the tree mod log is per file system and not per transaction,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 937050a..c7cb8aa 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -141,6 +141,29 @@ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
- }
+ out:
+ 	kfree(scratch_leaf);
+-	ulist_free(qgroups);
+-	ulist_free(tmp);
+ 	btrfs_free_path(path);
  
-+/*
-+ * Make qgroup codes to skip given qgroupid, means the old/new_roots for
-+ * qgroup won't contain the qgroupid in it.
-+ */
-+static inline void btrfs_set_skip_qgroup(struct btrfs_trans_handle *trans,
-+					 u64 qgroupid)
-+{
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+	WARN_ON(delayed_refs->qgroup_to_skip);
-+	delayed_refs->qgroup_to_skip = qgroupid;
-+}
-+
-+static inline void btrfs_clear_skip_qgroup(struct btrfs_trans_handle *trans)
-+{
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+	WARN_ON(!delayed_refs->qgroup_to_skip);
-+	delayed_refs->qgroup_to_skip = 0;
-+}
-+
- int btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
 -- 
 2.3.5
 

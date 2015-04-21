@@ -1,123 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:47724 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751276AbbDUBbT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 21:31:19 -0400
-Date: Mon, 20 Apr 2015 21:31:16 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: The FAQ on fsync/O_SYNC
-Message-ID: <20150421013116.GC20194@hungrycats.org>
-References: <CAMsr+YEB2+vb3XirwNYe4y6mWOKJuZhKgekPvNQqQdcP4irPGw@mail.gmail.com>
- <49296740.rPqQP4vAjc@merkaba>
- <CAMsr+YH9jC-x57_fVv8N+DuhotYCZAibTE2ELQwN=DgK3qoL9w@mail.gmail.com>
- <20150420042731.GA20194@hungrycats.org>
- <pan$f3383$b95d8948$e810e90b$680e5c5d@cox.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Izn7cH1Com+I3R9J"
-In-Reply-To: <pan$f3383$b95d8948$e810e90b$680e5c5d@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:55527 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751058AbbDUJe6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Apr 2015 05:34:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YkUa0-0004Sj-0X
+	for linux-btrfs@vger.kernel.org; Tue, 21 Apr 2015 11:34:56 +0200
+Received: from 168.159.160.58 ([168.159.160.58])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 11:34:55 +0200
+Received: from toyours_sridhar by 168.159.160.58 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 11:34:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: sri <toyours_sridhar@yahoo.co.in>
+Subject: Re: btrfs send to file differences
+Date: Tue, 21 Apr 2015 09:34:44 +0000 (UTC)
+Message-ID: <loom.20150421T112138-902@post.gmane.org>
+References: <loom.20150420T160700-483@post.gmane.org> <20150420142527.GJ18187@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills <hugo <at> carfax.org.uk> writes:
 
---Izn7cH1Com+I3R9J
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> 
+> On Mon, Apr 20, 2015 at 02:15:47PM +0000, sri wrote:
+> > Hi,
+> > 
+> > I have a subvolume with only one file (file.txt) with 5Mb size.
+> > under /btrfs/subvol1/
+> > 1)
+> > I have created 1st snapshot /btrfs/snap1_subvol1. Then I ran "btrfs 
+> > send" and given -f out1.img
+> > 
+> > size of out1.img is 5Mb.
+> > 
+> > 2)
+> > Next, I have appended 1Mb data to file.txt
+> > 
+> > And again created snapshot /btrfs/snap2_subvol2. And rand "btrfs 
+send" 
+> > out put to file out2.img
+> > 
+> > 3)
+> > After that I ran "btrfs send -p  /btrfs/snap1_subvol1 
+> > /btrfs/snap2_subvol1 -f outwith_poption.img.
+> > 
+> > Beween out1.img and out2.img there is difference of 1Mb
+> > 
+> > I would like to know what is the difference between out2.img and 
+> > outwith_poption.img ?
+> > 
+> > When I do btrfs send to a file, is there a way to send only changes 
+to 
+> > new file i.e. for step 2 and step 1, out2.img is 6Mb and out1.img is 
+> > 5Mb.
+> 
+>    Basically, do exactly what you did with step 3. -p is the base
+> subvolume, and only the differences from that are sent.
+> 
+>    Hugo.
+> 
+> > can I get difference if the file and use it as input to btrfs 
+receive 
+> > option if I want to recover incremental recover i.e out1.img + 1Mb 
+??
+> > 
+> > Here with my steps I can give only out2.img which is of 6Mb or 
+out1.img 
+> > which is of 5Mb.
+> > So for incremetal backup, it consumes total of 11Mb.
+> > I want a way to reduce it to total of 6Mb but there should a way to 
+> > recover from fist snapshot dump and second snapshot dump as well.
+> 
 
-On Mon, Apr 20, 2015 at 06:07:09AM +0000, Duncan wrote:
-> 4.0 is out.  There's reason people may want to stick one version back by=
-=20
-> default, to 3.19 currently, since it can take a few weeks for early=20
-> reports to develop into a coherent problem, and sticking one stable=20
-> series back allows for that, and deciding exactly when one is comfortable=
-=20
-> upgrading.  But in btrfs context anyway, with 4.0 out, if you're not on=
-=20
-> at least 3.19 yet, you should be able to point to the bug explaining
-> /why/.  If you can't, arguably, you should be either upgrading yesterday=
-=20
-> if not sooner, or you really should choose some other filesystem, as=20
-> btrfs simply isn't at the stability required for your use-case yet, and=
-=20
-> you unnecessarily risk data loss to already found and fixed bugs as a=20
-> result.
+Hi Hugo,
 
-I'm not sure that "run the latest kernel" or even "run the latest kernel
-minus N weeks or months" is good advice for user data integrity at
-present.  It's certainly unsupported by any test data I'm seeing.
+Could you please elaborate more on your point.
 
-If the intention is to discover and report or fix btrfs bugs, or confirm
-that known bugs have been corrected, then the latest kernel (or a -next
-integration branch) is the only one to run.  If the intention is to
-use btrfs for data storage, then the kernel selection process is much
-different.
+What I am looking is a way to just to collect differences of previous 
+send dump and further send dumps which are from incrementail snapshots.
 
-In the stable kernels (the v3.xx.y Git tags with no other patches)
-in the last year, there have been a number of btrfs regressions, from
-memory leaks to deadlocks to filesystem-crashing corruption issues:
+btrfs send on first snapshot is 5Mb (say). the Further sends on 
+snapshots should be able to collect only difference between already 
+collected dump of 5Mb to the latest and go further.
+first send  dump 5Mb dump1.img (size 5mb)
+sencod send  dump 1Mb dump_incr1.img  (size should be 1Mb but it is 6Mb)
+third send  dump 3Mb dump_incr2.img  ( size should be 2Mb but it is 7Mb)
 
-	2 severe corruption (i.e. destroy the filesystem) or memory leak
-	issues (i.e. leak all the RAM and crash slowly and messily)
-	I've encountered in my own testing,
-
-	2 kernel panic or memory leak issues that I avoided by accident
-	because the fix came out before I could pull the regression into
-	a build,
-
-	3 failure modes in new code leading to deadlock or temporary
-	inability to retrieve stored data that first appeared in v3.13
-	or v3.15, and as of today are not yet resolved.
-
-My testing process runs like this (slightly simplified):
-
-	1.  Build stable and/or Linus tagged kernels + integration-queue
-	patches + locally-generated patches if any.
-
-	2.  Run these kernels on various machines with workloads,
-	observe and analyze failures.
-
-	3.  When a machine fails to do its work due to a kernel issue,
-	restart at step 1 with a different version or more patches.
-	Note this includes more issues than btrfs; e.g. sometimes
-	a kernel is not usable because of ACPI or WiFi issues that make
-	btrfs test results irrelevant.
-
-	4.  If a kernel build succeeds for N or more days, expand the set
-	of test machines to get more test coverage, and go back to step 2.
-
-	5.  If N >=3D 60 with no (severe) problems, consider that kernel
-	stable and bless it for production.
-
-Linux kernels getting to step 5 are rare and precious things even when
-not testing btrfs.  The last kernel to reach step 5 for me was v3.12.x.
-Before that was 835 days of searching for a successor to the kernel I
-was running in production at the time.  :-/
+And looking for a way of giving dump_incr2.img to btrfs receive (also 
+makre sure other file dump1.img and dump_incr2.img) are available, and 
+recreate subvolume on destination btrfs fs.
 
 
-> --=20
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---Izn7cH1Com+I3R9J
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlU1qGQACgkQgfmLGlazG5yIvwCdE2/jCrsdhItlcEjSTK4JCHZn
-WNUAn1Q47YIv9WDjTGgJUjxRcD+s4kzQ
-=a5tz
------END PGP SIGNATURE-----
-
---Izn7cH1Com+I3R9J--

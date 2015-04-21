@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:50964 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750895AbbDUGVr (ORCPT
+	with ESMTP id S1750895AbbDUGVo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 02:21:47 -0400
+	Tue, 21 Apr 2015 02:21:44 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KYvY025433
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:34 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KS6B025400
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:28 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 11/18] btrfs: qgroup: Add new qgroup calculation function btrfs_qgroup_account_extents().
-Date: Tue, 21 Apr 2015 14:21:27 +0800
-Message-ID: <1429597294-11875-12-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 05/18] btrfs: extent-tree: Use ref_node to replace unneeded parameters in __inc_extent_ref() and __free_extent()
+Date: Tue, 21 Apr 2015 14:21:21 +0800
+Message-ID: <1429597294-11875-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,165 +19,136 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The new btrfs_qgroup_account_extents() function should be called in
-btrfs_commit_transaction() and it will update all the qgroup according
-to delayed_ref_root->dirty_extent_root.
+__btrfs_inc_extent_ref() and __btrfs_free_extent() have already had too
+many parameters, but three of them can be extracted from
+btrfs_delayed_ref_node struct.
 
-The new function can handle both normal operation during
-commit_transaction() or in rescan in a unified method with clearer
-logic.
+So use btrfs_delayed_ref_node struct as a single parameter to replace
+the bytenr/num_byte/no_quota parameters.
+
+The real objective of this patch is to allow btrfs_qgroup_record_ref()
+get the delayed_ref_node in incoming qgroup patches.
+
+Other functions calling btrfs_qgroup_record_ref() are not affected since
+the rest will only add/sub exclusive extents, where node is not used.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.h |   0
- fs/btrfs/qgroup.c      | 116 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h      |   2 +
- 3 files changed, 118 insertions(+)
- create mode 100644 fs/btrfs/extent-tree.h
+ fs/btrfs/extent-tree.c | 42 +++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
-new file mode 100644
-index 0000000..e69de29
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 3040296..be5717f 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2346,6 +2346,122 @@ static int btrfs_qgroup_account(struct btrfs_trans_handle *trans,
- 	return ret;
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e0d3fcc..dd6e47e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -79,11 +79,10 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 			      u64 num_bytes, int alloc);
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+-				u64 bytenr, u64 num_bytes, u64 parent,
++				struct btrfs_delayed_ref_node *node, u64 parent,
+ 				u64 root_objectid, u64 owner_objectid,
+ 				u64 owner_offset, int refs_to_drop,
+-				struct btrfs_delayed_extent_op *extra_op,
+-				int no_quota);
++				struct btrfs_delayed_extent_op *extra_op);
+ static void __run_delayed_extent_op(struct btrfs_delayed_extent_op *extent_op,
+ 				    struct extent_buffer *leaf,
+ 				    struct btrfs_extent_item *ei);
+@@ -1967,10 +1966,9 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
  
-+static int
-+btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
-+			    struct btrfs_fs_info *fs_info,
-+			    u64 bytenr, u64 num_bytes,
-+			    struct ulist *old_roots, struct ulist *new_roots)
-+{
-+	struct ulist *qgroups = NULL;
-+	struct ulist *tmp = NULL;
-+	u64 seq;
-+	u64 nr_new_roots = 0;
-+	u64 nr_old_roots = 0;
-+	int ret = 0;
-+
-+	if (new_roots)
-+		nr_new_roots = new_roots->nnodes;
-+	if (old_roots)
-+		nr_old_roots = old_roots->nnodes;
-+
-+	if (!fs_info->quota_enabled)
-+		return 0;
-+	BUG_ON(!fs_info->quota_root);
-+
-+	qgroups = ulist_alloc(GFP_NOFS);
-+	if (!qgroups) {
-+		ret = -ENOMEM;
-+		goto out_free;
-+	}
-+	tmp = ulist_alloc(GFP_NOFS);
-+	if (!tmp) {
-+		ret = -ENOMEM;
-+		goto out_free;
-+	}
-+
-+	mutex_lock(&fs_info->qgroup_rescan_lock);
-+	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
-+		if (fs_info->qgroup_rescan_progress.objectid <= bytenr) {
-+			mutex_unlock(&fs_info->qgroup_rescan_lock);
-+			ret = 0;
-+			goto out_free;
-+		}
-+	}
-+	mutex_unlock(&fs_info->qgroup_rescan_lock);
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	seq = fs_info->qgroup_seq;
-+
-+	/* Update old refcnts using old_roots */
-+	ret = qgroup_update_refcnt(fs_info, old_roots, tmp, qgroups, seq,
-+				   UPDATE_OLD);
-+	if (ret < 0)
-+		goto out;
-+
-+	/* Update new refcnts using new_roots */
-+	ret = qgroup_update_refcnt(fs_info, new_roots, tmp, qgroups, seq,
-+				   UPDATE_NEW);
-+	if (ret < 0)
-+		goto out;
-+
-+	qgroup_update_counters(fs_info, qgroups, nr_old_roots, nr_new_roots,
-+			       num_bytes, seq);
-+
-+	/*
-+	 * Bump qgroup_seq to avoid seq overlap
-+	 */
-+	fs_info->qgroup_seq += max(nr_old_roots, nr_new_roots) + 1;
-+out:
-+	spin_unlock(&fs_info->qgroup_lock);
-+out_free:
-+	ulist_free(tmp);
-+	ulist_free(qgroups);
-+	ulist_free(old_roots);
-+	ulist_free(new_roots);
-+	return ret;
-+}
-+
-+int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
-+				 struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_qgroup_extent_record *record;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct ulist *new_roots = NULL;
-+	struct rb_node *node;
-+	int ret = 0;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+	while ((node = rb_first(&delayed_refs->dirty_extent_root))) {
-+		record = rb_entry(node, struct btrfs_qgroup_extent_record,
-+				  node);
-+
-+		if (!ret) {
-+			/*
-+			 * Use (u64)-1 as time_seq to do special search, which
-+			 * doesn't lock tree or delayed_refs and search current
-+			 * root. It's safe inside commit_transaction().
-+			 */
-+			ret = btrfs_find_all_roots(trans, fs_info,
-+					record->bytenr, (u64)-1, &new_roots);
-+			if (ret < 0)
-+				goto cleanup;
-+			ret = btrfs_qgroup_account_extent(trans, fs_info,
-+					record->bytenr, record->num_bytes,
-+					record->old_roots, new_roots);
-+			record->old_roots = NULL;
-+			new_roots = NULL;
-+		}
-+cleanup:
-+		ulist_free(record->old_roots);
-+		ulist_free(new_roots);
-+		new_roots = NULL;
-+		rb_erase(node, &delayed_refs->dirty_extent_root);
-+		kfree(record);
-+
-+	}
-+	return ret;
-+}
-+
- /*
-  * Needs to be called everytime we run delayed refs, even if there is an error
-  * in order to cleanup outstanding operations.
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 3b549cb..c3b08d6 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -104,6 +104,8 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
- struct btrfs_qgroup_extent_record
- *btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
- 				  struct btrfs_qgroup_extent_record *record);
-+int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
-+				 struct btrfs_fs_info *fs_info);
- int btrfs_delayed_qgroup_accounting(struct btrfs_trans_handle *trans,
- 				    struct btrfs_fs_info *fs_info);
- void btrfs_remove_qgroup_operation(struct btrfs_trans_handle *trans,
+ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root,
+-				  u64 bytenr, u64 num_bytes,
++				  struct btrfs_delayed_ref_node *node,
+ 				  u64 parent, u64 root_objectid,
+ 				  u64 owner, u64 offset, int refs_to_add,
+-				  int no_quota,
+ 				  struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -1978,8 +1976,11 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *item;
+ 	struct btrfs_key key;
++	u64 bytenr = node->bytenr;
++	u64 num_bytes = node->num_bytes;
+ 	u64 refs;
+ 	int ret;
++	int no_quota = node->no_quota;
+ 	enum btrfs_qgroup_operation_type type = BTRFS_QGROUP_OPER_ADD_EXCL;
+ 
+ 	path = btrfs_alloc_path();
+@@ -2087,17 +2088,15 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 						 ref->objectid, ref->offset,
+ 						 &ins, node->ref_mod);
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+-		ret = __btrfs_inc_extent_ref(trans, root, node->bytenr,
+-					     node->num_bytes, parent,
++		ret = __btrfs_inc_extent_ref(trans, root, node, parent,
+ 					     ref_root, ref->objectid,
+ 					     ref->offset, node->ref_mod,
+-					     node->no_quota, extent_op);
++					     extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+-		ret = __btrfs_free_extent(trans, root, node->bytenr,
+-					  node->num_bytes, parent,
++		ret = __btrfs_free_extent(trans, root, node, parent,
+ 					  ref_root, ref->objectid,
+ 					  ref->offset, node->ref_mod,
+-					  extent_op, node->no_quota);
++					  extent_op);
+ 	} else {
+ 		BUG();
+ 	}
+@@ -2255,15 +2254,14 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 						ref->level, &ins,
+ 						node->no_quota);
+ 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
+-		ret = __btrfs_inc_extent_ref(trans, root, node->bytenr,
+-					     node->num_bytes, parent, ref_root,
+-					     ref->level, 0, 1, node->no_quota,
++		ret = __btrfs_inc_extent_ref(trans, root, node,
++					     parent, ref_root,
++					     ref->level, 0, 1,
+ 					     extent_op);
+ 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
+-		ret = __btrfs_free_extent(trans, root, node->bytenr,
+-					  node->num_bytes, parent, ref_root,
+-					  ref->level, 0, 1, extent_op,
+-					  node->no_quota);
++		ret = __btrfs_free_extent(trans, root, node,
++					  parent, ref_root,
++					  ref->level, 0, 1, extent_op);
+ 	} else {
+ 		BUG();
+ 	}
+@@ -5806,11 +5804,10 @@ static void add_pinned_bytes(struct btrfs_fs_info *fs_info, u64 num_bytes,
+ 
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+-				u64 bytenr, u64 num_bytes, u64 parent,
++				struct btrfs_delayed_ref_node *node, u64 parent,
+ 				u64 root_objectid, u64 owner_objectid,
+ 				u64 owner_offset, int refs_to_drop,
+-				struct btrfs_delayed_extent_op *extent_op,
+-				int no_quota)
++				struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -5824,8 +5821,11 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	int extent_slot = 0;
+ 	int found_extent = 0;
+ 	int num_to_del = 1;
++	int no_quota = node->no_quota;
+ 	u32 item_size;
+ 	u64 refs;
++	u64 bytenr = node->bytenr;
++	u64 num_bytes = node->num_bytes;
+ 	int last_ref = 0;
+ 	enum btrfs_qgroup_operation_type type = BTRFS_QGROUP_OPER_SUB_EXCL;
+ 	bool skinny_metadata = btrfs_fs_incompat(root->fs_info,
 -- 
 2.3.5
 

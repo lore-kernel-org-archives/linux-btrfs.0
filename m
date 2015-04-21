@@ -1,53 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39944 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750714AbbDTFdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Apr 2015 01:33:21 -0400
-From: xuw2015@gmail.com
+Received: from aserp1040.oracle.com ([141.146.126.69]:51205 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750711AbbDUEZQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Apr 2015 00:25:16 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: George Wang <xuw2015@gmail.com>
-Subject: [PATCH] btrfs-progs: fix btrfs quota rescan failed on PPC64 arch
-Date: Mon, 20 Apr 2015 13:33:16 +0800
-Message-Id: <1429507996-28224-1-git-send-email-xuw2015@gmail.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] Btrfs-progs: fix typo in btrfs-device.txt
+Date: Tue, 21 Apr 2015 15:12:03 +0800
+Message-Id: <1429600323-5199-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1429525889-2843-1-git-send-email-anand.jain@oracle.com>
+References: <1429525889-2843-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: George Wang <xuw2015@gmail.com>
+From: Anand Jain <Anand.Jain@oracle.com>
 
-PPC64 arch use such following IOC values "
-\#define _IOC_NONE       1U
-\#define _IOC_READ       2U
-\#define _IOC_WRITE      4U
-" comparing to the default IOC values "
-\#define _IOC_NONE       0U
-\#define _IOC_READ       2U
-\#define _IOC_WRITE      1U"
-
-This means the value "_IOW*" will be negative when we store it in the int
-variables. Such as the "BTRFS_IOC_QGROUP_CREATE", it will be "0x4010942e" on
-X86_64, but "0x8010942e" on PPC64.
-Notice that the IOC values are the "unsigned long" type, so we use the
-"unsigned long" to store it, and this can insure the comparison between the
-variable and BTRFS_IOC_* valid.
-
-Signed-off-by: George Wang <xuw2015@gmail.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-quota.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ v1->v2: Oh no. Typo while fixing typo. oops ! thanks Duncan.
 
-diff --git a/cmds-quota.c b/cmds-quota.c
-index 89cc89c..f6a1cfa 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -109,7 +109,7 @@ static int cmd_quota_rescan(int argc, char **argv)
- 	int e;
- 	char *path = NULL;
- 	struct btrfs_ioctl_quota_rescan_args args;
--	int ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
-+	unsigned long ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
- 	DIR *dirstream = NULL;
- 	int wait_for_completion = 0;
+ Documentation/btrfs-device.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
+index 4bb5ea5..7807450 100644
+--- a/Documentation/btrfs-device.txt
++++ b/Documentation/btrfs-device.txt
+@@ -53,12 +53,12 @@ run `btrfs-balance`(8) to rebuild the chunks.
+ See `btrfs-balance`(8) for more details.
  
+ Device add/remove/replace::
+-Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
++Device can be added/removed using `btrfs-device`(8) subcommand and replaced
+ using `btrfs-replace`(8).
+ +
+ When device is removed or replaced, btrfs will do the chunk rebuild if needed.
+ +
+-See `btrfs-replace`(8) and this man page for more details.
++See `btrfs-replace`(8) man page for more details on device replace.
+ 
+ SUBCOMMAND
+ ----------
 -- 
-1.9.3
+2.0.0.153.g79dcccc
 

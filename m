@@ -1,62 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f181.google.com ([209.85.217.181]:33524 "EHLO
-	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933286AbbDUVzN (ORCPT
+Received: from mail-lb0-f169.google.com ([209.85.217.169]:33145 "EHLO
+	mail-lb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933286AbbDUV4T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 17:55:13 -0400
-Received: by lbbzk7 with SMTP id zk7so166221998lbb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:55:11 -0700 (PDT)
+	Tue, 21 Apr 2015 17:56:19 -0400
+Received: by lbbzk7 with SMTP id zk7so166237841lbb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:56:17 -0700 (PDT)
 MIME-Version: 1.0
 From: Lukas Lueg <lukas.lueg@gmail.com>
-Date: Tue, 21 Apr 2015 23:54:51 +0200
-Message-ID: <CAJF-kYnw923Myu2R=xbtyr=XTaUdMzsXEJvgJdLXPHQchfJMPw@mail.gmail.com>
-Subject: abort() reached in "btrfs check"
+Date: Tue, 21 Apr 2015 23:55:56 +0200
+Message-ID: <CAJF-kYmLtMq-7aVqJb_onD3Nv=AQadScZ=0pm7wRSLfebFA0+A@mail.gmail.com>
+Subject: Carefully crafted BTRFS-image causes userland tools to crash
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-See also https://bugzilla.kernel.org/show_bug.cgi?id=97021
+See also https://bugzilla.kernel.org/show_bug.cgi?id=97031
 
 The btrfs-image attached to this bug causes the userland tools v3.19.1
-to crash by reaching a call to abort().
+to crash with a SIGFPE. The problem is that map->stripe_len in
+__btrfs_map_block() is allowed to be 0 before entering a division.
 
-(gdb) run check btrfs_fukked_abort_cmds-check:5919.bin
-Starting program: /usr/sbin/btrfs check btrfs_fukked_abort_cmds-check:5919.bin
-[Thread debugging using libthread_db enabled]
-Using host libthread_db library "/lib64/libthread_db.so.1".
-Checking filesystem on btrfs_fukked_abort_cmds-check:5919.bin
-UUID: cdd8684f-9eb1-40a4-91ec-1ed7c3cb444c
-checking extents
+The userland tool crashes.
+The kernel fails to mount with
+> BTRFS: failed to read the system array on loop0
+> BTRFS: open_ctree_failed
 
-Program received signal SIGABRT, Aborted.
-0x00000032626348d7 in __GI_raise (sig=sig@entry=6)
-    at ../sysdeps/unix/sysv/linux/raise.c:55
-55  return INLINE_SYSCALL (tgkill, 3, pid, selftid, sig);
+
+
+(gdb) run check btrfs_fukked_sigfpe_volumes:1372.bin
+....
+warning, device 0 is missing
+warning, device 4294967295 is missing
+warning, device 0 is missing
+warning, device 0 is missing
+warning, device 0 is missing
+warning, device 0 is missing
+warning, device 4294967295 is missing
+
+Program received signal SIGFPE, Arithmetic exception.
+0x000000000044d56f in __btrfs_map_block (map_tree=map_tree@entry=0x88c170,
+    rw=rw@entry=0, logical=<optimized out>, length=length@entry=0x7fffffffd8f0,
+    type=type@entry=0x0, multi_ret=multi_ret@entry=0x7fffffffd8e8, mirror_num=0,
+    raid_map_ret=0x0) at volumes.c:1372
+1372 stripe_nr = stripe_nr / map->stripe_len;
 (gdb) bt
-#0  0x00000032626348d7 in __GI_raise (sig=sig@entry=6)
-    at ../sysdeps/unix/sysv/linux/raise.c:55
-#1  0x000000326263653a in __GI_abort () at abort.c:89
-#2  0x0000000000425038 in run_next_block (root=root@entry=0x894b20,
-    bits=bits@entry=0x896960, last=last@entry=0x7fffffffd470,
-    pending=pending@entry=0x7fffffffd5f0, seen=seen@entry=0x7fffffffd5e0,
-    reada=reada@entry=0x7fffffffd600, nodes=0x7fffffffd610,
-    extent_cache=0x7fffffffd5d0, chunk_cache=0x7fffffffd5c0,
-dev_cache=0x7fffffffd5b0,
-    block_group_cache=0x7fffffffd6a0, dev_extent_cache=0x7fffffffd6c0,
-ri=0x894e20,
-    bits_nr=1024) at cmds-check.c:5908
-#3  0x000000000042523d in deal_root_from_list (list=list@entry=0x7fffffffd640,
-    root=root@entry=0x894b20, bits=bits@entry=0x896960,
-    pending=pending@entry=0x7fffffffd5f0, seen=seen@entry=0x7fffffffd5e0,
-    reada=reada@entry=0x7fffffffd600, nodes=0x7fffffffd610,
-    extent_cache=0x7fffffffd5d0, chunk_cache=0x7fffffffd5c0,
-dev_cache=0x7fffffffd5b0,
-    block_group_cache=0x7fffffffd6a0, dev_extent_cache=0x7fffffffd6c0,
-bits_nr=1024)
-    at cmds-check.c:7838
-#4  0x0000000000425f3d in check_chunks_and_extents (root=root@entry=0x894b20)
-    at cmds-check.c:8000
-#5  0x0000000000428144 in cmd_check (argc=<optimized out>, argv=<optimized out>)
-    at cmds-check.c:9431
-#6  0x000000000040e5a2 in main (argc=2, argv=0x7fffffffde90) at btrfs.c:245
+#0  0x000000000044d56f in __btrfs_map_block (map_tree=map_tree@entry=0x88c170,
+    rw=rw@entry=0, logical=<optimized out>, length=length@entry=0x7fffffffd8f0,
+    type=type@entry=0x0, multi_ret=multi_ret@entry=0x7fffffffd8e8, mirror_num=0,
+    raid_map_ret=0x0) at volumes.c:1372
+#1  0x000000000044db45 in btrfs_map_block (map_tree=map_tree@entry=0x88c170,
+    rw=rw@entry=0, logical=<optimized out>, length=length@entry=0x7fffffffd8f0,
+    multi_ret=multi_ret@entry=0x7fffffffd8e8, mirror_num=mirror_num@entry=0,
+    raid_map_ret=0x0) at volumes.c:1291
+#2  0x000000000043b22d in read_whole_eb (info=0x88c010, eb=eb@entry=0x88f400,
+    mirror=mirror@entry=0) at disk-io.c:232
+#3  0x000000000043caa2 in read_tree_block (root=root@entry=0x88c710,
+    bytenr=<optimized out>, blocksize=<optimized out>, parent_transid=5)
+    at disk-io.c:295
+#4  0x000000000043d5df in btrfs_setup_chunk_tree_and_device_map (
+    fs_info=fs_info@entry=0x88c010) at disk-io.c:1106
+#5  0x000000000043d7d1 in __open_ctree_fd (fp=fp@entry=3,
+    path=path@entry=0x7fffffffe1fa "btrfs_fukked_sigfpe_volumes:1372.bin",
+    sb_bytenr=65536, sb_bytenr@entry=0,
+root_tree_bytenr=root_tree_bytenr@entry=0,
+    flags=flags@entry=OPEN_CTREE_EXCLUSIVE) at disk-io.c:1190
+#6  0x000000000043d965 in open_ctree_fs_info (
+    filename=0x7fffffffe1fa "btrfs_fukked_sigfpe_volumes:1372.bin",
+    sb_bytenr=sb_bytenr@entry=0, root_tree_bytenr=root_tree_bytenr@entry=0,
+    flags=flags@entry=OPEN_CTREE_EXCLUSIVE) at disk-io.c:1231
+#7  0x0000000000427bf5 in cmd_check (argc=1, argv=0x7fffffffde90) at
+cmds-check.c:9326
+#8  0x000000000040e5a2 in main (argc=2, argv=0x7fffffffde90) at btrfs.c:245
+(gdb) p map->stripe_len
+$1 = 0

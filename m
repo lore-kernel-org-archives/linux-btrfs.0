@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:12881 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750737AbbDUGVm (ORCPT
+	with ESMTP id S1751772AbbDUGVo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 02:21:42 -0400
+	Tue, 21 Apr 2015 02:21:44 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KRFv025382
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:27 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KUbO025409
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:30 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 03/18] btrfs: delayed-ref: Cleanup the unneeded functions.
-Date: Tue, 21 Apr 2015 14:21:19 +0800
-Message-ID: <1429597294-11875-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 07/18] btrfs: qgroup: Add function qgroup_update_counters().
+Date: Tue, 21 Apr 2015 14:21:23 +0800
+Message-ID: <1429597294-11875-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,213 +19,150 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup the rb_tree merge/insert/update functions, since now we use list
-instead of rb_tree now.
+Add function qgroup_update_counters(), which will update related
+qgroups' rfer/excl according to old/new_roots.
+
+This is one of the two core functions for the new qgroup implement.
+
+This is based on btrfs_adjust_coutners() but with clearer logic and
+comment.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.c | 174 -------------------------------------------------
- 1 file changed, 174 deletions(-)
+ fs/btrfs/qgroup.c | 120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 120 insertions(+)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index f5f706f..197f45b 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -84,87 +84,6 @@ static int comp_data_refs(struct btrfs_delayed_data_ref *ref2,
- 	return 0;
- }
- 
--/*
-- * entries in the rb tree are ordered by the byte number of the extent,
-- * type of the delayed backrefs and content of delayed backrefs.
-- */
--static int comp_entry(struct btrfs_delayed_ref_node *ref2,
--		      struct btrfs_delayed_ref_node *ref1,
--		      bool compare_seq)
--{
--	if (ref1->bytenr < ref2->bytenr)
--		return -1;
--	if (ref1->bytenr > ref2->bytenr)
--		return 1;
--	if (ref1->is_head && ref2->is_head)
--		return 0;
--	if (ref2->is_head)
--		return -1;
--	if (ref1->is_head)
--		return 1;
--	if (ref1->type < ref2->type)
--		return -1;
--	if (ref1->type > ref2->type)
--		return 1;
--	if (ref1->no_quota > ref2->no_quota)
--		return 1;
--	if (ref1->no_quota < ref2->no_quota)
--		return -1;
--	/* merging of sequenced refs is not allowed */
--	if (compare_seq) {
--		if (ref1->seq < ref2->seq)
--			return -1;
--		if (ref1->seq > ref2->seq)
--			return 1;
--	}
--	if (ref1->type == BTRFS_TREE_BLOCK_REF_KEY ||
--	    ref1->type == BTRFS_SHARED_BLOCK_REF_KEY) {
--		return comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref2),
--				      btrfs_delayed_node_to_tree_ref(ref1),
--				      ref1->type);
--	} else if (ref1->type == BTRFS_EXTENT_DATA_REF_KEY ||
--		   ref1->type == BTRFS_SHARED_DATA_REF_KEY) {
--		return comp_data_refs(btrfs_delayed_node_to_data_ref(ref2),
--				      btrfs_delayed_node_to_data_ref(ref1));
--	}
--	BUG();
--	return 0;
--}
--
--/*
-- * insert a new ref into the rbtree.  This returns any existing refs
-- * for the same (bytenr,parent) tuple, or NULL if the new node was properly
-- * inserted.
-- */
--static struct btrfs_delayed_ref_node *tree_insert(struct rb_root *root,
--						  struct rb_node *node)
--{
--	struct rb_node **p = &root->rb_node;
--	struct rb_node *parent_node = NULL;
--	struct btrfs_delayed_ref_node *entry;
--	struct btrfs_delayed_ref_node *ins;
--	int cmp;
--
--	ins = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
--	while (*p) {
--		parent_node = *p;
--		entry = rb_entry(parent_node, struct btrfs_delayed_ref_node,
--				 rb_node);
--
--		cmp = comp_entry(entry, ins, 1);
--		if (cmp < 0)
--			p = &(*p)->rb_left;
--		else if (cmp > 0)
--			p = &(*p)->rb_right;
--		else
--			return entry;
--	}
--
--	rb_link_node(node, parent_node, p);
--	rb_insert_color(node, root);
--	return NULL;
--}
--
- /* insert a new ref to head ref rbtree */
- static struct btrfs_delayed_ref_head *htree_insert(struct rb_root *root,
- 						   struct rb_node *node)
-@@ -277,57 +196,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
- 		trans->delayed_ref_updates--;
- }
- 
--static int merge_ref(struct btrfs_trans_handle *trans,
--		     struct btrfs_delayed_ref_root *delayed_refs,
--		     struct btrfs_delayed_ref_head *head,
--		     struct btrfs_delayed_ref_node *ref, u64 seq)
--{
--	struct rb_node *node;
--	int mod = 0;
--	int done = 0;
--
--	node = rb_next(&ref->rb_node);
--	while (!done && node) {
--		struct btrfs_delayed_ref_node *next;
--
--		next = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
--		node = rb_next(node);
--		if (seq && next->seq >= seq)
--			break;
--		if (comp_entry(ref, next, 0))
--			continue;
--
--		if (ref->action == next->action) {
--			mod = next->ref_mod;
--		} else {
--			if (ref->ref_mod < next->ref_mod) {
--				struct btrfs_delayed_ref_node *tmp;
--
--				tmp = ref;
--				ref = next;
--				next = tmp;
--				done = 1;
--			}
--			mod = -next->ref_mod;
--		}
--
--		drop_delayed_ref(trans, delayed_refs, head, next);
--		ref->ref_mod += mod;
--		if (ref->ref_mod == 0) {
--			drop_delayed_ref(trans, delayed_refs, head, ref);
--			done = 1;
--		} else {
--			/*
--			 * You can't have multiples of the same ref on a tree
--			 * block.
--			 */
--			WARN_ON(ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
--				ref->type == BTRFS_SHARED_BLOCK_REF_KEY);
--		}
--	}
--	return done;
--}
--
- int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
- 			    struct btrfs_delayed_ref_root *delayed_refs,
- 			    u64 seq)
-@@ -401,48 +269,6 @@ again:
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 17a974c..a780f8f 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1761,6 +1761,126 @@ static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
  }
  
  /*
-- * helper function to update an extent delayed ref in the
-- * rbtree.  existing and update must both have the same
-- * bytenr and parent
-- *
-- * This may free existing if the update cancels out whatever
-- * operation it was doing.
-- */
--static noinline void
--update_existing_ref(struct btrfs_trans_handle *trans,
--		    struct btrfs_delayed_ref_root *delayed_refs,
--		    struct btrfs_delayed_ref_head *head,
--		    struct btrfs_delayed_ref_node *existing,
--		    struct btrfs_delayed_ref_node *update)
--{
--	if (update->action != existing->action) {
--		/*
--		 * this is effectively undoing either an add or a
--		 * drop.  We decrement the ref_mod, and if it goes
--		 * down to zero we just delete the entry without
--		 * every changing the extent allocation tree.
--		 */
--		existing->ref_mod--;
--		if (existing->ref_mod == 0)
--			drop_delayed_ref(trans, delayed_refs, head, existing);
--		else
--			WARN_ON(existing->type == BTRFS_TREE_BLOCK_REF_KEY ||
--				existing->type == BTRFS_SHARED_BLOCK_REF_KEY);
--	} else {
--		WARN_ON(existing->type == BTRFS_TREE_BLOCK_REF_KEY ||
--			existing->type == BTRFS_SHARED_BLOCK_REF_KEY);
--		/*
--		 * the action on the existing ref matches
--		 * the action on the ref we're trying to add.
--		 * Bump the ref_mod by one so the backref that
--		 * is eventually added/removed has the correct
--		 * reference count
--		 */
--		existing->ref_mod += update->ref_mod;
--	}
--}
--
--/*
-  * Helper to insert the ref_node to the tail or merge with tail.
-  *
-  * Return 0 for insert.
++ * Update qgroup rfer/excl counters.
++ * Rfer update is easy, codes can explain themselves.
++ * Excl update is tricky, the update is split into 2 part.
++ * Part 1: Possible exclusive <-> sharing detect:
++ *	|	A	|	!A	|
++ *  -------------------------------------
++ *  B	|	*	|	-	|
++ *  -------------------------------------
++ *  !B	|	+	|	**	|
++ *  -------------------------------------
++ *
++ * Conditions:
++ * A:	cur_old_roots < nr_old_roots	(not exclusive before)
++ * !A:	cur_old_roots == nr_old_roots	(possible exclusive before)
++ * B:	cur_new_roots < nr_new_roots	(not exclusive now)
++ * !B:	cur_new_roots == nr_new_roots	(possible exclsuive now)
++ *
++ * Results:
++ * +: Possible sharing -> exclusive	-: Possible exclusive -> sharing
++ * *: Definitely not changed.		**: Possible unchanged.
++ *
++ * For !A and !B condition, the exception is cur_old/new_roots == 0 case.
++ *
++ * To make the logic clear, we first use condition A and B to split
++ * combination into 4 results.
++ *
++ * Then, for result "+" and "-", check old/new_roots == 0 case, as in them
++ * only on variant maybe 0.
++ *
++ * Lastly, check result **, since there are 2 variants maybe 0, split them
++ * again(2x2).
++ * But this time we don't need to consider other things, the codes and logic
++ * is easy to understand now.
++ */
++static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
++				  struct ulist *qgroups,
++				  u64 nr_old_roots,
++				  u64 nr_new_roots,
++				  u64 num_bytes, u64 seq)
++{
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++	struct btrfs_qgroup *qg;
++	u64 cur_new_count, cur_old_count;
++
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(qgroups, &uiter))) {
++		bool dirty = false;
++
++		qg = u64_to_ptr(unode->aux);
++		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
++		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
++
++		/* Rfer update part */
++		if (cur_old_count == 0 && cur_new_count > 0) {
++			qg->rfer += num_bytes;
++			qg->rfer_cmpr += num_bytes;
++			dirty = true;
++		}
++		if (cur_old_count > 0 && cur_new_count == 0) {
++			qg->rfer -= num_bytes;
++			qg->rfer_cmpr -= num_bytes;
++			dirty = true;
++		}
++
++		/* Excl update part */
++		/* Exclusive/none -> shared case */
++		if (cur_old_count == nr_old_roots &&
++		    cur_new_count < nr_new_roots) {
++			/* Exclusive -> shared */
++			if (cur_old_count != 0) {
++				qg->excl -= num_bytes;
++				qg->excl_cmpr -= num_bytes;
++				dirty = true;
++			}
++		}
++
++		/* Shared -> exclusive/none case */
++		if (cur_old_count < nr_old_roots &&
++		    cur_new_count == nr_new_roots) {
++			/* Shared->exclusive */
++			if (cur_new_count != 0) {
++				qg->excl += num_bytes;
++				qg->excl_cmpr += num_bytes;
++				dirty = true;
++			}
++		}
++
++		/* Exclusive/none -> exclusive/none case */
++		if (cur_old_count == nr_old_roots &&
++		    cur_new_count == nr_new_roots) {
++			if (cur_old_count == 0) {
++				/* None -> exclusive/none */
++
++				if (cur_new_count != 0) {
++					/* None -> exclusive */
++					qg->excl += num_bytes;
++					qg->excl_cmpr += num_bytes;
++					dirty = true;
++				}
++				/* None -> none, nothing changed */
++			} else {
++				/* Exclusive -> exclusive/none */
++
++				if (cur_new_count == 0) {
++					/* Exclusive -> none */
++					qg->excl -= num_bytes;
++					qg->excl_cmpr -= num_bytes;
++					dirty = true;
++				}
++				/* Exclusive -> exclusive, nothing changed */
++			}
++		}
++		if (dirty)
++			qgroup_dirty(fs_info, qg);
++	}
++	return 0;
++}
++
++/*
+  * This adjusts the counters for all referenced qgroups if need be.
+  */
+ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
 -- 
 2.3.5
 

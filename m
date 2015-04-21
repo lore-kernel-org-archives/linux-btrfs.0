@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39263 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58479 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751436AbbDUGVl (ORCPT
+	with ESMTP id S1751921AbbDUGVx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 02:21:41 -0400
+	Tue, 21 Apr 2015 02:21:53 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KRdB025391
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:27 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KdF4025467
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:39 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 04/18] btrfs: qgroup: Cleanup open-coded old/new_refcnt update and read.
-Date: Tue, 21 Apr 2015 14:21:20 +0800
-Message-ID: <1429597294-11875-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 18/18] btrfs: qgroup: Make snapshot accounting work with new extent-oriented qgroup.
+Date: Tue, 21 Apr 2015 14:21:34 +0800
+Message-ID: <1429597294-11875-19-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,186 +19,104 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use inline functions to do such things, to improve readability.
+Make snapshot accounting work with new extent-oriented mechanism by
+skipping given root in new/old_roots in create_pending_snapshot().
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Acked-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/qgroup.c | 95 +++++++++++++++++++++++++++++++------------------------
- 1 file changed, 54 insertions(+), 41 deletions(-)
+ fs/btrfs/transaction.c | 53 +++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 33 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 058c79e..9625644 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -84,11 +84,42 @@ struct btrfs_qgroup {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 2b50ce4..0f3c1b8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1286,6 +1286,12 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (pending->error)
+ 		goto no_free_objectid;
  
- 	/*
- 	 * temp variables for accounting operations
-+	 * Refer to qgroup_shared_accouting() for details.
- 	 */
- 	u64 old_refcnt;
- 	u64 new_refcnt;
- };
++	/*
++	 * Make qgroup to skip current new snapshot's qgroupid, as it is
++	 * accounted by later btrfs_qgroup_inherit().
++	 */
++	btrfs_set_skip_qgroup(trans, objectid);
++
+ 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
  
-+static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->old_refcnt < seq)
-+		qg->old_refcnt = seq;
-+	qg->old_refcnt += mod;
-+}
-+
-+static void btrfs_qgroup_update_new_refcnt(struct btrfs_qgroup *qg, u64 seq,
-+					   int mod)
-+{
-+	if (qg->new_refcnt < seq)
-+		qg->new_refcnt = seq;
-+	qg->new_refcnt += mod;
-+}
-+
-+static inline u64 btrfs_qgroup_get_old_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->old_refcnt < seq)
-+		return 0;
-+	return qg->old_refcnt - seq;
-+}
-+
-+static inline u64 btrfs_qgroup_get_new_refcnt(struct btrfs_qgroup *qg, u64 seq)
-+{
-+	if (qg->new_refcnt < seq)
-+		return 0;
-+	return qg->new_refcnt - seq;
-+}
-+
- /*
-  * glue structure to represent the relations between qgroups.
-  */
-@@ -1497,6 +1528,7 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 		ULIST_ITER_INIT(&tmp_uiter);
- 		while ((tmp_unode = ulist_next(tmp, &tmp_uiter))) {
- 			struct btrfs_qgroup_list *glist;
-+			int mod;
+ 	if (to_reserve > 0) {
+@@ -1294,7 +1300,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 						     to_reserve,
+ 						     BTRFS_RESERVE_NO_FLUSH);
+ 		if (pending->error)
+-			goto no_free_objectid;
++			goto clear_skip_qgroup;
+ 	}
  
- 			qg = u64_to_ptr(tmp_unode->aux);
- 			/*
-@@ -1508,20 +1540,15 @@ static int qgroup_calc_old_refcnt(struct btrfs_fs_info *fs_info,
- 			 * upper level qgroups in order to determine exclusive
- 			 * counts.
- 			 *
--			 * For rescan we want to set old_refcnt to seq so our
--			 * exclusive calculations end up correct.
-+			 * For rescan none of the extent is recorded before so
-+			 * we just don't add old_refcnt.
- 			 */
- 			if (rescan)
--				qg->old_refcnt = seq;
--			else if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
+ 	key.objectid = objectid;
+@@ -1392,25 +1398,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		goto fail;
+ 	}
 -
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
-+				mod = 0;
- 			else
--				qg->new_refcnt++;
-+				mod = 1;
-+			btrfs_qgroup_update_old_refcnt(qg, seq, mod);
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 			list_for_each_entry(glist, &qg->groups, next_group) {
- 				ret = ulist_add(qgroups, glist->group->qgroupid,
- 						ptr_to_u64(glist->group),
-@@ -1615,14 +1642,8 @@ next:
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (qg->old_refcnt < seq)
--			qg->old_refcnt = seq + 1;
--		else
--			qg->old_refcnt++;
--		if (qg->new_refcnt < seq)
--			qg->new_refcnt = seq + 1;
--		else
--			qg->new_refcnt++;
-+		btrfs_qgroup_update_old_refcnt(qg, seq, 1);
-+		btrfs_qgroup_update_new_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(qgroups, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1663,17 +1684,10 @@ static int qgroup_calc_new_refcnt(struct btrfs_fs_info *fs_info,
- 		struct btrfs_qgroup_list *glist;
- 
- 		qg = u64_to_ptr(unode->aux);
--		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED) {
--			if (qg->new_refcnt < seq)
--				qg->new_refcnt = seq + 1;
--			else
--				qg->new_refcnt++;
--		} else {
--			if (qg->old_refcnt < seq)
--				qg->old_refcnt = seq + 1;
--			else
--				qg->old_refcnt++;
--		}
-+		if (oper->type == BTRFS_QGROUP_OPER_ADD_SHARED)
-+			btrfs_qgroup_update_new_refcnt(qg, seq, 1);
-+		else
-+			btrfs_qgroup_update_old_refcnt(qg, seq, 1);
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(tmp, glist->group->qgroupid,
- 					ptr_to_u64(glist->group), GFP_ATOMIC);
-@@ -1706,11 +1720,14 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		bool dirty = false;
- 
- 		qg = u64_to_ptr(unode->aux);
-+		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
-+		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
-+
- 		/*
- 		 * Wasn't referenced before but is now, add to the reference
- 		 * counters.
- 		 */
--		if (qg->old_refcnt <= seq && qg->new_refcnt > seq) {
-+		if (cur_old_count == 0 && cur_new_count > 0) {
- 			qg->rfer += num_bytes;
- 			qg->rfer_cmpr += num_bytes;
- 			dirty = true;
-@@ -1720,21 +1737,12 @@ static int qgroup_adjust_counters(struct btrfs_fs_info *fs_info,
- 		 * Was referenced before but isn't now, subtract from the
- 		 * reference counters.
- 		 */
--		if (qg->old_refcnt > seq && qg->new_refcnt <= seq) {
-+		if (cur_old_count > 0 && cur_new_count == 0) {
- 			qg->rfer -= num_bytes;
- 			qg->rfer_cmpr -= num_bytes;
- 			dirty = true;
+-	/*
+-	 * We need to flush delayed refs in order to make sure all of our quota
+-	 * operations have been done before we call btrfs_qgroup_inherit.
+-	 */
+-	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
+-		goto fail;
+-	}
+-
+-	ret = btrfs_qgroup_inherit(trans, fs_info,
+-				   root->root_key.objectid,
+-				   objectid, pending->inherit);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
+-		goto fail;
+-	}
+-
+ 	/* see comments in should_cow_block() */
+ 	set_bit(BTRFS_ROOT_FORCE_COW, &root->state);
+ 	smp_wmb();
+@@ -1493,11 +1480,37 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 			goto fail;
  		}
- 
--		if (qg->old_refcnt < seq)
--			cur_old_count = 0;
--		else
--			cur_old_count = qg->old_refcnt - seq;
--		if (qg->new_refcnt < seq)
--			cur_new_count = 0;
--		else
--			cur_new_count = qg->new_refcnt - seq;
--
- 		/*
- 		 * If our refcount was the same as the roots previously but our
- 		 * new count isn't the same as the number of roots now then we
-@@ -1932,6 +1940,11 @@ static int qgroup_shared_accounting(struct btrfs_trans_handle *trans,
- 		new_roots = old_roots;
- 		old_roots++;
  	}
 +
++	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto fail;
++	}
++
 +	/*
-+	 * Bump qgroup_seq to avoid seq overlap
-+	 * XXX: This makes qgroup_seq mismatch with oper->seq.
++	 * account qgroup counters before qgroup_inherit()
 +	 */
- 	fs_info->qgroup_seq += old_roots + 1;
- 
- 
++	ret = btrfs_qgroup_prepare_account_extents(trans, fs_info);
++	if (ret)
++		goto fail;
++	ret = btrfs_qgroup_account_extents(trans, fs_info);
++	if (ret)
++		goto fail;
++	ret = btrfs_qgroup_inherit(trans, fs_info,
++				   root->root_key.objectid,
++				   objectid, pending->inherit);
++	if (ret) {
++		btrfs_abort_transaction(trans, root, ret);
++		goto fail;
++	}
++
+ fail:
+ 	pending->error = ret;
+ dir_item_existed:
+ 	trans->block_rsv = rsv;
+ 	trans->bytes_reserved = 0;
++clear_skip_qgroup:
++	btrfs_clear_skip_qgroup(trans);
+ no_free_objectid:
+ 	kfree(new_root_item);
+ root_item_alloc_fail:
 -- 
 2.3.5
 

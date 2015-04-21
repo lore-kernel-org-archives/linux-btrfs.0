@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58479 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50964 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751469AbbDUGVs (ORCPT
+	with ESMTP id S1750895AbbDUGVr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 02:21:48 -0400
+	Tue, 21 Apr 2015 02:21:47 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KYCR025437
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:35 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3L6KYvY025433
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2015 14:20:34 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 12/18] btrfs: qgroup: Switch rescan to new mechanism.
-Date: Tue, 21 Apr 2015 14:21:28 +0800
-Message-ID: <1429597294-11875-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 11/18] btrfs: qgroup: Add new qgroup calculation function btrfs_qgroup_account_extents().
+Date: Tue, 21 Apr 2015 14:21:27 +0800
+Message-ID: <1429597294-11875-12-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1429597294-11875-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,117 +19,165 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Switch rescan to use the new new extent oriented mechanism.
+The new btrfs_qgroup_account_extents() function should be called in
+btrfs_commit_transaction() and it will update all the qgroup according
+to delayed_ref_root->dirty_extent_root.
 
-As rescan is also based on extent, new mechanism is just a perfect match
-for rescan.
-
-With re-designed internal functions, rescan is quite easy, just call
-btrfs_find_all_roots() and then btrfs_qgroup_account_one_extent().
+The new function can handle both normal operation during
+commit_transaction() or in rescan in a unified method with clearer
+logic.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 43 +++++++------------------------------------
- 1 file changed, 7 insertions(+), 36 deletions(-)
+ fs/btrfs/extent-tree.h |   0
+ fs/btrfs/qgroup.c      | 116 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h      |   2 +
+ 3 files changed, 118 insertions(+)
+ create mode 100644 fs/btrfs/extent-tree.h
 
+diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+new file mode 100644
+index 0000000..e69de29
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index be5717f..579f94a 100644
+index 3040296..be5717f 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2877,15 +2877,13 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
-  */
- static int
- qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
--		   struct btrfs_trans_handle *trans, struct ulist *qgroups,
--		   struct ulist *tmp, struct extent_buffer *scratch_leaf)
-+		   struct btrfs_trans_handle *trans,
-+		   struct extent_buffer *scratch_leaf)
- {
- 	struct btrfs_key found;
- 	struct ulist *roots = NULL;
- 	struct seq_list tree_mod_seq_elem = {};
- 	u64 num_bytes;
--	u64 seq;
--	int new_roots;
- 	int slot;
- 	int ret;
+@@ -2346,6 +2346,122 @@ static int btrfs_qgroup_account(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
-@@ -2935,33 +2933,15 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
- 		else
- 			num_bytes = found.offset;
- 
--		ulist_reinit(qgroups);
- 		ret = btrfs_find_all_roots(NULL, fs_info, found.objectid, 0,
- 					   &roots);
- 		if (ret < 0)
- 			goto out;
--		spin_lock(&fs_info->qgroup_lock);
--		seq = fs_info->qgroup_seq;
--		fs_info->qgroup_seq += roots->nnodes + 1; /* max refcnt */
--
--		new_roots = 0;
--		ret = qgroup_calc_old_refcnt(fs_info, 0, tmp, roots, qgroups,
--					     seq, &new_roots, 1);
--		if (ret < 0) {
--			spin_unlock(&fs_info->qgroup_lock);
--			ulist_free(roots);
--			goto out;
--		}
--
--		ret = qgroup_adjust_counters(fs_info, 0, num_bytes, qgroups,
--					     seq, 0, new_roots, 1);
--		if (ret < 0) {
--			spin_unlock(&fs_info->qgroup_lock);
--			ulist_free(roots);
-+		/* For rescan, just pass old_roots as NULL */
-+		ret = btrfs_qgroup_account_extent(trans, fs_info,
-+				found.objectid, num_bytes, NULL, roots);
-+		if (ret < 0)
- 			goto out;
--		}
--		spin_unlock(&fs_info->qgroup_lock);
--		ulist_free(roots);
- 	}
- out:
- 	btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
-@@ -2975,19 +2955,12 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 						     qgroup_rescan_work);
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans = NULL;
--	struct ulist *tmp = NULL, *qgroups = NULL;
- 	struct extent_buffer *scratch_leaf = NULL;
- 	int err = -ENOMEM;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		goto out;
--	qgroups = ulist_alloc(GFP_NOFS);
--	if (!qgroups)
--		goto out;
--	tmp = ulist_alloc(GFP_NOFS);
--	if (!tmp)
--		goto out;
- 	scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
- 	if (!scratch_leaf)
- 		goto out;
-@@ -3003,7 +2976,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 			err = -EINTR;
- 		} else {
- 			err = qgroup_rescan_leaf(fs_info, path, trans,
--						 qgroups, tmp, scratch_leaf);
-+						 scratch_leaf);
- 		}
- 		if (err > 0)
- 			btrfs_commit_transaction(trans, fs_info->fs_root);
-@@ -3013,8 +2986,6 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 
- out:
- 	kfree(scratch_leaf);
--	ulist_free(qgroups);
--	ulist_free(tmp);
- 	btrfs_free_path(path);
- 
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
++static int
++btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
++			    struct btrfs_fs_info *fs_info,
++			    u64 bytenr, u64 num_bytes,
++			    struct ulist *old_roots, struct ulist *new_roots)
++{
++	struct ulist *qgroups = NULL;
++	struct ulist *tmp = NULL;
++	u64 seq;
++	u64 nr_new_roots = 0;
++	u64 nr_old_roots = 0;
++	int ret = 0;
++
++	if (new_roots)
++		nr_new_roots = new_roots->nnodes;
++	if (old_roots)
++		nr_old_roots = old_roots->nnodes;
++
++	if (!fs_info->quota_enabled)
++		return 0;
++	BUG_ON(!fs_info->quota_root);
++
++	qgroups = ulist_alloc(GFP_NOFS);
++	if (!qgroups) {
++		ret = -ENOMEM;
++		goto out_free;
++	}
++	tmp = ulist_alloc(GFP_NOFS);
++	if (!tmp) {
++		ret = -ENOMEM;
++		goto out_free;
++	}
++
++	mutex_lock(&fs_info->qgroup_rescan_lock);
++	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN) {
++		if (fs_info->qgroup_rescan_progress.objectid <= bytenr) {
++			mutex_unlock(&fs_info->qgroup_rescan_lock);
++			ret = 0;
++			goto out_free;
++		}
++	}
++	mutex_unlock(&fs_info->qgroup_rescan_lock);
++
++	spin_lock(&fs_info->qgroup_lock);
++	seq = fs_info->qgroup_seq;
++
++	/* Update old refcnts using old_roots */
++	ret = qgroup_update_refcnt(fs_info, old_roots, tmp, qgroups, seq,
++				   UPDATE_OLD);
++	if (ret < 0)
++		goto out;
++
++	/* Update new refcnts using new_roots */
++	ret = qgroup_update_refcnt(fs_info, new_roots, tmp, qgroups, seq,
++				   UPDATE_NEW);
++	if (ret < 0)
++		goto out;
++
++	qgroup_update_counters(fs_info, qgroups, nr_old_roots, nr_new_roots,
++			       num_bytes, seq);
++
++	/*
++	 * Bump qgroup_seq to avoid seq overlap
++	 */
++	fs_info->qgroup_seq += max(nr_old_roots, nr_new_roots) + 1;
++out:
++	spin_unlock(&fs_info->qgroup_lock);
++out_free:
++	ulist_free(tmp);
++	ulist_free(qgroups);
++	ulist_free(old_roots);
++	ulist_free(new_roots);
++	return ret;
++}
++
++int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
++				 struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_qgroup_extent_record *record;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	struct ulist *new_roots = NULL;
++	struct rb_node *node;
++	int ret = 0;
++
++	delayed_refs = &trans->transaction->delayed_refs;
++	while ((node = rb_first(&delayed_refs->dirty_extent_root))) {
++		record = rb_entry(node, struct btrfs_qgroup_extent_record,
++				  node);
++
++		if (!ret) {
++			/*
++			 * Use (u64)-1 as time_seq to do special search, which
++			 * doesn't lock tree or delayed_refs and search current
++			 * root. It's safe inside commit_transaction().
++			 */
++			ret = btrfs_find_all_roots(trans, fs_info,
++					record->bytenr, (u64)-1, &new_roots);
++			if (ret < 0)
++				goto cleanup;
++			ret = btrfs_qgroup_account_extent(trans, fs_info,
++					record->bytenr, record->num_bytes,
++					record->old_roots, new_roots);
++			record->old_roots = NULL;
++			new_roots = NULL;
++		}
++cleanup:
++		ulist_free(record->old_roots);
++		ulist_free(new_roots);
++		new_roots = NULL;
++		rb_erase(node, &delayed_refs->dirty_extent_root);
++		kfree(record);
++
++	}
++	return ret;
++}
++
+ /*
+  * Needs to be called everytime we run delayed refs, even if there is an error
+  * in order to cleanup outstanding operations.
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 3b549cb..c3b08d6 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -104,6 +104,8 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ struct btrfs_qgroup_extent_record
+ *btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
+ 				  struct btrfs_qgroup_extent_record *record);
++int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
++				 struct btrfs_fs_info *fs_info);
+ int btrfs_delayed_qgroup_accounting(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_fs_info *fs_info);
+ void btrfs_remove_qgroup_operation(struct btrfs_trans_handle *trans,
 -- 
 2.3.5
 

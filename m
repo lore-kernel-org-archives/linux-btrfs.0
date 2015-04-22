@@ -1,33 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54318 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57996 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965494AbbDVQbY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Apr 2015 12:31:24 -0400
-Date: Wed, 22 Apr 2015 18:31:22 +0200
+	id S965022AbbDVR1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Apr 2015 13:27:47 -0400
+Date: Wed, 22 Apr 2015 19:27:45 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Lauri =?iso-8859-1?Q?V=F5sandi?= <lauri.vosandi@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: report failure when resize ioctl fails
-Message-ID: <20150422163122.GF4996@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: optionally enforce chroot for btrfs receive
+Message-ID: <20150422172745.GK4996@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1429673927-3854-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+References: <217a387d55b5828a82fadad98dd88a959e7a13ed.1429008167.git.lauri.vosandi@gmail.com>
+ <1429443988-16001-1-git-send-email-lauri.vosandi@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1429673927-3854-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1429443988-16001-1-git-send-email-lauri.vosandi@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 21, 2015 at 11:38:47PM -0400, Zygo Blaxell wrote:
-> The BTRFS_IOC_RESIZE ioctl returns 0 on success, negative for POSIX
-> errors, and positive for btrfs-specific errors.
+On Sun, Apr 19, 2015 at 02:46:28PM +0300, Lauri Võsandi wrote:
+> This patch forces btrfs receive to issue chroot before
+> parsing the btrfs stream using command-line flag -C
+> to confine the process and minimize damage that could
+> be done via malicious btrfs stream.
 > 
-> If resize fails with a btrfs-specific error, decode the error and
-> report it.  If we can't decode the error, report its numeric value so
-> that the userspace tool is not instantly useless when a new error code
-> is defined in the kernel.
-> 
-> Exit with non-zero status on any resize error.  This is very important
-> for scripts that will shrink the underlying storage when btrfs reports
-> success!
+> Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
 
-Added the signed-off-by and applied, thanks.
+Applied with some updates, thanks.
+
+> -	/*
+> -	 * find_mount_root returns a root_path that is a subpath of
+> -	 * dest_dir_full_path. Now get the other part of root_path,
+> -	 * which is the destination dir relative to root_path.
+> -	 */
+> -	r->dest_dir_path = dest_dir_full_path + strlen(r->root_path);
+> -	while (r->dest_dir_path[0] == '/')
+> -		r->dest_dir_path++;
+
+This goes to the 'else' branch of the 'if' below.
+
+> +	if (r->dest_dir_chroot) {
+> +		if (chroot(dest_dir_full_path)) {
+> +			ret = -errno;
+> +			fprintf(stderr,
+> +				"ERROR: failed to chroot to %s, %s\n",
+> +				dest_dir_full_path,
+> +				strerror(-ret));
+> +			goto out;
+> +		}
+> +		if(chdir("/")) {
+> +			ret = -errno;
+> +			fprintf(stderr,
+> +				"ERROR: failed to chdir to /, %s\n",
+> +				strerror(-ret));
+> +			goto out;
+> +		}
+> +		if (g_verbose >= 1) {
+> +			fprintf(stderr, "chrooted to %s\n",
+> +				dest_dir_full_path);
+> +		}
+> +		r->root_path = r->dest_dir_path = strdup("/");
+> +	}
+> -		c = getopt_long(argc, argv, "evf:", long_opts, NULL);
+> +		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
+
+added the long option --chroot

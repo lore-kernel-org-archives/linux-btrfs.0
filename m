@@ -1,48 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51205 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750711AbbDUEZQ (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41650 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754427AbbDVDru (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 00:25:16 -0400
-From: Anand Jain <anand.jain@oracle.com>
+	Tue, 21 Apr 2015 23:47:50 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] Btrfs-progs: fix typo in btrfs-device.txt
-Date: Tue, 21 Apr 2015 15:12:03 +0800
-Message-Id: <1429600323-5199-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1429525889-2843-1-git-send-email-anand.jain@oracle.com>
-References: <1429525889-2843-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: report failure when resize ioctl fails
+Date: Tue, 21 Apr 2015 23:38:47 -0400
+Message-Id: <1429673927-3854-1-git-send-email-ce3g8jdj@umail.furryterror.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+The BTRFS_IOC_RESIZE ioctl returns 0 on success, negative for POSIX
+errors, and positive for btrfs-specific errors.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+If resize fails with a btrfs-specific error, decode the error and
+report it.  If we can't decode the error, report its numeric value so
+that the userspace tool is not instantly useless when a new error code
+is defined in the kernel.
+
+Exit with non-zero status on any resize error.  This is very important
+for scripts that will shrink the underlying storage when btrfs reports
+success!
 ---
- v1->v2: Oh no. Typo while fixing typo. oops ! thanks Duncan.
+ cmds-filesystem.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
- Documentation/btrfs-device.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
-index 4bb5ea5..7807450 100644
---- a/Documentation/btrfs-device.txt
-+++ b/Documentation/btrfs-device.txt
-@@ -53,12 +53,12 @@ run `btrfs-balance`(8) to rebuild the chunks.
- See `btrfs-balance`(8) for more details.
- 
- Device add/remove/replace::
--Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
-+Device can be added/removed using `btrfs-device`(8) subcommand and replaced
- using `btrfs-replace`(8).
- +
- When device is removed or replaced, btrfs will do the chunk rebuild if needed.
- +
--See `btrfs-replace`(8) and this man page for more details.
-+See `btrfs-replace`(8) man page for more details on device replace.
- 
- SUBCOMMAND
- ----------
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index f3fc160..85f0406 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -1263,6 +1263,16 @@ static int cmd_resize(int argc, char **argv)
+ 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
+ 			path, strerror(e));
+ 		return 1;
++	} else if (res > 0) {
++		const char *err_str = btrfs_err_str(res);
++		if (err_str) {
++			fprintf(stderr, "ERROR: btrfs error resizing '%s' - %s\n",
++				path, err_str);
++		} else {
++			fprintf(stderr, "ERROR: btrfs error resizing '%s' - unknown btrfs_err_code %d\n",
++				path, res);
++		}
++		return 1;
+ 	}
+ 	return 0;
+ }
 -- 
-2.0.0.153.g79dcccc
+1.7.10.4
 

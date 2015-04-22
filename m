@@ -1,57 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33014 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:55715 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932273AbbDVBta (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 21:49:30 -0400
-Date: Tue, 21 Apr 2015 18:49:28 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] btrfs: clear 'ret' in btrfs_check_shared() loop
-Message-ID: <20150422014928.GP17170@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20150421214733.GO17170@wotan.suse.de>
- <5536F004.3090602@fb.com>
+	id S965980AbbDVQxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Apr 2015 12:53:49 -0400
+Date: Wed, 22 Apr 2015 18:53:47 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Dan Merillat <dan.merillat@gmail.com>
+Cc: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 1/1] btrfs-progs: optionally restore metadata
+Message-ID: <20150422165347.GG4996@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <5535E4A8.8040600@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5536F004.3090602@fb.com>
+In-Reply-To: <5535E4A8.8040600@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 21, 2015 at 08:49:08PM -0400, Chris Mason wrote:
-> On 04/21/2015 05:47 PM, Mark Fasheh wrote:
-> > btrfs_check_shared() is leaking a return value of '1' from
-> > find_parent_nodes(). As a result, callers (in this case, extent_fiemap())
-> > are told extents are shared when they are not. This in turn broke fiemap on
-> > btrfs for kernels v3.18 and up.
-> > 
-> > The fix is simple - we just have to clear 'ret' after we are done processing
-> > the results of find_parent_nodes().
-> > 
-> > It wasn't clear to me at first what was happening with return values in
-> > btrfs_check_shared() and find_parent_nodes() - thanks to Josef for the help
-> > on irc. I added documentation to both functions to make things more clear
-> > for the next hacker who might come across them.
-> > 
+On Tue, Apr 21, 2015 at 01:48:24AM -0400, Dan Merillat wrote:
+> As long as the inode is intact, the file metadata can be restored.
+> Directory data is restored at the end of search_dir.  Errors are
+> checked and returned, unless ignore_errors is requested.
 > 
-> Thanks Mark, any reason not to tag this for stable?
+> Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
 
-If you all are ok with the patch then yes please send it to -stable too. It
-breaks duperemove on kernels from 3.18 onward:
+Applied, thanks.
 
-https://github.com/markfasheh/duperemove/issues/55
+In future patches, please stick to the coding style used in progs ([1]),
+I've fixed spacing around "=", comments and moved declarations before
+the statements.
 
-so I'm understandbly interested in seeing it backported :)
+[1] https://www.kernel.org/doc/Documentation/CodingStyle
 
-Thanks,
-	--Mark
+> @@ -1168,10 +1275,12 @@ int cmd_restore(int argc, char **argv)
+>  		static const struct option long_options[] = {
+>  			{ "path-regex", 1, NULL, 256},
+>  			{ "dry-run", 0, NULL, 'D'},
+> +			{ "metadata", 0, NULL, 'm'},
+> +			{ "debug-regex", 0, NULL, 257},
 
-> 
-> -chris
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-Mark Fasheh
+This was unused and I've removed it.

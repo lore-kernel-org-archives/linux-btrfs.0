@@ -1,62 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f42.google.com ([209.85.215.42]:35558 "EHLO
-	mail-la0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966432AbbDWRhf convert rfc822-to-8bit (ORCPT
+Received: from smtp02.univ-lille1.fr ([193.49.225.20]:44470 "EHLO
+	smtp02.univ-lille1.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030319AbbDWSFb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 13:37:35 -0400
-Received: by labbd9 with SMTP id bd9so18037064lab.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 10:37:34 -0700 (PDT)
+	Thu, 23 Apr 2015 14:05:31 -0400
+Message-ID: <5539345C.1040905@gnieh.org>
+Date: Thu, 23 Apr 2015 20:05:16 +0200
+From: Martin Monperrus <martin.monperrus@gnieh.org>
 MIME-Version: 1.0
-In-Reply-To: <20150423173647.GB29760@gardel-login>
-References: <CAK1hC9ujeQs_pv6nD6C689hMFQNjMMQdUgt7RFOz0gHjdeSz_A@mail.gmail.com>
-	<20150423115056.GA28566@gardel-login>
-	<CAK1hC9unKak9ffbwJthki38te5PDB+28iJTN10++gRGLZpfoiA@mail.gmail.com>
-	<20150423144708.GB29079@gardel-login>
-	<CAK1hC9s9DQaL8-E4_R-4pr-iC0K93D+6Yf-nqqsUsNtfrr74eQ@mail.gmail.com>
-	<20150423171248.GD29642@gardel-login>
-	<CAK1hC9v65LCt7fu1MGYkx0Gpsb=cwcHVWDP4bcURr7WTK754iQ@mail.gmail.com>
-	<CAK1hC9t_N1bTV4Xk_iXiqqAqmN5++fLQwk6UGgtEM4Kqw3PZSQ@mail.gmail.com>
-	<20150423173647.GB29760@gardel-login>
-Date: Thu, 23 Apr 2015 19:37:34 +0200
-Message-ID: <CAK1hC9u_09e_pkAWiii-7bn5CzQC0fqGi-c+1Z7h-WFQzdhdHw@mail.gmail.com>
-Subject: Re: [systemd-devel] install Fedora systemd-nspawn container on btrfs
-From: arnaud gaboury <arnaud.gaboury@gmail.com>
-To: Lennart Poettering <lennart@poettering.net>
-Cc: systemd <systemd-devel@lists.freedesktop.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Re: How to repair a BTRFS block?
+References: <55320BAE.1030007@gnieh.org>
+In-Reply-To: <55320BAE.1030007@gnieh.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2015 at 7:36 PM, Lennart Poettering
-<lennart@poettering.net> wrote:
-> On Thu, 23.04.15 19:29, arnaud gaboury (arnaud.gaboury@gmail.com) wrote:
+Hi,
+
+More on my issue, I have "uncorrectable errors"
+
+# btrfs scrub status /
+scrub status for e11013b3-b244-4d1a-a9c7-3956db1a699c
+    scrub started at Thu Apr 23 19:07:45 2015 and finished after 372 seconds
+    total bytes scrubbed: 167.13GiB with 13 errors
+    error details: read=13
+    corrected errors: 0, uncorrectable errors: 13, unverified errors: 0
+
+Before going to my backups, how can know the files impacted by those
+uncorrectable errors?
+
+Best regards,
+
+--Martin
+
+
+
+On 04/18/2015 09:45 AM, Martin Monperrus wrote:
+> Dear Btrfs developers,
 >
->> When in /var/lib/machines/poppy:
->>
->> root@hortensia ➤➤ machines/poppy # btrfs subvolume list .
->> ID 266 gen 98 top level 5 path rootvol
->> ID 268 gen 100 top level 5 path var
->> ID 269 gen 101 top level 5 path etc
->> ID 271 gen 72 top level 266 path var/lib/machines
->> ID 272 gen 77 top level 268 path var/tmp
->> ID 273 gen 77 top level 268 path var/lib/machines
->>
->> Anyone from the Btrfs ML to help ?
+> For some unknown reasons, my BTRFS filesystem is corrupted. dmesg prints
 >
-> Note that systemd-tmpfiles will create /var/tmp, and /var/lib/machines
-> as subvolumes these days, if they are missing and on btrfs.
+> |BTRFS critical (device sda2): corrupt leaf, slot offset bad:
+> block=43231330304,root=1, slot=47|
+>
+> (more than 1000x in the dmesg trace).
+>
+> btrfs check --repair fails with:
+>
+> read block failed check_tree_block
+> incorrect offset 12725 2298746482
+> items overlap, can't fix
+> cmds_check.c:2918: fix_item_offset: Assertion 'ret' failed
+>
+> How to list the files in block #43231330304 affected by the corruption?
+> How to repair block #43231330304?
+>
+> Best regards,
+>
+> --Martin
 >
 
-OK, I understand these new subvol
-
-> Lennart
->
-> --
-> Lennart Poettering, Red Hat
-
-
-
--- 
-
-google.com/+arnaudgabourygabx

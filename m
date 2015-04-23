@@ -1,49 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.131]:52995 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966493AbbDWRa6 (ORCPT
+Received: from gardel.0pointer.net ([85.214.157.71]:59888 "EHLO
+	gardel.0pointer.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966432AbbDWRgt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 13:30:58 -0400
-Received: from oxbaltgw03.schlund.de ([172.19.246.9]) by
- mrelayeu.kundenserver.de (mreue001) with ESMTPSA (Nemesis) id
- 0MHfTA-1YkDyG3Pyu-003PKJ for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015
- 19:30:56 +0200
-Date: Thu, 23 Apr 2015 19:30:56 +0200 (CEST)
-From: - - <fdp@fkoop.de>
-Reply-To: - - <fdp@fkoop.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <935962336.145772.1429810256346.JavaMail.open-xchange@oxbaltgw03.schlund.de>
-Subject: Help needed when btrfs raid5 crashed
+	Thu, 23 Apr 2015 13:36:49 -0400
+Date: Thu, 23 Apr 2015 19:36:47 +0200
+From: Lennart Poettering <lennart@poettering.net>
+To: arnaud gaboury <arnaud.gaboury@gmail.com>
+Cc: systemd <systemd-devel@lists.freedesktop.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [systemd-devel] install Fedora systemd-nspawn container on btrfs
+Message-ID: <20150423173647.GB29760@gardel-login>
+References: <CAK1hC9ujeQs_pv6nD6C689hMFQNjMMQdUgt7RFOz0gHjdeSz_A@mail.gmail.com>
+ <20150423115056.GA28566@gardel-login>
+ <CAK1hC9unKak9ffbwJthki38te5PDB+28iJTN10++gRGLZpfoiA@mail.gmail.com>
+ <20150423144708.GB29079@gardel-login>
+ <CAK1hC9s9DQaL8-E4_R-4pr-iC0K93D+6Yf-nqqsUsNtfrr74eQ@mail.gmail.com>
+ <20150423171248.GD29642@gardel-login>
+ <CAK1hC9v65LCt7fu1MGYkx0Gpsb=cwcHVWDP4bcURr7WTK754iQ@mail.gmail.com>
+ <CAK1hC9t_N1bTV4Xk_iXiqqAqmN5++fLQwk6UGgtEM4Kqw3PZSQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAK1hC9t_N1bTV4Xk_iXiqqAqmN5++fLQwk6UGgtEM4Kqw3PZSQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, 23.04.15 19:29, arnaud gaboury (arnaud.gaboury@gmail.com) wrote:
 
-I had a 3 disk raid5 system with btrfs installed. Unfortunately one of the disks
-crashed. Now I cannot mount the system any more, not even with the degraded
-option. I suspect the failed disk to have a hw failure. I Think part of the
-problem might be that I configured the system to not only have the data and
-metadata, but also the system data in raid config. Is there any chance that I
-might get my data back from the file system?
+> When in /var/lib/machines/poppy:
+> 
+> root@hortensia ➤➤ machines/poppy # btrfs subvolume list .
+> ID 266 gen 98 top level 5 path rootvol
+> ID 268 gen 100 top level 5 path var
+> ID 269 gen 101 top level 5 path etc
+> ID 271 gen 72 top level 266 path var/lib/machines
+> ID 272 gen 77 top level 268 path var/tmp
+> ID 273 gen 77 top level 268 path var/lib/machines
+> 
+> Anyone from the Btrfs ML to help ?
 
-Currently the system does not boot any more. It was a debian testing system with
-btrfs version 3.17. The kernel was originally 3.16.0-4-amd64, but now I also
-have 3.19.0-trunk-amd64 installed.
+Note that systemd-tmpfiles will create /var/tmp, and /var/lib/machines
+as subvolumes these days, if they are missing and on btrfs.
 
-When I run btrfs fi show, I get an error message:
-Check tree block failed, want=<big number>, have=<another big number>
-read block failed check_tree_block
-Couldn' t read chunk root
-warning, device 2 is missing
+Lennart
 
-Sorry, I cannot copy/paste as the machine does not boot anymore.
-
-Can anyone give me some help or can explain to me what other kind of info you
-need? Thanks.
-
----
-Kind regards
-
-Felix
+-- 
+Lennart Poettering, Red Hat

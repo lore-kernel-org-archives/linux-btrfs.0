@@ -1,108 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56597 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753474AbbDXNdh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 09:33:37 -0400
-Date: Fri, 24 Apr 2015 09:33:30 -0400
-From: Chris Mason <clm@fb.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:53272 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S966339AbbDWQeT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Apr 2015 12:34:19 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YlK4u-0007a4-1T
+	for linux-btrfs@vger.kernel.org; Thu, 23 Apr 2015 18:34:16 +0200
+Received: from p4ff58852.dip0.t-ipconnect.de ([79.245.136.82])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 18:34:16 +0200
+Received: from holger.hoffstaette by p4ff58852.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 18:34:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
 Subject: Re: [PATCH 0/4] btrfs: reduce block group cache writeout times
  during commit
-Message-ID: <20150424133330.GA2412@ret.masoncoding.com>
-References: <pan.2015.04.22.16.37.38@googlemail.com>
- <5537D27E.3080609@fb.com>
- <CAL3q7H4ccdcJYKZaH_fYW9EUPCSTa3gDz_fiUjP8TvCUvQtxTQ@mail.gmail.com>
- <5538EB05.7050200@fb.com>
- <CAL3q7H6wUMruqTvKwMqcTXcgJv2fFw1GFN9QxyfE5GKqR-GNew@mail.gmail.com>
- <20150423151704.GA25585@ret.masoncoding.com>
- <CAL3q7H7oOcTZyCkP0NVWzQ3cKdJD=GDnM6+wM83D9_szHCX95g@mail.gmail.com>
- <CAL3q7H6+x7y64rZfRniJVDP8OwbNWCLuAC7M9D9OWY2urTsnWg@mail.gmail.com>
- <55394CEE.5030205@fb.com>
- <CAL3q7H7sM9Z4AbyuJUy5A9PkhrfOB=eQq_2ZRu9nRgjOwkVA6w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAL3q7H7sM9Z4AbyuJUy5A9PkhrfOB=eQq_2ZRu9nRgjOwkVA6w@mail.gmail.com>
+Date: Thu, 23 Apr 2015 16:34:05 +0000 (UTC)
+Message-ID: <pan.2015.04.23.16.34.05@googlemail.com>
+References: <1428954759-1304912-1-git-send-email-clm@fb.com>
+	<mh8h3f$l3u$1@ger.gmane.org> <pan.2015.04.22.16.37.38@googlemail.com>
+	<5537D27E.3080609@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 24, 2015 at 07:34:43AM +0100, Filipe David Manana wrote:
-> There's also one list corruption I didn't get before and happened
-> while running fsstress (btrfs/078), apparently due to some race:
-> 
-> [25590.799058] ------------[ cut here ]------------
-> [25590.800204] WARNING: CPU: 3 PID: 7280 at lib/list_debug.c:62
-> __list_del_entry+0x5a/0x98()
-> [25590.802101] list_del corruption. next->prev should be
-> ffff8801a0f74d50, but was a56b6b6b6b6b6b6b
-> [25590.804236] Modules linked in: btrfs dm_flakey dm_mod
-> crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs
-> lockd grace fscache sunrpc loop fuse i2c_piix4 i2c_core psmouse
-> serio_raw evdev parport_pc parport acpi_cpufreq processor button
-> pcspkr thermal_sys microcode ext4 crc16 jbd2 mbcache sd_mod sg sr_mod
-> cdrom virtio_scsi ata_generic virtio_pci virtio_ring ata_piix e1000
-> virtio libata floppy scsi_mod [last unloaded: btrfs]
-> [25590.818580] CPU: 3 PID: 7280 Comm: fsstress Tainted: G        W
->   4.0.0-rc5-btrfs-next-9+ #1
-> [25590.820597] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
-> BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org
-> 04/01/2014
-> [25590.823458]  0000000000000009 ffff8803f031bc08 ffffffff8142fa46
-> ffffffff8108b6a2
-> [25590.825081]  ffff8803f031bc58 ffff8803f031bc48 ffffffff81045ea5
-> 0000000000000011
-> [25590.826568]  ffffffff81245af7 ffff8801a0f74d50 ffff8801a0f74460
-> ffff880041710df0
-> [25590.828106] Call Trace:
-> [25590.828630]  [<ffffffff8142fa46>] dump_stack+0x4f/0x7b
-> [25590.829706]  [<ffffffff8108b6a2>] ? console_unlock+0x361/0x3ad
-> [25590.830785]  [<ffffffff81045ea5>] warn_slowpath_common+0xa1/0xbb
-> [25590.831957]  [<ffffffff81245af7>] ? __list_del_entry+0x5a/0x98
-> [25590.867473]  [<ffffffff81045f05>] warn_slowpath_fmt+0x46/0x48
-> [25590.868631]  [<ffffffffa04907e2>] ? btrfs_csum_data+0x16/0x18 [btrfs]
-> [25590.869524]  [<ffffffff81245af7>] __list_del_entry+0x5a/0x98
-> [25590.870918]  [<ffffffffa04cff5f>] write_bitmap_entries+0x99/0xbd [btrfs]
+On Wed, 22 Apr 2015 12:55:26 -0400, Chris Mason wrote:
 
-Can you please see which line write_bitmap_entries+0x99 is?
+> Great to hear.  I recommend just using my for-linus-4.1 branch, since it
+> has all the good things  in one place.
 
-I'm hoping this will fix it:
+Even with the latest patch for xfstests/049 I reproducibly get:
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d773f22..5c7746f 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1119,18 +1119,21 @@ static int flush_dirty_cache(struct inode *inode)
- }
- 
- static void noinline_for_stack
--cleanup_write_cache_enospc(struct inode *inode,
-+cleanup_write_cache_enospc(struct btrfs_free_space_ctl *ctl,
-+			   struct inode *inode,
- 			   struct btrfs_io_ctl *io_ctl,
- 			   struct extent_state **cached_state,
- 			   struct list_head *bitmap_list)
- {
- 	struct list_head *pos, *n;
- 
-+	spin_lock(&ctl->tree_lock);
- 	list_for_each_safe(pos, n, bitmap_list) {
- 		struct btrfs_free_space *entry =
- 			list_entry(pos, struct btrfs_free_space, list);
- 		list_del_init(&entry->list);
- 	}
-+	spin_unlock(&ctl->tree_lock);
- 	io_ctl_drop_pages(io_ctl);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
- 			     i_size_read(inode) - 1, cached_state,
-@@ -1345,7 +1348,8 @@ out:
- 	return ret;
- 
- out_nospc:
--	cleanup_write_cache_enospc(inode, io_ctl, &cached_state, &bitmap_list);
-+	cleanup_write_cache_enospc(ctl, inode, io_ctl,
-+				   &cached_state, &bitmap_list);
- 
- 	if (block_group && (block_group->flags & BTRFS_BLOCK_GROUP_DATA))
- 		up_write(&block_group->data_rwsem);
+[  405.052123] =============================================================================
+[  405.052125] BUG btrfs_transaction (Not tainted): Objects remaining in btrfs_transaction on kmem_cache_close()
+[  405.052126] -----------------------------------------------------------------------------
+[  405.052127] Disabling lock debugging due to kernel taint
+[  405.052129] INFO: Slab 0xffffea000fea1e00 objects=22 used=1 fp=0xffff8803fa879d88 flags=0x20000000004080
+[  405.052131] CPU: 0 PID: 3625 Comm: rmmod Tainted: G    B           4.0.0 #1
+[  405.052132] Hardware name: System manufacturer System Product Name/P8Z68-V LX, BIOS 4105 07/01/2013
+[  405.052133]  ffff88040c03e300 ffff88040cd37d48 ffffffff8154c085 0000000000000007
+[  405.052136]  ffffea000fea1e00 ffff88040cd37e18 ffffffff811557a0 0000000000000020
+[  405.052137]  ffff88040cd37e28 ffff88040cd37dd8 656a624f00000202 616d657220737463
+[  405.052139] Call Trace:
+[  405.052145]  [<ffffffff8154c085>] dump_stack+0x45/0x57
+[  405.052148]  [<ffffffff811557a0>] slab_err+0xa0/0xb0
+[  405.052151]  [<ffffffff8110de00>] ? free_hot_cold_page_list+0x30/0xa0
+[  405.052153]  [<ffffffff811561de>] ? __free_slab+0xce/0x1a0
+[  405.052155]  [<ffffffff81157d7a>] ? __kmalloc+0x16a/0x1b0
+[  405.052163]  [<ffffffff81159462>] ? free_partial+0xc2/0x230
+[  405.052165]  [<ffffffff81159482>] free_partial+0xe2/0x230
+[  405.052166]  [<ffffffff81156fd0>] ? deactivate_slab+0x580/0x580
+[  405.052168]  [<ffffffff811596de>] __kmem_cache_shutdown+0x5e/0xb0
+[  405.052170]  [<ffffffff811286b0>] kmem_cache_destroy+0x90/0x110
+[  405.052192]  [<ffffffffa04683f1>] btrfs_destroy_cachep+0x41/0x80 [btrfs]
+[  405.052197]  [<ffffffffa04d0466>] exit_btrfs_fs+0x9/0x5c [btrfs]
+[  405.052199]  [<ffffffff810a69e1>] SyS_delete_module+0x171/0x240
+[  405.052202]  [<ffffffff81002ccd>] ? do_notify_resume+0x6d/0x70
+[  405.052205]  [<ffffffff81551272>] system_call_fastpath+0x12/0x17
+[  405.052207] INFO: Object 0xffff8803fa878168 @offset=360
+[  405.052208] kmem_cache_destroy btrfs_transaction: Slab cache still has objects
+[  405.052209] CPU: 0 PID: 3625 Comm: rmmod Tainted: G    B           4.0.0 #1
+[  405.052210] Hardware name: System manufacturer System Product Name/P8Z68-V LX, BIOS 4105 07/01/2013
+[  405.052210]  ffff88040cd37eb8 ffff88040cd37ea8 ffffffff8154c085 0000000000000007
+[  405.052212]  ffff88040c03e300 ffff88040cd37ee8 ffffffff81128721 ffff88040cd37eb8
+[  405.052213]  ffff88040cd37eb8 0000000000000800 ffffffffa04e9a00 00007ffd13de7932
+[  405.052215] Call Trace:
+[  405.052217]  [<ffffffff8154c085>] dump_stack+0x45/0x57
+[  405.052218]  [<ffffffff81128721>] kmem_cache_destroy+0x101/0x110
+[  405.052225]  [<ffffffffa04683f1>] btrfs_destroy_cachep+0x41/0x80 [btrfs]
+[  405.052229]  [<ffffffffa04d0466>] exit_btrfs_fs+0x9/0x5c [btrfs]
+[  405.052230]  [<ffffffff810a69e1>] SyS_delete_module+0x171/0x240
+[  405.052232]  [<ffffffff81002ccd>] ? do_notify_resume+0x6d/0x70
+[  405.052234]  [<ffffffff81551272>] system_call_fastpath+0x12/0x17
+
+After a clean unmount (with a fresh space_cache but no inode_cache) & rmmod.
+This used to work. :)
+
+-h
 

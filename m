@@ -1,47 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:36185 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965961AbbDWPml (ORCPT
+Received: from mail-la0-f51.google.com ([209.85.215.51]:34054 "EHLO
+	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030310AbbDWRAD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 11:42:41 -0400
-Received: by wizk4 with SMTP id k4so221011742wiz.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 08:42:40 -0700 (PDT)
-Message-ID: <553912EF.7010004@gmail.com>
-Date: Thu, 23 Apr 2015 17:42:39 +0200
-From: Marc Cousin <cousinmarc@gmail.com>
+	Thu, 23 Apr 2015 13:00:03 -0400
+Received: by laat2 with SMTP id t2so17301872laa.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 10:00:01 -0700 (PDT)
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: snapshot destruction making IO extremely slow
-References: <550E7917.5030602@gmail.com> <20150325011937.GB20767@twin.jikos.cz> <55129428.7090508@gmail.com> <20150330142532.GI32051@suse.cz> <55196740.1000705@gmail.com> <20150331170516.GD6821@suse.cz> <5534CC2F.4080109@gmail.com>
-In-Reply-To: <5534CC2F.4080109@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20150423144708.GB29079@gardel-login>
+References: <CAK1hC9ujeQs_pv6nD6C689hMFQNjMMQdUgt7RFOz0gHjdeSz_A@mail.gmail.com>
+	<20150423115056.GA28566@gardel-login>
+	<CAK1hC9unKak9ffbwJthki38te5PDB+28iJTN10++gRGLZpfoiA@mail.gmail.com>
+	<20150423144708.GB29079@gardel-login>
+Date: Thu, 23 Apr 2015 19:00:01 +0200
+Message-ID: <CAK1hC9s9DQaL8-E4_R-4pr-iC0K93D+6Yf-nqqsUsNtfrr74eQ@mail.gmail.com>
+Subject: Re: [systemd-devel] install Fedora systemd-nspawn container on btrfs
+From: arnaud gaboury <arnaud.gaboury@gmail.com>
+To: Lennart Poettering <lennart@poettering.net>
+Cc: systemd <systemd-devel@lists.freedesktop.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20/04/2015 11:51, Marc Cousin wrote:
-> On 31/03/2015 19:05, David Sterba wrote:
->> On Mon, Mar 30, 2015 at 05:09:52PM +0200, Marc Cousin wrote:
->>>> So it would be good to sample the active threads and see where it's
->>>> spending the time. It could be the somewhere in the rb-tree representing
->>>> extents, but that's a guess.
->>>>
->>> I just need to be told how to do that :)
->>>
->>> Something like a perf top ?
+On Thu, Apr 23, 2015 at 4:47 PM, Lennart Poettering
+<lennart@poettering.net> wrote:
+> On Thu, 23.04.15 14:18, arnaud gaboury (arnaud.gaboury@gmail.com) wrote:
+>
+>> > Pick one:
+>> >
+>> > a) download the raw image and use that, but it will be a loopback file
+>> > with its own file system inside
+>> >
+>> > or:
+>> >
+>> > b) do the dnf/yum install root thing, and install it into a directory
+>> > tree.
 >>
->> for i in `pgrep btrfs`; do
->>         ps $i
->> 	sudo cat /proc/$i/stack 2>/dev/null
->> done
+>> I installed yum package on Arch but couldn't manage to do the install.
 >>
->> and capture samples every second.
+>> # yum -y --releasever=22 --nogpg --installroot=/var/lib/machines/enl
+>> --disablerepo='*' --enablerepo=fedora install systemd passwd dnf
+>> fedora-release-server
+>> Error getting repository data for fedora, repository not found
+>> # yum repolist all
+>> repolist: 0
 >>
-> 
-> Sorry, it took me a while to reproduce this (I needed to be in front of the machine when it happens :) )
+>> In fact, /etc/yum/repos.d is empty, so I am not surprised.
+>
+> Of course, you could use the .raw image, mount the extern btrfs volume
+> into it via nspawn's --bind= switch, then use yum inside of that
+> container to install into the btrfs volume. Then get rid of the .raw
+> image again, and you still have the btrfs volume that should be
+> bootable.
+>
+> A bit complex, but you almost were there already... ;-)
 
-Hi,
+Wunderbach
 
-Anything more I can provide on this issue ?
+# systemd-nspawn -M Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw --
+bind=/var/lib/machines/enl:/mnt
+[root@Fedora-Cloud-Base-22_Beta-20150415 ~]#dnf -y --releasever=22
+--nogpg --installroot=/mnt
+ --disablerepo='*' --enablerepo=fedora install systemd passwd dnf
+................
+Complete!
 
-Regards
+-------------------------------------------------------------------------
+$ ls /var/lib/machines/enl
+boot/  etc/   media/  opt/   root/  srv/  tmp/  var/  lib@    sbin@
+dev/   home/  mnt/    proc/  run/   sys/  usr/  bin@  lib64@
+-------------------------------------------------------------------------------------
 
+But now booting but hanging:
+
+#systemd-nspawn -bD /var/lib/machines/enl
+Spawning container enl on /var/lib/machines/enl.
+Press ^] three times within 1s to kill container.
+systemd 219 running in system mode. (+PAM +AUDIT +SELINUX +IMA
+-APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL
++XZ -LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD +IDN)
+Detected virtualization 'systemd-nspawn'.
+Detected architecture 'x86-64'.
+Running with unpopulated /etc.
+
+Welcome to Fedora 22 (Twenty Two)!
+
+Initializing machine ID from random generator.
+Populated /etc with preset unit settings.
+Unit etc.mount is bound to inactive unit dev-sdb1.device. Stopping, too.
+Unit var.mount is bound to inactive unit dev-sdb1.device. Stopping, too.
+Cannot add dependency job for unit display-manager.service, ignoring:
+Unit display-manager.service failed to load: No such file or
+directory.
+Startup finished in 51ms.
+
+------------------------------------------------------------------------
+
+Maybe my btrfs story ?
+> Unit etc.mount is bound to inactive unit dev-sdb1.device. Stopping, too.
+> Unit var.mount is bound to inactive unit dev-sdb1.device. Stopping, too.
+Will investigate.
+
+--bind was certainly the most easy trick once the raw image is downloaded.
+
+>
+> Lennart
+>
+> --
+> Lennart Poettering, Red Hat
+
+
+
+-- 
+
+google.com/+arnaudgabourygabx

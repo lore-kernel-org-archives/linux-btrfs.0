@@ -1,65 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51747 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29057 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752522AbbDWBdh (ORCPT
+	with ESMTP id S1757899AbbDWDDE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Apr 2015 21:33:37 -0400
+	Wed, 22 Apr 2015 23:03:04 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <lukas.lueg@gmail.com>
-Subject: [PATCH] btrfs: Check superblock csum type to avoid 0 division or array overflow.
-Date: Thu, 23 Apr 2015 09:31:21 +0800
-Message-ID: <1429752681-566-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Add extra check for sub_stripes to avoid hostile 0 division attack.
+Date: Thu, 23 Apr 2015 11:00:45 +0800
+Message-ID: <1429758045-27027-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current btrfs only support CRC32 checksum, and if csum_type is 1, we
-will get 0 csum size, causing 0 division later destroy the whole kernel.
-Or csum_type is later than 1, we will get data from other random memory
-causing more problem.
+Although only RAID10 use sub_stripes, a hostile attack can modify chunk
+tree and just add RAID10 bit to a single chunk.
+Then btrfs_map_block will trigger a 0 division in kernel and destroy
+everything.
 
-So check csum_type in btrfs_check_super_valid() to avoid such hostile
-attack.
+Just add extra check when reading chunk from disk.
 
 Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   | 1 +
- fs/btrfs/disk-io.c | 7 +++++++
- 2 files changed, 8 insertions(+)
+ fs/btrfs/volumes.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f9c89ca..d6f3aa0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -173,6 +173,7 @@ struct btrfs_ordered_sum;
- 
- /* csum types */
- #define BTRFS_CSUM_TYPE_CRC32	0
-+#define BTRFS_CSUM_LAST_TYPE	0
- 
- static int btrfs_csum_sizes[] = { 4, 0 };
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 639f266..8687ab5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3885,6 +3885,13 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 	}
- 
-+	/* Also check csum type, to avoid 0 csum_size */
-+	if (btrfs_super_csum_type(sb) > BTRFS_CSUM_LAST_TYPE) {
-+		printk(KERN_ERR "BTRFS: unsupported checksum type: %d\n",
-+		       btrfs_super_csum_type(sb));
-+		ret = -EINVAL;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8222f6f..a764726 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6061,6 +6061,14 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+ 	map->type = btrfs_chunk_type(leaf, chunk);
+ 	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
++
++	/* Add extra check to avoid hostile 0 division attack */
++	if (map->type & BTRFS_BLOCK_GROUP_RAID10 &&
++	    map->sub_stripes == 0) {
++		free_extent_map(em);
++		return -EINVAL;
 +	}
 +
- 	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
- 		printk(KERN_ERR "BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
- 				fs_info->fsid, sb->dev_item.fsid);
+ 	for (i = 0; i < num_stripes; i++) {
+ 		map->stripes[i].physical =
+ 			btrfs_stripe_offset_nr(leaf, chunk, i);
 -- 
 2.3.5
 

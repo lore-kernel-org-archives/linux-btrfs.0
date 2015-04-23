@@ -1,53 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:41650 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754427AbbDVDru (ORCPT
+Received: from mail-qk0-f170.google.com ([209.85.220.170]:34602 "EHLO
+	mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966600AbbDWQu2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Apr 2015 23:47:50 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: report failure when resize ioctl fails
-Date: Tue, 21 Apr 2015 23:38:47 -0400
-Message-Id: <1429673927-3854-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+	Thu, 23 Apr 2015 12:50:28 -0400
+Received: by qkgx75 with SMTP id x75so14301824qkg.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 09:50:28 -0700 (PDT)
+Message-ID: <553922D2.90303@gmail.com>
+Date: Thu, 23 Apr 2015 12:50:26 -0400
+From: Dan Merillat <dan.merillat@gmail.com>
+MIME-Version: 1.0
+To: David Sterba <dsterba@suse.cz>, BTRFS <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/3] btrfs-progs: restore: document metadata restore.
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <55392221.6090502@gmail.com>
 
-The BTRFS_IOC_RESIZE ioctl returns 0 on success, negative for POSIX
-errors, and positive for btrfs-specific errors.
+This was lost in the cleanup of 71a559
 
-If resize fails with a btrfs-specific error, decode the error and
-report it.  If we can't decode the error, report its numeric value so
-that the userspace tool is not instantly useless when a new error code
-is defined in the kernel.
-
-Exit with non-zero status on any resize error.  This is very important
-for scripts that will shrink the underlying storage when btrfs reports
-success!
+Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
 ---
- cmds-filesystem.c |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+ Documentation/btrfs-restore.asciidoc | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index f3fc160..85f0406 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -1263,6 +1263,16 @@ static int cmd_resize(int argc, char **argv)
- 		fprintf(stderr, "ERROR: unable to resize '%s' - %s\n", 
- 			path, strerror(e));
- 		return 1;
-+	} else if (res > 0) {
-+		const char *err_str = btrfs_err_str(res);
-+		if (err_str) {
-+			fprintf(stderr, "ERROR: btrfs error resizing '%s' - %s\n",
-+				path, err_str);
-+		} else {
-+			fprintf(stderr, "ERROR: btrfs error resizing '%s' - unknown btrfs_err_code %d\n",
-+				path, res);
-+		}
-+		return 1;
- 	}
- 	return 0;
- }
+diff --git a/Documentation/btrfs-restore.asciidoc b/Documentation/btrfs-restore.asciidoc
+index 20fc366..89e0c87 100644
+--- a/Documentation/btrfs-restore.asciidoc
++++ b/Documentation/btrfs-restore.asciidoc
+@@ -29,6 +29,9 @@ get snapshots, btrfs restore skips snapshots in default.
+ -x::
+ get extended attributes.
+ 
++-m|--metadata::
++restore owner, mode and times.
++
+ -v::
+ verbose.
+ 
 -- 
-1.7.10.4
+2.1.4
 

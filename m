@@ -1,48 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50430 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756718AbbDWExh (ORCPT
+Received: from mail-la0-f44.google.com ([209.85.215.44]:36740 "EHLO
+	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757469AbbDWLpa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 00:53:37 -0400
-Date: Wed, 22 Apr 2015 21:53:11 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20150423045311.GB20088@merlins.org>
-References: <201504221808.30242.thomas@koch.ro>
- <pan$5278$86c57e90$b5f9efb5$e578b832@cox.net>
+	Thu, 23 Apr 2015 07:45:30 -0400
+Received: by lagv1 with SMTP id v1so10570982lag.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 04:45:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$5278$86c57e90$b5f9efb5$e578b832@cox.net>
-Subject: Re: btrfs subvolume diff
+Date: Thu, 23 Apr 2015 13:45:28 +0200
+Message-ID: <CAK1hC9ujeQs_pv6nD6C689hMFQNjMMQdUgt7RFOz0gHjdeSz_A@mail.gmail.com>
+Subject: install Fedora systemd-nspawn container on btrfs
+From: arnaud gaboury <arnaud.gaboury@gmail.com>
+To: systemd <systemd-devel@lists.freedesktop.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2015 at 03:43:35AM +0000, Duncan wrote:
-> Thomas Koch posted on Wed, 22 Apr 2015 18:08:30 +0200 as excerpted:
-> 
-> > for incremental backups it would be useful to know the files that
-> > changed between two snapshots. I found a paper about such a tool[1] that
-> > adds the "btrfs subvolue diff" command, but it's not yet implemented in
-> > btrfs-tools in Debian Jessie.
-> > 
-> > Is it in Git? Or somewhere else?
-> > 
-> > [1] https://www.kernel.org/doc/ols/2014/ols2014-pimpale.pdf
-> 
-> [Note that I'm just a btrfs user and list regular, not a dev, and that my 
-> own use-case doesn't involve subvolumes, tho I played with them a bit 
-> when I first got into btrfs, so my practical subvolume management 
-> knowledge is limited.  But based on current git's manpages...]
+Not sure what I did wrong, but I can't install/boot my nspawn container.
+Here is my setup:
 
-Not a great answer but better than nothing:
-http://marc.merlins.org/perso/btrfs/2014-05.html#Btrfs-diff-Between-Snapshots
+Archlinux box- updated
 
-(based on find-new)
+1- created 3 btrfs subvol on /dev/sdb1 (SSD). The goal is to manage
+snapshots easily.
+no nested subvol.
+------------------------------------------
+# btrfs subvolume list .
+ID 266 gen 39 top level 5 path rootvol
+ID 268 gen 41 top level 5 path var
+ID 269 gen 42 top level 5 path etc
+# btrfs filesystem show
+Label: 'poppy-root'  uuid: ef1b44cd-e7b0-4166-b933-e7d4d20a1171
+    Total devices 1 FS bytes used 64.00KiB
+    devid    1 size 80.00GiB used 12.00MiB path /dev/sdb1
+--------------------------------------------------
 
-Marc
+2 - mount btrfs subvol
+-------------------------------------------------------------------
+# mount -t btrfs -o subvol=rootvol /dev/sdb1 /var/lib/machines/enl
+# mkdir /var/lib/machines/enl/var
+# mkdir /var/lib/machines/enl/etc
+# mount -t btrfs -o subvol=etc /dev/sdb1 /var/lib/machines/enl/etc
+# mount -t btrfs -o subvol=var /dev/sdb1 /var/lib/machines/enl/var
+--------------------------------------------------------------------
+
+3- install fedora minimal and boot it
+-------------------------------------------------
+#  machinectl pull-raw --verify=no
+http://ftp.halifax.rwth-aachen.de/fedora/linux/releases/22/Cloud/Images/x86_64/Fedora-Cloud-Base-22_Beta-20150415-x86_64.raw.xz
+$ tar ....
+# systemd-nspawn -M Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw
+Spawning container Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw on
+/var/lib/machines/Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw.
+Press ^] three times within 1s to kill container.
+[root@Fedora-Cloud-Base-22_Beta-20150415 ~]#
+------------------------------------------------------------
+
+4- install Fedora on /var/lib/machines/enl
+--------------------------------------------------------------
+[root@Fedora-Cloud-Base-22_Beta-20150415 ~]# dnf -y --releasever=22
+--nogpg --installroot=/var/lib/machines/MyContainer --disablerepo='*'
+--enablerepo=fedora install systemd passwd dnf fedora-release-server
+vim-minimal
+..........................
+INSTALL
+...........................
+Complete!
+----------------------------------------------------------
+
+5- Now, nothing !!
+----------------------------------------------------
+% ls -a /var/lib/machines/enl
+./  ../  etc/  var/
+
+# systemd-nspawn -bD /var/lib/machines/enl
+[sudo] password for root:
+Directory /var/lib/machines/enl doesn't look like an OS root directory
+(os-release file is missing). Refusing.
+-------------------------------------------------------
+
+Not sure if my issue comes from a wrong Btrfs setup, or if I missed
+something when installing from the cloud minimal Fedora.
+
+Thank you for hints
+
+
+
+
+
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+
+google.com/+arnaudgabourygabx

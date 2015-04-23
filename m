@@ -1,55 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:32953 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966153AbbDWQ0z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 12:26:55 -0400
-Date: Thu, 23 Apr 2015 18:26:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, lukas.lueg@gmail.com
-Subject: Re: [PATCH] btrfs: Add extra check for sub_stripes to avoid hostile
- 0 division attack.
-Message-ID: <20150423162653.GM4996@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1429758045-27027-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-ie0-f170.google.com ([209.85.223.170]:33236 "EHLO
+	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030406AbbDWSQl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Apr 2015 14:16:41 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1429758045-27027-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20150413165818.GC32634@kroah.com>
+References: <1427984267.10670.0@mail.thefacebook.com>
+	<20150413192838.3d5a0a69@natsu>
+	<20150413165818.GC32634@kroah.com>
+Date: Thu, 23 Apr 2015 14:16:40 -0400
+Message-ID: <CAGfcS_nSSzikmkD_6wTTUAa0Zx6znoxf0qHwAfVeNuOZ9Ej5Kw@mail.gmail.com>
+Subject: Re: Please add 9c4f61f01d269815bb7c37be3ede59c5587747c6 to stable
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Greg KH <gregkh@linuxfoundation.org>
+Cc: Roman Mamedov <rm@romanrm.net>, Chris Mason <clm@fb.com>,
+        stable <stable@vger.kernel.org>, Btrfs <linux-btrfs@vger.kernel.org>,
+        Eric Sandeen <sandeen@redhat.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2015 at 11:00:45AM +0800, Qu Wenruo wrote:
-> Although only RAID10 use sub_stripes, a hostile attack can modify chunk
-> tree and just add RAID10 bit to a single chunk.
-> Then btrfs_map_block will trigger a 0 division in kernel and destroy
-> everything.
-> 
-> Just add extra check when reading chunk from disk.
-> 
-> Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 8222f6f..a764726 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6061,6 +6061,14 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
->  	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
->  	map->type = btrfs_chunk_type(leaf, chunk);
->  	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
-> +
-> +	/* Add extra check to avoid hostile 0 division attack */
-> +	if (map->type & BTRFS_BLOCK_GROUP_RAID10 &&
-> +	    map->sub_stripes == 0) {
-> +		free_extent_map(em);
+On Mon, Apr 13, 2015 at 12:58 PM, Greg KH <gregkh@linuxfoundation.org> wrote:
+> On Mon, Apr 13, 2015 at 07:28:38PM +0500, Roman Mamedov wrote:
+>> On Thu, 2 Apr 2015 10:17:47 -0400
+>> Chris Mason <clm@fb.com> wrote:
+>>
+>> > Hi stable friends,
+>> >
+>> > Can you please backport this one to 3.19.y.  It fixes a bug introduced
+>> > by:
+>> >
+>> > 381cf6587f8a8a8e981bc0c1aaaa8859b51dc756, which was tagged for stable
+>> > 3.14+
+>> >
+>> > The symptoms of the bug are deadlocks during log reply after a crash.
+>> > The patch wasn't intentionally fixing the deadlock, which is why we
+>> > missed it when tagging fixes.
+>>
+>> Unfortunately still not fixed (no btrfs-related changes) in 3.14.38 and
+>> 3.18.11 released today.
+>
+> I have a few hundred stable backports left to sort through, don't worry,
+> this is still in the queue, it's not lost.
 
-That would deserve an error message, we get a lot of
-> +		return -EINVAL;
+It looks like this still isn't in 3.18.12, though it looks like it is in 3.19.5.
 
--EIO to be consistent with the other errors during mount. EINVAL is for
-user-specified arguments, while EIO is for "read from device".
-
-Otherwise looks good, thanks.
+--
+Rich

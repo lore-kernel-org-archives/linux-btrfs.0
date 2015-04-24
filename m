@@ -1,68 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36285 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42524 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753334AbbDXOoc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 10:44:32 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 5C38AABB3
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 14:44:31 +0000 (UTC)
+	id S1757862AbbDXPFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 11:05:10 -0400
+Date: Fri, 24 Apr 2015 17:05:07 +0200
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: let tree defrag work in SSD mode
-Date: Fri, 24 Apr 2015 16:44:30 +0200
-Message-Id: <1429886670-3353-1-git-send-email-dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
+Message-ID: <20150424150507.GQ4996@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1429837961-2255-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1429837961-2255-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Long time ago (2008) the defrag was automatic for new b-tree writes but
-has been disabled after performance problems. There was a leftover in
-tree-defrag.c that effectively stops any defragmentation on b-trees.
-This is a bit unexpected and IMHO undesired. The SSD mode is an
-optimization and defrag is supposed to work if the users asks for it.
+On Fri, Apr 24, 2015 at 09:12:40AM +0800, Qu Wenruo wrote:
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -173,6 +173,7 @@ struct btrfs_ordered_sum;
+>  
+>  /* csum types */
+>  #define BTRFS_CSUM_TYPE_CRC32	0
+> +#define BTRFS_CSUM_LAST_TYPE	0
+>  
+>  static int btrfs_csum_sizes[] = { 4, 0 };
 
-Related commits:
-
-6702ed490ca0bb44e17131818a5a18b773957c5a
-Btrfs: Add run time btree defrag, and an ioctl to force btree defrag
-
-e18e4809b10e6c9efb5fe10c1ddcb4ebb690d517
-Btrfs: Add mount -o ssd, which includes optimizations for seek free
-storage
-
-b3236e68bf86b3ae87f58984a1822369225211cb
-Btrfs: Leave on the tree defragger in mount -o ssd, it still helps there
-
-9afbb0b752ef30a429c45b9de6706e28ad1a36e1
-Btrfs: Disable tree defrag in SSD mode
-
-The last three commits switch the defrag+ssd off/on/off and the last one
-
-3f157a2fd2ad731e1ed9964fecdc5f459f04a4a4
-Btrfs: Online btree defragmentation fixes
-
-misses the bits from tree-defrag.c to revert to the behaviour introduced
-in e18e4809b10e.
-
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/tree-defrag.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
-index a63719cc9578..a4b9c8b2d35a 100644
---- a/fs/btrfs/tree-defrag.c
-+++ b/fs/btrfs/tree-defrag.c
-@@ -52,9 +52,6 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		goto out;
- 
--	if (btrfs_test_opt(root, SSD))
--		goto out;
--
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--- 
-1.8.4.5
-
+I'd prefer to fix it by removing the 0 from btrfs_csum_sizes instead of
+introducing a define.

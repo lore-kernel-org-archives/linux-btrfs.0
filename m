@@ -1,31 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54103 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:36285 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752881AbbDXODQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 10:03:16 -0400
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <CAPBX1xJsZ+spTHNLhq+vyHt_ex_wjPGoz6H8fsV3=faNJ0jJyw@mail.gmail.com>
-References: <CAPBX1xJsZ+spTHNLhq+vyHt_ex_wjPGoz6H8fsV3=faNJ0jJyw@mail.gmail.com>
-To: George Wang <xuw2015@gmail.com>
-Cc: dhowells@redhat.com, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs/078 may got stuck in the __wait_on_atomic_t
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Fri, 24 Apr 2015 15:03:11 +0100
-Message-ID: <30330.1429884191@warthog.procyon.org.uk>
+	id S1753334AbbDXOoc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 10:44:32 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 5C38AABB3
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 14:44:31 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: let tree defrag work in SSD mode
+Date: Fri, 24 Apr 2015 16:44:30 +0200
+Message-Id: <1429886670-3353-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-George Wang <xuw2015@gmail.com> wrote:
+Long time ago (2008) the defrag was automatic for new b-tree writes but
+has been disabled after performance problems. There was a leftover in
+tree-defrag.c that effectively stops any defragmentation on b-trees.
+This is a bit unexpected and IMHO undesired. The SSD mode is an
+optimization and defrag is supposed to work if the users asks for it.
 
-> +       do {
-> +               prepare_to_wait(wq, &q->wait, mode);
-> +               val = q->key.flags;
-> +               if (atomic_read(val) == 0)
-> +                       ret = (*action)(val);
-> +       } while (!ret && atomic_read(val) != 0);
+Related commits:
 
-This isn't what's in the upstream kernel now.  See commit
-42577ca8c3616baaafdd8f167b2e1fb959026081.
+6702ed490ca0bb44e17131818a5a18b773957c5a
+Btrfs: Add run time btree defrag, and an ioctl to force btree defrag
 
-David
+e18e4809b10e6c9efb5fe10c1ddcb4ebb690d517
+Btrfs: Add mount -o ssd, which includes optimizations for seek free
+storage
+
+b3236e68bf86b3ae87f58984a1822369225211cb
+Btrfs: Leave on the tree defragger in mount -o ssd, it still helps there
+
+9afbb0b752ef30a429c45b9de6706e28ad1a36e1
+Btrfs: Disable tree defrag in SSD mode
+
+The last three commits switch the defrag+ssd off/on/off and the last one
+
+3f157a2fd2ad731e1ed9964fecdc5f459f04a4a4
+Btrfs: Online btree defragmentation fixes
+
+misses the bits from tree-defrag.c to revert to the behaviour introduced
+in e18e4809b10e.
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/tree-defrag.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
+index a63719cc9578..a4b9c8b2d35a 100644
+--- a/fs/btrfs/tree-defrag.c
++++ b/fs/btrfs/tree-defrag.c
+@@ -52,9 +52,6 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 		goto out;
+ 
+-	if (btrfs_test_opt(root, SSD))
+-		goto out;
+-
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-- 
+1.8.4.5
+

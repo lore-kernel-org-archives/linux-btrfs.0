@@ -1,63 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp02.univ-lille1.fr ([193.49.225.20]:44470 "EHLO
-	smtp02.univ-lille1.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030319AbbDWSFb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 14:05:31 -0400
-Message-ID: <5539345C.1040905@gnieh.org>
-Date: Thu, 23 Apr 2015 20:05:16 +0200
-From: Martin Monperrus <martin.monperrus@gnieh.org>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:56194 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751597AbbDXDbR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Apr 2015 23:31:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YlUKP-0000Vj-53
+	for linux-btrfs@vger.kernel.org; Fri, 24 Apr 2015 05:30:57 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 05:30:57 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 05:30:57 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: How to repair a BTRFS block?
-References: <55320BAE.1030007@gnieh.org>
-In-Reply-To: <55320BAE.1030007@gnieh.org>
-Content-Type: text/plain; charset=utf-8
+Date: Fri, 24 Apr 2015 03:30:24 +0000 (UTC)
+Message-ID: <pan$3eb65$73d44307$1ec5b26c$82e641a1@cox.net>
+References: <55320BAE.1030007@gnieh.org> <5539345C.1040905@gnieh.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Martin Monperrus posted on Thu, 23 Apr 2015 20:05:16 +0200 as excerpted:
 
-More on my issue, I have "uncorrectable errors"
+> # btrfs scrub status /
+> scrub status for e11013b3-b244-4d1a-a9c7-3956db1a699c
+>     scrub started at Thu Apr 23 19:07:45 2015
+>     and finished after 372 seconds
+>     total bytes scrubbed: 167.13GiB with 13 errors
+>     error details: read=13 corrected errors: 0,
+>     uncorrectable errors: 13, unverified errors: 0
+> 
+> Before going to my backups, how can know the files impacted by those
+> uncorrectable errors?
 
-# btrfs scrub status /
-scrub status for e11013b3-b244-4d1a-a9c7-3956db1a699c
-    scrub started at Thu Apr 23 19:07:45 2015 and finished after 372 seconds
-    total bytes scrubbed: 167.13GiB with 13 errors
-    error details: read=13
-    corrected errors: 0, uncorrectable errors: 13, unverified errors: 0
+The kernel log (dmesg, also logged to syslog/journald on most systems) 
+from during the scrub should capture more information on those errors.  
+You didn't check that?  (Checked or not, you obviously didn't post it.)
 
-Before going to my backups, how can know the files impacted by those
-uncorrectable errors?
-
-Best regards,
-
---Martin
-
-
-
-On 04/18/2015 09:45 AM, Martin Monperrus wrote:
-> Dear Btrfs developers,
->
-> For some unknown reasons, my BTRFS filesystem is corrupted. dmesg prints
->
-> |BTRFS critical (device sda2): corrupt leaf, slot offset bad:
-> block=43231330304,root=1, slot=47|
->
-> (more than 1000x in the dmesg trace).
->
-> btrfs check --repair fails with:
->
-> read block failed check_tree_block
-> incorrect offset 12725 2298746482
-> items overlap, can't fix
-> cmds_check.c:2918: fix_item_offset: Assertion 'ret' failed
->
-> How to list the files in block #43231330304 affected by the corruption?
-> How to repair block #43231330304?
->
-> Best regards,
->
-> --Martin
->
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

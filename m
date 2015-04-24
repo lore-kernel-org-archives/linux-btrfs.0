@@ -1,45 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55207 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:45202 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752447AbbDXNmi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 09:42:38 -0400
-Date: Fri, 24 Apr 2015 15:42:36 +0200
+	id S1755052AbbDXPYa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 11:24:30 -0400
+Date: Fri, 24 Apr 2015 17:24:28 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: xuw2015@gmail.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: fix btrfs quota rescan failed on PPC64 arch
-Message-ID: <20150424134236.GP4996@twin.jikos.cz>
+To: Dan Merillat <dan.merillat@gmail.com>
+Cc: David Sterba <dsterba@suse.cz>, BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/3] btrfs-progs: separate the overwrite check.
+Message-ID: <20150424152428.GS4996@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1429507996-28224-1-git-send-email-xuw2015@gmail.com>
- <4064896.UsZQ5YB6B2@localhost.localdomain>
+References: <55392221.6090502@gmail.com>
+ <55392315.8040306@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4064896.UsZQ5YB6B2@localhost.localdomain>
+In-Reply-To: <55392315.8040306@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2015 at 10:43:29PM +0530, Chandan Rajendra wrote:
-> On Monday 20 Apr 2015 13:33:16 xuw2015@gmail.com wrote:
-> > From: George Wang <xuw2015@gmail.com>
-> > 
-> > PPC64 arch use such following IOC values "
-> > \#define _IOC_NONE       1U
-> > \#define _IOC_READ       2U
-> > \#define _IOC_WRITE      4U
-> > " comparing to the default IOC values "
-> > \#define _IOC_NONE       0U
-> > \#define _IOC_READ       2U
-> > \#define _IOC_WRITE      1U"
-> > 
-> > This means the value "_IOW*" will be negative when we store it in the int
-> > variables. Such as the "BTRFS_IOC_QGROUP_CREATE", it will be "0x4010942e" on
-> > X86_64, but "0x8010942e" on PPC64.
-> > Notice that the IOC values are the "unsigned long" type, so we use the
-> > "unsigned long" to store it, and this can insure the comparison between the
-> > variable and BTRFS_IOC_* valid.
-> > 
-> > Signed-off-by: George Wang <xuw2015@gmail.com>
-> 
-> Tested-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+On Thu, Apr 23, 2015 at 12:51:33PM -0400, Dan Merillat wrote:
+> +/* returns:
+> + *  0 if the file exists and should be skipped.
+> + *  1 if the file does NOT exist
+> + *  2 if the file exists but is OK to overwrite
+> + */
+> +
+> +static int overwrite_ok(const char * path)
+> +{
+> +	static int warn = 0;
+> +	struct stat st;
+> +	int ret;
+> +
+> +	/* don't be fooled by symlinks */
+> +	ret = fstatat(-1, path_name, &st, AT_SYMLINK_NOFOLLOW);
 
-Thanks for testing, commit updated.
+Is the filedescriptor -1 correct? Previously, stat was used that uses
+AT_FDCWD for the dirfd, which is -100. -1 could be intepreted as a bad
+filedescriptor (EBADF).

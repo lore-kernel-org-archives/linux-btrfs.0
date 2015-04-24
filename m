@@ -1,96 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58276 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58289 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031478AbbDXRL7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 13:11:59 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 43F66ADAC
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 17:11:58 +0000 (UTC)
+	id S1031065AbbDXRMD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 13:12:03 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D0F3DADAC
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 17:12:01 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/3] btrfs: add 'cold' compiler annotations to all error handling functions
-Date: Fri, 24 Apr 2015 19:11:57 +0200
-Message-Id: <45f5186a247fa68551ae25b18fdf49fdee0c3576.1429894863.git.dsterba@suse.cz>
+Subject: [PATCH 3/3] btrfs: fix warnings after changes in btrfs_abort_transaction
+Date: Fri, 24 Apr 2015 19:12:01 +0200
+Message-Id: <8b4a3592269ab37c9d6213724886431f6e73a810.1429894863.git.dsterba@suse.cz>
 In-Reply-To: <cover.1429894863.git.dsterba@suse.cz>
 References: <cover.1429894863.git.dsterba@suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The annotated functios will be placed into .text.unlikely section. The
-annotation also hints compiler to move the code out of the hot paths,
-and may implicitly mark if-statement leading to that block as unlikely.
+fs/btrfs/volumes.c: In function ‘btrfs_create_uuid_tree’:
+fs/btrfs/volumes.c:3909:3: warning: format ‘%d’ expects argument of type ‘int’, but argument 4 has type ‘long int’ [-Wformat=]
+   btrfs_abort_transaction(trans, tree_root,
+   ^
+  CC [M]  fs/btrfs/ioctl.o
+fs/btrfs/ioctl.c: In function ‘create_subvol’:
+fs/btrfs/ioctl.c:549:3: warning: format ‘%d’ expects argument of type ‘int’, but argument 4 has type ‘long int’ [-Wformat=]
+   btrfs_abort_transaction(trans, root, PTR_ERR(new_root));
 
-This is a heuristic, the impact on the generated code is not
-significant.
+PTR_ERR returns long, but we're really using 'int' for the error codes
+everywhere so just set and use the local variable.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ctree.h | 4 ++++
- fs/btrfs/super.c | 3 +++
- 2 files changed, 7 insertions(+)
+ fs/btrfs/ioctl.c   | 2 +-
+ fs/btrfs/volumes.c | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index b0f9ba4b47c8..3a303451f010 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4011,6 +4011,7 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 74609b931ba5..75bb2f011f1b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -546,8 +546,8 @@ static noinline int create_subvol(struct inode *dir,
+ 	key.offset = (u64)-1;
+ 	new_root = btrfs_read_fs_root_no_name(root->fs_info, &key);
+ 	if (IS_ERR(new_root)) {
+-		btrfs_abort_transaction(trans, root, PTR_ERR(new_root));
+ 		ret = PTR_ERR(new_root);
++		btrfs_abort_transaction(trans, root, ret);
+ 		goto fail;
+ 	}
  
- #ifdef CONFIG_BTRFS_ASSERT
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8222f6f74147..029ba2ab5c4b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3906,9 +3906,9 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+ 	uuid_root = btrfs_create_tree(trans, fs_info,
+ 				      BTRFS_UUID_TREE_OBJECTID);
+ 	if (IS_ERR(uuid_root)) {
+-		btrfs_abort_transaction(trans, tree_root,
+-					PTR_ERR(uuid_root));
+-		return PTR_ERR(uuid_root);
++		ret = PTR_ERR(uuid_root);
++		btrfs_abort_transaction(trans, tree_root, ret);
++		return ret;
+ 	}
  
-+__cold
- static inline void assfail(char *expr, char *file, int line)
- {
- 	pr_err("BTRFS: assertion failed: %s, file: %s, line: %d",
-@@ -4026,10 +4027,12 @@ static inline void assfail(char *expr, char *file, int line)
- 
- #define btrfs_assert()
- __printf(5, 6)
-+__cold
- void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 		     unsigned int line, int errno, const char *fmt, ...);
- 
- 
-+__cold
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
- 			       unsigned int line, int errno);
-@@ -4099,6 +4102,7 @@ do {								\
- } while (0)
- 
- __printf(5, 6)
-+__cold
- void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
- 		   unsigned int line, int errno, const char *fmt, ...);
- 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3c6033768ad3..51a36bf80b2e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -135,6 +135,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
-  * __btrfs_std_error decodes expected errors from the caller and
-  * invokes the approciate error response.
-  */
-+__cold
- void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 		       unsigned int line, int errno, const char *fmt, ...)
- {
-@@ -247,6 +248,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
-  * We'll complete the cleanup in btrfs_end_transaction and
-  * btrfs_commit_transaction.
-  */
-+__cold
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
- 			       unsigned int line, int errno)
-@@ -273,6 +275,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
-  * __btrfs_panic decodes unexpected, fatal errors from the caller,
-  * issues an alert, and either panics or BUGs, depending on mount options.
-  */
-+__cold
- void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
- 		   unsigned int line, int errno, const char *fmt, ...)
- {
+ 	fs_info->uuid_root = uuid_root;
 -- 
 2.1.3
 

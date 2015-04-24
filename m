@@ -1,74 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:35486 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S965409AbbDXQJN (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Fri, 24 Apr 2015 12:09:13 -0400
-Message-ID: <553A6A98.4070309@suse.com>
-Date: Fri, 24 Apr 2015 17:08:56 +0100
-From: Filipe Manana <fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:58261 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1031479AbbDXRLx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 13:11:53 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D5A46ADB9
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 17:11:51 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 0/3] Better transaction abort reports
+Date: Fri, 24 Apr 2015 19:11:51 +0200
+Message-Id: <cover.1429894863.git.dsterba@suse.cz>
 MIME-Version: 1.0
-To: =?UTF-8?B?SG9sZ2VyIEhvZmZzdMOkdHRl?=
-	<holger.hoffstaette@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix race when reusing stale extent buffers that
- leads to BUG_ON
-References: <1429784928-12665-1-git-send-email-fdmanana@suse.com>	<pan.2015.04.23.12.16.21@googlemail.com> <5538E6C7.9050201@suse.com>	<pan.2015.04.23.13.22.23@googlemail.com> <5538F70C.5040004@suse.com> <pan.2015.04.23.13.53.22@googlemail.com>
-In-Reply-To: <pan.2015.04.23.13.53.22@googlemail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+patch #1 moves the WARN at transaction abort time to the callsite (via macro).
+That way we get the exact location of the error and not the common location.
+This is supposed to help debugging and screening report, but the change comes
+at some cost and increases the resulting asm code.
 
-On 04/23/2015 02:53 PM, Holger Hoffstätte wrote:
-> On Thu, 23 Apr 2015 14:43:40 +0100, Filipe Manana wrote:
-> 
->> I don't think a lock followed by unlock without nothing in between (be
->> it a spinlock, mutex, or any other kind of lock) will be seen by the
->> compiler as a nop. Pretty sure I've seen this pattern being done in the
-> 
-> No, I didn't say they would - that would be wrong. I just found it odd,
-> that's all.
+I vote for better error reports, the .text grows all the time anyway. Patch #2
+adds some compiler hints so the error blocks are likely to be put out of the
+hot paths.
 
-For reference, you have plenty of example in the kernel source tree:
+Available in
 
-$ find . -name '*.c' | xargs pcregrep --line-offsets -nrM '^\s*spin_lock.*\n^\s*spin_unlock'
-(...)
-./fs/ext4/balloc.c:644:0,68
-(...)
-./mm/truncate.c:458:0,51
-(...)
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/abort-onsite
 
-$ cat ./fs/ext4/balloc.c | head -646 | tail -4
-	if (!(*errp) && (flags & EXT4_MB_DELALLOC_RESERVED)) {
-		spin_lock(&EXT4_I(inode)->i_block_reservation_lock);
-		spin_unlock(&EXT4_I(inode)->i_block_reservation_lock);
-		dquot_alloc_block_nofail(inode,
+David Sterba (3):
+  btrfs: report exact callsite where transaction abort occurs
+  btrfs: add 'cold' compiler annotations to all error handling functions
+  btrfs: fix warnings after changes in btrfs_abort_transaction
 
-$ cat ./mm/truncate.c | head -460 | tail -9
-		/*
-		 * As truncation uses a lockless tree lookup, cycle
-		 * the tree lock to make sure any ongoing tree
-		 * modification that does not see AS_EXITING is
-		 * completed before starting the final truncate.
-		 */
-		spin_lock_irq(&mapping->tree_lock);
-		spin_unlock_irq(&mapping->tree_lock);
+ fs/btrfs/ctree.h   | 16 +++++++++++++---
+ fs/btrfs/ioctl.c   |  2 +-
+ fs/btrfs/super.c   | 11 +++--------
+ fs/btrfs/volumes.c |  6 +++---
+ 4 files changed, 20 insertions(+), 15 deletions(-)
 
+-- 
+2.1.3
 
-> 
->> kernel and in many other places as mechanism to wait for something.
-> 
-> I also completely forgot that spinlocks disable preemption, since
-> otherwise nothing would really work. That's the real reason why
-> any of this works. Well, that and the refcount==2 thing.
-> 
-> Cool! Thanks!
-> Holger
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

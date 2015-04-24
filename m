@@ -1,101 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mta02.helmholtz-muenchen.de ([146.107.4.101]:49232 "EHLO
-	mta02.helmholtz-muenchen.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753646AbbDXOxl convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 10:53:41 -0400
-Received: from XCH21.scidom.de (xch21.helmholtz-muenchen.de [146.107.8.221])
-	(using TLSv1 with cipher AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	by mta02.helmholtz-muenchen.de (Postfix) with ESMTP id CF8DB317471
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 16:23:35 +0200 (CEST)
-From: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
-To: "'linux-btrfs@vger.kernel.org'" <linux-btrfs@vger.kernel.org>
-Date: Fri, 24 Apr 2015 16:26:03 +0200
-Subject: rollback of a snapshot is just read-only
-Message-ID: <15785B7E063D464C86DD482FCAE4EBA501CAC3EF69DB@XCH11.scidom.de>
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from mail-lb0-f181.google.com ([209.85.217.181]:33136 "EHLO
+	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1031603AbbDXRWd convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 13:22:33 -0400
+Received: by lbbzk7 with SMTP id zk7so41575611lbb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 10:22:31 -0700 (PDT)
 MIME-Version: 1.0
+Date: Fri, 24 Apr 2015 19:22:31 +0200
+Message-ID: <CAK1hC9uX3iy=By2pXa5dPKJQTU7795Et78cD7_sQbLmv4LAc_w@mail.gmail.com>
+Subject: installation of a nspwan-container on btrfs subvolumes
+From: arnaud gaboury <arnaud.gaboury@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Archlinux host
 
-it should be just a small problem, but it is one. How can I rollback to a snapshot of my root filesystem ?
-Googeling, I found a lot of solutions, each different.
-I finally choosed this one: https://btrfs.wiki.kernel.org/index.php/UseCases#I_want_to_be_able_to_do_rollbacks_with_Btrfs
+1- created 3 btrfs subvol on /dev/sdb1 (SSD). The goal is to manage
+snapshots easily.
+no nested subvol.
+------------------------------------------
+# btrfs subvolume list .
+ID 266 gen 39 top level 5 path rootvol
+ID 268 gen 41 top level 5 path var
+ID 269 gen 42 top level 5 path etc
+----------------------------------------------------
 
-I made the snapshot, changed some configuration, and afterwards I'd like to rollback to the snapshot:
+2 - mount btrfs subvol
+-------------------------------------------------------------------
+# mount -t btrfs -o subvol=rootvol /dev/sdb1 /var/lib/machines/poppy
+# mkdir /var/lib/machines/poppy/var
+# mkdir /var/lib/machines/poppy/etc
+# mount -t btrfs -o subvol=etc /dev/sdb1 /var/lib/machines/poppy/etc
+# mount -t btrfs -o subvol=var /dev/sdb1 /var/lib/machines/poppy/var
+--------------------------------------------------------------------
 
-- btrfs subvolume snapshot -r  /  /.snapshots/vor_nvidia
+3- installed Fedora on /var/lib/machines/poppy
 
-- change some configuration
+4- when booting the container, it hangs.
 
-- btrfs subvolume set-default 625 (id of the snapshot)
-
-- reboot
-
-My /-folder is again the old one, that's ok. The change of the configuration has disappeared. But it is just read-only:
-pc63422:~ # touch /test
-touch: cannot touch '/test': Read-only file system
-
-mount says:
-
-...
-/dev/sda1 on /  type btrfs (rw,ssd,space_cache)
-...
-
-It seems to be rw !?
-
-OS: SLES 12 64bit
-kernel: 3.12.38-44-default
-
-pc63422:~ # rpm -qa|grep -i btrfs
-btrfsprogs-3.16.2-7.1.x86_64
-libbtrfs0-3.16.2-7.1.x86_64
-btrfsmaintenance-0.1-7.1.noarch
-
-pc63422:~ # btrfs --version
-Btrfs v3.16.2+20150127
-
-pc63422:~ # btrfs fi show
-Label: none  uuid: 7edcb64a-4ca6-47ec-8979-54e158c96ac2
-        Total devices 1 FS bytes used 145.19GiB
-        devid    1 size 450.00GiB used 150.04GiB path /dev/sda1
-
-pc63422:~ # btrfs fi df /
-Data, single: total=146.01GiB, used=142.74GiB
-System, single: total=32.00MiB, used=16.00KiB
-Metadata, single: total=4.00GiB, used=2.44GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Thanks for any hint.
+weird:
+-------------------------------------------------------------------------------
+root@hortensia âž¤âž¤ lib/machines # ls poppy/etc
+lvm/    systemd/  group    ld.so.cache  machine-id     os-release@  resolv.conf
+pam.d/  udev/     gshadow  localtime@   nsswitch.conf  passwd       shadow
+root@hortensia âž¤âž¤ lib/machines # ls poppy/var
+cache/  lib/  log/  spool/  tmp/  lock@  run@
+--------------------------------------------------------------------------
+These above directories seems indeed quite empty
 
 
-Bernd
+Now:
+----------------------------------------------------------------------------------------------------------------
+root@hortensia âž¤âž¤ lib/machines # umount /var/lib/machines/poppy/etc
+root@hortensia âž¤âž¤ lib/machines # umount /var/lib/machines/poppy/var
+root@hortensia âž¤âž¤ lib/machines # ls poppy/var
+adm/    db/     games/   kerberos/  local/  nis/  preserve/  tmp/  lock@  run@
+cache/  empty/  gopher/  lib/       log/    opt/  spool/     yp/   mail@
+root@hortensia âž¤âž¤ lib/machines # ls poppy/etc
+alternatives/       modules-load.d/  tmpfiles.d/              gshadow
+          passwd
+avahi/              NetworkManager/  udev/                    gshadow-
+          passwd-
+bash_completion.d/  openldap/        udisks2/
+host.conf          printcap
+binfmt.d/           opt/             X11/                     hosts
+          profile
+chkconfig.d/        pam.d/           xdg/
+hosts.allow        protocols
+cockpit/            pkcs11/          xinetd.d/
+hosts.deny         rc0.d@
+cron.d/             pki/             yum/                     init.d@
+          rc1.d@
+crypto-policies/    pm/              yum.repos.d/             inittab
+          rc2.d@
+dbus-1/             polkit-1/        adjtime                  inputrc
+          rc3.d@
+default/            popt.d/          aliases                  issue
+          rc4.d@
+depmod.d/           ppp/             bashrc
+issue.net          rc5.d@
+dhcp/               profile.d/       csh.cshrc
+krb5.conf          rc6.d@
+dnf/                rc.d/            csh.login
+ld.so.cache        redhat-release@
+dnsmasq.d/          rolekit/         DIR_COLORS
+ld.so.conf         resolv.conf
+docker/             rpm/             DIR_COLORS.256color
+libaudit.conf      rpc
+firewalld/          rwtab.d/         DIR_COLORS.lightbgcolor
+libuser.conf       rwtab
+gcrypt/             sasl2/           dnsmasq.conf
+localtime@         services
+gnupg/              security/        e2fsck.conf
+login.defs         shadow
+gss/                selinux/         environment
+machine-id         shadow-
+iproute2/           skel/            ethertypes
+mke2fs.conf        shells
+ld.so.conf.d/       ssl/             exports                  motd
+          statetab
+libnl/              statetab.d/      fedora-release           mtab@
+          sysctl.conf
+libreport/          sysconfig/       filesystems              networks
+          system-release@
+logrotate.d/        sysctl.d/        GREP_COLORS
+nsswitch.conf      system-release-cpe
+lvm/                systemd/         group
+nsswitch.conf.bak  tcsd.conf
+modprobe.d/         terminfo/        group-
+os-release@        xattr.conf
+----------------------------------------------------------------------------------------------------------
 
---
-Bernd Lentes
+and the container now boots perfect and I can log in.
 
-Systemadministration
-Institut für Entwicklungsgenetik
-Gebäude 35.34 - Raum 208
-HelmholtzZentrum münchen
-bernd.lentes@helmholtz-muenchen.de
-phone: +49 89 3187 1241
-fax:   +49 89 3187 2294
-http://www.helmholtz-muenchen.de/idg
+So I must not mount the /etc and /var subvolumes to be able to boot
+the containers.
+My two subvolumes have been indeed populated, but in a very very
+uncompleted way. Why?
 
-Je suis Charlie
+What did I wrong in my settings? I was waiting for /etc and /var
+subvolumes full with all the needed files. Were I wrong?
+
+TY for hints
 
 
 
-Helmholtz Zentrum München
-Deutsches Forschungszentrum für Gesundheit und Umwelt (GmbH)
-Ingolstädter Landstr. 1
-85764 Neuherberg
-www.helmholtz-muenchen.de
-Aufsichtsratsvorsitzende: MinDir´in Bärbel Brumme-Bothe
-Geschäftsführer: Prof. Dr. Günther Wess, Dr. Nikolaus Blum, Dr. Alfons Enhsen
-Registergericht: Amtsgericht München HRB 6466
-USt-IdNr: DE 129521671
+-- 
+
+google.com/+arnaudgabourygabx

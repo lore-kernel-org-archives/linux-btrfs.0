@@ -1,91 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58267 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031470AbbDXRLz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 13:11:55 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id AF629ADAC
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2015 17:11:54 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+Received: from e23smtp08.au.ibm.com ([202.81.31.141]:59531 "EHLO
+	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965151AbbDXSV4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Apr 2015 14:21:56 -0400
+Received: from /spool/local
+	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Sat, 25 Apr 2015 04:21:53 +1000
+Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id F1EEB2BB0040
+	for <linux-btrfs@vger.kernel.org>; Sat, 25 Apr 2015 04:21:48 +1000 (EST)
+Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
+	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t3OILefj13435266
+	for <linux-btrfs@vger.kernel.org>; Sat, 25 Apr 2015 04:21:48 +1000
+Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
+	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t3OILFoC006476
+	for <linux-btrfs@vger.kernel.org>; Sat, 25 Apr 2015 04:21:15 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/3] btrfs: report exact callsite where transaction abort occurs
-Date: Fri, 24 Apr 2015 19:11:54 +0200
-Message-Id: <37c1087edc978ccec5411761ae4bb200e38b07c1.1429894863.git.dsterba@suse.cz>
-In-Reply-To: <cover.1429894863.git.dsterba@suse.cz>
-References: <cover.1429894863.git.dsterba@suse.cz>
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, chandan@mykolab.com
+Subject: [PATCH] Btrfs: Add OPER_SUB_SUBTREE to the list of operation types to be displayed in a trace.
+Date: Fri, 24 Apr 2015 23:50:38 +0530
+Message-Id: <1429899638-12430-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-WARN is called from a single location and all bugreports say that's in
-super.c __btrfs_abort_transaction. This is slightly confusing as we'd
-rather want to know the exact callsite. Whereas this information is
-printed in the syslog below the stacktrace, this requires further look
-and we usually see only the headline from WARNING.
+BTRFS_QGROUP_OPER_SUB_SUBTREE is missing from the list of operation types that
+will be displayed in a trace. Fix this.
 
-Moving the WARN into the macro has to inline some code and increases
-code by a few kilobytes:
-
-  text    data     bss     dec     hex filename
-835481   20305   14120  869906   d4612 btrfs.ko.before
-842883   20305   14120  877308   d62fc btrfs.ko.after
-
-The delta is +7k (130+ calls), measured on 3.19 x86_64, distro config.
-The increase is not small and could lead to worse icache use. The code
-is on error/exit paths that can be recognized by compiler as cold and
-moved out of the way so the impact is speculated to be low, if
-measurable at all.
-
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/ctree.h | 12 +++++++++---
- fs/btrfs/super.c |  8 --------
- 2 files changed, 9 insertions(+), 11 deletions(-)
+ include/trace/events/btrfs.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f9c89cae39ee..b0f9ba4b47c8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4072,11 +4072,17 @@ static inline int __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
-  * Call btrfs_abort_transaction as early as possible when an error condition is
-  * detected, that way the exact line number is reported.
-  */
--
- #define btrfs_abort_transaction(trans, root, errno)		\
- do {								\
--	__btrfs_abort_transaction(trans, root, __func__,	\
--				  __LINE__, errno);		\
-+	/* Report first abort since mount */			\
-+	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
-+			&((root)->fs_info->fs_state))) {	\
-+		WARN(1, KERN_DEBUG				\
-+		"BTRFS: Transaction aborted (error %d)\n",	\
-+		(errno));					\
-+	}							\
-+	__btrfs_abort_transaction((trans), (root), __func__,	\
-+				  __LINE__, (errno));		\
- } while (0)
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 1faecea..7a51ec3 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1122,7 +1122,8 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
+ 		{ BTRFS_QGROUP_OPER_ADD_EXCL, 	"OPER_ADD_EXCL" },	\
+ 		{ BTRFS_QGROUP_OPER_ADD_SHARED, "OPER_ADD_SHARED" },	\
+ 		{ BTRFS_QGROUP_OPER_SUB_EXCL, 	"OPER_SUB_EXCL" },	\
+-		{ BTRFS_QGROUP_OPER_SUB_SHARED,	"OPER_SUB_SHARED" })
++		{ BTRFS_QGROUP_OPER_SUB_SHARED,	"OPER_SUB_SHARED" },	\
++		{ BTRFS_QGROUP_OPER_SUB_SUBTREE,"OPER_SUB_SUBTREE" })
  
- #define btrfs_std_error(fs_info, errno)				\
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 05fef198ff94..3c6033768ad3 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -251,14 +251,6 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
- 			       unsigned int line, int errno)
- {
--	/*
--	 * Report first abort since mount
--	 */
--	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,
--				&root->fs_info->fs_state)) {
--		WARN(1, KERN_DEBUG "BTRFS: Transaction aborted (error %d)\n",
--				errno);
--	}
- 	trans->aborted = errno;
- 	/* Nothing used. The other threads that have joined this
- 	 * transaction may be able to continue. */
+ DECLARE_EVENT_CLASS(btrfs_qgroup_oper,
+ 
 -- 
-2.1.3
+2.1.0
 

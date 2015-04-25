@@ -1,54 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:34784 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750862AbbDGFJa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Apr 2015 01:09:30 -0400
-Received: by pdbqa5 with SMTP id qa5so9789335pdb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2015 22:09:29 -0700 (PDT)
-From: Davide Italiano <dccitaliano@gmail.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:34488 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S965095AbbDYRa1 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Sat, 25 Apr 2015 13:30:27 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Davide Italiano <dccitaliano@gmail.com>
-Subject: [PATCH] Btrfs: Improve FL_KEEP_SIZE handling in fallocate.
-Date: Mon,  6 Apr 2015 22:09:15 -0700
-Message-Id: <1428383355-1686-2-git-send-email-dccitaliano@gmail.com>
-In-Reply-To: <1428383355-1686-1-git-send-email-dccitaliano@gmail.com>
-References: <1428383355-1686-1-git-send-email-dccitaliano@gmail.com>
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between start dirty bg cache writeout and bg deletion
+Date: Sat, 25 Apr 2015 18:29:16 +0100
+Message-Id: <1429982956-22284-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- We call inode_size_ok() only if FL_KEEP_SIZE isn't specified.
-- As an optimisation we can skip the call if (off + len)
-  isn't greater than the current size of the file. This operation
-  is called under the lock so the less work we do, the better.
-- If we call inode_size_ok() pass to it the correct value rather
-  than a more conservative estimation.
+While running xfstests I ran into the following:
 
-Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
+[20892.242791] ------------[ cut here ]------------
+[20892.243776] WARNING: CPU: 0 PID: 13299 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x52/0x114 [btrfs]()
+[20892.245874] BTRFS: Transaction aborted (error -2)
+[20892.247329] Modules linked in: btrfs dm_snapshot dm_bufio dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse$
+[20892.258488] CPU: 0 PID: 13299 Comm: fsstress Tainted: G        W       4.0.0-rc5-btrfs-next-9+ #2
+[20892.262011] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
+[20892.264738]  0000000000000009 ffff880427f8bc18 ffffffff8142fa46 ffffffff8108b6a2
+[20892.266244]  ffff880427f8bc68 ffff880427f8bc58 ffffffff81045ea5 ffff880427f8bc48
+[20892.267761]  ffffffffa0509a6d 00000000fffffffe ffff8803545d6f40 ffffffffa05a15a0
+[20892.269378] Call Trace:
+[20892.269915]  [<ffffffff8142fa46>] dump_stack+0x4f/0x7b
+[20892.271097]  [<ffffffff8108b6a2>] ? console_unlock+0x361/0x3ad
+[20892.272173]  [<ffffffff81045ea5>] warn_slowpath_common+0xa1/0xbb
+[20892.273386]  [<ffffffffa0509a6d>] ? __btrfs_abort_transaction+0x52/0x114 [btrfs]
+[20892.274857]  [<ffffffff81045f05>] warn_slowpath_fmt+0x46/0x48
+[20892.275851]  [<ffffffffa0509a6d>] __btrfs_abort_transaction+0x52/0x114 [btrfs]
+[20892.277341]  [<ffffffffa0515e10>] write_one_cache_group+0x68/0xaf [btrfs]
+[20892.278628]  [<ffffffffa052088a>] btrfs_start_dirty_block_groups+0x18d/0x29b [btrfs]
+[20892.280191]  [<ffffffffa052f077>] btrfs_commit_transaction+0x130/0x9c9 [btrfs]
+[20892.281781]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
+[20892.282873]  [<ffffffffa054163b>] btrfs_sync_file+0x313/0x387 [btrfs]
+[20892.284111]  [<ffffffff8117acad>] vfs_fsync_range+0x95/0xa4
+[20892.285203]  [<ffffffff810e603f>] ? time_hardirqs_on+0x15/0x28
+[20892.286290]  [<ffffffff8123960b>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+[20892.287469]  [<ffffffff8117acd8>] vfs_fsync+0x1c/0x1e
+[20892.288412]  [<ffffffff8117ae54>] do_fsync+0x34/0x4e
+[20892.289348]  [<ffffffff8117b07c>] SyS_fsync+0x10/0x14
+[20892.290255]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
+[20892.291316] ---[ end trace 597f77e664245373 ]---
+[20892.293955] BTRFS: error (device sdg) in write_one_cache_group:3184: errno=-2 No such entry
+[20892.297390] BTRFS info (device sdg): forced readonly
+
+This happens because in btrfs_start_dirty_block_groups() we splice the
+transaction's list of dirty block groups into a local list and then we
+keep extracting the first element of the list without holding the
+cache_write_mutex mutex. This means that before we acquire that mutex
+the first block group on the list might be removed by a conurrent task
+running btrfs_remove_block_group(). So make sure we extract the first
+element (and test the list emptyness) while holding that mutex.
+
+Fixes: 1bbc621ef284 ("Btrfs: allow block group cache writeout
+                      outside critical section in commit")
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c | 44 +++++++++++++++++++++++++++-----------------
+ 1 file changed, 27 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 30982bb..f649bfc 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2586,9 +2586,13 @@ static long btrfs_fallocate(struct file *file, int mode,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5edc7ee..d5f3ef0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3407,17 +3407,14 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
+ 	int loops = 0;
+ 
+ 	spin_lock(&cur_trans->dirty_bgs_lock);
+-	if (!list_empty(&cur_trans->dirty_bgs)) {
+-		list_splice_init(&cur_trans->dirty_bgs, &dirty);
++	if (list_empty(&cur_trans->dirty_bgs)) {
++		spin_unlock(&cur_trans->dirty_bgs_lock);
++		return 0;
+ 	}
++	list_splice_init(&cur_trans->dirty_bgs, &dirty);
+ 	spin_unlock(&cur_trans->dirty_bgs_lock);
+ 
+ again:
+-	if (list_empty(&dirty)) {
+-		btrfs_free_path(path);
+-		return 0;
+-	}
+-
+ 	/*
+ 	 * make sure all the block groups on our dirty list actually
+ 	 * exist
+@@ -3430,18 +3427,16 @@ again:
+ 			return -ENOMEM;
  	}
  
- 	mutex_lock(&inode->i_mutex);
--	ret = inode_newsize_ok(inode, alloc_end);
--	if (ret)
--		goto out;
-+
-+	if (!(mode & FALLOC_FL_KEEP_SIZE) &&
-+	    offset + len > inode->i_size) {
-+		ret = inode_newsize_ok(inode, offset + len);
-+		if (ret)
-+			goto out;
-+	}
++	/*
++	 * cache_write_mutex is here only to save us from balance or automatic
++	 * removal of empty block groups deleting this block group while we are
++	 * writing out the cache
++	 */
++	mutex_lock(&trans->transaction->cache_write_mutex);
+ 	while (!list_empty(&dirty)) {
+ 		cache = list_first_entry(&dirty,
+ 					 struct btrfs_block_group_cache,
+ 					 dirty_list);
+-
+-		/*
+-		 * cache_write_mutex is here only to save us from balance
+-		 * deleting this block group while we are writing out the
+-		 * cache
+-		 */
+-		mutex_lock(&trans->transaction->cache_write_mutex);
+-
+ 		/*
+ 		 * this can happen if something re-dirties a block
+ 		 * group that is already under IO.  Just wait for it to
+@@ -3494,7 +3489,6 @@ again:
+ 		}
+ 		if (!ret)
+ 			ret = write_one_cache_group(trans, root, path, cache);
+-		mutex_unlock(&trans->transaction->cache_write_mutex);
  
- 	if (alloc_start > inode->i_size) {
- 		ret = btrfs_cont_expand(inode, i_size_read(inode),
+ 		/* if its not on the io list, we need to put the block group */
+ 		if (should_put)
+@@ -3502,7 +3496,16 @@ again:
+ 
+ 		if (ret)
+ 			break;
++
++		/*
++		 * Avoid blocking other tasks for too long. It might even save
++		 * us from writing caches for block groups that are going to be
++		 * removed.
++		 */
++		mutex_unlock(&trans->transaction->cache_write_mutex);
++		mutex_lock(&trans->transaction->cache_write_mutex);
+ 	}
++	mutex_unlock(&trans->transaction->cache_write_mutex);
+ 
+ 	/*
+ 	 * go through delayed refs for all the stuff we've just kicked off
+@@ -3513,8 +3516,15 @@ again:
+ 		loops++;
+ 		spin_lock(&cur_trans->dirty_bgs_lock);
+ 		list_splice_init(&cur_trans->dirty_bgs, &dirty);
++		/*
++		 * dirty_bgs_lock protects us from concurrent block group
++		 * deletes too (not just cache_write_mutex).
++		 */
++		if (!list_empty(&dirty)) {
++			spin_unlock(&cur_trans->dirty_bgs_lock);
++			goto again;
++		}
+ 		spin_unlock(&cur_trans->dirty_bgs_lock);
+-		goto again;
+ 	}
+ 
+ 	btrfs_free_path(path);
 -- 
-2.3.4
+2.1.3
 

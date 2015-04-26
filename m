@@ -1,51 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:34778 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751144AbbDZLh7 convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:59130 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751296AbbDZPUc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Apr 2015 07:37:59 -0400
-Received: by iget9 with SMTP id t9so53222973ige.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2015 04:37:58 -0700 (PDT)
+	Sun, 26 Apr 2015 11:20:32 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:48576 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtps
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1YmOLo-0004KB-GV
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2015 08:20:11 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <marc@merlins.org>)
+	id 1YmOLn-0007Cj-RC
+	for linux-btrfs@vger.kernel.org; Sun, 26 Apr 2015 08:20:07 -0700
+Date: Sun, 26 Apr 2015 08:20:07 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20150426152007.GA27173@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <20150426111943.GZ18187@carfax.org.uk>
-References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
-	<20150426111943.GZ18187@carfax.org.uk>
-Date: Sun, 26 Apr 2015 14:37:58 +0300
-Message-ID: <CAJ1pDqR6Q_cfLiKoNKReC1Rx76BkNXj3pY6_CqHeyL3J_hSf6g@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: receive explicit parent support
-From: lauri <lauri.vosandi@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        =?ISO-8859-1?Q?Lauri_V=F5sandi?= <lauri.vosandi@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+Subject: raid0 needs mounting alternate device every boot? open_ctree failed
+ (3.19.5)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This is the weirdest thing:
+gargamel:/var/log# mount /dev/mapper/raid0d2 /mnt/btrfs_space
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/raid0d2,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+[  835.718898] BTRFS info (device dm-5): disk space caching is enabled
+[  835.778580] BTRFS: failed to read the system array on dm-5
+[  835.819223] BTRFS: open_ctree failed
 
-> Subvol A on source side: (A, -)
-> Send this to A' on target side: (A', A)
-> Send this back to A'' on source side: (A'', A) <-- Note the A here, not A'
+gargamel:/var/log# mount /dev/mapper/raid0d1 /mnt/btrfs_space
+[  847.047607] BTRFS: device label btrfs_space devid 1 transid 40929 /dev/mapper/raid0d1
+[  847.073955] BTRFS info (device dm-4): disk space caching is enabled
 
-I also think your approach is the real solution to the problem, but as
-some pointed out on IRC this changes the behaviour of btrfs receive
-and will break things for someone. When I asked whose obscure workflow
-does it break nobody could come up with any reasonable example whereas
-sending snapshots back and forth seems to be the major usecase for
-btrfs receive and it's impossible to for example restore snapshots
-with current implementation.
+The previous boot, I had to mount raid0d2 because raid0d1 didn't work.
 
-I know that -p may fail horribly but the idea was to have *option* to
-replace parent lookup logic and instead of relying on UUID-s simply
-have it specified by userspace application.
+Label: 'btrfs_space'  uuid: 01334b81-c0db-4e80-92e4-cac4da867651
+        Total devices 2 FS bytes used 401.54GiB
+        devid    1 size 836.13GiB used 295.02GiB path /dev/mapper/raid0d1
+        devid    2 size 836.13GiB used 295.01GiB path /dev/mapper/raid0d2
 
->    More later, when I've had a little time to play with things and
-> think through the semantics properly.
+Data, RAID0: total=580.00GiB, used=398.22GiB
+System, RAID1: total=8.00MiB, used=64.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=5.00GiB, used=3.08GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-You want to give it a try?
+Those are 2 crypted disks which are already decrypted by the time I try
+to mount them, I just don't understand why btrfs fails if I mount
+one device but works with the other one, or the other way around.
 
+Any idea what could be causing this?
+
+Marc
 -- 
-Lauri Võsandi
-tel: +372 53329412
-e-mail: lauri.vosandi@gmail.com
-blog: http://lauri.vosandi.com/
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

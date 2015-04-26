@@ -1,70 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-afa67.mailout.artfiles.de ([212.72.176.67]:42692 "EHLO
-	mailout-afa67.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751187AbbDZSji (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:32958 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752493AbbDZTcJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Apr 2015 14:39:38 -0400
-Received: from [47.70.125.116] (helo=discus.localnet)
-	auth=Wolfgang_Mader@brain-frog.de
-	by mailout.artfiles.de with esmtpsa (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-	(Exim 4.80.1)
-	id 1YmRSp-000389-UV
-	for linux-btrfs@vger.kernel.org; Sun, 26 Apr 2015 20:39:36 +0200
-From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
-To: linux-btrfs@vger.kernel.org
-Subject: How to get the devid of a missing device
-Date: Sun, 26 Apr 2015 20:39:34 +0200
-Message-ID: <1704142.6uN5bYeLWo@discus>
+	Sun, 26 Apr 2015 15:32:09 -0400
+Date: Sun, 26 Apr 2015 12:32:04 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Message-ID: <20150426193204.GA5904@merlins.org>
+References: <20150426152007.GA27173@merlins.org>
+ <20150426153226.GA18187@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150426153226.GA18187@carfax.org.uk>
+Subject: Re: raid0 needs mounting alternate device every boot? open_ctree
+ failed (3.19.5)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sun, Apr 26, 2015 at 03:32:26PM +0000, Hugo Mills wrote:
+>    The usual reason for this is that btrfs dev scan isn't being run
+> properly. It's usually handled by udev -- most distributions will put
+> the appropriate hooks in their udev configuration if you have the
+> distribution's btrfs-progs package installed. If you have only a
+> self-built btrfs-progs from git installed, then the udev hooks
+> probably aren't there, and you'll need to configure it yourself (or
+> arrange to have btrfs dev scan run after the cryptsetup open
+> operation).
 
-I have a raid10 with one device missing. I would like to use btrfs replace to 
-replace it. However, I am unsure on how to obtain the devid of the missing 
-device. Having the filesystem mounted in degraded mode under mnt, btrfs fs 
-show /mnt returns
+Ah, yes, that makes more sense.
 
-sudo btrfs filesystem show /mnt
-Label: 'dataPool'  uuid: b5f082e2-2ce0-4f91-b54b-c2d26185a635
-        Total devices 4 FS bytes used 665.88GiB
-        devid    2 size 931.51GiB used 336.03GiB path /dev/sdb
-        devid    4 size 931.51GiB used 336.03GiB path /dev/sdd
-        devid    5 size 931.51GiB used 336.03GiB path /dev/sde
-        *** Some devices missing
+I do have package and the rules:
+gargamel:~# dpkg -L btrfs-tools 
+/.
+/lib
+/lib/udev
+/lib/udev/rules.d
+/lib/udev/rules.d/80-btrfs-lvm.rules
+/lib/udev/rules.d/70-btrfs.rules
 
-but does not mention the devid of the missing device. The device stat is
+But it's very possible that udev isn't working properly or timely on
+this system.
 
-sudo btrfs device stats /mnt 
-[/dev/sdb].write_io_errs   0 
-[/dev/sdb].read_io_errs    0 
-[/dev/sdb].flush_io_errs   0 
-[/dev/sdb].corruption_errs 0 
-[/dev/sdb].generation_errs 0 
-[(null)].write_io_errs   1448 
-[(null)].read_io_errs    0 
-[(null)].flush_io_errs   0 
-[(null)].corruption_errs 0 
-[(null)].generation_errs 0 
-[/dev/sdd].write_io_errs   0 
-[/dev/sdd].read_io_errs    0 
-[/dev/sdd].flush_io_errs   0 
-[/dev/sdd].corruption_errs 0 
-[/dev/sdd].generation_errs 0 
-[/dev/sde].write_io_errs   0 
-[/dev/sde].read_io_errs    0 
-[/dev/sde].flush_io_errs   0 
-[/dev/sde].corruption_errs 0 
-[/dev/sde].generation_errs 0
+I added "btrfs device scan" to /etc/init.d/cryptdisks
 
-
-Btw, the file system is too old for skinny metadata and extended inode refs. 
-If I do a btrfs replace or a btrfs device add, must I myself ensure that the 
-new features are not enables for the new device which is to be added?
-
-Thank!
-Wolfgang
-
-
+Thanks for the help.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

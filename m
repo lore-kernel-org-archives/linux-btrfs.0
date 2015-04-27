@@ -1,36 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60091 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751144AbbDZNSL (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:42024 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751336AbbD0AZ6 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Apr 2015 09:18:11 -0400
-Message-ID: <553CE58B.8090401@fb.com>
-Date: Sun, 26 Apr 2015 09:18:03 -0400
-From: Chris Mason <clm@fb.com>
+	Sun, 26 Apr 2015 20:25:58 -0400
+Message-ID: <553D8216.8090503@cn.fujitsu.com>
+Date: Mon, 27 Apr 2015 08:25:58 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs fixes
-Content-Type: text/plain; charset="utf-8"
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
+References: <1429837961-2255-1-git-send-email-quwenruo@cn.fujitsu.com> <20150424150507.GQ4996@twin.jikos.cz>
+In-Reply-To: <20150424150507.GQ4996@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi Linus,
 
-Filipe hit two problems in my block group cache patches.  We finalized
-the fixes last week and ran through more tests.
+-------- Original Message  --------
+Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年04月24日 23:05
 
-Can you please pull:
+> On Fri, Apr 24, 2015 at 09:12:40AM +0800, Qu Wenruo wrote:
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -173,6 +173,7 @@ struct btrfs_ordered_sum;
+>>
+>>   /* csum types */
+>>   #define BTRFS_CSUM_TYPE_CRC32	0
+>> +#define BTRFS_CSUM_LAST_TYPE	0
+>>
+>>   static int btrfs_csum_sizes[] = { 4, 0 };
+>
+> I'd prefer to fix it by removing the 0 from btrfs_csum_sizes instead of
+> introducing a define.
+>
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.1
+Removing the zero seems not help for this case, as some one can still
+craft a strange csum_type to access outside the array.
 
-Chris Mason (2) commits (+25/-17):
-    Btrfs: prevent list corruption during free space cache processing (+18/-14)
-    Btrfs: fix inode cache writeout (+7/-3)
+So I introduce the new macro and use the new macro to compare with 
+csum_type without acess the array.
 
-Total: (2) commits (+25/-17)
-
- fs/btrfs/free-space-cache.c | 42 +++++++++++++++++++++++++-----------------
- 1 file changed, 25 insertions(+), 17 deletions(-)
+Thanks,
+Qu

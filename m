@@ -1,123 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28412 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932229AbbD0HhK (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:28435 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932173AbbD0HhF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 03:37:10 -0400
+	Mon, 27 Apr 2015 03:37:05 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, m_btrfs@ml1.co.uk
-Subject: [PATCH 7/8] Btrfs: fix btrfs_scratch_superblock() with fixes from device delete
-Date: Mon, 27 Apr 2015 15:34:14 +0800
-Message-Id: <1430120055-10381-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 4/8] Btrfs: use BTRFS_ERROR_DEV_MISSING_NOT_FOUND when missing device is not found
+Date: Mon, 27 Apr 2015 15:34:11 +0800
+Message-Id: <1430120055-10381-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 References: <1429525756-2727-2-git-send-email-anand.jain@oracle.com>
  <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch updates the btrfs_scratch_superblock(), (which is used
-by the replace device thread), with those fixes from the
-scratch superblock code section of btrfs_rm_device(). The fixes are:
-  Scratch all copies of superblock
-  Notify kobject that superblock has been changed
-  Update time on the device
-
-so that btrfs_rm_device() can use the function btrfs_scratch_superblock()
-instead of its own scratch code. And further replace deivce code which
-similarly releases device back to the system, will have the fixes from
-the btrfs device delete.
+use btrfs specific error code BTRFS_ERROR_DEV_MISSING_NOT_FOUND instead of -ENOENT.
+Next this removes the logging when user specifies "missing" and we don't find
+it in the kernel device list. logging are for system events not for user input errors.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c | 40 ++++++++++++++++++++++++++++------------
- fs/btrfs/volumes.h |  2 +-
- 2 files changed, 29 insertions(+), 13 deletions(-)
+ fs/btrfs/volumes.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e57dd60..4fd7010 100644
+index 13b19c5..7b16147 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1891,7 +1891,8 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
- 	if (srcdev->writeable) {
- 		fs_devices->rw_devices--;
- 		/* zero out the old super if it is writable */
--		btrfs_scratch_superblock(srcdev);
-+		btrfs_scratch_superblock(srcdev->bdev,
-+					rcu_str_deref(srcdev->name));
- 	}
+@@ -2054,10 +2054,8 @@ int btrfs_find_device_missing_or_by_path(struct btrfs_root *root,
+ 			}
+ 		}
  
- 	if (srcdev->bdev)
-@@ -1941,7 +1942,8 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev, 0);
+-		if (!*device) {
+-			btrfs_err(root->fs_info, "no missing device found");
+-			return -ENOENT;
+-		}
++		if (!*device)
++			return BTRFS_ERROR_DEV_MISSING_NOT_FOUND;
  
- 	if (tgtdev->bdev) {
--		btrfs_scratch_superblock(tgtdev);
-+		btrfs_scratch_superblock(tgtdev->bdev,
-+					rcu_str_deref(tgtdev->name));
- 		fs_info->fs_devices->open_devices--;
- 	}
- 	fs_info->fs_devices->num_devices--;
-@@ -6779,22 +6781,36 @@ int btrfs_get_dev_stats(struct btrfs_root *root,
- 	return 0;
- }
- 
--int btrfs_scratch_superblock(struct btrfs_device *device)
-+void btrfs_scratch_superblock(struct block_device *bdev, char *device_path)
- {
- 	struct buffer_head *bh;
- 	struct btrfs_super_block *disk_super;
-+	int copy_num;
- 
--	bh = btrfs_read_dev_super(device->bdev);
--	if (IS_ERR(bh))
--		return PTR_ERR(bh);
--	disk_super = (struct btrfs_super_block *)bh->b_data;
-+	if (!bdev)
-+		return;
- 
--	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--	set_buffer_dirty(bh);
--	sync_dirty_buffer(bh);
--	brelse(bh);
-+	for (copy_num = 0; copy_num < BTRFS_SUPER_MIRROR_MAX;
-+		copy_num++) {
- 
--	return 0;
-+		if (btrfs_read_dev_one_super(bdev, copy_num, &bh))
-+			continue;
-+
-+		disk_super = (struct btrfs_super_block *)bh->b_data;
-+
-+		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
-+		set_buffer_dirty(bh);
-+		sync_dirty_buffer(bh);
-+		brelse(bh);
-+	}
-+
-+	/* Notify udev that device has changed */
-+	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
-+
-+	/* Update ctime/mtime for device path for libblkid */
-+	update_dev_time(device_path);
-+
-+	return;
- }
- 
- /*
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 027d454..a9e4459 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -487,7 +487,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 				      struct btrfs_device *tgtdev);
- void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
- 					      struct btrfs_device *tgtdev);
--int btrfs_scratch_superblock(struct btrfs_device *device);
-+void btrfs_scratch_superblock(struct block_device *bdev, char *device_path);
- int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
- 			   u64 logical, u64 len, int mirror_num);
- unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+ 		return 0;
+ 	} else {
 -- 
 2.0.0.153.g79dcccc
 

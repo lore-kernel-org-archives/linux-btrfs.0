@@ -1,101 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:35013 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932620AbbD0Njm (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:32907 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932720AbbD0OKH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 09:39:42 -0400
-Received: by widdi4 with SMTP id di4so99753227wid.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 06:39:35 -0700 (PDT)
+	Mon, 27 Apr 2015 10:10:07 -0400
+Received: by lbbzk7 with SMTP id zk7so83113694lbb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:10:05 -0700 (PDT)
 MIME-Version: 1.0
-From: Ermanno Baschiera <ebaschiera@gmail.com>
-Date: Mon, 27 Apr 2015 15:39:14 +0200
-Message-ID: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-Subject: help on broken file system
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <CAK1hC9uX3iy=By2pXa5dPKJQTU7795Et78cD7_sQbLmv4LAc_w@mail.gmail.com>
+References: <CAK1hC9uX3iy=By2pXa5dPKJQTU7795Et78cD7_sQbLmv4LAc_w@mail.gmail.com>
+Date: Mon, 27 Apr 2015 16:10:05 +0200
+Message-ID: <CAK1hC9tzAHoD3pxBSFjgyfivVsdAgoz19VA7S3oEnP30BP8Jiw@mail.gmail.com>
+Subject: Re: installation of a nspwan-container on btrfs subvolumes
+From: arnaud gaboury <arnaud.gaboury@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-I have a 3 disks file system configured in RAID1, created with Ubuntu
-13.10 (if I recall correctly). Last friday I upgraded my system from
-Ubuntu 14.10 (kernel 3.16.0) to 15.04 (kernel 3.19.0). Then I started
-to notice some malfunctions (errors on cron scripts, my time machine
-asking to perform a full backup, high load, etc.). On saturday I
-rebooted the system and it booted in readonly. I tried to reboot it
-and it didn't boot anymore, stuck at mounting the disks.
-So I booted with a live Ubuntu 15.05 which could not mount my disks,
-even with "-o recovery,". Then I switched to Fedora beta with kernel
-4.0.0-0.rc5. I did a "btrfs check" and got a lot of "parent transid
-verify failed on 8328801964032 wanted 1568448 found 1561133".
-Reading on docs and Stack Exchange, I decided to try a "btrfs restore"
-to backup my data. Having not a spare disk, and being the file system
-a RAID1, I decided to use one of the 3 disks as target for the
-restore. I formatted it in EXT4 and tried the restore. The process
-stopped after one minute, ending with errors.
-Then I tried to "btrfs-zero-log" the file system, but I noticed that
-running it multiple times, it was giving me the same amount of
-messages, making me think it wasn't fixing anything.
-So I run a "btrfs rescue chunk-recover". After that, I still not being
-able to mount the system (with parameters -o recovery,degraded,ro).
-I'm not sure about what to do now. Can someone give me some advice?
-My possible steps are (if I understand correctly):
-- try the "btrfs rescue super-recover"
-- try the "btrfs check --repair"
+On Fri, Apr 24, 2015 at 7:22 PM, arnaud gaboury
+<arnaud.gaboury@gmail.com> wrote:
+> Archlinux host
+>
+> 1- created 3 btrfs subvol on /dev/sdb1 (SSD). The goal is to manage
+> snapshots easily.
+> no nested subvol.
+> ------------------------------------------
+> # btrfs subvolume list .
+> ID 266 gen 39 top level 5 path rootvol
+> ID 268 gen 41 top level 5 path var
+> ID 269 gen 42 top level 5 path etc
+> ----------------------------------------------------
+>
+> 2 - mount btrfs subvol
+> -------------------------------------------------------------------
+> # mount -t btrfs -o subvol=rootvol /dev/sdb1 /var/lib/machines/poppy
+> # mkdir /var/lib/machines/poppy/var
+> # mkdir /var/lib/machines/poppy/etc
+> # mount -t btrfs -o subvol=etc /dev/sdb1 /var/lib/machines/poppy/etc
+> # mount -t btrfs -o subvol=var /dev/sdb1 /var/lib/machines/poppy/var
+> --------------------------------------------------------------------
+>
+> 3- installed Fedora on /var/lib/machines/poppy
+>
+> 4- when booting the container, it hangs.
+>
+> weird:
+> -------------------------------------------------------------------------------
+> root@hortensia ➤➤ lib/machines # ls poppy/etc
+> lvm/    systemd/  group    ld.so.cache  machine-id     os-release@  resolv.conf
+> pam.d/  udev/     gshadow  localtime@   nsswitch.conf  passwd       shadow
+> root@hortensia ➤➤ lib/machines # ls poppy/var
+> cache/  lib/  log/  spool/  tmp/  lock@  run@
+> --------------------------------------------------------------------------
+> These above directories seems indeed quite empty
+>
+>
+> Now:
+> ----------------------------------------------------------------------------------------------------------------
+> root@hortensia ➤➤ lib/machines # umount /var/lib/machines/poppy/etc
+> root@hortensia ➤➤ lib/machines # umount /var/lib/machines/poppy/var
+> root@hortensia ➤➤ lib/machines # ls poppy/var
+> adm/    db/     games/   kerberos/  local/  nis/  preserve/  tmp/  lock@  run@
+> cache/  empty/  gopher/  lib/       log/    opt/  spool/     yp/   mail@
+> root@hortensia ➤➤ lib/machines # ls poppy/etc
+> alternatives/       modules-load.d/  tmpfiles.d/              gshadow
+>           passwd
+> avahi/              NetworkManager/  udev/                    gshadow-
+>           passwd-
+> bash_completion.d/  openldap/        udisks2/
+> host.conf          printcap
+> binfmt.d/           opt/             X11/                     hosts
+>           profile
+> chkconfig.d/        pam.d/           xdg/
+> hosts.allow        protocols
+> cockpit/            pkcs11/          xinetd.d/
+> hosts.deny         rc0.d@
+> cron.d/             pki/             yum/                     init.d@
+>           rc1.d@
+> crypto-policies/    pm/              yum.repos.d/             inittab
+>           rc2.d@
+> dbus-1/             polkit-1/        adjtime                  inputrc
+>           rc3.d@
+> default/            popt.d/          aliases                  issue
+>           rc4.d@
+> depmod.d/           ppp/             bashrc
+> issue.net          rc5.d@
+> dhcp/               profile.d/       csh.cshrc
+> krb5.conf          rc6.d@
+> dnf/                rc.d/            csh.login
+> ld.so.cache        redhat-release@
+> dnsmasq.d/          rolekit/         DIR_COLORS
+> ld.so.conf         resolv.conf
+> docker/             rpm/             DIR_COLORS.256color
+> libaudit.conf      rpc
+> firewalld/          rwtab.d/         DIR_COLORS.lightbgcolor
+> libuser.conf       rwtab
+> gcrypt/             sasl2/           dnsmasq.conf
+> localtime@         services
+> gnupg/              security/        e2fsck.conf
+> login.defs         shadow
+> gss/                selinux/         environment
+> machine-id         shadow-
+> iproute2/           skel/            ethertypes
+> mke2fs.conf        shells
+> ld.so.conf.d/       ssl/             exports                  motd
+>           statetab
+> libnl/              statetab.d/      fedora-release           mtab@
+>           sysctl.conf
+> libreport/          sysconfig/       filesystems              networks
+>           system-release@
+> logrotate.d/        sysctl.d/        GREP_COLORS
+> nsswitch.conf      system-release-cpe
+> lvm/                systemd/         group
+> nsswitch.conf.bak  tcsd.conf
+> modprobe.d/         terminfo/        group-
+> os-release@        xattr.conf
+> ----------------------------------------------------------------------------------------------------------
+>
+> and the container now boots perfect and I can log in.
+>
+> So I must not mount the /etc and /var subvolumes to be able to boot
+> the containers.
+> My two subvolumes have been indeed populated, but in a very very
+> uncompleted way. Why?
+>
+> What did I wrong in my settings? I was waiting for /etc and /var
+> subvolumes full with all the needed files. Were I wrong?
+>
+> TY for hints
 
-Thank you.
+This issue is now solved. The root was the fact that I installed
+Fedora from the minimal raw image this way:
 
--Ermanno Baschiera
+# systemd-nspawn -M Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw
+--bind=/var/lib/machines/poppy:/mnt
+
+So in that case, only /var/lib/machines/poppy was populated by the installation.
 
 
-I'm posting the output of my commands
-
-[liveuser@localhost ~]$ sudo btrfs fi show
-warning, device 1 is missing
-warning devid 1 not found already
-Label: none  uuid: 32eeac52-699b-4fa2-be61-06206910a37f
-    Total devices 3 FS bytes used 3.79TiB
-    devid    3 size 2.73TiB used 2.73TiB path /dev/sda
-    devid    4 size 2.73TiB used 2.73TiB path /dev/sdc2
-    *** Some devices missing
-
-Btrfs v3.18.2
+The solution was:
+# systemd-nspawn -M Fedora-Cloud-Base-22_Beta-20150415.x86_64.raw
+--bind=/var/lib/machines/poppy:/mnt
+--bind=/var/lib/machines/poppy/etc:/mnt/etc
+--bind=/var/lib/machines/poppy/var:/mnt/var
 
 
 
 
-[liveuser@localhost ~]$ sudo btrfs restore /dev/sda /run/media/liveuser/restored
-[...]
-parent transid verify failed on 8328375693312 wanted 1568448 found 1561131
-Ignoring transid failure
-leaf parent key incorrect 8328375693312
-parent transid verify failed on 8328375693312 wanted 1568448 found 1561131
-Ignoring transid failure
-leaf parent key incorrect 8328375693312
-Error searching -1
-Error copying data for
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
-Error searching
-/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+-- 
 
-
-
-
-[liveuser@localhost ~]$ uname -a
-Linux localhost 4.0.0-0.rc5.git4.1.fc22.x86_64 #1 SMP Fri Mar 27
-13:51:23 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-
-
-[liveuser@localhost ~]$ btrfs version
-Btrfs v3.18.2
+google.com/+arnaudgabourygabx

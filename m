@@ -1,52 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.lqfe.com ([72.14.186.34]:45033 "EHLO mail.lqfe.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752935AbbD0M6L convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:35013 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932620AbbD0Njm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 08:58:11 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail.lqfe.com (Postfix) with ESMTP id 314A11608C9
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:51:16 -0500 (CDT)
-Received: from mail.lqfe.com ([127.0.0.1])
-	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10032)
-	with ESMTP id WcaDMAYI0UQq for <linux-btrfs@vger.kernel.org>;
-	Mon, 27 Apr 2015 07:51:15 -0500 (CDT)
-Received: from localhost (localhost [127.0.0.1])
-	by mail.lqfe.com (Postfix) with ESMTP id D47561637A8
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:51:15 -0500 (CDT)
-Received: from mail.lqfe.com ([127.0.0.1])
-	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id bC6ul0EjlkfE for <linux-btrfs@vger.kernel.org>;
-	Mon, 27 Apr 2015 07:51:15 -0500 (CDT)
-Received: from [192.168.168.20] (unknown [206.126.223.13])
-	by mail.lqfe.com (Postfix) with ESMTPSA id 95E3C1608C9
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:51:15 -0500 (CDT)
-From: Anthony Plack <anthony@plack.net>
-Content-Type: text/plain; charset=us-ascii
-Subject: btrfs-progs BTRFS mounted with -o recovery showing no errors on scrub - minor
-Message-Id: <D06066B0-F26E-4F1D-BFF5-E6BC8CDB68B1@plack.net>
-Date: Mon, 27 Apr 2015 07:51:14 -0500
+	Mon, 27 Apr 2015 09:39:42 -0400
+Received: by widdi4 with SMTP id di4so99753227wid.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 06:39:35 -0700 (PDT)
+MIME-Version: 1.0
+From: Ermanno Baschiera <ebaschiera@gmail.com>
+Date: Mon, 27 Apr 2015 15:39:14 +0200
+Message-ID: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
+Subject: help on broken file system
 To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This may be by design since the driver is handling the errors. When the drive is mounted with -o recovery, and then a scrub is performed, scrub will show no errors. 
+Hello,
+I have a 3 disks file system configured in RAID1, created with Ubuntu
+13.10 (if I recall correctly). Last friday I upgraded my system from
+Ubuntu 14.10 (kernel 3.16.0) to 15.04 (kernel 3.19.0). Then I started
+to notice some malfunctions (errors on cron scripts, my time machine
+asking to perform a full backup, high load, etc.). On saturday I
+rebooted the system and it booted in readonly. I tried to reboot it
+and it didn't boot anymore, stuck at mounting the disks.
+So I booted with a live Ubuntu 15.05 which could not mount my disks,
+even with "-o recovery,". Then I switched to Fedora beta with kernel
+4.0.0-0.rc5. I did a "btrfs check" and got a lot of "parent transid
+verify failed on 8328801964032 wanted 1568448 found 1561133".
+Reading on docs and Stack Exchange, I decided to try a "btrfs restore"
+to backup my data. Having not a spare disk, and being the file system
+a RAID1, I decided to use one of the 3 disks as target for the
+restore. I formatted it in EXT4 and tried the restore. The process
+stopped after one minute, ending with errors.
+Then I tried to "btrfs-zero-log" the file system, but I noticed that
+running it multiple times, it was giving me the same amount of
+messages, making me think it wasn't fixing anything.
+So I run a "btrfs rescue chunk-recover". After that, I still not being
+able to mount the system (with parameters -o recovery,degraded,ro).
+I'm not sure about what to do now. Can someone give me some advice?
+My possible steps are (if I understand correctly):
+- try the "btrfs rescue super-recover"
+- try the "btrfs check --repair"
 
-fatdrive ~ # dmesg | tail
-[35348.694291] repair_io_failure: 4 callbacks suppressed
-[35348.694297] BTRFS: read error corrected: ino 1 off 93863407616 (dev /dev/sds sector 183326968)
-[35351.029568] BTRFS (device sdt): parent transid verify failed on 8392192475136 wanted 148989 found 147789
-[35351.048101] BTRFS: read error corrected: ino 1 off 8392192475136 (dev /dev/sds sector 2314785632)
-[35470.018881] BTRFS (device sdt): parent transid verify failed on 94051291136 wanted 150686 found 150687
-[35470.150372] BTRFS (device sdt): parent transid verify failed on 94051291136 wanted 150686 found 150687
-[35948.602971] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
-[35948.608723] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
-[36114.453009] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
-[36114.472586] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
-fatdrive ~ # btrfs scrub status /mnt/data
-scrub status for f591ac13-1a69-476d-bd30-346f87a491da
-	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 2651 seconds
-	total bytes scrubbed: 2.39TiB with 0 errors
+Thank you.
 
-I have reported this as issue 97351. https://bugzilla.kernel.org/show_bug.cgi?id=97351
+-Ermanno Baschiera
+
+
+I'm posting the output of my commands
+
+[liveuser@localhost ~]$ sudo btrfs fi show
+warning, device 1 is missing
+warning devid 1 not found already
+Label: none  uuid: 32eeac52-699b-4fa2-be61-06206910a37f
+    Total devices 3 FS bytes used 3.79TiB
+    devid    3 size 2.73TiB used 2.73TiB path /dev/sda
+    devid    4 size 2.73TiB used 2.73TiB path /dev/sdc2
+    *** Some devices missing
+
+Btrfs v3.18.2
+
+
+
+
+[liveuser@localhost ~]$ sudo btrfs restore /dev/sda /run/media/liveuser/restored
+[...]
+parent transid verify failed on 8328375693312 wanted 1568448 found 1561131
+Ignoring transid failure
+leaf parent key incorrect 8328375693312
+parent transid verify failed on 8328375693312 wanted 1568448 found 1561131
+Ignoring transid failure
+leaf parent key incorrect 8328375693312
+Error searching -1
+Error copying data for
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+Error searching
+/run/media/liveuser/vai/@/var/lib/apt/lists/partial/security.ubuntu.com_ubuntu_dists_vivid-security_multiverse_binary-amd64_Packages.bz2
+
+
+
+
+[liveuser@localhost ~]$ uname -a
+Linux localhost 4.0.0-0.rc5.git4.1.fc22.x86_64 #1 SMP Fri Mar 27
+13:51:23 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+
+
+[liveuser@localhost ~]$ btrfs version
+Btrfs v3.18.2

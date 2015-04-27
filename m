@@ -1,49 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42024 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751336AbbD0AZ6 convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:34229 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751257AbbD0EtM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Apr 2015 20:25:58 -0400
-Message-ID: <553D8216.8090503@cn.fujitsu.com>
-Date: Mon, 27 Apr 2015 08:25:58 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
-References: <1429837961-2255-1-git-send-email-quwenruo@cn.fujitsu.com> <20150424150507.GQ4996@twin.jikos.cz>
-In-Reply-To: <20150424150507.GQ4996@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	Mon, 27 Apr 2015 00:49:12 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Wolfgang_Mader@brain-frog.de, dsterba@suse.cz
+Subject: [PATCH 0/2] serviceability: add event log when missing device is created
+Date: Mon, 27 Apr 2015 12:46:17 +0800
+Message-Id: <1430109979-9397-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Wolfgang was in a situation that he wanted to know the device-id
+of a missing device as indicated by 'btrfs fi show'
+
+sysfs patches sent before would help. And irrespective of that,
+these are system events must be logged for better pathological
+analysis of the btrfs issues.
 
 
--------- Original Message  --------
-Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年04月24日 23:05
+Anand Jain (2):
+  Btrfs: log when missing device is created
+  Btrfs: check error before reporting missing device and add uuid
 
-> On Fri, Apr 24, 2015 at 09:12:40AM +0800, Qu Wenruo wrote:
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -173,6 +173,7 @@ struct btrfs_ordered_sum;
->>
->>   /* csum types */
->>   #define BTRFS_CSUM_TYPE_CRC32	0
->> +#define BTRFS_CSUM_LAST_TYPE	0
->>
->>   static int btrfs_csum_sizes[] = { 4, 0 };
->
-> I'd prefer to fix it by removing the 0 from btrfs_csum_sizes instead of
-> introducing a define.
->
+ fs/btrfs/volumes.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Removing the zero seems not help for this case, as some one can still
-craft a strange csum_type to access outside the array.
+-- 
+2.0.0.153.g79dcccc
 
-So I introduce the new macro and use the new macro to compare with 
-csum_type without acess the array.
-
-Thanks,
-Qu

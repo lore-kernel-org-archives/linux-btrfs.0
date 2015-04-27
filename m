@@ -1,77 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outbound-queue-2.mail.thdo.gradwell.net ([212.11.70.35]:36383
-	"EHLO outbound-queue-2.mail.thdo.gradwell.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932852AbbD0SXD (ORCPT
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.217]:52667 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964816AbbD0T3T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 14:23:03 -0400
-Received: from outbound-edge-2.mail.thdo.gradwell.net (bonnie.gradwell.net [212.11.70.2])
-	by outbound-queue-2.mail.thdo.gradwell.net (Postfix) with ESMTP id 64F2055332
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 19:23:01 +0100 (BST)
-Message-ID: <553E7E84.4060702@barrowhillfarm.org.uk>
-Date: Mon, 27 Apr 2015 19:23:00 +0100
-From: Bob Williams <linux@barrowhillfarm.org.uk>
+	Mon, 27 Apr 2015 15:29:19 -0400
+Message-ID: <553E8E0A.6060609@giantdisaster.de>
+Date: Mon, 27 Apr 2015 21:29:14 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: help on broken file system
-References: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-In-Reply-To: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+To: lauri <lauri.vosandi@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: receive explicit parent support
+References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>	<553DE512.7080606@giantdisaster.de> <CAJ1pDqRsVdTHs0Yki9yrT1ibC7mTn9_Z7JEpZdLb2OJd7z+8Aw@mail.gmail.com>
+In-Reply-To: <CAJ1pDqRsVdTHs0Yki9yrT1ibC7mTn9_Z7JEpZdLb2OJd7z+8Aw@mail.gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 4/27/2015 11:23 AM, lauri wrote:
+> Hi,
+>
+>> This won't work if you receive more than one snapshot, each one derived
+>> from the previous one ("btrfs send -e snap1 snap2 snap3 snap4"). You
+>> would always use the first one as the parent, not the predecessor.
+>> That's implemented differently for the -p option in
+>> git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
+>
+> I'll take another look on the multi-subvolume stream mode.
+>
+>> This used to be a search for the received_uuid only. Why is this code
+>> changed like this in the branch that is executed when -p is not
+>> specified, in a patch that has the goal to add -p with new functionality
+>> if -p is specified?
+>
+> Many things have changed since far-progs, take a look in the original
+> source I used as basis for my patch:
+>
+> https://github.com/kdave/btrfs-progs/blob/1b7dd327f43777bcdd217a0500e6bda78128a290/cmds-receive.c#L233
+>
+> I am pretty sure lookup logic isn't affected if -p is not used.
 
-On 27/04/15 14:39, Ermanno Baschiera wrote:
-> Hello, I have a 3 disks file system configured in RAID1, created
-> with Ubuntu 13.10 (if I recall correctly). Last friday I upgraded
-> my system from Ubuntu 14.10 (kernel 3.16.0) to 15.04 (kernel
-> 3.19.0). Then I started to notice some malfunctions (errors on cron
-> scripts, my time machine asking to perform a full backup, high
-> load, etc.). On saturday I rebooted the system and it booted in
-> readonly. I tried to reboot it and it didn't boot anymore, stuck at
-> mounting the disks. So I booted with a live Ubuntu 15.05 which
-> could not mount my disks, even with "-o recovery,". Then I switched
-> to Fedora beta with kernel 4.0.0-0.rc5. I did a "btrfs check" and
-> got a lot of "parent transid verify failed on 8328801964032 wanted
-> 1568448 found 1561133". Reading on docs and Stack Exchange, I
-> decided to try a "btrfs restore" to backup my data. Having not a
-> spare disk, and being the file system a RAID1, I decided to use one
-> of the 3 disks as target for the restore. I formatted it in EXT4
-> and tried the restore. The process stopped after one minute, ending
-> with errors. Then I tried to "btrfs-zero-log" the file system, but
-> I noticed that running it multiple times, it was giving me the same
-> amount of messages, making me think it wasn't fixing anything. So I
-> run a "btrfs rescue chunk-recover". After that, I still not being 
-> able to mount the system (with parameters -o
-> recovery,degraded,ro). I'm not sure about what to do now. Can
-> someone give me some advice? My possible steps are (if I understand
-> correctly): - try the "btrfs rescue super-recover" - try the "btrfs
-> check --repair"
-> 
-Hi Ermanno,
+You are right! My bad, not looking precisely enough. Before the patch, 
+the code did the two lookups as well.
 
-I'm sorry, I can't help you solve your problem. I've just had a
-similar problem (see thread subject "btrfs filesystem for /home has
-become readonly").
+But the first issue is real. One possible fix is to update 
+explicit_parent_path after each received snapshot.
 
-I tried everything, like you, including btrfs check --repair, but
-nothing helped. In the end I reformatted my disks, reinstalled the OS
-and restored all my data from backup.
 
-I shall watch this thread to see if any experts have a better solution
-for you. I hope so!
-
-Bob
-- -- 
-Bob Williams
-System:  Linux 3.16.7-7-desktop
-Distro:  openSUSE 13.2 (x86_64) with KDE Development Platform: 4.14.3
-Uptime:  06:00am up 7:55, 3 users, load average: 0.16, 0.05, 0.06
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlU+foIACgkQ0Sr7eZJrmU79DgCgpC5YxMbcFKEXp+5bb8BA23Tz
-KZMAn2r5hOzILWF3f1TwBaC0HaSC1A4A
-=ej+n
------END PGP SIGNATURE-----
+>
+> 2015-04-27 9:28 GMT+02:00 Stefan Behrens <sbehrens@giantdisaster.de>:
+>> On Sun, 26 Apr 2015 12:12:45 +0200, Lauri Võsandi wrote:
+>>> This patch adds command-line flag -p to btrfs receive
+>>> which makes it possible to disable automatic parent
+>>> search for incremental snapshots and use explicitly
+>>> specified path instead.
+>>>
+>>> Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
+>>> ---
+>>>   cmds-receive.c | 34 ++++++++++++++++++++++++++--------
+>>>   1 file changed, 26 insertions(+), 8 deletions(-)
+>>>
+>>> diff --git a/cmds-receive.c b/cmds-receive.c
+>>> index b7cf3f9..391d281 100644
+>>> --- a/cmds-receive.c
+>>> +++ b/cmds-receive.c
+>>> @@ -61,6 +61,7 @@ struct btrfs_receive
+>>>        char *root_path;
+>>>        char *dest_dir_path; /* relative to root_path */
+>>>        char *full_subvol_path;
+>>> +     char *explicit_parent_path;
+>>>        int dest_dir_chroot;
+>>>
+>>>        struct subvol_info *cur_subvol;
+>>> @@ -220,20 +221,32 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+>>>                fprintf(stderr, "receiving snapshot %s uuid=%s, "
+>>>                                "ctransid=%llu ", path, uuid_str,
+>>>                                r->cur_subvol->stransid);
+>>> -             uuid_unparse(parent_uuid, uuid_str);
+>>> -             fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
+>>> -                             uuid_str, parent_ctransid);
+>>>        }
+>>>
+>>>        memset(&args_v2, 0, sizeof(args_v2));
+>>>        strncpy_null(args_v2.name, path);
+>>>
+>>> -     parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+>>> -                     parent_ctransid, NULL, subvol_search_by_received_uuid);
+>>> -     if (!parent_subvol) {
+>>> +     if (r->explicit_parent_path) {
+>>> +             if (g_verbose) {
+>>> +                     fprintf(stderr, "using explicit parent %s\n",
+>>> +                                     r->explicit_parent_path);
+>>> +             }
+>>> +             parent_subvol = subvol_uuid_search(&r->sus, 0, NULL,
+>>> +                     0, r->explicit_parent_path, subvol_search_by_path);
+>>
+>> This won't work if you receive more than one snapshot, each one derived
+>> from the previous one ("btrfs send -e snap1 snap2 snap3 snap4"). You
+>> would always use the first one as the parent, not the predecessor.
+>> That's implemented differently for the -p option in
+>> git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
+>>
+>>
+>>> +     } else {
+>>> +             if (g_verbose) {
+>>> +                     uuid_unparse(parent_uuid, uuid_str);
+>>> +                     fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
+>>> +                                     uuid_str, parent_ctransid);
+>>> +             }
+>>>                parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+>>> -                             parent_ctransid, NULL, subvol_search_by_uuid);
+>>> +                     parent_ctransid, NULL, subvol_search_by_received_uuid);
+>>> +             if (!parent_subvol) {
+>>> +                     parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+>>> +                                     parent_ctransid, NULL, subvol_search_by_uuid);
+>>> +             }
+>>
+>> This used to be a search for the received_uuid only. Why is this code
+>> changed like this in the branch that is executed when -p is not
+>> specified, in a patch that has the goal to add -p with new functionality
+>> if -p is specified?
+>>
+>>
+>>>        }
+>>> +
+>>>        if (!parent_subvol) {
+>>>                ret = -ENOENT;
+>>>                fprintf(stderr, "ERROR: could not find parent subvolume\n");
+>>> @@ -962,11 +975,14 @@ int cmd_receive(int argc, char **argv)
+>>>                        { NULL, 0, NULL, 0 }
+>>>                };
+>>>
+>>> -             c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
+>>> +             c = getopt_long(argc, argv, "Cevf:p:", long_opts, NULL);
+>>>                if (c < 0)
+>>>                        break;
+>>>
+>>>                switch (c) {
+>>> +             case 'p':
+>>> +                     r.explicit_parent_path = optarg;
+>>> +                     break;
+>>>                case 'v':
+>>>                        g_verbose++;
+>>>                        break;
+>>> @@ -1028,6 +1044,8 @@ const char * const cmd_receive_usage[] = {
+>>>        "                 in the data stream. Without this option,",
+>>>        "                 the receiver terminates only if an error",
+>>>        "                 is recognized or on EOF.",
+>>> +     "-p <subvol>      Disables the automatic searching for parents",
+>>> +     "                 if incremental streams are received.",
+>>>        "-C|--chroot      confine the process to <mount> using chroot",
+>>>        "--max-errors <N> Terminate as soon as N errors happened while",
+>>>        "                 processing commands from the send stream.",
+>>>

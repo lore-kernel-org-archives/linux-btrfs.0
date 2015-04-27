@@ -1,86 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38413 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932466AbbD0MPW (ORCPT
+Received: from mail.lqfe.com ([72.14.186.34]:45001 "EHLO mail.lqfe.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932772AbbD0MxL convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 08:15:22 -0400
-Date: Mon, 27 Apr 2015 12:15:21 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: sri <toyours_sridhar@yahoo.co.in>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs freeze/thaw when using with LVM2
-Message-ID: <20150427121521.GB18187@carfax.org.uk>
-References: <loom.20150427T140306-446@post.gmane.org>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="M+mJV+fSrF9QWN+i"
-In-Reply-To: <loom.20150427T140306-446@post.gmane.org>
+	Mon, 27 Apr 2015 08:53:11 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id 36CC916380A
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:48:02 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id jajOIFN8NYBr for <linux-btrfs@vger.kernel.org>;
+	Mon, 27 Apr 2015 07:48:01 -0500 (CDT)
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id B5EFE1637A8
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:48:01 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id vfoW6kTeWOVn for <linux-btrfs@vger.kernel.org>;
+	Mon, 27 Apr 2015 07:48:01 -0500 (CDT)
+Received: from [192.168.168.20] (unknown [206.126.223.13])
+	by mail.lqfe.com (Postfix) with ESMTPSA id 743BD1608C9
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 07:48:01 -0500 (CDT)
+From: Anthony Plack <anthony@plack.net>
+Content-Type: text/plain; charset=us-ascii
+Subject: btrfs-progs SCRUB reporting aborted but still running - minor
+Message-Id: <A08BD340-C5DA-4852-B38B-7314CCAD3E3F@plack.net>
+Date: Mon, 27 Apr 2015 07:48:00 -0500
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I have a BTRFS which has errors. After starting a scrub, and checking status once, scrub will report it was aborted but still runs to completion.
 
---M+mJV+fSrF9QWN+i
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+fatdrive ~ # btrfs scrub status /mnt/data
+scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+	scrub started at Mon Apr 27 06:48:44 2015, running for 224 seconds
+	total bytes scrubbed: 223.10GiB with 0 errors
+fatdrive ~ # btrfs scrub status /mnt/data
+scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1089 seconds
+	total bytes scrubbed: 1.02TiB with 0 errors
+fatdrive ~ # btrfs scrub status /mnt/data
+scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1664 seconds
+	total bytes scrubbed: 1.53TiB with 0 errors
+fatdrive ~ # btrfs scrub status /mnt/data
+scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1669 seconds
+	total bytes scrubbed: 1.54TiB with 0 errors
+fatdrive ~ # btrfs scrub status /mnt/data
+scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1705 seconds
+	total bytes scrubbed: 1.56TiB with 0 errors
 
-On Mon, Apr 27, 2015 at 12:05:28PM +0000, sri wrote:
-> Hi,
-> 
-> I would like to know if btrfs file system is created on LVM2 logical 
-> volumes, does freeze and thaw operations takes place for btrfs to make 
-> file system consistent??
+Scrub does seem to be processing, so this is just a text/status issue.
 
-   No, because the filesystem is *always* consistent, because of the
-way that the CoW update mechanism works.
-
-> If not is there a way (ioctl etc..) to run btrfs freeze/thaw before and 
-> after creating LVM2 snapshot of a btrfs file system?
-
-   As I said above, none is needed.
-
-   HOWEVER, you shouldn't take LVM snapshots of a btrfs filesystem AT
-ALL, if you have the original FS mounted on that system, or if you
-plan on mounting the FS or its snapshots on that system. It's fine if
-the only things mounting it are independent of the base system, and
-don't see the snapshots (e.g. you're exporting LVs as block devices to
-a VM host, and the snapshot is never seen by the VM; or you're
-exporting LVs via NBD, and the remote system never sees the
-snapshot).
-
-   If, on the other hand, you're expecting to have /dev/mapper/foo
-mounted, and then take a snapshot of it on the same system, you can
-expect massive filesystem corruption, because the kernel can't
-distinguish between the original block device and the snapshot, and
-may try using the wrong one (or possibly both).
-
-   Hugo.
-
--- 
-Hugo Mills             | Someone's been throwing dead sheep down my Fun Well
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                          Nick Gibbins
-
---M+mJV+fSrF9QWN+i
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVPihZAAoJEFheFHXiqx3kYRMP/2JtwrCfPn4ROTLsGTcpbWmr
-ic7a9EdHhYExY5eR26EBfnH2zJfkjTqAZiGVC6ILI4ITBDn/eYo8oG9z9s2/qGj2
-wzu4dyw4fi1KCpItpilHadGUOvKdJHr+BLfkPLkhof2NGnjIPwweYd01inaYsvnp
-o8kDqrJDokujVf6tzdPRKHKaNEyjpxlIdQn8YVxCxrf+QsW1bCQ/qQ9KZaZfWYO2
-tz3znD6PnXnYQcB7+VITxd+4BfjNvt+VwAfXyMtaRVaLBvcEPf93kcCdSErv3XPx
-7MCu7t98ERsiErYq55vMFzdcBX8PpvputZK3a0c60G7dwONjrVUkn0BMAuPD9zQW
-ZxNVVoOq8G7bJzVM74Mz/P2IDqn02kMabYjS1xBEoFXhQOJ0RimUf+vl9//RTXcp
-A/nV2mR3GRCAE4EQSYeiN/DUZsUeo7kDwFhEUBZH+J3bC8GSpykt7tN3wgBDcnu8
-V7Gl8jXRfwki4ZauF8l9iq9mXHppIVKFpp4/6llaa09C82Ra6jjYF7/DivWWS3oe
-ZlFvqqXeu6FAGjcIpne6YBTFKgRiHeJXlYmgEp/BNm7QgUrrsvEbGIuWMUPgptoK
-00SEjB4Yy5UPxC37VDrnbJ3nJ7kWZhrRkDC1ETrah5eDA+XHyY5bTV1Ig4JKf8nQ
-TuvALmDCxj3D+PPLpA3T
-=0Eiu
------END PGP SIGNATURE-----
-
---M+mJV+fSrF9QWN+i--
+I have opened issue 97341 for this.   https://bugzilla.kernel.org/show_bug.cgi?id=97341

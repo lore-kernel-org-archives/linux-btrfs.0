@@ -1,29 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:35984 "EHLO zlom.siedziba.pl"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753066AbbD0QIG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 12:08:06 -0400
-Message-ID: <553E5C8C.4070202@siedziba.pl>
-Date: Mon, 27 Apr 2015 17:58:04 +0200
-From: =?UTF-8?B?UGlvdHIgUGF3xYJvdw==?= <pp@siedziba.pl>
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, sri <toyours_sridhar@yahoo.co.in>,
-        linux-btrfs@vger.kernel.org
+Received: from meiko.romanrm.net ([195.154.92.155]:44522 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932817AbbD0Red (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Apr 2015 13:34:33 -0400
+Date: Mon, 27 Apr 2015 22:34:42 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: sri <toyours_sridhar@yahoo.co.in>, linux-btrfs@vger.kernel.org
 Subject: Re: btrfs freeze/thaw when using with LVM2
-References: <loom.20150427T140306-446@post.gmane.org> <20150427121521.GB18187@carfax.org.uk>
-In-Reply-To: <20150427121521.GB18187@carfax.org.uk>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Message-ID: <20150427223442.47e254c4@natsu>
+In-Reply-To: <20150427145549.GC18187@carfax.org.uk>
+References: <loom.20150427T140306-446@post.gmane.org>
+	<20150427121521.GB18187@carfax.org.uk>
+	<loom.20150427T163556-13@post.gmane.org>
+	<20150427145549.GC18187@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/kJJq7k6mihPJ1+JA9+hoBU="; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 27.04.2015 o 14:15, Hugo Mills wrote:
-> HOWEVER, you shouldn't take LVM snapshots of a btrfs filesystem AT ALL
+--Sig_/kJJq7k6mihPJ1+JA9+hoBU=
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I'd like to add, that generally when working with LVM and BTRFS, it's 
-probably a good idea to always use "device=" mount option to make it 
-scan only specified devices instead of all. I'd learned that the hard 
-way, when I enabled SSD caching, and got massive corruption, because 
-BTRFS mixed up cached devices with cache-origin devices. Now I have 
-"device=/dev/mapper/vg-home1,device=/dev/mapper/vg-home2" in mount 
-options in my fstab, and I can use LVM cache without worrying that 
-things will get mixed up again.
+On Mon, 27 Apr 2015 14:55:49 +0000
+Hugo Mills <hugo@carfax.org.uk> wrote:
+
+> > This is strange considering that I wanted a consistent snapshot of=20
+> > entire btrfs filesystem at volume level.
+> >=20
+> > Is there a way to achive this? or btrfs just cannot provide?
+>=20
+>    No, there's no way to manage it with the current btrfs code.
+
+Why not. fsfreeze, dd to a file (optionally with compression), unfreeze.
+
+--=20
+With respect,
+Roman
+
+--Sig_/kJJq7k6mihPJ1+JA9+hoBU=
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlU+czIACgkQTLKSvz+PZwjbDgCdF9BuclleV4h12EZC9JjjCNiA
+wIYAn2z1WE+gcZ+5o1ChKC6RYgIvwxjC
+=wF9I
+-----END PGP SIGNATURE-----
+
+--Sig_/kJJq7k6mihPJ1+JA9+hoBU=--

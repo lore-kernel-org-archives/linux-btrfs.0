@@ -1,61 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54240 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932977AbbD0R5W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 13:57:22 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YmnHO-0005ln-TB
-	for linux-btrfs@vger.kernel.org; Mon, 27 Apr 2015 19:57:15 +0200
-Received: from abts-kk-dynamic-51.111.171.122-airtelbroadband.in ([abts-kk-dynamic-51.111.171.122-airtelbroadband.in])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 19:57:14 +0200
-Received: from toyours_sridhar by abts-kk-dynamic-51.111.171.122-airtelbroadband.in with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 19:57:14 +0200
+Received: from outbound-queue-2.mail.thdo.gradwell.net ([212.11.70.35]:36383
+	"EHLO outbound-queue-2.mail.thdo.gradwell.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932852AbbD0SXD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Apr 2015 14:23:03 -0400
+Received: from outbound-edge-2.mail.thdo.gradwell.net (bonnie.gradwell.net [212.11.70.2])
+	by outbound-queue-2.mail.thdo.gradwell.net (Postfix) with ESMTP id 64F2055332
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 19:23:01 +0100 (BST)
+Message-ID: <553E7E84.4060702@barrowhillfarm.org.uk>
+Date: Mon, 27 Apr 2015 19:23:00 +0100
+From: Bob Williams <linux@barrowhillfarm.org.uk>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: sri <toyours_sridhar@yahoo.co.in>
-Subject: Re: btrfs freeze/thaw when using with LVM2
-Date: Mon, 27 Apr 2015 17:56:58 +0000 (UTC)
-Message-ID: <loom.20150427T195047-500@post.gmane.org>
-References: <loom.20150427T140306-446@post.gmane.org> <20150427121521.GB18187@carfax.org.uk> <loom.20150427T163556-13@post.gmane.org> <20150427145549.GC18187@carfax.org.uk> <20150427223442.47e254c4@natsu> <20150427173717.GD18187@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: Re: help on broken file system
+References: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
+In-Reply-To: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills <hugo <at> carfax.org.uk> writes:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
+On 27/04/15 14:39, Ermanno Baschiera wrote:
+> Hello, I have a 3 disks file system configured in RAID1, created
+> with Ubuntu 13.10 (if I recall correctly). Last friday I upgraded
+> my system from Ubuntu 14.10 (kernel 3.16.0) to 15.04 (kernel
+> 3.19.0). Then I started to notice some malfunctions (errors on cron
+> scripts, my time machine asking to perform a full backup, high
+> load, etc.). On saturday I rebooted the system and it booted in
+> readonly. I tried to reboot it and it didn't boot anymore, stuck at
+> mounting the disks. So I booted with a live Ubuntu 15.05 which
+> could not mount my disks, even with "-o recovery,". Then I switched
+> to Fedora beta with kernel 4.0.0-0.rc5. I did a "btrfs check" and
+> got a lot of "parent transid verify failed on 8328801964032 wanted
+> 1568448 found 1561133". Reading on docs and Stack Exchange, I
+> decided to try a "btrfs restore" to backup my data. Having not a
+> spare disk, and being the file system a RAID1, I decided to use one
+> of the 3 disks as target for the restore. I formatted it in EXT4
+> and tried the restore. The process stopped after one minute, ending
+> with errors. Then I tried to "btrfs-zero-log" the file system, but
+> I noticed that running it multiple times, it was giving me the same
+> amount of messages, making me think it wasn't fixing anything. So I
+> run a "btrfs rescue chunk-recover". After that, I still not being 
+> able to mount the system (with parameters -o
+> recovery,degraded,ro). I'm not sure about what to do now. Can
+> someone give me some advice? My possible steps are (if I understand
+> correctly): - try the "btrfs rescue super-recover" - try the "btrfs
+> check --repair"
 > 
-> On Mon, Apr 27, 2015 at 10:34:42PM +0500, Roman Mamedov wrote:
-> > On Mon, 27 Apr 2015 14:55:49 +0000
-> > Hugo Mills <hugo <at> carfax.org.uk> wrote:
-> > 
-> > > > This is strange considering that I wanted a consistent snapshot 
-of 
-> > > > entire btrfs filesystem at volume level.
-> > > > 
-> > > > Is there a way to achive this? or btrfs just cannot provide?
-> > > 
-> > >    No, there's no way to manage it with the current btrfs code.
-> > 
-> > Why not. fsfreeze, dd to a file (optionally with compression), 
-unfreeze.
-> 
->    OK, point taken, but if you want to use the frozen volume to make a
-> file-level backup of the FS contents, you've still got to turn it into
-> a block device and mount it... at which point, you get hit by the
-> explosion again...
-> 
->    Hugo.
-> 
+Hi Ermanno,
 
+I'm sorry, I can't help you solve your problem. I've just had a
+similar problem (see thread subject "btrfs filesystem for /home has
+become readonly").
 
-If I am not wrong, chunk tree represents the allocaiton block of entire 
-file system. I could copy and replicate ( which will be less time 
-consume) on alternate disk(s). 
+I tried everything, like you, including btrfs check --repair, but
+nothing helped. In the end I reformatted my disks, reinstalled the OS
+and restored all my data from backup.
 
-For this kind of backup, either lvm level consistency or freeze/thaw 
-would help.
+I shall watch this thread to see if any experts have a better solution
+for you. I hope so!
 
+Bob
+- -- 
+Bob Williams
+System:  Linux 3.16.7-7-desktop
+Distro:  openSUSE 13.2 (x86_64) with KDE Development Platform: 4.14.3
+Uptime:  06:00am up 7:55, 3 users, load average: 0.16, 0.05, 0.06
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlU+foIACgkQ0Sr7eZJrmU79DgCgpC5YxMbcFKEXp+5bb8BA23Tz
+KZMAn2r5hOzILWF3f1TwBaC0HaSC1A4A
+=ej+n
+-----END PGP SIGNATURE-----

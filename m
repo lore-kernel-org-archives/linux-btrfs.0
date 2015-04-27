@@ -1,47 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28421 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:28422 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932137AbbD0HhD (ORCPT
+	with ESMTP id S932160AbbD0HhD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 27 Apr 2015 03:37:03 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, m_btrfs@ml1.co.uk
-Subject: [PATCH 0/8 v2] device delete by devid
-Date: Mon, 27 Apr 2015 15:34:07 +0800
-Message-Id: <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1429525756-2727-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/8] Btrfs: move check for min number of devices to a function
+Date: Mon, 27 Apr 2015 15:34:09 +0800
+Message-Id: <1430120055-10381-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 References: <1429525756-2727-2-git-send-email-anand.jain@oracle.com>
+ <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel patch of device delete by devid.
-Now also includes possible code optimization.
-Some of the codes are common between delete device and
-replace device. This patch will use functions to reuse
-those codes, mainly the get btrfs_device structure of
-the source device, and scratch the source device at the end.
+btrfs_rm_device() has a section of the code to check for min number
+of the devices required by various group profile. This patch move
+that part of the code in the function __check_raid_min_devices()
 
-Anand Jain (8):
-  Btrfs: device delete by devid
-  Btrfs: move check for min number of devices to a function
-  Btrfs: rename btrfs_dev_replace_find_srcdev()
-  Btrfs: use BTRFS_ERROR_DEV_MISSING_NOT_FOUND when missing device is
-    not found
-  Btrfs: use btrfs_find_device_by_user_input()
-  Btrfs: add btrfs_read_dev_one_super() to read one specific SB
-  Btrfs: fix btrfs_scratch_superblock() with fixes from device delete
-  Btrfs: use btrfs_scratch_superblock() in btrfs_rm_device()
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 78 ++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 43 insertions(+), 35 deletions(-)
 
- fs/btrfs/dev-replace.c     |  24 +----
- fs/btrfs/disk-io.c         |  54 ++++++----
- fs/btrfs/disk-io.h         |   2 +
- fs/btrfs/ioctl.c           |  50 ++++++++-
- fs/btrfs/volumes.c         | 257 ++++++++++++++++++++-------------------------
- fs/btrfs/volumes.h         |   7 +-
- include/uapi/linux/btrfs.h |   8 ++
- 7 files changed, 210 insertions(+), 192 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c8b033e..9556f59 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1612,61 +1612,69 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
++static int __check_raid_min_devices(struct btrfs_fs_info *fs_info)
+ {
+-	struct btrfs_device *device;
+-	struct btrfs_device *next_device;
+-	struct block_device *bdev = NULL;
+-	struct buffer_head *bh = NULL;
+-	struct btrfs_super_block *disk_super = NULL;
+-	struct btrfs_fs_devices *cur_devices;
+ 	u64 all_avail;
+ 	u64 num_devices;
+-	u8 *dev_uuid;
+ 	unsigned seq;
+-	int ret = 0;
+-	bool clear_super = false;
+-	char *dev_name = NULL;
+-
+-	mutex_lock(&uuid_mutex);
+ 
+-	do {
+-		seq = read_seqbegin(&root->fs_info->profiles_lock);
+-
+-		all_avail = root->fs_info->avail_data_alloc_bits |
+-			    root->fs_info->avail_system_alloc_bits |
+-			    root->fs_info->avail_metadata_alloc_bits;
+-	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
+-
+-	num_devices = root->fs_info->fs_devices->num_devices;
+-	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
+-	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
++	num_devices = fs_info->fs_devices->num_devices;
++	btrfs_dev_replace_lock(&fs_info->dev_replace);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+ 		WARN_ON(num_devices < 1);
+ 		num_devices--;
+ 	}
+-	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
++	btrfs_dev_replace_unlock(&fs_info->dev_replace);
++
++	do {
++		seq = read_seqbegin(&fs_info->profiles_lock);
++
++		all_avail = fs_info->avail_data_alloc_bits |
++			    fs_info->avail_system_alloc_bits |
++			    fs_info->avail_metadata_alloc_bits;
++	} while (read_seqretry(&fs_info->profiles_lock, seq));
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+-		ret = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+-		goto out;
++		return BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+ 	}
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) && num_devices <= 2) {
+-		ret = BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET;
+-		goto out;
++		return BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET;
+ 	}
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
+-	    root->fs_info->fs_devices->rw_devices <= 2) {
+-		ret = BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET;
+-		goto out;
++	    fs_info->fs_devices->rw_devices <= 2) {
++		return BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET;
+ 	}
++
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
+-	    root->fs_info->fs_devices->rw_devices <= 3) {
+-		ret = BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET;
+-		goto out;
++	    fs_info->fs_devices->rw_devices <= 3) {
++		return BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET;
+ 	}
+ 
++	return 0;
++}
++
++int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
++{
++	struct btrfs_device *device;
++	struct btrfs_device *next_device;
++	struct block_device *bdev = NULL;
++	struct buffer_head *bh = NULL;
++	struct btrfs_super_block *disk_super = NULL;
++	struct btrfs_fs_devices *cur_devices;
++	u64 num_devices;
++	u8 *dev_uuid;
++	int ret = 0;
++	bool clear_super = false;
++	char *dev_name = NULL;
++
++	mutex_lock(&uuid_mutex);
++
++	ret = __check_raid_min_devices(root->fs_info);
++	if (ret)
++		goto out;
++
+ 	if (devid) {
+ 		device = btrfs_find_device(root->fs_info, devid,
+ 				NULL, NULL);
 -- 
 2.0.0.153.g79dcccc
 

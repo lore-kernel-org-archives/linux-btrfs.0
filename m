@@ -1,46 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34246 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751840AbbD0EtQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 00:49:16 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wolfgang_Mader@brain-frog.de, dsterba@suse.cz
-Subject: [PATCH 2/2] Btrfs: check error before reporting missing device and add uuid
-Date: Mon, 27 Apr 2015 12:46:19 +0800
-Message-Id: <1430109979-9397-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1430109979-9397-1-git-send-email-anand.jain@oracle.com>
-References: <1430109979-9397-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:43388 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932481AbbD0K7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Apr 2015 06:59:31 -0400
+Date: Mon, 27 Apr 2015 12:59:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
+Message-ID: <20150427105929.GT4996@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1429837961-2255-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20150424150507.GQ4996@twin.jikos.cz>
+ <553D8216.8090503@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <553D8216.8090503@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Report missing device when add is successful,
-otherwise it would exit as ENOMEM. And add uuid
-to the report.
+On Mon, Apr 27, 2015 at 08:25:58AM +0800, Qu Wenruo wrote:
+> 
+> 
+> -------- Original Message  --------
+> Subject: Re: [PATCH v2 1/2] btrfs: Fix superblock csum type check.
+> From: David Sterba <dsterba@suse.cz>
+> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Date: 2015年04月24日 23:05
+> 
+> > On Fri, Apr 24, 2015 at 09:12:40AM +0800, Qu Wenruo wrote:
+> >> --- a/fs/btrfs/ctree.h
+> >> +++ b/fs/btrfs/ctree.h
+> >> @@ -173,6 +173,7 @@ struct btrfs_ordered_sum;
+> >>
+> >>   /* csum types */
+> >>   #define BTRFS_CSUM_TYPE_CRC32	0
+> >> +#define BTRFS_CSUM_LAST_TYPE	0
+> >>
+> >>   static int btrfs_csum_sizes[] = { 4, 0 };
+> >
+> > I'd prefer to fix it by removing the 0 from btrfs_csum_sizes instead of
+> > introducing a define.
+> >
+> 
+> Removing the zero seems not help for this case, as some one can still
+> craft a strange csum_type to access outside the array.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+The ARRAY_SIZE will be 1, so if a crafted csum will be anything than 0,
+then the check will catch it, no?
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 693745e..d722ee5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6255,10 +6255,11 @@ static int read_one_dev(struct btrfs_root *root,
- 		if (!btrfs_test_opt(root, DEGRADED))
- 			return -EIO;
- 
--		btrfs_warn(root->fs_info, "devid %llu missing", devid);
- 		device = add_missing_dev(root, fs_devices, devid, dev_uuid);
- 		if (!device)
- 			return -ENOMEM;
-+		btrfs_warn(root->fs_info, "devid %llu uuid %pU missing",
-+				devid, uuid);
- 	} else {
- 		if (!device->bdev && !btrfs_test_opt(root, DEGRADED))
- 			return -EIO;
--- 
-2.0.0.153.g79dcccc
+> So I introduce the new macro and use the new macro to compare with 
+> csum_type without acess the array.
 
+The macro serves the same purpose as the ARRAY_SIZE macro and is always
+in sync with the btrfs_csum_size.

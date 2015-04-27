@@ -1,120 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ftx-008-i766.relay.mailchannels.net ([50.61.143.66]:5038 "EHLO
-	relay.mailchannels.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750734AbbDZU0N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Apr 2015 16:26:13 -0400
-From: Matt Robinson <git@nerdoftheherd.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, Matt Robinson <git@nerdoftheherd.com>
-Subject: [PATCH RESEND] btrfs: Align EOF length to block in extent_same
-Date: Sun, 26 Apr 2015 19:05:11 +0100
-Message-Id: <1430071511-6055-1-git-send-email-git@nerdoftheherd.com>
+Received: from plane.gmane.org ([80.91.229.3]:50374 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751769AbbD0CLT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Apr 2015 22:11:19 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YmYVv-0006qB-Qe
+	for linux-btrfs@vger.kernel.org; Mon, 27 Apr 2015 04:11:15 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 04:11:15 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2015 04:11:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: How to get the devid of a missing device
+Date: Mon, 27 Apr 2015 02:11:05 +0000 (UTC)
+Message-ID: <pan$7e6ba$6d122ecc$73869bfb$271bf54f@cox.net>
+References: <1704142.6uN5bYeLWo@discus>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is not currently possible to deduplicate the last block of files
-whose size is not a multiple of the block size, as the btrfs_extent_same
-ioctl returns -EINVAL if offset + size is greater than the file size or
-is not aligned to the fs block size.
+Wolfgang Mader posted on Sun, 26 Apr 2015 20:39:34 +0200 as excerpted:
 
-For example, with the default block size of 16K and two identical
-1,000,000 byte files, calling the extent_same ioctl with offset 0 and
-length set to 1,000,000 the call fails with -EINVAL.  The same call
-with a length of 999,424 will succeed, but the final 576 bytes can then
-not be shared.  This seems to have a larger impact on the amount of
-space actually freed by the ioctl than would be expected - in my
-testing the amount of space freed was generally reduced by 50-100% for
-files sized from a few megabytes downwards which has a significant
-negative impact on the usefulness of the extent_same ioctl in some
-circumstances.
+> Hello,
+> 
+> I have a raid10 with one device missing. I would like to use btrfs
+> replace to replace it. However, I am unsure on how to obtain the devid
+> of the missing device.
 
-To resolve this, this patch allows unaligned offset + length values to
-be passed to btrfs_ioctl_file_extent_same if offset + length is equal
-to the file size of both src and dest.  This is implemented in the same
-way as in btrfs_ioctl_clone.
+The devid is if the device is still active in the filesystem.  If it's 
+missing...
 
-To return to the earlier example 1,000,000 byte file - this patch would
-allow a length of 1,000,000 bytes to be passed as it is equal to the
-file lengths and would be internally extended to the end of the block
-(1,015,808), allowing one set of extents to be shared completely between
-the full length of both files.
+btrfs device delete missing
 
-Signed-off-by: Matt Robinson <git@nerdoftheherd.com>
----
- fs/btrfs/ioctl.c | 21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
+That, along with a bunch of other likely helpful information, is covered 
+on the wiki:
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ca5d968..0588076 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2878,14 +2878,16 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
- 	return ret;
- }
- 
--static int extent_same_check_offsets(struct inode *inode, u64 off, u64 len)
-+static int extent_same_check_offsets(struct inode *inode, u64 off, u64 len,
-+				     u64 len_aligned)
- {
- 	u64 bs = BTRFS_I(inode)->root->fs_info->sb->s_blocksize;
- 
- 	if (off + len > inode->i_size || off + len < off)
- 		return -EINVAL;
-+
- 	/* Check that we are block aligned - btrfs_clone() requires this */
--	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs))
-+	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len_aligned, bs))
- 		return -EINVAL;
- 
- 	return 0;
-@@ -2895,6 +2897,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 			     struct inode *dst, u64 dst_loff)
- {
- 	int ret;
-+	u64 len_aligned = len;
-+	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 
- 	/*
- 	 * btrfs_clone() can't handle extents in the same file
-@@ -2909,11 +2913,15 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 
- 	btrfs_double_lock(src, loff, dst, dst_loff, len);
- 
--	ret = extent_same_check_offsets(src, loff, len);
-+	/* if we extend to both eofs, continue to block boundaries */
-+	if (loff + len == src->i_size && dst_loff + len == dst->i_size)
-+		len_aligned = ALIGN(src->i_size, bs) - loff;
-+
-+	ret = extent_same_check_offsets(src, loff, len, len_aligned);
- 	if (ret)
- 		goto out_unlock;
- 
--	ret = extent_same_check_offsets(dst, dst_loff, len);
-+	ret = extent_same_check_offsets(dst, dst_loff, len, len_aligned);
- 	if (ret)
- 		goto out_unlock;
- 
-@@ -2926,7 +2934,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 len,
- 
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, len);
- 	if (ret == 0)
--		ret = btrfs_clone(src, dst, loff, len, len, dst_loff);
-+		ret = btrfs_clone(src, dst, loff, len, len_aligned, dst_loff);
- 
- out_unlock:
- 	btrfs_double_unlock(src, loff, dst, dst_loff, len);
-@@ -3172,8 +3180,7 @@ static void clone_update_extent_map(struct inode *inode,
-  * @inode: Inode to clone to
-  * @off: Offset within source to start clone from
-  * @olen: Original length, passed by user, of range to clone
-- * @olen_aligned: Block-aligned value of olen, extent_same uses
-- *               identical values here
-+ * @olen_aligned: Block-aligned value of olen
-  * @destoff: Offset within @inode to start clone
-  */
- static int btrfs_clone(struct inode *src, struct inode *inode,
+https://btrfs.wiki.kernel.org
+
+Specifically for that (reassemble from the wrap, too lazy to fiddle with 
+it on my end):
+
+https://btrfs.wiki.kernel.org/index.php/
+Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+
+But since it was a four-device raid10 and four devices is the minimum for 
+that, I don't believe it'll let you delete until you device add, first.
+
+Of course that means probably some hours for the add, then some more 
+hours for the delete missing, during which you obviously hope not to lose 
+another device.  Of course the sysadmin's backup rule of thumb applies -- 
+if you don't have a backup, by definition, loss of the data isn't a big 
+deal, or you'd have it backed up.  (And the corollary, it's not a backup 
+until it's tested, applies as well.)  So you shouldn't have to worry 
+about loss of a second device during that time, because it's either 
+backed up or the data isn't worth the trouble to backup and thus loss of 
+it with the loss of a second device isn't a big deal.
+
+That page doesn't seem to cover direct replacement, probably because the 
+replace command is new and it hasn't been updated.  But AFAIK replace 
+doesn't work with a missing device anyway; it's the fast way to replace a 
+still listed device, so you don't have to add and then delete, but the 
+device has to still be there in ordered to use that shortcut.  (You could 
+try using missing with the -r option tho, just in case it works now.  The 
+wiki/manpage is a bit vague on that point.)
+
+> Btw, the file system is too old for skinny metadata and extended inode
+> refs. If I do a btrfs replace or a btrfs device add, must I myself
+> ensure that the new features are not enables for the new device which is
+> to be added?
+
+I don't believe there's any way to set that manually even if you wanted 
+to -- you don't use mkfs on it and the add/replace would overwrite 
+existing if you did.  The new device should just take on the attributes 
+of the filesystem you're adding it to.
+
+
 -- 
-2.1.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

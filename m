@@ -1,124 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.216]:45708 "EHLO
-	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932116AbbD0H2T (ORCPT
+Received: from mailout-afa67.mailout.artfiles.de ([212.72.176.67]:50273 "EHLO
+	mailout-afa67.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751252AbbD0IAN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 03:28:19 -0400
-Message-ID: <553DE512.7080606@giantdisaster.de>
-Date: Mon, 27 Apr 2015 09:28:18 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Mon, 27 Apr 2015 04:00:13 -0400
+From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: How to get the devid of a missing device
+Date: Mon, 27 Apr 2015 10:00:07 +0200
+Message-ID: <1714496.4Yoe3Ejg52@discus>
+In-Reply-To: <pan$7e6ba$6d122ecc$73869bfb$271bf54f@cox.net>
+References: <1704142.6uN5bYeLWo@discus> <pan$7e6ba$6d122ecc$73869bfb$271bf54f@cox.net>
 MIME-Version: 1.0
-To: =?UTF-8?B?TGF1cmkgVsO1c2FuZGk=?= <lauri.vosandi@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: receive explicit parent support
-References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
-In-Reply-To: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 26 Apr 2015 12:12:45 +0200, Lauri Võsandi wrote:
-> This patch adds command-line flag -p to btrfs receive
-> which makes it possible to disable automatic parent
-> search for incremental snapshots and use explicitly
-> specified path instead.
+On Monday, April 27, 2015 02:11:05 AM Duncan wrote:
+> Wolfgang Mader posted on Sun, 26 Apr 2015 20:39:34 +0200 as excerpted:
+> > Hello,
+> > 
+> > I have a raid10 with one device missing. I would like to use btrfs
+> > replace to replace it. However, I am unsure on how to obtain the devid
+> > of the missing device.
 > 
-> Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
-> ---
->  cmds-receive.c | 34 ++++++++++++++++++++++++++--------
->  1 file changed, 26 insertions(+), 8 deletions(-)
+> The devid is if the device is still active in the filesystem.  If it's
+> missing...
 > 
-> diff --git a/cmds-receive.c b/cmds-receive.c
-> index b7cf3f9..391d281 100644
-> --- a/cmds-receive.c
-> +++ b/cmds-receive.c
-> @@ -61,6 +61,7 @@ struct btrfs_receive
->  	char *root_path;
->  	char *dest_dir_path; /* relative to root_path */
->  	char *full_subvol_path;
-> +	char *explicit_parent_path;
->  	int dest_dir_chroot;
->  
->  	struct subvol_info *cur_subvol;
-> @@ -220,20 +221,32 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
->  		fprintf(stderr, "receiving snapshot %s uuid=%s, "
->  				"ctransid=%llu ", path, uuid_str,
->  				r->cur_subvol->stransid);
-> -		uuid_unparse(parent_uuid, uuid_str);
-> -		fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
-> -				uuid_str, parent_ctransid);
->  	}
->  
->  	memset(&args_v2, 0, sizeof(args_v2));
->  	strncpy_null(args_v2.name, path);
->  
-> -	parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
-> -			parent_ctransid, NULL, subvol_search_by_received_uuid);
-> -	if (!parent_subvol) {
-> +	if (r->explicit_parent_path) {
-> +		if (g_verbose) {
-> +			fprintf(stderr, "using explicit parent %s\n",
-> +					r->explicit_parent_path);
-> +		}
-> +		parent_subvol = subvol_uuid_search(&r->sus, 0, NULL,
-> +			0, r->explicit_parent_path, subvol_search_by_path);
-
-This won't work if you receive more than one snapshot, each one derived
-from the previous one ("btrfs send -e snap1 snap2 snap3 snap4"). You
-would always use the first one as the parent, not the predecessor.
-That's implemented differently for the -p option in
-git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
-
-
-> +	} else {
-> +		if (g_verbose) {
-> +			uuid_unparse(parent_uuid, uuid_str);
-> +			fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
-> +					uuid_str, parent_ctransid);
-> +		}
->  		parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
-> -				parent_ctransid, NULL, subvol_search_by_uuid);
-> +			parent_ctransid, NULL, subvol_search_by_received_uuid);
-> +		if (!parent_subvol) {
-> +			parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
-> +					parent_ctransid, NULL, subvol_search_by_uuid);
-> +		}
-
-This used to be a search for the received_uuid only. Why is this code
-changed like this in the branch that is executed when -p is not
-specified, in a patch that has the goal to add -p with new functionality
-if -p is specified?
-
-
->  	}
-> +
->  	if (!parent_subvol) {
->  		ret = -ENOENT;
->  		fprintf(stderr, "ERROR: could not find parent subvolume\n");
-> @@ -962,11 +975,14 @@ int cmd_receive(int argc, char **argv)
->  			{ NULL, 0, NULL, 0 }
->  		};
->  
-> -		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
-> +		c = getopt_long(argc, argv, "Cevf:p:", long_opts, NULL);
->  		if (c < 0)
->  			break;
->  
->  		switch (c) {
-> +		case 'p':
-> +			r.explicit_parent_path = optarg;
-> +			break;
->  		case 'v':
->  			g_verbose++;
->  			break;
-> @@ -1028,6 +1044,8 @@ const char * const cmd_receive_usage[] = {
->  	"                 in the data stream. Without this option,",
->  	"                 the receiver terminates only if an error",
->  	"                 is recognized or on EOF.",
-> +	"-p <subvol>      Disables the automatic searching for parents",
-> +	"                 if incremental streams are received.",
->  	"-C|--chroot      confine the process to <mount> using chroot",
->  	"--max-errors <N> Terminate as soon as N errors happened while",
->  	"                 processing commands from the send stream.",
+> btrfs device delete missing
 > 
+> That, along with a bunch of other likely helpful information, is covered
+> on the wiki:
+> 
+> https://btrfs.wiki.kernel.org
+> 
+> Specifically for that (reassemble from the wrap, too lazy to fiddle with
+> it on my end):
+> 
+> https://btrfs.wiki.kernel.org/index.php/
+> Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+> 
+> But since it was a four-device raid10 and four devices is the minimum for
+> that, I don't believe it'll let you delete until you device add, first.
+
+Thanks for your answer. I know the stuff of that page, but since it is 
+possible to use btrfs replace on a missing device I wanted to try that 
+approach.
+
+> 
+> Of course that means probably some hours for the add, then some more
+> hours for the delete missing, during which you obviously hope not to lose
+> another device.  Of course the sysadmin's backup rule of thumb applies --
+> if you don't have a backup, by definition, loss of the data isn't a big
+> deal, or you'd have it backed up.  (And the corollary, it's not a backup
+> until it's tested, applies as well.)  So you shouldn't have to worry
+> about loss of a second device during that time, because it's either
+> backed up or the data isn't worth the trouble to backup and thus loss of
+> it with the loss of a second device isn't a big deal.
+
+Well, of course, there is a backup on a different machine. Its in the same 
+room, but who has the luxury for off-site backups in a home-use setting! :)
+
+> 
+> That page doesn't seem to cover direct replacement, probably because the
+> replace command is new and it hasn't been updated.  But AFAIK replace
+> doesn't work with a missing device anyway; it's the fast way to replace a
+> still listed device, so you don't have to add and then delete, but the
+> device has to still be there in ordered to use that shortcut.  (You could
+> try using missing with the -r option tho, just in case it works now.  The
+> wiki/manpage is a bit vague on that point.)
+> 
+> > Btw, the file system is too old for skinny metadata and extended inode
+> > refs. If I do a btrfs replace or a btrfs device add, must I myself
+> > ensure that the new features are not enables for the new device which is
+> > to be added?
+> 
+> I don't believe there's any way to set that manually even if you wanted
+> to -- you don't use mkfs on it and the add/replace would overwrite
+> existing if you did.  The new device should just take on the attributes
+> of the filesystem you're adding it to.
+
+ Good to know.
+
+Thanks
 

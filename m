@@ -1,117 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28485 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932245AbbD0HhL (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:28398 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932137AbbD0HhI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 03:37:11 -0400
+	Mon, 27 Apr 2015 03:37:08 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, m_btrfs@ml1.co.uk
-Subject: [PATCH 8/8] Btrfs: use btrfs_scratch_superblock() in btrfs_rm_device()
-Date: Mon, 27 Apr 2015 15:34:15 +0800
-Message-Id: <1430120055-10381-9-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 6/8] Btrfs: add btrfs_read_dev_one_super() to read one specific SB
+Date: Mon, 27 Apr 2015 15:34:13 +0800
+Message-Id: <1430120055-10381-7-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 References: <1429525756-2727-2-git-send-email-anand.jain@oracle.com>
  <1430120055-10381-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With the previous patches now the btrfs_scratch_superblock()
-is ready to be used in btrfs_rm_device() so use it.
+This uses a chunk of code from btrfs_read_dev_super() and creates
+a function called btrfs_read_dev_one_super() so that next patch
+can use it for scratch superblock.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c | 69 ++++--------------------------------------------------
- 1 file changed, 5 insertions(+), 64 deletions(-)
+ fs/btrfs/disk-io.c | 54 ++++++++++++++++++++++++++++++++++--------------------
+ fs/btrfs/disk-io.h |  2 ++
+ 2 files changed, 36 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4fd7010..d722ee5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1659,9 +1659,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_device *next_device;
--	struct block_device *bdev = NULL;
--	struct buffer_head *bh = NULL;
--	struct btrfs_super_block *disk_super = NULL;
- 	struct btrfs_fs_devices *cur_devices;
- 	u64 num_devices;
- 	int ret = 0;
-@@ -1783,68 +1780,12 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- 	 * remove it from the devices list and zero out the old super
- 	 */
- 	if (clear_super) {
--		u64 bytenr;
--		int i;
--
--		if (!disk_super) {
--			ret = btrfs_get_bdev_and_sb(dev_name,
--					    FMODE_WRITE | FMODE_EXCL,
--					    root->fs_info->bdev_holder, 0,
--					    &bdev, &bh);
--			if (ret) {
--				/*
--				 * It could be a failed device ok for clear_super
--				 * to fail. So return success
--				 */
--				ret = 0;
--				goto out;
--			}
--
--			disk_super = (struct btrfs_super_block *)bh->b_data;
--		}
--		/* make sure this device isn't detected as part of
--		 * the FS anymore
--		 */
--		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--		set_buffer_dirty(bh);
--		sync_dirty_buffer(bh);
--		brelse(bh);
--
--		/* clear the mirror copies of super block on the disk
--		 * being removed, 0th copy is been taken care above and
--		 * the below would take of the rest
--		 */
--		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
--			bytenr = btrfs_sb_offset(i);
--			if (bytenr + BTRFS_SUPER_INFO_SIZE >=
--					i_size_read(bdev->bd_inode))
--				break;
--
--			bh = __bread(bdev, bytenr / 4096,
--					BTRFS_SUPER_INFO_SIZE);
--			if (!bh)
--				continue;
--
--			disk_super = (struct btrfs_super_block *)bh->b_data;
--
--			if (btrfs_super_bytenr(disk_super) != bytenr ||
--				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
--				brelse(bh);
--				continue;
--			}
--			memset(&disk_super->magic, 0,
--						sizeof(disk_super->magic));
--			set_buffer_dirty(bh);
--			sync_dirty_buffer(bh);
--			brelse(bh);
--		}
--
--		if (bdev) {
--			/* Notify udev that device has changed */
--			btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
-+		struct block_device *bdev;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f47c643..3681e1e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3085,6 +3085,37 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+ 	put_bh(bh);
+ }
  
--			/* Update ctime/mtime for device path for libblkid */
--			update_dev_time(dev_name);
-+		bdev = blkdev_get_by_path(dev_name, FMODE_READ | FMODE_EXCL,
-+						root->fs_info->bdev_holder);
-+		if (!IS_ERR(bdev)) {
-+			btrfs_scratch_superblock(bdev, dev_name);
- 			blkdev_put(bdev, FMODE_READ | FMODE_EXCL);
- 		}
- 	}
++int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
++			struct buffer_head **bh)
++{
++	struct buffer_head *bufhead;
++	struct btrfs_super_block *super;
++	u64 bytenr;
++
++	bytenr = btrfs_sb_offset(copy_num);
++	if (bytenr + BTRFS_SUPER_INFO_SIZE >= i_size_read(bdev->bd_inode))
++		return -EINVAL;
++
++	bufhead = __bread(bdev, bytenr / 4096, BTRFS_SUPER_INFO_SIZE);
++	/*
++	 * If we fail to read from the underlaying drivers, as of now
++	 * the best option we have is to mark it EIO.
++	 */
++	if (!bufhead)
++		return -EIO;
++
++	super = (struct btrfs_super_block *)bufhead->b_data;
++	if (btrfs_super_bytenr(super) != bytenr ||
++		    btrfs_super_magic(super) != BTRFS_MAGIC) {
++		brelse(bufhead);
++		return -EINVAL;
++	}
++
++	*bh = bufhead;
++	return 0;
++}
++
++
+ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+ {
+ 	struct buffer_head *bh;
+@@ -3092,7 +3123,6 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+ 	struct btrfs_super_block *super;
+ 	int i;
+ 	u64 transid = 0;
+-	u64 bytenr;
+ 	int ret = -EINVAL;
+ 
+ 	/* we would like to check all the supers, but that would make
+@@ -3101,28 +3131,12 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+ 	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+ 	 */
+ 	for (i = 0; i < 1; i++) {
+-		bytenr = btrfs_sb_offset(i);
+-		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+-					i_size_read(bdev->bd_inode))
+-			break;
+-		bh = __bread(bdev, bytenr / 4096,
+-					BTRFS_SUPER_INFO_SIZE);
+-		/*
+-		 * If we fail to read from the underlaying drivers, as of now
+-		 * the best option we have is to mark it EIO.
+-		 */
+-		if (!bh) {
+-			ret = -EIO;
++
++		ret = btrfs_read_dev_one_super(bdev, i, &bh);
++		if (ret)
+ 			continue;
+-		}
+ 
+ 		super = (struct btrfs_super_block *)bh->b_data;
+-		if (btrfs_super_bytenr(super) != bytenr ||
+-		    btrfs_super_magic(super) != BTRFS_MAGIC) {
+-			brelse(bh);
+-			ret = -EINVAL;
+-			continue;
+-		}
+ 
+ 		if (!latest || btrfs_super_generation(super) > transid) {
+ 			brelse(latest);
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 27d44c0..36bd1fc 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -60,6 +60,8 @@ void close_ctree(struct btrfs_root *root);
+ int write_ctree_super(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int max_mirrors);
+ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
++int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
++			struct buffer_head **bh);
+ int btrfs_commit_super(struct btrfs_root *root);
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
+ 					    u64 bytenr);
 -- 
 2.0.0.153.g79dcccc
 

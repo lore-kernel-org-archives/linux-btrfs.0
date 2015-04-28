@@ -1,178 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34373 "EHLO plane.gmane.org"
+Received: from mail.kernel.org ([198.145.29.136]:39418 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932293AbbD1G1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Apr 2015 02:27:40 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YmyzM-00028R-3q
-	for linux-btrfs@vger.kernel.org; Tue, 28 Apr 2015 08:27:34 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 08:27:24 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 08:27:24 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: help on broken file system
-Date: Tue, 28 Apr 2015 06:27:16 +0000 (UTC)
-Message-ID: <pan$a40d6$92516c5$38662177$7c6f432f@cox.net>
-References: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1753471AbbD1Gt3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Apr 2015 02:49:29 -0400
+From: Ming Lin <mlin@kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Dongsu Park <dongsu.park@profitbricks.com>, Ming Lin <mlin@kernel.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 05/10] btrfs: remove bio splitting and merge_bvec_fn() calls
+Date: Mon, 27 Apr 2015 23:48:32 -0700
+Message-Id: <1430203717-13307-6-git-send-email-mlin@kernel.org>
+In-Reply-To: <1430203717-13307-1-git-send-email-mlin@kernel.org>
+References: <1430203717-13307-1-git-send-email-mlin@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ermanno Baschiera posted on Mon, 27 Apr 2015 15:39:14 +0200 as excerpted:
+From: Kent Overstreet <kent.overstreet@gmail.com>
 
-> I have a 3 disks file system configured in RAID1, created with Ubuntu
-> 13.10 (if I recall correctly). Last friday I upgraded my system from
-> Ubuntu 14.10 (kernel 3.16.0) to 15.04 (kernel 3.19.0). Then I started to
-> notice some malfunctions (errors on cron scripts, my time machine asking
-> to perform a full backup, high load, etc.). On saturday I rebooted the
-> system and it booted in readonly. I tried to reboot it and it didn't 
-boot
-> anymore, stuck at mounting the disks.
-> So I booted with a live Ubuntu 15.05 which could not mount my disks,
-> even with "-o recovery,". Then I switched to Fedora beta with kernel
-> 4.0.0-0.rc5. I did a "btrfs check" and got a lot of "parent transid 
-verify
-> failed on 8328801964032 wanted 1568448 found 1561133".
-> Reading on docs and Stack Exchange, I decided to try a "btrfs restore"
-> to backup my data. Having not a spare disk, and being the file system a
-> RAID1, I decided to use one of the 3 disks as target for the restore. I
-> formatted it in EXT4 and tried the restore. The process stopped after 
-one
-> minute, ending with errors.
-> Then I tried to "btrfs-zero-log" the file system, but I noticed that
-> running it multiple times, it was giving me the same amount of messages,
-> making me think it wasn't fixing anything.
-> So I run a "btrfs rescue chunk-recover". After that, I still not being
-> able to mount the system (with parameters -o recovery,degraded,ro).
-> I'm not sure about what to do now. Can someone give me some advice?
-> My possible steps are (if I understand correctly):
-> - try the "btrfs rescue super-recover"
-> - try the "btrfs check --repair"
+Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
+device limits as well as calling ->merge_bvec_fn() etc. That is not
+necessary any more, because generic_make_request() is now able to
+handle arbitrarily sized bios. So clean up unnecessary code paths.
 
-Sysadmin's backup rule of thumb:  If the data is valuable to you, it's 
-backed up.  If it's not backed up, by definition, you consider it less 
-valuable to you than the time and money you're saving by not backing it 
-up, or it WOULD be backed up.  No exceptions.
-
-And the corollary:  A backup is not a backup until you have tested your 
-ability to actually use it.  An untested "will-be backup" is therefore 
-not yet a backup, as the backup job is not yet completed until it is 
-tested usable.
-
-Given that btrfs isn't yet fully stable and mature, those rules apply to 
-it even more than they apply to other, more stable and mature filesystems.
-
-So... no problem.  If you have a backup, restore from it and be happy.  
-If you don't, as seems to be the case, then by definition, you considered 
-the time and money saved by not doing that backup more valuable than the 
-data, and you still have that time and money you saved, so again, no 
-problem.
-
-
-OK, so you unfortunately may have learned that the hard way...  Lesson 
-learned, is there any hope?
-
-Actually, yes, and you were on the right track with restore, you just 
-haven't gone far enough with it yet, using only its defaults, which as 
-you've seen, don't always work.  But with a strong dose of patience, some 
-rather fine-point effort, and some luck... hopefully... =:^)
-
-The idea is to use btrfs-find-root along with the advanced btrfs restore 
-options to find an older root commit (btrfs' copy-on-write nature means 
-there's generally quite a few older generations still on the device(s)) 
-that contains as much of the data you're trying to save as possible.  
-There's a writeup on the wiki about it, but last I checked, it was rather 
-outdated.  Still, you should be able to use it as a start, and with some 
-trial and error...
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-Basically, your above efforts stopped at the "really lucky" stage.  
-Obviously you aren't that lucky, so you gotta do the "advanced usage" 
-stuff.
-
-A few hints that I found helpful last time I had to use it.[1]
-
-* Use current btrfs-progs for the best chance at successful restoration.  
-As of a few days ago, that was v3.19.1, the version I'm referring to in 
-the points below.
-
-* "Generation" and "transid" (transaction ID) are the same thing.  
-Fortunately the page actually makes this a bit more explicit than it used 
-to, as this key to understanding the output, which also makes it worth 
-repeating, just in case.
-
-* Where the page says pick the tree root with the largest set of 
-filesystem trees, use restore's -l option to see those trees.  (The page 
-doesn't say how to see the set, just to use the largest set.)
-
-* Use btrfs-show-super to list what the filesystem thinks is the current 
-transid/generation, and btrfs-find-root to find older candidate 
-transids.  
-
-* Feed the bytenrs (byte numbers) from find-root to restore using the -t 
-option (as the page mentions), first with -l to see if it gives you a 
-full list of filesystem trees, then with -D (dry run, which didn't exist 
-when the page was written) to see if you get a good list of files.
-
-* Restore's -D (dry run) can be used to see what it thinks it can 
-restore.  It's a file list so will likely be long.  You thus might want 
-to redirect it to a file or pipe it to a pager for further examination.
-
-* In directories with lots of files, restore will loop enough it can 
-think it's not making progress, and will prompt you to continue or not.  
-You'll obviously want to continue if you want all the files in that dir 
-restored.  (Back when I ran it, it just gave up, and I had to run it 
-repeatedly, getting more files each time, to get them all.)
-
-* Restore currently only restores file data, not metadata like dates, 
-ownership/permission, etc, and not symlinks.  Files are written as owned 
-by the user and group (probably root:root ) you're running restore as, 
-using the current UMASK.  When I ran restore, since I had a stale backup 
-as well, I whipped up a script to compared to it, and where the file 
-existed in the backup too, the script used the backup file as a reference 
-to reset ownership/perms.  That left only the files new enough not to be 
-in the backup to deal with, and there were relatively few of those.  I 
-had to recreate the symlinks manually.
-
-There are still very new (less than a week old) patches on the list that 
-let restore optionally restore ownership/perms/symlinks, too.  Depending 
-on what you're restoring, it may be well worth your time to rebuild btrfs-
-progs with these patches applied, letting you avoid having to do the 
-fixups I had to do when I had to use restore.
-
-
-
-Given enough patience and the technical literacy to piece things together 
-from the outdated page, the above hints, and the output as you get it, 
-chances are reasonably good that you'll be able to successfully restore 
-most of your files.  Btrfs' COW nature makes the techniques restore uses 
-surprisingly effective, but it does take a bit of reading between the 
-lines to figure things out, and nerves of steel while you're working on 
-it.  The exception would be a filesystem that's simply so heavily damaged 
-there's just not enough of the trees, of /any/ generation, left to make 
-sense of things.
-
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
+Signed-off-by: Chris Mason <clm@fb.com>
+[dpark: add more description in commit message]
+Signed-off-by: Dongsu Park <dongsu.park@profitbricks.com>
+Signed-off-by: Ming Lin <mlin@kernel.org>
 ---
-[1] FWIW, I had a backup, but it wasn't as current as I wanted, and it 
-turned out restore gave me newer copies than my stale backup of many 
-files.  In keeping with the above rule, the data was valuable enough to 
-me to back it up, but obviously not valuable enough to me to consistently 
-update that backup...  If I'd have lost everything from the backup on, 
-I'd have been not exactly happy, but I'd have considered it fair for the 
-backup time/energy/money invested.  Restore thus simply let me get a 
-better deal than I actually deserved... which actually happens enough 
-that I'm obviously willing to play the odds...
+ fs/btrfs/volumes.c | 72 ------------------------------------------------------
+ 1 file changed, 72 deletions(-)
 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8bcd2a0..de84f18 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5708,34 +5708,6 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
+ 				 &device->work);
+ }
+ 
+-static int bio_size_ok(struct block_device *bdev, struct bio *bio,
+-		       sector_t sector)
+-{
+-	struct bio_vec *prev;
+-	struct request_queue *q = bdev_get_queue(bdev);
+-	unsigned int max_sectors = queue_max_sectors(q);
+-	struct bvec_merge_data bvm = {
+-		.bi_bdev = bdev,
+-		.bi_sector = sector,
+-		.bi_rw = bio->bi_rw,
+-	};
+-
+-	if (WARN_ON(bio->bi_vcnt == 0))
+-		return 1;
+-
+-	prev = &bio->bi_io_vec[bio->bi_vcnt - 1];
+-	if (bio_sectors(bio) > max_sectors)
+-		return 0;
+-
+-	if (!q->merge_bvec_fn)
+-		return 1;
+-
+-	bvm.bi_size = bio->bi_iter.bi_size - prev->bv_len;
+-	if (q->merge_bvec_fn(q, &bvm, prev) < prev->bv_len)
+-		return 0;
+-	return 1;
+-}
+-
+ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 			      struct bio *bio, u64 physical, int dev_nr,
+ 			      int rw, int async)
+@@ -5769,38 +5741,6 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 		btrfsic_submit_bio(rw, bio);
+ }
+ 
+-static int breakup_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+-			      struct bio *first_bio, struct btrfs_device *dev,
+-			      int dev_nr, int rw, int async)
+-{
+-	struct bio_vec *bvec = first_bio->bi_io_vec;
+-	struct bio *bio;
+-	int nr_vecs = bio_get_nr_vecs(dev->bdev);
+-	u64 physical = bbio->stripes[dev_nr].physical;
+-
+-again:
+-	bio = btrfs_bio_alloc(dev->bdev, physical >> 9, nr_vecs, GFP_NOFS);
+-	if (!bio)
+-		return -ENOMEM;
+-
+-	while (bvec <= (first_bio->bi_io_vec + first_bio->bi_vcnt - 1)) {
+-		if (bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len) {
+-			u64 len = bio->bi_iter.bi_size;
+-
+-			atomic_inc(&bbio->stripes_pending);
+-			submit_stripe_bio(root, bbio, bio, physical, dev_nr,
+-					  rw, async);
+-			physical += len;
+-			goto again;
+-		}
+-		bvec++;
+-	}
+-
+-	submit_stripe_bio(root, bbio, bio, physical, dev_nr, rw, async);
+-	return 0;
+-}
+-
+ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ {
+ 	atomic_inc(&bbio->error);
+@@ -5875,18 +5815,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 			continue;
+ 		}
+ 
+-		/*
+-		 * Check and see if we're ok with this bio based on it's size
+-		 * and offset with the given device.
+-		 */
+-		if (!bio_size_ok(dev->bdev, first_bio,
+-				 bbio->stripes[dev_nr].physical >> 9)) {
+-			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
+-						 dev_nr, rw, async_submit);
+-			BUG_ON(ret);
+-			continue;
+-		}
+-
+ 		if (dev_nr < total_devs - 1) {
+ 			bio = btrfs_bio_clone(first_bio, GFP_NOFS);
+ 			BUG_ON(!bio); /* -ENOMEM */
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.9.1
 

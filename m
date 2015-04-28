@@ -1,155 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.217]:52667 "EHLO
-	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964816AbbD0T3T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 15:29:19 -0400
-Message-ID: <553E8E0A.6060609@giantdisaster.de>
-Date: Mon, 27 Apr 2015 21:29:14 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: lauri <lauri.vosandi@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: receive explicit parent support
-References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>	<553DE512.7080606@giantdisaster.de> <CAJ1pDqRsVdTHs0Yki9yrT1ibC7mTn9_Z7JEpZdLb2OJd7z+8Aw@mail.gmail.com>
-In-Reply-To: <CAJ1pDqRsVdTHs0Yki9yrT1ibC7mTn9_Z7JEpZdLb2OJd7z+8Aw@mail.gmail.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:59072 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751967AbbD1Et7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Apr 2015 00:49:59 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YmxSy-0001RB-HR
+	for linux-btrfs@vger.kernel.org; Tue, 28 Apr 2015 06:49:52 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 06:49:52 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 06:49:52 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs-progs BTRFS mounted with -o recovery showing no errors on
+ scrub - minor
+Date: Tue, 28 Apr 2015 04:49:46 +0000 (UTC)
+Message-ID: <pan$74b1$6f200c1f$ea194380$e1e64066@cox.net>
+References: <D06066B0-F26E-4F1D-BFF5-E6BC8CDB68B1@plack.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4/27/2015 11:23 AM, lauri wrote:
-> Hi,
->
->> This won't work if you receive more than one snapshot, each one derived
->> from the previous one ("btrfs send -e snap1 snap2 snap3 snap4"). You
->> would always use the first one as the parent, not the predecessor.
->> That's implemented differently for the -p option in
->> git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
->
-> I'll take another look on the multi-subvolume stream mode.
->
->> This used to be a search for the received_uuid only. Why is this code
->> changed like this in the branch that is executed when -p is not
->> specified, in a patch that has the goal to add -p with new functionality
->> if -p is specified?
->
-> Many things have changed since far-progs, take a look in the original
-> source I used as basis for my patch:
->
-> https://github.com/kdave/btrfs-progs/blob/1b7dd327f43777bcdd217a0500e6bda78128a290/cmds-receive.c#L233
->
-> I am pretty sure lookup logic isn't affected if -p is not used.
+Anthony Plack posted on Mon, 27 Apr 2015 07:51:14 -0500 as excerpted:
 
-You are right! My bad, not looking precisely enough. Before the patch, 
-the code did the two lookups as well.
+> This may be by design since the driver is handling the errors. When the
+> drive is mounted with -o recovery, and then a scrub is performed, scrub
+> will show no errors. 
+> 
+> fatdrive ~ # dmesg | tail
+> [35348.694291] repair_io_failure: 4 callbacks suppressed
+> [35348.694297] BTRFS: read error corrected: ino 1 off 93863407616 (dev /dev/sds sector 183326968)
+> [35351.029568] BTRFS (device sdt): parent transid verify failed on 8392192475136 wanted 148989 found 147789
+> [35351.048101] BTRFS: read error corrected: ino 1 off 8392192475136 (dev /dev/sds sector 2314785632)
+> [35470.018881] BTRFS (device sdt): parent transid verify failed on 94051291136 wanted 150686 found 150687
+> [35470.150372] BTRFS (device sdt): parent transid verify failed on 94051291136 wanted 150686 found 150687
+> [35948.602971] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
+> [35948.608723] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
+> [36114.453009] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
+> [36114.472586] BTRFS (device sdt): parent transid verify failed on 94238015488 wanted 150690 found 150691
+> fatdrive ~ # btrfs scrub status /mnt/data
+> scrub status for f591ac13-1a69-476d-bd30-346f87a491da
+> 	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 2651 seconds
+> 	total bytes scrubbed: 2.39TiB with 0 errors
+> 
+> I have reported this as issue 97351.
+> https://bugzilla.kernel.org/show_bug.cgi?id=97351
 
-But the first issue is real. One possible fix is to update 
-explicit_parent_path after each received snapshot.
+You misunderstand the type of errors scrub fixes, compared to what the
+above dmesg reflects.
 
+Scrub searches for and (if possible and not read-only) fixes only one
+type of errors, where the data stored in a block does not match the
+checksum recorded for that block, thus indicating either in-transit
+or in-storage errors on the storage device itself, after btrfs
+calculated and stored the checksum for that data.  It's entirely
+possible for the data to match the checksum -- it's still the same
+data that btrfs sent to storage and the checksum matches (or it's
+something for which checksumming is specifically turned off, the 
+space-cache isn't checksummed IIRC, and setting NOCOW on a file
+will turn off checksumming as well) -- and thus come up clean on a
+scrub, but for that data to be invalid for some other reason.
 
->
-> 2015-04-27 9:28 GMT+02:00 Stefan Behrens <sbehrens@giantdisaster.de>:
->> On Sun, 26 Apr 2015 12:12:45 +0200, Lauri Võsandi wrote:
->>> This patch adds command-line flag -p to btrfs receive
->>> which makes it possible to disable automatic parent
->>> search for incremental snapshots and use explicitly
->>> specified path instead.
->>>
->>> Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
->>> ---
->>>   cmds-receive.c | 34 ++++++++++++++++++++++++++--------
->>>   1 file changed, 26 insertions(+), 8 deletions(-)
->>>
->>> diff --git a/cmds-receive.c b/cmds-receive.c
->>> index b7cf3f9..391d281 100644
->>> --- a/cmds-receive.c
->>> +++ b/cmds-receive.c
->>> @@ -61,6 +61,7 @@ struct btrfs_receive
->>>        char *root_path;
->>>        char *dest_dir_path; /* relative to root_path */
->>>        char *full_subvol_path;
->>> +     char *explicit_parent_path;
->>>        int dest_dir_chroot;
->>>
->>>        struct subvol_info *cur_subvol;
->>> @@ -220,20 +221,32 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
->>>                fprintf(stderr, "receiving snapshot %s uuid=%s, "
->>>                                "ctransid=%llu ", path, uuid_str,
->>>                                r->cur_subvol->stransid);
->>> -             uuid_unparse(parent_uuid, uuid_str);
->>> -             fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
->>> -                             uuid_str, parent_ctransid);
->>>        }
->>>
->>>        memset(&args_v2, 0, sizeof(args_v2));
->>>        strncpy_null(args_v2.name, path);
->>>
->>> -     parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
->>> -                     parent_ctransid, NULL, subvol_search_by_received_uuid);
->>> -     if (!parent_subvol) {
->>> +     if (r->explicit_parent_path) {
->>> +             if (g_verbose) {
->>> +                     fprintf(stderr, "using explicit parent %s\n",
->>> +                                     r->explicit_parent_path);
->>> +             }
->>> +             parent_subvol = subvol_uuid_search(&r->sus, 0, NULL,
->>> +                     0, r->explicit_parent_path, subvol_search_by_path);
->>
->> This won't work if you receive more than one snapshot, each one derived
->> from the previous one ("btrfs send -e snap1 snap2 snap3 snap4"). You
->> would always use the first one as the parent, not the predecessor.
->> That's implemented differently for the -p option in
->> git://git.kernel.org/pub/scm/linux/kernel/git/arne/far-progs.git
->>
->>
->>> +     } else {
->>> +             if (g_verbose) {
->>> +                     uuid_unparse(parent_uuid, uuid_str);
->>> +                     fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
->>> +                                     uuid_str, parent_ctransid);
->>> +             }
->>>                parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
->>> -                             parent_ctransid, NULL, subvol_search_by_uuid);
->>> +                     parent_ctransid, NULL, subvol_search_by_received_uuid);
->>> +             if (!parent_subvol) {
->>> +                     parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
->>> +                                     parent_ctransid, NULL, subvol_search_by_uuid);
->>> +             }
->>
->> This used to be a search for the received_uuid only. Why is this code
->> changed like this in the branch that is executed when -p is not
->> specified, in a patch that has the goal to add -p with new functionality
->> if -p is specified?
->>
->>
->>>        }
->>> +
->>>        if (!parent_subvol) {
->>>                ret = -ENOENT;
->>>                fprintf(stderr, "ERROR: could not find parent subvolume\n");
->>> @@ -962,11 +975,14 @@ int cmd_receive(int argc, char **argv)
->>>                        { NULL, 0, NULL, 0 }
->>>                };
->>>
->>> -             c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
->>> +             c = getopt_long(argc, argv, "Cevf:p:", long_opts, NULL);
->>>                if (c < 0)
->>>                        break;
->>>
->>>                switch (c) {
->>> +             case 'p':
->>> +                     r.explicit_parent_path = optarg;
->>> +                     break;
->>>                case 'v':
->>>                        g_verbose++;
->>>                        break;
->>> @@ -1028,6 +1044,8 @@ const char * const cmd_receive_usage[] = {
->>>        "                 in the data stream. Without this option,",
->>>        "                 the receiver terminates only if an error",
->>>        "                 is recognized or on EOF.",
->>> +     "-p <subvol>      Disables the automatic searching for parents",
->>> +     "                 if incremental streams are received.",
->>>        "-C|--chroot      confine the process to <mount> using chroot",
->>>        "--max-errors <N> Terminate as soon as N errors happened while",
->>>        "                 processing commands from the send stream.",
->>>
+In this case the other reason is that the (commit) generation number
+(aka transaction id, transid) is off.  The wanted transid on the
+last one, for instance, is 150690, but it found a transid one
+higher than that.
+
+Which AFAIK[1] is actually expected when one has to mount with recovery,
+since while the generation number is normally monotonically
+increasing and thus under /normal/ operation you should never see a
+found value /higher/ than wanted, mounting with recovery gives btrfs
+explicit permission to use and older generation (with btrfs being
+copy-on-write, there will be many older generations still available
+on-device) if it has to.
+
+So what seems to have occurred here is that you used recovery to
+allow btrfs to use an older generation where it needed to, and it
+needed to do just that for some of the subtrees, falling one
+commit generation back.  But some others were actually current,
+which is why you're getting a wanted (which matches the generation
+chosen for recovery, one back) that's one lower than found, for
+these subtrees.
+
+Bottom line, the checksums are apparently fine, so scrub won't
+see anything wrong, no matter how invalid the data that was
+actually sent to the device to store.
+
+Which will make that bug invalid...  unless it gets turned
+into a documentation bug suggesting the btrfs-scrub documentation
+be made more explicit on this point.  Which might actually be
+considered a valid bug, depending on how data error detection
+and correction technology knowledgeable we expect our users to
+be.  Professional sysadmins should know this stuff from raid
+and the like and it shouldn't need explained to them, but
+ordinary personal machine users and sysadmins likely won't.
+
+---
+[1] AFAIK:  I'm a btrfs user and list regular, not a dev.
+This is my understanding based on the presented evidence
+and what I do know about recovery, that being that it
+allows falling back a few generations if necessary, and
+about generation aka transid numbers and btrfs commit
+behavior.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

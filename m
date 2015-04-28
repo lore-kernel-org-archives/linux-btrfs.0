@@ -1,46 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46445 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932786AbbD1JUs (ORCPT
+Received: from mail.lqfe.com ([72.14.186.34]:53806 "EHLO mail.lqfe.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965567AbbD1MeZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Apr 2015 05:20:48 -0400
-Message-ID: <553F50E3.6060002@oracle.com>
-Date: Tue, 28 Apr 2015 17:20:35 +0800
-From: Anand Jain <anand.jain@oracle.com>
-MIME-Version: 1.0
-To: Ermanno Baschiera <ebaschiera@gmail.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: help on broken file system
-References: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-In-Reply-To: <CAGMbsDWrzYi5jQTKhSfTn0YAbFKfcQzsMktuw5rM9yK17j3Urw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	Tue, 28 Apr 2015 08:34:25 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id C7EFB1608BC
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 07:34:24 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id 5vmzVTK_-gZE for <linux-btrfs@vger.kernel.org>;
+	Tue, 28 Apr 2015 07:34:24 -0500 (CDT)
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id 85F641609C0
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 07:34:24 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id 20SGoMsGrYK9 for <linux-btrfs@vger.kernel.org>;
+	Tue, 28 Apr 2015 07:34:24 -0500 (CDT)
+Received: from [192.168.168.20] (unknown [206.126.223.13])
+	by mail.lqfe.com (Postfix) with ESMTPSA id 4FD231608BC
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2015 07:34:24 -0500 (CDT)
+From: Anthony Plack <anthony@plack.net>
+Content-Type: text/plain; charset=utf-8
+Subject: parent transid verify failed
+Date: Tue, 28 Apr 2015 07:34:24 -0500
+References: <E18363B1-CD81-41F4-A03C-4D09AA669915@plack.net>
+To: linux-btrfs@vger.kernel.org
+Message-Id: <34469AC9-0D4E-46D9-8335-2EE10A449BA1@plack.net>
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I am running kernel 4.0 and btrfs-prog mainline.  I have a backup.
 
-> I have a 3 disks file system configured in RAID1, created with Ubuntu
+Of the following commands:
 
-::
+btrfs check —repair device
+btrfsck —repair device
+mount -t btrfs -o recovery device mount && btrfs scrub start mount
 
- > Having not a spare disk, and being the file system
- > a RAID1, I decided to use one of the 3 disks as target for the
- > restore. I formatted it in EXT4 and tried the restore. The process
-::
-> [liveuser@localhost ~]$ sudo btrfs fi show
-> warning, device 1 is missing
-> warning devid 1 not found already
+--none of them remove the "parent transid verify failed” errors from the disk.
 
+The disk was going to read-only.  The disk now mounts and seems to be fine.  However, these “errors” persist.
 
-> Label: none  uuid: 32eeac52-699b-4fa2-be61-06206910a37f
->      Total devices 3 FS bytes used 3.79TiB
->      devid    3 size 2.73TiB used 2.73TiB path /dev/sda
->      devid    4 size 2.73TiB used 2.73TiB path /dev/sdc2
->      *** Some devices missing
->
-> Btrfs v3.18.2
-
-
-Looks like you didn't use btrfs device del to remove a disk, FS still
-shows total devices as 3. presumably kernel knows about a device
-missing. then , 'btrfs device del missing /mnt' will be the first step. IMO.
-
+Is there any tool other than to zero the log, which will “repair” the log?

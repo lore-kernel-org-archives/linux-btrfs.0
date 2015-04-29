@@ -1,43 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from neo-zeon.de ([173.228.7.145]:47882 "EHLO neo-zeon.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751389AbbD2VqA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Apr 2015 17:46:00 -0400
-Received: from [192.168.74.143] ([97.64.124.16])
-	(authenticated bits=0)
-	by neo-zeon.de (8.14.9/8.14.9) with ESMTP id t3TLjvna001321
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2015 14:45:58 -0700 (PDT)
-	(envelope-from cam@neo-zeon.de)
-Message-ID: <55415110.9010609@neo-zeon.de>
-Date: Wed, 29 Apr 2015 14:45:52 -0700
-From: Cameron Berkenpas <cam@neo-zeon.de>
+Received: from magic.merlins.org ([209.81.13.136]:41833 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750937AbbD2XVd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Apr 2015 19:21:33 -0400
+Date: Wed, 29 Apr 2015 16:21:30 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: fdmanana@suse.com
+Subject: 3.19.3, btrfs send/receive error: failed to clone extents
+Message-ID: <20150429232130.GA23814@merlins.org>
 MIME-Version: 1.0
-To: BTRFS <linux-btrfs@vger.kernel.org>
-Subject: btrfs quota questions
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+I'm getting this from my send/receive job.
 
-I've successfully enabled quotas/qgroups in btrfs. I've also managed to 
-set a limit on a subvolume.
-
-I have 2 questions:
-
-1. Is there a command to retrieve the current quota limit set on a 
-subvolume? It seems odd that I can set a limit on a subvolume, but I 
-can't find out what that limit is.
-
-2. When using "btrfs qgroup show <path>", EVERY subvolume on the device 
-is listed. Is it possible to only list the subvolume given in the path?
-
-Ie, "btrfs qgroup show /home" would only show quota information for /home.
-
-Thanks!
-
--Cameron
+I'm just going to delete that one file since I don't need it anyway, but
+is this a known problem or something that would need more info from me?
 
 
+ERROR: failed to clone extents to merlin/.config/google-chrome-beta-42/Default/Application Cache/Cache/data_0
+Invalid argument
 
+ABORT: btrfs send -p /mnt/btrfs_pool1/home_ro.20150403_18:01:24 home_ro.20150429_15:01:24 |  btrfs receive /mnt/btrfs_pool2// failed
+
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,55 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:35563 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752052AbbDMVdS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Apr 2015 17:33:18 -0400
-Received: by pabtp1 with SMTP id tp1so114928835pab.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2015 14:33:18 -0700 (PDT)
-Date: Mon, 13 Apr 2015 14:33:17 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: Re: [PATCH RESEND] btrfs: unlock i_mutex after attempting to delete
- subvolume during send
-Message-ID: <20150413213317.GB4857@mew.cs.washington.edu>
-References: <00d6e1021fdd56192360d2eb0fb43130f3607fe1.1428700740.git.osandov@osandov.com>
+Received: from cantor2.suse.de ([195.135.220.15]:50327 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S966405AbbD2RTU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Apr 2015 13:19:20 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id B4F75AB1C
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2015 17:19:18 +0000 (UTC)
+Date: Wed, 29 Apr 2015 19:19:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: David Sterba <dsterba@suse.cz>, btrfs <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>
+Subject: Re: [PATCH][RFC] btrfs-progs: add 'du' command
+Message-ID: <20150429171918.GC4996@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20150423211206.GQ17170@wotan.suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <00d6e1021fdd56192360d2eb0fb43130f3607fe1.1428700740.git.osandov@osandov.com>
+In-Reply-To: <20150423211206.GQ17170@wotan.suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 10, 2015 at 02:20:40PM -0700, Omar Sandoval wrote:
-> Whenever the check for a send in progress introduced in commit
-> 521e0546c970 (btrfs: protect snapshots from deleting during send) is
-> hit, we return without unlocking inode->i_mutex. This is easy to see
-> with lockdep enabled:
-> 
-> [  +0.000059] ================================================
-> [  +0.000028] [ BUG: lock held when returning to user space! ]
-> [  +0.000029] 4.0.0-rc5-00096-g3c435c1 #93 Not tainted
-> [  +0.000026] ------------------------------------------------
-> [  +0.000029] btrfs/211 is leaving the kernel with locks still held!
-> [  +0.000029] 1 lock held by btrfs/211:
-> [  +0.000023]  #0:  (&type->i_mutex_dir_key){+.+.+.}, at: [<ffffffff8135b8df>] btrfs_ioctl_snap_destroy+0x2df/0x7a0
-> 
-> Make sure we unlock it in the error path.
-> 
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> Reviewed-by: David Sterba <dsterba@suse.cz>
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> ---
-> Just resending this with Filipe's and David's Reviewed-bys and Cc-ing
-> stable.
-> 
->  fs/btrfs/ioctl.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+On Thu, Apr 23, 2015 at 02:12:06PM -0700, Mark Fasheh wrote:
+> This patch adds a 'du' subcommand to btrfs. 'btrfs fi du' will
+> calculate disk usage of the target files using fiemap. For individual
+> files, it will report a count of total bytes, and exclusive (not
+> shared) bytes. We also calculate a 'set shared' value which is
+> described below.
 
-Ping.
+The functionality is useful, I personally like it and have seen people
+on irc to ask about this.
 
--- 
-Omar
+The question is whether we want to add this to a btrfs command or to the
+'du' utility itself. AFAICS it's not built around FIEMAP, so I guess
+this would be an intrusive change.
+
+> Following this paragraph is a very simple example. I started with a
+> clean btrfs fs in which i copied vmlinuz from /boot. I then made a
+> snapshot of the fs root in 'snap1'. After the snapshot, I made a 2nd
+> copy of vmlinuz into the main fs to give us some not-shared data. The
+> output below shows a sum of all the space, and a 'set shared' with len
+> exactly equal to that of the single shared file.
+> 
+> # btrfs fi du .
+> total	exclusive	set shared	filename
+> 4362240	0			./vmlinuz-4.0.0-rc7
+> 4362240	0			./snap1/vmlinuz-4.0.0-rc7
+> 4362240	0			./snap1
+> 4362240	4362240			./vmlinuz-4.0.0-rc7.copy
+> 13086720	4362240	4362240	.
+
+I guess the next thing people will want to see is the compressed size.
+
+> A git tree of the patches can be found here:
+> 
+> https://github.com/markfasheh/btrfs-progs-patches/tree/du
+
+The file interval_tree.h seems missing and build fails.

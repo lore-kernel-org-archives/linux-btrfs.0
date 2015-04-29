@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55030 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:36586 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1031478AbbD2CbZ (ORCPT
+	with ESMTP id S1031525AbbD2Cbc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Apr 2015 22:31:25 -0400
+	Tue, 28 Apr 2015 22:31:32 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3T2U9sP018330
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2015 10:30:09 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t3T2UGus018356
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2015 10:30:16 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 09/18] btrfs: qgroup: Add new function to record old_roots.
-Date: Wed, 29 Apr 2015 10:29:02 +0800
-Message-ID: <1430274551-9277-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 16/18] btrfs: ulist: Add ulist_del() function.
+Date: Wed, 29 Apr 2015 10:29:09 +0800
+Message-ID: <1430274551-9277-17-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,76 +19,113 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add function btrfs_qgroup_prepare_account_extents() to get old_roots
-which are needed for qgroup.
+This function will delete unode with given (val,aux) pair.
+And with this patch, seqnum for debug usage doesn't have any meaning
+now, so remove them.
 
-We do it in commit_transaction() and before switch_roots(), and only
-search commit_root, so it gives a quite accurate view for previous
-transaction.
-
-With old_roots from previous transaction, we can use it to do accurate
-account with current transaction.
----
-v2:
-  None
+This is used by later patches to skip snapshot root.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 27 +++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  2 ++
- 2 files changed, 29 insertions(+)
+v2:
+  None
+---
+ fs/btrfs/ulist.c | 47 ++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/ulist.h |  1 +
+ 2 files changed, 37 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 505f6f3..3040296 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1403,6 +1403,33 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
- 	return 0;
+diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
+index 840a38b..91feb2b 100644
+--- a/fs/btrfs/ulist.c
++++ b/fs/btrfs/ulist.c
+@@ -132,6 +132,15 @@ static struct ulist_node *ulist_rbtree_search(struct ulist *ulist, u64 val)
+ 	return NULL;
  }
  
-+int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
-+					 struct btrfs_fs_info *fs_info)
++static void ulist_rbtree_erase(struct ulist *ulist, struct ulist_node *node)
 +{
-+	struct btrfs_qgroup_extent_record *record;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct rb_node *node;
-+	int ret = 0;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	/*
-+	 * No need to do lock, since this function will only be called in
-+	 * btrfs_commmit_transaction().
-+	 */
-+	node = rb_first(&delayed_refs->dirty_extent_root);
-+	while (node) {
-+		record = rb_entry(node, struct btrfs_qgroup_extent_record,
-+				  node);
-+		ret = btrfs_find_all_roots(NULL, fs_info, record->bytenr, 0,
-+					   &record->old_roots);
-+		if (ret < 0)
-+			break;
-+		node = rb_next(node);
-+	}
-+	return ret;
++	rb_erase(&node->rb_node, &ulist->root);
++	list_del(&node->list);
++	kfree(node);
++	BUG_ON(ulist->nnodes == 0);
++	ulist->nnodes--;
 +}
 +
- struct btrfs_qgroup_extent_record
- *btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
- 				  struct btrfs_qgroup_extent_record *record)
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 7754d08..3b549cb 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -99,6 +99,8 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
- 			    u64 bytenr, u64 num_bytes,
- 			    enum btrfs_qgroup_operation_type type,
- 			    int mod_seq);
-+int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
-+					 struct btrfs_fs_info *fs_info);
- struct btrfs_qgroup_extent_record
- *btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
- 				  struct btrfs_qgroup_extent_record *record);
+ static int ulist_rbtree_insert(struct ulist *ulist, struct ulist_node *ins)
+ {
+ 	struct rb_node **p = &ulist->root.rb_node;
+@@ -197,9 +206,6 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 
+ 	node->val = val;
+ 	node->aux = aux;
+-#ifdef CONFIG_BTRFS_DEBUG
+-	node->seqnum = ulist->nnodes;
+-#endif
+ 
+ 	ret = ulist_rbtree_insert(ulist, node);
+ 	ASSERT(!ret);
+@@ -209,6 +215,33 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 	return 1;
+ }
+ 
++/*
++ * ulist_del - delete one node from ulist
++ * @ulist:	ulist to remove node from
++ * @val:	value to delete
++ * @aux:	aux to delete
++ *
++ * The deletion will only be done when *BOTH* val and aux matches.
++ * Return 0 for successful delete.
++ * Return > 0 for not found.
++ */
++int ulist_del(struct ulist *ulist, u64 val, u64 aux)
++{
++	struct ulist_node *node;
++
++	node = ulist_rbtree_search(ulist, val);
++	/* Not found */
++	if (!node)
++		return 1;
++
++	if (node->aux != aux)
++		return 1;
++
++	/* Found and delete */
++	ulist_rbtree_erase(ulist, node);
++	return 0;
++}
++
+ /**
+  * ulist_next - iterate ulist
+  * @ulist:	ulist to iterate
+@@ -237,15 +270,7 @@ struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_iterator *uiter)
+ 		uiter->cur_list = uiter->cur_list->next;
+ 	} else {
+ 		uiter->cur_list = ulist->nodes.next;
+-#ifdef CONFIG_BTRFS_DEBUG
+-		uiter->i = 0;
+-#endif
+ 	}
+ 	node = list_entry(uiter->cur_list, struct ulist_node, list);
+-#ifdef CONFIG_BTRFS_DEBUG
+-	ASSERT(node->seqnum == uiter->i);
+-	ASSERT(uiter->i >= 0 && uiter->i < ulist->nnodes);
+-	uiter->i++;
+-#endif
+ 	return node;
+ }
+diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
+index 4c29db6..a01a2c4 100644
+--- a/fs/btrfs/ulist.h
++++ b/fs/btrfs/ulist.h
+@@ -57,6 +57,7 @@ void ulist_free(struct ulist *ulist);
+ int ulist_add(struct ulist *ulist, u64 val, u64 aux, gfp_t gfp_mask);
+ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 		    u64 *old_aux, gfp_t gfp_mask);
++int ulist_del(struct ulist *ulist, u64 val, u64 aux);
+ 
+ /* just like ulist_add_merge() but take a pointer for the aux data */
+ static inline int ulist_add_merge_ptr(struct ulist *ulist, u64 val, void *aux,
 -- 
 2.3.6
 

@@ -1,57 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:38100 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932620AbbD0Nn5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Apr 2015 09:43:57 -0400
-Date: Mon, 27 Apr 2015 06:43:49 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: NeilBrown <neilb@suse.de>
-Cc: David Howells <dhowells@redhat.com>, Chris Mason <clm@fb.com>,
-        Al Viro <viro@ZenIV.linux.org.uk>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, Dave Chinner <david@fromorbit.com>,
-        linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: set FS_SUPPORTS_SEEK_HOLE flag.
-Message-ID: <20150427134349.GA11928@infradead.org>
-References: <20150420193347.29378d69@notabene.brown>
- <20150420052752.26554.13596.stgit@notabene.brown>
- <20150420052558.26554.97143.stgit@notabene.brown>
- <30419.1429519662@warthog.procyon.org.uk>
- <31824.1429523209@warthog.procyon.org.uk>
- <20150420094855.GA21116@infradead.org>
- <20150427154133.65f58366@notabene.brown>
+Received: from cantor2.suse.de ([195.135.220.15]:41163 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1422869AbbD2PS5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Apr 2015 11:18:57 -0400
+Date: Wed, 29 Apr 2015 17:18:55 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 3.19
+Message-ID: <20150429151855.GY4996@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150427154133.65f58366@notabene.brown>
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 27, 2015 at 03:41:33PM +1000, NeilBrown wrote:
-> Are you sure about NFSv4.2?
-> 
-> I see that it *can* report holes, but is there any guarantee that if you
-> create a new file and write only the 5th block, then READ_PLUS will reliably
-> report that the first 4 block are holes??
+Hi,
 
-FYI, I'm talking about SEEK here, not READ_PLUS but the issue is the
-same.
+btrfs-progs 4.0 have been released. There are few enhancments to
+subcommands restore, receive, resize and a few bugfixes elsewhere.
 
-> Because if it doesn't guarantee that, then NFSv4.2 doesn't fit the with the
-> others where SEEK_HOLE reliable reports holes.
-> On the other hand if NFSv4.2 *does* guarantee that then the current READ_PLUS
-> server patches are broken because they just use vfs_llseek and assume that
-> trust what it says.
+The zero-log functionality is now avaiable under 'rescue' so you can
+drop the standalone utility btrfs-zero-log from init ramdisks or other
+space-tight rescue environments.
 
-There is no quality of implementation guarantee in NFS, just like there
-isn't any in Linux.  It's very hard to have any hard guarantees without
-leaking specific implementation details like a block size.
+The version is 4.0 and matches kernel versioning, though there are no
+major changes or incompatibilities.
 
-> It would be really nice if SEEK_{DATA,HOLE} either reported holes reliably or
-> returned ENXIO, but I guess there was a goo reason not to do that.
+Changelog:
 
-It would hav been useful, but we went with the Solaris way of reporting
-a giant hole.  Solaris at least has a pathconf value telling you if
-real SEEK_{DATA,HOLE} are supported, but with Linus' hatred of that
-syscall we only have a bad emulation in glibc that isn't of much help
-here.
+* resize:
+  * don't accept file as an argument (it's confusing)
+  * print better error message in case of an error
+* restore: optionally restore metadata (time, mode, uid/gid)
+* receive: optionally enforce chroot
+* new rescue subcommand 'zero-log', same as btrfs-zero-log, but
+  now also part of the main utility
+* check:
+  * free space checks match kernel, fixes incorrect reports
+* convert: fix setting of checksum bit if --no-datasum is used
+* fsck.btrfs: don't print messages
+* fix quota rescan on PPC64 (mangled ioctl number)
+* test updates
+* documentation: files renamed to .asciidoc, misc fixups
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+Anand Jain (3):
+      Btrfs-progs: fix compile warnings
+      btrfs-progs: improve troubleshooting avoid duplicate error strings
+      btrfs-progs: fix typo in btrfs-device.txt
+
+Chen Hanxiao (1):
+      btrfs-progs doc: emphasis that only mounted device works for btrfs device stats
+
+Dan Merillat (2):
+      btrfs-progs: restore: optionally restore metadata
+      btrfs-progs: restore: document metadata restore.
+
+David Sterba (22):
+      btrfs-progs: convert tests: preserve test image permissions
+      btrfs-progs: tests: split make rule for fsck and convert tests, fix prerequisities
+      btrfs-progs: tests: remove duplicate output for fsck test 013
+      btrfs-progs: convert: use exact size for reading superblock
+      btrfs-progs: mkfs, deprecate leafsize and clean up the code
+      btrfs-progs: move feature parsing from mkfs to utils
+      btrfs-progs: print fs features filtered by a mask
+      btrfs-progs: cleanup option index argument from getopt_long
+      btrfs-progs: getopt, use symbolic name for argument requirements
+      btrfs-progs: Documentaion: rename to .asciidoc
+      btrfs-progs: fi resize: accept only directories as paths
+      btrfs-progs: cleanup, rename *disk_usage* files to usage
+      btrfs-progs: add zero-log to rescue command
+      btrfs-progs: restore: fix path leak in copy_metadata
+      btrfs-progs: restore: convert search_dir exit paths to a single return
+      btrfs-progs: restore: convert copy_file exit paths to a single return
+      btrfs-progs: check: fix compile warnings in del_file_extent_hole
+      btrfs-progs: restore: cleanup, use PATH_MAX
+      btrfs-progs: fix typos in restore help/doc
+      btrfs-progs: receive: unconditionally print if doing chroot
+      btrfs-progs: restore: don't misreport errors from search_dir
+      Btrfs progs v4.0
+
+George Wang (1):
+      btrfs-progs: fix btrfs quota rescan failed on PPC64 arch
+
+Josef Bacik (1):
+      btrfs-progs: check for matching free space in cache
+
+Lauri Võsandi (1):
+      btrfs-progs: optionally enforce chroot for btrfs receive
+
+Qu Wenruo (8):
+      btrfs-progs: convert: Make ext*_image file obey datacsum setting.
+      btrfs-progs: test-frame: Update variant names
+      btrfs-progs: fsck-tests: Remove duplicatesd TEST_MNT setup.
+      btrfs-progs: fsck-tests: Update 013-extent-tree-rebuild to use more test framework infrastructure.
+      btrfs-progs: fsck-tests: Add fallback TEST_DEV for test case 013
+      btrfs-progs: convert-tests: Update to use test framework infrastructure.
+      btrfs-progs: convert-tests: Add check for converted btrfs with regular file extent.
+      btrfs-progs: Doc: Add warning and note on btrfs-convert.
+
+WorMzy Tykashi (1):
+      btrfs-progs: use local btrfs-image in leaf corruption test
+
+Zach Brown (1):
+      btrfs-progs: silence fake fsck
+
+Zygo Blaxell (1):
+      btrfs-progs: report failure when resize ioctl fails

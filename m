@@ -1,41 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:22634 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750780AbbD2UWC (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:46879 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751794AbbD3Ad2 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Apr 2015 16:22:02 -0400
-Message-ID: <55413D65.4000204@fb.com>
-Date: Wed, 29 Apr 2015 16:21:57 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 29 Apr 2015 20:33:28 -0400
+Message-ID: <55417856.5060207@cn.fujitsu.com>
+Date: Thu, 30 Apr 2015 08:33:26 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
-CC: Shaohua Li <shli@fb.com>
-Subject: Re: [PATCH] Revert "btrfs: delete chunk allocation attemp when setting
- block group ro"
-References: <c99a895bc0facef23387ef7b44c98c0df41216fa.1429431096.git.osandov@osandov.com> <20150429182409.GA23155@mew.dhcp4.washington.edu>
-In-Reply-To: <20150429182409.GA23155@mew.dhcp4.washington.edu>
-Content-Type: text/plain; charset="windows-1252"
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Fix superblock csum type check.
+References: <1430183163-10870-1-git-send-email-quwenruo@cn.fujitsu.com> <20150429172307.GD4996@twin.jikos.cz>
+In-Reply-To: <20150429172307.GD4996@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/29/2015 02:24 PM, Omar Sandoval wrote:
-> On Sun, Apr 19, 2015 at 01:17:05AM -0700, Omar Sandoval wrote:
 
->> Holger reported this awhile ago and I haven't seen a proper fix make it
->> to the ML. I messed around with it for awhile and came up empty, but I
->> figured I might as well send this in. Applies to v4.0.
+
+-------- Original Message  --------
+Subject: Re: [PATCH] btrfs: Fix superblock csum type check.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年04月30日 01:23
+
+> On Tue, Apr 28, 2015 at 09:06:03AM +0800, Qu Wenruo wrote:
+>> Old csum type check is wrong and can't catch csum_type 1(not supported).
 >>
->>  fs/btrfs/extent-tree.c | 13 ++++++++-----
->>  1 file changed, 8 insertions(+), 5 deletions(-)
+>> Fix it to avoid hostile 0 division.
 >>
-> 
-> Has another fix for this shown up yet? Currently 4.0 and up can't
-> convert between data/metadata profiles, which seems like a pretty major
-> regression.
-> 
+>> Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>
+> Reviewed-by: David Sterba <dsterba@suse.cz>
+>
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -428,7 +428,7 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+>>
+>>   	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+>>   		printk(KERN_ERR "BTRFS: unsupported checksum algorithm %u\n",
+>> -				csum_type);
+>> +		       csum_type);
+>
+> Please avoid unrelated changes.
+Thanks for reviewing.
 
-I've got a fix in testing here, I'll get it out the door.
+Do I need to send a newer version to discard this format change?
 
--chris
-
-
+Thanks,
+Qu
+>
+>>   		ret = 1;
+>>   	}

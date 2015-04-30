@@ -1,243 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f175.google.com ([209.85.216.175]:33809 "EHLO
-	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030364AbbDWQw7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Apr 2015 12:52:59 -0400
-Received: by qcyk17 with SMTP id k17so12378615qcy.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2015 09:52:58 -0700 (PDT)
-Message-ID: <55392369.8020603@gmail.com>
-Date: Thu, 23 Apr 2015 12:52:57 -0400
-From: Dan Merillat <dan.merillat@gmail.com>
+Received: from mail.phunq.net ([184.71.0.62]:35072 "EHLO starbase.phunq.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750705AbbD3Lyt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Apr 2015 07:54:49 -0400
+Message-ID: <554213A2.6050607@phunq.net>
+Date: Thu, 30 Apr 2015 04:36:02 -0700
+From: Daniel Phillips <daniel@phunq.net>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, BTRFS <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs-progs: optionally restore symlinks.
+To: Filipe Manana <fdmanana@suse.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Tux3 Report: How fast can we fsync?
+References: <8f886f13-6550-4322-95be-93244ae61045@phunq.net> <20150430014616.GZ15810@dastard> <81488fcb-b5d5-4761-b8ae-936dce9c1f89@phunq.net> <55420EAC.5040900@suse.com>
+In-Reply-To: <55420EAC.5040900@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <55392221.6090502@gmail.com>
 
-Restore symlinks, optionally with owner/times.
+On 04/30/2015 04:14 AM, Filipe Manana wrote:
+> 
+> On 04/30/2015 11:28 AM, Daniel Phillips wrote:
+>> It looks like Btrfs hit a bug, not a huge surprise. Btrfs hit an assert
+>> for me earlier this evening. It is rare but it happens.
+> 
+> Hi Daniel,
+> 
+> Would you mind reporting (to linux-btrfs@vger.kernel.org) the
+> bug/assertion you hit during your tests with btrfs?
 
-Signed-off-by: Dan Merillat <dan.merillat@gmail.com>
----
- Documentation/btrfs-restore.asciidoc |   3 +
- cmds-restore.c                       | 140 ++++++++++++++++++++++++++++++++++-
- 2 files changed, 140 insertions(+), 3 deletions(-)
+Kernel 3.19.0 under KVM with BTRFS mounted on a file in /tmp, see
+the KVM command below. I believe I was running the 10,000 task test
+using the "sync" program below: "syncs foo 10 10000".
 
-diff --git a/Documentation/btrfs-restore.asciidoc b/Documentation/btrfs-restore.asciidoc
-index 89e0c87..06a0498 100644
---- a/Documentation/btrfs-restore.asciidoc
-+++ b/Documentation/btrfs-restore.asciidoc
-@@ -32,6 +32,9 @@ get extended attributes.
- -m|--metadata::
- restore owner, mode and times.
- 
-+-S|--symlinks::
-+restore symbolic links as well as normal files.
-+
- -v::
- verbose.
- 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 8869f2a..c7a3e96 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -45,9 +45,11 @@
- 
- static char fs_name[PATH_MAX];
- static char path_name[PATH_MAX];
-+static char symlink_target[PATH_MAX];
- static int get_snaps = 0;
- static int verbose = 0;
- static int restore_metadata = 0;
-+static int restore_symlinks = 0;
- static int ignore_errors = 0;
- static int overwrite = 0;
- static int get_xattrs = 0;
-@@ -812,6 +814,125 @@ static int overwrite_ok(const char * path)
- 	return 1;
- }
- 
-+static int copy_symlink(struct btrfs_root *root, struct btrfs_key *key,
-+		     const char *file)
-+{
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_file_extent_item *extent_item;
-+	struct btrfs_inode_item *inode_item;
-+	u32 len;
-+	int ret;
-+
-+	ret = overwrite_ok(path_name);
-+	if (ret == 0)
-+	    return 0; // skip this file.
-+
-+	if (ret == 2) { // symlink() can't overwrite, so unlink first.
-+		ret = unlink(path_name);
-+		if (ret) {
-+			fprintf(stderr, "failed to unlink '%s' for overwrite\n",
-+					path_name);
-+			return ret;
-+		}
-+	}
-+
-+	key->type = BTRFS_EXTENT_DATA_KEY;
-+	key->offset = 0;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+
-+	leaf = path->nodes[0];
-+	if (!leaf) {
-+		fprintf(stderr, "Error getting leaf for symlink '%s'\n", file);
-+		ret = -1;
-+		goto out;
-+	}
-+
-+	extent_item = btrfs_item_ptr(leaf, path->slots[0],
-+			struct btrfs_file_extent_item);
-+
-+	len = btrfs_file_extent_inline_item_len(leaf,
-+			btrfs_item_nr(path->slots[0]));
-+	if (len > PATH_MAX) {
-+		fprintf(stderr, "Symlink '%s' target length %d is longer than PATH_MAX\n",
-+				fs_name, len);
-+		ret = -1;
-+		goto out;
-+	}
-+
-+	u32 name_offset = (unsigned long) extent_item
-+			+ offsetof(struct btrfs_file_extent_item, disk_bytenr);
-+	read_extent_buffer(leaf, symlink_target, name_offset, len);
-+
-+	symlink_target[len] = 0;
-+
-+	if (!dry_run) {
-+		ret = symlink(symlink_target, path_name);
-+		if (ret<0) {
-+			fprintf(stderr, "Failed to restore symlink '%s': %s\n",
-+					path_name, strerror(errno));
-+			goto out;
-+		}
-+	}
-+	printf("SYMLINK: '%s' => '%s'\n", path_name, symlink_target);
-+
-+	ret = 0;
-+	if (!restore_metadata)
-+		goto out;
-+
-+	/* Symlink metadata operates differently than files/directories,
-+	 * so do our own work here.
-+	 */
-+
-+	key->type = BTRFS_INODE_ITEM_KEY;
-+	key->offset = 0;
-+
-+	btrfs_release_path(path);
-+
-+	ret = btrfs_lookup_inode(NULL, root, path, key, 0);
-+	if (ret) {
-+		fprintf(stderr, "Failed to lookup inode for '%s'\n", file);
-+		goto out;
-+	}
-+
-+	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			struct btrfs_inode_item);
-+
-+	fchownat(-1, file, btrfs_inode_uid(path->nodes[0], inode_item),
-+				   btrfs_inode_gid(path->nodes[0], inode_item),
-+				   AT_SYMLINK_NOFOLLOW);
-+	if (ret) {
-+		fprintf(stderr, "Failed to change owner: %s\n",
-+				strerror(errno));
-+		goto out;
-+	}
-+
-+	struct btrfs_timespec *bts;
-+	struct timespec times[2];
-+
-+	bts = btrfs_inode_atime(inode_item);
-+	times[0].tv_sec  = btrfs_timespec_sec(path->nodes[0], bts);
-+	times[0].tv_nsec = btrfs_timespec_nsec(path->nodes[0], bts);
-+
-+	bts = btrfs_inode_mtime(inode_item);
-+	times[1].tv_sec  = btrfs_timespec_sec(path->nodes[0], bts);
-+	times[1].tv_nsec = btrfs_timespec_nsec(path->nodes[0], bts);
-+
-+	ret = utimensat(-1, file, times, AT_SYMLINK_NOFOLLOW);
-+	if (ret)
-+		fprintf(stderr, "Failed to set times: %s\n", strerror(errno));
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		      const char *output_rootdir, const char *in_dir,
- 		      const regex_t *mreg)
-@@ -924,8 +1045,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		snprintf(path_name, PATH_MAX, "%s%s", output_rootdir, fs_name);
- 
- 		/*
--		 * At this point we're only going to restore directories and
--		 * files, no symlinks or anything else.
-+		 * Restore directories, files, symlinks and metadata.
- 		 */
- 		if (type == BTRFS_FT_REG_FILE) {
- 			if (!overwrite_ok(path_name))
-@@ -1032,6 +1152,15 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 					goto next;
- 				goto out;
- 			}
-+		} else if (type == BTRFS_FT_SYMLINK) {
-+			if (restore_symlinks)
-+			ret = copy_symlink(root, &location, path_name);
-+			if (ret<0) {
-+				if (ignore_errors)
-+					goto next;
-+				btrfs_free_path(path);
-+				return ret;
-+			}
- 		}
- next:
- 		path->slots[0]++;
-@@ -1258,6 +1387,7 @@ const char * const cmd_restore_usage[] = {
- 	"-s              get snapshots",
- 	"-x              get extended attributes",
- 	"-m|--metadata   restore owner, mode and times",
-+	"-S|--symlinks	 restore symbolic links"
- 	"-v              verbose",
- 	"-i              ignore errors",
- 	"-o              overwrite",
-@@ -1300,10 +1430,11 @@ int cmd_restore(int argc, char **argv)
- 			{ "path-regex", required_argument, NULL, 256},
- 			{ "dry-run", no_argument, NULL, 'D'},
- 			{ "metadata", no_argument, NULL, 'm'},
-+			{ "symlinks", no_argument, NULL, 'S'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		opt = getopt_long(argc, argv, "sxviot:u:dmf:r:lDc", long_options,
-+		opt = getopt_long(argc, argv, "sSxviot:u:dmf:r:lDc", long_options,
- 					NULL);
- 		if (opt < 0)
- 			break;
-@@ -1352,6 +1483,9 @@ int cmd_restore(int argc, char **argv)
- 			case 'm':
- 				restore_metadata = 1;
- 				break;
-+			case 'S':
-+				restore_symlinks = 1;
-+				break;
- 			case 'D':
- 				dry_run = 1;
- 				break;
--- 
-2.1.4
+    346 ------------[ cut here ]------------
+    347 kernel BUG at fs/btrfs/extent_io.c:4548!
+    348 invalid opcode: 0000 [#1] PREEMPT SMP
+    349 Modules linked in:
+    350 CPU: 2 PID: 5754 Comm: sync6 Not tainted 3.19.0-56544-g65cf1a5 #756
+    351 Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+    352 task: ec3c0ea0 ti: ec3ea000 task.ti: ec3ea000
+    353 EIP: 0060:[<c1301a30>] EFLAGS: 00010202 CPU: 2
+    354 EIP is at btrfs_release_extent_buffer_page+0xf0/0x100
+    355 EAX: 00000001 EBX: f47198f0 ECX: 00000000 EDX: 00000001
+    356 ESI: f47198f0 EDI: f61f1808 EBP: ec3ebbac ESP: ec3ebb9c
+    357  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+    358 CR0: 8005003b CR2: b756a356 CR3: 2c3ce000 CR4: 000006d0
+    359 Stack:
+    360  00000005 f47198f0 f61f1000 f61f1808 ec3ebbc0 c1301a7f f47198f0 00000000
+    361  f6a3d940 ec3ebbcc c1301ee5 d9a6c770 ec3ebbdc c12b436d fff92000 da136b20
+    362  ec3ebc74 c12e42b6 00000c00 00000000 00000000 00001000 00000000 00000000
+    363 Call Trace:
+    364  [<c1301a7f>] release_extent_buffer+0x3f/0xb0
+    365  [<c1301ee5>] free_extent_buffer+0x45/0x80
+    366  [<c12b436d>] btrfs_release_path+0x2d/0x90
+    367  [<c12e42b6>] cow_file_range_inline+0x466/0x600
+    368  [<c12e495e>] cow_file_range+0x50e/0x640
+    369  [<c12fdde1>] ? find_lock_delalloc_range.constprop.42+0x2e1/0x320
+    370  [<c12e5af9>] run_delalloc_range+0x419/0x450
+    371  [<c12fdf6b>] writepage_delalloc.isra.32+0x14b/0x1d0
+    372  [<c12ff20e>] __extent_writepage+0xde/0x2b0
+    373  [<c11208fd>] ? find_get_pages_tag+0xad/0x120
+    374  [<c130135c>] extent_writepages+0x29c/0x350
+    375  [<c12e1530>] ? btrfs_direct_IO+0x300/0x300
+    376  [<c12e009f>] btrfs_writepages+0x1f/0x30
+    377  [<c11299e5>] do_writepages+0x15/0x40
+    378  [<c112199f>] __filemap_fdatawrite_range+0x4f/0x60
+    379  [<c1121aa2>] filemap_fdatawrite_range+0x22/0x30
+    380  [<c12f4768>] btrfs_fdatawrite_range+0x28/0x70
+    381  [<c12f47d1>] start_ordered_ops+0x21/0x30
+    382  [<c12f4823>] btrfs_sync_file+0x43/0x370
+    383  [<c115c3e5>] ? vfs_write+0x135/0x1c0
+    384  [<c12f47e0>] ? start_ordered_ops+0x30/0x30
+    385  [<c1183e27>] do_fsync+0x47/0x70
+    386  [<c118403d>] SyS_fsync+0xd/0x10
+    387  [<c15bd8ae>] syscall_call+0x7/0x7
+    388 Code: 8b 03 f6 c4 20 75 26 f0 80 63 01 f7 c7 43 1c 00 00 00 00 89 d8 e8 61 94 e2 ff eb c3 8d
+b4 26 00 00 00 00 83 c4 04 5b 5e 5f 5d c3 <0f> 0b 0f 0b     388 0f 0b 0f 0b 90 8d b4 26 00 00 00 00
+55 89 e5 57 56
+    389 EIP: [<c1301a30>] btrfs_release_extent_buffer_page+0xf0/0x100 SS:ESP 0068:ec3ebb9c
+    390 ---[ end trace 12b9bbe75d9541a3 ]---
 
+KVM command:
+
+mkfs.btrfs -f /tmp/disk.img && kvm -kernel /src/linux-tux3/arch/x86/boot/bzImage -append
+"root=/dev/sda1 console=ttyS0 console=tty0 oops=panic tux3.tux3_trace=0" -serial file:serial.txt
+-hda /more/kvm/hdd.img -hdb /tmp/disk.img -net nic -net user,hostfwd=tcp::1234-:22 -smp 4 -m 2000
+
+Source code:
+
+/*
+ * syncs.c
+ *
+ * D.R. Phillips, 2015
+ *
+ * To build: c99 -Wall syncs.c -o syncs
+ * To run: ./syncs [<filename> [<syncs> [<tasks>]]]
+ */
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+char text[1024] = { "hello world!\n" };
+
+int main(int argc, const char *argv[]) {
+	const char *basename = argc < 1 ? "foo" : argv[1];
+	char name[100];
+	int steps = argc < 3 ? 1 : atoi(argv[2]);
+	int tasks = argc < 4 ? 1 : atoi(argv[3]);
+	int err, fd;
+
+	for (int t = 0; t < tasks; t++) {
+		snprintf(name, sizeof name, "%s%i", basename, t);
+		if (!fork())
+			goto child;
+	}
+	for (int t = 0; t < tasks; t++)
+		wait(&err);
+	return 0;
+
+child:
+	fd = creat(name, S_IRWXU);
+	for (int i = 0; i < steps; i++) {
+		write(fd, text, sizeof text);
+		fsync(fd);
+	}
+	return 0;
+}

@@ -1,45 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45808 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754885AbbDXSLQ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20531 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751070AbbD3KC7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Apr 2015 14:11:16 -0400
-Message-ID: <553A8737.8030600@fb.com>
-Date: Fri, 24 Apr 2015 14:11:03 -0400
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Filipe Manana <fdmanana@suse.com>, <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] fstests: test btrfs send after swapping directory names
- differently
-References: <1428591389-3668-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1428591389-3668-1-git-send-email-fdmanana@suse.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+	Thu, 30 Apr 2015 06:02:59 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] xfstests: btrfs: 020 is bit diverted from its objective
+Date: Thu, 30 Apr 2015 17:59:14 +0800
+Message-Id: <1430387954-15682-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/09/2015 10:56 AM, Filipe Manana wrote:
-> Test btrfs incremental send after renaming and moving directories around in a
-> way that ends up making a directory have different dentries with the same name
-> but pointing to different inodes in the parent and send snapshots, and also
-> inverting the ancestor-descendent relationship between one of those inodes and
-> some other inode.
->
-> Cases like this made an incremental send enter an infinite lopp when building
-> path strings, leading to -ENOMEM errors when the path string reached a length
-> of PATH_MAX.
-> This issue was fixed by the following linux kernel btrfs patch:
->
->    Btrfs: incremental send, check if orphanized dir inode needs delayed rename
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Not sure what this test case wanted to achieve by deleting the
+source device before the replace.
 
-Verified it passed with the patches applied and failed without them. 
-Test looks straightforward and good to me, you can add
+As per the comments the objective of this test case seems to be
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+~~~~
+btrfs device replace test on RO fs
 
-Thanks,
+Regression test for commit:
+bbb651e Btrfs: don't allow the replace procedure on read only filesystems
+~~~~~
 
-Josef
+Also there won't be EIO when you delete a loop device when its
+still mounted. as shown below.
+
+mount /dev/loop0 /mnt
+losetup -d /dev/loop0
+echo $?
+0
+dd if=/dev/zero of=/mnt/tf1 count=1
+1+0 records in
+1+0 records out
+512 bytes (512 B) copied, 0.00192936 s, 265 kB/s
+cd /mnt
+sync
+losetup -a
+/dev/loop0: [0802]:1291816 (/root/testdev/disk1)
+
+No errors in the dmesg as well.
+
+Instead of further confusing, I am deleting  the delete loop device part
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ tests/btrfs/020 | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/tests/btrfs/020 b/tests/btrfs/020
+index 84251f3..3752dcf 100755
+--- a/tests/btrfs/020
++++ b/tests/btrfs/020
+@@ -76,8 +76,6 @@ loop_dev3=`_create_loop_device $fs_img3`
+ _mkfs_dev -m raid1 -d raid1 $loop_dev1 $loop_dev2 >>$seqres.full 2>&1
+ _mount -o ro $loop_dev1 $loop_mnt
+ 
+-# Fail the second device and replace with the third
+-_destroy_loop_device $loop_dev2
+ $BTRFS_UTIL_PROG replace start -B 2 $loop_dev3 $loop_mnt >>$seqres.full 2>&1 && \
+ _fail "FAIL: Device replaced on RO btrfs"
+ 
+-- 
+2.0.0.153.g79dcccc
 

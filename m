@@ -1,38 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:34003 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750878AbbD3Rdh (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:59034 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750878AbbD3RhR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Apr 2015 13:33:37 -0400
-Received: by iget9 with SMTP id t9so15246825ige.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2015 10:33:37 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <554263A2.9060003@libero.it>
-References: <554263A2.9060003@libero.it>
-Date: Thu, 30 Apr 2015 18:33:37 +0100
-Message-ID: <CAL3q7H7a_S-zW1oNnaEx4Q+_J1k1dvEJfr0S3ZNA4PONQr+kHA@mail.gmail.com>
-Subject: Re: Bug report: filesystem needed btrf-zero-log
-From: Filipe David Manana <fdmanana@gmail.com>
+	Thu, 30 Apr 2015 13:37:17 -0400
+Date: Thu, 30 Apr 2015 17:37:16 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
 To: kreijack@inwind.it
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Bug report: filesystem needed btrf-zero-log
+Message-ID: <20150430173716.GH18480@carfax.org.uk>
+References: <554263A2.9060003@libero.it>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="ISKrrfpKsPiF35CV"
+In-Reply-To: <554263A2.9060003@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 30, 2015 at 6:17 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
+
+--ISKrrfpKsPiF35CV
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Thu, Apr 30, 2015 at 07:17:22PM +0200, Goffredo Baroncelli wrote:
 > Hi All,
->
+> 
 > after a crash for reason not related to btrfs [*], I was not able to
 > mount the root filesystem anymore. To investigate a bit I started from
 > another filesystem and I tried to mount manually the FS.
->
+> 
 > I run "mount /dev/sdd3 /mnt", but the command never returned.
 > The system was responsive: I was able to start a kernel compilation, to
 > launch a new shell... But the mount process stuck in 'D' state.
->
+> 
 > After 120sec in the log appeared:
->
+
+   Known bug... see https://btrfs.wiki.kernel.org/index.php/Gotchas
+
+   Hugo.
+
 > Apr 30 18:47:14 venice kernel: INFO: task mount:2043 blocked for more than 120 seconds.
 > Apr 30 18:47:14 venice kernel:      Tainted: G          I    3.19.1 #193
 > Apr 30 18:47:14 venice kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
@@ -165,44 +172,54 @@ On Thu, Apr 30, 2015 at 6:17 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
 > Apr 30 18:53:14 venice kernel: [<ffffffff81089f60>] ? kthread_create_on_node+0x180/0x180
 > Apr 30 18:53:14 venice kernel: [<ffffffff8155023c>] ? ret_from_fork+0x7c/0xb0
 > Apr 30 18:53:14 venice kernel: [<ffffffff81089f60>] ? kthread_create_on_node+0x180/0x180
->
->
+> 
+> 
 > "btrfs check" (btrfs-progs v4.0) didn't report anything.
->
-> Doing a btrfs-zero-log /dev/sdd3, solved this problem and now the
+> 
+> Doing a btrfs-zero-log /dev/sdd3, solved this problem and now the 
 > filesystem works properly.
 > Before the btrfs-zero-log I made a btrfs-image (~44MB). If someone want to investigate
 > this issue more I can provide him the image.
->
->
->
+> 
+> 
+> 
 > The problem appeared both in the kernel 3.19.1 and 3.19.3.
-
-https://btrfs.wiki.kernel.org/index.php/Gotchas
-
-
->
+> 
 > Let me know.
->
+> 
 > BR
 > G.Baroncelli
->
+> 
 > [*] I am developing a driver for a mouse. This driver caused the crash.
->
->
-> --
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+> 
+> 
 
 -- 
-Filipe David Manana,
+Hugo Mills             | There's many a slip 'twixt wicket-keeper and gully.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+--ISKrrfpKsPiF35CV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJVQmhMAAoJEFheFHXiqx3kDMkP/0/lt1OI+AgtKl9NQt3KjMwx
+4+DQVOv2DyQQmB0pPSb9Gbsge+htF52YwXpF1yI+wlVW0IQD1+YAPDuWzM702hyu
+85gGXN9sY38PD2Ke8vLqBT44Uvf5J2ND0m+xWEmtP31sx1satfmhTOf+VDaDWBsh
+y8k1925ZTzMf2yfOILhKvSA7k22JIo8gu2SyIjIgeiO5CLzwC5Z5Gut+/izXZr/8
+tvrSzvthnVD1H4v0L0y37R7a20Twwae5DNej156Nf62KzZcYw1n08OyPXMBJtD5M
+AHQzq8VhI+qKY7t1OVO6EHfnfGdFZTMuNd+LCAIZHWConoKMxrygGgLnToxJxQ3f
+7JwmVgVbus7bfM0Qt5Zt0eIxELb6pTH5Muvi9XvWgGoTI2lFJGlcMNnScwBclHQL
+KP81jqdISYm8n2F+fZA1uR0plXi0YXPoQdlh3KSmk575wejT6Sa0J4j5CxCQV/52
+uIdDfgSYZ3HbgNtxrQIR9WIBn5hR0saNTy009711hKFE3qYgz4Kw+XfhsZ2TYymJ
+2AdVMX0jptUL5P+AmppMTjpupOrlbkhylmJZLtBN40Mf/g5iZuhMbu0sT2ZUG6JI
+Gdr2uU4A4fqTmXmYhLgtpLQ11Bsj4paRfIkVrxmXYohhuSh8puVgrDkuhgK55xly
+ToCxJ75O2mq/PXMavGol
+=R5sR
+-----END PGP SIGNATURE-----
+
+--ISKrrfpKsPiF35CV--

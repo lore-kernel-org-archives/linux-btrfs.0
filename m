@@ -1,257 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3803 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750887AbbEEAzf convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2015 20:55:35 -0400
-Message-ID: <55481503.9090305@cn.fujitsu.com>
-Date: Tue, 5 May 2015 08:55:31 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:56043 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751270AbbEAKnb convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2015 06:43:31 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Lutz Euler <lutz.euler@freenet.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2] Btrfs: really fix trim 0 bytes after a device delete
+Date: Fri, 01 May 2015 12:43:29 +0200
+Message-ID: <1656835.n20mzq2Spt@merkaba>
+In-Reply-To: <21672.2859.468940.450115@localhost.localdomain>
+References: <20644.2272.57892.435731@localhost.localdomain> <20644.2675.653732.24816@localhost.localdomain> <21672.2859.468940.450115@localhost.localdomain>
 MIME-Version: 1.0
-To: <fdmanana@gmail.com>
-CC: Eric Sandeen <sandeen@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 3/5] btrfs-progs: Record and report every file extent
- hole.
-References: <1420182753-2724-1-git-send-email-quwenruo@cn.fujitsu.com>	<1420182753-2724-3-git-send-email-quwenruo@cn.fujitsu.com>	<551225F6.4030208@redhat.com>	<55122D40.8020201@cn.fujitsu.com> <CAL3q7H69-Y8UbzmY1PXwj=eh39k+Ur8dwhMMVvc0cqb0rZzGrg@mail.gmail.com>
-In-Reply-To: <CAL3q7H69-Y8UbzmY1PXwj=eh39k+Ur8dwhMMVvc0cqb0rZzGrg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, I was busy making another patchset for offline fsid/chunk tree 
-uuid change, and didn't have time investigating it.
+Hello!
 
-But now the patchset is finished and I'll begin investigate it.
+The following patch fixes the trimming on my /home Dual SSD BTRFS RAID 1
+for quite some kernel releases already. Without it, it doesn�t trim
+anything, with it, it trims possibly.
 
-Thanks for your valgrind output.
-Qu
+What would be required to get this or a similar fix into the kernel?
 
--------- Original Message  --------
-Subject: Re: [PATCH v2 3/5] btrfs-progs: Record and report every file 
-extent hole.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年05月03日 00:36
+In either case this gets my:
 
-> On Wed, Mar 25, 2015 at 3:36 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> Thanks, I'll investigate it soon.
->>
->> Thanks,
->> Qu
->
-> Qu, did you end up finding anything?
->
-> Just upgraded to btrfs-progs 4.0 and getting pretty much the same as
-> Eric all the time I run btrfs/078.
-> Valgrind should give you some nice clues.
->
-> E.g.
->
-> (...)
-> checking free space cache
-> checking fs roots
-> ==11808== Invalid read of size 8
-> ==11808==    at 0x4611C2: rb_first (rbtree.c:420)
-> ==11808==    by 0x41B694: first_extent_gap (cmds-check.c:184)
-> ==11808==    by 0x42020E: merge_inode_recs (cmds-check.c:954)
-> ==11808==    by 0x42020E: splice_shared_node (cmds-check.c:1036)
-> ==11808==    by 0x4205B8: enter_shared_node (cmds-check.c:1142)
-> ==11808==    by 0x420F6E: walk_down_tree (cmds-check.c:1758)
-> ==11808==    by 0x429555: check_fs_root (cmds-check.c:3382)
-> ==11808==    by 0x429555: check_fs_roots (cmds-check.c:3518)
-> ==11808==    by 0x429555: cmd_check (cmds-check.c:9465)
-> ==11808==    by 0x409BEC: main (btrfs.c:245)
-> ==11808==  Address 0x6057d10 is 16 bytes inside a block of size 40 free'd
-> ==11808==    at 0x4C29E90: free (vg_replace_malloc.c:473)
-> ==11808==    by 0x41C118: free_file_extent_holes (cmds-check.c:363)
-> ==11808==    by 0x41C118: free_inode_rec (cmds-check.c:722)
-> ==11808==    by 0x41F9CA: maybe_free_inode_rec (cmds-check.c:790)
-> ==11808==    by 0x42036C: splice_shared_node (cmds-check.c:1042)
-> ==11808==    by 0x4205B8: enter_shared_node (cmds-check.c:1142)
-> ==11808==    by 0x420F6E: walk_down_tree (cmds-check.c:1758)
-> ==11808==    by 0x429555: check_fs_root (cmds-check.c:3382)
-> ==11808==    by 0x429555: check_fs_roots (cmds-check.c:3518)
-> ==11808==    by 0x429555: cmd_check (cmds-check.c:9465)
-> ==11808==    by 0x409BEC: main (btrfs.c:245)
-> ==11808==
-> ==11808==
-> ==11808== Process terminating with default action of signal 11 (SIGSEGV)
-> ==11808==  General Protection Fault
-> ==11808==    at 0x4611C2: rb_first (rbtree.c:420)
-> ==11808==    by 0x41B694: first_extent_gap (cmds-check.c:184)
-> ==11808==    by 0x42020E: merge_inode_recs (cmds-check.c:954)
-> ==11808==    by 0x42020E: splice_shared_node (cmds-check.c:1036)
-> ==11808==    by 0x4205B8: enter_shared_node (cmds-check.c:1142)
-> ==11808==    by 0x420F6E: walk_down_tree (cmds-check.c:1758)
-> ==11808==    by 0x429555: check_fs_root (cmds-check.c:3382)
-> ==11808==    by 0x429555: check_fs_roots (cmds-check.c:3518)
-> ==11808==    by 0x429555: cmd_check (cmds-check.c:9465)
-> ==11808==    by 0x409BEC: main (btrfs.c:245)
-> (....)
->
-> Thanks.
->
->
->>
->>
->>> On 1/2/15 1:12 AM, Qu Wenruo wrote:
->>>>
->>>> Record every file extent discontinuous hole in inode_record using a
->>>> rb_tree member.
->>>>
->>>> Before the patch, btrfsck will only record the first file extent hole by
->>>> using first_extent_gap, that's good for detecting error, but not
->>>> suitable for fixing it.
->>>>
->>>> This patch provides the ability to record every file extent hole and
->>>> report it.
->>>
->>>
->>> This is causing use after free and segfaults in my testing, running
->>> xfstests btrfs/078 with multiple devices defined:
->>>
->>> SCRATCH_DEV_POOL="/dev/sdc5 /dev/sdc6 /dev/sdc7 /dev/sdc8 /dev/sdc9
->>> /dev/sdc10 /dev/sdc11 /dev/sdc12"
->>>
->>> -Eric
->>>
->>> # valgrind ./btrfsck /dev/sdc5
->>> ==31620== Memcheck, a memory error detector
->>> ==31620== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
->>> ==31620== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright
->>> info
->>> ==31620== Command: ./btrfsck /dev/sdc5
->>> ==31620==
->>> Checking filesystem on /dev/sdc5
->>> UUID: ab91fc96-549b-4048-a68b-73c5190e6265
->>> checking extents
->>> checking free space cache
->>> checking fs roots
->>> ==31620== Invalid read of size 8
->>> ==31620==    at 0x4C257C3: rb_first (rbtree.c:420)
->>> ==31620==    by 0x41E609: first_extent_gap (cmds-check.c:182)
->>> ==31620==    by 0x427D43: merge_inode_recs (cmds-check.c:950)
->>> ==31620==    by 0x42827B: splice_shared_node (cmds-check.c:1032)
->>> ==31620==    by 0x428827: enter_shared_node (cmds-check.c:1138)
->>> ==31620==    by 0x428BCF: walk_down_tree (cmds-check.c:1745)
->>> ==31620==    by 0x42CA64: check_fs_root (cmds-check.c:3360)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==  Address 0x4e5dc60 is 16 bytes inside a block of size 40 free'd
->>> ==31620==    at 0x4A063F0: free (vg_replace_malloc.c:446)
->>> ==31620==    by 0x421887: free_file_extent_holes (cmds-check.c:359)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x42849E: leave_shared_node (cmds-check.c:1170)
->>> ==31620==    by 0x42869F: walk_up_tree (cmds-check.c:1817)
->>> ==31620==    by 0x42CA82: check_fs_root (cmds-check.c:3366)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==
->>> ==31620== Invalid read of size 8
->>> ==31620==    at 0x41E60A: first_extent_gap (cmds-check.c:183)
->>> ==31620==    by 0x427D43: merge_inode_recs (cmds-check.c:950)
->>> ==31620==    by 0x42827B: splice_shared_node (cmds-check.c:1032)
->>> ==31620==    by 0x428827: enter_shared_node (cmds-check.c:1138)
->>> ==31620==    by 0x428BCF: walk_down_tree (cmds-check.c:1745)
->>> ==31620==    by 0x42CA64: check_fs_root (cmds-check.c:3360)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==  Address 0x4e5dc68 is 24 bytes inside a block of size 40 free'd
->>> ==31620==    at 0x4A063F0: free (vg_replace_malloc.c:446)
->>> ==31620==    by 0x421887: free_file_extent_holes (cmds-check.c:359)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x42849E: leave_shared_node (cmds-check.c:1170)
->>> ==31620==    by 0x42869F: walk_up_tree (cmds-check.c:1817)
->>> ==31620==    by 0x42CA82: check_fs_root (cmds-check.c:3366)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==
->>> ==31620== Invalid read of size 8
->>> ==31620==    at 0x4C257C3: rb_first (rbtree.c:420)
->>> ==31620==    by 0x41E609: first_extent_gap (cmds-check.c:182)
->>> ==31620==    by 0x427421: maybe_free_inode_rec (cmds-check.c:768)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x428827: enter_shared_node (cmds-check.c:1138)
->>> ==31620==    by 0x428BCF: walk_down_tree (cmds-check.c:1745)
->>> ==31620==    by 0x42CA64: check_fs_root (cmds-check.c:3360)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==  Address 0x4e5dc60 is 16 bytes inside a block of size 40 free'd
->>> ==31620==    at 0x4A063F0: free (vg_replace_malloc.c:446)
->>> ==31620==    by 0x421887: free_file_extent_holes (cmds-check.c:359)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x42849E: leave_shared_node (cmds-check.c:1170)
->>> ==31620==    by 0x42869F: walk_up_tree (cmds-check.c:1817)
->>> ==31620==    by 0x42CA82: check_fs_root (cmds-check.c:3366)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==
->>> ==31620== Invalid read of size 8
->>> ==31620==    at 0x41E60A: first_extent_gap (cmds-check.c:183)
->>> ==31620==    by 0x427421: maybe_free_inode_rec (cmds-check.c:768)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x428827: enter_shared_node (cmds-check.c:1138)
->>> ==31620==    by 0x428BCF: walk_down_tree (cmds-check.c:1745)
->>> ==31620==    by 0x42CA64: check_fs_root (cmds-check.c:3360)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==  Address 0x4e5dc68 is 24 bytes inside a block of size 40 free'd
->>> ==31620==    at 0x4A063F0: free (vg_replace_malloc.c:446)
->>> ==31620==    by 0x421887: free_file_extent_holes (cmds-check.c:359)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x42849E: leave_shared_node (cmds-check.c:1170)
->>> ==31620==    by 0x42869F: walk_up_tree (cmds-check.c:1817)
->>> ==31620==    by 0x42CA82: check_fs_root (cmds-check.c:3366)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==
->>> ==31620== Invalid read of size 8
->>> ==31620==    at 0x4C257C3: rb_first (rbtree.c:420)
->>> ==31620==    by 0x42186C: free_file_extent_holes (cmds-check.c:355)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x428827: enter_shared_node (cmds-check.c:1138)
->>> ==31620==    by 0x428BCF: walk_down_tree (cmds-check.c:1745)
->>> ==31620==    by 0x42CA64: check_fs_root (cmds-check.c:3360)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>> ==31620==  Address 0x4e5dc60 is 16 bytes inside a block of size 40 free'd
->>> ==31620==    at 0x4A063F0: free (vg_replace_malloc.c:446)
->>> ==31620==    by 0x421887: free_file_extent_holes (cmds-check.c:359)
->>> ==31620==    by 0x4218FB: free_inode_rec (cmds-check.c:718)
->>> ==31620==    by 0x42753E: maybe_free_inode_rec (cmds-check.c:786)
->>> ==31620==    by 0x4282A5: splice_shared_node (cmds-check.c:1038)
->>> ==31620==    by 0x42849E: leave_shared_node (cmds-check.c:1170)
->>> ==31620==    by 0x42869F: walk_up_tree (cmds-check.c:1817)
->>> ==31620==    by 0x42CA82: check_fs_root (cmds-check.c:3366)
->>> ==31620==    by 0x42CE2D: check_fs_roots (cmds-check.c:3496)
->>> ==31620==    by 0x42E342: cmd_check (cmds-check.c:9161)
->>> ==31620==    by 0x40C089: main (btrfs.c:245)
->>>
->>> ... etc ...
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
+Reported-and-tested-by: Martin Steigerwald <martin@lichtvoll.de>
+
+I used trimming with this patch countless of times and scrub still tells
+all is fine.
+
+Thanks,
+Martin
+
+Am Samstag, 3. Januar 2015, 16:30:51 schrieb Lutz Euler:
+> Commit 2cac13e41bf5b99ffc426bd28dfd2248df1dfa67, "fix trim 0 bytes after
+> a device delete", said:
+>   A user reported a bug of btrfs's trim, that is we will trim 0 bytes
+>   after a device delete.
+> The commit didn't attack the root of the problem so did not fix the bug
+> except for a special case.
+> 
+> For block discard, btrfs_trim_fs directly compares the range passed in
+> against the filesystem's objectids. The former is bounded by the sum of
+> the sizes of the devices of the filesystem, the latter is a completely
+> unrelated set of intervals of 64-bit integers. The bug reported occurred
+> as the smallest objectid was larger than the sum of the device sizes.
+> The above mentioned commit only fixed the case where the smallest
+> objectid is nonzero and the largest objectid less than the sum of the
+> device sizes, but it still trims too little if the largest objectid is
+> larger than that, and nothing in the reported situation.
+> 
+> The current mapping between the given range and the objectids is thus
+> clearly broken, so, to fix the bug and as a first step towards a
+> complete solution, simply ignore the range parameter's start and length
+> fields and always trim the whole filesystem. (While this makes it
+> impossible to trim a filesystem only partly, due to the broken mapping
+> this often didn't work anyway.)
+> 
+> V2:
+> - Rebased onto 3.9. (still applies to and works with 3.19-rc2)
+> - Take range->minlen into account.
+> 
+> Reported-by: Lutz Euler <lutz.euler@freenet.de>
+> Signed-off-by: Lutz Euler <lutz.euler@freenet.de>
+> ---
+>  fs/btrfs/extent-tree.c |   25 +++++++++++--------------
+>  1 files changed, 11 insertions(+), 14 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index cfb3cf7..81006c1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8824,26 +8824,23 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+>  	u64 start;
+>  	u64 end;
+>  	u64 trimmed = 0;
+> -	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+>  	int ret = 0;
+>  
+>  	/*
+> -	 * try to trim all FS space, our block group may start from non-zero.
+> +	 * The range passed in is a subinterval of the interval from 0
+> +	 * to the sum of the sizes of the devices of the filesystem.
+> +	 * The objectid's used in the filesystem can span any set of
+> +	 * subintervals of the interval from 0 to (u64)-1. As there is
+> +	 * neither a simple nor an agreed upon mapping between these
+> +	 * two ranges we ignore the range parameter's start and len
+> +	 * fields and always trim the whole filesystem (that is, only
+> +	 * the free space in allocated chunks).
+>  	 */
+> -	if (range->len == total_bytes)
+> -		cache = btrfs_lookup_first_block_group(fs_info, range->start);
+> -	else
+> -		cache = btrfs_lookup_block_group(fs_info, range->start);
+> +	cache = btrfs_lookup_first_block_group(fs_info, 0);
+>  
+>  	while (cache) {
+> -		if (cache->key.objectid >= (range->start + range->len)) {
+> -			btrfs_put_block_group(cache);
+> -			break;
+> -		}
+> -
+> -		start = max(range->start, cache->key.objectid);
+> -		end = min(range->start + range->len,
+> -				cache->key.objectid + cache->key.offset);
+> +		start = cache->key.objectid;
+> +		end = cache->key.objectid + cache->key.offset;
+>  
+>  		if (end - start >= range->minlen) {
+>  			if (!block_group_cache_done(cache)) {
+> 
+
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

@@ -1,57 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f174.google.com ([209.85.192.174]:34016 "EHLO
-	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932571AbbESOq5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 10:46:57 -0400
-Received: by pdbnk13 with SMTP id nk13so28438836pdb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 07:46:57 -0700 (PDT)
-Received: from arch-nb.localdomain ([211.40.97.131])
-        by mx.google.com with ESMTPSA id ms7sm13366558pdb.11.2015.05.19.07.46.54
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Tue, 19 May 2015 07:46:55 -0700 (PDT)
-From: Byongho Lee <bhlee.kernel@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:48833 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751214AbbEBQDj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 2 May 2015 12:03:39 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YoZtB-0004yb-Rr
+	for linux-btrfs@vger.kernel.org; Sat, 02 May 2015 18:03:37 +0200
+Received: from host-78-149-209-236.as13285.net ([78.149.209.236])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 May 2015 18:03:37 +0200
+Received: from samtygier by host-78-149-209-236.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 May 2015 18:03:37 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: remove unused inode argument from uncompress_inline()
-Date: Tue, 19 May 2015 23:46:45 +0900
-Message-Id: <1432046805-6668-1-git-send-email-bhlee.kernel@gmail.com>
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH] btrfs-progs: check metadata redundancy
+Date: Sat, 02 May 2015 17:03:31 +0100
+Message-ID: <mi2sgj$urs$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The inode argument is never used from the beginning, so remove it.
+Currently BTRFS allows you to make bad choices of data and 
+metadata levels. For example -d raid1 -m raid0 means you can
+only use half your total disk space, but will loose everything
+if 1 disk fails. This patch prevents you creating the situation
+another will be need to prevent rebalancing in to it. 
 
-Change since v1:
-- Add missing Signed-off-by line.
+When making a filesystem check that metadata mode is at least
+as redundant as the data mode. For example don't allow:
+	-d raid1 -m raid0
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 ---
- fs/btrfs/inode.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ utils.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0020b56..6abd9ae 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6565,7 +6565,7 @@ static int merge_extent_mapping(struct extent_map_tree *em_tree,
+diff --git a/utils.c b/utils.c
+index b175b01..1136a78 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2391,6 +2391,24 @@ static int group_profile_devs_min(u64 flag)
+ 	}
  }
  
- static noinline int uncompress_inline(struct btrfs_path *path,
--				      struct inode *inode, struct page *page,
-+				      struct page *page,
- 				      size_t pg_offset, u64 extent_offset,
- 				      struct btrfs_file_extent_item *item)
++static int group_profile_max_safe_loss(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0: /* single */
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return 0;
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return 1;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return 2;
++	default:
++		return -1;
++	}
++}
++
+ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ 	u64 dev_cnt, int mixed, char *estr)
  {
-@@ -6761,8 +6761,7 @@ next:
- 		if (create == 0 && !PageUptodate(page)) {
- 			if (btrfs_file_extent_compression(leaf, item) !=
- 			    BTRFS_COMPRESS_NONE) {
--				ret = uncompress_inline(path, inode, page,
--							pg_offset,
-+				ret = uncompress_inline(path, page, pg_offset,
- 							extent_offset, item);
- 				if (ret) {
- 					err = ret;
--- 
-2.4.1
+@@ -2439,6 +2457,13 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ 			"dup for data is allowed only in mixed mode");
+ 		return 1;
+ 	}
++
++	if (group_profile_max_safe_loss(metadata_profile) <
++		group_profile_max_safe_loss(data_profile)){
++		snprintf(estr, sz,
++			"metatdata has lower redundancy than data");
++		return 1;
++	}
+ 	return 0;
+ }
+ 
+-- 2.1.4
+
 

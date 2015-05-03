@@ -1,73 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34026 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965355AbbEMPgA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 May 2015 11:36:00 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id BC920AAC7
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2015 15:35:58 +0000 (UTC)
-Date: Wed, 13 May 2015 17:35:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: dsterba@suse.cz, btrfs <linux-btrfs@vger.kernel.org>,
-        Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [PATCH][RFC] btrfs-progs: add 'du' command
-Message-ID: <20150513153558.GM23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20150423211206.GQ17170@wotan.suse.de>
- <20150429171918.GC4996@twin.jikos.cz>
- <20150505194614.GX17170@wotan.suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150505194614.GX17170@wotan.suse.de>
+Received: from victor.provo.novell.com ([137.65.250.26]:59859 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751200AbbEDO3H (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 4 May 2015 10:29:07 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: marc@merlins.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: incremental send, fix clone operations for compressed extents
+Date: Sun,  3 May 2015 01:56:00 +0100
+Message-Id: <1430614560-4680-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 05, 2015 at 12:46:14PM -0700, Mark Fasheh wrote:
-> On Wed, Apr 29, 2015 at 07:19:18PM +0200, David Sterba wrote:
-> > The functionality is useful, I personally like it and have seen people
-> > on irc to ask about this.
-> Cool, I would really like to know how close this gets to answering some
-> of those questions regarding disk usage.
+Marc reported a problem where the receiving end of an incremental send
+was performing clone operations that failed with -EINVAL. This happened
+because, unlike for uncompressed extents, we were not checking if the
+source clone offset and length, after summing the data offset, falls
+within the source file's boundaries.
 
-IIRC one of the questions was 'how much do these two files share', eg.
-after one of the files has been reflinked and modified.
+So make sure we do such checks when attempting to issue clone operations
+for compressed extents.
 
-> > > Following this paragraph is a very simple example. I started with a
-> > > clean btrfs fs in which i copied vmlinuz from /boot. I then made a
-> > > snapshot of the fs root in 'snap1'. After the snapshot, I made a 2nd
-> > > copy of vmlinuz into the main fs to give us some not-shared data. The
-> > > output below shows a sum of all the space, and a 'set shared' with len
-> > > exactly equal to that of the single shared file.
-> > > 
-> > > # btrfs fi du .
-> > > total	exclusive	set shared	filename
-> > > 4362240	0			./vmlinuz-4.0.0-rc7
-> > > 4362240	0			./snap1/vmlinuz-4.0.0-rc7
-> > > 4362240	0			./snap1
-> > > 4362240	4362240			./vmlinuz-4.0.0-rc7.copy
-> > > 13086720	4362240	4362240	.
-> > 
-> > I guess the next thing people will want to see is the compressed size.
-> 
-> I can look into this. Maybe as a switch? How do I even get the compressed
-> size?
+Problem reproducible with the following steps:
 
-Not needed for the first implementation. The compressed size can be read
-from userspace by iterating the extents. I have the code for that
-stashed somewhere, we can add that once this patchset lands.
-> 
-> > > A git tree of the patches can be found here:
-> > > 
-> > > https://github.com/markfasheh/btrfs-progs-patches/tree/du
-> > 
-> > The file interval_tree.h seems missing and build fails.
-> 
-> If you pull the branch again you should have a fix for this.
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount -o compress /dev/sdb /mnt
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount -o compress /dev/sdc /mnt2
 
-I've tested it, works for me, however if you want me to pull the branch
-please clean up the patches so the fixups are not in separate commits.
-Also cmds-du goes to cmds-filesystem, as it's a subcommand. Patch
-subjects should start with 'btrfs-progs'. The rest is the same as if it
-were a patchset for kernel. I do fix small things at commit time unless
-there are too many of them.
+  # Create the file with a single extent of 128K. This creates a metadata file
+  # extent item with a data start offset of 0 and a logical length of 128K.
+  $ xfs_io -f -c "pwrite -S 0xaa 64K 128K" -c "fsync" /mnt/foo
+
+  # Now rewrite the range 64K to 112K of our file. This will make the inode's
+  # metadata continue to point to the 128K extent we created before, but now
+  # with an extent item that points to the extent with a data start offset of
+  # 112K and a logical length of 16K.
+  # That metadata file extent item is associated with the logical file offset
+  # at 176K and covers the logical file range 176K to 192K.
+  $ xfs_io -c "pwrite -S 0xbb 64K 112K" -c "fsync" /mnt/foo
+
+  # Now rewrite the range 180K to 12K. This will make the inode's metadata
+  # continue to point the the 128K extent we created earlier, with a single
+  # extent item that points to it with a start offset of 112K and a logical
+  # length of 4K.
+  # That metadata file extent item is associated with the logical file offset
+  # at 176K and covers the logical file range 176K to 180K.
+  $ xfs_io -c "pwrite -S 0xcc 180K 12K" -c "fsync" /mnt/foo
+
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+
+  $ touch /mnt/bar
+  # Calls the btrfs clone ioctl.
+  $ ~/xfstests/src/cloner -s $((176 * 1024)) -d $((176 * 1024)) \
+    -l $((4 * 1024)) /mnt/foo /mnt/bar
+
+  $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+
+  $ btrfs send /mnt/snap1 | btrfs receive /mnt2
+  At subvol /mnt/snap1
+  At subvol snap1
+
+  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive /mnt2
+  At subvol /mnt/snap2
+  At snapshot snap2
+  ERROR: failed to clone extents to bar
+  Invalid argument
+
+A test case for fstests follows soon.
+
+Reported-by: Marc MERLIN <marc@merlins.org>
+Tested-by: Marc MERLIN <marc@merlins.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 895f1b1..50ebc62 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1159,6 +1159,9 @@ struct backref_ctx {
+ 	/* may be truncated in case it's the last extent in a file */
+ 	u64 extent_len;
+ 
++	/* data offset in the file extent item */
++	u64 data_offset;
++
+ 	/* Just to check for bugs in backref resolving */
+ 	int found_itself;
+ };
+@@ -1222,7 +1225,7 @@ static int __iterate_backrefs(u64 ino, u64 offset, u64 root, void *ctx_)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	if (offset + bctx->extent_len > i_size)
++	if (offset + bctx->data_offset + bctx->extent_len > i_size)
+ 		return 0;
+ 
+ 	/*
+@@ -1364,6 +1367,19 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	backref_ctx->cur_offset = data_offset;
+ 	backref_ctx->found_itself = 0;
+ 	backref_ctx->extent_len = num_bytes;
++	/*
++	 * For non-compressed extents iterate_extent_inodes() gives us extent
++	 * offsets that already take into account the data offset, but not for
++	 * compressed extents, since the offset is logical and not relative to
++	 * the physical extent locations. We must take this into account to
++	 * avoid sending clone offsets that go beyond the source file's size,
++	 * which would result in the clone ioctl failing with -EINVAL on the
++	 * receiving end.
++	 */
++	if (compressed == BTRFS_COMPRESS_NONE)
++		backref_ctx->data_offset = 0;
++	else
++		backref_ctx->data_offset = btrfs_file_extent_offset(eb, fi);
+ 
+ 	/*
+ 	 * The last extent of a file may be too large due to page alignment.
+-- 
+2.1.3
+

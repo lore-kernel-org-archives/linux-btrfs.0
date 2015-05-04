@@ -1,206 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:42922 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750707AbbEDOeh (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 4 May 2015 10:34:37 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, marc@merlins.org,
-        Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test for btrfs send with compressed file extents
-Date: Mon,  4 May 2015 15:34:19 +0100
-Message-Id: <1430750059-4833-1-git-send-email-fdmanana@suse.com>
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:25551 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751161AbbEDXq0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 May 2015 19:46:26 -0400
+Date: Tue, 5 May 2015 09:46:11 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] xfstests: btrfs: add functions to create dm-error
+ device
+Message-ID: <20150504234611.GI15810@dastard>
+References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
+ <1430388527-16700-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1430388527-16700-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test that an incremental send issues valid clone operations for
-compressed file extents.
+On Thu, Apr 30, 2015 at 06:08:45PM +0800, Anand Jain wrote:
+> Controlled EIO from the device is achieved using the dm device.
+> Helper functions are at common/dmerror.
+> 
+> Broadly steps will include calling _init_dm_error_dev() with a blk
+> device as an argument, typically this device can be a device pealed
+> from the SCRATCH_DEV_POOL, and init_dm_error_dev() will use
+> this blk device as backing store of dm linear device and assign
+> DM_ERROR_DEV to /dev/mapper/error-dev, which then can be assigned back
+> to the SCRATCH_DEV_POOL.
 
-For some compressed extents, namely those referred by a file extent item
-with a non-zero data offset, btrfs could issue a clone operation in the
-send stream with an offset and length pair that were not entirely
-contained in the source file's range, causing the receiving side to get
--EINVAL errors from the clone ioctl when attempting to perform the clone
-operations.
+Don't play games with device pools like this. Create a single error
+device from the SCRATCH_DEV, just like the dm-flakey code does. That
+way this code can be used by any filesystem.
 
-This issue was fixed by the following linux kernel btrfs patch:
+And like the dmflakey code, build the dm tables at init time so you
+don't need all the blockdev variables to built them later on.
 
-  Btrfs: incremental send, fix clone operations for compressed extents
+> When test script is read to get EIO, the test cases can call
+                      ^^^^
+ready?
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/094     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/094.out |  15 ++++++
- tests/btrfs/group   |   1 +
- 3 files changed, 144 insertions(+)
- create mode 100755 tests/btrfs/094
- create mode 100644 tests/btrfs/094.out
+> _load_dm_error_table() which then it will load the dm error.
+> so that reading DM_ERROR_DEV will cause EIO. After the test case is
+> complete, cleanup must be done by calling _cleanup_dm_error_dev().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  common/dmerror | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  common/rc      | 18 ++++++++++++++++
+>  2 files changed, 83 insertions(+)
+>  create mode 100644 common/dmerror
+> 
+> diff --git a/common/dmerror b/common/dmerror
+> new file mode 100644
+> index 0000000..e1f92e6
+> --- /dev/null
+> +++ b/common/dmerror
+> @@ -0,0 +1,65 @@
+> +##/bin/bash
+> +#
+> +# Copyright (c) 2015 Oracle.  All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#
+> +#
+> +# common functions for setting up and tearing down a dmerror device
+> +
+> +_init_dm_error_dev()
+> +{
+> +	DM_ERROR_DEV=''
+> +	$DMSETUP_PROG remove error-dev > /dev/null 2>&1
+> +	DM_BLK_DEV=$1
+> +	[ -b $DM_BLK_DEV ] || _fatal "$DM_BLK_DEV is not a block device"
 
-diff --git a/tests/btrfs/094 b/tests/btrfs/094
-new file mode 100755
-index 0000000..6f6cdeb
---- /dev/null
-+++ b/tests/btrfs/094
-@@ -0,0 +1,128 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/094
-+#
-+# Test that an incremental send issues valid clone operations for compressed
-+# file extents.
-+#
-+# For some compressed extents, namely those referred by a file extent item with
-+# a non-zero data offset, btrfs could issue a clone operation in the send stream
-+# with an offset and length pair that were not entirely contained in the source
-+# file's range, causing the receiving side to get -EINVAL errors from the clone
-+# ioctl when attempting to perform the clone operations.
-+#
-+# This issue was fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: incremental send, fix clone operations for compressed extents
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	rm -fr $send_files_dir
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_cloner
-+_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount "-o compress"
-+
-+# Create the file with a single extent of 128K. This creates a metadata file
-+# extent item with a data start offset of 0 and a logical length of 128K.
-+$XFS_IO_PROG -f -c "pwrite -S 0xaa 64K 128K" -c "fsync" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Now rewrite the range 64K to 112K of our file. This will make the inode's
-+# metadata continue to point to the 128K extent we created before, but now
-+# with an extent item that points to the extent with a data start offset of
-+# 112K and a logical length of 16K.
-+# That metadata file extent item is associated with the logical file offset
-+# at 176K and covers the logical file range 176K to 192K.
-+$XFS_IO_PROG -c "pwrite -S 0xbb 64K 112K" -c "fsync" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Now rewrite the range 180K to 12K. This will make the inode's metadata
-+# continue to point the the 128K extent we created earlier, with a single
-+# extent item that points to it with a start offset of 112K and a logical
-+# length of 4K.
-+# That metadata file extent item is associated with the logical file offset
-+# at 176K and covers the logical file range 176K to 180K.
-+$XFS_IO_PROG -c "pwrite -S 0xcc 180K 12K" -c "fsync" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+
-+# Now clone that same region of the 128K extent into a new file, so that it
-+# gets referenced twice and the incremental send operation below decides to
-+# issue a clone operation instead of copying the data.
-+touch $SCRATCH_MNT/bar
-+$CLONER_PROG -s $((176 * 1024)) -d $((176 * 1024)) -l $((4 * 1024)) \
-+	$SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+	-f $send_files_dir/2.snap
-+
-+echo "File digests in the original filesystem:"
-+md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap2/bar | _filter_scratch
-+
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same file contents that the original filesystem had.
-+_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+
-+echo "File digests in the new filesystem:"
-+md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap2/bar | _filter_scratch
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/094.out b/tests/btrfs/094.out
-new file mode 100644
-index 0000000..c3ac1bf
---- /dev/null
-+++ b/tests/btrfs/094.out
-@@ -0,0 +1,15 @@
-+QA output created by 094
-+wrote 131072/131072 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 114688/114688 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 12288/12288 bytes at offset 184320
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digests in the original filesystem:
-+f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap1/foo
-+f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap2/foo
-+7fccf6175f5c68504b408719a21db99f  SCRATCH_MNT/mysnap2/bar
-+File digests in the new filesystem:
-+f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap1/foo
-+f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap2/foo
-+7fccf6175f5c68504b408719a21db99f  SCRATCH_MNT/mysnap2/bar
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a2112ab..ffe18bf 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -95,3 +95,4 @@
- 091 auto quick qgroup
- 092 auto quick send
- 093 auto quick clone
-+094 auto quick send
+This has already been checked in the _require function, right?
+
+> +	DM_DEV_SIZE=`blockdev --getsz $DM_BLK_DEV`
+> +	[ $? -ne 0 ] && _fatal  "failed to failed to read block dev size"
+
+And so this will never fail.
+
+> +	LINEAR_TABLE="0 $DM_DEV_SIZE linear $DM_BLK_DEV 0"
+> +	$DMSETUP_PROG create error-dev --table "$LINEAR_TABLE" || \
+> +		_fatal "failed to create dm linear device"
+> +
+> +	DM_ERROR_DEV='/dev/mapper/error-dev'
+> +	blockdev --setra 0 $DM_ERROR_DEV
+> +	[ $? -ne 0 ] && _fatal  "failed to failed to setra  for $DM_ERROR_DEV"
+
+Why are you doing this here, and, FWIW, it can't fail, either.
+
+> +}
+> +
+> +_cleanup_dm_error_dev()
+> +{
+> +	DM_ERROR_DEV=''
+> +	$DMSETUP_PROG remove error-dev > /dev/null 2>&1
+> +}
+> +
+> +_load_dm_error_table()
+> +{
+> +	[ -z $DM_BLK_DEV ] && _fatal "DM_BLK_DEV is not set"
+> +	[ -z $DM_ERROR_DEV ] && _fatal "DM_ERROR_DEV is not set"
+> +	[ -z $DM_DEV_SIZE ] && _fatal "DM_DEV_SIZE is not set call init_error_dev first"
+
+These are not necessary if the tables are already built.
+
+> +
+> +	ERROR_TABLE="0 $DM_DEV_SIZE error $DM_BLK_DEV 0"
+> +	$DMSETUP_PROG load error-dev --table "$ERROR_TABLE"
+> +	[ $? -ne 0 ] && _fatal "failed to load table into error-dev"
+> +
+> +	$DMSETUP_PROG resume error-dev
+> +	[ $? -ne 0 ] && _fatal  "failed to resume error-dev"
+> +
+> +	dd if=$DM_ERROR_DEV of=/dev/null count=1 > /dev/null 2>&1
+> +	[ $? -ne 0 ] || _fatal  "failed to fail IO to $DM_ERROR_DEV"
+
+There is no need to test the dm-error device like this. If it's not
+failing IO, then the caller is going to fail because the filesystem
+failed to fail like expected...
+
+> diff --git a/common/rc b/common/rc
+> index c5db0dd..2a50491 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -1305,6 +1305,24 @@ _require_block_device()
+>  	fi
+>  }
+>  
+> +# this test requires the device mapper error target
+> +#
+> +_require_dm_error()
+> +{
+> +    DM_BACKSTORE_DEV=$1
+> +    # require SCRATCH_DEV to be a valid block device
+> +    _require_block_device $DM_BACKSTORE_DEV
+> +    _require_command "$DMSETUP_PROG" dmsetup
+
+8 space tabs, please, and this function can go in common/dmerror,
+too.
+
+> +
+> +    $DMSETUP_PROG targets | grep error >/dev/null 2>&1
+> +    if [ $? -eq 0 ]
+> +    then
+> +	:
+> +    else
+> +	_notrun "This test requires dm error support"
+> +    fi
+
+if [...]; then
+else
+fi
+
+Cheers,
+
+Dave.
 -- 
-2.1.3
-
+Dave Chinner
+david@fromorbit.com

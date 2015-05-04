@@ -1,47 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4738 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754209AbbEZNXE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 09:23:04 -0400
-Message-ID: <55646D1F.6000506@fb.com>
-Date: Tue, 26 May 2015 08:54:55 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59308 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751030AbbEDQIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 May 2015 12:08:07 -0400
+Date: Mon, 4 May 2015 18:08:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix superblock csum type check.
+Message-ID: <20150504160805.GA5099@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1430183163-10870-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20150429172307.GD4996@twin.jikos.cz>
+ <55417856.5060207@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Josh Boyer <jwboyer@fedoraproject.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs
-References: <20150523000905.GA16230@ret.masoncoding.com> <CA+5PVA7yA-q3V_KHp-zL+4G_bO9Fp4i0jH_UXdez0r+4D4KqYQ@mail.gmail.com>
-In-Reply-To: <CA+5PVA7yA-q3V_KHp-zL+4G_bO9Fp4i0jH_UXdez0r+4D4KqYQ@mail.gmail.com>
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55417856.5060207@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/26/2015 08:33 AM, Josh Boyer wrote:
-> On Fri, May 22, 2015 at 9:14 PM, Chris Mason <clm@fb.com> wrote:
->> Hi Linus,
->>
->> My for-linus-4.1 branch has three more fixes:
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.1
->>
->> I fixed up a regression from 4.0 where conversion between different raid
->> levels would sometimes bail out without converting.
->>
->> Filipe tracked down a race where it was possible to double allocate
->> chunks on the drive.
->>
->> Mark has a fix for fiemap.  All three will get bundled off for stable as
->> well.
->>
->> Chris Mason (1) commits (+18/-0):
->>     Btrfs: fix regression in raid level conversion
+On Thu, Apr 30, 2015 at 08:33:26AM +0800, Qu Wenruo wrote:
+> >> -				csum_type);
+> >> +		       csum_type);
+> >
+> > Please avoid unrelated changes.
+> Thanks for reviewing.
 > 
-> Shouldn't this be CC'd to stable since it fixes a broken commit in 4.0?
+> Do I need to send a newer version to discard this format change?
 
-Yes, I'm retesting two of these against 4.0
-
--chris
-
+Yes please.

@@ -1,56 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36609 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752369AbbEDVgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 May 2015 17:36:46 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YpO2b-0000a9-7g
-	for linux-btrfs@vger.kernel.org; Mon, 04 May 2015 23:36:41 +0200
-Received: from c-24-5-205-109.hsd1.ca.comcast.net ([24.5.205.109])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 23:36:41 +0200
-Received: from obiwantje by c-24-5-205-109.hsd1.ca.comcast.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 23:36:41 +0200
-To: linux-btrfs@vger.kernel.org
-From: TheJay <obiwantje@gmail.com>
-Subject: Re: [REQ] Help to gain access to btrfsraid6 pool that won't mount
-Date: Mon, 4 May 2015 21:36:35 +0000 (UTC)
-Message-ID: <mi8op3$ri6$1@ger.gmane.org>
-References: <mi8452$i00$1@ger.gmane.org> <5547E3BF.4090901@inwind.it>
-Mime-Version: 1.0
+Received: from mail-vn0-f45.google.com ([209.85.216.45]:33380 "EHLO
+	mail-vn0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751477AbbEDXkI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2015 19:40:08 -0400
+Received: by vnbf1 with SMTP id f1so15835730vnb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 16:40:08 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$3396c$51a072b0$71501292$8af8c3ee@cox.net>
+References: <CADw2B2NDTqOXQdh+xBTfk3=MfYJUtGAvQ-B4RaADA4XXJ30OZw@mail.gmail.com>
+	<20150412201107.GA4711@hungrycats.org>
+	<pan$3396c$51a072b0$71501292$8af8c3ee@cox.net>
+Date: Mon, 4 May 2015 16:40:08 -0700
+Message-ID: <CADw2B2NuyxorUUJvpwUuPF78adrey9OORgviWg5NWx56cknOdg@mail.gmail.com>
+Subject: Re: mlocate/updatedb and btrfs subvolume mounts
+From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 04 May 2015 23:25:19 +0200, Goffredo Baroncelli wrote:
+On Sun, Apr 12, 2015 at 9:12 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>
+> Zygo Blaxell posted on Sun, 12 Apr 2015 16:11:07 -0400 as excerpted:
+>
+> > Since these are simple binds (not rbinds), they don't see any other
+> > filesystems, period.  They do see btrfs subvolumes, though.
+>
+> Tho... for systemd users...
+>
+> Do note that systemd plays with the kernel's shared-subtree "private"
+> default, switching it to shared for /.
 
+I like to think I know a bit about a thing or two. I've read both Zygo
+and Duncan's probably cogent responses.
 
-> A disk is missing, in this case you should use the "degraded" mount option:
-> 
-> mount -o degraded /dev/sdaa /mnt/roms03
+My brain hurts, and I am just not getting it.
 
+If I am to understand correctly, and specific to my OP, the problem
+with updatedb et al. on my system is that /, /home, /var, /opt and
+/var/lib/libvirt are all subvolume mounts - which appear as bind
+mounts. Thus the PRUNE_BIND_MOUNTS prunes ALL mounts, and updatedb
+sees nothing.
 
-Goffredo - Thanks for responding - I tried that, but to no avail:
+Everything else is a blur when we start talking about "mount --bind /
+/.binds/root"
 
-$ sudo mount -o degraded /dev/sdaa /mnt/roms03
-mount: wrong fs type, bad option, bad superblock on /dev/sdaa,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+Oh wait, maybe I get it now...
 
+By running "mount --bind / /.binds/root" and running updatedb in
+"/.binds/root" while still allowing it to see binds, I am certain to
+get a an mlocate db, and it won't ever see anything outside that
+explicit hierarchy.
 
-$ dmesg -T|tail
-[Mon May  4 14:33:17 2015] BTRFS info (device sdaa): allowing degraded mounts
-[Mon May  4 14:33:17 2015] BTRFS info (device sdaa): disk space caching is enabled
-[Mon May  4 14:33:17 2015] BTRFS: has skinny extents
-[Mon May  4 14:33:17 2015] BTRFS: bdev (null) errs: wr 3, rd 28773, flush 2, corrupt 0, gen 0
-[Mon May  4 14:33:22 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Mon May  4 14:33:22 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Mon May  4 14:33:22 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Mon May  4 14:33:22 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Mon May  4 14:33:22 2015] BTRFS: Failed to read block groups: -5
-[Mon May  4 14:33:22 2015] BTRFS: open_ctree failed
+Something like that?
 
+-rb

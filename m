@@ -1,91 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38334 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753960AbbEEC75 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 May 2015 22:59:57 -0400
-Date: Mon, 4 May 2015 22:59:53 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: mlocate/updatedb and btrfs subvolume mounts
-Message-ID: <20150505025953.GB18025@hungrycats.org>
-References: <CADw2B2NDTqOXQdh+xBTfk3=MfYJUtGAvQ-B4RaADA4XXJ30OZw@mail.gmail.com>
- <20150412201107.GA4711@hungrycats.org>
- <pan$3396c$51a072b0$71501292$8af8c3ee@cox.net>
- <CADw2B2NuyxorUUJvpwUuPF78adrey9OORgviWg5NWx56cknOdg@mail.gmail.com>
+Received: from magic.merlins.org ([209.81.13.136]:41876 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750997AbbEEGcP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 02:32:15 -0400
+Date: Mon, 4 May 2015 23:32:15 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe David Manana <fdmanana@gmail.com>, christian@vivaldi.com
+Subject: Re: 3.19.3: check tree block failed + WARNING: device 0 not present on scrub
+Message-ID: <20150505063215.GA28387@merlins.org>
+References: <20150502141102.GB1809@merlins.org> <20150501210013.GH13624@merlins.org> <20150429232130.GA23814@merlins.org> <20150502163010.GK13624@merlins.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="jho1yZJdad60DJr+"
-In-Reply-To: <CADw2B2NuyxorUUJvpwUuPF78adrey9OORgviWg5NWx56cknOdg@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150502163010.GK13624@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, May 02, 2015 at 09:30:10AM -0700, Marc MERLIN wrote:
+> btrfs-debug-tree -t 2 /dev/mapper/cryptroot 2>&1 | tee /tmp/debug_2.txt
+> 
+> leaf 372551614464 items 125 free space 7363 generation 1911640 owner 2
+> fs uuid 79a9a6c7-0955-4820-b81e-0c0681a657c1
+> chunk uuid a45c7819-9aee-4999-8a39-566181679f9c
+> 	item 0 key (291412238336 EXTENT_ITEM 16384) itemoff 16178 itemsize 105
+> 		extent refs 5 gen 688250 flags DATA
+> 		extent data backref root 23942 objectid 2028 offset 27253407744 count 1
+> 		shared data backref parent 919382933504 count 1
+> 		shared data backref parent 510112530432 count 1
+> 		shared data backref parent 510100160512 count 1
+> 		shared data backref parent 230103220224 count 1
+> (...)
+> 	item 123 key (291431116800 EXTENT_ITEM 4096) itemoff 10554 itemsize 37
+> 		extent refs 1 gen 172150 flags DATA
+> 		shared data backref parent 510226677760 count 1
+> 	item 124 key (291431120896 EXTENT_ITEM 32768) itemoff 10488 itemsize 66
+> 		extent refs 2 gen 334924 flags DATA
+> 		extent data backref root 23942 objectid 2028 offset 85580054528 count 1
+> 		shared data backref parent 504622628864 count 1
+> Check tree block failed, want=612294639616, have=687330107929042309
+> Check tree block failed, want=612294639616, have=687330107929042309
+> Check tree block failed, want=612294639616, have=10656972372562425046
+> Check tree block failed, want=612294639616, have=10656972372562425046
+> Check tree block failed, want=612294639616, have=10656972372562425046
+> read block failed check_tree_block
+> failed to read 612294639616 in tree 2
+> parent transid verify failed on 935174963200 wanted 1912353 found 1912435
+> parent transid verify failed on 935174963200 wanted 1912353 found 1912435
+> parent transid verify failed on 935174963200 wanted 1912353 found 1912435
+> parent transid verify failed on 935174963200 wanted 1912353 found 1912435
+> Ignoring transid failure
+> print-tree.c:1071: btrfs_print_tree: Assertion failed.
+> btrfs-debug-tree[0x410489]
+> btrfs-debug-tree[0x411dbf]
+> btrfs-debug-tree[0x402adb]
+> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fc2bc6b9b45]
+> btrfs-debug-tree[0x402d85]
 
---jho1yZJdad60DJr+
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Ok, so I ran btrfs check --repair on it with btrfs 4.0 and got this:
+http://marc.merlins.org/tmp/repair.txt
 
-On Mon, May 04, 2015 at 04:40:08PM -0700, G. Richard Bellamy wrote:
-> On Sun, Apr 12, 2015 at 9:12 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> >
-> > Zygo Blaxell posted on Sun, 12 Apr 2015 16:11:07 -0400 as excerpted:
-> >
-> > > Since these are simple binds (not rbinds), they don't see any other
-> > > filesystems, period.  They do see btrfs subvolumes, though.
-> >
-> > Tho... for systemd users...
-> >
-> > Do note that systemd plays with the kernel's shared-subtree "private"
-> > default, switching it to shared for /.
->=20
-> I like to think I know a bit about a thing or two. I've read both Zygo
-> and Duncan's probably cogent responses.
->=20
-> My brain hurts, and I am just not getting it.
->=20
-> If I am to understand correctly, and specific to my OP, the problem
-> with updatedb et al. on my system is that /, /home, /var, /opt and
-> /var/lib/libvirt are all subvolume mounts - which appear as bind
-> mounts. Thus the PRUNE_BIND_MOUNTS prunes ALL mounts, and updatedb
-> sees nothing.
->=20
-> Everything else is a blur when we start talking about "mount --bind /
-> /.binds/root"
->=20
-> Oh wait, maybe I get it now...
->=20
-> By running "mount --bind / /.binds/root" and running updatedb in
-> "/.binds/root" while still allowing it to see binds, I am certain to
-> get a an mlocate db, and it won't ever see anything outside that
-> explicit hierarchy.
->=20
-> Something like that?
+Many lines of 
+root 62006 inode 454222 errors 400, nbytes wrong
+root 62006 inode 454223 errors 400, nbytes wrong
+root 62006 inode 9680874 errors 400, nbytes wrong
+and
+reset isize for dir 28434 root 394
+reset isize for dir 37282 root 394
+reset isize for dir 37712 root 394
 
-Something like that.  You might also have to do=20
-'chroot /.binds/root <your-updatedb-script-here>' in order to get path
-names that make sense from / (i.e. to prevent updatedb from adding
-'/.binds/root' to everything).
+Not sure when/how I picked those up, but I guess repair was able to handle
+them.
 
-Bind mounts are awesome.  And also evil.  ;)
+But what do they mean? Does size wrong mean that I have files that got reset
+with less data that they had before?
 
-> -rb
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---jho1yZJdad60DJr+
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlVIMikACgkQgfmLGlazG5xlNQCfSVxHHcgcfqw6R+T/yCkWaO0s
-0+MAnjBbHOO0199JMTtRbVE84Cf4aFg5
-=XReE
------END PGP SIGNATURE-----
-
---jho1yZJdad60DJr+--
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

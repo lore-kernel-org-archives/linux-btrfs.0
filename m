@@ -1,187 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:33837 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751277AbbEEAC4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2015 20:02:56 -0400
-Received: by pacyx8 with SMTP id yx8so174739557pac.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 17:02:55 -0700 (PDT)
-Received: from crinkle.gilfillan.org (wsip-68-15-115-197.ok.ok.cox.net. [68.15.115.197])
-        by mx.google.com with ESMTPSA id mb4sm13927002pdb.63.2015.05.04.17.02.53
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 04 May 2015 17:02:53 -0700 (PDT)
-Message-ID: <554808AC.7090801@gmail.com>
-Date: Mon, 04 May 2015 19:02:52 -0500
-From: Perry Gilfillan <tuxokc@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:62876 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750990AbbEEA1g convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2015 20:27:36 -0400
+Message-ID: <55480E74.80404@cn.fujitsu.com>
+Date: Tue, 5 May 2015 08:27:32 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: hard lockup while balance was running killed my raid5
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: Christian Engelmayer <cengelma@gmx.at>, <linux-btrfs@vger.kernel.org>
+CC: <clm@fb.com>, <jbacik@fb.com>, <dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs: qgroup: Fix possible leak in btrfs_add_qgroup_relation()
+References: <1430579995-24551-1-git-send-email-cengelma@gmx.at>
+In-Reply-To: <1430579995-24551-1-git-send-email-cengelma@gmx.at>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been using BTRFS for the better part of a year now without too many 
-hiccups, and recovered from those that have happened with minimal fuss 
-until now.  I created this raid5 set a few months ago on a collection of 
-1TB and 2TB drives, and since then have been swapping in new 3TB drives.
-
-The data is just broadcast recordings, so there's no time pressure, nor 
-are there backups...  So I'll sit on the problem for as long it takes to 
-see a solution.
 
 
-My kernel
-Linux lightmyfire 4.1.0-0.rc1.git1.1.fc23.x86_64 #1 SMP Sun May 3 
-14:26:14 CDT 2015 x86_64 x86_64 x86_64 GNU/Linux
+-------- Original Message  --------
+Subject: [PATCH] btrfs: qgroup: Fix possible leak in 
+btrfs_add_qgroup_relation()
+From: Christian Engelmayer <cengelma@gmx.at>
+To: <linux-btrfs@vger.kernel.org>
+Date: 2015年05月02日 23:19
 
-I've got btrfs-progs and btrfs-progs-unstable from git, so I'll use 
-which ever might be useful for any further diagnostics.
+> Commit 9c8b35b1ba21 ("btrfs: quota: Automatically update related qgroups or
+> mark INCONSISTENT flags when assigning/deleting a qgroup relations.")
+> introduced the allocation of a temporary ulist in function
+> btrfs_add_qgroup_relation() and added the corresponding cleanup to the out
+> path. However, the allocation was introduced before the src/dst level check
+> that directly returns. Fix the possible leakage of the ulist by moving the
+> allocation after the input validation. Detected by Coverity CID 1295988.
+>
+> Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
+> ---
+> Compile tested only. Applies against linux-next.
+> ---
+>   fs/btrfs/qgroup.c | 8 ++++----
+>   1 file changed, 4 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 3d6546581bb9..842ff86d4ae8 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1115,14 +1115,14 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
+>   	struct ulist *tmp;
+>   	int ret = 0;
+>
+> -	tmp = ulist_alloc(GFP_NOFS);
+> -	if (!tmp)
+> -		return -ENOMEM;
+> -
+>   	/* Check the level of src and dst first */
+>   	if (btrfs_qgroup_level(src) >= btrfs_qgroup_level(dst))
+>   		return -EINVAL;
+>
+> +	tmp = ulist_alloc(GFP_NOFS);
+> +	if (!tmp)
+> +		return -ENOMEM;
+> +
+>   	mutex_lock(&fs_info->qgroup_ioctl_lock);
+>   	quota_root = fs_info->quota_root;
+>   	if (!quota_root) {
+>
+Oh, my fault.
+Thanks for catching it.
 
-Since devid 1 & 2 appear to be fully utilized, I set off a balance, the 
-system locked up,  and nothing I've read points to a solution yet.
-
-
-[root@lightmyfire btrfs-progs-unstable]# ./btrfs fi sh /dev/sda5
-Label: 'mythstore-Q-002'  uuid: 8cb46c9e-9633-435f-a965-1afd14c981d6
-         Total devices 5 FS bytes used 6.82TiB
-         devid    1 size 2.44TiB used 2.44TiB path /dev/sde5
-         devid    2 size 2.44TiB used 2.44TiB path /dev/sdc5
-         devid    5 size 1.82TiB used 1.79TiB path /dev/sdd1
-         devid    6 size 2.44TiB used 1.79TiB path /dev/sda5
-         devid    7 size 2.44TiB used 1.79TiB path /dev/sdf5
-
-btrfs-progs v4.0
-
-
-[root@lightmyfire btrfs-progs-unstable]# mount -o ro,recovery /dev/sda5 
-/media/mythstore-q/
-mount: wrong fs type, bad option, bad superblock on /dev/sda5,
-        missing codepage or helper program, or other error
-
-        In some cases useful info is found in syslog - try
-        dmesg | tail or so.
-
-[root@lightmyfire btrfs-progs-unstable]# dmesg | tail
-[90155.912245] BTRFS info (device sde5): enabling auto recovery
-[90155.912250] BTRFS info (device sde5): disk space caching is enabled
-[90155.914705] BTRFS (device sde5): parent transid verify failed on 
-27198602870784 wanted 291859 found 291431
-[90155.916631] BTRFS (device sde5): parent transid verify failed on 
-27198602887168 wanted 291859 found 291431
-[90155.967480] BTRFS (device sde5): parent transid verify failed on 
-27198604001280 wanted 291640 found 291420
-[90156.688917] BTRFS (device sde5): bad tree block start 889192477 
-27198604001280
-[90156.689124] BTRFS: failed to read chunk tree on sde5
-[90156.758500] BTRFS: open_ctree failed
-
-
-
-Looking at btrfs-show-super it appears that /dev/sdf5 is the one that is 
-causing the transid problem.  The other device supers all show 
-generation 291859.  I've tried hiding sdf5 ( wipefs ) with no success, 
-so degraded doesn't help.
-
-superblock: bytenr=65536, device=/dev/sde5
----------------------------------------------------------
-csum                    0xaec2d815 [match]
-bytenr                  65536
-flags                   0x1
-magic                   _BHRfS_M [match]
-fsid                    8cb46c9e-9633-435f-a965-1afd14c981d6
-label                   mythstore-Q-002
-generation              291859
-root                    26023428292608
-sys_array_size          161
-chunk_root_generation   291859
-root_level              1
-chunk_root              27198602870784
-chunk_root_level        1
-log_root                26023432650752
-log_root_transid        0
-log_root_level          0
-total_bytes             12726740449280
-bytes_used              7496508084224
-sectorsize              4096
-nodesize                16384
-leafsize                16384
-stripesize              4096
-root_dir                6
-num_devices             5
-compat_flags            0x0
-compat_ro_flags         0x0
-incompat_flags          0xe1
-                         ( MIXED_BACKREF |
-                           BIG_METADATA |
-                           EXTENDED_IREF |
-                           RAID56 )
-csum_type               0
-csum_size               4
-cache_generation        291859
-uuid_tree_generation    291859
-dev_item.uuid           4d3a8469-8492-4cbe-bba9-dc77c82fe2b5
-dev_item.fsid           8cb46c9e-9633-435f-a965-1afd14c981d6 [match]
-dev_item.type           0
-dev_item.total_bytes    2681585270784
-dev_item.bytes_used     2681584222208
-dev_item.io_align       4096
-dev_item.io_width       4096
-dev_item.sector_size    4096
-dev_item.devid          1
-dev_item.dev_group      0
-dev_item.seek_speed     0
-dev_item.bandwidth      0
-dev_item.generation     0
-
-
-superblock: bytenr=65536, device=/dev/sdf5
----------------------------------------------------------
-csum                    0x4b5bad00 [match]
-bytenr                  65536
-flags                   0x1
-magic                   _BHRfS_M [match]
-fsid                    8cb46c9e-9633-435f-a965-1afd14c981d6
-label                   mythstore-Q-002
-generation              291431
-root                    26096742498304
-sys_array_size          161
-chunk_root_generation   291431
-root_level              1
-chunk_root              27198602870784
-chunk_root_level        1
-log_root                26096751624192
-log_root_transid        0
-log_root_level          0
-total_bytes             12726740449280
-bytes_used              7496518389760
-sectorsize              4096
-nodesize                16384
-leafsize                16384
-stripesize              4096
-root_dir                6
-num_devices             5
-compat_flags            0x0
-compat_ro_flags         0x0
-incompat_flags          0xe1
-                         ( MIXED_BACKREF |
-                           BIG_METADATA |
-                           EXTENDED_IREF |
-                           RAID56 )
-csum_type               0
-csum_size               4
-cache_generation        291431
-uuid_tree_generation    291431
-dev_item.uuid           3fc033b6-43f7-4e07-aee3-00ca592615f9
-dev_item.fsid           8cb46c9e-9633-435f-a965-1afd14c981d6 [match]
-dev_item.type           0
-dev_item.total_bytes    2681585737216
-dev_item.bytes_used     1964992626688
-dev_item.io_align       4096
-dev_item.io_width       4096
-dev_item.sector_size    4096
-dev_item.devid          7
-dev_item.dev_group      0
-dev_item.seek_speed     0
-dev_item.bandwidth      0
-dev_item.generation     0
-
+Qu

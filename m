@@ -1,41 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60614 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750779AbbEDQdp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 May 2015 12:33:45 -0400
-Date: Mon, 4 May 2015 18:33:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: progs bug(ish?) report
-Message-ID: <20150504163343.GB5099@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20150429222438.GG18480@carfax.org.uk>
+Received: from cn.fujitsu.com ([59.151.112.132]:23100 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755066AbbEECzT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2015 22:55:19 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Subject: [PATCH v2] btrfs: Fix superblock csum type check.
+Date: Tue, 5 May 2015 10:53:15 +0800
+Message-ID: <1430794395-5846-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150429222438.GG18480@carfax.org.uk>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 29, 2015 at 10:24:38PM +0000, Hugo Mills wrote:
->    Not sure if it really counts as a bug, mostly just an
-> inconvenience, but ./configure completes happily, and then make fails
-> with:
-> 
-> btrfs-convert.c:27:21: fatal error: sys/acl.h: No such file or directory
+Old csum type check is wrong and can't catch csum_type 1(not supported).
 
-Thanks, it's a bug.
+Fix it to avoid hostile 0 division.
 
-> so I guess it needs an additional check for libacl1. I can't see a
-> pkg-config entry for it on my system. OTOH, I don't see where there's
-> any linkage with libacl in the makefile, and it's clearly finding the
-> include files successfully.
+Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2:
+   Discard a unrelated format change.
+---
+ fs/btrfs/ctree.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Right, btrfs-convert does not link against libacl. I can see it use
-some of the ACL_ macros (simple values only) and none of the functions
-provided by libacl. For that reason I'd rather avoid dependency on the
-library and copy the values.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f9c89ca..745b5e7 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -174,7 +174,7 @@ struct btrfs_ordered_sum;
+ /* csum types */
+ #define BTRFS_CSUM_TYPE_CRC32	0
+ 
+-static int btrfs_csum_sizes[] = { 4, 0 };
++static int btrfs_csum_sizes[] = { 4 };
+ 
+ /* four bytes for CRC32 */
+ #define BTRFS_EMPTY_DIR_SIZE 0
+-- 
+2.3.7
 
-The acl values are directly read from the extN data, so it's more part
-of the on-disk format than an interface to libacl. For that reason I'm
-not worried about having the local copy. I'll fix that.

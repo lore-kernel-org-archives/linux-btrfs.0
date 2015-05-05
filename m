@@ -1,32 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39306 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1423394AbbEENUG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 May 2015 09:20:06 -0400
-Date: Tue, 5 May 2015 15:20:04 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christian Engelmayer <cengelma@gmx.at>
-Cc: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com, clm@fb.com,
-        jbacik@fb.com
-Subject: Re: [PATCH] btrfs: qgroup: Fix possible leak in
- btrfs_add_qgroup_relation()
-Message-ID: <20150505132004.GD5099@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1430579995-24551-1-git-send-email-cengelma@gmx.at>
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:33564 "EHLO
+	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750808AbbEEQQC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 12:16:02 -0400
+Received: by oica37 with SMTP id a37so150401040oic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 09:16:01 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1430579995-24551-1-git-send-email-cengelma@gmx.at>
+Date: Tue, 5 May 2015 09:16:01 -0700
+Message-ID: <CAA=o1pmgVecy+TDq-3ecdoSKUTVs8Qb5Sh8GnGZ6aVR=16h=VQ@mail.gmail.com>
+Subject: Compression: effect of setting the c attribute: wiki unclear
+From: Rory Jaffe <rsjaffe@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 02, 2015 at 05:19:55PM +0200, Christian Engelmayer wrote:
-> Commit 9c8b35b1ba21 ("btrfs: quota: Automatically update related qgroups or
-> mark INCONSISTENT flags when assigning/deleting a qgroup relations.")
-> introduced the allocation of a temporary ulist in function
-> btrfs_add_qgroup_relation() and added the corresponding cleanup to the out
-> path. However, the allocation was introduced before the src/dst level check
-> that directly returns. Fix the possible leakage of the ulist by moving the
-> allocation after the input validation. Detected by Coverity CID 1295988.
-> 
-> Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+On the wiki, it first speaks about forcing compression by adding the c
+attribute, but later states that the c attribute enables, not forces
+compression. Which is it? It seems like the typical use case
+currently, given the inability to selectively compress subvolumes, is
+the "if possible" choice.
+
+============from https://btrfs.wiki.kernel.org/index.php/Compression
+
+Can I force compression on a file without using the compress mount option?
+
+Yes. The utility chattr supports setting file attribute c that marks
+the inode to compress newly written data.
+
+* * *
+
+What's the precedence of all the options affecting compression?
+
+Compression to newly written data happens:
+
+always -- if the filesystem is mounted with compress-force
+never -- if the NOCOMPRESS flag is set per-file/-directory
+if possible -- if the COMPRESS per-file flag (aka chattr +c) is set,
+but it may get converted to NOCOMPRESS eventually
+if possible -- if the compress mount option is specified
+
+Note, that mounting with compress will not set the +c file attribute.

@@ -1,19 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43727 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753411AbbEFDFs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:48 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:37970 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751079AbbEFGZI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 02:25:08 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: [PATCH v2 1/3] xfstests: btrfs: add functions to create dm-error device
-Date: Wed,  6 May 2015 03:03:17 +0800
-Message-Id: <1430852599-22724-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
-References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
- <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2.1 1/3] xfstests: btrfs: add functions to create dm-error device
+Date: Wed,  6 May 2015 06:22:45 +0800
+Message-Id: <1430864565-25079-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1430852599-22724-2-git-send-email-anand.jain@oracle.com>
+References: <1430852599-22724-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+From: Anand Jain <Anand.Jain@oracle.com>
 
 Controlled EIO from the device is achieved using the dm device.
 Helper functions are at common/dmerror.
@@ -22,13 +23,14 @@ Broadly steps will include calling _init_dmerror().
 _init_dmerror() will use SCRATCH_DEV to create dm linear device and assign
 DMERROR_DEV to /dev/mapper/error-test.
 
-When test script is read to get EIO, the test cases can call
+When test script is ready to get EIO, the test cases can call
 _load_dmerror_table() which then it will load the dm error.
 so that reading DMERROR_DEV will cause EIO. After the test case is
 complete, cleanup must be done by calling _cleanup_dmerror().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+v2->v2.1: fixed missed typo error fixup in the commit.
 v1->v2: accepts Dave Chinner's review comments, thanks
 
  common/dmerror | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

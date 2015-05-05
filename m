@@ -1,88 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58060 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:57443 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751236AbbEHI5P convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 04:57:15 -0400
-Message-ID: <554C7A6A.8040404@cn.fujitsu.com>
-Date: Fri, 8 May 2015 16:57:14 +0800
+	with ESMTP id S1752624AbbEEGSv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 02:18:51 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t456HVSd008341
+	for <linux-btrfs@vger.kernel.org>; Tue, 5 May 2015 14:17:31 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/8] btrfs-progs: Allow open_ctree to ignore fsid mismatch.
+Date: Tue, 5 May 2015 14:16:39 +0800
+Message-ID: <1430806606-3226-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1430806606-3226-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1430806606-3226-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/8] Introduce offline fsid/chunk tree uuid change for
- btrfstune.
-References: <1430806606-3226-1-git-send-email-quwenruo@cn.fujitsu.com> <20150505152055.GH5099@twin.jikos.cz> <5549651D.6020005@cn.fujitsu.com> <20150506154347.GC23255@twin.jikos.cz>
-In-Reply-To: <20150506154347.GC23255@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This feature is used for later UUID change function.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ ctree.h   | 1 +
+ disk-io.c | 5 ++++-
+ disk-io.h | 3 +++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
 
--------- Original Message  --------
-Subject: Re: [PATCH 0/8] Introduce offline fsid/chunk tree uuid change 
-for btrfstune.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2015年05月06日 23:43
+diff --git a/ctree.h b/ctree.h
+index 10dc838..45fef3d 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1010,6 +1010,7 @@ struct btrfs_fs_info {
+ 	unsigned int is_chunk_recover:1;
+ 	unsigned int quota_enabled:1;
+ 	unsigned int suppress_check_block_errors:1;
++	unsigned int ignore_fsid:1;
+ 
+ 	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+diff --git a/disk-io.c b/disk-io.c
+index c1cf146..8a91345 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -49,7 +49,8 @@ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
+ 
+ 	fs_devices = root->fs_info->fs_devices;
+ 	while (fs_devices) {
+-		if (!memcmp_extent_buffer(buf, fs_devices->fsid,
++		if (root->fs_info->ignore_fsid ||
++		    !memcmp_extent_buffer(buf, fs_devices->fsid,
+ 					  btrfs_header_fsid(),
+ 					  BTRFS_FSID_SIZE)) {
+ 			ret = 0;
+@@ -1149,6 +1150,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 		fs_info->on_restoring = 1;
+ 	if (flags & OPEN_CTREE_SUPPRESS_CHECK_BLOCK_ERRORS)
+ 		fs_info->suppress_check_block_errors = 1;
++	if (flags & OPEN_CTREE_IGNORE_FSID)
++		fs_info->ignore_fsid = 1;
+ 
+ 	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr,
+ 				    (flags & OPEN_CTREE_RECOVER_SUPER),
+diff --git a/disk-io.h b/disk-io.h
+index 4caebeb..83cbe47 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -49,6 +49,9 @@ enum btrfs_open_ctree_flags {
+ 	 * tree bits.
+ 	 * Like split PARTIAL into SKIP_CSUM/SKIP_EXTENT
+ 	 */
++
++	/* Currently, no codes check chunk_tree_uuid, so only ignore fsid */
++	OPEN_CTREE_IGNORE_FSID		= (1 << 10)
+ };
+ 
+ static inline u64 btrfs_sb_offset(int mirror)
+-- 
+2.3.7
 
-> On Wed, May 06, 2015 at 08:49:33AM +0800, Qu Wenruo wrote:
->>> Code looks good to me. I'm not sure whether it should land in btrfstune
->>> or in 'btrfs' proper.
->>>
->>> * btrfstune should go away at some point, so I'd rather not add new
->>>     features there
->>>
->>> * 'btrfs property set -t filesystem uuid' seems best to me at this moment
->> Good idea.
->>
->> I'll change it to property in next version.
->
-> I've realized this later on.  The original purpose of the properties is
-> to manipulate objects on a mounted filesystem, so this might need some
-> adjustnments on the progs side. I'd really want to avoid another
-> separate tool, so we should make sure that the interface is sane even if
-> it could mix online/offline filesystem changes.
-That's the original reason why I put these codes into btrfstune.
-
-But that should not be a big problem. (See below)
->
-> Respecting the current syntax, the way to set the uuid is:
->
->   btrfs prop set -t filesytem /dev/sdx uuid ...UUID...
->
-> In this special case, the property handler should check if the device is
-> unmounted (and is a btrfs filesystem) and then do the rest.
-This is one good idea, but I'm afraid it may still be confusing.
-And things may get even worse when we try to move everything into 
-btrfs-prop,
-E.g. if we auto move seeding flag to prop, we must give a quite detailed 
-explain on which property is offline.
-
-So I prefer to add a new type called offline, and put uuid change with 
-other btrfstune function into this type.
-IMHO this should provide a good explain on which is online and which is 
-offline.
-
-How do you think about this method?
-
-Thanks,
-Qu
->
->>> A minor suggestion: set BTRFS_SUPER_FLAG_ERROR on the filesystem during
->>> the conversion and drop it after it finishes successfully. It's merely a
->>> hint that there's something wrong with the filesytem, the mount will
->>> fail because filesystem uuid would not match the device id.
->>>
->> Nice idea too.
->> But I'd like to use more specific flags like
->> BTRFS_SUPER_FLAG_UUID_CHANGING to give better info if kernel can't mount it.
->
-> Yeah that would be better and we'd use that for the on-line uuid change
-> as well. I've outlined the idea here
-> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Filesystem_UUID_change_-_on-line
->
-> The code should really support only 2 UUIDs, so we should check if the
-> UUIDs specified by user matches one of them if the superblock flag is
-> set. Ie. a partial uuid conversion must be finished before another
-> UUID change (though it's a rare case, we have to be ready for that).
->

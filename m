@@ -1,92 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:46201 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:57032 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S2993163AbbEEOWb (ORCPT
+	by vger.kernel.org with ESMTP id S1759195AbbEESDr (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 5 May 2015 10:22:31 -0400
+	Tue, 5 May 2015 14:03:47 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix crash after inode cache writeback failure
-Date: Tue,  5 May 2015 15:21:27 +0100
-Message-Id: <1430835687-19709-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix panic when starting bg cache writeout after IO error
+Date: Tue,  5 May 2015 19:03:10 +0100
+Message-Id: <1430848990-4675-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the writeback of an inode cache failed we were unnecessarilly
-attempting to release again the delalloc metadata that we previously
-reserved. However attempting to do this a second time triggers an
-assertion at drop_outstanding_extent() because we have no more
-outstanding extents for our inode cache's inode. If we were able
-to start writeback of the cache the reserved metadata space is
-released at btrfs_finished_ordered_io(), even if an error happens
-during writeback.
+When waiting for the writeback of block group cache we returned
+immediately if there was an error during writeback without waiting
+for the ordered extent to complete. This left a short time window
+where if some other task attempts to start the writeout for the same
+block group cache it can attempt to add a new ordered extent, starting
+at the same offset (0) before the previous one is removed from the
+ordered tree, causing an ordered tree panic (calls BUG()).
 
-So make sure we don't repeat the metadata space release if writeback
-started for our inode cache.
+This normally doesn't happen in other write paths, such as buffered
+writes or direct IO writes for regular files, since before marking
+page ranges dirty we lock the ranges and wait for any ordered extents
+within the range to complete first.
 
-This issue was trivial to reproduce by running the fstest btrfs/088
-with "-o inode_cache", which triggered the assertion leading to a
-BUG() call and requiring a reboot in order to run the remaining
-fstests. Trace produced by btrfs/088:
+Fix this by making btrfs_wait_ordered_range() not return immediately
+if it gets an error from the writeback, waiting for all ordered extents
+to complete first.
 
-[255289.385904] BTRFS: assertion failed: BTRFS_I(inode)->outstanding_extents >= num_extents, file: fs/btrfs/extent-tree.c, line: 5276
-[255289.388094] ------------[ cut here ]------------
-[255289.389184] kernel BUG at fs/btrfs/ctree.h:4057!
-[255289.390125] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+This issue happened often when running the fstest btrfs/088 and it's
+easy to trigger it by running in a loop until the panic happens:
+
+  for ((i = 1; i <= 10000; i++)) do ./check btrfs/088 ; done
+
+[17156.862573] BTRFS critical (device sdc): panic in ordered_data_tree_panic:70: Inconsistency in ordered tree at offset 0 (errno=-17 Object already exists)
+[17156.864052] ------------[ cut here ]------------
+[17156.864052] kernel BUG at fs/btrfs/ordered-data.c:70!
 (...)
-[255289.392068] Call Trace:
-[255289.392068]  [<ffffffffa035e774>] drop_outstanding_extent+0x3d/0x6d [btrfs]
-[255289.392068]  [<ffffffffa0364988>] btrfs_delalloc_release_metadata+0x54/0xe3 [btrfs]
-[255289.392068]  [<ffffffffa03b4174>] btrfs_write_out_ino_cache+0x95/0xad [btrfs]
-[255289.392068]  [<ffffffffa036f5c4>] btrfs_save_ino_cache+0x275/0x2dc [btrfs]
-[255289.392068]  [<ffffffffa03e2d83>] commit_fs_roots.isra.12+0xaa/0x137 [btrfs]
-[255289.392068]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
-[255289.392068]  [<ffffffffa037841f>] ? btrfs_commit_transaction+0x4b1/0x9c9 [btrfs]
-[255289.392068]  [<ffffffff814351a4>] ? _raw_spin_unlock+0x32/0x46
-[255289.392068]  [<ffffffffa037842e>] btrfs_commit_transaction+0x4c0/0x9c9 [btrfs]
-(...)
+[17156.864052] Call Trace:
+[17156.864052]  [<ffffffffa03876e3>] btrfs_add_ordered_extent+0x12/0x14 [btrfs]
+[17156.864052]  [<ffffffffa03787e2>] run_delalloc_nocow+0x5bf/0x747 [btrfs]
+[17156.864052]  [<ffffffffa03789ff>] run_delalloc_range+0x95/0x353 [btrfs]
+[17156.864052]  [<ffffffffa038b7fe>] writepage_delalloc.isra.16+0xb9/0x13f [btrfs]
+[17156.864052]  [<ffffffffa038d75b>] __extent_writepage+0x129/0x1f7 [btrfs]
+[17156.864052]  [<ffffffffa038da5a>] extent_write_cache_pages.isra.15.constprop.28+0x231/0x2f4 [btrfs]
+[17156.864052]  [<ffffffff810ad2af>] ? __module_text_address+0x12/0x59
+[17156.864052]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
+[17156.864052]  [<ffffffffa038df76>] extent_writepages+0x4b/0x5c [btrfs]
+[17156.864052]  [<ffffffff81144431>] ? kmem_cache_free+0x9b/0xce
+[17156.864052]  [<ffffffffa0376a46>] ? btrfs_submit_direct+0x3fc/0x3fc [btrfs]
+[17156.864052]  [<ffffffffa0389cd6>] ? free_extent_state+0x8c/0xc1 [btrfs]
+[17156.864052]  [<ffffffffa0374871>] btrfs_writepages+0x28/0x2a [btrfs]
+[17156.864052]  [<ffffffff8110c4c8>] do_writepages+0x23/0x2c
+[17156.864052]  [<ffffffff81102f36>] __filemap_fdatawrite_range+0x5a/0x61
+[17156.864052]  [<ffffffff81102f6e>] filemap_fdatawrite_range+0x13/0x15
+[17156.864052]  [<ffffffffa0383ef7>] btrfs_fdatawrite_range+0x21/0x48 [btrfs]
+[17156.864052]  [<ffffffffa03ab89e>] __btrfs_write_out_cache.isra.14+0x2d9/0x3a7 [btrfs]
+[17156.864052]  [<ffffffffa03ac1ab>] ? btrfs_write_out_cache+0x41/0xdc [btrfs]
+[17156.864052]  [<ffffffffa03ac1fd>] btrfs_write_out_cache+0x93/0xdc [btrfs]
+[17156.864052]  [<ffffffffa0363847>] ? btrfs_start_dirty_block_groups+0x13a/0x2b2 [btrfs]
+[17156.864052]  [<ffffffffa03638e6>] btrfs_start_dirty_block_groups+0x1d9/0x2b2 [btrfs]
+[17156.864052]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
+[17156.864052]  [<ffffffffa037209e>] btrfs_commit_transaction+0x130/0x9c9 [btrfs]
+[17156.864052]  [<ffffffffa034c748>] btrfs_sync_fs+0xe1/0x12d [btrfs]
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ fs/btrfs/ordered-data.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index f1ddccf..c0ef0b1 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3465,6 +3465,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
- 	int ret;
- 	struct btrfs_io_ctl io_ctl;
-+	bool release_metadata = true;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 6c4f8e7..8f391fd 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -736,6 +736,7 @@ void btrfs_start_ordered_extent(struct inode *inode,
+ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
+ {
+ 	int ret = 0;
++	int ret_wb = 0;
+ 	u64 end;
+ 	u64 orig_end;
+ 	struct btrfs_ordered_extent *ordered;
+@@ -755,9 +756,14 @@ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
+ 	if (ret)
+ 		return ret;
  
- 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
- 		return 0;
-@@ -3472,11 +3473,20 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 	memset(&io_ctl, 0, sizeof(io_ctl));
- 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, &io_ctl,
- 				      trans, path, 0);
--	if (!ret)
-+	if (!ret) {
-+		/*
-+		 * At this point writepages() didn't error out, so our metadata
-+		 * reservation is released when the writeback finishes, at
-+		 * inode.c:btrfs_finish_ordered_io(), regardless of it finishing
-+		 * with or without an error.
-+		 */
-+		release_metadata = false;
- 		ret = btrfs_wait_cache_io(root, trans, NULL, &io_ctl, path, 0);
-+	}
+-	ret = filemap_fdatawait_range(inode->i_mapping, start, orig_end);
+-	if (ret)
+-		return ret;
++	/*
++	 * If we have a writeback error don't return immediately. Wait first
++	 * for any ordered extents that haven't completed yet. This is to make
++	 * sure no one can dirty the same page ranges and call writepages()
++	 * before the ordered extents complete - to avoid failures (-EEXIST)
++	 * when adding the new ordered extents to the ordered tree.
++	 */
++	ret_wb = filemap_fdatawait_range(inode->i_mapping, start, orig_end);
  
- 	if (ret) {
--		btrfs_delalloc_release_metadata(inode, inode->i_size);
-+		if (release_metadata)
-+			btrfs_delalloc_release_metadata(inode, inode->i_size);
- #ifdef DEBUG
- 		btrfs_err(root->fs_info,
- 			"failed to write free ino cache for root %llu",
+ 	end = orig_end;
+ 	while (1) {
+@@ -781,7 +787,7 @@ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
+ 			break;
+ 		end--;
+ 	}
+-	return ret;
++	return ret_wb ? ret_wb : ret;
+ }
+ 
+ /*
 -- 
 2.1.3
 

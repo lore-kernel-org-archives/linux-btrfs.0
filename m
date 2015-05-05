@@ -1,49 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:44967 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751561AbbEEXMx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 May 2015 19:12:53 -0400
-Date: Wed, 6 May 2015 09:11:30 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] xfstests: btrfs: test device replace, with EIO on
- the src dev
-Message-ID: <20150505231130.GM15810@dastard>
+Received: from userp1040.oracle.com ([156.151.31.81]:43721 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756953AbbEFDFr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:47 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: [PATCH v2 0/3] dm error based test cases
+Date: Wed,  6 May 2015 03:03:16 +0800
+Message-Id: <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
 References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
- <1430388527-16700-3-git-send-email-anand.jain@oracle.com>
- <20150505001412.GJ15810@dastard>
- <5548DE28.6070209@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5548DE28.6070209@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 05, 2015 at 11:13:44PM +0800, Anand Jain wrote:
-> 
-> Dave,
-> 
->  Thanks for comments. I am rewriting it.
-> 
->  But any idea why should _scratch_mkfs_dmerror (below) should
->  fail with one of the device in SCRATCH_DEV_POOL being busy.?
->  (when I start the script non of the device provided is actually
->  busy).
+Most likely user would replace or delete the device when
+there is a problem about it.
 
-$SCRATCH_DEV is the first device in $SCRATCH_DEV_POOL, right?
+We want to test this condition by using the dm error target which
+will help to create the EIO when needed.
+Basically first create the linear device and then load the error
+table to get the EIO when needed.
 
-> +SCRATCH_DEV_POOL_DEV1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $1}'`"
-> +SCRATCH_DEV_POOL_DEV2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
+The fist patch will provide the helper dm functions to create such
+a test case using dm error device.
 
-BTW, don't shout so much in your code: dev1 and dev2 are perfectly
-good local variable names. In general, local variables are in lower
-case, global/exported variables are in upper case.
+2nd and 3rd patch uses it to test the device replace and delete,
+respectively. Note that device delete will need kernel and progs
+patch, which when not there tests will gracefully fail and 
+will not run respectively.
 
-Cheers,
+v1->v2: accepts Dave Chinner's review comments, thanks.
 
-Dave.
+Anand Jain (3):
+  xfstests: btrfs: add functions to create dm-error device
+  xfstests: btrfs: test device replace, with EIO on the src dev
+  xfstests: btrfs: test device delete with EIO on src dev
+
+ common/dmerror      | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/rc           | 21 ++++++++++++++++
+ tests/btrfs/087     | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/087.out |  2 ++
+ tests/btrfs/088     | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/088.out |  2 ++
+ tests/btrfs/group   |  2 ++
+ 7 files changed, 237 insertions(+)
+ create mode 100644 common/dmerror
+ create mode 100755 tests/btrfs/087
+ create mode 100644 tests/btrfs/087.out
+ create mode 100755 tests/btrfs/088
+ create mode 100644 tests/btrfs/088.out
+
 -- 
-Dave Chinner
-david@fromorbit.com
+2.0.0.153.g79dcccc
+

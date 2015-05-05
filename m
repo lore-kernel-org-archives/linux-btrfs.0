@@ -1,38 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f53.google.com ([209.85.218.53]:33812 "EHLO
-	mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751068AbbEEGwR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 02:52:17 -0400
-Received: by oiko83 with SMTP id o83so132858913oik.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 23:52:16 -0700 (PDT)
+Received: from mail-ob0-f175.google.com ([209.85.214.175]:36758 "EHLO
+	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753214AbbEEG4j (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 02:56:39 -0400
+Received: by obbkp3 with SMTP id kp3so70630767obb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2015 23:56:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <mi8op3$ri6$1@ger.gmane.org>
-References: <mi8452$i00$1@ger.gmane.org>
-	<5547E3BF.4090901@inwind.it>
-	<mi8op3$ri6$1@ger.gmane.org>
-Date: Tue, 5 May 2015 00:52:16 -0600
-Message-ID: <CAJCQCtRy+RppYv5AnVb1BACWmud_yTN8qsRY2MHBKZv2K37Ykw@mail.gmail.com>
-Subject: Re: [REQ] Help to gain access to btrfsraid6 pool that won't mount
+In-Reply-To: <CAA=o1pmDtxRCgWZjUwazq8G+ch__oMAdXLUhnu3-N7ieASZO_Q@mail.gmail.com>
+References: <CAA=o1pmDtxRCgWZjUwazq8G+ch__oMAdXLUhnu3-N7ieASZO_Q@mail.gmail.com>
+Date: Tue, 5 May 2015 00:56:38 -0600
+Message-ID: <CAJCQCtRUQw9910kyX6kMaR+iA=QR1UA95nJ4Njc5uLZaZr62bA@mail.gmail.com>
+Subject: Re: fstab: use UUID or labe?
 From: Chris Murphy <lists@colorremedies.com>
-To: TheJay <obiwantje@gmail.com>
+To: Rory Jaffe <rsjaffe@gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 4, 2015 at 3:36 PM, TheJay <obiwantje@gmail.com> wrote:
+On Mon, May 4, 2015 at 7:42 PM, Rory Jaffe <rsjaffe@gmail.com> wrote:
 
-> [Mon May  4 14:33:17 2015] BTRFS: bdev (null) errs: wr 3, rd 28773, flush 2, corrupt 0, gen 0
+> If the original drive fails, will that UUID still point to the
+> filesystem, or is it better to use the label for the filesystem? Will
+> the filesystem mount in either case with the failure of the original
+> drive?
 
-So there might be more than one thing going wrong and they're
-colliding to make a worse problem. You've got three write and 2 flush
-errors, and many thousands of read errors (probably due to missing
-devices).
-
-It might be worth trying -o degraded,recovery because recovery can't
-work with devices missing, and degraded alone won't run the recovery
-code.
-
+A Btrfs volume has one label and one UUID. All member drives contain
+this information. So the answer is, it doesn't matter whether you use
+label or UUID in fstab, except that with UUID there's a lower chance
+of collision.
 
 -- 
 Chris Murphy

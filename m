@@ -1,66 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33812 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:34203 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752667AbbEEH2y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 May 2015 03:28:54 -0400
+	id S1756586AbbEEHfE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 May 2015 03:35:04 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YpXHg-0006gs-Ha
-	for linux-btrfs@vger.kernel.org; Tue, 05 May 2015 09:28:52 +0200
+	id 1YpXNe-0001y0-Qv
+	for linux-btrfs@vger.kernel.org; Tue, 05 May 2015 09:35:03 +0200
 Received: from c-24-5-205-109.hsd1.ca.comcast.net ([24.5.205.109])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 09:28:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 09:35:02 +0200
 Received: from obiwantje by c-24-5-205-109.hsd1.ca.comcast.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 09:28:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 09:35:02 +0200
 To: linux-btrfs@vger.kernel.org
 From: TheJay <obiwantje@gmail.com>
 Subject: Re: [REQ] Help to gain access to btrfsraid6 pool that won't mount
-Date: Tue, 5 May 2015 07:28:46 +0000 (UTC)
-Message-ID: <mi9rfe$ri6$2@ger.gmane.org>
-References: <mi8452$i00$1@ger.gmane.org> <5547E3BF.4090901@inwind.it>
-	<mi8op3$ri6$1@ger.gmane.org>
-	<CAJCQCtRy+RppYv5AnVb1BACWmud_yTN8qsRY2MHBKZv2K37Ykw@mail.gmail.com>
+Date: Tue, 5 May 2015 07:30:18 +0000 (UTC)
+Message-ID: <mi9ria$ri6$3@ger.gmane.org>
+References: <mi8452$i00$1@ger.gmane.org>
+	<CAJCQCtR2hZu7Dxr1PpHyTyaDYhRMeC7Rf=we59WzRCGncZ7=QA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 05 May 2015 00:52:16 -0600, Chris Murphy wrote:
+On Tue, 05 May 2015 00:48:35 -0600, Chris Murphy wrote:
 
-> On Mon, May 4, 2015 at 3:36 PM, TheJay <obiwantje@gmail.com> wrote:
+> On Mon, May 4, 2015 at 9:44 AM, TheJay <obiwantje@gmail.com> wrote:
+>> $ sudo btrfs fi show
+>> Label: 'roms03'  uuid: b0025417-4045-4c63-a432-0625b7cc41ea
+>>         Total devices 4 FS bytes used 2.67TiB
+>>         devid    1 size 1.36TiB used 1.36TiB path /dev/sdz
+>>         devid    3 size 1.36TiB used 1.36TiB path /dev/sdaa
+>>         devid    4 size 1.36TiB used 1.36TiB path /dev/sdab
+>>         *** Some devices missing
 > 
->> [Mon May  4 14:33:17 2015] BTRFS: bdev (null) errs: wr 3, rd 28773, flush 2, corrupt 0, gen 0
+> How many devices are missing?
 > 
-> So there might be more than one thing going wrong and they're
-> colliding to make a worse problem. You've got three write and 2 flush
-> errors, and many thousands of read errors (probably due to missing
-> devices).
+>> [Mon May  4 08:35:08 2015] BTRFS: failed to read chunk tree on sdz
 > 
-> It might be worth trying -o degraded,recovery because recovery can't
-> work with devices missing, and degraded alone won't run the recovery
-> code.
-> 
+> That's not good. What do you get for 'btrfs check" (without --repair)?
 > 
 > -- 
 > Chris Murphy
 
-$ mount  -o degraded,recovery /dev/sdz /mnt/roms03
-mount: wrong fs type, bad option, bad superblock on /dev/sdy,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+Appriciate the response Chris
 
-$ dmesg -T|tail
-[Tue May  5 00:26:01 2015] BTRFS info (device sdaa): enabling auto recovery
-[Tue May  5 00:26:01 2015] BTRFS info (device sdaa): disk space caching is enabled
-[Tue May  5 00:26:01 2015] BTRFS: has skinny extents
-[Tue May  5 00:26:01 2015] BTRFS: bdev (null) errs: wr 3, rd 28773, flush 2, corrupt 0, gen 0
-[Tue May  5 00:26:05 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Tue May  5 00:26:05 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Tue May  5 00:26:05 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Tue May  5 00:26:05 2015] BTRFS (device sdaa): bad tree block start 8714499618262386624 1585233920
-[Tue May  5 00:26:05 2015] BTRFS: Failed to read block groups: -5
-[Tue May  5 00:26:06 2015] BTRFS: open_ctree failed
+> How many devices are missing?
+One (1) of the 4 devices is missing - "device 2".
+
+> What do you get for 'btrfs check" (without --repair)?
+$ btrfs check /dev/sdaa
+warning, device 2 is missing
+warning devid 2 not found already
+checksum verify failed on 21200896 found 44715E95 wanted A092E323
+checksum verify failed on 21200896 found 91AC994F wanted 987F5E0F
+checksum verify failed on 21200896 found 44715E95 wanted A092E323
+bytenr mismatch, want=21200896, have=65536
+Couldn't read chunk tree
+Couldn't open file system
+
+
+
 

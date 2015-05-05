@@ -1,56 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43721 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:43748 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756953AbbEFDFr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:47 -0400
+	with ESMTP id S1756667AbbEFDFw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:52 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: [PATCH v2 0/3] dm error based test cases
-Date: Wed,  6 May 2015 03:03:16 +0800
-Message-Id: <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 3/3] xfstests: btrfs: test device delete with EIO on src dev
+Date: Wed,  6 May 2015 03:03:19 +0800
+Message-Id: <1430852599-22724-4-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
 References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
+ <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Most likely user would replace or delete the device when
-there is a problem about it.
+This test case tests if the device delete would work when
+the source device has failed with EIO errors.
 
-We want to test this condition by using the dm error target which
-will help to create the EIO when needed.
-Basically first create the linear device and then load the error
-table to get the EIO when needed.
+EIO errors are achieved usign the DM device.
 
-The fist patch will provide the helper dm functions to create such
-a test case using dm error device.
+Also this test needs the latest btrfs-progs and kernel patch
+under title
+  [PATCH] device delete by devid
 
-2nd and 3rd patch uses it to test the device replace and delete,
-respectively. Note that device delete will need kernel and progs
-patch, which when not there tests will gracefully fail and 
-will not run respectively.
+When this patch is not found in the btrfs-progs, this test
+will not run. However when the require patch is not found
+in the kernel it will fail gracefully.
 
-v1->v2: accepts Dave Chinner's review comments, thanks.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v1->v2: accepts Dave Chinner's review comments, thanks
 
-Anand Jain (3):
-  xfstests: btrfs: add functions to create dm-error device
-  xfstests: btrfs: test device replace, with EIO on the src dev
-  xfstests: btrfs: test device delete with EIO on src dev
-
- common/dmerror      | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++
- common/rc           | 21 ++++++++++++++++
- tests/btrfs/087     | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/087.out |  2 ++
+ common/rc           |  6 +++++
  tests/btrfs/088     | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/088.out |  2 ++
- tests/btrfs/group   |  2 ++
- 7 files changed, 237 insertions(+)
- create mode 100644 common/dmerror
- create mode 100755 tests/btrfs/087
- create mode 100644 tests/btrfs/087.out
+ tests/btrfs/group   |  1 +
+ 4 files changed, 80 insertions(+)
  create mode 100755 tests/btrfs/088
  create mode 100644 tests/btrfs/088.out
 
+diff --git a/common/rc b/common/rc
+index 447ab7f..aca7a62 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2685,6 +2685,12 @@ _require_test_fcntl_advisory_locks()
+ 		_notrun "Require fcntl advisory locks support"
+ }
+ 
++_require_btrfs_dev_del_by_devid()
++{
++	$BTRFS_UTIL_PROG device delete --help | egrep devid > /dev/null 2>&1
++	[ $? -eq 0 ] || _notrun "$BTRFS_UTIL_PROG too old (must support 'btrfs device delete <devid> /<mnt>')"
++}
++
+ _get_total_inode()
+ {
+ 	if [ -z "$1" ]; then
+diff --git a/tests/btrfs/088 b/tests/btrfs/088
+new file mode 100755
+index 0000000..87814ec
+--- /dev/null
++++ b/tests/btrfs/088
+@@ -0,0 +1,71 @@
++#! /bin/bash
++# FS QA Test No. btrfs/088
++#
++# test device delete when the source device has EIO
++#
++# Copyright (c) 2015 Oracle.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++
++_cleanup()
++{
++	_cleanup_dmerror
++	rm -f $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmerror
++
++_supported_fs btrfs
++_supported_os Linux
++_need_to_be_root
++_require_scratch_dev_pool 3
++_require_btrfs_dev_del_by_devid
++_require_dmerror
++
++rm -f $seqres.full
++
++dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
++dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
++
++_init_dmerror
++_scratch_mkfs_dmerror "-f -d raid1 -m raid1 $dev1 $dev2"
++_mount_dmerror
++
++#$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
++
++error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
++			egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
++
++# now load the error into the DMERROR_DEV
++_load_dmerror_table
++
++_run_btrfs_util_prog device delete $error_devid $SCRATCH_MNT
++
++echo "Silence is golden"
++status=0; exit
+diff --git a/tests/btrfs/088.out b/tests/btrfs/088.out
+new file mode 100644
+index 0000000..c24480a
+--- /dev/null
++++ b/tests/btrfs/088.out
+@@ -0,0 +1,2 @@
++QA output created by 088
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index d66b4fc..d474c47 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -90,3 +90,4 @@
+ 085 auto quick metadata subvol
+ 086 auto quick clone
+ 087 auto quick replace
++088 auto quick replace
 -- 
 2.0.0.153.g79dcccc
 

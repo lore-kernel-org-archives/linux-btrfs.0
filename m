@@ -1,46 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35721 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756955AbbEFDFu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:50 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:43727 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753411AbbEFDFs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:05:48 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: [PATCH v2 2/3] xfstests: btrfs: test device replace, with EIO on the src dev
-Date: Wed,  6 May 2015 03:03:18 +0800
-Message-Id: <1430852599-22724-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 1/3] xfstests: btrfs: add functions to create dm-error device
+Date: Wed,  6 May 2015 03:03:17 +0800
+Message-Id: <1430852599-22724-2-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
 References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
  <1430852599-22724-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test case will test to confirm the replace works when
-the replacing source device has EIO errors.
+Controlled EIO from the device is achieved using the dm device.
+Helper functions are at common/dmerror.
 
-EIO condition is achieved using the DM device.
+Broadly steps will include calling _init_dmerror().
+_init_dmerror() will use SCRATCH_DEV to create dm linear device and assign
+DMERROR_DEV to /dev/mapper/error-test.
+
+When test script is read to get EIO, the test cases can call
+_load_dmerror_table() which then it will load the dm error.
+so that reading DMERROR_DEV will cause EIO. After the test case is
+complete, cleanup must be done by calling _cleanup_dmerror().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1->v2: accepts Dave Chinner's review comments
+v1->v2: accepts Dave Chinner's review comments, thanks
 
- tests/btrfs/087     | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/087.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 73 insertions(+)
- create mode 100755 tests/btrfs/087
- create mode 100644 tests/btrfs/087.out
+ common/dmerror | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/rc      | 15 +++++++++++++
+ 2 files changed, 84 insertions(+)
+ create mode 100644 common/dmerror
 
-diff --git a/tests/btrfs/087 b/tests/btrfs/087
-new file mode 100755
-index 0000000..01b8aec
+diff --git a/common/dmerror b/common/dmerror
+new file mode 100644
+index 0000000..f895d90
 --- /dev/null
-+++ b/tests/btrfs/087
-@@ -0,0 +1,70 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/087
-+#
-+#test device replace works when the source device has EIO
++++ b/common/dmerror
+@@ -0,0 +1,69 @@
++##/bin/bash
 +#
 +# Copyright (c) 2015 Oracle.  All Rights Reserved.
 +#
@@ -57,73 +59,84 @@ index 0000000..01b8aec
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#
++#
++# common functions for setting up and tearing down a dmerror device
 +
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+
-+_cleanup()
++_init_dmerror()
 +{
-+	_cleanup_dmerror
-+	rm -f $tmp
++	$DMSETUP_PROG remove error-test > /dev/null 2>&1
++
++	local BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
++
++	DMERROR_DEV='/dev/mapper/error-test'
++
++	DMLINEAR_TABLE="0 $BLK_DEV_SIZE linear $SCRATCH_DEV 0"
++
++	$DMSETUP_PROG create error-test --table "$DMLINEAR_TABLE" || \
++		_fatal "failed to create dm linear device"
++
++	DMERROR_TABLE="0 $BLK_DEV_SIZE error $SCRATCH_DEV 0"
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmerror
++_scratch_mkfs_dmerror()
++{
++	$MKFS_BTRFS_PROG $* $DMERROR_DEV >> $seqres.full 2>&1 || \
++			_fatal "failed to create mkfs.btrfs $* $DMERROR_DEV"
++}
 +
-+_supported_fs btrfs
-+_supported_os Linux
-+_need_to_be_root
-+_require_scratch_dev_pool 3
-+_require_dmerror
++_mount_dmerror()
++{
++	mount -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
++}
 +
-+rm -f $seqres.full
++_unmount_dmerror()
++{
++	$UMOUNT_PROGS $SCRATCH_MNT
++}
 +
-+dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
-+dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
++_cleanup_dmerror()
++{
++	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
++	$DMSETUP_PROG remove error-test > /dev/null 2>&1
++}
 +
-+_init_dmerror
-+_scratch_mkfs_dmerror "-f -d raid1 -m raid1 $dev1"
-+_mount_dmerror
++_load_dmerror_table()
++{
++	$DMSETUP_PROG suspend error-test
++	[ $? -ne 0 ] && _fatal  "failed to suspend error-test"
 +
-+#$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
++	$DMSETUP_PROG load error-test --table "$DMERROR_TABLE"
++	[ $? -ne 0 ] && _fatal "failed to load error table error-test"
 +
-+error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
-+			egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
++	$DMSETUP_PROG resume error-test
++	[ $? -ne 0 ] && _fatal  "failed to resume error-test"
++}
+diff --git a/common/rc b/common/rc
+index c5db0dd..447ab7f 100644
+--- a/common/rc
++++ b/common/rc
+@@ -1305,6 +1305,21 @@ _require_block_device()
+ 	fi
+ }
+ 
++# this test requires the device mapper error target
++#
++_require_dmerror()
++{
++    _require_command "$DMSETUP_PROG" dmsetup
 +
-+# now load the error into the DMERROR_DEV
-+_load_dmerror_table
++    $DMSETUP_PROG targets | grep error >/dev/null 2>&1
++    if [ $? -eq 0 ]
++    then
++	:
++    else
++	_notrun "This test requires dm error support"
++    fi
++}
 +
-+_run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
-+
-+echo "Silence is golden"
-+status=0; exit
-diff --git a/tests/btrfs/087.out b/tests/btrfs/087.out
-new file mode 100644
-index 0000000..e84c64c
---- /dev/null
-+++ b/tests/btrfs/087.out
-@@ -0,0 +1,2 @@
-+QA output created by 087
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e9c15af..d66b4fc 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -89,3 +89,4 @@
- 084 auto quick send
- 085 auto quick metadata subvol
- 086 auto quick clone
-+087 auto quick replace
+ # this test requires the device mapper flakey target
+ #
+ _require_dm_flakey()
 -- 
 2.0.0.153.g79dcccc
 

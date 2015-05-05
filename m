@@ -1,27 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56238 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1422672AbbEEMI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 May 2015 08:08:56 -0400
-Date: Tue, 5 May 2015 14:08:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Fix superblock csum type check.
-Message-ID: <20150505120854.GC5099@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1430794395-5846-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1430794395-5846-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:46201 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S2993163AbbEEOWb (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 5 May 2015 10:22:31 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix crash after inode cache writeback failure
+Date: Tue,  5 May 2015 15:21:27 +0100
+Message-Id: <1430835687-19709-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 05, 2015 at 10:53:15AM +0800, Qu Wenruo wrote:
-> Old csum type check is wrong and can't catch csum_type 1(not supported).
-> 
-> Fix it to avoid hostile 0 division.
-> 
-> Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+If the writeback of an inode cache failed we were unnecessarilly
+attempting to release again the delalloc metadata that we previously
+reserved. However attempting to do this a second time triggers an
+assertion at drop_outstanding_extent() because we have no more
+outstanding extents for our inode cache's inode. If we were able
+to start writeback of the cache the reserved metadata space is
+released at btrfs_finished_ordered_io(), even if an error happens
+during writeback.
+
+So make sure we don't repeat the metadata space release if writeback
+started for our inode cache.
+
+This issue was trivial to reproduce by running the fstest btrfs/088
+with "-o inode_cache", which triggered the assertion leading to a
+BUG() call and requiring a reboot in order to run the remaining
+fstests. Trace produced by btrfs/088:
+
+[255289.385904] BTRFS: assertion failed: BTRFS_I(inode)->outstanding_extents >= num_extents, file: fs/btrfs/extent-tree.c, line: 5276
+[255289.388094] ------------[ cut here ]------------
+[255289.389184] kernel BUG at fs/btrfs/ctree.h:4057!
+[255289.390125] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+(...)
+[255289.392068] Call Trace:
+[255289.392068]  [<ffffffffa035e774>] drop_outstanding_extent+0x3d/0x6d [btrfs]
+[255289.392068]  [<ffffffffa0364988>] btrfs_delalloc_release_metadata+0x54/0xe3 [btrfs]
+[255289.392068]  [<ffffffffa03b4174>] btrfs_write_out_ino_cache+0x95/0xad [btrfs]
+[255289.392068]  [<ffffffffa036f5c4>] btrfs_save_ino_cache+0x275/0x2dc [btrfs]
+[255289.392068]  [<ffffffffa03e2d83>] commit_fs_roots.isra.12+0xaa/0x137 [btrfs]
+[255289.392068]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
+[255289.392068]  [<ffffffffa037841f>] ? btrfs_commit_transaction+0x4b1/0x9c9 [btrfs]
+[255289.392068]  [<ffffffff814351a4>] ? _raw_spin_unlock+0x32/0x46
+[255289.392068]  [<ffffffffa037842e>] btrfs_commit_transaction+0x4c0/0x9c9 [btrfs]
+(...)
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index f1ddccf..c0ef0b1 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3465,6 +3465,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
+ 	int ret;
+ 	struct btrfs_io_ctl io_ctl;
++	bool release_metadata = true;
+ 
+ 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
+ 		return 0;
+@@ -3472,11 +3473,20 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	memset(&io_ctl, 0, sizeof(io_ctl));
+ 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, &io_ctl,
+ 				      trans, path, 0);
+-	if (!ret)
++	if (!ret) {
++		/*
++		 * At this point writepages() didn't error out, so our metadata
++		 * reservation is released when the writeback finishes, at
++		 * inode.c:btrfs_finish_ordered_io(), regardless of it finishing
++		 * with or without an error.
++		 */
++		release_metadata = false;
+ 		ret = btrfs_wait_cache_io(root, trans, NULL, &io_ctl, path, 0);
++	}
+ 
+ 	if (ret) {
+-		btrfs_delalloc_release_metadata(inode, inode->i_size);
++		if (release_metadata)
++			btrfs_delalloc_release_metadata(inode, inode->i_size);
+ #ifdef DEBUG
+ 		btrfs_err(root->fs_info,
+ 			"failed to write free ino cache for root %llu",
+-- 
+2.1.3
+

@@ -1,57 +1,258 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33078 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:47714 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751036AbbEFOBc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 May 2015 10:01:32 -0400
+	id S1750943AbbEFQpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 May 2015 12:45:22 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ypzt6-00015G-4a
-	for linux-btrfs@vger.kernel.org; Wed, 06 May 2015 16:01:24 +0200
-Received: from 168.159.160.53 ([168.159.160.53])
+	id 1Yq2Rj-0007BG-IE
+	for linux-btrfs@vger.kernel.org; Wed, 06 May 2015 18:45:19 +0200
+Received: from c-24-5-205-109.hsd1.ca.comcast.net ([24.5.205.109])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 16:01:24 +0200
-Received: from toyours_sridhar by 168.159.160.53 with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 18:45:19 +0200
+Received: from obiwantje by c-24-5-205-109.hsd1.ca.comcast.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 16:01:24 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 18:45:19 +0200
 To: linux-btrfs@vger.kernel.org
-From: sri <toyours_sridhar@yahoo.co.in>
-Subject: btrfs send using with copied snapshot
-Date: Wed, 6 May 2015 14:01:02 +0000 (UTC)
-Message-ID: <loom.20150506T155438-123@post.gmane.org>
+From: TheJay <obiwantje@gmail.com>
+Subject: Re: [REQ] Help to gain access to btrfsraid6 pool that won't mount
+Date: Wed, 6 May 2015 16:45:11 +0000 (UTC)
+Message-ID: <midgen$ri6$4@ger.gmane.org>
+References: <mi8452$i00$1@ger.gmane.org>
+	<pan$bf105$8407f6ba$59e45aa$6ad3abdc@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs send has option -p to compare 2 snapshots and genereate output of 
-diff and if btrfs receive is there it will get the diff.
+On Wed, 06 May 2015 11:55:51 +0000, Duncan wrote:
 
-lets say i have done my first backup 
-/b1/s1 is my subvolume and snap1_s1 is first snapshot
+> Since then, I had to use it again myself, updating my year-old personal 
+> experience.  Among other things, btrfs-progs v4.0 has a new metadata 
+> restore option, which should restore ownership/perms/dates as well as the 
+> file data.  There's a patch to restore symlinks too, but it apparently 
+> didn't make it into 4.0, so you'll have to try the integration branch or 
+> apply it manually after finding it on the list.  The looping too many 
+> times point apparently doesn't apply any more, at least on a full run, 
+> tho it still cuts short if you use the dry-run option.  Additionally, the 
+> dry-run option gave me some metadata restoration errors that a full write-
+> files run didn't give me, so dry-run ends up being rather more 
+> pessimistic about what can be restored than what it actually restores.
+> 
+> If you're lucky, restore will "just work".  If not, you can try feeding 
+> it roots you found using btrfs-find-root, as detailed in the above post.  
+> On my recent experience I was lucky and it worked without that, so I 
+> didn't get to update my personal experience knowledge in that regard.
 
-ran command:
+Duncan,
 
-btrfse send /b1/snap1_s1 | btrfs receive /backup
+Many thanks for taking the time to look at my case, and to make the effort of writing such an elaborate response - much appreciated. 
+I understand the direction I should be taking, and by just reading your response have learned quite a bit already.
+
+Unfortunately I got stranded right at the get-go, with the btrfs-show super command not working for me. Let me share a couple of outputs, and hopefully you or others can point me where to go from here.
+As a side-note, I did update to btrfs-progs 4.0 from 3.19.2 as suggested.
+
+$ btrfs --version
+btrfs-progs v4.0
+
+$ sudo uname -a
+Linux thejay-srv03 4.0.0-040000-generic #201504121935 SMP Sun Apr 12 23:36:33 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+Just for clarity - this is a btrfsraid6 pool.
+
+$ sudo btrfs fi show /dev/sdy
+warning, device 2 is missing
+warning devid 2 not found already
+checksum verify failed on 21200896 found 44715E95 wanted A092E323
+checksum verify failed on 21200896 found 91AC994F wanted 987F5E0F
+checksum verify failed on 21200896 found 44715E95 wanted A092E323
+bytenr mismatch, want=21200896, have=65536
+Couldn't read chunk tree
+Label: 'roms03'  uuid: b0025417-4045-4c63-a432-0625b7cc41ea
+	Total devices 4 FS bytes used 2.67TiB
+	devid    1 size 1.36TiB used 1.36TiB path /dev/sdy
+	devid    3 size 1.36TiB used 1.36TiB path /dev/sdz
+	devid    4 size 1.36TiB used 1.36TiB path /dev/sdaa
+	*** Some devices missing
+
+btrfs-progs v4.0
+
+$ sudo btrfs-find-root /dev/sdy
+warning, device 2 is missing
+warning devid 2 not found already
+Couldn't read chunk tree
+Open ctree failed
 
 
-then I will get my backup /backup/snap1_s1
+(above output is the same for the other 2 drives sdz and sdaa)
 
-next I have created 2nd snapshot /b1/snap2_s1
+$ sudo btrfs-show-super /dev/sdy
+superblock: bytenr=65536, device=/dev/sdy
+---------------------------------------------------------
+csum			0x8c55bcfe [match]
+bytenr			65536
+flags			0x1
+magic			_BHRfS_M [match]
+fsid			b0025417-4045-4c63-a432-0625b7cc41ea
+label			roms03
+generation		17310
+root			1622245376
+sys_array_size		290
+chunk_root_generation	16372
+root_level		1
+chunk_root		20971520
+chunk_root_level	1
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		6001207640064
+bytes_used		2937720725504
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		4
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1e1
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  RAID56 |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	17310
+uuid_tree_generation	17310
+dev_item.uuid		f39d7af1-1eec-4f99-8353-4c70371e1942
+dev_item.fsid		b0025417-4045-4c63-a432-0625b7cc41ea [match]
+dev_item.type		0
+dev_item.total_bytes	1500301910016
+dev_item.bytes_used	1500301885440
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-why cannot i do below
+----
 
-btrfs send -p /backup/snap1_s1 /b1/snap2_s1 |btrfs receive /backup
+$ sudo btrfs-show-super /dev/sdz
+superblock: bytenr=65536, device=/dev/sdz
+---------------------------------------------------------
+csum			0xb48f16eb [match]
+bytenr			65536
+flags			0x1
+magic			_BHRfS_M [match]
+fsid			b0025417-4045-4c63-a432-0625b7cc41ea
+label			roms03
+generation		17310
+root			1622245376
+sys_array_size		290
+chunk_root_generation	16372
+root_level		1
+chunk_root		20971520
+chunk_root_level	1
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		6001207640064
+bytes_used		2937720725504
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		4
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1e1
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  RAID56 |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	17310
+uuid_tree_generation	17310
+dev_item.uuid		6560226f-a966-4699-8a9e-e7377d436cc6
+dev_item.fsid		b0025417-4045-4c63-a432-0625b7cc41ea [match]
+dev_item.type		0
+dev_item.total_bytes	1500301910016
+dev_item.bytes_used	1500300836864
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		3
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-both sanp1_s1 and snap2_s2 are readonly
+----
 
-why there is a restriction of all snapshots should be under same root? 
-can't I get the diff of copied snapshot i.e /backup/snap1_s1 (never 
-changed) to new snapshot /b1/snap2_s1 ??
+$ sudo btrfs-show-super /dev/sdaa
+superblock: bytenr=65536, device=/dev/sdaa
+---------------------------------------------------------
+csum			0xf3cbbf1f [match]
+bytenr			65536
+flags			0x1
+magic			_BHRfS_M [match]
+fsid			b0025417-4045-4c63-a432-0625b7cc41ea
+label			roms03
+generation		17310
+root			1622245376
+sys_array_size		290
+chunk_root_generation	16372
+root_level		1
+chunk_root		20971520
+chunk_root_level	1
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		6001207640064
+bytes_used		2937720725504
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		4
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1e1
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  RAID56 |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	17310
+uuid_tree_generation	17310
+dev_item.uuid		3c026bb0-dcf0-45da-8c90-cb668323180d
+dev_item.fsid		b0025417-4045-4c63-a432-0625b7cc41ea [match]
+dev_item.type		0
+dev_item.total_bytes	1500301910016
+dev_item.bytes_used	1500300836864
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		4
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
 
-My case, i may not always keep previous snapshot but i have copied to 
-backup using the snapshot.
 
-In this case is there a way to backup only incrementals using backedup 
-snapshot subvolume ?
+
+
+
+
 

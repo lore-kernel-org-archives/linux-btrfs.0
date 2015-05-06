@@ -1,84 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:35486 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750756AbbE3I7w (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 May 2015 04:59:52 -0400
-Received: by pdbnf5 with SMTP id nf5so9373929pdb.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2015 01:59:52 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Markus Schauler <mschauler@gmail.com>, Omar Sandoval <osandov@osandov.com>,
-        <stable@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't invalidate root dentry when subvolume deletion fails
-Date: Sat, 30 May 2015 01:59:26 -0700
-Message-Id: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
+Received: from mail-oi0-f52.google.com ([209.85.218.52]:36734 "EHLO
+	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750973AbbEFGP3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 02:15:29 -0400
+MIME-Version: 1.0
+In-Reply-To: <1428703236-24735-1-git-send-email-zab@redhat.com>
+References: <1428703236-24735-1-git-send-email-zab@redhat.com>
+From: Michael Kerrisk <mtk.manpages@gmail.com>
+Date: Wed, 6 May 2015 08:15:08 +0200
+Message-ID: <CAHO5Pa0UEhOC3vqP9Nq4+gEH_OJPG6dgoLM9XbRLOfTRsRVSCw@mail.gmail.com>
+Subject: Re: [PATCH RFC 0/3] simple copy offloading system call
+To: Zach Brown <zab@redhat.com>
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
+        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
+        linux-nfs@vger.kernel.org, linux-scsi@vger.kernel.org,
+        Linux API <linux-api@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
-mounted subvolumes can be deleted because d_invalidate() won't fail.
-However, we run into problems when we attempt to delete the default
-subvolume while it is mounted as the root filesystem:
+[CC += linux-api@vger.kernel.org]
 
-	# btrfs subvol list /
-	ID 257 gen 306 top level 5 path rootvol
-	ID 267 gen 334 top level 5 path snap1
-	# btrfs subvol get-default /
-	ID 267 gen 334 top level 5 path snap1
-	# btrfs inspect-internal rootid /
-	267
-	# mount -o subvol=/ /dev/vda1 /mnt
-	# btrfs subvol del /mnt/snap1
-	Delete subvolume (no-commit): '/mnt/snap1'
-	ERROR: cannot delete '/mnt/snap1' - Operation not permitted
-	# findmnt /
-	findmnt: can't read /proc/mounts: No such file or directory
-	# ls /proc
-	#
+Zach,
 
-Markus reported that this same scenario simply led to a kernel oops.
+Since this is a kernel-user-space API change, please CC linux-api@.
+The kernel source file Documentation/SubmitChecklist notes that all
+Linux kernel patches that change userspace interfaces should be CCed
+to linux-api@vger.kernel.org, so that the various parties who are
+interested in API changes are informed. For further information, see
+https://www.kernel.org/doc/man-pages/linux-api-ml.html
 
-This happens because in btrfs_ioctl_snap_destroy(), we call
-d_invalidate() before we check may_destroy_subvol(), which means that we
-detach the submounts and drop the dentry before erroring out. Instead,
-we should only invalidate the dentry once we know that we're going
-through with the deletion.
+Thanks,
 
-Cc: <stable@vger.kernel.org>
-Fixes: bafc9b754f75 ("vfs: More precise tests in d_invalidate")
-Reported-by: Markus Schauler <mschauler@gmail.com>
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
-The other fix for preventing all mounted subvolumes from being deleted
-would preclude this, but it sounded like we were leaning towards
-enforcing that in userspace once subvolume info becomes available in
-/proc/mounts, so this should be fixed separately.
+Michael
 
- fs/btrfs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c22c6518504..8edb8544088b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2413,14 +2413,14 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 		goto out_unlock_inode;
- 	}
- 
--	d_invalidate(dentry);
--
- 	down_write(&root->fs_info->subvol_sem);
- 
- 	err = may_destroy_subvol(dest);
- 	if (err)
- 		goto out_up_write;
- 
-+	d_invalidate(dentry);
-+
- 	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
- 	/*
- 	 * One for dir inode, two for dir entries, two for root
+
+
+On Sat, Apr 11, 2015 at 12:00 AM, Zach Brown <zab@redhat.com> wrote:
+> Hello everyone!
+>
+> Here's my current attempt at the most basic system call interface for
+> offloading copying between files.  The system call and vfs function
+> are relatively light wrappers around the file_operation method that
+> does the heavy lifting.
+>
+> There was interest at LSF in getting the basic infrastructure merged
+> before worrying about adding behavioural flags and more complicated
+> implementations.  This series only offers a refactoring of the btrfs
+> clone ioctl as an example of an implementation of the file
+> copy_file_range method.
+>
+> I've added support for copy_file_range() to xfs_io in xfsprogs and
+> have the start of an xfstest that tests the system call.  I'll send
+> those to fstests@.
+>
+> So how does this look?
+>
+> Do we want to merge this and let the NFS and block XCOPY patches add
+> their changes when they're ready?
+>
+> - z
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.4.2
-
+Michael Kerrisk Linux man-pages maintainer;
+http://www.kernel.org/doc/man-pages/
+Author of "The Linux Programming Interface", http://blog.man7.org/

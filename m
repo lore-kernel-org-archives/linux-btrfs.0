@@ -1,144 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:40509 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750769AbbEFKWt (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Wed, 6 May 2015 06:22:49 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race between block group creation and their cache writeout
-Date: Wed,  6 May 2015 11:22:36 +0100
-Message-Id: <1430907756-21192-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:43464 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750816AbbEFPH2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 May 2015 11:07:28 -0400
+Date: Wed, 6 May 2015 17:07:27 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-progs 4.0 breaks btrfs fi show?
+Message-ID: <20150506150727.GA23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJCQCtR7ZT6vt06fbw3sh9sQxufsck=v2J+HJKz2DLFxR9q8RQ@mail.gmail.com>
+ <5549CCD8.2010000@cn.fujitsu.com>
+ <5549D20F.1030607@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5549D20F.1030607@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So creating a block group has 2 distinct phases:
+On Wed, May 06, 2015 at 04:34:23PM +0800, Anand Jain wrote:
+> On 05/06/2015 04:12 PM, Qu Wenruo wrote:
+> > Works for me.
+> > Although with a lot of annoying extra missing device warning:
+> 
+> Yep. Its from 915902c5002485fb13d27c4b699a73fb66cc0f09
+> after various objections I made it still got in.
 
-Phase 1 - creates the btrfs_block_group_cache item and adds it to the
-rbtree fs_info->block_group_cache_tree and to the corresponding list
-space_info->block_groups[];
-
-Phase 2 - adds the block group item to the extent tree and corresponding
-items to the chunk tree.
-
-The first phase adds the block_group_cache_item to a list of pending block
-groups in the transaction handle, and phase 2 happens when
-btrfs_end_transaction() is called against the transaction handle.
-
-It happens that once phase 1 completes, other concurrent tasks that use
-their own transaction handle, but points to the same running transaction
-(struct btrfs_trans_handle->transaction), can use this block group for
-space allocations and therefore mark it dirty. Dirty block groups are
-tracked in a list belonging to the currently running transaction (struct
-btrfs_transaction) and not in the transaction handle (btrfs_trans_handle).
-
-This is a problem because once a task calls btrfs_commit_transaction(),
-it calls btrfs_start_dirty_block_groups() which will see all dirty block
-groups and attempt to start their writeout, including those that are
-still attached to the transaction handle of some concurrent task that
-hasn't called btrfs_end_transaction() yet - which means those block
-groups haven't gone through phase 2 yet and therefore when
-write_one_cache_group() is called, it won't find the block group items
-in the extent tree and abort the current transaction with -ENOENT,
-turning the fs into readonly mode and require a remount.
-
-Fix this by adding the block group items to the extent tree in phase 1,
-before the new block groups can be used for space allocations by concurrent
-tasks. This is a simple solution and is not more expensive than doing
-it at phase 2 - alternatively if write_one_cache_group() couldn't find
-a block group's item in the extent tree, we could not abort the transaction
-and re-add the block group to the dirty list - but this is slightly more
-complex and implies writing the block again in the commit critical section,
-not to mention hiding other potential bugs related to missing block group
-items in the extent tree.
-
-This issue happened twice, once while running fstests btrfs/067 and once
-for btrfs/078, which produced the following trace:
-
-[ 3278.703014] WARNING: CPU: 7 PID: 18499 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x52/0x114 [btrfs]()
-[ 3278.707329] BTRFS: Transaction aborted (error -2)
-(...)
-[ 3278.731555] Call Trace:
-[ 3278.732396]  [<ffffffff8142fa46>] dump_stack+0x4f/0x7b
-[ 3278.733860]  [<ffffffff8108b6a2>] ? console_unlock+0x361/0x3ad
-[ 3278.735312]  [<ffffffff81045ea5>] warn_slowpath_common+0xa1/0xbb
-[ 3278.736874]  [<ffffffffa03ada6d>] ? __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[ 3278.738302]  [<ffffffff81045f05>] warn_slowpath_fmt+0x46/0x48
-[ 3278.739520]  [<ffffffffa03ada6d>] __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[ 3278.741222]  [<ffffffffa03b9e56>] write_one_cache_group+0xae/0xbf [btrfs]
-[ 3278.742797]  [<ffffffffa03c487b>] btrfs_start_dirty_block_groups+0x170/0x2b2 [btrfs]
-[ 3278.744492]  [<ffffffffa03d309c>] btrfs_commit_transaction+0x130/0x9c9 [btrfs]
-[ 3278.746084]  [<ffffffff8107d33d>] ? trace_hardirqs_on+0xd/0xf
-[ 3278.747249]  [<ffffffffa03e5660>] btrfs_sync_file+0x313/0x387 [btrfs]
-[ 3278.748744]  [<ffffffff8117acad>] vfs_fsync_range+0x95/0xa4
-[ 3278.749958]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
-[ 3278.751218]  [<ffffffff8117acd8>] vfs_fsync+0x1c/0x1e
-[ 3278.754197]  [<ffffffff8117ae54>] do_fsync+0x34/0x4e
-[ 3278.755192]  [<ffffffff8117b07c>] SyS_fsync+0x10/0x14
-[ 3278.756236]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
-[ 3278.757366] ---[ end trace 9a4d4df4969709aa ]---
-
-Fixes: 1bbc621ef284 ("Btrfs: allow block group cache writeout
-                      outside critical section in commit")
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 27 +++++++++++++++++++++------
- 1 file changed, 21 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0ec8e22..d916778 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9466,10 +9466,6 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
- 		memcpy(&key, &block_group->key, sizeof(key));
- 		spin_unlock(&block_group->lock);
- 
--		ret = btrfs_insert_item(trans, extent_root, &key, &item,
--					sizeof(item));
--		if (ret)
--			btrfs_abort_transaction(trans, extent_root, ret);
- 		ret = btrfs_finish_chunk_alloc(trans, extent_root,
- 					       key.objectid, key.offset);
- 		if (ret)
-@@ -9490,8 +9486,6 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 
- 	extent_root = root->fs_info->extent_root;
- 
--	btrfs_set_log_full_commit(root->fs_info, trans);
--
- 	cache = btrfs_create_block_group_cache(root, chunk_offset, size);
- 	if (!cache)
- 		return -ENOMEM;
-@@ -9519,6 +9513,27 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 
- 	free_excluded_extents(root, cache);
- 
-+	ret = btrfs_insert_item(trans, extent_root, &cache->key, &cache->item,
-+				sizeof(cache->item));
-+	if (ret) {
-+		btrfs_remove_free_space_cache(cache);
-+		btrfs_put_block_group(cache);
-+		btrfs_abort_transaction(trans, root, ret);
-+		return ret;
-+	}
-+
-+	/*
-+	 * We must make sure our block group item is in the extent tree before
-+	 * we force fsyncs to commit the current transaction and before the
-+	 * block group is made visible to other tasks that are about to allocate
-+	 * space (and therefore mark our block group dirty). This is because if
-+	 * we didn't do this, other tasks could start the writeout of the block
-+	 * group caches (btrfs_start_dirty_block_groups()) and not find our
-+	 * block group's item in the extent tree, resulting in an abortion of
-+	 * the current transaction and turning the fs into readonly mode.
-+	 */
-+	btrfs_set_log_full_commit(root->fs_info, trans);
-+
- 	ret = btrfs_add_block_group_cache(root->fs_info, cache);
- 	if (ret) {
- 		btrfs_remove_free_space_cache(cache);
--- 
-2.1.3
-
+I don't see this commit id in my git, what's the patch subject?

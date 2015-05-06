@@ -1,37 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44865 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752081AbbEFP1g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 May 2015 11:27:36 -0400
-Date: Wed, 6 May 2015 17:27:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Anand Jain <Anand.Jain@oracle.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs 4.0 breaks btrfs fi show?
-Message-ID: <20150506152734.GB23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJCQCtR7ZT6vt06fbw3sh9sQxufsck=v2J+HJKz2DLFxR9q8RQ@mail.gmail.com>
- <5549CCD8.2010000@cn.fujitsu.com>
- <5549D20F.1030607@oracle.com>
- <20150506150727.GA23255@twin.jikos.cz>
+Received: from mail-ie0-f169.google.com ([209.85.223.169]:33050 "EHLO
+	mail-ie0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750776AbbEFPwQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 11:52:16 -0400
+Received: by iepj10 with SMTP id j10so14199425iep.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 08:52:15 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150506150727.GA23255@twin.jikos.cz>
+In-Reply-To: <5549DF66.5090900@cn.fujitsu.com>
+References: <CAJCQCtR7ZT6vt06fbw3sh9sQxufsck=v2J+HJKz2DLFxR9q8RQ@mail.gmail.com>
+	<5549CCD8.2010000@cn.fujitsu.com>
+	<CAJCQCtT0ff8fVrMQ7rrgW1VFkiBL+f_upGOUZ7DY65N62jAsBQ@mail.gmail.com>
+	<5549DF66.5090900@cn.fujitsu.com>
+Date: Wed, 6 May 2015 09:52:15 -0600
+Message-ID: <CAJCQCtSYbumV4-SPXRCxTzb0gXw6NaLYrNUCC79bz7eUNOiSPw@mail.gmail.com>
+Subject: Re: btrfs-progs 4.0 breaks btrfs fi show?
+From: Chris Murphy <lists@colorremedies.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        anonymous_temp_mail@yahoo.co.jp
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 06, 2015 at 05:07:27PM +0200, David Sterba wrote:
-> On Wed, May 06, 2015 at 04:34:23PM +0800, Anand Jain wrote:
-> > On 05/06/2015 04:12 PM, Qu Wenruo wrote:
-> > > Works for me.
-> > > Although with a lot of annoying extra missing device warning:
-> > 
-> > Yep. Its from 915902c5002485fb13d27c4b699a73fb66cc0f09
-> > after various objections I made it still got in.
-> 
-> I don't see this commit id in my git, what's the patch subject?
+On Wed, May 6, 2015 at 3:31 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Maybe the default kernel probe routine has some problem?
+>
+> Would you please try 'btrfs fi show <device>' to test the offline
+> probe routine?
+> Also, did you update your kernel and didn't reboot?
+>
+> P.S. Add CC to one of my personal mail address to this case.
 
-Found by other means "btrfs-progs: fix device missing of btrfs fi show
-with seed devices", merged into 3.17.
+*sigh* no much more stupid user error than that: I wasn't root but
+thought I was. Obviously it was too late and I should have going to
+bed before hitting Send.
+
+So it works fine so long as the user is too.
+
+
+
+-- 
+Chris Murphy

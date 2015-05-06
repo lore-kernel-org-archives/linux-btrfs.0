@@ -1,32 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50980 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751407AbbEFIgv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 04:36:51 -0400
-Message-ID: <5549D20F.1030607@oracle.com>
-Date: Wed, 06 May 2015 16:34:23 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:19067 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751056AbbEFJbR convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 05:31:17 -0400
+Message-ID: <5549DF66.5090900@cn.fujitsu.com>
+Date: Wed, 6 May 2015 17:31:18 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        <anonymous_temp_mail@yahoo.co.jp>
 Subject: Re: btrfs-progs 4.0 breaks btrfs fi show?
-References: <CAJCQCtR7ZT6vt06fbw3sh9sQxufsck=v2J+HJKz2DLFxR9q8RQ@mail.gmail.com> <5549CCD8.2010000@cn.fujitsu.com>
-In-Reply-To: <5549CCD8.2010000@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+References: <CAJCQCtR7ZT6vt06fbw3sh9sQxufsck=v2J+HJKz2DLFxR9q8RQ@mail.gmail.com>	<5549CCD8.2010000@cn.fujitsu.com> <CAJCQCtT0ff8fVrMQ7rrgW1VFkiBL+f_upGOUZ7DY65N62jAsBQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtT0ff8fVrMQ7rrgW1VFkiBL+f_upGOUZ7DY65N62jAsBQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Maybe the default kernel probe routine has some problem?
 
+Would you please try 'btrfs fi show <device>' to test the offline
+probe routine?
+Also, did you update your kernel and didn't reboot?
 
-Thanks Qu for confirming it working in 4.x. It put me on my toes
-for a while, and I am still upgrading my ws.
+P.S. Add CC to one of my personal mail address to this case.
 
+Thanks,
+Qu
 
-On 05/06/2015 04:12 PM, Qu Wenruo wrote:
-> Works for me.
-> Although with a lot of annoying extra missing device warning:
+-------- Original Message  --------
+Subject: Re: btrfs-progs 4.0 breaks btrfs fi show?
+From: Chris Murphy <lists@colorremedies.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2015年05月06日 17:27
 
-Yep. Its from 915902c5002485fb13d27c4b699a73fb66cc0f09
-after various objections I made it still got in.
-
+>
+> On May 6, 2015 2:12 AM, "Qu Wenruo" <quwenruo@cn.fujitsu.com
+> <mailto:quwenruo@cn.fujitsu.com>> wrote:
+>  >
+>  > Would you please give some detail of your problem?
+>  > Like the options and arguments.
+>
+> I usually use it without arguments, but with 4.0 the arguments don't matter.
+>
+> # btrfs fi show
+> btrfs-progs v4.0
+> # btrfs fi show /
+> btrfs-progs v4.0
+>
+> I get nothing else.
+>
+> Chris Murphy
+>

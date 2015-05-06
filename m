@@ -1,40 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:37295 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751345AbbEFD4j (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2015 23:56:39 -0400
-Received: by igblo3 with SMTP id lo3so6066782igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 May 2015 20:56:38 -0700 (PDT)
+Received: from userp1040.oracle.com ([156.151.31.81]:17306 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750943AbbEFJRT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 05:17:19 -0400
+Message-ID: <5549DB94.3050704@oracle.com>
+Date: Wed, 06 May 2015 17:15:00 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAN05THQbAqQCqGcgNSx5f5h58LnX7z8XqB60434Eed+5gbFLHw@mail.gmail.com>
-References: <5548F177.1040309@linuxmail.org>
-	<pan.2015.05.05.17.03.19@googlemail.com>
-	<55490697.8020702@linuxmail.org>
-	<CAN05THQbAqQCqGcgNSx5f5h58LnX7z8XqB60434Eed+5gbFLHw@mail.gmail.com>
-Date: Tue, 5 May 2015 21:56:38 -0600
-Message-ID: <CAJCQCtR9XTdHZMfTrjZzinQxDjOqjXE8NB4+=ssQSfM6sXvC=g@mail.gmail.com>
-Subject: Re: hard lockup while balance was running killed my raid5
-From: Chris Murphy <lists@colorremedies.com>
-To: ronnie sahlberg <ronniesahlberg@gmail.com>
-Cc: Perry Gilfillan <perrye@linuxmail.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: xuw2015@gmail.com
+CC: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs: support to find missing device by path
+References: <1430384845-9666-1-git-send-email-xuw2015@gmail.com> <1430384845-9666-2-git-send-email-xuw2015@gmail.com> <20150505153816.GJ5099@twin.jikos.cz>
+In-Reply-To: <20150505153816.GJ5099@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 5, 2015 at 9:46 PM, ronnie sahlberg
-<ronniesahlberg@gmail.com> wrote:
-> In my experience,
-> parent transid verify failed on 27198603952128 wanted 291431 found 291859
+
+
+On 05/05/2015 11:38 PM, David Sterba wrote:
+> On Thu, Apr 30, 2015 at 05:07:24PM +0800, xuw2015@gmail.com wrote:
+>> From: George Wang <xuw2015@gmail.com>
+>>
+>> First try to find the device matches specified device path, if nothing, then
+>> find the device by (devid, dev_uuid). This can fix the regression for
+>> replacing an offline device which path is held in btrfs_device.
 >
-> This probably means your filesystem is toast and you have total dataloss.
+> I vaguely remember similar patches sent by Anand, CCed.
 
-The generations aren't that far apart, there's a decent chance that
-btrfs restore can work.
+George,
 
-What we don't know is everything leading up to this point, because
-obviously a btrfs raid6 should be mountable degraded in the face of a
-single device failure.
+  Critically we don't need this patch. right ?
+  Anyway user of replace cli can use devid if device read fails.
 
--- 
-Chris Murphy
+  I think David is talking about:
+    [PATCH] device delete by devid
+
+  it was critical for device delete. since there was device
+  delete by devid. I used device delete by devid instead of
+  device path strcmp mainly because to maintain consistency
+  between device replace and delete.
+  the above patch set also provides code cleanups between
+  device replace and delete codes.
+
+Thanks, Anand
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

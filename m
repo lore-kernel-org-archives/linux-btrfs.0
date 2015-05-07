@@ -1,130 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:35993 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751464AbbEGF4j convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 01:56:39 -0400
-Received: by igbpi8 with SMTP id pi8so14170694igb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 22:56:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150409110630.GB8979@localhost.localdomain>
-References: <CAB3_QuJVGezacw-yYqbfr2LHzF_Em4k1XFys02KMHemh1-sMsw@mail.gmail.com>
- <CAB3_QuJaTv_vt-eSaCyrLfmT3kfGFjJPgRJYkYwgh9JZ9KRO=Q@mail.gmail.com> <20150409110630.GB8979@localhost.localdomain>
-From: Paul Harvey <csirac2@gmail.com>
-Date: Thu, 7 May 2015 15:56:18 +1000
-Message-ID: <CAB3_QuKJuVGF-Ugn6OLeM27kv5DssZ-7zww8rncSa7K21ud=7A@mail.gmail.com>
-Subject: Re: unstable atimes on empty dirs in read-only snapshots which were
- subvol parents
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.lqfe.com ([72.14.186.34]:50124 "EHLO mail.lqfe.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751543AbbEGOdC convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 10:33:02 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id 508B01608CB
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2015 09:33:02 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id c5wkdk1LWhaS for <linux-btrfs@vger.kernel.org>;
+	Thu,  7 May 2015 09:33:01 -0500 (CDT)
+Received: from localhost (localhost [127.0.0.1])
+	by mail.lqfe.com (Postfix) with ESMTP id 890DF160B0F
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2015 09:33:01 -0500 (CDT)
+Received: from mail.lqfe.com ([127.0.0.1])
+	by localhost (mail.lqfe.com [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id u6HbEff5nSJp for <linux-btrfs@vger.kernel.org>;
+	Thu,  7 May 2015 09:33:01 -0500 (CDT)
+Received: from [192.168.168.20] (unknown [206.126.223.13])
+	by mail.lqfe.com (Postfix) with ESMTPSA id 3A0D01608CB
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2015 09:33:01 -0500 (CDT)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
+Subject: Re: Kernel Dump scanning directory
+From: Anthony Plack <anthony@plack.net>
+In-Reply-To: <C42E48E9-4DA9-442D-8FAC-B1982EA5DF4B@plack.net>
+Date: Thu, 7 May 2015 09:33:00 -0500
+Message-Id: <4B045A3B-60E2-4151-86E7-029E79585886@plack.net>
+References: <C42E48E9-4DA9-442D-8FAC-B1982EA5DF4B@plack.net>
+To: linux-btrfs@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Somehow I missed your E-mail a few weeks ago. However, I'm still not
-quite understanding how your reply justifies this surprising
-behaviour. Does this mean it's a WONTFIX? Could you (or someone else)
-please try to elaborate on what condition this surprising behaviour
-guards against?
+Okay, trying my programming skills at this unfamiliar code.
 
-"btrfs receive" complicates this further. If we consider my desired
-behaviour (that these empty subvol dirs should behave exactly like
-plain old empty dirs, i.e. a stable atime), and consider the actual
-behaviour (they look like plain old empty dirs but the atime always
-returns an ever-changing CURRENT_TIME), then "btrfs send | btrfs
-receive" in its current form adds a third behaviour in which these
-problem directories are simply omitted altogether in the snapshot on
-the destination filesystem.
+Okay so this looks like an IO error, then an abort transaction.  Is it a fair assumption that a normal transaction abort marks the volume as read-only, undoes the transaction, and then marks the transaction as read-write?  Therefore, because of the dump, in the middle of the undo, the volume remains read-only?
 
-Which means that what you "btrfs send" is different to what you
-actually "btrfs receive".
+> On May 6, 2015, at 4:56 PM, Anthony Plack <anthony@plack.net> wrote:
+> 
+> Hey guys, I have some dump data from BTRFS.  This occurred when running rsync -nav to my backup server.  Data is all there (as far as I can tell about 9TB of data).  If I unmount the drive, and remount it, it will be writable (echo ‘b’ > b) for days, but I start the rsync and very quickly it will dump and switch to read-only.  Scrub finished successful (mount was still RW after completion) yesterday.  Let me know what else I can get you.
+> 
+> May  6 11:17:47 fatdrive kernel: verify_parent_transid: 19 callbacks suppressed
+> May  6 11:17:47 fatdrive kernel: BTRFS (device sdm): parent transid verify failed on 94051291136 wanted 150686 found 150687
+> May  6 11:17:47 fatdrive kernel: BTRFS (device sdm): parent transid verify failed on 94051291136 wanted 150686 found 150687
+> May  6 11:17:47 fatdrive kernel: ------------[ cut here ]------------
+> May  6 11:17:47 fatdrive kernel: WARNING: CPU: 0 PID: 9426 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x5a/0x130()
+> May  6 11:17:47 fatdrive kernel: BTRFS: Transaction aborted (error -5)
+> May  6 11:17:47 fatdrive kernel: Modules linked in: nfsd exportfs kvm_amd r8168(O) kvm k10temp ata_generic acpi_cpufreq
+> May  6 11:17:47 fatdrive kernel: CPU: 0 PID: 9426 Comm: kworker/u12:4 Tainted: G        W  O    4.0.0-gentoo #1
+> May  6 11:17:47 fatdrive kernel: Hardware name: BIOSTAR Group TA880G HD/TA880G HD, BIOS 080015  11/11/2011
+> May  6 11:17:47 fatdrive kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper
+> May  6 11:17:47 fatdrive kernel:  ffffffff81a9729e ffff8801704abc38 ffffffff817e6414 0000000000000000
+> May  6 11:17:47 fatdrive kernel:  ffff8801704abc88 ffff8801704abc78 ffffffff81049e60 0000000000000000
+> May  6 11:17:47 fatdrive kernel:  ffff8802142b22c0 ffff88020ce81800 00000000fffffffb ffffffff81869b50
+> May  6 11:17:47 fatdrive kernel: Call Trace:
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff817e6414>] dump_stack+0x45/0x57
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81049e60>] warn_slowpath_common+0x90/0xd0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81049ee1>] warn_slowpath_fmt+0x41/0x50
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812d9e7a>] __btrfs_abort_transaction+0x5a/0x130
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812f6fa1>] btrfs_run_delayed_refs.part.65+0x121/0x270
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812f7190>] delayed_ref_async_start+0x80/0xa0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81336e07>] normal_work_helper+0xb7/0x2b0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff8133711d>] btrfs_extent_refs_helper+0xd/0x10
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff810606c7>] process_one_work+0x147/0x3f0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81060a88>] worker_thread+0x118/0x440
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81060970>] ? process_one_work+0x3f0/0x3f0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065624>] kthread+0xc4/0xe0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065560>] ? kthread_create_on_node+0x190/0x190
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff817ee488>] ret_from_fork+0x58/0x90
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065560>] ? kthread_create_on_node+0x190/0x190
+> May  6 11:17:47 fatdrive kernel: ---[ end trace f948e8ffd1f550c0 ]---
+> May  6 11:17:47 fatdrive kernel: BTRFS warning (device sdm): btrfs_run_delayed_refs:2790: Aborting unused transaction(IO failure).
+> May  6 11:17:47 fatdrive kernel: BTRFS (device sdm): parent transid verify failed on 94051291136 wanted 150686 found 150687
 
-This certainly complicates the business of trying to get
-reproducibility and integrity out of any backup system leveraging
-btrfs snapshots.
+Not sure where to dig out btrfs_run_delayed_refs.part.65+0x121 as it is a structure (gdb is not a regular tool I use).  it seems that it is trying to run the delayed refs and something in the data for line 265 is wrong and generating a warning.
 
-I've updated https://bugzilla.kernel.org/show_bug.cgi?id=95201 to
-include a "btrfs send | btrfs recieve" test-case demonstrating the
-inconsistency between the sent snapshot and the received snapshot.
+260					errno);
+261		}
+262		trans->aborted = errno;
+263		/* Nothing used. The other threads that have joined this
+264		 * transaction may be able to continue. */
+265		if (!trans->blocks_used && list_empty(&trans->new_bgs)) {
+266			const char *errstr;
+267	
+268			errstr = btrfs_decode_error(errno);
+269			btrfs_warn(root->fs_info,
 
-On 9 April 2015 at 21:06, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Fri, Mar 06, 2015 at 12:03:59PM +1100, Paul Harvey wrote:
->> Apparently in my haste, forgot to include any information in my email.
->> This is also in the URL to the gist of my test script:
->>
->> btrfs v3.17
->> Linux 3.16.0-4-amd64 #1 SMP Debian 3.16.7-ckt4-3 (2015-02-03) x86_64 GNU/Linux
->>
->> # mount: /dev/loop2 mounted on /tmp/tmp.FkcW7fRde7.
->> # Showing mount:
->> # /tmp/tmp.1fbwCCdeNM on /tmp/tmp.FkcW7fRde7 type btrfs (rw,noatime,space_cache)
->> # Create subvolume '/tmp/tmp.FkcW7fRde7/subvol'
->> # mkdir: created directory ‘/tmp/tmp.FkcW7fRde7/snapshots’
->> # mkdir: created directory ‘/tmp/tmp.FkcW7fRde7/empty_dir’
->> # Create a readonly snapshot of '/tmp/tmp.FkcW7fRde7' in
->> '/tmp/tmp.FkcW7fRde7/snapshots/1'
->> # Testing that the subvol dir has stable atime on original parent FS:
->> # Testing that '/tmp/tmp.FkcW7fRde7/subvol' has repeatable atime of
->> #         2015-03-06T11:09:40+1100...
->> # 1:      2015-03-06T11:09:40+1100
->> # 2:      2015-03-06T11:09:40+1100
->> #         PASS /tmp/tmp.FkcW7fRde7/subvol atime is stable :)
->> # Testing that a normal empty dir has stable atime on the snapshot:
->> # Testing that '/tmp/tmp.FkcW7fRde7/snapshots/1/empty_dir' has
->> repeatable atime of
->> #         2015-03-06T11:09:40+1100...
->> # 1:      2015-03-06T11:09:40+1100
->> # 2:      2015-03-06T11:09:40+1100
->> #         PASS /tmp/tmp.FkcW7fRde7/snapshots/1/empty_dir atime is stable :)
->> # Testing that the subvol dir has stable atime on snapshot of parent FS:
->> # Testing that '/tmp/tmp.FkcW7fRde7/snapshots/1/subvol' has repeatable atime of
->> #         2015-03-06T11:09:48+1100...
->> # 1:      2015-03-06T11:09:50+1100
->> # 2:      2015-03-06T11:09:52+1100
->> #         FAIL /tmp/tmp.FkcW7fRde7/snapshots/1/subvol atime is unstable :(
->> # './btrfs-atime-bug.sh nocleanup' not specified so cleaning up our mess:
->> # umount: /tmp/tmp.FkcW7fRde7 unmounted
->> # rmdir: removing directory, ‘/tmp/tmp.FkcW7fRde7’
->> # removed ‘/tmp/tmp.1fbwCCdeNM’
->
-> Right, that's an intended behaviour because we'd like to avoid hardlink similar
-> problems, that is, to allow ONLY one valid access to 'subvol'.  Here btrfs
-> makes a pseudo 'subvol' with setting CURRENT_TIME to inode->atime/ctime/mtime,
-> that's why we see it's unstable.
->
-> Thanks,
->
-> -liubo
->>
->> On 6 March 2015 at 11:29, Paul Harvey <csirac2@gmail.com> wrote:
->> > Hi there,
->> >
->> > Apologies for not confirming on a much more recent kernel, if anyone
->> > could please try my test script for me on a newer kernel that would be
->> > very much appreciated.
->> >
->> > I'm working on reproducible builds, and part of this workflow involves
->> > tar archiving parts of read-only btrfs snapshots. Problem is, some of
->> > these tar archives are different from run to run when they capture an
->> > empty directory that happened to be a subvol parent on the original
->> > FS: the atimes on these empty dirs are always returning the current
->> > time - which is not the case with an ordinary empty directory created
->> > with mkdir; it's also not the same behaviour on the original FS (tar
->> > archives are reproducible if we use the original FS rather than the
->> > read-only snapshot). This all happens regardless of mounting noatime.
->> >
->> > Perhaps this verbiage is convoluted, I'm writing this in a hurry with
->> > limited internet connectivity - I have a reproducible test case here
->> > at https://gist.github.com/csirac2/c2b5b2b9d0193b3c08a8
->> >
->> > Again, I understand this is a pretty old kernel and perhaps this is
->> > fixed by now, I'll try a more recent kernel with more assertive bug
->> > report next week if nobody has time to try out my test case.
->> >
->> > Cheers
->> >
->> > --
->> > Paul Harvey
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ 
+
+> May  6 11:17:47 fatdrive kernel: BTRFS warning (device sdm): btrfs_run_delayed_refs:2790: Aborting unused transaction(IO failure).
+> May  6 11:17:47 fatdrive kernel: ------------[ cut here ]------------
+> May  6 11:17:47 fatdrive kernel: WARNING: CPU: 1 PID: 9414 at fs/btrfs/delayed-ref.c:438 btrfs_select_ref_head+0x124/0x140()
+> May  6 11:17:47 fatdrive kernel: Modules linked in: nfsd exportfs kvm_amd r8168(O) kvm k10temp ata_generic acpi_cpufreq
+> May  6 11:17:47 fatdrive kernel: CPU: 1 PID: 9414 Comm: kworker/u12:0 Tainted: G        W  O    4.0.0-gentoo #1
+> May  6 11:17:47 fatdrive kernel: Hardware name: BIOSTAR Group TA880G HD/TA880G HD, BIOS 080015  11/11/2011
+> May  6 11:17:47 fatdrive kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper
+> May  6 11:17:47 fatdrive kernel:  ffffffff81a98a02 ffff88006476bb58 ffffffff817e6414 0000000000000000
+> May  6 11:17:47 fatdrive kernel:  0000000000000000 ffff88006476bb98 ffffffff81049e60 ffff88006476bbd8
+> May  6 11:17:47 fatdrive kernel:  ffff880214300320 ffff880178aec120 0000000000000000 ffff880178aec208
+> May  6 11:17:47 fatdrive kernel: Call Trace:
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff817e6414>] dump_stack+0x45/0x57
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81049e60>] warn_slowpath_common+0x90/0xd0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81049f45>] warn_slowpath_null+0x15/0x20
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81351f04>] btrfs_select_ref_head+0x124/0x140
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812f1f15>] __btrfs_run_delayed_refs+0x1f5/0x11f0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff8106e6cd>] ? check_preempt_curr+0x8d/0xa0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff8106e6f8>] ? ttwu_do_wakeup+0x18/0xd0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812f6eea>] btrfs_run_delayed_refs.part.65+0x6a/0x270
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff812f7190>] delayed_ref_async_start+0x80/0xa0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81336e07>] normal_work_helper+0xb7/0x2b0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff8133711d>] btrfs_extent_refs_helper+0xd/0x10
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff810606c7>] process_one_work+0x147/0x3f0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81060a88>] worker_thread+0x118/0x440
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81060970>] ? process_one_work+0x3f0/0x3f0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065624>] kthread+0xc4/0xe0
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065560>] ? kthread_create_on_node+0x190/0x190
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff817ee488>] ret_from_fork+0x58/0x90
+> May  6 11:17:47 fatdrive kernel:  [<ffffffff81065560>] ? kthread_create_on_node+0x190/0x190
+> May  6 11:17:47 fatdrive kernel: ---[ end trace f948e8ffd1f550c1 ]---
+> May  6 11:17:47 fatdrive kernel: BTRFS: error (device sdm) in btrfs_run_delayed_refs:2790: errno=-5 IO failure
+> May  6 11:17:47 fatdrive kernel: BTRFS info (device sdm): forced readonly
+> May  6 11:17:47 fatdrive kernel: BTRFS: error (device sdm) in btrfs_run_delayed_refs:2790: errno=-5 IO failure
+> May  6 11:17:47 fatdrive kernel: BTRFS: error (device sdm) in btrfs_run_delayed_refs:2790: errno=-5 IO failure
+> May  6 11:18:16 fatdrive kernel: verify_parent_transid: 28 callbacks suppressed
+> May  6 11:18:16 fatdrive kernel: BTRFS (device sdm): parent transid verify failed on 7645497978880 wanted 148829 found 147711
+> 
+
+This next one seems a little more obvious.
+
+0x12d4 is in btrfs_select_ref_head (fs/btrfs/delayed-ref.c:438).
+433			head = rb_entry(node, struct btrfs_delayed_ref_head,
+434					href_node);
+435		}
+436	
+437		head->processing = 1;
+438		WARN_ON(delayed_refs->num_heads_ready == 0);
+439		delayed_refs->num_heads_ready--;
+440		delayed_refs->run_delayed_start = head->node.bytenr +
+441			head->node.num_bytes;
+442		return head;
+
+Because there are not heads ready, we are getting a warning.
+
+So the real question is how do I know what is generating the IO error?  The rsync -nav is not changing the the volume, it is reading from it.
+
+The devices are not showing errors in the log or in the "device stat" view.
+
+What seems to be interesting is that whatever is generating the IO errors (which seems to be in the extents), triggers the Warning, which by default flips the whole volume to read-only.
+
+
+

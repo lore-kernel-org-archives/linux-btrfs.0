@@ -1,50 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.com ([74.208.4.201]:54555 "EHLO mout.gmx.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751021AbbEGRVw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 May 2015 13:21:52 -0400
-Received: from crinkle.gilfillan.org ([68.15.115.197]) by mail.gmx.com
- (mrgmxus002) with ESMTPSA (Nemesis) id 0LuPIX-1ZH2gD22OV-011ihb for
- <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 19:21:50 +0200
-Message-ID: <554B9F2B.1090202@linuxmail.org>
-Date: Thu, 07 May 2015 12:21:47 -0500
-From: Perry Gilfillan <perrye@linuxmail.org>
+Received: from mail-la0-f53.google.com ([209.85.215.53]:36374 "EHLO
+	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752751AbbEGRug (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 13:50:36 -0400
+Received: by lagv1 with SMTP id v1so36213365lag.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 10:50:35 -0700 (PDT)
+From: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+Subject: [PATCH v2] This patch adds command-line flag -p to btrfs receive which makes it possible to disable automatic parent search for incremental snapshots and use explicitly specified path instead. Works also with multiple incremental snapshots.
+Date: Thu,  7 May 2015 20:50:24 +0300
+Message-Id: <1431021024-6890-1-git-send-email-lauri.vosandi@gmail.com>
+In-Reply-To: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
+References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: hard lockup while balance was running killed my raid5
-References: <5548F177.1040309@linuxmail.org> <pan.2015.05.05.17.03.19@googlemail.com> <55490697.8020702@linuxmail.org>
-In-Reply-To: <55490697.8020702@linuxmail.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been trying to understand where some of these numbers come from.
+Signed-off-by: Lauri Võsandi <lauri.vosandi@gmail.com>
+---
+ cmds-receive.c | 50 ++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 42 insertions(+), 8 deletions(-)
 
-On 05/05/2015 01:06 PM, Perry Gilfillan wrote:
-> btrfs-image throws a different error,
-> bytenr mismatch, want=27198603952128, have=13057557201204318535,
-> where the 'have' seems to be pointing some where out past Pluto!
->
-> [root@lightmyfire btrfs-progs-unstable]# ./btrfs-image /dev/sdf5 
-> ~/text.txt
-> parent transid verify failed on 27198602870784 wanted 291859 found 291431
-> parent transid verify failed on 27198602870784 wanted 291859 found 291431
-> checksum verify failed on 27198602870784 found C273E746 wanted 26905AF0
-> parent transid verify failed on 27198602870784 wanted 291859 found 291431
-> Ignoring transid failure
-> parent transid verify failed on 27198603952128 wanted 291431 found 291859
-> parent transid verify failed on 27198603952128 wanted 291431 found 291859
-> checksum verify failed on 27198603952128 found BC5A7A89 wanted 90B199E8
-> checksum verify failed on 27198603952128 found BC5A7A89 wanted 90B199E8
-> bytenr mismatch, want=27198603952128, have=13057557201204318535
-> Couldn't read chunk tree
-> Open ctree failed
-> create failed (Success)
->
+diff --git a/cmds-receive.c b/cmds-receive.c
+index b7cf3f9..21a6f56 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -61,6 +61,7 @@ struct btrfs_receive
+ 	char *root_path;
+ 	char *dest_dir_path; /* relative to root_path */
+ 	char *full_subvol_path;
++	char *explicit_parent_path;
+ 	int dest_dir_chroot;
+ 
+ 	struct subvol_info *cur_subvol;
+@@ -152,6 +153,12 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 	if (ret < 0)
+ 		goto out;
+ 
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = NULL;
++		fprintf(stderr, "WARNING: Receiving full snapshot, no need to specify explicit parent!\n");
++	}
++
+ 	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
+ 
+ 	if (strlen(r->dest_dir_path) == 0)
+@@ -220,20 +227,32 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		fprintf(stderr, "receiving snapshot %s uuid=%s, "
+ 				"ctransid=%llu ", path, uuid_str,
+ 				r->cur_subvol->stransid);
+-		uuid_unparse(parent_uuid, uuid_str);
+-		fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
+-				uuid_str, parent_ctransid);
+ 	}
+ 
+ 	memset(&args_v2, 0, sizeof(args_v2));
+ 	strncpy_null(args_v2.name, path);
+ 
+-	parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+-			parent_ctransid, NULL, subvol_search_by_received_uuid);
+-	if (!parent_subvol) {
++	if (r->explicit_parent_path) {
++		if (g_verbose) {
++			fprintf(stderr, "using explicit parent %s\n",
++					r->explicit_parent_path);
++		}
++		parent_subvol = subvol_uuid_search(&r->sus, 0, NULL,
++			0, r->explicit_parent_path, subvol_search_by_path);
++	} else {
++		if (g_verbose) {
++			uuid_unparse(parent_uuid, uuid_str);
++			fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
++					uuid_str, parent_ctransid);
++		}
+ 		parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+-				parent_ctransid, NULL, subvol_search_by_uuid);
++			parent_ctransid, NULL, subvol_search_by_received_uuid);
++		if (!parent_subvol) {
++			parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
++					parent_ctransid, NULL, subvol_search_by_uuid);
++		}
+ 	}
++
+ 	if (!parent_subvol) {
+ 		ret = -ENOENT;
+ 		fprintf(stderr, "ERROR: could not find parent subvolume\n");
+@@ -276,6 +295,12 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 	}
+ 
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = strdup(r->cur_subvol->path);
++		printf("New explicit parent is %s\n", r->explicit_parent_path);
++	}
++
+ out:
+ 	if (parent_subvol) {
+ 		free(parent_subvol->path);
+@@ -922,6 +947,10 @@ out:
+ 	r->full_subvol_path = NULL;
+ 	r->dest_dir_path = NULL;
+ 	free(dest_dir_full_path);
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = NULL;
++	}
+ 	if (r->cur_subvol) {
+ 		free(r->cur_subvol->path);
+ 		free(r->cur_subvol);
+@@ -962,11 +991,14 @@ int cmd_receive(int argc, char **argv)
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
++		c = getopt_long(argc, argv, "Cevf:p:", long_opts, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
++		case 'p':
++			r.explicit_parent_path = strdup(optarg);
++			break;
+ 		case 'v':
+ 			g_verbose++;
+ 			break;
+@@ -1028,6 +1060,8 @@ const char * const cmd_receive_usage[] = {
+ 	"                 in the data stream. Without this option,",
+ 	"                 the receiver terminates only if an error",
+ 	"                 is recognized or on EOF.",
++	"-p <subvol>      Disables the automatic searching for parents",
++	"                 if incremental streams are received.",
+ 	"-C|--chroot      confine the process to <mount> using chroot",
+ 	"--max-errors <N> Terminate as soon as N errors happened while",
+ 	"                 processing commands from the send stream.",
+-- 
+1.9.1
 
-The generation numbers are easy enough.  If incremented every 30 
-seconds, they represent about 100 days of activity.
-
-The other numbers (27198602870784) are leaf nodes in the tree?  When the 
-'bytenr mismatch' error shows up, how would I find the cause and try to 
-patch it manually?

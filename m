@@ -1,31 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54390 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753454AbbELQRu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 May 2015 12:17:50 -0400
-Date: Tue, 12 May 2015 18:17:48 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lauri =?iso-8859-1?Q?V=F5sandi?= <lauri.vosandi@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: receive explicit parent support
-Message-ID: <20150512161748.GF23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-la0-f48.google.com ([209.85.215.48]:33262 "EHLO
+	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751707AbbEGSyK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 14:54:10 -0400
+Received: by layy10 with SMTP id y10so37450783lay.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 11:54:08 -0700 (PDT)
+From: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Lauri=20V=C3=B5sandi?= <lauri.vosandi@gmail.com>
+Subject: [PATCH v2] btrfs-progs: receive explicit parent support
+Date: Thu,  7 May 2015 21:53:59 +0300
+Message-Id: <1431024839-13693-1-git-send-email-lauri.vosandi@gmail.com>
+In-Reply-To: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
 References: <1430043165-20641-1-git-send-email-lauri.vosandi@gmail.com>
- <1431024839-13693-1-git-send-email-lauri.vosandi@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1431024839-13693-1-git-send-email-lauri.vosandi@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 07, 2015 at 09:53:59PM +0300, Lauri Võsandi wrote:
-> This patch adds command-line flag -p to btrfs receive
-> which makes it possible to disable automatic parent
-> search for incremental snapshots and use explicitly
-> specified path instead. Works also with multiple
-> incremental snapshots.
+This patch adds command-line flag -p to btrfs receive
+which makes it possible to disable automatic parent
+search for incremental snapshots and use explicitly
+specified path instead. Works also with multiple
+incremental snapshots.
 
-Can you please describe the usecase(s) in detail? I don't have a clear
-picture at the moment and given that there are objections I'd like to be
-sure that we can document the expected behaviour possibly with a list of
-"do not do this".
+Signed-off-by: Lauri VÃµsandi <lauri.vosandi@gmail.com>
+---
+ cmds-receive.c | 50 ++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 42 insertions(+), 8 deletions(-)
+
+diff --git a/cmds-receive.c b/cmds-receive.c
+index b7cf3f9..21a6f56 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -61,6 +61,7 @@ struct btrfs_receive
+ 	char *root_path;
+ 	char *dest_dir_path; /* relative to root_path */
+ 	char *full_subvol_path;
++	char *explicit_parent_path;
+ 	int dest_dir_chroot;
+ 
+ 	struct subvol_info *cur_subvol;
+@@ -152,6 +153,12 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 	if (ret < 0)
+ 		goto out;
+ 
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = NULL;
++		fprintf(stderr, "WARNING: Receiving full snapshot, no need to specify explicit parent!\n");
++	}
++
+ 	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
+ 
+ 	if (strlen(r->dest_dir_path) == 0)
+@@ -220,20 +227,32 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		fprintf(stderr, "receiving snapshot %s uuid=%s, "
+ 				"ctransid=%llu ", path, uuid_str,
+ 				r->cur_subvol->stransid);
+-		uuid_unparse(parent_uuid, uuid_str);
+-		fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
+-				uuid_str, parent_ctransid);
+ 	}
+ 
+ 	memset(&args_v2, 0, sizeof(args_v2));
+ 	strncpy_null(args_v2.name, path);
+ 
+-	parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+-			parent_ctransid, NULL, subvol_search_by_received_uuid);
+-	if (!parent_subvol) {
++	if (r->explicit_parent_path) {
++		if (g_verbose) {
++			fprintf(stderr, "using explicit parent %s\n",
++					r->explicit_parent_path);
++		}
++		parent_subvol = subvol_uuid_search(&r->sus, 0, NULL,
++			0, r->explicit_parent_path, subvol_search_by_path);
++	} else {
++		if (g_verbose) {
++			uuid_unparse(parent_uuid, uuid_str);
++			fprintf(stderr, "parent_uuid=%s, parent_ctransid=%llu\n",
++					uuid_str, parent_ctransid);
++		}
+ 		parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
+-				parent_ctransid, NULL, subvol_search_by_uuid);
++			parent_ctransid, NULL, subvol_search_by_received_uuid);
++		if (!parent_subvol) {
++			parent_subvol = subvol_uuid_search(&r->sus, 0, parent_uuid,
++					parent_ctransid, NULL, subvol_search_by_uuid);
++		}
+ 	}
++
+ 	if (!parent_subvol) {
+ 		ret = -ENOENT;
+ 		fprintf(stderr, "ERROR: could not find parent subvolume\n");
+@@ -276,6 +295,12 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 	}
+ 
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = strdup(r->cur_subvol->path);
++		printf("New explicit parent is %s\n", r->explicit_parent_path);
++	}
++
+ out:
+ 	if (parent_subvol) {
+ 		free(parent_subvol->path);
+@@ -922,6 +947,10 @@ out:
+ 	r->full_subvol_path = NULL;
+ 	r->dest_dir_path = NULL;
+ 	free(dest_dir_full_path);
++	if (r->explicit_parent_path) {
++		free(r->explicit_parent_path);
++		r->explicit_parent_path = NULL;
++	}
+ 	if (r->cur_subvol) {
+ 		free(r->cur_subvol->path);
+ 		free(r->cur_subvol);
+@@ -962,11 +991,14 @@ int cmd_receive(int argc, char **argv)
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
++		c = getopt_long(argc, argv, "Cevf:p:", long_opts, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
++		case 'p':
++			r.explicit_parent_path = strdup(optarg);
++			break;
+ 		case 'v':
+ 			g_verbose++;
+ 			break;
+@@ -1028,6 +1060,8 @@ const char * const cmd_receive_usage[] = {
+ 	"                 in the data stream. Without this option,",
+ 	"                 the receiver terminates only if an error",
+ 	"                 is recognized or on EOF.",
++	"-p <subvol>      Disables the automatic searching for parents",
++	"                 if incremental streams are received.",
+ 	"-C|--chroot      confine the process to <mount> using chroot",
+ 	"--max-errors <N> Terminate as soon as N errors happened while",
+ 	"                 processing commands from the send stream.",
+-- 
+1.9.1
+

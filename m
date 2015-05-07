@@ -1,77 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f43.google.com ([209.85.213.43]:33399 "EHLO
-	mail-yh0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750968AbbEGDrR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 23:47:17 -0400
-Received: by yhcb70 with SMTP id b70so7909950yhc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 20:47:16 -0700 (PDT)
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:35032 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750841AbbEGEuO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 00:50:14 -0400
+Received: by igbyr2 with SMTP id yr2so149979841igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 21:50:13 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <554AD962.5040707@oracle.com>
-References: <1430384845-9666-1-git-send-email-xuw2015@gmail.com>
-	<1430384845-9666-2-git-send-email-xuw2015@gmail.com>
-	<20150505153816.GJ5099@twin.jikos.cz>
-	<5549DB94.3050704@oracle.com>
-	<5549DD61.8050502@oracle.com>
-	<CAPBX1xLhRXPyEMy_Dqkmsr_T-GmOUdt5Dt8yH4CMRm0UdpFkYw@mail.gmail.com>
-	<554AD962.5040707@oracle.com>
-Date: Thu, 7 May 2015 11:47:16 +0800
-Message-ID: <CAPBX1x+LPefj=T3LJHUPCkBhF+eZpRUzxi9esM6LQpju+c9_tw@mail.gmail.com>
-Subject: Re: [PATCH 2/3] btrfs: support to find missing device by path
-From: George Wang <xuw2015@gmail.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <loom.20150506T155438-123@post.gmane.org>
+References: <loom.20150506T155438-123@post.gmane.org>
+From: Paul Harvey <csirac2@gmail.com>
+Date: Thu, 7 May 2015 14:49:53 +1000
+Message-ID: <CAB3_QuJ3xkt+5bchszU7rOYMHsym151Lc49L=7Hwt08zqoYmsg@mail.gmail.com>
+Subject: Re: btrfs send using with copied snapshot
+To: sri <toyours_sridhar@yahoo.co.in>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 7, 2015 at 11:17 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
->
->
->>>>    Critically we don't need this patch. right ?
->>>>    Anyway user of replace cli can use devid if device read fails.
->
->
->> Yes, I agree it.
->
->>>>    I think David is talking about:
->>>>      [PATCH] device delete by devid
->>>>
->>>>    it was critical for device delete. since there wasn't device
->>>>    delete by devid. I used device delete by devid instead of
->>>>    device path strcmp mainly because to maintain consistency
->>>>    between device replace and delete.
->>>>    the above patch set also provides code cleanups between
->>>>    device replace and delete codes.
->
->
->> We can delete the device by devid on behalf of "btrfs_find_device".
->
->  yes. patch-set (above) uses btrfs_find_device for device delete now.
->  replace was already using it.
->
->> In my opinion, the dev path is easier and humanized to use.
->
->  yes. good to have. in the long run. But not a regression/critical.
->  this will conflict with my patch, can you rebase on top of
->  above path which has some cleanups in this area as well.
->
->> This was OK before, but now I can not replace offline device
->> by path.
->> So I consider it as a regression.
+Disclaimer: I am just a btrfs user, not an expert.
 
-Oh, sorry, my fault. NOT regression, It should always be the
-srcdevid.
-I confused with another stuff.
+AFAIU btrfs send currently does the incremental diff by comparing the
+snapshot to send with the parent specified with "btrfs send -p", but
+both of these must exist on a the same, single source filesystem.
+AFAIK you cannot make it examine some other btrfs filesystem as part
+of this process, that would require some knowledge of, and thus
+bi-directional communication with the receiving filesystem (i.e.
+reinventing rsync). This would break the "btrfs send | btrfs receive"
+idiom which is a one-way, "zero-knowledge" flow of data (and trivially
+allows sending/receiving over ssh and other network protocols to
+remote hosts, which is a use-case that your desired example cannot
+easily work with).
 
-Thanks,
+So in summary, for efficient transport and to make use of incremental
+snapshots, you should not immediately delete all snapshots on the
+source filesystem. You should instead keep at least whichever was the
+last snapshot sent to the destination backup filesystem. And so in
+this scenario your source filesystem will always have at least one old
+snapshot, and during a btrfs send -p it will also have the new
+(current) snapshot (which will then become the "old" snapshots after
+it's sent).
 
-George
+I hope my explanation makes sense.
+
+On 7 May 2015 at 00:01, sri <toyours_sridhar@yahoo.co.in> wrote:
+> btrfs send has option -p to compare 2 snapshots and genereate output of
+> diff and if btrfs receive is there it will get the diff.
 >
->  You mean to say you could replace the offline device using the
->  device path before (not devid) and now you can't ?
+> lets say i have done my first backup
+> /b1/s1 is my subvolume and snap1_s1 is first snapshot
 >
->  Then what patch introduced the regression ? Do you see any
->  older version replace working with offline device using the
->  device path ?
+> ran command:
 >
-> Thanks, Anand
+> btrfse send /b1/snap1_s1 | btrfs receive /backup
+>
+>
+> then I will get my backup /backup/snap1_s1
+>
+> next I have created 2nd snapshot /b1/snap2_s1
+>
+> why cannot i do below
+>
+> btrfs send -p /backup/snap1_s1 /b1/snap2_s1 |btrfs receive /backup
+>
+> both sanp1_s1 and snap2_s2 are readonly
+>
+> why there is a restriction of all snapshots should be under same root?
+> can't I get the diff of copied snapshot i.e /backup/snap1_s1 (never
+> changed) to new snapshot /b1/snap2_s1 ??
+>
+> My case, i may not always keep previous snapshot but i have copied to
+> backup using the snapshot.
+>
+> In this case is there a way to backup only incrementals using backedup
+> snapshot subvolume ?
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

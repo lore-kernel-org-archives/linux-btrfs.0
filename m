@@ -1,276 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55656 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:50789 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754959AbbEESTX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 May 2015 14:19:23 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id C01FAACC2
-	for <linux-btrfs@vger.kernel.org>; Tue,  5 May 2015 18:19:21 +0000 (UTC)
-Message-ID: <554909A7.6030100@suse.com>
-Date: Tue, 05 May 2015 14:19:19 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] btrfs: add missing discards when unpinning extents with
- -o discard
-Content-Type: text/plain; charset=utf-8
+	id S1751135AbbEGDn7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 May 2015 23:43:59 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YqCj3-000594-EY
+	for linux-btrfs@vger.kernel.org; Thu, 07 May 2015 05:43:53 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 05:43:53 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 05:43:53 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs send/receive for backup of subvolumes
+Date: Thu, 7 May 2015 03:43:38 +0000 (UTC)
+Message-ID: <pan$bd072$7354a39e$575b04ce$653d5c8a@cox.net>
+References: <loom.20150505T131847-769@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we clear the dirty bits in btrfs_delete_unused_bgs for extents
-in the empty block group, it results in btrfs_finish_extent_commit being
-unable to discard the freed extents.
+sri posted on Tue, 05 May 2015 11:30:27 +0000 as excerpted:
 
-The block group removal patch added an alternate path to forget extents
-other than btrfs_finish_extent_commit. As a result, any extents that would
-be freed when the block group is removed aren't discarded. In my
-test run, with a large copy of mixed sized files followed by removal, it
-left nearly 2/3 of extents undiscarded.
+> Hi
+> 
+> My query speicific to incremental backup/recovery with btrfs
+> send/receive option available for btrfs subvolume backups.
+> 
+> say i have /b1/s1 subvolume and snapshot of s1 is /b1/snap1_s1
+> 
+> I run btrfs send /b1/snap_s1 | btrfs receive /backup where /backup is my
+> backup btrfs file system.
+> 
+> 
+> Now I will take snapshot of s1 again ( after modifiying data in s1)
+> which is /b1/snap2_s1
+> 
+> Using btrfs send -p snap1_s1 snap2_s2 and destination as /backup I can
+> send incremental to backup store.
+> 
+> My question is is there a way I can have option recover files from
+> /backup from incremental backup or full backup (i.e. from copy of
+> snap2_s1 or snap1_s1)
+> 
+> And I do not want to make 2 copies of 1 full and 1 incremetal backup
+> since if full backup is 1Gb and if there is 0.6Gb change for
+> incremental, I would like to backup only difference for incremental
+> backup but still would able to get option to recover files from full or
+> incremental from backedup subvolume.
+> 
+> is there a way I can achieve this using current btrfs send/receive and
+> other snapshot and tracking options?
 
-To clean up the block groups, we add the removed block group onto a list
-that will be discarded after transaction commit.
+>From a later post it looks like you  probably figured this out on your 
+own.  But in case you didn't and for others who may google this thread...
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h            |  2 ++
- fs/btrfs/extent-tree.c      | 58 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/free-space-cache.c | 45 +++++++++++++++++++----------------
- fs/btrfs/super.c            |  2 +-
- fs/btrfs/transaction.c      |  2 ++
- fs/btrfs/transaction.h      |  2 ++
- 6 files changed, 90 insertions(+), 21 deletions(-)
+Disclaimer: While I'm a btrfs user and list regular, I'm not a btrfs dev, 
+and my own use-case doesn't involve send/receive, so while the following 
+is as I understand the functionality based on the wiki documentation and 
+previous list discussion, I've never used send/receive myself, so if 
+actual functionality appears to conflict with the below, consider me 
+wrong and go with actual functionality...
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6f364e1..3448a54 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3438,6 +3438,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start,
- 			     struct extent_map *em);
- void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
-+void btrfs_cleanup_block_group_mapping(struct btrfs_block_group_cache *cache);
- void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
- 				       struct btrfs_root *root);
- u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
-@@ -4068,6 +4069,7 @@ __printf(5, 6)
- void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 		     unsigned int line, int errno, const char *fmt, ...);
- 
-+const char *btrfs_decode_error(int errno);
- 
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6d1d74d..521a294 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6011,6 +6011,8 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_block_group_cache *block_group, *tmp;
-+	struct list_head *deleted_bgs;
- 	struct extent_io_tree *unpin;
- 	u64 start;
- 	u64 end;
-@@ -6043,6 +6045,29 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 		cond_resched();
- 	}
- 
-+	/* Transaction is finished. We don't need the lock anymore. */
-+	deleted_bgs = &trans->transaction->deleted_bgs;
-+	list_for_each_entry_safe(block_group, tmp, deleted_bgs, bg_list) {
-+		u64 start, end, trimmed = 0;
-+		int ret;
-+		list_del_init(&block_group->bg_list);
-+
-+		start = block_group->key.objectid;
-+		end = start + block_group->key.offset - 1;
-+
-+		ret = btrfs_discard_extent(root, start, end, &trimmed);
-+
-+		btrfs_cleanup_block_group_mapping(block_group);
-+		btrfs_put_block_group(block_group);
-+
-+		if (ret) {
-+			const char *errstr = btrfs_decode_error(ret);
-+			btrfs_warn(fs_info,
-+				   "Discard failed while removing blockgroup: errno=%d %s\n",
-+				   ret, errstr);
-+		}
-+	}
-+
- 	return 0;
- }
- 
-@@ -9802,6 +9827,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	 * currently running transaction might finish and a new one start,
- 	 * allowing for new block groups to be created that can reuse the same
- 	 * physical device locations unless we take this special care.
-+	 *
-+	 * There may also be an implicit trim operation if the file system
-+	 * is mounted with -odiscard. The same protections must remain
-+	 * in place until the extents have been discarded completely when
-+	 * the transaction commit has completed.
- 	 */
- 	remove_em = (atomic_read(&block_group->trimming) == 0);
- 	/*
-@@ -9876,6 +9906,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 	spin_lock(&fs_info->unused_bgs_lock);
- 	while (!list_empty(&fs_info->unused_bgs)) {
- 		u64 start, end;
-+		int trimming;
- 
- 		block_group = list_first_entry(&fs_info->unused_bgs,
- 					       struct btrfs_block_group_cache,
-@@ -9973,12 +10004,39 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_unlock(&block_group->lock);
- 		spin_unlock(&space_info->lock);
- 
-+		/* DISCARD can flip during remount */
-+		trimming = btrfs_test_opt(root, DISCARD);
-+
-+		/* Implicit trim during transaction commit. */
-+		if (trimming)
-+			atomic_inc(&block_group->trimming);
-+
- 		/*
- 		 * Btrfs_remove_chunk will abort the transaction if things go
- 		 * horribly wrong.
- 		 */
- 		ret = btrfs_remove_chunk(trans, root,
- 					 block_group->key.objectid);
-+
-+		if (ret) {
-+			if (trimming)
-+				atomic_dec(&block_group->trimming);
-+			goto end_trans;
-+		}
-+
-+		/*
-+		 * If we're not mounted with -odiscard, we can just forget
-+		 * about this block group. Otherwise we'll need to wait
-+		 * until transaction commit to do the actual discard.
-+		 */
-+		if (trimming) {
-+			WARN_ON(!list_empty(&block_group->bg_list));
-+			spin_lock(&trans->transaction->deleted_bgs_lock);
-+			list_add(&block_group->bg_list,
-+				 &trans->transaction->deleted_bgs);
-+			spin_unlock(&trans->transaction->deleted_bgs_lock);
-+			btrfs_get_block_group(block_group);
-+		}
- end_trans:
- 		btrfs_end_transaction(trans, root);
- next:
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 41c510b..d33b146 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3274,6 +3274,30 @@ next:
- 	return ret;
- }
- 
-+void btrfs_cleanup_block_group_mapping(struct btrfs_block_group_cache *cache)
-+{
-+	struct extent_map_tree *em_tree;
-+	struct extent_map *em;
-+
-+	lock_chunks(cache->fs_info->chunk_root);
-+	em_tree = &cache->fs_info->mapping_tree.map_tree;
-+	write_lock(&em_tree->lock);
-+	em = lookup_extent_mapping(em_tree, cache->key.objectid, 1);
-+	BUG_ON(!em); /* logic error, can't happen */
-+
-+	/*
-+	 * remove_extent_mapping() will delete us from the pinned_chunks
-+	 * list, which is protected by the chunk mutex.
-+	 */
-+	remove_extent_mapping(em_tree, em);
-+	write_unlock(&em_tree->lock);
-+	unlock_chunks(cache->fs_info->chunk_root);
-+
-+	/* once for us and once for the tree */
-+	free_extent_map(em);
-+	free_extent_map(em);
-+}
-+
- int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
- 			   u64 *trimmed, u64 start, u64 end, u64 minlen)
- {
-@@ -3298,28 +3322,9 @@ out:
- 	spin_lock(&block_group->lock);
- 	if (atomic_dec_and_test(&block_group->trimming) &&
- 	    block_group->removed) {
--		struct extent_map_tree *em_tree;
--		struct extent_map *em;
--
- 		spin_unlock(&block_group->lock);
- 
--		lock_chunks(block_group->fs_info->chunk_root);
--		em_tree = &block_group->fs_info->mapping_tree.map_tree;
--		write_lock(&em_tree->lock);
--		em = lookup_extent_mapping(em_tree, block_group->key.objectid,
--					   1);
--		BUG_ON(!em); /* logic error, can't happen */
--		/*
--		 * remove_extent_mapping() will delete us from the pinned_chunks
--		 * list, which is protected by the chunk mutex.
--		 */
--		remove_extent_mapping(em_tree, em);
--		write_unlock(&em_tree->lock);
--		unlock_chunks(block_group->fs_info->chunk_root);
--
--		/* once for us and once for the tree */
--		free_extent_map(em);
--		free_extent_map(em);
-+		btrfs_cleanup_block_group_mapping(block_group);
- 
- 		/*
- 		 * We've left one free space entry and other tasks trimming
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 9e66f5e..016e65a 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -69,7 +69,7 @@ static struct file_system_type btrfs_fs_type;
- 
- static int btrfs_remount(struct super_block *sb, int *flags, char *data);
- 
--static const char *btrfs_decode_error(int errno)
-+const char *btrfs_decode_error(int errno)
- {
- 	char *errstr = "unknown";
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5628e25..2005262 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -256,6 +256,8 @@ loop:
- 	mutex_init(&cur_trans->cache_write_mutex);
- 	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
-+	INIT_LIST_HEAD(&cur_trans->deleted_bgs);
-+	spin_lock_init(&cur_trans->deleted_bgs_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 0b24755..14325f2 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -74,6 +74,8 @@ struct btrfs_transaction {
- 	 */
- 	struct mutex cache_write_mutex;
- 	spinlock_t dirty_bgs_lock;
-+	struct list_head deleted_bgs;
-+	spinlock_t deleted_bgs_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
- 	int dirty_bg_run;
--- 
-1.8.5.6
+AFAIK, when you btrfs receive a send, btrfs creates a subvolume 
+duplicating the one being sent from the send side.
 
+So in the scenario above, you should end up with two different snapshots 
+under /backup, one for s1 and one for s2.  Due to the parent relationship 
+and the fact that btrfs is copy-on-write, where extents in s1 and s2 
+differ, the difference is sent (as a copy of the new extent along with 
+metadata describing its place in reference to the parent) and the 
+snapshots occupy the space used by both.  Where they do NOT differ, there 
+is no difference to send, and the snapshots share the space, so while 
+either one can be accessed, they're actually referencing the same shared 
+extent and only that shared copy of that extent exists.
+
+So as long as you keep both snapshots, you can access both, but given 1 
+GiB in snap_s1 and 0.6 GiB worth of changes between it and snap_s2, the 
+total space used by the two should still be only 1.6 GiB, even tho you 
+can access the full 1 GiB of either snapshot.
 
 -- 
-Jeff Mahoney
-SUSE Labs
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

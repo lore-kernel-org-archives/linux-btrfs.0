@@ -1,139 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47264 "EHLO mail.kernel.org"
+Received: from plane.gmane.org ([80.91.229.3]:34676 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752643AbbEGGes (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 May 2015 02:34:48 -0400
-From: Ming Lin <mlin@kernel.org>
-To: linux-kernel@vger.kernel.org
-Cc: Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Dongsu Park <dpark@posteo.net>, Ming Lin <mlin@kernel.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 05/11] btrfs: remove bio splitting and merge_bvec_fn() calls
-Date: Wed,  6 May 2015 23:34:15 -0700
-Message-Id: <1430980461-5235-6-git-send-email-mlin@kernel.org>
-In-Reply-To: <1430980461-5235-1-git-send-email-mlin@kernel.org>
-References: <1430980461-5235-1-git-send-email-mlin@kernel.org>
+	id S1751698AbbEGIoo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 May 2015 04:44:44 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YqHQA-0005YR-9m
+	for linux-btrfs@vger.kernel.org; Thu, 07 May 2015 10:44:42 +0200
+Received: from 168.159.160.53 ([168.159.160.53])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 10:44:42 +0200
+Received: from toyours_sridhar by 168.159.160.53 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 10:44:42 +0200
+To: linux-btrfs@vger.kernel.org
+From: sri <toyours_sridhar@yahoo.co.in>
+Subject: strange behavior btrfs copy
+Date: Thu, 7 May 2015 08:44:35 +0000 (UTC)
+Message-ID: <loom.20150507T103552-598@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Kent Overstreet <kent.overstreet@gmail.com>
+Hi,
 
-Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
-device limits as well as calling ->merge_bvec_fn() etc. That is not
-necessary any more, because generic_make_request() is now able to
-handle arbitrarily sized bios. So clean up unnecessary code paths.
+I have a btrfs file system /b1 on /dev/sdb with 2 subvolumes and 2 
+snapshots of them.
 
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
-Signed-off-by: Chris Mason <clm@fb.com>
-[dpark: add more description in commit message]
-Signed-off-by: Dongsu Park <dpark@posteo.net>
-Signed-off-by: Ming Lin <mlin@kernel.org>
----
- fs/btrfs/volumes.c | 72 ------------------------------------------------------
- 1 file changed, 72 deletions(-)
+I have written a code which takes 2 disks as input source: /dev/sdb and 
+destination as /dev/sdc and copies entire disk in 512 byte chunks to 
+desination /dev/sdc.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 96aebf3..c616aba 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5715,34 +5715,6 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
- 				 &device->work);
- }
- 
--static int bio_size_ok(struct block_device *bdev, struct bio *bio,
--		       sector_t sector)
--{
--	struct bio_vec *prev;
--	struct request_queue *q = bdev_get_queue(bdev);
--	unsigned int max_sectors = queue_max_sectors(q);
--	struct bvec_merge_data bvm = {
--		.bi_bdev = bdev,
--		.bi_sector = sector,
--		.bi_rw = bio->bi_rw,
--	};
--
--	if (WARN_ON(bio->bi_vcnt == 0))
--		return 1;
--
--	prev = &bio->bi_io_vec[bio->bi_vcnt - 1];
--	if (bio_sectors(bio) > max_sectors)
--		return 0;
--
--	if (!q->merge_bvec_fn)
--		return 1;
--
--	bvm.bi_size = bio->bi_iter.bi_size - prev->bv_len;
--	if (q->merge_bvec_fn(q, &bvm, prev) < prev->bv_len)
--		return 0;
--	return 1;
--}
--
- static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
- 			      struct bio *bio, u64 physical, int dev_nr,
- 			      int rw, int async)
-@@ -5776,38 +5748,6 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
- 		btrfsic_submit_bio(rw, bio);
- }
- 
--static int breakup_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
--			      struct bio *first_bio, struct btrfs_device *dev,
--			      int dev_nr, int rw, int async)
--{
--	struct bio_vec *bvec = first_bio->bi_io_vec;
--	struct bio *bio;
--	int nr_vecs = bio_get_nr_vecs(dev->bdev);
--	u64 physical = bbio->stripes[dev_nr].physical;
--
--again:
--	bio = btrfs_bio_alloc(dev->bdev, physical >> 9, nr_vecs, GFP_NOFS);
--	if (!bio)
--		return -ENOMEM;
--
--	while (bvec <= (first_bio->bi_io_vec + first_bio->bi_vcnt - 1)) {
--		if (bio_add_page(bio, bvec->bv_page, bvec->bv_len,
--				 bvec->bv_offset) < bvec->bv_len) {
--			u64 len = bio->bi_iter.bi_size;
--
--			atomic_inc(&bbio->stripes_pending);
--			submit_stripe_bio(root, bbio, bio, physical, dev_nr,
--					  rw, async);
--			physical += len;
--			goto again;
--		}
--		bvec++;
--	}
--
--	submit_stripe_bio(root, bbio, bio, physical, dev_nr, rw, async);
--	return 0;
--}
--
- static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
- {
- 	atomic_inc(&bbio->error);
-@@ -5882,18 +5822,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 			continue;
- 		}
- 
--		/*
--		 * Check and see if we're ok with this bio based on it's size
--		 * and offset with the given device.
--		 */
--		if (!bio_size_ok(dev->bdev, first_bio,
--				 bbio->stripes[dev_nr].physical >> 9)) {
--			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
--						 dev_nr, rw, async_submit);
--			BUG_ON(ret);
--			continue;
--		}
--
- 		if (dev_nr < total_devs - 1) {
- 			bio = btrfs_bio_clone(first_bio, GFP_NOFS);
- 			BUG_ON(!bio); /* -ENOMEM */
--- 
-1.9.1
+my source btrfs /dev/sdb is mounted /b1 currently and mount command show 
+the same.
+
+I ran above program and it is successful. and now everything in /dev/sdb 
+is copied to /dev/sdc
+
+but after this when I run mount command at CLI, i am seeing strange 
+behaviour and output show /dev/sdc is mounted on /b1.
+
+Some how it changes device from /dev/sdb to /dev/sdc on the fliy.
+
+I also tried to cd to /b1 (which make /b1 is in use) and ran same 
+program, still after copy from /dev/sdb to /dev/sdc, mount shows 
+/dev/sdc is mounted on /b1
+
+
+what could be the reason for this?
+
+does btrfs do any polling or something?
+
+since /dev/sdb and /dev/sdc contains same data, i can mount /dev/sdc 
+independently.
+
 

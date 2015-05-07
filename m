@@ -1,48 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f175.google.com ([209.85.212.175]:37589 "EHLO
-	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751848AbbEGTsm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 May 2015 15:48:42 -0400
-Received: by widdi4 with SMTP id di4so3988592wid.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2015 12:48:41 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150507162331.GG23255@twin.jikos.cz>
-References: <mig2nl$mrr$1@ger.gmane.org> <20150507162331.GG23255@twin.jikos.cz>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Thu, 7 May 2015 22:48:00 +0300
-Message-ID: <CAGqmi75giuU9jJ2qRryxG2eDve=3CAzO_EDgg-djkvZE2w-n7g@mail.gmail.com>
-Subject: Re: Kernel 3.19 and btrfs
-To: dsterba@suse.cz, Christian <cdysthe@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:26398 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751823AbbEHEho (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 00:37:44 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Wolfgang_Mader@brain-frog.de, dsterba@suse.cz
+Subject: [PATCH 2/2] Btrfs: check error before reporting missing device and add uuid
+Date: Fri,  8 May 2015 04:34:35 +0800
+Message-Id: <1431030875-17754-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1430109979-9397-3-git-send-email-anand.jain@oracle.com>
+References: <1430109979-9397-3-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ubuntu provide own patched kernel as i know.
+Report missing device when add is successful,
+otherwise it would exit as ENOMEM. And add uuid
+to the report.
 
-Christian, if you have 3.19-15 kernel(shiped with 15.04 by default),
-it has affected by deadlock bug while replaying journal.
-But as i see in 3.19-16 (you can update) this issues has been fixed.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+---
+v1->v2: rebase to 4.1, fix compile error,
+        still wonder why it wasn't in 3.19x.
 
-So, it you install latest updates, all must be okay.
+ fs/btrfs/volumes.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-2015-05-07 19:23 GMT+03:00 David Sterba <dsterba@suse.cz>:
-> On Thu, May 07, 2015 at 12:09:23PM -0400, Christian wrote:
->> I am relying on btrfs on a couple of work laptops now and things seems
->> to work. I'm on Ubuntu 15.04. However, I've seen some horror stories
->> about problems with btrfs on this kernel version. Since Ubuntu 15.04
->> comes with 3.19 I'm a bit worried I am going to get in trouble at some
->> point. I'm not technical enough to understand what the threat level is.
->
-> The bug has been fixed in 3.19.5. The 3.19(.0) release itself is not
-> affected either.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ef1124f..228f26b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6299,10 +6299,11 @@ static int read_one_dev(struct btrfs_root *root,
+ 		if (!btrfs_test_opt(root, DEGRADED))
+ 			return -EIO;
+ 
+-		btrfs_warn(root->fs_info, "devid %llu missing", devid);
+ 		device = add_missing_dev(root, fs_devices, devid, dev_uuid);
+ 		if (!device)
+ 			return -ENOMEM;
++		btrfs_warn(root->fs_info, "devid %llu uuid %pU missing",
++				devid, dev_uuid);
+ 	} else {
+ 		if (!device->bdev && !btrfs_test_opt(root, DEGRADED))
+ 			return -EIO;
 -- 
-Have a nice day,
-Timofey.
+2.0.0.153.g79dcccc
+

@@ -1,58 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:33862 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752605AbbEHK1K (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 06:27:10 -0400
-Received: by iget9 with SMTP id t9so28327886ige.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 May 2015 03:27:10 -0700 (PDT)
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:51395 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752809AbbEHVcE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 May 2015 17:32:04 -0400
+Date: Fri, 8 May 2015 17:32:00 -0400
+From: Chris Mason <clm@fb.com>
+To: <torvalds@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs fix
+Message-ID: <20150508213152.GA2846@ret.masoncoding.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <554C8BD7.4090706@oracle.com>
-References: <554C8BD7.4090706@oracle.com>
-Date: Fri, 8 May 2015 11:27:10 +0100
-Message-ID: <CAL3q7H5M=jDB-9O0TPpMO6VUQzHteVAa73SadJBTHz95Q+Qukg@mail.gmail.com>
-Subject: Re: btrfs-progs Makefile in gitignore ?
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 8, 2015 at 11:11 AM, Anand Jain <Anand.Jain@oracle.com> wrote:
->
->
-> btrfs-progs/.gitignore
-> ::
-> Makefile
-> Documentation/Makefile
->
-> why ?
+Hi Linus,
 
-Why not?
-Autotools generates Makefile from Makefile.in (or a Makefile.am in
-other setups).
+When an arm user reported crashes near page_address(page) in my new code,
+it became clear that I can't be trusted with GFP masks.  Filipe beat me
+to the patch, and I'll just be in the corner with my dunce cap on.
 
-Every single project I've ever seen using autotools has Makefile
-listed in .gitignore.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.1
 
-Examples:
+Filipe Manana (1) commits (+1/-1):
+    Btrfs: fix wrong mapping flags for free space inode
 
-https://github.com/apache/couchdb/blob/1.6.x/.gitignore
-https://github.com/memcached/memcached/blob/master/.gitignore
-(...)
+Total: (1) commits (+1/-1)
 
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+ fs/btrfs/free-space-cache.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)

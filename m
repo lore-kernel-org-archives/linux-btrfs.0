@@ -1,72 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f172.google.com ([209.85.217.172]:33439 "EHLO
-	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751949AbbEGCw5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2015 22:52:57 -0400
-Received: by lbbzk7 with SMTP id zk7so21241314lbb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 May 2015 19:52:55 -0700 (PDT)
+Received: from aserp1040.oracle.com ([141.146.126.69]:47362 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751396AbbEHIbJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 04:31:09 -0400
+Message-ID: <554C73A8.1030406@oracle.com>
+Date: Fri, 08 May 2015 16:28:24 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAHO5Pa0UEhOC3vqP9Nq4+gEH_OJPG6dgoLM9XbRLOfTRsRVSCw@mail.gmail.com>
-References: <1428703236-24735-1-git-send-email-zab@redhat.com> <CAHO5Pa0UEhOC3vqP9Nq4+gEH_OJPG6dgoLM9XbRLOfTRsRVSCw@mail.gmail.com>
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Wed, 6 May 2015 19:52:34 -0700
-Message-ID: <CALCETrUj2EqJ7uDPbAuOGBnLycWBqqnt2Z2cAf8Pp+sgCqBhvw@mail.gmail.com>
-Subject: Re: [PATCH RFC 0/3] simple copy offloading system call
-To: Michael Kerrisk <mtk.manpages@gmail.com>
-Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>,
-        Linux SCSI List <linux-scsi@vger.kernel.org>,
-        linux-nfs@vger.kernel.org,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Zach Brown <zab@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs-progs: improve troubleshooting avoid duplicate
+ error strings
+References: <1428928621-8001-1-git-send-email-anand.jain@oracle.com> <20150414131444.GQ25622@twin.jikos.cz>
+In-Reply-To: <20150414131444.GQ25622@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 6, 2015 11:45 AM, "Michael Kerrisk" <mtk.manpages@gmail.com> wrote:
->
-> [CC += linux-api@vger.kernel.org]
->
-> Zach,
->
-> Since this is a kernel-user-space API change, please CC linux-api@.
-> The kernel source file Documentation/SubmitChecklist notes that all
-> Linux kernel patches that change userspace interfaces should be CCed
-> to linux-api@vger.kernel.org, so that the various parties who are
-> interested in API changes are informed. For further information, see
-> https://www.kernel.org/doc/man-pages/linux-api-ml.html
->
-> Thanks,
->
-> Michael
->
->
->
->
-> On Sat, Apr 11, 2015 at 12:00 AM, Zach Brown <zab@redhat.com> wrote:
-> > Hello everyone!
-> >
-> > Here's my current attempt at the most basic system call interface for
-> > offloading copying between files.  The system call and vfs function
-> > are relatively light wrappers around the file_operation method that
-> > does the heavy lifting.
-> >
-> > There was interest at LSF in getting the basic infrastructure merged
-> > before worrying about adding behavioural flags and more complicated
-> > implementations.  This series only offers a refactoring of the btrfs
-> > clone ioctl as an example of an implementation of the file
-> > copy_file_range method.
-> >
-> > I've added support for copy_file_range() to xfs_io in xfsprogs and
-> > have the start of an xfstest that tests the system call.  I'll send
-> > those to fstests@.
-> >
-> > So how does this look?
-> >
-> > Do we want to merge this and let the NFS and block XCOPY patches add
-> > their changes when they're ready?
 
-This sounds enough like splice that I'm wondering why the API isn't splice.
 
---Andy
+
+
+On 04/14/2015 09:14 PM, David Sterba wrote:
+> On Mon, Apr 13, 2015 at 08:37:01PM +0800, Anand Jain wrote:
+>> my troubleshooting experience says have unique error string per module.
+>>
+>> In the below eg, its one additional step to know error line,
+>>
+>> cat -n cmds-device.c | egrep "error removing the device"
+>>     185	"ERROR: error removing the device '%s' - %s\n",
+>>     190	"ERROR: error removing the device '%s' - %s\n",
+>>
+>> which is completely avoidable.
+>
+> It is, we can merge both branches into one.
+
+
+
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   cmds-device.c | 2 +-
+>>   1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/cmds-device.c b/cmds-device.c
+>> index 1c72e90..1c32771 100644
+>> --- a/cmds-device.c
+>> +++ b/cmds-device.c
+>> @@ -187,7 +187,7 @@ static int cmd_rm_dev(int argc, char **argv)
+>>   			ret++;
+>>   		} else if (res < 0) {
+>>   			fprintf(stderr,
+>> -				"ERROR: error removing the device '%s' - %s\n",
+>> +				"ERROR: ioctl error removing the device '%s' - %s\n",
+>
+> The only difference is the strerror vs btrfs_err_str. As both ret > 0
+> and ret < 0 report some kind of error, the wording would be very similar
+> so I think that one error message would fit better. I'll fix that.
+
+You means res not ret (above) ?
+--------------------------------------------------------------
+diff --git a/cmds-device.c b/cmds-device.c
+index cbb3243..1022656 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -183,7 +183,7 @@ static int cmd_rm_dev(int argc, char **argv)
+                 if (res) {
+                         const char *msg;
+
+-                       if (ret > 0)
++                       if (res > 0)
+                                 msg = btrfs_err_str(res);
+                         else
+                                 msg = strerror(e);
+--------------------------------------------------------------
+
+Thanks, Anand
+
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

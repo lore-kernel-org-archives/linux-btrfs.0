@@ -1,38 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.lqfe.com ([72.14.186.34]:33988 "EHLO mail.lqfe.com"
+Received: from mail.lqfe.com ([72.14.186.34]:34027 "EHLO mail.lqfe.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753264AbbEHVnk convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 17:43:40 -0400
+	id S1752871AbbEHVtW convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 May 2015 17:49:22 -0400
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2070.6\))
 Subject: Re: Kernel Dump scanning directory
-From: Anthony Plack <tmy@plack.net>
-In-Reply-To: <pan$ef76f$1decf414$ca28dae0$217ae55f@cox.net>
-Date: Fri, 8 May 2015 16:37:05 -0500
+From: Anthony Plack <anthony@plack.net>
+In-Reply-To: <20150508211850.GN18480@carfax.org.uk>
+Date: Fri, 8 May 2015 16:49:19 -0500
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <D7C742B6-7DD3-49F3-B49A-4C8FD5B97527@plack.net>
-References: <C42E48E9-4DA9-442D-8FAC-B1982EA5DF4B@plack.net> <4B045A3B-60E2-4151-86E7-029E79585886@plack.net> <60DA4BA3-C4FE-4A61-9D5C-399122FA2B96@plack.net> <EAC2F414-3D41-4458-9AF4-8533B1925C96@plack.net> <pan$ef76f$1decf414$ca28dae0$217ae55f@cox.net>
-To: Duncan <1i5t5.duncan@cox.net>
+Message-Id: <A54EAF29-BF4C-4CCA-BFBF-FEDFF2A01C73@plack.net>
+References: <C42E48E9-4DA9-442D-8FAC-B1982EA5DF4B@plack.net> <4B045A3B-60E2-4151-86E7-029E79585886@plack.net> <60DA4BA3-C4FE-4A61-9D5C-399122FA2B96@plack.net> <EAC2F414-3D41-4458-9AF4-8533B1925C96@plack.net> <20150508211850.GN18480@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-> On May 8, 2015, at 3:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> On May 8, 2015, at 4:18 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 > 
-> And then I wasn't quite so concerned either about losing something 
-> critical in the log, or the safety of simply blowing it away, since by 
-> design, the log only deals with what hasn't been committed yet, and the 
-> commits are themselves designed to be atomic and leave the filesystem in 
-> a known good state.
+> On Fri, May 08, 2015 at 11:44:39AM -0500, Anthony Plack wrote:
+>> I am close to zeroing the log at this point.  It is sad that we cannot fix the transaction log instead of just flushing it.
 > 
+>   That's not likely to make any difference here. If the FS mounts OK
+> with -o ro, then zeroing the log might be useful. Otherwise, it won't
+> e (a read-only mount won't replay the log; if it mounts without
+> replaying the log, the problem is in the log, and it should be
+> dropped; if not, then the problem is nothing to do with the log).
 
-Duncan,
-Thank you for joining me in my monolog here.
+The FS mounts okay no matter what, it is trying to read the inodes where it crashes.  Thanks for the advise.
 
-30 seconds on a server can be allot of data, and is to small of a time span for adequate backups to occur.  What you say makes sense, however, without this fixed going forward, BTRFS can never become a serious data storage file system.
+>   Dropping the log is *not* a panacea to all btrfs problems. It's
+> there for a very limited class of issues, which rarely show up these
+> days. I wish there were some way of editing the internet(*) to remove the
+> idea that btrfs-zero-log will magically fix everything. It won't.
 
-While there are major distros who have switched to this as their default filesystem, and acknowledging that btrfs has no control over who chooses to do this, there should be more than just a warning about it being unstable, but wholly unreliable.
+Good to know.
 
-I do get the point that you are relaying what you understood, and it does help me a bit.  Since I have a backup (and always I would like another of the data), I thought I would try to help solve an ongoing problem of the tranid issues.  I realize I am just stumbling around in the dark, so maybe this comes for nothing in the end.
+> (*) https://www.xkcd.com/386/ is probably appropriate here.
+> 
+>> Once again btrfsck --repair /dev/sdm ended with
+>> 
+>> parent transid verify failed on 94238015488 wanted 150690 found 150691
+>> Ignoring transid failure
+>> 
+>> no attempt to actually repair the volume.  No indication from the tools why.
+> 
+>   A transid failure means that the superblock has been written out to
+> disk *before* a part of the metadata that forms that transaction, and
+> then the machine has crashed in some way that prevented the
+> late-arriving metadata from hitting the disk. There are two ways that
+> this can happen: it's a bug in the kernel, or the hardware lies about
+> having written data. Both are possible, but the former is more likely.
 
-Maybe we need a warning at the top of the BTRFS page that it is highly likely, if BTRFS crashes and the transactions get corrupt, that you WILL loose at a minimum the last 30 seconds of your data and maybe more.
+Also good to know.  I agree to the bug in the kernel.  I think you just hit on the issue here.  Since this COW, we should be able to assume that the superblock is then still "empty."  Or do I misunderstand?
+
+> 
+>   Once this failure has happened, the FS is corrupt in a way that's
+> hard to repair reliably. I did raise this question with Chris a while
+> ago, and my understanding from the conversation was that he didn't
+> think that it was possible to fix transid failures in btrfsck.
+
+I guess I don't understand how that could be designed that way.
+
+>   Once again: zeroing the log won't help. It doesn't fix everything.
+> In fact, it rarely fixes anything.
+
+>   The reason there's no documentation on fixing transid failures is
+> because there's no good fix for them.
+
+Then what is the point of the transactions?  Why do we care about transid mismatch?  Why keep something, that if it fails, breaks the whole thing?
+
+Thanks for the thoughts.

@@ -1,84 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35567 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752110AbbEJDLl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 May 2015 23:11:41 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YrHeS-0006yc-LW
-	for linux-btrfs@vger.kernel.org; Sun, 10 May 2015 05:11:36 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 05:11:36 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 05:11:36 +0200
+Received: from mail-wg0-f53.google.com ([74.125.82.53]:36178 "EHLO
+	mail-wg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751171AbbEJOiF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 May 2015 10:38:05 -0400
+Received: by wgiu9 with SMTP id u9so107968683wgi.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 07:38:03 -0700 (PDT)
+Received: from [10.0.2.15] (p4FCB5E8C.dip0.t-ipconnect.de. [79.203.94.140])
+        by mx.google.com with ESMTPSA id dg8sm18299778wjc.9.2015.05.10.07.38.01
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 10 May 2015 07:38:02 -0700 (PDT)
+From: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Message-ID: <554F6D43.2060806@googlemail.com>
+Date: Sun, 10 May 2015 16:37:55 +0200
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs receive error recovery
-Date: Sun, 10 May 2015 03:11:24 +0000 (UTC)
-Message-ID: <pan$9aa88$5ab24adb$91f7415$30f5f0f3@cox.net>
-References: <554DF4E8.2010601@tty0.ch>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Got 10 csum errors according to dmesg but 0 errors according to dev
+ stats
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Axel Burri posted on Sat, 09 May 2015 13:52:08 +0200 as excerpted:
+I have installed a new virtual machine (VirtualBox) with Arch on btrfs 
+(just a root fs and swap partition, no other partitions).
+I suddenly noticed 10 checksum errors in the kernel log:
+$ dmesg | grep csum
+[  736.283506] BTRFS warning (device sda1): csum failed ino 1704363 off 
+761856 csum 1145980813 expected csum 2566472073
+[  736.283605] BTRFS warning (device sda1): csum failed ino 1704363 off 
+1146880 csum 1961240434 expected csum 2566472073
+[  745.583064] BTRFS warning (device sda1): csum failed ino 1704346 off 
+393216 csum 4035064017 expected csum 2566472073
+[  752.324899] BTRFS warning (device sda1): csum failed ino 1705927 off 
+2125824 csum 3638986839 expected csum 2566472073
+[  752.333115] BTRFS warning (device sda1): csum failed ino 1705927 off 
+2588672 csum 176788087 expected csum 2566472073
+[  752.333303] BTRFS warning (device sda1): csum failed ino 1705927 off 
+3276800 csum 1891435134 expected csum 2566472073
+[  752.333397] BTRFS warning (device sda1): csum failed ino 1705927 off 
+3964928 csum 3304112727 expected csum 2566472073
+[ 2761.889460] BTRFS warning (device sda1): csum failed ino 1705927 off 
+2125824 csum 3638986839 expected csum 2566472073
+[ 9054.226022] BTRFS warning (device sda1): csum failed ino 1704363 off 
+761856 csum 1145980813 expected csum 2566472073
+[ 9054.226106] BTRFS warning (device sda1): csum failed ino 1704363 off 
+1146880 csum 1961240434 expected csum 2566472073
 
-> Hi btrfs team
-> 
-> I'm the developer of "btrbk" [1], which uses btrfs send/receive to
-> create backups. In case of errors, "btrfs receive" leaves the partially
-> received subvolume behind, causing some trouble for subsequent
-> incremental backups. As I can see in the wiki, "Delete partially
-> received subvolumes on error" is on the TODO list. Until then, what
-> would be the best way to check if the received subvolume needs to be
-> deleted?
-> 
-> As "btrfs receive" does always return an exit value of "1" on errors, I
-> cannot rely on this (e.g. if a file with the received name already
-> exists, I also get an exit code=1, but then I do NOT want to delete
-> anything).
-> 
-> Also, "btrfs subvolume show <partially-received-subvol>" does not
-> complain either.
-> 
-> Do you have any hints on how I can check for this? (and no, parsing
-> stderr messages is not an option)
+This is a new vm, it hasn't crashed (which might have caused filesystem 
+corruption). The virtual disk is on a RAID storage on the host, which is 
+healthy. All corrupted files are Firefox data files:
+$ dmesg | grep csum | grep -Eo 'csum failed ino [0-9]* ' | awk '{print 
+$4}' | xargs -I{} find -inum {}
+./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+./.mozilla/firefox/nfh217zw.default/webappsstore.sqlite
+./.mozilla/firefox/nfh217zw.default/places.sqlite
+./.mozilla/firefox/nfh217zw.default/places.sqlite
+./.mozilla/firefox/nfh217zw.default/places.sqlite
+./.mozilla/firefox/nfh217zw.default/places.sqlite
+./.mozilla/firefox/nfh217zw.default/places.sqlite
+./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+./.mozilla/firefox/nfh217zw.default/cookies.sqlite
 
-You might be interested in the discussion on a recent thread, sorry, I'd 
-have to search it out the same as you, so I'll leave you to it (unless 
-someone involved in that thread happens to read this one too and can 
-point you right to it), where someone mentioned that their script (which 
-is I think its own btrfs-based product similar to yours) did checksum and 
-signature (md5 and gpg, IIRC) verification, and that as such and because 
-it was actually btrfs checksumming independent, that part of it could be 
-used to verify the same fileset from original pre-send run, as it was 
-send/received, and even onto non-btrfs filesystems synced with rsync, etc.
+How could this possibly happen?
 
-I /think/ the whole thread should have been within the last week, but if 
-not, certainly that reply was, so you should be able to find it by 
-searching all the multi-post threads within the last week.  I'd start by 
-excluding the ones with patch in the title first, as I don't think it was 
-a patch thread, tho I'm not sure...
+And more importantly: Why doesn't the btrfs stat(u)s output tell me that 
+errors have occurred?
+$ sudo btrfs dev stats /
+[/dev/sda1].write_io_errs   0
+[/dev/sda1].read_io_errs    0
+[/dev/sda1].flush_io_errs   0
+[/dev/sda1].corruption_errs 0
+[/dev/sda1].generation_errs 0
 
-You may also be able to use btrfs subvolume find-new, tho from the 
-discussion, it doesn't provide everything you need, and I think the above 
-script actually started with it to get a list of the files to verify, 
-then did the verification on them.
+If the filesystem health was monitored using btrfs dev stats (cronjob) 
+(like checking a zpool using zpool status), the admin would not have 
+been notified:
+$ sudo btrfs dev stats / | grep -v 0 -c
+0
 
-> 
-> [1] https://www.digint.ch/btrbk/
->     https://github.com/digint/btrbk
-
-
+Is my understanding of the stats command wrong, does "corruption_errs" 
+not mean corruption errors?
 
 
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Philip

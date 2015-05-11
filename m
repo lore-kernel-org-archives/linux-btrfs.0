@@ -1,88 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:35182 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751705AbbEJWRd (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54651 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751378AbbEKBl7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 May 2015 18:17:33 -0400
-Received: by pdbqd1 with SMTP id qd1so131005116pdb.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 15:17:32 -0700 (PDT)
-Received: from android-a3079a374005daa4.lan (124-171-101-175.dyn.iinet.net.au. [124.171.101.175])
-        by mx.google.com with ESMTPSA id oj10sm11064361pdb.38.2015.05.10.15.17.31
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sun, 10 May 2015 15:17:32 -0700 (PDT)
-Date: Mon, 11 May 2015 08:17:27 +1000
-From: csirac2@gmail.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <6e30a94c-52bb-4ca1-bc5b-96b36c18c54d.maildroid@localhost>
-Subject: Re: Are there plans for full btrfs filesystem backups?
+	Sun, 10 May 2015 21:41:59 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Subject: Re: Got 10 csum errors according to dmesg but 0 errors according to dev stats
+Date: Mon, 11 May 2015 11:41:54 +1000
+Cc: linux-btrfs@vger.kernel.org
+References: <554F6D43.2060806@googlemail.com> <CABR0jERqzkdTJxX_1S5WEZHDzX8=O8P7r+Bk0mesPLsR2n=w8A@mail.gmail.com> <554F963D.2040209@googlemail.com>
+In-Reply-To: <554F963D.2040209@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201505111141.54771.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Full-filesystem backups also beg the question of full-filesystem snapshots; this level of atomicity may be desirable for such a thing.
+On Mon, 11 May 2015 03:32:45 AM Philip Seeger wrote:
+> However, it seems strange to me that a bunch of files is corrupted 
+> simply because btrfs-progs is older than the kernel.
 
-Perhaps this off topic (and I am sorry to bring it up again :D), but normal snazzer [1] usage operates on all subvolumes on all mounted btrfs filesystems, although I should revisit docker assumptions (I normally exclude them). snazzer-receive man page is at [2]. Still working on coping with manually mounted subvols [3].
+That won't happen.
 
-[1] https://github.com/csirac2/snazzer
-[2] https://github.com/csirac2/snazzer/blob/master/doc/snazzer-receive.md
-[3] https://github.com/csirac2/snazzer/issues/2
+> To trigger more csum errors, I ran a script that basically finds all 
+> files and runs cat $file >/dev/null. I also scrubbed the filesystem.
+> It's getting worse. The number of corrupted files has grown to 79 - all 
+> in /home. Some of these files have not been modified in 3 years. I have 
 
+Sounds like you are having errors in your RAM, CPU, motherboard, or hard drive 
+cabling.  Turn the machine off ASAP and plug the disks into a different system, 
+if you keep it running you will make it worse.
 
-
-Sent from my android device.
-
------Original Message-----
-From: Paul Harvey <csirac2@gmail.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Sent: Mon, 11 May 2015 8:13
-Subject: Re: Are there plans for full btrfs filesystem backups?
-
-Full-filesystem backups also beg the question of full-filesystem snapshots;
-this level of atomicity may be desirable for such a thing.
-
-Perhaps this off topic (and I am sorry to bring it up again :D), but normal
-snazzer [1] usage operates on all subvolumes on all mounted btrfs
-filesystems, although I should revisit docker assumptions (I normally
-exclude them). snazzer-receive man page is at [2]. Still working on coping
-with manually mounted subvols [3].
-
-[1] https://github.com/csirac2/snazzer
-[2] https://github.com/csirac2/snazzer/blob/master/doc/snazzer-receive.md
-[3] https://github.com/csirac2/snazzer/issues/2
-On 11 May 2015 02:56, "Marc MERLIN" <marc@merlins.org> wrote:
-
-> I use send/receive to backup some subvolumes, but there is no good way
-> to back up all of my subvolumes in one swoop.
-> Backing up with tar/cp/rsync is of course no good since it loses all the
-> btrfs attributes including COW deduped blocks.
->
-> For one, my recent btrfs filesystem crash reminded me that docker
-> creates a boatload of subvolumes which my backups didn't cacch, so now
-> it's all gone.
->
-> Are there any plans for a full filesystem send/receive, not just a
-> subvolume send/receive?
->
-> Note that this is the same problem when you are migtrating to new drives
-> or bcache, and you can't play tricks with adding a virtual drive of 8TB
-> just to mirror to it and remove the original mirror later.
->
-> Thanks,
-> Marc
-> --
-> "A mouse is a device used to point at the xterm you want to type in" -
-> A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet
-> cooking
-> Home page: http://marc.merlins.org/                         | PGP
-> 1024R/763BE901
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

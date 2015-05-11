@@ -1,132 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:55090 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753535AbbEKQQs (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 11 May 2015 12:16:48 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix block group ->space_info null pointer dereference
-Date: Mon, 11 May 2015 17:16:20 +0100
-Message-Id: <1431360980-24817-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36596 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751951AbbEKQcy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 May 2015 12:32:54 -0400
+Date: Mon, 11 May 2015 18:32:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs changes (issues?) on OS upgrade
+Message-ID: <20150511163252.GW23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1798034232.614027.1431151384353.JavaMail.apache@nm33.abv.bg>
+ <20150509085844.GA839393@mother.pipebreaker.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20150509085844.GA839393@mother.pipebreaker.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we create a block group we add it to the rbtree of block groups
-before setting its ->space_info field (while it's NULL). This is
-problematic since other tasks can access the block group from the
-rbtree and attempt to use its ->space_info before it is set by
-btrfs_make_block_group().
+On Sat, May 09, 2015 at 10:58:44AM +0200, Tomasz Torcz wrote:
+> On Sat, May 09, 2015 at 09:03:04AM +0300, Милен Христов wrote:
+> > 
+> > 1. Before the upgrade, the size of the entire array was reported as 9TB
+> > (roughly), both on the server (I use conky to monitor server status) and via
+> > samba on Windows clients. After the upgrade, the size is reduced to 4.55 TB
+> > which seems to better reflect what the actual usable space is, but is
+> > unexpected to me (I read some articles on the web about the difficulties in
+> > calculating free space on a btrfs filesystem). Is this expected?  > 
+> 
+>   This was changed in kernel 3.17:
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=ba7b6e62f420f5a8832bc161ab0c7ba767f65b3d
 
-This can happen for example when a concurrent fitrim ioctl operation
-is ongoing, which produces a trace like the following when
-CONFIG_DEBUG_PAGEALLOC is set.
-
-[11509.604369] BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
-[11509.606373] IP: [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179] PGD 2296a8067 PUD 22f4a2067 PMD 0
-[11509.608179] Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-[11509.608179] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse acpi_cpufreq processor i2c_piix4 psmou
-[11509.608179] CPU: 10 PID: 8538 Comm: fstrim Tainted: G        W       4.0.0-rc5-btrfs-next-9+ #2
-[11509.608179] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-[11509.608179] task: ffff88009f5c46d0 ti: ffff8801b3edc000 task.ti: ffff8801b3edc000
-[11509.608179] RIP: 0010:[<ffffffff8107d675>]  [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179] RSP: 0018:ffff8801b3edf9e8  EFLAGS: 00010002
-[11509.608179] RAX: 0000000000000046 RBX: 0000000000000000 RCX: 0000000000000000
-[11509.608179] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000018
-[11509.608179] RBP: ffff8801b3edfaa8 R08: 0000000000000001 R09: 0000000000000000
-[11509.608179] R10: 0000000000000000 R11: ffff88009f5c4f98 R12: 0000000000000000
-[11509.608179] R13: 0000000000000000 R14: 0000000000000018 R15: ffff88009f5c46d0
-[11509.608179] FS:  00007f280a10e840(0000) GS:ffff88023ed40000(0000) knlGS:0000000000000000
-[11509.608179] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[11509.608179] CR2: 0000000000000018 CR3: 00000002119bc000 CR4: 00000000000006e0
-[11509.608179] Stack:
-[11509.608179]  0000000000000000 0000000000000000 0000000000000004 0000000000000000
-[11509.608179]  ffff880100000000 ffffffff00000000 0000000000000001 ffffffff00000000
-[11509.608179]  0000000000000001 0000000000000000 ffff880100000000 00000000000006c4
-[11509.608179] Call Trace:
-[11509.608179]  [<ffffffff8107dc57>] ? __lock_acquire+0x696/0xf02
-[11509.608179]  [<ffffffff8107e806>] lock_acquire+0xa5/0x116
-[11509.608179]  [<ffffffffa04cc876>] ? do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffff81434f37>] _raw_spin_lock+0x34/0x44
-[11509.608179]  [<ffffffffa04cc876>] ? do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffffa04cc876>] do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffffa04cde7d>] btrfs_trim_block_group+0x201/0x491 [btrfs]
-[11509.608179]  [<ffffffffa04849e2>] btrfs_trim_fs+0xe0/0x129 [btrfs]
-[11509.608179]  [<ffffffffa04bb80a>] btrfs_ioctl_fitrim+0x138/0x167 [btrfs]
-[11509.608179]  [<ffffffffa04c002f>] btrfs_ioctl+0x50d/0x21e8 [btrfs]
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81158050>] ? cp_new_stat+0x147/0x15e
-[11509.608179]  [<ffffffff81163041>] do_vfs_ioctl+0x3c6/0x479
-[11509.608179]  [<ffffffff81158116>] ? SYSC_newfstat+0x25/0x2e
-[11509.608179]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
-[11509.608179]  [<ffffffff8116b915>] ? __fget_light+0x2d/0x4f
-[11509.608179]  [<ffffffff8116314e>] SyS_ioctl+0x5a/0x7f
-[11509.608179]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
-[11509.608179] Code: f4 01 00 0f 85 c0 00 00 00 48 c7 c1 f3 1f 7d 81 48 c7 c2 aa cb 7c 81 be fc 0b 00 00 eb 70 83 3d 61 eb 9c 00 00 0f 84 a5 00 00 00 <49> 81 3e 40 a3 2b 82 b8 00 00 00
-[11509.608179] RIP  [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179]  RSP <ffff8801b3edf9e8>
-[11509.608179] CR2: 0000000000000018
-[11509.608179] ---[ end trace 570a5c6769f0e49a ]---
-
-Which corresponds to the following access in fs/btrfs/free-space-cache.c:
-
-  static int do_trimming(struct btrfs_block_group_cache *block_group,
-                         u64 *total_trimmed, u64 start, u64 bytes,
-                         u64 reserved_start, u64 reserved_bytes,
-                         struct btrfs_trim_range *trim_entry)
-  {
-       struct btrfs_space_info *space_info = block_group->space_info;
-  (...)
-       spin_lock(&space_info->lock);
-       ^^^^^ - block_group->space_info is NULL...
-
-Fix this by ensuring the block group's ->space_info is set before adding
-the block group to the rbtree.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7effed6..2c7ac17 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9542,6 +9542,19 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 
- 	free_excluded_extents(root, cache);
- 
-+	/*
-+	 * Call to ensure space_info object is created, don't update its
-+	 * counters just yet. We want our block group to be added to the rbtree
-+	 * with its ->space_info set.
-+	 */
-+	ret = update_space_info(root->fs_info, cache->flags, 0, 0,
-+				&cache->space_info);
-+	if (ret) {
-+		btrfs_remove_free_space_cache(cache);
-+		btrfs_put_block_group(cache);
-+		return ret;
-+	}
-+
- 	ret = btrfs_add_block_group_cache(root->fs_info, cache);
- 	if (ret) {
- 		btrfs_remove_free_space_cache(cache);
-@@ -9549,6 +9562,10 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
-+	/*
-+	 * Now that our block group has its ->space_info set, update the space
-+	 * info's counters.
-+	 */
- 	ret = update_space_info(root->fs_info, cache->flags, size, bytes_used,
- 				&cache->space_info);
- 	if (ret) {
--- 
-2.1.3
-
+That's right. Before this patch, the space in df was reported in
+physical bytes, ie 9TB. The patch recalculates the space to the logical
+size according to the raid profiles, so it's 9/2 ~ 4.55 TB afterwards.

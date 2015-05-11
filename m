@@ -1,92 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:35574 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751791AbbEKVX6 convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:35235 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752115AbbEKVoR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 17:23:58 -0400
-Received: by igbyr2 with SMTP id yr2so83625402igb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 14:23:58 -0700 (PDT)
+	Mon, 11 May 2015 17:44:17 -0400
+Date: Mon, 11 May 2015 14:44:12 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe David Borba Manana <fdmanana@suse.com>
+Message-ID: <20150511214412.GE15670@merlins.org>
+References: <20140908015124.GA21441@merlins.org>
+ <CAL3q7H70SGvWamdeuvF1id-pnP0o4PskgJMb7qE+CfGBB5vd1w@mail.gmail.com>
+ <20140915001836.GU8530@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <55510B14.7090204@friedels.name>
-References: <55510B14.7090204@friedels.name>
-Date: Mon, 11 May 2015 14:23:58 -0700
-Message-ID: <CAN05THRAVfb6vo2eLvdO-wvFL5--4xR+g6uQVsmGd2AEr0bxPw@mail.gmail.com>
-Subject: Re: raid 5 and different device size
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140915001836.GU8530@merlins.org>
+Subject: Re: btrfs differential receive has become excrutiatingly slow on one
+ machine
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For that kind of data where you mainly store lots of (big?) files but
-rarely modify the files once stored,
-I would suggest using snapraid  it is mor stable and reliable than
-current btrfs raid5 state.
-And it allows you to to go to raid6 and beyond as your data and
-redundancy factors grow.
+On Sun, Sep 14, 2014 at 05:18:36PM -0700, Marc MERLIN wrote:
+> On Mon, Sep 08, 2014 at 10:49:01PM +0100, Filipe David Manana wrote:
+> > Hi Marc,
+> > 
+> > Does the sum of all reads from the stream file (fd 3) gets anywhere
+> > close to the total btrfs receive time? (or even more than 50%)
+> > Can you paste somewhere the full output of strace (with -T option)?
+> 
+> Sorry for the lack of answer, I lost the snapshot I used for that mail,
+> so it was not possible to do again easily.
+> Because my backups were so hopelessly behind, I did a full resync of
+> /var, i.e. not a differential send (300GB or so). The copy went at about
+> 25GB/h, which wasn't bad at all since was over wifi (took about 14H).
 
+Sigh, now that I'm resyncing my laptop I just rebuilt after the btrfs
+crash, to my server (both running 3.19.5+), full btrfs sends (i.e. not
+incremental), are taking ages.
 
-On Mon, May 11, 2015 at 1:03 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
-> Hello,
->
-> I need your advice for the following scenario:
-> I do have three -identical- 3TB HDD. On these I store:
-> -Backups (Images of my Families Laptop; Backup of the Machines (the one with
-> the HDD) running System).
-> -Videos (recordings, not essential)
-> -HomeVideos (Familiy, essential)
-> -Photos
-> -Documents
->
-> Now I intend to:
-> * increase the available disc space
-> * stop worrying how much space is available on which drive
-> * create redundancy
-> * have low operating cost (power-consumption)
->
->
-> So, I need to buy one additional HDD.
-> And I want to combine the drives to one big volume.
->
-> I am aware that raid is no backup.
-> Thus, I backup the HomeVideos and the Photos on an external drive not
-> connected to the power supply and USB.
->
-> I think, that I do not need raid5, depending on the definition of 'not
-> essential'. Nevertheless, raid5 would efficiently (at low cost) decrease the
-> likelyhood of loss of the 'non-essential' data.
-> Furthermore, raid5 would fill the gap that I have between backups (the fact,
-> that I do these backup manually means that I do not do them every day) and
-> at least safe me from hardware failures.
->
-> So, yes, I think I do want raid5 and I want to combine.
-> But what size of HDD do I want to buy? The best value (cost per TB) I get
-> for 3TB drives. So I could by two 3TB drives, one for additional space, the
-> other for the parity information.
-> Or I could by one bigger drive, with potentially lower power consumption.
-> But how would the raid5 look in this case? I fear, only 3TB of the 6 would
-> be redundant and the other 3 would be not redundant, right?
->
->
-> Now the last point: Power consumption: Under which conditions can the drives
-> spin down in case of raid5? I assume that all drives have to run as in case
-> the data is written on any one of the drives, right?
-> Is that also true during reading of data, i.e. is the parity also checked
-> for read operations?
->
-> Thanks for your advice in advance,
-> Hendrik
->
->
->
->
->
-> ---
-> Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-> http://www.avast.com
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm seeing less than 100GB/day on my home network when my tcp
+connections over wifi easily get 50MB/s
+
+Right now I'm seeing the equivalent of aout 1MB/s, or 50 times less than
+what my network connection can do.
+
+Last time I tried to strace btrfs send, it killed the process with
+SIGPIPE and I lost a full day of sync and had to start over :(
+
+It's a broad question, but how can I diagnose btrfs send being so slow
+without taking the risk of killing my connection?
+(if there is no good answer on this one, I can try another sync later
+with -vvv and strace if you'd like)
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

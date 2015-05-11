@@ -1,116 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34858 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754149AbbE3Pet (ORCPT
+Received: from mail-yh0-f43.google.com ([209.85.213.43]:36028 "EHLO
+	mail-yh0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752176AbbEKGBU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 May 2015 11:34:49 -0400
-Message-ID: <5569D890.5060001@oracle.com>
-Date: Sat, 30 May 2015 23:34:40 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Mon, 11 May 2015 02:01:20 -0400
+Received: by yhrr66 with SMTP id r66so33567053yhr.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 23:01:19 -0700 (PDT)
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5.1 24/27] Btrfs: free the stale device
-References: <1426845702-6298-25-git-send-email-anand.jain@oracle.com> <1432308828-31185-1-git-send-email-Anand.Jain@oracle.com> <20150527113437.GQ23255@twin.jikos.cz>
-In-Reply-To: <20150527113437.GQ23255@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20150505153444.GI5099@twin.jikos.cz>
+References: <1430384845-9666-1-git-send-email-xuw2015@gmail.com>
+	<20150505153444.GI5099@twin.jikos.cz>
+Date: Mon, 11 May 2015 14:01:19 +0800
+Message-ID: <CAPBX1xLD4t0uxUQpUYH10mYxcKOHq+4EfgwRDBjmPgwU7ee3LA@mail.gmail.com>
+Subject: Re: [PATCH 1/3] btrfs: introduce BTRFS_BLOCK_SIZE to replace number 4096
+From: George Wang <xuw2015@gmail.com>
+To: dsterba@suse.cz, xuw2015@gmail.com, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for review.
 
-Hi David, Thanks for comments, more below..
-
-On 05/27/2015 07:34 PM, David Sterba wrote:
-> On Fri, May 22, 2015 at 11:33:48PM +0800, Anand Jain wrote:
->> +void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->> +{
->> +	int del = 0;
->> +	struct btrfs_fs_devices *fs_devs;
->> +	struct btrfs_device *dev;
->> +
->> +	if (!rcu_str_deref(cur_dev->name))
->> +		return;
+On Tue, May 5, 2015 at 11:34 PM, David Sterba <dsterba@suse.cz> wrote:
+> General comment: everywhere the superblock "4096" is used, the right
+> replacement is BTRFS_SUPER_INFO_SIZE
 >
-> This looks like rcu-unprotected access, though there's an outer mutext
-> held in device_list_add that calls btrfs_free_stale_device. I'm not sure
-> that the device name should be used to do any sorts of checks at all.
 
-  you are right.  I got this corrected in v5.2 just sent out.
+I think it depends on the context. BTRFS_SUPER_INFO_SIZE means the
+super block size for btrfs, which may not be considered as block size
+logically.
 
-
->> +	list_for_each_entry(fs_devs, &fs_uuids, list) {
->> +		if (fs_devs->opened)
->> +			continue;
->> +		if (fs_devs->seeding)
->> +			continue;
->> +		list_for_each_entry(dev, &fs_devs->devices, dev_list) {
->> +			if (dev == cur_dev)
->> +				continue;
->> +
->> +			/*
->> +			 * Todo: This won't be enough. What if same device
->> +			 * comes back with new uuid and with its mapper path?
->> +			 * But for now, this does helps as mostly an admin will
->> +			 * use either mapper or non mapper path throughout.
->> +			 */
->> +			if (!rcu_str_deref(dev->name))
->> +				continue;
->> +			if (!strcmp(rcu_str_deref(dev->name),
->> +						rcu_str_deref(cur_dev->name))) {
->> +				del = 1;
->> +				break;
->> +			}
->> +		}
->> +		if (del) {
->> +			/* delete the stale */
->> +			if (fs_devs->num_devices == 1) {
->> +				btrfs_sysfs_remove_fsid(fs_devs);
->> +				list_del(&fs_devs->list);
->> +				free_fs_devices(fs_devs);
->> +			} else {
->> +				fs_devs->num_devices--;
->> +				list_del(&dev->dev_list);
->> +				rcu_string_free(dev->name);
->> +				kfree(dev);
->
-> Devices are normally freed by the rcu through free_device, this looks
-> suspicious to mix both approaches.
-
-  yes its bit of mixed up, also in other parts as well, for eg:
-  free_fs_devices(). Here I am following free_fs_devices,
-  since free_stale will check on the devices that are unmounted.
-
->> +			}
->> +			break;
->> +		}
->> +	}
->> +	return;
->
-> Unnecessary return
-
-right.
-
->> +}
->> +
->>   /*
->>    * Add new device to list of registered devices
->>    *
->> @@ -560,6 +609,8 @@ static noinline int device_list_add(const char *path,
->>   	if (!fs_devices->opened)
->>   		device->generation = found_transid;
+> On Thu, Apr 30, 2015 at 05:07:23PM +0800, xuw2015@gmail.com wrote:
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -2548,8 +2548,8 @@ int open_ctree(struct super_block *sb,
+>>       btrfs_init_balance(fs_info);
+>>       btrfs_init_async_reclaim_work(&fs_info->async_reclaim_work);
 >>
->> +	btrfs_free_stale_device(device);
->
-> It might be safe to do that in the end, but it should be explained
-> somewhere.
-
-Added, Thanks, Anand
-
->> +
->>   	*fs_devices_ret = fs_devices;
+>> -     sb->s_blocksize = 4096;
+>> -     sb->s_blocksize_bits = blksize_bits(4096);
+>> +     sb->s_blocksize = BTRFS_BLOCK_SIZE;
+>> +     sb->s_blocksize_bits = blksize_bits(BTRFS_BLOCK_SIZE);
+>>       sb->s_bdi = &fs_info->bdi;
 >>
->>   	return ret;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>       btrfs_init_btree_inode(fs_info, tree_root);
+>> @@ -3144,7 +3144,7 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+>>               if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+>>                                       i_size_read(bdev->bd_inode))
+>>                       break;
+>> -             bh = __bread(bdev, bytenr / 4096,
+>> +             bh = __bread(bdev, bytenr / BTRFS_BLOCK_SIZE,
 >
+> That one is really BTRFS_SUPER_INFO_SIZE
+Here we call the __bread->__bread_gfp->__getblk_gfp, and the block is based
+on bdev->bd_inode->i_blkbits, which is initialized by set_blocksize in
+volumes.c of btrfs codes. This means the param block is the block nr based on
+the bdev, not the BTRFS_SUPER_INFO_SIZE.(I mean logically, because not
+all of them are 4096)
+
+So I think "bytenr / BTRFS_MIN_BLOCK_SIZE" or "bytenr / block_size(bdev)"
+may be more accurate.
+
+>
+>>                                       BTRFS_SUPER_INFO_SIZE);
+>>               if (!bh)
+>>                       continue;
+>> @@ -3199,7 +3199,7 @@ static int write_dev_supers(struct btrfs_device *device,
+>>                       break;
+>>
+>>               if (wait) {
+>> -                     bh = __find_get_block(device->bdev, bytenr / 4096,
+>> +                     bh = __find_get_block(device->bdev, bytenr / BTRFS_BLOCK_SIZE,
+>
+> same here
+The __find_get_block also in the same context, the 2nd param block nr
+is based on
+the blocksize of bdev.
+
+>
+>>                                             BTRFS_SUPER_INFO_SIZE);
+>>                       if (!bh) {
+>>                               errors++;
+>> @@ -3229,7 +3229,7 @@ static int write_dev_supers(struct btrfs_device *device,
+>>                        * one reference for us, and we leave it for the
+>>                        * caller
+>>                        */
+>> -                     bh = __getblk(device->bdev, bytenr / 4096,
+>> +                     bh = __getblk(device->bdev, bytenr / BTRFS_BLOCK_SIZE,
+>
+> same here
+I think here is the same.
+
+>
+>>                                     BTRFS_SUPER_INFO_SIZE);
+>>                       if (!bh) {
+>>                               printk(KERN_ERR "BTRFS: couldn't get super "
+>> @@ -3904,13 +3904,13 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>>        * The common minimum, we don't know if we can trust the nodesize/sectorsize
+>>        * items yet, they'll be verified later. Issue just a warning.
+>>        */
+>> -     if (!IS_ALIGNED(btrfs_super_root(sb), 4096))
+>> +     if (!IS_ALIGNED(btrfs_super_root(sb), BTRFS_BLOCK_SIZE))
+>>               printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
+>>                               btrfs_super_root(sb));
+>> -     if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096))
+>> +     if (!IS_ALIGNED(btrfs_super_chunk_root(sb), BTRFS_BLOCK_SIZE))
+>>               printk(KERN_WARNING "BTRFS: chunk_root block unaligned: %llu\n",
+>>                               btrfs_super_chunk_root(sb));
+>> -     if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096))
+>> +     if (!IS_ALIGNED(btrfs_super_log_root(sb), BTRFS_BLOCK_SIZE))
+>>               printk(KERN_WARNING "BTRFS: log_root block unaligned: %llu\n",
+>>                               btrfs_super_log_root(sb));
+>
+> Throughout btrfs_check_super_valid 4096 is used as a minimum block size
+> and the macro should be more descriptive.
+Yes, I will convert the BTRFS_BLOCK_SIZE to BTRFS_MIN_BLOCK_SIZE.
+
+>>
+>> @@ -3918,14 +3918,14 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>>        * Check the lower bound, the alignment and other constraints are
+>>        * checked later.
+>>        */
+>> -     if (btrfs_super_nodesize(sb) < 4096) {
+>> -             printk(KERN_ERR "BTRFS: nodesize too small: %u < 4096\n",
+>> -                             btrfs_super_nodesize(sb));
+>> +     if (btrfs_super_nodesize(sb) < BTRFS_BLOCK_SIZE) {
+>> +             printk(KERN_ERR "BTRFS: nodesize too small: %u < %d\n",
+>> +                             btrfs_super_nodesize(sb), BTRFS_BLOCK_SIZE);
+>>               ret = -EINVAL;
+>>       }
+>> -     if (btrfs_super_sectorsize(sb) < 4096) {
+>> -             printk(KERN_ERR "BTRFS: sectorsize too small: %u < 4096\n",
+>> -                             btrfs_super_sectorsize(sb));
+>> +     if (btrfs_super_sectorsize(sb) < BTRFS_BLOCK_SIZE) {
+>> +             printk(KERN_ERR "BTRFS: sectorsize too small: %u < %d\n",
+>> +                             btrfs_super_sectorsize(sb), BTRFS_BLOCK_SIZE);
+>>               ret = -EINVAL;
+>>       }
+>>
+>> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+>> index d4cbfee..4d246ff 100644
+>> --- a/fs/btrfs/disk-io.h
+>> +++ b/fs/btrfs/disk-io.h
+>> @@ -19,8 +19,9 @@
+>>  #ifndef __DISKIO__
+>>  #define __DISKIO__
+>>
+>> +#define BTRFS_BLOCK_SIZE 4096
+>>  #define BTRFS_SUPER_INFO_OFFSET (64 * 1024)
+>> -#define BTRFS_SUPER_INFO_SIZE 4096
+>> +#define BTRFS_SUPER_INFO_SIZE BTRFS_BLOCK_SIZE
+>
+> This should stay 4096, super info size is defined as 4096, block size
+> can vary according to page size.
+>
+Yes, the BTRFS_SUPER_INFO_SIZE should irrelevant to the
+BTRFS_BLOCK_SIZE.
+> IOW, I don't see the point to introduce BTRFS_BLOCK_SIZE, it should be
+> something like BTRFS_MIN_BLOCK_SIZE and used in the validation
+> functions.
+Yes, I will use the BTRFS_MIN_BLOCK_SIZE.

@@ -1,35 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53690 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933623AbbEMN5k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 May 2015 09:57:40 -0400
-Date: Wed, 13 May 2015 15:57:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 01/13] btrfs-progs: Add CHANGIND_FSID and
- CHANGING_CHUNK_TREE_ID super flags.
-Message-ID: <20150513135738.GL23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:6243 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752661AbbEKIJK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 May 2015 04:09:10 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4B87lfj028793
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 16:07:47 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 13/13] btrfs-progs: Update Doc for btrfs-property
+Date: Mon, 11 May 2015 16:08:54 +0800
+Message-ID: <1431331734-11714-14-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1431331734-11714-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1431331734-11714-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1431331734-11714-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1431331734-11714-2-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 11, 2015 at 04:08:42PM +0800, Qu Wenruo wrote:
-> @@ -307,6 +307,8 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
->  
->  #define BTRFS_HEADER_FLAG_WRITTEN		(1ULL << 0)
->  #define BTRFS_HEADER_FLAG_RELOC			(1ULL << 1)
-> +#define BTRFS_SUPER_FLAG_CHANGING_FSID		(1ULL << 30)
-> +#define BTRFS_SUPER_FLAG_CHANGING_CHUNK_TREE_ID	(1ULL << 31)
+Update offline related new function for btrfs-property.
 
-Seems that the values should continue from the end of the sequence, ie.
-1 << 35, I'll change that.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2:
+  Seperated from previous patch.
+---
+ Documentation/btrfs-property.asciidoc | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
->  #define BTRFS_SUPER_FLAG_SEEDING		(1ULL << 32)
->  #define BTRFS_SUPER_FLAG_METADUMP		(1ULL << 33)
->  #define BTRFS_SUPER_FLAG_METADUMP_V2		(1ULL << 34)
+diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
+index 8b9b7f0..c7239ef 100644
+--- a/Documentation/btrfs-property.asciidoc
++++ b/Documentation/btrfs-property.asciidoc
+@@ -32,7 +32,8 @@ The '-t <type>' option can be used to explicitly
+ specify what type of object you meant. This is only needed when a
+ property could be set for more then one object type.
+ +
+-Possible types are 's[ubvol]', 'f[ilesystem]', 'i[node]' and 'd[evice]'.
++Possible types are 's[ubvol]', 'f[ilesystem]', 'i[node]', 'd[evice]' and
++'o[ffline]'.
+ +
+ Set the name of property by '<name>'. If no '<name>' is specified,
+ all properties for the given object are printed. '<name>' is one of
+@@ -44,6 +45,20 @@ label::::
+ label of device
+ compression::::
+ compression setting for an inode: lzo, zlib, or "" (empty string)
++fsid::::
++fsid for an offline btrfs: 36 bytes UUID string in `printf`(3) format:
++"%08x-%04x-%04x-%04x-%012x"
++chunk_tree_uuid::::
++chunk tree uuid for an offline btrfs: 36 bytes UUID, same as 'fsid'.
++
++
++NOTE: To use 'fsid' and 'chunk_tree_uuid' in 'offline' type, '-t offline' must
++be specified explicitly, as most offline operation are dangerous and user
++should be aware of the danger.
++
++WARNING: If process of changing 'fsid' or 'chunk_tree_uuid' is canceled, the
++filesystem will not be mountable as it is in a inconsistent status. To make it
++mountable again, the uuid change needs to be reran and ensure it completes.
+ 
+ *list* [-t <type>] <object>::
+ Lists available properties with their descriptions for the given object.
+-- 
+2.4.0
+

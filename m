@@ -1,38 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54651 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751378AbbEKBl7 (ORCPT
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:35711 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751644AbbEKCzG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 May 2015 21:41:59 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Philip Seeger <p0h0i0l0i0p@gmail.com>
-Subject: Re: Got 10 csum errors according to dmesg but 0 errors according to dev stats
-Date: Mon, 11 May 2015 11:41:54 +1000
-Cc: linux-btrfs@vger.kernel.org
-References: <554F6D43.2060806@googlemail.com> <CABR0jERqzkdTJxX_1S5WEZHDzX8=O8P7r+Bk0mesPLsR2n=w8A@mail.gmail.com> <554F963D.2040209@googlemail.com>
-In-Reply-To: <554F963D.2040209@googlemail.com>
+	Sun, 10 May 2015 22:55:06 -0400
+Received: by ieczm2 with SMTP id zm2so98512344iec.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2015 19:55:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201505111141.54771.russell@coker.com.au>
+Date: Sun, 10 May 2015 20:55:05 -0600
+Message-ID: <CAJCQCtSyn7XVG4ZZcuF_FrpJDUd3WiaLY5JiGu80e2ghEoCYog@mail.gmail.com>
+Subject: bug, volume can be umounted before fs has fully flushed to disk,
+ results in scary warning
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 11 May 2015 03:32:45 AM Philip Seeger wrote:
-> However, it seems strange to me that a bunch of files is corrupted 
-> simply because btrfs-progs is older than the kernel.
+https://bugzilla.kernel.org/show_bug.cgi?id=98051
 
-That won't happen.
+I'm not sure what the expected behavior is here, because a file system
+can only do so much to deal with bugs in the device (or USB bridge
+chipsets). But my gut instinct is that I shouldn't get a return to
+prompt from umount until it's safe to disconnect the device.
 
-> To trigger more csum errors, I ran a script that basically finds all 
-> files and runs cat $file >/dev/null. I also scrubbed the filesystem.
-> It's getting worse. The number of corrupted files has grown to 79 - all 
-> in /home. Some of these files have not been modified in 3 years. I have 
+This error suggests otherwise. YetI have no idea how long I'd have to
+wait to avoid this message, which doesn't always happen. This is not a
+regression, I've seen it before. So far there's been no complaints on
+normal remount or btrfs check, so despite the 1 flush being dropped
+(?) the file system is consistent.
 
-Sounds like you are having errors in your RAM, CPU, motherboard, or hard drive 
-cabling.  Turn the machine off ASAP and plug the disks into a different system, 
-if you keep it running you will make it worse.
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Chris Murphy

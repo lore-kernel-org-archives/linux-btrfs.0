@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11526 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:6243 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751153AbbEKIJB (ORCPT
+	with ESMTP id S1752264AbbEKIJC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 04:09:01 -0400
+	Mon, 11 May 2015 04:09:02 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4B87bEc028750
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 16:07:37 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4B87bEe028750
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 16:07:38 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 03/13] btrfs-progs: Make btrfs-show-super print human readable flag for super flags.
-Date: Mon, 11 May 2015 16:08:44 +0800
-Message-ID: <1431331734-11714-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 04/13] btrfs-progs: Add open_ctree check for uuid changing.
+Date: Mon, 11 May 2015 16:08:45 +0800
+Message-ID: <1431331734-11714-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1431331734-11714-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1431331734-11714-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,73 +19,93 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the new __print_readable_flag() to implement
-print_readable_super_flag().
+Now open_ctree will exit if it found the superblock is marked
+CHANGING_FSID/CHUNK_TREE_UUID, except given IGNORE_FSID/CHUNK_TREE_ID
+open ctree flags.
+
+Kernel will do the same thing later.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v2:
-  Newly introduced.
+  Abort open_ctree if uuid change is not done.
 ---
- btrfs-show-super.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ ctree.h   |  2 ++
+ disk-io.c | 19 ++++++++++++++++++-
+ disk-io.h |  3 +++
+ 3 files changed, 23 insertions(+), 1 deletion(-)
 
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index 430ddfe..6da80d8 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -305,6 +305,30 @@ struct readable_flag_entry incompat_flags_array[] = {
- static const int incompat_flags_num = sizeof(incompat_flags_array) /
- 				      sizeof(struct readable_flag_entry);
+diff --git a/ctree.h b/ctree.h
+index 8dc70a5..1608645 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1012,6 +1012,8 @@ struct btrfs_fs_info {
+ 	unsigned int is_chunk_recover:1;
+ 	unsigned int quota_enabled:1;
+ 	unsigned int suppress_check_block_errors:1;
++	unsigned int ignore_fsid:1;
++	unsigned int ignore_chunk_tree_id:1;
  
-+#define DEF_HEADER_FLAG_ENTRY(bit_name)			\
-+	{BTRFS_HEADER_FLAG_##bit_name, #bit_name}
-+#define DEF_SUPER_FLAG_ENTRY(bit_name)			\
-+	{BTRFS_SUPER_FLAG_##bit_name, #bit_name}
-+
-+struct readable_flag_entry super_flags_array[] = {
-+	DEF_HEADER_FLAG_ENTRY(WRITTEN),
-+	DEF_HEADER_FLAG_ENTRY(RELOC),
-+	DEF_SUPER_FLAG_ENTRY(CHANGING_FSID),
-+	DEF_SUPER_FLAG_ENTRY(CHANGING_CHUNK_TREE_ID),
-+	DEF_SUPER_FLAG_ENTRY(SEEDING),
-+	DEF_SUPER_FLAG_ENTRY(METADUMP),
-+	DEF_SUPER_FLAG_ENTRY(METADUMP_V2)
-+};
-+static const int super_flags_num = ARRAY_SIZE(super_flags_array);
-+
-+#define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
-+				 BTRFS_HEADER_FLAG_RELOC |\
-+				 BTRFS_SUPER_FLAG_CHANGING_FSID |\
-+				 BTRFS_SUPER_FLAG_CHANGING_CHUNK_TREE_ID |\
-+				 BTRFS_SUPER_FLAG_SEEDING |\
-+				 BTRFS_SUPER_FLAG_METADUMP |\
-+				 BTRFS_SUPER_FLAG_METADUMP_V2)
-+
- static void __print_readable_flag(u64 flag, struct readable_flag_entry *array,
- 				  int array_size, u64 supported_flags)
- {
-@@ -343,6 +367,12 @@ static void print_readable_incompat_flag(u64 flag)
- 				     BTRFS_FEATURE_INCOMPAT_SUPP);
- }
+ 	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+diff --git a/disk-io.c b/disk-io.c
+index c1cf146..0edebfa 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -49,7 +49,8 @@ static int check_tree_block(struct btrfs_root *root, struct extent_buffer *buf)
  
-+static void print_readable_super_flag(u64 flag)
-+{
-+	return __print_readable_flag(flag, super_flags_array,
-+				     super_flags_num, BTRFS_SUPER_FLAG_SUPP);
-+}
-+
- static void dump_superblock(struct btrfs_super_block *sb, int full)
- {
- 	int i;
-@@ -362,6 +392,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 		(unsigned long long)btrfs_super_bytenr(sb));
- 	printf("flags\t\t\t0x%llx\n",
- 		(unsigned long long)btrfs_super_flags(sb));
-+	print_readable_super_flag(btrfs_super_flags(sb));
+ 	fs_devices = root->fs_info->fs_devices;
+ 	while (fs_devices) {
+-		if (!memcmp_extent_buffer(buf, fs_devices->fsid,
++		if (root->fs_info->ignore_fsid ||
++		    !memcmp_extent_buffer(buf, fs_devices->fsid,
+ 					  btrfs_header_fsid(),
+ 					  BTRFS_FSID_SIZE)) {
+ 			ret = 0;
+@@ -1149,6 +1150,10 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 		fs_info->on_restoring = 1;
+ 	if (flags & OPEN_CTREE_SUPPRESS_CHECK_BLOCK_ERRORS)
+ 		fs_info->suppress_check_block_errors = 1;
++	if (flags & OPEN_CTREE_IGNORE_FSID)
++		fs_info->ignore_fsid = 1;
++	if (flags & OPEN_CTREE_IGNORE_CHUNK_TREE_ID)
++		fs_info->ignore_chunk_tree_id = 1;
  
- 	printf("magic\t\t\t");
- 	s = (char *) &sb->magic;
+ 	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr,
+ 				    (flags & OPEN_CTREE_RECOVER_SUPER),
+@@ -1180,6 +1185,18 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 		goto out_devices;
+ 	}
+ 
++	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_CHANGING_FSID &&
++	    !fs_info->ignore_fsid) {
++		fprintf(stderr, "Under uuid changing, fsid inconsistent\n");
++		goto out_devices;
++	}
++	if (btrfs_super_flags(disk_super) &
++			BTRFS_SUPER_FLAG_CHANGING_CHUNK_TREE_ID &&
++	    !fs_info->ignore_chunk_tree_id) {
++		fprintf(stderr, "Under uuid changing, chunk tree uuid inconsistent\n");
++		goto out_devices;
++	}
++
+ 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
+ 
+ 	ret = btrfs_check_fs_compatibility(fs_info->super_copy,
+diff --git a/disk-io.h b/disk-io.h
+index 4caebeb..e1c2030 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -49,6 +49,9 @@ enum btrfs_open_ctree_flags {
+ 	 * tree bits.
+ 	 * Like split PARTIAL into SKIP_CSUM/SKIP_EXTENT
+ 	 */
++
++	OPEN_CTREE_IGNORE_FSID		= (1 << 10),
++	OPEN_CTREE_IGNORE_CHUNK_TREE_ID	= (1 << 11)
+ };
+ 
+ static inline u64 btrfs_sb_offset(int mirror)
 -- 
 2.4.0
 

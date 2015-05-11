@@ -1,240 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:33251 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752511AbbEKH6f (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 03:58:35 -0400
-Received: by pacwv17 with SMTP id wv17so103964934pac.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 00:58:35 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Miao Xie <miaoxie@huawei.com>, Philip <bugzilla@philip-seeger.de>,
-        Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH 3/4] Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
-Date: Mon, 11 May 2015 00:58:14 -0700
-Message-Id: <8811074b49d6b73ad4546d686f5908643346cefc.1431330020.git.osandov@osandov.com>
-In-Reply-To: <cover.1431330020.git.osandov@osandov.com>
-References: <cover.1431330020.git.osandov@osandov.com>
-In-Reply-To: <cover.1431330020.git.osandov@osandov.com>
-References: <cover.1431330020.git.osandov@osandov.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34910 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752706AbbEKJKK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 May 2015 05:10:10 -0400
+Date: Mon, 11 May 2015 11:10:07 +0200
+From: David Sterba <dsterba@suse.cz>
+To: xuw2015@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCHv2] btrfs: replace the 4096 magic number for block size
+Message-ID: <20150511091007.GJ23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1431326095-25176-1-git-send-email-xuw2015@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1431326095-25176-1-git-send-email-xuw2015@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current RAID 5/6 recovery code isn't quite prepared to handle
-missing devices. In particular, it expects a bio that we previously
-attempted to use in the read path, meaning that it has valid pages
-allocated. However, missing devices have a NULL blkdev, and we can't
-call bio_add_page() on a bio with a NULL blkdev. We could do manual
-manipulation of bio->bi_io_vec, but that's pretty gross. So instead, add
-a separate path that allows us to manually add pages to the rbio.
+On Mon, May 11, 2015 at 02:34:55PM +0800, xuw2015@gmail.com wrote:
+> From: George Wang <xuw2015@gmail.com>
+> 
+> There are a lot of 4096 magic number in disk-io.c and volumes.c. Most of them
+> are used for block size of the bdev. By the block_size(bdev) and macor
+> BTRFS_MIN_BLOCK_SIZE, it can be more descriptive.
 
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/btrfs/raid56.c | 87 ++++++++++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/raid56.h | 10 +++++--
- fs/btrfs/scrub.c  |  3 +-
- 3 files changed, 86 insertions(+), 14 deletions(-)
+There must be some misunderstanding. Not all the 4096 constants refer to
+the same thing (and for that reason a symbolic name is better).
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index fa72068..6fe2613 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -61,9 +61,10 @@
- #define RBIO_CACHE_SIZE 1024
- 
- enum btrfs_rbio_ops {
--	BTRFS_RBIO_WRITE	= 0,
--	BTRFS_RBIO_READ_REBUILD	= 1,
--	BTRFS_RBIO_PARITY_SCRUB	= 2,
-+	BTRFS_RBIO_WRITE,
-+	BTRFS_RBIO_READ_REBUILD,
-+	BTRFS_RBIO_PARITY_SCRUB,
-+	BTRFS_RBIO_REBUILD_MISSING,
- };
- 
- struct btrfs_raid_bio {
-@@ -602,6 +603,10 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
- 	    cur->operation == BTRFS_RBIO_PARITY_SCRUB)
- 		return 0;
- 
-+	if (last->operation == BTRFS_RBIO_REBUILD_MISSING ||
-+	    cur->operation == BTRFS_RBIO_REBUILD_MISSING)
-+		return 0;
-+
- 	return 1;
- }
- 
-@@ -793,7 +798,10 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
- 
- 			if (next->operation == BTRFS_RBIO_READ_REBUILD)
- 				async_read_rebuild(next);
--			else if (next->operation == BTRFS_RBIO_WRITE) {
-+			else if (next->operation == BTRFS_RBIO_REBUILD_MISSING) {
-+				steal_rbio(rbio, next);
-+				async_read_rebuild(next);
-+			} else if (next->operation == BTRFS_RBIO_WRITE) {
- 				steal_rbio(rbio, next);
- 				async_rmw_stripe(next);
- 			} else if (next->operation == BTRFS_RBIO_PARITY_SCRUB) {
-@@ -1809,7 +1817,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 	faila = rbio->faila;
- 	failb = rbio->failb;
- 
--	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
- 		spin_lock_irq(&rbio->bio_list_lock);
- 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
- 		spin_unlock_irq(&rbio->bio_list_lock);
-@@ -1834,7 +1843,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
-+			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1943,7 +1953,8 @@ pstripe:
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
-+			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1965,6 +1976,8 @@ cleanup_io:
- 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
- 
- 		rbio_orig_end_io(rbio, err, err == 0);
-+	} else if (rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
-+		rbio_orig_end_io(rbio, err, err == 0);
- 	} else if (err == 0) {
- 		rbio->faila = -1;
- 		rbio->failb = -1;
-@@ -2101,7 +2114,8 @@ out:
- 	return 0;
- 
- cleanup:
--	if (rbio->operation == BTRFS_RBIO_READ_REBUILD)
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING)
- 		rbio_orig_end_io(rbio, -EIO, 0);
- 	return -EIO;
- }
-@@ -2232,8 +2246,9 @@ raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
- 	return rbio;
- }
- 
--void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
--				   struct page *page, u64 logical)
-+/* Used for both parity scrub and missing. */
-+void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
-+			    u64 logical)
- {
- 	int stripe_offset;
- 	int index;
-@@ -2668,3 +2683,55 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
- 	if (!lock_stripe_add(rbio))
- 		async_scrub_parity(rbio);
- }
-+
-+/* The following code is used for dev replace of a missing RAID 5/6 device. */
-+
-+struct btrfs_raid_bio *
-+raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
-+			  struct btrfs_bio *bbio, u64 length)
-+{
-+	struct btrfs_raid_bio *rbio;
-+
-+	rbio = alloc_rbio(root, bbio, length);
-+	if (IS_ERR(rbio))
-+		return NULL;
-+
-+	rbio->operation = BTRFS_RBIO_REBUILD_MISSING;
-+	bio_list_add(&rbio->bio_list, bio);
-+	/*
-+	 * This is a special bio which is used to hold the completion handler
-+	 * and make the scrub rbio is similar to the other types
-+	 */
-+	ASSERT(!bio->bi_iter.bi_size);
-+
-+	rbio->faila = find_logical_bio_stripe(rbio, bio);
-+	if (rbio->faila == -1) {
-+		BUG();
-+		kfree(rbio);
-+		return NULL;
-+	}
-+
-+	return rbio;
-+}
-+
-+static void missing_raid56_work(struct btrfs_work *work)
-+{
-+	struct btrfs_raid_bio *rbio;
-+
-+	rbio = container_of(work, struct btrfs_raid_bio, work);
-+	__raid56_parity_recover(rbio);
-+}
-+
-+static void async_missing_raid56(struct btrfs_raid_bio *rbio)
-+{
-+	btrfs_init_work(&rbio->work, btrfs_rmw_helper,
-+			missing_raid56_work, NULL, NULL);
-+
-+	btrfs_queue_work(rbio->fs_info->rmw_workers, &rbio->work);
-+}
-+
-+void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio)
-+{
-+	if (!lock_stripe_add(rbio))
-+		async_missing_raid56(rbio);
-+}
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 2b5d797..8b69469 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -48,15 +48,21 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 			       struct btrfs_bio *bbio, u64 stripe_len);
- 
-+void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
-+			    u64 logical);
-+
- struct btrfs_raid_bio *
- raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
- 			       struct btrfs_bio *bbio, u64 stripe_len,
- 			       struct btrfs_device *scrub_dev,
- 			       unsigned long *dbitmap, int stripe_nsectors);
--void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
--				   struct page *page, u64 logical);
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
- 
-+struct btrfs_raid_bio *
-+raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
-+			  struct btrfs_bio *bbio, u64 length);
-+void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio);
-+
- int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
- void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
- #endif
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 633fa7b..b94694d 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2699,8 +2699,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
- 		goto rbio_out;
- 
- 	list_for_each_entry(spage, &sparity->spages, list)
--		raid56_parity_add_scrub_pages(rbio, spage->page,
--					      spage->logical);
-+		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
- 
- 	scrub_pending_bio_inc(sctx);
- 	raid56_parity_submit_scrub_rbio(rbio);
--- 
-2.4.0
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2548,8 +2548,8 @@ int open_ctree(struct super_block *sb,
+>  	btrfs_init_balance(fs_info);
+>  	btrfs_init_async_reclaim_work(&fs_info->async_reclaim_work);
+>  
+> -	sb->s_blocksize = 4096;
+> -	sb->s_blocksize_bits = blksize_bits(4096);
+> +	sb->s_blocksize = BTRFS_MIN_BLOCK_SIZE;
+> +	sb->s_blocksize_bits = blksize_bits(BTRFS_MIN_BLOCK_SIZE);
 
+At this point in open_ctree, we're reading the superblock. Superblock
+has a fixed size, defined as BTRFS_SUPER_INFO_SIZE.
+
+s_blocksize is not used outside of the filesystem, and AFAICS unused
+until we read the superblock via btrfs_read_dev_super. So at this point
+it looks redundant.
+
+>  	sb->s_bdi = &fs_info->bdi;
+>  
+>  	btrfs_init_btree_inode(fs_info, tree_root);
+> @@ -3140,11 +3140,12 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+>  	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+>  	 */
+>  	for (i = 0; i < 1; i++) {
+> +		unsigned int blksz = block_size(bdev);
+>  		bytenr = btrfs_sb_offset(i);
+>  		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+>  					i_size_read(bdev->bd_inode))
+>  			break;
+> -		bh = __bread(bdev, bytenr / 4096,
+> +		bh = __bread(bdev, bytenr / blksz,
+
+I think I wrote this in the first review comments, all 4096 in
+btrfs_read_dev_super mean BTRFS_SUPER_INFO_SIZE. The block size is
+hardcoded and not dependent on the block device.
+
+>  					BTRFS_SUPER_INFO_SIZE);
+>  		if (!bh)
+>  			continue;
+> @@ -3193,13 +3194,14 @@ static int write_dev_supers(struct btrfs_device *device,
+> -			bh = __find_get_block(device->bdev, bytenr / 4096,
+> +			bh = __find_get_block(device->bdev, bytenr / blksz,
+> @@ -3229,7 +3231,7 @@ static int write_dev_supers(struct btrfs_device *device,
+> -			bh = __getblk(device->bdev, bytenr / 4096,
+> +			bh = __getblk(device->bdev, bytenr / blksz,
+
+Same here.
+
+> @@ -3904,13 +3906,13 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>  	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
+>  	 * items yet, they'll be verified later. Issue just a warning.
+>  	 */
+> -	if (!IS_ALIGNED(btrfs_super_root(sb), 4096))
+> +	if (!IS_ALIGNED(btrfs_super_root(sb), BTRFS_MIN_BLOCK_SIZE))
+
+> -	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096))
+> +	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), BTRFS_MIN_BLOCK_SIZE))
+
+> -	if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096))
+> +	if (!IS_ALIGNED(btrfs_super_log_root(sb), BTRFS_MIN_BLOCK_SIZE))
+
+> @@ -3918,14 +3920,14 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+> -	if (btrfs_super_nodesize(sb) < 4096) {
+> -		printk(KERN_ERR "BTRFS: nodesize too small: %u < 4096\n",
+> -				btrfs_super_nodesize(sb));
+> +	if (btrfs_super_nodesize(sb) < BTRFS_MIN_BLOCK_SIZE) {
+> +		printk(KERN_ERR "BTRFS: nodesize too small: %u < %d\n",
+> +				btrfs_super_nodesize(sb), BTRFS_MIN_BLOCK_SIZE);
+
+> -	if (btrfs_super_sectorsize(sb) < 4096) {
+> -		printk(KERN_ERR "BTRFS: sectorsize too small: %u < 4096\n",
+> -				btrfs_super_sectorsize(sb));
+> +	if (btrfs_super_sectorsize(sb) < BTRFS_MIN_BLOCK_SIZE) {
+> +		printk(KERN_ERR "BTRFS: sectorsize too small: %u < %d\n",
+> +				btrfs_super_sectorsize(sb), BTRFS_MIN_BLOCK_SIZE);
+
+These are correct.
+
+>  	}
+>  
+> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+> index d4cbfee..6f43b33 100644
+> --- a/fs/btrfs/disk-io.h
+> +++ b/fs/btrfs/disk-io.h
+> @@ -21,6 +21,7 @@
+>  
+>  #define BTRFS_SUPER_INFO_OFFSET (64 * 1024)
+>  #define BTRFS_SUPER_INFO_SIZE 4096
+> +#define BTRFS_MIN_BLOCK_SIZE 4096
+>  
+>  #define BTRFS_SUPER_MIRROR_MAX	 3
+>  #define BTRFS_SUPER_MIRROR_SHIFT 12
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 8bcd2a0..1f9d0de 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -200,7 +200,7 @@ btrfs_get_bdev_and_sb(const char *device_path, fmode_t flags, void *holder,
+>  
+>  	if (flush)
+>  		filemap_write_and_wait((*bdev)->bd_inode->i_mapping);
+> -	ret = set_blocksize(*bdev, 4096);
+> +	ret = set_blocksize(*bdev, BTRFS_MIN_BLOCK_SIZE);
+
+The set_blocksize 4096s are yet another category, that does not fit
+under BTRFS_MIN_BLOCK_SIZE. The argument has other constraints like it
+has to be at most a PAGE_SIZE, so the "minimal block size" does not make
+sense here. See below.
+
+> @@ -1746,14 +1746,16 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+> -			bh = __bread(bdev, bytenr / 4096,
+> -					BTRFS_SUPER_INFO_SIZE);
+> +			bh = __bread(bdev, bytenr / blksz,
+
+BTRFS_SUPER_INFO_SIZE again
+
+> +							BTRFS_SUPER_INFO_SIZE);
+>  			if (!bh)
+>  				continue;
+>  
+> @@ -2167,7 +2169,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+> -	set_blocksize(device->bdev, 4096);
+> +	set_blocksize(device->bdev, BTRFS_MIN_BLOCK_SIZE);
+> @@ -2374,7 +2376,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
+> -	set_blocksize(device->bdev, 4096);
+> +	set_blocksize(device->bdev, BTRFS_MIN_BLOCK_SIZE);
+
+And set_blocksize again, so I'd say best to add another define, called
+BTRFS_BDEV_BLOCK_SIZE and use it for set_blocksize.

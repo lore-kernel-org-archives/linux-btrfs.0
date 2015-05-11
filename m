@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:33632 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752499AbbEKH6e (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:33251 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752511AbbEKH6f (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 03:58:34 -0400
-Received: by pdbnk13 with SMTP id nk13so140527853pdb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 00:58:34 -0700 (PDT)
+	Mon, 11 May 2015 03:58:35 -0400
+Received: by pacwv17 with SMTP id wv17so103964934pac.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 00:58:35 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Miao Xie <miaoxie@huawei.com>, Philip <bugzilla@philip-seeger.de>,
         Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH 2/4] Btrfs: count devices correctly in readahead during RAID 5/6 replace
-Date: Mon, 11 May 2015 00:58:13 -0700
-Message-Id: <df88483593edb256ae04ac783c0fa75f9b2c55a5.1431330020.git.osandov@osandov.com>
+Subject: [PATCH 3/4] Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
+Date: Mon, 11 May 2015 00:58:14 -0700
+Message-Id: <8811074b49d6b73ad4546d686f5908643346cefc.1431330020.git.osandov@osandov.com>
 In-Reply-To: <cover.1431330020.git.osandov@osandov.com>
 References: <cover.1431330020.git.osandov@osandov.com>
 In-Reply-To: <cover.1431330020.git.osandov@osandov.com>
@@ -20,43 +20,221 @@ References: <cover.1431330020.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 5fbc7c59fd22 ("Btrfs: fix unfinished readahead thread for raid5/6
-degraded mounting") fixed a problem where we would skip a missing device
-when we shouldn't have because there are no other mirrors to read from
-in RAID 5/6. After commit 2c8cdd6ee4e7 ("Btrfs, replace: write dirty
-pages into the replace target device"), the fix doesn't work when we're
-doing a missing device replace on RAID 5/6 because the replace device is
-counted as a mirror so we're tricked into thinking we can safely skip
-the missing device. The fix is to count only the real stripes and decide
-based on that.
+The current RAID 5/6 recovery code isn't quite prepared to handle
+missing devices. In particular, it expects a bio that we previously
+attempted to use in the read path, meaning that it has valid pages
+allocated. However, missing devices have a NULL blkdev, and we can't
+call bio_add_page() on a bio with a NULL blkdev. We could do manual
+manipulation of bio->bi_io_vec, but that's pretty gross. So instead, add
+a separate path that allows us to manually add pages to the rbio.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 ---
- fs/btrfs/reada.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/raid56.c | 87 ++++++++++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/raid56.h | 10 +++++--
+ fs/btrfs/scrub.c  |  3 +-
+ 3 files changed, 86 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 0e7beea..4645cd1 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -328,6 +328,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 	struct btrfs_device *prev_dev;
- 	u32 blocksize;
- 	u64 length;
-+	int real_stripes;
- 	int nzones = 0;
- 	int i;
- 	unsigned long index = logical >> PAGE_CACHE_SHIFT;
-@@ -369,7 +370,8 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 		goto error;
- 	}
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index fa72068..6fe2613 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -61,9 +61,10 @@
+ #define RBIO_CACHE_SIZE 1024
  
--	for (nzones = 0; nzones < bbio->num_stripes; ++nzones) {
-+	real_stripes = bbio->num_stripes - bbio->num_tgtdevs;
-+	for (nzones = 0; nzones < real_stripes; ++nzones) {
- 		struct reada_zone *zone;
+ enum btrfs_rbio_ops {
+-	BTRFS_RBIO_WRITE	= 0,
+-	BTRFS_RBIO_READ_REBUILD	= 1,
+-	BTRFS_RBIO_PARITY_SCRUB	= 2,
++	BTRFS_RBIO_WRITE,
++	BTRFS_RBIO_READ_REBUILD,
++	BTRFS_RBIO_PARITY_SCRUB,
++	BTRFS_RBIO_REBUILD_MISSING,
+ };
  
- 		dev = bbio->stripes[nzones].dev;
+ struct btrfs_raid_bio {
+@@ -602,6 +603,10 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
+ 	    cur->operation == BTRFS_RBIO_PARITY_SCRUB)
+ 		return 0;
+ 
++	if (last->operation == BTRFS_RBIO_REBUILD_MISSING ||
++	    cur->operation == BTRFS_RBIO_REBUILD_MISSING)
++		return 0;
++
+ 	return 1;
+ }
+ 
+@@ -793,7 +798,10 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 
+ 			if (next->operation == BTRFS_RBIO_READ_REBUILD)
+ 				async_read_rebuild(next);
+-			else if (next->operation == BTRFS_RBIO_WRITE) {
++			else if (next->operation == BTRFS_RBIO_REBUILD_MISSING) {
++				steal_rbio(rbio, next);
++				async_read_rebuild(next);
++			} else if (next->operation == BTRFS_RBIO_WRITE) {
+ 				steal_rbio(rbio, next);
+ 				async_rmw_stripe(next);
+ 			} else if (next->operation == BTRFS_RBIO_PARITY_SCRUB) {
+@@ -1809,7 +1817,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 	faila = rbio->faila;
+ 	failb = rbio->failb;
+ 
+-	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
++	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
++	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
+ 		spin_lock_irq(&rbio->bio_list_lock);
+ 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+ 		spin_unlock_irq(&rbio->bio_list_lock);
+@@ -1834,7 +1843,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 			 * if we're rebuilding a read, we have to use
+ 			 * pages from the bio list
+ 			 */
+-			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
++			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
++			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
+ 			    (stripe == faila || stripe == failb)) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 0);
+ 			} else {
+@@ -1943,7 +1953,8 @@ pstripe:
+ 			 * if we're rebuilding a read, we have to use
+ 			 * pages from the bio list
+ 			 */
+-			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
++			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
++			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
+ 			    (stripe == faila || stripe == failb)) {
+ 				page = page_in_rbio(rbio, stripe, pagenr, 0);
+ 			} else {
+@@ -1965,6 +1976,8 @@ cleanup_io:
+ 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
+ 
+ 		rbio_orig_end_io(rbio, err, err == 0);
++	} else if (rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
++		rbio_orig_end_io(rbio, err, err == 0);
+ 	} else if (err == 0) {
+ 		rbio->faila = -1;
+ 		rbio->failb = -1;
+@@ -2101,7 +2114,8 @@ out:
+ 	return 0;
+ 
+ cleanup:
+-	if (rbio->operation == BTRFS_RBIO_READ_REBUILD)
++	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
++	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING)
+ 		rbio_orig_end_io(rbio, -EIO, 0);
+ 	return -EIO;
+ }
+@@ -2232,8 +2246,9 @@ raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
+ 	return rbio;
+ }
+ 
+-void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
+-				   struct page *page, u64 logical)
++/* Used for both parity scrub and missing. */
++void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
++			    u64 logical)
+ {
+ 	int stripe_offset;
+ 	int index;
+@@ -2668,3 +2683,55 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
+ 	if (!lock_stripe_add(rbio))
+ 		async_scrub_parity(rbio);
+ }
++
++/* The following code is used for dev replace of a missing RAID 5/6 device. */
++
++struct btrfs_raid_bio *
++raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
++			  struct btrfs_bio *bbio, u64 length)
++{
++	struct btrfs_raid_bio *rbio;
++
++	rbio = alloc_rbio(root, bbio, length);
++	if (IS_ERR(rbio))
++		return NULL;
++
++	rbio->operation = BTRFS_RBIO_REBUILD_MISSING;
++	bio_list_add(&rbio->bio_list, bio);
++	/*
++	 * This is a special bio which is used to hold the completion handler
++	 * and make the scrub rbio is similar to the other types
++	 */
++	ASSERT(!bio->bi_iter.bi_size);
++
++	rbio->faila = find_logical_bio_stripe(rbio, bio);
++	if (rbio->faila == -1) {
++		BUG();
++		kfree(rbio);
++		return NULL;
++	}
++
++	return rbio;
++}
++
++static void missing_raid56_work(struct btrfs_work *work)
++{
++	struct btrfs_raid_bio *rbio;
++
++	rbio = container_of(work, struct btrfs_raid_bio, work);
++	__raid56_parity_recover(rbio);
++}
++
++static void async_missing_raid56(struct btrfs_raid_bio *rbio)
++{
++	btrfs_init_work(&rbio->work, btrfs_rmw_helper,
++			missing_raid56_work, NULL, NULL);
++
++	btrfs_queue_work(rbio->fs_info->rmw_workers, &rbio->work);
++}
++
++void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio)
++{
++	if (!lock_stripe_add(rbio))
++		async_missing_raid56(rbio);
++}
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index 2b5d797..8b69469 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -48,15 +48,21 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
+ 			       struct btrfs_bio *bbio, u64 stripe_len);
+ 
++void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
++			    u64 logical);
++
+ struct btrfs_raid_bio *
+ raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
+ 			       struct btrfs_bio *bbio, u64 stripe_len,
+ 			       struct btrfs_device *scrub_dev,
+ 			       unsigned long *dbitmap, int stripe_nsectors);
+-void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
+-				   struct page *page, u64 logical);
+ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
+ 
++struct btrfs_raid_bio *
++raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
++			  struct btrfs_bio *bbio, u64 length);
++void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio);
++
+ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
+ void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
+ #endif
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 633fa7b..b94694d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2699,8 +2699,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+ 		goto rbio_out;
+ 
+ 	list_for_each_entry(spage, &sparity->spages, list)
+-		raid56_parity_add_scrub_pages(rbio, spage->page,
+-					      spage->logical);
++		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
+ 
+ 	scrub_pending_bio_inc(sctx);
+ 	raid56_parity_submit_scrub_rbio(rbio);
 -- 
 2.4.0
 

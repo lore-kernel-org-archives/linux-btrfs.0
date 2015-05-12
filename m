@@ -1,50 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f41.google.com ([74.125.82.41]:34047 "EHLO
-	mail-wg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752159AbbELAOn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 20:14:43 -0400
-Received: by wgic8 with SMTP id c8so119507793wgi.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 17:14:42 -0700 (PDT)
-Received: from [10.0.2.15] (p3E9EE011.dip0.t-ipconnect.de. [62.158.224.17])
-        by mx.google.com with ESMTPSA id gy8sm199413wib.13.2015.05.11.17.14.41
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 11 May 2015 17:14:41 -0700 (PDT)
-From: Philip Seeger <p0h0i0l0i0p@gmail.com>
-Message-ID: <555145EA.6040009@googlemail.com>
-Date: Tue, 12 May 2015 02:14:34 +0200
+Received: from 206-248-167-68.dsl.teksavvy.com ([206.248.167.68]:35709 "EHLO
+	mail.isoar.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750829AbbELAlK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 May 2015 20:41:10 -0400
+Message-ID: <555147C6.9070000@isoar.ca>
+Date: Mon, 11 May 2015 20:22:30 -0400
+From: "Andrew E. Mileski" <andrewm@isoar.ca>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Got 10 csum errors according to dmesg but 0 errors according
- to dev stats
-References: <554F6D43.2060806@googlemail.com> <CABR0jERqzkdTJxX_1S5WEZHDzX8=O8P7r+Bk0mesPLsR2n=w8A@mail.gmail.com> <554F963D.2040209@googlemail.com> <201505111141.54771.russell@coker.com.au>
-In-Reply-To: <201505111141.54771.russell@coker.com.au>
+To: Hendrik Friedel <hendrik@friedels.name>, linux-btrfs@vger.kernel.org
+Subject: Re: raid 5 and different device size
+References: <55510B14.7090204@friedels.name>
+In-Reply-To: <55510B14.7090204@friedels.name>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Sounds like you are having errors in your RAM, CPU, motherboard, or hard drive
-> cabling.  Turn the machine off ASAP and plug the disks into a different system,
-> if you keep it running you will make it worse.
+On 11/05/15 04:03 PM, Hendrik Friedel wrote:
+> I do have three -identical- 3TB HDD.
 >
-I know it sounds like it, but the host is fine. The host filesystem (on 
-which the vm virtual hdd resides) is healthy. Other vms are running on 
-the same host, no problems there. Just to be sure, I will run memtest, 
-but I'm pretty sure that's not it. The system is under high load a lot, 
-but I don't think btrfs would fail because of a slow system.
+> Now I intend to:
+> * increase the available disc space
+> * stop worrying how much space is available on which drive
+> * create redundancy
+> * have low operating cost (power-consumption)
+>
+> So, I need to buy one additional HDD.
+> And I want to combine the drives to one big volume.
+>
+> I am aware that raid is no backup.
+> Thus, I backup the HomeVideos and the Photos on an external drive not
+> connected to the power supply and USB.
 
-So I have deleted all those corrupted files in this Arch vm, ran a 
-scrub, 0 errors, all fixed. I restored them, fixed some other things and 
-now - I get checksum errors again. Interestingly, it looks like the 
-corruption is not happening randomly, because the same sqlite files are 
-affected under ~/.mozilla/ and exactly one library file (ghostscript).
-Meanwhile, other vms (not Arch but Fedora and Debian) are running 
-without a problem (one of them using btrfs as well).
+In my experience, people tend to GREATLY undervalue their data, until it 
+is lost!
 
-Is it possible that systemd isn't unmounting the filesystem properly, so 
-it gets corrupted on shutdown? (Juest a wild guess.) Although I'm not 
-sure if all this happened between reboots.
+Your proposed 12 TB (4x3TB) of storage is > 10^14 bits, so you are very 
+likely to to encounter an unrecoverable sector on a full-read with most 
+typically error-rated drives.
 
+Also consider drive wear (average lifespan of 3 years), spares, and how 
+you will deal with a single or multi-drive failure.
 
-Philip
+You may want to rethink your plan, and the value of your data.
+
+> Now the last point: Power consumption: Under which conditions can the
+> drives spin down in case of raid5? I assume that all drives have to run
+> as in case the data is written on any one of the drives, right?
+> Is that also true during reading of data, i.e. is the parity also
+> checked for read operations?
+
+In RAID-5/6, parity is only checked when an error or failure is reported 
+by the drive.  This can lead to undetected errors from "bit rot".  Hence 
+regular scrubbing (reading of all data) is recommended.
+
+Note that BTRFS checksums data, and verifies data read, so even if the 
+drive doesn't detect an error BTRFS is likely to, but BTRFS can't 
+recover without additional redundancy.
+
+Personally, I use BTRFS formatted with "-mdup -dsingle" on top of either 
+hardware RAID-6 (primary array) or software RAID-5 (backup array), so I 
+don't really rely upon BTRFS for recovery.
+
+Most external consumer-grade enclosures are best used with "Green" 
+drives, which tend to be 5400 RPM max, as these enclosures often have 
+very limited cooling.  Make sure your drives are compatible with the 
+enclosure.
+
+I have even seen server-grade rack enclosures with reduced temperature 
+ratings when using 7200 RPM or faster drives.  Heat and vibration are 
+important considerations with arrays.
+
+I prefer Seagate enterprise drives and WD consumer drives.
+
+Note that WD "Red Label" drives are identical to their "Green Label" 
+drives, except "Red Label" drives have time-limited error recovery 
+(TLER) firmware for use in arrays.  However, it is possible to increase 
+the error timeout in Linux, so even non-TLER drives can be used in 
+arrays, but it isn't as convenient nor recommended.  Both are 
+error-rated 1 unrecoverable sector in 10^14 bits read.
+
+~~Andrew E. Mileski

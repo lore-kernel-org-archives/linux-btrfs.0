@@ -1,84 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57095 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932998AbbELROw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 May 2015 13:14:52 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id CC93EAABA
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2015 17:14:50 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: make root id query unprivileged
-Date: Tue, 12 May 2015 19:14:49 +0200
-Message-Id: <1431450889-27968-1-git-send-email-dsterba@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:28073 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933847AbbELXbq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 May 2015 19:31:46 -0400
+From: Sasha Levin <sasha.levin@oracle.com>
+To: clm@fb.com, jbacik@fb.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Sasha Levin <sasha.levin@oracle.com>
+Subject: [PATCH] btrfs: use after free when closing devices
+Date: Tue, 12 May 2015 19:31:37 -0400
+Message-Id: <1431473498-15773-1-git-send-email-sasha.levin@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The INO_LOOKUP ioctl can lookup path for a given inode number and is
-thus restricted. As a sideefect it can find the root id of the
-containing subvolume and we're using this int the 'btrfs inspect rootid'
-command.
+__btrfs_close_devices() would call_rcu to free the device, which is racy with
+list_for_each_entry() accessing the memory to retrieve the next device on the
+list.
 
-The restriction is unnecessary in case we set the ioctl args
- args::treeid    = 0
- args::objectid  = 256 (BTRFS_FIRST_FREE_OBJECTID)
-
-Then the path will be empty and the treeid is filled with the root id of
-the inode on which the ioctl is called. This behaviour is unchanged,
-after the root restriction is removed.
-
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
 ---
+ fs/btrfs/volumes.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- fs/btrfs/ioctl.c | 20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c22c6518504..578ff63a9b74 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2271,10 +2271,7 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8e8d1d1..253b349 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -693,13 +693,13 @@ static void free_device(struct rcu_head *head)
+ 
+ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
  {
- 	 struct btrfs_ioctl_ino_lookup_args *args;
- 	 struct inode *inode;
--	 int ret;
--
--	if (!capable(CAP_SYS_ADMIN))
--		return -EPERM;
-+	int ret = 0;
+-	struct btrfs_device *device;
++	struct btrfs_device *device, *tmp;
  
- 	args = memdup_user(argp, sizeof(*args));
- 	if (IS_ERR(args))
-@@ -2282,13 +2279,28 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ 	if (--fs_devices->opened > 0)
+ 		return 0;
  
- 	inode = file_inode(file);
- 
-+	/*
-+	 * Unprivileged query to obtain the containing subvolume root id. The
-+	 * path is reset so it's consistent with btrfs_search_path_in_tree.
-+	 */
- 	if (args->treeid == 0)
- 		args->treeid = BTRFS_I(inode)->root->root_key.objectid;
- 
-+	if (args->objectid == BTRFS_FIRST_FREE_OBJECTID) {
-+		args->name[0] = 0;
-+		goto out;
-+	}
-+
-+	if (!capable(CAP_SYS_ADMIN)) {
-+		ret = -EPERM;
-+		goto out;
-+	}
-+
- 	ret = btrfs_search_path_in_tree(BTRFS_I(inode)->root->fs_info,
- 					args->treeid, args->objectid,
- 					args->name);
- 
-+out:
- 	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
- 		ret = -EFAULT;
+ 	mutex_lock(&fs_devices->device_list_mutex);
+-	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
+ 		struct btrfs_device *new_device;
+ 		struct rcu_string *name;
  
 -- 
-1.8.4.5
+1.7.10.4
 

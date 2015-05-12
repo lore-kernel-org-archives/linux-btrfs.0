@@ -1,38 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f175.google.com ([209.85.223.175]:35036 "EHLO
-	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752128AbbELBhQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 21:37:16 -0400
-Received: by ieczm2 with SMTP id zm2so124021478iec.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2015 18:37:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <B7F2379062E32745A8651FBDB20F645954A2D259@Server.waterlogic.com.au>
-References: <554F6D43.2060806@googlemail.com>
-	<CABR0jERqzkdTJxX_1S5WEZHDzX8=O8P7r+Bk0mesPLsR2n=w8A@mail.gmail.com>
-	<554F963D.2040209@googlemail.com>
-	<201505111141.54771.russell@coker.com.au>
-	<555145EA.6040009@googlemail.com>
-	<B7F2379062E32745A8651FBDB20F645954A2D259@Server.waterlogic.com.au>
-Date: Mon, 11 May 2015 19:37:15 -0600
-Message-ID: <CAJCQCtT-ZdFqwjCjS5sH1zG=xT3Ok4V1VYBf4NeQ3QPxsZgtRA@mail.gmail.com>
-Subject: Re: Got 10 csum errors according to dmesg but 0 errors according to
- dev stats
-From: Chris Murphy <lists@colorremedies.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:49347 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750723AbbELFgw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 May 2015 01:36:52 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Ys2s4-0004HB-VV
+	for linux-btrfs@vger.kernel.org; Tue, 12 May 2015 07:36:49 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2015 07:36:48 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2015 07:36:48 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Are there plans for full btrfs filesystem backups?
+Date: Tue, 12 May 2015 05:36:43 +0000 (UTC)
+Message-ID: <pan$36707$3012e0dd$1583d9f5$5883c3f4@cox.net>
+References: <20150510164944.GI16535@merlins.org>
+	<pan$2bd31$990b002e$ebe891e2$76d0f14f@cox.net>
+	<CAJCQCtTszNWB-XpBZs=Fah-J5NBsuOEbLC2pBFtFujUZnNWQ4Q@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are two file systems involved, guest and host. What are their
-file systems? I know one of them is Btrfs but I can't tell if they're
-both Btrfs.
+Chris Murphy posted on Sun, 10 May 2015 22:57:24 -0600 as excerpted:
 
-There is a regression somewhere, I don't know where yet, when libvirt
-cache=none or cache=directsync, and the disk image (qcow2 in my case)
-is on Btrfs. The guest file system doesn't matter, it'll eventually
-spew some corruption related errors.
-https://bugzilla.redhat.com/show_bug.cgi?id=1204569
+> On Sun, May 10, 2015 at 9:55 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Marc MERLIN posted on Sun, 10 May 2015 09:49:44 -0700 as excerpted:
+>>
+>>> Are there any plans for a full filesystem send/receive, not just a
+>>> subvolume send/receive?
+>>
+>> Recent discussion suggests yes, tho it's a relatively new plan.
+>>
+>> More specifically, the recent discussion seemed to settle around the
+>> need for a send/receive --recursive option, which would recurse into
+>> nested subvolumes.  IIRC, the systemd folks requested that for their
+>> container management, among other things.
+> 
+> That was for snapshot creation and destruction, not send receive.
 
+I believe that was it, yes.
 
-Chris Murphy
+But of course recursive snapshot creation/deletion would be a practical 
+prerequisite to recursive send/receive, since in that case read-only 
+snapshots would need to be created in ordered to be sent, and similarly 
+created on the receive side to recreate the nested snapshot tree on the 
+send side.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

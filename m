@@ -1,33 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40908 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57095 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933467AbbELNEG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 May 2015 09:04:06 -0400
-Date: Tue, 12 May 2015 15:04:04 +0200
+	id S932998AbbELROw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 May 2015 13:14:52 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CC93EAABA
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2015 17:14:50 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix race when reusing stale extent buffers that
- leads to BUG_ON
-Message-ID: <20150512130404.GY23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1429784928-12665-1-git-send-email-fdmanana@suse.com>
- <pan.2015.04.23.12.16.21@googlemail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <pan.2015.04.23.12.16.21@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: make root id query unprivileged
+Date: Tue, 12 May 2015 19:14:49 +0200
+Message-Id: <1431450889-27968-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 23, 2015 at 12:16:21PM +0000, Holger Hoffstätte wrote:
-> After staring at this (and the Lovecraftian horrors of free_extent_buffer())
-> for over an hour and trying to understand how and why this could even remotely
-> work, I cannot help but think that this fix would shift the race to the much
-> smaller window between the test_bit and the first spin_lock.
+The INO_LOOKUP ioctl can lookup path for a given inode number and is
+thus restricted. As a sideefect it can find the root id of the
+containing subvolume and we're using this int the 'btrfs inspect rootid'
+command.
 
-Btw, I had exactly the same concerns, as this is close to the classical
-example of a shared resource check outside of the critical section. But
-the extent buffers are protected by more than just the spinlock and if
-the race mentioned above happens, the lifted reference counts will
-prevent to drop the last one.
+The restriction is unnecessary in case we set the ioctl args
+ args::treeid    = 0
+ args::objectid  = 256 (BTRFS_FIRST_FREE_OBJECTID)
+
+Then the path will be empty and the treeid is filled with the root id of
+the inode on which the ioctl is called. This behaviour is unchanged,
+after the root restriction is removed.
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+
+ fs/btrfs/ioctl.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1c22c6518504..578ff63a9b74 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2271,10 +2271,7 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ {
+ 	 struct btrfs_ioctl_ino_lookup_args *args;
+ 	 struct inode *inode;
+-	 int ret;
+-
+-	if (!capable(CAP_SYS_ADMIN))
+-		return -EPERM;
++	int ret = 0;
+ 
+ 	args = memdup_user(argp, sizeof(*args));
+ 	if (IS_ERR(args))
+@@ -2282,13 +2279,28 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ 
+ 	inode = file_inode(file);
+ 
++	/*
++	 * Unprivileged query to obtain the containing subvolume root id. The
++	 * path is reset so it's consistent with btrfs_search_path_in_tree.
++	 */
+ 	if (args->treeid == 0)
+ 		args->treeid = BTRFS_I(inode)->root->root_key.objectid;
+ 
++	if (args->objectid == BTRFS_FIRST_FREE_OBJECTID) {
++		args->name[0] = 0;
++		goto out;
++	}
++
++	if (!capable(CAP_SYS_ADMIN)) {
++		ret = -EPERM;
++		goto out;
++	}
++
+ 	ret = btrfs_search_path_in_tree(BTRFS_I(inode)->root->fs_info,
+ 					args->treeid, args->objectid,
+ 					args->name);
+ 
++out:
+ 	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
+ 		ret = -EFAULT;
+ 
+-- 
+1.8.4.5
+

@@ -1,160 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53041 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750837AbbEKXaT (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 11 May 2015 19:30:19 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: fix block group ->space_info null pointer dereference
-Date: Tue, 12 May 2015 00:28:11 +0100
-Message-Id: <1431386891-31155-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1431360980-24817-1-git-send-email-fdmanana@suse.com>
-References: <1431360980-24817-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:40908 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933467AbbELNEG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 May 2015 09:04:06 -0400
+Date: Tue, 12 May 2015 15:04:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix race when reusing stale extent buffers that
+ leads to BUG_ON
+Message-ID: <20150512130404.GY23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1429784928-12665-1-git-send-email-fdmanana@suse.com>
+ <pan.2015.04.23.12.16.21@googlemail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan.2015.04.23.12.16.21@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we create a block group we add it to the rbtree of block groups
-before setting its ->space_info field (while it's NULL). This is
-problematic since other tasks can access the block group from the
-rbtree and attempt to use its ->space_info before it is set by
-btrfs_make_block_group().
+On Thu, Apr 23, 2015 at 12:16:21PM +0000, Holger Hoffstätte wrote:
+> After staring at this (and the Lovecraftian horrors of free_extent_buffer())
+> for over an hour and trying to understand how and why this could even remotely
+> work, I cannot help but think that this fix would shift the race to the much
+> smaller window between the test_bit and the first spin_lock.
 
-This can happen for example when a concurrent fitrim ioctl operation
-is ongoing, which produces a trace like the following when
-CONFIG_DEBUG_PAGEALLOC is set.
-
-[11509.604369] BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
-[11509.606373] IP: [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179] PGD 2296a8067 PUD 22f4a2067 PMD 0
-[11509.608179] Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-[11509.608179] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse acpi_cpufreq processor i2c_piix4 psmou
-[11509.608179] CPU: 10 PID: 8538 Comm: fstrim Tainted: G        W       4.0.0-rc5-btrfs-next-9+ #2
-[11509.608179] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-[11509.608179] task: ffff88009f5c46d0 ti: ffff8801b3edc000 task.ti: ffff8801b3edc000
-[11509.608179] RIP: 0010:[<ffffffff8107d675>]  [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179] RSP: 0018:ffff8801b3edf9e8  EFLAGS: 00010002
-[11509.608179] RAX: 0000000000000046 RBX: 0000000000000000 RCX: 0000000000000000
-[11509.608179] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000018
-[11509.608179] RBP: ffff8801b3edfaa8 R08: 0000000000000001 R09: 0000000000000000
-[11509.608179] R10: 0000000000000000 R11: ffff88009f5c4f98 R12: 0000000000000000
-[11509.608179] R13: 0000000000000000 R14: 0000000000000018 R15: ffff88009f5c46d0
-[11509.608179] FS:  00007f280a10e840(0000) GS:ffff88023ed40000(0000) knlGS:0000000000000000
-[11509.608179] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[11509.608179] CR2: 0000000000000018 CR3: 00000002119bc000 CR4: 00000000000006e0
-[11509.608179] Stack:
-[11509.608179]  0000000000000000 0000000000000000 0000000000000004 0000000000000000
-[11509.608179]  ffff880100000000 ffffffff00000000 0000000000000001 ffffffff00000000
-[11509.608179]  0000000000000001 0000000000000000 ffff880100000000 00000000000006c4
-[11509.608179] Call Trace:
-[11509.608179]  [<ffffffff8107dc57>] ? __lock_acquire+0x696/0xf02
-[11509.608179]  [<ffffffff8107e806>] lock_acquire+0xa5/0x116
-[11509.608179]  [<ffffffffa04cc876>] ? do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffff81434f37>] _raw_spin_lock+0x34/0x44
-[11509.608179]  [<ffffffffa04cc876>] ? do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffffa04cc876>] do_trimming+0x51/0x145 [btrfs]
-[11509.608179]  [<ffffffffa04cde7d>] btrfs_trim_block_group+0x201/0x491 [btrfs]
-[11509.608179]  [<ffffffffa04849e2>] btrfs_trim_fs+0xe0/0x129 [btrfs]
-[11509.608179]  [<ffffffffa04bb80a>] btrfs_ioctl_fitrim+0x138/0x167 [btrfs]
-[11509.608179]  [<ffffffffa04c002f>] btrfs_ioctl+0x50d/0x21e8 [btrfs]
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81123bda>] ? might_fault+0x58/0xb5
-[11509.608179]  [<ffffffff81158050>] ? cp_new_stat+0x147/0x15e
-[11509.608179]  [<ffffffff81163041>] do_vfs_ioctl+0x3c6/0x479
-[11509.608179]  [<ffffffff81158116>] ? SYSC_newfstat+0x25/0x2e
-[11509.608179]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
-[11509.608179]  [<ffffffff8116b915>] ? __fget_light+0x2d/0x4f
-[11509.608179]  [<ffffffff8116314e>] SyS_ioctl+0x5a/0x7f
-[11509.608179]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
-[11509.608179] Code: f4 01 00 0f 85 c0 00 00 00 48 c7 c1 f3 1f 7d 81 48 c7 c2 aa cb 7c 81 be fc 0b 00 00 eb 70 83 3d 61 eb 9c 00 00 0f 84 a5 00 00 00 <49> 81 3e 40 a3 2b 82 b8 00 00 00
-[11509.608179] RIP  [<ffffffff8107d675>] __lock_acquire+0xb4/0xf02
-[11509.608179]  RSP <ffff8801b3edf9e8>
-[11509.608179] CR2: 0000000000000018
-[11509.608179] ---[ end trace 570a5c6769f0e49a ]---
-
-Which corresponds to the following access in fs/btrfs/free-space-cache.c:
-
-  static int do_trimming(struct btrfs_block_group_cache *block_group,
-                         u64 *total_trimmed, u64 start, u64 bytes,
-                         u64 reserved_start, u64 reserved_bytes,
-                         struct btrfs_trim_range *trim_entry)
-  {
-       struct btrfs_space_info *space_info = block_group->space_info;
-  (...)
-       spin_lock(&space_info->lock);
-       ^^^^^ - block_group->space_info is NULL...
-
-Fix this by ensuring the block group's ->space_info is set before adding
-the block group to the rbtree.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Fixed a few typos/grammar in the comments. Node code changes.
-V3: Don't set space_info->full to false when total_bytes == 0.
-
- fs/btrfs/extent-tree.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7effed6..4bf489b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3693,7 +3693,8 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 		found->disk_total += total_bytes * factor;
- 		found->bytes_used += bytes_used;
- 		found->disk_used += bytes_used * factor;
--		found->full = 0;
-+		if (total_bytes > 0)
-+			found->full = 0;
- 		spin_unlock(&found->lock);
- 		*space_info = found;
- 		return 0;
-@@ -3721,7 +3722,10 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	found->bytes_reserved = 0;
- 	found->bytes_readonly = 0;
- 	found->bytes_may_use = 0;
--	found->full = 0;
-+	if (total_bytes > 0)
-+		found->full = 0;
-+	else
-+		found->full = 1;
- 	found->force_alloc = CHUNK_ALLOC_NO_FORCE;
- 	found->chunk_alloc = 0;
- 	found->flush = 0;
-@@ -9542,6 +9546,19 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 
- 	free_excluded_extents(root, cache);
- 
-+	/*
-+	 * Call to ensure the corresponding space_info object is created and
-+	 * assigned to our block group, but don't update its counters just yet.
-+	 * We want our bg to be added to the rbtree with its ->space_info set.
-+	 */
-+	ret = update_space_info(root->fs_info, cache->flags, 0, 0,
-+				&cache->space_info);
-+	if (ret) {
-+		btrfs_remove_free_space_cache(cache);
-+		btrfs_put_block_group(cache);
-+		return ret;
-+	}
-+
- 	ret = btrfs_add_block_group_cache(root->fs_info, cache);
- 	if (ret) {
- 		btrfs_remove_free_space_cache(cache);
-@@ -9549,6 +9566,10 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
-+	/*
-+	 * Now that our block group has its ->space_info set and is inserted in
-+	 * the rbtree, update the space info's counters.
-+	 */
- 	ret = update_space_info(root->fs_info, cache->flags, size, bytes_used,
- 				&cache->space_info);
- 	if (ret) {
--- 
-2.1.3
-
+Btw, I had exactly the same concerns, as this is close to the classical
+example of a shared resource check outside of the critical section. But
+the extent buffers are protected by more than just the spinlock and if
+the race mentioned above happens, the lifted reference counts will
+prevent to drop the last one.

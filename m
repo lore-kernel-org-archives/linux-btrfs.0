@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zinan.dashjr.org ([192.3.11.21]:46751 "EHLO zinan.dashjr.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932186AbbEMRZw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 May 2015 13:25:52 -0400
-From: Luke Dashjr <luke@dashjr.org>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
-Date: Wed, 13 May 2015 17:15:26 +0000
-Cc: stable@vger.kernel.org, trivial@kernel.org
+Received: from cn.fujitsu.com ([59.151.112.132]:28564 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752022AbbEMJRk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 May 2015 05:17:40 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <lukas.lueg@gmail.com>
+Subject: [PATCH 0/4] Enhance btrfs-progs for hostile image (FPE error part)
+Date: Wed, 13 May 2015 17:15:32 +0800
+Message-ID: <1431508536-7275-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="us-ascii"
-Message-Id: <201505131715.27483.luke@dashjr.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-32-bit ioctl uses these rather than the regular FS_IOC_* versions. They can be 
-handled in btrfs using the same code. Without this, 32-bit {ch,ls}attr fail.
+This patchset fixes 3 FPE error reported by Lukas Lueg<lukas.lueg@gmail.com>.
+Corresponding kernel BZ#96971, BZ#97031, BZ#97041.
 
-Signed-off-by: Luke Dashjr <luke-jr+git@utopios.org>
----
- fs/btrfs/ioctl.c | 3 +++
- 1 file changed, 3 insertions(+)
+What a pity that I didn't realize it's a good chance to submit more patches. :)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c22c65..31af093 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5225,10 +5225,13 @@ long btrfs_ioctl(struct file *file, unsigned int
- 
- 	switch (cmd) {
- 	case FS_IOC_GETFLAGS:
-+	case FS_IOC32_GETFLAGS:
- 		return btrfs_ioctl_getflags(file, argp);
- 	case FS_IOC_SETFLAGS:
-+	case FS_IOC32_SETFLAGS:
- 		return btrfs_ioctl_setflags(file, argp);
- 	case FS_IOC_GETVERSION:
-+	case FS_IOC32_GETVERSION:
- 		return btrfs_ioctl_getversion(file, argp);
- 	case FITRIM:
- 		return btrfs_ioctl_fitrim(file, argp);
+There are still 3 BZ, but that's about memory corruption, and some even
+corrupt the backtrace. So it will take a little longer to investigate it.
+
+Qu Wenruo (4):
+  btrfs-progs: Remove non-exist csum size.
+  btrfs-progs: Read the whole superblock instead of struct    
+    btrfs_super_block.
+  btrfs-progs: Introduce better superblock check.
+  btrfs-progs: Add extra chunk item check to avoid btrfs-progs crash.
+
+ ctree.h   |   2 +-
+ disk-io.c | 175 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ volumes.c |  60 +++++++++++++++++++--
+ 3 files changed, 216 insertions(+), 21 deletions(-)
+
 -- 
-2.0.5
+2.4.0
 

@@ -1,33 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:56389 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934127AbbEMONm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 May 2015 10:13:42 -0400
-Received: from [192.168.178.24] ([78.54.133.58]) by mail.gmx.com (mrgmx001)
- with ESMTPSA (Nemesis) id 0MRoyH-1Ylccc3bGD-00StPT for
- <linux-btrfs@vger.kernel.org>; Wed, 13 May 2015 16:13:39 +0200
-Message-ID: <55535C12.3010807@gmx.de>
-Date: Wed, 13 May 2015 16:13:38 +0200
-From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+Received: from aquinas.techsquare.com ([75.125.237.226]:37652 "EHLO
+	techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S965109AbbEMPwJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 May 2015 11:52:09 -0400
+Message-ID: <5553731B.9020200@techsquare.com>
+Date: Wed, 13 May 2015 11:51:55 -0400
+From: Matt McKinnon <matt@techsquare.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: shall I use BTRFS sub-volumes for top-level directories ?
-Content-Type: text/plain; charset=utf-8
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
+References: <55512147.5030708@techsquare.com>  <20150511234604.GF15670@merlins.org>  <55515093.4060504@techsquare.com> <20150512144141.GG15670@merlins.org> (sfid-20150512_104155_536751_2B218AE4)
+In-Reply-To: <20150512144141.GG15670@merlins.org> (sfid-20150512_104155_536751_2B218AE4)
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Subject: Re: btrfs send/receive error
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To support the Gentoo Linux ecosystem I do maintain a server as a tinderbox. I create chroot images based on various Gentoo minmal ISO images. I usually run 4 chroot image jobs in parallel. The chroots are full-filled over days/weeks with the compiled output. Issues during that are filed into Gentoo's bugzilla.
+On 05/12/2015 10:41 AM, Marc MERLIN wrote:
+> On Mon, May 11, 2015 at 09:00:03PM -0400, Matt McKinnon wrote:
+>>> Marc
+>>
+>> Send box is 3.16.6 .  Receive box is 3.17.4 .
+>>
+>> Just upgraded the receiving box to 4.0.2 which didn't fix it, so
+>> I'll schedule a reboot of the sending box.
+>
+> Yeah, usually these problems are because the sender sent a sequence of
+> events that doesn't make sense and can't be replicated by the receiver.
+> Hopefully the server upgrade will fix it.
+>
+> Otherwise Filipe will be very interested in getting the output of btrfs
+> send -v -v from the sending and receiving side just around the time
+> where it dies.
+>
+> Marc
+>
 
-If an image is "full" (~35 GB with many files + directories in it) or completely bricked I create a new one of the same type. The old is kept for weeks/months to further serve to bug reports questions. But old images are rarely accessed usually.
+The kernel upgrade on both ends fixed it.  Thanks Marc, Filipe.
 
-Because deleting a chroot image takes awfully long and b/c I experience iowait spikes even if the 3 TB drive isn't filled by more than 50% I do wonder, if it would make sense to create a btrfs subvolume for each chroot image ?
-The deletion of a subvolume should be fast compared to recursivly deleting a 35 GB file system structure, right ?
-
-(And BTW what's about re-balancing of the BTRFS-tree during the daily usage: wouldn't this profit from that too ?
-
--- 
-Toralf
-pgp key: 7B1A 07F4 EC82 0F90 D4C2  8936 872A E508 0076 E94E
---
-"; the past is all dirty and cruel in the modern popular imagination, with the exception of the Romans, who are just cruel"
-Ian Mortimer, 2008, "The Time Traveller's Guide to Medieval England"
+-Matt

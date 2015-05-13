@@ -1,157 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56205 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S934004AbbEMDUN (ORCPT
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:35813 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754067AbbEMLfV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 May 2015 23:20:13 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4D3IopV006845
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2015 11:18:50 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: Qgroup: Do early check on snapshot create with qgroup_inherit.
-Date: Wed, 13 May 2015 11:18:10 +0800
-Message-ID: <1431487090-11885-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Wed, 13 May 2015 07:35:21 -0400
+Received: by igbyr2 with SMTP id yr2so135750077igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2015 04:35:20 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20150511214412.GE15670@merlins.org>
+References: <20140908015124.GA21441@merlins.org>
+	<CAL3q7H70SGvWamdeuvF1id-pnP0o4PskgJMb7qE+CfGBB5vd1w@mail.gmail.com>
+	<20140915001836.GU8530@merlins.org>
+	<20150511214412.GE15670@merlins.org>
+Date: Wed, 13 May 2015 12:35:20 +0100
+Message-ID: <CAL3q7H7SYfka5MK=8XZkw1m7PGjyR-1fzrD0tP_=dhznQ5QdGQ@mail.gmail.com>
+Subject: Re: btrfs differential receive has become excrutiatingly slow on one machine
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe David Borba Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-When quota is enabled, and we pass invalid inherit to create a snapshot,
-it will cause abort_transaction() and the filesystem is mounted as RO.
+On Mon, May 11, 2015 at 10:44 PM, Marc MERLIN <marc@merlins.org> wrote:
+> On Sun, Sep 14, 2014 at 05:18:36PM -0700, Marc MERLIN wrote:
+>> On Mon, Sep 08, 2014 at 10:49:01PM +0100, Filipe David Manana wrote:
+>> > Hi Marc,
+>> >
+>> > Does the sum of all reads from the stream file (fd 3) gets anywhere
+>> > close to the total btrfs receive time? (or even more than 50%)
+>> > Can you paste somewhere the full output of strace (with -T option)?
+>>
+>> Sorry for the lack of answer, I lost the snapshot I used for that mail,
+>> so it was not possible to do again easily.
+>> Because my backups were so hopelessly behind, I did a full resync of
+>> /var, i.e. not a differential send (300GB or so). The copy went at about
+>> 25GB/h, which wasn't bad at all since was over wifi (took about 14H).
+>
+> Sigh, now that I'm resyncing my laptop I just rebuilt after the btrfs
+> crash, to my server (both running 3.19.5+), full btrfs sends (i.e. not
+> incremental), are taking ages.
+>
+> I'm seeing less than 100GB/day on my home network when my tcp
+> connections over wifi easily get 50MB/s
+>
+> Right now I'm seeing the equivalent of aout 1MB/s, or 50 times less than
+> what my network connection can do.
+>
+> Last time I tried to strace btrfs send, it killed the process with
+> SIGPIPE and I lost a full day of sync and had to start over :(
+>
+> It's a broad question, but how can I diagnose btrfs send being so slow
+> without taking the risk of killing my connection?
+> (if there is no good answer on this one, I can try another sync later
+> with -vvv and strace if you'd like)
 
-[CAUSE]
-Unlike subvolume creation, snapshot creation is delayed until
-commit_transaction(), making it too late to detect invalid
-qgroup_inherit but only to abort transaction.
+Try to see if it's a problem at the sending side or at the receiving
+side. Redirect send's output to a file, see how much it takes. Then
+run receive with that file as input and see how long it takes.
+You can also use 'perf record -ag' while doing both, it might give
+some useful information.
 
-[FIX]
-The fix is to check the qgroup_inherit() early before going to
-create_snapshot().
-Although this fix is not perfect as it doesn't completely kill the
-possible concurrency to trigger abort_transaction().
+>
+> Thanks,
+> Marc
+> --
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
 
-Reported-by: Remi Rampin <remirampin@gmail.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c  | 14 ++++++++++++++
- fs/btrfs/qgroup.c | 55 ++++++++++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/qgroup.h |  3 +++
- 3 files changed, 61 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 74609b9..95494e1 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -846,6 +846,20 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	if (btrfs_root_refs(&BTRFS_I(dir)->root->root_item) == 0)
- 		goto out_up_read;
- 
-+	/*
-+	 * FIXME: The check here is not perfect, as for create_snapshot(),
-+	 * we should ensure the valid inherit is not changed during
-+	 * qgroup_check_inherit() to create_pending_snapshots().
-+	 *
-+	 * Unforunately, we can't use qgroup_ioctl_lock, as
-+	 * create_pending_snapshots() can be called async in
-+	 * commit_transaction_async().
-+	 */
-+	error = btrfs_qgroup_check_inherit(BTRFS_I(dir)->root->fs_info,
-+					   inherit, 0);
-+	if (error)
-+		goto out_up_read;
-+
- 	if (snap_src) {
- 		error = create_snapshot(snap_src, dir, dentry, name, namelen,
- 					async_transid, readonly, inherit);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 058c79e..4d822a0 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2184,6 +2184,47 @@ out:
- }
- 
- /*
-+ * Check if the qgroup_inherit is valid.
-+ *
-+ * If no_ioctl_lock is set, this will not lock qgroup_ioctl_lock and caller
-+ * should lock it correctly
-+ */
-+int btrfs_qgroup_check_inherit(struct btrfs_fs_info *fs_info,
-+			       struct btrfs_qgroup_inherit *inherit,
-+			       int no_ioctl_lock)
-+{
-+	struct btrfs_qgroup *qg;
-+	int i;
-+	int num;
-+	int ret = 0;
-+
-+	if (!inherit || !fs_info->quota_enabled)
-+		goto out_nolock;
-+
-+	if (!fs_info->quota_root) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	if (!no_ioctl_lock)
-+		mutex_lock(&fs_info->qgroup_ioctl_lock);
-+	num = inherit->num_qgroups + 2 * inherit->num_ref_copies +
-+	      2 * inherit->num_excl_copies;
-+	for (i = 0; i < num; i++) {
-+		qg = find_qgroup_rb(fs_info, inherit->qgroups[i]);
-+		if (!qg) {
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+	}
-+out:
-+	if (!no_ioctl_lock)
-+		mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+out_nolock:
-+	return ret;
-+}
-+
-+/*
-  * copy the acounting information between qgroups. This is necessary when a
-  * snapshot or a subvolume is created
-  */
-@@ -2210,17 +2251,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (inherit) {
--		i_qgroups = (u64 *)(inherit + 1);
--		nums = inherit->num_qgroups + 2 * inherit->num_ref_copies +
--		       2 * inherit->num_excl_copies;
--		for (i = 0; i < nums; ++i) {
--			srcgroup = find_qgroup_rb(fs_info, *i_qgroups);
--			if (!srcgroup) {
--				ret = -EINVAL;
--				goto out;
--			}
--			++i_qgroups;
--		}
-+		ret = btrfs_qgroup_check_inherit(fs_info, inherit, 1);
-+		if (ret < 0)
-+			goto out;
- 	}
- 
- 	/*
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 18cc68c..9fdc085 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -92,6 +92,9 @@ void btrfs_remove_qgroup_operation(struct btrfs_trans_handle *trans,
- 				   struct btrfs_qgroup_operation *oper);
- int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
- 		      struct btrfs_fs_info *fs_info);
-+int btrfs_qgroup_check_inherit(struct btrfs_fs_info *fs_info,
-+			       struct btrfs_qgroup_inherit *inherit,
-+			       int no_ioctl_lock);
- int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
- 			 struct btrfs_qgroup_inherit *inherit);
+
 -- 
-1.8.3.1
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

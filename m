@@ -1,40 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28564 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752022AbbEMJRk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 May 2015 05:17:40 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <lukas.lueg@gmail.com>
-Subject: [PATCH 0/4] Enhance btrfs-progs for hostile image (FPE error part)
-Date: Wed, 13 May 2015 17:15:32 +0800
-Message-ID: <1431508536-7275-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:35757 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754520AbbEMQOW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 May 2015 12:14:22 -0400
+Date: Wed, 13 May 2015 18:14:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, lukas.lueg@gmail.com
+Subject: Re: [PATCH 2/4] btrfs-progs: Read the whole superblock instead of
+ struct btrfs_super_block.
+Message-ID: <20150513161420.GO23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1431508536-7275-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1431508536-7275-3-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1431508536-7275-3-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset fixes 3 FPE error reported by Lukas Lueg<lukas.lueg@gmail.com>.
-Corresponding kernel BZ#96971, BZ#97031, BZ#97041.
+On Wed, May 13, 2015 at 05:15:34PM +0800, Qu Wenruo wrote:
+> Before the patch, btrfs-progs will only read
+> sizeof(struct btrfs_super_block) and restore it into super_copy.
+> 
+> This makes checksum check for superblock impossible.
+> Change it to read the whole superblock.
 
-What a pity that I didn't realize it's a good chance to submit more patches. :)
+We've been there already:
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/36563
 
-There are still 3 BZ, but that's about memory corruption, and some even
-corrupt the backtrace. So it will take a little longer to investigate it.
-
-Qu Wenruo (4):
-  btrfs-progs: Remove non-exist csum size.
-  btrfs-progs: Read the whole superblock instead of struct    
-    btrfs_super_block.
-  btrfs-progs: Introduce better superblock check.
-  btrfs-progs: Add extra chunk item check to avoid btrfs-progs crash.
-
- ctree.h   |   2 +-
- disk-io.c | 175 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++------
- volumes.c |  60 +++++++++++++++++++--
- 3 files changed, 216 insertions(+), 21 deletions(-)
-
--- 
-2.4.0
-
+IIRC it caused a bug on PPC64 machine but I don't have it at hand right
+now.

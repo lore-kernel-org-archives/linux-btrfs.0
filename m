@@ -1,33 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f180.google.com ([209.85.216.180]:33836 "EHLO
-	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932420AbbENMn0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 May 2015 08:43:26 -0400
+Received: from cantor2.suse.de ([195.135.220.15]:56030 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752970AbbENNkg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 May 2015 09:40:36 -0400
+Date: Thu, 14 May 2015 15:40:35 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: Btrfs progs release 4.0.1-rc1
+Message-ID: <20150514134035.GX23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20150513171753.GV23255@twin.jikos.cz>
 MIME-Version: 1.0
-Date: Thu, 14 May 2015 08:43:25 -0400
-Message-ID: <CA+5PVA5HhK07LHXcPxDV=JztgdRRa+2LsK7RJXDZ-Y+esAqX1g@mail.gmail.com>
-Subject: btrfs balance 4.0 regression?
-From: Josh Boyer <jwboyer@fedoraproject.org>
-To: osandov@osandov.com, Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150513171753.GV23255@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Omar and Chris,
+On Wed, May 13, 2015 at 07:17:53PM +0200, David Sterba wrote:
+> Changes:
+> * restore can restore symlinks
 
-We have a bug reported [1] against 4.0 saying that btrfs balance is
-broken.  The reporter found a revert patch that Omar sent [2] to
-revert commit 2f0810880.  Looking in Linus' latest tree, I don't see
-that revert and I don't immediately see a patch to fix the issue Omar
-reported either.
-
-Do either of you know if this is still an issue?  If not, which commit
-was it fixed by?
-
-josh
-
-[1] https://bugzilla.redhat.com/show_bug.cgi?id=1217191
-[2] https://patchwork.kernel.org/patch/6238111/
+Due to a mistake on my side, I need to rebase the development branch.
+Two restore-symlink git commits are wrongly credited to me instead of
+Dan Merillat. This will be fixed in the next rc. I'm sorry.

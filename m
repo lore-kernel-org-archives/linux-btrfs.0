@@ -1,26 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56030 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752970AbbENNkg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 May 2015 09:40:36 -0400
-Date: Thu, 14 May 2015 15:40:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: Btrfs progs release 4.0.1-rc1
-Message-ID: <20150514134035.GX23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20150513171753.GV23255@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150513171753.GV23255@twin.jikos.cz>
+Received: from victor.provo.novell.com ([137.65.250.26]:42841 "EHLO
+	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S965016AbbENTlq (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 14 May 2015 15:41:46 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ce3g8jdj@umail.furryterror.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: wake up extent state waiters on unlock through clear_extent_bits
+Date: Thu, 14 May 2015 20:41:07 +0100
+Message-Id: <1431632467-2000-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 13, 2015 at 07:17:53PM +0200, David Sterba wrote:
-> Changes:
-> * restore can restore symlinks
+When we clear an extent state's EXTENT_LOCKED bit with clear_extent_bits()
+through free_io_failure(), we weren't waking up any tasks waiting for the
+extent's state EXTENT_LOCKED bit, leading to an hang.
 
-Due to a mistake on my side, I need to rebase the development branch.
-Two restore-symlink git commits are wrongly credited to me instead of
-Dan Merillat. This will be fixed in the next rc. I'm sorry.
+So make sure clear_extent_bits() ends up waking up any waiters if the
+bit EXTENT_LOCKED is supplied by its callers.
+
+Zygo Blaxell was experiencing such hangs at inode eviction time after
+file unlinks. Thanks to him for a set of scripts to reproduce the issue.
+
+Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent_io.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c32d226..856c2e8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1277,7 +1277,12 @@ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 		      unsigned bits, gfp_t mask)
+ {
+-	return clear_extent_bit(tree, start, end, bits, 0, 0, NULL, mask);
++	int wake = 0;
++
++	if (bits & EXTENT_LOCKED)
++		wake = 1;
++
++	return clear_extent_bit(tree, start, end, bits, wake, 0, NULL, mask);
+ }
+ 
+ int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
+-- 
+2.1.3
+

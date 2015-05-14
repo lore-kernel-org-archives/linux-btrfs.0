@@ -1,124 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47562 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753058AbbENJqb (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 14 May 2015 05:46:31 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, clm@fb.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix chunk allocation regression leading to transaction abort
-Date: Thu, 14 May 2015 10:46:03 +0100
-Message-Id: <1431596763-13608-1-git-send-email-fdmanana@suse.com>
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:36794 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932773AbbENMZe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 May 2015 08:25:34 -0400
+Received: by igbpi8 with SMTP id pi8so165338020igb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 May 2015 05:25:33 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20150513230756.GB12262@hungrycats.org>
+References: <20150507222034.GC18025@hungrycats.org>
+	<CAL3q7H5XsorEcdG+OdPEz=YaqVoNcmM5GXzs_DFY0yzLQNmaXA@mail.gmail.com>
+	<20150508132101.GE18025@hungrycats.org>
+	<20150513053340.GF18025@hungrycats.org>
+	<20150513230756.GB12262@hungrycats.org>
+Date: Thu, 14 May 2015 13:25:33 +0100
+Message-ID: <CAL3q7H73r=xxaCAstaaEM6pNRz64+fKo4LU+RhskVUNnaKr9hA@mail.gmail.com>
+Subject: Re: Recipe for creating unlink deadlocks (v2, verified on 4.1-rc3) (resend)
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With commit 1b9845081633 ("Btrfs: fix find_free_dev_extent() malfunction
-in case device tree has hole") introduced in the kernel 4.1 merge window,
-we end up using part of a device hole for which there are already pending
-chunks or pinned chunks. Before that commit we didn't use the hole and
-would just move on to the next hole in the device.
+On Thu, May 14, 2015 at 12:07 AM, Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
+> [Apologies for the duplication, if any.  I gave the original, longer
+> version 18 hours to appear, and it doesn't seem to have shown up yet.]
+>
+> On Fri, May 08, 2015 at 09:21:02AM -0400, Zygo Blaxell wrote:
+>> On Fri, May 08, 2015 at 11:32:07AM +0100, Filipe David Manana wrote:
+>> > On Thu, May 7, 2015 at 11:20 PM, Zygo Blaxell
+>> > <ce3g8jdj@umail.furryterror.org> wrote:
+>> > > This is the simplest repro recipe for this that I have found so far.
+>> > > It takes only a few minutes for the rm processes to get stuck here:
+>> > >
+>> > > # cat /proc/28396/stack                                                                                                                                       Thu May  7 18:13:05 2015
+>> > >
+>> > > [<ffffffff813c8a2d>] lock_extent_bits+0x1ad/0x200
+>> > > [<ffffffff813b5dfa>] btrfs_evict_inode+0x17a/0x5e0
+>> > > [<ffffffff8123fc68>] evict+0xb8/0x1b0
+>> > > [<ffffffff81240813>] iput+0x1f3/0x260
+>> > > [<ffffffff81233c68>] do_unlinkat+0x1d8/0x360
+>> > > [<ffffffff812346db>] SyS_unlinkat+0x1b/0x40
+>> > > [<ffffffff8190024d>] system_call_fastpath+0x16/0x1b
+>> > > [<ffffffffffffffff>] 0xffffffffffffffff
+>> > >
+>> > >
+>> > > Run these three scripts in a directory that is the top of a subvol:
+>
+> New versions of these scripts make the results a little more reproducible:
+>
+>
+>         #!/bin/bash
+>         set -x
+>         # Script #1:  randomly create or delete snapshots
+>         # v2:  no significant changes
+>         while date; do
+>                 if [ $[RANDOM%2] = 0 ]; then
+>                         btrfs sub snap . snaps-$RANDOM
+>                 else
+>                         for x in snaps-*; do
+>                                 btrfs sub del $x
+>                                 break
+>                         done
+>                         btrfs sub sync .
+>                 fi
+>                 sleep 1
+>         done
+>
+>
+>         #!/bin/bash
+>         # Script #2:  create a bunch of files of random sizes
+>         # v2:  create our own test file instead of using Chromium's 1.6M copyright file
+>         while echo -ne "\r$(date)"; do
+>                 [ -s tester ] || head -c 1024k /dev/urandom > tester
+>                 d=$[RANDOM%9]/$[RANDOM%9]/$[RANDOM%9]/$[RANDOM%9]
+>                 mkdir -p ${d%/*}
+>                 head -c $[RANDOM%1024]k tester > $d
+>         done
+>
+>
+>
+>         #!/bin/bash
+>         set -x
+>         # Script #3:  read and immediately delete all the files
+>         # v3:  let script #2 create some more files
+>         while date; do
+>                 find *[0-9] -type f -exec sh -c 'cat >/dev/null "$@"' -- {} \; -exec rm -fv {} \;
+>
+>                 # Allow some files to build up between runs
+>                 sleep 1m
+>
+>                 # Make sure we are not reading from cache.
+>                 # These are not strictly necessary but they reduce
+>                 # the repro time by a minute or so.
+>                 sync
+>                 sysctl vm.drop_caches=1
+>         done
+>
+>
+>> > Tried that for over 3 hours, on a 4.1-rc2 kernel with a few patches
+>> > from the list, with several combinations of mount options (compress,
+>> > autodefrag, nodatacow, etc) and didn't got any issue.
+>> >
+>> > What kernel version are you testing? Any specific combination of mount options?
+>>
+>> I've seen it on the field on versions from v3.15 to v4.0.1.  The test I did
+>> yesterday was v4.0.1.
+>
+> I just verified that the issue is still present in v4.1-rc3.  Tested on
+> bare hardware and kvm, and a mix of AMD and Intel CPUs.
+>
+> The issue appears immediately after the test file collection becomes too
+> large to fit in the host RAM.  In my test environment I used RAM sizes
+> from 3GB to 16GB with a 16GB btrfs filesystem.  The test ran without
+> incident until the filesystem used space (reported by df) exceeded the
+> RAM size, then rm hung a few seconds later.
+>
+> If I reboot after an rm hang and run scripts #1 and #3 (snapshots and
+> rm), it hangs almost immediately as soon as subvol delete and rm are
+> running at the same time.
+>
+> If script #3 (remove files) runs too quickly (i.e. your disks are too
+> fast ;), try delaying script #3 until after #1 and #2 have accumulated
+> enough data to exceed RAM size.
+>
+> I used default mkfs and mount options this time.  For kvm tests I used
+> a freshly debootstrapped Debian Jessie, and for the bare hardware tests
+> I used some random Debian Wheezy systems.
+>
+> My kernel config file, logs, and repro scripts are available at:
+>
+>         http://furryterror.org/~zblaxell/tmp/.ma12/
+>
+> This is part of the kernel log after a typical failure (the whole thing
+> is available at the URL above):
+>
+>         May 13 04:59:34 testhost kernel: [  720.290141] rm              D ffff8800ab8ebc78     0  4994  23006 0x00000000
+>         May 13 04:59:34 testhost kernel: [  720.329903]  ffff8800ab8ebc78 ffffffff814291b8 00000000ffffffff ffff8800aa831000
+>         May 13 04:59:34 testhost kernel: [  720.330512]  ffff8800ac4ed000 00000000000b0000 ffff8800ab8ec000 ffff8800acd670f0
+>         May 13 04:59:34 testhost kernel: [  720.331090]  ffff8800acd670d0 00000000000b0000 ffff8800aa62dae0 ffff8800ab8ebc98
+>         May 13 04:59:34 testhost kernel: [  720.400161] Call Trace:
+>         May 13 04:59:34 testhost kernel: [  720.401020]  [<ffffffff814291b8>] ? lock_extent_bits+0x1a8/0x200
+>         May 13 04:59:34 testhost kernel: [  720.462318]  [<ffffffff819a8297>] schedule+0x37/0x90
+>         May 13 04:59:34 testhost kernel: [  720.467741]  [<ffffffff814291bd>] lock_extent_bits+0x1ad/0x200
+>         May 13 04:59:34 testhost kernel: [  720.468489]  [<ffffffff810dfa30>] ? wait_woken+0xc0/0xc0
+>         May 13 04:59:34 testhost kernel: [  720.492572]  [<ffffffff814156ea>] btrfs_evict_inode+0x19a/0x760
+>         May 13 04:59:34 testhost kernel: [  720.493048]  [<ffffffff8127fc88>] evict+0xb8/0x1b0
+>         May 13 04:59:34 testhost kernel: [  720.494419]  [<ffffffff812808fe>] iput+0x2be/0x3e0
+>         May 13 04:59:34 testhost kernel: [  720.494598]  [<ffffffff81272cb8>] do_unlinkat+0x208/0x330
+>         May 13 04:59:34 testhost kernel: [  720.495086]  [<ffffffff81265cda>] ? SyS_newfstatat+0x2a/0x40
+>         May 13 04:59:34 testhost kernel: [  720.495511]  [<ffffffff81566925>] ? lockdep_sys_exit_thunk+0x12/0x14
+>         May 13 04:59:34 testhost kernel: [  720.495750]  [<ffffffff8127359b>] SyS_unlinkat+0x1b/0x40
+>         May 13 04:59:34 testhost kernel: [  720.496101]  [<ffffffff819af5b2>] system_call_fastpath+0x16/0x7a
+>         May 13 04:59:34 testhost kernel: [  720.628063] 1 lock held by rm/4994:
+>         May 13 04:59:34 testhost kernel: [  720.628239]  #0:  (sb_writers#3){.+.+.+}, at: [<ffffffff812861f4>] mnt_want_write+0x24/0x50
 
-However when we adjust the start offset for the chunk allocation and we
-have pinned chunks, we set it blindly to the end offset of the pinned
-chunk we are currently processing, which is dangerous because we can
-have a pending chunk that has a start offset that matches the end offset
-of our pinned chunk - leading us to a case where we end up getting two
-pending chunks that start at the same physical device offset, which makes
-us later abort the current transaction with -EEXIST when finishing the
-chunk allocation at btrfs_create_pending_block_groups():
+Thanks. After over 1 hour running these scripts I was able to
+reproduce. I'll see if I can figure out why it happens and fix it.
 
-[194737.659017] ------------[ cut here ]------------
-[194737.660192] WARNING: CPU: 15 PID: 31111 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x52/0x106 [btrfs]()
-[194737.662209] BTRFS: Transaction aborted (error -17)
-[194737.663175] Modules linked in: btrfs dm_snapshot dm_bufio dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse
-[194737.674015] CPU: 15 PID: 31111 Comm: xfs_io Tainted: G        W       4.0.0-rc5-btrfs-next-9+ #2
-[194737.675986] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-[194737.682999]  0000000000000009 ffff8800564c7a98 ffffffff8142fa46 ffffffff8108b6a2
-[194737.684540]  ffff8800564c7ae8 ffff8800564c7ad8 ffffffff81045ea5 ffff8800564c7b78
-[194737.686017]  ffffffffa0383aa7 00000000ffffffef ffff88000c7ba000 ffff8801a1f66f40
-[194737.687509] Call Trace:
-[194737.688068]  [<ffffffff8142fa46>] dump_stack+0x4f/0x7b
-[194737.689027]  [<ffffffff8108b6a2>] ? console_unlock+0x361/0x3ad
-[194737.690095]  [<ffffffff81045ea5>] warn_slowpath_common+0xa1/0xbb
-[194737.691198]  [<ffffffffa0383aa7>] ? __btrfs_abort_transaction+0x52/0x106 [btrfs]
-[194737.693789]  [<ffffffff81045f05>] warn_slowpath_fmt+0x46/0x48
-[194737.695065]  [<ffffffffa0383aa7>] __btrfs_abort_transaction+0x52/0x106 [btrfs]
-[194737.696806]  [<ffffffffa039a3bd>] btrfs_create_pending_block_groups+0x101/0x130 [btrfs]
-[194737.698683]  [<ffffffffa03aa433>] __btrfs_end_transaction+0x84/0x366 [btrfs]
-[194737.700329]  [<ffffffffa03aa725>] btrfs_end_transaction+0x10/0x12 [btrfs]
-[194737.701924]  [<ffffffffa0394b51>] btrfs_check_data_free_space+0x11f/0x27c [btrfs]
-[194737.703675]  [<ffffffffa03b8ba4>] __btrfs_buffered_write+0x16a/0x4c8 [btrfs]
-[194737.705417]  [<ffffffffa03bb502>] ? btrfs_file_write_iter+0x19a/0x431 [btrfs]
-[194737.707058]  [<ffffffffa03bb511>] ? btrfs_file_write_iter+0x1a9/0x431 [btrfs]
-[194737.708560]  [<ffffffffa03bb68d>] btrfs_file_write_iter+0x325/0x431 [btrfs]
-[194737.710673]  [<ffffffff81067d85>] ? get_parent_ip+0xe/0x3e
-[194737.712076]  [<ffffffff811534c3>] new_sync_write+0x7c/0xa0
-[194737.713293]  [<ffffffff81153b58>] vfs_write+0xb2/0x117
-[194737.714443]  [<ffffffff81154424>] SyS_pwrite64+0x64/0x82
-[194737.715646]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
-[194737.717175] ---[ end trace f2d5dc04e56d7e48 ]---
-[194737.718170] BTRFS: error (device sdc) in btrfs_create_pending_block_groups:9524: errno=-17 Object already exists
 
-The -EEXIST failure comes from btrfs_finish_chunk_alloc(), called by
-btrfs_create_pending_block_groups(), when it attempts to insert a
-duplicated device extent item via btrfs_alloc_dev_extent().
 
-This issue was reproducible with fstests generic/038 running in a loop for
-several hours (it's very hard to hit) and using MOUNT_OPTIONS="-o discard".
-Applying Jeff's recent patch titled "btrfs: add missing discards when
-unpinning extents with -o discard" makes the issue much easier to reproduce
-(usually within 4 to 5 hours), since it pins chunks for longer periods of
-time when an unused block group is deleted by the cleaner kthread.
-
-Fix this by making sure that we never adjust the start offset to a lower
-value than it currently has.
-
-Fixes: 1b9845081633 ("Btrfs: fix find_free_dev_extent() malfunction in case device tree has hole"
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/volumes.c | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 96aebf3..56b91ed 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1067,15 +1067,31 @@ again:
- 
- 		map = (struct map_lookup *)em->bdev;
- 		for (i = 0; i < map->num_stripes; i++) {
-+			u64 end;
-+
- 			if (map->stripes[i].dev != device)
- 				continue;
- 			if (map->stripes[i].physical >= physical_start + len ||
- 			    map->stripes[i].physical + em->orig_block_len <=
- 			    physical_start)
- 				continue;
--			*start = map->stripes[i].physical +
--				em->orig_block_len;
--			ret = 1;
-+			/*
-+			 * Make sure that while processing the pinned list we do
-+			 * not override our *start with a lower value, because
-+			 * we can have pinned chunks that fall within this
-+			 * device hole and that have lower physical addresses
-+			 * than the pending chunks we processed before. If we
-+			 * do not take this special care we can end up getting
-+			 * 2 pending chunks that start at the same physical
-+			 * device offsets because the end offset of a pinned
-+			 * chunk can be equal to the start offset of some
-+			 * pending chunk.
-+			 */
-+			end = map->stripes[i].physical + em->orig_block_len;
-+			if (end > *start) {
-+				*start = end;
-+				ret = 1;
-+			}
- 		}
- 	}
- 	if (search_list == &trans->transaction->pending_chunks) {
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

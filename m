@@ -1,31 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:51688 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932313AbbENMRB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 May 2015 08:17:01 -0400
-Message-ID: <5554923A.1090903@gmx.de>
-Date: Thu, 14 May 2015 14:16:58 +0200
-From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+Received: from mail-qc0-f180.google.com ([209.85.216.180]:33836 "EHLO
+	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932420AbbENMn0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 May 2015 08:43:26 -0400
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: Linux Kernel <linux-kernel@vger.kernel.org>
-Subject: deleting a btrfs subvolume shut up a server
-Content-Type: text/plain; charset=utf-8
+Date: Thu, 14 May 2015 08:43:25 -0400
+Message-ID: <CA+5PVA5HhK07LHXcPxDV=JztgdRRa+2LsK7RJXDZ-Y+esAqX1g@mail.gmail.com>
+Subject: btrfs balance 4.0 regression?
+From: Josh Boyer <jwboyer@fedoraproject.org>
+To: osandov@osandov.com, Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I created at a 3 TB btrfs formatted disk a btrfs subvolume, unpacked a minimal Gentoo Linux in it, created in addition few files within it under ./tmp and bind mount from the host few files onto those files. If I now delete in another terminal the subvolume - then the server dies immediately
+Hi Omar and Chris,
 
-It is a headless server, I had to request a manually reset to get it back.
-Nothing in the syslog (syslog-ng 3.6.2) - the server was just shot in he head.
+We have a bug reported [1] against 4.0 saying that btrfs balance is
+broken.  The reporter found a revert patch that Omar sent [2] to
+revert commit 2f0810880.  Looking in Linus' latest tree, I don't see
+that revert and I don't immediately see a patch to fix the issue Omar
+reported either.
 
-This happened 2 times in a row. Host is a stable hardened Gentoo with 4.0.2 kernel.
+Do either of you know if this is still an issue?  If not, which commit
+was it fixed by?
 
-:-/
+josh
 
--- 
-Toralf
-pgp key: 7B1A 07F4 EC82 0F90 D4C2  8936 872A E508 0076 E94E
---
-"; the past is all dirty and cruel in the modern popular imagination, with the exception of the Romans, who are just cruel"
-Ian Mortimer, 2008, "The Time Traveller's Guide to Medieval England"
+[1] https://bugzilla.redhat.com/show_bug.cgi?id=1217191
+[2] https://patchwork.kernel.org/patch/6238111/

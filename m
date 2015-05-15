@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42531 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:45450 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753761AbbEOGa3 (ORCPT
+	with ESMTP id S1753874AbbEOGaa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 May 2015 02:30:29 -0400
+	Fri, 15 May 2015 02:30:30 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 2/4] btrfs-progs: Add ability to restore unfinished fsid change.
-Date: Fri, 15 May 2015 14:28:24 +0800
-Message-ID: <1431671306-22262-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 3/4] btrfs-progs: Add '-U' and '-u' option for btrfstune.
+Date: Fri, 15 May 2015 14:28:25 +0800
+Message-ID: <1431671306-22262-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1431671306-22262-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1431671306-22262-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,111 +17,164 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now change_uuid() can auto detected unfinished fsid change and restore
-it.
+Add two options, '-U' and '-u' for btrfstune.
+
+For '-u', it is used to change fsid to a random new UUID.
+For '-U', it is used to change fsid to a specified UUID.
+
+Both will also change the internal use only chunk_tree_uuid to a random
+new UUID.
+
+Although there is a GNU getopt extension "::" to get optional
+option-argument, but is forbidden by POSIX.1-2008, so use split options
+here.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfstune.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 53 insertions(+), 7 deletions(-)
+ btrfstune.c | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 62 insertions(+), 5 deletions(-)
 
 diff --git a/btrfstune.c b/btrfstune.c
-index 36d7a00..1d5af33 100644
+index 1d5af33..e324f83 100644
 --- a/btrfstune.c
 +++ b/btrfstune.c
-@@ -267,7 +267,9 @@ out:
+@@ -406,23 +406,27 @@ static void print_usage(void)
+ 	fprintf(stderr, "\t-S value\tpositive value will enable seeding, zero to disable, negative is not allowed\n");
+ 	fprintf(stderr, "\t-r \t\tenable extended inode refs\n");
+ 	fprintf(stderr, "\t-x \t\tenable skinny metadata extent refs\n");
+-	fprintf(stderr, "\t-f \t\tforce to set or clear flags, make sure that you are aware of the dangers\n");
++	fprintf(stderr, "\t-f \t\tforce to do dangerous operation, make sure that you are aware of the dangers\n");
++	fprintf(stderr, "\t-U [uuid]\t\tchange fsid, if uuid is not given, use a random one\n");
+ }
  
- static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
+ int main(int argc, char *argv[])
  {
-+	struct btrfs_root *tree_root = fs_info->tree_root;
- 	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+	int ret = 0;
+ 	struct btrfs_root *root;
++	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_WRITES;
+ 	int success = 0;
+ 	int total = 0;
+ 	int extrefs_flag = 0;
+ 	int seeding_flag = 0;
+ 	u64 seeding_value = 0;
+ 	int skinny_flag = 0;
++	int random_fsid = 0;
++	char *new_fsid_str = NULL;
+ 	int ret;
  
- 	if (!fs_info->new_fsid && !fs_info->new_chunk_tree_uuid)
- 		return 0;
-@@ -276,7 +278,16 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
- 		flags |= BTRFS_SUPER_FLAG_CHANGING_FSID;
- 	btrfs_set_super_flags(fs_info->super_copy, flags);
+ 	optind = 1;
+ 	while(1) {
+-		int c = getopt(argc, argv, "S:rxf");
++		int c = getopt(argc, argv, "S:rxfuU:");
+ 		if (c < 0)
+ 			break;
+ 		switch(c) {
+@@ -439,6 +443,14 @@ int main(int argc, char *argv[])
+ 		case 'f':
+ 			force = 1;
+ 			break;
++		case 'U':
++			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
++			new_fsid_str = optarg;
++			break;
++		case 'u':
++			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
++			random_fsid = 1;
++			break;
+ 		default:
+ 			print_usage();
+ 			return 1;
+@@ -453,13 +465,37 @@ int main(int argc, char *argv[])
+ 		return 1;
+ 	}
  
--	return write_all_supers(fs_info->tree_root);
-+	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid, BTRFS_FSID_SIZE);
-+	ret = write_all_supers(tree_root);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* also restore new chunk_tree_id into tree_root for restore */
-+	write_extent_buffer(tree_root->node, fs_info->new_chunk_tree_uuid,
-+			    btrfs_header_chunk_tree_uuid(tree_root->node),
-+			    BTRFS_UUID_SIZE);
-+	return write_tree_block(NULL, tree_root, tree_root->node);
- }
- 
- static int change_fsid_done(struct btrfs_fs_info *fs_info)
-@@ -294,9 +305,31 @@ static int change_fsid_done(struct btrfs_fs_info *fs_info)
- }
- 
- /*
-+ * Return 0 for no unfinished fsid change.
-+ * Return >0 for unfinished fsid change, and restore unfinished fsid/
-+ * chunk_tree_id into fsid_ret/chunk_id_ret.
-+ */
-+static int check_unfinished_fsid_change(struct btrfs_fs_info *fs_info,
-+					uuid_t fsid_ret, uuid_t chunk_id_ret)
-+{
-+	struct btrfs_root *tree_root = fs_info->tree_root;
-+	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+
-+	if (flags & BTRFS_SUPER_FLAG_CHANGING_FSID) {
-+		memcpy(fsid_ret, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
-+		read_extent_buffer(tree_root->node, chunk_id_ret,
-+				btrfs_header_chunk_tree_uuid(tree_root->node),
-+				BTRFS_UUID_SIZE);
+-	if (!(seeding_flag + extrefs_flag + skinny_flag)) {
++	if (random_fsid && new_fsid_str) {
++		fprintf(stderr,
++			"ERROR: Random fsid can't be used with specified fsid\n");
 +		return 1;
 +	}
-+	return 0;
-+}
++	if (!(seeding_flag + extrefs_flag + skinny_flag) &&
++	    !(random_fsid || new_fsid_str)) {
+ 		fprintf(stderr,
+ 			"ERROR: At least one option should be assigned.\n");
+ 		print_usage();
+ 		return 1;
+ 	}
+ 
++	if (new_fsid_str) {
++		uuid_t tmp;
 +
-+/*
-  * Change fsid of a given fs.
-  *
-  * If new_fsid_str is not given, use a random generated UUID.
-+ * Caller should check new_fsid_str is valid
-  */
- static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
- {
-@@ -305,13 +338,26 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
- 	char uuid_buf[BTRFS_UUID_UNPARSED_SIZE];
- 	int ret = 0;
++		ret = uuid_parse(new_fsid_str, tmp);
++		if (ret < 0) {
++			fprintf(stderr,
++				"ERROR: Could not parse UUID: %s\n",
++				new_fsid_str);
++			return 1;
++		}
++		if (!test_uuid_unique(new_fsid_str)) {
++			fprintf(stderr,
++				"ERROR: Fsid %s is not unique\n",
++				new_fsid_str);
++			return 1;
++		}
++	}
++
+ 	ret = check_mounted(device);
+ 	if (ret < 0) {
+ 		fprintf(stderr, "Could not check mount status: %s\n",
+@@ -470,7 +506,7 @@ int main(int argc, char *argv[])
+ 		return 1;
+ 	}
  
--	/* caller should do extra check on passed uuid */
--	if (new_fsid_str)
--		uuid_parse(new_fsid_str, new_fsid);
--	else
--		uuid_generate(new_fsid);
-+	if (check_unfinished_fsid_change(fs_info, new_fsid, new_chunk_id)) {
-+		if (new_fsid_str) {
-+			uuid_t tmp;
+-	root = open_ctree(device, 0, OPEN_CTREE_WRITES);
++	root = open_ctree(device, 0, ctree_flags);
  
--	uuid_generate(new_chunk_id);
-+			uuid_parse(new_fsid_str, tmp);
-+			if (memcmp(tmp, new_fsid, BTRFS_FSID_SIZE)) {
-+				fprintf(stderr,
-+					"ERROR: New fsid %s is not the same with unfinished fsid change\n",
-+					new_fsid_str);
-+				return -EINVAL;
+ 	if (!root) {
+ 		fprintf(stderr, "Open ctree failed\n");
+@@ -483,7 +519,8 @@ int main(int argc, char *argv[])
+ 			ret = ask_user("We are going to clear the seeding flag, are you sure?");
+ 			if (!ret) {
+ 				fprintf(stderr, "Clear seeding flag canceled\n");
+-				return 1;
++				ret = 1;
++				goto out;
+ 			}
+ 		}
+ 
+@@ -505,6 +542,25 @@ int main(int argc, char *argv[])
+ 		total++;
+ 	}
+ 
++	if (random_fsid || new_fsid_str) {
++		if (!force) {
++			fprintf(stderr,
++				"Warning: It's highly recommended to run 'btrfs check' before this operation\n");
++			fprintf(stderr,
++				"Also canceling running UUID change progress may cause corruption\n");
++			ret = ask_user("We are going to change UUID, are your sure?");
++			if (!ret) {
++				fprintf(stderr, "UUID change canceled\n");
++				ret = 1;
++				goto out;
 +			}
 +		}
-+	} else {
-+		if (new_fsid_str)
-+			uuid_parse(new_fsid_str, new_fsid);
-+		else
-+			uuid_generate(new_fsid);
-+
-+		uuid_generate(new_chunk_id);
++		ret = change_uuid(root->fs_info, new_fsid_str);
++		if (!ret)
++			success++;
++		total++;
 +	}
- 	fs_info->new_fsid = new_fsid;
- 	fs_info->new_chunk_tree_uuid = new_chunk_id;
++
+ 	if (success == total) {
+ 		ret = 0;
+ 	} else {
+@@ -512,6 +568,7 @@ int main(int argc, char *argv[])
+ 		ret = 1;
+ 		fprintf(stderr, "btrfstune failed\n");
+ 	}
++out:
+ 	close_ctree(root);
  
+ 	return ret;
 -- 
 2.4.0
 

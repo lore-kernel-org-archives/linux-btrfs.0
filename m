@@ -1,54 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18638 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34769 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751744AbbEOFNY (ORCPT
+	with ESMTP id S1753724AbbEOGa3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 May 2015 01:13:24 -0400
+	Fri, 15 May 2015 02:30:29 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: Fix a bug in chunk item extra check and allow degraded chunk.
-Date: Fri, 15 May 2015 13:11:14 +0800
-Message-ID: <1431666674-23322-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 1/4] btrfs-progs: Minor change of change_uuid().
+Date: Fri, 15 May 2015 14:28:23 +0800
+Message-ID: <1431671306-22262-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For DUP profile, the num_stripes should be 2 not 1.
-This causes btrfs offline tool fails on valid image.
+Change the change_uuid():
+1) Remove new_chunk_tree_uuid para
+As chunk_tree_uuid is only internal used, no need to manual specify it.
+Use random generated UUID instead.
 
-Also, num_stripes check is too restrict for btrfsck self test,
-as there is some image in degraded mode, so modify it to allow degraded
-chunk.
+2) Don't use heap allocated memory for fs_info->new_fsid/chunk_tree_id.
+It's easy to forgot free or double free heap memory.
+Use stack memory instead.
+(In fact, I forgot to free them in previous patchset)
+
+3) Print dst fsid.
+As now it's possible to change fsid to random uuid, it's better to print
+it out.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+ btrfstune.c | 63 ++++++++++++++++++++++++++++---------------------------------
+ 1 file changed, 29 insertions(+), 34 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index 77cc305..14ce33e 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1649,12 +1649,11 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	/*
- 	 * Device number check against profile
- 	 */
--	if ((map->type & BTRFS_BLOCK_GROUP_RAID10 && num_stripes < 4 &&
--	     map->sub_stripes < 2) ||
--	    (map->type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 2) ||
--	    (map->type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 3) ||
--	    (map->type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 4) ||
--	    (map->type & BTRFS_BLOCK_GROUP_DUP && num_stripes != 1) ||
-+	if ((map->type & BTRFS_BLOCK_GROUP_RAID10 && map->sub_stripes == 0) ||
-+	    (map->type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
-+	    (map->type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
-+	    (map->type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
-+	    (map->type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
- 	    ((map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
- 	     num_stripes != 1)) {
- 		fprintf(stderr,
+diff --git a/btrfstune.c b/btrfstune.c
+index 7b8090a..36d7a00 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -293,36 +293,30 @@ static int change_fsid_done(struct btrfs_fs_info *fs_info)
+ 	return write_all_supers(fs_info->tree_root);
+ }
+ 
+-static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid,
+-		       const char *new_chunk_uuid)
++/*
++ * Change fsid of a given fs.
++ *
++ * If new_fsid_str is not given, use a random generated UUID.
++ */
++static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
+ {
++	uuid_t new_fsid;
++	uuid_t new_chunk_id;
++	char uuid_buf[BTRFS_UUID_UNPARSED_SIZE];
+ 	int ret = 0;
+ 
+ 	/* caller should do extra check on passed uuid */
+-	if (new_fsid) {
+-		/* allocated mem will be freed at close_ctree() */
+-		fs_info->new_fsid = malloc(BTRFS_FSID_SIZE);
+-		if (!fs_info->new_fsid) {
+-			ret = -ENOMEM;
+-			goto out;
+-		}
+-		ret = uuid_parse(new_fsid, fs_info->new_fsid);
+-		if (ret < 0)
+-			goto out;
+-	}
++	if (new_fsid_str)
++		uuid_parse(new_fsid_str, new_fsid);
++	else
++		uuid_generate(new_fsid);
+ 
+-	if (new_chunk_uuid) {
+-		/* allocated mem will be freed at close_ctree() */
+-		fs_info->new_chunk_tree_uuid = malloc(BTRFS_UUID_SIZE);
+-		if (!fs_info->new_chunk_tree_uuid) {
+-			ret = -ENOMEM;
+-			goto out;
+-		}
+-		ret = uuid_parse(new_chunk_uuid, fs_info->new_chunk_tree_uuid);
+-		if (ret < 0)
+-			goto out;
+-	}
++	uuid_generate(new_chunk_id);
++	fs_info->new_fsid = new_fsid;
++	fs_info->new_chunk_tree_uuid = new_chunk_id;
+ 
++	uuid_unparse_upper(new_fsid, uuid_buf);
++	printf("Changing fsid to %s\n", uuid_buf);
+ 	/* Now we can begin fsid change */
+ 	ret = change_fsid_prepare(fs_info);
+ 	if (ret < 0)
+@@ -342,19 +336,20 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid,
+ 		goto out;
+ 	}
+ 
+-	/* Last, change fsid in super, only fsid change needs this */
+-	if (new_fsid) {
+-		memcpy(fs_info->fs_devices->fsid, fs_info->new_fsid,
+-		       BTRFS_FSID_SIZE);
+-		memcpy(fs_info->super_copy->fsid, fs_info->new_fsid,
+-		       BTRFS_FSID_SIZE);
+-		ret = write_all_supers(fs_info->tree_root);
+-		if (ret < 0)
+-			goto out;
+-	}
++	/* Last, change fsid in super */
++	memcpy(fs_info->fs_devices->fsid, fs_info->new_fsid,
++	       BTRFS_FSID_SIZE);
++	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid,
++	       BTRFS_FSID_SIZE);
++	ret = write_all_supers(fs_info->tree_root);
++	if (ret < 0)
++		goto out;
+ 
+ 	/* Now fsid change is done */
+ 	ret = change_fsid_done(fs_info);
++	fs_info->new_fsid = NULL;
++	fs_info->new_chunk_tree_uuid = NULL;
++	printf("Fsid changed to %s\n", uuid_buf);
+ out:
+ 	return ret;
+ }
 -- 
 2.4.0
 

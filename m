@@ -1,38 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47846 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753916AbbEKNpZ (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:18638 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751744AbbEOFNY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 May 2015 09:45:25 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/1] btrfs-progs: use the correct variable
-Date: Mon, 11 May 2015 21:55:52 +0800
-Message-Id: <1431352552-3391-1-git-send-email-anand.jain@oracle.com>
+	Fri, 15 May 2015 01:13:24 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: Fix a bug in chunk item extra check and allow degraded chunk.
+Date: Fri, 15 May 2015 13:11:14 +0800
+Message-ID: <1431666674-23322-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-its res instead of ret
+For DUP profile, the num_stripes should be 2 not 1.
+This causes btrfs offline tool fails on valid image.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Also, num_stripes check is too restrict for btrfsck self test,
+as there is some image in degraded mode, so modify it to allow degraded
+chunk.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-device.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ volumes.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index cbb3243..1022656 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -183,7 +183,7 @@ static int cmd_rm_dev(int argc, char **argv)
- 		if (res) {
- 			const char *msg;
- 
--			if (ret > 0)
-+			if (res > 0)
- 				msg = btrfs_err_str(res);
- 			else
- 				msg = strerror(e);
+diff --git a/volumes.c b/volumes.c
+index 77cc305..14ce33e 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1649,12 +1649,11 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	/*
+ 	 * Device number check against profile
+ 	 */
+-	if ((map->type & BTRFS_BLOCK_GROUP_RAID10 && num_stripes < 4 &&
+-	     map->sub_stripes < 2) ||
+-	    (map->type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 2) ||
+-	    (map->type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 3) ||
+-	    (map->type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 4) ||
+-	    (map->type & BTRFS_BLOCK_GROUP_DUP && num_stripes != 1) ||
++	if ((map->type & BTRFS_BLOCK_GROUP_RAID10 && map->sub_stripes == 0) ||
++	    (map->type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
++	    (map->type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
++	    (map->type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
++	    (map->type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
+ 	    ((map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
+ 	     num_stripes != 1)) {
+ 		fprintf(stderr,
 -- 
-1.7.1
+2.4.0
 

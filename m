@@ -1,211 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51561 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:59053 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933006AbbENNHy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 May 2015 09:07:54 -0400
-Message-ID: <55549E27.9060006@suse.com>
-Date: Thu, 14 May 2015 09:07:51 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+	id S934016AbbEOMzp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 May 2015 08:55:45 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 341BFADBB
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2015 12:55:44 +0000 (UTC)
+Date: Fri, 15 May 2015 14:55:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix mutex unlock without prior lock on space
+ cache truncation
+Message-ID: <20150515125543.GC23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1430412425-12876-1-git-send-email-fdmanana@suse.com>
 MIME-Version: 1.0
-To: fdmanana@gmail.com
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: iterate over unused chunk space in FITRIM
-References: <554909A5.4030307@suse.com>	<CAL3q7H5O0w+_EPSbpMyWTYzyzyCOxHmU-wPRx7w85ftUzHzXgQ@mail.gmail.com>	<CAL3q7H4EtmBHZkTR02R++FE0ZUWyqpG7wsWvPH-ct1-3Ss2NgA@mail.gmail.com>	<5343733B-D959-4207-976F-EF5EEAAE9E5F@suse.com> <CAL3q7H5cA6h8AFgOui6Lqo6LJ+t5zme+ZMC6RJd26Rn30GC5eA@mail.gmail.com>
-In-Reply-To: <CAL3q7H5cA6h8AFgOui6Lqo6LJ+t5zme+ZMC6RJd26Rn30GC5eA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1430412425-12876-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 5/14/15 5:33 AM, Filipe David Manana wrote:
-> On Fri, May 8, 2015 at 11:45 PM, Jeff Mahoney <jeffm@suse.com>
-> wrote:
->> 
->>> On May 8, 2015, at 5:16 PM, Filipe David Manana
->>> <fdmanana@gmail.com> wrote:
->>> 
->>>> On Fri, May 8, 2015 at 9:38 PM, Filipe David Manana
->>>> <fdmanana@gmail.com> wrote:
->>>>> On Tue, May 5, 2015 at 7:19 PM, Jeff Mahoney
->>>>> <jeffm@suse.com> wrote: Since we now clean up block groups
->>>>> automatically as they become empty, iterating over block
->>>>> groups is no longer sufficient to discard unused space.
->>>>> 
->>>>> This patch iterates over the unused chunk space and
->>>>> discards any regions that are unallocated, regardless of
->>>>> whether they were ever used.  This is a change for btrfs
->>>>> but is consistent with other file systems.
->>>>> 
->>>>> We do this in a transactionless manner since the discard
->>>>> process can take a substantial amount of time and a
->>>>> transaction would need to be started before the acquisition
->>>>> of the device list lock.  That would mean a transaction
->>>>> would be held open across /all/ of the discards
->>>>> collectively. In order to prevent other threads from
->>>>> allocating or freeing chunks, we hold the chunks lock
->>>>> across the search and discard calls.  We release it between
->>>>> searches to allow the file system to perform more-or-less 
->>>>> normally.  Since the running transaction can commit and
->>>>> disappear while we're using the transaction pointer, we
->>>>> take a reference to it and release it after the search.
->>>>> This is safe since it would happen normally at the end of
->>>>> the transaction commit after any locks are released
->>>>> anyway.
->>>>> 
->>>>> Signed-off-by: Jeff Mahoney <jeffm@suse.com> ---
->>>> 
->>>> Hi Jeff,
->>>> 
->>>> Missing changelog describing what changed between v1 and v2.
->>>> 
->>>>> fs/btrfs/extent-tree.c | 96
->>>>> ++++++++++++++++++++++++++++++++++++++++++++++++++ 
->>>>> fs/btrfs/volumes.c     | 61
->>>>> ++++++++++++++++++++------------ fs/btrfs/volumes.h     |
->>>>> 3 ++ 3 files changed, 137 insertions(+), 23 deletions(-)
->>>>> 
->>>>> diff --git a/fs/btrfs/extent-tree.c
->>>>> b/fs/btrfs/extent-tree.c index 0ec8e22..6d1d74d 100644 ---
->>>>> a/fs/btrfs/extent-tree.c +++ b/fs/btrfs/extent-tree.c @@
->>>>> -10031,10 +10031,94 @@ int
->>>>> btrfs_error_unpin_extent_range(struct btrfs_root *root, u64
->>>>> start, u64 end) return unpin_extent_range(root, start, end,
->>>>> false); }
->>>>> 
->>>>> +/* + * It used to be that old block groups would be left
->>>>> around forever. + * Iterating over them would be enough to
->>>>> trim unused space.  Since we + * now automatically remove
->>>>> them, we also need to iterate over unallocated + * space. +
->>>>> * + * We don't want a transaction for this since the
->>>>> discard may take a + * substantial amount of time.  We
->>>>> don't require that a transaction be + * running, but we do
->>>>> need to take a running transaction into account + * to
->>>>> ensure that we're not discarding chunks that were released
->>>>> in + * the current transaction. + * + * Holding the chunks
->>>>> lock will prevent other threads from allocating + * or
->>>>> releasing chunks, but it won't prevent a running
->>>>> transaction + * from committing and releasing the memory
->>>>> that the pending chunks + * list head uses.  For that, we
->>>>> need to take a reference to the + * transaction. + */ 
->>>>> +static int btrfs_trim_free_extents(struct btrfs_device
->>>>> *device, +                                  u64 minlen, u64
->>>>> *trimmed) +{ +       u64 start = 0, len = 0; +       int
->>>>> ret; + +       *trimmed = 0; + +       /* Not writeable =
->>>>> nothing to do. */ +       if (!device->writeable) +
->>>>> return 0; + +       /* No free space = nothing to do. */ +
->>>>> if (device->total_bytes <= device->bytes_used) +
->>>>> return 0; + +       ret = 0; + +       while (1) { +
->>>>> struct btrfs_fs_info *fs_info = device->dev_root->fs_info; 
->>>>> +               struct btrfs_transaction *trans; + +
->>>>> ret = mutex_lock_interruptible(&fs_info->chunk_mutex); +
->>>>> if (ret) +                       return ret; + +
->>>>> spin_lock(&fs_info->trans_lock); +               trans =
->>>>> fs_info->running_transaction; +               if (trans) +
->>>>> atomic_inc(&trans->use_count); +
->>>>> spin_unlock(&fs_info->trans_lock); + +               ret =
->>>>> find_free_dev_extent_start(trans, device, minlen, start, +
->>>>> &start, &len); +               if (trans) +
->>>>> btrfs_put_transaction(trans); + +               if (ret) { 
->>>>> +
->>>>> mutex_unlock(&fs_info->chunk_mutex); +
->>>>> if (ret == -ENOSPC) +                               ret =
->>>>> 0; +                       break; +               } + +
->>>>> ret = btrfs_issue_discard(device->bdev, start, len); +
->>>>> mutex_unlock(&fs_info->chunk_mutex); + +               if
->>>>> (ret) +                       break; + +
->>>>> start += len; +               *trimmed += len; + +
->>>>> if (fatal_signal_pending(current)) { +
->>>>> ret = -ERESTARTSYS; +                       break; +
->>>>> } + +               cond_resched(); +       } + +
->>>>> return ret; +} + int btrfs_trim_fs(struct btrfs_root *root,
->>>>> struct fstrim_range *range) { struct btrfs_fs_info *fs_info
->>>>> = root->fs_info; struct btrfs_block_group_cache *cache =
->>>>> NULL; +       struct btrfs_device *device; +       struct
->>>>> list_head *devices; u64 group_trimmed; u64 start; u64 end; 
->>>>> @@ -10089,6 +10173,18 @@ int btrfs_trim_fs(struct
->>>>> btrfs_root *root, struct fstrim_range *range) cache =
->>>>> next_block_group(fs_info->tree_root, cache); }
->>>>> 
->>>>> +
->>>>> mutex_lock(&root->fs_info->fs_devices->device_list_mutex); 
->>>>> +       devices = &root->fs_info->fs_devices->alloc_list; +
->>>>> list_for_each_entry(device, devices, dev_alloc_list) { +
->>>>> ret = btrfs_trim_free_extents(device, range->minlen, +
->>>>> &group_trimmed); +               if (ret) +
->>>>> break; + +               trimmed += group_trimmed; +
->>>>> } +
->>>>> mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
->>>>>
->>>>> 
-+
->>>>> range->len = trimmed; return ret; } diff --git
->>>>> a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c index
->>>>> 96aebf3..ada8965 100644 --- a/fs/btrfs/volumes.c +++
->>>>> b/fs/btrfs/volumes.c @@ -1051,15 +1051,19 @@ out: return
->>>>> ret; }
->>>>> 
->>>>> -static int contains_pending_extent(struct
->>>>> btrfs_trans_handle *trans, +static int
->>>>> contains_pending_extent(struct btrfs_transaction
->>>>> *transaction, struct btrfs_device *device, u64 *start, u64
->>>>> len) { +       struct btrfs_fs_info *fs_info =
->>>>> device->dev_root->fs_info; struct extent_map *em; -
->>>>> struct list_head *search_list =
->>>>> &trans->transaction->pending_chunks; +       struct
->>>>> list_head *search_list = &transaction->pending_chunks;
->>>> 
->>>> transaction can be NULL so we need to check for that first
->>>> (as you do below).
->>>> 
->>>>> int ret = 0; u64 physical_start = *start;
->>>>> 
->>>>> +       if (!transaction) +               search_list =
->>>>> &fs_info->pinned_chunks; + again: list_for_each_entry(em,
->>>>> search_list, list) { struct map_lookup *map; @@ -1078,8
->>>>> +1082,8 @@ again: ret = 1; } } -       if (search_list ==
->>>>> &trans->transaction->pending_chunks) { -
->>>>> search_list = &trans->root->fs_info->pinned_chunks; +
->>>>> if (search_list == &transaction->pending_chunks) {
->>> 
->>> And here missing the null test too, which should be something
->>> like:
->>> 
->>> if (transaction && search_list == &transaction->pending_chunks)
->>> {
->>> 
->> 
->> That's the same case as above. We're not dereferencing
->> transaction here either. The test in the if statement will fail
->> because &transaction->pending_chunks will be 0x100 or something.
+On Thu, Apr 30, 2015 at 05:47:05PM +0100, Filipe Manana wrote:
+> If the call to btrfs_truncate_inode_items() failed and we don't have a block
+> group, we were unlocking the cache_write_mutex without having locked it (we
+> do it only if we have a block group).
 > 
-> Right. Sorry friday evening review. What you are doing is valid
-> then and something very close to the offsetof implementation.
+> Fixes: 1bbc621ef284 ("Btrfs: allow block group cache writeout
+>                       outside critical section in commit")
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Exactly. I got enough pushback on it that I just changed it around so
-there aren't any questions, though.
+Patch is ok, I have one comment to the transaction abort calls. The
+pattern is to put them right after the error is detected so we can
+trace it back to the sources based on the reports.
 
-- -Jeff
+> @@ -231,6 +231,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+>  {
+>  	int ret = 0;
+>  	struct btrfs_path *path = btrfs_alloc_path();
+> +	bool locked = false;
+>  
+>  	if (!path) {
+>  		ret = -ENOMEM;
 
+the context:
+		goto fail;
 
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+> @@ -269,18 +271,14 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+>  	 */
+>  	ret = btrfs_truncate_inode_items(trans, root, inode,
+>  					 0, BTRFS_EXTENT_DATA_KEY);
+> -	if (ret) {
+> -		mutex_unlock(&trans->transaction->cache_write_mutex);
+> -		btrfs_abort_transaction(trans, root, ret);
+> -		return ret;
+> -	}
+> +	if (ret)
+> +		goto fail;
+>  
+>  	ret = btrfs_update_inode(trans, root, inode);
+>  
+> -	if (block_group)
+> -		mutex_unlock(&trans->transaction->cache_write_mutex);
+> -
+>  fail:
+> +	if (locked)
+> +		mutex_unlock(&trans->transaction->cache_write_mutex);
+>  	if (ret)
+>  		btrfs_abort_transaction(trans, root, ret);
 
-iQIcBAEBAgAGBQJVVJ4nAAoJEB57S2MheeWyOJUQAKRdRkTzw6QGPBbEHL4mz5fV
-u/1EUvnsf3nUf1xvjxhnimAkxdVFJ66jV4Et3MaZXQwx/ejVByn4VfT7wi58AiYD
-x3mzbGgMBB2lxHrS4OZD2yO7nh+n9IRSKE3yVuKkqgXWqL0meyJ5FvU3cpVWaj5u
-v7ka5pyFEIlaymJqcvFJX57uKYKgUKJkAreGYqEvvCpZYc+BWibmp1svsN66824l
-kO0aBLIz0WCPc0CuG3i9YSRXMSIbf8sV6QygpQiaCQ2WfJiDNZINjNwUzK+mwBq9
-UtMs3LiyqRMMIINSM6Ey14s842ov6Xh3DsIDS1YzqzyE0it4tYjS6o5lTK2vpmrM
-RQVDGxu3btlFlWfTPOP32Ts1tOWdHB6bMOezca53p3I/sLvA5g5snonqbEDPltov
-DnHNTskDdFAuh/3QzTpGHU93cPZJE3vp8bpQfc1UQuUs9NzN/b26ghxau1Rto87q
-v0KKcp9qnU+2nQ/6TxKekudKBWTT+glene73ddHct0WRwtQWwPIZihL028llzHF4
-Iu9JEE3ov879PMTvUzFFfc6cSKPQGy9UNjn/O0E0G6km/GFAW/BHNDeywa0O+Smh
-DPJ4GLXYHKw4JHqGYtbuoMwt2KXZd/9XmCUiBPo0s+wRCqz9Ms3J1T1UMmhqJDOt
-lLa/DggUBMYfjGOVHS/2
-=WAYC
------END PGP SIGNATURE-----
+Now two code paths lead to one abort. We can get ENOMEM from both,
+however this kind of error is not really a bug we want to analyze deeper
+so I'm fine with it.
+
+Reviewed-by: David Sterba <dsterba@suse.cz>

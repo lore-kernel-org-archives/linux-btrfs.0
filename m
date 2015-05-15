@@ -1,37 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54844 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752934AbbENNcY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 May 2015 09:32:24 -0400
-Date: Thu, 14 May 2015 15:32:22 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-ie0-f178.google.com ([209.85.223.178]:35128 "EHLO
+	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1946011AbbEOUnm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 May 2015 16:43:42 -0400
+Received: by iesa3 with SMTP id a3so42366782ies.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2015 13:43:42 -0700 (PDT)
+Date: Fri, 15 May 2015 13:43:40 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/13]  Introduce offline fsid/chunk tree uuid change
- for btrfstune.
-Message-ID: <20150514133222.GW23255@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1431331734-11714-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150513160325.GN23255@twin.jikos.cz>
- <5553ED4F.3060207@cn.fujitsu.com>
+Subject: Re: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
+Message-ID: <20150515204340.GA20386@mew.dhcp4.washington.edu>
+References: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5553ED4F.3060207@cn.fujitsu.com>
+In-Reply-To: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 14, 2015 at 08:33:19AM +0800, Qu Wenruo wrote:
-> That's very kind of you to modify them by yourself.
+On Fri, May 15, 2015 at 09:28:29PM +0100, Dimitri John Ledkov wrote:
+> Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=784911
+> Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
+> ---
+>  fsck.btrfs | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> I have already prepared branches for both property and btrfstune, but 
-> you did it even before I send the v3 patchset.
+> diff --git a/fsck.btrfs b/fsck.btrfs
+> index f056a7f..3a92804 100755
+> --- a/fsck.btrfs
+> +++ b/fsck.btrfs
+> @@ -31,7 +31,7 @@ if [ ! -e $DEV ]; then
+>  	echo "$0: $DEV does not exist"
+>  	exit 8
+>  fi
+> -if [ "$AUTO" == "false" ]; then
+> +if [ "false" = "$AUTO" ]; then
+>  	echo "If you wish to check the consistency of a BTRFS filesystem or"
+>  	echo "repair a damaged filesystem, see btrfs(8) subcommand 'check'."
+>  fi
 
-I'd like to do a release soon so I merge what seems ready even if it
-does not take the usual route of resending.
+I'm going to completely bikeshed here, but Yoda conditions are already
+ugly in C, and completely pointless in Bash, where you can't ever
+accidentally reassign a variable in a condition. Either way, I think:
 
-> Would you mind me to do all the modification you mentioned and send the 
-> v3 patchset?
-> This should save some time for you.
+if [ ! $AUTO ]; then
 
-The work is done already, please send new patches, based on top of the
-current deveolopment branch.
+would be clearer anyways.
+
+Thanks!
+-- 
+Omar

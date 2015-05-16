@@ -1,73 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:33551 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753678AbbEOSkI (ORCPT
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:36197 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750769AbbEPKur (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 May 2015 14:40:08 -0400
-Received: by wicmx19 with SMTP id mx19so45042054wic.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2015 11:40:07 -0700 (PDT)
-Received: from [10.0.2.15] (p3E9EE5B9.dip0.t-ipconnect.de. [62.158.229.185])
-        by mx.google.com with ESMTPSA id n1sm4178362wix.0.2015.05.15.11.40.06
+	Sat, 16 May 2015 06:50:47 -0400
+Received: by pabts4 with SMTP id ts4so61217539pab.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 03:50:47 -0700 (PDT)
+Received: from localhost ([2402:f000:1:1501:200:5efe:a66f:4120])
+        by mx.google.com with ESMTPSA id i13sm4398187pbq.79.2015.05.16.03.50.44
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 15 May 2015 11:40:06 -0700 (PDT)
-From: Philip Seeger <p0h0i0l0i0p@gmail.com>
-Message-ID: <55563D86.60901@googlemail.com>
-Date: Fri, 15 May 2015 20:40:06 +0200
-MIME-Version: 1.0
+        Sat, 16 May 2015 03:50:45 -0700 (PDT)
+Date: Sat, 16 May 2015 18:50:42 +0800
+From: Justin Wong <i@bigeagle.me>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Got 10 csum errors according to dmesg but 0 errors according
- to dev stats
-References: <554F6D43.2060806@googlemail.com>	<CABR0jERqzkdTJxX_1S5WEZHDzX8=O8P7r+Bk0mesPLsR2n=w8A@mail.gmail.com>	<554F963D.2040209@googlemail.com>	<201505111141.54771.russell@coker.com.au>	<555145EA.6040009@googlemail.com>	<B7F2379062E32745A8651FBDB20F645954A2D259@Server.waterlogic.com.au> <CAJCQCtT-ZdFqwjCjS5sH1zG=xT3Ok4V1VYBf4NeQ3QPxsZgtRA@mail.gmail.com>
-In-Reply-To: <CAJCQCtT-ZdFqwjCjS5sH1zG=xT3Ok4V1VYBf4NeQ3QPxsZgtRA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Subject: Very slow writing and low I/O throuput
+Message-ID: <20150516105042.GA6088@BigEagle-desktop.tuna.tsinghua.edu.cn>
+Reply-To: i@bigeagle.me
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The host filesystem (where the virtual hdd is stored) is ZFS (no 
-errors). It's a bit slower recently because I am moving a lot of data 
-around while other vms are running. But that shouldn't be a problem.
 
-This Arch vm appears to be the only one having problems. Again, I have 
-even scrubbed one other vm, which also uses btrfs (but 3.19, not 4.0) 
-and found no errors. This is the vm from which I have copied the 11 GB 
-directory, which now keeps getting corrupted in the Arch vm.
+--GvXjxJ+pjyke8COw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I'd just like to repeat that I have copied one directory from an older 
-vm, which uses btrfs, to a new Arch vm, which also used btrfs, and while 
-that older vm has worked fine (still does), the same files in that 
-copied directory are getting corrupted in the new Arch vm...
+Hi there,
 
-The bug report mentions Gnome Boxes, but I'm using VirtualBox. Don't 
-know if both are affected in the same way.
-If it makes a difference: The Arch vm has an IDE controller (host cache 
-enabled) for the virtual optical drive and one SATA controller (host 
-cache disabled) for the virtual hard drive.
+I'm a maintainer of a linux mirror site, and we use btrfs snapshots provide=
+ better service. The
+workflow of our mirror job is :
+1. create a working snapshot of current mirror
+2. rsync from upstream to the working snapshot
+3. after rsync done, remove the original subvolume and mv working snapshot =
+to production subvolume
 
-I will try to get this vm in a healthy state again by deleting all 
-affected files and copying them back again.
+Everything was fine until several days ago, every `btrfs subvolume snapshot=
+` command takes more than
+1 minute to finish, and during this 1 minitue, every write to the disk is e=
+xtremly slow (< 1MB/s).
 
-Also, should I try to use a specific mount option, maybe a lower commit 
-interval?
+Also, when the disk is totally idel, if I tried to  `dd if=3D/dev/zero of=
+=3Dtest bs=3D1M count=3D100 conv=3Dfdatasync`,
+this `dd` just hangs, and iostat told me the disk is reading at speed of ~5=
+MB/s, not a bit was
+writtien to the disk.
+
+Smartctl showed the disk is fine, and btrfs device stat reports no error. T=
+his server is a KVM
+virtual machine and btrfs is on two 4T qcow2 images, with virtio cache=3Dno=
+ne and io=3Dnative.
+
+Uname -a is
+Linux debian-opensource 3.16.0-0.bpo.4-amd64 #1 SMP Debian 3.16.7-ckt9-3~de=
+b8u1~bpo70+1 (2015-04-27) x86_64 GNU/Linux
+
+Btrfs fi show is
+Label: none  uuid: 179cb1ff-fe45-4e02-996a-a9ad02f766b9
+Total devices 2 FS bytes used 5.46TiB
+devid    1 size 4.00TiB used 3.08TiB path /dev/vdb
+devid    2 size 4.00TiB used 2.41TiB path /dev/vdc
+
+Btrfs v3.14.1
+
+SysRq+w reports: http://pastebin.com/ZRPwZiUQ
+
+Mount Options: (rw,noatime,space_cache,autodefrag)
+
+No dmesg errors.
+
+So I wanna know:
+1. Why is it slow?
+2. Is it bad to use btrfs inside KVM with qcow2?
+3. Everything was fast before, can I somehow "reset" the filesystem without=
+ losing data?
 
 
-Philip
+Cheers,
+--=20
+Justin Wong
 
-On 05/12/2015 03:37 AM, Chris Murphy wrote:
-> There are two file systems involved, guest and host. What are their
-> file systems? I know one of them is Btrfs but I can't tell if they're
-> both Btrfs.
->
-> There is a regression somewhere, I don't know where yet, when libvirt
-> cache=none or cache=directsync, and the disk image (qcow2 in my case)
-> is on Btrfs. The guest file system doesn't matter, it'll eventually
-> spew some corruption related errors.
-> https://bugzilla.redhat.com/show_bug.cgi?id=1204569
->
->
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Blog: https://bigeagle.me/
+Fingerprint: 15CC 6A61 738B 1599 0095  E256 CB67 DA7A 865B AC3A
 
+--GvXjxJ+pjyke8COw
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJVVyD6AAoJEMtn2nqGW6w6fysP/iJmekg+2tPgWsZm1Cbvf/I7
+to9NFr+k4GcZepUQ37Rgnhgw27N/BhpI4acVelwQuz9vrbccPCP/f7Jq5YhVbrpi
+p10KB+1P2Q+/GNpbQZTBzIUikOO2zGALGAZrz5J23vHjHaYIyszJIVx7ZWLiVmpa
+unZGSUEQ1AuV9BM8GIj46KFmmnjlFoTCJWmTQ3RDHYDOP/mUkiAESZV1JoIjOBow
+5Lk/HaPwvDl3nJIEZrW+fK546WPX0KyLRqPPj0grOoskBIwaSouz2Kyn2+5oZutk
+bnoBNyEiPKv4hLGEwJOdRr4R3NCQ9v+fJqzmqJbSHXNMDpe72MoO2g6Hz6WsjbNq
++jVkyxf0ZkptLc2sKdP+zvab9S2/Qz682EombsLz0aAtL5EMmuaKENaMnD5F9Fq2
+nXjnTqYcC4Z+VzejKzQsbflGIT2vnFOrXMGrmHinF31XSgcG7e6hoWa9Ioj825sb
+y1dfeZBXq0eulm0ML5fQQabPisaEAQ8sTbfVRksp17DhiGXoh/5GZie43tGT3c3e
+D+rZmWzTr1djnkjLyFo8H+AKC4a9vxoYd4TP2uUrS5bITyD5KpEn1eC455XCshJ1
+zNu0uibiIa0WVpMB9eCs4KkBuKdQlvEw9BEG4iRPKfamSTppEE1OQzq+YEzXILMO
+NCL3Qg5TLABg8vs0UGC8
+=uInR
+-----END PGP SIGNATURE-----
+
+--GvXjxJ+pjyke8COw--

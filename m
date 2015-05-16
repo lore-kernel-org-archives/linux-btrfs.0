@@ -1,53 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:35128 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1946011AbbEOUnm (ORCPT
+Received: from mout.kundenserver.de ([212.227.17.10]:49689 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S2992793AbbEPI1O (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 May 2015 16:43:42 -0400
-Received: by iesa3 with SMTP id a3so42366782ies.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2015 13:43:42 -0700 (PDT)
-Date: Fri, 15 May 2015 13:43:40 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
-Message-ID: <20150515204340.GA20386@mew.dhcp4.washington.edu>
-References: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
+	Sat, 16 May 2015 04:27:14 -0400
+Received: from [192.168.10.21] ([83.64.176.131]) by mrelayeu.kundenserver.de
+ (mreue104) with ESMTPSA (Nemesis) id 0LsywU-1ZLKrd3gUM-012YLU for
+ <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 10:27:11 +0200
+Message-ID: <5556FF5F.1050907@floga.de>
+Date: Sat, 16 May 2015 10:27:11 +0200
+From: =?windows-1252?Q?Florian_Gamb=F6ck?= <ml@floga.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
+References: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com> <20150515204340.GA20386@mew.dhcp4.washington.edu>
+In-Reply-To: <20150515204340.GA20386@mew.dhcp4.washington.edu>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 15, 2015 at 09:28:29PM +0100, Dimitri John Ledkov wrote:
-> Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=784911
-> Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-> ---
->  fsck.btrfs | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fsck.btrfs b/fsck.btrfs
-> index f056a7f..3a92804 100755
-> --- a/fsck.btrfs
-> +++ b/fsck.btrfs
-> @@ -31,7 +31,7 @@ if [ ! -e $DEV ]; then
->  	echo "$0: $DEV does not exist"
->  	exit 8
->  fi
-> -if [ "$AUTO" == "false" ]; then
-> +if [ "false" = "$AUTO" ]; then
->  	echo "If you wish to check the consistency of a BTRFS filesystem or"
->  	echo "repair a damaged filesystem, see btrfs(8) subcommand 'check'."
->  fi
+Am 15.05.2015 um 22:43 schrieb Omar Sandoval:
+> I'm going to completely bikeshed here, but Yoda conditions are already
+> ugly in C, and completely pointless in Bash, where you can't ever
+> accidentally reassign a variable in a condition. Either way, I think:
+>
+> if [ ! $AUTO ]; then
+>
+> would be clearer anyways.
 
-I'm going to completely bikeshed here, but Yoda conditions are already
-ugly in C, and completely pointless in Bash, where you can't ever
-accidentally reassign a variable in a condition. Either way, I think:
+Ah, I'm sorry to disagree with you, but your code snippet would only 
+work if $AUTO is *empty*, and I think, to be totally correct you'd have 
+to use the -n or -z test.
 
-if [ ! $AUTO ]; then
+To sum it up now, you'd have to replace "false" with an empty string in 
+the beginning of the file and the zero-test in the end. So something 
+like the following:
 
-would be clearer anyways.
+AUTO=
+# ...
+if [ -z "$AUTO" ]; then
 
-Thanks!
--- 
-Omar
+Regards
+--Flo

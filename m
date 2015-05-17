@@ -1,57 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:35255 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756603AbbE2TN7 (ORCPT
+Received: from [77.88.71.232] ([77.88.71.232]:48348 "EHLO zimbra.karlsbakk.net"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750994AbbEQTdh convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 May 2015 15:13:59 -0400
-Received: by lbbuc2 with SMTP id uc2so54549537lbb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2015 12:13:58 -0700 (PDT)
+	Sun, 17 May 2015 15:33:37 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by zimbra.karlsbakk.net (Postfix) with ESMTP id 1C95B4EECC
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 21:33:34 +0200 (CEST)
+Received: from zimbra.karlsbakk.net ([127.0.0.1])
+	by localhost (zimbra.karlsbakk.net [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id wvTVpe6efB8z for <linux-btrfs@vger.kernel.org>;
+	Sun, 17 May 2015 21:33:31 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+	by zimbra.karlsbakk.net (Postfix) with ESMTP id A0B174EF5F
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 21:33:31 +0200 (CEST)
+Received: from zimbra.karlsbakk.net ([127.0.0.1])
+	by localhost (zimbra.karlsbakk.net [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id nzAWPzH6LYuu for <linux-btrfs@vger.kernel.org>;
+	Sun, 17 May 2015 21:33:31 +0200 (CEST)
+Received: from zimbra.karlsbakk.net (zimbra.karlsbakk.net [77.88.71.232])
+	by zimbra.karlsbakk.net (Postfix) with ESMTP id EB2414EED8
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 21:33:28 +0200 (CEST)
+Date: Sun, 17 May 2015 21:33:27 +0200 (CEST)
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
+Subject: Btrfs and integration with GNU ++
 MIME-Version: 1.0
-In-Reply-To: <CANXojcyqXUNhWLa4ybGyhXceqLdb3DdvM-TvEtwf-KOM6YOsUQ@mail.gmail.com>
-References: <CANXojcyqXUNhWLa4ybGyhXceqLdb3DdvM-TvEtwf-KOM6YOsUQ@mail.gmail.com>
-Date: Fri, 29 May 2015 21:13:58 +0200
-Message-ID: <CAC+fKQXdKjh3ckEvrcxiEMWvA0xN3v+Gx_T2DeJoCL4pEFbasg@mail.gmail.com>
-Subject: Re: Plans for a library for btrfs?
-From: Juan Orti Alcaine <j.orti.alcaine@gmail.com>
-To: Stef Bon <stefbon@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm not a developer, but I read this a days ago. Could it be helpful?
+Hi all
 
-https://blog-vpodzime.rhcloud.com/?p=61
-https://github.com/rhinstaller/libblockdev
+First of all, thanks for the good work. I first started looking into btrfs some six years back, and things are a lot better now. I just wonder about a few things…
 
+For btrfs to be accepted as a primary filesystem in major distros, I'd think it should integrate with existing tools. Currently, df seems to show good data, while du doesn't. I've been working with ZFS for some time, and there du will show data on disk and du --apparent-size will show how much apparently is on disk according to file sizes. I beleive this only acconuts for compression (not dedup, which I don't use), but still it's neat. Also, lsblk works well with md, showing which md device each device belongs to, while in btrfs land, it only shows the device from /proc/mounts that appear to be mounted. Again, mount should IMHO show btrfs information and not just the some device in the btrfs filesystem.
 
-2015-05-27 14:31 GMT+02:00 Stef Bon <stefbon@gmail.com>:
-> Hi,
->
-> I'm working on a program (using sqlite, FUSE and btrfs) to provide
-> backup and version managment
-> for users. They can enable the backup service for folders they own,
-> and select files they want to backup using mimetypes.
->
-> This program, which I've called fuse-backup, creates backup subvolumes
-> and snapshots by calling an extrenal script, which does something
-> like:
->
-> btrfs subvolume snapshot -r %PathToBackup%/ %PathToSnapshot%
->
-> This works perfect, but are there any plans to do this with a library?
->
-> Stef Bon
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Lastly - I just did a small test on a 6 drive RAID-6, turned on compression and started cat /proc/zero > testfile - let this run until the filesize was 500GB and stopped it. Made some other test files and a copy of these with --reflink=auto just for kicks. rm test* and waited. While waiting, did a 'echo b > /proc/sysrq-trigger' and fsck started on bootup and took a minute or so to complete. Since the filesystem is rather small (6x8GB VDEVs on top of ZFS with SSD caching, kvm as hypervisor), I wonder how long this fsck job would take if it were on a system with, say, 6 4TB drives. RHEL/CentOS7 just moved to XFS to allow for system crashes without this hour-long fsck job, and I somewhat doubt that btrfs will be the chosen one if it requires the same amount of time as of ext4.
 
+Vennlig hilsen / Best regards
 
-
--- 
-Juan Orti
-https://miceliux.com
-
-GPG key: https://miceliux.com/pub/pubkey.asc
-GPG fingerprint: 61F0 8272 6882 BCA6 3A35  88F6 B630 4B72 DEEB D08B
+roy
+--
+Roy Sigurd Karlsbakk
+(+47) 98013356
+http://blogg.karlsbakk.net/
+GPG Public key: http://karlsbakk.net/roysigurdkarlsbakk.pubkey.txt
+--
+I all pedagogikk er det essensielt at pensum presenteres intelligibelt. Det er et elementært imperativ for alle pedagoger å unngå eksessiv anvendelse av idiomer med xenotyp etymologi. I de fleste tilfeller eksisterer adekvate og relevante synonymer på norsk.

@@ -1,94 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50872 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751101AbbEPUlE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 May 2015 16:41:04 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YtitK-0008Ma-MQ
-	for linux-btrfs@vger.kernel.org; Sat, 16 May 2015 22:41:02 +0200
-Received: from 78-22-129-174.access.telenet.be ([78.22.129.174])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 22:41:02 +0200
-Received: from fhimpe by 78-22-129-174.access.telenet.be with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 22:41:02 +0200
+Received: from mail-wg0-f66.google.com ([74.125.82.66]:33201 "EHLO
+	mail-wg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750709AbbEQBxX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 16 May 2015 21:53:23 -0400
+Received: by wggy19 with SMTP id y19so12253246wgg.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 18:53:22 -0700 (PDT)
+Received: from [10.0.2.15] (p4FCB5052.dip0.t-ipconnect.de. [79.203.80.82])
+        by mx.google.com with ESMTPSA id g8sm9768333wjn.18.2015.05.16.18.53.20
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 16 May 2015 18:53:21 -0700 (PDT)
+From: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Message-ID: <5557F490.5000606@googlemail.com>
+Date: Sun, 17 May 2015 03:53:20 +0200
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Frederik Himpe <fhimpe@vub.ac.be>
-Subject: Re: BTRFS: Transaction aborted (error -5) on 3.19.7
-Date: Sat, 16 May 2015 20:40:54 +0000 (UTC)
-Message-ID: <mj8a0m$ljk$1@ger.gmane.org>
-References: <mj4e3g$so9$1@ger.gmane.org> <55561E86.8090006@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Got 10 csum errors according to dmesg but 0 errors according to dev
+ stats
+References: <554F6D43.2060806@googlemail.com> <554F7232.9080804@googlemail.com>
+In-Reply-To: <554F7232.9080804@googlemail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 16 May 2015 00:27:50 +0800, Anand Jain wrote:
+I deleted and restored the corrupted files again. One of those files 
+(not a new one) got corrupted again.
 
-> What kind of disk group profile we have in here ?
-> Underlaying disk should be fixed.
+I think I forgot to mention that this btrfs filesystem was converted 
+from ext4 (not initially created as btrfs).
+Could this cause this corruption?
 
-This is just a BTRFS file system on an LVM logical volume located on
-SSD /dev/sda. dmesg does not contain any error related to /dev/sda.
+Also, does this df output look weird to anyone, shouldn't metadata be 
+duplicated?
+# btrfs fi df /
+Data, single: total=21.00GiB, used=20.82GiB
+System, single: total=32.00MiB, used=4.00KiB
+Metadata, single: total=1.25GiB, used=901.21MiB
+GlobalReserve, single: total=304.00MiB, used=0.00B
 
-A read-only badblocks did not reveal any problem with /dev/sda, neither
-did smartctl
 
+Philip
 
-> On 05/15/2015 05:26 PM, Frederik Himpe wrote:
->> On my system with Linux 3.19.7, my /home btrfs file system was suddenly
->> mounted read-only, and I found underneath errors in the kernel log.
+On 05/10/2015 04:58 PM, Philip Seeger wrote:
+> Forgot to mention kernel version: Linux 4.0.1-1-ARCH
+>
+> $ sudo btrfs fi show
+> Label: none  uuid: 3e8973d3-83ce-4d93-8d50-2989c0be256a
+>     Total devices 1 FS bytes used 19.87GiB
+>     devid    1 size 45.00GiB used 21.03GiB path /dev/sda1
+>
+> btrfs-progs v3.19.1
+>
+>
+>
+> On 05/10/2015 04:37 PM, Philip Seeger wrote:
+>> I have installed a new virtual machine (VirtualBox) with Arch on btrfs
+>> (just a root fs and swap partition, no other partitions).
+>> I suddenly noticed 10 checksum errors in the kernel log:
+>> $ dmesg | grep csum
+>> [  736.283506] BTRFS warning (device sda1): csum failed ino 1704363 off
+>> 761856 csum 1145980813 expected csum 2566472073
+>> [  736.283605] BTRFS warning (device sda1): csum failed ino 1704363 off
+>> 1146880 csum 1961240434 expected csum 2566472073
+>> [  745.583064] BTRFS warning (device sda1): csum failed ino 1704346 off
+>> 393216 csum 4035064017 expected csum 2566472073
+>> [  752.324899] BTRFS warning (device sda1): csum failed ino 1705927 off
+>> 2125824 csum 3638986839 expected csum 2566472073
+>> [  752.333115] BTRFS warning (device sda1): csum failed ino 1705927 off
+>> 2588672 csum 176788087 expected csum 2566472073
+>> [  752.333303] BTRFS warning (device sda1): csum failed ino 1705927 off
+>> 3276800 csum 1891435134 expected csum 2566472073
+>> [  752.333397] BTRFS warning (device sda1): csum failed ino 1705927 off
+>> 3964928 csum 3304112727 expected csum 2566472073
+>> [ 2761.889460] BTRFS warning (device sda1): csum failed ino 1705927 off
+>> 2125824 csum 3638986839 expected csum 2566472073
+>> [ 9054.226022] BTRFS warning (device sda1): csum failed ino 1704363 off
+>> 761856 csum 1145980813 expected csum 2566472073
+>> [ 9054.226106] BTRFS warning (device sda1): csum failed ino 1704363 off
+>> 1146880 csum 1961240434 expected csum 2566472073
 >>
->> Is this a known problem with a fix available?
+>> This is a new vm, it hasn't crashed (which might have caused filesystem
+>> corruption). The virtual disk is on a RAID storage on the host, which is
+>> healthy. All corrupted files are Firefox data files:
+>> $ dmesg | grep csum | grep -Eo 'csum failed ino [0-9]* ' | awk '{print
+>> $4}' | xargs -I{} find -inum {}
+>> ./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/webappsstore.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/places.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/places.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/places.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/places.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/places.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/cookies.sqlite
+>> ./.mozilla/firefox/nfh217zw.default/cookies.sqlite
 >>
->> Should I run something like btrfs check --repair?
+>> How could this possibly happen?
 >>
->> I'm using snapper on this file system to regularly make snapshots.
+>> And more importantly: Why doesn't the btrfs stat(u)s output tell me that
+>> errors have occurred?
+>> $ sudo btrfs dev stats /
+>> [/dev/sda1].write_io_errs   0
+>> [/dev/sda1].read_io_errs    0
+>> [/dev/sda1].flush_io_errs   0
+>> [/dev/sda1].corruption_errs 0
+>> [/dev/sda1].generation_errs 0
 >>
->> [  431.785656] BTRFS (device dm-2): parent transid verify failed on 32628736 wanted 80487 found 342631
->> [  431.785905] BTRFS (device dm-2): parent transid verify failed on 32628736 wanted 80487 found 342631
->> [  431.785927] ------------[ cut here ]------------
->> [  431.785967] WARNING: CPU: 3 PID: 1837 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120 [btrfs]()
->> [  431.785970] BTRFS: Transaction aborted (error -5)
->> [  431.785972] Modules linked in: ebtable_filter ebtables iptable_filter ip_tables binfmt_misc cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative nf_log_ipv6 nf_log_common xt_recent ip6table_nat nf_nat_ipv6 nf_nat xt_comment ip6t_REJECT nf_reject_ipv6 xt_addrtype xt_mark ip6table_mangle nf_conntrack_snmp xt_tcpudp xt_CT ip6table_raw xt_multiport nf_conntrack_ipv6 nf_defrag_ipv6 xt_conntrack xt_NFLOG nfnetlink_log xt_LOG nf_conntrack_tftp nf_conntrack_sip nf_conntrack_sane nf_conntrack_proto_udplite nf_conntrack_proto_sctp nf_conntrack_pptp nf_conntrack_proto_gre nf_conntrack_netlink nfnetlink nf_conntrack_netbios_ns nf_conntrack_broadcast nf_conntrack_irc nf_conntrack_h323 nf_conntrack_ftp ts_kmp nf_conntrack_amanda nf_conntrack nfsd auth_rpcgss oid_registry nfs_acl n
->  fs lockd grace
->> [  431.786169]  fscache sunrpc ip6table_filter ip6_tables x_tables rc_pinnacle_pctv_hd em28xx_rc tda18271 cxd2820r em28xx_dvb dvb_core em28xx tveeprom v4l2_common videodev media nct6775 hwmon_vid uas usb_storage joydev hid_generic hid_logitech_hidpp hid_logitech_dj usbhid hid ext4 crc16 mbcache jbd2 x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul amdkfd iTCO_wdt ghash_clmulni_intel iTCO_vendor_support evdev aesni_intel radeon aes_x86_64 lrw gf128mul glue_helper ttm ablk_helper cryptd drm_kms_helper pcspkr psmouse serio_raw sr_mod cdrom snd_hda_codec_realtek snd_hda_codec_generic sg snd_hda_codec_hdmi battery drm 8250_fintek i2c_algo_bit nuvoton_cir tpm_tis rc_core intel_smartconnect tpm video button snd_hda_intel snd_hda_controller snd_hda_codec
->   i2c_i801 snd_hwdep
->> [  431.786652]  lpc_ich snd_pcm snd_timer snd soundcore mei_me xhci_pci ie31200_edac ehci_pci processor mei mfd_core xhci_hcd ehci_hcd i2c_core edac_core usbcore usb_common thermal_sys netconsole configfs r8169 mii fuse autofs4 btrfs xor raid6_pq dm_mod sd_mod crc32c_intel ahci libahci libata scsi_mod shpchp
->> [  431.786956] CPU: 3 PID: 1837 Comm: btrfs-cleaner Not tainted 3.19.7-desktop #7
->> [  431.786959] Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./H77 Pro4/MVP, BIOS P1.70 08/07/2013
->> [  431.786963]  0000000000000000 ffffffffa01ace32 ffffffff81562073 ffff8800c4c5fa78
->> [  431.786970]  ffffffff8106cee1 ffff8804154acbb0 00000000fffffffb ffff8804161f7000
->> [  431.786977]  ffffffffa01ab5f0 0000000000001766 ffffffff8106cf5a ffffffffa01af9d8
->> [  431.787087] Call Trace:
->> [  431.787101]  [<ffffffff81562073>] ? dump_stack+0x40/0x50
->> [  431.787108]  [<ffffffff8106cee1>] ? warn_slowpath_common+0x81/0xb0
->> [  431.787115]  [<ffffffff8106cf5a>] ? warn_slowpath_fmt+0x4a/0x50
->> [  431.787135]  [<ffffffffa0100a2b>] ? __btrfs_abort_transaction+0x4b/0x120 [btrfs]
->> [  431.787149]  [<ffffffffa011380f>] ? __btrfs_free_extent+0x30f/0xc60 [btrfs]
->> [  431.787166]  [<ffffffffa0176bad>] ? find_ref_head+0x5d/0x80 [btrfs]
->> [  431.787182]  [<ffffffffa0118d6b>] ? __btrfs_run_delayed_refs+0x42b/0x1250 [btrfs]
->> [  431.787196]  [<ffffffffa011a08d>] ? btrfs_free_tree_block+0x10d/0x250 [btrfs]
->> [  431.787212]  [<ffffffffa011ddfd>] ? btrfs_run_delayed_refs.part.66+0x6d/0x270 [btrfs]
->> [  431.787226]  [<ffffffffa011a7c0>] ? walk_up_tree+0xd0/0x1f0 [btrfs]
->> [  431.787241]  [<ffffffffa012e071>] ? btrfs_should_end_transaction+0x41/0x80 [btrfs]
->> [  431.787258]  [<ffffffffa011c49c>] ? btrfs_drop_snapshot+0x46c/0x880 [btrfs]
->> [  431.787274]  [<ffffffffa0183518>] ? btrfs_kill_all_delayed_nodes+0xd8/0xf0 [btrfs]
->> [  431.787288]  [<ffffffffa011f1e8>] ? btrfs_delete_unused_bgs+0x58/0x270 [btrfs]
->> [  431.787305]  [<ffffffffa012e570>] ? btrfs_clean_one_deleted_snapshot+0xb0/0x100 [btrfs]
->> [  431.787320]  [<ffffffffa0126c0c>] ? cleaner_kthread+0x15c/0x1b0 [btrfs]
->> [  431.787335]  [<ffffffffa0126ab0>] ? check_leaf+0x360/0x360 [btrfs]
->> [  431.787342]  [<ffffffff8108af83>] ? kthread+0xd3/0xf0
->> [  431.787349]  [<ffffffff8101d3b5>] ? sched_clock+0x5/0x10
->> [  431.787354]  [<ffffffff8108aeb0>] ? kthread_create_on_node+0x180/0x180
->> [  431.787360]  [<ffffffff81568518>] ? ret_from_fork+0x58/0x90
->> [  431.787365]  [<ffffffff8108aeb0>] ? kthread_create_on_node+0x180/0x180
->> [  431.787370] ---[ end trace 21d173b18a39a524 ]---
->> [  431.787376] BTRFS: error (device dm-2) in __btrfs_free_extent:5990: errno=-5 IO failure
->> [  431.787381] BTRFS info (device dm-2): forced readonly
->> [  431.787387] BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2792: errno=-5 IO failure
+>> If the filesystem health was monitored using btrfs dev stats (cronjob)
+>> (like checking a zpool using zpool status), the admin would not have
+>> been notified:
+>> $ sudo btrfs dev stats / | grep -v 0 -c
+>> 0
 >>
-
+>> Is my understanding of the stats command wrong, does "corruption_errs"
+>> not mean corruption errors?
+>>
+>>
+>>
+>
 

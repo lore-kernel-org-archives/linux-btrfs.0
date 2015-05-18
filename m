@@ -1,83 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:34439 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752398AbbEQIqo (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:32783 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752704AbbERJQm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 May 2015 04:46:44 -0400
-Received: by pabru16 with SMTP id ru16so101378723pab.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 01:46:44 -0700 (PDT)
-Date: Sun, 17 May 2015 01:46:42 -0700
+	Mon, 18 May 2015 05:16:42 -0400
+Received: by padbw4 with SMTP id bw4so144022173pad.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2015 02:16:42 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: btrfs balance 4.0 regression?
-Message-ID: <20150517084642.GA14149@mew>
-References: <CA+5PVA5HhK07LHXcPxDV=JztgdRRa+2LsK7RJXDZ-Y+esAqX1g@mail.gmail.com>
- <pan$f2ed7$f0336ef0$1026d216$35cc450c@cox.net>
- <20150515003329.GA17120@mew>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150515003329.GA17120@mew>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v3 0/6] Btrfs: show subvolume name and ID in /proc/mounts
+Date: Mon, 18 May 2015 02:16:25 -0700
+Message-Id: <cover.1431939732.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 14, 2015 at 05:33:29PM -0700, Omar Sandoval wrote:
-> On Fri, May 15, 2015 at 12:15:06AM +0000, Duncan wrote:
-> > Josh Boyer posted on Thu, 14 May 2015 08:43:25 -0400 as excerpted:
-> > 
-> > > Hi Omar and Chris,
-> > > 
-> > > We have a bug reported [1] against 4.0 saying that btrfs balance is
-> > > broken.  The reporter found a revert patch that Omar sent [2] to revert
-> > > commit 2f0810880.  Looking in Linus' latest tree, I don't see that
-> > > revert and I don't immediately see a patch to fix the issue Omar
-> > > reported either.
-> > > 
-> > > Do either of you know if this is still an issue?  If not, which commit
-> > > was it fixed by?
-> > > 
-> > > josh
-> > > 
-> > > [1] https://bugzilla.redhat.com/show_bug.cgi?id=1217191
-> > > [2] https://patchwork.kernel.org/patch/6238111/
-> > 
-> > Still an issue, officially as of dev comments a day or two ago, at least.
-> 
-> Yup, Chris says he has a proper fix but it hasn't hit the list yet.
-> 
-> > From various comments including from Chris Mason directly, the devs are 
-> > aware of it, but (from a non-dev list-regular perspective) there's a 
-> > seeming reluctance to simply apply the revert patch.  Not being a dev I 
-> > can't explain why tho I can speculate that the patch is logically correct 
-> > and simply triggers this other bug.  But further patches have yet to 
-> > appear.
-> > 
-> > Part of the problem may be a bit of confusion as some of the devs 
-> > evidently thought the revert patch fixed the problem and hadn't been 
-> > worrying about it until others pointed out the revert hadn't been applied 
-> > and the problem thus remained.
-> > 
-> > So as of now, the choice appears to be broken balance-convert with the 
-> > current code, or broken ext*-convert with that patch reverted.  Both 
-> > cases aren't entirely common, so I guess it's up to you which you want to 
-> > break ATM.
-> 
-> Actually, ext4 convert is broken anyways (with irrelevant output
-> elided):
+Now that we've reached an agreement, I've rebased this series on top of
+v4.1-rc3 (there were some minor conflicts with the ->d_inode to
+d_inode() conversion merged in v4.1-rc1, no other code changes).
 
-(I realize that I was being a bit too alarmist here. Reposting a message
-from another thread clarifying.)
+This change makes things just a little bit friendlier for users and also
+cleans up the mount path. David mentioned that he's also using this
+patchset as a base for per-subvolume mount flag support. He's reviewed
+all of the patches in this series. Please consider for 4.2!
 
-"""
-Just to clarify, reverting 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e does
-not break ext4 conversion. If you revert it, you can btrfs-convert, do a
-btrfs balance to finalize the conversion, then do another btrfs balance
--dconvert=... -mconvert=... to convert the profile. I should have been
-clearer in that other thread: conversion from ext4 to Btrfs works, its
-just that the commit that caused the regression did not actually
-accomplish what it set out to do: allow converting the data/metadata
-profile of a freshly btrfs-converted ext4 filesystem.
-"""
+v2: https://lkml.org/lkml/2015/4/9/906
+v1: https://lkml.org/lkml/2015/4/8/16
 
+Omar Sandoval (6):
+  Btrfs: lock superblock before remounting for rw subvol
+  Btrfs: remove all subvol options before mounting top-level
+  Btrfs: clean up error handling in mount_subvol()
+  Btrfs: fail on mismatched subvol and subvolid mount options
+  Btrfs: unify subvol= and subvolid= mounting
+  Btrfs: show subvol= and subvolid= in /proc/mounts
+
+ fs/btrfs/super.c | 386 ++++++++++++++++++++++++++++++++++++-------------------
+ fs/seq_file.c    |   1 +
+ 2 files changed, 252 insertions(+), 135 deletions(-)
 
 -- 
-Omar
+2.4.1
+

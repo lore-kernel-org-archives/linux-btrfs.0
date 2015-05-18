@@ -1,64 +1,919 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailsrv.ikr.uni-stuttgart.de ([129.69.170.2]:38496 "EHLO
-	mailsrv.ikr.uni-stuttgart.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750712AbbEQPcz (ORCPT
+Received: from mailgateway3.uni-freiburg.de ([132.230.2.213]:38484 "EHLO
+	mailgateway3.uni-freiburg.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753774AbbERJ1l (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 May 2015 11:32:55 -0400
-Received: from netsrv1.ikr.uni-stuttgart.de (netsrv1-c [10.11.12.12])
-	by mailsrv.ikr.uni-stuttgart.de (Postfix) with ESMTP id 9AE1060141
-	for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 17:23:52 +0200 (CEST)
-Received: from vpn-2-cl144 (vpn-2-cl144 [10.41.21.144])
-	by netsrv1.ikr.uni-stuttgart.de (Postfix) with ESMTP id 871A76013B
-	for <linux-btrfs@vger.kernel.org>; Sun, 17 May 2015 17:23:52 +0200 (CEST)
-From: Ulrich Gemkow <ulrich.gemkow@ikr.uni-stuttgart.de>
+	Mon, 18 May 2015 05:27:41 -0400
+Received: from msb.uni-freiburg.de ([132.230.2.2] helo=uni-freiburg.de) port 58946
+	by mailgateway3.uni-freiburg.de with esmtp
+	(Exim 4.84 #2 built 13-Nov-2014 08:50:24 running on Gentoo)
+	id 1YuH1s-00084n-Up
+	for linux-btrfs@vger.kernel.org; Mon, 18 May 2015 11:08:09 +0200
+Received: from [132.230.80.54] (account wolfgang.mader@fdm.uni-freiburg.de HELO discus.localnet)
+  by fdm.uni-freiburg.de (CommuniGate Pro SMTP 6.1.2)
+  with ESMTPSA id 258593982 for linux-btrfs@vger.kernel.org; Mon, 18 May 2015 11:08:08 +0200
+From: Wolfgang Mader <Wolfgang.Mader@fdm.uni-freiburg.de>
 To: linux-btrfs@vger.kernel.org
-Subject: NFSv3-mounting of BTRFS-FS fails, gives ESTALE
-Date: Sun, 17 May 2015 17:23:45 +0200
+Subject: Re: Kernel oops: 17 on PREEMPT ARM when scrubbing
+Date: Mon, 18 May 2015 11:08:04 +0200
+Message-ID: <1836565.Anox2V7X2S@discus>
+In-Reply-To: <5446053.ssUlp5hNAW@fuckup>
+References: <5446053.ssUlp5hNAW@fuckup>
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201505171723.47140.ulrich.gemkow@ikr.uni-stuttgart.de>
+Content-Type: multipart/signed; boundary="nextPart2067036.C0uKcba7JG"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+--nextPart2067036.C0uKcba7JG
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-we export a BTRFS-filesystem via NFSv3 and tried to mount
-this share on a client (also NFSv3). The mount program on the
-client hangs and the mount fails.
+Dear list,
 
-Server and client use vanilla Linux kernel 4.0.3, the distro
-is Ubuntu 14.04.02, btrfs-progs are version 4.0.
+I switched servers and the error disappeared. The file system is all right. 
+So, the cause for the error seem to be on the server side. Maybe the poor arm 
+machine with only 512MB of RAM was not able to handle the scrub of the 3TB 
+pool.
 
-Exporting of other filesystems (ext4) and mounting them in
-the exactly same setup works, so this seems to be BTRFS-related.
+By the way. Since the last two years I server my files in my home network 
+using low-power arm devices, but by now I am a little frustrated to depend on 
+the manufacturer when it comes to u-boot updates. What are you guys using for 
+your home network as server hardware?
 
-strace-ing the mount-call on the client shows that the mount
-syscall returns ESTALE errors and mount enters a loop which
-leads to the hang of the mount-program in user land.
+Thanks for your comments.
 
-I applied the patch of Neil Brown (which should help with
-NFS v2) in [1]. The behaviour without and with this patch
-is the same.
+On Saturday 16 May 2015 22:33:21 you wrote:
+> Hi list,
+> 
+> (I do have a backup)
+> 
+> I am running
+> 
+> - Linux deck 4.0.3-1-ARCH #1 PREEMPT Thu May 14 01:08:37 MDT 2015 armv5tel
+> - btrfs-progs v4.0
+> 
+> I want to scrub the following file system
+> 
+> btrfs filesystem df /pools/dataPool
+> Data, RAID10: total=666.00GiB, used=663.88GiB
+> System, RAID10: total=64.00MiB, used=80.00KiB
+> Metadata, RAID10: total=2.00GiB, used=1.11GiB
+> GlobalReserve, single: total=380.00MiB, used=68.00KiB
+> 
+> btrfs filesystem show /pools/dataPool
+> Label: 'dataPool'  uuid: b5f082e2-2ce0-4f91-b54b-c2d26185a635
+>         Total devices 4 FS bytes used 665.00GiB
+>         devid    2 size 931.51GiB used 334.03GiB path /dev/sdb
+>         devid    4 size 931.51GiB used 334.03GiB path /dev/sde
+>         devid    5 size 931.51GiB used 334.03GiB path /dev/sdf
+>         devid    6 size 2.73TiB used 334.03GiB path /dev/sdc
+> 
+> btrfs device stats /pools/dataPool
+> [/dev/sdb].write_io_errs   0
+> [/dev/sdb].read_io_errs    0
+> [/dev/sdb].flush_io_errs   0
+> [/dev/sdb].corruption_errs 0
+> [/dev/sdb].generation_errs 0
+> [/dev/sde].write_io_errs   0
+> [/dev/sde].read_io_errs    0
+> [/dev/sde].flush_io_errs   0
+> [/dev/sde].corruption_errs 0
+> [/dev/sde].generation_errs 0
+> [/dev/sdf].write_io_errs   0
+> [/dev/sdf].read_io_errs    0
+> [/dev/sdf].flush_io_errs   0
+> [/dev/sdf].corruption_errs 0
+> [/dev/sdf].generation_errs 0
+> [/dev/sdc].write_io_errs   0
+> [/dev/sdc].read_io_errs    0
+> [/dev/sdc].flush_io_errs   0
+> [/dev/sdc].corruption_errs 0
+> [/dev/sdc].generation_errs 0
+> 
+> and get lots of what is shown in the next paragraph. What might be the
+> reason? Could it be a hardware error on my server? Is this at all connected
+> to btrfs?
+> 
+> Thank you very much.
+> 
+> 
+> 
+> [  285.029007] Internal error: Oops: 17 [#13] PREEMPT ARM
+> [  285.034119] Modules linked in: btrfs raid456 async_raid6_recov
+> async_memcpy async_pq async_xor async_tx xor md_mod ath9k ath9k_common
+> ath9k_hw raid6_pq ath mac80211 m25p80 spi_nor cfg80211 rfkill mv_cesa nfs
+> lockd grace sunrpc ipv6
+> [  285.054746] CPU: 0 PID: 6 Comm: kworker/u2:0 Tainted: G      D
+> 4.0.3-1-ARCH #1
+> [  285.062623] Hardware name: BUBBA3 Kirkwood based miniserver
+> [  285.068170] task: df4a1b80 ti: df4bc000 task.ti: df4bc000
+> [  285.073547] PC is at kthread_data+0x4/0xc
+> [  285.077540] LR is at wq_worker_sleeping+0xc/0xbc
+> [  285.082135] pc : [<c0036ba0>]    lr : [<c0032c58>]    psr: 20000093
+> [  285.082135] sp : df4bc510  ip : df4a1bc4  fp : df4bc54c
+> [  285.093554] r10: df4a1b80  r9 : 00000017  r8 : df4a1efc
+> [  285.098747] r7 : 00000000  r6 : c07b3818  r5 : 00000000  r4 : 00000000
+> [  285.105236] r3 : 00000000  r2 : fffffffb  r1 : 00000000  r0 : df4a1b80
+> [  285.111725] Flags: nzCv  IRQs off  FIQs on  Mode SVC_32  ISA ARM  Segment
+> user
+> [  285.118914] Control: 0005397f  Table: 1d900000  DAC: 00000015
+> [  285.124633] Process kworker/u2:0 (pid: 6, stack limit = 0xdf4bc190)
+> [  285.130871] Stack: (0xdf4bc510 to 0xdf4be000)
+> [  285.135211] c500:                                     00000020 df4a1b80
+> 00000000 c0576390
+> [  285.143353] c520: 00000017 df4a1b80 df4bc734 c0053b30 df4bc000 df4bc6b0
+> 0000000b 60000093
+> [  285.151491] c540: c07a6500 00000017 df4bc55c c05765b8 df4a1b80 df4a1b80
+> df4bc734 c001e868
+> [  285.159630] c560: c0695858 df4bc584 df4bc734 c07b4318 df4bc6b0 c07f3084
+> df4bc6b0 0000000b
+> [  285.167768] c580: 60000093 c07a6500 00000017 df4a1b80 df4bc734 c000c7c8
+> df4bc190 0000000b
+> [  285.175908] c5a0: fffffff0 00000017 df4bc6b0 00000000 df4a1b80 00000017
+> df4a1b80 c0571fd4
+> [  285.184047] c5c0: fffffff0 c057a42c 0000000a c03619ac c08993a8 c03619c0
+> c07f55f8 c07f55f8
+> [  285.192186] c5e0: c03619ac c035d1e0 c03619ac c07a688c 00000017 c057a198
+> fffffff0 df4bc6b0
+> [  285.200324] c600: 00000017 df4a1b80 df4bc734 c00084bc c07f55bc 00000001
+> 0000002c c0833998
+> [  285.208464] c620: c08339a8 c03038a8 c07f55bc df4bc638 00000000 0000002c
+> c07f55bc 00000001
+> [  285.216602] c640: 0000002c c07f55cb 0000000f c07db41c c07f50c0 0000003c
+> c0833998 c0874ec0
+> [  285.224741] c660: c07b4330 20000093 00000b0c c004c114 00000b0d 00000000
+> 00000b0c c0053220
+> [  285.232880] c680: 00000400 c0051598 00000000 20000093 00000000 00000001
+> c0036ba0 20000093
+> [  285.241019] c6a0: ffffffff df4bc6e4 df4a1efc c0579b78 df4a1b80 00000000
+> fffffffc 00000000
+> [  285.249157] c6c0: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bc734
+> [  285.257297] c6e0: df4a1bc4 df4bc6f8 c0032c58 c0036ba0 20000093 ffffffff
+> 00000020 df4a1b80
+> [  285.265436] c700: 00000000 c0576390 00000017 df4a1b80 df4bc91c c0053b30
+> df4bc000 df4bc898
+> [  285.273574] c720: 0000000b 60000093 c07a6500 00000017 df4bc744 c05765b8
+> df4a1b80 df4a1b80
+> [  285.281713] c740: df4bc91c c001e868 c0695858 df4bc76c df4bc91c c07b4318
+> df4bc898 c07f3084
+> [  285.289852] c760: df4bc898 0000000b 60000093 c07a6500 00000017 df4a1b80
+> df4bc91c c000c7c8
+> [  285.297991] c780: df4bc190 0000000b fffffff0 00000017 df4bc898 00000000
+> df4a1b80 00000017
+> [  285.306130] c7a0: df4a1b80 c0571fd4 fffffff0 c057a42c 0000000a c03619ac
+> c08993a8 c03619c0
+> [  285.314269] c7c0: c07f55f8 c07f55f8 c03619ac c035d1e0 c03619ac c07a688c
+> 00000017 c057a198
+> [  285.322407] c7e0: fffffff0 df4bc898 00000017 df4a1b80 df4bc91c c00084bc
+> c07f55bc 00000001
+> [  285.330547] c800: 0000002c c082b7c8 c082b7d8 c03038a8 c07f55bc df4bc820
+> 00000000 0000002c
+> [  285.338685] c820: c07f55bc 00000001 0000002c c07f55cb 0000000f c07db41c
+> c07f50c0 0000003c
+> [  285.346825] c840: c082b7c8 c0874ec0 c07b4330 20000093 000009a3 c004c114
+> 000009a4 00000000
+> [  285.354963] c860: 000009a3 c0053220 00000400 c0051598 00000000 20000093
+> 00000000 00000001
+> [  285.363102] c880: c0036ba0 20000093 ffffffff df4bc8cc df4a1efc c0579b78
+> df4a1b80 00000000
+> [  285.371240] c8a0: fffffffd 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  285.379380] c8c0: df4a1b80 df4bc91c df4a1bc4 df4bc8e0 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  285.387519] c8e0: 00000020 df4a1b80 00000000 c0576390 00000017 df4a1b80
+> df4bcb04 c0053b30
+> [  285.395657] c900: df4bc000 df4bca80 0000000b 60000093 c07a6500 00000017
+> df4bc92c c05765b8
+> [  285.403797] c920: df4a1b80 df4a1b80 df4bcb04 c001e868 c0695858 df4bc954
+> df4bcb04 c07b4318
+> [  285.411936] c940: df4bca80 c07f3084 df4bca80 0000000b 60000093 c07a6500
+> 00000017 df4a1b80
+> [  285.420074] c960: df4bcb04 c000c7c8 df4bc190 0000000b fffffff0 00000017
+> df4bca80 00000000
+> [  285.428213] c980: df4a1b80 00000017 df4a1b80 c0571fd4 fffffff0 c057a42c
+> 0000000a c03619ac
+> [  285.436353] c9a0: c08993a8 c03619c0 c07f55f8 c07f55f8 c03619ac c035d1e0
+> c03619ac c07a688c
+> [  285.444491] c9c0: 00000017 c057a198 fffffff0 df4bca80 00000017 df4a1b80
+> df4bcb04 c00084bc
+> [  285.452630] c9e0: c07f55bc 00000001 0000002c c0824040 c0824050 c03038a8
+> c07f55bc df4bca08
+> [  285.460768] ca00: 00000000 0000002c c07f55bc 00000001 0000002c c07f55cb
+> 0000000f c07db41c
+> [  285.468908] ca20: c07f50c0 0000003c c0824040 c0874ec0 c07b4330 20000093
+> 00000857 c004c114
+> [  285.477046] ca40: 00000858 00000000 00000857 c0053220 00000400 c0051598
+> 00000000 20000093
+> [  285.485185] ca60: 00000000 00000001 c0036ba0 20000093 ffffffff df4bcab4
+> df4a1efc c0579b78
+> [  285.493324] ca80: df4a1b80 00000000 fffffffe 00000000 00000000 00000000
+> c07b3818 00000000
+> [  285.501463] caa0: df4a1efc 00000017 df4a1b80 df4bcb04 df4a1bc4 df4bcac8
+> c0032c58 c0036ba0
+> [  285.509601] cac0: 20000093 ffffffff 00000020 df4a1b80 00000000 c0576390
+> 00000017 df4a1b80
+> [  285.517741] cae0: df4bccec c0053b30 df4bc000 df4bcc68 0000000b 60000093
+> c07a6500 00000017
+> [  285.525880] cb00: df4bcb14 c05765b8 df4a1b80 df4a1b80 df4bccec c001e868
+> c0695858 df4bcb3c
+> [  285.534019] cb20: df4bccec c07b4318 df4bcc68 c07f3084 df4bcc68 0000000b
+> 60000093 c07a6500
+> [  285.542157] cb40: 00000017 df4a1b80 df4bccec c000c7c8 df4bc190 0000000b
+> fffffff0 00000017
+> [  285.550297] cb60: df4bcc68 00000000 df4a1b80 00000017 df4a1b80 c0571fd4
+> fffffff0 c057a42c
+> [  285.558435] cb80: 0000000a c03619ac c08993a8 c03619c0 c07f55f8 c07f55f8
+> c03619ac c035d1e0
+> [  285.566574] cba0: c03619ac c07a688c 00000017 c057a198 fffffff0 df4bcc68
+> 00000017 df4a1b80
+> [  285.574713] cbc0: df4bccec c00084bc c07f55bc 00000001 0000002c c081d318
+> c081d328 c03038a8
+> [  285.582852] cbe0: c07f55bc df4bcbf0 00000000 0000002c c07f55bc 00000001
+> 0000002c c07f55cb
+> [  285.590991] cc00: 0000000f c07db41c c07f50c0 0000003c c081d318 c0874ec0
+> c07b4330 20000093
+> [  285.599129] cc20: 00000728 c004c114 00000729 00000000 00000728 c0053220
+> 00000400 c0051598
+> [  285.607268] cc40: 00000000 20000093 00000000 00000001 c0036ba0 20000093
+> ffffffff df4bcc9c
+> [  285.615407] cc60: df4a1efc c0579b78 df4a1b80 00000000 ffffffff 00000000
+> 00000000 00000000
+> [  285.623546] cc80: c07b3818 00000000 df4a1efc 00000017 df4a1b80 df4bccec
+> df4a1bc4 df4bccb0
+> [  285.631685] cca0: c0032c58 c0036ba0 20000093 ffffffff 00000020 df4a1b80
+> 00000000 c0576390
+> [  285.639824] ccc0: 00000017 df4a1b80 df4bced4 c0053b30 df4bc000 df4bce50
+> 0000000b 60000093
+> [  285.647963] cce0: c07a6500 00000017 df4bccfc c05765b8 df4a1b80 df4a1b80
+> df4bced4 c001e868
+> [  285.656102] cd00: c0695858 df4bcd24 df4bced4 c07b4318 df4bce50 c07f3084
+> df4bce50 0000000b
+> [  285.664240] cd20: 60000093 c07a6500 00000017 df4a1b80 df4bced4 c000c7c8
+> df4bc190 0000000b
+> [  285.672380] cd40: fffffff0 00000017 df4bce50 00000000 df4a1b80 00000017
+> df4a1b80 c0571fd4
+> [  285.680519] cd60: fffffff0 c057a42c 0000000a c03619ac c08993a8 c03619c0
+> c07f55f8 c07f55f8
+> [  285.688658] cd80: c03619ac c035d1e0 c03619ac c07a688c 00000017 c057a198
+> fffffff0 df4bce50
+> [  285.696796] cda0: 00000017 df4a1b80 df4bced4 c00084bc c07f55bc 00000001
+> 0000002c c0817060
+> [  285.704935] cdc0: c0817070 c03038a8 c07f55bc df4bcdd8 00000000 0000002c
+> c07f55bc 00000001
+> [  285.713074] cde0: 0000002c c07f55cb 0000000f c07db41c c07f50c0 0000003c
+> c0817060 c0874ec0
+> [  285.721213] ce00: c07b4330 20000093 00000616 c004c114 00000617 00000000
+> 00000616 c0053220
+> [  285.729351] ce20: 00000400 c0051598 00000000 20000093 00000000 00000001
+> c0036ba0 20000093
+> [  285.737491] ce40: ffffffff df4bce84 df4a1efc c0579b78 df4a1b80 00000000
+> 00000000 00000000
+> [  285.745629] ce60: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bced4
+> [  285.753769] ce80: df4a1bc4 df4bce98 c0032c58 c0036ba0 20000093 ffffffff
+> 00000020 df4a1b80
+> [  285.761907] cea0: 00000000 c0576390 00000017 df4a1b80 df4bd0bc c0053b30
+> df4bc000 df4bd038
+> [  285.770046] cec0: 0000000b 60000093 c07a6500 00000017 df4bcee4 c05765b8
+> df4a1b80 df4a1b80
+> [  285.778185] cee0: df4bd0bc c001e868 c0695858 df4bcf0c df4bd0bc c07b4318
+> df4bd038 c07f3084
+> [  285.786325] cf00: df4bd038 0000000b 60000093 c07a6500 00000017 df4a1b80
+> df4bd0bc c000c7c8
+> [  285.794463] cf20: df4bc190 0000000b fffffff0 00000017 df4bd038 00000000
+> df4a1b80 00000017
+> [  285.802602] cf40: df4a1b80 c0571fd4 fffffff0 c057a42c 0000000a c03619ac
+> c08993a8 c03619c0
+> [  285.810740] cf60: c07f55f8 c07f55f8 c03619ac c035d1e0 c03619ac c07a688c
+> 00000017 c057a198
+> [  285.818879] cf80: fffffff0 df4bd038 00000017 df4a1b80 df4bd0bc c00084bc
+> c07f55bc 00000001
+> [  285.827019] cfa0: 0000002c c0811888 c0811898 c03038a8 c07f55bc df4bcfc0
+> 00000000 0000002c
+> [  285.835157] cfc0: c07f55bc 00000001 0000002c c07f55cb 0000000f c07db41c
+> c07f50c0 0000003c
+> [  285.843295] cfe0: c0811888 c0874ec0 c07b4330 20000093 00000522 c004c114
+> 00000523 00000000
+> [  285.851435] d000: 00000522 c0053220 00000400 c0051598 00000000 20000093
+> 00000000 00000001
+> [  285.859573] d020: c0036ba0 20000093 ffffffff df4bd06c df4a1efc c0579b78
+> df4a1b80 00000000
+> [  285.867712] d040: 00000001 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  285.875851] d060: df4a1b80 df4bd0bc df4a1bc4 df4bd080 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  285.883990] d080: 00000020 df4a1b80 00000000 c0576390 00000017 df4a1b80
+> df4bd2a4 c0053b30
+> [  285.892130] d0a0: df4bc000 df4bd220 0000000b 60000093 c07a6500 00000017
+> df4bd0cc c05765b8
+> [  285.900268] d0c0: df4a1b80 df4a1b80 df4bd2a4 c001e868 c0695858 df4bd0f4
+> df4bd2a4 c07b4318
+> [  285.908407] d0e0: df4bd220 c07f3084 df4bd220 0000000b 60000093 c07a6500
+> 00000017 df4a1b80
+> [  285.916545] d100: df4bd2a4 c000c7c8 df4bc190 0000000b fffffff0 00000017
+> df4bd220 00000000
+> [  285.924685] d120: df4a1b80 00000017 df4a1b80 c0571fd4 fffffff0 c057a42c
+> 0000000a c03619ac
+> [  285.932824] d140: c08993a8 c03619c0 c07f55f8 c07f55f8 c03619ac c035d1e0
+> c03619ac c07a688c
+> [  285.940963] d160: 00000017 c057a198 fffffff0 df4bd220 00000017 df4a1b80
+> df4bd2a4 c00084bc
+> [  285.949101] d180: c07f55bc 00000001 0000002c c080caf8 c080cb08 c03038a8
+> c07f55bc df4bd1a8
+> [  285.957240] d1a0: 00000000 0000002c c07f55bc 00000001 0000002c c07f55cb
+> 0000000f c07db41c
+> [  285.965380] d1c0: c07f50c0 0000003c c080caf8 c0874ec0 c07b4330 20000093
+> 0000044b c004c114
+> [  285.973518] d1e0: 0000044c 00000000 0000044b c0053220 00000400 c0051598
+> 00000000 20000093
+> [  285.981656] d200: 00000000 00000001 c0036ba0 20000093 ffffffff df4bd254
+> df4a1efc c0579b78
+> [  285.989796] d220: df4a1b80 00000000 00000002 00000000 00000000 00000000
+> c07b3818 00000000
+> [  285.997934] d240: df4a1efc 00000017 df4a1b80 df4bd2a4 df4a1bc4 df4bd268
+> c0032c58 c0036ba0
+> [  286.006074] d260: 20000093 ffffffff 00000020 df4a1b80 00000000 c0576390
+> 00000017 df4a1b80
+> [  286.014213] d280: df4bd48c c0053b30 df4bc000 df4bd408 0000000b 60000093
+> c07a6500 00000017
+> [  286.022351] d2a0: df4bd2b4 c05765b8 df4a1b80 df4a1b80 df4bd48c c001e868
+> c0695858 df4bd2dc
+> [  286.030490] d2c0: df4bd48c c07b4318 df4bd408 c07f3084 df4bd408 0000000b
+> 60000093 c07a6500
+> [  286.038628] d2e0: 00000017 df4a1b80 df4bd48c c000c7c8 df4bc190 0000000b
+> fffffff0 00000017
+> [  286.046768] d300: df4bd408 00000000 df4a1b80 00000017 df4a1b80 c0571fd4
+> fffffff0 c057a42c
+> [  286.054907] d320: 0000000a c03619ac c08993a8 c03619c0 c07f55f8 c07f55f8
+> c03619ac c035d1e0
+> [  286.063046] d340: c03619ac c07a688c 00000017 c057a198 fffffff0 df4bd408
+> 00000017 df4a1b80
+> [  286.071184] d360: df4bd48c c00084bc c07f55bc 00000001 0000002c c08087c8
+> c08087d8 c03038a8
+> [  286.079324] d380: c07f55bc df4bd390 00000000 0000002c c07f55bc 00000001
+> 0000002c c07f55cb
+> [  286.087462] d3a0: 0000000f c07db41c c07f50c0 0000003c c08087c8 c0874ec0
+> c07b4330 20000093
+> [  286.095602] d3c0: 00000391 c004c114 00000392 00000000 00000391 c0053220
+> 00000400 c0051598
+> [  286.103740] d3e0: 00000000 20000093 00000000 00000001 c0036ba0 20000093
+> ffffffff df4bd43c
+> [  286.111878] d400: df4a1efc c0579b78 df4a1b80 00000000 00000003 00000000
+> 00000000 00000000
+> [  286.120018] d420: c07b3818 00000000 df4a1efc 00000017 df4a1b80 df4bd48c
+> df4a1bc4 df4bd450
+> [  286.128157] d440: c0032c58 c0036ba0 20000093 ffffffff 00000020 df4a1b80
+> 00000000 c0576390
+> [  286.136295] d460: 00000017 df4a1b80 df4bd674 c0053b30 df4bc000 df4bd5f0
+> 0000000b 60000093
+> [  286.144435] d480: c07a6500 00000017 df4bd49c c05765b8 df4a1b80 df4a1b80
+> df4bd674 c001e868
+> [  286.152574] d4a0: c0695858 df4bd4c4 df4bd674 c07b4318 df4bd5f0 c07f3084
+> df4bd5f0 0000000b
+> [  286.160712] d4c0: 60000093 c07a6500 00000017 df4a1b80 df4bd674 c000c7c8
+> df4bc190 0000000b
+> [  286.168851] d4e0: fffffff0 00000017 df4bd5f0 00000000 df4a1b80 00000017
+> df4a1b80 c0571fd4
+> [  286.176990] d500: fffffff0 c057a42c 0000000a c03619ac c08993a8 c03619c0
+> c07f55f8 c07f55f8
+> [  286.185129] d520: c03619ac c035d1e0 c03619ac c07a688c 00000017 c057a198
+> fffffff0 df4bd5f0
+> [  286.193268] d540: 00000017 df4a1b80 df4bd674 c00084bc c07f55bc 00000001
+> 0000002c c0804f08
+> [  286.201406] d560: c0804f18 c03038a8 c07f55bc df4bd578 00000000 0000002c
+> c07f55bc 00000001
+> [  286.209546] d580: 0000002c c07f55cb 0000000f c07db41c c07f50c0 0000003c
+> c0804f08 c0874ec0
+> [  286.217684] d5a0: c07b4330 20000093 000002f4 c004c114 000002f5 00000000
+> 000002f4 c0053220
+> [  286.225823] d5c0: 00000400 c0051598 00000000 20000093 00000000 00000001
+> c0036ba0 20000093
+> [  286.233963] d5e0: ffffffff df4bd624 df4a1efc c0579b78 df4a1b80 00000000
+> 00000004 00000000
+> [  286.242101] d600: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bd674
+> [  286.250239] d620: df4a1bc4 df4bd638 c0032c58 c0036ba0 20000093 ffffffff
+> 00000020 df4a1b80
+> [  286.258379] d640: 00000000 c0576390 00000017 df4a1b80 df4bd85c c0053b30
+> df4bc000 df4bd7d8
+> [  286.266518] d660: 0000000b 60000093 c07a6500 00000017 df4bd684 c05765b8
+> df4a1b80 df4a1b80
+> [  286.274657] d680: df4bd85c c001e868 c0695858 df4bd6ac df4bd85c c07b4318
+> df4bd7d8 c07f3084
+> [  286.282795] d6a0: df4bd7d8 0000000b 60000093 c07a6500 00000017 df4a1b80
+> df4bd85c c000c7c8
+> [  286.290935] d6c0: df4bc190 0000000b fffffff0 00000017 df4bd7d8 00000000
+> df4a1b80 00000017
+> [  286.299074] d6e0: df4a1b80 c0571fd4 fffffff0 c057a42c 0000000a c03619ac
+> c08993a8 c03619c0
+> [  286.307212] d700: c07f55f8 c07f55f8 c03619ac c035d1e0 c03619ac c07a688c
+> 00000017 c057a198
+> [  286.315351] d720: fffffff0 df4bd7d8 00000017 df4a1b80 df4bd85c c00084bc
+> c07f55bc 00000001
+> [  286.323490] d740: 0000002c c0802128 c0802138 c03038a8 c07f55bc df4bd760
+> 00000000 0000002c
+> [  286.331629] d760: c07f55bc 00000001 0000002c c07f55cb 0000000f c07db41c
+> c07f50c0 0000003c
+> [  286.339767] d780: c0802128 c0874ec0 c07b4330 20000093 00000275 c004c114
+> 00000276 00000000
+> [  286.347907] d7a0: 00000275 c0053220 00000400 c0051598 00000000 20000093
+> 00000000 00000001
+> [  286.356046] d7c0: c0036ba0 20000093 ffffffff df4bd80c df4a1efc c0579b78
+> df4a1b80 00000000
+> [  286.364184] d7e0: 00000005 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  286.372323] d800: df4a1b80 df4bd85c df4a1bc4 df4bd820 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  286.380462] d820: 00000020 df4a1b80 00000000 c0576390 00000017 df4a1b80
+> df4bda44 c0053b30
+> [  286.388600] d840: df4bc000 df4bd9c0 0000000b 60000093 c07a6500 00000017
+> df4bd86c c05765b8
+> [  286.396740] d860: df4a1b80 df4a1b80 df4bda44 c001e868 c0695858 df4bd894
+> df4bda44 c07b4318
+> [  286.404879] d880: df4bd9c0 c07f3084 df4bd9c0 0000000b 60000093 c07a6500
+> 00000017 df4a1b80
+> [  286.413017] d8a0: df4bda44 c000c7c8 df4bc190 0000000b fffffff0 00000017
+> df4bd9c0 00000000
+> [  286.421156] d8c0: df4a1b80 00000000 df4a1b80 c0571fd4 fffffff0 c057a42c
+> 0000000a 00000001
+> [  286.429295] d8e0: ffffffff 00000000 00000000 00000000 00000000 c07b3858
+> df4a1bb0 c07a688c
+> [  286.437434] d900: 00000017 c057a198 fffffff0 df4bd9c0 00000000 df4a1b80
+> df4bda44 c00084bc
+> [  286.445573] d920: ffffffff c07b3858 c0042994 df4a1b80 c07b3818 60000093
+> 00000000 00000010
+> [  286.453713] d940: 00000102 df4bd9d3 c06ad1c0 df4bd9e0 c06ad1c2 00000002
+> df4bd9c8 c05b1d50
+> [  286.461851] d960: df400de0 000c000c 00000001 c010385c df400660 000f000f
+> 00000001 c010385c
+> [  286.469990] d980: ff0a0210 60000093 deccd948 000f000e c088bf34 60000093
+> df001198 00000000
+> [  286.478129] d9a0: df406d90 000f000e c0036ba0 20000093 ffffffff df4bd9f4
+> df4a1efc c0579b78
+> [  286.486267] d9c0: df4a1b80 00000000 00000006 00000000 00000000 00000000
+> c07b3818 00000000
+> [  286.494407] d9e0: df4a1efc 00000000 df4a1b80 df4bda44 df4a1bc4 df4bda08
+> c0032c58 c0036ba0
+> [  286.502545] da00: 20000093 ffffffff 00000020 df4a1b80 00000000 c0576390
+> 000001cc df7ed120
+> [  286.510685] da20: dec3fc00 c02ef2b8 df4bc000 df4bd74c c07b28e4 df4bda60
+> df4a1e78 00000000
+> [  286.518823] da40: df4bda54 c05765b8 0420c06c df4a1b80 df4a0000 c001e760
+> c0695858 df4bda7c
+> [  286.526962] da60: df4bda60 df4bda60 df4bdb60 c07f3084 df4bdb60 0000000b
+> 60000093 c07a6500
+> [  286.535101] da80: 00000000 df4a1b80 df7ec420 c000c7c8 df4bc190 0000000b
+> 00000004 e7f001f2
+> [  286.543240] daa0: df4bdb60 c02edd8c 00000000 60000093 df4bc000 c0008274
+> 00000006 c07fe380
+> [  286.551379] dac0: 00000004 00000000 00030001 c02edd8c c0051710 c0698f40
+> 00000121 0003d02f
+> [  286.559517] dae0: 00000000 c07f55cb 0000000f c07db41c c07f50c0 00000030
+> c07fe380 c0874ec0
+> [  286.567656] db00: c07b4330 20000093 000001cc c004c114 000001cd 00000000
+> 000001cc c0053220
+> [  286.575795] db20: 00000400 c0051598 ff0a0200 20000093 00000000 00000001
+> 00000020 00000020
+> [  286.583934] db40: c07b43d4 c02edd90 20000093 ffffffff df4bdb94 dec67060
+> c0579cac c0579cac
+> [  286.592072] db60: 00000020 c06b7f48 00000001 df4bc000 df7ec460 dec670a8
+> dec3fc00 000001cc
+> [  286.600212] db80: dec67060 dec670a8 dec3fc00 df7ec420 00000000 df4bdbe8
+> c02edd8c c02edd8c
+> [  286.608351] dba0: 20000093 ffffffff dec670a8 dec3fc00 df7ec420 c0053b30
+> c06c6268 df4bdbdc
+> [  286.616489] dbc0: df7ec420 c05722b4 00000001 df4bdbdc df7ec460 c02edd8c
+> c06c6268 00000000
+> [  286.624628] dbe0: 0000ffff dec3fc00 24400000 00000000 da061284 dff0b8fc
+> 00000000 00000040
+> [  286.632768] dc00: df7ec460 dec3fc00 000001cc dec67060 dec670a8 dec3fc00
+> 00000000 c02ede40
+> [  286.640906] dc20: df7ec460 df7ec420 dec3fc00 000001cc da0611e0 df7ec420
+> dec3fc00 c02ee20c
+> [  286.649045] dc40: 00000100 c02f0aec 2960d1a8 00000000 c07b9168 00000001
+> 00000014 00000001
+> [  286.657184] dc60: df6aec58 da0611e0 df6aec58 00000000 00000003 00000001
+> da20f160 db16d700
+> [  286.665323] dc80: db8f6800 c02cc184 da0611e0 00000000 00000052 da20f160
+> df4bc000 00000000
+> [  286.673461] dca0: 00000052 c02ca048 00000000 00000000 da20f160 00000008
+> c1a53000 c02ca0ec
+> [  286.681601] dcc0: 00010000 00000000 00000000 df20be00 db8ab000 df4bc000
+> db8f6800 bf8a0c60
+> [  286.689740] dce0: db8ab000 dd854200 db8f6800 bf8a0b58 da05c600 00000000
+> c1a53000 00000052
+> [  286.697878] dd00: 00000001 da20f160 db16d700 bf84a398 c1a53000 00000052
+> 00000000 00000020
+> [  286.706016] dd20: 00000000 00000001 00000000 00000020 000001d3 dff0b8fc
+> 00000001 00000000
+> [  286.714156] dd40: 00000000 db8f6800 ffffffff 7fffffff e9eeb518 00000000
+> 00000004 00000000
+> [  286.722294] dd60: dc160028 db16d700 0000d000 00000000 df20b700 00000000
+> 2960d298 00000000
+> [  286.730434] dd80: 00000000 00000000 db8ab000 00000000 da20f160 00000020
+> dc160110 00000001
+> [  286.738572] dda0: 1d3dd6a3 df4bde3c 00000001 bf8087f0 00000000 00000000
+> dc160028 00000000
+> [  286.746712] ddc0: dc160110 dd6a3fff 000001d3 da20f160 00000000 dd6a3000
+> 000001d3 00000000
+> [  286.754850] dde0: 1d3dd6a3 bf834c8c 00000000 df4bde38 dd6a3000 000001d3
+> 00000001 00000000
+> [  286.762989] de00: 00000001 00000002 00000001 dc3fde94 00000000 bf83deac
+> 00000001 df4bde3c
+> [  286.771127] de20: 00000020 000001d3 00000000 00000000 dc160028 dc3fde94
+> da20f160 00000000
+> [  286.779267] de40: dd854348 dc160028 dc3fde40 00000000 df4bc000 00000000
+> 00000000 db8ab000
+> [  286.787406] de60: dd854200 bf80895c 00000002 bf806740 00000001 00000000
+> 00000000 00000001
+> [  286.795545] de80: db955dd0 bf88abfc 00000001 df4bdeb4 00000000 00000000
+> dd6a3000 000001d3
+> [  286.803683] dea0: dd64d000 00000001 db955d80 00004004 da210e40 00000000
+> 00000000 dba4b8cc
+> [  286.811823] dec0: dba4b8c0 00000000 00000000 dee7ac20 decab900 c07edfb8
+> df41f400 bf84f32c
+> [  286.819962] dee0: 00000003 df68e100 df4bdf0c dba4b8cc df405840 df41f400
+> 00000000 00000000
+> [  286.828100] df00: decab900 c07edfb8 df41f400 c0031a10 df4bc000 df41f400
+> df41f400 df405840
+> [  286.836240] df20: df41f400 df405858 df4bc000 df41f410 00000088 c07edfb8
+> df41f400 c00326ec
+> [  286.844378] df40: df4bc000 df41f590 df405840 df402900 00000000 df405840
+> c00326b0 00000000
+> [  286.852517] df60: 00000000 00000000 00000000 c00366ac 00028000 00000000
+> 00000008 df405840
+> [  286.860656] df80: 00000000 df4bdf84 df4bdf84 00000001 df4bdf90 df4bdf90
+> df4bdfac df402900
+> [  286.868794] dfa0: c00365ec 00000000 00000000 c0009618 00000000 00000000
+> 00000000 00000000
+> [  286.876933] dfc0: 00000000 00000000 00000000 00000000 00000000 00000000
+> 00000000 00000000
+> [  286.885073] dfe0: 00000000 00000000 00000000 00000000 00000013 00000000
+> 00000000 00010800
+> [  286.893219] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  286.901191] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  286.909247] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  286.916263] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  286.923194] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  286.929695] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  286.937496] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  286.946331] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  286.953951] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  286.961306] Exception stack(0xdf4bc6b0 to 0xdf4bc6f8)
+> [  286.966329] c6a0:                                     df4a1b80 00000000
+> fffffffc 00000000
+> [  286.974470] c6c0: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bc734
+> [  286.982608] c6e0: df4a1bc4 df4bc6f8 c0032c58 c0036ba0 20000093 ffffffff
+> [  286.989195] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  286.996385] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.004358] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.012409] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.019424] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.026355] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.032854] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.040648] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.049484] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.057104] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.064459] Exception stack(0xdf4bc898 to 0xdf4bc8e0)
+> [  287.069481] c880:
+> df4a1b80 00000000
+> [  287.077624] c8a0: fffffffd 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  287.085762] c8c0: df4a1b80 df4bc91c df4a1bc4 df4bc8e0 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  287.093902] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.101092] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.109057] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.117108] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.124124] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.131054] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.137553] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.145348] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.154184] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.161803] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.169159] Exception stack(0xdf4bca80 to 0xdf4bcac8)
+> [  287.174184] ca80: df4a1b80 00000000 fffffffe 00000000 00000000 00000000
+> c07b3818 00000000
+> [  287.182324] caa0: df4a1efc 00000017 df4a1b80 df4bcb04 df4a1bc4 df4bcac8
+> c0032c58 c0036ba0
+> [  287.190457] cac0: 20000093 ffffffff
+> [  287.193936] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.201126] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.209091] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.217141] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.224158] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.231088] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.237587] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.245389] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.254226] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.261846] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.269202] Exception stack(0xdf4bcc68 to 0xdf4bccb0)
+> [  287.274234] cc60:                   df4a1b80 00000000 ffffffff 00000000
+> 00000000 00000000
+> [  287.282374] cc80: c07b3818 00000000 df4a1efc 00000017 df4a1b80 df4bccec
+> df4a1bc4 df4bccb0
+> [  287.290509] cca0: c0032c58 c0036ba0 20000093 ffffffff
+> [  287.295544] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.302732] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.310698] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.318749] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.325764] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.332694] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.339194] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.346996] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.355832] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.363452] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.370808] Exception stack(0xdf4bce50 to 0xdf4bce98)
+> [  287.375830] ce40:                                     df4a1b80 00000000
+> 00000000 00000000
+> [  287.383972] ce60: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bced4
+> [  287.392109] ce80: df4a1bc4 df4bce98 c0032c58 c0036ba0 20000093 ffffffff
+> [  287.398696] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.405885] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.413850] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.421901] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.428918] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.435848] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.442347] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.450149] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.458977] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.466597] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.473952] Exception stack(0xdf4bd038 to 0xdf4bd080)
+> [  287.478974] d020:
+> df4a1b80 00000000
+> [  287.487115] d040: 00000001 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  287.495255] d060: df4a1b80 df4bd0bc df4a1bc4 df4bd080 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  287.503397] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.510585] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.518550] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.526601] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.533617] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.540547] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.547047] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.554848] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.563676] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.571296] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.578652] Exception stack(0xdf4bd220 to 0xdf4bd268)
+> [  287.583686] d220: df4a1b80 00000000 00000002 00000000 00000000 00000000
+> c07b3818 00000000
+> [  287.591825] d240: df4a1efc 00000017 df4a1b80 df4bd2a4 df4a1bc4 df4bd268
+> c0032c58 c0036ba0
+> [  287.599959] d260: 20000093 ffffffff
+> [  287.603438] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.610628] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.618593] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.626644] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.633659] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.640589] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.647089] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.654891] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.663727] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.671347] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.678703] Exception stack(0xdf4bd408 to 0xdf4bd450)
+> [  287.683726] d400:                   df4a1b80 00000000 00000003 00000000
+> 00000000 00000000
+> [  287.691867] d420: c07b3818 00000000 df4a1efc 00000017 df4a1b80 df4bd48c
+> df4a1bc4 df4bd450
+> [  287.700002] d440: c0032c58 c0036ba0 20000093 ffffffff
+> [  287.705037] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.712225] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.720190] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.728241] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.735257] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.742187] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.748687] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.756489] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.765325] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.772944] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.780301] Exception stack(0xdf4bd5f0 to 0xdf4bd638)
+> [  287.785332] d5e0:                                     df4a1b80 00000000
+> 00000004 00000000
+> [  287.793474] d600: 00000000 00000000 c07b3818 00000000 df4a1efc 00000017
+> df4a1b80 df4bd674
+> [  287.801611] d620: df4a1bc4 df4bd638 c0032c58 c0036ba0 20000093 ffffffff
+> [  287.808198] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.815387] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.823352] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.831403] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.838419] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.845349] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.851848] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.859650] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.868486] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.876107] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.883462] Exception stack(0xdf4bd7d8 to 0xdf4bd820)
+> [  287.888483] d7c0:
+> df4a1b80 00000000
+> [  287.896627] d7e0: 00000005 00000000 00000000 00000000 c07b3818 00000000
+> df4a1efc 00000017
+> [  287.904765] d800: df4a1b80 df4bd85c df4a1bc4 df4bd820 c0032c58 c0036ba0
+> 20000093 ffffffff
+> [  287.912906] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  287.920095] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  287.928069] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  287.936120] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  287.943135] [<c05765b8>] (schedule) from [<c001e868>]
+> (do_exit+0x858/0xa78) [  287.950066] [<c001e868>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  287.956566] [<c000c7c8>] (die) from
+> [<c0571fd4>]
+> (__do_kernel_fault.part.8+0x54/0x74)
+> [  287.964367] [<c0571fd4>] (__do_kernel_fault.part.8) from [<c057a42c>]
+> (do_page_fault+0x294/0x3c0)
+> [  287.973203] [<c057a42c>] (do_page_fault) from [<c00084bc>]
+> (do_DataAbort+0x34/0xb8)
+> [  287.980823] [<c00084bc>] (do_DataAbort) from [<c0579b78>]
+> (__dabt_svc+0x38/0x60)
+> [  287.988179] Exception stack(0xdf4bd9c0 to 0xdf4bda08)
+> [  287.993213] d9c0: df4a1b80 00000000 00000006 00000000 00000000 00000000
+> c07b3818 00000000
+> [  288.001352] d9e0: df4a1efc 00000000 df4a1b80 df4bda44 df4a1bc4 df4bda08
+> c0032c58 c0036ba0
+> [  288.009486] da00: 20000093 ffffffff
+> [  288.012958] [<c0579b78>] (__dabt_svc) from [<c0036ba0>]
+> (kthread_data+0x4/0xc)
+> [  288.020146] [<c0036ba0>] (kthread_data) from [<c0032c58>]
+> (wq_worker_sleeping+0xc/0xbc)
+> [  288.028111] [<c0032c58>] (wq_worker_sleeping) from [<c0576390>]
+> (__schedule+0x4d8/0x6c0)
+> [  288.036162] [<c0576390>] (__schedule) from [<c05765b8>]
+> (schedule+0x40/0x98)
+> [  288.043178] [<c05765b8>] (schedule) from [<c001e760>]
+> (do_exit+0x750/0xa78) [  288.050108] [<c001e760>] (do_exit) from
+> [<c000c7c8>] (die+0x240/0x274) [  288.056604] [<c000c7c8>] (die) from
+> [<c0008274>] (do_undefinstr+0x9c/0x218) [  288.063535] [<c0008274>]
+> (do_undefinstr) from [<c0579cac>]
+> (__und_svc_finish+0x0/0x14)
+> [  288.071408] Exception stack(0xdf4bdb60 to 0xdf4bdba8)
+> [  288.076433] db60: 00000020 c06b7f48 00000001 df4bc000 df7ec460 dec670a8
+> dec3fc00 000001cc
+> [  288.084573] db80: dec67060 dec670a8 dec3fc00 df7ec420 00000000 df4bdbe8
+> c02edd8c c02edd8c
+> [  288.092707] dba0: 20000093 ffffffff
+> [  288.096192] [<c0579cac>] (__und_svc_finish) from [<c02edd8c>]
+> (__bfq_entity_update_weight_prio+0x23c/0x244)
+> [  288.105891] [<c02edd8c>] (__bfq_entity_update_weight_prio) from
+> [<c02ede40>] (__bfq_activate_entity+0xac/0x2d4)
+> [  288.115936] [<c02ede40>] (__bfq_activate_entity) from [<c02ee20c>]
+> (bfq_activate_entity+0x24/0x38)
+> [  288.124852] [<c02ee20c>] (bfq_activate_entity) from [<c02f0aec>]
+> (bfq_insert_request+0x780/0xc44)
+> [  288.133685] [<c02f0aec>] (bfq_insert_request) from [<c02cc184>]
+> (blk_queue_bio+0x360/0x370)
+> [  288.141994] [<c02cc184>] (blk_queue_bio) from [<c02ca048>]
+> (generic_make_request+0xb4/0xd8)
+> [  288.150306] [<c02ca048>] (generic_make_request) from [<c02ca0ec>]
+> (submit_bio+0x80/0x198)
+> [  288.158642] [<c02ca0ec>] (submit_bio) from [<bf84a398>]
+> (btrfs_map_bio+0x390/0x5c0 [btrfs])
+> [  288.167266] [<bf84a398>] (btrfs_map_bio [btrfs]) from [<bf8087f0>]
+> (btree_submit_bio_hook+0x58/0xf4 [btrfs])
+> [  288.177344] [<bf8087f0>] (btree_submit_bio_hook [btrfs]) from
+> [<bf834c8c>] (submit_one_bio+0xa8/0xdc [btrfs])
+> [  288.187541] [<bf834c8c>] (submit_one_bio [btrfs]) from [<bf83deac>]
+> (read_extent_buffer_pages+0x28c/0x35c [btrfs])
+> [  288.198150] [<bf83deac>] (read_extent_buffer_pages [btrfs]) from
+> [<bf80895c>] (reada_tree_block_flagged+0x6c/0xcc [btrfs])
+> [  288.209495] [<bf80895c>] (reada_tree_block_flagged [btrfs]) from
+> [<bf88abfc>] (reada_start_machine_worker+0x368/0x410 [btrfs])
+> [  288.221219] [<bf88abfc>] (reada_start_machine_worker [btrfs]) from
+> [<bf84f32c>] (normal_work_helper+0xac/0x45c [btrfs])
+> [  288.232133] [<bf84f32c>] (normal_work_helper [btrfs]) from [<c0031a10>]
+> (process_one_work+0x130/0x498)
+> [  288.241402] [<c0031a10>] (process_one_work) from [<c00326ec>]
+> (worker_thread+0x3c/0x518)
+> [  288.249460] [<c00326ec>] (worker_thread) from [<c00366ac>]
+> (kthread+0xc0/0xdc)
+> [  288.256648] [<c00366ac>] (kthread) from [<c0009618>]
+> (ret_from_fork+0x14/0x3c)
+> [  288.263835] Code: e1a00120 e2000001 e12fff1e e5903350 (e5130010)
+> [  288.269896] ---[ end trace 31f9aca317be32a3 ]---
+> [  288.274491] Fixing recursive fault but reboot is needed!
+> [  288.279793] Unable to handle kernel paging request at virtual address
+> fffffff0
+> [  288.286976] pgd = c0004000
+> [  288.289662] [fffffff0] *pgd=1fffd831
+> [  288.293041] , *pte=00000000, *ppte=00000000
 
-This seems to be a regression because from the lists I
-saw that NFS-exporting of BTRFS is supposed to work
-(but NFSv3 is not explicitely mentioned there).
+--nextPart2067036.C0uKcba7JG
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Is this a bug? I am more than willing to help with more
-diagnosis.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-Thank you and best regards
+iQIcBAABCAAGBQJVWav0AAoJEGZtonfLCdqhwuwP/RO/TfbS2IsOuwS3AJ8Dj0Qd
+AS/i/8cxU5XmdMRELs6fS3qxoXkuFPeJbQ9XATQWzBwVRg7erHMgVnSwm5ox2emf
+fro8k/byaGfvk2jk2tWE23NgVSwxd8CdyRgaakHfu+XjRM0xzhGdvSqbCmHesv1f
+H9inyYeA+BCYmnKyTQJ4oJh9dzh29Ds9W4KHnn7oG2edi92ULMKnGNg6a/du+3tQ
+1m/8z0n7nVAxNrV0kWgJnUoVC+q2te5+0vVwd2pc1oQ8Jub0gaRzGUyOQadXEn7g
+ZgB2Ip6rzvTy/WTpQHqc4028kkYwo5N15Emja4HTHmGpEDNMKXJ/CRopfY2MI+Wj
+ge5zcGwChO8zrz7vMxtLDmnxOqJ8naUjD+Ku4LiuGP+ejy+nC4OdBGnacG6KZm/b
+xWHk2hcLk1V/WpS5bloD78f30xGn/pf5UTlb20dL09biZIRLfF3rFiy+Pge6l0xY
+Uql1Cy6F1SkxidmhMN4YsyUW6sIU3W9AtTIF71Ojf6RdBrlwJuxnANwwk8J3MncZ
+Ng10uFypgI8lys/I8SJLzGe/leif3mO9WtErqS9tlzU8ZFCpEwgPTJwUu53kFtq2
+nFhkDfsB6QE3I1QOdICmArGH5NEz/6f8AO6TF2RXVMFyLUoC2Oey/wARfeBVNlTg
+AR+StJXu7wyg0/iSoYis
+=GJES
+-----END PGP SIGNATURE-----
 
-Ulrich
+--nextPart2067036.C0uKcba7JG--
 
-
-
-[1] https://lkml.org/lkml/2015/5/7/1013
-
--- 
-|-----------------------------------------------------------------------
-| Ulrich Gemkow
-| University of Stuttgart, Germany
-| Institute of Communication Networks and Computer Engineering (IKR)
-|-----------------------------------------------------------------------

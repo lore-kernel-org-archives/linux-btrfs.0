@@ -1,36 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f182.google.com ([209.85.223.182]:33527 "EHLO
-	mail-ie0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752355AbbERObg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 May 2015 10:31:36 -0400
-Received: by iebgx4 with SMTP id gx4so172079254ieb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2015 07:31:35 -0700 (PDT)
+Received: from mx1.redhat.com ([209.132.183.28]:57217 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752646AbbERPO0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 May 2015 11:14:26 -0400
+Message-ID: <555A01CF.3050904@redhat.com>
+Date: Mon, 18 May 2015 10:14:23 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <5559D3D7.4020405@gmail.com>
-References: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
-	<pan$87dbc$361c1d30$d0fc2fb2$5646ab5d@cox.net>
-	<1042503921.46602.1431940928643.JavaMail.zimbra@karlsbakk.net>
-	<5559D3D7.4020405@gmail.com>
-Date: Mon, 18 May 2015 08:31:35 -0600
-Message-ID: <CAJCQCtSYgBXQOsw8BR78bXpZTYk5SYKnvyFu2zRf+KXfTzzDHg@mail.gmail.com>
+To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>, linux-btrfs@vger.kernel.org
 Subject: Re: Btrfs and integration with GNU ++
-From: Chris Murphy <lists@colorremedies.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+References: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
+In-Reply-To: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 18, 2015 at 5:58 AM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
+On 5/17/15 2:33 PM, Roy Sigurd Karlsbakk wrote:
+> Hi all
 
-> While I don't know of any that use it by _default_ yet,
+> Lastly - I just did a small test on a 6 drive RAID-6, turned on
+> compression and started cat /proc/zero > testfile - let this run
+> until the filesize was 500GB and stopped it. Made some other test
+> files and a copy of these with --reflink=auto just for kicks. rm
+> test* and waited. While waiting, did a 'echo b > /proc/sysrq-trigger'
+> and fsck started on bootup and took a minute or so to complete. Since
+> the filesystem is rather small (6x8GB VDEVs on top of ZFS with SSD
+> caching, kvm as hypervisor), I wonder how long this fsck job would
+> take if it were on a system with, say, 6 4TB drives. RHEL/CentOS7
+> just moved to XFS to allow for system crashes without this hour-long
+> fsck job, and I somewhat doubt that btrfs will be the chosen one if
+> it requires the same amount of time as of ext4.
 
-Since 5-6 months, openSUSE uses it by default for root fs (including
-/boot). /home is on XFS. And snapper is configured to take snapshots
-by default as well immediately before and after any system changes
-(anything yast is in control of).
+Others have mentioned this as well, but I'll say it more broadly:
 
+echo b > /proc/sysrq-trigger should not require a fsck on any journaling
+filesystem - xfs, ext3, ext4, or btrfs - that's the whole reason you pay
+the slight overhead for metadata journaling at runtime, right?
 
--- 
-Chris Murphy
+Was it really running a fsck?
+
+-Eric

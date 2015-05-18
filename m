@@ -1,130 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:32836 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752762AbbERJQo (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20025 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932362AbbERQ1x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 May 2015 05:16:44 -0400
-Received: by padbw4 with SMTP id bw4so144023113pad.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2015 02:16:44 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 2/6] Btrfs: remove all subvol options before mounting top-level
-Date: Mon, 18 May 2015 02:16:27 -0700
-Message-Id: <890a770a617e3b7bb2c857fc0e87ac9b4cecfd0c.1431939732.git.osandov@osandov.com>
-In-Reply-To: <cover.1431939732.git.osandov@osandov.com>
-References: <cover.1431939732.git.osandov@osandov.com>
-In-Reply-To: <cover.1431939732.git.osandov@osandov.com>
-References: <cover.1431939732.git.osandov@osandov.com>
+	Mon, 18 May 2015 12:27:53 -0400
+Date: Tue, 19 May 2015 00:27:18 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
+Subject: Re: [PATCH] Btrfs: wake up extent state waiters on unlock through
+ clear_extent_bits
+Message-ID: <20150518162716.GA26112@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1431632467-2000-1-git-send-email-fdmanana@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1431632467-2000-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, setup_root_args() substitutes 's/subvol=[^,]*/subvolid=0/'.
-But, this means that if the user passes both a subvol and subvolid for
-some reason, we won't actually mount the top-level when we recursively
-mount. For example, consider:
+On Thu, May 14, 2015 at 08:41:07PM +0100, Filipe Manana wrote:
+> When we clear an extent state's EXTENT_LOCKED bit with clear_extent_bits()
+> through free_io_failure(), we weren't waking up any tasks waiting for the
+> extent's state EXTENT_LOCKED bit, leading to an hang.
+> 
+> So make sure clear_extent_bits() ends up waking up any waiters if the
+> bit EXTENT_LOCKED is supplied by its callers.
+> 
+> Zygo Blaxell was experiencing such hangs at inode eviction time after
+> file unlinks. Thanks to him for a set of scripts to reproduce the issue.
 
-mkfs.btrfs -f /dev/sdb
-mount /dev/sdb /mnt
-btrfs subvol create /mnt/subvol1 # subvolid=257
-btrfs subvol create /mnt/subvol2 # subvolid=258
-umount /mnt
-mount -osubvol=/subvol1,subvolid=258 /dev/sdb /mnt
+Good catch!
 
-In the final mount, subvol=/subvol1,subvolid=258 becomes
-subvolid=0,subvolid=258, and the last option takes precedence, so we
-mount subvol2 and try to look up subvol1 inside of it, which fails.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-So, instead, do a thorough scan through the argument list and remove any
-subvol= and subvolid= options, then append subvolid=0 to the end. This
-implicitly makes subvol= take precedence over subvolid=, but we're about
-to add a stricter check for that. This also makes setup_root_args() more
-generic, which we'll need soon.
+Thanks,
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
- fs/btrfs/super.c | 56 ++++++++++++++++++++------------------------------------
- 1 file changed, 20 insertions(+), 36 deletions(-)
+-liubo
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0576750..b5d04e4 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1138,52 +1138,36 @@ static inline int is_subvolume_inode(struct inode *inode)
- }
- 
- /*
-- * This will strip out the subvol=%s argument for an argument string and add
-- * subvolid=0 to make sure we get the actual tree root for path walking to the
-- * subvol we want.
-+ * This will add subvolid=0 to the argument string while removing any subvol=
-+ * and subvolid= arguments to make sure we get the top-level root for path
-+ * walking to the subvol we want.
-  */
- static char *setup_root_args(char *args)
- {
--	unsigned len = strlen(args) + 2 + 1;
--	char *src, *dst, *buf;
-+	char *buf, *dst, *sep;
- 
--	/*
--	 * We need the same args as before, but with this substitution:
--	 * s!subvol=[^,]+!subvolid=0!
--	 *
--	 * Since the replacement string is up to 2 bytes longer than the
--	 * original, allocate strlen(args) + 2 + 1 bytes.
--	 */
--
--	src = strstr(args, "subvol=");
--	/* This shouldn't happen, but just in case.. */
--	if (!src)
--		return NULL;
-+	if (!args)
-+		return kstrdup("subvolid=0", GFP_NOFS);
- 
--	buf = dst = kmalloc(len, GFP_NOFS);
-+	/* The worst case is that we add ",subvolid=0" to the end. */
-+	buf = dst = kmalloc(strlen(args) + strlen(",subvolid=0") + 1, GFP_NOFS);
- 	if (!buf)
- 		return NULL;
- 
--	/*
--	 * If the subvol= arg is not at the start of the string,
--	 * copy whatever precedes it into buf.
--	 */
--	if (src != args) {
--		*src++ = '\0';
--		strcpy(buf, args);
--		dst += strlen(args);
-+	while (1) {
-+		sep = strchrnul(args, ',');
-+		if (!strstarts(args, "subvol=") &&
-+		    !strstarts(args, "subvolid=")) {
-+			memcpy(dst, args, sep - args);
-+			dst += sep - args;
-+			*dst++ = ',';
-+		}
-+		if (*sep)
-+			args = sep + 1;
-+		else
-+			break;
- 	}
--
- 	strcpy(dst, "subvolid=0");
--	dst += strlen("subvolid=0");
--
--	/*
--	 * If there is a "," after the original subvol=... string,
--	 * copy that suffix into our buffer.  Otherwise, we're done.
--	 */
--	src = strchr(src, ',');
--	if (src)
--		strcpy(dst, src);
- 
- 	return buf;
- }
--- 
-2.4.1
-
+> 
+> Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index c32d226..856c2e8 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1277,7 +1277,12 @@ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+>  int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+>  		      unsigned bits, gfp_t mask)
+>  {
+> -	return clear_extent_bit(tree, start, end, bits, 0, 0, NULL, mask);
+> +	int wake = 0;
+> +
+> +	if (bits & EXTENT_LOCKED)
+> +		wake = 1;
+> +
+> +	return clear_extent_bit(tree, start, end, bits, wake, 0, NULL, mask);
+>  }
+>  
+>  int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

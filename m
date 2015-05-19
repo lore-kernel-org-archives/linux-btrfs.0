@@ -1,46 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:41353 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754614AbbESOoJ (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:63226 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754524AbbESOoz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 10:44:09 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t4JEhEjg029930
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 07:44:07 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1ug6ug82wy-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 07:44:07 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: set UNWRITTEN for prealloc'ed extents in fiemap
-Date: Tue, 19 May 2015 10:44:04 -0400
-Message-ID: <1432046644-6981-1-git-send-email-jbacik@fb.com>
+	Tue, 19 May 2015 10:44:55 -0400
+Message-ID: <555B4C4E.2020403@fb.com>
+Date: Tue, 19 May 2015 10:44:30 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Piotr Szymaniak <szarpaj@grubelek.pl>
+CC: Govindarajulu Varadarajan <_govind@gmx.com>, <linux-btrfs@vger.kernel.org>,
+        <linux-nfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        <jbacik@fb.com>, <dsterba@suse.cz>
+Subject: Re: btrfs: kernel BUG at mm/page-writeback.c:2286!
+References: <alpine.LNX.2.03.1505191317300.21108@ws.cisco> <555B3DEE.1000900@fb.com> <20150519135416.GO2539@wloczykij>
+In-Reply-To: <20150519135416.GO2539@wloczykij>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should be doing this, it's weird we hadn't been doing this.
+On 05/19/2015 09:54 AM, Piotr Szymaniak wrote:
+> On Tue, May 19, 2015 at 09:43:10AM -0400, Chris Mason wrote:
+>> On 05/19/2015 03:55 AM, Govindarajulu Varadarajan wrote:
+>>> 2286--->BUG_ON(!PageLocked(page));
+>>>
+>>> [  166.769868] BTRFS info (device sdf): no csum found for inode 1154
+>>> start 43192320
+>>> [  166.774334] BTRFS info (device sdf): csum failed ino 1154 extent
+>>> 4434247680 csum 1388825687 wanted 0 mirror 0
+>>
+>>
+>> Josef and I both missed this the first time you pasted it, but the
+>> unlocked page is almost certainly related to this csum error.  While
+>> we're looking at things can you please scrub?
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent_io.c | 2 ++
- 1 file changed, 2 insertions(+)
+Josef and I just read through all of this, and I'm not finding a way to
+connect the crc error to the BUG_ON.  Do all kernels crash like this, or
+was it just 4.1-rc?
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c32d226..428930b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4492,6 +4492,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		}
- 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
- 			flags |= FIEMAP_EXTENT_ENCODED;
-+		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
-+			flags |= FIEMAP_EXTENT_UNWRITTEN;
- 
- 		free_extent_map(em);
- 		em = NULL;
--- 
-1.8.3.1
+-chris
+
 

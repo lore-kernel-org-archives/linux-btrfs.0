@@ -1,42 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:57217 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752646AbbERPO0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 May 2015 11:14:26 -0400
-Message-ID: <555A01CF.3050904@redhat.com>
-Date: Mon, 18 May 2015 10:14:23 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49716 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754810AbbESHZR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 May 2015 03:25:17 -0400
+In-Reply-To: <CAJCQCtTedu8HXqCbW-S-JV1euvZA3i404RYPP15Ym-Y6boRdtQ@mail.gmail.com>
+References: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net> <pan$87dbc$361c1d30$d0fc2fb2$5646ab5d@cox.net> <1042503921.46602.1431940928643.JavaMail.zimbra@karlsbakk.net> <CAJCQCtTedu8HXqCbW-S-JV1euvZA3i404RYPP15Ym-Y6boRdtQ@mail.gmail.com>
 MIME-Version: 1.0
-To: Roy Sigurd Karlsbakk <roy@karlsbakk.net>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain;
+ charset=UTF-8
 Subject: Re: Btrfs and integration with GNU ++
-References: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
-In-Reply-To: <1761734734.45679.1431891207641.JavaMail.zimbra@karlsbakk.net>
-Content-Type: text/plain; charset=utf-8
+From: Russell Coker <russell@coker.com.au>
+Date: Tue, 19 May 2015 17:24:33 +1000
+To: Chris Murphy <lists@colorremedies.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <6079A80F-4A26-4D34-AF20-C3161E895FB0@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/17/15 2:33 PM, Roy Sigurd Karlsbakk wrote:
-> Hi all
+Do you have a reference for fsck on a ro mounted ext4 filesystem being dangerous? The standard behavior of Linux systems has been to fsck a ro mounted ext* root filesystem since long before an initrd was invented.
 
-> Lastly - I just did a small test on a 6 drive RAID-6, turned on
-> compression and started cat /proc/zero > testfile - let this run
-> until the filesize was 500GB and stopped it. Made some other test
-> files and a copy of these with --reflink=auto just for kicks. rm
-> test* and waited. While waiting, did a 'echo b > /proc/sysrq-trigger'
-> and fsck started on bootup and took a minute or so to complete. Since
-> the filesystem is rather small (6x8GB VDEVs on top of ZFS with SSD
-> caching, kvm as hypervisor), I wonder how long this fsck job would
-> take if it were on a system with, say, 6 4TB drives. RHEL/CentOS7
-> just moved to XFS to allow for system crashes without this hour-long
-> fsck job, and I somewhat doubt that btrfs will be the chosen one if
-> it requires the same amount of time as of ext4.
+On May 19, 2015 12:24:39 AM GMT+10:00, Chris Murphy <lists@colorremedies.com> wrote:
+>On Mon, May 18, 2015 at 3:22 AM, Roy Sigurd Karlsbakk
+><roy@karlsbakk.net> wrote:
+>
+>>
+>> I didn't run it. Some part of the Jessie startup did, and 1 minute
+>for just 6x8GB (not TB) seems a lot…
+>
+>Systemd issues a generic fsck for root fs, always, even for file
+>systems that don't have unattended fsck like XFS and btrfs.
+>Effectively the fs_passno field in fstab is ignored for root fs now.
+>In order to know what passno is set to required mounting root ro
+>first, and then executing fsck on an ro filesystem which even ext4
+>considers dangerous. The fsck.xfs and fsck.btrfs don't really do
+>anything, if you read their man page you'll see that, but I think they
+>require all devices present for the fsck to return 0 and systemd to
+>continue with boot. So I'll bet that for some reason there's a delay
+>with the devices themselves, or with them all being discovered (by
+>udev?) and thus the systemd unit for root fs is hanging.
+>
+>If you're experiencing this 1 minute fsck on a non-root fs btrfs, then
+>that's a bug. There should be no fsck for btrfs, not even the faux
+>one. I'd check to make sure fs_passno is set to 0. If not, then I'd
+>look to the initramfs asking for the unnecessary fsck.
 
-Others have mentioned this as well, but I'll say it more broadly:
-
-echo b > /proc/sysrq-trigger should not require a fsck on any journaling
-filesystem - xfs, ext3, ext4, or btrfs - that's the whole reason you pay
-the slight overhead for metadata journaling at runtime, right?
-
-Was it really running a fsck?
-
--Eric
+-- 
+Sent from my Samsung Galaxy Note 3 with K-9 Mail.

@@ -1,38 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:9515 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751092AbbESTUt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 15:20:49 -0400
-Received: from pps.filterd (m0004346 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t4JJKRC5017646
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 12:20:48 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1ug9640bcd-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 12:20:48 -0700
-Message-ID: <555B8D0B.9020609@fb.com>
-Date: Tue, 19 May 2015 15:20:43 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:60377 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750865AbbESTtw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 May 2015 15:49:52 -0400
+Date: Tue, 19 May 2015 12:49:50 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>
+Subject: [PATCH][RESEND] btrfs: clear 'ret' in btrfs_check_shared() loop
+Message-ID: <20150519194950.GE18148@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: set UNWRITTEN for prealloc'ed extents in fiemap
-References: <1432046644-6981-1-git-send-email-jbacik@fb.com> <555B7BF4.40200@fb.com>
-In-Reply-To: <555B7BF4.40200@fb.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/19/2015 02:07 PM, Chris Mason wrote:
-> On 05/19/2015 10:44 AM, Josef Bacik wrote:
->> We should be doing this, it's weird we hadn't been doing this.
->
-> Isn't there an xfstest we should be failing because of this?
->
+btrfs_check_shared() is leaking a return value of '1' from
+find_parent_nodes(). As a result, callers (in this case, extent_fiemap())
+are told extents are shared when they are not. This in turn broke fiemap on
+btrfs for kernels v3.18 and up.
 
-You'd think that but apparently the test that does my fiemap-tester 
-specifically disables using prealloc'ed extents, so I've added another 
-test to do the tester with prealloc, which we pass with this patch.  Thanks,
+The fix is simple - we just have to clear 'ret' after we are done processing
+the results of find_parent_nodes().
 
-Josef
+It wasn't clear to me at first what was happening with return values in
+btrfs_check_shared() and find_parent_nodes() - thanks to Josef for the help
+on irc. I added documentation to both functions to make things more clear
+for the next hacker who might come across them.
+
+If we could queue this up for -stable too that would be great.
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/backref.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index f55721f..8d47380 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -880,6 +880,8 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+  * indirect refs to their parent bytenr.
+  * When roots are found, they're added to the roots list
+  *
++ * NOTE: This can return values > 0
++ *
+  * FIXME some caching might speed things up
+  */
+ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+@@ -1198,6 +1200,19 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++/**
++ * btrfs_check_shared - tell us whether an extent is shared
++ *
++ * @trans: optional trans handle
++ *
++ * btrfs_check_shared uses the backref walking code but will short
++ * circuit as soon as it finds a root or inode that doesn't match the
++ * one passed in. This provides a significant performance benefit for
++ * callers (such as fiemap) which want to know whether the extent is
++ * shared but do not need a ref count.
++ *
++ * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
++ */
+ int btrfs_check_shared(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info, u64 root_objectid,
+ 		       u64 inum, u64 bytenr)
+@@ -1226,11 +1241,13 @@ int btrfs_check_shared(struct btrfs_trans_handle *trans,
+ 		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
+ 					roots, NULL, root_objectid, inum);
+ 		if (ret == BACKREF_FOUND_SHARED) {
++			/* this is the only condition under which we return 1 */
+ 			ret = 1;
+ 			break;
+ 		}
+ 		if (ret < 0 && ret != -ENOENT)
+ 			break;
++		ret = 0;
+ 		node = ulist_next(tmp, &uiter);
+ 		if (!node)
+ 			break;
+-- 
+2.1.2
 

@@ -1,87 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60377 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750865AbbESTtw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 15:49:52 -0400
-Date: Tue, 19 May 2015 12:49:50 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>
-Subject: [PATCH][RESEND] btrfs: clear 'ret' in btrfs_check_shared() loop
-Message-ID: <20150519194950.GE18148@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
+Received: from userp1040.oracle.com ([156.151.31.81]:42762 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750889AbbESULG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 May 2015 16:11:06 -0400
+Date: Tue, 19 May 2015 13:10:55 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Kent Overstreet <kent.overstreet@gmail.com>
+Cc: Ric Wheeler <ricwheeler@gmail.com>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>,
+        linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Let's get a File & Storage miniconf going at LPC2015!
+Message-ID: <20150519201055.GD27115@birch.djwong.org>
+References: <20150515205825.GC24967@birch.djwong.org>
+ <20150519154200.GA2559@kmo-pixel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150519154200.GA2559@kmo-pixel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_check_shared() is leaking a return value of '1' from
-find_parent_nodes(). As a result, callers (in this case, extent_fiemap())
-are told extents are shared when they are not. This in turn broke fiemap on
-btrfs for kernels v3.18 and up.
+On Tue, May 19, 2015 at 08:42:00AM -0700, Kent Overstreet wrote:
+> On Fri, May 15, 2015 at 01:58:25PM -0700, Darrick J. Wong wrote:
+> > We of course are not limited to just those topics -- if there's something
+> > you'd really like to discuss with everyone, please add that to the wiki.
+> > I realize that mid-August is family vacation time for many people, but
+> > those are the constraints the conference has to work with this year.
+> > There are fun things to do around Seattle, and that's probably the best
+> > time of year to visit.
+> 
+> It's getting near time for the big bcachefs announcement :)
+> 
+> Also, stable pages - what's been going on there? Last I heard you were talking
+> about using the page migration code to do COW, did anything come of that? I just
+> added data checksumming/compression to bcachefs, so that's been fresh on my
+> mind.
 
-The fix is simple - we just have to clear 'ret' after we are done processing
-the results of find_parent_nodes().
+Yeah.  I never figured out a sane way to migrate pages and keep everything
+else happy.  Daniel Phillips is having a go at page forking for tux3; let's
+see if the questions about that get resolved.
 
-It wasn't clear to me at first what was happening with return values in
-btrfs_check_shared() and find_parent_nodes() - thanks to Josef for the help
-on irc. I added documentation to both functions to make things more clear
-for the next hacker who might come across them.
+> Also, there's probably always going to be situations where we're reading or
+> writing to pages user space can stomp on (dio) - IMO we need to add a bio flag
+> to annotate this - "if you need this to be stable you have to bounce it".
+> Otherwise either filesystems/block drivers are going to be stuck bouncing
+> everything, or it'll just (continue to be) buggy.
 
-If we could queue this up for -stable too that would be great.
+Well, for now there's BIO_SNAP_STABLE that forces the block layer to bounce it,
+but right now ext3 is the last user of it, and afaict btrfs is the only other
+FS that takes care of stable pages on its own.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/backref.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index f55721f..8d47380 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -880,6 +880,8 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
-  * indirect refs to their parent bytenr.
-  * When roots are found, they're added to the roots list
-  *
-+ * NOTE: This can return values > 0
-+ *
-  * FIXME some caching might speed things up
-  */
- static int find_parent_nodes(struct btrfs_trans_handle *trans,
-@@ -1198,6 +1200,19 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+/**
-+ * btrfs_check_shared - tell us whether an extent is shared
-+ *
-+ * @trans: optional trans handle
-+ *
-+ * btrfs_check_shared uses the backref walking code but will short
-+ * circuit as soon as it finds a root or inode that doesn't match the
-+ * one passed in. This provides a significant performance benefit for
-+ * callers (such as fiemap) which want to know whether the extent is
-+ * shared but do not need a ref count.
-+ *
-+ * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
-+ */
- int btrfs_check_shared(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info, u64 root_objectid,
- 		       u64 inum, u64 bytenr)
-@@ -1226,11 +1241,13 @@ int btrfs_check_shared(struct btrfs_trans_handle *trans,
- 		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
- 					roots, NULL, root_objectid, inum);
- 		if (ret == BACKREF_FOUND_SHARED) {
-+			/* this is the only condition under which we return 1 */
- 			ret = 1;
- 			break;
- 		}
- 		if (ret < 0 && ret != -ENOENT)
- 			break;
-+		ret = 0;
- 		node = ulist_next(tmp, &uiter);
- 		if (!node)
- 			break;
--- 
-2.1.2
-
+--D

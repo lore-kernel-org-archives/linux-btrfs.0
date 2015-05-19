@@ -1,72 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:37557 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932447AbbESMaU convert rfc822-to-8bit (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:61797 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753623AbbESNc1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 08:30:20 -0400
-Received: by igbsb11 with SMTP id sb11so12421060igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 05:30:19 -0700 (PDT)
+	Tue, 19 May 2015 09:32:27 -0400
+Message-ID: <555B3B5D.7040601@fb.com>
+Date: Tue, 19 May 2015 09:32:13 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <pan.2015.05.19.11.32.06@googlemail.com>
-References: <1431972715-16833-1-git-send-email-fdmanana@suse.com>
-	<pan.2015.05.19.11.32.06@googlemail.com>
-Date: Tue, 19 May 2015 13:30:19 +0100
-Message-ID: <CAL3q7H6ay7T_-RK+ujf0KM4eLbMfAhOXHWV1Fr5G_Msd5Mxr1g@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix racy system chunk allocation when setting
- block group ro
-From: Filipe David Manana <fdmanana@gmail.com>
-To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Govindarajulu Varadarajan <_govind@gmx.com>, <linux-btrfs@vger.kernel.org>,
+        <linux-nfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+CC: <clm@fb.com>, <dsterba@suse.cz>
+Subject: Re: btrfs: kernel BUG at mm/page-writeback.c:2286!
+References: <alpine.LNX.2.03.1505191317300.21108@ws.cisco>
+In-Reply-To: <alpine.LNX.2.03.1505191317300.21108@ws.cisco>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 19, 2015 at 12:32 PM, Holger Hoffstätte
-<holger.hoffstaette@googlemail.com> wrote:
-> On Mon, 18 May 2015 19:11:40 +0100, Filipe Manana wrote:
+On 05/19/2015 03:55 AM, Govindarajulu Varadarajan wrote:
+> Hi all
 >
->> If while setting a block group read-only we end up allocating a system
->> chunk, through check_system_chunk(), we were not doing it while holding
->> the chunk mutex which is a problem if a concurrent chunk allocation is
->> happening, through do_chunk_alloc(), as it means both block groups can
->> end up using the same logical addresses and physical regions in the
->> device(s). So make sure we hold the chunk mutex.
->>
->> Cc: stable@vger.kernel.org  # 4.0+
->> Fixes: 2f0810880f08 ("btrfs: delete chunk allocation attemp when
->>                       setting block group ro")
+> I am seeing the following crash on my btrfs filesystem with nfs export.
+> If I disable the nfs share and reboot, I do not hit the crash. Look like
+> the crash happens on btrfs with nfs export.
 >
-> Hello Filipe,
+> Is this a known issue? Has anyone else faced this? Let me know if you
+> need more
+> information.
 >
-> good find, as usual. But from the description it's not clear to me whether
-> this also fixes rebalance seemingly not having an effect (as reported many
-> times now) or "just" the on-disk block data getting munched together on a
-> racy day? Just thought I'd ask for clarification before I start patching.
 
-No, it doesn't fix the balance/conversion issue. It's a completely
-separate issue/regression. Chris is working on the balance/conversion
-issue.
+Somebody else is unlocking the page while we have it locked (by somebody 
+else I mean somebody other than in this particular code path, so could 
+totally still be us, it's just not obvious.)  What are your mount 
+options?  Are you capable of building your own kernel?  A git bisect 
+would be good to try and find where the problem was introduced, seems 
+like it's easy to reproduce.  I'll look through our recent commits and 
+see if anything pops out.  Thanks,
 
-thanks
+Josef
 
->
-> Thanks!
->
-> Holger
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

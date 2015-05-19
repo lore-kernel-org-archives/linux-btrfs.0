@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:63226 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754524AbbESOoz (ORCPT
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:36447 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753104AbbESPnr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 10:44:55 -0400
-Message-ID: <555B4C4E.2020403@fb.com>
-Date: Tue, 19 May 2015 10:44:30 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 19 May 2015 11:43:47 -0400
+Date: Tue, 19 May 2015 08:42:00 -0700
+From: Kent Overstreet <kent.overstreet@gmail.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Ric Wheeler <ricwheeler@gmail.com>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>,
+        linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Let's get a File & Storage miniconf going at LPC2015!
+Message-ID: <20150519154200.GA2559@kmo-pixel>
+References: <20150515205825.GC24967@birch.djwong.org>
 MIME-Version: 1.0
-To: Piotr Szymaniak <szarpaj@grubelek.pl>
-CC: Govindarajulu Varadarajan <_govind@gmx.com>, <linux-btrfs@vger.kernel.org>,
-        <linux-nfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <jbacik@fb.com>, <dsterba@suse.cz>
-Subject: Re: btrfs: kernel BUG at mm/page-writeback.c:2286!
-References: <alpine.LNX.2.03.1505191317300.21108@ws.cisco> <555B3DEE.1000900@fb.com> <20150519135416.GO2539@wloczykij>
-In-Reply-To: <20150519135416.GO2539@wloczykij>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150515205825.GC24967@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/19/2015 09:54 AM, Piotr Szymaniak wrote:
-> On Tue, May 19, 2015 at 09:43:10AM -0400, Chris Mason wrote:
->> On 05/19/2015 03:55 AM, Govindarajulu Varadarajan wrote:
->>> 2286--->BUG_ON(!PageLocked(page));
->>>
->>> [  166.769868] BTRFS info (device sdf): no csum found for inode 1154
->>> start 43192320
->>> [  166.774334] BTRFS info (device sdf): csum failed ino 1154 extent
->>> 4434247680 csum 1388825687 wanted 0 mirror 0
->>
->>
->> Josef and I both missed this the first time you pasted it, but the
->> unlocked page is almost certainly related to this csum error.  While
->> we're looking at things can you please scrub?
+On Fri, May 15, 2015 at 01:58:25PM -0700, Darrick J. Wong wrote:
+> We of course are not limited to just those topics -- if there's something
+> you'd really like to discuss with everyone, please add that to the wiki.
+> I realize that mid-August is family vacation time for many people, but
+> those are the constraints the conference has to work with this year.
+> There are fun things to do around Seattle, and that's probably the best
+> time of year to visit.
 
-Josef and I just read through all of this, and I'm not finding a way to
-connect the crc error to the BUG_ON.  Do all kernels crash like this, or
-was it just 4.1-rc?
+It's getting near time for the big bcachefs announcement :)
 
--chris
+Also, stable pages - what's been going on there? Last I heard you were talking
+about using the page migration code to do COW, did anything come of that? I just
+added data checksumming/compression to bcachefs, so that's been fresh on my
+mind.
 
-
+Also, there's probably always going to be situations where we're reading or
+writing to pages user space can stomp on (dio) - IMO we need to add a bio flag
+to annotate this - "if you need this to be stable you have to bounce it".
+Otherwise either filesystems/block drivers are going to be stuck bouncing
+everything, or it'll just (continue to be) buggy.

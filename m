@@ -1,187 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:56690 "EHLO
-	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751976AbbETNEn (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Wed, 20 May 2015 09:04:43 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:47891 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751530AbbETNTP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 May 2015 09:19:15 -0400
+Date: Wed, 20 May 2015 15:19:13 +0200
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] Btrfs: fix -ENOSPC on block group removal
-Date: Wed, 20 May 2015 14:01:55 +0100
-Message-Id: <1432126915-30733-2-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1432126915-30733-1-git-send-email-fdmanana@suse.com>
-References: <1432126915-30733-1-git-send-email-fdmanana@suse.com>
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.0.1
+Message-ID: <20150520131913.GJ23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unlike when attempting to allocate a new block group, where we check
-that we have enough space in the system space_info to update the device
-items and insert a new chunk item in the chunk tree, we were not checking
-if the system space_info had enough space for updating the device items
-and deleting the chunk item in the chunk tree. This often lead to -ENOSPC
-error when attempting to allocate blocks for the chunk tree (during btree
-node/leaf COW operations) while updating the device items or deleting the
-chunk item, which resulted in the current transaction being aborted and
-turning the filesystem into read-only mode.
+Hi,
 
-While running fstests generic/038, which stresses allocation of block
-groups and removal of unused block groups, with a large scratch device
-(750Gb) this happened often, despite more than enough unallocated space,
-and resulted in the following trace:
+the btrfs-progs 4.0.1 have been released, a bugfix release with a few
+enhancements.
 
-[68663.586604] WARNING: CPU: 3 PID: 1521 at fs/btrfs/super.c:260 __btrfs_abort_transaction+0x52/0x114 [btrfs]()
-[68663.600407] BTRFS: Transaction aborted (error -28)
-(...)
-[68663.730829] Call Trace:
-[68663.732585]  [<ffffffff8142fa46>] dump_stack+0x4f/0x7b
-[68663.734334]  [<ffffffff8108b6a2>] ? console_unlock+0x361/0x3ad
-[68663.739980]  [<ffffffff81045ea5>] warn_slowpath_common+0xa1/0xbb
-[68663.757153]  [<ffffffffa036ca6d>] ? __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[68663.760925]  [<ffffffff81045f05>] warn_slowpath_fmt+0x46/0x48
-[68663.762854]  [<ffffffffa03b159d>] ? btrfs_update_device+0x15a/0x16c [btrfs]
-[68663.764073]  [<ffffffffa036ca6d>] __btrfs_abort_transaction+0x52/0x114 [btrfs]
-[68663.765130]  [<ffffffffa03b3638>] btrfs_remove_chunk+0x597/0x5ee [btrfs]
-[68663.765998]  [<ffffffffa0384663>] ? btrfs_delete_unused_bgs+0x245/0x296 [btrfs]
-[68663.767068]  [<ffffffffa0384676>] btrfs_delete_unused_bgs+0x258/0x296 [btrfs]
-[68663.768227]  [<ffffffff8143527f>] ? _raw_spin_unlock_irq+0x2d/0x4c
-[68663.769081]  [<ffffffffa038b109>] cleaner_kthread+0x13d/0x16c [btrfs]
-[68663.799485]  [<ffffffffa038afcc>] ? btrfs_alloc_root+0x28/0x28 [btrfs]
-[68663.809208]  [<ffffffff8105f367>] kthread+0xef/0xf7
-[68663.828795]  [<ffffffff810e603f>] ? time_hardirqs_on+0x15/0x28
-[68663.844942]  [<ffffffff8105f278>] ? __kthread_parkme+0xad/0xad
-[68663.846486]  [<ffffffff81435a88>] ret_from_fork+0x58/0x90
-[68663.847760]  [<ffffffff8105f278>] ? __kthread_parkme+0xad/0xad
-[68663.849503] ---[ end trace 798477c6d6dbaad6 ]---
-[68663.850525] BTRFS: error (device sdc) in btrfs_remove_chunk:2652: errno=-28 No space left
+>From now on, the latest development branch will be named 'devel'. It might be
+rebased occasionally.
 
-So fix this by verifying that enough space exists in system space_info,
-and reserving the space in the chunk block reserve, before attempting to
-delete the block group and allocate a new system chunk if we don't have
-enough space to perform the necessary updates and delete in the chunk
-tree. Like for the block group creation case, we don't error our if we
-fail to allocate a new system chunk, since we might end up not needing
-it (no node/leaf splits happen during the COW operations and/or we end
-up not needing to COW any btree nodes or leafs because they were already
-COWed in the current transaction and their writeback didn't start yet).
+The branch 'master' is updated at the time of release only and is never
+rebased, no change here.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+Changes:
+* restore:
+  * can restore symlinks, new option --symlinks
+  * long option variants added
+* convert: dropped dependency on acl.h header and libacl is not required for
+  build
+* fix for 'check' crash
+* device remove error message fix
+* preparatory works for fsid change
 
-Applies on top of the recent patch titled:
-"Btrfs: fix racy system chunk allocation when setting block group ro"
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
- fs/btrfs/ctree.h       |  4 ++++
- fs/btrfs/extent-tree.c | 31 +++++++++++++++++++++++--------
- fs/btrfs/volumes.c     |  3 +++
- 3 files changed, 30 insertions(+), 8 deletions(-)
+Shortlog:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5ecafcd..70b79d0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3516,6 +3516,10 @@ int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
- int __get_raid_index(u64 flags);
- int btrfs_start_write_no_snapshoting(struct btrfs_root *root);
- void btrfs_end_write_no_snapshoting(struct btrfs_root *root);
-+void check_system_chunk(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root,
-+			const u64 type,
-+			const bool is_allocation);
- /* ctree.c */
- int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
- 		     int level, int *slot);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3d07b4d..b76fd95 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4092,7 +4092,7 @@ static int should_alloc_chunk(struct btrfs_root *root,
- 	return 1;
- }
- 
--static u64 get_system_chunk_thresh(struct btrfs_root *root, u64 type)
-+static u64 get_profile_num_devs(struct btrfs_root *root, u64 type)
- {
- 	u64 num_dev;
- 
-@@ -4106,17 +4106,24 @@ static u64 get_system_chunk_thresh(struct btrfs_root *root, u64 type)
- 	else
- 		num_dev = 1;	/* DUP or single */
- 
--	/* metadata for updaing devices and chunk tree */
--	return btrfs_calc_trans_metadata_size(root, num_dev + 1);
-+	return num_dev;
- }
- 
--static void check_system_chunk(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root, u64 type)
-+/*
-+ * If @is_allocation is true, reserve space in the system space info necessary
-+ * for allocating a chunk, otherwise if it's false, reserve space necessary for
-+ * removing a chunk.
-+ */
-+void check_system_chunk(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root,
-+			u64 type,
-+			const bool is_allocation)
- {
- 	struct btrfs_space_info *info;
- 	u64 left;
- 	u64 thresh;
- 	int ret = 0;
-+	u64 num_devs;
- 
- 	/*
- 	 * Needed because we can end up allocating a system chunk and for an
-@@ -4131,7 +4138,15 @@ static void check_system_chunk(struct btrfs_trans_handle *trans,
- 		info->bytes_may_use;
- 	spin_unlock(&info->lock);
- 
--	thresh = get_system_chunk_thresh(root, type);
-+	num_devs = get_profile_num_devs(root, type);
-+
-+	/* num_devs device items to update and 1 chunk item to add or remove */
-+	if (is_allocation)
-+		thresh = btrfs_calc_trans_metadata_size(root, num_devs + 1);
-+	else
-+		thresh = btrfs_calc_trans_metadata_size(root, num_devs) +
-+			btrfs_calc_trunc_metadata_size(root, 1);
-+
- 	if (left < thresh && btrfs_test_opt(root, ENOSPC_DEBUG)) {
- 		btrfs_info(root->fs_info, "left=%llu, need=%llu, flags=%llu",
- 			left, thresh, type);
-@@ -4243,7 +4258,7 @@ again:
- 	 * Check if we have enough space in SYSTEM chunk because we may need
- 	 * to update devices.
- 	 */
--	check_system_chunk(trans, extent_root, flags);
-+	check_system_chunk(trans, extent_root, flags, true);
- 
- 	ret = btrfs_alloc_chunk(trans, extent_root, flags);
- 	trans->allocating_chunk = false;
-@@ -8887,7 +8902,7 @@ out:
- 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
- 		alloc_flags = update_block_group_flags(root, cache->flags);
- 		lock_chunks(root->fs_info->chunk_root);
--		check_system_chunk(trans, root, alloc_flags);
-+		check_system_chunk(trans, root, alloc_flags, true);
- 		unlock_chunks(root->fs_info->chunk_root);
- 	}
- 	mutex_unlock(&root->fs_info->ro_block_group_mutex);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d2b276c..dbea12e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2625,6 +2625,9 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 		return -EINVAL;
- 	}
- 	map = (struct map_lookup *)em->bdev;
-+	lock_chunks(root->fs_info->chunk_root);
-+	check_system_chunk(trans, extent_root, map->type, false);
-+	unlock_chunks(root->fs_info->chunk_root);
- 
- 	for (i = 0; i < map->num_stripes; i++) {
- 		struct btrfs_device *device = map->stripes[i].dev;
--- 
-2.1.3
+Anand Jain (2):
+      btrfs-progs: btrfs_scan_block_devices is unused function delete it
+      btrfs-progs: use the correct variable
+
+Dan Merillat (2):
+      btrfs-progs: restore: separate the overwrite check
+      btrfs-progs: optionally restore symlinks.
+
+David Sterba (4):
+      btrfs-progs: restore: use bigger buffer for output path name
+      btrfs-progs: restore: shift option texts
+      btrfs-progs: restore: add more long option variants
+      btrfs-progs: convert: drop dependency on sys/acl.h
+
+Qu Wenruo (15):
+      btrfs-progs: fsck: Fix a shallow copy which will leads to segfault.
+      btrfs-progs: Add CHANGING_FSID super flag
+      btrfs-progs: Use unified function to implement print_readable_*_flag function
+      btrfs-progs: show-super: print human readable text for super flags
+      btrfs-progs: Add open_ctree check for uuid changing
+      btrfs-progs: Export write_tree_block
+      btrfs-progs: Introduce change_header_uuid function
+      btrfs-progs: Introduce change_extents_uuid function
+      btrfs-progs: Introduce change_device_uuid function
+      btrfs-progs: Introduce change_devices_uuid function.
+      btrfs-progs: Introduce change_fsid_prepare and change_fsid_done functions
+      btrfs-progs: Introduce change_uuid function
+      btrfs-progs: Remove non-exist csum size.
+      btrfs-progs: Add extra chunk item check to avoid btrfs-progs crash.
+      btrfs-progs: Fix a bug in chunk item extra check and allow degraded chunk.
 

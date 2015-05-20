@@ -1,42 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:38769 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754935AbbEPJOx convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 May 2015 05:14:53 -0400
-Received: by wicnf17 with SMTP id nf17so17129060wic.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2015 02:14:52 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:43623 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751818AbbETM1Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 May 2015 08:27:24 -0400
+Date: Wed, 20 May 2015 14:27:22 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: Fix a bug in chunk item extra check and
+ allow degraded chunk.
+Message-ID: <20150520122722.GI23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1431666674-23322-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <5556FF5F.1050907@floga.de>
-References: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
- <20150515204340.GA20386@mew.dhcp4.washington.edu> <5556FF5F.1050907@floga.de>
-From: Markus Baertschi <markus@markus.org>
-Date: Sat, 16 May 2015 11:14:11 +0200
-Message-ID: <CAKz5JasQE0=0761zjFFbDJLnfs6RZg9YHYsQwHSoki9uDNAyZA@mail.gmail.com>
-Subject: Re: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1431666674-23322-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we just want to fix the bashism, then
+On Fri, May 15, 2015 at 01:11:14PM +0800, Qu Wenruo wrote:
+> For DUP profile, the num_stripes should be 2 not 1.
+> This causes btrfs offline tool fails on valid image.
+> 
+> Also, num_stripes check is too restrict for btrfsck self test,
+> as there is some image in degraded mode, so modify it to allow degraded
+> chunk.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-        if [ "$AUTO" = "false" ]; then
-
-is a good solution. No point to use a yoda condition.
-
-
-But I like the style proposed by Florian best. It is closest to
-traditional shell programming.
-
-On Sat, May 16, 2015 at 10:27 AM, Florian Gamböck <ml@floga.de> wrote:
->
-> AUTO=
-> # ...
-> if [ -z "$AUTO" ]; then
-
-Markus
-
--- 
-Markus Baertschi, Bas du Rossé 16, CH-1163, Etoy, Switzerland
-markus@markus.org, +41 (79) 403 1186 (mobile)
+Applied, thanks. There relase of 4.0.1 is on the way.

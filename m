@@ -1,105 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f175.google.com ([209.85.223.175]:33461 "EHLO
-	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750994AbbETAaO (ORCPT
+Received: from server1.design-company.com.au ([103.18.108.111]:35677 "EHLO
+	server1.design-company.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751075AbbETFFg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 May 2015 20:30:14 -0400
-Received: by iebgx4 with SMTP id gx4so27331658ieb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2015 17:30:13 -0700 (PDT)
+	Wed, 20 May 2015 01:05:36 -0400
+Received: from ful1143003.lnk.telstra.net ([110.143.62.99]:60255 helo=hostd49a20ff8a0a.local)
+	by server1.design-company.com.au with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	(Exim 4.85)
+	(envelope-from <hub@spotprint.com.au>)
+	id 1YuwCC-0008LC-RC
+	for linux-btrfs@vger.kernel.org; Wed, 20 May 2015 15:05:32 +1000
+Message-ID: <555C15E5.2070808@spotprint.com.au>
+Date: Wed, 20 May 2015 15:04:37 +1000
+From: Ryan Bourne <hub@spotprint.com.au>
 MIME-Version: 1.0
-In-Reply-To: <CAMtiharLjfjEvgJaSvOru=NrxGcX754t9oLbxTMSngnF47ZQvA@mail.gmail.com>
-References: <CAMtiharLjfjEvgJaSvOru=NrxGcX754t9oLbxTMSngnF47ZQvA@mail.gmail.com>
-Date: Wed, 20 May 2015 02:30:13 +0200
-Message-ID: <CAMtiharcE6Gt24Vdf+VF-gR6ySVfO84DfrB6TNieY=aMsuXN7w@mail.gmail.com>
-Subject: Fwd: BTRFS crash after flac tag writing
-From: =?UTF-8?Q?Dani=C3=ABl_Sonck?= <dsonck92@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Kernel BUG during balance
+References: <555C04BC.9090808@spotprint.com.au>
+In-Reply-To: <555C04BC.9090808@spotprint.com.au>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Hi,
 
-My server streams music and I recently found the need to tag a lot of
-flac files automatically, this tagging process now triggers something
-in btrfs (which I only recently started to use). Below is the system
-information.
+I have a filesystem which triggers a BUG_ON() about 10-20 minutes into a 
+balance. At other times it appears to be functioning normally.
 
-I've looked whether my 8 concurrent writes were causing the issues or
-the sheer amount of data, even if I run only one metaflac instance at
-a time, this will still trigger.
 
-Daniel
+[ 1143.881622] kernel BUG at fs/btrfs/extent-tree.c:2248!
+[ 1143.882359] invalid opcode: 0000 [#1] SMP
+[ 1143.883094] Modules linked in: joydev(E) bonding(E) iTCO_wdt(E) 
+iTCO_vendor_support(E) eeepc_wmi(E) asus_wmi(E) sparse_keymap(E) 
+rfkill(E) mxm_wmi(E) ppdev(E) ext4(E) mbcache(E) jbd2(E) 
+x86_pkg_temp_thermal(E) intel_powerclamp(E) coretemp(E) kvm_intel(E) 
+kvm(E) crct10dif_pclmul(E) crc32_pclmul(E) crc32c_intel(E) 
+ghash_clmulni_intel(E) aesni_intel(E) lrw(E) gf128mul(E) glue_helper(E) 
+ablk_helper(E) cryptd(E) serio_raw(E) pcspkr(E) i2c_i801(E) lpc_ich(E) 
+mfd_core(E) snd_hda_codec_realtek(E) snd_hda_codec_generic(E) 
+snd_hda_intel(E) snd_hda_controller(E) snd_hda_codec(E) snd_hwdep(E) 
+snd_seq(E) snd_seq_device(E) snd_pcm(E) parport_pc(E) parport(E) 
+8250_fintek(E) wmi(E) snd_timer(E) tpm_infineon(E) mei_me(E) snd(E) 
+mei(E) soundcore(E) shpchp(E) nfsd(E) auth_rpcgss(E) nfs_acl(E) lockd(E) 
+grace(E) sunrpc(E)
+[ 1143.887229]  btrfs(E) xor(E) raid6_pq(E) sd_mod(E) ahci(E) libahci(E) 
+libata(E) firewire_ohci(E) igb(E) ptp(E) i915(E) pps_core(E) dca(E) 
+firewire_core(E) crc_itu_t(E) i2c_algo_bit(E) drm_kms_helper(E) drm(E) 
+video(E)
+[ 1143.888998] CPU: 0 PID: 4076 Comm: btrfs Tainted: G        W   E 
+4.0.1-1.el7.elrepo.x86_64 #1
+[ 1143.889900] Hardware name: ASUS All Series/P9D WS, BIOS 2004 06/05/2014
+[ 1143.890797] task: ffff88040aabc470 ti: ffff880382f5c000 task.ti: 
+ffff880382f5c000
+[ 1143.891699] RIP: 0010:[<ffffffffa0338376>]  [<ffffffffa0338376>] 
+__btrfs_run_delayed_refs+0x11f6/0x1220 [btrfs]
+[ 1143.892632] RSP: 0018:ffff880382f5f7a8  EFLAGS: 00010202
+[ 1143.893641] RAX: 0000000000004000 RBX: 0000000000000000 RCX: 
+0000000000000069
+[ 1143.894566] RDX: ffff8803f7d6f000 RSI: ffff880109319d90 RDI: 
+ffff880109319d88
+[ 1143.895482] RBP: ffff880382f5f8d8 R08: 0000000000000000 R09: 
+ffff88039d9388f0
+[ 1143.896379] R10: ffff8803b677e3c8 R11: 0000000000003523 R12: 
+ffff8803be941738
+[ 1143.897253] R13: 00000205f7a90000 R14: ffff880109319d20 R15: 
+0000000000000000
+[ 1143.898109] FS:  00007f1ff5b3dc80(0000) GS:ffff88041fa00000(0000) 
+knlGS:0000000000000000
+[ 1143.898952] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 1143.899774] CR2: 00007f6c6ac42000 CR3: 0000000382f52000 CR4: 
+00000000001407f0
+[ 1143.900584] Stack:
+[ 1143.901368]  0000000000000001 0000000000000000 0000020500000001 
+0000000000000001
+[ 1143.902164]  0000000000000000 fffffffffffffff8 ffff8803f99bfb40 
+fffffffffffffff8
+[ 1143.902953]  0000000282f5f818 0000000000004000 ffff8803f99bfb40 
+ffff8803f99bfb40
+[ 1143.903737] Call Trace:
+[ 1143.904530]  [<ffffffffa033c4f3>] 
+btrfs_run_delayed_refs.part.65+0x73/0x270 [btrfs]
+[ 1143.905333]  [<ffffffffa033c707>] btrfs_run_delayed_refs+0x17/0x20 
+[btrfs]
+[ 1143.906127]  [<ffffffffa034cf57>] 
+btrfs_should_end_transaction+0x47/0x60 [btrfs]
+[ 1143.906922]  [<ffffffffa033abc2>] btrfs_drop_snapshot+0x492/0x8a0 [btrfs]
+[ 1143.907721]  [<ffffffffa03a2a36>] merge_reloc_roots+0x106/0x250 [btrfs]
+[ 1143.908522]  [<ffffffffa03a2df1>] relocate_block_group+0x271/0x6a0 
+[btrfs]
+[ 1143.909321]  [<ffffffffa03a33f6>] 
+btrfs_relocate_block_group+0x1d6/0x2e0 [btrfs]
+[ 1143.910126]  [<ffffffffa037689e>] 
+btrfs_relocate_chunk.isra.38+0x3e/0xc0 [btrfs]
+[ 1143.910927]  [<ffffffffa0377d34>] __btrfs_balance+0x4f4/0x8e0 [btrfs]
+[ 1143.911725]  [<ffffffffa03784ca>] btrfs_balance+0x3aa/0x680 [btrfs]
+[ 1143.912524]  [<ffffffffa038184b>] ? btrfs_ioctl_balance+0x29b/0x520 
+[btrfs]
+[ 1143.913323]  [<ffffffffa0381714>] btrfs_ioctl_balance+0x164/0x520 [btrfs]
+[ 1143.914123]  [<ffffffffa03866e4>] btrfs_ioctl+0x574/0x2b10 [btrfs]
+[ 1143.914916]  [<ffffffff81188cab>] ? 
+lru_cache_add_active_or_unevictable+0x2b/0xa0
+[ 1143.915711]  [<ffffffff811a9641>] ? handle_pte_fault+0xc61/0x13c0
+[ 1143.916505]  [<ffffffff811c8e01>] ? alloc_pages_current+0x91/0x100
+[ 1143.917297]  [<ffffffff81068c80>] ? pte_alloc_one+0x30/0x50
+[ 1143.918086]  [<ffffffff811ab114>] ? handle_mm_fault+0x234/0x4a0
+[ 1143.918874]  [<ffffffff81206e18>] do_vfs_ioctl+0x2f8/0x4f0
+[ 1143.919664]  [<ffffffff8111c0a4>] ? __audit_syscall_entry+0xb4/0x110
+[ 1143.920452]  [<ffffffff810241cc>] ? do_audit_syscall_entry+0x6c/0x70
+[ 1143.921241]  [<ffffffff81207091>] SyS_ioctl+0x81/0xa0
+[ 1143.922026]  [<ffffffff816b2a89>] system_call_fastpath+0x12/0x17
+[ 1143.922812] Code: ff ff 48 8b 75 b7 45 31 c0 b9 01 00 00 00 41 bf f4 
+ff ff ff 8b 90 5c 03 00 00 48 89 c7 e8 f3 b0 ff ff e9 9b ef ff ff 0f 0b 
+0f 0b <0f> 0b 48 8b 4d c0 48 8b 55 b7 48 c7 c6 e0 39 3d a0 48 8b bd 38
+[ 1143.924516] RIP  [<ffffffffa0338376>] 
+__btrfs_run_delayed_refs+0x11f6/0x1220 [btrfs]
+[ 1143.925633]  RSP <ffff880382f5f7a8>
 
-# uname -a
-Linux sakuya 4.0.2-gentoo-2-default #1 SMP Thu May 14 02:50:16 CEST
-2015 x86_64 AMD FX(tm)-8320 Eight-Core Processor AuthenticAMD
-GNU/Linux
 
-# btrfs --version
-btrfs-progs v4.0
+--
 
-# btrfs fi show
-Label: none  uuid: f956cfd2-e851-42be-8943-d924c6c6e4e4
-        Total devices 1 FS bytes used 2.73TiB
-        devid    1 size 3.64TiB used 2.73TiB path /dev/sdd
+Regards,
+Ryan
 
-# btrfs fi df /storage/media-files3
-Data, single: total=2.73TiB, used=2.73TiB
-System, single: total=32.00MiB, used=320.00KiB
-Metadata, single: total=4.00GiB, used=2.97GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-# dmesg
-[372349.284091] BTRFS info (device sdd): disk space caching is enabled
-[372668.321999] ------------[ cut here ]------------
-[372668.322060] WARNING: CPU: 1 PID: 23395 at fs/btrfs/super.c:260
-__btrfs_abort_transaction+0x5f/0x130 [btrfs]()
-[372668.322147] BTRFS: Transaction aborted (error -95)
-[372668.322152] Modules linked in: btrfs xor raid6_pq binfmt_misc
-af_packet ipt_REJECT nf_reject_ipv4 xt_conntrack iptable_filter
-ipt_MASQUERADE nf_nat_masquerade_ipv4 xt_nat xt_tcpudp iptable_nat
-nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-bridge stp llc ip_tables x_tables joydev hid_generic usbhid xhci_pci
-xhci_hcd ohci_pci snd_hda_codec_via snd_hda_codec_generic ehci_pci
-snd_hda_codec_hdmi ohci_hcd ehci_hcd usbcore snd_hda_intel
-snd_hda_controller snd_hda_codec kvm_amd kvm snd_hwdep
-crct10dif_pclmul snd_pcm crc32_pclmul crc32c_intel ppdev
-ghash_clmulni_intel aesni_intel aes_x86_64 lrw snd_timer e1000
-gf128mul glue_helper r8169 ablk_helper snd parport_pc mii cryptd
-serio_raw parport shpchp pcspkr edac_core sp5100_tco usb_common button
-fam15h_power wmi i2c_piix4 edac_mce_amd soundcore
-[372668.322610]  k10temp asus_atk0110 acpi_cpufreq processor sch_fq_codel
-[372668.322652] CPU: 1 PID: 23395 Comm: kworker/u16:3 Tainted: G
- W       4.0.2-gentoo-2-default #1
-[372668.322721] Hardware name: System manufacturer System Product
-Name/M5A78L-M/USB3, BIOS 2001    09/11/2014
-[372668.322803] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-[372668.322840]  ffffffffa04bfe32 ffff8801e8937c08 ffffffff816edc91
-0000000000000007
-[372668.322911]  ffff8801e8937c58 ffff8801e8937c48 ffffffff81056675
-ffff8801e8937ce8
-[372668.322986]  ffff8803ad83fd28 00000000ffffffa1 ffff880147d2a800
-ffffffffa04bea60
-[372668.323058] Call Trace:
-[372668.323097]  [<ffffffff816edc91>] dump_stack+0x45/0x57
-[372668.323134]  [<ffffffff81056675>] warn_slowpath_common+0x95/0xe0
-[372668.323171]  [<ffffffff81056706>] warn_slowpath_fmt+0x46/0x50
-[372668.323219]  [<ffffffffa0454e65>] ? try_merge_map+0x45/0x150 [btrfs]
-[372668.323261]  [<ffffffffa040f46f>]
-__btrfs_abort_transaction+0x5f/0x130 [btrfs]
-[372668.323339]  [<ffffffffa0447b82>]
-btrfs_finish_ordered_io+0x552/0x5e0 [btrfs]
-[372668.323418]  [<ffffffffa0447e85>] finish_ordered_fn+0x15/0x20 [btrfs]
-[372668.323466]  [<ffffffffa046f168>] normal_work_helper+0xb8/0x2a0 [btrfs]
-[372668.323515]  [<ffffffffa046f4e2>] btrfs_endio_write_helper+0x12/0x20 [btrfs]
-[372668.323552]  [<ffffffff8106ed63>] process_one_work+0x153/0x410
-[372668.323589]  [<ffffffff8106f7bb>] worker_thread+0x6b/0x480
-[372668.323693]  [<ffffffff8106f750>] ? rescuer_thread+0x300/0x300
-[372668.323730]  [<ffffffff8107473b>] kthread+0xdb/0x100
-[372668.323767]  [<ffffffff81074660>] ? kthread_create_on_node+0x190/0x190
-[372668.323805]  [<ffffffff816f4218>] ret_from_fork+0x58/0x90
-[372668.323845]  [<ffffffff81074660>] ? kthread_create_on_node+0x190/0x190
-[372668.323885] ---[ end trace c0894b8b0ebe359e ]---
-[372668.323925] BTRFS: error (device sdd) in
-btrfs_finish_ordered_io:2896: errno=-95 unknown

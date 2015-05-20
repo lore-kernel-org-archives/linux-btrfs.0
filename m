@@ -1,74 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47891 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751530AbbETNTP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 May 2015 09:19:15 -0400
-Date: Wed, 20 May 2015 15:19:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.0.1
-Message-ID: <20150520131913.GJ23255@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47655 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753213AbbETONP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 May 2015 10:13:15 -0400
+Date: Wed, 20 May 2015 10:13:11 -0400
+From: Chris Mason <clm@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <holger.hoffstaette@googlemail.com>
+Subject: [PATCH] Btrfs: fix regression in raid level conversion
+Message-ID: <20150520141301.GA16249@ret.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e changed
+btrfs_set_block_group_ro to avoid trying to allocate new chunks with the
+new raid profile during conversion.  This fixed failures when there was
+no space on the drive to allocate a new chunk, but the metadata
+reserves were sufficient to continue the conversion.
 
-the btrfs-progs 4.0.1 have been released, a bugfix release with a few
-enhancements.
+But this ended up causing a regression when the drive had plenty of
+space to allocate new chunks, mostly because reduce_alloc_profile isn't
+using the new raid profile.
 
->From now on, the latest development branch will be named 'devel'. It might be
-rebased occasionally.
+Fixing btrfs_reduce_alloc_profile is a bigger patch.  For now, do a
+partial revert of 2f0810880, and don't error out if we hit ENOSPC.
 
-The branch 'master' is updated at the time of release only and is never
-rebased, no change here.
+Signed-off-by: Chris Mason <clm@fb.com>
+---
+ fs/btrfs/extent-tree.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-Changes:
-* restore:
-  * can restore symlinks, new option --symlinks
-  * long option variants added
-* convert: dropped dependency on acl.h header and libacl is not required for
-  build
-* fix for 'check' crash
-* device remove error message fix
-* preparatory works for fsid change
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-Anand Jain (2):
-      btrfs-progs: btrfs_scan_block_devices is unused function delete it
-      btrfs-progs: use the correct variable
-
-Dan Merillat (2):
-      btrfs-progs: restore: separate the overwrite check
-      btrfs-progs: optionally restore symlinks.
-
-David Sterba (4):
-      btrfs-progs: restore: use bigger buffer for output path name
-      btrfs-progs: restore: shift option texts
-      btrfs-progs: restore: add more long option variants
-      btrfs-progs: convert: drop dependency on sys/acl.h
-
-Qu Wenruo (15):
-      btrfs-progs: fsck: Fix a shallow copy which will leads to segfault.
-      btrfs-progs: Add CHANGING_FSID super flag
-      btrfs-progs: Use unified function to implement print_readable_*_flag function
-      btrfs-progs: show-super: print human readable text for super flags
-      btrfs-progs: Add open_ctree check for uuid changing
-      btrfs-progs: Export write_tree_block
-      btrfs-progs: Introduce change_header_uuid function
-      btrfs-progs: Introduce change_extents_uuid function
-      btrfs-progs: Introduce change_device_uuid function
-      btrfs-progs: Introduce change_devices_uuid function.
-      btrfs-progs: Introduce change_fsid_prepare and change_fsid_done functions
-      btrfs-progs: Introduce change_uuid function
-      btrfs-progs: Remove non-exist csum size.
-      btrfs-progs: Add extra chunk item check to avoid btrfs-progs crash.
-      btrfs-progs: Fix a bug in chunk item extra check and allow degraded chunk.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 45e3f08..a115599 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8829,6 +8829,26 @@ again:
+ 		goto again;
+ 	}
+ 
++	/*
++	 * if we are changing raid levels, try to allocate a corresponding
++	 * block group with the new raid level.
++	 */
++	if (!(cache->flags & BTRFS_BLOCK_GROUP_SYSTEM)) {
++		alloc_flags = update_block_group_flags(root, cache->flags);
++		if (alloc_flags != cache->flags) {
++			ret = do_chunk_alloc(trans, root, alloc_flags,
++					     CHUNK_ALLOC_FORCE);
++			/*
++			 * ENOSPC is allowed here, we may have enough space
++			 * already allocated at the new raid level to
++			 * carry on
++			 */
++			if (ret == -ENOSPC)
++				ret = 0;
++			if (ret < 0)
++				goto out;
++		}
++	}
+ 
+ 	ret = set_block_group_ro(cache, 0);
+ 	if (!ret)
+-- 
+2.4.0
 

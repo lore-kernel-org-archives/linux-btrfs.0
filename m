@@ -1,32 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:19956 "EHLO mga02.intel.com"
+Received: from mga01.intel.com ([192.55.52.88]:17778 "EHLO mga01.intel.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934443AbbEOU2b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 May 2015 16:28:31 -0400
+	id S1754448AbbEUMu7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 08:50:59 -0400
 From: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
-Date: Fri, 15 May 2015 21:28:29 +0100
-Message-Id: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
+Subject: [PATCH] fsck.btrfs: Fix bashism and bad getopts processing
+Date: Thu, 21 May 2015 13:50:55 +0100
+Message-Id: <1432212655-6238-1-git-send-email-dimitri.j.ledkov@intel.com>
+In-Reply-To: <20150521115651.GP23255@twin.jikos.cz>
+References: <20150521115651.GP23255@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=784911
+First fix == bashism, as that is not accepted by e.g. Debian/Ubuntu
+dash.
+
+Secondly shift OPTIND, such that last parameter is checked to exist.
+
 Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
 ---
- fsck.btrfs | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fsck.btrfs | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fsck.btrfs b/fsck.btrfs
-index f056a7f..3a92804 100755
+index f056a7f..20b070a 100755
 --- a/fsck.btrfs
 +++ b/fsck.btrfs
-@@ -31,7 +31,7 @@ if [ ! -e $DEV ]; then
+@@ -26,12 +26,13 @@ do
+ 	a|A|p|y)	AUTO=true;;
+ 	esac
+ done
++shift $(($OPTIND -1))
+ eval DEV=\${$#}
+ if [ ! -e $DEV ]; then
  	echo "$0: $DEV does not exist"
  	exit 8
  fi
 -if [ "$AUTO" == "false" ]; then
-+if [ "false" = "$AUTO" ]; then
++if ! $AUTO; then
  	echo "If you wish to check the consistency of a BTRFS filesystem or"
  	echo "repair a damaged filesystem, see btrfs(8) subcommand 'check'."
  fi

@@ -1,51 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f175.google.com ([209.85.214.175]:35580 "EHLO
-	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751193AbbEUIUA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 May 2015 04:20:00 -0400
-Received: by obcus9 with SMTP id us9so55095170obc.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2015 01:19:59 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:55815 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752790AbbEUIwS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 04:52:18 -0400
+Date: Thu, 21 May 2015 10:52:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Fix a bug which makes unfinished fsid
+ change unrecoverable.
+Message-ID: <20150521085217.GO23255@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1431671795-30516-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <555D41D5.10109@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
-References: <1431721709-5146-1-git-send-email-dimitri.j.ledkov@intel.com>
-Date: Thu, 21 May 2015 09:19:59 +0100
-Message-ID: <CANBHLUhme-Y1FP21yQZ3w6QQCvOTNrXDmNKDRRY8rsMtbDJwuQ@mail.gmail.com>
-Subject: Re: [PATCH] Fix bashism in fsck.btrfs for debian/ubuntu dash.
-From: Dimitri John Ledkov <xnox@debian.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <555D41D5.10109@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 15 May 2015 at 21:28, Dimitri John Ledkov <dimitri.j.ledkov@intel.com> wrote:
-> Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=784911
-> Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-> ---
->  fsck.btrfs | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fsck.btrfs b/fsck.btrfs
-> index f056a7f..3a92804 100755
-> --- a/fsck.btrfs
-> +++ b/fsck.btrfs
-> @@ -31,7 +31,7 @@ if [ ! -e $DEV ]; then
->         echo "$0: $DEV does not exist"
->         exit 8
->  fi
-> -if [ "$AUTO" == "false" ]; then
-> +if [ "false" = "$AUTO" ]; then
->         echo "If you wish to check the consistency of a BTRFS filesystem or"
->         echo "repair a damaged filesystem, see btrfs(8) subcommand 'check'."
->  fi
+On Thu, May 21, 2015 at 10:24:21AM +0800, Qu Wenruo wrote:
+> I didn't see this patch merged into 4.0.1.
+> 
+> As without this patch, canceled fsid change process can't be recovered.
 
-There was a lot of discussion about this trivial patch, mostly because
-it's so trivial and has many ways to fix.
+There are only some of the fsid patches merged, the preparatory work.
+When the series looks ok up to some patch I think it's better to merge
+it so you don't have to resend it again.
 
-I hope btrfs maintainers could implement & push any of the proposed
-ways to resolve this bashism to rule them all =)
+The commandline interface is not present yet so it's not even possible
+to start the fsid change.
 
--- 
-Regards,
+> I totally understand that it's not good to merge a patch into the
+> already fully tested tree.
+> So would you please consider add this patch to next release(even 4.1 is OK)?
 
-Dimitri.
+Yes, that's the plan.

@@ -1,68 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14516 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751976AbbETSIm (ORCPT
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:34593 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753915AbbEUBG2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 May 2015 14:08:42 -0400
-Message-ID: <555CCDA1.2040302@fb.com>
-Date: Wed, 20 May 2015 14:08:33 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 20 May 2015 21:06:28 -0400
+Date: Wed, 20 May 2015 18:04:40 -0700
+From: Kent Overstreet <kent.overstreet@gmail.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>,
+        linux-btrfs@vger.kernel.org, axboe@fb.com, zab@zabbo.net,
+        neilb@suse.de
+Subject: Proposal for annotating _unstable_ pages
+Message-ID: <20150521010440.GA17405@kmo-pixel>
+References: <20150515205825.GC24967@birch.djwong.org>
+ <20150519154200.GA2559@kmo-pixel>
+ <20150519201055.GD27115@birch.djwong.org>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        <holger.hoffstaette@googlemail.com>
-Subject: Re: [PATCH] Btrfs: fix regression in raid level conversion
-References: <20150520141301.GA16249@ret.masoncoding.com> <20150520170227.GM23255@twin.jikos.cz>
-In-Reply-To: <20150520170227.GM23255@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150519201055.GD27115@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/20/2015 01:02 PM, David Sterba wrote:
-> On Wed, May 20, 2015 at 10:13:11AM -0400, Chris Mason wrote:
->> Commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e changed
->> btrfs_set_block_group_ro to avoid trying to allocate new chunks with the
->> new raid profile during conversion.  This fixed failures when there was
->> no space on the drive to allocate a new chunk, but the metadata
->> reserves were sufficient to continue the conversion.
->>
->> But this ended up causing a regression when the drive had plenty of
->> space to allocate new chunks, mostly because reduce_alloc_profile isn't
->> using the new raid profile.
->>
->> Fixing btrfs_reduce_alloc_profile is a bigger patch.  For now, do a
->> partial revert of 2f0810880, and don't error out if we hit ENOSPC.
->>
->> Signed-off-by: Chris Mason <clm@fb.com>
->> ---
->>  fs/btrfs/extent-tree.c | 20 ++++++++++++++++++++
->>  1 file changed, 20 insertions(+)
->>
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index 45e3f08..a115599 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -8829,6 +8829,26 @@ again:
->>  		goto again;
->>  	}
->>  
->> +	/*
->> +	 * if we are changing raid levels, try to allocate a corresponding
->> +	 * block group with the new raid level.
->> +	 */
->> +	if (!(cache->flags & BTRFS_BLOCK_GROUP_SYSTEM)) {
+On Tue, May 19, 2015 at 01:10:55PM -0700, Darrick J. Wong wrote:
+> On Tue, May 19, 2015 at 08:42:00AM -0700, Kent Overstreet wrote:
+> > Also, stable pages - what's been going on there? Last I heard you were talking
+> > about using the page migration code to do COW, did anything come of that? I just
+> > added data checksumming/compression to bcachefs, so that's been fresh on my
+> > mind.
 > 
-> This prevents to switch the system chunk in all cases. What was the
-> reason to do it?
+> Yeah.  I never figured out a sane way to migrate pages and keep everything
+> else happy.  Daniel Phillips is having a go at page forking for tux3; let's
+> see if the questions about that get resolved.
 
-I thought the system chunk was being caught by check_system_chunk below,
-but no, its using the wrong profile.  It did work when I tested, but I
-ran it a few times in a row and got inconsistent results.
+That would be great, we need something.
 
+I'd also be really curious what btrfs is doing today - is it just bouncing
+everything internally, or did they come up with something more clever?
+
+> > Also, there's probably always going to be situations where we're reading or
+> > writing to pages user space can stomp on (dio) - IMO we need to add a bio flag
+> > to annotate this - "if you need this to be stable you have to bounce it".
+> > Otherwise either filesystems/block drivers are going to be stuck bouncing
+> > everything, or it'll just (continue to be) buggy.
 > 
-> If I remove the check, then the conversions work in all combinations.
-> Eg.
+> Well, for now there's BIO_SNAP_STABLE that forces the block layer to bounce it,
+> but right now ext3 is the last user of it, and afaict btrfs is the only other
+> FS that takes care of stable pages on its own.
 
-Thanks, I'm pushing out an updated patch without the check.
+I have no idea what BIO_SNAP_STABLE was supposed to be for, but I don't see how
+it's useful for anything sane.
 
--chris
+I'm _guessing_ it's to get atomic snapshots? But if the upper layer is modifying
+the data being written while the write is in flight, the memcpy() for the bounce
+still isn't going to be atomic. If the upper layer cares about atomicity, it
+needs to not diddle over the memory its writing while the write is in flight.
 
+But that's the complete opposite of the problem stable pages are supposed to
+solve: stable pages are for when the _lower_ layer (be it filesystem, bcache,
+md, lvm) needs the memory being either read to or written from (both, it's not
+just writes) to not be diddled over while the IO is in flight.
+
+Now, a point that I think has been missed is that stable pages are _not_ a
+complete solution, at least for consumers in the block layer.
+
+The situation today is that if I'm in the block layer, and I get a handed a read
+or write bio, I _don't know_ if it's from something that's going to diddle over
+those pages or not. So if I require stable pages - be it for data checksumming
+or for other things - I've just got to bounce the bio myself.
+
+And then the really annoying thing is that if you've got stacked things that all
+need stable pages (maybe btrfs on top of bcache on top of md) - they _all_ have
+to assume the pages aren't going to be stable, so if they need them they _all_
+have to bounce - even though once the first layer bounced the bio that made it
+stable for everything underneath it.
+
+Stable pages for IO to/from the pagecache are _not_ going to solve this problem,
+because the page cache is not the only source of IO to non stable pages (Direct
+IO will always be, even if everything else gets fixed).
+
+So what I'm proposing is:
+
+ - Add a new bio flag: BIO_PAGES_NOT_STABLE
+
+ - Everything that submits a bio and _doesn't_ guarantee that the pages won't be
+   touched while the IO is in flight has to set that flag.  This flag will have
+   to be preserved when cloning a bio, but not when cloning a bio and its pages
+   (i.e. bouncing it).
+
+This is going to be a lot of not-fun work auditing code, but IMO it really needs
+to be done. As a bonus, once it's done everything that generates IO that must be
+expensively bounced will be nicely annotated.
+
+To verify that the annotations are correct, for writes we can add some debug
+code to the generic IO path that checksums the data before and after the IO and
+complains loudly if the checksums don't match. Dunno what we can do for reads.
+
+Thoughts?

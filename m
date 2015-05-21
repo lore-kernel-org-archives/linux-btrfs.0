@@ -1,75 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:55462 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755744AbbEUOjv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 May 2015 10:39:51 -0400
-Message-ID: <555DEE34.9050702@gmx.de>
-Date: Thu, 21 May 2015 16:39:48 +0200
-From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+Received: from aserp1040.oracle.com ([141.146.126.69]:20334 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753041AbbEUOs6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 10:48:58 -0400
+Message-ID: <555DF054.4080707@oracle.com>
+Date: Thu, 21 May 2015 22:48:52 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Calvin Walton <calvin.walton@kepstin.ca>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: shall I use BTRFS sub-volumes for top-level directories ?
-References: <55535C12.3010807@gmx.de> <1431539167.9076.9.camel@kepstin.ca>
-In-Reply-To: <1431539167.9076.9.camel@kepstin.ca>
-Content-Type: text/plain; charset=utf-8
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/27 V5] provide framework so that sysfs attributs from
+ the fs_devices can be added
+References: <1426845702-6298-1-git-send-email-anand.jain@oracle.com> <55239094.2010109@oracle.com> <20150520164039.GK23255@twin.jikos.cz>
+In-Reply-To: <20150520164039.GK23255@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/13/2015 07:46 PM, Calvin Walton wrote:
-> On Wed, 2015-05-13 at 16:13 +0200, Toralf Förster wrote:
->> To support the Gentoo Linux ecosystem I do maintain a server as a 
->> tinderbox. I create chroot images based on various Gentoo minmal ISO 
->> images. I usually run 4 chroot image jobs in parallel. The chroots 
->> are full-filled over days/weeks with the compiled output. Issues 
->> during that are filed into Gentoo's bugzilla.
->>
->> If an image is "full" (~35 GB with many files + directories in it) 
->> or completely bricked I create a new one of the same type. The old 
->> is kept for weeks/months to further serve to bug reports questions. 
->> But old images are rarely accessed usually.
->>
->> Because deleting a chroot image takes awfully long and b/c I 
->> experience iowait spikes even if the 3 TB drive isn't filled by more 
->> than 50% I do wonder, if it would make sense to create a btrfs 
->> subvolume for each chroot image ?
->> The deletion of a subvolume should be fast compared to recursivly 
->> deleting a 35 GB file system structure, right ?
-> 
-> Unfortunately, this isn't entirely the case… Deleting a subvolume 
-> actually triggers a background garbage-collecting thread to run in the 
-> kernel (named "btrfs-cleaner") which goes recursively through the 
-> deleted tree to unallocate the files.
-> 
-> It will probably save a bit of IO compared to doing it with "rm -r", 
-> because there is less metadata updating. (You'll probably see that the 
-> "btrfs-transaction" process has high disk io during "rm -r", since it 
-> has to commit metadata periodically while the delete is still in 
-> progress.)
-> 
-> Unfortunately the IO scheduling on btrfs-cleaner currently isn't 
-> great, so it'll likely still cause io spikes, reducing performance of 
-> other applications while it runs.
-> 
-> As with all things, it's probably best if you just try it and see!
-> 
 
-Pff - deleting a directory took over 30 minutes before. Now using subvolumes the same is done in a 1/2 min.
-And even if there would be back ground jobs now - the system is still responsive.
+  some confusion, sorry about that. will get seed-fsid under seeding dir.
+  (However seeding name was already used by an (upcoming) attribute
+  (fs_devices->seeding), but now I am thinking seeding as a kobject dir
+  is better, so will rename the attribute to something else.. like
+  seeding_flag).
+
+  thanks for the feedback.
+
+Thanks, Anand
 
 
->> (And BTW what's about re-balancing of the BTRFS-tree during the 
->> daily usage: wouldn't this profit from that too ?
-> 
-> All subvolumes share the same allocated space for metadata and data, 
-> so using subvolumes vs. directories currently won't make any 
-> difference regarding rebalancing.
-> 
-
-
--- 
-Toralf
-pgp key: 7B1A 07F4 EC82 0F90 D4C2  8936 872A E508 0076 E94E
---
-"; the past is all dirty and cruel in the modern popular imagination, with the exception of the Romans, who are just cruel"
-Ian Mortimer, 2008, "The Time Traveller's Guide to Medieval England"
+On 05/21/2015 12:40 AM, David Sterba wrote:
+> On Tue, Apr 07, 2015 at 04:08:52PM +0800, Anand Jain wrote:
+>>    Can I check if this patch set is lined up for the integration branch ?
+>>    Any comments ?
+>
+> I've noticed that the proposal to add an extra directory to the seeding
+> uuid hasn't been implemented.
+>
+> http://article.gmane.org/gmane.comp.file-systems.btrfs/43095
+>
+>    "I'm thinking about a representation of the possible relations between
+>    the devices. Seems that the seeding hierarchy for one filesystem is
+>    always linear, so it's ok to represent it by the filesystem UUID chain.
+>
+>    /sys/fs/btrfs/UUID1/UUID2/UUID3
+>
+>    What I still find unsatisfying is lack of any explicit naming attached
+>    to the UUIDs. As we can use lots of types of UUID, saying that "if it
+>    looks like an uuid if the main filesystem directory in sysfs, then it's
+>    the seeding filesystem" is not the best we can come up with.
+>
+>    I don't have a final idea, but at least
+>
+>    /sys/fs/btrfs/UUID1/seeding/UUID2/seeding/UUID3
+>
+>    would look more friendly to the user and also more accssible to
+>    scripting. We coud possibly add other files/dirs to the inserted
+>    directory."
+>
+> I still think that the plain UUID1/UUID2/... naming scheme is not
+> acceptable. Yes it is redundant in some way but also more descriptive.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

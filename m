@@ -1,153 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36807 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755974AbbEUVuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 May 2015 17:50:08 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YvYLs-0002kc-5R
-	for linux-btrfs@vger.kernel.org; Thu, 21 May 2015 23:50:04 +0200
-Received: from 93.96-242-81.adsl-dyn.isp.belgacom.be ([81.242.96.93])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2015 23:50:04 +0200
-Received: from jan.voet by 93.96-242-81.adsl-dyn.isp.belgacom.be with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2015 23:50:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Jan Voet <jan.voet@gmail.com>
-Subject: BTRFS RAID5 filesystem corruption during balance
-Date: Thu, 21 May 2015 21:43:36 +0000 (UTC)
-Message-ID: <loom.20150521T231006-840@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-ig0-f170.google.com ([209.85.213.170]:36527 "EHLO
+	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752558AbbEUW7u convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 18:59:50 -0400
+Received: by igbpi8 with SMTP id pi8so22539584igb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2015 15:59:49 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <555D47A4.1080808@cn.fujitsu.com>
+References: <CAMtiharLjfjEvgJaSvOru=NrxGcX754t9oLbxTMSngnF47ZQvA@mail.gmail.com>
+	<CAMtihapRHKH-+f3TChO5Feoo54AiSdJcoCXn+D9Ee+7kF4x90w@mail.gmail.com>
+	<555D47A4.1080808@cn.fujitsu.com>
+Date: Fri, 22 May 2015 00:59:49 +0200
+Message-ID: <CAMtihaq1OOfqLPDWg6jP2T9yLshAHbCAfL_FofWZuhHZKjgEuw@mail.gmail.com>
+Subject: Re: BTRFS crash after flac tag writing
+From: =?UTF-8?Q?Dani=C3=ABl_Sonck?= <dsonck92@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+There are no files smaller than 4k that I write to during tagging, I
+do write out 0 byte files to indicate the folder has been done if that
+gives any useful information.
 
-I recently upgraded a quite old home NAS system (Celeron M based) to Ubuntu
-14.04 with an upgraded linux kernel (3.19.8) and BTRFS tools v3.17.  This
-system has 5 brand new 6TB drives (HGST) with all drives directly handled by
-BTRFS, both data and metadata in RAID5.
-After loading up the system with 12.5TB data (took some time :-) ), a btrfs
-balance was done to see how it would behave.   After 3 days into it and
-still 48% to go, the system locked up and didn't respond anymore to ssh, usb
-keyboard, nor did the VGA output work anymore.  Only pings worked (IP/ICMP
-Echo Request/Reply) so the kernel IP stack was still active, nothing else
-did however and no disk activity was seen at all.
-So I did a hard reset, hoping that on restart it would resume the balance. 
-It actually seemed to restart the balance but showed only a few extents
-remaining (11 or so, instead of the 3000+ that were shown originally) and
-after a small amount of time seemed to have completed the balance ???
-The result seems to be a mess however, with the filesystem being remounted
-read-only after a few minutes, with lots of btrfs-related stackdumps in the
-kernel message dump. Rebooting doesn't seem to help.  It always ends up in
-the same situation after some time.
-The data is still visible, but I'm a bit of a loss as to how I should
-continue.  Any advice would be welcome.
+To specifically say what this script is doing. I had a large
+collection of tta rip files which I wanted to convert to individual
+flac files. I already did my splitting but the tagger to write the
+tags out was incomplete. So, now I'm retagging all the flac files by
+going over the collection of cue files again and tagging each
+individual flac file. Perhaps worth mentioning: it is a converted
+partition from ext4. I started out on ext4, on which I performed the
+mass splitting. Afterwards, I discovered btrfs and it's ability to
+convert from ext4 so I converted it into btrfs. Then to discover the
+mass tagging fails after a while.
 
-Some data:
+Well, I do have a slight remark to make, I *did* have pregap files
+left over from splitting. I found out during manual correction of the
+tags, these did get tags written to them and I don't know how large
+those files were. I deleted those files recently because they messed
+with the proper tagging (file "0" got the tags of file "1", etc.). I
+will run the non parallelized version of the script which fails as
+soon as it can't write out it's "done.txt" file and see if it stops at
+the same files.
 
-$ sudo btrfs fi show /dev/sdb
-Label: none  uuid: d278e7df-e26d-4a9b-99fb-71fbef819dd1
-        Total devices 5 FS bytes used 11.58TiB
-        devid    1 size 5.46TiB used 2.92TiB path /dev/sdb
-        devid    2 size 5.46TiB used 2.92TiB path /dev/sdc
-        devid    3 size 5.46TiB used 2.92TiB path /dev/sdd
-        devid    4 size 5.46TiB used 2.92TiB path /dev/sde
-        devid    5 size 5.46TiB used 2.92TiB path /dev/sdf
+In any case, thanks for the reply and new directions.
 
-Btrfs v3.17
+Daniel
 
-One of the stackdumps:
-
-[  328.224417] ------------[ cut here ]------------
-[  328.224446] WARNING: CPU: 0 PID: 1633 at
-/home/kernel/COD/linux/fs/btrfs/disk-io.c:513 csum_dirty_buffer+0x6f/0xa0
-[btrfs]()
-[  328.224448] Modules linked in: ppdev i915 video net2280 udc_core
-drm_kms_helper lpc_ich drm serio_raw shpchp i2c_algo_bit 8250_fintek
-parport_pc mac_hid lp parport btrfs xor raid6_pq hid_generic usbhid sata_mv
-e1000 pata_acpi floppy hid
-[  328.224473] CPU: 0 PID: 1633 Comm: kworker/u2:12 Tainted: G        W    
- 3.19.8-031908-generic #201505110938
-[  328.224476] Hardware name:    /i854GML-LPC47M182, BIOS 6.00 PG 06/21/2007
-[  328.224508] Workqueue: btrfs-worker btrfs_worker_helper [btrfs]
-[  328.224510]  00000000 00000000 c0ae5e40 c16e4a4d 00000000 c0ae5e70
-c106250e c1907948
-[  328.224518]  00000000 00000661 f89c3444 00000201 f893142f f893142f
-d6f3a8f0 f72b1ac8
-[  328.224525]  f6d5d800 c0ae5e80 c1062572 00000009 00000000 c0ae5e9c
-f893142f 187ced34
-[  328.224532] Call Trace:
-[  328.224537]  [<c16e4a4d>] dump_stack+0x41/0x52
-[  328.224541]  [<c106250e>] warn_slowpath_common+0x8e/0xd0
-[  328.224570]  [<f893142f>] ? csum_dirty_buffer+0x6f/0xa0 [btrfs]
-[  328.224598]  [<f893142f>] ? csum_dirty_buffer+0x6f/0xa0 [btrfs]
-[  328.224603]  [<c1062572>] warn_slowpath_null+0x22/0x30
-[  328.224631]  [<f893142f>] csum_dirty_buffer+0x6f/0xa0 [btrfs]
-[  328.224660]  [<f893149f>] btree_csum_one_bio.isra.121+0x3f/0x50 [btrfs]
-[  328.224688]  [<f89314c3>] __btree_submit_bio_start+0x13/0x20 [btrfs]
-[  328.224715]  [<f892f81d>] run_one_async_start+0x3d/0x60 [btrfs]
-[  328.224750]  [<f896e2b2>] normal_work_helper+0x62/0x180 [btrfs]
-[  328.224778]  [<f8930630>] ? __btree_submit_bio_done+0x50/0x50 [btrfs]
-[  328.224812]  [<f896e3e0>] btrfs_worker_helper+0x10/0x20 [btrfs]
-[  328.224817]  [<c1077cb1>] process_one_work+0x121/0x3a0
-[  328.224822]  [<c16f057c>] ? apic_timer_interrupt+0x34/0x3c
-[  328.224826]  [<c107854d>] worker_thread+0xed/0x390
-[  328.224831]  [<c1099fbf>] ? __wake_up_locked+0x1f/0x30
-[  328.224835]  [<c1078460>] ? create_worker+0x1b0/0x1b0
-[  328.224840]  [<c107d09b>] kthread+0x9b/0xb0
-[  328.224845]  [<c16efb81>] ret_from_kernel_thread+0x21/0x30
-[  328.224850]  [<c107d000>] ? flush_kthread_worker+0x80/0x80
-[  328.224853] ---[ end trace e8386011b87476a4 ]---
-
-There's plenty more of those as well as other messages such as:
-
-[  329.354420] BTRFS: error (device sdf) in btrfs_run_delayed_refs:2792:
-errno=-5 IO failure
-[  329.354522] BTRFS info (device sdf): forced readonly
-[  476.620532] perf interrupt took too long (2512 > 2500), lowering
-kernel.perf_event_max_sample_rate to 50000
-[  549.412065] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.425057] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.425415] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.425641] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.425655] BTRFS info (device sdf): no csum found for inode 15963 start 0
-[  549.425943] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.426154] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.426165] BTRFS info (device sdf): no csum found for inode 15963 start 4096
-[  549.426443] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.426653] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.426663] BTRFS info (device sdf): no csum found for inode 15963 start 8192
-[  549.426944] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.427153] BTRFS (device sdf): bad tree block start 17003380002271197777
-19274981785600
-[  549.427163] BTRFS info (device sdf): no csum found for inode 15963 start
-12288
-[  549.427655] BTRFS info (device sdf): no csum found for inode 15963 start
-16384
-[  549.428447] BTRFS info (device sdf): no csum found for inode 15963 start
-20480
-[  549.429175] BTRFS info (device sdf): no csum found for inode 15963 start
-24576
-
-.....
-
-I can provide more info on request, and don't mind trying out different
-things (the data was fully backed up before I started this experiment).
-
-Kind regards,
-Jan
-
-
+2015-05-21 4:49 GMT+02:00 Qu Wenruo <quwenruo@cn.fujitsu.com>:
+>
+>
+> -------- Original Message  --------
+> Subject: Re: BTRFS crash after flac tag writing
+> From: Daniël Sonck <dsonck92@gmail.com>
+> To: <linux-btrfs@vger.kernel.org>
+> Date: 2015年05月20日 21:54
+>
+>> Extra information:
+>> While I was trying to work around this issue, I found that it rarely
+>> triggers during the whole process. If I resume the process, it seems
+>> like it just doesn't like a few particular files it needs to tag. As I
+>> can currently live with this state, I have no intention to dive deeper
+>> into this on my own. However, if any of you suggest any particular
+>> strategy to find out why this happens, I'm more than willing to help
+>> find and squash this bug.
+>>
+>> As I just found out:
+>> If I do the regular mass tagging from cue files, it hits the bug
+>> twice, so I need to start the process three times.
+>> If I do the mass tagging but first sort the cue file list to use
+>> alphabetically, it hits the bug only once.
+>>
+>> To me it seems like a particular order of file alterations trigger this
+>> bug.
+>>
+>> Daniel
+>>
+>> 2015-05-20 0:01 GMT+02:00 Daniël Sonck <dsonck92@gmail.com>:
+>>>
+>>> Hi all,
+>>>
+>>> My server streams music and I recently found the need to tag a lot of
+>>> flac
+>>> files automatically, this tagging process now triggers something in btrfs
+>>> (which I only recently started to use). Below is the system information.
+>>>
+>>> I've looked whether my 8 concurrent writes were causing the issues or the
+>>> sheer amount of data, even if I run only one metaflac instance at a time,
+>>> this will still trigger.
+>>>
+>>> Daniel
+>>>
+>>> # uname -a
+>>> Linux sakuya 4.0.2-gentoo-2-default #1 SMP Thu May 14 02:50:16 CEST 2015
+>>> x86_64 AMD FX(tm)-8320 Eight-Core Processor AuthenticAMD GNU/Linux
+>>>
+>>> # btrfs --version
+>>> btrfs-progs v4.0
+>>>
+>>> # btrfs fi show
+>>> Label: none  uuid: f956cfd2-e851-42be-8943-d924c6c6e4e4
+>>>          Total devices 1 FS bytes used 2.73TiB
+>>>          devid    1 size 3.64TiB used 2.73TiB path /dev/sdd
+>>>
+>>> # btrfs fi df /storage/media-files3
+>>> Data, single: total=2.73TiB, used=2.73TiB
+>>> System, single: total=32.00MiB, used=320.00KiB
+>>> Metadata, single: total=4.00GiB, used=2.97GiB
+>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>
+>>> # dmesg
+>>> [372349.284091] BTRFS info (device sdd): disk space caching is enabled
+>>> [372668.321999] ------------[ cut here ]------------
+>>> [372668.322060] WARNING: CPU: 1 PID: 23395 at fs/btrfs/super.c:260
+>>> __btrfs_abort_transaction+0x5f/0x130 [btrfs]()
+>>> [372668.322147] BTRFS: Transaction aborted (error -95)
+>>> [372668.322152] Modules linked in: btrfs xor raid6_pq binfmt_misc
+>>> af_packet
+>>> ipt_REJECT nf_reject_ipv4 xt_conntrack iptable_filter ipt_MASQUERADE
+>>> nf_nat_masquerade_ipv4 xt_nat xt_tcpudp iptable_nat nf_conntrack_ipv4
+>>> nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack bridge stp llc ip_tables
+>>> x_tables joydev hid_generic usbhid xhci_pci xhci_hcd ohci_pci
+>>> snd_hda_codec_via snd_hda_codec_generic ehci_pci snd_hda_codec_hdmi
+>>> ohci_hcd
+>>> ehci_hcd usbcore snd_hda_intel snd_hda_controller snd_hda_codec kvm_amd
+>>> kvm
+>>> snd_hwdep crct10dif_pclmul snd_pcm crc32_pclmul crc32c_intel ppdev
+>>> ghash_clmulni_intel aesni_intel aes_x86_64 lrw snd_timer e1000 gf128mul
+>>> glue_helper r8169 ablk_helper snd parport_pc mii cryptd serio_raw parport
+>>> shpchp pcspkr edac_core sp5100_tco usb_common button fam15h_power wmi
+>>> i2c_piix4 edac_mce_amd soundcore
+>>> [372668.322610]  k10temp asus_atk0110 acpi_cpufreq processor sch_fq_codel
+>>> [372668.322652] CPU: 1 PID: 23395 Comm: kworker/u16:3 Tainted: G        W
+>>> 4.0.2-gentoo-2-default #1
+>>> [372668.322721] Hardware name: System manufacturer System Product
+>>> Name/M5A78L-M/USB3, BIOS 2001    09/11/2014
+>>> [372668.322803] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+>>> [btrfs]
+>>> [372668.322840]  ffffffffa04bfe32 ffff8801e8937c08 ffffffff816edc91
+>>> 0000000000000007
+>>> [372668.322911]  ffff8801e8937c58 ffff8801e8937c48 ffffffff81056675
+>>> ffff8801e8937ce8
+>>> [372668.322986]  ffff8803ad83fd28 00000000ffffffa1 ffff880147d2a800
+>>> ffffffffa04bea60
+>>> [372668.323058] Call Trace:
+>>> [372668.323097]  [<ffffffff816edc91>] dump_stack+0x45/0x57
+>>> [372668.323134]  [<ffffffff81056675>] warn_slowpath_common+0x95/0xe0
+>>> [372668.323171]  [<ffffffff81056706>] warn_slowpath_fmt+0x46/0x50
+>>> [372668.323219]  [<ffffffffa0454e65>] ? try_merge_map+0x45/0x150 [btrfs]
+>>> [372668.323261]  [<ffffffffa040f46f>]
+>>> __btrfs_abort_transaction+0x5f/0x130
+>>> [btrfs]
+>>> [372668.323339]  [<ffffffffa0447b82>] btrfs_finish_ordered_io+0x552/0x5e0
+>>> [btrfs]
+>>> [372668.323418]  [<ffffffffa0447e85>] finish_ordered_fn+0x15/0x20 [btrfs]
+>>> [372668.323466]  [<ffffffffa046f168>] normal_work_helper+0xb8/0x2a0
+>>> [btrfs]
+>>> [372668.323515]  [<ffffffffa046f4e2>] btrfs_endio_write_helper+0x12/0x20
+>>> [btrfs]
+>>> [372668.323552]  [<ffffffff8106ed63>] process_one_work+0x153/0x410
+>>> [372668.323589]  [<ffffffff8106f7bb>] worker_thread+0x6b/0x480
+>>> [372668.323693]  [<ffffffff8106f750>] ? rescuer_thread+0x300/0x300
+>>> [372668.323730]  [<ffffffff8107473b>] kthread+0xdb/0x100
+>>> [372668.323767]  [<ffffffff81074660>] ?
+>>> kthread_create_on_node+0x190/0x190
+>>> [372668.323805]  [<ffffffff816f4218>] ret_from_fork+0x58/0x90
+>>> [372668.323845]  [<ffffffff81074660>] ?
+>>> kthread_create_on_node+0x190/0x190
+>>> [372668.323885] ---[ end trace c0894b8b0ebe359e ]---
+>>> [372668.323925] BTRFS: error (device sdd) in
+>>> btrfs_finish_ordered_io:2896:
+>>> errno=-95 unknown
+>
+> Abort transaction warning itself doesn't really help,
+> but btrfs_finish_order_io and its errno seems interesting.
+> Especially the errno, 95 is EOPNOTSUPP.
+> A quick search leads me to inline extent -> regular extent change part.
+>
+> Also you mentioned cue tagging, I'm also curious about the size of your
+> music files.
+> Is there any files which is smaller or equal to 4K?
+> If you only listen to loseless, then my guess would be wrong. :(
+>
+> BTW, it would be perfect if you find some consistent method to trigger
+> the bug...
+>
+> Thanks,
+> Qu
+>>>
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>

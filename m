@@ -1,47 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:57141 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753503AbbEUIjh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 May 2015 04:39:37 -0400
-Date: Thu, 21 May 2015 14:09:24 +0530 (IST)
-From: Govindarajulu Varadarajan <_govind@gmx.com>
-To: Josef Bacik <jbacik@fb.com>
-cc: Govindarajulu Varadarajan <_govind@gmx.com>, linux-btrfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-kernel@vger.kernel.org, clm@fb.com,
-        dsterba@suse.cz
-Subject: Re: btrfs: kernel BUG at mm/page-writeback.c:2286!
-In-Reply-To: <555B3B5D.7040601@fb.com>
-Message-ID: <alpine.LNX.2.03.1505211407010.19285@ws.cisco>
-References: <alpine.LNX.2.03.1505191317300.21108@ws.cisco> <555B3B5D.7040601@fb.com>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
+Received: from mailrelay101.isp.belgacom.be ([195.238.20.128]:45811 "EHLO
+	mailrelay101.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752832AbbEUPzi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 11:55:38 -0400
+From: Fabian Frederick <fabf@skynet.be>
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/1 linux-next] btrfs: remove -ENOENT from test values in btrfs_get_acl()
+Date: Thu, 21 May 2015 17:55:32 +0200
+Message-Id: <1432223732-19057-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 19 May 2015, Josef Bacik wrote:
+btrfs_get_acl() calls __btrfs_getxattr() and checks for returned value
+to assign acl. Like FIXME presumed, -ENOENT is not part of those
+possible values. btrfs_search_slot() explicitly returns 1 when
+the key isn't found (see function comment).
 
-> On 05/19/2015 03:55 AM, Govindarajulu Varadarajan wrote:
->> Hi all
->> 
->> I am seeing the following crash on my btrfs filesystem with nfs export.
->> If I disable the nfs share and reboot, I do not hit the crash. Look like
->> the crash happens on btrfs with nfs export.
->> 
->> Is this a known issue? Has anyone else faced this? Let me know if you
->> need more
->> information.
->> 
->
-> Somebody else is unlocking the page while we have it locked (by somebody else 
-> I mean somebody other than in this particular code path, so could totally 
-> still be us, it's just not obvious.)  What are your mount options?  Are you 
-> capable of building your own kernel?  A git bisect would be good to try and 
-> find where the problem was introduced, seems like it's easy to reproduce. 
-> I'll look through our recent commits and see if anything pops out.  Thanks,
->
+This patch also simplifies code by giving NULL value to acl by default.
 
-Yes, I can do git bisect. But, now that I have deleted the file with csum error
-I do not see the crash any more. Sorry.
+Previous behavior remains the same:
 
-Is there any was to introduce
-"BTRFS info (device sdf): csum failed ino 1154 extent 4434247680 csum 1388825687 wanted 0 mirror 0"?
+mkdir d1
+(remount)
+getfacl d1
+	system.posix_acl_access: size: ENODATA
+	acl: NULL
+	system.posix_acl_default size: ENODATA
+	acl: NULL
+setfacl -d -m o::rw d1
+(remount)
+getfacl d1
+	system.posix_acl_access: size: ENODATA
+	acl: NULL
+	system.posix_acl_default size: 28
+	acl not NULL
+setfacl -m u:<user>:r d1
+(remount)
+getfacl d1
+	system.posix_acl_access: size: 44
+	acl: not NULL
+	system.posix_acl_default: size: 28
+	acl: not NULL
+setfacl -k d1
+(remount)
+getfacl d1
+	system.posix_acl_access: size: 44
+	acl: not NULL
+	system.posix_acl_default: size: ENODATA
+	acl: NULL
+
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
+ fs/btrfs/acl.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 9a0124a..988cc52 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -33,7 +33,7 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 	int size;
+ 	const char *name;
+ 	char *value = NULL;
+-	struct posix_acl *acl;
++	struct posix_acl *acl = NULL;
+ 
+ 	switch (type) {
+ 	case ACL_TYPE_ACCESS:
+@@ -53,14 +53,10 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 			return ERR_PTR(-ENOMEM);
+ 		size = __btrfs_getxattr(inode, name, value, size);
+ 	}
+-	if (size > 0) {
++	if (size > 0)
+ 		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+-	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
+-		/* FIXME, who returns -ENOENT?  I think nobody */
+-		acl = NULL;
+-	} else {
++	else if (size && size != -ENODATA)
+ 		acl = ERR_PTR(-EIO);
+-	}
+ 	kfree(value);
+ 
+ 	if (!IS_ERR(acl))
+-- 
+2.4.1
+

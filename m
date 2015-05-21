@@ -1,100 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:34593 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753915AbbEUBG2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 May 2015 21:06:28 -0400
-Date: Wed, 20 May 2015 18:04:40 -0700
-From: Kent Overstreet <kent.overstreet@gmail.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-        device-mapper development <dm-devel@redhat.com>,
-        linux-btrfs@vger.kernel.org, axboe@fb.com, zab@zabbo.net,
-        neilb@suse.de
-Subject: Proposal for annotating _unstable_ pages
-Message-ID: <20150521010440.GA17405@kmo-pixel>
-References: <20150515205825.GC24967@birch.djwong.org>
- <20150519154200.GA2559@kmo-pixel>
- <20150519201055.GD27115@birch.djwong.org>
+Received: from mout.gmx.net ([212.227.17.20]:51565 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753891AbbEUIdn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 May 2015 04:33:43 -0400
+Date: Thu, 21 May 2015 14:03:25 +0530 (IST)
+From: Govindarajulu Varadarajan <_govind@gmx.com>
+To: Piotr Szymaniak <szarpaj@grubelek.pl>
+cc: Chris Mason <clm@fb.com>, Govindarajulu Varadarajan <_govind@gmx.com>,
+        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, jbacik@fb.com, dsterba@suse.cz
+Subject: Re: btrfs: kernel BUG at mm/page-writeback.c:2286!
+In-Reply-To: <20150519135416.GO2539@wloczykij>
+Message-ID: <alpine.LNX.2.03.1505211400350.19285@ws.cisco>
+References: <alpine.LNX.2.03.1505191317300.21108@ws.cisco> <555B3DEE.1000900@fb.com> <20150519135416.GO2539@wloczykij>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150519201055.GD27115@birch.djwong.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 19, 2015 at 01:10:55PM -0700, Darrick J. Wong wrote:
-> On Tue, May 19, 2015 at 08:42:00AM -0700, Kent Overstreet wrote:
-> > Also, stable pages - what's been going on there? Last I heard you were talking
-> > about using the page migration code to do COW, did anything come of that? I just
-> > added data checksumming/compression to bcachefs, so that's been fresh on my
-> > mind.
-> 
-> Yeah.  I never figured out a sane way to migrate pages and keep everything
-> else happy.  Daniel Phillips is having a go at page forking for tux3; let's
-> see if the questions about that get resolved.
+On Tue, 19 May 2015, Piotr Szymaniak wrote:
 
-That would be great, we need something.
+> On Tue, May 19, 2015 at 09:43:10AM -0400, Chris Mason wrote:
+>> On 05/19/2015 03:55 AM, Govindarajulu Varadarajan wrote:
+>>> 2286--->BUG_ON(!PageLocked(page));
+>>>
+>>> [  166.769868] BTRFS info (device sdf): no csum found for inode 1154
+>>> start 43192320
+>>> [  166.774334] BTRFS info (device sdf): csum failed ino 1154 extent
+>>> 4434247680 csum 1388825687 wanted 0 mirror 0
+>>
+>>
+>> Josef and I both missed this the first time you pasted it, but the
+>> unlocked page is almost certainly related to this csum error.  While
+>> we're looking at things can you please scrub?
+>
+> Hi,
+>
+> In the original report there was:
+>
+>> [root@stg ~]#btrfs scru status /mnt/stg
+>> scrub status for dd10b751-d2aa-40d1-971f-e15b0062dd11
+>>         scrub started at Tue May 19 03:33:26 2015 and finished after 468 seconds
+>>         total bytes scrubbed: 101.80GiB with 0 errors
+>
+> Correct me if I'm wrong, but I think that Govindarajulu Varadarajan made the
+> scrub _after_ the crash.
+>
 
-I'd also be really curious what btrfs is doing today - is it just bouncing
-everything internally, or did they come up with something more clever?
-
-> > Also, there's probably always going to be situations where we're reading or
-> > writing to pages user space can stomp on (dio) - IMO we need to add a bio flag
-> > to annotate this - "if you need this to be stable you have to bounce it".
-> > Otherwise either filesystems/block drivers are going to be stuck bouncing
-> > everything, or it'll just (continue to be) buggy.
-> 
-> Well, for now there's BIO_SNAP_STABLE that forces the block layer to bounce it,
-> but right now ext3 is the last user of it, and afaict btrfs is the only other
-> FS that takes care of stable pages on its own.
-
-I have no idea what BIO_SNAP_STABLE was supposed to be for, but I don't see how
-it's useful for anything sane.
-
-I'm _guessing_ it's to get atomic snapshots? But if the upper layer is modifying
-the data being written while the write is in flight, the memcpy() for the bounce
-still isn't going to be atomic. If the upper layer cares about atomicity, it
-needs to not diddle over the memory its writing while the write is in flight.
-
-But that's the complete opposite of the problem stable pages are supposed to
-solve: stable pages are for when the _lower_ layer (be it filesystem, bcache,
-md, lvm) needs the memory being either read to or written from (both, it's not
-just writes) to not be diddled over while the IO is in flight.
-
-Now, a point that I think has been missed is that stable pages are _not_ a
-complete solution, at least for consumers in the block layer.
-
-The situation today is that if I'm in the block layer, and I get a handed a read
-or write bio, I _don't know_ if it's from something that's going to diddle over
-those pages or not. So if I require stable pages - be it for data checksumming
-or for other things - I've just got to bounce the bio myself.
-
-And then the really annoying thing is that if you've got stacked things that all
-need stable pages (maybe btrfs on top of bcache on top of md) - they _all_ have
-to assume the pages aren't going to be stable, so if they need them they _all_
-have to bounce - even though once the first layer bounced the bio that made it
-stable for everything underneath it.
-
-Stable pages for IO to/from the pagecache are _not_ going to solve this problem,
-because the page cache is not the only source of IO to non stable pages (Direct
-IO will always be, even if everything else gets fixed).
-
-So what I'm proposing is:
-
- - Add a new bio flag: BIO_PAGES_NOT_STABLE
-
- - Everything that submits a bio and _doesn't_ guarantee that the pages won't be
-   touched while the IO is in flight has to set that flag.  This flag will have
-   to be preserved when cloning a bio, but not when cloning a bio and its pages
-   (i.e. bouncing it).
-
-This is going to be a lot of not-fun work auditing code, but IMO it really needs
-to be done. As a bonus, once it's done everything that generates IO that must be
-expensively bounced will be nicely annotated.
-
-To verify that the annotations are correct, for writes we can add some debug
-code to the generic IO path that checksums the data before and after the IO and
-complains loudly if the checksums don't match. Dunno what we can do for reads.
-
-Thoughts?
+I ran the scrub before and after the crash. Scrub shows 0 error but then I
+access the file which is corrupt, I get I/O error and csum failure
+in kernel log.

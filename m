@@ -1,68 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44938 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756510AbbEVSLX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 May 2015 14:11:23 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YvrPl-0007eX-Eh
-	for linux-btrfs@vger.kernel.org; Fri, 22 May 2015 20:11:21 +0200
-Received: from 93.96-242-81.adsl-dyn.isp.belgacom.be ([81.242.96.93])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2015 20:11:21 +0200
-Received: from jan.voet by 93.96-242-81.adsl-dyn.isp.belgacom.be with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2015 20:11:21 +0200
-To: linux-btrfs@vger.kernel.org
-From: Jan Voet <jan.voet@gmail.com>
-Subject: Re: BTRFS RAID5 filesystem corruption during balance
-Date: Fri, 22 May 2015 18:11:14 +0000 (UTC)
-Message-ID: <loom.20150522T194305-796@post.gmane.org>
-References: <loom.20150521T231006-840@post.gmane.org> <pan$1c831$68d3ab4d$212d5e11$aaf7c2b4@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mailout3.samsung.com ([203.254.224.33]:10116 "EHLO
+	mailout3.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757185AbbEVSTZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 May 2015 14:19:25 -0400
+From: Ming Lin <mlin@kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Christoph Hellwig <hch@lst.de>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Jens Axboe <axboe@kernel.dk>, Dongsu Park <dpark@posteo.net>,
+        Ming Lin <mlin@kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 04/11] btrfs: remove bio splitting and merge_bvec_fn() calls
+Date: Fri, 22 May 2015 11:18:36 -0700
+Message-id: <1432318723-18829-5-git-send-email-mlin@kernel.org>
+In-reply-to: <1432318723-18829-1-git-send-email-mlin@kernel.org>
+References: <1432318723-18829-1-git-send-email-mlin@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan <at> cox.net> writes:
+From: Kent Overstreet <kent.overstreet@gmail.com>
 
-> FWIW, btrfs raid5 (and raid6, together called raid56 mode) is still 
-> extremely new, only normal runtime implemented as originally introduced, 
-> with complete repair from a device failure only completely implemented in 
-> kernel 3.19, and while in theory complete, that implementation is still 
-> very immature and poorly tested, and *WILL* have bugs, one of which you 
-> may very well have found.
-> 
-> For in-production use, therefore, btrfs raid56 mode, while now at least 
-> in theory complete, is really too immature at this point to recommend.  
-> I'd recommend either btrfs raid1 or raid10 modes as more stable within 
-> btrfs at this point, tho by the end of this year or early next, I predict 
-> raid56 mode to have stabilized to about that of the rest of btrfs, which 
-> is to say, not entirely stable, but heading that way.
-> 
+Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
+device limits as well as calling ->merge_bvec_fn() etc. That is not
+necessary any more, because generic_make_request() is now able to
+handle arbitrarily sized bios. So clean up unnecessary code paths.
 
-Hi Duncan,
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
+Signed-off-by: Chris Mason <clm@fb.com>
+[dpark: add more description in commit message]
+Signed-off-by: Dongsu Park <dpark@posteo.net>
+Signed-off-by: Ming Lin <mlin@kernel.org>
+---
+ fs/btrfs/volumes.c | 72 ------------------------------------------------------
+ 1 file changed, 72 deletions(-)
 
-Thanks for your reply.
-
-I was under the impression that RAID5/6 was considered quite stable in the
-more recent kernels, hence my use of the 3.19 kernel and the upgraded
-btrfstools.  It's obvious that I was wrong in this assumption and maybe
-btrfs RAID5 should be labeled as experimental code then.
-
-A balance operation is supposed to be safe as it makes a copy of each file,
-rewrites it, distributing the data over all devices and only then deletes
-the original file?  This should never lead to kernel deadlocks ...
-Having a corrupted filesystem after a reboot due to this is even more
-worrisome, I think.  And worst of all are the btrfs kworker crashes.  Kernel
-code should never crash IMHO, but maybe I'm slightly naive here ;-) .
-
-Anyways, lots of lessons learned, and I'll see if I can repair the
-filesystem as described in https://btrfs.wiki.kernel.org/index.php/Btrfsck
-If it doesn't work, I'll simply start over with an alternative filesystem.
-
-Regards,
-Jan
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 96aebf3..c616aba 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5715,34 +5715,6 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
+ 				 &device->work);
+ }
+ 
+-static int bio_size_ok(struct block_device *bdev, struct bio *bio,
+-		       sector_t sector)
+-{
+-	struct bio_vec *prev;
+-	struct request_queue *q = bdev_get_queue(bdev);
+-	unsigned int max_sectors = queue_max_sectors(q);
+-	struct bvec_merge_data bvm = {
+-		.bi_bdev = bdev,
+-		.bi_sector = sector,
+-		.bi_rw = bio->bi_rw,
+-	};
+-
+-	if (WARN_ON(bio->bi_vcnt == 0))
+-		return 1;
+-
+-	prev = &bio->bi_io_vec[bio->bi_vcnt - 1];
+-	if (bio_sectors(bio) > max_sectors)
+-		return 0;
+-
+-	if (!q->merge_bvec_fn)
+-		return 1;
+-
+-	bvm.bi_size = bio->bi_iter.bi_size - prev->bv_len;
+-	if (q->merge_bvec_fn(q, &bvm, prev) < prev->bv_len)
+-		return 0;
+-	return 1;
+-}
+-
+ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 			      struct bio *bio, u64 physical, int dev_nr,
+ 			      int rw, int async)
+@@ -5776,38 +5748,6 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 		btrfsic_submit_bio(rw, bio);
+ }
+ 
+-static int breakup_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+-			      struct bio *first_bio, struct btrfs_device *dev,
+-			      int dev_nr, int rw, int async)
+-{
+-	struct bio_vec *bvec = first_bio->bi_io_vec;
+-	struct bio *bio;
+-	int nr_vecs = bio_get_nr_vecs(dev->bdev);
+-	u64 physical = bbio->stripes[dev_nr].physical;
+-
+-again:
+-	bio = btrfs_bio_alloc(dev->bdev, physical >> 9, nr_vecs, GFP_NOFS);
+-	if (!bio)
+-		return -ENOMEM;
+-
+-	while (bvec <= (first_bio->bi_io_vec + first_bio->bi_vcnt - 1)) {
+-		if (bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len) {
+-			u64 len = bio->bi_iter.bi_size;
+-
+-			atomic_inc(&bbio->stripes_pending);
+-			submit_stripe_bio(root, bbio, bio, physical, dev_nr,
+-					  rw, async);
+-			physical += len;
+-			goto again;
+-		}
+-		bvec++;
+-	}
+-
+-	submit_stripe_bio(root, bbio, bio, physical, dev_nr, rw, async);
+-	return 0;
+-}
+-
+ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ {
+ 	atomic_inc(&bbio->error);
+@@ -5882,18 +5822,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 			continue;
+ 		}
+ 
+-		/*
+-		 * Check and see if we're ok with this bio based on it's size
+-		 * and offset with the given device.
+-		 */
+-		if (!bio_size_ok(dev->bdev, first_bio,
+-				 bbio->stripes[dev_nr].physical >> 9)) {
+-			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
+-						 dev_nr, rw, async_submit);
+-			BUG_ON(ret);
+-			continue;
+-		}
+-
+ 		if (dev_nr < total_devs - 1) {
+ 			bio = btrfs_bio_clone(first_bio, GFP_NOFS);
+ 			BUG_ON(!bio); /* -ENOMEM */
+-- 
+1.9.1
 

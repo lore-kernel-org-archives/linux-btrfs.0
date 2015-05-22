@@ -1,192 +1,259 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:39485 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754573AbbERT7w (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:56941 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751456AbbEVFsc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 May 2015 15:59:52 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: <fstests@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] fstests: btrfs balance with dm log writes test
-Date: Mon, 18 May 2015 15:50:42 -0400
-Message-ID: <1431978642-13124-2-git-send-email-jbacik@fb.com>
-In-Reply-To: <1431978642-13124-1-git-send-email-jbacik@fb.com>
-References: <1431978642-13124-1-git-send-email-jbacik@fb.com>
+	Fri, 22 May 2015 01:48:32 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4M5l5Sf014741
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2015 13:47:05 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Use ref_cnt for set_block_group_ro()
+Date: Fri, 22 May 2015 13:46:53 +0800
+Message-ID: <af458385e2759893000ccd9b5160350312de928c.1432273487.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test runs fsstress+balance+defrag and then replays every FUA in the log and
-mounts, scrubs and then fscks the fs to make sure it does the balance recovery
-properly.  Thanks,
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+More than one code call set_block_group_ro() and restore rw in fail.
+
+Old code use bool bit to save blockgroup's ro state, it can not
+support parallel case(it is confirmd exist in my debug log).
+
+This patch use ref count to store ro state, and rename
+set_block_group_ro/set_block_group_rw
+to
+inc_block_group_ro/dec_block_group_ro.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- tests/btrfs/093     | 135 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/093.out |   1 +
- tests/btrfs/group   |   1 +
- 3 files changed, 137 insertions(+)
- create mode 100644 tests/btrfs/093
- create mode 100644 tests/btrfs/093.out
+ fs/btrfs/ctree.h       |  6 +++---
+ fs/btrfs/extent-tree.c | 42 +++++++++++++++++++++---------------------
+ fs/btrfs/relocation.c  | 14 ++++++--------
+ 3 files changed, 30 insertions(+), 32 deletions(-)
 
-diff --git a/tests/btrfs/093 b/tests/btrfs/093
-new file mode 100644
-index 0000000..26f1c69
---- /dev/null
-+++ b/tests/btrfs/093
-@@ -0,0 +1,135 @@
-+#! /bin/bash
-+# FSQA Test No. btrfs/093
-+#
-+# Run btrfs balance and defrag operations simultaneously with fsstress
-+# running in background on top of dm-log-writes.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2015 Facebook. All rights reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmlogwrites
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+# we check scratch dev after each loop
-+_need_to_be_root
-+_require_scratch_nocheck
-+_require_dm_log_writes
-+
-+rm -f $seqres.full
-+
-+_wait_balance()
-+{
-+	while [ 1 ]
-+	do
-+		$BTRFS_UTIL_PROG filesystem balance status $SCRATCH_MNT \
-+			| grep "No balance" >> $seqres.full
-+		[ $? -eq 0 ] && break
-+		sleep 1
-+	done
-+}
-+
-+run_test()
-+{
-+	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
-+	echo "Run fsstress $args" >>$seqres.full
-+	$FSSTRESS_PROG $args >/dev/null 2>&1 &
-+	fsstress_pid=$!
-+
-+	echo -n "Start balance worker: " >>$seqres.full
-+	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
-+	balance_pid=$!
-+	echo "$balance_pid" >>$seqres.full
-+
-+	echo -n "Start defrag worker: " >>$seqres.full
-+	_btrfs_stress_defrag $SCRATCH_MNT $with_compress >/dev/null 2>&1 &
-+	defrag_pid=$!
-+	echo "$defrag_pid" >>$seqres.full
-+
-+	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
-+	wait $fsstress_pid
-+	kill $balance_pid $defrag_pid
-+	wait
-+	# wait for the balance and defrag operations to finish
-+	while ps aux | grep "balance start" | grep -qv grep; do
-+		sleep 1
-+	done
-+	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
-+		sleep 1
-+	done
-+}
-+
-+_init_log_writes
-+
-+_log_writes_mkfs >> $seqres.full 2>&1
-+
-+_mount_log_writes
-+
-+run_test "$t" nocompress
-+
-+_unmount_log_writes
-+_log_writes_remove
-+
-+# Get the number of entries in the log
-+NUM_ENTRIES=$($REPLAYLOG_PROG --log $LOGWRITES_DEV --num-entries)
-+
-+# Start at the first FUA after the mkfs
-+ENTRY=$($REPLAYLOG_PROG --log $LOGWRITES_DEV --start-mark mkfs \
-+	--find --next-fua)
-+
-+while [ $ENTRY -lt $NUM_ENTRIES ];
-+do
-+	echo "Replaying to $ENTRY" >> $seqres.full
-+	$REPLAYLOG_PROG --log $LOGWRITES_DEV --replay $SCRATCH_DEV --limit \
-+		$ENTRY > /dev/null 2>&1
-+	[ $? -ne 0 ] && _fatal "replay failed"
-+	btrfsck $SCRATCH_DEV >> $seqres.full 2>&1 || _fatal "btrfsck failed"
-+	_scratch_mount || _fatal "mount failed"
-+	_wait_balance
-+	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >> $seqres.full 2>&1
-+	[ $? -ne 0 ] && _fatal "scrub failed"
-+	_scratch_unmount
-+	btrfsck $SCRATCH_DEV >> $seqres.full 2>&1 || _fatal "btrfsck failed"
-+	let ENTRY+=1
-+	ENTRY=$($REPLAYLOG_PROG --find --start-entry $ENTRY --log \
-+		$LOGWRITES_DEV --next-fua)
-+done
-+
-+status=0
-+exit
-+
-diff --git a/tests/btrfs/093.out b/tests/btrfs/093.out
-new file mode 100644
-index 0000000..211b92c
---- /dev/null
-+++ b/tests/btrfs/093.out
-@@ -0,0 +1 @@
-+QA output created by 093
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 8e32b20..a9955f7 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -94,3 +94,4 @@
- 090 auto quick metadata
- 091 auto quick qgroup
- 092 auto quick send
-+093 auto log
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6f364e1..74ce6fc 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1300,7 +1300,7 @@ struct btrfs_block_group_cache {
+ 	/* for raid56, this is a full stripe, without parity */
+ 	unsigned long full_stripe_len;
+ 
+-	unsigned int ro:1;
++	unsigned int ro;
+ 	unsigned int iref:1;
+ 	unsigned int has_caching_ctl:1;
+ 	unsigned int removed:1;
+@@ -3495,9 +3495,9 @@ int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
+ void btrfs_block_rsv_release(struct btrfs_root *root,
+ 			     struct btrfs_block_rsv *block_rsv,
+ 			     u64 num_bytes);
+-int btrfs_set_block_group_ro(struct btrfs_root *root,
++int btrfs_inc_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache);
+-void btrfs_set_block_group_rw(struct btrfs_root *root,
++void btrfs_dec_block_group_ro(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache);
+ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
+ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7effed6..6a82ba0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8751,14 +8751,13 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
+ 	return flags;
+ }
+ 
+-static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
++static int inc_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+ 	u64 num_bytes;
+ 	u64 min_allocable_bytes;
+ 	int ret = -ENOSPC;
+ 
+-
+ 	/*
+ 	 * We need some metadata space and system metadata space for
+ 	 * allocating chunks in some corner cases until we force to set
+@@ -8775,6 +8774,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	spin_lock(&cache->lock);
+ 
+ 	if (cache->ro) {
++		cache->ro++;
+ 		ret = 0;
+ 		goto out;
+ 	}
+@@ -8786,7 +8786,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	    sinfo->bytes_may_use + sinfo->bytes_readonly + num_bytes +
+ 	    min_allocable_bytes <= sinfo->total_bytes) {
+ 		sinfo->bytes_readonly += num_bytes;
+-		cache->ro = 1;
++		cache->ro++;
+ 		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
+ 		ret = 0;
+ 	}
+@@ -8796,7 +8796,7 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_set_block_group_ro(struct btrfs_root *root,
++int btrfs_inc_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache)
+ 
+ {
+@@ -8804,8 +8804,6 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 	u64 alloc_flags;
+ 	int ret;
+ 
+-	BUG_ON(cache->ro);
+-
+ again:
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans))
+@@ -8830,7 +8828,7 @@ again:
+ 	}
+ 
+ 
+-	ret = set_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ 	if (!ret)
+ 		goto out;
+ 	alloc_flags = get_alloc_profile(root, cache->space_info->flags);
+@@ -8838,7 +8836,7 @@ again:
+ 			     CHUNK_ALLOC_FORCE);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = set_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ out:
+ 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		alloc_flags = update_block_group_flags(root, cache->flags);
+@@ -8899,7 +8897,7 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ 	return free_bytes;
+ }
+ 
+-void btrfs_set_block_group_rw(struct btrfs_root *root,
++void btrfs_dec_block_group_ro(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+@@ -8909,11 +8907,13 @@ void btrfs_set_block_group_rw(struct btrfs_root *root,
+ 
+ 	spin_lock(&sinfo->lock);
+ 	spin_lock(&cache->lock);
+-	num_bytes = cache->key.offset - cache->reserved - cache->pinned -
+-		    cache->bytes_super - btrfs_block_group_used(&cache->item);
+-	sinfo->bytes_readonly -= num_bytes;
+-	cache->ro = 0;
+-	list_del_init(&cache->ro_list);
++	if (!--cache->ro) {
++		num_bytes = cache->key.offset - cache->reserved -
++			    cache->pinned - cache->bytes_super -
++			    btrfs_block_group_used(&cache->item);
++		sinfo->bytes_readonly -= num_bytes;
++		list_del_init(&cache->ro_list);
++	}
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&sinfo->lock);
+ }
+@@ -9429,7 +9429,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 
+ 		set_avail_alloc_bits(root->fs_info, cache->flags);
+ 		if (btrfs_chunk_readonly(root, cache->key.objectid)) {
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		} else if (btrfs_block_group_used(&cache->item) == 0) {
+ 			spin_lock(&info->unused_bgs_lock);
+ 			/* Should always be true but just in case. */
+@@ -9457,11 +9457,11 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_RAID0],
+ 				list)
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_SINGLE],
+ 				list)
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 	}
+ 
+ 	init_global_block_rsv(info);
+@@ -9930,7 +9930,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&block_group->lock);
+ 
+ 		/* We don't want to force the issue, only flip if it's ok. */
+-		ret = set_block_group_ro(block_group, 0);
++		ret = inc_block_group_ro(block_group, 0);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0) {
+ 			ret = 0;
+@@ -9944,7 +9944,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		/* 1 for btrfs_orphan_reserve_metadata() */
+ 		trans = btrfs_start_transaction(root, 1);
+ 		if (IS_ERR(trans)) {
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			ret = PTR_ERR(trans);
+ 			goto next;
+ 		}
+@@ -9971,14 +9971,14 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			goto end_trans;
+ 		}
+ 		ret = clear_extent_bits(&fs_info->freed_extents[1], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			goto end_trans;
+ 		}
+ 		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 74b24b0..c93b66f 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4206,14 +4206,12 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 	rc->block_group = btrfs_lookup_block_group(fs_info, group_start);
+ 	BUG_ON(!rc->block_group);
+ 
+-	if (!rc->block_group->ro) {
+-		ret = btrfs_set_block_group_ro(extent_root, rc->block_group);
+-		if (ret) {
+-			err = ret;
+-			goto out;
+-		}
+-		rw = 1;
++	ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
++	if (ret) {
++		err = ret;
++		goto out;
+ 	}
++	rw = 1;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -4285,7 +4283,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 	WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
+ out:
+ 	if (err && rw)
+-		btrfs_set_block_group_rw(extent_root, rc->block_group);
++		btrfs_dec_block_group_ro(extent_root, rc->block_group);
+ 	iput(rc->data_inode);
+ 	btrfs_put_block_group(rc->block_group);
+ 	kfree(rc);
 -- 
-1.8.3.1
+1.8.5.1
 

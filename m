@@ -1,63 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53481 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:57887 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932251AbbEWPCe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 May 2015 11:02:34 -0400
+	id S1757961AbbEWQwb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 May 2015 12:52:31 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YwAwZ-0005Fb-7H
-	for linux-btrfs@vger.kernel.org; Sat, 23 May 2015 17:02:31 +0200
-Received: from 93.96-242-81.adsl-dyn.isp.belgacom.be ([81.242.96.93])
+	id 1YwCez-0005v1-IS
+	for linux-btrfs@vger.kernel.org; Sat, 23 May 2015 18:52:29 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 17:02:31 +0200
-Received: from jan.voet by 93.96-242-81.adsl-dyn.isp.belgacom.be with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 18:52:29 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 17:02:31 +0200
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 18:52:29 +0200
 To: linux-btrfs@vger.kernel.org
-From: Jan Voet <jan.voet@gmail.com>
-Subject: Re: BTRFS RAID5 filesystem corruption during balance
-Date: Sat, 23 May 2015 15:02:21 +0000 (UTC)
-Message-ID: <loom.20150523T165247-239@post.gmane.org>
-References: <loom.20150521T231006-840@post.gmane.org> <pan$1c831$68d3ab4d$212d5e11$aaf7c2b4@cox.net> <loom.20150522T194305-796@post.gmane.org>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Got 10 csum errors according to dmesg but 0 errors according to
+ dev stats
+Date: Sat, 23 May 2015 16:52:19 +0000 (UTC)
+Message-ID: <pan$9da5d$8559e11b$1dc0dccb$67ad3c9d@cox.net>
+References: <554F6D43.2060806@googlemail.com>
+	<554F7232.9080804@googlemail.com> <5557F490.5000606@googlemail.com>
+	<pan$f32b4$a31b2df$ac4903ed$b7bd68b4@cox.net>
+	<1432385390.4187.15.camel@googlemail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Voet <jan.voet <at> gmail.com> writes:
+Philip Seeger posted on Sat, 23 May 2015 14:49:50 +0200 as excerpted:
 
-> 
-> Duncan <1i5t5.duncan <at> cox.net> writes:
-> 
-> > FWIW, btrfs raid5 (and raid6, together called raid56 mode) is still 
-> > extremely new, only normal runtime implemented as originally introduced, 
-> > with complete repair from a device failure only completely implemented in 
-> > kernel 3.19, and while in theory complete, that implementation is still 
-> > very immature and poorly tested, and *WILL* have bugs, one of which you 
-> > may very well have found.
-> > 
-> > For in-production use, therefore, btrfs raid56 mode, while now at least 
-> > in theory complete, is really too immature at this point to recommend.  
-> > I'd recommend either btrfs raid1 or raid10 modes as more stable within 
-> > btrfs at this point, tho by the end of this year or early next, I predict 
-> > raid56 mode to have stabilized to about that of the rest of btrfs, which 
-> > is to say, not entirely stable, but heading that way.
-> > 
-> 
+> Is this a known side effect, that files could get corrupted if no
+> balance is run (not counting the balance with 4.0 which doesn't work due
+> to that commit) after an ext4 conversion?
 
-Looks like the the btrfs raid5 filesystem is back in working order.
+I'm not sure.
 
-What actually happened was that on reboot of the server, the interrupted
-btrfs balance tried to resume each time, but wasn't capable of it due to an
-incorrect/invalid state.  The amount of errors that were spawned by this
-made it very difficult to diagnose, as the kernel log got truncated very
-quickly.
+What I am sure of is that I'd not trust a btrfs converted from ext* until 
+the saved subvol is deleted, and a defrag and balance run.  Even then, 
+I'd personally be more comfortable with a fresh mkfs.btrfs, and copy over 
+from backup, tho I know reality is that btrfs /needs/ a working 
+conversion program or it'll never take off as the default successor to 
+the ext* crown, as it wants to be.  I simply don't trust that conversion, 
+as I've seen too many people have problems with their btrfs after doing 
+the conversion from ext*.
 
-Doing a 'btrfs balance cancel' immediately after the array was mounted seems
-to have done the trick.  A subsequent 'btrfs check' didn't show any errors
-at all and all the data seems to be there.  :-)
+Balance-conversions between raid modes of btrfs are a little different, 
+and somewhat more trustworthy... to me, anyway.
 
-Kind regards,
-Jan
+To be fair, it might well be a personal bias of mine against ext* in the 
+first place, as I never really was comfortable with it for various 
+reasons.  Among others, I think enough kernel devs see ext* as simple 
+enough to meddle with that it gets more changes than it really should 
+have, ext3's period with data=writeback as the default being a primary 
+example.  Reiserfs, my personal favorite, and xfs, and now btrfs, all 
+seem to be different enough that the hacking is left to the folks that 
+really know the filesystem, with others leaving it to the experts as 
+they're afraid to touch it, at least more so than ext*.  Anyway, it's 
+quite possible I have enough of a bias there that it taints anything 
+converted from it more than it should as well.  Either way, I personally 
+just don't trust ext* conversions, and would rather see people do 
+mkfs.btrfs and copy over from backup, as I think the filesystem is 
+cleanly native btrfs that way, and has less problems as a result.
+
+But you really need a second opinion before trusting /that/, because as I 
+said, it might simply be my personal bias talking.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

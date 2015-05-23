@@ -1,72 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:36559 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161013AbbEVWxd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 May 2015 18:53:33 -0400
-Received: by wgbgq6 with SMTP id gq6so29754757wgb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2015 15:53:32 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150522222216.GH25778@carfax.org.uk>
-References: <CAOQP4cGzX6knmXjaYcO=JB=VycidG7LS0GWA+N2x+f680ATGnA@mail.gmail.com>
-	<20150522222216.GH25778@carfax.org.uk>
-Date: Sat, 23 May 2015 00:53:32 +0200
-Message-ID: <CAOQP4cGDRQ9nndO9TtAUXq-QRv3n7vkkzykbG0QbooQmekdasg@mail.gmail.com>
-Subject: Re: Removing a device from a metadata raid1 - data raid0
-From: Arnaud Kapp <kapp.arno@gmail.com>
-To: Arnaud Kapp <kapp.arno@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:34868 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756057AbbEWC4R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 May 2015 22:56:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Yvzbj-00074W-4X
+	for linux-btrfs@vger.kernel.org; Sat, 23 May 2015 04:56:15 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 04:56:15 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2015 04:56:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS RAID5 filesystem corruption during balance
+Date: Sat, 23 May 2015 02:56:06 +0000 (UTC)
+Message-ID: <pan$2d29f$68e50c54$420ff0f1$97d19c19@cox.net>
+References: <loom.20150521T231006-840@post.gmane.org>
+	<pan$1c831$68d3ab4d$212d5e11$aaf7c2b4@cox.net>
+	<CAJCQCtTeoYHganNAJf=cyXzgCN9z1X=G1N=xEbksyRVDpZPbjQ@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Chris Murphy posted on Fri, 22 May 2015 13:15:09 -0600 as excerpted:
 
-Yes the conversion from raid0 to single went fine.
+> On Thu, May 21, 2015 at 10:43 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> For in-production use, therefore, btrfs raid56 mode, while now at least
+>> in theory complete, is really too immature at this point to recommend.
+> 
+> At some point perhaps a developer will have time to state the expected
+> stability level on stable hardware. And what things should be included
+> in a complete report. I see many reports only including the bug/ Warning
+> with call trace. And too often problems were happening before that.
+> 
+> The XFS FAQ has an explicit "what to include in a report" other that may
+> serve as a guide to adapt for Btrfs reports.
 
->   For the metadata, one approach is to convert to single, delete the
-> device, then convert to DUP. That at least will work, if be a little
-> risky.
+There's one spot on the wiki (bottom of the btrfs mailing lists page) that
+lists the information to provide when filing a bug.
 
-This worked great, thank you !
+https://btrfs.wiki.kernel.org/index.php/Btrfs_mailing_list
 
+But, even being somewhat familiar with the wiki and knowing it was, or had
+been, somewhere on the wiki, I had trouble finding it.  It's definitely
+not in the first place I looked, the Problem FAQ, under How do I report
+bugs and issues?  (Tho it does link to the list page.)
 
-On Sat, May 23, 2015 at 12:22 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Sat, May 23, 2015 at 12:15:13AM +0200, Arnaud Kapp wrote:
->> Hello,
->>
->> I've setup a filesystem with 2 devices. The metadata are in raid1.
->> Data is in raid0.
->>
->> I wish to remove one of this device from the filesystem (to use for an
->> unrelated purpose) but I am not able to do so.
->> It *seems* that attempting to balance metadata to dup is not allowed
->> (btrfs -mconvert=dup) because they currently are raid1.
->> The metadata in raid1 prevents me from removing the device because the
->> filesystem can't go below one device in raid1.
->>
->> Could someone please advise me about my options here?
->
->    The RAID-0 data is also going to be a problem here. You'll have to
-> convert that to single, because RAID-0 requires a minimum of two
-> devices.
->
->    For the metadata, one approach is to convert to single, delete the
-> device, then convert to DUP. That at least will work, if be a little
-> risky.
->
->    IMO, we should definitely support conversion to DUP, and prevent
-> the automatic "upgrade" to RAID-1, but I think we don't at the moment.
->
->    Hugo.
->
-> --
-> Hugo Mills             | Two things came out of Berkeley in the 1960s: LSD
-> hugo@... carfax.org.uk | and Unix. This is not a coincidence.
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_do_I_report_bugs_and_issues.3F
 
+If I had ever gotten around to getting a wiki login, I'd fix that, but for
+some reason, while I seem to be fine posting to newsgroups and
+mailinglists (as newsgroups, via gmane.org's list2news service), I mostly
+treat the web, wikis included, as read-only, other than the occasional
+reply to an article.  I never got into web forums that much either.
 
+So if you have a wiki login and time to fix it... =:^)
 
 -- 
-Kapp Arnaud - Xaqq
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

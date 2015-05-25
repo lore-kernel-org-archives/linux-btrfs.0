@@ -1,41 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:36316 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757621AbbEVSez (ORCPT
+Received: from mail-wg0-f54.google.com ([74.125.82.54]:36446 "EHLO
+	mail-wg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751373AbbEYBCT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 May 2015 14:34:55 -0400
-Date: Fri, 22 May 2015 11:33:04 -0700
-From: Kent Overstreet <kent.overstreet@gmail.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: device-mapper development <dm-devel@redhat.com>, Jan Kara <jack@suse.cz>,
-        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-        axboe@fb.com, Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        zab@zabbo.net, linux-btrfs@vger.kernel.org
-Subject: Re: [dm-devel] Proposal for annotating _unstable_ pages
-Message-ID: <20150522183304.GB27397@kmo-pixel>
-References: <20150515205825.GC24967@birch.djwong.org>
- <20150519154200.GA2559@kmo-pixel>
- <20150519201055.GD27115@birch.djwong.org>
- <20150521010440.GA17405@kmo-pixel>
- <20150521165453.GK27863@quack.suse.cz>
- <20150521180954.GA27397@kmo-pixel>
- <20150521192112.GA2665@quack.suse.cz>
- <20150522181759.GB32090@birch.djwong.org>
+	Sun, 24 May 2015 21:02:19 -0400
+Received: by wgbgq6 with SMTP id gq6so60872124wgb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2015 18:02:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150522181759.GB32090@birch.djwong.org>
+Date: Mon, 25 May 2015 11:02:17 +1000
+Message-ID: <CA+WRLO_=RV_Ga7d-ff=p13TxycquQ1Ra2d2WYeGroQn9tm934w@mail.gmail.com>
+Subject: Did convert do anything?
+From: Gareth Pye <gareth@cerberos.id.au>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 22, 2015 at 11:17:59AM -0700, Darrick J. Wong wrote:
-> Back when I was writing the stable pages patches, I observed that some of the
-> filesystems didn't hold the pages containing their own metadata stable during
-> writeback on a stable-writes device.  The journalling filesystems were fine
-> because they had various means to take care of that.
-> 
-> ISTR ext2 and vfat were the biggest culprits, but both maintainers rejected
-> the patches to fix that behavior.  This might no longer be the case; those
-> patches were so long ago I can't find them in Google.
+Just attempted to change the meta data of my 6 drive array to RAID6 with:
 
-Not at all surprised. Yeah, this would solve that problem - we just annotate
-those bios so we don't bounce them until we hit a point where we need to.
+# btrfs balance start -mconvert=raid6 /data
+Done, had to relocate 12 out of 4548 chunks
+
+Which looks pretty good. But:
+
+# btrfs  fi df /data
+Data, RAID1: total=4.43TiB, used=4.41TiB
+System, RAID1: total=32.00MiB, used=772.00KiB
+Metadata, RAID1: total=11.00GiB, used=9.13GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+And some context:
+
+# btrfs --version
+btrfs-progs v4.0
+
+# uname -a
+Linux emile 4.0.1-040001-generic #201504290935 SMP Wed Apr 29 09:36:55
+UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+
+What am I missing here?
+
+
+
+-- 
+Gareth Pye
+Level 2 MTG Judge, Melbourne, Australia
+"Dear God, I would like to file a bug report"

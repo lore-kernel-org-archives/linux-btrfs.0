@@ -1,43 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:36787 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751666AbbEYFmO (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27753 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751044AbbEYJQw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 May 2015 01:42:14 -0400
-Received: by wgbgq6 with SMTP id gq6so64060116wgb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2015 22:42:12 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CACvadSVdBSkCy=6Hm=yQ-XeWd=EmqYJjbfMJf-hfqnGRc8n0iA@mail.gmail.com>
-References: <CA+WRLO_=RV_Ga7d-ff=p13TxycquQ1Ra2d2WYeGroQn9tm934w@mail.gmail.com>
-	<036B4518-F7BF-4C9A-8906-38550D7F125F@plack.net>
-	<CA+WRLO_5mG7t+2x-B+AV052i2=pkPmAr88txeQ4ZkxL7jvOAig@mail.gmail.com>
-	<CA+WRLO_qRRXnY+Qwfw83-d6HmrZ3b4cdgCVOX+Vg1EHSKBK=4g@mail.gmail.com>
-	<CACvadSVdBSkCy=6Hm=yQ-XeWd=EmqYJjbfMJf-hfqnGRc8n0iA@mail.gmail.com>
-Date: Mon, 25 May 2015 15:42:12 +1000
-Message-ID: <CA+WRLO8e=QsVD9f4J2eBfcMBxTQ8-2JZY7hCD5EejQL0avuH1g@mail.gmail.com>
-Subject: Re: Did convert do anything?
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Peter Marheine <peter@taricorp.net>
-Cc: Anthony Plack <tmy@plack.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Mon, 25 May 2015 05:16:52 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t4P9GoBs005694
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 09:16:51 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+	by userv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t4P9GnqE031550
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 09:16:50 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t4P9GnOt027505
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 09:16:49 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: add missing free_extent_buffer
+Date: Mon, 25 May 2015 17:16:40 +0800
+Message-Id: <1432545400-31871-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cool, had heard of that, hadn't actually understood what it meant :)
+read_tree_block may take a reference on the 'eb', a following
+free_extent_buffer is necessary.
 
-On Mon, May 25, 2015 at 3:04 PM, Peter Marheine <peter@taricorp.net> wrote:
-> It's a known regression in 4.0. See [1], I don't think Chris's fix has
-> landed yet.
->
-> [1] https://patchwork.kernel.org/patch/6238111/
->
-> --
-> Peter Marheine
-> Don't Panic
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8b353ad..bb8a221 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7649,6 +7649,7 @@ walk_down:
+ 			eb = read_tree_block(root, child_bytenr, child_gen);
+ 			if (!eb || !extent_buffer_uptodate(eb)) {
+ 				ret = -EIO;
++				free_extent_buffer(eb);
+ 				goto out;
+ 			}
+ 
 -- 
-Gareth Pye
-Level 2 MTG Judge, Melbourne, Australia
-"Dear God, I would like to file a bug report"
+2.1.0
+

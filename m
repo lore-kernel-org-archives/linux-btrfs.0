@@ -1,89 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43478 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750845AbbEZIwt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 04:52:49 -0400
-Date: Tue, 26 May 2015 08:52:46 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: sri <toyours_sridhar@yahoo.co.in>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs on disk stability
-Message-ID: <20150526085246.GC16826@carfax.org.uk>
-References: <loom.20150526T103943-385@post.gmane.org>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="V88s5gaDVPzZ0KCq"
-In-Reply-To: <loom.20150526T103943-385@post.gmane.org>
+Received: from [198.145.29.136] ([198.145.29.136]:36705 "EHLO mail.kernel.org"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751464AbbEZJbf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 May 2015 05:31:35 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: ce3g8jdj@umail.furryterror.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix hang during inode eviction due to concurrent readahead
+Date: Tue, 26 May 2015 00:55:42 +0100
+Message-Id: <1432598142-4434-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Filipe Manana <fdmanana@suse.com>
 
---V88s5gaDVPzZ0KCq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Zygo Blaxell and other users have reported occasional hangs while an
+inode is being evicted, leading to traces like the following:
 
-On Tue, May 26, 2015 at 08:45:06AM +0000, sri wrote:
-> Hi,
-> 
-> According to btrfs wiki page, under "Stability status" it is written that
-> 
-> "The filesystem disk format is no longer unstable".
-> 
-> Does this mean if there are more I/Os are going on a btrfs file system, 
-> copy of entire disk (all disk blocks) gives a stable disk?
+[ 5281.972322] INFO: task rm:20488 blocked for more than 120 seconds.
+[ 5281.973836]       Not tainted 4.0.0-rc5-btrfs-next-9+ #2
+[ 5281.974818] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 5281.976364] rm              D ffff8800724cfc38     0 20488   7747 0x00000000
+[ 5281.977506]  ffff8800724cfc38 ffff8800724cfc38 ffff880065da5c50 0000000000000001
+[ 5281.978461]  ffff8800724cffd8 ffff8801540a5f50 0000000000000008 ffff8801540a5f78
+[ 5281.979541]  ffff8801540a5f50 ffff8800724cfc58 ffffffff8143107e 0000000000000123
+[ 5281.981396] Call Trace:
+[ 5281.982066]  [<ffffffff8143107e>] schedule+0x74/0x83
+[ 5281.983341]  [<ffffffffa03b33cf>] wait_on_state+0xac/0xcd [btrfs]
+[ 5281.985127]  [<ffffffff81075cd6>] ? signal_pending_state+0x31/0x31
+[ 5281.986715]  [<ffffffffa03b4b71>] wait_extent_bit.constprop.32+0x7c/0xde [btrfs]
+[ 5281.988680]  [<ffffffffa03b540b>] lock_extent_bits+0x5d/0x88 [btrfs]
+[ 5281.990200]  [<ffffffffa03a621d>] btrfs_evict_inode+0x24e/0x5be [btrfs]
+[ 5281.991781]  [<ffffffff8116964d>] evict+0xa0/0x148
+[ 5281.992735]  [<ffffffff8116a43d>] iput+0x18f/0x1e5
+[ 5281.993796]  [<ffffffff81160d4a>] do_unlinkat+0x15b/0x1fa
+[ 5281.994806]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
+[ 5281.996120]  [<ffffffff8107d314>] ? trace_hardirqs_on_caller+0x18f/0x1ab
+[ 5281.997562]  [<ffffffff8123960b>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+[ 5281.998815]  [<ffffffff81161a16>] SyS_unlinkat+0x29/0x2b
+[ 5281.999920]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
+[ 5282.001299] 1 lock held by rm/20488:
+[ 5282.002066]  #0:  (sb_writers#12){.+.+.+}, at: [<ffffffff8116dd81>] mnt_want_write+0x24/0x4b
 
-   No, it means that the format isn't changing in incompatible ways
-any more. You're guaranteed that if you upgrade your kernel, the FS
-will still be readable on the new kernel. (And, if you don't enable
-any extra features with btrfstune, that the kernel will still be
-readable if you downgrade to the earlier kernel you were using).
+This happens when we have readahead, which calls readpages(), happening
+right before the inode eviction handler is invoked. So the reason is
+essentially:
 
-> Just to elaborate more, if btrfs file system is created on 2 disks 
-> /dev/sda and /dev/sdb and if I start copying blocks of sda and sdb to sdc 
-> and sdc respectively by just opening file handlers of sda and sdb and 
-> mounting the new copy via /dev/sdc and /dev/sdd will give consistent file 
-> system??
+1) readpages() is called while a reference on the inode is held, so
+   eviction can not be triggered before readpages() returns. It also
+   locks one or more ranges in the inode's io_tree (which is done at
+   extent_io.c:__do_contiguous_readpages());
 
-   That's always the case, with the very large caveat that you remove
-/dev/sdc and /dev/sdd from the system before you try mounting anything
-related to that FS. Making block level copies of btrfs filesystems and
-leaving them visible to the same kernel as the originals is a very bad
-idea, and can cause massive FS corruption.
+2) readpages() submits several read bios, all with an end io callback
+   that runs extent_io.c:end_bio_extent_readpage() and that is executed
+   by other task when a bio finishes, corresponding to a work queue
+   (fs_info->end_io_workers) worker kthread. This callback unlocks
+   the ranges in the inode's io_tree that were previously locked in
+   step 1;
 
-   It's OK to make the copy, but not to try mounting the FS with both
-copies present, as the kernel will see both copies as the same
-filesystem (because they have the same UUID), and it will get very
-confused about which device(s) it's meant to be writing to.
+3) readpages() returns, the reference on the inode is dropped;
 
-   Hugo.
+4) One or more of the read bios previously submitted are still not
+   complete (their end io callback was not yet invoked or has not
+   yet finished execution);
 
+5) Inode eviction is triggered (through an unlink call for example).
+   The inode reference count was not incremented before submitting
+   the read bios, therefore this is possible;
+
+6) The eviction handler starts executing and enters the loop that
+   iterates over all extent states in the inode's io_tree;
+
+7) The loop picks one extent state record and uses its ->start and
+   ->end fields, after releasing the inode's io_tree spinlock, to
+   call lock_extent_bits() and clear_extent_bit(). The call to lock
+   the range [state->start, state->end] blocks because the whole
+   range or a part of it was locked by the previous call to
+   readpages() and the corresponding end io callback, which unlocks
+   the range was not yet executed;
+
+8) The end io callback for the read bio is executed and unlocks the
+   range [state->start, state->end] (or a superset of that range).
+   And at clear_extent_bit() the extent_state record state is used
+   as a second argument to split_state(), which sets state->start to
+   a larger value;
+
+9) The task executing the eviction handler is woken up by the task
+   executing the bio's end io callback (through clear_state_bit) and
+   the eviction handler locks the range
+   [old value for state->start, state->end]. Shortly after, when
+   calling clear_extent_bit(), it unlocks the range
+   [new value for state->start, state->end], so it ends up unlocking
+   only part of the range that it locked, leaving an extent state
+   record in the io_tree that represents the unlocked subrange;
+
+10) The eviction handler loop, in its next iteration, gets the
+    extent_state record for the subrange that it did not unlock in the
+    previous step and then tries to lock it, resulting in an hang.
+
+So fix this by not using the ->start and ->end fields of an existing
+extent_state record. This is a simple solution, and an alternative
+could be to bump the inode's reference count before submitting each
+read bio and having it dropped in the bio's end io callback. But that
+would be a more invasive/complex change and would not protect against
+other possible places that are not holding a reference on the inode
+as well. Something to consider in the future.
+
+Many thanks to Zygo Blaxell for reporting, in the mailing list, the
+issue, a set of scripts to trigger it and testing this fix.
+
+Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 26 +++++++++++++++++++++-----
+ 1 file changed, 21 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0020b56..ef05800 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4987,24 +4987,40 @@ static void evict_inode_truncate_pages(struct inode *inode)
+ 	}
+ 	write_unlock(&map_tree->lock);
+ 
++	/*
++	 * Keep looping until we have no more ranges in the io tree.
++	 * We can have ongoing bios started by readpages (called from readahead)
++	 * that didn't get their end io callbacks called yet or they are still
++	 * in progress ((extent_io.c:end_bio_extent_readpage()). This means some
++	 * ranges can still be locked and eviction started because before
++	 * submitting those bios, which are executed by a separate task (work
++	 * queue kthread), inode references (inode->i_count) were not taken
++	 * (which would be dropped in the end io callback of each bio).
++	 * Therefore here we effectively end up waiting for those bios and
++	 * anyone else holding locked ranges without having bumped the inode's
++	 * reference count - if we don't do it, when they access the inode's
++	 * io_tree to unlock a range it may be too late, leading to an
++	 * use-after-free issue.
++	 */
+ 	spin_lock(&io_tree->lock);
+ 	while (!RB_EMPTY_ROOT(&io_tree->state)) {
+ 		struct extent_state *state;
+ 		struct extent_state *cached_state = NULL;
++		u64 start;
++		u64 end;
+ 
+ 		node = rb_first(&io_tree->state);
+ 		state = rb_entry(node, struct extent_state, rb_node);
+-		atomic_inc(&state->refs);
++		start = state->start;
++		end = state->end;
+ 		spin_unlock(&io_tree->lock);
+ 
+-		lock_extent_bits(io_tree, state->start, state->end,
+-				 0, &cached_state);
+-		clear_extent_bit(io_tree, state->start, state->end,
++		lock_extent_bits(io_tree, start, end, 0, &cached_state);
++		clear_extent_bit(io_tree, start, end,
+ 				 EXTENT_LOCKED | EXTENT_DIRTY |
+ 				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
+ 				 EXTENT_DEFRAG, 1, 1,
+ 				 &cached_state, GFP_NOFS);
+-		free_extent_state(state);
+ 
+ 		cond_resched();
+ 		spin_lock(&io_tree->lock);
 -- 
-Hugo Mills             | Q: What goes, "Pieces of seven! Pieces of seven!"?
-hugo@... carfax.org.uk | A: A parroty error.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+2.1.3
 
---V88s5gaDVPzZ0KCq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVZDRdAAoJEFheFHXiqx3kkAsQAJhbcgf3kGJ6U3AFzDJ+CaA+
-i64cN1cVAjzMxeuA9O9wVDLuGT24LtPg6hTQmAPhcxhLg5fSYmDbid5reC5SV6Ke
-u1xbk+Y5EwHYrKYIAwVOyCV6iPyrP09/PHNZohI4bl1QKE/l6HgzKBR6QueGr3/n
-HQO4lxs/7nQHepfpoFGzJM7/SaiggPffyF/BoY6FaTv8bs5hMALKQw8uBc0d8tvd
-WODsOgHK0RfSoyHw9c8Sp0uLUX/9Axu2AlgZ7BteUIMeEl4lkY+A2uZ24el1Rh+w
-L9w7nF5qguw4yhUFAzwJqouk//cL6D1pMUdS/AKFhtKN3qt7MjoOxdVNYglsta4c
-6Up2b9bIS3ydMNDXeyU2gxxLKSRfyMBd/JHrjvxuHQkjP9ChBKLIguPHYdE6qDQz
-wkjR+rq75eVM35J3KRbCRAKpaK6R9lnXxRptvLAXNMDilTXn1ybeRLx3jfaH46nM
-Tiq5Lkxb9ajDwjdNo2yjtKaJUffzRxwgf2iwyYv6UuiEEBE25Pizd3Ju+w/Rn8td
-a7S6yA8DBN+TqbAQwqNhqsU32akYwt5qlQl8huM4EVrOreNkDCGx1Jnhx9wfRZFn
-HGlfapo/dWhc2pMQ4MNxBtxIc5Hgf8Pri+WSypERPMI8dT18se+4e/6dVR1nErzA
-QSFqm+OFleW7AVVEJiN6
-=pqmU
------END PGP SIGNATURE-----
-
---V88s5gaDVPzZ0KCq--

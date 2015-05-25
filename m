@@ -1,98 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35598 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751043AbbEYDUt (ORCPT
+Received: from mail.lqfe.com ([72.14.186.34]:55329 "EHLO mail.lqfe.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751495AbbEYD4j convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 May 2015 23:20:49 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t4P3Kmj5017921
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 03:20:48 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t4P3Kmbo007444
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 03:20:48 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t4P3KmHW012625
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015 03:20:48 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove csum_bytes_left
-Date: Mon, 25 May 2015 11:20:22 +0800
-Message-Id: <1432524022-12424-1-git-send-email-bo.li.liu@oracle.com>
+	Sun, 24 May 2015 23:56:39 -0400
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2098\))
+Subject: Re: Did convert do anything?
+From: Anthony Plack <tmy@plack.net>
+In-Reply-To: <CA+WRLO_=RV_Ga7d-ff=p13TxycquQ1Ra2d2WYeGroQn9tm934w@mail.gmail.com>
+Date: Sun, 24 May 2015 22:56:37 -0500
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <036B4518-F7BF-4C9A-8906-38550D7F125F@plack.net>
+References: <CA+WRLO_=RV_Ga7d-ff=p13TxycquQ1Ra2d2WYeGroQn9tm934w@mail.gmail.com>
+To: Gareth Pye <gareth@cerberos.id.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After commit 8407f553268a
-("Btrfs: fix data corruption after fast fsync and writeback error"),
-during wait_ordered_extents(), we wait for ordered extent setting
-BTRFS_ORDERED_IO_DONE or BTRFS_ORDERED_IOERR, at which point we've
-already got checksum information, so we don't need to check
-(csum_bytes_left == 0) in the whole logging path.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ordered-data.c | 7 -------
- fs/btrfs/ordered-data.h | 3 ---
- fs/btrfs/tree-log.c     | 6 ------
- 3 files changed, 16 deletions(-)
+> On May 24, 2015, at 8:02 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
+> 
+> Just attempted to change the meta data of my 6 drive array to RAID6 with:
+> 
+> # btrfs balance start -mconvert=raid6 /data
+> Done, had to relocate 12 out of 4548 chunks
+> 
+> Which looks pretty good. But:
+> 
+> # btrfs  fi df /data
+> Data, RAID1: total=4.43TiB, used=4.41TiB
+> System, RAID1: total=32.00MiB, used=772.00KiB
+> Metadata, RAID1: total=11.00GiB, used=9.13GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> And some context:
+> 
+> # btrfs --version
+> btrfs-progs v4.0
+> 
+> # uname -a
+> Linux emile 4.0.1-040001-generic #201504290935 SMP Wed Apr 29 09:36:55
+> UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> 
+> What am I missing here?
+> 
+> 
+> 
+> -- 
+> Gareth Pye
+> Level 2 MTG Judge, Melbourne, Australia
+> "Dear God, I would like to file a bug report"
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 157cc54..e3c7540 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -198,9 +198,6 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	entry->file_offset = file_offset;
- 	entry->start = start;
- 	entry->len = len;
--	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) &&
--	    !(type == BTRFS_ORDERED_NOCOW))
--		entry->csum_bytes_left = disk_len;
- 	entry->disk_len = disk_len;
- 	entry->bytes_left = len;
- 	entry->inode = igrab(inode);
-@@ -286,10 +283,6 @@ void btrfs_add_ordered_sum(struct inode *inode,
- 	tree = &BTRFS_I(inode)->ordered_tree;
- 	spin_lock_irq(&tree->lock);
- 	list_add_tail(&sum->list, &entry->list);
--	WARN_ON(entry->csum_bytes_left < sum->len);
--	entry->csum_bytes_left -= sum->len;
--	if (entry->csum_bytes_left == 0)
--		wake_up(&entry->wait);
- 	spin_unlock_irq(&tree->lock);
- }
- 
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index e96cd4c..a82cd75 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -89,9 +89,6 @@ struct btrfs_ordered_extent {
- 	/* number of bytes that still need writing */
- 	u64 bytes_left;
- 
--	/* number of bytes that still need csumming */
--	u64 csum_bytes_left;
--
- 	/*
- 	 * the end of the ordered extent which is behind it but
- 	 * didn't update disk_i_size. Please see the comment of
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c5b8ba3..6989b42 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3734,12 +3734,6 @@ static int wait_ordered_extents(struct btrfs_trans_handle *trans,
- 				     &ordered->flags))
- 			continue;
- 
--		if (ordered->csum_bytes_left) {
--			btrfs_start_ordered_extent(inode, ordered, 0);
--			wait_event(ordered->wait,
--				   ordered->csum_bytes_left == 0);
--		}
--
- 		list_for_each_entry(sum, &ordered->list, list) {
- 			ret = btrfs_csum_file_blocks(trans, log, sum);
- 			if (ret)
--- 
-2.1.0
+Two things:
 
+1. What is the output of "btrfs fi sh /data”
+2. There is not allot of free space on this volume.

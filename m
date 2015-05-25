@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52823 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56054 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752061AbbEYM2E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 May 2015 08:28:04 -0400
-Date: Mon, 25 May 2015 14:28:02 +0200
+	id S1751290AbbEYNnd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 May 2015 09:43:33 -0400
+Date: Mon, 25 May 2015 15:43:31 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fsck.btrfs: Fix bashism and bad getopts processing
-Message-ID: <20150525122801.GD23255@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2] btrfs-progs: Enhance read_tree_block to avoid memory
+ corruption
+Message-ID: <20150525134331.GH23255@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20150521115651.GP23255@twin.jikos.cz>
- <1432212655-6238-1-git-send-email-dimitri.j.ledkov@intel.com>
+References: <1432256483-19347-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1432212655-6238-1-git-send-email-dimitri.j.ledkov@intel.com>
+In-Reply-To: <1432256483-19347-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 21, 2015 at 01:50:55PM +0100, Dimitri John Ledkov wrote:
-> First fix == bashism, as that is not accepted by e.g. Debian/Ubuntu
-> dash.
+On Fri, May 22, 2015 at 09:01:23AM +0800, Qu Wenruo wrote:
+> Add the following tree block check to avoid memory corruption on hostile
+> image:
+> 1) Check level.
+> Level >= BTRFS_MAX_LEVEL won't be read out.
 > 
-> Secondly shift OPTIND, such that last parameter is checked to exist.
+> 2) Nritems.
+> For nr_items > max_nritems, the tree_block won't be read out.
+> Max nritems is calculated in a easy method.
+> For node, it's straightforward, just (nodesize - header size) /
+> (btrfs_key_ptr)
+> For leaf, (nodesize - header size) / (btrfs_item), as btrfs support zero
+> item size
 > 
-> Signed-off-by: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
-> ---
->  fsck.btrfs | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+> This fixes 3 kernel bugs: BZ#97171, BZ#97191, BZ#97271.
 > 
-> diff --git a/fsck.btrfs b/fsck.btrfs
-> index f056a7f..20b070a 100755
-> --- a/fsck.btrfs
-> +++ b/fsck.btrfs
-> @@ -26,12 +26,13 @@ do
->  	a|A|p|y)	AUTO=true;;
->  	esac
->  done
-> +shift $(($OPTIND -1))
+> Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-BTW, this line is missing in the fsck.xfs stub as well, you may want to
-send the patch to xfsprogs.
+Applied, thanks.
+
+I've added image for the first bug, the other two do not pass inside our
+testing setup (check/repair/check) and fails to start, but the image
+restoration works at least. This would need some enhancements.

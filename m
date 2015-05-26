@@ -1,32 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:33286 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750962AbbEZSSl (ORCPT
+Received: from mail-qk0-f180.google.com ([209.85.220.180]:34041 "EHLO
+	mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750961AbbEZSut (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 14:18:41 -0400
-Received: by igbpi8 with SMTP id pi8so66777428igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 11:18:40 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150526180820.GG16826@carfax.org.uk>
-References: <20150526173634.GU11340@wantstofly.org>
-	<20150526180820.GG16826@carfax.org.uk>
-Date: Tue, 26 May 2015 12:18:40 -0600
-Message-ID: <CAJCQCtQsCU9OhSPRjqTS30i8KeC-_aa9SG+qmViA_q5po00QrQ@mail.gmail.com>
+	Tue, 26 May 2015 14:50:49 -0400
+Received: by qkgx75 with SMTP id x75so97220335qkg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 11:50:48 -0700 (PDT)
+Message-ID: <1432666245.4677.15.camel@kepstin.ca>
 Subject: Re: intermittent -ENOSPC errors on btrfs filesystem with 170G free
-From: Chris Murphy <lists@colorremedies.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>,
         Lennert Buytenhek <buytenh@wantstofly.org>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Tue, 26 May 2015 14:50:45 -0400
+In-Reply-To: <CAJCQCtQsCU9OhSPRjqTS30i8KeC-_aa9SG+qmViA_q5po00QrQ@mail.gmail.com>
+References: <20150526173634.GU11340@wantstofly.org>
+	 <20150526180820.GG16826@carfax.org.uk>
+	 <CAJCQCtQsCU9OhSPRjqTS30i8KeC-_aa9SG+qmViA_q5po00QrQ@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh yeah easy to miss, but obvious once pointed out:
+On Tue, 2015-05-26 at 12:18 -0600, Chris Murphy wrote:
+> Oh yeah easy to miss, but obvious once pointed out:
+> 
+> > Data, single: total=227.94GiB, used=58.16GiB
+> 
+> I thought we had automatic deallocation of unused chunks but I guess
+> it hasn't landed yet.
 
-> Data, single: total=227.94GiB, used=58.16GiB
+We do have automatic deallocation of unused chunks. (I know it's in 
+4.0, dunno about earlier versions.)
 
-I thought we had automatic deallocation of unused chunks but I guess
-it hasn't landed yet.
+Unfortunately, this only deallocates *completely* unused chunks - if 
+you're e.g. writing a bunch of small files and large files at the same 
+time, then delete the large files, you could end up with a bunch of 
+data chunks that are mostly, but not completely, empty: they still 
+have the small files hanging around.
 
+In this case a balance is still necessary to clean things up.
 
-Chris Murphy
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>

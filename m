@@ -1,78 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.10]:61508 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750771AbbEYQGX convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 May 2015 12:06:23 -0400
-Received: from oxbsltgw09.schlund.de ([172.19.249.26]) by
- mrelayeu.kundenserver.de (mreue102) with ESMTPSA (Nemesis) id
- 0M7sZ6-1ZJ09629Ro-00vKvF for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2015
- 18:06:20 +0200
-Date: Mon, 25 May 2015 18:06:20 +0200 (CEST)
-From: Felix Koop <fdp@fkoop.de>
-Reply-To: Felix Koop <fdp@fkoop.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
-Subject: Help needed to recover a RAID5 btrfs
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:38909 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751005AbbEZFid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 May 2015 01:38:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Yx7ZP-00005p-JO
+	for linux-btrfs@vger.kernel.org; Tue, 26 May 2015 07:38:31 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 07:38:31 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 07:38:31 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Help needed to recover a RAID5 btrfs
+Date: Tue, 26 May 2015 05:38:23 +0000 (UTC)
+Message-ID: <pan$3386d$35212f4$af6d06d8$b9fa55d1@cox.net>
+References: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Felix Koop posted on Mon, 25 May 2015 18:06:20 +0200 as excerpted:
 
-I have a RAID5 filesystem where one disk has crashed. Now the filesystem is not
-recognized any more. Any help available?
+> I have a RAID5 filesystem where one disk has crashed. Now the filesystem
+> is not recognized any more. Any help available?
+> 
+> Here is some info:
+> 
+> root@server:~# uname -a Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1
+> (2015-05-11) x86_64 GNU/Linux
+> 
+> root@server:~# btrfs --version btrfs-progs v4.0
 
-Here is some info:
+Commendations on at least running current versions.  With code as new as 
+btrfs raid56 mode, that's absolutely critical, so I'm glad to see you got 
+it covered! =:^)
 
-root@server:~# uname -a
-Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1 (2015-05-11) x86_64 GNU/Linux
+This isn't going to help with the current problem, but it might be useful 
+in general...  Note that I'm just a btrfs user/admin and list regular, 
+not a dev, and that my own btrfs use-case is btrfs raid1 mode, so what I 
+know about btrfs raid56 mode (covering both raid5 and raid6) is what I've 
+found on the wiki and the list.  Disclaimer out of the way...
 
-root@server:~# btrfs --version
-btrfs-progs v4.0
+FWIW, btrfs raid56 mode was only actually theoretically complete with 
+kernel 3.19, and is still very new and buggy.
 
-root@server:~# btrfs f sh /dev/Data1vg/afs0
-warning, device 3 is missing
-warning devid 3 not found already
-checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
-checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
-bytenr mismatch, want=1111813750784, have=65536
-Couldn't read tree root
-Label: none uuid: 7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
- Total devices 3 FS bytes used 213.96GiB
- devid 2 size 150.00GiB used 108.53GiB path /dev/mapper/Data1vg-afs0
- devid 4 size 150.00GiB used 108.53GiB path /dev/mapper/Data3vg-afs0
- *** Some devices missing
+If you're simply testing it, great, we need testers to help it get to 
+usability. =:^)
 
-btrfs-progs v4.0
+If OTOH you're actually expecting it to work, I'd strongly recommend 
+avoiding raid56 mode until it has at /least/ a /couple/ kernel cycles 
+under its belt after completion... which would be 4.1 since 3.19 was code-
+completion, and preferably something closer to a year, five kernel cycles 
+or so, thus 4.4.
 
-root@server:~# mount -o degraded -r /dev/Data1vg/afs0 /mnt
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/Data1vg-afs0,
- missing codepage or helper program, or other error
+In the mean time, for multi-device btrfs modes with raid redundancy, I'd 
+recommend sticking with either raid1 or raid10 modes as at this point 
+they are both far more mature and tested, basically to the same level of 
+maturity btrfs itself is, that being not entirely stable yet, but 
+reasonably usable as long as you're following the sysadmins' backups 
+rule, that in turn being, if it's not backed up you by definition don't 
+care if you lose it, no matter what you claim, with the corollary being 
+that a would-be backup isn't a backup, until you've tested that you can 
+recover from it.
 
-In some cases useful info is found in syslog – try
- dmesg | tail or so.
+As for help with your current broken btrfs raid5, I'll refer you to 
+others with actual experience with it. =:^/
 
-root@server:~# dmesg | tail
-[104991.996065] BTRFS: open_ctree failed
-[105527.836798] blk_update_request: I/O error, dev fd0, sector 0
-[105527.839477] floppy: error -5 while reading block 0
-[105555.615991] BTRFS info (device dm-52): allowing degraded mounts
-[105555.616000] BTRFS info (device dm-52): disk space caching is enabled
-[105555.665644] BTRFS: bdev (null) errs: wr 38, rd 0, flush 0, corrupt 0, gen 0
-[105556.213570] BTRFS (device dm-52): bad tree block start 14290338419558610620
-1111828267008
-[105556.216649] BTRFS (device dm-52): bad tree block start 14290338419558610620
-1111828267008
-[105556.219364] BTRFS: Failed to read block groups: -5
-[105556.236056] BTRFS: open_ctree failed
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-If more info is needed, just tell me what I should do. Thanks.
-
----
-
-Kind greetings
-
-Felix Koop

@@ -1,85 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:33849 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751461AbbEZWoD (ORCPT
+Received: from umail.aei.mpg.de ([194.94.224.6]:36310 "EHLO umail.aei.mpg.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751331AbbEZXNT convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 18:44:03 -0400
-Received: by pdbki1 with SMTP id ki1so59101352pdb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 15:44:02 -0700 (PDT)
-Date: Tue, 26 May 2015 15:44:00 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Felix Koop <fdp@fkoop.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Help needed to recover a RAID5 btrfs
-Message-ID: <20150526224400.GA28433@mew.lv.cox.net>
-References: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
+	Tue, 26 May 2015 19:13:19 -0400
+Received: from [192.168.1.106] (x55b3a8ff.dyn.telefonica.de [85.179.168.255])
+	by umail.aei.mpg.de (Postfix) with ESMTPSA id 303A02001E3
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2015 01:04:37 +0200 (CEST)
+From: Ian Hinder <ian.hinder@aei.mpg.de>
+Content-Type: text/plain; charset=us-ascii
+Subject: du vs qgroup
+Message-Id: <FE5E411A-18A0-4D69-9997-050C05275019@aei.mpg.de>
+Date: Wed, 27 May 2015 01:04:38 +0200
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 25, 2015 at 06:06:20PM +0200, Felix Koop wrote:
-> Hello,
-> 
-> I have a RAID5 filesystem where one disk has crashed. Now the filesystem is not
-> recognized any more. Any help available?
-> 
-> Here is some info:
-> 
-> root@server:~# uname -a
-> Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1 (2015-05-11) x86_64 GNU/Linux
-> 
-> root@server:~# btrfs --version
-> btrfs-progs v4.0
-> 
-> root@server:~# btrfs f sh /dev/Data1vg/afs0
-> warning, device 3 is missing
-> warning devid 3 not found already
-> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
-> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
-> bytenr mismatch, want=1111813750784, have=65536
-> Couldn't read tree root
-> Label: none uuid: 7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
->  Total devices 3 FS bytes used 213.96GiB
->  devid 2 size 150.00GiB used 108.53GiB path /dev/mapper/Data1vg-afs0
->  devid 4 size 150.00GiB used 108.53GiB path /dev/mapper/Data3vg-afs0
->  *** Some devices missing
-> 
-> btrfs-progs v4.0
-> 
-> root@server:~# mount -o degraded -r /dev/Data1vg/afs0 /mnt
-> mount: wrong fs type, bad option, bad superblock on /dev/mapper/Data1vg-afs0,
->  missing codepage or helper program, or other error
-> 
-> In some cases useful info is found in syslog – try
->  dmesg | tail or so.
-> 
-> root@server:~# dmesg | tail
-> [104991.996065] BTRFS: open_ctree failed
-> [105527.836798] blk_update_request: I/O error, dev fd0, sector 0
-> [105527.839477] floppy: error -5 while reading block 0
-> [105555.615991] BTRFS info (device dm-52): allowing degraded mounts
-> [105555.616000] BTRFS info (device dm-52): disk space caching is enabled
-> [105555.665644] BTRFS: bdev (null) errs: wr 38, rd 0, flush 0, corrupt 0, gen 0
-> [105556.213570] BTRFS (device dm-52): bad tree block start 14290338419558610620
-> 1111828267008
-> [105556.216649] BTRFS (device dm-52): bad tree block start 14290338419558610620
-> 1111828267008
-> [105556.219364] BTRFS: Failed to read block groups: -5
-> [105556.236056] BTRFS: open_ctree failed
-> 
-> 
-> If more info is needed, just tell me what I should do. Thanks.
-> 
+Hi,
 
-Just a heads up if you manage to mount it, device replace of a missing
-device on RAID5/6 will currently oops (see [1]). If you're feeling
-really adventurous, you could try my unreviewed patch series here [2],
-but that of course depends on the degraded mount succeeding.
+I have a 350 GB btrfs filesystem in which I am storing backups of virtual machine disk images.  These are rsynced periodically from the VM host to a "current" subvolume, followed by a snapshot operation to a dated subvolume.  One disk image is about 50 GB in size, as reported by ls -l and du.  However, the qgroup assigned to the "current" subvolume reports a "refr" size of 75 GB.  I have performed a "btrfs quota rescan" to make sure the quota is up-to-date.  I have tried defragmenting the file, but this did not significantly help.
 
-1: https://bugzilla.kernel.org/show_bug.cgi?id=96141
-2: http://thread.gmane.org/gmane.comp.file-systems.btrfs/45045
+Is there an explanation for the discrepancy between the logical file size and the data used in btrfs to store it?
+
+I have one theory, which is that when the updated VM image is synced into the current subvolume, the changes affect only a small part of each data storage node (I'm not sure if I'm using the terminology "node" correctly here), but each node needs to be duplicated due to the COW nature of the filesystem, and the fact that the nodes are shared with the existing snapshots, so they cannot be rewritten to be more efficient.  This means that most of the data in such a node is actually duplicated, even though it only counts once toward the logical size of the file.  I do not know how to determine the node size of my filesystem, but as far as I can tell from searching, the node size is never more than 65 K.  It seems to me unlikely that such a small node size could cause the problems I am seeing, but I suppose it's not impossible, especially because this virtual machine disk image hosts a number of git repositories, typically containing large numbers of small files, which have undergone significant churn in the past.  If this were the problem, would deduplication help, or does it operate only at the level of nodes?
+
+I am using Linux version 3.16.0-38-generic, Ubuntu 14.04.2 LTS.  This is from August 2014.  I know that it is preferable to use the latest kernel for btrfs; Ubuntu provides up to 3.19.0-18, and I would consider upgrading if this is likely to help the problem.
+
+What is the most up-to-date description of how btrfs stores data? I have found this, https://oss.oracle.com/~mason/btrfs/btrfs-design.html, for example.
 
 -- 
-Omar
+Ian Hinder
+http://members.aei.mpg.de/ianhin
+

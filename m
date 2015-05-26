@@ -1,46 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f175.google.com ([209.85.212.175]:33761 "EHLO
-	mail-wi0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751011AbbEZTcM (ORCPT
+Received: from mail-ie0-f181.google.com ([209.85.223.181]:33591 "EHLO
+	mail-ie0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751140AbbEZTtW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 15:32:12 -0400
-Received: by wicmx19 with SMTP id mx19so74274383wic.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 12:32:11 -0700 (PDT)
+	Tue, 26 May 2015 15:49:22 -0400
+Received: by iebgx4 with SMTP id gx4so100479009ieb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 12:49:22 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <556457b8.e72b980a.ee08.ffffce60@mx.google.com>
 References: <556457b8.e72b980a.ee08.ffffce60@mx.google.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 26 May 2015 22:31:31 +0300
-Message-ID: <CAGqmi76gUe5s3v0=SOmrPcBt8F-N9Vi72FLB1JqnR+8Uo-y+Ew@mail.gmail.com>
+Date: Tue, 26 May 2015 13:49:22 -0600
+Message-ID: <CAJCQCtQFyCEn3kdeYOrOyk_vqekNH_MiOyA=WSOxLCoQS6PV1w@mail.gmail.com>
 Subject: Re: RAID1: system stability
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Chris Murphy <lists@colorremedies.com>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh, i missing, i've test it on 3.19+ kernels
-I can get trace from screen if it interesting for developers.
+Without a complete dmesg it's hard to say what's going on. The call
+trace alone probably don't show the instigating factor so you may need
+to use remote ssh with journalctl -f, or use netconsole to
+continuously get kernel messages prior to the implosion.
 
-2015-05-26 14:23 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
-> Hi list,
-> I'm regular on this list and I very like btrfs, I want use it on production server, and I want replace hw raid on it.
->
-> Test case: server with N scsi discs
-> 2 SAS disks used for raid 1 root fs
-> If I just remove one disk physically, all okay, kernel show me write errors and system continue work some time. But after first sync call, example
-> # sync
-> # dd if=/Dev/zero of=/zero
->
-> Kernel will crush and system freeze.
-> Yes, after reboot, I can mount with degraded and recovery options, and I can add failed disk again, and btrfs will rebuild array.
-> But kernel crush and reboot expected in this case, or I can skip it? How?
-> # mount -o remount, degraded -> kernel crush
-> Insert failed disk again -> kernel crush
->
-> May be I missing something? I just want avoid shutdown time or/and reboot =.=
-
-
-
--- 
-Have a nice day,
-Timofey.
+Chris Murphy

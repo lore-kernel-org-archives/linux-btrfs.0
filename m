@@ -1,79 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38909 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751005AbbEZFid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 01:38:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Yx7ZP-00005p-JO
-	for linux-btrfs@vger.kernel.org; Tue, 26 May 2015 07:38:31 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 07:38:31 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 07:38:31 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:23027 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751364AbbEZF4J convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 May 2015 01:56:09 -0400
+Message-ID: <55640AF3.2090502@cn.fujitsu.com>
+Date: Tue, 26 May 2015 13:56:03 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Felix Koop <fdp@fkoop.de>, linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Help needed to recover a RAID5 btrfs
-Date: Tue, 26 May 2015 05:38:23 +0000 (UTC)
-Message-ID: <pan$3386d$35212f4$af6d06d8$b9fa55d1@cox.net>
 References: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Felix Koop posted on Mon, 25 May 2015 18:06:20 +0200 as excerpted:
-
-> I have a RAID5 filesystem where one disk has crashed. Now the filesystem
-> is not recognized any more. Any help available?
-> 
+> Hello,
+>
+> I have a RAID5 filesystem where one disk has crashed. Now the filesystem is not
+> recognized any more. Any help available?
+>
 > Here is some info:
-> 
-> root@server:~# uname -a Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1
-> (2015-05-11) x86_64 GNU/Linux
-> 
-> root@server:~# btrfs --version btrfs-progs v4.0
+>
+> root@server:~# uname -a
+> Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1 (2015-05-11) x86_64 GNU/Linux
+>
+> root@server:~# btrfs --version
+> btrfs-progs v4.0
+>
+> root@server:~# btrfs f sh /dev/Data1vg/afs0
+> warning, device 3 is missing
+> warning devid 3 not found already
+> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
+> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
+> bytenr mismatch, want=1111813750784, have=65536
+> Couldn't read tree root
+Tree root is corrupted, which is not a good news.
 
-Commendations on at least running current versions.  With code as new as 
-btrfs raid56 mode, that's absolutely critical, so I'm glad to see you got 
-it covered! =:^)
+> Label: none uuid: 7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
+>   Total devices 3 FS bytes used 213.96GiB
+>   devid 2 size 150.00GiB used 108.53GiB path /dev/mapper/Data1vg-afs0
+>   devid 4 size 150.00GiB used 108.53GiB path /dev/mapper/Data3vg-afs0
+>   *** Some devices missing
+The device 3, I guest it's /dev/mapper/data2vg-afs0, does it still 
+exists in /dev/mapper?
+>
+> btrfs-progs v4.0
+>
+> root@server:~# mount -o degraded -r /dev/Data1vg/afs0 /mnt
+> mount: wrong fs type, bad option, bad superblock on /dev/mapper/Data1vg-afs0,
+>   missing codepage or helper program, or other error
+>
+> In some cases useful info is found in syslog – try
+>   dmesg | tail or so.
+>
+> root@server:~# dmesg | tail
+> [104991.996065] BTRFS: open_ctree failed
+> [105527.836798] blk_update_request: I/O error, dev fd0, sector 0
+> [105527.839477] floppy: error -5 while reading block 0
+> [105555.615991] BTRFS info (device dm-52): allowing degraded mounts
+> [105555.616000] BTRFS info (device dm-52): disk space caching is enabled
+> [105555.665644] BTRFS: bdev (null) errs: wr 38, rd 0, flush 0, corrupt 0, gen 0
+> [105556.213570] BTRFS (device dm-52): bad tree block start 14290338419558610620
+> 1111828267008
+> [105556.216649] BTRFS (device dm-52): bad tree block start 14290338419558610620
+> 1111828267008
+> [105556.219364] BTRFS: Failed to read block groups: -5
+> [105556.236056] BTRFS: open_ctree failed
+>
+>
+> If more info is needed, just tell me what I should do. Thanks.
+Need some extra info:
+  btrfs-show-super -a -f /dev/mapper/Data1vg-afs0
+  btrfs-show-super -a -f /dev/mapper/Data2vg-afs0 (If that is device3 
+and exists)
+  btrfs-show-super -a -f /dev/mapper/Data3vg-afs0
 
-This isn't going to help with the current problem, but it might be useful 
-in general...  Note that I'm just a btrfs user/admin and list regular, 
-not a dev, and that my own btrfs use-case is btrfs raid1 mode, so what I 
-know about btrfs raid56 mode (covering both raid5 and raid6) is what I've 
-found on the wiki and the list.  Disclaimer out of the way...
+Maybe we can use old super to restore it to a mountable status.
 
-FWIW, btrfs raid56 mode was only actually theoretically complete with 
-kernel 3.19, and is still very new and buggy.
+If you have spare space to backup all the 3 devices, it's recommended to 
+do it, as some repair tips may cause some write into disk, and may even 
+make things worse.
 
-If you're simply testing it, great, we need testers to help it get to 
-usability. =:^)
+Thanks,
+Qu
 
-If OTOH you're actually expecting it to work, I'd strongly recommend 
-avoiding raid56 mode until it has at /least/ a /couple/ kernel cycles 
-under its belt after completion... which would be 4.1 since 3.19 was code-
-completion, and preferably something closer to a year, five kernel cycles 
-or so, thus 4.4.
-
-In the mean time, for multi-device btrfs modes with raid redundancy, I'd 
-recommend sticking with either raid1 or raid10 modes as at this point 
-they are both far more mature and tested, basically to the same level of 
-maturity btrfs itself is, that being not entirely stable yet, but 
-reasonably usable as long as you're following the sysadmins' backups 
-rule, that in turn being, if it's not backed up you by definition don't 
-care if you lose it, no matter what you claim, with the corollary being 
-that a would-be backup isn't a backup, until you've tested that you can 
-recover from it.
-
-As for help with your current broken btrfs raid5, I'll refer you to 
-others with actual experience with it. =:^/
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+>
+> ---
+>
+> Kind greetings
+>
+> Felix Koop
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,34 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:37701 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750726AbbEZQ0x (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 12:26:53 -0400
-Received: by igbsb11 with SMTP id sb11so57596685igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 09:26:53 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:56357 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754642AbbEZQea (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 May 2015 12:34:30 -0400
+Date: Tue, 26 May 2015 18:34:27 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] [PATCH 2/2] Btrfs: fix up read_tree_block to return
+ proper error
+Message-ID: <20150526163427.GN23255@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1432546215-10954-1-git-send-email-bo.li.liu@oracle.com>
+ <1432546215-10954-2-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20150526142607.GE16826@carfax.org.uk>
-References: <loom.20150526T103943-385@post.gmane.org>
-	<20150526085246.GC16826@carfax.org.uk>
-	<loom.20150526T112326-642@post.gmane.org>
-	<20150526142607.GE16826@carfax.org.uk>
-Date: Tue, 26 May 2015 10:26:53 -0600
-Message-ID: <CAJCQCtR1EtjrXfH3TjtjiMwULTD9ZJ9VMfVHpTmyaM4gQr7fig@mail.gmail.com>
-Subject: Re: btrfs on disk stability
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1432546215-10954-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm not really understanding the use case. Is this for one time copy
-of a Btrfs file system or a need to keep the copies in sync? Because
-this sounds like a better fit for rsync, btrfs send/receive, or drdb.
+On Mon, May 25, 2015 at 05:30:15PM +0800, Liu Bo wrote:
+> The return value of read_tree_block() can confuse callers as it always
+> returns NULL for either -ENOMEM or -EIO, so it's likely that callers
+> parse it to a wrong error, for instance, in btrfs_read_tree_root().
+> 
+> This fixes the above issue.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-The part especially where I'm getting confused is where you say "start
-copying blocks of sda to sdc" and yet you refer to "file handler" and
-"mounting the new copy". I can't really tell if this is strictly a
-block copy e.g. using dd, or if you're using cp/rsync -a or what. And
-then, why do you need to mount the copy?
-
-Chris Murphy
+Reviewed-by: David Sterba <dsterba@suse.cz>

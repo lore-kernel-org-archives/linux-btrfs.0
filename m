@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35530 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750947AbbEZS57 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 14:57:59 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1YxK31-0004sL-42
-	for linux-btrfs@vger.kernel.org; Tue, 26 May 2015 20:57:55 +0200
-Received: from pd953eddd.dip0.t-ipconnect.de ([217.83.237.221])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 20:57:55 +0200
-Received: from holger.hoffstaette by pd953eddd.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 20:57:55 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: intermittent -ENOSPC errors on btrfs filesystem with 170G free
-Date: Tue, 26 May 2015 18:57:48 +0000 (UTC)
-Message-ID: <pan.2015.05.26.18.57.48@googlemail.com>
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:34307 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751721AbbEZT3X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 May 2015 15:29:23 -0400
+Received: by igbhj9 with SMTP id hj9so68844182igb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 12:29:22 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1432666245.4677.15.camel@kepstin.ca>
 References: <20150526173634.GU11340@wantstofly.org>
 	<20150526180820.GG16826@carfax.org.uk>
 	<CAJCQCtQsCU9OhSPRjqTS30i8KeC-_aa9SG+qmViA_q5po00QrQ@mail.gmail.com>
-Mime-Version: 1.0
+	<1432666245.4677.15.camel@kepstin.ca>
+Date: Tue, 26 May 2015 13:29:22 -0600
+Message-ID: <CAJCQCtQTEKectBbzVS822_5GLL6usX6wzgxh8XfiVTGRVa2PvQ@mail.gmail.com>
+Subject: Re: intermittent -ENOSPC errors on btrfs filesystem with 170G free
+From: Chris Murphy <lists@colorremedies.com>
+To: Calvin Walton <calvin.walton@kepstin.ca>
+Cc: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Lennert Buytenhek <buytenh@wantstofly.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 26 May 2015 12:18:40 -0600, Chris Murphy wrote:
+On Tue, May 26, 2015 at 12:50 PM, Calvin Walton
+<calvin.walton@kepstin.ca> wrote:
+> On Tue, 2015-05-26 at 12:18 -0600, Chris Murphy wrote:
+>> Oh yeah easy to miss, but obvious once pointed out:
+>>
+>> > Data, single: total=227.94GiB, used=58.16GiB
+>>
+>> I thought we had automatic deallocation of unused chunks but I guess
+>> it hasn't landed yet.
+>
+> We do have automatic deallocation of unused chunks. (I know it's in
+> 4.0, dunno about earlier versions.)
+>
+> Unfortunately, this only deallocates *completely* unused chunks
 
-> Oh yeah easy to miss, but obvious once pointed out:
-> 
->> Data, single: total=227.94GiB, used=58.16GiB
-> 
-> I thought we had automatic deallocation of unused chunks but I guess
-> it hasn't landed yet.
+oic.
 
-It did (in 3.18 IIRC), but that doesn't help with - for whatever reason -
-severely unbalanced chunks, i.e. all allocated but each used only a
-little bit. Now, how and why that happened..
-
--h
-
+-- 
+Chris Murphy

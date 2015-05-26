@@ -1,88 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hmm.wantstofly.org ([148.251.232.15]:53107 "EHLO
-	mail.wantstofly.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751295AbbEZRmG (ORCPT
+Received: from mail-ie0-f178.google.com ([209.85.223.178]:36308 "EHLO
+	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752081AbbEZRuB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 13:42:06 -0400
-Date: Tue, 26 May 2015 20:36:34 +0300
-From: Lennert Buytenhek <buytenh@wantstofly.org>
-To: linux-btrfs@vger.kernel.org
-Subject: intermittent -ENOSPC errors on btrfs filesystem with 170G free
-Message-ID: <20150526173634.GU11340@wantstofly.org>
+	Tue, 26 May 2015 13:50:01 -0400
+Received: by iepj10 with SMTP id j10so97914846iep.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 10:50:00 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20150526173634.GU11340@wantstofly.org>
+References: <20150526173634.GU11340@wantstofly.org>
+Date: Tue, 26 May 2015 11:50:00 -0600
+Message-ID: <CAJCQCtRW5ZJ9J-dq_64p+vQnWsAM+Pt8eGP+NxH_SzwSAU9mpg@mail.gmail.com>
+Subject: Re: intermittent -ENOSPC errors on btrfs filesystem with 170G free
+From: Chris Murphy <lists@colorremedies.com>
+To: Lennert Buytenhek <buytenh@wantstofly.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
-
-The btrfs filesystem on my newly installed laptop has managed to
-hose itself rather thoroughly, and it's now in a state where it
-works okay if you don't write too much to it, but if you do, it
-starts returning -ENOSPC on a random subset of your filesystem
-operations until you let it cool down again.
-
-This was a fresh Fedora 21 install, upgraded to F22, installed
-about a month ago, with a ~250G btrfs filesystem on a 256G SSD,
-and this system has only even run 4.0, and it has never had more
-than ~60G on it.  It's currently running:
-
-# uname -a
-Linux foobox 4.0.1-300.fc22.x86_64 #1 SMP Wed Apr 29 15:48:25 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v4.0
-
-# btrfs fi show
-Label: 'foobox'  uuid: [...]
-        Total devices 1 FS bytes used 58.87GiB
-        devid    1 size 229.97GiB used 229.97GiB path /dev/[...]
-
-# btrfs fi df /
-Data, single: total=227.94GiB, used=58.16GiB
-System, DUP: total=8.00MiB, used=48.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=1.00GiB, used=730.80MiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=256.00MiB, used=0.00B
-
-There's zero btrfs related messages in the logs, or anything disk or
-filesystem related, except a whole bunch of:
-
-[1843230.259205] systemd-journald[692]: /var/log/journal/5997c521ad1f4293842511a8ae54ff19/system.journal: IO error, rotating.
-[1843230.290505] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/system.journal: No space left on device
-[1843230.315511] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/user-1000.journal: No space left on device
-[1843230.348163] systemd-journald[692]: Failed to write entry (23 items, 626 bytes) despite vacuuming, ignoring: Bad message
-[1843230.372496] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/system.journal: No space left on device
-[1843230.385662] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/user-1000.journal: No space left on device
-[1843230.385750] systemd-journald[692]: Failed to write entry (23 items, 585 bytes), ignoring: Bad message
-[1848548.026408] systemd-journald[692]: Failed to sync system journal: Input/output error
-[1848642.374799] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/system.journal: No space left on device
-[1848642.392197] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/user-1000.journal: No space left on device
-[1848642.392433] systemd-journald[692]: Failed to write entry (21 items, 796 bytes), ignoring: Bad message
-[1848642.405032] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/system.journal: No space left on device
-[1848642.416944] systemd-journald[692]: Failed to rotate /var/log/journal/5997c521ad1f4293842511a8ae54ff19/user-1000.journal: No space left on device
-
-This is with ~170G free.
-
-It's currently still in a funky state:
-
-[root@foobox lib]# df /
-Filesystem     1K-blocks     Used Available Use% Mounted on
-/dev/dm-0      241145856 62743256 178027464  27% /
-[root@foobox lib]# pwd
-/var/lib
-[root@foobox lib]# touch foo
-[root@foobox lib]# rm -f foo
-[root@foobox lib]# ls -ald abrt
-drwxr-xr-x. 1 root root 56 May 21 10:02 abrt
-[root@foobox lib]# mv abrt abrt2
-mv: cannot move ‘abrt’ to ‘abrt2’: No space left on device
-[root@foobox lib]# 
-
-Any tests anyone wants to run on this before I wipe and reinstall
-the box?
+Before wiping I suggest making an image with btrfs-image. And then
+also see if any additional messages appear with the enospc_debug mount
+option. And also see if there's any correlation between the journald
+reported failures (the specific .journal file) and whether it's +C by
+using lsattr. Fedora 21 systemd journal files do not have +C by
+default, whereas Fedora 22 systemd journal files do use +C by default.
+So I'd expect the journal files to be a mix. Also let us know if there
+are snapshots that affect /var/log/journal (either reflink copies of
+the journal files or a snapshot of the root subvolume which contains
+/var/log/journal.
 
 
-cheers,
-Lennert
+Chris Murphy

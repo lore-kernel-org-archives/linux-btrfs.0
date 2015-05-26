@@ -1,476 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.187]:52812 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751207AbbEZUPG convert rfc822-to-8bit (ORCPT
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:33849 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751461AbbEZWoD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 16:15:06 -0400
-Date: Tue, 26 May 2015 22:15:00 +0200 (CEST)
-From: Felix Koop <fdp@fkoop.de>
-Reply-To: Felix Koop <fdp@fkoop.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1413519748.49215.1432671300490.JavaMail.open-xchange@oxbsltgw01.schlund.de>
-In-Reply-To: <55640AF3.2090502@cn.fujitsu.com>
-References: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de> <55640AF3.2090502@cn.fujitsu.com>
+	Tue, 26 May 2015 18:44:03 -0400
+Received: by pdbki1 with SMTP id ki1so59101352pdb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 15:44:02 -0700 (PDT)
+Date: Tue, 26 May 2015 15:44:00 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Felix Koop <fdp@fkoop.de>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Help needed to recover a RAID5 btrfs
+Message-ID: <20150526224400.GA28433@mew.lv.cox.net>
+References: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <508094243.133459.1432569980190.JavaMail.open-xchange@oxbsltgw09.schlund.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Qu Wenruo <quwenruo@cn.fujitsu.com> hat am 26. Mai 2015 um 07:56 geschrieben:
+On Mon, May 25, 2015 at 06:06:20PM +0200, Felix Koop wrote:
+> Hello,
 > 
-> > Label: none uuid: 7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
-> >   Total devices 3 FS bytes used 213.96GiB
-> >   devid 2 size 150.00GiB used 108.53GiB path /dev/mapper/Data1vg-afs0
-> >   devid 4 size 150.00GiB used 108.53GiB path /dev/mapper/Data3vg-afs0
-> >   *** Some devices missing
-> The device 3, I guest it's /dev/mapper/data2vg-afs0, does it still 
-> exists in /dev/mapper?
-
-No, the disk crashed, so that the device does no longer exist.
-
-> Need some extra info:
->   btrfs-show-super -a -f /dev/mapper/Data1vg-afs0
-
-root@server:~# btrfs-show-super -a -f /dev/mapper/Data1vg-afs0
-superblock: bytenr=65536, device=/dev/mapper/Data1vg-afs0
----------------------------------------------------------
-csum			0xc33db89c [match]
-bytenr			65536
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
-label			
-generation		35278
-root			1111813750784
-sys_array_size		161
-chunk_root_generation	33824
-root_level		1
-chunk_root		1111721295872
-chunk_root_level	1
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		483183820800
-bytes_used		229738524672
-sectorsize		4096
-nodesize		16384
-leafsize		16384
-stripesize		4096
-root_dir		6
-num_devices		3
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0xe1
-			( MIXED_BACKREF |
-			  BIG_METADATA |
-			  EXTENDED_IREF |
-			  RAID56 )
-csum_type		0
-csum_size		4
-cache_generation	35278
-uuid_tree_generation	35278
-dev_item.uuid		5e5332c3-9e02-4b86-a84e-709f6ac4196b
-dev_item.fsid		7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf [match]
-dev_item.type		0
-dev_item.total_bytes	161061273600
-dev_item.bytes_used	116534542336
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		2
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-sys_chunk_array[2048]:
-	item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1111721246720)
-		chunk length 67108864 owner 2 type SYSTEM|RAID5 num_stripes 3
-			stripe 0 devid 2 offset 1048576
-			stripe 1 devid 4 offset 1048576
-			stripe 2 devid 3 offset 1048576
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	1111813750784	gen: 35278	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111813963776	gen: 35278	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111814504448	gen: 35278	level: 1
-		backup_csum_root:	1111814963200	gen: 35278	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-	backup 1:
-		backup_tree_root:	1111811768320	gen: 35275	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111808262144	gen: 35275	level: 2
-		backup_fs_root:		1111808081920	gen: 35275	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111814733824	gen: 35275	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 2:
-		backup_tree_root:	1111816585216	gen: 35276	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111815340032	gen: 35276	level: 2
-		backup_fs_root:		1111808983040	gen: 35277	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111818010624	gen: 35276	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 3:
-		backup_tree_root:	1111842062336	gen: 35277	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111825956864	gen: 35277	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111842095104	gen: 35277	level: 1
-		backup_csum_root:	1111842160640	gen: 35277	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-
-superblock: bytenr=67108864, device=/dev/mapper/Data1vg-afs0
----------------------------------------------------------
-csum			0x635c9052 [match]
-bytenr			67108864
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
-label			
-generation		35278
-root			1111813750784
-sys_array_size		161
-chunk_root_generation	33824
-root_level		1
-chunk_root		1111721295872
-chunk_root_level	1
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		483183820800
-bytes_used		229738524672
-sectorsize		4096
-nodesize		16384
-leafsize		16384
-stripesize		4096
-root_dir		6
-num_devices		3
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0xe1
-			( MIXED_BACKREF |
-			  BIG_METADATA |
-			  EXTENDED_IREF |
-			  RAID56 )
-csum_type		0
-csum_size		4
-cache_generation	35278
-uuid_tree_generation	35278
-dev_item.uuid		5e5332c3-9e02-4b86-a84e-709f6ac4196b
-dev_item.fsid		7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf [match]
-dev_item.type		0
-dev_item.total_bytes	161061273600
-dev_item.bytes_used	116534542336
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		2
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-sys_chunk_array[2048]:
-	item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1111721246720)
-		chunk length 67108864 owner 2 type SYSTEM|RAID5 num_stripes 3
-			stripe 0 devid 2 offset 1048576
-			stripe 1 devid 4 offset 1048576
-			stripe 2 devid 3 offset 1048576
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	1111813750784	gen: 35278	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111813963776	gen: 35278	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111814504448	gen: 35278	level: 1
-		backup_csum_root:	1111814963200	gen: 35278	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-	backup 1:
-		backup_tree_root:	1111811768320	gen: 35275	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111808262144	gen: 35275	level: 2
-		backup_fs_root:		1111808081920	gen: 35275	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111814733824	gen: 35275	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 2:
-		backup_tree_root:	1111816585216	gen: 35276	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111815340032	gen: 35276	level: 2
-		backup_fs_root:		1111808983040	gen: 35277	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111818010624	gen: 35276	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 3:
-		backup_tree_root:	1111842062336	gen: 35277	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111825956864	gen: 35277	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111842095104	gen: 35277	level: 1
-		backup_csum_root:	1111842160640	gen: 35277	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-
-
-
-
->   btrfs-show-super -a -f /dev/mapper/Data2vg-afs0 (If that is device3 
-> and exists)
-
-As I said, the device does no longer exist, because the disk crashed.
-
->   btrfs-show-super -a -f /dev/mapper/Data3vg-afs0
-
-root@server:~# btrfs-show-super -a -f /dev/mapper/Data3vg-afs0
-superblock: bytenr=65536, device=/dev/mapper/Data3vg-afs0
----------------------------------------------------------
-csum			0xe3500af0 [match]
-bytenr			65536
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
-label			
-generation		35278
-root			1111813750784
-sys_array_size		161
-chunk_root_generation	33824
-root_level		1
-chunk_root		1111721295872
-chunk_root_level	1
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		483183820800
-bytes_used		229738524672
-sectorsize		4096
-nodesize		16384
-leafsize		16384
-stripesize		4096
-root_dir		6
-num_devices		3
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0xe1
-			( MIXED_BACKREF |
-			  BIG_METADATA |
-			  EXTENDED_IREF |
-			  RAID56 )
-csum_type		0
-csum_size		4
-cache_generation	35278
-uuid_tree_generation	35278
-dev_item.uuid		ce22bfec-b82d-42cf-8703-8f1eaa17a1ec
-dev_item.fsid		7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf [match]
-dev_item.type		0
-dev_item.total_bytes	161061273600
-dev_item.bytes_used	116534542336
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		4
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-sys_chunk_array[2048]:
-	item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1111721246720)
-		chunk length 67108864 owner 2 type SYSTEM|RAID5 num_stripes 3
-			stripe 0 devid 2 offset 1048576
-			stripe 1 devid 4 offset 1048576
-			stripe 2 devid 3 offset 1048576
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	1111813750784	gen: 35278	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111813963776	gen: 35278	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111814504448	gen: 35278	level: 1
-		backup_csum_root:	1111814963200	gen: 35278	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-	backup 1:
-		backup_tree_root:	1111811768320	gen: 35275	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111808262144	gen: 35275	level: 2
-		backup_fs_root:		1111808081920	gen: 35275	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111814733824	gen: 35275	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 2:
-		backup_tree_root:	1111816585216	gen: 35276	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111815340032	gen: 35276	level: 2
-		backup_fs_root:		1111808983040	gen: 35277	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111818010624	gen: 35276	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 3:
-		backup_tree_root:	1111842062336	gen: 35277	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111825956864	gen: 35277	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111842095104	gen: 35277	level: 1
-		backup_csum_root:	1111842160640	gen: 35277	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-
-superblock: bytenr=67108864, device=/dev/mapper/Data3vg-afs0
----------------------------------------------------------
-csum			0x4331223e [match]
-bytenr			67108864
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
-label			
-generation		35278
-root			1111813750784
-sys_array_size		161
-chunk_root_generation	33824
-root_level		1
-chunk_root		1111721295872
-chunk_root_level	1
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		483183820800
-bytes_used		229738524672
-sectorsize		4096
-nodesize		16384
-leafsize		16384
-stripesize		4096
-root_dir		6
-num_devices		3
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0xe1
-			( MIXED_BACKREF |
-			  BIG_METADATA |
-			  EXTENDED_IREF |
-			  RAID56 )
-csum_type		0
-csum_size		4
-cache_generation	35278
-uuid_tree_generation	35278
-dev_item.uuid		ce22bfec-b82d-42cf-8703-8f1eaa17a1ec
-dev_item.fsid		7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf [match]
-dev_item.type		0
-dev_item.total_bytes	161061273600
-dev_item.bytes_used	116534542336
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		4
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-sys_chunk_array[2048]:
-	item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1111721246720)
-		chunk length 67108864 owner 2 type SYSTEM|RAID5 num_stripes 3
-			stripe 0 devid 2 offset 1048576
-			stripe 1 devid 4 offset 1048576
-			stripe 2 devid 3 offset 1048576
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	1111813750784	gen: 35278	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111813963776	gen: 35278	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111814504448	gen: 35278	level: 1
-		backup_csum_root:	1111814963200	gen: 35278	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-	backup 1:
-		backup_tree_root:	1111811768320	gen: 35275	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111808262144	gen: 35275	level: 2
-		backup_fs_root:		1111808081920	gen: 35275	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111814733824	gen: 35275	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 2:
-		backup_tree_root:	1111816585216	gen: 35276	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111815340032	gen: 35276	level: 2
-		backup_fs_root:		1111808983040	gen: 35277	level: 2
-		backup_dev_root:	1112427905024	gen: 33824	level: 1
-		backup_csum_root:	1111818010624	gen: 35276	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738541056
-		backup_num_devices:	3
-
-	backup 3:
-		backup_tree_root:	1111842062336	gen: 35277	level: 1
-		backup_chunk_root:	1111721295872	gen: 33824	level: 1
-		backup_extent_root:	1111825956864	gen: 35277	level: 2
-		backup_fs_root:		1111836409856	gen: 35277	level: 2
-		backup_dev_root:	1111842095104	gen: 35277	level: 1
-		backup_csum_root:	1111842160640	gen: 35277	level: 2
-		backup_total_bytes:	483183820800
-		backup_bytes_used:	229738524672
-		backup_num_devices:	3
-
-
-
-
+> I have a RAID5 filesystem where one disk has crashed. Now the filesystem is not
+> recognized any more. Any help available?
 > 
-> Maybe we can use old super to restore it to a mountable status.
+> Here is some info:
 > 
-> If you have spare space to backup all the 3 devices, it's recommended to 
-> do it, as some repair tips may cause some write into disk, and may even 
-> make things worse.
+> root@server:~# uname -a
+> Linux server 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1 (2015-05-11) x86_64 GNU/Linux
+> 
+> root@server:~# btrfs --version
+> btrfs-progs v4.0
+> 
+> root@server:~# btrfs f sh /dev/Data1vg/afs0
+> warning, device 3 is missing
+> warning devid 3 not found already
+> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
+> checksum verify failed on 1111813750784 found 18019A1D wanted FCE227AB
+> bytenr mismatch, want=1111813750784, have=65536
+> Couldn't read tree root
+> Label: none uuid: 7d4b023a-a1ef-4991-b01d-31e7c4fdfbcf
+>  Total devices 3 FS bytes used 213.96GiB
+>  devid 2 size 150.00GiB used 108.53GiB path /dev/mapper/Data1vg-afs0
+>  devid 4 size 150.00GiB used 108.53GiB path /dev/mapper/Data3vg-afs0
+>  *** Some devices missing
+> 
+> btrfs-progs v4.0
+> 
+> root@server:~# mount -o degraded -r /dev/Data1vg/afs0 /mnt
+> mount: wrong fs type, bad option, bad superblock on /dev/mapper/Data1vg-afs0,
+>  missing codepage or helper program, or other error
+> 
+> In some cases useful info is found in syslog – try
+>  dmesg | tail or so.
+> 
+> root@server:~# dmesg | tail
+> [104991.996065] BTRFS: open_ctree failed
+> [105527.836798] blk_update_request: I/O error, dev fd0, sector 0
+> [105527.839477] floppy: error -5 while reading block 0
+> [105555.615991] BTRFS info (device dm-52): allowing degraded mounts
+> [105555.616000] BTRFS info (device dm-52): disk space caching is enabled
+> [105555.665644] BTRFS: bdev (null) errs: wr 38, rd 0, flush 0, corrupt 0, gen 0
+> [105556.213570] BTRFS (device dm-52): bad tree block start 14290338419558610620
+> 1111828267008
+> [105556.216649] BTRFS (device dm-52): bad tree block start 14290338419558610620
+> 1111828267008
+> [105556.219364] BTRFS: Failed to read block groups: -5
+> [105556.236056] BTRFS: open_ctree failed
+> 
+> 
+> If more info is needed, just tell me what I should do. Thanks.
 > 
 
-Will do. I have enough space.
+Just a heads up if you manage to mount it, device replace of a missing
+device on RAID5/6 will currently oops (see [1]). If you're feeling
+really adventurous, you could try my unreviewed patch series here [2],
+but that of course depends on the degraded mount succeeding.
 
+1: https://bugzilla.kernel.org/show_bug.cgi?id=96141
+2: http://thread.gmane.org/gmane.comp.file-systems.btrfs/45045
 
-
-Mit freundlichen Grüßen/Kind regards
-
-
-
-
-
-Felix Koop
+-- 
+Omar

@@ -1,70 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28391 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755833AbbE2L5V (ORCPT
+Received: from mail-pa0-f50.google.com ([209.85.220.50]:36344 "EHLO
+	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756266AbbE2UDL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 May 2015 07:57:21 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t4TBtiVe002959
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2015 19:55:46 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/4] btrfs: Separate scrub_blocked_if_needed() to scrub_pause_on/off()
-Date: Fri, 29 May 2015 19:55:33 +0800
-Message-ID: <db592d7da3170d0b43e66b146be70ae494a44760.1432900529.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
+	Fri, 29 May 2015 16:03:11 -0400
+Received: by pacux9 with SMTP id ux9so25877753pac.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2015 13:03:10 -0700 (PDT)
+Date: Fri, 29 May 2015 13:03:06 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Zhaolei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/4] btrfs: Separate scrub_blocked_if_needed() to
+ scrub_pause_on/off()
+Message-ID: <20150529200306.GA13244@mew.dhcp4.washington.edu>
 References: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
+ <db592d7da3170d0b43e66b146be70ae494a44760.1432900529.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <db592d7da3170d0b43e66b146be70ae494a44760.1432900529.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Fri, May 29, 2015 at 07:55:33PM +0800, Zhaolei wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> It can reduce current duplicated code which is similar to
+> scrub_blocked_if_needed() but can not call it because little
+> different.
+> It also used by my next patch which is in same case.
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reviewed-by: Omar Sandoval <osandov@osandov.com>
 
-It can reduce current duplicated code which is similar to
-scrub_blocked_if_needed() but can not call it because little
-different.
-It also used by my next patch which is in same case.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ab58115..a3d1546 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -332,11 +332,14 @@ static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
- 	}
- }
- 
--static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-+static void scrub_pause_on(struct btrfs_fs_info *fs_info)
- {
- 	atomic_inc(&fs_info->scrubs_paused);
- 	wake_up(&fs_info->scrub_pause_wait);
-+}
- 
-+static void scrub_pause_off(struct btrfs_fs_info *fs_info)
-+{
- 	mutex_lock(&fs_info->scrub_lock);
- 	__scrub_blocked_if_needed(fs_info);
- 	atomic_dec(&fs_info->scrubs_paused);
-@@ -345,6 +348,12 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
- 	wake_up(&fs_info->scrub_pause_wait);
- }
- 
-+static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-+{
-+	scrub_pause_on(fs_info);
-+	scrub_pause_off(fs_info);
-+}
-+
- /*
-  * used for workers that require transaction commits (i.e., for the
-  * NOCOW case)
 -- 
-1.8.5.1
-
+Omar

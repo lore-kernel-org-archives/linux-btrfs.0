@@ -1,55 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-33.italiaonline.it ([212.48.25.161]:53478 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1756334AbbE2RC7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 May 2015 13:02:59 -0400
-Message-ID: <55689BC3.40306@inwind.it>
-Date: Fri, 29 May 2015 19:02:59 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mail-lb0-f177.google.com ([209.85.217.177]:35255 "EHLO
+	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756603AbbE2TN7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 May 2015 15:13:59 -0400
+Received: by lbbuc2 with SMTP id uc2so54549537lbb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2015 12:13:58 -0700 (PDT)
 MIME-Version: 1.0
-To: Roman Mamedov <rm@romanrm.net>, Stef Bon <stefbon@gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CANXojcyqXUNhWLa4ybGyhXceqLdb3DdvM-TvEtwf-KOM6YOsUQ@mail.gmail.com>
+References: <CANXojcyqXUNhWLa4ybGyhXceqLdb3DdvM-TvEtwf-KOM6YOsUQ@mail.gmail.com>
+Date: Fri, 29 May 2015 21:13:58 +0200
+Message-ID: <CAC+fKQXdKjh3ckEvrcxiEMWvA0xN3v+Gx_T2DeJoCL4pEFbasg@mail.gmail.com>
 Subject: Re: Plans for a library for btrfs?
-References: <CANXojcyqXUNhWLa4ybGyhXceqLdb3DdvM-TvEtwf-KOM6YOsUQ@mail.gmail.com> <20150529193123.1ecb5d8a@natsu>
-In-Reply-To: <20150529193123.1ecb5d8a@natsu>
-Content-Type: text/plain; charset=windows-1252
+From: Juan Orti Alcaine <j.orti.alcaine@gmail.com>
+To: Stef Bon <stefbon@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-05-29 16:31, Roman Mamedov wrote:
-> On Wed, 27 May 2015 14:31:28 +0200
-> Stef Bon <stefbon@gmail.com> wrote:
-> 
->> This program, which I've called fuse-backup, creates backup subvolumes
->> and snapshots by calling an extrenal script, which does something
->> like:
->>
->> btrfs subvolume snapshot -r %PathToBackup%/ %PathToSnapshot%
->>
->> This works perfect, but are there any plans to do this with a library?
-> 
-> If this works perfect, then what is the rationale for needing a library?
+I'm not a developer, but I read this a days ago. Could it be helpful?
 
-The problem in calling another executable, is that is very difficult to parse the program output.
-For "btrfs sub snap" it is easy; but what about "btrfs fi df" or "btrfs fi show" ?
-
-> Do you see a clear reason aside from any vague "it's supposed to be that way".
-> In the Unix land it is perfectly normal for programs to call other
-> self-contained programs to do their self-contained jobs:
-
-Right, but now btrfs is a collection of tools; I don't think that it could e considered a "self-contained programs"... Other programs (eg systemd, udev) rewrite some code in order to avoid to call an external executable. This leads to code duplication with all the associated problems...
-
-> http://www.catb.org/esr/writings/taoup/html/ch01s06.html#id2877684
-> Not everything must to be a library linked into your main executable, some
-> separation and calling external programs to do stuff such as mkfs or snapshot
-> management seems perfectly fine and even better from the debug-ability
-> standpoint.
+https://blog-vpodzime.rhcloud.com/?p=61
+https://github.com/rhinstaller/libblockdev
 
 
+2015-05-27 14:31 GMT+02:00 Stef Bon <stefbon@gmail.com>:
+> Hi,
+>
+> I'm working on a program (using sqlite, FUSE and btrfs) to provide
+> backup and version managment
+> for users. They can enable the backup service for folders they own,
+> and select files they want to backup using mimetypes.
+>
+> This program, which I've called fuse-backup, creates backup subvolumes
+> and snapshots by calling an extrenal script, which does something
+> like:
+>
+> btrfs subvolume snapshot -r %PathToBackup%/ %PathToSnapshot%
+>
+> This works perfect, but are there any plans to do this with a library?
+>
+> Stef Bon
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Juan Orti
+https://miceliux.com
+
+GPG key: https://miceliux.com/pub/pubkey.asc
+GPG fingerprint: 61F0 8272 6882 BCA6 3A35  88F6 B630 4B72 DEEB D08B
